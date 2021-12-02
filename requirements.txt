@@ -1,0 +1,5 @@
+beautifulsoup4==4.10.0
+cxxfilt==0.3.0
+lxml==4.6.3
+PyYAML==5.4.1
+soupsieve==2.2.1
