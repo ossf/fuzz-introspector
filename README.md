@@ -68,3 +68,24 @@ The output of the introspector is a HTML report that gives data about your fuzze
 - An overlay of the reachability tree with coverage collected from a fuzzer run. 
 - A table giving summary information about which targets are optimal targets to analyse for a fuzzer of the functions that are not being reached by any fuzzer.
 - A list of suggestions for new fuzzers (this is super naive at the moment).
+
+### Example output
+
+Here we show a few images from the output report:
+
+Project overview:
+
+![project overview](/img/project_overview.png)
+
+
+Table with data of all functions in a project:
+
+![Functions table](/img/functions_overview.png)
+
+Reachability tree with coverage overlay
+
+![Overlay 1](/img/overlay-1.png)
+
+
+Reachability tree with coverage overlay, showing where a fuzz-blocker is occurring
+![Overlay 2](/img/overlay-2.png)
