@@ -1,0 +1,7 @@
+build/
+tmp
+*.swp
+*.out
+*.err
+*.profile
+*fuzz_report.html
