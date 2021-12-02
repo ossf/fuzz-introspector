@@ -78,7 +78,7 @@ Project overview:
 ![project overview](/img/project_overview.png)
 
 
-Table with data of all functions in a project:
+Table with data of all functions in a project. The table is sortable to make enhance the process of understanding the fuzzer-infrastructure of a given project:
 
 ![Functions table](/img/functions_overview.png)
 
