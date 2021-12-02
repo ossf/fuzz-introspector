@@ -434,6 +434,9 @@ def create_html_report(profiles,
                         for (n_line_number, hit_times_n) in profile['coverage']['coverage-map'][funcname_t]:
                             if n_line_number == node['linenumber'] and hit_times_n != 0:
                                 color_to_be = "green"
+                # hack to always make LLVMFUzzerTestOneInput green. TODO: avoid hardcoding like this.
+                if demangled_name == "LLVMFuzzerTestOneInput":
+                    color_to_be = "green"
                 color = {"green": "#99FF99",
                          "yellow": "#FFFF99",
                          "red": "#FF9999"}[color_to_be]
