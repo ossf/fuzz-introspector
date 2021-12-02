@@ -51,3 +51,20 @@ python3 -m http.server 5002
 
 You can also use the `build_all_projects.sh` and `build_all_web_only.sh` scripts to control
 which examples you want to build as well as whether you want to only build the web data.
+
+
+## Output
+
+The output of the introspector is a HTML report that gives data about your fuzzer. This includes:
+
+- An overview of reachability by all fuzzers in the repository
+- A table with detailed information about each fuzzer in the repository, e.g. number of functions reached, complexity covered and more.
+- A table with overview of all functions in the project. With information such as 
+  - Number of fuzzers that reaches this function
+  - Cyclomatic complexity of this function and all functions reachable by this function
+  - Number of functions reached by this function
+  - The amount of undiscovered complexity in this function. Undiscovered complexity is the complexity *not* covered by any fuzzers.
+- A call reachability tree for each fuzzer in the project. The reachability tree shows the potential control-flow of a given fuzzer
+- An overlay of the reachability tree with coverage collected from a fuzzer run. 
+- A table giving summary information about which targets are optimal targets to analyse for a fuzzer of the functions that are not being reached by any fuzzer.
+- A list of suggestions for new fuzzers (this is super naive at the moment).
