@@ -16,11 +16,11 @@ The recommended way of testing this project is by way of OSS-Fuzz. Please see
 You can also build and run the introspector outside the OSS-Fuzz environment.
 
 We use this mainly to develop the LLVM LTO pass as compilation of clang goes
-faster (recompilation in particular). However, for the full-experience we 
+faster (recompilation in particular). However, for the full experience we 
 recommend working in the OSS-Fuzz environment as described above.
 
 One problem with testing locally is that the full end-to-end process of
-both (1) building fuzzers; (2) running them; (3) building with coverage and
+both (1) building fuzzers; (2) running them; (3) building with coverage; and
 (4) building with introspector analysis, is better supported
 in the OSS-Fuzz environment.
 
@@ -41,7 +41,7 @@ cd fuzz-introspector
 ```
 
 #### Run local examples
-After having built the custom clang above, you can try and example:
+After having built the custom clang above, you can try an example:
 ```
 cd examples
 ./build_simple_examples.sh
