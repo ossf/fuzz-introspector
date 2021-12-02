@@ -1,0 +1,6 @@
+*.data
+web
+fuzzer
+fuzzer.o
+*.ll
+*.bc
