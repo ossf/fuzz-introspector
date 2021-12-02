@@ -1,0 +1,209 @@
+diff --git a/infra/base-images/base-builder/Dockerfile b/infra/base-images/base-builder/Dockerfile
+index 256e7be5..140ac3df 100644
+--- a/infra/base-images/base-builder/Dockerfile
++++ b/infra/base-images/base-builder/Dockerfile
+@@ -82,6 +82,8 @@ ENV SANITIZER_FLAGS_dataflow "-fsanitize=dataflow"
+ 
+ ENV SANITIZER_FLAGS_thread "-fsanitize=thread"
+ 
++ENV SANITIZER_FLAGS_instrumentor "-flto"
++
+ # Do not use any sanitizers in the coverage build.
+ ENV SANITIZER_FLAGS_coverage ""
+ 
+@@ -138,6 +140,8 @@ RUN cd $SRC && \
+ COPY precompile_afl /usr/local/bin/
+ RUN precompile_afl
+ 
++COPY post-processing $SRC/post-processing
++
+ COPY precompile_honggfuzz /usr/local/bin/
+ RUN precompile_honggfuzz
+ 
+diff --git a/infra/base-images/base-builder/compile b/infra/base-images/base-builder/compile
+index c934d3b5..7725b17d 100755
+--- a/infra/base-images/base-builder/compile
++++ b/infra/base-images/base-builder/compile
+@@ -146,6 +146,20 @@ if [ "$FUZZING_LANGUAGE" = "jvm" ]; then
+   export CXXFLAGS="$CXXFLAGS -fno-sanitize=leak"
+ fi
+ 
++if [ "$SANITIZER" = "instrumentor" ]; then
++  echo "We are in the instrumentor"
++  export LDFLAGS="-fuse-ld=gold"
++  export AR=llvm-ar
++  export RANLIB=llvm-ranlib
++
++  # Move ar and ranlib
++  mv /usr/bin/ar /usr/bin/old-ar
++  mv /usr/bin/ranlib /usr/bin/old-ranlib
++
++  ln -s /usr/local/bin/llvm-ar /usr/bin/ar
++  ln -s /usr/local/bin/llvm-ranlib /usr/bin/ranlib
++fi
++
+ echo "---------------------------------------------------------------"
+ echo "CC=$CC"
+ echo "CXX=$CXX"
+@@ -186,6 +200,28 @@ else
+   fi
+ fi
+ 
++if [ "$SANITIZER" = "instrumentor" ]; then
++  pip3 install cxxfilt pyyaml beautifulsoup4 lxml soupsieve
++  mkdir $SRC/inspector-tmp
++
++  find $SRC/ -name "*.data" -exec cp {} $SRC/inspector-tmp/ \;
++  find $SRC/ -name "*.data.yaml" -exec cp {} $SRC/inspector-tmp/ \;
++
++  # Move coverage report in case
++  if [ -d "$OUT/fuzzer_stats" ]
++  then
++    cp $OUT/fuzzer_stats/*.covreport $SRC/inspector-tmp/
++  fi
++  ls -la $SRC/inspector-tmp
++
++  cd $SRC/inspector-tmp
++  python3 $SRC/post-processing/main.py --target_dir=$SRC/inspector-tmp --git_repo_url=$GITHUB_REPO
++  #find $SRC/ -name "fuzz_report.html" -exec cp {} $OUT/ \;
++  #mv fuzz_report.html $SRC/inspector-tmp/fuzz_report.html
++
++  cp -rf $SRC/inspector-tmp $OUT/inspector-tmp
++fi
++
+ if [[ "$FUZZING_ENGINE" = "dataflow" ]]; then
+   # Remove seed corpus as it can be huge but is not needed for a dataflow build.
+   rm -f $OUT/*.zip
+diff --git a/infra/base-images/base-clang/Dockerfile b/infra/base-images/base-clang/Dockerfile
+index 45260941..c533509e 100644
+--- a/infra/base-images/base-clang/Dockerfile
++++ b/infra/base-images/base-clang/Dockerfile
+@@ -28,6 +28,8 @@ RUN apt-get update && apt-get install -y wget sudo && \
+     SUDO_FORCE_REMOVE=yes apt-get remove --purge -y wget sudo && \
+     rm -rf /usr/local/doc/cmake /usr/local/bin/cmake-gui
+ 
++COPY llvm /root/introspector-llvm/
++
+ COPY checkout_build_install_llvm.sh /root/
+ # Keep all steps in the same script to decrease the number of intermediate
+ # layes in docker file.
+diff --git a/infra/base-images/base-clang/checkout_build_install_llvm.sh b/infra/base-images/base-clang/checkout_build_install_llvm.sh
+index a62b27cf..c3cf6129 100755
+--- a/infra/base-images/base-clang/checkout_build_install_llvm.sh
++++ b/infra/base-images/base-clang/checkout_build_install_llvm.sh
+@@ -61,6 +61,8 @@ function cmake_llvm {
+       $LLVM_SRC/llvm
+ }
+ 
++apt-get install -y texinfo bison flex
++
+ # Use chromium's clang revision
+ mkdir $SRC/chromium_tools
+ cd $SRC/chromium_tools
+@@ -74,7 +76,7 @@ OUR_LLVM_REVISION=llvmorg-12-init-17251-g6de48655
+ 
+ # To allow for manual downgrades. Set to 0 to use Chrome's clang version (i.e.
+ # *not* force a manual downgrade). Set to 1 to force a manual downgrade.
+-FORCE_OUR_REVISION=0
++FORCE_OUR_REVISION=1
+ LLVM_REVISION=$(grep -Po "CLANG_REVISION = '\K([^']+)" scripts/update.py)
+ 
+ clone_with_retries https://github.com/llvm/llvm-project.git $LLVM_SRC
+@@ -93,6 +95,23 @@ fi
+ git -C $LLVM_SRC checkout $LLVM_REVISION
+ echo "Using LLVM revision: $LLVM_REVISION"
+ 
++### For fuzz introspector
++echo "Applying introspector changes"
++BBBASE=$PWD
++cd $LLVM_SRC 
++cp -rf /root/introspector-llvm/include/llvm/Transforms/Inspector/ ./llvm/include/llvm/Transforms//Inspector
++cp -rf /root/introspector-llvm/lib/Transforms/Inspector ./llvm/lib/Transforms/Inspector
++
++# LLVM currently does not support dynamically loading LTO passes. Thus,
++# we hardcode it into Clang instead.
++# Ref: https://reviews.llvm.org/D77704
++sed -i 's/whole-program devirtualization and bitset lowering./whole-program devirtualization and bitset lowering.\nPM.add(createInspectorPass());/g' ./llvm/lib/Transforms/IPO/PassManagerBuilder.cpp
++sed -i 's/using namespace/#include "llvm\/Transforms\/Inspector\/Inspector.h"\nusing namespace/g' ./llvm/lib/Transforms/IPO/PassManagerBuilder.cpp
++echo "add_subdirectory(Inspector)" >> ./llvm/lib/Transforms/CMakeLists.txt
++sed -i 's/Instrumentation/Instrumentation\n  Inspector/g' ./llvm/lib/Transforms/IPO/CMakeLists.txt
++cd $BBBASE
++
++
+ # Build & install.
+ mkdir -p $WORK/llvm-stage2 $WORK/llvm-stage1
+ python3 $SRC/chromium_tools/clang/scripts/update.py --output-dir $WORK/llvm-stage1
+diff --git a/infra/base-images/base-runner/coverage b/infra/base-images/base-runner/coverage
+index 40c31e07..4b47adc0 100755
+--- a/infra/base-images/base-runner/coverage
++++ b/infra/base-images/base-runner/coverage
+@@ -100,7 +100,7 @@ function run_fuzz_target {
+   fi
+ 
+   # If necessary translate to latest profraw version.
+-  llvm-cov-rel $OUT/$target $profraw_file_mask tmp.profraw
++  #llvm-cov-rel $OUT/$target $profraw_file_mask tmp.profraw
+   mv tmp.profraw $profraw_file_mask
+   llvm-profdata merge -j=1 -sparse $profraw_file_mask -o $profdata_file
+ 
+@@ -112,6 +112,9 @@ function run_fuzz_target {
+   llvm-cov export -summary-only -instr-profile=$profdata_file -object=$target \
+       $shared_libraries $LLVM_COV_COMMON_ARGS > $FUZZER_STATS_DIR/$target.json
+ 
++  # For introspector
++  llvm-cov show -instr-profile=$profdata_file -object=$target -line-coverage-gt=0 $shared_libraries $LLVM_COV_COMMON_ARGS > ${FUZZER_STATS_DIR}/$target.covreport
++
+   if [ -n "${FULL_SUMMARY_PER_TARGET-}" ]; then
+     # This is needed for dataflow strategy analysis, can be removed later. See
+     # - https://github.com/google/oss-fuzz/pull/3306
+diff --git a/infra/constants.py b/infra/constants.py
+index a323a436..68c006d1 100644
+--- a/infra/constants.py
++++ b/infra/constants.py
+@@ -32,7 +32,7 @@ LANGUAGES = [
+ ]
+ LANGUAGES_WITH_COVERAGE_SUPPORT = ['c', 'c++', 'go', 'jvm', 'rust', 'swift']
+ SANITIZERS = [
+-    'address', 'none', 'memory', 'undefined', 'dataflow', 'thread', 'coverage'
++    'address', 'none', 'memory', 'undefined', 'dataflow', 'thread', 'coverage', 'instrumentor'
+ ]
+ ARCHITECTURES = ['i386', 'x86_64']
+ ENGINES = ['libfuzzer', 'afl', 'honggfuzz', 'dataflow', 'none']
+diff --git a/infra/helper.py b/infra/helper.py
+index db9f76b6..ce98761d 100755
+--- a/infra/helper.py
++++ b/infra/helper.py
+@@ -270,6 +270,9 @@ def get_parser():  # pylint: disable=too-many-statements
+                                     action='store_false',
+                                     help='do not clean existing artifacts '
+                                     '(default).')
++  build_fuzzers_parser.add_argument('--git-repo',
++                                    default='none',
++                                    help='Github repository')
+   build_fuzzers_parser.set_defaults(clean=False)
+ 
+   check_build_parser = subparsers.add_parser(
+@@ -605,6 +608,7 @@ def build_fuzzers_impl(  # pylint: disable=too-many-arguments,too-many-locals,to
+     architecture,
+     env_to_add,
+     source_path,
++    github_repo,
+     mount_path=None):
+   """Builds fuzzers."""
+   if not build_image_impl(project):
+@@ -632,6 +636,7 @@ def build_fuzzers_impl(  # pylint: disable=too-many-arguments,too-many-locals,to
+       'FUZZING_ENGINE=' + engine,
+       'SANITIZER=' + sanitizer,
+       'ARCHITECTURE=' + architecture,
++      'GITHUB_REPO=' + github_repo,
+   ]
+ 
+   _add_oss_fuzz_ci_if_needed(env)
+@@ -684,6 +689,7 @@ def build_fuzzers(args):
+                             args.architecture,
+                             args.e,
+                             args.source_path,
++                            args.git_repo,
+                             mount_path=args.mount_path)
+ 
+ 
