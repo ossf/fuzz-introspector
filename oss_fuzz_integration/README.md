@@ -30,10 +30,7 @@ cd corpus-0/inspector-report/
 python3 -m http.server 8008
 ```
 
-You can now navigate to `http://localhost:5002/fuzz_report.html`
-
-You should start the first webserver (coverage data) on port 5001 as shown
-above. Otherwise there will be broken links in the introspector report.
+You can now navigate to `http://localhost:8008/fuzz_report.html`
 
 Notice that when running these commands the `run_both.sh` script will use
 OSS-Fuzz to generate coverage. This will result in a webserver being launched

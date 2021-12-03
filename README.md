@@ -19,7 +19,7 @@ We use this mainly to develop the LLVM LTO pass as compilation of clang goes
 faster (recompilation in particular). However, for the full experience we 
 recommend working in the OSS-Fuzz environment as described above.
 
-One problem with testing locally is that the full end-to-end process of
+A complication with testing locally is that the full end-to-end process of
 both (1) building fuzzers; (2) running them; (3) building with coverage; and
 (4) building with introspector analysis, is better supported
 in the OSS-Fuzz environment.
