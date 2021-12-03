@@ -18,4 +18,9 @@
 
 SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 python3 ${SCRIPT_DIR}/get_full_coverage.py $1 $2
-python3 ./infra/helper.py build_fuzzers --sanitizer=instrumentor --git-repo="https://github.com/samtools/htslib/blob/develop" $1
+python3 ./infra/helper.py build_fuzzers --sanitizer=instrumentor $1
+
+LATEST_CORPUS_DIR=$(ls | sed 's/corpus-//' | sort -n | tail -1)
+
+cp -rf ./build/out/$1/inspector-tmp/ ./corpus-$LATEST_CORPUS_DIR/inspector-report
+cp -rf ./corpus-$LATEST_CORPUS_DIR/report/ ./corpus-$LATEST_CORPUS_DIR/inspector-report/covreport

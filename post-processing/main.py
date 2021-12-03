@@ -14,12 +14,10 @@
 
 import os
 import sys
-
 import argparse
 
 import fuzz_data_loader
 import fuzz_html
-
 
 
 def run_analysis_on_dir(target_folder,
@@ -45,12 +43,8 @@ def run_analysis_on_dir(target_folder,
         fuzz_data_loader.refine_profile(profile)
 
     # Create the HTML report that can be viewed.
-
     if coverage_url == "":
-        coverage_url = "http://localhost:5001/linux"
-
-    if git_repo_url == None:
-        git_repo_url = "https://github.com/kamailio/kamailio/tree/master"
+        coverage_url = "http://localhost:8008/covreport/linux"
 
     print("[+] Creating HTML report")
     fuzz_html.create_html_report(profiles, project_profile, coverage_url, git_repo_url, basefolder, False)
@@ -67,7 +61,7 @@ def create_parser():
     parser.add_argument('--git_repo_url', 
                         type=str,
                         help="Git repository with the source code",
-                        default=None)
+                        default="")
         
     parser.add_argument('--coverage_url', 
                         type=str,
