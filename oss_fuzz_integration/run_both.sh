@@ -24,3 +24,5 @@ LATEST_CORPUS_DIR=$(ls | sed 's/corpus-//' | sort -n | tail -1)
 
 cp -rf ./build/out/$1/inspector-tmp/ ./corpus-$LATEST_CORPUS_DIR/inspector-report
 cp -rf ./corpus-$LATEST_CORPUS_DIR/report/ ./corpus-$LATEST_CORPUS_DIR/inspector-report/covreport
+
+echo "If all worked, then you should be able to start a webserver at port 8008 in ./corpus-${LATEST_CORPUS_DIR}/inspector-report/"
