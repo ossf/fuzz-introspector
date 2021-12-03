@@ -26,11 +26,8 @@ a complete run of the introspector, including with coverage analysis.
 ```
 cd oss-fuzz
 ../run_both.sh htslib 30
-cd corpus-0/report
-python3 -m http.server 5001 &
-cd ../../
-cd build/out/htslib/inspector-tmp
-python3 -m http.server 5002
+cd corpus-0/inspector-report/
+python3 -m http.server 8008
 ```
 
 You can now navigate to `http://localhost:5002/fuzz_report.html`
