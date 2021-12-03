@@ -21,7 +21,7 @@ index 256e7be5..140ac3df 100644
  RUN precompile_honggfuzz
  
 diff --git a/infra/base-images/base-builder/compile b/infra/base-images/base-builder/compile
-index c934d3b5..7725b17d 100755
+index c934d3b5..d6844e63 100755
 --- a/infra/base-images/base-builder/compile
 +++ b/infra/base-images/base-builder/compile
 @@ -146,6 +146,20 @@ if [ "$FUZZING_LANGUAGE" = "jvm" ]; then
@@ -45,12 +45,16 @@ index c934d3b5..7725b17d 100755
  echo "---------------------------------------------------------------"
  echo "CC=$CC"
  echo "CXX=$CXX"
-@@ -186,6 +200,28 @@ else
+@@ -186,6 +200,32 @@ else
    fi
  fi
  
 +if [ "$SANITIZER" = "instrumentor" ]; then
-+  pip3 install cxxfilt pyyaml beautifulsoup4 lxml soupsieve
++  unset CXXFLAGS
++  unset CFLAGS
++  apt-get install -y libjpeg-dev zlib1g-dev
++  pip3 install --upgrade setuptools
++  pip3 install cxxfilt pyyaml beautifulsoup4 lxml soupsieve matplotlib
 +  mkdir $SRC/inspector-tmp
 +
 +  find $SRC/ -name "*.data" -exec cp {} $SRC/inspector-tmp/ \;
@@ -170,7 +174,7 @@ index a323a436..68c006d1 100644
  ARCHITECTURES = ['i386', 'x86_64']
  ENGINES = ['libfuzzer', 'afl', 'honggfuzz', 'dataflow', 'none']
 diff --git a/infra/helper.py b/infra/helper.py
-index db9f76b6..ce98761d 100755
+index 805f39a9..cd028f33 100755
 --- a/infra/helper.py
 +++ b/infra/helper.py
 @@ -270,6 +270,9 @@ def get_parser():  # pylint: disable=too-many-statements
@@ -183,7 +187,7 @@ index db9f76b6..ce98761d 100755
    build_fuzzers_parser.set_defaults(clean=False)
  
    check_build_parser = subparsers.add_parser(
-@@ -605,6 +608,7 @@ def build_fuzzers_impl(  # pylint: disable=too-many-arguments,too-many-locals,to
+@@ -610,6 +613,7 @@ def build_fuzzers_impl(  # pylint: disable=too-many-arguments,too-many-locals,to
      architecture,
      env_to_add,
      source_path,
@@ -191,7 +195,7 @@ index db9f76b6..ce98761d 100755
      mount_path=None):
    """Builds fuzzers."""
    if not build_image_impl(project):
-@@ -632,6 +636,7 @@ def build_fuzzers_impl(  # pylint: disable=too-many-arguments,too-many-locals,to
+@@ -637,6 +641,7 @@ def build_fuzzers_impl(  # pylint: disable=too-many-arguments,too-many-locals,to
        'FUZZING_ENGINE=' + engine,
        'SANITIZER=' + sanitizer,
        'ARCHITECTURE=' + architecture,
@@ -199,7 +203,7 @@ index db9f76b6..ce98761d 100755
    ]
  
    _add_oss_fuzz_ci_if_needed(env)
-@@ -684,6 +689,7 @@ def build_fuzzers(args):
+@@ -689,6 +694,7 @@ def build_fuzzers(args):
                              args.architecture,
                              args.e,
                              args.source_path,

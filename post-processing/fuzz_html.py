@@ -23,6 +23,54 @@ import fuzz_analysis
 from bs4 import BeautifulSoup as bs
 import lxml.html as lh
 
+import matplotlib.pyplot as plt
+from matplotlib.patches import Rectangle
+
+
+def create_image(image_name, color_list):
+    print("Creating image %s"%(image_name))
+    plot_size = 10.0
+    multiplier = plot_size / len(color_list)
+
+    #print("Multiplier: %f"%(multiplier))
+    #print("Generating image: %s"%(image_name))
+    fig, ax = plt.subplots()
+    ax.clear()
+    fig.set_size_inches(20, 2)
+    #ax.plot([1,5,2],[2,3,4],color="cyan")
+    ax.plot()
+
+    # Now create our rectangles
+    curr_start_x = 0.0
+    curr_size = 1.0
+    curr_color = color_list[0]
+
+    for i in range(1, len(color_list)):
+        if curr_color == color_list[i]:
+            curr_size += 1.0
+        else:
+            # We need to plot
+            final_start_x = curr_start_x * multiplier
+            final_end_x = final_start_x + curr_size * multiplier
+            final_size = curr_size * multiplier
+            #print("Plotting: %f - %f"%(final_start_x, final_size))
+            ax.add_patch(Rectangle((final_start_x, 0.0), final_size, 1, color=curr_color))
+
+            # Start next color area
+            curr_start_x += curr_size
+            curr_color = color_list[i]
+            curr_size = 1.0
+
+    # Plot the last case
+    final_start_x = curr_start_x * multiplier
+    final_end_x = final_start_x + curr_size * multiplier
+    final_size = curr_size * multiplier
+    #print("Plotting: %f - %f"%(final_start_x, final_size))
+    ax.add_patch(Rectangle((final_start_x, 0.0), final_size, 1, color=curr_color))
+
+    # Save file
+    plt.title(image_name.split(".")[0])
+    plt.savefig(image_name)
 
 def normalise_str(s1):
     return s1.replace("\t", "").replace("\r", "").replace("\n", "").replace(" ", "")
@@ -34,7 +82,6 @@ def create_table_head(table_head, items):
         html_str += f"<th>{elem}</th>\n"
     html_str += "</tr></thead><tbody>"
     return html_str
-
 
 def html_table_add_row(elems):
     html_str = "<tr>\n"
@@ -406,11 +453,14 @@ def create_html_report(profiles,
                             "functions are hit/not hit. This info is based on the coverage "
                             "achieved of all fuzzers together and not just this specific "
                             "fuzzer. This should change in the future to be per-fuzzer-basis.</p>")
+            image_name = "%s_colormap.png"%(fuzzer_filename.replace(" ", "").split("/")[-1])
+            html_string += "<img src=\"%s\">"%(image_name)
 
             html_string += "<div class='section-wrapper'>"
             # We use the depth_func to keep track of all function parents. We need this
             # when looking up if a callsite was hit or not.
             depth_func = dict()
+            color_sequence = []
             for node in profile['function_call_depths']:
                 demangled_name = demangle_cpp_func(node['function_name'])
 
@@ -440,6 +490,8 @@ def create_html_report(profiles,
                 color = {"green": "#99FF99",
                          "yellow": "#FFFF99",
                          "red": "#FF9999"}[color_to_be]
+
+                color_sequence.append(color_to_be)
 
                 # Get URL to coverage report for the node.
                 link = "#"
@@ -519,6 +571,9 @@ def create_html_report(profiles,
                             #fd_github_url,
                             callsite_link))
                             #node['linenumber']))
+
+            # End of tree output
+            create_image(image_name, color_sequence)
         html_string += "</div>"
 
     #############################################
