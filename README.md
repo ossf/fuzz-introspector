@@ -1,5 +1,12 @@
 # Fuzz introspector
 
+Fuzz introspector is a tool to help fuzzer developers to get an understanding of their fuzzer’s performance 
+and identify any potential blockers. Fuzz introspector aggregates the fuzzers’ functional data like coverage,
+hit frequency, entry points, etc to give the developer a birds eye view of their fuzzer. This helps with 
+identifying fuzz bottlenecks and blockers and eventually helps in developing better fuzzers.
+
+
+
 High-level goals:
 - Show fuzzing-relevant data about each function in a given project
 - Show reachability of fuzzer(s)
@@ -89,3 +96,16 @@ Reachability tree with coverage overlay
 
 Reachability tree with coverage overlay, showing where a fuzz-blocker is occurring
 ![Overlay 2](/img/overlay-2.png)
+
+
+## Contribute
+### Code of Conduct
+Before contributing, please follow our [Code of Conduct](CODE_OF_CONDUCT.md).
+
+### Connect with the Fuzzing Community
+If you want to get involved in the Fuzzing community or have ideas to chat about, we discuss
+this project in the
+[OSSF Security Tooling Working Group](https://github.com/ossf/wg-security-tooling)
+meetings.
+
+More specifically, you can attend [Monthly Fuzzing Collaboration](https://zoom.us/j/99960722134?pwd=ZzZqdzY1eG9tMzQxWFI1Z0RhTkUxZz09). 
