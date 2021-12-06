@@ -108,4 +108,7 @@ this project in the
 [OSSF Security Tooling Working Group](https://github.com/ossf/wg-security-tooling)
 meetings.
 
-More specifically, you can attend [Monthly Fuzzing Collaboration](https://zoom.us/j/99960722134?pwd=ZzZqdzY1eG9tMzQxWFI1Z0RhTkUxZz09). 
+More specifically, you can attend Fuzzing Collaboration meeting (monthly on
+the first Tuesday 10:30am - 11:30am PST)
+[Calendar](https://calendar.google.com/calendar?cid=czYzdm9lZmhwNWk5cGZsdGI1cTY3bmdwZXNAZ3JvdXAuY2FsZW5kYXIuZ29vZ2xlLmNvbQ)
+[Zoom Link](https://zoom.us/j/99960722134?pwd=ZzZqdzY1eG9tMzQxWFI1Z0RhTkUxZz09). 
