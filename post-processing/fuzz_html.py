@@ -246,13 +246,7 @@ def create_top_summary_info(tables, project_profile):
             total_complexity_reached += fd['CyclomaticComplexity']
 
     html_string += create_table_head(tables[-1],
-                                     #["", "Functions", "Complexity"])
                                      ["", "Reached", "Unreached"])
- #   html_string += html_table_add_row([
- #       "0 - Total", 
- #       len(project_profile['all_function_data']), 
- #       str(total_complexity_reached + total_complexity_unreached)
- #       ])
 
     functions_percentage = ((len(total_reached_functions)*1.0) / (len(total_reached_functions) + len(
         total_unreached_functions)*1.0))*100
@@ -273,52 +267,12 @@ def create_top_summary_info(tables, project_profile):
         "%.5s%% (%d / %d)"%(str(functions_percentage),reached_functions,total_functions),
         "%.5s%% (%d / %d)"%(str(unreached_funcs_percentage), unreached_functions,total_functions)
         ])
-
-    #html_string += html_table_add_row([
-    #     "Functions unreached", "%.5s%% (%d / %d)"%(str(unreached_funcs_percentage), unreached_functions,total_functions)])
-
     html_string += html_table_add_row([
         "Complexity", 
         "%.5s%% (%d / %d)"%(reached_complexity_percentage,total_complexity_reached,total_complexity),
         "%.5s%% (%d / %d)"%(unreached_complexity_percentage,total_complexity_unreached,total_complexity)        
         ])
-
-    #html_string += html_table_add_row([
-    #     "Complexity unreached", "%.5s%% (%d / %d)"%(unreached_complexity_percentage,total_complexity_unreached,total_complexity)])
-    #    ])
-
-    #html_string += html_table_add_row([
-    #    "1 - Reached",
-    #    "%.5s%% (%d / %d)"%(str(functions_percentage),
-    #                    reached_functions,
-    #                    total_functions),
-    #                    #len(total_reached_functions),
-    #                    #len(total_reached_functions) + len(total_unreached_functions)),
-    #    "%.5s%% (%d / %d)"%(
-    #        reached_complexity_percentage,
-    #        total_complexity_reached,
-    #        total_complexity)
-    #    #total_complexity_reached
-    #    ])
-#
-#    html_string += html_table_add_row([
-#        "2 - Unreached",
-#        "%.5s%% (%d / %d)"%(str(unreached_funcs_percentage),
-#                unreached_functions,
-#                total_functions),
-#                  #len(total_unreached_functions),
-#                  #len(total_reached_functions) + len(total_unreached_functions)),
-#        "%.5s%% (%d / %d)"%(
-#            unreached_complexity_percentage,
-#            total_complexity_unreached,
-#            total_complexity)
-#        #total_complexity_unreached
-#        ])
-
- #   html_string += html_table_add_row(["3 - Percentage", round(functions_percentage, 2), round(complexity_percentage, 2)])
-
     html_string += ("</table>\n")
-
     return html_string
 
 
