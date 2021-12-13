@@ -438,7 +438,7 @@ def create_html_report(profiles,
                         for (n_line_number, hit_times_n) in profile['coverage']['coverage-map'][funcname_t]:
                             if n_line_number == node['linenumber'] and hit_times_n != 0:
                                 color_to_be = "green"
-                elif demangled_name == "LLVMFuzzerTestOneInput":
+                elif demangled_name == "LLVMFuzzerTestOneInput" and 'LLVMFuzzerTestOneInput' in profile['coverage']['coverage-map']:
                     # LLVMFuzzerTestOneInput will never have a parent in the calltree. As such, we 
                     # check here if the function has been hit, and if so, make it green. We avoid
                     # hardcoding LLVMFuzzerTestOneInput to be green because some fuzzers may not
@@ -498,7 +498,7 @@ def create_html_report(profiles,
                 # in case it bloats the calltree
                 #libc_funcs = { "free" }
                 libc_funcs = { }
-                should_do = len([fn for fn in lics_funcs if fn in demangled_name]) > 0
+                should_do = len([fn for fn in libc_funcs if fn in demangled_name]) == 0
 
                 # Create the line
                 if should_do:
