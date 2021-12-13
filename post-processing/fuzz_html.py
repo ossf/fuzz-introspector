@@ -394,136 +394,129 @@ def create_html_report(profiles,
         # with colored background. Otherwise, we show plain.
         html_string += html_add_header_with_link(
             "Call tree", 3, toc_list, link=f"call_tree_{curr_tt_profile}")
-        if not "coverage" in profile:
-            html_string += ("<h4>Profile calltree</h4>\n")
-            html_string += ("<pre>\n")
-            for node in profile['function_call_depths']:
-                html_string += ("%s %s (%s)\n" % (" "*int(node['depth']), demangle_cpp_func(
-                    node['function_name']), node['functionSourceFile']))
-            html_string += ("</pre>\n")
-        else:
-            html_string += "<h4>Function coverage</h4>"
-            html_string += ("<p class='no-top-margin'>The following is the call tree with color coding for which "
-                            "functions are hit/not hit. This info is based on the coverage "
-                            "achieved of all fuzzers together and not just this specific "
-                            "fuzzer. This should change in the future to be per-fuzzer-basis.</p>")
-            image_name = "%s_colormap.png"%(fuzzer_filename.replace(" ", "").split("/")[-1])
-            html_string += "<img src=\"%s\">"%(image_name)
 
-            html_string += "<div class='section-wrapper'>"
-            # We use the depth_func to keep track of all function parents. We need this
-            # when looking up if a callsite was hit or not.
-            depth_func = dict()
-            color_sequence = []
-            for node in profile['function_call_depths']:
-                demangled_name = demangle_cpp_func(node['function_name'])
+        html_string += "<h4>Function coverage</h4>"
+        html_string += ("<p class='no-top-margin'>The following is the call tree with color coding for which "
+                        "functions are hit/not hit. This info is based on the coverage "
+                        "achieved of all fuzzers together and not just this specific "
+                        "fuzzer. This should change in the future to be per-fuzzer-basis.</p>")
+        image_name = "%s_colormap.png"%(fuzzer_filename.replace(" ", "").split("/")[-1])
+        html_string += "<img src=\"%s\">"%(image_name)
 
-                # Some logic for enforcing consistency, i.e. all functions above
-                # in the callstack must be green for something to be green.
-                depth_func[int(node['depth'])] = demangled_name
+        html_string += "<div class='section-wrapper'>"
+        # We use the depth_func to keep track of all function parents. We need this
+        # when looking up if a callsite was hit or not.
+        depth_func = dict()
+        color_sequence = []
+        for node in profile['function_call_depths']:
+            demangled_name = demangle_cpp_func(node['function_name'])
 
-                # Identify what background color the line should be, corresponding to whether
-                # it was hit or not in the coverage analysis.
-                # Check if the callsite was hit in the parent function. If so, it means the 
-                # node should be displayed as green.
-                color_to_be = "red"
-                if int(node['depth'])-1 in depth_func:
-                    for funcname_t in profile['coverage']['coverage-map']:
-                        normalised_funcname = demangle_cpp_func(normalise_str(funcname_t))
-                        normalised_parent_funcname = normalise_str(depth_func[int(node['depth'])-1])
-                        #print("Normalised funcname: %s"%(normalised_funcname))
-                        #print("Normalised parent funcname: %s"%(normalised_parent_funcname))
-                        if normalised_funcname != normalised_parent_funcname:
-                            continue
-                        for (n_line_number, hit_times_n) in profile['coverage']['coverage-map'][funcname_t]:
-                            if n_line_number == node['linenumber'] and hit_times_n != 0:
-                                color_to_be = "green"
-                elif demangled_name == "LLVMFuzzerTestOneInput" and 'LLVMFuzzerTestOneInput' in profile['coverage']['coverage-map']:
-                    # LLVMFuzzerTestOneInput will never have a parent in the calltree. As such, we 
-                    # check here if the function has been hit, and if so, make it green. We avoid
-                    # hardcoding LLVMFuzzerTestOneInput to be green because some fuzzers may not
-                    # have a single seed, and in this specific case LLVMFuzzerTestOneInput
-                    # will be red.
-                    for (n_line_number, hit_times_n) in profile['coverage']['coverage-map']['LLVMFuzzerTestOneInput']:
-                        if hit_times_n > 0:
+            # Some logic for enforcing consistency, i.e. all functions above
+            # in the callstack must be green for something to be green.
+            depth_func[int(node['depth'])] = demangled_name
+
+            # Identify what background color the line should be, corresponding to whether
+            # it was hit or not in the coverage analysis.
+            # Check if the callsite was hit in the parent function. If so, it means the 
+            # node should be displayed as green.
+            color_to_be = "red"
+            if int(node['depth'])-1 in depth_func:
+                for funcname_t in profile['coverage']['coverage-map']:
+                    normalised_funcname = demangle_cpp_func(normalise_str(funcname_t))
+                    normalised_parent_funcname = normalise_str(depth_func[int(node['depth'])-1])
+                    #print("Normalised funcname: %s"%(normalised_funcname))
+                    #print("Normalised parent funcname: %s"%(normalised_parent_funcname))
+                    if normalised_funcname != normalised_parent_funcname:
+                        continue
+                    for (n_line_number, hit_times_n) in profile['coverage']['coverage-map'][funcname_t]:
+                        if n_line_number == node['linenumber'] and hit_times_n != 0:
                             color_to_be = "green"
-                color = {"green": "#99FF99",
-                         "yellow": "#FFFF99",
-                         "red": "#FF9999"}[color_to_be]
+            elif demangled_name == "LLVMFuzzerTestOneInput" and 'LLVMFuzzerTestOneInput' in profile['coverage']['coverage-map']:
+                # LLVMFuzzerTestOneInput will never have a parent in the calltree. As such, we 
+                # check here if the function has been hit, and if so, make it green. We avoid
+                # hardcoding LLVMFuzzerTestOneInput to be green because some fuzzers may not
+                # have a single seed, and in this specific case LLVMFuzzerTestOneInput
+                # will be red.
+                for (n_line_number, hit_times_n) in profile['coverage']['coverage-map']['LLVMFuzzerTestOneInput']:
+                    if hit_times_n > 0:
+                        color_to_be = "green"
+            color = {"green": "#99FF99",
+                     "yellow": "#FFFF99",
+                     "red": "#FF9999"}[color_to_be]
 
-                color_sequence.append(color_to_be)
+            color_sequence.append(color_to_be)
 
-                # Get URL to coverage report for the node.
-                link = "#"
+            # Get URL to coverage report for the node.
+            link = "#"
+            for fd in project_profile['all_function_data']:
+                if fd['functionName'] == node['function_name']:
+                    link = coverage_url + \
+                        "%s.html#L%d" % (
+                            fd['functionSourceFile'], fd['functionLinenumber'])
+                    break
+
+            callsite_link = "#"
+            # Find the parent
+            if int(node['depth'])-1 in depth_func:
+                parent_fname = depth_func[int(node['depth'])-1]
                 for fd in project_profile['all_function_data']:
-                    if fd['functionName'] == node['function_name']:
-                        link = coverage_url + \
-                            "%s.html#L%d" % (
-                                fd['functionSourceFile'], fd['functionLinenumber'])
-                        break
+                    if demangle_cpp_func(fd['functionName']) == parent_fname:
+                        callsite_link = coverage_url + "%s.html#L%d" % (
+                                fd['functionSourceFile'],  # parent source file
+                                node['linenumber'])        # callsite line number;
 
-                callsite_link = "#"
-                # Find the parent
-                if int(node['depth'])-1 in depth_func:
-                    parent_fname = depth_func[int(node['depth'])-1]
-                    for fd in project_profile['all_function_data']:
-                        if demangle_cpp_func(fd['functionName']) == parent_fname:
-                            callsite_link = coverage_url + "%s.html#L%d" % (
-                                    fd['functionSourceFile'],  # parent source file
-                                    node['linenumber'])        # callsite line number;
+            # Get the Github URL to the node. However, if we got a "/" basefolder it means
+            # it is a wrong basefolder and we handle this by removing the two first folders
+            # in the complete path (which shuold be in most cases /src/NAME where NAME
+            # is the project folder.
+            if basefolder == "/":
+                fd_github_url = "%s/%s#L%d" % (git_repo_url, "/".join(
+                    fd['functionSourceFile'].split("/")[3:]), fd['functionLinenumber'])
+            else:
+                fd_github_url = "%s/%s#L%d" % (git_repo_url, fd['functionSourceFile'].replace(
+                    basefolder, ""), fd['functionLinenumber'])
 
-                # Get the Github URL to the node. However, if we got a "/" basefolder it means
-                # it is a wrong basefolder and we handle this by removing the two first folders
-                # in the complete path (which shuold be in most cases /src/NAME where NAME
-                # is the project folder.
-                if basefolder == "/":
-                    fd_github_url = "%s/%s#L%d" % (git_repo_url, "/".join(
-                        fd['functionSourceFile'].split("/")[3:]), fd['functionLinenumber'])
+            #html_string += (
+            #            f"<div class=\"{color_to_be}-background\">"
+            #            f"<span class=\"coverage-line-inner\">{int(node['depth'])} {\"&nbsp;\"*4*int(node['depth'])}"
+            #            f"<code class=\"language-clike\">{demangled_name}</code> "
+            #            f"<span class=\"coverage-line-filename\">"
+            #            f"(<a href=\"{link}\">{node['functionSourceFile']}</a>)"
+            #            f"<a href=\"{link}\">[coverage]</a> "
+            #            f"| <a href=\"{fd_github_url}\">[source]</a>[linenumber:{node['linenumber']}]"
+            #            f"<span></span></div>\n"
+            #        )
+
+            # We may not want to show certain functions at times, e.g. libc functions
+            # in case it bloats the calltree
+            #libc_funcs = { "free" }
+            libc_funcs = { }
+            should_do = len([fn for fn in libc_funcs if fn in demangled_name]) == 0
+
+            # Create the line
+            if should_do:
+                indentation = int(node['depth'])*16
+                horisontal_spacing = "&nbsp;"*4*int(node['depth'])
+                #html_string += ("<div style='margin-left: %spx' class=\"%s-background\"><span class=\"coverage-line-inner\">%d <code class=\"language-clike\">%s</code> <span class=\"coverage-line-filename\">(<a href=\"%s\">%s</a>)<a href=\"%s\">[function]</a> | <a href=\"%s\">[source]</a><a href=\"%s\">[call site]</a><span></span></div>\n" % (
+
+                if node['functionSourceFile'].replace(" ","") == "/":
+                    html_string += ("<div style='margin-left: %spx' class=\"%s-background\"><span class=\"coverage-line-inner\">%d <code class=\"language-clike\">%s</code> <span class=\"coverage-line-filename\"><a href=\"%s\">[call site]</a><span></span></div>\n" % (
+                        str(indentation),
+                        color_to_be,
+                        int(node['depth']),
+                        demangled_name,
+                        callsite_link))
                 else:
-                    fd_github_url = "%s/%s#L%d" % (git_repo_url, fd['functionSourceFile'].replace(
-                        basefolder, ""), fd['functionLinenumber'])
+                    html_string += ("<div style='margin-left: %spx' class=\"%s-background\"><span class=\"coverage-line-inner\">%d <code class=\"language-clike\">%s</code> <span class=\"coverage-line-filename\"><a href=\"%s\">[function]</a><a href=\"%s\">[call site]</a><span></span></div>\n" % (
+                        str(indentation),
+                        color_to_be,
+                        int(node['depth']),
+                        demangled_name,
+                        link,
+                        callsite_link))
 
-                #html_string += (
-                #            f"<div class=\"{color_to_be}-background\">"
-                #            f"<span class=\"coverage-line-inner\">{int(node['depth'])} {\"&nbsp;\"*4*int(node['depth'])}"
-                #            f"<code class=\"language-clike\">{demangled_name}</code> "
-                #            f"<span class=\"coverage-line-filename\">"
-                #            f"(<a href=\"{link}\">{node['functionSourceFile']}</a>)"
-                #            f"<a href=\"{link}\">[coverage]</a> "
-                #            f"| <a href=\"{fd_github_url}\">[source]</a>[linenumber:{node['linenumber']}]"
-                #            f"<span></span></div>\n"
-                #        )
-
-                # We may not want to show certain functions at times, e.g. libc functions
-                # in case it bloats the calltree
-                #libc_funcs = { "free" }
-                libc_funcs = { }
-                should_do = len([fn for fn in libc_funcs if fn in demangled_name]) == 0
-
-                # Create the line
-                if should_do:
-                    indentation = int(node['depth'])*16
-                    horisontal_spacing = "&nbsp;"*4*int(node['depth'])
-                    #html_string += ("<div style='margin-left: %spx' class=\"%s-background\"><span class=\"coverage-line-inner\">%d <code class=\"language-clike\">%s</code> <span class=\"coverage-line-filename\">(<a href=\"%s\">%s</a>)<a href=\"%s\">[function]</a> | <a href=\"%s\">[source]</a><a href=\"%s\">[call site]</a><span></span></div>\n" % (
-
-                    if node['functionSourceFile'].replace(" ","") == "/":
-                        html_string += ("<div style='margin-left: %spx' class=\"%s-background\"><span class=\"coverage-line-inner\">%d <code class=\"language-clike\">%s</code> <span class=\"coverage-line-filename\"><a href=\"%s\">[call site]</a><span></span></div>\n" % (
-                            str(indentation),
-                            color_to_be,
-                            int(node['depth']),
-                            demangled_name,
-                            callsite_link))
-                    else:
-                        html_string += ("<div style='margin-left: %spx' class=\"%s-background\"><span class=\"coverage-line-inner\">%d <code class=\"language-clike\">%s</code> <span class=\"coverage-line-filename\"><a href=\"%s\">[function]</a><a href=\"%s\">[call site]</a><span></span></div>\n" % (
-                            str(indentation),
-                            color_to_be,
-                            int(node['depth']),
-                            demangled_name,
-                            link,
-                            callsite_link))
-
-            # End of tree output
-            create_image(image_name, color_sequence)
+        # End of tree output
+        create_image(image_name, color_sequence)
         html_string += "</div>"
 
     #############################################
