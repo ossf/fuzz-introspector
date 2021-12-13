@@ -47,7 +47,7 @@ def run_analysis_on_dir(target_folder,
         coverage_url = "http://localhost:8008/covreport/linux"
 
     print("[+] Creating HTML report")
-    fuzz_html.create_html_report(profiles, project_profile, coverage_url, git_repo_url, basefolder, False)
+    fuzz_html.create_html_report(profiles, project_profile, coverage_url, git_repo_url, basefolder)
 
 
 def create_parser():

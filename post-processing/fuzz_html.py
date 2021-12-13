@@ -276,7 +276,7 @@ def create_top_summary_info(tables, project_profile):
     return html_string
 
 
-def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefolder, enforce_consistency, image_name):
+def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefolder, image_name):
     """
     Creates the HTML of the calltree. Returns the HTML as a string.
     """
@@ -387,8 +387,7 @@ def create_html_report(profiles,
                        project_profile,
                        coverage_url,
                        git_repo_url,
-                       basefolder,
-                       enforce_consistency=True):
+                       basefolder):
     """
     Logs a complete report. This is the current main place for looking at 
     data produced by fuzz introspector.
@@ -511,7 +510,7 @@ def create_html_report(profiles,
         html_string += "<img src=\"%s\">"%(image_name)
 
         html_string += "<div class='section-wrapper'>"
-        html_string += create_calltree(profile, project_profile, coverage_url, git_repo_url, basefolder, enforce_consistency, image_name)
+        html_string += create_calltree(profile, project_profile, coverage_url, git_repo_url, basefolder, image_name)
         html_string += "</div>"
 
     #############################################
