@@ -277,6 +277,9 @@ def create_top_summary_info(tables, project_profile):
 
 
 def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefolder, enforce_consistency, image_name):
+    """
+    Creates the HTML of the calltree. Returns the HTML as a string.
+    """
     html_string = ""
     # We use the depth_func to keep track of all function parents. We need this
     # when looking up if a callsite was hit or not.
@@ -317,7 +320,6 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
         color = {"green": "#99FF99",
                  "yellow": "#FFFF99",
                  "red": "#FF9999"}[color_to_be]
-
         color_sequence.append(color_to_be)
 
         # Get URL to coverage report for the node.
@@ -350,17 +352,6 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
             fd_github_url = "%s/%s#L%d" % (git_repo_url, fd['functionSourceFile'].replace(
                 basefolder, ""), fd['functionLinenumber'])
 
-        #html_string += (
-        #            f"<div class=\"{color_to_be}-background\">"
-        #            f"<span class=\"coverage-line-inner\">{int(node['depth'])} {\"&nbsp;\"*4*int(node['depth'])}"
-        #            f"<code class=\"language-clike\">{demangled_name}</code> "
-        #            f"<span class=\"coverage-line-filename\">"
-        #            f"(<a href=\"{link}\">{node['functionSourceFile']}</a>)"
-        #            f"<a href=\"{link}\">[coverage]</a> "
-        #            f"| <a href=\"{fd_github_url}\">[source]</a>[linenumber:{node['linenumber']}]"
-        #            f"<span></span></div>\n"
-        #        )
-
         # We may not want to show certain functions at times, e.g. libc functions
         # in case it bloats the calltree
         #libc_funcs = { "free" }
@@ -371,7 +362,6 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
         if should_do:
             indentation = int(node['depth'])*16
             horisontal_spacing = "&nbsp;"*4*int(node['depth'])
-            #html_string += ("<div style='margin-left: %spx' class=\"%s-background\"><span class=\"coverage-line-inner\">%d <code class=\"language-clike\">%s</code> <span class=\"coverage-line-filename\">(<a href=\"%s\">%s</a>)<a href=\"%s\">[function]</a> | <a href=\"%s\">[source]</a><a href=\"%s\">[call site]</a><span></span></div>\n" % (
 
             if node['functionSourceFile'].replace(" ","") == "/":
                 html_string += ("<div style='margin-left: %spx' class=\"%s-background\"><span class=\"coverage-line-inner\">%d <code class=\"language-clike\">%s</code> <span class=\"coverage-line-filename\"><a href=\"%s\">[call site]</a><span></span></div>\n" % (
