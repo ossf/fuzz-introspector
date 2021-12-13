@@ -7,12 +7,14 @@ identifying fuzz bottlenecks and blockers and eventually helps in developing bet
 
 
 
-High-level goals:
+The current capabilities:
 - Show fuzzing-relevant data about each function in a given project
 - Show reachability of fuzzer(s)
 - Integrate seamlessly with OSS-Fuzz
 - Show visualisations to enable fuzzer debugging
 - Give suggestions for how to improve fuzzing
+
+By and large these capabilities will remain the goals of fuzz-introspector. The focus is on improving these.
 
 ## Testing with OSS-Fuzz
 The recommended way of testing this project is by way of OSS-Fuzz. Please see
