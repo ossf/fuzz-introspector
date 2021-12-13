@@ -494,12 +494,11 @@ def create_html_report(profiles,
                 #            f"<span></span></div>\n"
                 #        )
 
-                should_do = True
+                # We may not want to show certain functions at times, e.g. libc functions
+                # in case it bloats the calltree
                 #libc_funcs = { "free" }
                 libc_funcs = { }
-                for fnn in libc_funcs:
-                    if fnn in demangled_name:
-                        should_do = False
+                should_do = len([fn for fn in lics_funcs if fn in demangled_name]) > 0
 
                 # Create the line
                 if should_do:
