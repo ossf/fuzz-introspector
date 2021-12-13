@@ -513,24 +513,15 @@ def create_html_report(profiles,
                             color_to_be,
                             int(node['depth']),
                             demangled_name,
-                            #link,
-                            #node['functionSourceFile'],
-                            #link,
-                            #fd_github_url,
                             callsite_link))
-                            #node['linenumber']))
                     else:
                         html_string += ("<div style='margin-left: %spx' class=\"%s-background\"><span class=\"coverage-line-inner\">%d <code class=\"language-clike\">%s</code> <span class=\"coverage-line-filename\"><a href=\"%s\">[function]</a><a href=\"%s\">[call site]</a><span></span></div>\n" % (
                             str(indentation),
                             color_to_be,
                             int(node['depth']),
                             demangled_name,
-                            #link,
-                            #node['functionSourceFile'],
                             link,
-                            #fd_github_url,
                             callsite_link))
-                            #node['linenumber']))
 
             # End of tree output
             create_image(image_name, color_sequence)
