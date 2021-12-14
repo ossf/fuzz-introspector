@@ -178,7 +178,7 @@ def refine_paths(merged_profile):
     """
     global BASE_DIR
     # Find the root of the files to not add unnesecary stuff.
-    base = fuzz_utils.identify_base_folder(merged_profile)
+    base = merged_profile.get_basefolder()
     BASE_DIR = base
     #print("Base: %s"%(base))
     
@@ -407,6 +407,20 @@ class MergedProjectProfile:
             if fd['hitcount'] != 0:
                 reached_function_count += 1
         return reached_function_count
+
+    def get_basefolder(self):
+        """
+        Identifies a common path-prefix amongst source files in all_function_data
+        dictionary. This is used to remove locations within a host system to 
+        essentially make paths as if they were from the root of the source code project.
+        """
+        all_strs = []
+        for func in self.all_functions:
+            if func['functionSourceFile'] != "/":
+                all_strs.append(func['functionSourceFile'])
+        base = fuzz_utils.longest_common_prefix(all_strs)
+        return base
+
 
 
 def add_func_to_reached_and_clone(merged_profile_old, func_dict_old):

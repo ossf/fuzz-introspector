@@ -39,18 +39,6 @@ def longest_common_prefix(strs):
         current = temp
     return current
 
-def identify_base_folder(merged_profile):
-    """
-    Identifies a common path-prefix amongst source files in all_function_data
-    dictionary. This is used to remove locations within a host system to 
-    essentially make paths as if they were from the root of the source code project.
-    """
-    all_strs = []
-    for func in merged_profile.all_functions:
-        if func['functionSourceFile'] != "/":
-            all_strs.append(func['functionSourceFile'])
-    base = longest_common_prefix(all_strs)
-    return base
 
 def get_all_files_in_tree_with_suffix(basedir, suffix):
     """
