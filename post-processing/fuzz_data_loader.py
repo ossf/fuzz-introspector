@@ -424,17 +424,6 @@ class MergedProjectProfile:
         return reached_function_count
 
 
-    
-def create_project_profile(profiles):
-    """
-    Merges a set of profiles into one big profile.
-    We only merge a subset of the fields in each profile. Read
-    the code to find out which as this changes often.
-    """
-
-    merged_profile = MergedProjectProfile(profiles)
-    return merged_profile
-
 def add_func_to_reached_and_clone(merged_profile_old, func_dict_old):
     merged_profile = copy.deepcopy(merged_profile_old)
 

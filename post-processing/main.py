@@ -32,7 +32,7 @@ def run_analysis_on_dir(target_folder,
 
     # Merge all profiles into a project profile    
     print("[+] Creating project profile")
-    project_profile = fuzz_data_loader.create_project_profile(profiles)
+    project_profile = fuzz_data_loader.MergedProjectProfile(profiles)
 
     # Find a base folder
     basefolder = fuzz_data_loader.identify_base_folder(project_profile)
