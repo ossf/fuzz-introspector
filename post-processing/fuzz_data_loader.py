@@ -103,59 +103,52 @@ def extract_functions_covered(target_dir, target_name=None):
 
     # Check if there is a meaningful profile and if not, we need to use all.
     found_name = False
-    for pf in coverage_reports:
-        if target_name != None:
+    if target_name != None:
+        for pf in coverage_reports:
             if target_name in pf:
                 found_name = True
 
     for profile_file in coverage_reports:
         # If only coverage from a specific report should be used then filter
         # here. Otherwise, include coverage from everybody.
-        if found_name:
-            if target_name != None:
-                if target_name not in profile_file:
-                    continue
+        if found_name and target_name not in profile_file:
+            continue
 
         with open(profile_file, "r") as pf:
             curr_func = None
             for line in pf:
-                if len(line.replace("\n","")) > 0 and line.replace("\n","")[-1] == ":" and "|" not in line:
+                stripped_line = line.replace("\n","")
+                if len(stripped_line) > 0 and stripped_line[-1] == ":" and "|" not in stripped_line:
                     #print("We got a function definition: %s"%(line.replace("n","")))
-
                     if len(line.split(":")) == 3:
-                        curr_func = line.replace("\n","").split(":")[1].replace(" ","").replace(":","")
+                        curr_func = stripped_line.split(":")[1].replace(" ","").replace(":","")
                     else:
-                        curr_func = line.replace("\n","").replace(" ","").replace(":","")
-
+                        curr_func = stripped_line.replace(" ","").replace(":","")
                     coverage_map[curr_func] = list()
                 if curr_func != None and "|" in line:
                     #print("Function: %s has line: %s --- %s"%(curr_func, line.replace("\n",""), str(line.split("|"))))
                     line_number = int(line.split("|")[0])
                     try:
+                        # write out numbers e.g. 1.2k into 1200
                         hit_times = int(line.split("|")[1].replace("k","00").replace(".",""))
                     except:
                         hit_times = 0
                     coverage_map[curr_func].append((line_number, hit_times))
                     #print("\tLine %d - hit times: %d"%(line_number, hit_times))
 
-
                 # We should now normalise the potential function name
-                fname = str(line.replace("\n", ""))
-                if ".c" in fname and ".cpp" not in fname:
-                    fname = fname.split(".c")[-1].replace(":","")
+                if not stripped_line.endswith(":"):
+                    continue
+                fname = stripped_line
                 if ".cpp" in fname:
                     fname = fname.split(".cpp")[-1].replace(":","")
                     fname = demangle_cpp_func(fname)
-
-                if line.replace("\n","").endswith(":"):
-                    fname = fname.replace(":", "")
-                    fname = demangle_cpp_func(fname)
-                    functions_hit.add(fname)
-
-
+                elif ".c" in fname:
+                    fname = fname.split(".c")[-1].replace(":","")
+                fname = fname.replace(":", "")
+                functions_hit.add(fname)
     #for fh in functions_hit:
     #    print("Function: %s"%(fh))
-
     return functions_hit, coverage_map
 
 def longestCommonPrefix(strs):
