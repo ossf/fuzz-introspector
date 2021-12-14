@@ -300,7 +300,7 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
                 #print("Normalised parent funcname: %s"%(normalised_parent_funcname))
                 if normalised_funcname != normalised_parent_funcname:
                     continue
-                for (n_line_number, hit_times_n) in profile['coverage']['coverage-map'][funcname_t]:
+                for (n_line_number, hit_times_n) in profile.coverage['coverage-map'][funcname_t]:
                     if n_line_number == node['linenumber'] and hit_times_n != 0:
                         color_to_be = "green"
         elif demangled_name == "LLVMFuzzerTestOneInput" and 'LLVMFuzzerTestOneInput' in profile.coverage['coverage-map']:
@@ -309,7 +309,7 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
             # hardcoding LLVMFuzzerTestOneInput to be green because some fuzzers may not
             # have a single seed, and in this specific case LLVMFuzzerTestOneInput
             # will be red.
-            for (n_line_number, hit_times_n) in profile['coverage']['coverage-map']['LLVMFuzzerTestOneInput']:
+            for (n_line_number, hit_times_n) in profile.coverage['coverage-map']['LLVMFuzzerTestOneInput']:
                 if hit_times_n > 0:
                     color_to_be = "green"
         color = {"green": "#99FF99",
