@@ -75,7 +75,6 @@ def create_parser():
 if __name__ == "__main__":
     args = create_parser()
 
-    #target_dir = sys.argv[1]
     print("Running fuzz introspector post-processing")
     run_analysis_on_dir(args.target_dir, args.git_repo_url, args.coverage_url)
     print("Ending fuzz introspector post-processing")
