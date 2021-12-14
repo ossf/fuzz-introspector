@@ -139,7 +139,7 @@ def refine_paths(merged_profile):
             func['functionSourceFile'] = func['functionSourceFile'].replace(base, "")
 
 
-def read_fuzzer_data_files(filename):
+def read_fuzzer_data_file_to_profile(filename):
     if not os.path.isfile(filename) or not os.path.isfile(filename+".yaml"):
         return None
 
@@ -499,7 +499,7 @@ def load_all_profiles(target_folder):
     for data_file in data_files:
         print(" - loading %s"%(data_file))
         # Read the .data file
-        profile = read_fuzzer_data_files(data_file)
+        profile = read_fuzzer_data_file_to_profile(data_file)
         if profile != None:
             profiles.append(profile)
     return profiles
