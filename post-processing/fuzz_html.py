@@ -27,20 +27,22 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 
 
-def create_image(image_name, color_list):
+def create_horisontal_calltree_image(image_name, color_list):
+    """
+    Creates a horisontal image of the calltree. The height is fixed and 
+    each element on the x-axis shows a node in the calltree in the form
+    of a rectangle. The rectangle is red if not visited and green if visited.
+    """
     print("Creating image %s"%(image_name))
     plot_size = 10.0
     multiplier = plot_size / len(color_list)
 
-    #print("Multiplier: %f"%(multiplier))
-    #print("Generating image: %s"%(image_name))
     fig, ax = plt.subplots()
     ax.clear()
     fig.set_size_inches(20, 2)
-    #ax.plot([1,5,2],[2,3,4],color="cyan")
     ax.plot()
 
-    # Now create our rectangles
+    # Create our rectangles
     curr_start_x = 0.0
     curr_size = 1.0
     curr_color = color_list[0]
@@ -49,11 +51,9 @@ def create_image(image_name, color_list):
         if curr_color == color_list[i]:
             curr_size += 1.0
         else:
-            # We need to plot
             final_start_x = curr_start_x * multiplier
             final_end_x = final_start_x + curr_size * multiplier
             final_size = curr_size * multiplier
-            #print("Plotting: %f - %f"%(final_start_x, final_size))
             ax.add_patch(Rectangle((final_start_x, 0.0), final_size, 1, color=curr_color))
 
             # Start next color area
@@ -65,10 +65,9 @@ def create_image(image_name, color_list):
     final_start_x = curr_start_x * multiplier
     final_end_x = final_start_x + curr_size * multiplier
     final_size = curr_size * multiplier
-    #print("Plotting: %f - %f"%(final_start_x, final_size))
     ax.add_patch(Rectangle((final_start_x, 0.0), final_size, 1, color=curr_color))
 
-    # Save file
+    # Save the image
     plt.title(image_name.split(".")[0])
     plt.savefig(image_name)
 
@@ -380,7 +379,7 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
                 callsite_link))
 
     # End of tree output
-    create_image(image_name, color_sequence)
+    create_horisontal_calltree_image(image_name, color_sequence)
     return html_string
 
 def create_html_report(profiles,
@@ -496,11 +495,11 @@ def create_html_report(profiles,
                                               len(profile['file_targets'][k])])
         html_string += "</table>\n"
 
-        # Show the calltree of the fuzzer. If coverage exists, then we show
-        # with colored background. Otherwise, we show plain.
+
+
+        # Calltree generation
         html_string += html_add_header_with_link(
             "Call tree", 3, toc_list, link=f"call_tree_{curr_tt_profile}")
-
         html_string += "<h4>Function coverage</h4>"
         html_string += ("<p class='no-top-margin'>The following is the call tree with color coding for which "
                         "functions are hit/not hit. This info is based on the coverage "
