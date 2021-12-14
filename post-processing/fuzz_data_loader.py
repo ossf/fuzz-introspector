@@ -17,60 +17,10 @@ import os
 import sys
 import copy
 import cxxfilt
+import fuzz_cfg_load
 import fuzz_cov_load
 import fuzz_html
 import fuzz_utils
-
-
-def data_file_read_calltree(filename):
-    """
-    Extracts the calltree of a fuzzer from a .data file.
-    """
-    read_tree = False
-    function_call_depths = []
-
-    tmp_function_depths = {
-                'depth' : -2,
-                'function_calls' : []
-            }
-    with open(filename, "r") as flog:
-        for line in flog:
-            line = line.replace("\n", "")
-            if read_tree and "======" not in line:
-                stripped_line = line.strip().split(" ")
-
-                # Type: {spacing depth} {target filename} {line count}
-                if len(stripped_line) == 3:
-                    filename = stripped_line[1]
-                    linenumber = int(stripped_line[2].replace("linenumber=",""))
-                else: 
-                    filename = ""
-                    linenumber=0
-
-                space_count = len(line) - len(line.lstrip(' '))
-                depth = space_count / 2
-                curr_node = { 'function_name' : stripped_line[0],
-                              'functionSourceFile' : filename,
-                              'depth' : depth,
-                              'linenumber' : linenumber}
-
-                if tmp_function_depths['depth'] != depth:
-                    if tmp_function_depths['depth'] != -2:
-                        function_call_depths += list(sorted(tmp_function_depths['function_calls'], key=lambda x: x['linenumber']))
-                    tmp_function_depths = {
-                                'depth' : depth,
-                                'function_calls' : []
-                            }
-                tmp_function_depths['function_calls'].append(curr_node)
-
-                #function_call_depths.append(curr_node)
-            if "====================================" in line:
-                read_tree = False
-            if "Call tree" in line:
-                read_tree = True
-        # Add the remaining list of nodes to the overall list.
-        tmp_function_depths['function_calls'] += list(sorted(tmp_function_depths['function_calls'], key=lambda x: x['linenumber']))
-    return function_call_depths
 
 
 class FuzzerProfile:
@@ -82,7 +32,7 @@ class FuzzerProfile:
 
         # Read data about all functions
         data_dict = dict()
-        self.function_call_depths = data_file_read_calltree(filename)
+        self.function_call_depths = fuzz_cfg_load.data_file_read_calltree(filename)
         self.fuzzer_information =  { 'functionSourceFile' : data_dict_yaml['Fuzzer filename'] }
         self.all_function_data = data_dict_yaml['All functions']['Elements']
         self.funcsReachedByFuzzer = None
@@ -271,7 +221,7 @@ class MergedProjectProfile:
         """
         all_strs = []
         for func in self.all_functions:
-            if func['functionSourceFile'] != "/":
+            if func['functionSourceFile'] != "/" and "/usr/include/" not in func['functionSourceFile']:
                 all_strs.append(func['functionSourceFile'])
         base = fuzz_utils.longest_common_prefix(all_strs)
         return base
