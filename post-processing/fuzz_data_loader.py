@@ -19,6 +19,7 @@ import copy
 import cxxfilt
 import yaml
 import fuzz_html
+import fuzz_utils
 
 debug = False
 BASE_DIR = None
@@ -96,7 +97,7 @@ def extract_functions_covered(target_dir, target_name=None):
     internals, e.g. file name and location of LLVMFuzzerTestOneInput. 
     But, we wait a bit with this.
     """
-    coverage_reports = get_all_files_in_tree_with_suffix(target_dir, ".covreport")
+    coverage_reports = fuzz_utils.get_all_files_in_tree_with_suffix(target_dir, ".covreport")
     functions_hit = set()
     coverage_map = dict()
 
@@ -170,21 +171,6 @@ def longestCommonPrefix(strs):
         current = temp
     return current
 
-
-def identify_base_folder(merged_profile):
-    """
-    Identifies a common path-prefix amongst source files in all_function_data
-    dictionary. This is used to remove locations within a host system to 
-    essentially make paths as if they were from the root of the source code project.
-    """
-    all_strs = []
-    for func in merged_profile.all_functions:
-        if func['functionSourceFile'] != "/":
-            all_strs.append(func['functionSourceFile'])
-    base = longestCommonPrefix(all_strs)
-    return base
-
-
 def refine_paths(merged_profile):
     """
     Identify the longest common prefix amongst source files in all_function_data
@@ -192,7 +178,7 @@ def refine_paths(merged_profile):
     """
     global BASE_DIR
     # Find the root of the files to not add unnesecary stuff.
-    base = identify_base_folder(merged_profile)
+    base = fuzz_utils.identify_base_folder(merged_profile)
     BASE_DIR = base
     #print("Base: %s"%(base))
     
@@ -201,7 +187,6 @@ def refine_paths(merged_profile):
     for func in merged_profile['all_function_data']:
         if func['functionSourceFile'] != "/":
             func['functionSourceFile'] = func['functionSourceFile'].replace(base, "")
-
 
 class FuzzerProfile:
     """
@@ -455,30 +440,9 @@ def add_func_to_reached_and_clone(merged_profile_old, func_dict_old):
     return merged_profile
     
 
-
-def get_all_files_in_tree_with_suffix(basedir, suffix):
-    """
-    Returns a list of paths such that each path is to a file with
-    the provided suffix. Walks the entire tree of basedir.
-    """
-    data_files = []
-    for root, dirs, files in os.walk(basedir):
-        for f in files:
-            if f.endswith(suffix):
-                data_files.append(os.path.join(root, f))
-    return data_files
-
-
-def demangle_cpp_func(funcname):
-    try:
-        demangled = cxxfilt.demangle(funcname.replace(" ",""))
-        return demangled
-    except:
-        return funcname
-
 def load_all_profiles(target_folder):
     # Get the introspector profile with raw data from each fuzzer in the target folder.
-    data_files = get_all_files_in_tree_with_suffix(target_folder, ".data")
+    data_files = fuzz_utils.get_all_files_in_tree_with_suffix(target_folder, ".data")
 
     # Parse and analyse the data from each fuzzer.
     profiles = []

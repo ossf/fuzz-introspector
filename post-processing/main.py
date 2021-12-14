@@ -18,6 +18,7 @@ import argparse
 
 import fuzz_data_loader
 import fuzz_html
+import fuzz_utils
 
 
 def run_analysis_on_dir(target_folder,
@@ -35,7 +36,7 @@ def run_analysis_on_dir(target_folder,
     project_profile = fuzz_data_loader.MergedProjectProfile(profiles)
 
     # Find a base folder
-    basefolder = fuzz_data_loader.identify_base_folder(project_profile)
+    basefolder = fuzz_utils.identify_base_folder(project_profile)
     #print("Base folder: %s"%(basefolder))
 
     print("[+] Refining profiles")

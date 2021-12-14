@@ -18,6 +18,7 @@ import sys
 import cxxfilt
 import shutil
 import fuzz_analysis
+import fuzz_utils
 
 # For pretty printing the html code:
 from bs4 import BeautifulSoup as bs
@@ -145,14 +146,6 @@ def html_add_header_with_link(header_title, title_type, toc_list, link=None):
     return html_string
 
 
-def demangle_cpp_func(funcname):
-    try:
-        demangled = cxxfilt.demangle(funcname.replace(" ", ""))
-        return demangled
-    except:
-        return funcname
-
-
 def create_overview_table(tables, profiles):
     """Table with an overview of all the fuzzers"""
     html_string = create_table_head(tables[-1],
@@ -206,7 +199,7 @@ def create_all_function_table(tables, project_profile, coverage_url, git_repo_ur
                 basefolder, ""), fd['functionLinenumber'])
         html_string += html_table_add_row([
             "%s" % ("<a href='%s'><code class='language-clike'>" % ("%s%s.html#L%d" % (coverage_url,
-                    fd['functionSourceFile'], fd['functionLinenumber'])) + demangle_cpp_func(fd['functionName']) + "</code></a>"),
+                    fd['functionSourceFile'], fd['functionLinenumber'])) + fuzz_utils.demangle_cpp_func(fd['functionName']) + "</code></a>"),
             "<a href=\"%s\">LINK</a>" % (fd_github_url),
             "%s" % fd['functionSourceFile'],
             fd['argCount'],
@@ -281,7 +274,7 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
     depth_func = dict()
     color_sequence = []
     for node in profile.function_call_depths:
-        demangled_name = demangle_cpp_func(node['function_name'])
+        demangled_name = fuzz_utils.demangle_cpp_func(node['function_name'])
 
         # Some logic for enforcing consistency, i.e. all functions above
         # in the callstack must be green for something to be green.
@@ -294,7 +287,7 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
         color_to_be = "red"
         if int(node['depth'])-1 in depth_func:
             for funcname_t in profile.coverage['coverage-map']:
-                normalised_funcname = demangle_cpp_func(normalise_str(funcname_t))
+                normalised_funcname = fuzz_utils.demangle_cpp_func(normalise_str(funcname_t))
                 normalised_parent_funcname = normalise_str(depth_func[int(node['depth'])-1])
                 #print("Normalised funcname: %s"%(normalised_funcname))
                 #print("Normalised parent funcname: %s"%(normalised_parent_funcname))
@@ -331,7 +324,7 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
         if int(node['depth'])-1 in depth_func:
             parent_fname = depth_func[int(node['depth'])-1]
             for fd in project_profile.all_functions:
-                if demangle_cpp_func(fd['functionName']) == parent_fname:
+                if fuzz_utils.demangle_cpp_func(fd['functionName']) == parent_fname:
                     callsite_link = coverage_url + "%s.html#L%d" % (
                             fd['functionSourceFile'],  # parent source file
                             node['linenumber'])        # callsite line number;
@@ -580,7 +573,7 @@ def create_html_report(profiles,
 
         html_string += html_table_add_row([
             "<a href=\"%s\"><code class='language-clike'>%s</code></a>" % (
-                fd_github_url, demangle_cpp_func(fd['functionName'])),
+                fd_github_url, fuzz_utils.demangle_cpp_func(fd['functionName'])),
             fd['functionSourceFile'],
             fd['argCount'],
             fd['argTypes'],
