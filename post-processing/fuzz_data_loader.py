@@ -475,39 +475,6 @@ def add_func_to_reached_and_clone(merged_profile_old, func_dict_old):
     
 
 
-def get_total_basic_blocks(profile):
-    total_basic_blocks = 0
-    for func in profile['functions-reached-by-fuzzer']:
-        for fd in profile['all_function_data']:
-            if fd['functionName'] == func:
-                total_basic_blocks += fd['BBCount']
-    return total_basic_blocks
-
-def get_total_cyclomatic_complexity(profile):
-    total_cyclomatic_complexity = 0
-    for func in profile['functions-reached-by-fuzzer']:
-        for fd in profile['all_function_data']:
-            if fd['functionName'] == func:
-                total_cyclomatic_complexity += fd['CyclomaticComplexity']
-    return total_cyclomatic_complexity
-
-
-def get_file_targets(profile):
-    fcl = profile['function_call_depths']
-    filenames = set()
-    file_targets = dict()
-
-    for fd in fcl:
-        if fd['functionSourceFile'].replace(" ","") == "":
-            continue
-
-        if fd['functionSourceFile'] not in file_targets:
-            file_targets[fd['functionSourceFile']] = set()
-        file_targets[fd['functionSourceFile']].add(fd['function_name'])
-
-    return file_targets
-     
-
 def get_all_profile_files(basedir, suffix):
     #print("Finding all targets")
     data_files = []
@@ -526,42 +493,6 @@ def demangle_cpp_func(funcname):
         return demangled
     except:
         return funcname
-
-
-
-
-def correlate_runtime_coverage_with_reachability(profile, target_folder):
-    # Merge any runtime coverage data that we may have to correlate
-    # reachability and runtime coverage information.
-    #print("Finding coverage")
-    tname = profile['fuzzer-information']['functionSourceFile'].split("/")[-1].replace(".cpp","").replace(".c","")
-    functions_hit, coverage_map = extract_functions_covered(target_folder, tname)
-    if tname != None:
-        profile['coverage'] = dict()
-        profile['coverage']['functions-hit'] = functions_hit
-        profile['coverage']['coverage-map'] = coverage_map
-    return {'functions-hit': functions_hit ,
-            'coverage-map' : coverage_map }
-
-
-def find_all_reached_functions(profile):
-    funcsReachedByFuzzer = list()
-    #for func in profile['all_function_data']:
-    for func in profile.all_function_data:
-        if func["functionName"] == "LLVMFuzzerTestOneInput":
-            funcsReachedByFuzzer = func['functionsReached']
-    return funcsReachedByFuzzer
-
-def find_all_unreached_functions(profile):
-    funcsUnreachedByFuzzer = list()
-    for func in profile['all_function_data']:
-        in_fuzzer = False
-        for func_name2 in profile['functions-reached-by-fuzzer']:
-            if func_name2 == func['functionName']:
-                in_fuzzer = True
-        if not in_fuzzer:
-            funcsUnreachedByFuzzer.append(func['functionName'])
-    return funcsUnreachedByFuzzer
 
 def load_all_profiles(target_folder):
     # Get the introspector profile with raw data from each fuzzer in the target folder.
