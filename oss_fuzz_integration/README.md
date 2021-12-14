@@ -10,6 +10,9 @@ rebuild images when you switch between fuzz-introspector-images and original
 oss-fuzz images. The reason we have to rebuild the images is we need to make
 a small patch to Clang due to the following issue: https://reviews.llvm.org/D77704
 
+In order to use the OSS-Fuzz integration you must have Docker installer, as this
+is a requirement for OSS-Fuzz itself.
+
 ## Build the patched OSS-Fuzz
 From within this directory, run the command:
 ```
