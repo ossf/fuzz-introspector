@@ -115,18 +115,15 @@ class FuzzerProfile:
         data_dict = dict()
         self.function_call_depths = data_file_read_calltree(filename)
         self.fuzzer_information =  { 'functionSourceFile' : data_dict_yaml['Fuzzer filename'] }
-        #self.function_call_depths = function_call_depths
         self.all_function_data = data_dict_yaml['All functions']['Elements']
         self.funcsReachedByFuzzer = None
 
 
     def set_all_reached_functions(self):
         self.funcsReachedByFuzzer = list()
-        #for func in profile['all_function_data']:
         for func in self.all_function_data:
             if func["functionName"] == "LLVMFuzzerTestOneInput":
                 self.funcsReachedByFuzzer = func['functionsReached']
-        #return funcsReachedByFuzzer
         if self.funcsReachedByFuzzer == None:
             self.funcsReachedByFuzzer = list()
 
@@ -140,7 +137,6 @@ class FuzzerProfile:
                     in_fuzzer = True
             if not in_fuzzer:
                 self.funcsUnreachedByFuzzer.append(func['functionName'])
-        #return funcsUnreachedByFuzzer
 
     def correlate_runtime_coverage_with_reachability(self, target_folder):
         # Merge any runtime coverage data that we may have to correlate
