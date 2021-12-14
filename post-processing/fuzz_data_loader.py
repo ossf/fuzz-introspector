@@ -147,7 +147,7 @@ class FuzzerProfile:
         # reachability and runtime coverage information.
         #print("Finding coverage")
         tname = self.fuzzer_information['functionSourceFile'].split("/")[-1].replace(".cpp","").replace(".c","")
-        functions_hit, coverage_map = fuzz_cov_load.llvm_cov_load(target_folder, tname)#extract_functions_covered(target_folder, tname)
+        functions_hit, coverage_map = fuzz_cov_load.llvm_cov_load(target_folder, tname)
         if tname != None:
             self.coverage = dict()
             self.coverage['functions-hit'] = functions_hit
