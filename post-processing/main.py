@@ -28,7 +28,7 @@ def run_analysis_on_dir(target_folder,
     profiles = fuzz_data_loader.load_all_profiles(target_folder)
     print("[+] Accummulating profiles")
     for profile in profiles:
-        fuzz_data_loader.accummulate_profile(profile, target_folder)
+        profile.accummulate_profile(target_folder)
 
     # Merge all profiles into a project profile    
     print("[+] Creating project profile")

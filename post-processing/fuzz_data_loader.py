@@ -294,6 +294,15 @@ class FuzzerProfile:
                 if fd['functionName'] == func:
                     self.total_cyclomatic_complexity += fd['CyclomaticComplexity']
 
+    def accummulate_profile(self, target_folder):
+        self.set_all_reached_functions()
+        self.set_all_unreached_functions()
+        self.correlate_runtime_coverage_with_reachability(target_folder)
+        self.get_file_targets()
+        self.get_total_basic_blocks()
+        self.get_total_cyclomatic_complexity()
+
+
 
 def read_fuzzer_data_file_to_profile(filename):
     if not os.path.isfile(filename) or not os.path.isfile(filename+".yaml"):
@@ -594,20 +603,10 @@ def load_all_profiles(target_folder):
 
 
 def accummulate_profile(profile, target_folder):
-    #print("Accumulating profile")
-    #profile['functions-reached-by-fuzzer'] = find_all_reached_functions(profile)
     profile.set_all_reached_functions()
-    #profile['unreached-functions'] = find_all_unreached_functions(profile)
     profile.set_all_unreached_functions()
-
-    #profile['coverage'] = correlate_runtime_coverage_with_reachability(profile, target_folder)
     profile.correlate_runtime_coverage_with_reachability(target_folder)
-
-    #profile['file_targets'] = get_file_targets(profile)
     profile.get_file_targets()
-
-    #profile['total-basic-block-count'] = get_total_basic_blocks(profile)
     profile.get_total_basic_blocks()
-    #profile['total-cyclomatic-complexity'] = get_total_cyclomatic_complexity(profile)
     profile.get_total_cyclomatic_complexity()
 
