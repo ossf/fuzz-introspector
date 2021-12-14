@@ -165,20 +165,20 @@ def create_overview_table(tables, profiles):
                                      "Cyclomatic complexity",
                                      "Details"])
     for profile in profiles:  # create a row for each fuzzer.
-        fuzzer_filename = profile['fuzzer-information']['functionSourceFile']
+        fuzzer_filename = profile.fuzzer_information['functionSourceFile']
         max_depth = 0
-        for node in profile['function_call_depths']:
+        for node in profile.function_call_depths:
             if node['depth'] > max_depth:
                 max_depth = node['depth']
 
         html_string += html_table_add_row([
             fuzzer_filename,
-            len(profile['functions-reached-by-fuzzer']),
-            len(profile['unreached-functions']),
+            len(profile.funcsReachedByFuzzer),
+            len(profile.funcsUnreachedByFuzzer),
             max_depth,
-            len(profile['file_targets']),
-            profile['total-basic-block-count'],
-            profile['total-cyclomatic-complexity'],
+            len(profile.file_targets),
+            profile.total_basic_blocks,
+            profile.total_cyclomatic_complexity,
             fuzzer_filename.replace(" ", "").split("/")[-1]])
     html_string += ("\n</tbody></table>")
     return html_string
@@ -280,7 +280,7 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
     # when looking up if a callsite was hit or not.
     depth_func = dict()
     color_sequence = []
-    for node in profile['function_call_depths']:
+    for node in profile.function_call_depths:
         demangled_name = demangle_cpp_func(node['function_name'])
 
         # Some logic for enforcing consistency, i.e. all functions above
@@ -293,7 +293,7 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
         # node should be displayed as green.
         color_to_be = "red"
         if int(node['depth'])-1 in depth_func:
-            for funcname_t in profile['coverage']['coverage-map']:
+            for funcname_t in profile.coverage['coverage-map']:
                 normalised_funcname = demangle_cpp_func(normalise_str(funcname_t))
                 normalised_parent_funcname = normalise_str(depth_func[int(node['depth'])-1])
                 #print("Normalised funcname: %s"%(normalised_funcname))
@@ -303,7 +303,7 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
                 for (n_line_number, hit_times_n) in profile['coverage']['coverage-map'][funcname_t]:
                     if n_line_number == node['linenumber'] and hit_times_n != 0:
                         color_to_be = "green"
-        elif demangled_name == "LLVMFuzzerTestOneInput" and 'LLVMFuzzerTestOneInput' in profile['coverage']['coverage-map']:
+        elif demangled_name == "LLVMFuzzerTestOneInput" and 'LLVMFuzzerTestOneInput' in profile.coverage['coverage-map']:
             # LLVMFuzzerTestOneInput will never have a parent in the calltree. As such, we 
             # check here if the function has been hit, and if so, make it green. We avoid
             # hardcoding LLVMFuzzerTestOneInput to be green because some fuzzers may not
@@ -475,7 +475,7 @@ def create_html_report(profiles,
         # if (curr_tt_profile > max_profile):
         #    sys.exit(0)
 
-        fuzzer_filename = profile['fuzzer-information']['functionSourceFile']
+        fuzzer_filename = profile.fuzzer_information['functionSourceFile']
         html_string += html_add_header_with_link("Fuzzer: %s" % (
             fuzzer_filename.replace(" ", "").split("/")[-1]), 2, toc_list)
 
@@ -486,9 +486,9 @@ def create_html_report(profiles,
         tables.append(f"myTable{len(tables)}")
         html_string += create_table_head(tables[-1],
                                          ["filename", "functions hit"])
-        for k in profile['file_targets']:
+        for k in profile.file_targets:
             html_string += html_table_add_row([k,
-                                              len(profile['file_targets'][k])])
+                                              len(profile.file_targets[k])])
         html_string += "</table>\n"
 
 

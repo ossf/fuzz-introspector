@@ -86,6 +86,78 @@ def data_file_read_calltree(filename):
         tmp_function_depths['function_calls'] += list(sorted(tmp_function_depths['function_calls'], key=lambda x: x['linenumber']))
     return function_call_depths
 
+def extract_functions_covered(target_dir, target_name=None):
+    """
+    Reads all of the functions hit across all of the covreport files.
+    This is a bit over-approximating in that we dont actually find coverage
+    on a per-fuzzer basis, which is what we shuold. 
+    The difficulty in finding coverage on a per-fuzzer basis is correlating
+    binary files to the introspection done a compile time. Files could be
+    moved around and remaned, so we need some mechanism that looks at the 
+    internals, e.g. file name and location of LLVMFuzzerTestOneInput. 
+    But, we wait a bit with this.
+    """
+    coverage_reports = get_all_profile_files(target_dir, ".covreport")
+    functions_hit = set()
+    coverage_map = dict()
+
+    # Check if there is a meaningful profile and if not, we need to use all.
+    found_name = False
+    for pf in coverage_reports:
+        if target_name != None:
+            if target_name in pf:
+                found_name = True
+
+    for profile_file in coverage_reports:
+        # If only coverage from a specific report should be used then filter
+        # here. Otherwise, include coverage from everybody.
+        if found_name:
+            if target_name != None:
+                if target_name not in profile_file:
+                    continue
+
+        with open(profile_file, "r") as pf:
+            curr_func = None
+            for line in pf:
+                if len(line.replace("\n","")) > 0 and line.replace("\n","")[-1] == ":" and "|" not in line:
+                    #print("We got a function definition: %s"%(line.replace("n","")))
+
+                    if len(line.split(":")) == 3:
+                        curr_func = line.replace("\n","").split(":")[1].replace(" ","").replace(":","")
+                    else:
+                        curr_func = line.replace("\n","").replace(" ","").replace(":","")
+
+                    coverage_map[curr_func] = list()
+                if curr_func != None and "|" in line:
+                    #print("Function: %s has line: %s --- %s"%(curr_func, line.replace("\n",""), str(line.split("|"))))
+                    line_number = int(line.split("|")[0])
+                    try:
+                        hit_times = int(line.split("|")[1].replace("k","00").replace(".",""))
+                    except:
+                        hit_times = 0
+                    coverage_map[curr_func].append((line_number, hit_times))
+                    #print("\tLine %d - hit times: %d"%(line_number, hit_times))
+
+
+                # We should now normalise the potential function name
+                fname = str(line.replace("\n", ""))
+                if ".c" in fname and ".cpp" not in fname:
+                    fname = fname.split(".c")[-1].replace(":","")
+                if ".cpp" in fname:
+                    fname = fname.split(".cpp")[-1].replace(":","")
+                    fname = demangle_cpp_func(fname)
+
+                if line.replace("\n","").endswith(":"):
+                    fname = fname.replace(":", "")
+                    fname = demangle_cpp_func(fname)
+                    functions_hit.add(fname)
+
+
+    #for fh in functions_hit:
+    #    print("Function: %s"%(fh))
+
+    return functions_hit, coverage_map
+
 def longestCommonPrefix(strs):
     """
     :type strs: List[str]
@@ -139,6 +211,90 @@ def refine_paths(merged_profile):
             func['functionSourceFile'] = func['functionSourceFile'].replace(base, "")
 
 
+class FuzzerProfile:
+    """
+    Class for storing information about a given Fuzzer
+    """
+    def __init__(self, filename, data_dict_yaml):
+        self.fuzzer_information = dict()
+
+        # Read data about all functions
+        data_dict = dict()
+        self.function_call_depths = data_file_read_calltree(filename)
+        self.fuzzer_information =  { 'functionSourceFile' : data_dict_yaml['Fuzzer filename'] }
+        #self.function_call_depths = function_call_depths
+        self.all_function_data = data_dict_yaml['All functions']['Elements']
+        self.funcsReachedByFuzzer = None
+
+
+    def set_all_reached_functions(self):
+        self.funcsReachedByFuzzer = list()
+        #for func in profile['all_function_data']:
+        for func in self.all_function_data:
+            if func["functionName"] == "LLVMFuzzerTestOneInput":
+                self.funcsReachedByFuzzer = func['functionsReached']
+        #return funcsReachedByFuzzer
+        if self.funcsReachedByFuzzer == None:
+            self.funcsReachedByFuzzer = list()
+
+
+    def set_all_unreached_functions(self):
+        self.funcsUnreachedByFuzzer = list()
+        for func in self.all_function_data:
+            in_fuzzer = False
+            for func_name2 in self.funcsReachedByFuzzer:
+                if func_name2 == func['functionName']:
+                    in_fuzzer = True
+            if not in_fuzzer:
+                self.funcsUnreachedByFuzzer.append(func['functionName'])
+        #return funcsUnreachedByFuzzer
+
+    def correlate_runtime_coverage_with_reachability(self, target_folder):
+        # Merge any runtime coverage data that we may have to correlate
+        # reachability and runtime coverage information.
+        #print("Finding coverage")
+        tname = self.fuzzer_information['functionSourceFile'].split("/")[-1].replace(".cpp","").replace(".c","")
+        functions_hit, coverage_map = extract_functions_covered(target_folder, tname)
+        if tname != None:
+            self.coverage = dict()
+            self.coverage['functions-hit'] = functions_hit
+            self.coverage['coverage-map'] = coverage_map
+        #return {'functions-hit': functions_hit ,
+        #        'coverage-map' : coverage_map }
+
+    def get_file_targets(self):
+        #fcl = profile['function_call_depths']
+        filenames = set()
+        file_targets = dict()
+
+        for fd in self.function_call_depths:
+            if fd['functionSourceFile'].replace(" ","") == "":
+                continue
+
+            if fd['functionSourceFile'] not in file_targets:
+                file_targets[fd['functionSourceFile']] = set()
+            file_targets[fd['functionSourceFile']].add(fd['function_name'])
+        self.file_targets = file_targets
+
+
+    def get_total_basic_blocks(self):
+        total_basic_blocks = 0
+        for func in self.funcsReachedByFuzzer:
+            #for fd in profile['all_function_data']:
+            for fd in self.all_function_data:
+                if fd['functionName'] == func:
+                    total_basic_blocks += fd['BBCount']
+        self.total_basic_blocks = total_basic_blocks
+        #return total_basic_blocks
+
+    def get_total_cyclomatic_complexity(self):
+        self.total_cyclomatic_complexity = 0
+        for func in self.funcsReachedByFuzzer:
+            for fd in self.all_function_data:
+                if fd['functionName'] == func:
+                    self.total_cyclomatic_complexity += fd['CyclomaticComplexity']
+
+
 def read_fuzzer_data_file_to_profile(filename):
     if not os.path.isfile(filename) or not os.path.isfile(filename+".yaml"):
         return None
@@ -148,13 +304,15 @@ def read_fuzzer_data_file_to_profile(filename):
         return None
 
     # Read data about all functions
-    data_dict = dict()
-    function_call_depths = data_file_read_calltree(filename)
-    data_dict['fuzzer-information'] =  { 'functionSourceFile' : data_dict_yaml['Fuzzer filename'] }
-    data_dict['function_call_depths'] = function_call_depths
-    data_dict['all_function_data'] = data_dict_yaml['All functions']['Elements']
+    #data_dict = dict()
+    #function_call_depths = data_file_read_calltree(filename)
+    #data_dict['fuzzer-information'] =  { 'functionSourceFile' : data_dict_yaml['Fuzzer filename'] }
+    #data_dict['function_call_depths'] = function_call_depths
+    #data_dict['all_function_data'] = data_dict_yaml['All functions']['Elements']
 
-    return data_dict
+    profile = FuzzerProfile(filename, data_dict_yaml)
+
+    return profile
 
 def refine_profile(profile):
     """
@@ -191,18 +349,18 @@ class MergedProjectProfile:
 
         # Populate functions reached
         for profile in profiles:
-            for func_name in profile['functions-reached-by-fuzzer']:
+            for func_name in profile.funcsReachedByFuzzer:
                 self.functions_reached.add(func_name)
 
         # Set all unreached functions
         for profile in profiles:
-            for func_name in profile['unreached-functions']:
+            for func_name in profile.funcsUnreachedByFuzzer:
                 if func_name not in self.functions_reached:
                     self.unreached_functions.add(func_name)
 
         # Gather data on functions
         for profile in profiles:
-            for fd in profile['all_function_data']:
+            for fd in profile.all_function_data:
                 if ("sanitizer" in fd['functionName'] or 
                         "llvm" in fd['functionName']):
                         #"LLVMFuzzerTestOneInput" in fd['functionName'] or 
@@ -211,7 +369,7 @@ class MergedProjectProfile:
                 # Find hit count
                 hitcount = 0
                 for p2 in profiles:
-                    if fd['functionName'] in p2['functions-reached-by-fuzzer']:
+                    if fd['functionName'] in p2.funcsReachedByFuzzer:
                         hitcount += 1
                 # Only insert if it is not a duplicate
                 is_duplicate = False
@@ -330,6 +488,7 @@ def add_func_to_reached_and_clone(merged_profile_old, func_dict_old):
     return merged_profile
     
 
+
 def get_total_basic_blocks(profile):
     total_basic_blocks = 0
     for func in profile['functions-reached-by-fuzzer']:
@@ -337,7 +496,6 @@ def get_total_basic_blocks(profile):
             if fd['functionName'] == func:
                 total_basic_blocks += fd['BBCount']
     return total_basic_blocks
-
 
 def get_total_cyclomatic_complexity(profile):
     total_cyclomatic_complexity = 0
@@ -384,77 +542,6 @@ def demangle_cpp_func(funcname):
         return funcname
 
 
-def extract_functions_covered(target_dir, target_name=None):
-    """
-    Reads all of the functions hit across all of the covreport files.
-    This is a bit over-approximating in that we dont actually find coverage
-    on a per-fuzzer basis, which is what we shuold. 
-    The difficulty in finding coverage on a per-fuzzer basis is correlating
-    binary files to the introspection done a compile time. Files could be
-    moved around and remaned, so we need some mechanism that looks at the 
-    internals, e.g. file name and location of LLVMFuzzerTestOneInput. 
-    But, we wait a bit with this.
-    """
-    coverage_reports = get_all_profile_files(target_dir, ".covreport")
-    functions_hit = set()
-    coverage_map = dict()
-
-    # Check if there is a meaningful profile and if not, we need to use all.
-    found_name = False
-    for pf in coverage_reports:
-        if target_name != None:
-            if target_name in pf:
-                found_name = True
-
-    for profile_file in coverage_reports:
-        # If only coverage from a specific report should be used then filter
-        # here. Otherwise, include coverage from everybody.
-        if found_name:
-            if target_name != None:
-                if target_name not in profile_file:
-                    continue
-
-        with open(profile_file, "r") as pf:
-            curr_func = None
-            for line in pf:
-                if len(line.replace("\n","")) > 0 and line.replace("\n","")[-1] == ":" and "|" not in line:
-                    #print("We got a function definition: %s"%(line.replace("n","")))
-
-                    if len(line.split(":")) == 3:
-                        curr_func = line.replace("\n","").split(":")[1].replace(" ","").replace(":","")
-                    else:
-                        curr_func = line.replace("\n","").replace(" ","").replace(":","")
-
-                    coverage_map[curr_func] = list()
-                if curr_func != None and "|" in line:
-                    #print("Function: %s has line: %s --- %s"%(curr_func, line.replace("\n",""), str(line.split("|"))))
-                    line_number = int(line.split("|")[0])
-                    try:
-                        hit_times = int(line.split("|")[1].replace("k","00").replace(".",""))
-                    except:
-                        hit_times = 0
-                    coverage_map[curr_func].append((line_number, hit_times))
-                    #print("\tLine %d - hit times: %d"%(line_number, hit_times))
-
-
-                # We should now normalise the potential function name
-                fname = str(line.replace("\n", ""))
-                if ".c" in fname and ".cpp" not in fname:
-                    fname = fname.split(".c")[-1].replace(":","")
-                if ".cpp" in fname:
-                    fname = fname.split(".cpp")[-1].replace(":","")
-                    fname = demangle_cpp_func(fname)
-
-                if line.replace("\n","").endswith(":"):
-                    fname = fname.replace(":", "")
-                    fname = demangle_cpp_func(fname)
-                    functions_hit.add(fname)
-
-
-    #for fh in functions_hit:
-    #    print("Function: %s"%(fh))
-
-    return functions_hit, coverage_map
 
 
 def correlate_runtime_coverage_with_reachability(profile, target_folder):
@@ -473,7 +560,8 @@ def correlate_runtime_coverage_with_reachability(profile, target_folder):
 
 def find_all_reached_functions(profile):
     funcsReachedByFuzzer = list()
-    for func in profile['all_function_data']:
+    #for func in profile['all_function_data']:
+    for func in profile.all_function_data:
         if func["functionName"] == "LLVMFuzzerTestOneInput":
             funcsReachedByFuzzer = func['functionsReached']
     return funcsReachedByFuzzer
@@ -507,10 +595,19 @@ def load_all_profiles(target_folder):
 
 def accummulate_profile(profile, target_folder):
     #print("Accumulating profile")
-    profile['functions-reached-by-fuzzer'] = find_all_reached_functions(profile)
-    profile['unreached-functions'] = find_all_unreached_functions(profile)
-    profile['coverage'] = correlate_runtime_coverage_with_reachability(profile, target_folder)
-    profile['file_targets'] = get_file_targets(profile)
-    profile['total-basic-block-count'] = get_total_basic_blocks(profile)
-    profile['total-cyclomatic-complexity'] = get_total_cyclomatic_complexity(profile)
+    #profile['functions-reached-by-fuzzer'] = find_all_reached_functions(profile)
+    profile.set_all_reached_functions()
+    #profile['unreached-functions'] = find_all_unreached_functions(profile)
+    profile.set_all_unreached_functions()
+
+    #profile['coverage'] = correlate_runtime_coverage_with_reachability(profile, target_folder)
+    profile.correlate_runtime_coverage_with_reachability(target_folder)
+
+    #profile['file_targets'] = get_file_targets(profile)
+    profile.get_file_targets()
+
+    #profile['total-basic-block-count'] = get_total_basic_blocks(profile)
+    profile.get_total_basic_blocks()
+    #profile['total-cyclomatic-complexity'] = get_total_cyclomatic_complexity(profile)
+    profile.get_total_cyclomatic_complexity()
 
