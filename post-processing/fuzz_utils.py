@@ -13,12 +13,7 @@
 # limitations under the License.
 
 import os
-import sys
-import copy
 import cxxfilt
-import yaml
-import fuzz_html
-import fuzz_utils
 
 def longest_common_prefix(strs):
     """
@@ -59,4 +54,3 @@ def demangle_cpp_func(funcname):
         return demangled
     except:
         return funcname
-
