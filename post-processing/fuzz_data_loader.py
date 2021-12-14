@@ -21,7 +21,6 @@ import yaml
 import fuzz_html
 
 debug = False
-
 BASE_DIR = None
 
 def data_file_read_all_function_data_yaml(filename):
@@ -97,7 +96,7 @@ def extract_functions_covered(target_dir, target_name=None):
     internals, e.g. file name and location of LLVMFuzzerTestOneInput. 
     But, we wait a bit with this.
     """
-    coverage_reports = get_all_profile_files(target_dir, ".covreport")
+    coverage_reports = get_all_files_in_tree_with_suffix(target_dir, ".covreport")
     functions_hit = set()
     coverage_map = dict()
 
@@ -468,14 +467,15 @@ def add_func_to_reached_and_clone(merged_profile_old, func_dict_old):
     
 
 
-def get_all_profile_files(basedir, suffix):
-    #print("Finding all targets")
+def get_all_files_in_tree_with_suffix(basedir, suffix):
+    """
+    Returns a list of paths such that each path is to a file with
+    the provided suffix. Walks the entire tree of basedir.
+    """
     data_files = []
     for root, dirs, files in os.walk(basedir):
-        #print("files: %s"%(str(files)))
         for f in files:
             if f.endswith(suffix):
-                #print(os.path.join(root, f))
                 data_files.append(os.path.join(root, f))
     return data_files
 
@@ -489,7 +489,7 @@ def demangle_cpp_func(funcname):
 
 def load_all_profiles(target_folder):
     # Get the introspector profile with raw data from each fuzzer in the target folder.
-    data_files = get_all_profile_files(target_folder, ".data")
+    data_files = get_all_files_in_tree_with_suffix(target_folder, ".data")
 
     # Parse and analyse the data from each fuzzer.
     profiles = []
