@@ -25,12 +25,15 @@ debug = False
 BASE_DIR = None
 
 def data_file_read_all_function_data_yaml(filename):
+    """
+    Reads a file as a yaml file. This is used to load data
+    from fuzz-introspectors compiler plugin output.
+    """
     with open(filename, 'r') as stream:
         try:
             data_dict = yaml.safe_load(stream)
             return data_dict
         except yaml.YAMLError as exc:
-            #print(exc) 
             return None
 
 def data_file_read_calltree(filename):
@@ -105,22 +108,27 @@ def longestCommonPrefix(strs):
 
 
 def identify_base_folder(merged_profile):
+    """
+    Identifies a common path-prefix amongst source files in all_function_data
+    dictionary. This is used to remove locations within a host system to 
+    essentially make paths as if they were from the root of the source code project.
+    """
     all_strs = []
-
-    for func in merged_profile['all_function_data']:#function_dict['All functions']['Elements']:
+    for func in merged_profile['all_function_data']:
         if func['functionSourceFile'] != "/":
-            #print("Function: %s"%(func['functionSourceFile']))
             all_strs.append(func['functionSourceFile'])
-    
     base = longestCommonPrefix(all_strs)
     return base
 
 
 def refine_paths(merged_profile):
+    """
+    Identify the longest common prefix amongst source files in all_function_data
+    and remove this from their path.
+    """
     global BASE_DIR
     # Find the root of the files to not add unnesecary stuff.
     base = identify_base_folder(merged_profile)
-
     BASE_DIR = base
     #print("Base: %s"%(base))
     
@@ -131,18 +139,13 @@ def refine_paths(merged_profile):
             func['functionSourceFile'] = func['functionSourceFile'].replace(base, "")
 
 
-
 def read_fuzzer_data_files(filename):
-    if not os.path.isfile(filename):
-        return None
-
-    if not os.path.isfile(filename+".yaml"):
+    if not os.path.isfile(filename) or not os.path.isfile(filename+".yaml"):
         return None
 
     data_dict_yaml = data_file_read_all_function_data_yaml(filename + ".yaml")
     if data_dict_yaml == None:
         return None
-
 
     # Read data about all functions
     data_dict = dict()
@@ -154,22 +157,24 @@ def read_fuzzer_data_files(filename):
     return data_dict
 
 def refine_profile(profile):
+    """
+    Removes BASE_DIR from source paths in a given profile. 
+    """
     global BASE_DIR
-    if BASE_DIR != None:
-        #print("Refining: %s"%(profile['fuzzer-information']['functionSourceFile']))
-        profile['fuzzer-information']['functionSourceFile'] = profile['fuzzer-information']['functionSourceFile'].replace(BASE_DIR, "")
-        #print("Completed: %s"%(profile['fuzzer-information']['functionSourceFile']))
+    if BASE_DIR == None:
+        return
 
+    #print("Refining: %s"%(profile['fuzzer-information']['functionSourceFile']))
+    profile['fuzzer-information']['functionSourceFile'] = profile['fuzzer-information']['functionSourceFile'].replace(BASE_DIR, "")
+    #print("Completed: %s"%(profile['fuzzer-information']['functionSourceFile']))
 
-        for node in profile['function_call_depths']:
-            node['functionSourceFile'] = node['functionSourceFile'].replace(BASE_DIR, "")
+    for node in profile['function_call_depths']:
+        node['functionSourceFile'] = node['functionSourceFile'].replace(BASE_DIR, "")
 
-        new_dict = {}
-        for key in profile['file_targets']:
-            new_dict[key.replace(BASE_DIR, "")] = profile['file_targets'][key]
-        profile['file_targets'] = new_dict
-    #else:
-    #    print("Am not refining")
+    new_dict = {}
+    for key in profile['file_targets']:
+        new_dict[key.replace(BASE_DIR, "")] = profile['file_targets'][key]
+    profile['file_targets'] = new_dict
 
 
 def create_project_profile(profiles):
