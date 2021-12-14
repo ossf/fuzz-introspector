@@ -259,11 +259,8 @@ class FuzzerProfile:
             self.coverage = dict()
             self.coverage['functions-hit'] = functions_hit
             self.coverage['coverage-map'] = coverage_map
-        #return {'functions-hit': functions_hit ,
-        #        'coverage-map' : coverage_map }
 
     def get_file_targets(self):
-        #fcl = profile['function_call_depths']
         filenames = set()
         file_targets = dict()
 
@@ -280,12 +277,10 @@ class FuzzerProfile:
     def get_total_basic_blocks(self):
         total_basic_blocks = 0
         for func in self.funcsReachedByFuzzer:
-            #for fd in profile['all_function_data']:
             for fd in self.all_function_data:
                 if fd['functionName'] == func:
                     total_basic_blocks += fd['BBCount']
         self.total_basic_blocks = total_basic_blocks
-        #return total_basic_blocks
 
     def get_total_cyclomatic_complexity(self):
         self.total_cyclomatic_complexity = 0
@@ -331,10 +326,7 @@ def refine_profile(profile):
     if BASE_DIR == None:
         return
 
-    #print("Refining: %s"%(profile['fuzzer-information']['functionSourceFile']))
     profile['fuzzer-information']['functionSourceFile'] = profile['fuzzer-information']['functionSourceFile'].replace(BASE_DIR, "")
-    #print("Completed: %s"%(profile['fuzzer-information']['functionSourceFile']))
-
     for node in profile['function_call_depths']:
         node['functionSourceFile'] = node['functionSourceFile'].replace(BASE_DIR, "")
 
@@ -425,9 +417,6 @@ class MergedProjectProfile:
         if do_refinement:
             refine_paths(merged_profile)
 
-    def get_profile_count(self):
-        return len(self.profiles)
-
     def get_total_unreached_function_count(self):
         unreached_function_count = 0
         for fd in self.all_functions:
@@ -451,21 +440,13 @@ def create_project_profile(profiles):
     the code to find out which as this changes often.
     """
 
-    merged_profile = dict()
-    merged_profile["fuzzer-information"] = set()
-    merged_profile["functions-reached-by-fuzzer"] = set()
-    merged_profile["unreached-functions"] = set()
-    merged_profile['all_function_data'] = list()
-
-    class_MP = MergedProjectProfile(profiles)
-    print("Number of profiles: %d"%(class_MP.get_profile_count()))
-    return class_MP
+    merged_profile = MergedProjectProfile(profiles)
+    return merged_profile
 
 def add_func_to_reached_and_clone(merged_profile_old, func_dict_old):
     merged_profile = copy.deepcopy(merged_profile_old)
 
     # Update the hitcount of the function in the new merged profile.
-    #for fd_tmp in merged_profile['all_function_data']:
     for fd_tmp in merged_profile.all_functions:
         if fd_tmp['functionName'] == func_dict_old['functionName'] and fd_tmp['CyclomaticComplexity'] == func_dict_old['CyclomaticComplexity']:
             #print("We found the function, setting hit count %s"%(fd_tmp['functionName']))
@@ -474,17 +455,13 @@ def add_func_to_reached_and_clone(merged_profile_old, func_dict_old):
             fd_tmp['hitcount'] = 1
     
     for fd10 in merged_profile.all_functions:
-        #print("Going through function: %s"%(str(fd10)))
-        #print("Length of all function data: %d"%(len(merged_profile['all_function_data'])))
         total_cyclomatic_complexity = 0
-        #for fd20 in merged_profile['all_function_data']:
         for fd20 in merged_profile.all_functions:
             if fd20['functionName'] in fd10['functionsReached']:
                 total_cyclomatic_complexity += fd20['CyclomaticComplexity']
 
         # Check how much complexity this one will uncover.
         total_new_complexity = 0
-        #for fd21 in merged_profile['all_function_data']:
         for fd21 in merged_profile.all_functions:
             if fd21['functionName'] in fd10['functionsReached'] and fd21['hitcount'] == 0:
                 total_new_complexity += fd21['CyclomaticComplexity']
@@ -600,13 +577,3 @@ def load_all_profiles(target_folder):
         if profile != None:
             profiles.append(profile)
     return profiles
-
-
-def accummulate_profile(profile, target_folder):
-    profile.set_all_reached_functions()
-    profile.set_all_unreached_functions()
-    profile.correlate_runtime_coverage_with_reachability(target_folder)
-    profile.get_file_targets()
-    profile.get_total_basic_blocks()
-    profile.get_total_cyclomatic_complexity()
-
