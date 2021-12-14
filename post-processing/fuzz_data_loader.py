@@ -23,7 +23,6 @@ import fuzz_html
 import fuzz_utils
 
 debug = False
-BASE_DIR = None
 
 def data_file_read_all_function_data_yaml(filename):
     """
@@ -92,10 +91,8 @@ def refine_paths(merged_profile):
     Identify the longest common prefix amongst source files in all_function_data
     and remove this from their path.
     """
-    global BASE_DIR
     # Find the root of the files to not add unnesecary stuff.
     base = merged_profile.get_basefolder()
-    BASE_DIR = base
     #print("Base: %s"%(base))
     
     # Now clear up all source file paths
@@ -118,6 +115,20 @@ class FuzzerProfile:
         self.all_function_data = data_dict_yaml['All functions']['Elements']
         self.funcsReachedByFuzzer = None
 
+    def refine_paths(self, basefolder):
+        """
+        Removes the project_profile's basefolder from source paths in a given profile. 
+        """
+        #basefolder = project_profile.get_basefolder()
+
+        self.fuzzer_information['functionSourceFile'] = self.fuzzer_information['functionSourceFile'].replace(basefolder, "")
+        for node in self.function_call_depths:
+            node['functionSourceFile'] = node['functionSourceFile'].replace(basefolder, "")
+
+        new_dict = {}
+        for key in self.file_targets:
+            new_dict[key.replace(basefolder, "")] = self.file_targets[key]
+        self.file_targets = new_dict
 
     def set_all_reached_functions(self):
         self.funcsReachedByFuzzer = list()
@@ -207,22 +218,6 @@ def read_fuzzer_data_file_to_profile(filename):
 
     return profile
 
-def refine_profile(profile):
-    """
-    Removes BASE_DIR from source paths in a given profile. 
-    """
-    global BASE_DIR
-    if BASE_DIR == None:
-        return
-
-    profile['fuzzer-information']['functionSourceFile'] = profile['fuzzer-information']['functionSourceFile'].replace(BASE_DIR, "")
-    for node in profile['function_call_depths']:
-        node['functionSourceFile'] = node['functionSourceFile'].replace(BASE_DIR, "")
-
-    new_dict = {}
-    for key in profile['file_targets']:
-        new_dict[key.replace(BASE_DIR, "")] = profile['file_targets'][key]
-    profile['file_targets'] = new_dict
 
 class MergedProjectProfile:
     """

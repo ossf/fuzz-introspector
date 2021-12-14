@@ -41,7 +41,7 @@ def run_analysis_on_dir(target_folder,
 
     print("[+] Refining profiles")
     for profile in profiles:
-        fuzz_data_loader.refine_profile(profile)
+        profile.refine_paths(basefolder)
 
     # Create the HTML report that can be viewed.
     if coverage_url == "":
