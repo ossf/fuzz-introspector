@@ -11,30 +11,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Reads the data output from the fuzz introspector LLVM plugin."""
+
 import os
 import sys
 import copy
 import cxxfilt
-import yaml
 import fuzz_cov_load
 import fuzz_html
 import fuzz_utils
 
-debug = False
-
-def data_file_read_all_function_data_yaml(filename):
-    """
-    Reads a file as a yaml file. This is used to load data
-    from fuzz-introspectors compiler plugin output.
-    """
-    with open(filename, 'r') as stream:
-        try:
-            data_dict = yaml.safe_load(stream)
-            return data_dict
-        except yaml.YAMLError as exc:
-            return None
 
 def data_file_read_calltree(filename):
     """
@@ -86,20 +72,6 @@ def data_file_read_calltree(filename):
         tmp_function_depths['function_calls'] += list(sorted(tmp_function_depths['function_calls'], key=lambda x: x['linenumber']))
     return function_call_depths
 
-def refine_paths(merged_profile):
-    """
-    Identify the longest common prefix amongst source files in all_function_data
-    and remove this from their path.
-    """
-    # Find the root of the files to not add unnesecary stuff.
-    base = merged_profile.get_basefolder()
-    #print("Base: %s"%(base))
-    
-    # Now clear up all source file paths
-    #for func in function_dict['All functions']['Elements']:
-    for func in merged_profile['all_function_data']:
-        if func['functionSourceFile'] != "/":
-            func['functionSourceFile'] = func['functionSourceFile'].replace(base, "")
 
 class FuzzerProfile:
     """
@@ -119,8 +91,6 @@ class FuzzerProfile:
         """
         Removes the project_profile's basefolder from source paths in a given profile. 
         """
-        #basefolder = project_profile.get_basefolder()
-
         self.fuzzer_information['functionSourceFile'] = self.fuzzer_information['functionSourceFile'].replace(basefolder, "")
         for node in self.function_call_depths:
             node['functionSourceFile'] = node['functionSourceFile'].replace(basefolder, "")
@@ -199,24 +169,6 @@ class FuzzerProfile:
 
 
 
-def read_fuzzer_data_file_to_profile(filename):
-    if not os.path.isfile(filename) or not os.path.isfile(filename+".yaml"):
-        return None
-
-    data_dict_yaml = data_file_read_all_function_data_yaml(filename + ".yaml")
-    if data_dict_yaml == None:
-        return None
-
-    # Read data about all functions
-    #data_dict = dict()
-    #function_call_depths = data_file_read_calltree(filename)
-    #data_dict['fuzzer-information'] =  { 'functionSourceFile' : data_dict_yaml['Fuzzer filename'] }
-    #data_dict['function_call_depths'] = function_call_depths
-    #data_dict['all_function_data'] = data_dict_yaml['All functions']['Elements']
-
-    profile = FuzzerProfile(filename, data_dict_yaml)
-
-    return profile
 
 
 class MergedProjectProfile:
@@ -297,10 +249,6 @@ class MergedProjectProfile:
 
             fd10['total_cyclomatic_complexity'] = total_cyclomatic_complexity + fd10['CyclomaticComplexity']
 
-        do_refinement = False
-        if do_refinement:
-            refine_paths(merged_profile)
-
     def get_total_unreached_function_count(self):
         unreached_function_count = 0
         for fd in self.all_functions:
@@ -328,6 +276,24 @@ class MergedProjectProfile:
         base = fuzz_utils.longest_common_prefix(all_strs)
         return base
 
+def read_fuzzer_data_file_to_profile(filename):
+    if not os.path.isfile(filename) or not os.path.isfile(filename+".yaml"):
+        return None
+
+    data_dict_yaml = fuzz_utils.data_file_read_all_function_data_yaml(filename + ".yaml")
+    if data_dict_yaml == None:
+        return None
+
+    # Read data about all functions
+    #data_dict = dict()
+    #function_call_depths = data_file_read_calltree(filename)
+    #data_dict['fuzzer-information'] =  { 'functionSourceFile' : data_dict_yaml['Fuzzer filename'] }
+    #data_dict['function_call_depths'] = function_call_depths
+    #data_dict['all_function_data'] = data_dict_yaml['All functions']['Elements']
+
+    profile = FuzzerProfile(filename, data_dict_yaml)
+
+    return profile
 
 
 def add_func_to_reached_and_clone(merged_profile_old, func_dict_old):

@@ -11,8 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+""" Utility functions """
 
 import os
+import yaml
 import cxxfilt
 
 def longest_common_prefix(strs):
@@ -47,6 +49,17 @@ def get_all_files_in_tree_with_suffix(basedir, suffix):
                 data_files.append(os.path.join(root, f))
     return data_files
 
+def data_file_read_all_function_data_yaml(filename):
+    """
+    Reads a file as a yaml file. This is used to load data
+    from fuzz-introspectors compiler plugin output.
+    """
+    with open(filename, 'r') as stream:
+        try:
+            data_dict = yaml.safe_load(stream)
+            return data_dict
+        except yaml.YAMLError as exc:
+            return None
 
 def demangle_cpp_func(funcname):
     try:
