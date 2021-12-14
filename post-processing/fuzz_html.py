@@ -197,7 +197,7 @@ def create_all_function_table(tables, project_profile, coverage_url, git_repo_ur
     if basefolder == "/":
         basefolder = "WRONG"
 
-    for fd in project_profile['all_function_data']:
+    for fd in project_profile.all_functions:
         if basefolder == "WRONG":
             fd_github_url = "%s/%s#L%d" % (git_repo_url, "/".join(
                 fd['functionSourceFile'].split("/")[3:]), fd['functionLinenumber'])
@@ -229,20 +229,16 @@ def create_top_summary_info(tables, project_profile):
     html_string = ""
     total_unreached_functions = set()
     total_reached_functions = set()
-    for fd in project_profile['all_function_data']:
+
+    for fd in project_profile.all_functions:
         if fd['hitcount'] == 0:
             total_unreached_functions.add(fd['functionName'])
         else:
             total_reached_functions.add(fd['functionName'])
 
     # Get the total amount of compleixty reached
-    total_complexity_reached = 0
-    total_complexity_unreached = 0
-    for fd in project_profile['all_function_data']:
-        if fd['hitcount'] == 0:
-            total_complexity_unreached += fd['CyclomaticComplexity']
-        else:
-            total_complexity_reached += fd['CyclomaticComplexity']
+    total_complexity_reached = project_profile.get_total_reached_function_count()
+    total_complexity_unreached = project_profile.get_total_unreached_function_count()
 
     html_string += create_table_head(tables[-1],
                                      ["", "Reached", "Unreached"])
@@ -323,7 +319,7 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
 
         # Get URL to coverage report for the node.
         link = "#"
-        for fd in project_profile['all_function_data']:
+        for fd in project_profile.all_functions:
             if fd['functionName'] == node['function_name']:
                 link = coverage_url + \
                     "%s.html#L%d" % (
@@ -334,7 +330,7 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
         # Find the parent
         if int(node['depth'])-1 in depth_func:
             parent_fname = depth_func[int(node['depth'])-1]
-            for fd in project_profile['all_function_data']:
+            for fd in project_profile.all_functions:
                 if demangle_cpp_func(fd['functionName']) == parent_fname:
                     callsite_link = coverage_url + "%s.html#L%d" % (
                             fd['functionSourceFile'],  # parent source file

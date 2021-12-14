@@ -114,7 +114,7 @@ def identify_base_folder(merged_profile):
     essentially make paths as if they were from the root of the source code project.
     """
     all_strs = []
-    for func in merged_profile['all_function_data']:
+    for func in merged_profile.all_functions:
         if func['functionSourceFile'] != "/":
             all_strs.append(func['functionSourceFile'])
     base = longestCommonPrefix(all_strs)
@@ -176,7 +176,107 @@ def refine_profile(profile):
         new_dict[key.replace(BASE_DIR, "")] = profile['file_targets'][key]
     profile['file_targets'] = new_dict
 
+class MergedProjectProfile:
+    """
+    Class for storing information about all fuzzers combined in a given project.
+    """
+    def __init__(self, profiles):
+        self.name = None
+        self.profiles = profiles
 
+
+        self.all_functions = list()
+        self.unreached_functions = set()
+        self.functions_reached = set()
+
+        # Populate functions reached
+        for profile in profiles:
+            for func_name in profile['functions-reached-by-fuzzer']:
+                self.functions_reached.add(func_name)
+
+        # Set all unreached functions
+        for profile in profiles:
+            for func_name in profile['unreached-functions']:
+                if func_name not in self.functions_reached:
+                    self.unreached_functions.add(func_name)
+
+        # Gather data on functions
+        for profile in profiles:
+            for fd in profile['all_function_data']:
+                if ("sanitizer" in fd['functionName'] or 
+                        "llvm" in fd['functionName']):
+                        #"LLVMFuzzerTestOneInput" in fd['functionName'] or 
+                    continue
+
+                # Find hit count
+                hitcount = 0
+                for p2 in profiles:
+                    if fd['functionName'] in p2['functions-reached-by-fuzzer']:
+                        hitcount += 1
+                # Only insert if it is not a duplicate
+                is_duplicate = False
+                for fd1 in self.all_functions:
+                    if fd1['functionName'] == fd['functionName']:
+                        is_duplicate = True
+                        break
+                fd['hitcount'] = hitcount
+                if not is_duplicate:
+                    #print("T1: %s"%(str(fd['functionsReached'])))
+                    self.all_functions.append(fd)
+
+
+        # Identify how many times each function is reached by other functions.
+        for fd1 in self.all_functions:
+            incoming_references = list()
+            for fd2 in self.all_functions:
+                if fd1['functionName'] in fd2['functionsReached']:
+                    incoming_references.append(fd2)
+            fd1['incoming_references'] = incoming_references
+
+
+
+        # Gather complexity information about each function
+        for fd10 in self.all_functions:
+            total_cyclomatic_complexity = 0
+            for fd20 in self.all_functions:
+                if fd20['functionName'] in fd10['functionsReached']:
+                    total_cyclomatic_complexity += fd20['CyclomaticComplexity']
+
+            # Check how much complexity this one will uncover.
+            total_new_complexity = 0
+            for fd21 in self.all_functions:
+                if fd21['functionName'] in fd10['functionsReached'] and fd21['hitcount'] == 0:
+                    total_new_complexity += fd21['CyclomaticComplexity']
+            if fd10['hitcount'] == 0:
+                fd10['new_unreached_complexity'] = total_new_complexity + (fd10['CyclomaticComplexity'])
+            else:
+                fd10['new_unreached_complexity'] = total_new_complexity
+
+            fd10['total_cyclomatic_complexity'] = total_cyclomatic_complexity + fd10['CyclomaticComplexity']
+
+        do_refinement = False
+        if do_refinement:
+            refine_paths(merged_profile)
+
+    def get_profile_count(self):
+        return len(self.profiles)
+
+    def get_total_unreached_function_count(self):
+        unreached_function_count = 0
+        for fd in self.all_functions:
+            if fd['hitcount'] == 0:
+                unreached_function_count += 1
+        return unreached_function_count
+
+    def get_total_reached_function_count(self):
+        reached_function_count = 0
+        for fd in self.all_functions:
+            if fd['hitcount'] != 0:
+                reached_function_count += 1
+        return reached_function_count
+
+
+    
 def create_project_profile(profiles):
     """
     Merges a set of profiles into one big profile.
@@ -190,98 +290,35 @@ def create_project_profile(profiles):
     merged_profile["unreached-functions"] = set()
     merged_profile['all_function_data'] = list()
 
-    # first find all functions reached by all fuzzers
-    for profile in profiles:
-        for fname in profile['functions-reached-by-fuzzer']:
-            merged_profile['functions-reached-by-fuzzer'].add(fname)
-
-    # Now go through all unreached functions
-    for profile in profiles:
-        for fname in profile['unreached-functions']:
-            if fname not in merged_profile['functions-reached-by-fuzzer']:
-                merged_profile['unreached-functions'].add(fname)
-
-    # Merge all of the function data. We must ensure for each function that
-    # the given function is still part of the unreached functions.
-    # Include a "hitcount" in the dictionary.
-    for profile in profiles:
-        for fd in profile['all_function_data']:
-            if ("sanitizer" in fd['functionName'] or 
-                    "llvm" in fd['functionName']):
-                    #"LLVMFuzzerTestOneInput" in fd['functionName'] or 
-                continue
-
-            is_duplicate = False
-
-            # Find hit count
-            hitcount = 0
-            for p2 in profiles:
-                if fd['functionName'] in p2['functions-reached-by-fuzzer']:
-                    hitcount += 1
-            # Only insert if it is not a duplicate
-            for fd1 in merged_profile["all_function_data"]:
-                if fd1['functionName'] == fd['functionName']:
-                    is_duplicate = True
-                    break
-            fd['hitcount'] = hitcount
-            if not is_duplicate:
-                #print("T1: %s"%(str(fd['functionsReached'])))
-                merged_profile["all_function_data"].append(fd)
-
-    # Identify how many times each function is reached by other functions.
-    for fd1 in merged_profile['all_function_data']:
-        incoming_references = list()
-        for fd2 in merged_profile['all_function_data']:
-            if fd1['functionName'] in fd2['functionsReached']:
-                incoming_references.append(fd2)
-        fd1['incoming_references'] = incoming_references
-
-    for fd10 in merged_profile['all_function_data']:
-        total_cyclomatic_complexity = 0
-        for fd20 in merged_profile['all_function_data']:
-            if fd20['functionName'] in fd10['functionsReached']:
-                total_cyclomatic_complexity += fd20['CyclomaticComplexity']
-
-        # Check how much complexity this one will uncover.
-        total_new_complexity = 0
-        for fd21 in merged_profile['all_function_data']:
-            if fd21['functionName'] in fd10['functionsReached'] and fd21['hitcount'] == 0:
-                total_new_complexity += fd21['CyclomaticComplexity']
-        if fd10['hitcount'] == 0:
-            fd10['new_unreached_complexity'] = total_new_complexity + (fd10['CyclomaticComplexity'])
-        else:
-            fd10['new_unreached_complexity'] = total_new_complexity
-
-        fd10['total_cyclomatic_complexity'] = total_cyclomatic_complexity + fd10['CyclomaticComplexity']
-
-    do_refinement = False
-    if do_refinement:
-        refine_paths(merged_profile)
-
-    return merged_profile
+    class_MP = MergedProjectProfile(profiles)
+    print("Number of profiles: %d"%(class_MP.get_profile_count()))
+    return class_MP
 
 def add_func_to_reached_and_clone(merged_profile_old, func_dict_old):
     merged_profile = copy.deepcopy(merged_profile_old)
 
     # Update the hitcount of the function in the new merged profile.
-    for fd_tmp in merged_profile['all_function_data']:
+    #for fd_tmp in merged_profile['all_function_data']:
+    for fd_tmp in merged_profile.all_functions:
         if fd_tmp['functionName'] == func_dict_old['functionName'] and fd_tmp['CyclomaticComplexity'] == func_dict_old['CyclomaticComplexity']:
             #print("We found the function, setting hit count %s"%(fd_tmp['functionName']))
             fd_tmp['hitcount'] = 1
         if fd_tmp['functionName'] in func_dict_old['functionsReached'] and fd_tmp['hitcount'] == 0:
             fd_tmp['hitcount'] = 1
     
-    for fd10 in merged_profile['all_function_data']:
+    for fd10 in merged_profile.all_functions:
         #print("Going through function: %s"%(str(fd10)))
         #print("Length of all function data: %d"%(len(merged_profile['all_function_data'])))
         total_cyclomatic_complexity = 0
-        for fd20 in merged_profile['all_function_data']:
+        #for fd20 in merged_profile['all_function_data']:
+        for fd20 in merged_profile.all_functions:
             if fd20['functionName'] in fd10['functionsReached']:
                 total_cyclomatic_complexity += fd20['CyclomaticComplexity']
 
         # Check how much complexity this one will uncover.
         total_new_complexity = 0
-        for fd21 in merged_profile['all_function_data']:
+        #for fd21 in merged_profile['all_function_data']:
+        for fd21 in merged_profile.all_functions:
             if fd21['functionName'] in fd10['functionsReached'] and fd21['hitcount'] == 0:
                 total_new_complexity += fd21['CyclomaticComplexity']
         if fd10['hitcount'] == 0:
