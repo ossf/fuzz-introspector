@@ -27,27 +27,27 @@ def analysis_get_optimal_targets(merged_profile):
     print("    - in analysis_get_optimal_targets", end=" ")
     optimal_set = set()
     target_fds = list()
-    for fd in reversed(sorted(merged_profile.all_functions, key=lambda x: len(x['functionsReached']))):
-        
+    #for fd in reversed(sorted(merged_profile.all_functions, key=lambda x: len(x['functionsReached']))):
+    for fd in reversed(sorted(merged_profile.all_functions, key=lambda x: len(x.functions_reached))):
         total_vals = 0
         for t in optimal_set:
-            if t in fd['functionsReached']:
+            if t in fd.functions_reached:
                 total_vals += 1
         
-        if fd['hitcount'] != 0:
+        if fd.hitcount != 0:
             continue
 
-        if len(fd['functionsReached']) < 1:
+        if len(fd.functions_reached) < 1:
             continue
 
-        if fd['argCount'] == 0:
+        if fd.arg_count == 0:
             continue
 
         # We do not care about "main2" functions
-        if "main2" in fd['functionName']:
+        if "main2" in fd.function_name:
             continue
 
-        if fd['total_cyclomatic_complexity'] < 20:
+        if fd.total_cyclomatic_complexity < 20:
             continue
 
         # Ensure that the overlap with existing functions in our optimal set is not excessive
@@ -61,12 +61,12 @@ def analysis_get_optimal_targets(merged_profile):
         condition1 = True #proportion < 0.5
 
         # We also want to include all targets that have a fairly high complexity.
-        condition2 = fd['BBCount'] > 1
+        condition2 = fd.bb_count > 1
 
         if not (condition1 or condition2):
             continue
 
-        for func_name in fd['functionsReached']:
+        for func_name in fd.functions_reached:
             optimal_set.add(func_name)
 
         target_fds.append(fd)

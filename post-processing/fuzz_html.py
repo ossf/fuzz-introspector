@@ -193,26 +193,26 @@ def create_all_function_table(tables, project_profile, coverage_url, git_repo_ur
     for fd in project_profile.all_functions:
         if basefolder == "WRONG":
             fd_github_url = "%s/%s#L%d" % (git_repo_url, "/".join(
-                fd['functionSourceFile'].split("/")[3:]), fd['functionLinenumber'])
+                fd.function_source_file.split("/")[3:]), fd.function_linenumber)
         else:
-            fd_github_url = "%s/%s#L%d" % (git_repo_url, fd['functionSourceFile'].replace(
-                basefolder, ""), fd['functionLinenumber'])
+            fd_github_url = "%s/%s#L%d" % (git_repo_url, fd.function_source_file.replace(
+                basefolder, ""), fd.function_linenumber)
         html_string += html_table_add_row([
             "%s" % ("<a href='%s'><code class='language-clike'>" % ("%s%s.html#L%d" % (coverage_url,
-                    fd['functionSourceFile'], fd['functionLinenumber'])) + fuzz_utils.demangle_cpp_func(fd['functionName']) + "</code></a>"),
+                    fd.function_source_file, fd.function_linenumber)) + fuzz_utils.demangle_cpp_func(fd.function_name) + "</code></a>"),
             "<a href=\"%s\">LINK</a>" % (fd_github_url),
-            "%s" % fd['functionSourceFile'],
-            fd['argCount'],
-            fd['argTypes'],
-            fd['functionDepth'],
-            fd['hitcount'],
-            fd['ICount'],
-            fd['BBCount'],
-            fd['CyclomaticComplexity'],
-            len(fd['functionsReached']),
-            len(fd['incoming_references']),
-            fd['total_cyclomatic_complexity'],
-            fd['new_unreached_complexity']
+            "%s" % fd.function_source_file,
+            fd.arg_count,
+            fd.arg_types,
+            fd.function_depth,
+            fd.hitcount,
+            fd.i_count,
+            fd.bb_count,
+            fd.cyclomatic_complexity,
+            len(fd.functions_reached),
+            len(fd.incoming_references),
+            fd.total_cyclomatic_complexity,
+            fd.new_unreached_complexity
         ])
     html_string += ("</table>\n")
     return html_string
@@ -224,10 +224,10 @@ def create_top_summary_info(tables, project_profile):
     total_reached_functions = set()
 
     for fd in project_profile.all_functions:
-        if fd['hitcount'] == 0:
-            total_unreached_functions.add(fd['functionName'])
+        if fd.hitcount == 0:
+            total_unreached_functions.add(fd.function_name)
         else:
-            total_reached_functions.add(fd['functionName'])
+            total_reached_functions.add(fd.function_name)
 
     # Get the total amount of compleixty reached
     total_complexity_reached = project_profile.get_total_reached_function_count()
@@ -313,10 +313,10 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
         # Get URL to coverage report for the node.
         link = "#"
         for fd in project_profile.all_functions:
-            if fd['functionName'] == node['function_name']:
+            if fd.function_name == node['function_name']:
                 link = coverage_url + \
                     "%s.html#L%d" % (
-                        fd['functionSourceFile'], fd['functionLinenumber'])
+                        fd.function_source_file, fd.function_linenumber)
                 break
 
         callsite_link = "#"
@@ -324,9 +324,9 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
         if int(node['depth'])-1 in depth_func:
             parent_fname = depth_func[int(node['depth'])-1]
             for fd in project_profile.all_functions:
-                if fuzz_utils.demangle_cpp_func(fd['functionName']) == parent_fname:
+                if fuzz_utils.demangle_cpp_func(fd.function_name) == parent_fname:
                     callsite_link = coverage_url + "%s.html#L%d" % (
-                            fd['functionSourceFile'],  # parent source file
+                            fd.function_source_file,  # parent source file
                             node['linenumber'])        # callsite line number;
 
         # Get the Github URL to the node. However, if we got a "/" basefolder it means
@@ -335,10 +335,10 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
         # is the project folder.
         if basefolder == "/":
             fd_github_url = "%s/%s#L%d" % (git_repo_url, "/".join(
-                fd['functionSourceFile'].split("/")[3:]), fd['functionLinenumber'])
+                fd.function_source_file.split("/")[3:]), fd.function_linenumbe)
         else:
-            fd_github_url = "%s/%s#L%d" % (git_repo_url, fd['functionSourceFile'].replace(
-                basefolder, ""), fd['functionLinenumber'])
+            fd_github_url = "%s/%s#L%d" % (git_repo_url, fd.function_source_file.replace(
+                basefolder, ""), fd.function_linenumber)
 
         # We may not want to show certain functions at times, e.g. libc functions
         # in case it bloats the calltree

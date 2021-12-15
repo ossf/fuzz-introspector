@@ -61,6 +61,7 @@ class FuzzerProfile:
             func_profile.cyclomatic_complexity = elem['CyclomaticComplexity']
             func_profile.functions_reached = elem['functionsReached']
             func_profile.function_uses = elem['functionUses']
+            func_profile.function_depth = elem['functionDepth']
 
             self.all_class_functions.append(func_profile)
 
@@ -174,28 +175,29 @@ class MergedProjectProfile:
                 if func_name not in self.functions_reached:
                     self.unreached_functions.add(func_name)
 
-        # Gather data on functions
+        # Add all functions from the various profiles into the merged profile. Don't
+        # add duplicates
         excluded_functions = {
                     "sanitizer", "llvm"
                 }
         for profile in profiles:
-            for fd in profile.all_function_data:
-                exclude = len([ef for ef in excluded_functions if ef in fd['functionName']]) == 0
+            for fd in profile.all_class_functions:
+                exclude = len([ef for ef in excluded_functions if ef in fd.function_name]) != 0
                 if exclude:
                     continue
 
                 # Find hit count
                 hitcount = 0
                 for p2 in profiles:
-                    if fd['functionName'] in p2.functions_reached_by_fuzzer:
+                    if fd.function_name in p2.functions_reached_by_fuzzer:
                         hitcount += 1
                 # Only insert if it is not a duplicate
                 is_duplicate = False
                 for fd1 in self.all_functions:
-                    if fd1['functionName'] == fd['functionName']:
+                    if fd1.function_name == fd.function_name:
                         is_duplicate = True
                         break
-                fd['hitcount'] = hitcount
+                fd.hitcount = hitcount
                 if not is_duplicate:
                     self.all_functions.append(fd)
 
@@ -204,42 +206,39 @@ class MergedProjectProfile:
         for fd1 in self.all_functions:
             incoming_references = list()
             for fd2 in self.all_functions:
-                if fd1['functionName'] in fd2['functionsReached']:
+                if fd1.function_name in fd2.functions_reached:
                     incoming_references.append(fd2)
-            fd1['incoming_references'] = incoming_references
-
-
+            fd1.incoming_references = incoming_references
 
         # Gather complexity information about each function
         for fd10 in self.all_functions:
             total_cyclomatic_complexity = 0
             for fd20 in self.all_functions:
-                if fd20['functionName'] in fd10['functionsReached']:
-                    total_cyclomatic_complexity += fd20['CyclomaticComplexity']
+                if fd20.function_name in fd10.functions_reached:
+                    total_cyclomatic_complexity += fd20.cyclomatic_complexity
 
             # Check how much complexity this one will uncover.
             total_new_complexity = 0
             for fd21 in self.all_functions:
-                if fd21['functionName'] in fd10['functionsReached'] and fd21['hitcount'] == 0:
-                    total_new_complexity += fd21['CyclomaticComplexity']
-            if fd10['hitcount'] == 0:
-                fd10['new_unreached_complexity'] = total_new_complexity + (fd10['CyclomaticComplexity'])
+                if fd21.function_name in fd10.functions_reached and fd21.hitcount == 0:
+                    total_new_complexity += fd21.cyclomatic_complexity
+            if fd10.hitcount == 0:
+                fd10.new_unreached_complexity = total_new_complexity + (fd10.cyclomatic_complexity)
             else:
-                fd10['new_unreached_complexity'] = total_new_complexity
-
-            fd10['total_cyclomatic_complexity'] = total_cyclomatic_complexity + fd10['CyclomaticComplexity']
+                fd10.new_unreached_complexity = total_new_complexity
+            fd10.total_cyclomatic_complexity = total_cyclomatic_complexity + fd10.cyclomatic_complexity
 
     def get_total_unreached_function_count(self):
         unreached_function_count = 0
         for fd in self.all_functions:
-            if fd['hitcount'] == 0:
+            if fd.hitcount == 0:
                 unreached_function_count += 1
         return unreached_function_count
 
     def get_total_reached_function_count(self):
         reached_function_count = 0
         for fd in self.all_functions:
-            if fd['hitcount'] != 0:
+            if fd.hitcount != 0:
                 reached_function_count += 1
         return reached_function_count
 
@@ -251,8 +250,9 @@ class MergedProjectProfile:
         """
         all_strs = []
         for func in self.all_functions:
-            if func['functionSourceFile'] != "/" and "/usr/include/" not in func['functionSourceFile']:
-                all_strs.append(func['functionSourceFile'])
+            #if func['functionSourceFile'] != "/" and "/usr/include/" not in func['functionSourceFile']:
+            if func.function_source_file != "/" and "/usr/include/" not in func.function_source_file:
+                all_strs.append(func.function_source_file)
         base = fuzz_utils.longest_common_prefix(all_strs)
         return base
 
