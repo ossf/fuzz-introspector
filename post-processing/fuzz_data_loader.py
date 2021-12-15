@@ -39,7 +39,6 @@ class FuzzerProfile:
         self.fuzzer_information = dict()
 
         # Read data about all functions
-        data_dict = dict()
         self.function_call_depths = fuzz_cfg_load.data_file_read_calltree(filename)
         self.fuzzer_information =  { 'functionSourceFile' : data_dict_yaml['Fuzzer filename'] }
 
