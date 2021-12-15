@@ -127,17 +127,19 @@ class FuzzerProfile:
     def get_total_basic_blocks(self):
         total_basic_blocks = 0
         for func in self.functions_reached_by_fuzzer:
-            for fd in self.all_function_data:
-                if fd['functionName'] == func:
-                    total_basic_blocks += fd['BBCount']
+            for fd in self.all_class_functions:
+                if fd.function_name == func:
+                    total_basic_blocks += fd.bb_count
+                    break
         self.total_basic_blocks = total_basic_blocks
 
     def get_total_cyclomatic_complexity(self):
         self.total_cyclomatic_complexity = 0
         for func in self.functions_reached_by_fuzzer:
-            for fd in self.all_function_data:
-                if fd['functionName'] == func:
-                    self.total_cyclomatic_complexity += fd['CyclomaticComplexity']
+            for fd in self.all_class_functions:
+                if fd.function_name == func:
+                    self.total_cyclomatic_complexity += fd.cyclomatic_complexity
+                    break
 
     def accummulate_profile(self, target_folder):
         self.set_all_reached_functions()
