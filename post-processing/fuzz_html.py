@@ -166,8 +166,8 @@ def create_overview_table(tables, profiles):
 
         html_string += html_table_add_row([
             fuzzer_filename,
-            len(profile.funcsReachedByFuzzer),
-            len(profile.funcsUnreachedByFuzzer),
+            len(profile.functions_reached_by_fuzzer),
+            len(profile.functions_unreached_by_fuzzer),
             max_depth,
             len(profile.file_targets),
             profile.total_basic_blocks,

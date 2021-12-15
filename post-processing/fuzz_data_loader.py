@@ -63,7 +63,6 @@ class FuzzerProfile:
             func_profile.function_uses = elem['functionUses']
 
             self.all_class_functions.append(func_profile)
-        self.funcsReachedByFuzzer = None
 
     def refine_paths(self, basefolder):
         """
@@ -79,28 +78,20 @@ class FuzzerProfile:
         self.file_targets = new_dict
 
     def set_all_reached_functions(self):
-        self.funcsReachedByFuzzer = list()
-        for func in self.all_function_data:
-            if func["functionName"] == "LLVMFuzzerTestOneInput":
-                self.funcsReachedByFuzzer = func['functionsReached']
-        if self.funcsReachedByFuzzer == None:
-            self.funcsReachedByFuzzer = list()
-
-        # Using class methods instead of the dictionary-style.
         self.functions_reached_by_fuzzer = list()
         for func in self.all_class_functions:
             if func.function_name == "LLVMFuzzerTestOneInput":
                 self.functions_reached_by_fuzzer = func.functions_reached
 
     def set_all_unreached_functions(self):
-        self.funcsUnreachedByFuzzer = list()
-        for func in self.all_function_data:
+        self.functions_unreached_by_fuzzer = list()
+        for func in self.all_class_functions:
             in_fuzzer = False
-            for func_name2 in self.funcsReachedByFuzzer:
-                if func_name2 == func['functionName']:
+            for func2_name in self.functions_reached_by_fuzzer:
+                if func2_name == func.function_name:
                     in_fuzzer = True
             if not in_fuzzer:
-                self.funcsUnreachedByFuzzer.append(func['functionName'])
+                self.functions_unreached_by_fuzzer.append(func.function_name)
 
 
 
@@ -131,7 +122,7 @@ class FuzzerProfile:
 
     def get_total_basic_blocks(self):
         total_basic_blocks = 0
-        for func in self.funcsReachedByFuzzer:
+        for func in self.functions_reached_by_fuzzer:
             for fd in self.all_function_data:
                 if fd['functionName'] == func:
                     total_basic_blocks += fd['BBCount']
@@ -139,7 +130,7 @@ class FuzzerProfile:
 
     def get_total_cyclomatic_complexity(self):
         self.total_cyclomatic_complexity = 0
-        for func in self.funcsReachedByFuzzer:
+        for func in self.functions_reached_by_fuzzer:
             for fd in self.all_function_data:
                 if fd['functionName'] == func:
                     self.total_cyclomatic_complexity += fd['CyclomaticComplexity']
@@ -171,12 +162,12 @@ class MergedProjectProfile:
 
         # Populate functions reached
         for profile in profiles:
-            for func_name in profile.funcsReachedByFuzzer:
+            for func_name in profile.functions_reached_by_fuzzer:
                 self.functions_reached.add(func_name)
 
         # Set all unreached functions
         for profile in profiles:
-            for func_name in profile.funcsUnreachedByFuzzer:
+            for func_name in profile.functions_unreached_by_fuzzer:
                 if func_name not in self.functions_reached:
                     self.unreached_functions.add(func_name)
 
@@ -191,7 +182,7 @@ class MergedProjectProfile:
                 # Find hit count
                 hitcount = 0
                 for p2 in profiles:
-                    if fd['functionName'] in p2.funcsReachedByFuzzer:
+                    if fd['functionName'] in p2.functions_reached_by_fuzzer:
                         hitcount += 1
                 # Only insert if it is not a duplicate
                 is_duplicate = False
@@ -201,7 +192,6 @@ class MergedProjectProfile:
                         break
                 fd['hitcount'] = hitcount
                 if not is_duplicate:
-                    #print("T1: %s"%(str(fd['functionsReached'])))
                     self.all_functions.append(fd)
 
 
