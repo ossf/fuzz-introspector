@@ -33,7 +33,10 @@ class FunctionProfile:
 
 class FuzzerProfile:
     """
-    Class for storing information about a given Fuzzer
+    Class for storing information about a given Fuzzer.
+
+    This class essentially holds data corresponding to the output of run of the LLVM
+    plugin. That means, the output from the plugin for a single fuzzer.
     """
     def __init__(self, filename, data_dict_yaml):
         self.fuzzer_information = dict()
@@ -78,12 +81,19 @@ class FuzzerProfile:
         self.file_targets = new_dict
 
     def set_all_reached_functions(self):
+        """
+        sets self.functions_reached_by_fuzzer to all functions reached by LLVMFuzzerTestOneInput
+        """
         self.functions_reached_by_fuzzer = list()
         for func in self.all_class_functions:
             if func.function_name == "LLVMFuzzerTestOneInput":
                 self.functions_reached_by_fuzzer = func.functions_reached
 
     def set_all_unreached_functions(self):
+        """
+        sets self.functions_unreached_by_fuzzer to all functiosn in self.all_class_functions
+        that are not in self.functions_reached_by_fuzzer
+        """
         self.functions_unreached_by_fuzzer = list()
         for func in self.all_class_functions:
             in_fuzzer = False
@@ -125,6 +135,10 @@ class FuzzerProfile:
 
 
     def get_total_basic_blocks(self):
+        """
+        sets self.total_basic_blocks to the sym of basic blocks of all the functions
+        reached by this fuzzer.
+        """
         total_basic_blocks = 0
         for func in self.functions_reached_by_fuzzer:
             for fd in self.all_class_functions:
@@ -134,6 +148,10 @@ class FuzzerProfile:
         self.total_basic_blocks = total_basic_blocks
 
     def get_total_cyclomatic_complexity(self):
+        """
+        sets self.total_cyclomatic_complexity to the sum of cyclomatic complexity
+        of all functions reached by this fuzzer.
+        """
         self.total_cyclomatic_complexity = 0
         for func in self.functions_reached_by_fuzzer:
             for fd in self.all_class_functions:
@@ -142,6 +160,10 @@ class FuzzerProfile:
                     break
 
     def accummulate_profile(self, target_folder):
+        """
+        Triggers various analyses on the data of the fuzzer. This is used after a
+        profile has been initialised to generate more interesting data.
+        """
         self.set_all_reached_functions()
         self.set_all_unreached_functions()
         self.load_coverage(target_folder)
@@ -153,6 +175,11 @@ class FuzzerProfile:
 class MergedProjectProfile:
     """
     Class for storing information about all fuzzers combined in a given project.
+
+    This means, it contains data for all fuzzers in a given project, and digests
+    the manner in a way that makes sense from a project-scope perspective. For
+    example, it does project-wide analysis of reachable/unreachable functions by
+    digesting data from all the fuzzers in the project.
     """
     def __init__(self, profiles):
         self.name = None
