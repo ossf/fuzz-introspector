@@ -42,10 +42,10 @@ class FuzzerProfile:
         data_dict = dict()
         self.function_call_depths = fuzz_cfg_load.data_file_read_calltree(filename)
         self.fuzzer_information =  { 'functionSourceFile' : data_dict_yaml['Fuzzer filename'] }
-        self.all_function_data = data_dict_yaml['All functions']['Elements']
 
+        # Create a list of all the functions.
         self.all_class_functions = list()
-        for elem in self.all_function_data:
+        for elem in data_dict_yaml['All functions']['Elements']:
             func_profile = FunctionProfile(elem['functionName'])
             func_profile.function_name = elem['functionName']
             func_profile.function_source_file = elem['functionSourceFile']
@@ -244,8 +244,8 @@ class MergedProjectProfile:
 
     def get_basefolder(self):
         """
-        Identifies a common path-prefix amongst source files in all_function_data
-        dictionary. This is used to remove locations within a host system to 
+        Identifies a common path-prefix amongst source files in 
+        This is used to remove locations within a host system to 
         essentially make paths as if they were from the root of the source code project.
         """
         all_strs = []
@@ -264,7 +264,7 @@ def read_fuzzer_data_file_to_profile(filename):
     if not os.path.isfile(filename) or not os.path.isfile(filename+".yaml"):
         return None
 
-    data_dict_yaml = fuzz_utils.data_file_read_all_function_data_yaml(filename + ".yaml")
+    data_dict_yaml = fuzz_utils.data_file_read_yaml(filename + ".yaml")
     if data_dict_yaml == None:
         return None
 

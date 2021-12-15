@@ -49,7 +49,7 @@ def get_all_files_in_tree_with_suffix(basedir, suffix):
                 data_files.append(os.path.join(root, f))
     return data_files
 
-def data_file_read_all_function_data_yaml(filename):
+def data_file_read_yaml(filename):
     """
     Reads a file as a yaml file. This is used to load data
     from fuzz-introspectors compiler plugin output.

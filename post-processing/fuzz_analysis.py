@@ -71,8 +71,6 @@ def analysis_get_optimal_targets(merged_profile):
 
         target_fds.append(fd)
     print(". Done")
-    #optimal_set = set()
-    #for fd in merged_profile['all_function_data']
     return target_fds, optimal_set
 
 
