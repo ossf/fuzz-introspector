@@ -598,9 +598,7 @@ def create_html_report(profiles,
         html_string += html_add_header_with_link("%s" %
                                                  (filename.split("/")[-1]), 3, toc_list)
         html_string += "<b>Target file:</b>%s<br>" % (filename)
-        all_functions = ""
-        for ttt in fuzz_targets[filename]['target_fds']:
-            all_functions += " " + ttt.function_name
+        all_functions = ", ".join([f.function_name for f in fuzz_targets[filename]['target_fds']])
         html_string += "<b>Target functions:</b> %s" % (all_functions)
         html_string += "<pre><code class='language-clike'>%s</code></pre><br>" % (
             fuzz_targets[filename]['source_code'])
