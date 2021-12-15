@@ -175,11 +175,13 @@ class MergedProjectProfile:
                     self.unreached_functions.add(func_name)
 
         # Gather data on functions
+        excluded_functions = {
+                    "sanitizer", "llvm"
+                }
         for profile in profiles:
             for fd in profile.all_function_data:
-                if ("sanitizer" in fd['functionName'] or 
-                        "llvm" in fd['functionName']):
-                        #"LLVMFuzzerTestOneInput" in fd['functionName'] or 
+                exclude = len([ef for ef in excluded_functions if ef in fd['functionName']]) == 0
+                if exclude:
                     continue
 
                 # Find hit count
