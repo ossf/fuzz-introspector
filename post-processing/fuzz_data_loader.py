@@ -22,6 +22,14 @@ import fuzz_cov_load
 import fuzz_html
 import fuzz_utils
 
+class FunctionProfile:
+    """
+    Class for storing information about a given Function
+    """
+
+    def __init__(self, function_name):
+        self.function_name = function_name
+
 
 class FuzzerProfile:
     """
@@ -35,6 +43,26 @@ class FuzzerProfile:
         self.function_call_depths = fuzz_cfg_load.data_file_read_calltree(filename)
         self.fuzzer_information =  { 'functionSourceFile' : data_dict_yaml['Fuzzer filename'] }
         self.all_function_data = data_dict_yaml['All functions']['Elements']
+
+        self.all_class_functions = list()
+        for elem in self.all_function_data:
+            func_profile = FunctionProfile(elem['functionName'])
+            func_profile.function_name = elem['functionName']
+            func_profile.function_source_file = elem['functionSourceFile']
+            func_profile.linkage_type = elem['linkageType']
+            func_profile.function_linenumber = elem['functionLinenumber']
+            func_profile.return_type = elem['returnType']
+            func_profile.arg_count = elem['argCount']
+            func_profile.arg_types = elem['argTypes']
+            func_profile.arg_names = elem['argNames']
+            func_profile.bb_count = elem['BBCount']
+            func_profile.i_count = elem['ICount']
+            func_profile.edge_count = elem['EdgeCount']
+            func_profile.cyclomatic_complexity = elem['CyclomaticComplexity']
+            func_profile.functions_reached = elem['functionsReached']
+            func_profile.function_uses = elem['functionUses']
+
+            self.all_class_functions.append(func_profile)
         self.funcsReachedByFuzzer = None
 
     def refine_paths(self, basefolder):
@@ -58,6 +86,11 @@ class FuzzerProfile:
         if self.funcsReachedByFuzzer == None:
             self.funcsReachedByFuzzer = list()
 
+        # Using class methods instead of the dictionary-style.
+        self.functions_reached_by_fuzzer = list()
+        for func in self.all_class_functions:
+            if func.function_name == "LLVMFuzzerTestOneInput":
+                self.functions_reached_by_fuzzer = func.functions_reached
 
     def set_all_unreached_functions(self):
         self.funcsUnreachedByFuzzer = list()
@@ -68,6 +101,8 @@ class FuzzerProfile:
                     in_fuzzer = True
             if not in_fuzzer:
                 self.funcsUnreachedByFuzzer.append(func['functionName'])
+
+
 
     def correlate_runtime_coverage_with_reachability(self, target_folder):
         # Merge any runtime coverage data that we may have to correlate
@@ -227,6 +262,10 @@ class MergedProjectProfile:
         return base
 
 def read_fuzzer_data_file_to_profile(filename):
+    """
+    For a given .data file (CFG) read the corresponding .yaml file
+    This is a bit odd way of doing it and should probably be improved.
+    """
     if not os.path.isfile(filename) or not os.path.isfile(filename+".yaml"):
         return None
 
