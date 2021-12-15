@@ -119,7 +119,7 @@ class FuzzerProfile:
         for fd in self.function_call_depths:
             if fd['functionSourceFile'].replace(" ","") == "":
                 continue
-            if fd['functionSourceFile'] not in file_targets:
+            if fd['functionSourceFile'] not in self.file_targets:
                 self.file_targets[fd['functionSourceFile']] = set()
             self.file_targets[fd['functionSourceFile']].add(fd['function_name'])
 
