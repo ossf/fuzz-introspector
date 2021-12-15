@@ -277,28 +277,28 @@ def add_func_to_reached_and_clone(merged_profile_old, func_dict_old):
 
     # Update the hitcount of the function in the new merged profile.
     for fd_tmp in merged_profile.all_functions:
-        if fd_tmp['functionName'] == func_dict_old['functionName'] and fd_tmp['CyclomaticComplexity'] == func_dict_old['CyclomaticComplexity']:
+        if fd_tmp.function_name == func_dict_old.function_name and fd_tmp.cyclomatic_complexity == func_dict_old.cyclomatic_complexity:
             #print("We found the function, setting hit count %s"%(fd_tmp['functionName']))
-            fd_tmp['hitcount'] = 1
-        if fd_tmp['functionName'] in func_dict_old['functionsReached'] and fd_tmp['hitcount'] == 0:
-            fd_tmp['hitcount'] = 1
+            fd_tmp.hitcount = 1
+        if fd_tmp.function_name in func_dict_old.functions_reached and fd_tmp.hitcount == 0:
+            fd_tmp.hitcount = 1
     
     for fd10 in merged_profile.all_functions:
         total_cyclomatic_complexity = 0
         for fd20 in merged_profile.all_functions:
-            if fd20['functionName'] in fd10['functionsReached']:
-                total_cyclomatic_complexity += fd20['CyclomaticComplexity']
+            if fd20.function_name in fd10.functions_reached:
+                total_cyclomatic_complexity += fd20.cyclomatic_complexity
 
         # Check how much complexity this one will uncover.
         total_new_complexity = 0
         for fd21 in merged_profile.all_functions:
-            if fd21['functionName'] in fd10['functionsReached'] and fd21['hitcount'] == 0:
-                total_new_complexity += fd21['CyclomaticComplexity']
-        if fd10['hitcount'] == 0:
-            fd10['new_unreached_complexity'] = total_new_complexity + (fd10['CyclomaticComplexity'])
+            if fd21.function_name in fd10.functions_reached and fd21.hitcount == 0:
+                total_new_complexity += fd21.cyclomatic_complexity
+        if fd10.hitcount == 0:
+            fd10.new_unreached_complexity = total_new_complexity + (fd10.cyclomatic_complexity)
         else:
-            fd10['new_unreached_complexity'] = total_new_complexity
-        fd10['total_cyclomatic_complexity'] = total_cyclomatic_complexity + fd10['CyclomaticComplexity']
+            fd10.new_unreached_complexity = total_new_complexity
+        fd10.total_cyclomatic_complexity = total_cyclomatic_complexity + fd10.cyclomatic_complexity
 
     return merged_profile
     

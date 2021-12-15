@@ -566,28 +566,28 @@ def create_html_report(profiles,
 
         if basefolder == "WRONG":
             fd_github_url = "%s/%s#L%d" % (git_repo_url, "/".join(
-                fd['functionSourceFile'].split("/")[3:]), fd['functionLinenumber'])
+                fd['functionSourceFile'].split("/")[3:]), fd.function_linenumber)
         else:
-            fd_github_url = "%s/%s#L%d" % (git_repo_url, fd['functionSourceFile'].replace(
-                basefolder, ""), fd['functionLinenumber'])
+            fd_github_url = "%s/%s#L%d" % (git_repo_url, fd.function_source_file.replace(
+                basefolder, ""), fd.function_linenumber)
 
         #print("Github url: %s" % (fd_github_url))
 
         html_string += html_table_add_row([
             "<a href=\"%s\"><code class='language-clike'>%s</code></a>" % (
-                fd_github_url, fuzz_utils.demangle_cpp_func(fd['functionName'])),
-            fd['functionSourceFile'],
-            fd['argCount'],
-            fd['argTypes'],
-            fd['functionDepth'],
-            fd['hitcount'],
-            fd['ICount'],
-            fd['BBCount'],
-            fd['CyclomaticComplexity'],
-            len(fd['functionsReached']),
-            len(fd['incoming_references']),
-            fd['total_cyclomatic_complexity'],
-            fd['new_unreached_complexity']])
+                fd_github_url, fuzz_utils.demangle_cpp_func(fd.function_name)),
+            fd.function_source_file,
+            fd.arg_count,
+            fd.arg_types,
+            fd.function_depth,
+            fd.hitcount,
+            fd.i_count,
+            fd.bb_count,
+            fd.cyclomatic_complexity,
+            len(fd.functions_reached),
+            len(fd.incoming_references),
+            fd.total_cyclomatic_complexity,
+            fd.new_unreached_complexity])
     html_string += ("</table>\n")
     #html_string += "</div>"
 
@@ -600,7 +600,7 @@ def create_html_report(profiles,
         html_string += "<b>Target file:</b>%s<br>" % (filename)
         all_functions = ""
         for ttt in fuzz_targets[filename]['target_fds']:
-            all_functions += " " + ttt['functionName']
+            all_functions += " " + ttt.function_name
         html_string += "<b>Target functions:</b> %s" % (all_functions)
         html_string += "<pre><code class='language-clike'>%s</code></pre><br>" % (
             fuzz_targets[filename]['source_code'])

@@ -112,7 +112,7 @@ def analysis_synthesize_simple_targets(merged_profile):
     curr_count = 0
     while curr_count < max_count:
         print("  - sorting by unreached complexity. ", end="")
-        sorted_by_undiscovered_complexity = list(reversed(sorted(target_fds, key=lambda x: int(x['new_unreached_complexity']))))
+        sorted_by_undiscovered_complexity = list(reversed(sorted(target_fds, key=lambda x: int(x.new_unreached_complexity))))
         print(". Done")
 
         #if len(sorted_by_undiscovered_complexity) == 0:
@@ -135,7 +135,7 @@ def analysis_synthesize_simple_targets(merged_profile):
         #    to_continue = False
         #if not to_continue:
         #    break
-        if tfd['new_unreached_complexity'] <= 35:
+        if tfd.new_unreached_complexity <= 35:
             break
         #if to_continue:
         curr_count += 1
@@ -146,7 +146,7 @@ def analysis_synthesize_simple_targets(merged_profile):
         code_var_decl = ""
         variable_creation = ""
         var_order = []
-        for arg_type in tfd['argTypes']:
+        for arg_type in tfd.arg_types:
             arg_type = arg_type.replace(" ","")
             if arg_type == "char**":
                 code_var_decl += "  char **new_var%d = af_get_double_char_p();\n"%(var_idx)
@@ -177,31 +177,31 @@ def analysis_synthesize_simple_targets(merged_profile):
         #if len(var_order) > 0:
 
         # Now add the function call. 
-        code += "  /* target %s */\n"%(tfd['functionName'])
+        code += "  /* target %s */\n"%(tfd.function_name)
         #code += "  /* linkage %s */\n"%(tfd['linkageType'])
         code += code_var_decl
-        code += "  %s("%(tfd['functionName'])
+        code += "  %s("%(tfd.function_name)
         for idx in range(len(var_order)):
             code += var_order[idx]
             if idx < (len(var_order)-1):
                 code += ", "
         code += ");\n"
         code += "\n"
-        if tfd['functionSourceFile'] not in target_codes:
-            target_codes[tfd['functionSourceFile']] = dict()
-            target_codes[tfd['functionSourceFile']]['source_code'] = ""
-            target_codes[tfd['functionSourceFile']]['target_fds'] = list()
+        if tfd.function_source_file not in target_codes:
+            target_codes[tfd.function_source_file] = dict()
+            target_codes[tfd.function_source_file]['source_code'] = ""
+            target_codes[tfd.function_source_file]['target_fds'] = list()
 
         #print("[Fuzz synthesizer] Function %s - adding code: %s"%(tfd['functionName'], code))
-        target_codes[tfd['functionSourceFile']]['source_code'] += code
-        target_codes[tfd['functionSourceFile']]['target_fds'].append(tfd)
+        target_codes[tfd.function_source_file]['source_code'] += code
+        target_codes[tfd.function_source_file]['target_fds'].append(tfd)
 
 
         print("  - calling add_func_t_reached_and_clone. ", end="")
         new_merged_profile = fuzz_data_loader.add_func_to_reached_and_clone(new_merged_profile, tfd)
         print(". Done")
         for tmp_ff in new_merged_profile.all_functions:
-            if tmp_ff['functionName'] == tfd['functionName'] and tmp_ff['hitcount'] == 0:
+            if tmp_ff.function_name == tfd.function_name and tmp_ff.hitcount == 0:
                 print("Error. Hitcount did not get set for some reason")
                 exit(0)
 
