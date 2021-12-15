@@ -95,29 +95,33 @@ class FuzzerProfile:
 
 
 
-    def correlate_runtime_coverage_with_reachability(self, target_folder):
+    def load_coverage(self, target_folder):
         # Merge any runtime coverage data that we may have to correlate
         # reachability and runtime coverage information.
-        #print("Finding coverage")
-        tname = self.fuzzer_information['functionSourceFile'].split("/")[-1].replace(".cpp","").replace(".c","")
-        functions_hit, coverage_map = fuzz_cov_load.llvm_cov_load(target_folder, tname)
-        if tname != None:
-            self.coverage = dict()
-            self.coverage['functions-hit'] = functions_hit
-            self.coverage['coverage-map'] = coverage_map
+        functions_hit, coverage_map = fuzz_cov_load.llvm_cov_load(target_folder, self.get_target_fuzzer_filename())
+        self.coverage = {
+                'functions-hit' : functions_hit,
+                'coverage-map' : coverage_map
+                }
+
+    def get_target_fuzzer_filename(self):
+        return self.fuzzer_information['functionSourceFile'].split("/")[-1].replace(".cpp","").replace(".c","")
 
     def get_file_targets(self):
+        """
+        Sets self.file_targets to be a dictionarty of string to string.
+        Each key in the dictionary is a filename and the corresponding value is
+        a set of strings containing strings which are the names of the functions
+        in the given file that are reached by the fuzzer.
+        """
         filenames = set()
-        file_targets = dict()
-
+        self.file_targets = dict()
         for fd in self.function_call_depths:
             if fd['functionSourceFile'].replace(" ","") == "":
                 continue
-
             if fd['functionSourceFile'] not in file_targets:
-                file_targets[fd['functionSourceFile']] = set()
-            file_targets[fd['functionSourceFile']].add(fd['function_name'])
-        self.file_targets = file_targets
+                self.file_targets[fd['functionSourceFile']] = set()
+            self.file_targets[fd['functionSourceFile']].add(fd['function_name'])
 
 
     def get_total_basic_blocks(self):
@@ -138,13 +142,10 @@ class FuzzerProfile:
     def accummulate_profile(self, target_folder):
         self.set_all_reached_functions()
         self.set_all_unreached_functions()
-        self.correlate_runtime_coverage_with_reachability(target_folder)
+        self.load_coverage(target_folder)
         self.get_file_targets()
         self.get_total_basic_blocks()
         self.get_total_cyclomatic_complexity()
-
-
-
 
 
 class MergedProjectProfile:
