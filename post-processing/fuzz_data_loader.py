@@ -234,15 +234,7 @@ def read_fuzzer_data_file_to_profile(filename):
     if data_dict_yaml == None:
         return None
 
-    # Read data about all functions
-    #data_dict = dict()
-    #function_call_depths = data_file_read_calltree(filename)
-    #data_dict['fuzzer-information'] =  { 'functionSourceFile' : data_dict_yaml['Fuzzer filename'] }
-    #data_dict['function_call_depths'] = function_call_depths
-    #data_dict['all_function_data'] = data_dict_yaml['All functions']['Elements']
-
     profile = FuzzerProfile(filename, data_dict_yaml)
-
     return profile
 
 
