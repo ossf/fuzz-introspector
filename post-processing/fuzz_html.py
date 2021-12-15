@@ -371,6 +371,43 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
     create_horisontal_calltree_image(image_name, color_sequence)
     return html_string
 
+def create_fuzzer_detailed_section(profile, toc_list, tables, curr_tt_profile, project_profile, coverage_url, git_repo_url, basefolder):
+    html_string = ""
+    fuzzer_filename = profile.fuzzer_information['functionSourceFile']
+    html_string += html_add_header_with_link("Fuzzer: %s" % (
+        fuzzer_filename.replace(" ", "").split("/")[-1]), 2, toc_list)
+
+    html_string += html_add_header_with_link(
+        "Files hit", 3, toc_list, link="files_hit_%d" % (curr_tt_profile))
+
+    # Table showing which files this fuzzer hits.
+    tables.append(f"myTable{len(tables)}")
+    html_string += create_table_head(tables[-1],
+                                     ["filename", "functions hit"])
+    for k in profile.file_targets:
+        html_string += html_table_add_row([k,
+                                          len(profile.file_targets[k])])
+    html_string += "</table>\n"
+
+
+
+    # Calltree generation
+    html_string += html_add_header_with_link(
+        "Call tree", 3, toc_list, link=f"call_tree_{curr_tt_profile}")
+    html_string += "<h4>Function coverage</h4>"
+    html_string += ("<p class='no-top-margin'>The following is the call tree with color coding for which "
+                    "functions are hit/not hit. This info is based on the coverage "
+                    "achieved of all fuzzers together and not just this specific "
+                    "fuzzer. This should change in the future to be per-fuzzer-basis.</p>")
+    image_name = "%s_colormap.png"%(fuzzer_filename.replace(" ", "").split("/")[-1])
+    html_string += "<img src=\"%s\">"%(image_name)
+
+    html_string += "<div class='section-wrapper'>"
+    html_string += create_calltree(profile, project_profile, coverage_url, git_repo_url, basefolder, image_name)
+    html_string += "</div>"
+
+    return html_string
+
 def create_html_report(profiles,
                        project_profile,
                        coverage_url,
@@ -456,50 +493,15 @@ def create_html_report(profiles,
 
     #############################################
     # Section with details about each fuzzer.
+    # This includes calltree for each fuzzer.
     #############################################
     print(" - Creating section with details about each fuzzer")
     html_string += html_add_header_with_link("Fuzzer details", 1, toc_list)
 
-    max_profile = 1
-    curr_tt_profile = 0
-
+    profile_idx = 0
     for profile in profiles:
-        curr_tt_profile += 1
-        # if (curr_tt_profile > max_profile):
-        #    sys.exit(0)
-
-        fuzzer_filename = profile.fuzzer_information['functionSourceFile']
-        html_string += html_add_header_with_link("Fuzzer: %s" % (
-            fuzzer_filename.replace(" ", "").split("/")[-1]), 2, toc_list)
-
-        html_string += html_add_header_with_link(
-            "Files hit", 3, toc_list, link="files_hit_%d" % (curr_tt_profile))
-
-        # Table showing which files this fuzzer hits.
-        tables.append(f"myTable{len(tables)}")
-        html_string += create_table_head(tables[-1],
-                                         ["filename", "functions hit"])
-        for k in profile.file_targets:
-            html_string += html_table_add_row([k,
-                                              len(profile.file_targets[k])])
-        html_string += "</table>\n"
-
-
-
-        # Calltree generation
-        html_string += html_add_header_with_link(
-            "Call tree", 3, toc_list, link=f"call_tree_{curr_tt_profile}")
-        html_string += "<h4>Function coverage</h4>"
-        html_string += ("<p class='no-top-margin'>The following is the call tree with color coding for which "
-                        "functions are hit/not hit. This info is based on the coverage "
-                        "achieved of all fuzzers together and not just this specific "
-                        "fuzzer. This should change in the future to be per-fuzzer-basis.</p>")
-        image_name = "%s_colormap.png"%(fuzzer_filename.replace(" ", "").split("/")[-1])
-        html_string += "<img src=\"%s\">"%(image_name)
-
-        html_string += "<div class='section-wrapper'>"
-        html_string += create_calltree(profile, project_profile, coverage_url, git_repo_url, basefolder, image_name)
-        html_string += "</div>"
+        profile_idx += 1
+        html_string += create_fuzzer_detailed_section(profile, toc_list, tables, profile_idx, project_profile, coverage_url, git_repo_url, basefolder)
 
     #############################################
     # Details about the suggestions for additions to the fuzzer infra
