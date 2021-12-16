@@ -158,7 +158,7 @@ def create_overview_table(tables, profiles):
                                      "Cyclomatic complexity",
                                      "Details"])
     for profile in profiles:  # create a row for each fuzzer.
-        fuzzer_filename = profile.fuzzer_information['functionSourceFile']
+        fuzzer_filename = profile.fuzzer_source_file
         max_depth = 0
         for node in profile.function_call_depths:
             if node['depth'] > max_depth:
@@ -373,7 +373,7 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
 
 def create_fuzzer_detailed_section(profile, toc_list, tables, curr_tt_profile, project_profile, coverage_url, git_repo_url, basefolder):
     html_string = ""
-    fuzzer_filename = profile.fuzzer_information['functionSourceFile']
+    fuzzer_filename = profile.fuzzer_source_file
     html_string += html_add_header_with_link("Fuzzer: %s" % (
         fuzzer_filename.replace(" ", "").split("/")[-1]), 2, toc_list)
 

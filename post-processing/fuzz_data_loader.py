@@ -69,11 +69,8 @@ class FuzzerProfile:
     plugin. That means, the output from the plugin for a single fuzzer.
     """
     def __init__(self, filename, data_dict_yaml):
-        self.fuzzer_information = dict()
-
-        # Read data about all functions
         self.function_call_depths = fuzz_cfg_load.data_file_read_calltree(filename)
-        self.fuzzer_information =  { 'functionSourceFile' : data_dict_yaml['Fuzzer filename'] }
+        self.fuzzer_source_file = data_dict_yaml['Fuzzer filename']
 
         # Create a list of all the functions.
         self.all_class_functions = list()
@@ -86,7 +83,7 @@ class FuzzerProfile:
         """
         Removes the project_profile's basefolder from source paths in a given profile. 
         """
-        self.fuzzer_information['functionSourceFile'] = self.fuzzer_information['functionSourceFile'].replace(basefolder, "")
+        self.fuzzer_source_file = self.fuzzer_source_file.replace(basefolder, "")
         for node in self.function_call_depths:
             node['functionSourceFile'] = node['functionSourceFile'].replace(basefolder, "")
 
@@ -128,7 +125,7 @@ class FuzzerProfile:
                 }
 
     def get_target_fuzzer_filename(self):
-        return self.fuzzer_information['functionSourceFile'].split("/")[-1].replace(".cpp","").replace(".c","")
+        return self.fuzzer_source_file.split("/")[-1].replace(".cpp","").replace(".c","")
 
     def get_file_targets(self):
         """
@@ -286,7 +283,6 @@ class MergedProjectProfile:
         """
         all_strs = []
         for func in self.all_functions:
-            #if func['functionSourceFile'] != "/" and "/usr/include/" not in func['functionSourceFile']:
             if func.function_source_file != "/" and "/usr/include/" not in func.function_source_file:
                 all_strs.append(func.function_source_file)
         base = fuzz_utils.longest_common_prefix(all_strs)
