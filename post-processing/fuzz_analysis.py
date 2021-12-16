@@ -13,10 +13,15 @@
 # limitations under the License.
 
 """Performs analysis on the profiles output from fuzz introspector LLVM pass"""
+
 import os
 import copy
-import fuzz_data_loader
 import cxxfilt
+import logging
+
+import fuzz_data_loader
+
+l = logging.getLogger(name=__name__)
 
 def analysis_get_optimal_targets(merged_profile):
     """
@@ -24,7 +29,7 @@ def analysis_get_optimal_targets(merged_profile):
     Each of these functions is not be reachable by another function
     in the returned set, but, they may reach some of the same functions.
     """
-    print("    - in analysis_get_optimal_targets", end=" ")
+    l.info("    - in analysis_get_optimal_targets")
     optimal_set = set()
     target_fds = list()
     #for fd in reversed(sorted(merged_profile.all_functions, key=lambda x: len(x['functionsReached']))):
@@ -70,7 +75,7 @@ def analysis_get_optimal_targets(merged_profile):
             optimal_set.add(func_name)
 
         target_fds.append(fd)
-    print(". Done")
+    l.info(". Done")
     return target_fds, optimal_set
 
 
@@ -84,7 +89,7 @@ def analysis_synthesize_simple_targets(merged_profile):
     In a sense, this is more of a PoC wy to do some analysis on the data we have.
     It is likely that we could do something much better.
     '''
-    print("  - in analysis_synthesize_simple_targets")
+    l.info("  - in analysis_synthesize_simple_targets")
     new_merged_profile = copy.deepcopy(merged_profile)
     target_fds, optimal_set = analysis_get_optimal_targets(merged_profile)
     fuzzer_code = "#include \"ada_fuzz_header.h\"\n"
@@ -109,9 +114,9 @@ def analysis_synthesize_simple_targets(merged_profile):
     #max_count = 8
     curr_count = 0
     while curr_count < max_count:
-        print("  - sorting by unreached complexity. ", end="")
+        l.info("  - sorting by unreached complexity. ")
         sorted_by_undiscovered_complexity = list(reversed(sorted(target_fds, key=lambda x: int(x.new_unreached_complexity))))
-        print(". Done")
+        l.info(". Done")
 
         #if len(sorted_by_undiscovered_complexity) == 0:
         #    break
@@ -195,12 +200,12 @@ def analysis_synthesize_simple_targets(merged_profile):
         target_codes[tfd.function_source_file]['target_fds'].append(tfd)
 
 
-        print("  - calling add_func_t_reached_and_clone. ", end="")
+        l.info("  - calling add_func_t_reached_and_clone. ", end="")
         new_merged_profile = fuzz_data_loader.add_func_to_reached_and_clone(new_merged_profile, tfd)
-        print(". Done")
+        l.info(". Done")
         for tmp_ff in new_merged_profile.all_functions:
             if tmp_ff.function_name == tfd.function_name and tmp_ff.hitcount == 0:
-                print("Error. Hitcount did not get set for some reason")
+                l.info("Error. Hitcount did not get set for some reason")
                 exit(0)
 
         # We need to update the optimal targets here.

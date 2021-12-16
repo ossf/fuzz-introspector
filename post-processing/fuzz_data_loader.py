@@ -17,10 +17,14 @@ import os
 import sys
 import copy
 import cxxfilt
+import logging
+
 import fuzz_cfg_load
 import fuzz_cov_load
 import fuzz_html
 import fuzz_utils
+
+l = logging.getLogger(name=__name__)
 
 class FunctionProfile:
     """
@@ -336,9 +340,9 @@ def load_all_profiles(target_folder):
 
     # Parse and analyse the data from each fuzzer.
     profiles = []
-    print(" - found %d profiles to load"%(len(data_files)))
+    l.info(" - found %d profiles to load"%(len(data_files)))
     for data_file in data_files:
-        print(" - loading %s"%(data_file))
+        l.info(" - loading %s"%(data_file))
         # Read the .data file
         profile = read_fuzzer_data_file_to_profile(data_file)
         if profile != None:

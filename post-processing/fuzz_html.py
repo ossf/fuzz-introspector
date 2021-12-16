@@ -16,7 +16,9 @@
 import os
 import sys
 import cxxfilt
+import logging
 import shutil
+
 import fuzz_analysis
 import fuzz_utils
 
@@ -27,6 +29,7 @@ import lxml.html as lh
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 
+l = logging.getLogger(name=__name__)
 
 def create_horisontal_calltree_image(image_name, color_list):
     """
@@ -34,7 +37,7 @@ def create_horisontal_calltree_image(image_name, color_list):
     each element on the x-axis shows a node in the calltree in the form
     of a rectangle. The rectangle is red if not visited and green if visited.
     """
-    print("Creating image %s"%(image_name))
+    l.info("Creating image %s"%(image_name))
     plot_size = 10.0
     multiplier = plot_size / len(color_list)
 
@@ -425,7 +428,7 @@ def create_html_report(profiles,
         os.remove(report_name)
 
     toc_list = list()
-    print(" - Creating top section")
+    l.info(" - Creating top section")
 
     # Create html file and top bits.
     # with open(report_name, "a+") as html_report:
@@ -454,7 +457,7 @@ def create_html_report(profiles,
     html_string += create_top_summary_info(tables, project_profile)
     #html_string += "</div>"
 
-    print(" - Identifying optimal targets")
+    l.info(" - Identifying optimal targets")
     fuzz_targets_2, new_profile_2, opt_2 = fuzz_analysis.analysis_synthesize_simple_targets(
         project_profile)
 
@@ -472,7 +475,7 @@ def create_html_report(profiles,
     #############################################
     # Table with overview of all fuzzers.
     #############################################
-    print(" - Creating table with overview of all fuzzers")
+    l.info(" - Creating table with overview of all fuzzers")
     html_string += html_add_header_with_link("Fuzzers overview", 3, toc_list)
     #html_string += "<div class='section-wrapper'>"
     tables.append("myTable%d" % (len(tables)))
@@ -482,7 +485,7 @@ def create_html_report(profiles,
     #############################################
     # Table with details about all functions in the target project.
     #############################################
-    print(" - Creating table with information about all functions in target")
+    l.info(" - Creating table with information about all functions in target")
     html_string += html_add_header_with_link(
         "Project functions overview", 2, toc_list)
     #html_string += "<div class='section-wrapper'>"
@@ -495,7 +498,7 @@ def create_html_report(profiles,
     # Section with details about each fuzzer.
     # This includes calltree for each fuzzer.
     #############################################
-    print(" - Creating section with details about each fuzzer")
+    l.info(" - Creating section with details about each fuzzer")
     html_string += html_add_header_with_link("Fuzzer details", 1, toc_list)
 
     profile_idx = 0
@@ -506,7 +509,7 @@ def create_html_report(profiles,
     #############################################
     # Details about the suggestions for additions to the fuzzer infra
     #############################################
-    print(" - Creating remaining bits")
+    l.info(" - Creating remaining bits")
     html_string += html_add_header_with_link(
         "Analysis and suggestions", 1, toc_list)
     html_string += html_add_header_with_link(

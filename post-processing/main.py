@@ -14,32 +14,34 @@
 
 import os
 import sys
+import logging
 import argparse
 
 import fuzz_data_loader
 import fuzz_html
 import fuzz_utils
 
+l = logging.getLogger(name=__name__)
 
 def run_analysis_on_dir(target_folder,
         git_repo_url,
         coverage_url):
     # Load all the data needed
-    print("[+] Loading profiles")
+    l.info("[+] Loading profiles")
     profiles = fuzz_data_loader.load_all_profiles(target_folder)
-    print("[+] Accummulating profiles")
+    l.info("[+] Accummulating profiles")
     for profile in profiles:
         profile.accummulate_profile(target_folder)
 
     # Merge all profiles into a project profile    
-    print("[+] Creating project profile")
+    l.info("[+] Creating project profile")
     project_profile = fuzz_data_loader.MergedProjectProfile(profiles)
 
     # Find a base folder
     basefolder = project_profile.get_basefolder()
     #print("Base folder: %s"%(basefolder))
 
-    print("[+] Refining profiles")
+    l.info("[+] Refining profiles")
     for profile in profiles:
         profile.refine_paths(basefolder)
 
@@ -47,7 +49,7 @@ def run_analysis_on_dir(target_folder,
     if coverage_url == "":
         coverage_url = "http://localhost:8008/covreport/linux"
 
-    print("[+] Creating HTML report")
+    l.info("[+] Creating HTML report")
     fuzz_html.create_html_report(profiles, project_profile, coverage_url, git_repo_url, basefolder)
 
 
@@ -73,8 +75,10 @@ def create_parser():
     return args
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+    l.info("Running fuzz introspector post-processing")
+
     args = create_parser()
 
-    print("Running fuzz introspector post-processing")
     run_analysis_on_dir(args.target_dir, args.git_repo_url, args.coverage_url)
-    print("Ending fuzz introspector post-processing")
+    l.info("Ending fuzz introspector post-processing")
