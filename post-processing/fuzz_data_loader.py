@@ -14,14 +14,11 @@
 """Reads the data output from the fuzz introspector LLVM plugin."""
 
 import os
-import sys
 import copy
-import cxxfilt
 import logging
 
 import fuzz_cfg_load
 import fuzz_cov_load
-import fuzz_html
 import fuzz_utils
 
 l = logging.getLogger(name=__name__)
@@ -103,6 +100,9 @@ class FuzzerProfile:
         for func in self.all_class_functions:
             if func.function_name == "LLVMFuzzerTestOneInput":
                 self.functions_reached_by_fuzzer = func.functions_reached
+
+    def reaches(self, func_name):
+        return func_name in self.functions_reached_by_fuzzer
 
     def set_all_unreached_functions(self):
         """
@@ -222,17 +222,10 @@ class MergedProjectProfile:
                 if exclude:
                     continue
 
-                # Find hit count
-                hitcount = 0
-                for p2 in profiles:
-                    if fd.function_name in p2.functions_reached_by_fuzzer:
-                        hitcount += 1
-                # Only insert if it is not a duplicate
-                is_duplicate = False
-                for fd1 in self.all_functions:
-                    if fd1.function_name == fd.function_name:
-                        is_duplicate = True
-                        break
+                # Find hit count and whether it has been handled already
+                hitcount = len([p for p in profiles if p.reaches(fd.function_name)])
+                is_duplicate = 0 < len([f for f in self.all_functions if fd.function_name == f])
+
                 fd.hitcount = hitcount
                 if not is_duplicate:
                     self.all_functions.append(fd)
