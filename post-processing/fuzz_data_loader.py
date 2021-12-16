@@ -29,7 +29,37 @@ class FunctionProfile:
 
     def __init__(self, function_name):
         self.function_name = function_name
+        self.function_source_file = None
+        self.linkage_type = None
+        self.function_linenumber = None
+        self.return_type = None
+        self.arg_count = None
+        self.arg_types = None
+        self.arg_names = None
+        self.bb_count = None
+        self.i_count = None
+        self.edge_count = None
+        self.cyclomatic_complexity = None
+        self.functions_reached = None
+        self.function_uses = None
+        self.function_depth = None
 
+    def migrate_from_yaml_elem(self, elem):
+        self.function_name = elem['functionName']
+        self.function_source_file = elem['functionSourceFile']
+        self.linkage_type = elem['linkageType']
+        self.function_linenumber = elem['functionLinenumber']
+        self.return_type = elem['returnType']
+        self.arg_count = elem['argCount']
+        self.arg_types = elem['argTypes']
+        self.arg_names = elem['argNames']
+        self.bb_count = elem['BBCount']
+        self.i_count = elem['ICount']
+        self.edge_count = elem['EdgeCount']
+        self.cyclomatic_complexity = elem['CyclomaticComplexity']
+        self.functions_reached = elem['functionsReached']
+        self.function_uses = elem['functionUses']
+        self.function_depth = elem['functionDepth']
 
 class FuzzerProfile:
     """
@@ -49,22 +79,7 @@ class FuzzerProfile:
         self.all_class_functions = list()
         for elem in data_dict_yaml['All functions']['Elements']:
             func_profile = FunctionProfile(elem['functionName'])
-            func_profile.function_name = elem['functionName']
-            func_profile.function_source_file = elem['functionSourceFile']
-            func_profile.linkage_type = elem['linkageType']
-            func_profile.function_linenumber = elem['functionLinenumber']
-            func_profile.return_type = elem['returnType']
-            func_profile.arg_count = elem['argCount']
-            func_profile.arg_types = elem['argTypes']
-            func_profile.arg_names = elem['argNames']
-            func_profile.bb_count = elem['BBCount']
-            func_profile.i_count = elem['ICount']
-            func_profile.edge_count = elem['EdgeCount']
-            func_profile.cyclomatic_complexity = elem['CyclomaticComplexity']
-            func_profile.functions_reached = elem['functionsReached']
-            func_profile.function_uses = elem['functionUses']
-            func_profile.function_depth = elem['functionDepth']
-
+            func_profile.migrate_from_yaml_elem(elem)
             self.all_class_functions.append(func_profile)
 
     def refine_paths(self, basefolder):
@@ -103,8 +118,6 @@ class FuzzerProfile:
             if not in_fuzzer:
                 self.functions_unreached_by_fuzzer.append(func.function_name)
 
-
-
     def load_coverage(self, target_folder):
         # Merge any runtime coverage data that we may have to correlate
         # reachability and runtime coverage information.
@@ -132,7 +145,6 @@ class FuzzerProfile:
             if fd['functionSourceFile'] not in self.file_targets:
                 self.file_targets[fd['functionSourceFile']] = set()
             self.file_targets[fd['functionSourceFile']].add(fd['function_name'])
-
 
     def get_total_basic_blocks(self):
         """
@@ -184,8 +196,6 @@ class MergedProjectProfile:
     def __init__(self, profiles):
         self.name = None
         self.profiles = profiles
-
-
         self.all_functions = list()
         self.unreached_functions = set()
         self.functions_reached = set()
