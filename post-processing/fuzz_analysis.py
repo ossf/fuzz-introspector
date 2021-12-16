@@ -200,7 +200,7 @@ def analysis_synthesize_simple_targets(merged_profile):
         target_codes[tfd.function_source_file]['target_fds'].append(tfd)
 
 
-        l.info("  - calling add_func_t_reached_and_clone. ", end="")
+        l.info("  - calling add_func_t_reached_and_clone. ")
         new_merged_profile = fuzz_data_loader.add_func_to_reached_and_clone(new_merged_profile, tfd)
         l.info(". Done")
         for tmp_ff in new_merged_profile.all_functions:
