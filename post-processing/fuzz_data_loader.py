@@ -298,6 +298,16 @@ def read_fuzzer_data_file_to_profile(filename):
     return FuzzerProfile(filename, data_dict_yaml)
 
 def add_func_to_reached_and_clone(merged_profile_old, func_dict_old):
+    """
+    This function adds new functions as "reached" in a merged profile, and returns
+    a new copy of the merged profile with reachability information as if the
+    functions in func_dict_old are added to the merged profile. The use of this is
+    to calculate what the state will be of a merged profile by targetting a new set
+    of functions.
+
+    We can use this function in a computation of "optimum fuzzer target analysis", which
+    computes what the combination of ideal function targets.
+    """
     merged_profile = copy.deepcopy(merged_profile_old)
 
     # Update the hitcount of the function in the new merged profile.
@@ -307,7 +317,14 @@ def add_func_to_reached_and_clone(merged_profile_old, func_dict_old):
             fd_tmp.hitcount = 1
         if fd_tmp.function_name in func_dict_old.functions_reached and fd_tmp.hitcount == 0:
             fd_tmp.hitcount = 1
-    
+
+    # Since the hitcounts has been updated in the profile, we now need to update
+    # data such as total complexity covered of the fuzzer, uncovered complexity, etc.
+    # Essentially, we need to re-organise all analysis that is based on hitcounts.
+
+    # TODO: this could be improved. Essentially, instead of having these complicated loops
+    # we create a new profile from scratch based on an array of functions. THis migth be easier
+    # to deal with and also more modular for future work.
     for fd10 in merged_profile.all_functions:
         total_cyclomatic_complexity = 0
         for fd20 in merged_profile.all_functions:
