@@ -26,7 +26,6 @@ class FunctionProfile:
     """
     Class for storing information about a given Function
     """
-
     def __init__(self, function_name):
         self.function_name = function_name
         self.function_source_file = None
@@ -285,8 +284,7 @@ class MergedProjectProfile:
         for func in self.all_functions:
             if func.function_source_file != "/" and "/usr/include/" not in func.function_source_file:
                 all_strs.append(func.function_source_file)
-        base = fuzz_utils.longest_common_prefix(all_strs)
-        return base
+        return fuzz_utils.longest_common_prefix(all_strs)
 
 def read_fuzzer_data_file_to_profile(filename):
     """
@@ -300,9 +298,7 @@ def read_fuzzer_data_file_to_profile(filename):
     if data_dict_yaml == None:
         return None
 
-    profile = FuzzerProfile(filename, data_dict_yaml)
-    return profile
-
+    return FuzzerProfile(filename, data_dict_yaml)
 
 def add_func_to_reached_and_clone(merged_profile_old, func_dict_old):
     merged_profile = copy.deepcopy(merged_profile_old)
@@ -331,7 +327,6 @@ def add_func_to_reached_and_clone(merged_profile_old, func_dict_old):
         else:
             fd10.new_unreached_complexity = total_new_complexity
         fd10.total_cyclomatic_complexity = total_cyclomatic_complexity + fd10.cyclomatic_complexity
-
     return merged_profile
     
 
