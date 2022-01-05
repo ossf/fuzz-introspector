@@ -272,6 +272,7 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
     Creates the HTML of the calltree. Returns the HTML as a string.
     """
     html_string = ""
+
     # We use the callstack to keep track of all function parents. We need this
     # when looking up if a callsite was hit or not. This is because the coverage
     # information about a callsite is located in coverage data of the function
@@ -321,8 +322,10 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
             # hardcoding LLVMFuzzerTestOneInput to be green because some fuzzers may not
             # have a single seed, and in this specific case LLVMFuzzerTestOneInput
             # will be red.
+            max_fuzzer_hitcount = 0
             for (n_line_number, hit_count_cov) in profile.coverage['coverage-map']['LLVMFuzzerTestOneInput']:
-                color_to_be = get_hit_count_color(hit_count_cov)
+                max_fuzzer_hitcount = max(hit_count_cov, max_fuzzer_hitcount)
+            color_to_be = get_hit_count_color(hit_count_cov)
         color_sequence.append(color_to_be)
 
         # Get URL to coverage report for the node.
