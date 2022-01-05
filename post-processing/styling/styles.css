@@ -182,6 +182,8 @@ h1 {
 	background: white!important;
 	border: 1px solid #d9d9d9;
 }
+
+
 .red-background {
 	display: block;
 	margin-bottom: 0px;
@@ -195,6 +197,20 @@ h1 {
 	background:  #bf4343;
 }
 
+
+.gold-background {
+	display: block;
+	margin-bottom: 0px;
+}
+.gold-background .coverage-line-inner {
+	/*background: #ffeaea;*/
+	color:  #a20000;
+	padding:  0px 0px
+}
+.gold-background .language-clike {
+	background:  #DCC80D;
+}
+
 .yellow-background {
 	display: block;
 	margin-bottom: 0px;
@@ -205,19 +221,33 @@ h1 {
 	padding:  0px 0px
 }
 .yellow-background .language-clike {
-	background:  #CCCC00;
+	background:  #DADA25;
 }
 
-.green-background {
+.greenyellow-background {
 	display: block;
 	margin-bottom: 0px;
 }
-.green-background .coverage-line-inner {
+.greenyellow-background .coverage-line-inner {
 	/* background: #ffeaea; */
 	color:  #a20000;
 	padding:  0px 0px
 }
-.green-background .language-clike {
+.greenyellow-background .language-clike {
+	background:  #67C30C;
+}
+
+
+.lawngreen-background {
+	display: block;
+	margin-bottom: 0px;
+}
+.lawngreen-background .coverage-line-inner {
+	/* background: #ffeaea; */
+	color:  #a20000;
+	padding:  0px 0px
+}
+.lawngreen-background .language-clike {
 	background:  #00CC00;
 }
 

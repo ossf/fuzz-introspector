@@ -288,6 +288,10 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
         # Check if the callsite was hit in the parent function. If so, it means the 
         # node should be displayed as green.
         color_to_be = "red"
+        # Our color schemes. These must correspond to the names used by matplotlib
+        color_schemes = [ (1, 10, "gold"), (10, 30, "yellow"), 
+                (30, 50, "greenyellow"), (50, 1000000, "lawngreen") ]
+
         if int(node['depth'])-1 in depth_func:
             for funcname_t in profile.coverage['coverage-map']:
                 normalised_funcname = fuzz_utils.demangle_cpp_func(normalise_str(funcname_t))
@@ -298,7 +302,10 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
                     continue
                 for (n_line_number, hit_times_n) in profile.coverage['coverage-map'][funcname_t]:
                     if n_line_number == node['linenumber'] and hit_times_n != 0:
-                        color_to_be = "green"
+                        print("Hit times: %d"%(hit_times_n))
+                        for cmin, cmax, cname in color_schemes:
+                            if hit_times_n >= cmin and hit_times_n < cmax:
+                                color_to_be = cname
         elif demangled_name == "LLVMFuzzerTestOneInput" and 'LLVMFuzzerTestOneInput' in profile.coverage['coverage-map']:
             # LLVMFuzzerTestOneInput will never have a parent in the calltree. As such, we 
             # check here if the function has been hit, and if so, make it green. We avoid
@@ -306,8 +313,10 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
             # have a single seed, and in this specific case LLVMFuzzerTestOneInput
             # will be red.
             for (n_line_number, hit_times_n) in profile.coverage['coverage-map']['LLVMFuzzerTestOneInput']:
-                if hit_times_n > 0:
-                    color_to_be = "green"
+                for cmin, cmax, cname in color_schemes:
+                    if hit_times_n >= cmin and hit_times_n < cmax:
+                        color_to_be = cname
+
         color = {"green": "#99FF99",
                  "yellow": "#FFFF99",
                  "red": "#FF9999"}[color_to_be]
