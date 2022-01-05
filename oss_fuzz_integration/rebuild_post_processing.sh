@@ -16,7 +16,7 @@
 ################################################################################
 #
 # This script should be run from the fuzz-introspector/oss_fuzz_integration folder
-cd oss-fuzz/infra/base-images/
+cd oss-fuzz
 
 #docker build --pull -t gcr.io/oss-fuzz-base/base-image "$@" infra/base-images/base-image
 #docker build -t gcr.io/oss-fuzz-base/base-clang "$@" infra/base-images/base-clang
