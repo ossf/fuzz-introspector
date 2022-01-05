@@ -340,14 +340,13 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
         callsite_link = "#"
 
         # Find the parent
-        #if int(node['depth'])-1 in callstack:
         if callstack_has_parent(node, callstack):
-            parent_fname = callstack_get_parent(node, callstack)#callstack[int(node['depth'])-1]
+            parent_fname = callstack_get_parent(node, callstack)
             for fd in project_profile.all_functions:
                 if fuzz_utils.demangle_cpp_func(fd.function_name) == parent_fname:
                     callsite_link = coverage_url + "%s.html#L%d" % (
-                            fd.function_source_file,  # parent source file
-                            node['linenumber'])        # callsite line number;
+                            fd.function_source_file,   # parent source file
+                            node['linenumber'])        # callsite line number
 
         # Get the Github URL to the node. However, if we got a "/" basefolder it means
         # it is a wrong basefolder and we handle this by removing the two first folders
