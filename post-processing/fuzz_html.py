@@ -373,22 +373,13 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
         # Create the HTML code for the line in the calltree
         indentation = int(node['depth'])*16
         horisontal_spacing = "&nbsp;"*4*int(node['depth'])
-
+        html_string += "<div style='margin-left: %spx' class=\"%s-background\">"%(str(indentation), color_to_be)
+        html_string += "<span class=\"coverage-line-inner\">%d <code class=\"language-clike\">%s</code>"%(int(node['depth']), demangled_name)
         if node['functionSourceFile'].replace(" ","") == "/":
-            html_string += ("<div style='margin-left: %spx' class=\"%s-background\"><span class=\"coverage-line-inner\">%d <code class=\"language-clike\">%s</code> <span class=\"coverage-line-filename\"><a href=\"%s\">[call site]</a><span></span></div>\n" % (
-            str(indentation),
-            color_to_be,
-            int(node['depth']),
-            demangled_name,
-            callsite_link))
+            func_href = ""
         else:
-            html_string += ("<div style='margin-left: %spx' class=\"%s-background\"><span class=\"coverage-line-inner\">%d <code class=\"language-clike\">%s</code> <span class=\"coverage-line-filename\"><a href=\"%s\">[function]</a><a href=\"%s\">[call site]</a><span></span></div>\n" % (
-            str(indentation),
-            color_to_be,
-            int(node['depth']),
-            demangled_name,
-            link,
-            callsite_link))
+            func_href = "<a href=\"%s\">[function]</a>"%(link)
+        html_string += "<span class=\"coverage-line-filename\">%s<a href=\"%s\">[call site]</a><span></span></div>\n"%(func_href, callsite_link)
 
     # End of tree output
     create_horisontal_calltree_image(image_name, color_sequence)
