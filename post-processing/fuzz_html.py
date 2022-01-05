@@ -284,12 +284,15 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
     def callstack_has_parent(n, c):
         return int(n['depth'])-1 in c
 
+    def callstack_set_curr_node(n, name, c):
+        c[int(node['depth'])] = name
+
     color_sequence = []
     for node in profile.function_call_depths:
         demangled_name = fuzz_utils.demangle_cpp_func(node['function_name'])
 
         # Add to callstack
-        callstack[int(node['depth'])] = demangled_name
+        callstack_set_curr_node(node, demangled_name, callstack)
 
         # Identify what background color the line should be, corresponding to whether
         # it was hit or not in the coverage analysis.
