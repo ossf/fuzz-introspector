@@ -16,6 +16,11 @@
 ################################################################################
 #
 # This script should be run from the fuzz-introspector/oss_fuzz_integration folder
+
+# Copy over new post-processing
+rm -rf ./oss-fuzz/infra/base-images/base-builder/post-processing
+cp -rf ../post-processing ./oss-fuzz/infra/base-images/base-builder/post-processing
+
 cd oss-fuzz
 
 #docker build --pull -t gcr.io/oss-fuzz-base/base-image "$@" infra/base-images/base-image
