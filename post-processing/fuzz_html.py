@@ -295,8 +295,13 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
         # Check if the callsite was hit in the parent function. If so, it means the 
         # node should be displayed as green.
         color_to_be = "red"
-        color_schemes = [ (1, 10, "gold"), (10, 30, "yellow"), 
-                (30, 50, "greenyellow"), (50, 1000000, "lawngreen") ]
+        def get_hit_count_color(hit_count):
+            color_schemes = [ (1, 10, "gold"), (10, 30, "yellow"), 
+                    (30, 50, "greenyellow"), (50, 1000000, "lawngreen") ]
+            for cmin, cmax, cname in color_schemes:
+                if hit_count >= cmin and hit_count < cmax:
+                    return cname
+            return "red"
 
         if callstack_has_parent(node, callstack):
             # Find the parent function and check coverage of the node
@@ -305,24 +310,19 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
                 normalised_parent_funcname = normalise_str(callstack_get_parent(node, callstack))
                 #print("Normalised funcname: %s"%(normalised_funcname))
                 #print("Normalised parent funcname: %s"%(normalised_parent_funcname))
-                if normalised_funcname != normalised_parent_funcname:
-                    continue
-                for (n_line_number, hit_times_n) in profile.coverage['coverage-map'][funcname_t]:
-                    if n_line_number == node['linenumber'] and hit_times_n != 0:
-                        print("Hit times: %d"%(hit_times_n))
-                        for cmin, cmax, cname in color_schemes:
-                            if hit_times_n >= cmin and hit_times_n < cmax:
-                                color_to_be = cname
+                if normalised_funcname == normalised_parent_funcname:
+                    for (n_line_number, hit_count_cov) in profile.coverage['coverage-map'][funcname_t]:
+                        if n_line_number == node['linenumber'] and hit_count_cov > 0:
+                            color_to_be = get_hit_count_color(hit_count_cov)
+
         elif demangled_name == "LLVMFuzzerTestOneInput" and 'LLVMFuzzerTestOneInput' in profile.coverage['coverage-map']:
             # LLVMFuzzerTestOneInput will never have a parent in the calltree. As such, we 
             # check here if the function has been hit, and if so, make it green. We avoid
             # hardcoding LLVMFuzzerTestOneInput to be green because some fuzzers may not
             # have a single seed, and in this specific case LLVMFuzzerTestOneInput
             # will be red.
-            for (n_line_number, hit_times_n) in profile.coverage['coverage-map']['LLVMFuzzerTestOneInput']:
-                for cmin, cmax, cname in color_schemes:
-                    if hit_times_n >= cmin and hit_times_n < cmax:
-                        color_to_be = cname
+            for (n_line_number, hit_count_cov) in profile.coverage['coverage-map']['LLVMFuzzerTestOneInput']:
+                color_to_be = get_hit_count_color(hit_count_cov)
         color_sequence.append(color_to_be)
 
         # Get URL to coverage report for the node.
