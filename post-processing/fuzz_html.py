@@ -277,6 +277,12 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
     # information about a callsite is located in coverage data of the function
     # in which the callsite is placed.
     callstack = dict()
+    def callstack_get_parent(n, c):
+        return c[int(n['depth'])-1]
+
+    def callstack_has_parent(n, c):
+        return int(n['depth'])-1 in c
+
     color_sequence = []
     for node in profile.function_call_depths:
         demangled_name = fuzz_utils.demangle_cpp_func(node['function_name'])
@@ -292,11 +298,11 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
         color_schemes = [ (1, 10, "gold"), (10, 30, "yellow"), 
                 (30, 50, "greenyellow"), (50, 1000000, "lawngreen") ]
 
-        if int(node['depth'])-1 in callstack:
+        if callstack_has_parent(node, callstack):
             # Find the parent function and check coverage of the node
             for funcname_t in profile.coverage['coverage-map']:
                 normalised_funcname = fuzz_utils.demangle_cpp_func(normalise_str(funcname_t))
-                normalised_parent_funcname = normalise_str(callstack[int(node['depth'])-1])
+                normalised_parent_funcname = normalise_str(callstack_get_parent(node, callstack))
                 #print("Normalised funcname: %s"%(normalised_funcname))
                 #print("Normalised parent funcname: %s"%(normalised_parent_funcname))
                 if normalised_funcname != normalised_parent_funcname:
@@ -331,8 +337,9 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
         callsite_link = "#"
 
         # Find the parent
-        if int(node['depth'])-1 in callstack:
-            parent_fname = callstack[int(node['depth'])-1]
+        #if int(node['depth'])-1 in callstack:
+        if callstack_has_parent(node, callstack):
+            parent_fname = callstack_get_parent(node, callstack)#callstack[int(node['depth'])-1]
             for fd in project_profile.all_functions:
                 if fuzz_utils.demangle_cpp_func(fd.function_name) == parent_fname:
                     callsite_link = coverage_url + "%s.html#L%d" % (
