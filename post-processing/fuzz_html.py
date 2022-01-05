@@ -316,10 +316,6 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
                 for cmin, cmax, cname in color_schemes:
                     if hit_times_n >= cmin and hit_times_n < cmax:
                         color_to_be = cname
-
-        color = {"green": "#99FF99",
-                 "yellow": "#FFFF99",
-                 "red": "#FF9999"}[color_to_be]
         color_sequence.append(color_to_be)
 
         # Get URL to coverage report for the node.
