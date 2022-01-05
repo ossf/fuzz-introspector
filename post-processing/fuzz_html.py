@@ -266,6 +266,9 @@ def create_top_summary_info(tables, project_profile):
     html_string += ("</table>\n")
     return html_string
 
+#def overlay_caltree_with_coverage(profile, project_profile):
+
+
 
 def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefolder, image_name):
     """
@@ -288,26 +291,31 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
         c[int(node['depth'])] = name
 
     color_sequence = []
+    is_first = True
     for node in profile.function_call_depths:
         demangled_name = fuzz_utils.demangle_cpp_func(node['function_name'])
 
         # Add to callstack
         callstack_set_curr_node(node, demangled_name, callstack)
 
-        # Identify what background color the line should be, corresponding to whether
-        # it was hit or not in the coverage analysis.
-        # Check if the callsite was hit in the parent function. If so, it means the 
-        # node should be displayed as green.
-        color_to_be = "red"
-        def get_hit_count_color(hit_count):
-            color_schemes = [ (1, 10, "gold"), (10, 30, "yellow"), 
-                    (30, 50, "greenyellow"), (50, 1000000, "lawngreen") ]
-            for cmin, cmax, cname in color_schemes:
-                if hit_count >= cmin and hit_count < cmax:
-                    return cname
-            return "red"
+        # Get hitcount for this node
+        node_hitcount = 0
+        if is_first:
+            # The first node is always the entry of LLVMFuzzerTestOneInput
+            # LLVMFuzzerTestOneInput will never have a parent in the calltree. As such, we 
+            # check here if the function has been hit, and if so, make it green. We avoid
+            # hardcoding LLVMFuzzerTestOneInput to be green because some fuzzers may not
+            # have a single seed, and in this specific case LLVMFuzzerTestOneInput
+            # will be red.
+            if not (demangled_name == "LLVMFuzzerTestOneInput" and 'LLVMFuzzerTestOneInput' in profile.coverage['coverage-map']):
+                l.error("LLVMFuzzerTestOneInput is not the first node or there is no coverage of the fuzzer entrypoint. Exiting.")
+                exit(1)
 
-        if callstack_has_parent(node, callstack):
+            node_hitcount = 0
+            for (n_line_number, hit_count_cov) in profile.coverage['coverage-map']['LLVMFuzzerTestOneInput']:
+                node_hitcount = max(hit_count_cov, node_hitcount)
+            is_first = False
+        elif  callstack_has_parent(node, callstack):
             # Find the parent function and check coverage of the node
             for funcname_t in profile.coverage['coverage-map']:
                 normalised_funcname = fuzz_utils.demangle_cpp_func(normalise_str(funcname_t))
@@ -317,18 +325,20 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
                 if normalised_funcname == normalised_parent_funcname:
                     for (n_line_number, hit_count_cov) in profile.coverage['coverage-map'][funcname_t]:
                         if n_line_number == node['linenumber'] and hit_count_cov > 0:
-                            color_to_be = get_hit_count_color(hit_count_cov)
+                            node_hitcount = hit_count_cov
+        else:
+            l.error("A node should either be the first or it must have a parent")
+            exit(1)
 
-        elif demangled_name == "LLVMFuzzerTestOneInput" and 'LLVMFuzzerTestOneInput' in profile.coverage['coverage-map']:
-            # LLVMFuzzerTestOneInput will never have a parent in the calltree. As such, we 
-            # check here if the function has been hit, and if so, make it green. We avoid
-            # hardcoding LLVMFuzzerTestOneInput to be green because some fuzzers may not
-            # have a single seed, and in this specific case LLVMFuzzerTestOneInput
-            # will be red.
-            max_fuzzer_hitcount = 0
-            for (n_line_number, hit_count_cov) in profile.coverage['coverage-map']['LLVMFuzzerTestOneInput']:
-                max_fuzzer_hitcount = max(hit_count_cov, max_fuzzer_hitcount)
-            color_to_be = get_hit_count_color(hit_count_cov)
+        # Map hitcount to color of target.
+        def get_hit_count_color(hit_count):
+            color_schemes = [ (0,1,"red"), (1, 10, "gold"), (10, 30, "yellow"),
+                    (30, 50, "greenyellow"), (50, 1000000, "lawngreen") ]
+            for cmin, cmax, cname in color_schemes:
+                if hit_count >= cmin and hit_count < cmax:
+                    return cname
+            return "red"
+        color_to_be = get_hit_count_color(node_hitcount)
         color_sequence.append(color_to_be)
 
         # Get URL to coverage report for the node.
