@@ -26,4 +26,6 @@ cp -rf ./build/out/$1/inspector-tmp/ ./corpus-$LATEST_CORPUS_DIR/inspector-repor
 cp -rf ./corpus-$LATEST_CORPUS_DIR/report/ ./corpus-$LATEST_CORPUS_DIR/inspector-report/covreport
 
 echo "If all worked, then you should be able to start a webserver at port 8008 in ./corpus-${LATEST_CORPUS_DIR}/inspector-report/"
+cd ./corpus-${LATEST_CORPUS_DIR}/inspector-report/
+python3 -m http.server 8008
 echo "Use the following command to initialize a webserver in the directory: cd ./corpus-${LATEST_CORPUS_DIR}/inspector-report/ && python3 -m http.server 8008"
