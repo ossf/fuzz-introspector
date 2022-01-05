@@ -272,30 +272,31 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
     Creates the HTML of the calltree. Returns the HTML as a string.
     """
     html_string = ""
-    # We use the depth_func to keep track of all function parents. We need this
-    # when looking up if a callsite was hit or not.
-    depth_func = dict()
+    # We use the callstack to keep track of all function parents. We need this
+    # when looking up if a callsite was hit or not. This is because the coverage
+    # information about a callsite is located in coverage data of the function
+    # in which the callsite is placed.
+    callstack = dict()
     color_sequence = []
     for node in profile.function_call_depths:
         demangled_name = fuzz_utils.demangle_cpp_func(node['function_name'])
 
-        # Some logic for enforcing consistency, i.e. all functions above
-        # in the callstack must be green for something to be green.
-        depth_func[int(node['depth'])] = demangled_name
+        # Add to callstack
+        callstack[int(node['depth'])] = demangled_name
 
         # Identify what background color the line should be, corresponding to whether
         # it was hit or not in the coverage analysis.
         # Check if the callsite was hit in the parent function. If so, it means the 
         # node should be displayed as green.
         color_to_be = "red"
-        # Our color schemes. These must correspond to the names used by matplotlib
         color_schemes = [ (1, 10, "gold"), (10, 30, "yellow"), 
                 (30, 50, "greenyellow"), (50, 1000000, "lawngreen") ]
 
-        if int(node['depth'])-1 in depth_func:
+        if int(node['depth'])-1 in callstack:
+            # Find the parent function and check coverage of the node
             for funcname_t in profile.coverage['coverage-map']:
                 normalised_funcname = fuzz_utils.demangle_cpp_func(normalise_str(funcname_t))
-                normalised_parent_funcname = normalise_str(depth_func[int(node['depth'])-1])
+                normalised_parent_funcname = normalise_str(callstack[int(node['depth'])-1])
                 #print("Normalised funcname: %s"%(normalised_funcname))
                 #print("Normalised parent funcname: %s"%(normalised_parent_funcname))
                 if normalised_funcname != normalised_parent_funcname:
@@ -328,9 +329,10 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
                 break
 
         callsite_link = "#"
+
         # Find the parent
-        if int(node['depth'])-1 in depth_func:
-            parent_fname = depth_func[int(node['depth'])-1]
+        if int(node['depth'])-1 in callstack:
+            parent_fname = callstack[int(node['depth'])-1]
             for fd in project_profile.all_functions:
                 if fuzz_utils.demangle_cpp_func(fd.function_name) == parent_fname:
                     callsite_link = coverage_url + "%s.html#L%d" % (
