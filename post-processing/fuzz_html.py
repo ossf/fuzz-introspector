@@ -266,16 +266,8 @@ def create_top_summary_info(tables, project_profile):
     html_string += ("</table>\n")
     return html_string
 
-#def overlay_caltree_with_coverage(profile, project_profile):
 
-
-
-def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefolder, image_name):
-    """
-    Creates the HTML of the calltree. Returns the HTML as a string.
-    """
-    html_string = ""
-
+def overlay_caltree_with_coverage(profile, project_profile, coverage_url, git_repo_url, basefolder, image_name):
     # We use the callstack to keep track of all function parents. We need this
     # when looking up if a callsite was hit or not. This is because the coverage
     # information about a callsite is located in coverage data of the function
@@ -374,7 +366,17 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
                 basefolder, ""), fd.function_linenumber)
         node['cov-github-url'] = fd_github_url
 
+
+def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefolder, image_name):
+    """
+    Creates the HTML of the calltree. Returns the HTML as a string.
+    """
+
+    # Overlay statically extracted calltree with runtime coverage information
+    overlay_caltree_with_coverage(profile, project_profile, coverage_url, git_repo_url, basefolder, image_name)
+
     # Now generate the HTML code
+    html_string = ""
     for node in profile.function_call_depths:
         demangled_name = fuzz_utils.demangle_cpp_func(node['function_name'])
         color_to_be = node['cov-color']
@@ -399,9 +401,8 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
         else:
             func_href = "<a href=\"%s\">[function]</a>"%(link)
         html_string += "<span class=\"coverage-line-filename\">%s<a href=\"%s\">[call site]</a><span></span></div>\n"%(func_href, callsite_link)
-    # End of tree output
 
-    # Create color sequence image
+    # Create fixed-width color sequence image
     color_sequence = []
     for node in profile.function_call_depths:
         color_sequence.append(node['cov-color'])
