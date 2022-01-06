@@ -309,6 +309,7 @@ def overlay_caltree_with_coverage(profile, project_profile, coverage_url, git_re
             if len(coverage_data) == 0:
                 l.error("There is no coverage data (not even all negative). Exiting")
                 exit(0)
+            node['cov-parent'] = "EP"
 
             node_hitcount = 0
             for (n_line_number, hit_count_cov) in coverage_data:
@@ -320,6 +321,7 @@ def overlay_caltree_with_coverage(profile, project_profile, coverage_url, git_re
             for (n_line_number, hit_count_cov) in coverage_data:
                 if n_line_number == node['linenumber'] and hit_count_cov > 0:
                     node_hitcount = hit_count_cov
+            node['cov-parent'] = callstack_get_parent(node, callstack)
         else:
             l.error("A node should either be the first or it must have a parent")
             exit(1)
@@ -412,10 +414,10 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
     # Highlight the ten most useful places
     nodes_sorted_by_red_ahead = list(reversed(list(sorted(profile.function_call_depths, key=lambda x:x['cov-forward-reds']))))
     max_idx = 10
-    html_string = create_table_head(tables[-1], ['Block count', 'Caltree index', 'Function', 'Callsite'])
+    html_string = create_table_head(tables[-1], ['Blocked nodes', 'Caltree index', 'Parent function', 'Callsite'])
     for node in nodes_sorted_by_red_ahead:
-        print("Function block count: %d ## Function: %s ## Callsite: %s"%(node['cov-forward-reds'], node['function_name'], node['cov-callsite-link']))
-        html_string += html_table_add_row([str(node['cov-forward-reds']), str(node['cov-ct-idx']), node['function_name'], "<a href=%s>call site</a>"%(node['cov-callsite-link'])])
+        print("Function block count: %d ## Function: %s ## Callsite: %s"%(node['cov-forward-reds'], node['cov-parent'], node['cov-callsite-link']))
+        html_string += html_table_add_row([str(node['cov-forward-reds']), str(node['cov-ct-idx']), node['cov-parent'], "<a href=%s>call site</a>"%(node['cov-callsite-link'])])
         if max_idx == 0:
             break
         max_idx -= 1
