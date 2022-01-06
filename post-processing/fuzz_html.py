@@ -366,6 +366,23 @@ def overlay_caltree_with_coverage(profile, project_profile, coverage_url, git_re
                 basefolder, ""), fd.function_linenumber)
         node['cov-github-url'] = fd_github_url
 
+    # Extract data about which nodes unlocks data
+    for idx1 in range(len(profile.function_call_depths)):
+        n1 = profile.function_call_depths[idx1]
+
+        # Read forward untill we see a green node. Depth must be the same or higher
+        idx2 = idx1+1
+        forward_red = 0
+        while idx2 < len(profile.function_call_depths):
+            # Check if we should break or increment forward_red
+            n2 = profile.function_call_depths[idx2]
+            if n2['depth'] > n1['depth']:
+                break
+            if n2['cov-hitcount'] != 0:
+                break
+            forward_red += 1
+            idx2 += 1
+        n1['cov-forward-reds'] = forward_red
 
 def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefolder, image_name):
     """
@@ -374,6 +391,9 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
 
     # Overlay statically extracted calltree with runtime coverage information
     overlay_caltree_with_coverage(profile, project_profile, coverage_url, git_repo_url, basefolder, image_name)
+
+    for node in profile.function_call_depths:
+        print("Node: %d"%(node['cov-forward-reds']))
 
     # Generate calltree overlay HTML
     html_string = ""
