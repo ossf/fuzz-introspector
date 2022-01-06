@@ -373,6 +373,9 @@ def overlay_caltree_with_coverage(profile, project_profile, coverage_url, git_re
     # Extract data about which nodes unlocks data
     for idx1 in range(len(profile.function_call_depths)):
         n1 = profile.function_call_depths[idx1]
+        if n1['cov-hitcount'] == 0:
+            n1['cov-forward-reds'] = 0
+            continue
 
         # Read forward untill we see a green node. Depth must be the same or higher
         idx2 = idx1+1
@@ -380,8 +383,18 @@ def overlay_caltree_with_coverage(profile, project_profile, coverage_url, git_re
         while idx2 < len(profile.function_call_depths):
             # Check if we should break or increment forward_red
             n2 = profile.function_call_depths[idx2]
-            if n2['depth'] > n1['depth']:
+
+            # Break if the node is not at depth or deeper in the calltree than n1
+            # Remember:
+            # - the lower the depth, the higher up (closer to LLVMFuzzerTestOneInput) in the calltree
+            # - the higehr the depth, the lower down (further away from LLVMFuzzerTestOneInput) in the calltree
+            if n2['depth'] < n1['depth']:
                 break
+
+            # break if the node is visited. We *could* change this to another metric, e.g.
+            # all nodes underneath n1 that are off, i.e. instead of breaking here we would
+            # increment forward_red iff cov-hitcount != 0. This, however, would prioritise
+            # blockers at the top rather than precisely locate them in the calltree.
             if n2['cov-hitcount'] != 0:
                 break
             forward_red += 1
