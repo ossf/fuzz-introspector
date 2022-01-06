@@ -395,14 +395,16 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
     # Highlight the ten most useful places
     nodes_sorted_by_red_ahead = list(reversed(list(sorted(profile.function_call_depths, key=lambda x:x['cov-forward-reds']))))
     max_idx = 10
+    html_string = create_table_head("Main blockers", ['Block count', 'Function', 'Callsite'])
     for node in nodes_sorted_by_red_ahead:
         print("Function block count: %d ## Function: %s ## Callsite: %s"%(node['cov-forward-reds'], node['function_name'], node['cov-callsite-link']))
+        html_string += html_table_add_row([str(node['cov-forward-reds']), node['function_name'], "<a href=%s>call site</a>"%(node['cov-callsite-link'])])
         if max_idx == 0:
             break
         max_idx -= 1
+    html_string += "</table>"
 
     # Generate calltree overlay HTML
-    html_string = ""
     for node in profile.function_call_depths:
         demangled_name = fuzz_utils.demangle_cpp_func(node['function_name'])
         color_to_be = node['cov-color']
