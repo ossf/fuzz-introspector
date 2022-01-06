@@ -391,9 +391,15 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
 
     # Overlay statically extracted calltree with runtime coverage information
     overlay_caltree_with_coverage(profile, project_profile, coverage_url, git_repo_url, basefolder, image_name)
-
-    for node in profile.function_call_depths:
-        print("Node: %d"%(node['cov-forward-reds']))
+ 
+    # Highlight the ten most useful places
+    nodes_sorted_by_red_ahead = list(reversed(list(sorted(profile.function_call_depths, key=lambda x:x['cov-forward-reds']))))
+    max_idx = 10
+    for node in nodes_sorted_by_red_ahead:
+        print("Function block count: %d ## Function: %s ## Callsite: %s"%(node['cov-forward-reds'], node['function_name'], node['cov-callsite-link']))
+        if max_idx == 0:
+            break
+        max_idx -= 1
 
     # Generate calltree overlay HTML
     html_string = ""
