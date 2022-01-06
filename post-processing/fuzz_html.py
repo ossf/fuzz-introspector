@@ -283,7 +283,11 @@ def overlay_caltree_with_coverage(profile, project_profile, coverage_url, git_re
         c[int(node['depth'])] = name
 
     is_first = True
+    ct_idx = 0
     for node in profile.function_call_depths:
+        node['cov-ct-idx'] = ct_idx
+        ct_idx += 1
+
         demangled_name = fuzz_utils.demangle_cpp_func(node['function_name'])
 
         # Add to callstack
@@ -395,16 +399,17 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
     # Highlight the ten most useful places
     nodes_sorted_by_red_ahead = list(reversed(list(sorted(profile.function_call_depths, key=lambda x:x['cov-forward-reds']))))
     max_idx = 10
-    html_string = create_table_head("Main blockers", ['Block count', 'Function', 'Callsite'])
+    html_string = create_table_head("Main blockers", ['Block count', 'Caltree index', 'Function', 'Callsite'])
     for node in nodes_sorted_by_red_ahead:
         print("Function block count: %d ## Function: %s ## Callsite: %s"%(node['cov-forward-reds'], node['function_name'], node['cov-callsite-link']))
-        html_string += html_table_add_row([str(node['cov-forward-reds']), node['function_name'], "<a href=%s>call site</a>"%(node['cov-callsite-link'])])
+        html_string += html_table_add_row([str(node['cov-forward-reds']), str(node['cov-ct-idx']), node['function_name'], "<a href=%s>call site</a>"%(node['cov-callsite-link'])])
         if max_idx == 0:
             break
         max_idx -= 1
     html_string += "</table>"
 
     # Generate calltree overlay HTML
+    html_string += "<div class='section-wrapper'>"
     for node in profile.function_call_depths:
         demangled_name = fuzz_utils.demangle_cpp_func(node['function_name'])
         color_to_be = node['cov-color']
@@ -420,15 +425,18 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
             continue
 
         # Create the HTML code for the line in the calltree
+        ct_idx_str = "%s%s"%("0"*(len("00000") - len(str(node['cov-ct-idx']))), str(node['cov-ct-idx']))
+
         indentation = int(node['depth'])*16
         horisontal_spacing = "&nbsp;"*4*int(node['depth'])
-        html_string += "<div style='margin-left: %spx' class=\"%s-background\">"%(str(indentation), color_to_be)
+        html_string += "%s <div style='margin-left: %spx' class=\"%s-background\">"%(ct_idx_str, str(indentation), color_to_be)
         html_string += "<span class=\"coverage-line-inner\">%d <code class=\"language-clike\">%s</code>"%(int(node['depth']), demangled_name)
         if node['functionSourceFile'].replace(" ","") == "/":
             func_href = ""
         else:
             func_href = "<a href=\"%s\">[function]</a>"%(link)
         html_string += "<span class=\"coverage-line-filename\">%s<a href=\"%s\">[call site]</a><span></span></div>\n"%(func_href, callsite_link)
+    html_string += "</div>"
 
     # Create fixed-width color sequence image
     color_sequence = []
@@ -468,9 +476,9 @@ def create_fuzzer_detailed_section(profile, toc_list, tables, curr_tt_profile, p
     image_name = "%s_colormap.png"%(fuzzer_filename.replace(" ", "").split("/")[-1])
     html_string += "<img src=\"%s\">"%(image_name)
 
-    html_string += "<div class='section-wrapper'>"
+    #html_string += "<div class='section-wrapper'>"
     html_string += create_calltree(profile, project_profile, coverage_url, git_repo_url, basefolder, image_name)
-    html_string += "</div>"
+    #html_string += "</div>"
 
     return html_string
 
