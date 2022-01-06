@@ -307,12 +307,16 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
             # hardcoding LLVMFuzzerTestOneInput to be green because some fuzzers may not
             # have a single seed, and in this specific case LLVMFuzzerTestOneInput
             # will be red.
-            if not (demangled_name == "LLVMFuzzerTestOneInput" and 'LLVMFuzzerTestOneInput' in profile.coverage['coverage-map']):
-                l.error("LLVMFuzzerTestOneInput is not the first node or there is no coverage of the fuzzer entrypoint. Exiting.")
+            if not demangled_name == "LLVMFuzzerTestOneInput":
+                l.error("LLVMFuzzerTestOneInput must be the first node in the calltree")
                 exit(1)
+            coverage_data = profile.get_function_coverage("LLVMFuzzerTestOneInput")
+            if len(coverage_data) == 0:
+                l.error("There is no coverage data (not even all negative). Exiting")
+                exit(0)
 
             node_hitcount = 0
-            for (n_line_number, hit_count_cov) in profile.coverage['coverage-map']['LLVMFuzzerTestOneInput']:
+            for (n_line_number, hit_count_cov) in coverage_data:
                 node_hitcount = max(hit_count_cov, node_hitcount)
             is_first = False
         elif  callstack_has_parent(node, callstack):
