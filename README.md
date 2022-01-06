@@ -5,9 +5,11 @@ and identify any potential blockers. Fuzz introspector aggregates the fuzzers’
 hit frequency, entry points, etc to give the developer a birds eye view of their fuzzer. This helps with 
 identifying fuzz bottlenecks and blockers and eventually helps in developing better fuzzers.
 
+Fuzz-introspector can on a high-level guide on how to improve fuzzing of a project by guiding on whether you shuold:
+- introduce new fuzzers to a fuzz harness
+- modify existing fuzzers to improve the quality of your harness.
 
-
-The current capabilities:
+The current high-level problems fuzz-introspector solves:
 - Show fuzzing-relevant data about each function in a given project
 - Show reachability of fuzzer(s)
 - Integrate seamlessly with OSS-Fuzz
@@ -15,6 +17,17 @@ The current capabilities:
 - Give suggestions for how to improve fuzzing
 
 By and large these capabilities will remain the goals of fuzz-introspector. The focus is on improving these.
+
+## Features
+Given a fuzz harness for a project show:
+ - which functions in the project are not reachable by the harness
+ - which functions in the project are reachable by harness
+ - identify which functions are the best to target (based on which unreached function reaches most code)
+
+Given a fuzz harness statically analyse the code and merge it with run-time coverage information to:
+ - visualise statically-extracted calltree of each fuzzer and overlay this calltree with run-time coverage information
+ - identify nodes in the statically-extracted calltree where fuzzers are blocked based on run-time coverage information
+ - automatically highlight fuzz-blockers, namely locations in the code where fuzzers are not able to continue execution at run-time despite the code being reachable by the fuzzer based on static analysis.
 
 ## Testing with OSS-Fuzz
 The recommended way of testing this project is by way of OSS-Fuzz. Please see
