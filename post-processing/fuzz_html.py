@@ -328,6 +328,7 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
         else:
             l.error("A node should either be the first or it must have a parent")
             exit(1)
+        node['cov-hitcount'] = node_hitcount
 
         # Map hitcount to color of target.
         def get_hit_count_color(hit_count):
@@ -337,7 +338,9 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
                 if hit_count >= cmin and hit_count < cmax:
                     return cname
             return "red"
-        color_to_be = get_hit_count_color(node_hitcount)
+        color_to_be = get_hit_count_color(node['cov-hitcount'])
+        node['cov-color'] = color_to_be
+
         color_sequence.append(color_to_be)
 
         # Get URL to coverage report for the node.
@@ -348,10 +351,10 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
                     "%s.html#L%d" % (
                         fd.function_source_file, fd.function_linenumber)
                 break
-
-        callsite_link = "#"
+        node['cov-link'] = link
 
         # Find the parent
+        callsite_link = "#"
         if callstack_has_parent(node, callstack):
             parent_fname = callstack_get_parent(node, callstack)
             for fd in project_profile.all_functions:
@@ -359,6 +362,7 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
                     callsite_link = coverage_url + "%s.html#L%d" % (
                             fd.function_source_file,   # parent source file
                             node['linenumber'])        # callsite line number
+        node['cov-callsite-link'] = callsite_link
 
         # Get the Github URL to the node. However, if we got a "/" basefolder it means
         # it is a wrong basefolder and we handle this by removing the two first folders
@@ -370,6 +374,14 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
         else:
             fd_github_url = "%s/%s#L%d" % (git_repo_url, fd.function_source_file.replace(
                 basefolder, ""), fd.function_linenumber)
+        node['cov-github-url'] = fd_github_url
+
+    # Now generate the HTML code
+    for node in profile.function_call_depths:
+        demangled_name = fuzz_utils.demangle_cpp_func(node['function_name'])
+        color_to_be = node['cov-color']
+        callsite_link = node['cov-callsite-link']
+        link = node['cov-link']
 
         # We may not want to show certain functions at times, e.g. libc functions
         # in case it bloats the calltree
