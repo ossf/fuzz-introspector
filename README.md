@@ -14,6 +14,7 @@ By and large these capabilities will remain the goals of fuzz-introspector. The 
 
 ## Features
 **High-level features**
+
 - Show fuzzing-relevant data about each function in a given project
 - Show reachability of fuzzer(s)
 - Integrate seamlessly with OSS-Fuzz
@@ -21,6 +22,7 @@ By and large these capabilities will remain the goals of fuzz-introspector. The 
 - Give suggestions for how to improve fuzzing
 
 **Concrete features**
+
 Given a fuzz harness for a project show:
  - which functions in the project are not reachable by the harness
  - which functions in the project are reachable by harness
