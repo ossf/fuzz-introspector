@@ -23,6 +23,15 @@ By and large these capabilities will remain the goals of fuzz-introspector. The 
 
 **Concrete features**
 
+For each function in a project and a fuzzing harness for the project:
+ - show the number of fuzzers (fuzz drivers) that reach this function
+ - show cyclomatic complexity of the function
+ - show the amount of functions reached by the function
+ - show the sum of cyclomatic complexity of all functions reachable by the function
+ - show the number of (LLVM IR) basic blocks in the function
+ - show the function call-depth of the function
+ - show the total unreached complexity of this function, including the complexity from all unreached functions reached by this function.
+
 Given a fuzz harness for a project show:
  - which functions in the project are not reachable by the harness
  - which functions in the project are reachable by harness
