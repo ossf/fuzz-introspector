@@ -267,7 +267,7 @@ def create_top_summary_info(tables, project_profile):
     return html_string
 
 
-def overlay_caltree_with_coverage(profile, project_profile, coverage_url, git_repo_url, basefolder, image_name):
+def overlay_calltree_with_coverage(profile, project_profile, coverage_url, git_repo_url, basefolder, image_name):
     # We use the callstack to keep track of all function parents. We need this
     # when looking up if a callsite was hit or not. This is because the coverage
     # information about a callsite is located in coverage data of the function
@@ -421,12 +421,12 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
     """
 
     # Overlay statically extracted calltree with runtime coverage information
-    overlay_caltree_with_coverage(profile, project_profile, coverage_url, git_repo_url, basefolder, image_name)
+    overlay_calltree_with_coverage(profile, project_profile, coverage_url, git_repo_url, basefolder, image_name)
  
     # Highlight the ten most useful places
     nodes_sorted_by_red_ahead = list(reversed(list(sorted(profile.function_call_depths, key=lambda x:x['cov-forward-reds']))))
     max_idx = 10
-    html_string = create_table_head(tables[-1], ['Blocked nodes', 'Caltree index', 'Parent function', 'Callsite', 'Largest blocked function'])
+    html_string = create_table_head(tables[-1], ['Blocked nodes', 'Calltree index', 'Parent function', 'Callsite', 'Largest blocked function'])
     for node in nodes_sorted_by_red_ahead:
         html_string += html_table_add_row([str(node['cov-forward-reds']), str(node['cov-ct-idx']), node['cov-parent'], "<a href=%s>call site</a>"%(node['cov-callsite-link']), node['cov-largest-blocked-func']])
         if max_idx == 0:
