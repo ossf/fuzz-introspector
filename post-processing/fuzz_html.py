@@ -317,15 +317,10 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
             is_first = False
         elif  callstack_has_parent(node, callstack):
             # Find the parent function and check coverage of the node
-            for funcname_t in profile.coverage['coverage-map']:
-                normalised_funcname = fuzz_utils.demangle_cpp_func(normalise_str(funcname_t))
-                normalised_parent_funcname = normalise_str(callstack_get_parent(node, callstack))
-                #print("Normalised funcname: %s"%(normalised_funcname))
-                #print("Normalised parent funcname: %s"%(normalised_parent_funcname))
-                if normalised_funcname == normalised_parent_funcname:
-                    for (n_line_number, hit_count_cov) in profile.coverage['coverage-map'][funcname_t]:
-                        if n_line_number == node['linenumber'] and hit_count_cov > 0:
-                            node_hitcount = hit_count_cov
+            coverage_data = profile.get_function_coverage(normalise_str(callstack_get_parent(node, callstack)), True)
+            for (n_line_number, hit_count_cov) in coverage_data:
+                if n_line_number == node['linenumber'] and hit_count_cov > 0:
+                    node_hitcount = hit_count_cov
         else:
             l.error("A node should either be the first or it must have a parent")
             exit(1)

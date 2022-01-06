@@ -23,6 +23,9 @@ import fuzz_utils
 
 l = logging.getLogger(name=__name__)
 
+def normalise_str(s1):
+    return s1.replace("\t", "").replace("\r", "").replace("\n", "").replace(" ", "")
+
 class FunctionProfile:
     """
     Class for storing information about a given Function
@@ -126,6 +129,23 @@ class FuzzerProfile:
                 'functions-hit' : functions_hit,
                 'coverage-map' : coverage_map
                 }
+    def get_function_coverage(self, function_name, should_normalise=False):
+        """
+        Get the tuples reflecting coverage map of a given function
+        """
+        if not should_normalise:
+            if not function_name in self.coverage['coverage-map']:
+                return []
+            return self.coverage['coverage-map'][function_name]
+        # should_normalise
+        for funcname in self.coverage['coverage-map']:
+            normalised_funcname = fuzz_utils.demangle_cpp_func(normalise_str(funcname))
+            if normalised_funcname == function_name:
+                return self.coverage['coverage-map'][funcname]
+
+        # In case of errs return empty list
+        return []
+
 
     def get_target_fuzzer_filename(self):
         return self.fuzzer_source_file.split("/")[-1].replace(".cpp","").replace(".c","")
