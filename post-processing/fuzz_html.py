@@ -388,7 +388,7 @@ def overlay_caltree_with_coverage(profile, project_profile, coverage_url, git_re
             idx2 += 1
         n1['cov-forward-reds'] = forward_red
 
-def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefolder, image_name):
+def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefolder, image_name, tables):
     """
     Creates the HTML of the calltree. Returns the HTML as a string.
     """
@@ -399,7 +399,7 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
     # Highlight the ten most useful places
     nodes_sorted_by_red_ahead = list(reversed(list(sorted(profile.function_call_depths, key=lambda x:x['cov-forward-reds']))))
     max_idx = 10
-    html_string = create_table_head("Main blockers", ['Block count', 'Caltree index', 'Function', 'Callsite'])
+    html_string = create_table_head(tables[-1], ['Block count', 'Caltree index', 'Function', 'Callsite'])
     for node in nodes_sorted_by_red_ahead:
         print("Function block count: %d ## Function: %s ## Callsite: %s"%(node['cov-forward-reds'], node['function_name'], node['cov-callsite-link']))
         html_string += html_table_add_row([str(node['cov-forward-reds']), str(node['cov-ct-idx']), node['function_name'], "<a href=%s>call site</a>"%(node['cov-callsite-link'])])
@@ -477,7 +477,8 @@ def create_fuzzer_detailed_section(profile, toc_list, tables, curr_tt_profile, p
     html_string += "<img src=\"%s\">"%(image_name)
 
     #html_string += "<div class='section-wrapper'>"
-    html_string += create_calltree(profile, project_profile, coverage_url, git_repo_url, basefolder, image_name)
+    tables.append(f"myTable{len(tables)}")
+    html_string += create_calltree(profile, project_profile, coverage_url, git_repo_url, basefolder, image_name, tables)
     #html_string += "</div>"
 
     return html_string
