@@ -377,11 +377,14 @@ def overlay_caltree_with_coverage(profile, project_profile, coverage_url, git_re
         n1 = profile.function_call_depths[idx1]
         if n1['cov-hitcount'] == 0:
             n1['cov-forward-reds'] = 0
+            n1['cov-largest-blocked-func'] = "none"
             continue
 
         # Read forward untill we see a green node. Depth must be the same or higher
         idx2 = idx1+1
         forward_red = 0
+        largest_blocked_name = ""
+        largest_blocked_count = 0
         while idx2 < len(profile.function_call_depths):
             # Check if we should break or increment forward_red
             n2 = profile.function_call_depths[idx2]
@@ -399,9 +402,18 @@ def overlay_caltree_with_coverage(profile, project_profile, coverage_url, git_re
             # blockers at the top rather than precisely locate them in the calltree.
             if n2['cov-hitcount'] != 0:
                 break
+
+            for fd in project_profile.all_functions:
+                if fuzz_utils.demangle_cpp_func(fd.function_name) == n2['function_name'] and fd.total_cyclomatic_complexity > largest_blocked_count:
+                    largest_blocked_count = fd.total_cyclomatic_complexity
+                    largest_blocked_name = n2['function_name']
+                    break
+
             forward_red += 1
             idx2 += 1
+
         n1['cov-forward-reds'] = forward_red
+        n1['cov-largest-blocked-func'] = largest_blocked_name
 
 def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefolder, image_name, tables):
     """
@@ -414,10 +426,9 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
     # Highlight the ten most useful places
     nodes_sorted_by_red_ahead = list(reversed(list(sorted(profile.function_call_depths, key=lambda x:x['cov-forward-reds']))))
     max_idx = 10
-    html_string = create_table_head(tables[-1], ['Blocked nodes', 'Caltree index', 'Parent function', 'Callsite'])
+    html_string = create_table_head(tables[-1], ['Blocked nodes', 'Caltree index', 'Parent function', 'Callsite', 'Largest blocked function'])
     for node in nodes_sorted_by_red_ahead:
-        print("Function block count: %d ## Function: %s ## Callsite: %s"%(node['cov-forward-reds'], node['cov-parent'], node['cov-callsite-link']))
-        html_string += html_table_add_row([str(node['cov-forward-reds']), str(node['cov-ct-idx']), node['cov-parent'], "<a href=%s>call site</a>"%(node['cov-callsite-link'])])
+        html_string += html_table_add_row([str(node['cov-forward-reds']), str(node['cov-ct-idx']), node['cov-parent'], "<a href=%s>call site</a>"%(node['cov-callsite-link']), node['cov-largest-blocked-func']])
         if max_idx == 0:
             break
         max_idx -= 1
