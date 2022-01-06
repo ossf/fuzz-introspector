@@ -290,7 +290,6 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
     def callstack_set_curr_node(n, name, c):
         c[int(node['depth'])] = name
 
-    color_sequence = []
     is_first = True
     for node in profile.function_call_depths:
         demangled_name = fuzz_utils.demangle_cpp_func(node['function_name'])
@@ -341,7 +340,6 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
         color_to_be = get_hit_count_color(node['cov-hitcount'])
         node['cov-color'] = color_to_be
 
-        color_sequence.append(color_to_be)
 
         # Get URL to coverage report for the node.
         link = "#"
@@ -401,8 +399,12 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
         else:
             func_href = "<a href=\"%s\">[function]</a>"%(link)
         html_string += "<span class=\"coverage-line-filename\">%s<a href=\"%s\">[call site]</a><span></span></div>\n"%(func_href, callsite_link)
-
     # End of tree output
+
+    # Create color sequence image
+    color_sequence = []
+    for node in profile.function_call_depths:
+        color_sequence.append(node['cov-color'])
     create_horisontal_calltree_image(image_name, color_sequence)
     return html_string
 
