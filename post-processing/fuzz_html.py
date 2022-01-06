@@ -375,7 +375,7 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
     # Overlay statically extracted calltree with runtime coverage information
     overlay_caltree_with_coverage(profile, project_profile, coverage_url, git_repo_url, basefolder, image_name)
 
-    # Now generate the HTML code
+    # Generate calltree overlay HTML
     html_string = ""
     for node in profile.function_call_depths:
         demangled_name = fuzz_utils.demangle_cpp_func(node['function_name'])
