@@ -429,13 +429,15 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
 
         indentation = int(node['depth'])*16
         horisontal_spacing = "&nbsp;"*4*int(node['depth'])
-        html_string += "%s <div style='margin-left: %spx' class=\"%s-background\">"%(ct_idx_str, str(indentation), color_to_be)
+        html_string += "<div style='margin-left: %spx' class=\"%s-background\">"%(str(indentation), color_to_be)
         html_string += "<span class=\"coverage-line-inner\">%d <code class=\"language-clike\">%s</code>"%(int(node['depth']), demangled_name)
+
         if node['functionSourceFile'].replace(" ","") == "/":
             func_href = ""
         else:
             func_href = "<a href=\"%s\">[function]</a>"%(link)
-        html_string += "<span class=\"coverage-line-filename\">%s<a href=\"%s\">[call site]</a><span></span></div>\n"%(func_href, callsite_link)
+
+        html_string += "<span class=\"coverage-line-filename\">%s<a href=\"%s\">[call site2]</a>[calltree idx: %s]<span></span></div>\n"%(func_href, callsite_link, ct_idx_str)
     html_string += "</div>"
 
     # Create fixed-width color sequence image
@@ -462,8 +464,6 @@ def create_fuzzer_detailed_section(profile, toc_list, tables, curr_tt_profile, p
         html_string += html_table_add_row([k,
                                           len(profile.file_targets[k])])
     html_string += "</table>\n"
-
-
 
     # Calltree generation
     html_string += html_add_header_with_link(
