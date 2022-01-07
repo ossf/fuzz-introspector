@@ -44,7 +44,9 @@ Given a fuzz harness statically analyse the code and merge it with run-time cove
 
 ## Testing with OSS-Fuzz
 The recommended way of testing this project is by way of OSS-Fuzz. Please see
-[OSS-Fuzz instructions](oss_fuzz_integration/) on how to do this. 
+[OSS-Fuzz instructions](oss_fuzz_integration/) on how to do this. It is the
+recommended way because it's by way of OSS-Fuzz that we currently support combining
+runtime coverage data with the compiler plugin.
 
 
 ## Testing without OSS-Fuzz integration
