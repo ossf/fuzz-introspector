@@ -355,15 +355,12 @@ def add_func_to_reached_and_clone(merged_profile_old, func_dict_old):
     l.info("Updating remaining data")
     for fd10 in merged_profile.all_functions:
         total_cyclomatic_complexity = 0
+        total_new_complexity = 0
         for fd20 in merged_profile.all_functions:
             if fd20.function_name in fd10.functions_reached:
                 total_cyclomatic_complexity += fd20.cyclomatic_complexity
-
-        # Check how much complexity this one will uncover.
-        total_new_complexity = 0
-        for fd21 in merged_profile.all_functions:
-            if fd21.function_name in fd10.functions_reached and fd21.hitcount == 0:
-                total_new_complexity += fd21.cyclomatic_complexity
+                if fd20.hitcount == 0:
+                    total_new_complexity += fd20.cyclomatic_complexity
         if fd10.hitcount == 0:
             fd10.new_unreached_complexity = total_new_complexity + (fd10.cyclomatic_complexity)
         else:
