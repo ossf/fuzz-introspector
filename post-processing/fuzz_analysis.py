@@ -356,11 +356,13 @@ def analysis_synthesize_simple_targets(merged_profile):
 
         l.info("  - calling add_func_t_reached_and_clone. ")
         new_merged_profile = fuzz_data_loader.add_func_to_reached_and_clone(new_merged_profile, tfd)
+
+        # Ensure hitcount is set
+        tmp_ff = new_merged_profile.all_functions[tfd.function_name]
+        if tmp_ff.hitcount == 0:
+            l.info("Error. Hitcount did not get set for some reason. Exiting")
+            exit(0)
         l.info(". Done")
-        for tmp_ff_k, tmp_ff in new_merged_profile.all_functions.items():
-            if tmp_ff.function_name == tfd.function_name and tmp_ff.hitcount == 0:
-                l.info("Error. Hitcount did not get set for some reason")
-                exit(0)
 
         # We need to update the optimal targets here.
         # We only need to do this operation if we are actually going to continue analysis
