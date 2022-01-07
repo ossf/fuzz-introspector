@@ -19,9 +19,163 @@ import copy
 import cxxfilt
 import logging
 
+import fuzz_utils
 import fuzz_data_loader
 
 l = logging.getLogger(name=__name__)
+
+def normalise_str(s1):
+    return s1.replace("\t", "").replace("\r", "").replace("\n", "").replace(" ", "")
+
+def overlay_calltree_with_coverage(profile, project_profile, coverage_url, git_repo_url, basefolder, image_name):
+    # We use the callstack to keep track of all function parents. We need this
+    # when looking up if a callsite was hit or not. This is because the coverage
+    # information about a callsite is located in coverage data of the function
+    # in which the callsite is placed.
+    callstack = dict()
+    def callstack_get_parent(n, c):
+        return c[int(n['depth'])-1]
+
+    def callstack_has_parent(n, c):
+        return int(n['depth'])-1 in c
+
+    def callstack_set_curr_node(n, name, c):
+        c[int(node['depth'])] = name
+
+    is_first = True
+    ct_idx = 0
+    for node in profile.function_call_depths:
+        node['cov-ct-idx'] = ct_idx
+        ct_idx += 1
+
+        demangled_name = fuzz_utils.demangle_cpp_func(node['function_name'])
+
+        # Add to callstack
+        callstack_set_curr_node(node, demangled_name, callstack)
+
+        # Get hitcount for this node
+        node_hitcount = 0
+        if is_first:
+            # The first node is always the entry of LLVMFuzzerTestOneInput
+            # LLVMFuzzerTestOneInput will never have a parent in the calltree. As such, we 
+            # check here if the function has been hit, and if so, make it green. We avoid
+            # hardcoding LLVMFuzzerTestOneInput to be green because some fuzzers may not
+            # have a single seed, and in this specific case LLVMFuzzerTestOneInput
+            # will be red.
+            if not demangled_name == "LLVMFuzzerTestOneInput":
+                l.error("LLVMFuzzerTestOneInput must be the first node in the calltree")
+                exit(1)
+            coverage_data = profile.get_function_coverage("LLVMFuzzerTestOneInput")
+            if len(coverage_data) == 0:
+                l.error("There is no coverage data (not even all negative). Exiting")
+                exit(0)
+            node['cov-parent'] = "EP"
+
+            node_hitcount = 0
+            for (n_line_number, hit_count_cov) in coverage_data:
+                node_hitcount = max(hit_count_cov, node_hitcount)
+            is_first = False
+        elif  callstack_has_parent(node, callstack):
+            # Find the parent function and check coverage of the node
+            coverage_data = profile.get_function_coverage(normalise_str(callstack_get_parent(node, callstack)), True)
+            for (n_line_number, hit_count_cov) in coverage_data:
+                if n_line_number == node['linenumber'] and hit_count_cov > 0:
+                    node_hitcount = hit_count_cov
+            node['cov-parent'] = callstack_get_parent(node, callstack)
+        else:
+            l.error("A node should either be the first or it must have a parent")
+            exit(1)
+        node['cov-hitcount'] = node_hitcount
+
+        # Map hitcount to color of target.
+        def get_hit_count_color(hit_count):
+            color_schemes = [ (0,1,"red"), (1, 10, "gold"), (10, 30, "yellow"),
+                    (30, 50, "greenyellow"), (50, 1000000, "lawngreen") ]
+            for cmin, cmax, cname in color_schemes:
+                if hit_count >= cmin and hit_count < cmax:
+                    return cname
+            return "red"
+        color_to_be = get_hit_count_color(node['cov-hitcount'])
+        node['cov-color'] = color_to_be
+
+
+        # Get URL to coverage report for the node.
+        link = "#"
+        for fd_k, fd in project_profile.all_functions.items():
+            if fd.function_name == node['function_name']:
+                link = coverage_url + \
+                    "%s.html#L%d" % (
+                        fd.function_source_file, fd.function_linenumber)
+                break
+        node['cov-link'] = link
+
+        # Find the parent
+        callsite_link = "#"
+        if callstack_has_parent(node, callstack):
+            parent_fname = callstack_get_parent(node, callstack)
+            for fd_k, fd in project_profile.all_functions.items():
+                if fuzz_utils.demangle_cpp_func(fd.function_name) == parent_fname:
+                    callsite_link = coverage_url + "%s.html#L%d" % (
+                            fd.function_source_file,   # parent source file
+                            node['linenumber'])        # callsite line number
+        node['cov-callsite-link'] = callsite_link
+
+        # Get the Github URL to the node. However, if we got a "/" basefolder it means
+        # it is a wrong basefolder and we handle this by removing the two first folders
+        # in the complete path (which shuold be in most cases /src/NAME where NAME
+        # is the project folder.
+        if basefolder == "/":
+            fd_github_url = "%s/%s#L%d" % (git_repo_url, "/".join(
+                fd.function_source_file.split("/")[3:]), fd.function_linenumbe)
+        else:
+            fd_github_url = "%s/%s#L%d" % (git_repo_url, fd.function_source_file.replace(
+                basefolder, ""), fd.function_linenumber)
+        node['cov-github-url'] = fd_github_url
+
+    # Extract data about which nodes unlocks data
+    for idx1 in range(len(profile.function_call_depths)):
+        n1 = profile.function_call_depths[idx1]
+        if n1['cov-hitcount'] == 0:
+            n1['cov-forward-reds'] = 0
+            n1['cov-largest-blocked-func'] = "none"
+            continue
+
+        # Read forward untill we see a green node. Depth must be the same or higher
+        idx2 = idx1+1
+        forward_red = 0
+        largest_blocked_name = ""
+        largest_blocked_count = 0
+        while idx2 < len(profile.function_call_depths):
+            # Check if we should break or increment forward_red
+            n2 = profile.function_call_depths[idx2]
+
+            # Break if the node is not at depth or deeper in the calltree than n1
+            # Remember:
+            # - the lower the depth, the higher up (closer to LLVMFuzzerTestOneInput) in the calltree
+            # - the higehr the depth, the lower down (further away from LLVMFuzzerTestOneInput) in the calltree
+            if n2['depth'] < n1['depth']:
+                break
+
+            # break if the node is visited. We *could* change this to another metric, e.g.
+            # all nodes underneath n1 that are off, i.e. instead of breaking here we would
+            # increment forward_red iff cov-hitcount != 0. This, however, would prioritise
+            # blockers at the top rather than precisely locate them in the calltree.
+            if n2['cov-hitcount'] != 0:
+                break
+
+            for fd_k, fd in project_profile.all_functions.items():
+                if fuzz_utils.demangle_cpp_func(fd.function_name) == n2['function_name'] and fd.total_cyclomatic_complexity > largest_blocked_count:
+                    largest_blocked_count = fd.total_cyclomatic_complexity
+                    largest_blocked_name = n2['function_name']
+                    break
+
+            forward_red += 1
+            idx2 += 1
+
+        n1['cov-forward-reds'] = forward_red
+        n1['cov-largest-blocked-func'] = largest_blocked_name
+
+
 
 def analysis_get_optimal_targets(merged_profile):
     """
