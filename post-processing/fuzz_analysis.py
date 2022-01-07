@@ -369,7 +369,6 @@ def analysis_synthesize_simple_targets(merged_profile):
 
         if curr_count < max_count:
             target_fds, optimal_set = analysis_get_optimal_targets(new_merged_profile)
-
     final_fuzzers = dict()
 
     #print("Fuzzers:")
@@ -387,17 +386,9 @@ def analysis_synthesize_simple_targets(merged_profile):
         final_fuzzers[filename]['source_code'] = file_fuzzer_code
         final_fuzzers[filename]['target_fds'] = target_codes[filename]['target_fds']
 
+    l.info("Found the following optimal functions: { %s }"%(
+        str([f.function_name for f in optimal_functions_targeted])))
 
-    #fuzzer_code += "  af_gb_cleanup();\n"
-    #fuzzer_code += "\n}\n"
-    #print("Fuzzer code:")
-    #print(fuzzer_code)
-    #print("-----------------")
-
-    #print("Optimal target functions")
-    #for nfd in optimal_functions_targeted:
-    #    print("%s"%(nfd['functionName']))
-    #print("<"*45)
     return final_fuzzers, new_merged_profile, optimal_functions_targeted
 
 def analysis_get_targets_for_existing_fuzzers(profiles, merged_profile):
