@@ -28,7 +28,7 @@ def llvm_cov_load(target_dir, target_name=None):
     internals, e.g. file name and location of LLVMFuzzerTestOneInput. 
     But, we wait a bit with this.
     """
-    coverage_reports = fuzz_utils.get_all_files_in_tree_with_suffix(target_dir, ".covreport")
+    coverage_reports = fuzz_utils.get_all_files_in_tree_with_regex(target_dir, ".*\.covreport$")
     functions_hit = set()
     coverage_map = dict()
 

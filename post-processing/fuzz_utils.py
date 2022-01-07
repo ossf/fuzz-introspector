@@ -14,8 +14,12 @@
 """ Utility functions """
 
 import os
+import re
 import yaml
+import logging
 import cxxfilt
+
+l = logging.getLogger(name=__name__)
 
 def longest_common_prefix(strs):
     """
@@ -37,15 +41,17 @@ def longest_common_prefix(strs):
     return current
 
 
-def get_all_files_in_tree_with_suffix(basedir, suffix):
+def get_all_files_in_tree_with_regex(basedir, regex_str):
     """
     Returns a list of paths such that each path is to a file with
     the provided suffix. Walks the entire tree of basedir.
     """
+    r = re.compile(regex_str)
     data_files = []
     for root, dirs, files in os.walk(basedir):
         for f in files:
-            if f.endswith(suffix):
+            if r.match(f):
+                l.info("f: %s -- matches regex: %s"%(f, regex_str))
                 data_files.append(os.path.join(root, f))
     return data_files
 

@@ -368,7 +368,7 @@ def add_func_to_reached_and_clone(merged_profile_old, func_to_add):
 
 def load_all_profiles(target_folder):
     # Get the introspector profile with raw data from each fuzzer in the target folder.
-    data_files = fuzz_utils.get_all_files_in_tree_with_suffix(target_folder, ".data")
+    data_files = fuzz_utils.get_all_files_in_tree_with_regex(target_folder, "fuzzerLogFile.*\.data$")
 
     # Parse and analyse the data from each fuzzer.
     profiles = []
