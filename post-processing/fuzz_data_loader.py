@@ -46,6 +46,7 @@ class FunctionProfile:
         self.functions_reached = None
         self.function_uses = None
         self.function_depth = None
+        self.incoming_references = list()
 
     def migrate_from_yaml_elem(self, elem):
         self.function_name = elem['functionName']
@@ -254,7 +255,6 @@ class MergedProjectProfile:
                 if not is_duplicate:
                     self.all_functions.append(fd)
 
-
         # Gather complexity information about each function
         l.info("Gathering complexity and incoming references of each function")
         for fd10 in self.all_functions:
@@ -262,14 +262,18 @@ class MergedProjectProfile:
             total_new_complexity = 0
             incoming_references = list()
 
-            for fd20 in self.all_functions:
-                if fd10.function_name in fd20.functions_reached:
-                    incoming_references.append(fd20)
-                if fd20.function_name in fd10.functions_reached:
-                    total_cyclomatic_complexity += fd20.cyclomatic_complexity
-                if fd20.function_name in fd10.functions_reached and fd20.hitcount == 0:
-                    total_new_complexity += fd20.cyclomatic_complexity
-            fd10.incoming_references = incoming_references
+            for reached_func_name in fd10.functions_reached:
+                found = False
+                for fd20 in self.all_functions:
+                    # Find the function
+                    if fd20.function_name == reached_func_name:
+                        found = True
+                        total_cyclomatic_complexity += fd20.cyclomatic_complexity
+                        if fd20.hitcount == 0:
+                            total_new_complexity += fd20.cyclomatic_complexity
+                        fd20.incoming_references.append(fd10)
+                    if found:
+                        break
 
             if fd10.hitcount == 0:
                 fd10.new_unreached_complexity = total_new_complexity + (fd10.cyclomatic_complexity)
