@@ -25,7 +25,7 @@ import shutil
 
 def build_proj_with_default(project_name):
     try:
-        subprocess.check_call("python3 infra/helper.py build_fuzzers %s"%(project_name), shell=True)
+        subprocess.check_call("python3 infra/helper.py build_fuzzers --clean %s"%(project_name), shell=True)
     except:
         print("Building default failed")
         exit(5)
