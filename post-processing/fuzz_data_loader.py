@@ -77,11 +77,11 @@ class FuzzerProfile:
         self.fuzzer_source_file = data_dict_yaml['Fuzzer filename']
 
         # Create a list of all the functions.
-        self.all_class_functions = list()
+        self.all_class_functions = dict()
         for elem in data_dict_yaml['All functions']['Elements']:
             func_profile = FunctionProfile(elem['functionName'])
             func_profile.migrate_from_yaml_elem(elem)
-            self.all_class_functions.append(func_profile)
+            self.all_class_functions[func_profile.function_name] = func_profile
 
     def refine_paths(self, basefolder):
         """
@@ -100,10 +100,11 @@ class FuzzerProfile:
         """
         sets self.functions_reached_by_fuzzer to all functions reached by LLVMFuzzerTestOneInput
         """
-        self.functions_reached_by_fuzzer = list()
-        for func in self.all_class_functions:
-            if func.function_name == "LLVMFuzzerTestOneInput":
-                self.functions_reached_by_fuzzer = func.functions_reached
+        #self.functions_reached_by_fuzzer = list()
+        self.functions_reached_by_fuzzer = self.all_class_functions["LLVMFuzzerTestOneInput"].functions_reached
+        #for func in self.all_class_functions:
+        #    if func.function_name == "LLVMFuzzerTestOneInput":
+        #        self.functions_reached_by_fuzzer = func.functions_reached
 
     def reaches(self, func_name):
         return func_name in self.functions_reached_by_fuzzer
@@ -114,7 +115,7 @@ class FuzzerProfile:
         that are not in self.functions_reached_by_fuzzer
         """
         self.functions_unreached_by_fuzzer = list()
-        for func in self.all_class_functions:
+        for func_k, func in self.all_class_functions.items():
             in_fuzzer = False
             for func2_name in self.functions_reached_by_fuzzer:
                 if func2_name == func.function_name:
@@ -174,10 +175,8 @@ class FuzzerProfile:
         """
         total_basic_blocks = 0
         for func in self.functions_reached_by_fuzzer:
-            for fd in self.all_class_functions:
-                if fd.function_name == func:
-                    total_basic_blocks += fd.bb_count
-                    break
+            fd = self.all_class_functions[func]
+            total_basic_blocks += fd.bb_count
         self.total_basic_blocks = total_basic_blocks
 
     def get_total_cyclomatic_complexity(self):
@@ -187,10 +186,8 @@ class FuzzerProfile:
         """
         self.total_cyclomatic_complexity = 0
         for func in self.functions_reached_by_fuzzer:
-            for fd in self.all_class_functions:
-                if fd.function_name == func:
-                    self.total_cyclomatic_complexity += fd.cyclomatic_complexity
-                    break
+            fd = self.all_class_functions[func]
+            self.total_cyclomatic_complexity += fd.cyclomatic_complexity
 
     def accummulate_profile(self, target_folder):
         """
@@ -242,7 +239,7 @@ class MergedProjectProfile:
                     "sanitizer", "llvm"
                 }
         for profile in profiles:
-            for fd in profile.all_class_functions:
+            for fd_k, fd in profile.all_class_functions.items():
                 exclude = len([ef for ef in excluded_functions if ef in fd.function_name]) != 0
                 if exclude:
                     continue
