@@ -271,7 +271,7 @@ class MergedProjectProfile:
                         total_cyclomatic_complexity += fd20.cyclomatic_complexity
                         if fd20.hitcount == 0:
                             total_new_complexity += fd20.cyclomatic_complexity
-                        fd20.incoming_references.append(fd10)
+                        fd20.incoming_references.append(fd10.function_name)
                     if found:
                         break
 
