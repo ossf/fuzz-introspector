@@ -220,12 +220,15 @@ class MergedProjectProfile:
         self.unreached_functions = set()
         self.functions_reached = set()
 
+        l.info("Creating merged profile of %d profiles"%(len(self.profiles)))
         # Populate functions reached
+        l.info("Populating functions reached")
         for profile in profiles:
             for func_name in profile.functions_reached_by_fuzzer:
                 self.functions_reached.add(func_name)
 
         # Set all unreached functions
+        l.info("Populating functions unreached")
         for profile in profiles:
             for func_name in profile.functions_unreached_by_fuzzer:
                 if func_name not in self.functions_reached:
@@ -233,6 +236,7 @@ class MergedProjectProfile:
 
         # Add all functions from the various profiles into the merged profile. Don't
         # add duplicates
+        l.info("Creating all_functions list")
         excluded_functions = {
                     "sanitizer", "llvm"
                 }
@@ -252,6 +256,7 @@ class MergedProjectProfile:
 
 
         # Identify how many times each function is reached by other functions.
+        l.info("Identifying how many times each function is reached by other functions")
         for fd1 in self.all_functions:
             incoming_references = list()
             for fd2 in self.all_functions:
@@ -260,6 +265,7 @@ class MergedProjectProfile:
             fd1.incoming_references = incoming_references
 
         # Gather complexity information about each function
+        l.info("Gathering complexity of each function")
         for fd10 in self.all_functions:
             total_cyclomatic_complexity = 0
             for fd20 in self.all_functions:
@@ -276,6 +282,7 @@ class MergedProjectProfile:
             else:
                 fd10.new_unreached_complexity = total_new_complexity
             fd10.total_cyclomatic_complexity = total_cyclomatic_complexity + fd10.cyclomatic_complexity
+        l.info("Completed creationg of merged profile")
 
     def get_total_unreached_function_count(self):
         unreached_function_count = 0
