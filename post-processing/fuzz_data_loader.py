@@ -255,28 +255,22 @@ class MergedProjectProfile:
                     self.all_functions.append(fd)
 
 
-        # Identify how many times each function is reached by other functions.
-        l.info("Identifying how many times each function is reached by other functions")
-        for fd1 in self.all_functions:
-            incoming_references = list()
-            for fd2 in self.all_functions:
-                if fd1.function_name in fd2.functions_reached:
-                    incoming_references.append(fd2)
-            fd1.incoming_references = incoming_references
-
         # Gather complexity information about each function
-        l.info("Gathering complexity of each function")
+        l.info("Gathering complexity and incoming references of each function")
         for fd10 in self.all_functions:
             total_cyclomatic_complexity = 0
+            total_new_complexity = 0
+            incoming_references = list()
+
             for fd20 in self.all_functions:
+                if fd10.function_name in fd20.functions_reached:
+                    incoming_references.append(fd20)
                 if fd20.function_name in fd10.functions_reached:
                     total_cyclomatic_complexity += fd20.cyclomatic_complexity
+                if fd20.function_name in fd10.functions_reached and fd20.hitcount == 0:
+                    total_new_complexity += fd20.cyclomatic_complexity
+            fd10.incoming_references = incoming_references
 
-            # Check how much complexity this one will uncover.
-            total_new_complexity = 0
-            for fd21 in self.all_functions:
-                if fd21.function_name in fd10.functions_reached and fd21.hitcount == 0:
-                    total_new_complexity += fd21.cyclomatic_complexity
             if fd10.hitcount == 0:
                 fd10.new_unreached_complexity = total_new_complexity + (fd10.cyclomatic_complexity)
             else:
