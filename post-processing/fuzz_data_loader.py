@@ -324,11 +324,11 @@ def read_fuzzer_data_file_to_profile(filename):
 
     return FuzzerProfile(filename, data_dict_yaml)
 
-def add_func_to_reached_and_clone(merged_profile_old, func_dict_old):
+def add_func_to_reached_and_clone(merged_profile_old, func_to_add):
     """
     This function adds new functions as "reached" in a merged profile, and returns
     a new copy of the merged profile with reachability information as if the
-    functions in func_dict_old are added to the merged profile. The use of this is
+    functions in func_to_add are added to the merged profile. The use of this is
     to calculate what the state will be of a merged profile by targetting a new set
     of functions.
 
@@ -340,11 +340,12 @@ def add_func_to_reached_and_clone(merged_profile_old, func_dict_old):
 
     # Update the hitcount of the function in the new merged profile.
     l.info("Updating hitcount")
-    for fd_tmp_k, fd_tmp in merged_profile.all_functions.items():
-        if fd_tmp.function_name == func_dict_old.function_name and fd_tmp.cyclomatic_complexity == func_dict_old.cyclomatic_complexity:
-            #print("We found the function, setting hit count %s"%(fd_tmp['functionName']))
-            fd_tmp.hitcount = 1
-        if fd_tmp.function_name in func_dict_old.functions_reached and fd_tmp.hitcount == 0:
+    fd_tmp = merged_profile.all_functions[func_to_add.function_name]
+    if fd_tmp.cyclomatic_complexity == func_to_add.cyclomatic_complexity:
+        fd_tmp.hitcount = 1
+    for func_name in func_to_add.functions_reached:
+        fd_tmp = merged_profile.all_functions[func_name]
+        if fd_tmp.hitcount == 0:
             fd_tmp.hitcount = 1
 
     # Since the hitcounts has been updated in the profile, we now need to update
