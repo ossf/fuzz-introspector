@@ -100,11 +100,7 @@ class FuzzerProfile:
         """
         sets self.functions_reached_by_fuzzer to all functions reached by LLVMFuzzerTestOneInput
         """
-        #self.functions_reached_by_fuzzer = list()
         self.functions_reached_by_fuzzer = self.all_class_functions["LLVMFuzzerTestOneInput"].functions_reached
-        #for func in self.all_class_functions:
-        #    if func.function_name == "LLVMFuzzerTestOneInput":
-        #        self.functions_reached_by_fuzzer = func.functions_reached
 
     def reaches(self, func_name):
         return func_name in self.functions_reached_by_fuzzer
