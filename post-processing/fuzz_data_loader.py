@@ -333,9 +333,11 @@ def add_func_to_reached_and_clone(merged_profile_old, func_dict_old):
     We can use this function in a computation of "optimum fuzzer target analysis", which
     computes what the combination of ideal function targets.
     """
+    l.info("Perfoming a deepcopy")
     merged_profile = copy.deepcopy(merged_profile_old)
 
     # Update the hitcount of the function in the new merged profile.
+    l.info("Updating hitcount")
     for fd_tmp in merged_profile.all_functions:
         if fd_tmp.function_name == func_dict_old.function_name and fd_tmp.cyclomatic_complexity == func_dict_old.cyclomatic_complexity:
             #print("We found the function, setting hit count %s"%(fd_tmp['functionName']))
@@ -350,6 +352,7 @@ def add_func_to_reached_and_clone(merged_profile_old, func_dict_old):
     # TODO: this could be improved. Essentially, instead of having these complicated loops
     # we create a new profile from scratch based on an array of functions. THis migth be easier
     # to deal with and also more modular for future work.
+    l.info("Updating remaining data")
     for fd10 in merged_profile.all_functions:
         total_cyclomatic_complexity = 0
         for fd20 in merged_profile.all_functions:
