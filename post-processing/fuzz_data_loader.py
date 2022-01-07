@@ -274,6 +274,16 @@ class MergedProjectProfile:
             fd10.total_cyclomatic_complexity = total_cyclomatic_complexity + fd10.cyclomatic_complexity
         l.info("Completed creationg of merged profile")
 
+    def get_total_complexity(self):
+        reached_complexity = 0
+        unreached_complexity = 0
+        for fd_k, fd in self.all_functions.items():
+            if fd.hitcount == 0:
+                unreached_complexity += fd.cyclomatic_complexity
+            else:
+                reached_complexity += fd.cyclomatic_complexity
+        return reached_complexity, unreached_complexity
+
     def get_total_unreached_function_count(self):
         unreached_function_count = 0
         for fd_k, fd in self.all_functions.items():

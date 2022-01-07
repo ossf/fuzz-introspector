@@ -233,8 +233,7 @@ def create_top_summary_info(tables, project_profile):
             total_reached_functions.add(fd.function_name)
 
     # Get the total amount of compleixty reached
-    total_complexity_reached = project_profile.get_total_reached_function_count()
-    total_complexity_unreached = project_profile.get_total_unreached_function_count()
+    total_complexity_reached, total_complexity_unreached = project_profile.get_total_complexity()
 
     html_string += create_table_head(tables[-1],
                                      ["", "Reached", "Unreached"])
