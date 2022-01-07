@@ -33,7 +33,7 @@ def analysis_get_optimal_targets(merged_profile):
     optimal_set = set()
     target_fds = list()
     #for fd in reversed(sorted(merged_profile.all_functions, key=lambda x: len(x['functionsReached']))):
-    for fd in reversed(sorted(merged_profile.all_functions, key=lambda x: len(x.functions_reached))):
+    for fd in reversed(sorted(list(merged_profile.all_functions.values()), key=lambda x: len(x.functions_reached))):
         total_vals = 0
         for t in optimal_set:
             if t in fd.functions_reached:
@@ -203,7 +203,7 @@ def analysis_synthesize_simple_targets(merged_profile):
         l.info("  - calling add_func_t_reached_and_clone. ")
         new_merged_profile = fuzz_data_loader.add_func_to_reached_and_clone(new_merged_profile, tfd)
         l.info(". Done")
-        for tmp_ff in new_merged_profile.all_functions:
+        for tmp_ff_k, tmp_ff in new_merged_profile.all_functions.items():
             if tmp_ff.function_name == tfd.function_name and tmp_ff.hitcount == 0:
                 l.info("Error. Hitcount did not get set for some reason")
                 exit(0)

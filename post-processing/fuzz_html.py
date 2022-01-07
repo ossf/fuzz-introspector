@@ -193,7 +193,7 @@ def create_all_function_table(tables, project_profile, coverage_url, git_repo_ur
     if basefolder == "/":
         basefolder = "WRONG"
 
-    for fd in project_profile.all_functions:
+    for fd_k, fd in project_profile.all_functions.items():
         if basefolder == "WRONG":
             fd_github_url = "%s/%s#L%d" % (git_repo_url, "/".join(
                 fd.function_source_file.split("/")[3:]), fd.function_linenumber)
@@ -226,7 +226,7 @@ def create_top_summary_info(tables, project_profile):
     total_unreached_functions = set()
     total_reached_functions = set()
 
-    for fd in project_profile.all_functions:
+    for fd_k, fd in project_profile.all_functions.items():
         if fd.hitcount == 0:
             total_unreached_functions.add(fd.function_name)
         else:
@@ -341,7 +341,7 @@ def overlay_calltree_with_coverage(profile, project_profile, coverage_url, git_r
 
         # Get URL to coverage report for the node.
         link = "#"
-        for fd in project_profile.all_functions:
+        for fd_k, fd in project_profile.all_functions.items():
             if fd.function_name == node['function_name']:
                 link = coverage_url + \
                     "%s.html#L%d" % (
@@ -353,7 +353,7 @@ def overlay_calltree_with_coverage(profile, project_profile, coverage_url, git_r
         callsite_link = "#"
         if callstack_has_parent(node, callstack):
             parent_fname = callstack_get_parent(node, callstack)
-            for fd in project_profile.all_functions:
+            for fd_k, fd in project_profile.all_functions.items():
                 if fuzz_utils.demangle_cpp_func(fd.function_name) == parent_fname:
                     callsite_link = coverage_url + "%s.html#L%d" % (
                             fd.function_source_file,   # parent source file
@@ -403,7 +403,7 @@ def overlay_calltree_with_coverage(profile, project_profile, coverage_url, git_r
             if n2['cov-hitcount'] != 0:
                 break
 
-            for fd in project_profile.all_functions:
+            for fd_k, fd in project_profile.all_functions.items():
                 if fuzz_utils.demangle_cpp_func(fd.function_name) == n2['function_name'] and fd.total_cyclomatic_complexity > largest_blocked_count:
                     largest_blocked_count = fd.total_cyclomatic_complexity
                     largest_blocked_name = n2['function_name']

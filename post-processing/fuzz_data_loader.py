@@ -217,7 +217,7 @@ class MergedProjectProfile:
     def __init__(self, profiles):
         self.name = None
         self.profiles = profiles
-        self.all_functions = list()
+        self.all_functions = dict()
         self.unreached_functions = set()
         self.functions_reached = set()
 
@@ -237,7 +237,7 @@ class MergedProjectProfile:
 
         # Add all functions from the various profiles into the merged profile. Don't
         # add duplicates
-        l.info("Creating all_functions list")
+        l.info("Creating all_functions dictionary")
         excluded_functions = {
                     "sanitizer", "llvm"
                 }
@@ -249,31 +249,23 @@ class MergedProjectProfile:
 
                 # Find hit count and whether it has been handled already
                 hitcount = len([p for p in profiles if p.reaches(fd.function_name)])
-                is_duplicate = 0 < len([f for f in self.all_functions if fd.function_name == f])
-
                 fd.hitcount = hitcount
-                if not is_duplicate:
-                    self.all_functions.append(fd)
+                if fd.function_name not in self.all_functions:
+                    self.all_functions[fd.function_name] = fd
 
         # Gather complexity information about each function
         l.info("Gathering complexity and incoming references of each function")
-        for fd10 in self.all_functions:
+        for fd10_k, fd10 in self.all_functions.items():
             total_cyclomatic_complexity = 0
             total_new_complexity = 0
             incoming_references = list()
 
             for reached_func_name in fd10.functions_reached:
-                found = False
-                for fd20 in self.all_functions:
-                    # Find the function
-                    if fd20.function_name == reached_func_name:
-                        found = True
-                        total_cyclomatic_complexity += fd20.cyclomatic_complexity
-                        if fd20.hitcount == 0:
-                            total_new_complexity += fd20.cyclomatic_complexity
-                        fd20.incoming_references.append(fd10.function_name)
-                    if found:
-                        break
+                fd20 = self.all_functions[reached_func_name]
+                fd20.incoming_references.append(fd10.function_name)
+                total_cyclomatic_complexity += fd20.cyclomatic_complexity
+                if fd20.hitcount == 0:
+                    total_new_complexity += fd20.cyclomatic_complexity
 
             if fd10.hitcount == 0:
                 fd10.new_unreached_complexity = total_new_complexity + (fd10.cyclomatic_complexity)
@@ -284,14 +276,14 @@ class MergedProjectProfile:
 
     def get_total_unreached_function_count(self):
         unreached_function_count = 0
-        for fd in self.all_functions:
+        for fd_k, fd in self.all_functions.items():
             if fd.hitcount == 0:
                 unreached_function_count += 1
         return unreached_function_count
 
     def get_total_reached_function_count(self):
         reached_function_count = 0
-        for fd in self.all_functions:
+        for fd_k, fd in self.all_functions.items():
             if fd.hitcount != 0:
                 reached_function_count += 1
         return reached_function_count
@@ -303,7 +295,7 @@ class MergedProjectProfile:
         essentially make paths as if they were from the root of the source code project.
         """
         all_strs = []
-        for func in self.all_functions:
+        for func_k, func in self.all_functions.items():
             if func.function_source_file != "/" and "/usr/include/" not in func.function_source_file:
                 all_strs.append(func.function_source_file)
         return fuzz_utils.longest_common_prefix(all_strs)
@@ -338,7 +330,7 @@ def add_func_to_reached_and_clone(merged_profile_old, func_dict_old):
 
     # Update the hitcount of the function in the new merged profile.
     l.info("Updating hitcount")
-    for fd_tmp in merged_profile.all_functions:
+    for fd_tmp_k, fd_tmp in merged_profile.all_functions.items():
         if fd_tmp.function_name == func_dict_old.function_name and fd_tmp.cyclomatic_complexity == func_dict_old.cyclomatic_complexity:
             #print("We found the function, setting hit count %s"%(fd_tmp['functionName']))
             fd_tmp.hitcount = 1
@@ -353,14 +345,15 @@ def add_func_to_reached_and_clone(merged_profile_old, func_dict_old):
     # we create a new profile from scratch based on an array of functions. THis migth be easier
     # to deal with and also more modular for future work.
     l.info("Updating remaining data")
-    for fd10 in merged_profile.all_functions:
+    for fd10_k, fd10 in merged_profile.all_functions.items():
         total_cyclomatic_complexity = 0
         total_new_complexity = 0
-        for fd20 in merged_profile.all_functions:
-            if fd20.function_name in fd10.functions_reached:
-                total_cyclomatic_complexity += fd20.cyclomatic_complexity
-                if fd20.hitcount == 0:
-                    total_new_complexity += fd20.cyclomatic_complexity
+
+        for reached_func_name in fd10.functions_reached:
+            fd20 = merged_profile.all_functions[reached_func_name]
+            total_cyclomatic_complexity += fd20.cyclomatic_complexity
+            if fd20.hitcount == 0:
+                total_new_complexity += fd20.cyclomatic_complexity
         if fd10.hitcount == 0:
             fd10.new_unreached_complexity = total_new_complexity + (fd10.cyclomatic_complexity)
         else:
