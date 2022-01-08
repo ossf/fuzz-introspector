@@ -329,18 +329,20 @@ def add_func_to_reached_and_clone(merged_profile_old, func_to_add):
     We can use this function in a computation of "optimum fuzzer target analysis", which
     computes what the combination of ideal function targets.
     """
-    l.info("Perfoming a deepcopy")
+    l.info("Creating a deepcopy")
     merged_profile = copy.deepcopy(merged_profile_old)
 
-    # Update the hitcount of the function in the new merged profile.
+    # Update hitcount of the function in the new merged profile
     l.info("Updating hitcount")
-    fd_tmp = merged_profile.all_functions[func_to_add.function_name]
-    if fd_tmp.cyclomatic_complexity == func_to_add.cyclomatic_complexity:
-        fd_tmp.hitcount = 1
+    f = merged_profile.all_functions[func_to_add.function_name]
+    if f.cyclomatic_complexity == func_to_add.cyclomatic_complexity:
+        f.hitcount = 1
+
+    # Update hitcount of all functions reached by the function
     for func_name in func_to_add.functions_reached:
-        fd_tmp = merged_profile.all_functions[func_name]
-        if fd_tmp.hitcount == 0:
-            fd_tmp.hitcount = 1
+        f = merged_profile.all_functions[func_name]
+        if f.hitcount == 0:
+            f.hitcount = 1
 
     # Recompute all analysis that is based on hitcounts in all functions as hitcount has
     # changed for elements in the dictionary.
@@ -348,7 +350,6 @@ def add_func_to_reached_and_clone(merged_profile_old, func_to_add):
     for f_profile in merged_profile.all_functions.values():
         cc = 0
         uncovered_cc = 0
-
         for reached_func_name in f_profile.functions_reached:
             f_reached = merged_profile.all_functions[reached_func_name]
             cc += f_reached.cyclomatic_complexity
