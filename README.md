@@ -72,7 +72,7 @@ in the OSS-Fuzz environment.
 #### Build custom clang
 (expect this part to take at least 1 hour)
 ```
-git clone https://github.com/AdaLogics/fuzz-introspector
+git clone https://github.com/ossf/fuzz-introspector
 cd fuzz-introspector
 ./build_all.sh
 ```
