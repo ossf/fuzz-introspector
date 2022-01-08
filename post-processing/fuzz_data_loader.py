@@ -319,11 +319,12 @@ def read_fuzzer_data_file_to_profile(filename):
 
 def add_func_to_reached_and_clone(merged_profile_old, func_to_add):
     """
-    This function adds new functions as "reached" in a merged profile, and returns
+    Add new functions as "reached" in a merged profile, and returns
     a new copy of the merged profile with reachability information as if the
-    functions in func_to_add are added to the merged profile. The use of this is
-    to calculate what the state will be of a merged profile by targetting a new set
-    of functions.
+    functions in func_to_add are added to the merged profile.
+ 
+    The use of this is to calculate what the state will be of a merged profile
+    by targetting a new set of functions.
 
     We can use this function in a computation of "optimum fuzzer target analysis", which
     computes what the combination of ideal function targets.
@@ -341,28 +342,25 @@ def add_func_to_reached_and_clone(merged_profile_old, func_to_add):
         if fd_tmp.hitcount == 0:
             fd_tmp.hitcount = 1
 
-    # Since the hitcounts has been updated in the profile, we now need to update
-    # data such as total complexity covered of the fuzzer, uncovered complexity, etc.
-    # Essentially, we need to re-organise all analysis that is based on hitcounts.
+    # Recompute all analysis that is based on hitcounts in all functions as hitcount has
+    # changed for elements in the dictionary.
+    l.info("Updating hitcount-related data")
+    for f_profile in merged_profile.all_functions.values():
+        cc = 0
+        uncovered_cc = 0
 
-    # TODO: this could be improved. Essentially, instead of having these complicated loops
-    # we create a new profile from scratch based on an array of functions. THis migth be easier
-    # to deal with and also more modular for future work.
-    l.info("Updating remaining data")
-    for fd10_k, fd10 in merged_profile.all_functions.items():
-        total_cyclomatic_complexity = 0
-        total_new_complexity = 0
+        for reached_func_name in f_profile.functions_reached:
+            f_reached = merged_profile.all_functions[reached_func_name]
+            cc += f_reached.cyclomatic_complexity
+            if f_reached.hitcount == 0:
+                uncovered_cc += f_reached.cyclomatic_complexity
+ 
+        # set complexity fields in the function
+        f_profile.new_unreached_complexity = uncovered_cc
+        if f_profile.hitcount == 0:
+            f_profile.new_unreached_complexity += f_profile.cyclomatic_complexity
+        f_profile.total_cyclomatic_complexity = cc + f_profile.cyclomatic_complexity
 
-        for reached_func_name in fd10.functions_reached:
-            fd20 = merged_profile.all_functions[reached_func_name]
-            total_cyclomatic_complexity += fd20.cyclomatic_complexity
-            if fd20.hitcount == 0:
-                total_new_complexity += fd20.cyclomatic_complexity
-        if fd10.hitcount == 0:
-            fd10.new_unreached_complexity = total_new_complexity + (fd10.cyclomatic_complexity)
-        else:
-            fd10.new_unreached_complexity = total_new_complexity
-        fd10.total_cyclomatic_complexity = total_cyclomatic_complexity + fd10.cyclomatic_complexity
     return merged_profile
     
 
