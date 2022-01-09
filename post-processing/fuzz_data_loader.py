@@ -110,14 +110,9 @@ class FuzzerProfile:
         sets self.functions_unreached_by_fuzzer to all functiosn in self.all_class_functions
         that are not in self.functions_reached_by_fuzzer
         """
-        self.functions_unreached_by_fuzzer = list()
-        for func_k, func in self.all_class_functions.items():
-            in_fuzzer = False
-            for func2_name in self.functions_reached_by_fuzzer:
-                if func2_name == func.function_name:
-                    in_fuzzer = True
-            if not in_fuzzer:
-                self.functions_unreached_by_fuzzer.append(func.function_name)
+        self.functions_unreached_by_fuzzer = [f.function_name for f
+                in self.all_class_functions.values()
+                if f.function_name not in self.functions_reached_by_fuzzer]
 
     def load_coverage(self, target_folder):
         # Merge any runtime coverage data that we may have to correlate
