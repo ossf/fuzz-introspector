@@ -230,9 +230,9 @@ class MergedProjectProfile:
                     "sanitizer", "llvm"
                 }
         for profile in profiles:
-            for fd_k, fd in profile.all_class_functions.items():
-                exclude = len([ef for ef in excluded_functions if ef in fd.function_name]) != 0
-                if exclude:
+            for fd in profile.all_class_functions.values():
+                # continue if the function is to be excluded
+                if len([ef for ef in excluded_functions if ef in fd.function_name]) != 0:
                     continue
 
                 # Find hit count and whether it has been handled already
@@ -243,23 +243,23 @@ class MergedProjectProfile:
 
         # Gather complexity information about each function
         l.info("Gathering complexity and incoming references of each function")
-        for fd10_k, fd10 in self.all_functions.items():
+        for fp_obj in self.all_functions.values():
             total_cyclomatic_complexity = 0
             total_new_complexity = 0
             incoming_references = list()
 
-            for reached_func_name in fd10.functions_reached:
-                fd20 = self.all_functions[reached_func_name]
-                fd20.incoming_references.append(fd10.function_name)
-                total_cyclomatic_complexity += fd20.cyclomatic_complexity
-                if fd20.hitcount == 0:
-                    total_new_complexity += fd20.cyclomatic_complexity
+            for reached_func_name in fp_obj.functions_reached:
+                reached_func_obj = self.all_functions[reached_func_name]
+                reached_func_obj.incoming_references.append(fp_obj.function_name)
+                total_cyclomatic_complexity += reached_func_obj.cyclomatic_complexity
+                if reached_func_obj.hitcount == 0:
+                    total_new_complexity += reached_func_obj.cyclomatic_complexity
 
-            if fd10.hitcount == 0:
-                fd10.new_unreached_complexity = total_new_complexity + (fd10.cyclomatic_complexity)
+            if fp_obj.hitcount == 0:
+                fp_obj.new_unreached_complexity = total_new_complexity + (fp_obj.cyclomatic_complexity)
             else:
-                fd10.new_unreached_complexity = total_new_complexity
-            fd10.total_cyclomatic_complexity = total_cyclomatic_complexity + fd10.cyclomatic_complexity
+                fp_obj.new_unreached_complexity = total_new_complexity
+            fp_obj.total_cyclomatic_complexity = total_cyclomatic_complexity + fp_obj.cyclomatic_complexity
         l.info("Completed creationg of merged profile")
 
     def get_total_complexity(self):
