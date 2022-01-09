@@ -37,20 +37,16 @@ def run_analysis_on_dir(target_folder,
     l.info("[+] Creating project profile")
     project_profile = fuzz_data_loader.MergedProjectProfile(profiles)
 
-    # Find a base folder
-    basefolder = project_profile.get_basefolder()
-    #print("Base folder: %s"%(basefolder))
-
     l.info("[+] Refining profiles")
     for profile in profiles:
-        profile.refine_paths(basefolder)
+        profile.refine_paths(project_profile.basefolder)
 
     # Create the HTML report that can be viewed.
     if coverage_url == "":
         coverage_url = "http://localhost:8008/covreport/linux"
 
     l.info("[+] Creating HTML report")
-    fuzz_html.create_html_report(profiles, project_profile, coverage_url, git_repo_url, basefolder)
+    fuzz_html.create_html_report(profiles, project_profile, coverage_url, git_repo_url, project_profile.basefolder)
 
 
 def create_parser():

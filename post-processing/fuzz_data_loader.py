@@ -260,6 +260,7 @@ class MergedProjectProfile:
             else:
                 fp_obj.new_unreached_complexity = total_new_complexity
             fp_obj.total_cyclomatic_complexity = total_cyclomatic_complexity + fp_obj.cyclomatic_complexity
+        self.set_basefolder()
         l.info("Completed creationg of merged profile")
 
     def get_total_complexity(self):
@@ -286,7 +287,7 @@ class MergedProjectProfile:
                 reached_function_count += 1
         return reached_function_count
 
-    def get_basefolder(self):
+    def set_basefolder(self):
         """
         Identifies a common path-prefix amongst source files in 
         This is used to remove locations within a host system to 
@@ -296,7 +297,7 @@ class MergedProjectProfile:
         for func_k, func in self.all_functions.items():
             if func.function_source_file != "/" and "/usr/include/" not in func.function_source_file:
                 all_strs.append(func.function_source_file)
-        return fuzz_utils.longest_common_prefix(all_strs)
+        self.basefolder = fuzz_utils.longest_common_prefix(all_strs)
 
 def read_fuzzer_data_file_to_profile(filename):
     """
