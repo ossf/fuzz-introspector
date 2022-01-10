@@ -312,6 +312,7 @@ def read_fuzzer_data_file_to_profile(filename: str) -> Optional[FuzzerProfile]:
     For a given .data file (CFG) read the corresponding .yaml file
     This is a bit odd way of doing it and should probably be improved.
     """
+    l.info(" - loading %s"%(data_file))
     if not os.path.isfile(filename) or not os.path.isfile(filename+".yaml"):
         return None
 
@@ -371,15 +372,10 @@ def add_func_to_reached_and_clone(merged_profile_old: MergedProjectProfile,
     
 
 def load_all_profiles(target_folder: str) -> List[FuzzerProfile]:
-    # Get the introspector profile with raw data from each fuzzer in the target folder.
-    data_files = fuzz_utils.get_all_files_in_tree_with_regex(target_folder, "fuzzerLogFile.*\.data$")
-
-    # Parse and analyse the data from each fuzzer.
     profiles = []
+    data_files = fuzz_utils.get_all_files_in_tree_with_regex(target_folder, "fuzzerLogFile.*\.data$")
     l.info(" - found %d profiles to load"%(len(data_files)))
     for data_file in data_files:
-        l.info(" - loading %s"%(data_file))
-        # Read the .data file
         profile = read_fuzzer_data_file_to_profile(data_file)
         if profile != None:
             profiles.append(profile)
