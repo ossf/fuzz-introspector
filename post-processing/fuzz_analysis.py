@@ -32,9 +32,6 @@ import fuzz_data_loader
 
 l = logging.getLogger(name=__name__)
 
-def normalise_str(s1):
-    return s1.replace("\t", "").replace("\r", "").replace("\n", "").replace(" ", "")
-
 def overlay_calltree_with_coverage(
         profile: fuzz_data_loader.FuzzerProfile,
         project_profile: fuzz_data_loader.MergedProjectProfile,
@@ -91,7 +88,7 @@ def overlay_calltree_with_coverage(
             is_first = False
         elif  callstack_has_parent(node, callstack):
             # Find the parent function and check coverage of the node
-            coverage_data = profile.get_function_coverage(normalise_str(callstack_get_parent(node, callstack)), True)
+            coverage_data = profile.get_function_coverage(fuzz_utils.normalise_str(callstack_get_parent(node, callstack)), True)
             for (n_line_number, hit_count_cov) in coverage_data:
                 if n_line_number == node['linenumber'] and hit_count_cov > 0:
                     node_hitcount = hit_count_cov

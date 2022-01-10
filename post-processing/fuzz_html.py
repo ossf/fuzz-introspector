@@ -83,9 +83,6 @@ def create_horisontal_calltree_image(image_name: str, color_list: List[str]) -> 
     plt.title(image_name.split(".")[0])
     plt.savefig(image_name)
 
-def normalise_str(s1: str) -> str:
-    return s1.replace("\t", "").replace("\r", "").replace("\n", "").replace(" ", "")
-
 def create_table_head(table_head: str, items: List[str]) -> str:
     html_str = f"<table id='{table_head}' class='cell-border compact stripe'><thead><tr>\n"
     #html_str = ""

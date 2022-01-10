@@ -31,9 +31,6 @@ import fuzz_utils
 
 l = logging.getLogger(name=__name__)
 
-def normalise_str(s1):
-    return s1.replace("\t", "").replace("\r", "").replace("\n", "").replace(" ", "")
-
 class FunctionProfile:
     """
     Class for storing information about a given Function
@@ -141,7 +138,7 @@ class FuzzerProfile:
             return self.coverage['coverage-map'][function_name]
         # should_normalise
         for funcname in self.coverage['coverage-map']:
-            normalised_funcname = fuzz_utils.demangle_cpp_func(normalise_str(funcname))
+            normalised_funcname = fuzz_utils.demangle_cpp_func(fuzz_utils.normalise_str(funcname))
             if normalised_funcname == function_name:
                 return self.coverage['coverage-map'][funcname]
 
