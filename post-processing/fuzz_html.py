@@ -496,42 +496,30 @@ def create_html_report(
     Logs a complete report. This is the current main place for looking at 
     data produced by fuzz introspector.
     """
-    tables = []
-
-    # Remove existing html report.
-    report_name = "fuzz_report.html"
-    if os.path.isfile(report_name):
-        os.remove(report_name)
-
+    tables = list()
     toc_list = list()
-    l.info(" - Creating top section")
 
-    # Create html file and top bits.
-    # with open(report_name, "a+") as html_report:
+    l.info(" - Creating HTML report")
+
+    # Create html header, which will be used to assemble the doc at the
+    # end of this function.
     html_header = html_get_header()
 
-    # Now create the body of the html. The header will be prepended later.
-    html_string = ""
+    # Start creation of core html
+    html_string = '<div class="content-section">'
 
-    # Wrap the content
-    html_string += '<div class="content-section">'
-
-    # Add the content
+    # Project overview
     html_string += html_add_header_with_link("Project overview", 1, toc_list)
+    html_string += html_add_header_with_link"Project information", 2, toc_list)
 
-    # Project meta information
-    html_string += html_add_header_with_link(
-        "Project information", 2, toc_list)
-
-    # 1) Display:
-    #     - The amount of functions reached by existing fuzzers
-    html_string += html_add_header_with_link(
-        "Reachability overview", 3, toc_list)
+    #############################################
+    # Reachability overview
+    #############################################
+    l.info(" - Creating reachability overview table")
+    html_string += html_add_header_with_link("Reachability overview", 3, toc_list)
     tables.append("myTable%d" % (len(tables)))
-
     html_string += "<p class='no-top-margin'>This is the overview of reachability by the existing fuzzers in the project</p>"
     html_string += create_top_summary_info(tables, project_profile)
-
 
     #############################################
     # Table with overview of all fuzzers.
@@ -552,15 +540,11 @@ def create_html_report(
         tables, project_profile, coverage_url, git_repo_url, basefolder)
 
     #############################################
-    # Section with details about each fuzzer.
-    # This includes calltree for each fuzzer.
+    # Section with details about each fuzzer, including calltree.
     #############################################
     l.info(" - Creating section with details about each fuzzer")
     html_string += html_add_header_with_link("Fuzzer details", 1, toc_list)
-
-    profile_idx = 0
-    for profile in profiles:
-        profile_idx += 1
+    for profile_idx in range(len(profiles)):
         html_string += create_fuzzer_detailed_section(profile, toc_list, tables, profile_idx, project_profile, coverage_url, git_repo_url, basefolder)
 
     #############################################
@@ -608,6 +592,7 @@ def create_html_report(
             html_string += "];\n"
         counter += 1
 
+    # Closing tags
     html_string += ("</script>\n")
     html_string += ("</body>\n")
     html_string += ("</html>\n")
@@ -618,11 +603,18 @@ def create_html_report(
     html_toc_string = html_get_table_of_contents(toc_list)
 
     # Assemble the final HTML report and write it to a file.
-    html_string = html_header + html_toc_string + html_string
+    html_full_doc = html_header + html_toc_string + html_string
 
-    # pretty print the html code:
-    soup = bs(html_string, "lxml")
+    # Pretty print the html document
+    soup = bs(html_full_doc, "lxml")
     prettyHTML = soup.prettify()
+
+    # Remove existing html report
+    report_name = "fuzz_report.html"
+    if os.path.isfile(report_name):
+        os.remove(report_name)
+
+    # Write new html report
     with open(report_name, "a+") as html_report:
         html_report.write(prettyHTML)
 
