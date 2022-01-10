@@ -312,7 +312,7 @@ def read_fuzzer_data_file_to_profile(filename: str) -> Optional[FuzzerProfile]:
     For a given .data file (CFG) read the corresponding .yaml file
     This is a bit odd way of doing it and should probably be improved.
     """
-    l.info(" - loading %s"%(data_file))
+    l.info(" - loading %s"%(filename))
     if not os.path.isfile(filename) or not os.path.isfile(filename+".yaml"):
         return None
 
