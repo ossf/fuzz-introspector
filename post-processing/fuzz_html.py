@@ -20,6 +20,8 @@ import logging
 import shutil
 
 from typing import (
+    Any,
+    Dict,
     List,
     Tuple,
 )
@@ -392,6 +394,92 @@ def create_fuzzer_detailed_section(
 
     return html_string
 
+def handle_analysis_1(
+	    toc_list: List[Tuple[str, str, int]],
+            tables: List[str],
+            fuzz_targets_2: Dict[str, Dict[str, Any]],
+            new_profile_2: fuzz_data_loader.MergedProjectProfile,
+            opt_2: List[fuzz_data_loader.FuzzerProfile],
+            basefolder: str,
+            git_repo_url: str,
+            coverage_url: str) -> str:
+    html_string = ""
+    html_string += html_add_header_with_link(
+        "Optimal target analysis", 2, toc_list)
+
+    # Analysis 1.1
+    html_string += html_add_header_with_link(
+        "Remaining optimal interesting functions", 3, toc_list)
+    fuzz_targets = fuzz_targets_2
+    new_profile = new_profile_2
+    opt_func_3 = opt_2
+    tables.append("myTable%d" % (len(tables)))
+    html_string += create_table_head(tables[-1],
+                                     ["Func name", "Functions filename", "Arg count", "Args", "Function depth", "hitcount", "instr count", "bb count", "cyclomatic complexity", "Reachable functions", "Incoming references", "total cyclomatic complexity", "Unreached complexity"])
+
+    for fd in opt_func_3:
+        if basefolder == "/":
+            basefolder = "WRONG"
+
+        if basefolder == "WRONG":
+            fd_github_url = "%s/%s#L%d" % (git_repo_url, "/".join(
+                fd['functionSourceFile'].split("/")[3:]), fd.function_linenumber)
+        else:
+            fd_github_url = "%s/%s#L%d" % (git_repo_url, fd.function_source_file.replace(
+                basefolder, ""), fd.function_linenumber)
+
+        #print("Github url: %s" % (fd_github_url))
+
+        html_string += html_table_add_row([
+            "<a href=\"%s\"><code class='language-clike'>%s</code></a>" % (
+                fd_github_url, fuzz_utils.demangle_cpp_func(fd.function_name)),
+            fd.function_source_file,
+            fd.arg_count,
+            fd.arg_types,
+            fd.function_depth,
+            fd.hitcount,
+            fd.i_count,
+            fd.bb_count,
+            fd.cyclomatic_complexity,
+            len(fd.functions_reached),
+            len(fd.incoming_references),
+            fd.total_cyclomatic_complexity,
+            fd.new_unreached_complexity])
+    html_string += ("</table>\n")
+    #html_string += "</div>"
+
+    # Show fuzzer source codes
+    html_string += html_add_header_with_link("New fuzzers", 3, toc_list)
+    html_string += "<p>The below fuzzers are templates and suggestions for how to target the set of optimal functions above</p>"
+    for filename in fuzz_targets:
+        html_string += html_add_header_with_link("%s" %
+                                                 (filename.split("/")[-1]), 4, toc_list)
+        html_string += "<b>Target file:</b>%s<br>" % (filename)
+        all_functions = ", ".join([f.function_name for f in fuzz_targets[filename]['target_fds']])
+        html_string += "<b>Target functions:</b> %s" % (all_functions)
+        html_string += "<pre><code class='language-clike'>%s</code></pre><br>" % (
+            fuzz_targets[filename]['source_code'])
+
+    #############################################
+    # Section with information about new fuzzers
+    #############################################
+
+    # Table overview with how reachability is if the new fuzzers are applied.
+    html_string += html_add_header_with_link(
+        "Function reachability if adopted", 3, toc_list)
+    tables.append("myTable%d" % (len(tables)))
+    html_string += create_top_summary_info(tables, new_profile)
+
+    # Details about the new fuzzers.
+    html_string += html_add_header_with_link(
+        "All functions overview", 4, toc_list)
+    tables.append("myTable%d" % (len(tables)))
+    html_string += create_all_function_table(
+        tables, new_profile, coverage_url, git_repo_url, basefolder)
+
+    return html_string
+
+
 def create_html_report(
         profiles: List[fuzz_data_loader.FuzzerProfile],
         project_profile: fuzz_data_loader.MergedProjectProfile,
@@ -484,79 +572,15 @@ def create_html_report(
 
 
     # Analysis 1
-    html_string += html_add_header_with_link(
-        "Optimal target analysis", 2, toc_list)
-
-    # Analysis 1.1
-    html_string += html_add_header_with_link(
-        "Remaining optimal interesting functions", 3, toc_list)
-    fuzz_targets = fuzz_targets_2
-    new_profile = new_profile_2
-    opt_func_3 = opt_2
-    tables.append("myTable%d" % (len(tables)))
-    html_string += create_table_head(tables[-1],
-                                     ["Func name", "Functions filename", "Arg count", "Args", "Function depth", "hitcount", "instr count", "bb count", "cyclomatic complexity", "Reachable functions", "Incoming references", "total cyclomatic complexity", "Unreached complexity"])
-
-    for fd in opt_func_3:
-        if basefolder == "/":
-            basefolder = "WRONG"
-
-        if basefolder == "WRONG":
-            fd_github_url = "%s/%s#L%d" % (git_repo_url, "/".join(
-                fd['functionSourceFile'].split("/")[3:]), fd.function_linenumber)
-        else:
-            fd_github_url = "%s/%s#L%d" % (git_repo_url, fd.function_source_file.replace(
-                basefolder, ""), fd.function_linenumber)
-
-        #print("Github url: %s" % (fd_github_url))
-
-        html_string += html_table_add_row([
-            "<a href=\"%s\"><code class='language-clike'>%s</code></a>" % (
-                fd_github_url, fuzz_utils.demangle_cpp_func(fd.function_name)),
-            fd.function_source_file,
-            fd.arg_count,
-            fd.arg_types,
-            fd.function_depth,
-            fd.hitcount,
-            fd.i_count,
-            fd.bb_count,
-            fd.cyclomatic_complexity,
-            len(fd.functions_reached),
-            len(fd.incoming_references),
-            fd.total_cyclomatic_complexity,
-            fd.new_unreached_complexity])
-    html_string += ("</table>\n")
-    #html_string += "</div>"
-
-    # Show fuzzer source codes
-    html_string += html_add_header_with_link("New fuzzers", 3, toc_list)
-    html_string += "<p>The below fuzzers are templates and suggestions for how to target the set of optimal functions above</p>"
-    for filename in fuzz_targets:
-        html_string += html_add_header_with_link("%s" %
-                                                 (filename.split("/")[-1]), 4, toc_list)
-        html_string += "<b>Target file:</b>%s<br>" % (filename)
-        all_functions = ", ".join([f.function_name for f in fuzz_targets[filename]['target_fds']])
-        html_string += "<b>Target functions:</b> %s" % (all_functions)
-        html_string += "<pre><code class='language-clike'>%s</code></pre><br>" % (
-            fuzz_targets[filename]['source_code'])
-
-    #############################################
-    # Section with information about new fuzzers
-    #############################################
-
-    # Table overview with how reachability is if the new fuzzers are applied.
-    html_string += html_add_header_with_link(
-        "Function reachability if adopted", 3, toc_list)
-    tables.append("myTable%d" % (len(tables)))
-    html_string += create_top_summary_info(tables, new_profile)
-
-    # Details about the new fuzzers.
-    html_string += html_add_header_with_link(
-        "All functions overview", 4, toc_list)
-    tables.append("myTable%d" % (len(tables)))
-    html_string += create_all_function_table(
-        tables, new_profile, coverage_url, git_repo_url, basefolder)
-
+    html_string += handle_analysis_1(
+            toc_list,
+            tables,
+            fuzz_targets_2,
+            new_profile_2,
+            opt_2,
+            basefolder,
+            git_repo_url,
+            coverage_url)
     # Finish of analysis 1. TODO: refactor this more precisely so we have analysis "classes"
     # that makes writing an "analysis pass" as a much more modular and plugin-type style.
 
