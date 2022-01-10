@@ -23,7 +23,7 @@ else
   git clone https://github.com/google/oss-fuzz
   echo "Applying diffs"
   cd oss-fuzz
-  git checkout 5e9a6f218484733df3b80e45e7d602fa7f01c764
+  git checkout adacaaae3c91fe1d0af545bf0921f5f0ca66d1fe
   git apply  --ignore-space-change --ignore-whitespace ../oss-fuzz-patches.diff
   echo "Done"
   cd ../

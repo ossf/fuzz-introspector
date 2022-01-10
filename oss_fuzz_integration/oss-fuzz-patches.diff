@@ -92,7 +92,7 @@ index 45260941..c533509e 100644
  # Keep all steps in the same script to decrease the number of intermediate
  # layes in docker file.
 diff --git a/infra/base-images/base-clang/checkout_build_install_llvm.sh b/infra/base-images/base-clang/checkout_build_install_llvm.sh
-index a62b27cf..c3cf6129 100755
+index 4c3ea6a8..c3cf6129 100755
 --- a/infra/base-images/base-clang/checkout_build_install_llvm.sh
 +++ b/infra/base-images/base-clang/checkout_build_install_llvm.sh
 @@ -61,6 +61,8 @@ function cmake_llvm {
@@ -104,15 +104,15 @@ index a62b27cf..c3cf6129 100755
  # Use chromium's clang revision
  mkdir $SRC/chromium_tools
  cd $SRC/chromium_tools
-@@ -74,7 +76,7 @@ OUR_LLVM_REVISION=llvmorg-12-init-17251-g6de48655
+@@ -70,7 +72,7 @@ cd clang
+ LLVM_SRC=$SRC/llvm-project
+ 
+ # For manual bumping.
+-OUR_LLVM_REVISION=llvmorg-14-init-7378-gaee49255
++OUR_LLVM_REVISION=llvmorg-12-init-17251-g6de48655
  
  # To allow for manual downgrades. Set to 0 to use Chrome's clang version (i.e.
  # *not* force a manual downgrade). Set to 1 to force a manual downgrade.
--FORCE_OUR_REVISION=0
-+FORCE_OUR_REVISION=1
- LLVM_REVISION=$(grep -Po "CLANG_REVISION = '\K([^']+)" scripts/update.py)
- 
- clone_with_retries https://github.com/llvm/llvm-project.git $LLVM_SRC
 @@ -93,6 +95,23 @@ fi
  git -C $LLVM_SRC checkout $LLVM_REVISION
  echo "Using LLVM revision: $LLVM_REVISION"
