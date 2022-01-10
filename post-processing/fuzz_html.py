@@ -476,16 +476,18 @@ def create_html_report(
         html_string += create_fuzzer_detailed_section(profile, toc_list, tables, profile_idx, project_profile, coverage_url, git_repo_url, basefolder)
 
     #############################################
-    # Details about the suggestions for additions to the fuzzer infra
+    # Handle optional analyses
     #############################################
-    l.info(" - Creating remaining bits")
+    l.info(" - Handling optional analyses")
     html_string += html_add_header_with_link(
-        "Analysis and suggestions", 1, toc_list)
+        "Analyses and suggestions", 1, toc_list)
+
+
+    # Analysis 1
     html_string += html_add_header_with_link(
-        "Target function analysis", 2, toc_list)
+        "Optimal target analysis", 2, toc_list)
 
-
-
+    # Analysis 1.1
     html_string += html_add_header_with_link(
         "Remaining optimal interesting functions", 3, toc_list)
     fuzz_targets = fuzz_targets_2
@@ -527,11 +529,11 @@ def create_html_report(
     #html_string += "</div>"
 
     # Show fuzzer source codes
-    html_string += html_add_header_with_link("New fuzzers", 2, toc_list)
+    html_string += html_add_header_with_link("New fuzzers", 3, toc_list)
     html_string += "<p>The below fuzzers are templates and suggestions for how to target the set of optimal functions above</p>"
     for filename in fuzz_targets:
         html_string += html_add_header_with_link("%s" %
-                                                 (filename.split("/")[-1]), 3, toc_list)
+                                                 (filename.split("/")[-1]), 4, toc_list)
         html_string += "<b>Target file:</b>%s<br>" % (filename)
         all_functions = ", ".join([f.function_name for f in fuzz_targets[filename]['target_fds']])
         html_string += "<b>Target functions:</b> %s" % (all_functions)
@@ -544,16 +546,19 @@ def create_html_report(
 
     # Table overview with how reachability is if the new fuzzers are applied.
     html_string += html_add_header_with_link(
-        "Function reachability if adopted", 2, toc_list)
+        "Function reachability if adopted", 3, toc_list)
     tables.append("myTable%d" % (len(tables)))
     html_string += create_top_summary_info(tables, new_profile)
 
     # Details about the new fuzzers.
     html_string += html_add_header_with_link(
-        "All functions overview", 3, toc_list)
+        "All functions overview", 4, toc_list)
     tables.append("myTable%d" % (len(tables)))
     html_string += create_all_function_table(
         tables, new_profile, coverage_url, git_repo_url, basefolder)
+
+    # Finish of analysis 1. TODO: refactor this more precisely so we have analysis "classes"
+    # that makes writing an "analysis pass" as a much more modular and plugin-type style.
 
     # Close the content div and content_wrapper
     html_string += "</div>\n</div>\n"
