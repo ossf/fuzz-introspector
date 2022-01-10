@@ -1,5 +1,5 @@
 diff --git a/infra/base-images/base-builder/Dockerfile b/infra/base-images/base-builder/Dockerfile
-index 256e7be5..140ac3df 100644
+index 475e5a7d..fca8165d 100644
 --- a/infra/base-images/base-builder/Dockerfile
 +++ b/infra/base-images/base-builder/Dockerfile
 @@ -82,6 +82,8 @@ ENV SANITIZER_FLAGS_dataflow "-fsanitize=dataflow"
@@ -138,15 +138,15 @@ index a62b27cf..c3cf6129 100755
  mkdir -p $WORK/llvm-stage2 $WORK/llvm-stage1
  python3 $SRC/chromium_tools/clang/scripts/update.py --output-dir $WORK/llvm-stage1
 diff --git a/infra/base-images/base-runner/coverage b/infra/base-images/base-runner/coverage
-index 40c31e07..4b47adc0 100755
+index 8312f38c..1c7f0bed 100755
 --- a/infra/base-images/base-runner/coverage
 +++ b/infra/base-images/base-runner/coverage
 @@ -100,7 +100,7 @@ function run_fuzz_target {
    fi
  
    # If necessary translate to latest profraw version.
--  llvm-cov-rel $OUT/$target $profraw_file_mask tmp.profraw
-+  #llvm-cov-rel $OUT/$target $profraw_file_mask tmp.profraw
+-  profraw_update.py $OUT/$target $profraw_file_mask tmp.profraw
++  #profraw_update.py $OUT/$target $profraw_file_mask tmp.profraw
    mv tmp.profraw $profraw_file_mask
    llvm-profdata merge -j=1 -sparse $profraw_file_mask -o $profdata_file
  
@@ -174,10 +174,10 @@ index a323a436..68c006d1 100644
  ARCHITECTURES = ['i386', 'x86_64']
  ENGINES = ['libfuzzer', 'afl', 'honggfuzz', 'dataflow', 'none']
 diff --git a/infra/helper.py b/infra/helper.py
-index 805f39a9..cd028f33 100755
+index 2478048a..235763ae 100755
 --- a/infra/helper.py
 +++ b/infra/helper.py
-@@ -270,6 +270,9 @@ def get_parser():  # pylint: disable=too-many-statements
+@@ -274,6 +274,9 @@ def get_parser():  # pylint: disable=too-many-statements
                                      action='store_false',
                                      help='do not clean existing artifacts '
                                      '(default).')
@@ -187,7 +187,7 @@ index 805f39a9..cd028f33 100755
    build_fuzzers_parser.set_defaults(clean=False)
  
    check_build_parser = subparsers.add_parser(
-@@ -610,6 +613,7 @@ def build_fuzzers_impl(  # pylint: disable=too-many-arguments,too-many-locals,to
+@@ -614,6 +617,7 @@ def build_fuzzers_impl(  # pylint: disable=too-many-arguments,too-many-locals,to
      architecture,
      env_to_add,
      source_path,
@@ -195,7 +195,7 @@ index 805f39a9..cd028f33 100755
      mount_path=None):
    """Builds fuzzers."""
    if not build_image_impl(project):
-@@ -637,6 +641,7 @@ def build_fuzzers_impl(  # pylint: disable=too-many-arguments,too-many-locals,to
+@@ -641,6 +645,7 @@ def build_fuzzers_impl(  # pylint: disable=too-many-arguments,too-many-locals,to
        'FUZZING_ENGINE=' + engine,
        'SANITIZER=' + sanitizer,
        'ARCHITECTURE=' + architecture,
@@ -203,7 +203,7 @@ index 805f39a9..cd028f33 100755
    ]
  
    _add_oss_fuzz_ci_if_needed(env)
-@@ -689,6 +694,7 @@ def build_fuzzers(args):
+@@ -693,6 +698,7 @@ def build_fuzzers(args):
                              args.architecture,
                              args.e,
                              args.source_path,
