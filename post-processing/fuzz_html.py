@@ -401,6 +401,20 @@ def handle_analysis_1(
             basefolder: str,
             git_repo_url: str,
             coverage_url: str) -> str:
+    """
+    Performs an analysis based on optimal target selection.
+
+    Finds a set of optimal functions based on complexity reach and:
+      - Displays the functions in a table.
+      - Calculates how the new all-function table will be in case the optimal
+        targets are implemented.
+      - Performs a simple synthesis on how to create fuzzers that target the
+        optimal functions.
+
+    The "optimal target function" is focused on code that is currently *not hit* by
+    any fuzzers. This means it can be used to expand the current fuzzing harness
+    rather than substitute it.
+    """
     l.info(" - Identifying optimal targets")
 
     html_string = ""
@@ -412,14 +426,12 @@ def handle_analysis_1(
     tables.append(f"myTable{len(tables)}")
     html_string += create_top_summary_info(tables, new_profile)
 
-    # Analysis 1.1
+    # Table with details about optimal target functions
     html_string += html_add_header_with_link(
         "Remaining optimal interesting functions", 3, toc_list)
-
     tables.append("myTable%d" % (len(tables)))
     html_string += create_table_head(tables[-1],
                                      ["Func name", "Functions filename", "Arg count", "Args", "Function depth", "hitcount", "instr count", "bb count", "cyclomatic complexity", "Reachable functions", "Incoming references", "total cyclomatic complexity", "Unreached complexity"])
-
     for fd in optimal_target_functions:
         if basefolder == "/":
             basefolder = "WRONG"
@@ -448,7 +460,7 @@ def handle_analysis_1(
             fd.new_unreached_complexity])
     html_string += ("</table>\n")
 
-    # Show fuzzer source codes
+    # Section with code for new fuzzing harnesses
     html_string += html_add_header_with_link("New fuzzers", 3, toc_list)
     html_string += "<p>The below fuzzers are templates and suggestions for how to target the set of optimal functions above</p>"
     for filename in fuzz_targets:
@@ -460,17 +472,14 @@ def handle_analysis_1(
         html_string += "<pre><code class='language-clike'>%s</code></pre><br>" % (
             fuzz_targets[filename]['source_code'])
 
-    #############################################
-    # Section with information about new fuzzers
-    #############################################
-
     # Table overview with how reachability is if the new fuzzers are applied.
     html_string += html_add_header_with_link(
         "Function reachability if adopted", 3, toc_list)
     tables.append("myTable%d" % (len(tables)))
     html_string += create_top_summary_info(tables, new_profile)
 
-    # Details about the new fuzzers.
+    # Table with details about all functions in the project in case the
+    # suggested fuzzers are implemented.
     html_string += html_add_header_with_link(
         "All functions overview", 4, toc_list)
     tables.append("myTable%d" % (len(tables)))
