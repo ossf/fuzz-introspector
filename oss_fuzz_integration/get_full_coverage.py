@@ -85,7 +85,7 @@ def run_all_fuzzers(project_name, fuzztime):
         os.mkdir(target_corpus)
         os.mkdir(target_crashes)
 
-        cmd = ["python3 ./infra/helper.py run_fuzzer --corpus-dir=%s %s %s -max_total_time=%d -detect_leaks=0"%(target_corpus, project_name, f, fuzztime)]
+        cmd = ["python3 ./infra/helper.py run_fuzzer --corpus-dir=%s %s %s -- -max_total_time=%d -detect_leaks=0"%(target_corpus, project_name, f, fuzztime)]
         try:
             subprocess.check_call(" ".join(cmd), shell=True)
             print("Execution finished without exception")
