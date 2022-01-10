@@ -18,6 +18,8 @@ import copy
 import logging
 
 from typing import (
+    Any,
+    Dict,
     List,
     Optional,
     Tuple,
@@ -78,7 +80,7 @@ class FuzzerProfile:
     This class essentially holds data corresponding to the output of run of the LLVM
     plugin. That means, the output from the plugin for a single fuzzer.
     """
-    def __init__(self, filename, data_dict_yaml):
+    def __init__(self, filename: str, data_dict_yaml: Dict[Any, Any]):
         self.function_call_depths = fuzz_cfg_load.data_file_read_calltree(filename)
         self.fuzzer_source_file = data_dict_yaml['Fuzzer filename']
 
@@ -209,7 +211,7 @@ class MergedProjectProfile:
     example, it does project-wide analysis of reachable/unreachable functions by
     digesting data from all the fuzzers in the project.
     """
-    def __init__(self, profiles):
+    def __init__(self, profiles: List[FuzzerProfile]):
         self.name = None
         self.profiles = profiles
         self.all_functions = dict()
