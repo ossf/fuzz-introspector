@@ -19,6 +19,14 @@ import copy
 import cxxfilt
 import logging
 
+from typing import (
+    Any,
+    Dict,
+    List,
+    Set,
+    Tuple,
+)
+
 import fuzz_utils
 import fuzz_data_loader
 
@@ -27,7 +35,13 @@ l = logging.getLogger(name=__name__)
 def normalise_str(s1):
     return s1.replace("\t", "").replace("\r", "").replace("\n", "").replace(" ", "")
 
-def overlay_calltree_with_coverage(profile, project_profile, coverage_url, git_repo_url, basefolder, image_name):
+def overlay_calltree_with_coverage(
+        profile: fuzz_data_loader.FuzzerProfile,
+        project_profile: fuzz_data_loader.MergedProjectProfile,
+        coverage_url: str,
+        git_repo_url: str,
+        basefolder: str,
+        image_name: str) -> None:
     # We use the callstack to keep track of all function parents. We need this
     # when looking up if a callsite was hit or not. This is because the coverage
     # information about a callsite is located in coverage data of the function
@@ -177,7 +191,8 @@ def overlay_calltree_with_coverage(profile, project_profile, coverage_url, git_r
 
 
 
-def analysis_get_optimal_targets(merged_profile):
+def analysis_get_optimal_targets(
+        merged_profile: fuzz_data_loader.MergedProjectProfile) -> Tuple[List[fuzz_data_loader.FuzzerProfile], Set[str]]:
     """
     Finds the top reachable functions with minimum overlap.
     Each of these functions is not be reachable by another function
@@ -233,7 +248,11 @@ def analysis_get_optimal_targets(merged_profile):
     return target_fds, optimal_set
 
 
-def analysis_synthesize_simple_targets(merged_profile):
+def analysis_synthesize_simple_targets(
+        merged_profile: fuzz_data_loader.MergedProjectProfile) -> (
+                Tuple[Dict[str, Dict[str, Any]],
+                      fuzz_data_loader.MergedProjectProfile,
+                      List[fuzz_data_loader.FuzzerProfile]]):
     '''
     Function for synthesizing fuzz targets. The way this one works is by finding
     optimal targets that don't overlap too much with each other. The fuzz targets
@@ -430,4 +449,4 @@ def analysis_get_targets_for_existing_fuzzers(profiles, merged_profile):
         if best_profile != None:
             targets_for_existing_fuzzers.append((fd, best_profile, best_proportion))
 
-    return targets_for_existing_fuzzers      
+    return targets_for_existing_fuzzers
