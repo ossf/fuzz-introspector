@@ -300,10 +300,11 @@ class MergedProjectProfile:
         This is used to remove locations within a host system to 
         essentially make paths as if they were from the root of the source code project.
         """
-        all_strs = []
-        for func_k, func in self.all_functions.items():
-            if func.function_source_file != "/" and "/usr/include/" not in func.function_source_file:
-                all_strs.append(func.function_source_file)
+        all_strs = [f.function_source_file for f
+                    in self.all_functions.values()
+                    if f.function_source_file != "/" and
+                    "/usr/include/" not in f.function_source_file]
+
         self.basefolder = fuzz_utils.longest_common_prefix(all_strs)
 
 def read_fuzzer_data_file_to_profile(filename: str) -> Optional[FuzzerProfile]:
