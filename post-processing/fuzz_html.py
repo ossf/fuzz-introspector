@@ -19,7 +19,13 @@ import cxxfilt
 import logging
 import shutil
 
+from typing import (
+    List,
+    Tuple,
+)
+
 import fuzz_analysis
+import fuzz_data_loader
 import fuzz_utils
 
 # For pretty printing the html code:
@@ -31,7 +37,7 @@ from matplotlib.patches import Rectangle
 
 l = logging.getLogger(name=__name__)
 
-def create_horisontal_calltree_image(image_name, color_list):
+def create_horisontal_calltree_image(image_name: str, color_list: List[str]) -> None:
     """
     Creates a horisontal image of the calltree. The height is fixed and 
     each element on the x-axis shows a node in the calltree in the form
@@ -75,10 +81,10 @@ def create_horisontal_calltree_image(image_name, color_list):
     plt.title(image_name.split(".")[0])
     plt.savefig(image_name)
 
-def normalise_str(s1):
+def normalise_str(s1: str) -> str:
     return s1.replace("\t", "").replace("\r", "").replace("\n", "").replace(" ", "")
 
-def create_table_head(table_head, items):
+def create_table_head(table_head: str, items: List[str]) -> str:
     html_str = f"<table id='{table_head}' class='cell-border compact stripe'><thead><tr>\n"
     #html_str = ""
     for elem in items:
@@ -86,14 +92,14 @@ def create_table_head(table_head, items):
     html_str += "</tr></thead><tbody>"
     return html_str
 
-def html_table_add_row(elems):
+def html_table_add_row(elems: List[str]) -> str:
     html_str = "<tr>\n"
     for elem in elems:
         html_str += f"<td>{elem}</td>\n"
     html_str += "</tr>\n"
     return html_str
 
-def html_get_header():
+def html_get_header() -> str:
     header = """<html>
                 <head>
                     <link rel='stylesheet' href='prism.css'>
@@ -109,7 +115,7 @@ def html_get_header():
     header = header+"<div class='content-wrapper'>"
     return header
 
-def html_get_navbar():
+def html_get_navbar() -> str:
     navbar = """\n<div class="top-navbar">\n
                     <div class="top-navbar-accordion">\n
                         <svg viewBox="0 0 24 24" preserveAspectRatio="xMidYMid meet" focusable="false" style="pointer-events: none; display: block; width: 100%; height: 100%;">
@@ -125,7 +131,7 @@ def html_get_navbar():
                 </div>\n"""
     return navbar
 
-def html_get_table_of_contents(toc_list):
+def html_get_table_of_contents(toc_list: List[Tuple[str, str, str]]) -> str:
     html_toc_string = ""
     html_toc_string += '<div class="left-sidebar">\
                             <div class="left-sidebar-content-box">\
@@ -140,7 +146,10 @@ def html_get_table_of_contents(toc_list):
     return html_toc_string
 
 
-def html_add_header_with_link(header_title, title_type, toc_list, link=None):
+def html_add_header_with_link(header_title: str,
+                                  title_type: int,
+                                  toc_list: List[Tuple[str, str, str]],
+                                  link: str=None) -> str:
     if link == None:
         link = header_title.replace(" ", "-")
     toc_list.append((header_title, link, title_type-1))
@@ -149,7 +158,8 @@ def html_add_header_with_link(header_title, title_type, toc_list, link=None):
     return html_string
 
 
-def create_overview_table(tables, profiles):
+def create_overview_table(tables: List[str],
+                              profiles: List[fuzz_data_loader.FuzzerProfile]) -> str:
     """Table with an overview of all the fuzzers"""
     html_string = create_table_head(tables[-1],
                                     ["Fuzzer filename",
@@ -180,7 +190,12 @@ def create_overview_table(tables, profiles):
     return html_string
 
 
-def create_all_function_table(tables, project_profile, coverage_url, git_repo_url, basefolder):
+def create_all_function_table(
+        tables: List[str],
+        project_profile: fuzz_data_loader.MergedProjectProfile,
+        coverage_url: str,
+        git_repo_url: str,
+        basefolder: str) -> str:
     """Table for all functions in the project. Contains many details about each
         function"""
     html_string = create_table_head(tables[-1],
@@ -221,7 +236,9 @@ def create_all_function_table(tables, project_profile, coverage_url, git_repo_ur
     return html_string
 
 
-def create_top_summary_info(tables, project_profile):
+def create_top_summary_info(
+        tables: List[str],
+        project_profile: fuzz_data_loader.MergedProjectProfile) -> str:
     html_string = ""
     total_unreached_functions = set()
     total_reached_functions = set()
@@ -266,7 +283,14 @@ def create_top_summary_info(tables, project_profile):
     return html_string
 
 
-def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefolder, image_name, tables):
+def create_calltree(
+        profile: fuzz_data_loader.FuzzerProfile,
+        project_profile: fuzz_data_loader.MergedProjectProfile,
+        coverage_url: str,
+        git_repo_url: str,
+        basefolder: str,
+        image_name: str,
+        tables: List[str]) -> str:
     """
     Creates the HTML of the calltree. Returns the HTML as a string.
     """
@@ -324,7 +348,15 @@ def create_calltree(profile, project_profile, coverage_url, git_repo_url, basefo
     create_horisontal_calltree_image(image_name, color_sequence)
     return html_string
 
-def create_fuzzer_detailed_section(profile, toc_list, tables, curr_tt_profile, project_profile, coverage_url, git_repo_url, basefolder):
+def create_fuzzer_detailed_section(
+        profile: fuzz_data_loader.FuzzerProfile,
+        toc_list: List[Tuple[str, str, int]],
+        tables: List[str],
+        curr_tt_profile: int,
+        project_profile: fuzz_data_loader.MergedProjectProfile,
+        coverage_url: str,
+        git_repo_url: str,
+        basefolder: str) -> str:
     html_string = ""
     fuzzer_filename = profile.fuzzer_source_file
     html_string += html_add_header_with_link("Fuzzer: %s" % (
@@ -360,11 +392,12 @@ def create_fuzzer_detailed_section(profile, toc_list, tables, curr_tt_profile, p
 
     return html_string
 
-def create_html_report(profiles,
-                       project_profile,
-                       coverage_url,
-                       git_repo_url,
-                       basefolder):
+def create_html_report(
+        profiles: List[fuzz_data_loader.FuzzerProfile],
+        project_profile: fuzz_data_loader.MergedProjectProfile,
+        coverage_url: str,
+        git_repo_url: str,
+        basefolder: str) -> None:
     """
     Logs a complete report. This is the current main place for looking at 
     data produced by fuzz introspector.
