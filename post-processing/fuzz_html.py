@@ -397,27 +397,30 @@ def create_fuzzer_detailed_section(
 def handle_analysis_1(
 	    toc_list: List[Tuple[str, str, int]],
             tables: List[str],
-            fuzz_targets_2: Dict[str, Dict[str, Any]],
-            new_profile_2: fuzz_data_loader.MergedProjectProfile,
-            opt_2: List[fuzz_data_loader.FuzzerProfile],
+            project_profile: fuzz_data_loader.MergedProjectProfile,
             basefolder: str,
             git_repo_url: str,
             coverage_url: str) -> str:
+    l.info(" - Identifying optimal targets")
+
     html_string = ""
     html_string += html_add_header_with_link(
         "Optimal target analysis", 2, toc_list)
+    fuzz_targets, new_profile, optimal_target_functions = fuzz_analysis.analysis_synthesize_simple_targets(
+        project_profile)
+    html_string += "<p>If you implement fuzzers that target the <a href=\"#Remaining-optimal-interesting-functions\">remaining optimal functions</a> then the reachability will be:</p>"
+    tables.append(f"myTable{len(tables)}")
+    html_string += create_top_summary_info(tables, new_profile)
 
     # Analysis 1.1
     html_string += html_add_header_with_link(
         "Remaining optimal interesting functions", 3, toc_list)
-    fuzz_targets = fuzz_targets_2
-    new_profile = new_profile_2
-    opt_func_3 = opt_2
+
     tables.append("myTable%d" % (len(tables)))
     html_string += create_table_head(tables[-1],
                                      ["Func name", "Functions filename", "Arg count", "Args", "Function depth", "hitcount", "instr count", "bb count", "cyclomatic complexity", "Reachable functions", "Incoming references", "total cyclomatic complexity", "Unreached complexity"])
 
-    for fd in opt_func_3:
+    for fd in optimal_target_functions:
         if basefolder == "/":
             basefolder = "WRONG"
 
@@ -427,8 +430,6 @@ def handle_analysis_1(
         else:
             fd_github_url = "%s/%s#L%d" % (git_repo_url, fd.function_source_file.replace(
                 basefolder, ""), fd.function_linenumber)
-
-        #print("Github url: %s" % (fd_github_url))
 
         html_string += html_table_add_row([
             "<a href=\"%s\"><code class='language-clike'>%s</code></a>" % (
@@ -446,7 +447,6 @@ def handle_analysis_1(
             fd.total_cyclomatic_complexity,
             fd.new_unreached_complexity])
     html_string += ("</table>\n")
-    #html_string += "</div>"
 
     # Show fuzzer source codes
     html_string += html_add_header_with_link("New fuzzers", 3, toc_list)
@@ -526,12 +526,6 @@ def create_html_report(
     html_string += "<p class='no-top-margin'>This is the overview of reachability by the existing fuzzers in the project</p>"
     html_string += create_top_summary_info(tables, project_profile)
 
-    l.info(" - Identifying optimal targets")
-    fuzz_targets_2, new_profile_2, opt_2 = fuzz_analysis.analysis_synthesize_simple_targets(
-        project_profile)
-    html_string += "<p>If you implement fuzzers that target the <a href=\"#Remaining-optimal-interesting-functions\">remaining optimal functions</a> then the reachability will be:</p>"
-    tables.append(f"myTable{len(tables)}")
-    html_string += create_top_summary_info(tables, new_profile_2)
 
     #############################################
     # Table with overview of all fuzzers.
@@ -570,20 +564,20 @@ def create_html_report(
     html_string += html_add_header_with_link(
         "Analyses and suggestions", 1, toc_list)
 
-
     # Analysis 1
     html_string += handle_analysis_1(
             toc_list,
             tables,
-            fuzz_targets_2,
-            new_profile_2,
-            opt_2,
+            project_profile,
             basefolder,
             git_repo_url,
             coverage_url)
-    # Finish of analysis 1. TODO: refactor this more precisely so we have analysis "classes"
-    # that makes writing an "analysis pass" as a much more modular and plugin-type style.
 
+    #############################################
+    # End of optional analyses
+    #############################################
+
+    ## Wrap up the HTML generation
     # Close the content div and content_wrapper
     html_string += "</div>\n</div>\n"
 
