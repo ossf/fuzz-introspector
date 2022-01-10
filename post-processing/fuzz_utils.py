@@ -13,15 +13,20 @@
 # limitations under the License.
 """ Utility functions """
 
-import os
-import re
-import yaml
 import logging
 import cxxfilt
+import os
+import re
+from typing import (
+    Any,
+    List,
+    Dict,
+)
+import yaml
 
 l = logging.getLogger(name=__name__)
 
-def longest_common_prefix(strs):
+def longest_common_prefix(strs: List[str]) -> str:
     """
     Returns the longest common prefix of all the strings in strs
     """
@@ -41,7 +46,7 @@ def longest_common_prefix(strs):
     return current
 
 
-def get_all_files_in_tree_with_regex(basedir, regex_str):
+def get_all_files_in_tree_with_regex(basedir: str, regex_str: str) -> List[str]:
     """
     Returns a list of paths such that each path is to a file with
     the provided suffix. Walks the entire tree of basedir.
@@ -55,7 +60,7 @@ def get_all_files_in_tree_with_regex(basedir, regex_str):
                 data_files.append(os.path.join(root, f))
     return data_files
 
-def data_file_read_yaml(filename):
+def data_file_read_yaml(filename: str) -> Dict[Any, Any]:
     """
     Reads a file as a yaml file. This is used to load data
     from fuzz-introspectors compiler plugin output.
@@ -67,7 +72,7 @@ def data_file_read_yaml(filename):
         except yaml.YAMLError as exc:
             return None
 
-def demangle_cpp_func(funcname):
+def demangle_cpp_func(funcname: str) -> str:
     try:
         demangled = cxxfilt.demangle(funcname.replace(" ",""))
         return demangled
