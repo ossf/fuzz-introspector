@@ -434,35 +434,24 @@ def create_html_report(
     html_string += html_add_header_with_link(
         "Reachability overview", 3, toc_list)
     tables.append("myTable%d" % (len(tables)))
-    #html_string += "<div class='section-wrapper'>"
+
     html_string += "<p class='no-top-margin'>This is the overview of reachability by the existing fuzzers in the project</p>"
     html_string += create_top_summary_info(tables, project_profile)
-    #html_string += "</div>"
 
     l.info(" - Identifying optimal targets")
     fuzz_targets_2, new_profile_2, opt_2 = fuzz_analysis.analysis_synthesize_simple_targets(
         project_profile)
-
-    # Table overview with how reachability is if the new fuzzers are applied.
-    #html_string += html_add_header_with_link(
-    #    "Optimal fuzzer reachability overview", 4, toc_list)
-    #html_string += "<div class='section-wrapper'>
-
-    #html_string += "<p class='no-top-margin'>If you implement fuzzers targetting the functions listed below, then the reachability will be:</p>"
     html_string += "<p>If you implement fuzzers that target the <a href=\"#Remaining-optimal-interesting-functions\">remaining optimal functions</a> then the reachability will be:</p>"
     tables.append(f"myTable{len(tables)}")
     html_string += create_top_summary_info(tables, new_profile_2)
-    #html_string += "</div>"
 
     #############################################
     # Table with overview of all fuzzers.
     #############################################
     l.info(" - Creating table with overview of all fuzzers")
     html_string += html_add_header_with_link("Fuzzers overview", 3, toc_list)
-    #html_string += "<div class='section-wrapper'>"
     tables.append("myTable%d" % (len(tables)))
     html_string += create_overview_table(tables, profiles)
-    #html_string += "</div>"
 
     #############################################
     # Table with details about all functions in the target project.
@@ -470,11 +459,9 @@ def create_html_report(
     l.info(" - Creating table with information about all functions in target")
     html_string += html_add_header_with_link(
         "Project functions overview", 2, toc_list)
-    #html_string += "<div class='section-wrapper'>"
     tables.append("myTable%d" % (len(tables)))
     html_string += create_all_function_table(
         tables, project_profile, coverage_url, git_repo_url, basefolder)
-    #html_string += "</div>"
 
     #############################################
     # Section with details about each fuzzer.
@@ -497,50 +484,13 @@ def create_html_report(
     html_string += html_add_header_with_link(
         "Target function analysis", 2, toc_list)
 
-    #optimal_targets, optimal_set = fuzz_analysis.analysis_get_optimal_targets(
-    #    project_profile)
-    #html_string += html_add_header_with_link(
-    #    "All interesting functions", 3, toc_list)
-    ##html_string += "<div class='section-wrapper'>"
-    #html_string += "<p class='no-top-margin'>Together, the following functions will target %d number of functions</p>" % (
-    #    len(optimal_set))
-    #tables.append("myTable%d" % (len(tables)))
-    #html_string += create_table_head(tables[-1],
-    #                                 ["Func name", "Functions filename", "Arg count", "Args", "Function depth", "hitcount", "instr count", "bb count", "cyclomatic complexity", "Reachable functions", "Incoming references", "total cyclomatic complexity", "Unreached complexity"])
 
-    #for fd in optimal_targets:
-    #    html_string += html_table_add_row([
-    #        "<code class='language-clike'>%s</code>" % demangle_cpp_func(
-    #            fd['functionName']),
-    #        fd['functionSourceFile'],
-    #        fd['argCount'],
-    #        fd['argTypes'],
-    #        fd['functionDepth'],
-    #        fd['hitcount'],
-    #        fd['ICount'],
-    #        fd['BBCount'],
-    #        fd['CyclomaticComplexity'],
-    #        len(fd['functionsReached']),
-    #        len(fd['incoming_references']),
-    #        fd['total_cyclomatic_complexity'],
-    #        fd['new_unreached_complexity']])
-    #html_string += ("</table>\n")
-    #html_string += "</div>" # Close section-wrapper
-
-    # Another way of finding optimal functions
-    # We already called fuzz_analysis.analysis_synthesize_simple_targets so it would be nice not having
-    # to do it again.
-    #fuzz_targets, new_profile, opt_func_3 = fuzz_analysis.analysis_synthesize_simple_targets(
-    #    project_profile)
-    fuzz_targets = fuzz_targets_2
-    new_profile = new_profile_2
-    opt_func_3 = opt_2
 
     html_string += html_add_header_with_link(
         "Remaining optimal interesting functions", 3, toc_list)
-    #html_string += "<div class='section-wrapper'>"
-    #html_string += "<p class='no-top-margin'>Together, the following functions will target %d functions</p>" % (
-    #    len(optimal_set))
+    fuzz_targets = fuzz_targets_2
+    new_profile = new_profile_2
+    opt_func_3 = opt_2
     tables.append("myTable%d" % (len(tables)))
     html_string += create_table_head(tables[-1],
                                      ["Func name", "Functions filename", "Arg count", "Args", "Function depth", "hitcount", "instr count", "bb count", "cyclomatic complexity", "Reachable functions", "Incoming references", "total cyclomatic complexity", "Unreached complexity"])
