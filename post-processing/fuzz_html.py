@@ -510,7 +510,7 @@ def create_html_report(
 
     # Project overview
     html_string += html_add_header_with_link("Project overview", 1, toc_list)
-    html_string += html_add_header_with_link"Project information", 2, toc_list)
+    html_string += html_add_header_with_link("Project information", 2, toc_list)
 
     #############################################
     # Reachability overview
@@ -545,7 +545,7 @@ def create_html_report(
     l.info(" - Creating section with details about each fuzzer")
     html_string += html_add_header_with_link("Fuzzer details", 1, toc_list)
     for profile_idx in range(len(profiles)):
-        html_string += create_fuzzer_detailed_section(profile, toc_list, tables, profile_idx, project_profile, coverage_url, git_repo_url, basefolder)
+        html_string += create_fuzzer_detailed_section(profiles[profile_idx], toc_list, tables, profile_idx, project_profile, coverage_url, git_repo_url, basefolder)
 
     #############################################
     # Handle optional analyses
