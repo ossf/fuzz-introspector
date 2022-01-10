@@ -17,6 +17,12 @@ import os
 import copy
 import logging
 
+from typing import (
+    List,
+    Optional,
+    Tuple,
+)
+
 import fuzz_cfg_load
 import fuzz_cov_load
 import fuzz_utils
@@ -83,7 +89,7 @@ class FuzzerProfile:
             func_profile.migrate_from_yaml_elem(elem)
             self.all_class_functions[func_profile.function_name] = func_profile
 
-    def refine_paths(self, basefolder):
+    def refine_paths(self, basefolder: str) -> None:
         """
         Removes the project_profile's basefolder from source paths in a given profile. 
         """
@@ -96,13 +102,13 @@ class FuzzerProfile:
             new_dict[key.replace(basefolder, "")] = self.file_targets[key]
         self.file_targets = new_dict
 
-    def set_all_reached_functions(self):
+    def set_all_reached_functions(self) -> None:
         """
         sets self.functions_reached_by_fuzzer to all functions reached by LLVMFuzzerTestOneInput
         """
         self.functions_reached_by_fuzzer = self.all_class_functions["LLVMFuzzerTestOneInput"].functions_reached
 
-    def reaches(self, func_name):
+    def reaches(self, func_name: str) -> bool:
         return func_name in self.functions_reached_by_fuzzer
 
     def set_all_unreached_functions(self):
@@ -114,7 +120,7 @@ class FuzzerProfile:
                 in self.all_class_functions.values()
                 if f.function_name not in self.functions_reached_by_fuzzer]
 
-    def load_coverage(self, target_folder):
+    def load_coverage(self, target_folder: str) -> None:
         # Merge any runtime coverage data that we may have to correlate
         # reachability and runtime coverage information.
         functions_hit, coverage_map = fuzz_cov_load.llvm_cov_load(target_folder, self.get_target_fuzzer_filename())
@@ -122,7 +128,8 @@ class FuzzerProfile:
                 'functions-hit' : functions_hit,
                 'coverage-map' : coverage_map
                 }
-    def get_function_coverage(self, function_name, should_normalise=False):
+
+    def get_function_coverage(self, function_name: str, should_normalise: bool=False) -> List[str]:
         """
         Get the tuples reflecting coverage map of a given function
         """
@@ -140,10 +147,10 @@ class FuzzerProfile:
         return []
 
 
-    def get_target_fuzzer_filename(self):
+    def get_target_fuzzer_filename(self) -> str:
         return self.fuzzer_source_file.split("/")[-1].replace(".cpp","").replace(".c","")
 
-    def get_file_targets(self):
+    def get_file_targets(self) -> None:
         """
         Sets self.file_targets to be a dictionarty of string to string.
         Each key in the dictionary is a filename and the corresponding value is
@@ -159,7 +166,7 @@ class FuzzerProfile:
                 self.file_targets[fd['functionSourceFile']] = set()
             self.file_targets[fd['functionSourceFile']].add(fd['function_name'])
 
-    def get_total_basic_blocks(self):
+    def get_total_basic_blocks(self) -> None:
         """
         sets self.total_basic_blocks to the sym of basic blocks of all the functions
         reached by this fuzzer.
@@ -170,7 +177,7 @@ class FuzzerProfile:
             total_basic_blocks += fd.bb_count
         self.total_basic_blocks = total_basic_blocks
 
-    def get_total_cyclomatic_complexity(self):
+    def get_total_cyclomatic_complexity(self) -> None:
         """
         sets self.total_cyclomatic_complexity to the sum of cyclomatic complexity
         of all functions reached by this fuzzer.
@@ -180,7 +187,7 @@ class FuzzerProfile:
             fd = self.all_class_functions[func]
             self.total_cyclomatic_complexity += fd.cyclomatic_complexity
 
-    def accummulate_profile(self, target_folder):
+    def accummulate_profile(self, target_folder: str) -> None:
         """
         Triggers various analyses on the data of the fuzzer. This is used after a
         profile has been initialised to generate more interesting data.
@@ -263,7 +270,7 @@ class MergedProjectProfile:
         self.set_basefolder()
         l.info("Completed creationg of merged profile")
 
-    def get_total_complexity(self):
+    def get_total_complexity(self) -> Tuple[int, int]:
         reached_complexity = 0
         unreached_complexity = 0
         for fd in self.all_functions.values():
@@ -273,21 +280,21 @@ class MergedProjectProfile:
                 reached_complexity += fd.cyclomatic_complexity
         return reached_complexity, unreached_complexity
 
-    def get_total_unreached_function_count(self):
+    def get_total_unreached_function_count(self) -> int:
         unreached_function_count = 0
         for fd in self.all_functions.values():
             if fd.hitcount == 0:
                 unreached_function_count += 1
         return unreached_function_count
 
-    def get_total_reached_function_count(self):
+    def get_total_reached_function_count(self) -> int:
         reached_function_count = 0
         for fd in self.all_functions.values():
             if fd.hitcount != 0:
                 reached_function_count += 1
         return reached_function_count
 
-    def set_basefolder(self):
+    def set_basefolder(self) -> None:
         """
         Identifies a common path-prefix amongst source files in 
         This is used to remove locations within a host system to 
@@ -299,7 +306,7 @@ class MergedProjectProfile:
                 all_strs.append(func.function_source_file)
         self.basefolder = fuzz_utils.longest_common_prefix(all_strs)
 
-def read_fuzzer_data_file_to_profile(filename):
+def read_fuzzer_data_file_to_profile(filename: str) -> Optional[FuzzerProfile]:
     """
     For a given .data file (CFG) read the corresponding .yaml file
     This is a bit odd way of doing it and should probably be improved.
@@ -313,7 +320,8 @@ def read_fuzzer_data_file_to_profile(filename):
 
     return FuzzerProfile(filename, data_dict_yaml)
 
-def add_func_to_reached_and_clone(merged_profile_old, func_to_add):
+def add_func_to_reached_and_clone(merged_profile_old: MergedProjectProfile,
+                                  func_to_add: FunctionProfile) -> MergedProjectProfile:
     """
     Add new functions as "reached" in a merged profile, and returns
     a new copy of the merged profile with reachability information as if the
@@ -361,7 +369,7 @@ def add_func_to_reached_and_clone(merged_profile_old, func_to_add):
     return merged_profile
     
 
-def load_all_profiles(target_folder):
+def load_all_profiles(target_folder: str) -> List[FuzzerProfile]:
     # Get the introspector profile with raw data from each fuzzer in the target folder.
     data_files = fuzz_utils.get_all_files_in_tree_with_regex(target_folder, "fuzzerLogFile.*\.data$")
 
