@@ -319,7 +319,11 @@ def read_fuzzer_data_file_to_profile(filename: str) -> Optional[FuzzerProfile]:
     if data_dict_yaml == None:
         return None
 
-    return FuzzerProfile(filename, data_dict_yaml)
+    FP = FuzzerProfile(filename, data_dict_yaml)
+    if "LLVMFuzzerTestOneInput" not in FP.all_class_functions:
+        return None
+
+    return FP
 
 def add_func_to_reached_and_clone(merged_profile_old: MergedProjectProfile,
                                   func_to_add: FunctionProfile) -> MergedProjectProfile:
