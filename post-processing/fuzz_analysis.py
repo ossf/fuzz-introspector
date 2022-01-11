@@ -137,7 +137,7 @@ def overlay_calltree_with_coverage(
         # is the project folder.
         if basefolder == "/":
             fd_github_url = "%s/%s#L%d" % (git_repo_url, "/".join(
-                fd.function_source_file.split("/")[3:]), fd.function_linenumbe)
+                fd.function_source_file.split("/")[3:]), fd.function_linenumber)
         else:
             fd_github_url = "%s/%s#L%d" % (git_repo_url, fd.function_source_file.replace(
                 basefolder, ""), fd.function_linenumber)
