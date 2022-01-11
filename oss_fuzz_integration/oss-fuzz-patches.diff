@@ -205,14 +205,6 @@ index 2478048a..ca498bbb 100755
    ]
  
    _add_oss_fuzz_ci_if_needed(env)
-@@ -670,6 +675,7 @@ def build_fuzzers_impl(  # pylint: disable=too-many-arguments,too-many-locals,to
-       ]
- 
-   command += [
-+      '--cpus=2',
-       '-v',
-       '%s:/out' % project.out, '-v',
-       '%s:/work' % project.work, '-t',
 @@ -693,6 +699,7 @@ def build_fuzzers(args):
                              args.architecture,
                              args.e,
