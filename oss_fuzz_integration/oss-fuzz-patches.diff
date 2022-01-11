@@ -45,7 +45,7 @@ index c934d3b5..d6844e63 100755
  echo "---------------------------------------------------------------"
  echo "CC=$CC"
  echo "CXX=$CXX"
-@@ -186,6 +200,32 @@ else
+@@ -186,6 +200,36 @@ else
    fi
  fi
  
@@ -61,9 +61,13 @@ index c934d3b5..d6844e63 100755
 +  find $SRC/ -name "*.data.yaml" -exec cp {} $SRC/inspector-tmp/ \;
 +
 +  # Move coverage report in case
-+  if [ -d "$OUT/fuzzer_stats" ]
-+  then
-+    cp $OUT/fuzzer_stats/*.covreport $SRC/inspector-tmp/
++  if [[ -z ${CLOUD_BUILD_ENV:+dummy} ]]; then
++     if [ -d "$OUT/fuzzer_stats" ]
++     then
++        cp $OUT/fuzzer_stats/*.covreport $SRC/inspector-tmp/
++     fi
++  else
++     find /workspace/ -name "*.covreport" -exec cp {} $SRC/inspector-tmp/ \;
 +  fi
 +  ls -la $SRC/inspector-tmp
 +
