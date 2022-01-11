@@ -6,7 +6,7 @@ index 475e5a7d..fca8165d 100644
  
  ENV SANITIZER_FLAGS_thread "-fsanitize=thread"
  
-+ENV SANITIZER_FLAGS_instrumentor "-flto"
++ENV SANITIZER_FLAGS_instrumentor "-flegacy-pass-manager -flto"
 +
  # Do not use any sanitizers in the coverage build.
  ENV SANITIZER_FLAGS_coverage ""
@@ -108,15 +108,6 @@ index 4c3ea6a8..c3cf6129 100755
  # Use chromium's clang revision
  mkdir $SRC/chromium_tools
  cd $SRC/chromium_tools
-@@ -70,7 +72,7 @@ cd clang
- LLVM_SRC=$SRC/llvm-project
- 
- # For manual bumping.
--OUR_LLVM_REVISION=llvmorg-14-init-7378-gaee49255
-+OUR_LLVM_REVISION=llvmorg-12-init-17251-g6de48655
- 
- # To allow for manual downgrades. Set to 0 to use Chrome's clang version (i.e.
- # *not* force a manual downgrade). Set to 1 to force a manual downgrade.
 @@ -93,6 +95,23 @@ fi
  git -C $LLVM_SRC checkout $LLVM_REVISION
  echo "Using LLVM revision: $LLVM_REVISION"
