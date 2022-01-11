@@ -29,30 +29,9 @@ a complete run of the introspector, including with coverage analysis.
 ```
 cd oss-fuzz
 ../run_both.sh htslib 30
-cd corpus-0/inspector-report/
-python3 -m http.server 8008
+...
+If all worked, then you should be able to start a webserver at port 8008 in ./corpus-0/inspector-report/
+Serving HTTP on 0.0.0.0 port 8008 (http://0.0.0.0:8008/) ...
 ```
 
 You can now navigate to `http://localhost:8008/fuzz_report.html`
-
-Notice that when running these commands the `run_both.sh` script will use
-OSS-Fuzz to generate coverage. This will result in a webserver being launched
-and you will have to exit that server. So, when the following output happens
-please use ctrl-c to exit it:
-
-```
-[2021-10-06 15:56:32,752 INFO] Finding shared libraries for targets (if any).
-[2021-10-06 15:56:32,759 INFO] Finished finding shared libraries for targets.
-[2021-10-06 15:56:32,920 DEBUG] Finished generating per-file code coverage summary.
-[2021-10-06 15:56:32,920 DEBUG] Generating file view html index file as: "/out/report/linux/file_view_index.html".
-[2021-10-06 15:56:32,931 DEBUG] Finished generating file view html index file.
-[2021-10-06 15:56:32,931 DEBUG] Calculating per-directory coverage summary.
-[2021-10-06 15:56:32,932 DEBUG] Finished calculating per-directory coverage summary.
-[2021-10-06 15:56:32,932 DEBUG] Writing per-directory coverage html reports.
-[2021-10-06 15:56:33,000 DEBUG] Finished writing per-directory coverage html reports.
-[2021-10-06 15:56:33,000 DEBUG] Generating directory view html index file as: "/out/report/linux/directory_view_index.html".
-[2021-10-06 15:56:33,000 DEBUG] Finished generating directory view html index file.
-[2021-10-06 15:56:33,000 INFO] Index file for html report is generated as: "file:///out/report/linux/index.html".
-Serving the report on http://127.0.0.1:8008/linux/index.html
-Serving HTTP on 0.0.0.0 port 8008 (http://0.0.0.0:8008/) ...
-```
