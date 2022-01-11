@@ -21,7 +21,7 @@ index 475e5a7d..fca8165d 100644
  RUN precompile_honggfuzz
  
 diff --git a/infra/base-images/base-builder/compile b/infra/base-images/base-builder/compile
-index c934d3b5..d6844e63 100755
+index c934d3b5..181a70d2 100755
 --- a/infra/base-images/base-builder/compile
 +++ b/infra/base-images/base-builder/compile
 @@ -146,6 +146,20 @@ if [ "$FUZZING_LANGUAGE" = "jvm" ]; then
@@ -142,7 +142,7 @@ index 4c3ea6a8..c3cf6129 100755
  mkdir -p $WORK/llvm-stage2 $WORK/llvm-stage1
  python3 $SRC/chromium_tools/clang/scripts/update.py --output-dir $WORK/llvm-stage1
 diff --git a/infra/base-images/base-runner/coverage b/infra/base-images/base-runner/coverage
-index 8312f38c..1c7f0bed 100755
+index 8312f38c..362fecf0 100755
 --- a/infra/base-images/base-runner/coverage
 +++ b/infra/base-images/base-runner/coverage
 @@ -100,7 +100,7 @@ function run_fuzz_target {
@@ -164,6 +164,13 @@ index 8312f38c..1c7f0bed 100755
    if [ -n "${FULL_SUMMARY_PER_TARGET-}" ]; then
      # This is needed for dataflow strategy analysis, can be removed later. See
      # - https://github.com/google/oss-fuzz/pull/3306
+@@ -312,5 +315,5 @@ if [[ -n $HTTP_PORT ]]; then
+   # Serve the report locally.
+   echo "Serving the report on http://127.0.0.1:$HTTP_PORT/linux/index.html"
+   cd $REPORT_ROOT_DIR
+-  python3 -m http.server $HTTP_PORT
++  #python3 -m http.server $HTTP_PORT
+ fi
 diff --git a/infra/constants.py b/infra/constants.py
 index a323a436..68c006d1 100644
 --- a/infra/constants.py
