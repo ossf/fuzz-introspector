@@ -73,7 +73,7 @@ def llvm_cov_load(target_dir, target_name=None):
                 fname = stripped_line
                 if ".cpp" in fname:
                     fname = fname.split(".cpp")[-1].replace(":","")
-                    fname = demangle_cpp_func(fname)
+                    fname = fuzz_utils.demangle_cpp_func(fname)
                 elif ".c" in fname:
                     fname = fname.split(".c")[-1].replace(":","")
                 fname = fname.replace(":", "")
