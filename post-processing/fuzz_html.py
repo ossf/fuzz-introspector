@@ -46,6 +46,10 @@ def create_horisontal_calltree_image(image_name: str, color_list: List[str]) -> 
     of a rectangle. The rectangle is red if not visited and green if visited.
     """
     l.info("Creating image %s"%(image_name))
+    # Show one read rectangle if the list is empty. An alternative is
+    # to not include the image at all.
+    if len(color_list) == 0:
+        color_list = ['red']
     plot_size = 10.0
     multiplier = plot_size / len(color_list)
 
