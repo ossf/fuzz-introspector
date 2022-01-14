@@ -61,7 +61,7 @@ def create_parser():
     parser.add_argument('--coverage_url', 
                         type=str,
                         help="URL with coverage information", 
-                        default="http://localhost:8008/covreport/linux")
+                        default="/covreport/linux")
     args = parser.parse_args()
 
     return args
