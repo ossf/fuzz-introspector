@@ -30,7 +30,6 @@ cd ${BUILD_BASE}
 # Now build LLVM
 git clone https://github.com/llvm/llvm-project/
 cd llvm-project
-git checkout 43f34f58349ae178fd1c95d6a73c6858f35f2ea1
 
 cd ${BUILD_BASE}
 
