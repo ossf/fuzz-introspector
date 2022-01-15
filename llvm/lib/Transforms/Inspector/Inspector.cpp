@@ -166,6 +166,7 @@ struct Inspector : public ModulePass {
     errs() << "We are now in the Inspector module pass\n";
   }
 
+  int moduleLogLevel = 2;
   CalltreeNode FuzzerCalltree;
   std::set<StringRef> functionNamesToIgnore = {"llvm.", "sanitizer_cov",
                                                "sancov.module"};
@@ -195,6 +196,9 @@ struct Inspector : public ModulePass {
 
 
   void logPrintf(int LogLevel, const char *Fmt, ...) {
+    if (LogLevel > moduleLogLevel) {
+      return;
+    }
     // Print time
     struct tm * timeinfo;
     auto SC = std::chrono::system_clock::now();
@@ -253,7 +257,7 @@ FuzzerFunctionList Inspector::wrapAllFunctions(Module &M) {
   FuzzerFunctionList ListWrapper;
   ListWrapper.ListName = "All functions";
   for (auto &F : M) {
-    logPrintf(1, "Wrapping function\n");
+    logPrintf(2, "Wrapping function %s\n", F.getName().str().c_str());
     ListWrapper.Functions.push_back(wrapFunction(&F));
   }
 
