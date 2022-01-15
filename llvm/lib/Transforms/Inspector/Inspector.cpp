@@ -30,6 +30,9 @@
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 #include "llvm/Transforms/Utils/CallGraphUpdater.h"
 #include <algorithm>
+#include <chrono>
+#include <cstdarg>
+#include <ctime>
 #include <fstream>
 #include <iostream>
 #include <set>
@@ -37,6 +40,10 @@
 
 using namespace std;
 using namespace llvm;
+
+#define L1 1
+#define L2 2
+#define L3 3
 
 /*
  * The main goal of this pass is to assist in setting up fuzzing
@@ -150,8 +157,11 @@ typedef struct CalltreeNode {
 
 } CalltreeNode;
 
+static FILE *OutputFile = stderr;
+
 struct Inspector : public ModulePass {
   static char ID;
+
   Inspector() : ModulePass(ID) {
     errs() << "We are now in the Inspector module pass\n";
   }
@@ -183,13 +193,33 @@ struct Inspector : public ModulePass {
   bool isFunctionPointerType(Type *type);
   Function *extractVTableIndirectCall(Function *, Instruction &);
 
+
+  void logPrintf(int LogLevel, const char *Fmt, ...) {
+    // Print time
+    struct tm * timeinfo;
+    auto SC = std::chrono::system_clock::now();
+    std::time_t end_time = std::chrono::system_clock::to_time_t(SC);
+    timeinfo = localtime (&end_time);
+    char buffer [80];
+    strftime (buffer,80,"%H:%M:%S",timeinfo);
+    fprintf(OutputFile, "[Log level %d] : %s : ", LogLevel, buffer);
+
+    // Print log statement
+    va_list ap;
+    va_start(ap, Fmt);
+    vfprintf(OutputFile, Fmt, ap);
+    va_end(ap);
+    fflush(OutputFile);
+  }
+
   // Function entrypoint.
   bool runOnModule(Module &M) override {
-    errs() << "Running inspector on " << M.getName() << "\n";
+    logPrintf(L1, "Running introspector on %s\n", M.getName());
     if (shouldRunIntrospector(M) == false) {
       return true;
     }
-    errs() << "This is a fuzzer, performing analysis\n";
+    logPrintf(L1, "This is a fuzzer, performing analysis\n");
+
     // Extract and log reachability graph
     std::string nextCalltreeFile = getNextLogFile();
     extractFuzzerReachabilityGraph(M);
@@ -199,7 +229,7 @@ struct Inspector : public ModulePass {
     std::string nextYamlName = nextCalltreeFile + ".yaml";
     extractAllFunctionDetailsToYaml(nextYamlName, M);
 
-    errs() << "Finished inspector module\n";
+    logPrintf(L1, "Finished introspector module\n");
     return true;
   }
 };
@@ -223,6 +253,7 @@ FuzzerFunctionList Inspector::wrapAllFunctions(Module &M) {
   FuzzerFunctionList ListWrapper;
   ListWrapper.ListName = "All functions";
   for (auto &F : M) {
+    logPrintf(1, "Wrapping function\n");
     ListWrapper.Functions.push_back(wrapFunction(&F));
   }
 
@@ -483,8 +514,7 @@ Function *Inspector::extractVTableIndirectCall(Function *F, Instruction &I) {
   StructType *SSM = cast<StructType>(v13);
   // Now we remove the "class." from the name, and then we have it.
   originalTargetClass = SSM->getName().str().substr(6);
-  errs() << "Shortened name that we can use for analysis: "
-         << originalTargetClass << "\n";
+  logPrintf(L1, "Shortened name that we can use for analysis: %s\n", originalTargetClass.c_str());
 
   // We find the global variable corresponding to the vtable by
   // way of naming convetions. Specifically, we look for the
@@ -525,8 +555,7 @@ Function *Inspector::extractVTableIndirectCall(Function *F, Instruction &I) {
   // Extract the function pointer corresponding to the constant expression.
   Function *VTableTargetFunc = value2Func(FunctionPtrConstant);
   if (VTableTargetFunc != nullptr) {
-    errs() << "The actual function name (from earlyCaught) "
-           << VTableTargetFunc->getName() << "\n";
+    logPrintf(L1, "The actual function name (from earlyCaught) %s\n", VTableTargetFunc->getName().str().c_str());
   }
   return VTableTargetFunc;
 }
@@ -763,13 +792,12 @@ bool Inspector::shouldRunIntrospector(Module &M) {
   // case we do not want to proceed to avoid having duplicate information.
   Function *MainFunc = M.getFunction("main");
   if (MainFunc != nullptr) {
-    errs() << "Main function filename: " << getFunctionFilename(MainFunc)
-           << "\n";
-    errs() << "This means a main function is in the source code rather in the "
-              "libfuzzer "
-              "library, and thus we do not care about it. We only want to "
-              "study the "
-              "actual fuzzers. Exiting this run.\n";
+    logPrintf(L1, "Main function filename: %s\n", getFunctionFilename(MainFunc).c_str());
+    logPrintf(L1, "This means a main function is in the source code rather in the "
+                  "libfuzzer "
+                  "library, and thus we do not care about it. We only want to "
+                  "study the "
+                  "actual fuzzers. Exiting this run.\n");
     return false;
   }
 
