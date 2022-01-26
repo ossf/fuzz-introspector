@@ -18,4 +18,4 @@ rm -rf ./work
 mkdir work
 cd work
 
-../../../build/llvm-build/bin/clang -fsanitize=fuzzer -flto -g ../fuzzer.c -o fuzzer
+../../../build/llvm-build/bin/clang -flegacy-pass-manager -fsanitize=fuzzer -flegacy-pass-manager -flto -g ../fuzzer.c -o fuzzer

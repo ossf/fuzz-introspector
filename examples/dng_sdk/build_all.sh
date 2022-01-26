@@ -21,8 +21,8 @@ export PATH=${CLANG_BASE}:${PATH}
 export CC=clang
 export CXX=clang++
 
-export CFLAGS="$CFLAGS -fsanitize=fuzzer-no-link -fcommon -g  -flto "
-export CXXFLAGS="$CXXFLAGS -fsanitize=fuzzer-no-link -fcommon -g -flto "
+export CFLAGS="$CFLAGS -fsanitize=fuzzer-no-link -fcommon -g  -flto  -flegacy-pass-manager "
+export CXXFLAGS="$CXXFLAGS -fsanitize=fuzzer-no-link -fcommon -g -flto  -flegacy-pass-manager "
 export LIB_FUZZING_ENGINE="-fsanitize=fuzzer  "
 export LDFLAGS="-fuse-ld=gold"
 export AR=llvm-ar
