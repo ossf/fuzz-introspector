@@ -8,12 +8,22 @@ int unreached_target2(const uint8_t *data) {
 }
 
 
+char *global1 = "FUZZCAFE";
+
+void unreached_target10(char *val) {
+  if (strcmp(val, global1) == 0) {
+    printf("Compare 1\n");
+  }
+  printf("Compare 2\n");
+}
+
 int unreached_target1(const uint8_t *data) {
     if (data[0] == 0x11) {
         return unreached_target2(data);
     }
     char *mc = (char*)malloc(12);
     if (data[0] == 0x12) {
+        unreached_target10((char*)data);
         return 0;
     }
     return 5;
