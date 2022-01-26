@@ -39,5 +39,13 @@ cp -rf ../post-processing ./oss-fuzz/infra/base-images/base-builder/post-process
 if [[ -z ${CLOUD_BUILD_ENV:+dummy} ]]; then
   echo 'running all.sh'
   cd oss-fuzz
-  ./infra/base-images/all.sh
+
+  # Only build a subset of the oss-fuzz images because fuzz-introspector
+  # only works with C/C++ projets.
+  docker build --pull -t gcr.io/oss-fuzz-base/base-image "$@" infra/base-images/base-image
+  docker build -t gcr.io/oss-fuzz-base/base-clang "$@" infra/base-images/base-clang
+  docker build -t gcr.io/oss-fuzz-base/base-builder "$@" infra/base-images/base-builder
+  docker build -t gcr.io/oss-fuzz-base/base-runner "$@" infra/base-images/base-runner
+
+  #./infra/base-images/all.sh
 fi
