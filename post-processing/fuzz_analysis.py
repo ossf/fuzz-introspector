@@ -78,8 +78,8 @@ def overlay_calltree_with_coverage(
                 exit(1)
             coverage_data = profile.get_function_coverage("LLVMFuzzerTestOneInput")
             if len(coverage_data) == 0:
-                l.error("There is no coverage data (not even all negative). Exiting")
-                exit(0)
+                l.error("There is no coverage data (not even all negative).")
+                #exit(0)
             node['cov-parent'] = "EP"
 
             node_hitcount = 0
