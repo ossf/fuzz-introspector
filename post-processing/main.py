@@ -25,7 +25,8 @@ l = logging.getLogger(name=__name__)
 
 def run_analysis_on_dir(target_folder,
         git_repo_url,
-        coverage_url):
+        coverage_url,
+        analyses_to_run):
     l.info("[+] Loading profiles")
     profiles = fuzz_data_loader.load_all_profiles(target_folder)
 
@@ -40,10 +41,13 @@ def run_analysis_on_dir(target_folder,
     for profile in profiles:
         profile.refine_paths(project_profile.basefolder)
 
+    print("%s"%(str(analyses_to_run)))
+
     l.info("[+] Creating HTML report")
     fuzz_html.create_html_report(
             profiles,
             project_profile,
+            analyses_to_run,
             coverage_url,
             git_repo_url,
             project_profile.basefolder)
@@ -62,13 +66,17 @@ def create_parser():
                         type=str,
                         help="URL with coverage information", 
                         default="/covreport/linux")
-    args = parser.parse_args()
+    parser.add_argument("--analyses",
+                        nargs="+",
+                        default=["OptimalTargets"],
+                        help="Analyses to run. Available options: OptimalTargets, FuzzEngineInput")
 
+    args = parser.parse_args()
     return args
 
 if __name__ == "__main__":
     l.info("Running fuzz introspector post-processing")
     logging.basicConfig(level=logging.INFO)
     args = create_parser()
-    run_analysis_on_dir(args.target_dir, args.git_repo_url, args.coverage_url)
+    run_analysis_on_dir(args.target_dir, args.git_repo_url, args.coverage_url, args.analyses)
     l.info("Ending fuzz introspector post-processing")

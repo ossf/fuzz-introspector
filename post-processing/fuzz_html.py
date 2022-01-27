@@ -534,6 +534,7 @@ def handle_analysis_1(
 def create_html_report(
         profiles: List[fuzz_data_loader.FuzzerProfile],
         project_profile: fuzz_data_loader.MergedProjectProfile,
+        analyses_to_run: List[str],
         coverage_url: str,
         git_repo_url: str,
         basefolder: str) -> None:
@@ -600,23 +601,25 @@ def create_html_report(
         "Analyses and suggestions", 1, toc_list)
 
     # Analysis 1
-    html_string += handle_analysis_1(
-            toc_list,
-            tables,
-            project_profile,
-            basefolder,
-            git_repo_url,
-            coverage_url)
+    if "OptimalTargets" in analyses_to_run:
+        html_string += handle_analysis_1(
+                toc_list,
+                tables,
+                project_profile,
+                basefolder,
+                git_repo_url,
+                coverage_url)
 
     # Analysis 2
-    html_string += handle_analysis_2(
-            toc_list,
-            tables,
-            project_profile,
-            profiles,
-            basefolder,
-            git_repo_url,
-            coverage_url)
+    if "FuzzEngineInput" in analyses_to_run:
+        html_string += handle_analysis_2(
+                toc_list,
+                tables,
+                project_profile,
+                profiles,
+                basefolder,
+                git_repo_url,
+                coverage_url)
 
     #############################################
     # End of optional analyses
