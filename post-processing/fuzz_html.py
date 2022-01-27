@@ -395,6 +395,37 @@ def create_fuzzer_detailed_section(
 
     return html_string
 
+def handle_analysis_2(
+	    toc_list: List[Tuple[str, str, int]],
+            tables: List[str],
+            project_profile: fuzz_data_loader.MergedProjectProfile,
+            profiles: List[fuzz_data_loader.FuzzerProfile],
+            basefolder: str,
+            git_repo_url: str,
+            coverage_url: str) -> str:
+    l.info("In analysis 2")
+
+    html_string = ""
+    html_string += html_add_header_with_link(
+        "Fuzz engine guidance", 1, toc_list)
+    html_string += "<p>This sections provides heuristics that can be used as input to a fuzz engine when running a given fuzz target. The current focus is on providing input that is usable by libFuzzer.</p>"
+
+    for profile_idx in range(len(profiles)):
+       
+        html_string += html_add_header_with_link(
+                "%s"%(profiles[profile_idx].fuzzer_source_file), 2, toc_list)
+        html_string += html_add_header_with_link(
+                "Dictionary", 3, toc_list)
+        html_string += "<p>Use this with the libFuzzer -dict=DICT.file flag</p>"
+        html_string += "<pre><code class='language-clike'>TBD</code></pre><br>"
+
+        html_string += html_add_header_with_link(
+                "Fuzzer function priority", 3, toc_list)
+        html_string += "<p>Use this as input to libfuzzer with flag: -focus_function=FUNC_NAME</p>"
+        html_string += "<pre><code class='language-clike'>TBD</code></pre><br>"
+
+    return html_string
+
 def handle_analysis_1(
 	    toc_list: List[Tuple[str, str, int]],
             tables: List[str],
@@ -563,6 +594,16 @@ def create_html_report(
             toc_list,
             tables,
             project_profile,
+            basefolder,
+            git_repo_url,
+            coverage_url)
+
+    # Analysis 2
+    html_string += handle_analysis_2(
+            toc_list,
+            tables,
+            project_profile,
+            profiles,
             basefolder,
             git_repo_url,
             coverage_url)
