@@ -2,18 +2,20 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-
 int unreached_target2(const uint8_t *data) {
         return 5;
 }
 
-
 char *global1 = "FUZZCAFE";
+char *global2 = "FUZZKEYWORD";
 int GLB2 = 0xbeef;
 
 void unreached_target10(char *val) {
   if (strcmp(val, global1) == 0) {
     printf("Compare 1\n");
+  }
+  if (strcmp(val, global2) == 0) {
+    printf("Compare 15\n");
   }
   if (((int*)val) == GLB2) {
     printf("Compare 3\n");
