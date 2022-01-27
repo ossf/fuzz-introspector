@@ -9,10 +9,17 @@ int unreached_target2(const uint8_t *data) {
 
 
 char *global1 = "FUZZCAFE";
+int GLB2 = 0xbeef;
 
 void unreached_target10(char *val) {
   if (strcmp(val, global1) == 0) {
     printf("Compare 1\n");
+  }
+  if (((int*)val) == GLB2) {
+    printf("Compare 3\n");
+  }
+  if (strcmp(val, "RABBIT") == 0) {
+    printf("Compare 4\n");
   }
   printf("Compare 2\n");
 }
