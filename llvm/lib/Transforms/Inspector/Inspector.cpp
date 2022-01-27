@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include "llvm/ADT/StringExtras.h"
 #include "llvm/Transforms/Inspector/Inspector.h"
 #include "llvm/IR/DebugInfoMetadata.h"
 #include "llvm/IR/DebugLoc.h"
@@ -30,6 +31,7 @@
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 #include "llvm/Transforms/Utils/CallGraphUpdater.h"
 #include <algorithm>
+#include <bitset>
 #include <chrono>
 #include <cstdarg>
 #include <ctime>
@@ -759,6 +761,68 @@ FuzzerFunctionWrapper Inspector::wrapFunction(Function *F) {
       FuncWrap.ICount++;
       if (BranchInst *BI = dyn_cast<BranchInst>(&I)) {
         FuncWrap.EdgeCount += BI->isConditional() ? 2 : 1;
+      }
+      if (!getenv("FUZZINTRO_CONSTANTS")) {
+        continue;
+      }
+
+      // Check if the operands refer to a global value and extract data.
+      for (int opndIdx = 0; opndIdx < I.getNumOperands(); opndIdx++) {
+        Value *opndI = I.getOperand(opndIdx);
+        //I.dump();
+        // Is this a global variable?
+        if (GlobalVariable *GV = dyn_cast<GlobalVariable>(opndI)) {
+          GV->dump();
+          if (GV->hasInitializer()) {
+            Constant *GVI = GV->getInitializer();
+            if (ConstantData *GD = dyn_cast<ConstantData>(GVI)) {
+              //logPrintf(L1, "ConstantData\n");
+              // Integer case
+              if (ConstantInt *GI = dyn_cast<ConstantInt>(GD)) {
+                logPrintf(L1, "Constant Int\n");
+                uint64_t zext_val = GI->getZExtValue();
+                errs() << "Zexct val: " << zext_val << "\n";
+              }
+            }
+            else if (ConstantExpr *GE = dyn_cast<ConstantExpr>(GVI)) {
+              logPrintf(L1, "Constant expr: %s\n", GE->getName().str().c_str());
+              GE->dump();
+              if (GEPOperator* gepo = dyn_cast<GEPOperator>(GE)) {
+                errs() << "GEPOperator\n";
+                if (GlobalVariable* gv12 = dyn_cast<GlobalVariable>(gepo->getPointerOperand())) {
+                  errs() << "GV - " << *gv12 << "\n";
+                  if (gv12->hasInitializer()) {
+                    errs() << "Has initializer\n";
+                    Constant *C222 = gv12->getInitializer();
+                    if (ConstantData *GD23 = dyn_cast<ConstantData>(C222)) {
+                      errs() << "ConstantData\n";
+                      if (ConstantDataArray *Carr = dyn_cast<ConstantDataArray>(GD23)) {
+                        // This is constant data. We should be able to dump it down.
+                        errs() << "ConstantArray. Type:\n";
+                        Carr->getElementType()->dump();
+                        errs() << "Number of elements: " << Carr->getNumElements() << "\n";
+                        Type *baseType = Carr->getElementType();
+                        if (baseType->isIntegerTy()) {
+                            errs() << "Base types\n";
+                            for (int i = 0; i < Carr->getNumElements(); i++) {
+                              std::string s1 = toHex(Carr->getElementAsInteger(i));
+                              errs() << "0x" << s1 << "\n";
+                            }
+                        }
+                        if (Carr->isString()) {
+                          errs() << "The string: " << Carr->getAsString() << "\n";
+                        }
+                        else {
+                          errs() << "No this is not a string\n";
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     }
   }
