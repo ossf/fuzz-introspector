@@ -417,7 +417,17 @@ def handle_analysis_2(
         html_string += html_add_header_with_link(
                 "Dictionary", 3, toc_list)
         html_string += "<p>Use this with the libFuzzer -dict=DICT.file flag</p>"
-        html_string += "<pre><code class='language-clike'>TBD</code></pre><br>"
+
+        html_string += "<pre><code class='language-clike'>"
+        kn=0
+        for fn in profiles[profile_idx].functions_reached_by_fuzzer:#all_class_functions:
+            fp = profiles[profile_idx].all_class_functions[fn]
+            #print(fp.constants_touched)
+            for const in fp.constants_touched:
+                html_string += "k%d=\"%s\"\n"%(kn, const)
+                kn += 1
+        html_string += "</code></pre><br>"
+
 
         html_string += html_add_header_with_link(
                 "Fuzzer function priority", 3, toc_list)

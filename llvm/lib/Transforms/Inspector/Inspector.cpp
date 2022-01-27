@@ -73,6 +73,7 @@ typedef struct fuzzFuncWrapper {
   size_t ArgCount;
   std::vector<std::string> ArgTypes;
   std::vector<std::string> ArgNames;
+  std::vector<std::string> ConstantsTouched;
   size_t BBCount;
   size_t ICount;
   size_t EdgeCount;
@@ -110,6 +111,7 @@ template <> struct yaml::MappingTraits<FuzzerFunctionWrapper> {
     io.mapRequired("returnType", Func.ReturnType);
     io.mapRequired("argCount", Func.ArgCount);
     io.mapRequired("argTypes", Func.ArgTypes);
+    io.mapRequired("constantsTouched", Func.ConstantsTouched);
     io.mapRequired("argNames", Func.ArgNames);
     io.mapRequired("BBCount", Func.BBCount);
     io.mapRequired("ICount", Func.ICount);
@@ -766,10 +768,11 @@ FuzzerFunctionWrapper Inspector::wrapFunction(Function *F) {
         continue;
       }
 
+      //I.dump();
       // Check if the operands refer to a global value and extract data.
       for (int opndIdx = 0; opndIdx < I.getNumOperands(); opndIdx++) {
         Value *opndI = I.getOperand(opndIdx);
-        //I.dump();
+        //opndI->dump();
         // Is this a global variable?
         if (GlobalVariable *GV = dyn_cast<GlobalVariable>(opndI)) {
           GV->dump();
@@ -811,6 +814,7 @@ FuzzerFunctionWrapper Inspector::wrapFunction(Function *F) {
                         }
                         if (Carr->isString()) {
                           errs() << "The string: " << Carr->getAsString() << "\n";
+                          FuncWrap.ConstantsTouched.push_back(Carr->getAsString().str());
                         }
                         else {
                           errs() << "No this is not a string\n";

@@ -52,6 +52,7 @@ class FunctionProfile:
         self.function_uses = None
         self.function_depth = None
         self.incoming_references = list()
+        self.constants_touched = list()
 
     def migrate_from_yaml_elem(self, elem):
         self.function_name = elem['functionName']
@@ -69,6 +70,7 @@ class FunctionProfile:
         self.functions_reached = elem['functionsReached']
         self.function_uses = elem['functionUses']
         self.function_depth = elem['functionDepth']
+        self.constants_touched = elem['constantsTouched']
 
 class FuzzerProfile:
     """
