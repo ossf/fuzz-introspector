@@ -39,6 +39,7 @@
 #include <iostream>
 #include <set>
 #include <vector>
+#include <unistd.h>
 
 using namespace std;
 using namespace llvm;
@@ -197,6 +198,7 @@ struct Inspector : public ModulePass {
   Function *value2Func(Value *Val);
   bool isFunctionPointerType(Type *type);
   Function *extractVTableIndirectCall(Function *, Instruction &);
+  std::string GenRandomStr(const int len);
 
 
   void logPrintf(int LogLevel, const char *Fmt, ...) {
@@ -226,6 +228,9 @@ struct Inspector : public ModulePass {
     if (shouldRunIntrospector(M) == false) {
       return true;
     }
+    // init randomness
+    srand((unsigned)time(NULL) * getpid());
+
     logPrintf(L1, "This is a fuzzer, performing analysis\n");
 
     // Extract and log reachability graph
@@ -249,6 +254,8 @@ Pass *llvm::createInspectorPass() { return new Inspector(); }
 void Inspector::extractAllFunctionDetailsToYaml(std::string nextYamlName,
                                                 Module &M) {
   std::error_code EC;
+  logPrintf(L1, "Logging next yaml tile to %s\n", nextYamlName.c_str());
+
   auto YamlStream = std::make_unique<raw_fd_ostream>(
       nextYamlName, EC, llvm::sys::fs::OpenFlags::OF_None);
   yaml::Output YamlOut(*YamlStream);
@@ -270,12 +277,35 @@ FuzzerFunctionList Inspector::wrapAllFunctions(Module &M) {
   return ListWrapper;
 }
 
+std::string Inspector::GenRandomStr(const int Len) {
+    static const char Alphabet[] =
+        "0123456789"
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        "abcdefghijklmnopqrstuvwxyz";
+    std::string TmpS;
+    TmpS.reserve(Len);
+
+    for (int i = 0; i < Len; i++) {
+        TmpS += Alphabet[rand() % (sizeof(Alphabet) - 1)];
+    }
+
+    return TmpS;
+}
+
 std::string Inspector::getNextLogFile() {
   std::string TargetLogName;
+
+  // Add a UID to the logname. The reason we do this is when fuzzers are compiled in different
+  // locaitons, then the count may end up being the same for different log files at different locations.
+  // The problem is that this can be annoying when doing some scripting, e.g. in the oss-fuzz integration
+  // at some point. In reality it's not really fuzz introspectors responsibility, however,
+  // to make things a bit easier we just do it here.
+  std::string RandomStrUUID = GenRandomStr(10);
   int Idx = 0;
   do {
-    TargetLogName = formatv("fuzzerLogFile-{0}.data", std::to_string(Idx++));
+    TargetLogName = formatv("fuzzerLogFile-{0}-{1}.data", std::to_string(Idx++), RandomStrUUID);
   } while (llvm::sys::fs::exists(TargetLogName));
+
   return TargetLogName;
 }
 
