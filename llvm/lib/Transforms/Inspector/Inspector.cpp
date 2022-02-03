@@ -775,7 +775,7 @@ FuzzerFunctionWrapper Inspector::wrapFunction(Function *F) {
         //opndI->dump();
         // Is this a global variable?
         if (GlobalVariable *GV = dyn_cast<GlobalVariable>(opndI)) {
-          GV->dump();
+          //GV->dump();
           if (GV->hasInitializer()) {
             Constant *GVI = GV->getInitializer();
             if (ConstantData *GD = dyn_cast<ConstantData>(GVI)) {
@@ -789,7 +789,7 @@ FuzzerFunctionWrapper Inspector::wrapFunction(Function *F) {
             }
             else if (ConstantExpr *GE = dyn_cast<ConstantExpr>(GVI)) {
               logPrintf(L1, "Constant expr: %s\n", GE->getName().str().c_str());
-              GE->dump();
+              //GE->dump();
               if (GEPOperator* gepo = dyn_cast<GEPOperator>(GE)) {
                 errs() << "GEPOperator\n";
                 if (GlobalVariable* gv12 = dyn_cast<GlobalVariable>(gepo->getPointerOperand())) {
@@ -802,7 +802,7 @@ FuzzerFunctionWrapper Inspector::wrapFunction(Function *F) {
                       if (ConstantDataArray *Carr = dyn_cast<ConstantDataArray>(GD23)) {
                         // This is constant data. We should be able to dump it down.
                         errs() << "ConstantArray. Type:\n";
-                        Carr->getElementType()->dump();
+                        //Carr->getElementType()->dump();
                         errs() << "Number of elements: " << Carr->getNumElements() << "\n";
                         Type *baseType = Carr->getElementType();
                         if (baseType->isIntegerTy()) {
