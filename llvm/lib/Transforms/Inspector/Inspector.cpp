@@ -678,7 +678,7 @@ int Inspector::extractCalltree(Function *F, CalltreeNode *Calltree,
 FuzzerFunctionWrapper Inspector::wrapFunction(Function *F) {
   FuzzerFunctionWrapper FuncWrap;
 
-  FuncWrap.FunctionName = F->getName();
+  FuncWrap.FunctionName = removeDecSuffixFromName(F->getName());
   FuncWrap.FunctionSourceFile = getFunctionFilename(F);
   FuncWrap.FunctionLinenumber = getFunctionLinenumber(F);
   FuncWrap.FunctionUses = 0;
