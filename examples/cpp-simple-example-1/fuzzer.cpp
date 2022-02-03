@@ -44,9 +44,23 @@ void C::bar()
   std::cout << "This is C's implementation of bar" << std::endl;
 }
 
+void ex1() {
+  B* b = new B();
+  b->bar();
+}
 
+void ex2() {
+  C* c = new C();
+  c->bar();
+}
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
+void ex3() {
   B* b = new C();
   b->bar();
+}
+
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
+  ex1();
+  ex2();
+  ex3();
 }
