@@ -324,8 +324,8 @@ def create_calltree(
         # in case it bloats the calltree
         #libc_funcs = { "free" }
         libc_funcs = { }
-        should_do = len([fn for fn in libc_funcs if fn in demangled_name]) == 0
-        if not should_do:
+        avoid = len([fn for fn in libc_funcs if fn in demangled_name]) > 0
+        if avoid:
             continue
 
         # Create the HTML code for the line in the calltree
