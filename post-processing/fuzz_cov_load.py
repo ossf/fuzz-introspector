@@ -45,7 +45,7 @@ def llvm_cov_load(target_dir, target_name=None):
         if found_name and target_name not in profile_file:
             continue
 
-        with open(profile_file, "r") as pf:
+        with open(profile_file, 'r', encoding='unicode_escape') as pf:
             curr_func = None
             for line in pf:
                 stripped_line = line.replace("\n","")
@@ -58,7 +58,10 @@ def llvm_cov_load(target_dir, target_name=None):
                     coverage_map[curr_func] = list()
                 if curr_func != None and "|" in line:
                     #print("Function: %s has line: %s --- %s"%(curr_func, line.replace("\n",""), str(line.split("|"))))
-                    line_number = int(line.split("|")[0])
+                    try:
+                        line_number = int(line.split("|")[0])
+                    except:
+                        continue
                     try:
                         # write out numbers e.g. 1.2k into 1200
                         hit_times = int(line.split("|")[1].replace("k","00").replace(".",""))
