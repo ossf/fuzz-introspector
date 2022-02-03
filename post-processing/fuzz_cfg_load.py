@@ -64,5 +64,6 @@ def data_file_read_calltree(filename):
             if "Call tree" in line:
                 read_tree = True
         # Add the remaining list of nodes to the overall list.
-        tmp_function_depths['function_calls'] += list(sorted(tmp_function_depths['function_calls'], key=lambda x: x['linenumber']))
+        function_call_depths += list(sorted(tmp_function_depths['function_calls'], key=lambda x: x['linenumber']))
+
     return function_call_depths
