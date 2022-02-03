@@ -86,6 +86,12 @@ class FuzzerProfile:
         # Create a list of all the functions.
         self.all_class_functions = dict()
         for elem in data_dict_yaml['All functions']['Elements']:
+            # Check if there is normalisation issue and log if so
+            if "." in elem['functionName']:
+                split_name = elem['functionName'].split(".")
+                if split_name[-1].isnumeric():
+                    l.info("We may have a non-normalised function name: %s"%(elem['functionName']))
+
             func_profile = FunctionProfile(elem['functionName'])
             func_profile.migrate_from_yaml_elem(elem)
             self.all_class_functions[func_profile.function_name] = func_profile
