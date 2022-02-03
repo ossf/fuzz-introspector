@@ -29,6 +29,9 @@ def run_analysis_on_dir(target_folder,
         analyses_to_run):
     l.info("[+] Loading profiles")
     profiles = fuzz_data_loader.load_all_profiles(target_folder)
+    if len(profiles) == 0:
+        l.info("Found no profiles. Exiting")
+        exit(0)
 
     l.info("[+] Accummulating profiles")
     for profile in profiles:
