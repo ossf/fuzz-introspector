@@ -627,6 +627,8 @@ def create_html_report(
     html_string += create_all_function_table(
         tables, project_profile, coverage_url, git_repo_url, basefolder)
 
+    html_string += "<hr>"
+
     #############################################
     # Section with details about each fuzzer, including calltree.
     #############################################
@@ -635,6 +637,8 @@ def create_html_report(
     for profile_idx in range(len(profiles)):
         html_string += create_fuzzer_detailed_section(profiles[profile_idx], toc_list, tables, profile_idx, project_profile, coverage_url, git_repo_url, basefolder)
 
+
+    html_string += "<hr>"
     #############################################
     # Handle optional analyses
     #############################################
