@@ -286,6 +286,30 @@ def create_top_summary_info(
     return html_string
 
 
+def write_wrapped_html_file(html_string, filename):
+    """
+    Write a wrapped HTML file with the tags needed from fuzz-introspector
+    We use this mainly for wrapping calltrees at the moment, however, down
+    the line it makes sense to have an easy wrapper for other HTML pages too.
+    """
+
+    # HTML start
+    html_header = html_get_header()
+    html_header += '<div class="content-section">'
+
+    # HTML end
+    html_end = '</div>'
+    html_end += "<script src=\"prism.js\"></script>"
+    html_end += "<script src=\"clike.js\"></script>"
+    html_end += "<script src=\"custom.js\"></script>"
+
+
+    with open(filename, "w+") as cf:
+        cf.write(html_header)
+        cf.write(html_string)
+        cf.write(html_end)
+
+
 def create_calltree(
         profile: fuzz_data_loader.FuzzerProfile,
         project_profile: fuzz_data_loader.MergedProjectProfile,
@@ -313,7 +337,8 @@ def create_calltree(
     html_string += "</table>"
 
     # Generate calltree overlay HTML
-    html_string += "<div class='section-wrapper'>"
+    # Open a new file for the calltree.
+    calltree_html_string = "<div class='section-wrapper'>"
     for node in profile.function_call_depths:
         demangled_name = fuzz_utils.demangle_cpp_func(node['function_name'])
         color_to_be = node['cov-color']
@@ -333,16 +358,26 @@ def create_calltree(
 
         indentation = int(node['depth'])*16
         horisontal_spacing = "&nbsp;"*4*int(node['depth'])
-        html_string += "<div style='margin-left: %spx' class=\"%s-background\">"%(str(indentation), color_to_be)
-        html_string += "<span class=\"coverage-line-inner\">%d <code class=\"language-clike\">%s</code>"%(int(node['depth']), demangled_name)
+        calltree_html_string += "<div style='margin-left: %spx' class=\"%s-background\">"%(str(indentation), color_to_be)
+        calltree_html_string += "<span class=\"coverage-line-inner\">%d <code class=\"language-clike\">%s</code>"%(int(node['depth']), demangled_name)
 
         if node['functionSourceFile'].replace(" ","") == "/":
             func_href = ""
         else:
             func_href = "<a href=\"%s\">[function]</a>"%(link)
 
-        html_string += "<span class=\"coverage-line-filename\">%s<a href=\"%s\">[call site2]</a>[calltree idx: %s]<span></span></div>\n"%(func_href, callsite_link, ct_idx_str)
-    html_string += "</div>"
+        calltree_html_string += "<span class=\"coverage-line-filename\">%s<a href=\"%s\">[call site2]</a>[calltree idx: %s]<span></span></div>\n"%(func_href, callsite_link, ct_idx_str)
+    calltree_html_string += "</div>"
+
+    calltree_file_idx = 0
+    fname = "calltree_view_%d.html"%(calltree_file_idx)
+    while os.path.isfile(fname):
+        calltree_file_idx += 1
+        fname = "calltree_view_%d.html"%(calltree_file_idx)
+    write_wrapped_html_file(calltree_html_string, fname)
+
+    # Add link to the calltree report
+    html_string += "<h2><a href=\"%s\">Calltree view</a></h2>"%(fname)
 
     # Create fixed-width color sequence image
     color_sequence = []
