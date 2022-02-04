@@ -328,13 +328,13 @@ def create_calltree(
     # Highlight the ten most useful places
     nodes_sorted_by_red_ahead = list(reversed(list(sorted(profile.function_call_depths, key=lambda x:x['cov-forward-reds']))))
     max_idx = 10
-    html_string = create_table_head(tables[-1], ['Blocked nodes', 'Calltree index', 'Parent function', 'Callsite', 'Largest blocked function'])
+    html_table_string = create_table_head(tables[-1], ['Blocked nodes', 'Calltree index', 'Parent function', 'Callsite', 'Largest blocked function'])
     for node in nodes_sorted_by_red_ahead:
-        html_string += html_table_add_row([str(node['cov-forward-reds']), str(node['cov-ct-idx']), node['cov-parent'], "<a href=%s>call site</a>"%(node['cov-callsite-link']), node['cov-largest-blocked-func']])
+        html_table_string += html_table_add_row([str(node['cov-forward-reds']), str(node['cov-ct-idx']), node['cov-parent'], "<a href=%s>call site</a>"%(node['cov-callsite-link']), node['cov-largest-blocked-func']])
         if max_idx == 0:
             break
         max_idx -= 1
-    html_string += "</table>"
+    html_table_string += "</table>"
 
     # Generate calltree overlay HTML
     # Open a new file for the calltree.
@@ -377,14 +377,14 @@ def create_calltree(
     write_wrapped_html_file(calltree_html_string, fname)
 
     # Add link to the calltree report
-    html_string += "<h2><a href=\"%s\">Calltree view</a></h2>"%(fname)
+    #html_string += "<h2><a href=\"%s\">Calltree view</a></h2>"%(fname)
 
     # Create fixed-width color sequence image
     color_sequence = []
     for node in profile.function_call_depths:
         color_sequence.append(node['cov-color'])
     create_horisontal_calltree_image(image_name, color_sequence)
-    return html_string
+    return html_table_string, fname
 
 def create_fuzzer_detailed_section(
         profile: fuzz_data_loader.FuzzerProfile,
@@ -414,8 +414,7 @@ def create_fuzzer_detailed_section(
 
     # Calltree generation
     html_string += html_add_header_with_link(
-        "Call tree", 3, toc_list, link=f"call_tree_{curr_tt_profile}")
-    html_string += "<h4>Function coverage</h4>"
+        "Call tree overview", 3, toc_list, link=f"call_tree_{curr_tt_profile}")
     html_string += ("<p class='no-top-margin'>The following is the call tree with color coding for which "
                     "functions are hit/not hit. This info is based on the coverage "
                     "achieved of all fuzzers together and not just this specific "
@@ -423,10 +422,18 @@ def create_fuzzer_detailed_section(
     image_name = "%s_colormap.png"%(fuzzer_filename.replace(" ", "").split("/")[-1])
     html_string += "<img src=\"%s\">"%(image_name)
 
-    #html_string += "<div class='section-wrapper'>"
     tables.append(f"myTable{len(tables)}")
-    html_string += create_calltree(profile, project_profile, coverage_url, git_repo_url, basefolder, image_name, tables)
-    #html_string += "</div>"
+    html_table_string, calltree_file_name = create_calltree(profile, project_profile, coverage_url, git_repo_url, basefolder, image_name, tables)
+
+    html_string += html_add_header_with_link(
+            "Fuzz blockers", 3, toc_list, link=f"fuzz_blocker{curr_tt_profile}")
+    html_string += "<p class='no-top-margin'>The followings nodes represent call sites where fuzz blockers occur</p>"
+    html_string += html_table_string
+
+    html_string += html_add_header_with_link(
+            "Full calltree", 3, toc_list, link=f"full_calltree_{curr_tt_profile}")
+    html_string += ("<p class='no-top-margin'>The following link provides a visualisation"
+                    "of the full calltree overlayed with coverage information: <a href=\"%s\">full calltree</a></p>"%(calltree_file_name))
 
     return html_string
 
