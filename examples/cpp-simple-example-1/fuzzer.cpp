@@ -59,8 +59,21 @@ void ex3() {
   b->bar();
 }
 
+void ex4(size_t s) {
+  B *t;
+
+  if (s < 10) {
+    t = new B();
+  }
+  else {
+    t = new C();
+  }
+  t->bar();
+}
+
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   ex1();
   ex2();
   ex3();
+  ex4(size);
 }
