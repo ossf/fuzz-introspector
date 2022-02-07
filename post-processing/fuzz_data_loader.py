@@ -268,12 +268,27 @@ class MergedProjectProfile:
                 total_cyclomatic_complexity += reached_func_obj.cyclomatic_complexity
                 if reached_func_obj.hitcount == 0:
                     total_new_complexity += reached_func_obj.cyclomatic_complexity
-
             if fp_obj.hitcount == 0:
                 fp_obj.new_unreached_complexity = total_new_complexity + (fp_obj.cyclomatic_complexity)
             else:
                 fp_obj.new_unreached_complexity = total_new_complexity
             fp_obj.total_cyclomatic_complexity = total_cyclomatic_complexity + fp_obj.cyclomatic_complexity
+
+        # Accumulate run-time coverage mapping
+        self.runtime_coverage = {
+                    'functions-hit' : list(),
+                    'coverage-map' : dict()
+                }
+        for profile in profiles:
+            for func_name in profile.coverage['functions-hit']:
+                if func_name not in self.runtime_coverage:
+                    self.runtime_coverage['functions-hit'].append(func_name)
+            for func_name in profile.coverage['coverage-map']:
+                if func_name not in self.runtime_coverage['coverage-map']:
+                    self.runtime_coverage['coverage-map'][func_name] = profile.coverage['coverage-map'][func_name]
+                elif self.runtime_coverage['coverage-map'][func_name][1] < profile.coverage['coverage-map'][func_name][1]:
+                    self.runtime_coverage['coverage-map'][func_name] = profile.coverage['coverage-map'][func_name]
+
         self.set_basefolder()
         l.info("Completed creationg of merged profile")
 
