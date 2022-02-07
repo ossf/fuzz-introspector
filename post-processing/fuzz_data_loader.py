@@ -291,8 +291,12 @@ class MergedProjectProfile:
                     new_line_counts = list()
                     to_add = True
                     for idx1 in range(len(self.runtime_coverage['coverage-map'][func_name])):
-                        ln1, ht1 = self.runtime_coverage['coverage-map'][func_name][idx1]
-                        ln2, ht2 = profile.coverage['coverage-map'][func_name][idx1]
+                        try:
+                            ln1, ht1 = self.runtime_coverage['coverage-map'][func_name][idx1]
+                            ln2, ht2 = profile.coverage['coverage-map'][func_name][idx1]
+                        except:
+                            ln1, ht1 = self.runtime_coverage['coverage-map'][func_name][idx1]
+                            ln2, ht2 = self.runtime_coverage['coverage-map'][func_name][idx1]
                         # It may be that line numbers are not the same for the same function name across
                         # different fuzzers.
                         # This *could* actually happen, and will often (almost always) happen for
