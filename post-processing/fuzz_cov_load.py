@@ -49,9 +49,12 @@ def llvm_cov_load(target_dir, target_name=None):
         if found_name and target_name not in profile_file:
             continue
         l.info("Parsing %s"%(profile_file))
-        with open(profile_file, 'r', encoding='unicode_escape') as pf:
+        with open(profile_file, 'rb') as pf:
             curr_func = None
             for line in pf:
+                #print("line:")
+                #print(line)
+                line = line.decode()
                 stripped_line = line.replace("\n","")
                 if len(stripped_line) > 0 and stripped_line[-1] == ":" and "|" not in stripped_line:
                     #print("We got a function definition: %s"%(line.replace("n","")))
