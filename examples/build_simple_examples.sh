@@ -23,6 +23,7 @@ for PROJ in simple-example-0; do
   rm -rf ./web
 
   ./build_all.sh
+  ./build_cov.sh || true
   mkdir web
   cd web
   python3 ${ROOT}/../post-processing/main.py --target_dir=../
