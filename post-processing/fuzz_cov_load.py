@@ -1,6 +1,9 @@
 import os
 import sys
 import fuzz_utils
+import logging
+
+l = logging.getLogger(name=__name__)
 
 """
 Module for loading coverage files and parsing them into something we can use in Python.
@@ -29,6 +32,7 @@ def llvm_cov_load(target_dir, target_name=None):
     But, we wait a bit with this.
     """
     coverage_reports = fuzz_utils.get_all_files_in_tree_with_regex(target_dir, ".*\.covreport$")
+    l.info("Found %d coverage reports"%(len(coverage_reports)))
     functions_hit = set()
     coverage_map = dict()
 
@@ -44,7 +48,7 @@ def llvm_cov_load(target_dir, target_name=None):
         # here. Otherwise, include coverage from everybody.
         if found_name and target_name not in profile_file:
             continue
-
+        l.info("Parsing %s"%(profile_file))
         with open(profile_file, 'r', encoding='unicode_escape') as pf:
             curr_func = None
             for line in pf:
@@ -64,7 +68,7 @@ def llvm_cov_load(target_dir, target_name=None):
                         continue
                     try:
                         # write out numbers e.g. 1.2k into 1200
-                        hit_times = int(line.split("|")[1].replace("k","00").replace(".",""))
+                        hit_times = int(line.split("|")[1].replace("k","00").replace("M","0000").replace(".",""))
                     except:
                         hit_times = 0
                     coverage_map[curr_func].append((line_number, hit_times))
