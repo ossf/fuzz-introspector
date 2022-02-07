@@ -90,9 +90,7 @@ def overlay_calltree_with_coverage(
             # Find the parent function and check coverage of the node
             coverage_data = profile.get_function_coverage(fuzz_utils.normalise_str(callstack_get_parent(node, callstack)), True)
             for (n_line_number, hit_count_cov) in coverage_data:
-                print("Checking line number %s %s %s"%(str(n_line_number), str(hit_count_cov), str(node['linenumber'])))
                 if n_line_number == node['linenumber'] and hit_count_cov > 0:
-                    print("Found linenumber")
                     node_hitcount = hit_count_cov
             node['cov-parent'] = callstack_get_parent(node, callstack)
         else:
