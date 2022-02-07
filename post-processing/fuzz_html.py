@@ -203,7 +203,7 @@ def create_all_function_table(
         function"""
     html_string = create_table_head(tables[-1],
                                     ["Func name", "Git URL", "Functions filename", "Arg count", "Args",
-                                     "Function call depth", "Fuzzers reach count", "Fuzzers runtime hit", "I Count", "BB Count",
+                                     "Function call depth", "Fuzzers reach count", "Fuzzers runtime hit", "Func lines hit %", "I Count", "BB Count",
                                      "Cyclomatic complexity", "Functions reached",
                                      "Reached by functions", "Accumulated cyclomatic complexity",
                                      "Undiscovered complexity"])
@@ -218,6 +218,12 @@ def create_all_function_table(
         else:
             fd_github_url = "%s/%s#L%d" % (git_repo_url, fd.function_source_file.replace(
                 basefolder, ""), fd.function_linenumber)
+        try:
+            #print("Hit lines: %d"%(project_profile.runtime_coverage['hit-summary'][fuzz_utils.demangle_cpp_func(fd.function_name)]['hit-lines']))
+            #print("Total lines: %d"%(project_profile.runtime_coverage['hit-summary'][fuzz_utils.demangle_cpp_func(fd.function_name)]['total-lines']))
+            hit_percentage = (project_profile.runtime_coverage['hit-summary'][fuzz_utils.demangle_cpp_func(fd.function_name)]['hit-lines'] / project_profile.runtime_coverage['hit-summary'][fuzz_utils.demangle_cpp_func(fd.function_name)]['total-lines']) * 100.0
+        except:
+            hit_percentage = 0.0
         html_string += html_table_add_row([
             "%s" % ("<a href='%s'><code class='language-clike'>" % ("%s%s.html#L%d" % (coverage_url,
                     fd.function_source_file, fd.function_linenumber)) + fuzz_utils.demangle_cpp_func(fd.function_name) + "</code></a>"),
@@ -228,6 +234,7 @@ def create_all_function_table(
             fd.function_depth,
             fd.hitcount,
             "yes" if fuzz_utils.demangle_cpp_func(fd.function_name) in project_profile.runtime_coverage['functions-hit'] else "no",
+            "%f"%(hit_percentage),
             fd.i_count,
             fd.bb_count,
             fd.cyclomatic_complexity,

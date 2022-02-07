@@ -274,7 +274,8 @@ class MergedProjectProfile:
         # Accumulate run-time coverage mapping
         self.runtime_coverage = {
                     'functions-hit' : list(),
-                    'coverage-map' : dict()
+                    'coverage-map' : dict(),
+                    'hit-summary' : dict()
                 }
         for profile in profiles:
             for func_name in profile.coverage['functions-hit']:
@@ -283,9 +284,36 @@ class MergedProjectProfile:
             for func_name in profile.coverage['coverage-map']:
                 if func_name not in self.runtime_coverage['coverage-map']:
                     self.runtime_coverage['coverage-map'][func_name] = profile.coverage['coverage-map'][func_name]
-                elif self.runtime_coverage['coverage-map'][func_name][1] < profile.coverage['coverage-map'][func_name][1]:
-                    self.runtime_coverage['coverage-map'][func_name] = profile.coverage['coverage-map'][func_name]
-
+                else:
+                    # Merge by picking highest line numbers. Here we can assume they coverage
+                    # maps have the same number of elements with the same line numbers but
+                    # different hit counts.
+                    new_line_counts = list()
+                    to_add = True
+                    for idx1 in range(len(self.runtime_coverage['coverage-map'][func_name])):
+                        ln1, ht1 = self.runtime_coverage['coverage-map'][func_name][idx1]
+                        ln2, ht2 = profile.coverage['coverage-map'][func_name][idx1]
+                        # It may be that line numbers are not the same for the same function name across
+                        # different fuzzers.
+                        # This *could* actually happen, and will often (almost always) happen for
+                        # LLVMFuzzerTestOneInput. In this case we just gracefully continue and ignore issues.
+                        if ln1 != ln2:
+                            l.error("Line numbers are different in the same function")
+                            to_add = False
+                            continue
+                        new_line_counts.append((ln1, max(ht1, ht2)))
+                    self.runtime_coverage['coverage-map'][func_name] = new_line_countes
+        for funcname in self.runtime_coverage['coverage-map']:
+            number_of_lines_hit = 0
+            for ln, ht in self.runtime_coverage['coverage-map'][funcname]:
+                if ht > 0:
+                    number_of_lines_hit += 1
+            #print("T1: %d"%(len(self.runtime_coverage['coverage-map'][funcname])))
+            #print("T2: %d"%(number_of_lines_hit))
+            self.runtime_coverage['hit-summary'][funcname] = {
+                        'total-lines' : len(self.runtime_coverage['coverage-map'][funcname]),
+                        'hit-lines': number_of_lines_hit
+                    }
         self.set_basefolder()
         l.info("Completed creationg of merged profile")
 
