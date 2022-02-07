@@ -54,7 +54,14 @@ def llvm_cov_load(target_dir, target_name=None):
             for line in pf:
                 #print("line:")
                 #print(line)
-                line = line.decode()
+                try:
+                    line = line.decode()
+                except:
+                    try:
+                        line = line.decode('unicode-escape')
+                    except:
+                        continue
+
                 stripped_line = line.replace("\n","")
                 if len(stripped_line) > 0 and stripped_line[-1] == ":" and "|" not in stripped_line:
                     #print("We got a function definition: %s"%(line.replace("n","")))
