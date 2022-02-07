@@ -85,6 +85,20 @@ def llvm_cov_load(target_dir, target_name=None):
                     fname = fname.split(".c")[-1].replace(":","")
                 fname = fname.replace(":", "")
                 functions_hit.add(fname)
-    #for fh in functions_hit:
-    #    print("Function: %s"%(fh))
-    return functions_hit, coverage_map
+
+    hit_summary = dict()
+    for funcname in coverage_map:
+        number_of_lines_hit = 0
+        for ln, ht in coverage_map[funcname]:
+            if ht > 0:
+                number_of_lines_hit += 1
+        hit_summary[funcname] = {
+                    'total-lines' : len(coverage_map[funcname]),
+                    'hit-lines': number_of_lines_hit
+                }
+    coverage_details = {
+                'coverage-map' : coverage_map,
+                'functions-hit' : functions_hit,
+                'hit-summary' : hit_summary
+            }
+    return coverage_details

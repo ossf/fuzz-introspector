@@ -128,13 +128,10 @@ class FuzzerProfile:
                 if f.function_name not in self.functions_reached_by_fuzzer]
 
     def load_coverage(self, target_folder: str) -> None:
-        # Merge any runtime coverage data that we may have to correlate
-        # reachability and runtime coverage information.
-        functions_hit, coverage_map = fuzz_cov_load.llvm_cov_load(target_folder, self.get_target_fuzzer_filename())
-        self.coverage = {
-                'functions-hit' : functions_hit,
-                'coverage-map' : coverage_map
-                }
+        """
+        Load coverage data for this profile
+        """
+        self.coverage = fuzz_cov_load.llvm_cov_load(target_folder, self.get_target_fuzzer_filename())
 
     def get_function_coverage(self, function_name: str, should_normalise: bool=False) -> List[str]:
         """
