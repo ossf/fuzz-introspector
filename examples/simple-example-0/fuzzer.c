@@ -77,8 +77,14 @@ int fuzz_entry(const uint8_t *data, size_t size) {
 }
 
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
+    if (size < 10) {
+      return 0;
+    }
     char *kldfj = (char*)malloc(123);
-    fuzz_entry(data, size);
+    char *nt = malloc(size+1);
+    memcpy(nt, data, size);
+    nt[size] = '\0';
+    fuzz_entry(nt, size);
     return 0;
 }
 
