@@ -306,7 +306,7 @@ class MergedProjectProfile:
                             to_add = False
                             continue
                         new_line_counts.append((ln1, max(ht1, ht2)))
-                    self.runtime_coverage['coverage-map'][func_name] = new_line_countes
+                    self.runtime_coverage['coverage-map'][func_name] = new_line_counts
         for funcname in self.runtime_coverage['coverage-map']:
             number_of_lines_hit = 0
             for ln, ht in self.runtime_coverage['coverage-map'][funcname]:
