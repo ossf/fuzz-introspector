@@ -425,10 +425,13 @@ def analysis_coverage_runtime_analysis(
     # - less than 15% coverage
     functions_of_interest = []
     for funcname in merged_profile.runtime_coverage['hit-summary']:
-        hit_summary = merged_profile.runtime_coverage['hit-summary'][funcname]
-        hit_proportion = (hit_summary['hit-lines'] / hit_summary['total-lines']) * 100.0
-        if hit_summary['total-lines'] > 50 and hit_proportion < 20:
-            functions_of_interest.append(funcname)
+        try:
+            hit_summary = merged_profile.runtime_coverage['hit-summary'][funcname]
+            hit_proportion = (hit_summary['hit-lines'] / hit_summary['total-lines']) * 100.0
+            if hit_summary['total-lines'] > 50 and hit_proportion < 20:
+                functions_of_interest.append(funcname)
+        except:
+            l.error("Error getting hit-summary information for %s"%(funcname))
 
     return functions_of_interest
 
