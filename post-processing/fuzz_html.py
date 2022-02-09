@@ -632,6 +632,40 @@ def create_html_report(
     html_string += html_add_header_with_link(
         "Project functions overview", 2, toc_list)
     tables.append("myTable%d" % (len(tables)))
+    html_string += """<p>
+    In the following function table the context of the columns have specific meaning. The description of the columnets are as follows:
+<table>
+    <thead>
+        <tr>
+            <th>Column name</th>
+            <th>Description</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><b>Func name</b></td>
+            <td>Name of function</td>
+        </tr>
+        <tr>
+            <td><b>Fuzzers reach count</b></td>
+            <td>[Static analysis] The amount of fuzzers that reach the function based on static analysis</td>
+        </tr>
+        <tr>
+            <td><b>Fuzzers runtime hit</b></td>
+            <td>[Dynamic analysis] Whether the function was hit during runtime coverage analysis</td>
+        </tr>
+        <tr>
+            <td><b>Func lines hit %</b></td>
+            <td>[Dynamic analysis] The percentage of the function's lines hit during runtime coverage analysis</td>
+        </tr>
+        <tr>
+            <td><b>Accumulated cyclomatic complexity</b></td>
+            <td>[Static analysis] The total amount of cyclomatic complexity of this function and all functions it reaches</td>
+        </tr>
+    </tbody>
+</table>
+<br>
+</p>"""
     html_string += create_all_function_table(
         tables, project_profile, coverage_url, git_repo_url, basefolder)
 
