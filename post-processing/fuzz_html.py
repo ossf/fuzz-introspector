@@ -434,8 +434,8 @@ def create_fuzzer_detailed_section(
         try:
             html_string += html_table_add_row([
                 funcname,
-                profile.coverage['hit-summary'][fuzz_utils.demangle_cpp_func(funcname)]['hit-lines'],
                 profile.coverage['hit-summary'][fuzz_utils.demangle_cpp_func(funcname)]['total-lines'],
+                profile.coverage['hit-summary'][fuzz_utils.demangle_cpp_func(funcname)]['hit-lines'],
                 "%.5s"%(str(hit_percentage))+"%"])
         except:
             l.error("Could not write coverage line for function %s"%(funcname))
