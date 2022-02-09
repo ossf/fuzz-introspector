@@ -461,7 +461,7 @@ def create_fuzzer_detailed_section(
 
     html_string += html_add_header_with_link(
             "Full calltree", 3, toc_list, link=f"full_calltree_{curr_tt_profile}")
-    html_string += ("<p class='no-top-margin'>The following link provides a visualisation"
+    html_string += ("<p class='no-top-margin'>The following link provides a visualisation "
                     "of the full calltree overlayed with coverage information: <a href=\"%s\">full calltree</a></p>"%(calltree_file_name))
 
     return html_string
