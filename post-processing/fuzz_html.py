@@ -50,12 +50,13 @@ def create_horisontal_calltree_image(image_name: str, color_list: List[str]) -> 
     # to not include the image at all.
     if len(color_list) == 0:
         color_list = ['red']
-    plot_size = 10.0
+    #plot_size = 10.0
+    plot_size = len(color_list)
     multiplier = plot_size / len(color_list)
 
     fig, ax = plt.subplots()
     ax.clear()
-    fig.set_size_inches(20, 2)
+    fig.set_size_inches(15, 2)
     ax.plot()
 
     # Create our rectangles
