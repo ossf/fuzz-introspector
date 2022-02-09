@@ -408,10 +408,9 @@ def create_fuzzer_detailed_section(
     html_string += html_add_header_with_link("Fuzzer: %s" % (
         fuzzer_filename.replace(" ", "").split("/")[-1]), 2, toc_list)
 
+    # Table showing which files this fuzzer hits.
     html_string += html_add_header_with_link(
         "Files hit", 3, toc_list, link="files_hit_%d" % (curr_tt_profile))
-
-    # Table showing which files this fuzzer hits.
     tables.append(f"myTable{len(tables)}")
     html_string += create_table_head(tables[-1],
                                      ["filename", "functions hit"])
@@ -419,6 +418,28 @@ def create_fuzzer_detailed_section(
         html_string += html_table_add_row([k,
                                           len(profile.file_targets[k])])
     html_string += "</table>\n"
+
+    # Table with all functions hit by this fuzzer
+    html_string += html_add_header_with_link(
+            "Functions hit (dynamic analysis based)", 3, toc_list, link="functions_cov_hit_%d"%(curr_tt_profile))
+    tables.append(f"myTable{len(tables)}")
+    html_string += create_table_head(tables[-1],
+                ["Function name", "source code lines", "source lines hit", "percentage hit"])
+
+    for funcname in profile.coverage['coverage-map']:
+        try:
+            hit_percentage = (profile.coverage['hit-summary'][fuzz_utils.demangle_cpp_func(funcname)]['hit-lines'] / profile.coverage['hit-summary'][fuzz_utils.demangle_cpp_func(funcname)]['total-lines']) * 100.0
+        except:
+            hit_percentage = 0.0
+        try:
+            html_string += html_table_add_row([
+                funcname,
+                profile.coverage['hit-summary'][fuzz_utils.demangle_cpp_func(funcname)]['hit-lines'],
+                profile.coverage['hit-summary'][fuzz_utils.demangle_cpp_func(funcname)]['total-lines'],
+                hit_percentage])
+        except:
+            l.error("Could not write coverage line for function %s"%(funcname))
+    html_string += "</table>"
 
     # Calltree generation
     html_string += html_add_header_with_link(
