@@ -407,6 +407,32 @@ def analysis_synthesize_simple_targets(
 
     return final_fuzzers, new_merged_profile, optimal_functions_targeted
 
+def analysis_coverage_runtime_analysis(
+        profiles : List[fuzz_data_loader.FuzzerProfile],
+        merged_profile : fuzz_data_loader.MergedProjectProfile):
+    """
+    Identifies the functions that are hit in terms of coverage, but
+    only has a low percentage overage in terms of lines covered in the
+    target program.
+    This is useful to highlight functions that need inspection and is
+    in contrast to statically-extracted data which gives a hit/not-hit
+    verdict on a given function entirely.
+    """
+    print("In coverage optimal analysis")
+
+    # Find all functions that satisfy:
+    # - source lines above 50
+    # - less than 15% coverage
+    functions_of_interest = []
+    for funcname in merged_profile.runtime_coverage['hit-summary']:
+        hit_summary = merged_profile.runtime_coverage['hit-summary'][funcname]
+        hit_proportion = (hit_summary['hit-lines'] / hit_summary['total-lines']) * 100.0
+        if hit_summary['total-lines'] > 50 and hit_proportion < 20:
+            functions_of_interest.append(funcname)
+
+    return functions_of_interest
+
+
 def analysis_get_targets_for_existing_fuzzers(profiles, merged_profile):
     targets_for_existing_fuzzers = []
     # Find promising targets for each fuzzer based on which 

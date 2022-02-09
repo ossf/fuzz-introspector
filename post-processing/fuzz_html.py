@@ -466,6 +466,41 @@ def create_fuzzer_detailed_section(
 
     return html_string
 
+def handle_analysis_3(
+	    toc_list: List[Tuple[str, str, int]],
+            tables: List[str],
+            project_profile: fuzz_data_loader.MergedProjectProfile,
+            profiles: List[fuzz_data_loader.FuzzerProfile],
+            basefolder: str,
+            git_repo_url: str,
+            coverage_url: str) -> str:
+    l.info("In analysis 3")
+
+    functions_of_interest = fuzz_analysis.analysis_coverage_runtime_analysis(profiles, project_profile)
+
+    html_string = ""
+    html_string += html_add_header_with_link(
+            "Runtime coverage analysis",
+            1, toc_list)
+    html_string += "<p>This section gives analysis based on data about the runtime coverage informatin</p>"
+
+    html_string += html_add_header_with_link(
+        "Complex functions with low coverage", 3, toc_list)
+    tables.append("myTable%d" % (len(tables)))
+    html_string += create_table_head(tables[-1],
+            ["Func name", "lines of code", "LoC runtime coverage", "percentage covered"])
+
+    for funcname in functions_of_interest:
+        hit_summary = project_profile.runtime_coverage['hit-summary'][funcname]
+        html_string += html_table_add_row([
+                fuzz_utils.demangle_cpp_func(funcname),
+                hit_summary['total-lines'],
+                hit_summary['hit-lines'],
+                "%.5s"%(str((hit_summary['hit-lines'] / hit_summary['total-lines']) * 100.0))
+            ])
+    html_string += "</table>"
+    return html_string
+
 def handle_analysis_2(
 	    toc_list: List[Tuple[str, str, int]],
             tables: List[str],
@@ -722,6 +757,16 @@ def create_html_report(
     # Analysis 2
     if "FuzzEngineInput" in analyses_to_run:
         html_string += handle_analysis_2(
+                toc_list,
+                tables,
+                project_profile,
+                profiles,
+                basefolder,
+                git_repo_url,
+                coverage_url)
+
+    if "OptimalCoverageTargets" in analyses_to_run:
+        html_string += handle_analysis_3(
                 toc_list,
                 tables,
                 project_profile,

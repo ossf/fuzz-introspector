@@ -71,7 +71,7 @@ def create_parser():
                         default="/covreport/linux")
     parser.add_argument("--analyses",
                         nargs="+",
-                        default=["OptimalTargets"],
+                        default=["OptimalTargets", "OptimalCoverageTargets"],
                         help="Analyses to run. Available options: OptimalTargets, FuzzEngineInput")
 
     args = parser.parse_args()
