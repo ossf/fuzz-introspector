@@ -260,6 +260,8 @@ class MergedProjectProfile:
             incoming_references = list()
 
             for reached_func_name in fp_obj.functions_reached:
+                if reached_func_name not in self.all_functions:
+                    continue
                 reached_func_obj = self.all_functions[reached_func_name]
                 reached_func_obj.incoming_references.append(fp_obj.function_name)
                 total_cyclomatic_complexity += reached_func_obj.cyclomatic_complexity
