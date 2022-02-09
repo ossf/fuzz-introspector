@@ -234,7 +234,7 @@ def create_all_function_table(
             fd.function_depth,
             fd.hitcount,
             "yes" if fuzz_utils.demangle_cpp_func(fd.function_name) in project_profile.runtime_coverage['functions-hit'] else "no",
-            "%f"%(hit_percentage),
+            "%.5s"%(str(hit_percentage))+"%",
             fd.i_count,
             fd.bb_count,
             fd.cyclomatic_complexity,
@@ -436,7 +436,7 @@ def create_fuzzer_detailed_section(
                 funcname,
                 profile.coverage['hit-summary'][fuzz_utils.demangle_cpp_func(funcname)]['hit-lines'],
                 profile.coverage['hit-summary'][fuzz_utils.demangle_cpp_func(funcname)]['total-lines'],
-                hit_percentage])
+                "%.5s"%(str(hit_percentage))+"%"])
         except:
             l.error("Could not write coverage line for function %s"%(funcname))
     html_string += "</table>"
