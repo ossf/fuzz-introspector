@@ -427,16 +427,16 @@ def create_fuzzer_detailed_section(
     html_string += create_table_head(tables[-1],
                 ["Function name", "source code lines", "source lines hit", "percentage hit"])
 
-    for funcname in profile.coverage['coverage-map']:
+    for funcname in profile.coverage.covmap:
         try:
-            hit_percentage = (profile.coverage['hit-summary'][fuzz_utils.demangle_cpp_func(funcname)]['hit-lines'] / profile.coverage['hit-summary'][fuzz_utils.demangle_cpp_func(funcname)]['total-lines']) * 100.0
+            hit_percentage = (profile.coverage.hit_summary[fuzz_utils.demangle_cpp_func(funcname)]['hit-lines'] / profile.coverage.hit_summary[fuzz_utils.demangle_cpp_func(funcname)]['total-lines']) * 100.0
         except:
             hit_percentage = 0.0
         try:
             html_string += html_table_add_row([
                 funcname,
-                profile.coverage['hit-summary'][fuzz_utils.demangle_cpp_func(funcname)]['total-lines'],
-                profile.coverage['hit-summary'][fuzz_utils.demangle_cpp_func(funcname)]['hit-lines'],
+                profile.coverage.hit_summary[fuzz_utils.demangle_cpp_func(funcname)]['total-lines'],
+                profile.coverage.hit_summary[fuzz_utils.demangle_cpp_func(funcname)]['hit-lines'],
                 "%.5s"%(str(hit_percentage))+"%"])
         except:
             l.error("Could not write coverage line for function %s"%(funcname))

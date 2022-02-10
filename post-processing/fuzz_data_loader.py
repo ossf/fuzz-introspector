@@ -138,14 +138,14 @@ class FuzzerProfile:
         Get the tuples reflecting coverage map of a given function
         """
         if not should_normalise:
-            if not function_name in self.coverage['coverage-map']:
+            if not function_name in self.coverage.covmap:
                 return []
-            return self.coverage['coverage-map'][function_name]
+            return self.coverage.covmap[function_name]
         # should_normalise
-        for funcname in self.coverage['coverage-map']:
+        for funcname in self.coverage.covmap:
             normalised_funcname = fuzz_utils.demangle_cpp_func(fuzz_utils.normalise_str(funcname))
             if normalised_funcname == function_name:
-                return self.coverage['coverage-map'][funcname]
+                return self.coverage.covmap[funcname]
 
         # In case of errs return empty list
         return []
@@ -281,12 +281,12 @@ class MergedProjectProfile:
                     'hit-summary' : dict()
                 }
         for profile in profiles:
-            for func_name in profile.coverage['functions-hit']:
+            for func_name in profile.coverage.functions_hit:
                 if func_name not in self.runtime_coverage:
                     self.runtime_coverage['functions-hit'].append(func_name)
-            for func_name in profile.coverage['coverage-map']:
+            for func_name in profile.coverage.covmap:
                 if func_name not in self.runtime_coverage['coverage-map']:
-                    self.runtime_coverage['coverage-map'][func_name] = profile.coverage['coverage-map'][func_name]
+                    self.runtime_coverage['coverage-map'][func_name] = profile.coverage.covmap[func_name]
                 else:
                     # Merge by picking highest line numbers. Here we can assume they coverage
                     # maps have the same number of elements with the same line numbers but
