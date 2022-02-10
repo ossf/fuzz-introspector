@@ -313,17 +313,6 @@ class MergedProjectProfile:
                             continue
                         new_line_counts.append((ln1, max(ht1, ht2)))
                     self.runtime_coverage.covmap[func_name] = new_line_counts
-        for funcname in self.runtime_coverage.covmap:
-            number_of_lines_hit = 0
-            for ln, ht in self.runtime_coverage.covmap[funcname]:
-                if ht > 0:
-                    number_of_lines_hit += 1
-            #print("T1: %d"%(len(self.runtime_coverage['coverage-map'][funcname])))
-            #print("T2: %d"%(number_of_lines_hit))
-            self.runtime_coverage.hit_summary[funcname] = {
-                        'total-lines' : len(self.runtime_coverage.covmap[funcname]),
-                        'hit-lines': number_of_lines_hit
-                    }
         self.set_basefolder()
         l.info("Completed creationg of merged profile")
 

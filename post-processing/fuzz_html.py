@@ -220,9 +220,8 @@ def create_all_function_table(
             fd_github_url = "%s/%s#L%d" % (git_repo_url, fd.function_source_file.replace(
                 basefolder, ""), fd.function_linenumber)
         try:
-            #print("Hit lines: %d"%(project_profile.runtime_coverage['hit-summary'][fuzz_utils.demangle_cpp_func(fd.function_name)]['hit-lines']))
-            #print("Total lines: %d"%(project_profile.runtime_coverage['hit-summary'][fuzz_utils.demangle_cpp_func(fd.function_name)]['total-lines']))
-            hit_percentage = (project_profile.runtime_coverage.hit_summary[fuzz_utils.demangle_cpp_func(fd.function_name)]['hit-lines'] / project_profile.runtime_coverage.hit_summary[fuzz_utils.demangle_cpp_func(fd.function_name)]['total-lines']) * 100.0
+            func_total_lines, hit_lines = project_profile.runtime_coverage.get_hit_summary(fuzz_utils.demangle_cpp_func(fd.function_name))
+            hit_percentage = (hit_lines / func_total_lines) * 100.0
         except:
             hit_percentage = 0.0
         html_string += html_table_add_row([
@@ -429,14 +428,16 @@ def create_fuzzer_detailed_section(
 
     for funcname in profile.coverage.covmap:
         try:
-            hit_percentage = (profile.coverage.hit_summary[fuzz_utils.demangle_cpp_func(funcname)]['hit-lines'] / profile.coverage.hit_summary[fuzz_utils.demangle_cpp_func(funcname)]['total-lines']) * 100.0
+            total_func_lines, hit_lines = profile.coverage.get_hit_summary(fuzz_utils.demangle_cpp_func(funcname))
+            hit_percentage = (hit_lines / total_func_lines) * 100.0
         except:
             hit_percentage = 0.0
         try:
+            total_func_lines, hit_lines = profile.coverage.get_hit_summary(fuzz_utils.demangle_cpp_func(funcname))
             html_string += html_table_add_row([
                 funcname,
-                profile.coverage.hit_summary[fuzz_utils.demangle_cpp_func(funcname)]['total-lines'],
-                profile.coverage.hit_summary[fuzz_utils.demangle_cpp_func(funcname)]['hit-lines'],
+                total_func_lines,
+                hit_lines,
                 "%.5s"%(str(hit_percentage))+"%"])
         except:
             l.error("Could not write coverage line for function %s"%(funcname))
@@ -492,12 +493,12 @@ def handle_analysis_3(
             ["Func name", "lines of code", "LoC runtime coverage", "percentage covered"])
 
     for funcname in functions_of_interest:
-        hit_summary = project_profile.runtime_coverage.hit_summary[funcname]
+        total_func_lines, hit_lines = project_profile.runtime_coverage.get_hit_summary(funcname)
         html_string += html_table_add_row([
                 fuzz_utils.demangle_cpp_func(funcname),
-                hit_summary['total-lines'],
-                hit_summary['hit-lines'],
-                "%.5s"%(str((hit_summary['hit-lines'] / hit_summary['total-lines']) * 100.0))
+                total_func_lines,
+                hit_lines,
+                "%.5s"%(str((hit_lines / total_func_lines) * 100.0))
             ])
     html_string += "</table>"
     return html_string

@@ -17,9 +17,20 @@ class CoverageProfile:
     def __init__(self):
         self.functions_hit = set()
         self.covmap = dict()
-        self.hit_summary = dict()
         self.covreports = list()
 
+    def get_all_hit_functions(self):
+        return self.covmap.keys()
+
+    def get_hit_summary(self, funcname):
+        """
+        returns the hit summary of a give function, in the form of
+        a tuple (total_function_lines, hit_lines)
+        """
+        if funcname not in self.covmap:
+            return None, None
+        lines_hit = [ht for ln,ht in self.covmap[funcname] if ht > 0]
+        return len(self.covmap[funcname]), len(lines_hit)
 
 def llvm_cov_load(target_dir, target_name=None):
     """
@@ -106,12 +117,6 @@ def llvm_cov_load(target_dir, target_name=None):
                 fname = fname.replace(":", "")
                 cp.functions_hit.add(fname)
 
-    for funcname in cp.covmap:
-        lines_hit = [ht for ln,ht in cp.covmap[funcname] if ht > 0]
-        cp.hit_summary[funcname]  = {
-                    'total-lines' : len(cp.covmap[funcname]),
-                    'hit-lines' : len(lines_hit)
-                }
     return cp
 
 if __name__ == "__main__":
