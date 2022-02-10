@@ -15,7 +15,7 @@
 ################################################################################
 
 ROOT=$PWD
-for PROJ in htslib dng_sdk; do
+for PROJ in htslib dng_sdk kamailio; do
   cd ${ROOT}/${PROJ}
   rm -rf ./web
 
