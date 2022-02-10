@@ -10,17 +10,15 @@ Module for loading coverage files and parsing them into something we can use in 
 
 At the moment only C/C++ is supported. Other languages coming up soon.
 """
-
 class CoverageProfile:
     """
     Class for storing information about a runtime coverage report
     """
-
     def __init__(self):
-        print("Initing")
         self.functions_hit = set()
         self.covmap = dict()
         self.hit_summary = dict()
+        self.covreports = list()
 
 
 def llvm_cov_load(target_dir, target_name=None):
@@ -61,6 +59,7 @@ def llvm_cov_load(target_dir, target_name=None):
             continue
         l.info("Parsing %s"%(profile_file))
         with open(profile_file, 'rb') as pf:
+            cp.covreports.append(profile_file)
             curr_func = None
             for line in pf:
                 #print("line:")
@@ -108,18 +107,15 @@ def llvm_cov_load(target_dir, target_name=None):
                 cp.functions_hit.add(fname)
 
     for funcname in cp.covmap:
-        number_of_lines_hit = 0
-        for ln, ht in cp.covmap[funcname]:
-            if ht > 0:
-                number_of_lines_hit += 1
+        lines_hit = [ht for ln,ht in cp.covmap[funcname] if ht > 0]
         cp.hit_summary[funcname]  = {
                     'total-lines' : len(cp.covmap[funcname]),
-                    'hit-lines' : number_of_lines_hit
+                    'hit-lines' : len(lines_hit)
                 }
     return cp
 
 if __name__ == "__main__":
-    print("In main")
+    print("Starting coverage loader")
     cp = llvm_cov_load(".")
     print("Functions hit:")
     for fn in cp.functions_hit:
@@ -128,3 +124,4 @@ if __name__ == "__main__":
     print("Coverage map keys")
     for fn in cp.covmap:
         print(fn)
+    print("Coverage loader end")
