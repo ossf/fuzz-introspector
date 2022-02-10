@@ -16,8 +16,6 @@
 
 ROOT=$PWD
 
-#for PROJ in simple-example-0 simple-example-1 simple-example-2 simple-example-3 simple-example-4 simple-example-indirect-pointers; do
-#for PROJ in cpp-simple-example-1; do
 for PROJ in simple-example-0; do
   cd ${ROOT}/${PROJ}
   rm -rf ./web
