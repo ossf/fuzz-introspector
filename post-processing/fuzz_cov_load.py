@@ -34,27 +34,26 @@ class CoverageProfile:
 
 def llvm_cov_load(target_dir, target_name=None):
     """
-    Parses output from commands e.g. 
+    Scans a directory to read one or more coverage reports, and returns a CoverageProfile
+
+    Parses output from "llvm-cov show", e.g.
         llvm-cov show -instr-profile=$profdata_file -object=$target \
           -line-coverage-gt=0 $shared_libraries $LLVM_COV_COMMON_ARGS > ${FUZZER_STATS_DIR}/$target.covreport
-    
+
     This is used to parse C/C++ coverage.
 
-    Some old documentation:
+    The function supports loading multiple and individual coverage reports.
+    This is needed because finding coverage on a per-fuzzer basis requires
+    correlating binary files to a specific introspection profile from compile time.
+    However, files could be moved around, renamed, and so on.
 
-    Reads all of the functions hit across all of the covreport files.
-    This is a bit over-approximating in that we dont actually find coverage
-    on a per-fuzzer basis, which is what we shuold. 
-    The difficulty in finding coverage on a per-fuzzer basis is correlating
-    binary files to the introspection done a compile time. Files could be
-    moved around and remaned, so we need some mechanism that looks at the 
-    internals, e.g. file name and location of LLVMFuzzerTestOneInput. 
-    But, we wait a bit with this.
+    As such, this function accepts an arugment "target_name" which is used to
+    target specific coverage profiles. However, if no coverage profile matches
+    that given name then the function will find *all* coverage reports it can and
+    use all of them.
     """
     coverage_reports = fuzz_utils.get_all_files_in_tree_with_regex(target_dir, ".*\.covreport$")
     l.info("Found %d coverage reports"%(len(coverage_reports)))
-
-    cp = CoverageProfile()
 
     # Check if there is a meaningful profile and if not, we need to use all.
     found_name = False
@@ -63,18 +62,18 @@ def llvm_cov_load(target_dir, target_name=None):
             if target_name in pf:
                 found_name = True
 
+    cp = CoverageProfile()
     for profile_file in coverage_reports:
         # If only coverage from a specific report should be used then filter
-        # here. Otherwise, include coverage from everybody.
+        # here. Otherwise, include coverage from all reports.
         if found_name and target_name not in profile_file:
             continue
-        l.info("Parsing %s"%(profile_file))
+
+        l.info("Reading coverage report: %s"%(profile_file))
         with open(profile_file, 'rb') as pf:
             cp.covreports.append(profile_file)
             curr_func = None
             for line in pf:
-                #print("line:")
-                #print(line)
                 try:
                     line = line.decode()
                 except:
@@ -83,40 +82,51 @@ def llvm_cov_load(target_dir, target_name=None):
                     except:
                         continue
 
-                stripped_line = line.replace("\n","")
-                if len(stripped_line) > 0 and stripped_line[-1] == ":" and "|" not in stripped_line:
-                    #print("We got a function definition: %s"%(line.replace("n","")))
+                line = line.replace("\n","")
+
+                # Parse lines that signal function names. These linse indicate that the lines following
+                # this line will be the specific source code lines of the given function.
+                # Example line:
+                #  "LLVMFuzzerTestOneInput:\n"
+                if len(line) > 0 and line[-1] == ":" and "|" not in line:
                     if len(line.split(":")) == 3:
-                        curr_func = stripped_line.split(":")[1].replace(" ","").replace(":","")
+                        curr_func = line.split(":")[1].replace(" ","").replace(":","")
                     else:
-                        curr_func = stripped_line.replace(" ","").replace(":","")
+                        curr_func = line.replace(" ","").replace(":","")
                     cp.covmap[curr_func] = list()
+
+                    # Normalise the function name and add it to functions_hit.
+                    # Notice there is something quite odd here in that we keep function names
+                    # both in cp.covmap and also cp.fuctions_hit. TODO: David, why was this
+                    # set up using both? It would be smarter to just use cp.covmap?
+                    fname = line
+                    if ".cpp" in fname:
+                        fname = fname.split(".cpp")[-1].replace(":","")
+                        fname = fuzz_utils.demangle_cpp_func(fname)
+                    elif ".c" in fname:
+                        fname = fname.split(".c")[-1].replace(":","")
+                    fname = fname.replace(":", "")
+                    cp.functions_hit.add(fname)
+
+                # Parse lines that signal specific line of code. These lines only
+                # offer after the function names parsed above.
+                # Example line:
+                #  "   83|  5.99M|    char *kldfj = (char*)malloc(123);\n"
                 if curr_func != None and "|" in line:
-                    #print("Function: %s has line: %s --- %s"%(curr_func, line.replace("\n",""), str(line.split("|"))))
+                    # Extract source code line number
                     try:
                         line_number = int(line.split("|")[0])
                     except:
                         continue
+
+                    # Extract hit count
+                    # Write out numbers e.g. 1.2k into 1200 and 5.99M to 5990000
                     try:
-                        # write out numbers e.g. 1.2k into 1200
                         hit_times = int(line.split("|")[1].replace("k","00").replace("M","0000").replace(".",""))
                     except:
                         hit_times = 0
+                    # Add source code line and hitcount to coverage map of current function
                     cp.covmap[curr_func].append((line_number, hit_times))
-                    #print("\tLine %d - hit times: %d"%(line_number, hit_times))
-
-                # We should now normalise the potential function name
-                if not stripped_line.endswith(":"):
-                    continue
-                fname = stripped_line
-                if ".cpp" in fname:
-                    fname = fname.split(".cpp")[-1].replace(":","")
-                    fname = fuzz_utils.demangle_cpp_func(fname)
-                elif ".c" in fname:
-                    fname = fname.split(".c")[-1].replace(":","")
-                fname = fname.replace(":", "")
-                cp.functions_hit.add(fname)
-
     return cp
 
 if __name__ == "__main__":
