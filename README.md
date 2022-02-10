@@ -114,20 +114,20 @@ Here we show a few images from the output report:
 
 Project overview:
 
-![project overview](/img/project_overview.png)
+![project overview](/doc/img/project_overview.png)
 
 
 Table with data of all functions in a project. The table is sortable to make enhance the process of understanding the fuzzer-infrastructure of a given project:
 
-![Functions table](/img/functions_overview.png)
+![Functions table](/doc/img/functions_overview.png)
 
 Reachability tree with coverage overlay
 
-![Overlay 1](/img/overlay-1.png)
+![Overlay 1](/doc/img/overlay-1.png)
 
 
 Reachability tree with coverage overlay, showing where a fuzz-blocker is occurring
-![Overlay 2](/img/overlay-2.png)
+![Overlay 2](/doc/img/overlay-2.png)
 
 
 ## Contribute
