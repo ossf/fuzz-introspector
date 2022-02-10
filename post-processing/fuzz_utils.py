@@ -48,6 +48,16 @@ def longest_common_prefix(strs: List[str]) -> str:
 def normalise_str(s1: str) -> str:
     return s1.replace("\t", "").replace("\r", "").replace("\n", "").replace(" ", "")
 
+def safe_decode(data):
+    try:
+        return data.decode()
+    except:
+        None
+    try:
+        return data.decode('unicode-escape')
+    except:
+        None
+    return None
 
 def get_all_files_in_tree_with_regex(basedir: str, regex_str: str) -> List[str]:
     """

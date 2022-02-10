@@ -74,13 +74,9 @@ def llvm_cov_load(target_dir, target_name=None):
             cp.covreports.append(profile_file)
             curr_func = None
             for line in pf:
-                try:
-                    line = line.decode()
-                except:
-                    try:
-                        line = line.decode('unicode-escape')
-                    except:
-                        continue
+                line = fuzz_utils.safe_decode(line)
+                if line == None:
+                    continue
 
                 line = line.replace("\n","")
 
