@@ -79,10 +79,10 @@ cd fuzz-introspector
 ./build_all.sh
 ```
 
-#### Run local examples
+#### Run local example
 After having built the custom clang above, you can try an example:
 ```
-cd examples
+cd tests
 ./build_simple_examples.sh
 cd simple-example-4/web
 python3 -m http.server 5002
