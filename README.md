@@ -12,6 +12,8 @@ Fuzz-introspector can on a high-level guide on how to improve fuzzing of a proje
 
 By and large these capabilities will remain the goals of fuzz-introspector. The focus is on improving these.
 
+A video demonstration of fuzz-introspector is given [here](https://www.youtube.com/watch?v=cheo-liJhuE)
+
 ## Features
 **High-level features**
 
