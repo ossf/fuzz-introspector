@@ -11,6 +11,17 @@ Module for loading coverage files and parsing them into something we can use in 
 At the moment only C/C++ is supported. Other languages coming up soon.
 """
 
+class CoverageProfile:
+    """
+    Class for storing information about a runtime coverage report
+    """
+
+    def __init__(self):
+        print("Initing")
+        self.functions_hit = set()
+        self.covmap = dict()
+        self.hit_summary = dict()
+
 
 def llvm_cov_load(target_dir, target_name=None):
     """
@@ -35,6 +46,8 @@ def llvm_cov_load(target_dir, target_name=None):
     l.info("Found %d coverage reports"%(len(coverage_reports)))
     functions_hit = set()
     coverage_map = dict()
+
+    cp = CoverageProfile()
 
     # Check if there is a meaningful profile and if not, we need to use all.
     found_name = False
@@ -70,6 +83,7 @@ def llvm_cov_load(target_dir, target_name=None):
                     else:
                         curr_func = stripped_line.replace(" ","").replace(":","")
                     coverage_map[curr_func] = list()
+                    cp.covmap[curr_func] = list()
                 if curr_func != None and "|" in line:
                     #print("Function: %s has line: %s --- %s"%(curr_func, line.replace("\n",""), str(line.split("|"))))
                     try:
@@ -82,6 +96,7 @@ def llvm_cov_load(target_dir, target_name=None):
                     except:
                         hit_times = 0
                     coverage_map[curr_func].append((line_number, hit_times))
+                    cp.covmap[curr_func].append((line_number, hit_times))
                     #print("\tLine %d - hit times: %d"%(line_number, hit_times))
 
                 # We should now normalise the potential function name
@@ -94,7 +109,9 @@ def llvm_cov_load(target_dir, target_name=None):
                 elif ".c" in fname:
                     fname = fname.split(".c")[-1].replace(":","")
                 fname = fname.replace(":", "")
+
                 functions_hit.add(fname)
+                cp.functions_hit.add(fname)
 
     hit_summary = dict()
     for funcname in coverage_map:
@@ -106,9 +123,25 @@ def llvm_cov_load(target_dir, target_name=None):
                     'total-lines' : len(coverage_map[funcname]),
                     'hit-lines': number_of_lines_hit
                 }
+        cp.hit_summary[funcname]  = {
+                    'total-lines' : len(cp.covmap[funcname]),
+                    'hit-lines' : number_of_lines_hit
+                }
     coverage_details = {
                 'coverage-map' : coverage_map,
                 'functions-hit' : functions_hit,
                 'hit-summary' : hit_summary
             }
     return coverage_details
+
+if __name__ == "__main__":
+    print("In main")
+    coverage_details = llvm_cov_load(".")
+    print(str(coverage_details))
+    print("Functions hit:")
+    for fn in coverage_details['functions-hit']:
+        print(fn)
+
+    print("Coverage map keys")
+    for fn in coverage_details['coverage-map']:
+        print(fn)
