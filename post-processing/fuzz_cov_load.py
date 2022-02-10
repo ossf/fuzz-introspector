@@ -44,8 +44,6 @@ def llvm_cov_load(target_dir, target_name=None):
     """
     coverage_reports = fuzz_utils.get_all_files_in_tree_with_regex(target_dir, ".*\.covreport$")
     l.info("Found %d coverage reports"%(len(coverage_reports)))
-    functions_hit = set()
-    coverage_map = dict()
 
     cp = CoverageProfile()
 
@@ -82,7 +80,6 @@ def llvm_cov_load(target_dir, target_name=None):
                         curr_func = stripped_line.split(":")[1].replace(" ","").replace(":","")
                     else:
                         curr_func = stripped_line.replace(" ","").replace(":","")
-                    coverage_map[curr_func] = list()
                     cp.covmap[curr_func] = list()
                 if curr_func != None and "|" in line:
                     #print("Function: %s has line: %s --- %s"%(curr_func, line.replace("\n",""), str(line.split("|"))))
@@ -95,7 +92,6 @@ def llvm_cov_load(target_dir, target_name=None):
                         hit_times = int(line.split("|")[1].replace("k","00").replace("M","0000").replace(".",""))
                     except:
                         hit_times = 0
-                    coverage_map[curr_func].append((line_number, hit_times))
                     cp.covmap[curr_func].append((line_number, hit_times))
                     #print("\tLine %d - hit times: %d"%(line_number, hit_times))
 
@@ -109,39 +105,26 @@ def llvm_cov_load(target_dir, target_name=None):
                 elif ".c" in fname:
                     fname = fname.split(".c")[-1].replace(":","")
                 fname = fname.replace(":", "")
-
-                functions_hit.add(fname)
                 cp.functions_hit.add(fname)
 
-    hit_summary = dict()
-    for funcname in coverage_map:
+    for funcname in cp.covmap:
         number_of_lines_hit = 0
-        for ln, ht in coverage_map[funcname]:
+        for ln, ht in cp.covmap[funcname]:
             if ht > 0:
                 number_of_lines_hit += 1
-        hit_summary[funcname] = {
-                    'total-lines' : len(coverage_map[funcname]),
-                    'hit-lines': number_of_lines_hit
-                }
         cp.hit_summary[funcname]  = {
                     'total-lines' : len(cp.covmap[funcname]),
                     'hit-lines' : number_of_lines_hit
                 }
-    coverage_details = {
-                'coverage-map' : coverage_map,
-                'functions-hit' : functions_hit,
-                'hit-summary' : hit_summary
-            }
-    return coverage_details
+    return cp
 
 if __name__ == "__main__":
     print("In main")
-    coverage_details = llvm_cov_load(".")
-    print(str(coverage_details))
+    cp = llvm_cov_load(".")
     print("Functions hit:")
-    for fn in coverage_details['functions-hit']:
+    for fn in cp.functions_hit:
         print(fn)
 
     print("Coverage map keys")
-    for fn in coverage_details['coverage-map']:
+    for fn in cp.covmap:
         print(fn)
