@@ -280,26 +280,29 @@ class MergedProjectProfile:
                     'coverage-map' : dict(),
                     'hit-summary' : dict()
                 }
+        self.runtime_coverage = fuzz_cov_load.CoverageProfile()
+
         for profile in profiles:
             for func_name in profile.coverage.functions_hit:
-                if func_name not in self.runtime_coverage:
-                    self.runtime_coverage['functions-hit'].append(func_name)
+                if func_name not in self.runtime_coverage.covmap:
+                    #self.runtime_coverage['functions-hit'].append(func_name)
+                    self.runtime_coverage.functions_hit.add(func_name)
             for func_name in profile.coverage.covmap:
-                if func_name not in self.runtime_coverage['coverage-map']:
-                    self.runtime_coverage['coverage-map'][func_name] = profile.coverage.covmap[func_name]
+                if func_name not in self.runtime_coverage.covmap:
+                    self.runtime_coverage.covmap[func_name] = profile.coverage.covmap[func_name]
                 else:
                     # Merge by picking highest line numbers. Here we can assume they coverage
                     # maps have the same number of elements with the same line numbers but
                     # different hit counts.
                     new_line_counts = list()
                     to_add = True
-                    for idx1 in range(len(self.runtime_coverage['coverage-map'][func_name])):
+                    for idx1 in range(len(self.runtime_coverage.covmap[func_name])):
                         try:
-                            ln1, ht1 = self.runtime_coverage['coverage-map'][func_name][idx1]
-                            ln2, ht2 = profile.coverage['coverage-map'][func_name][idx1]
+                            ln1, ht1 = self.runtime_coverage.covmap[func_name][idx1]
+                            ln2, ht2 = profile.coverage.covmap[func_name][idx1]
                         except:
-                            ln1, ht1 = self.runtime_coverage['coverage-map'][func_name][idx1]
-                            ln2, ht2 = self.runtime_coverage['coverage-map'][func_name][idx1]
+                            ln1, ht1 = self.runtime_coverage.covmap[func_name][idx1]
+                            ln2, ht2 = self.runtime_coverage.covmap[func_name][idx1]
                         # It may be that line numbers are not the same for the same function name across
                         # different fuzzers.
                         # This *could* actually happen, and will often (almost always) happen for
@@ -309,16 +312,16 @@ class MergedProjectProfile:
                             to_add = False
                             continue
                         new_line_counts.append((ln1, max(ht1, ht2)))
-                    self.runtime_coverage['coverage-map'][func_name] = new_line_counts
-        for funcname in self.runtime_coverage['coverage-map']:
+                    self.runtime_coverage.covmap[func_name] = new_line_counts
+        for funcname in self.runtime_coverage.covmap:
             number_of_lines_hit = 0
-            for ln, ht in self.runtime_coverage['coverage-map'][funcname]:
+            for ln, ht in self.runtime_coverage.covmap[funcname]:
                 if ht > 0:
                     number_of_lines_hit += 1
             #print("T1: %d"%(len(self.runtime_coverage['coverage-map'][funcname])))
             #print("T2: %d"%(number_of_lines_hit))
-            self.runtime_coverage['hit-summary'][funcname] = {
-                        'total-lines' : len(self.runtime_coverage['coverage-map'][funcname]),
+            self.runtime_coverage.hit_summary[funcname] = {
+                        'total-lines' : len(self.runtime_coverage.covmap[funcname]),
                         'hit-lines': number_of_lines_hit
                     }
         self.set_basefolder()

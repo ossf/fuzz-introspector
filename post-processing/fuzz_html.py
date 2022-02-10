@@ -222,7 +222,7 @@ def create_all_function_table(
         try:
             #print("Hit lines: %d"%(project_profile.runtime_coverage['hit-summary'][fuzz_utils.demangle_cpp_func(fd.function_name)]['hit-lines']))
             #print("Total lines: %d"%(project_profile.runtime_coverage['hit-summary'][fuzz_utils.demangle_cpp_func(fd.function_name)]['total-lines']))
-            hit_percentage = (project_profile.runtime_coverage['hit-summary'][fuzz_utils.demangle_cpp_func(fd.function_name)]['hit-lines'] / project_profile.runtime_coverage['hit-summary'][fuzz_utils.demangle_cpp_func(fd.function_name)]['total-lines']) * 100.0
+            hit_percentage = (project_profile.runtime_coverage.hit_summary[fuzz_utils.demangle_cpp_func(fd.function_name)]['hit-lines'] / project_profile.runtime_coverage.hit_summary[fuzz_utils.demangle_cpp_func(fd.function_name)]['total-lines']) * 100.0
         except:
             hit_percentage = 0.0
         html_string += html_table_add_row([
@@ -234,7 +234,7 @@ def create_all_function_table(
             fd.arg_types,
             fd.function_depth,
             fd.hitcount,
-            "yes" if fuzz_utils.demangle_cpp_func(fd.function_name) in project_profile.runtime_coverage['functions-hit'] else "no",
+            "yes" if fuzz_utils.demangle_cpp_func(fd.function_name) in project_profile.runtime_coverage.functions_hit else "no",
             "%.5s"%(str(hit_percentage))+"%",
             fd.i_count,
             fd.bb_count,
@@ -492,7 +492,7 @@ def handle_analysis_3(
             ["Func name", "lines of code", "LoC runtime coverage", "percentage covered"])
 
     for funcname in functions_of_interest:
-        hit_summary = project_profile.runtime_coverage['hit-summary'][funcname]
+        hit_summary = project_profile.runtime_coverage.hit_summary[funcname]
         html_string += html_table_add_row([
                 fuzz_utils.demangle_cpp_func(funcname),
                 hit_summary['total-lines'],
