@@ -18,7 +18,7 @@
 
 SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
-for fuzzname in htslib kamailio; do
+for fuzzname in htslib kamailio orbit wuffs croaring nettle; do
   echo "Testing $fuzzname"
 	python3 ${SCRIPT_DIR}/get_full_coverage.py $fuzzname 10 > get_coverage.log 2>&1
 	python3 ./infra/helper.py build_fuzzers --sanitizer=instrumentor $fuzzname  > build_introspector.log 2>&1
