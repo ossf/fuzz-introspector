@@ -21,9 +21,11 @@ import shutil
 
 from typing import (
     Any,
+    Callable,
     Dict,
     List,
     Tuple,
+    NamedTuple,
 )
 
 import fuzz_analysis
@@ -38,6 +40,11 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 
 l = logging.getLogger(name=__name__)
+
+class AnalysisInterface(NamedTuple):
+    name : str
+    analysis_func : Callable
+
 
 def create_horisontal_calltree_image(image_name: str, color_list: List[str]) -> None:
     """
@@ -548,6 +555,7 @@ def handle_analysis_1(
 	    toc_list: List[Tuple[str, str, int]],
             tables: List[str],
             project_profile: fuzz_data_loader.MergedProjectProfile,
+            profiles: List[fuzz_data_loader.FuzzerProfile],
             basefolder: str,
             git_repo_url: str,
             coverage_url: str) -> str:
@@ -746,29 +754,16 @@ def create_html_report(
     html_string += html_add_header_with_link(
         "Analyses and suggestions", 1, toc_list)
 
-    # Analysis 1
-    if "OptimalTargets" in analyses_to_run:
-        html_string += handle_analysis_1(
-                toc_list,
-                tables,
-                project_profile,
-                basefolder,
-                git_repo_url,
-                coverage_url)
+    # Ordering here is important as top analysis will be shown first in the report
+    analysis_array = [
+                AnalysisInterface("OptimalTargets",handle_analysis_1),
+                AnalysisInterface("FuzzEngineInput", handle_analysis_2),
+                AnalysisInterface("OptimalCoverageTargets", handle_analysis_3)
+            ]
 
-    # Analysis 2
-    if "FuzzEngineInput" in analyses_to_run:
-        html_string += handle_analysis_2(
-                toc_list,
-                tables,
-                project_profile,
-                profiles,
-                basefolder,
-                git_repo_url,
-                coverage_url)
-
-    if "OptimalCoverageTargets" in analyses_to_run:
-        html_string += handle_analysis_3(
+    for analysis in analysis_array:
+        if analysis.name in analyses_to_run:
+            analysis.analysis_func(
                 toc_list,
                 tables,
                 project_profile,
