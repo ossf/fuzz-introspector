@@ -43,9 +43,6 @@ class CalltreeCallsite():
         self.cov_forward_reds = None
         self.cov_largest_blocked_func = None
 
-
-
-
 def extract_all_callsites_recursive(calltree, callsite_nodes):
     """
     Given a node, will assemble all callsites in the children. Recursive function.
@@ -72,20 +69,16 @@ def data_file_read_calltree(filename):
     This is for C/C++ files
     """
     read_tree = False
-
-    curr_nodes = []
-
     curr_ctcs_node = None
     curr_depth = -1
-
     depth_stack = dict()
-
     with open(filename, "r") as flog:
         for line in flog:
             line = line.replace("\n", "")
             if read_tree and "======" not in line:
                 stripped_line = line.strip().split(" ")
-                print(line)
+                
+                # Parse the line
                 # Type: {spacing depth} {target filename} {line count}
                 if len(stripped_line) == 3:
                     filename = stripped_line[1]
@@ -93,14 +86,10 @@ def data_file_read_calltree(filename):
                 else: 
                     filename = ""
                     linenumber=0
-
                 space_count = len(line) - len(line.lstrip(' '))
                 depth = space_count / 2
-                curr_node = { 'function_name' : stripped_line[0],
-                              'functionSourceFile' : filename,
-                              'depth' : depth,
-                              'linenumber' : linenumber}
 
+                # Create a callsite nide
                 ctcs = CalltreeCallsite()
                 ctcs.dst_function_name = stripped_line[0]
                 ctcs.dst_function_source_file = filename
@@ -113,28 +102,23 @@ def data_file_read_calltree(filename):
                     # First node
                     curr_ctcs_node = ctcs
                 elif depth > curr_depth:
-                    # We are going one deeper
-                    # Special case in 
-                    # Root parent case
+                    # We are going one calldepth deeper
+                    # Special case in the root parent case, where we have no parent in the current node
+                    # and also no children.
                     if curr_ctcs_node.parent_calltree_callsite == None and len(curr_ctcs_node.children) == 0:
-                        print("Updating 1")
                         None
                     else:
-                        print("Updating 2")
                         curr_ctcs_node = curr_ctcs_node.children[-1]
 
                 elif depth < curr_depth:
                     # We are going up, find out how much
                     depth_diff = int(curr_depth - depth)
-                    print("Depth diff:")
-                    print(depth_diff)
                     tmp_node = curr_ctcs_node
                     idx = 0
                     while idx < depth_diff and tmp_node.parent_calltree_callsite != None:
                         #for i in range(depth_diff):
                         tmp_node = tmp_node.parent_calltree_callsite
                         idx +=  1
-                        print("Going up to %s"%(tmp_node.dst_function_name))
                     curr_ctcs_node = tmp_node
                 
                 # Add the node to the current parent
@@ -142,9 +126,7 @@ def data_file_read_calltree(filename):
                     ctcs.parent_calltree_callsite = curr_ctcs_node
                     curr_ctcs_node.children.append(ctcs)
                     curr_ctcs_node.children = list(sorted(curr_ctcs_node.children, key=lambda x : x.src_linenumber))
-
                 curr_depth = depth
-                curr_nodes.append(ctcs)
 
             if "====================================" in line:
                 read_tree = False
@@ -156,16 +138,10 @@ def data_file_read_calltree(filename):
         return None
 
     ctcs_root = curr_ctcs_node
-    idx = 0
     while ctcs_root.depth != 0:
-        print("Getting parent %s"%(ctcs_root.dst_function_name))
-        idx += 1
-        if idx > 20:
-            break
-        
         ctcs_root = ctcs_root.parent_calltree_callsite
         if ctcs_root == None:
             return None
+    #print_ctcs_tree(ctcs_root, 1)
 
-    print_ctcs_tree(ctcs_root, 1)
     return ctcs_root
