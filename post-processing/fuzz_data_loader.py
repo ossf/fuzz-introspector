@@ -396,6 +396,9 @@ def add_func_to_reached_and_clone(merged_profile_old: MergedProjectProfile,
 
     # Update hitcount of all functions reached by the function
     for func_name in func_to_add.functions_reached:
+        if func_name not in merged_profile.all_functions:
+            l.error("Found mismatched function name between merged all_functions and functions_reached: %s"%(func_name))
+            continue
         f = merged_profile.all_functions[func_name]
         if f.hitcount == 0:
             f.hitcount = 1
@@ -407,6 +410,9 @@ def add_func_to_reached_and_clone(merged_profile_old: MergedProjectProfile,
         cc = 0
         uncovered_cc = 0
         for reached_func_name in f_profile.functions_reached:
+            if reached_func_name not in merged_profile.all_functions:
+                l.error("Found mismatched function name between merged all_functions and functions_reached: %s"%(reached_func_name))
+                continue
             f_reached = merged_profile.all_functions[reached_func_name]
             cc += f_reached.cyclomatic_complexity
             if f_reached.hitcount == 0:
