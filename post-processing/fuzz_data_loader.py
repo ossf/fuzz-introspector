@@ -101,8 +101,10 @@ class FuzzerProfile:
         Removes the project_profile's basefolder from source paths in a given profile. 
         """
         self.fuzzer_source_file = self.fuzzer_source_file.replace(basefolder, "")
-        for node in self.function_call_depths:
-            node['functionSourceFile'] = node['functionSourceFile'].replace(basefolder, "")
+
+        all_callsites = fuzz_cfg_load.extract_all_callsites(self.function_call_depths)
+        for cs in all_callsites:
+            cs.dst_function_source_file = cs.dst_function_source_file.replace(basefolder, "")
 
         new_dict = {}
         for key in self.file_targets:
@@ -163,12 +165,13 @@ class FuzzerProfile:
         """
         filenames = set()
         self.file_targets = dict()
-        for fd in self.function_call_depths:
-            if fd['functionSourceFile'].replace(" ","") == "":
-                continue
-            if fd['functionSourceFile'] not in self.file_targets:
-                self.file_targets[fd['functionSourceFile']] = set()
-            self.file_targets[fd['functionSourceFile']].add(fd['function_name'])
+        all_callsites = fuzz_cfg_load.extract_all_callsites(self.function_call_depths)
+        for cs in all_callsites:
+            if cs.dst_function_source_file.replace(" ","") == "":
+                contineu
+            if cs.dst_function_source_file not in self.file_targets:
+                self.file_targets[cs.dst_function_source_file] = set()
+            self.file_targets[cs.dst_function_source_file].add(cs.dst_function_source_file)
 
     def get_total_basic_blocks(self) -> None:
         """
@@ -396,6 +399,9 @@ def add_func_to_reached_and_clone(merged_profile_old: MergedProjectProfile,
 
     # Update hitcount of all functions reached by the function
     for func_name in func_to_add.functions_reached:
+        if func_name not in merged_profile.all_functions:
+            l.error("Found mismatched function name between merged all_functions and functions_reached: %s"%(func_name))
+            continue
         f = merged_profile.all_functions[func_name]
         if f.hitcount == 0:
             f.hitcount = 1
@@ -407,6 +413,9 @@ def add_func_to_reached_and_clone(merged_profile_old: MergedProjectProfile,
         cc = 0
         uncovered_cc = 0
         for reached_func_name in f_profile.functions_reached:
+            if reached_func_name not in merged_profile.all_functions:
+                l.error("Found mismatched function name between merged all_functions and functions_reached: %s"%(reached_func_name))
+                continue
             f_reached = merged_profile.all_functions[reached_func_name]
             cc += f_reached.cyclomatic_complexity
             if f_reached.hitcount == 0:

@@ -28,6 +28,7 @@ from typing import (
 )
 
 import fuzz_utils
+import fuzz_cfg_load
 import fuzz_data_loader
 
 l = logging.getLogger(name=__name__)
@@ -45,21 +46,21 @@ def overlay_calltree_with_coverage(
     # in which the callsite is placed.
     callstack = dict()
     def callstack_get_parent(n, c):
-        return c[int(n['depth'])-1]
+        return c[int(n.depth)-1]
 
     def callstack_has_parent(n, c):
-        return int(n['depth'])-1 in c
+        return int(n.depth)-1 in c
 
     def callstack_set_curr_node(n, name, c):
-        c[int(node['depth'])] = name
+        c[int(node.depth)] = name
 
     is_first = True
     ct_idx = 0
-    for node in profile.function_call_depths:
-        node['cov-ct-idx'] = ct_idx
+    for node in fuzz_cfg_load.extract_all_callsites(profile.function_call_depths):
+        node.cov_ct_idx = ct_idx
         ct_idx += 1
 
-        demangled_name = fuzz_utils.demangle_cpp_func(node['function_name'])
+        demangled_name = fuzz_utils.demangle_cpp_func(node.dst_function_name)
 
         # Add to callstack
         callstack_set_curr_node(node, demangled_name, callstack)
@@ -80,7 +81,7 @@ def overlay_calltree_with_coverage(
             if len(coverage_data) == 0:
                 l.error("There is no coverage data (not even all negative).")
                 #exit(0)
-            node['cov-parent'] = "EP"
+            node.cov_parent = "EP"
 
             node_hitcount = 0
             for (n_line_number, hit_count_cov) in coverage_data:
@@ -90,13 +91,13 @@ def overlay_calltree_with_coverage(
             # Find the parent function and check coverage of the node
             coverage_data = profile.get_function_coverage(fuzz_utils.normalise_str(callstack_get_parent(node, callstack)), True)
             for (n_line_number, hit_count_cov) in coverage_data:
-                if n_line_number == node['linenumber'] and hit_count_cov > 0:
+                if n_line_number == node.src_linenumber and hit_count_cov > 0:
                     node_hitcount = hit_count_cov
-            node['cov-parent'] = callstack_get_parent(node, callstack)
+            node.cov_parent = callstack_get_parent(node, callstack)
         else:
             l.error("A node should either be the first or it must have a parent")
             exit(1)
-        node['cov-hitcount'] = node_hitcount
+        node.cov_hitcount = node_hitcount
 
         # Map hitcount to color of target.
         def get_hit_count_color(hit_count):
@@ -106,19 +107,19 @@ def overlay_calltree_with_coverage(
                 if hit_count >= cmin and hit_count < cmax:
                     return cname
             return "red"
-        color_to_be = get_hit_count_color(node['cov-hitcount'])
-        node['cov-color'] = color_to_be
+        color_to_be = get_hit_count_color(node.cov_hitcount)
+        node.cov_color = color_to_be
 
 
         # Get URL to coverage report for the node.
         link = "#"
         for fd_k, fd in project_profile.all_functions.items():
-            if fd.function_name == node['function_name']:
+            if fd.function_name == node.dst_function_name:
                 link = coverage_url + \
                     "%s.html#L%d" % (
                         fd.function_source_file, fd.function_linenumber)
                 break
-        node['cov-link'] = link
+        node.cov_link = link
 
         # Find the parent
         callsite_link = "#"
@@ -128,8 +129,8 @@ def overlay_calltree_with_coverage(
                 if fuzz_utils.demangle_cpp_func(fd.function_name) == parent_fname:
                     callsite_link = coverage_url + "%s.html#L%d" % (
                             fd.function_source_file,   # parent source file
-                            node['linenumber'])        # callsite line number
-        node['cov-callsite-link'] = callsite_link
+                            node.src_linenumber)        # callsite line number
+        node.cov_callsite_link = callsite_link
 
         # Get the Github URL to the node. However, if we got a "/" basefolder it means
         # it is a wrong basefolder and we handle this by removing the two first folders
@@ -141,14 +142,15 @@ def overlay_calltree_with_coverage(
         else:
             fd_github_url = "%s/%s#L%d" % (git_repo_url, fd.function_source_file.replace(
                 basefolder, ""), fd.function_linenumber)
-        node['cov-github-url'] = fd_github_url
+        node.cov_github_url = fd_github_url
 
     # Extract data about which nodes unlocks data
-    for idx1 in range(len(profile.function_call_depths)):
-        n1 = profile.function_call_depths[idx1]
-        if n1['cov-hitcount'] == 0:
-            n1['cov-forward-reds'] = 0
-            n1['cov-largest-blocked-func'] = "none"
+    all_callsites = fuzz_cfg_load.extract_all_callsites(profile.function_call_depths)
+    for idx1 in range(len(all_callsites)):#range(len(profile.function_call_depths)):
+        n1 = all_callsites[idx1]
+        if n1.cov_hitcount == 0:
+            n1.cov_forward_reds = 0
+            n1.cov_largest_blocked_func = "none"
             continue
 
         # Read forward untill we see a green node. Depth must be the same or higher
@@ -156,35 +158,35 @@ def overlay_calltree_with_coverage(
         forward_red = 0
         largest_blocked_name = ""
         largest_blocked_count = 0
-        while idx2 < len(profile.function_call_depths):
+        while idx2 < len(all_callsites):
             # Check if we should break or increment forward_red
-            n2 = profile.function_call_depths[idx2]
+            n2 = all_callsites[idx2]
 
             # Break if the node is not at depth or deeper in the calltree than n1
             # Remember:
             # - the lower the depth, the higher up (closer to LLVMFuzzerTestOneInput) in the calltree
             # - the higehr the depth, the lower down (further away from LLVMFuzzerTestOneInput) in the calltree
-            if n2['depth'] < n1['depth']:
+            if n2.depth < n1.depth:
                 break
 
             # break if the node is visited. We *could* change this to another metric, e.g.
             # all nodes underneath n1 that are off, i.e. instead of breaking here we would
             # increment forward_red iff cov-hitcount != 0. This, however, would prioritise
             # blockers at the top rather than precisely locate them in the calltree.
-            if n2['cov-hitcount'] != 0:
+            if n2.cov_hitcount != 0:
                 break
 
             for fd_k, fd in project_profile.all_functions.items():
-                if fuzz_utils.demangle_cpp_func(fd.function_name) == n2['function_name'] and fd.total_cyclomatic_complexity > largest_blocked_count:
+                if fuzz_utils.demangle_cpp_func(fd.function_name) == n2.dst_function_name and fd.total_cyclomatic_complexity > largest_blocked_count:
                     largest_blocked_count = fd.total_cyclomatic_complexity
-                    largest_blocked_name = n2['function_name']
+                    largest_blocked_name = n2.dst_function_name
                     break
 
             forward_red += 1
             idx2 += 1
 
-        n1['cov-forward-reds'] = forward_red
-        n1['cov-largest-blocked-func'] = largest_blocked_name
+        n1.cov_forward_reds = forward_red
+        n1.cov_largest_blocked_func = largest_blocked_name
 
 
 

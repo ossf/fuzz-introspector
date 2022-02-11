@@ -31,6 +31,7 @@ from typing import (
 import fuzz_analysis
 import fuzz_data_loader
 import fuzz_utils
+import fuzz_cfg_load
 
 # For pretty printing the html code:
 from bs4 import BeautifulSoup as bs
@@ -184,9 +185,9 @@ def create_overview_table(tables: List[str],
     for profile in profiles:  # create a row for each fuzzer.
         fuzzer_filename = profile.fuzzer_source_file
         max_depth = 0
-        for node in profile.function_call_depths:
-            if node['depth'] > max_depth:
-                max_depth = node['depth']
+        for cs in fuzz_cfg_load.extract_all_callsites(profile.function_call_depths):
+            if cs.depth > max_depth:
+                max_depth = cs.depth
 
         html_string += html_table_add_row([
             fuzzer_filename,
@@ -341,11 +342,11 @@ def create_calltree(
     fuzz_analysis.overlay_calltree_with_coverage(profile, project_profile, coverage_url, git_repo_url, basefolder, image_name)
  
     # Highlight the ten most useful places
-    nodes_sorted_by_red_ahead = list(reversed(list(sorted(profile.function_call_depths, key=lambda x:x['cov-forward-reds']))))
+    nodes_sorted_by_red_ahead = list(reversed(list(sorted(fuzz_cfg_load.extract_all_callsites(profile.function_call_depths), key=lambda x:x.cov_forward_reds))))
     max_idx = 10
     html_table_string = create_table_head(tables[-1], ['Blocked nodes', 'Calltree index', 'Parent function', 'Callsite', 'Largest blocked function'])
     for node in nodes_sorted_by_red_ahead:
-        html_table_string += html_table_add_row([str(node['cov-forward-reds']), str(node['cov-ct-idx']), node['cov-parent'], "<a href=%s>call site</a>"%(node['cov-callsite-link']), node['cov-largest-blocked-func']])
+        html_table_string += html_table_add_row([str(node.cov_forward_reds), str(node.cov_ct_idx), node.cov_parent, "<a href=%s>call site</a>"%(node.cov_callsite_link), node.cov_largest_blocked_func])
         if max_idx == 0:
             break
         max_idx -= 1
@@ -354,11 +355,12 @@ def create_calltree(
     # Generate calltree overlay HTML
     # Open a new file for the calltree.
     calltree_html_string = "<div class='section-wrapper'>"
-    for node in profile.function_call_depths:
-        demangled_name = fuzz_utils.demangle_cpp_func(node['function_name'])
-        color_to_be = node['cov-color']
-        callsite_link = node['cov-callsite-link']
-        link = node['cov-link']
+    for node in fuzz_cfg_load.extract_all_callsites(profile.function_call_depths):
+
+        demangled_name = fuzz_utils.demangle_cpp_func(node.dst_function_name)
+        color_to_be = node.cov_color
+        callsite_link = node.cov_callsite_link
+        link = node.cov_link
 
         # We may not want to show certain functions at times, e.g. libc functions
         # in case it bloats the calltree
@@ -369,14 +371,14 @@ def create_calltree(
             continue
 
         # Create the HTML code for the line in the calltree
-        ct_idx_str = "%s%s"%("0"*(len("00000") - len(str(node['cov-ct-idx']))), str(node['cov-ct-idx']))
+        ct_idx_str = "%s%s"%("0"*(len("00000") - len(str(node.cov_ct_idx))), str(node.cov_ct_idx))
 
-        indentation = int(node['depth'])*16
-        horisontal_spacing = "&nbsp;"*4*int(node['depth'])
+        indentation = int(node.depth)*16
+        horisontal_spacing = "&nbsp;"*4*int(node.depth)
         calltree_html_string += "<div style='margin-left: %spx' class=\"%s-background\">"%(str(indentation), color_to_be)
-        calltree_html_string += "<span class=\"coverage-line-inner\">%d <code class=\"language-clike\">%s</code>"%(int(node['depth']), demangled_name)
+        calltree_html_string += "<span class=\"coverage-line-inner\">%d <code class=\"language-clike\">%s</code>"%(int(node.depth), demangled_name)
 
-        if node['functionSourceFile'].replace(" ","") == "/":
+        if node.dst_function_source_file.replace(" ","") == "/":
             func_href = ""
         else:
             func_href = "<a href=\"%s\">[function]</a>"%(link)
@@ -396,8 +398,8 @@ def create_calltree(
 
     # Create fixed-width color sequence image
     color_sequence = []
-    for node in profile.function_call_depths:
-        color_sequence.append(node['cov-color'])
+    for node in fuzz_cfg_load.extract_all_callsites(profile.function_call_depths):
+        color_sequence.append(node.cov_color)
     create_horisontal_calltree_image(image_name, color_sequence)
     return html_table_string, fname
 
