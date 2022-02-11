@@ -16,6 +16,10 @@
 import os
 import sys
 
+from typing import (
+    List
+)
+
 class CalltreeCallsite():
     """
     Represents a single node in the calltree
@@ -43,7 +47,8 @@ class CalltreeCallsite():
         self.cov_forward_reds = None
         self.cov_largest_blocked_func = None
 
-def extract_all_callsites_recursive(calltree, callsite_nodes):
+def extract_all_callsites_recursive(calltree : CalltreeCallsite,
+				    callsite_nodes : List) -> List[CalltreeCallsite]:
     """
     Given a node, will assemble all callsites in the children. Recursive function.
     """
@@ -51,22 +56,24 @@ def extract_all_callsites_recursive(calltree, callsite_nodes):
     for c in calltree.children:
         extract_all_callsites_recursive(c, callsite_nodes)
 
-def extract_all_callsites(calltree):
+def extract_all_callsites(calltree : CalltreeCallsite) -> List[CalltreeCallsite]:
     cs_list = []
     extract_all_callsites_recursive(calltree, cs_list)
     return cs_list
 
-def print_ctcs_tree(ctcs, d2):
+def print_ctcs_tree(ctcs : CalltreeCallsite, d2 : int):
     #print("CTCS tree:")
     print("%s%s -- %s -- %d"%((" "*int(ctcs.depth)), ctcs.dst_function_name, ctcs.dst_function_source_file, ctcs.src_linenumber))
     #print("%s"%(d2))
     for c in ctcs.children:
         print_ctcs_tree(c, d2+1)
 
-def data_file_read_calltree(filename):
+def data_file_read_calltree(filename : str) -> CalltreeCallsite:
     """
     Extracts the calltree of a fuzzer from a .data file.
     This is for C/C++ files
+
+    Returns a CalltreeCallsite that is the root of the tree read.
     """
     read_tree = False
     curr_ctcs_node = None
@@ -116,7 +123,6 @@ def data_file_read_calltree(filename):
                     tmp_node = curr_ctcs_node
                     idx = 0
                     while idx < depth_diff and tmp_node.parent_calltree_callsite != None:
-                        #for i in range(depth_diff):
                         tmp_node = tmp_node.parent_calltree_callsite
                         idx +=  1
                     curr_ctcs_node = tmp_node
