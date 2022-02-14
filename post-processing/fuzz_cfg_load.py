@@ -61,12 +61,10 @@ def extract_all_callsites(calltree : CalltreeCallsite) -> List[CalltreeCallsite]
     extract_all_callsites_recursive(calltree, cs_list)
     return cs_list
 
-def print_ctcs_tree(ctcs : CalltreeCallsite, d2 : int):
-    #print("CTCS tree:")
+def print_ctcs_tree(ctcs : CalltreeCallsite):
     print("%s%s -- %s -- %d"%((" "*int(ctcs.depth)), ctcs.dst_function_name, ctcs.dst_function_source_file, ctcs.src_linenumber))
-    #print("%s"%(d2))
     for c in ctcs.children:
-        print_ctcs_tree(c, d2+1)
+        print_ctcs_tree(c)
 
 def data_file_read_calltree(filename : str) -> CalltreeCallsite:
     """
@@ -148,6 +146,6 @@ def data_file_read_calltree(filename : str) -> CalltreeCallsite:
         ctcs_root = ctcs_root.parent_calltree_callsite
         if ctcs_root == None:
             return None
-    #print_ctcs_tree(ctcs_root, 1)
+    #print_ctcs_tree(ctcs_root)
 
     return ctcs_root

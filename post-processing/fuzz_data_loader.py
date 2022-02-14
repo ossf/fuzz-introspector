@@ -278,17 +278,10 @@ class MergedProjectProfile:
             fp_obj.total_cyclomatic_complexity = total_cyclomatic_complexity + fp_obj.cyclomatic_complexity
 
         # Accumulate run-time coverage mapping
-        self.runtime_coverage = {
-                    'functions-hit' : list(),
-                    'coverage-map' : dict(),
-                    'hit-summary' : dict()
-                }
         self.runtime_coverage = fuzz_cov_load.CoverageProfile()
-
         for profile in profiles:
             for func_name in profile.coverage.functions_hit:
                 if func_name not in self.runtime_coverage.covmap:
-                    #self.runtime_coverage['functions-hit'].append(func_name)
                     self.runtime_coverage.functions_hit.add(func_name)
             for func_name in profile.coverage.covmap:
                 if func_name not in self.runtime_coverage.covmap:

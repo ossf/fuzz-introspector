@@ -48,7 +48,7 @@ def longest_common_prefix(strs: List[str]) -> str:
 def normalise_str(s1: str) -> str:
     return s1.replace("\t", "").replace("\r", "").replace("\n", "").replace(" ", "")
 
-def safe_decode(data):
+def safe_decode(data) -> str:
     try:
         return data.decode()
     except:
