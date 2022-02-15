@@ -17,6 +17,7 @@
 #include "llvm/Transforms/Inspector/Inspector.h"
 #include "llvm/IR/DebugInfoMetadata.h"
 #include "llvm/IR/DebugLoc.h"
+#include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/IntrinsicInst.h"
 #include "llvm/IR/LegacyPassManager.h"
@@ -476,7 +477,9 @@ Function *Inspector::value2Func(Value *Val) {
 // Recursively resolve a type and check if it is a function.
 bool Inspector::isFunctionPointerType(Type *T) {
   if (PointerType *pointerType = dyn_cast<PointerType>(T)) {
-    return isFunctionPointerType(pointerType->getElementType());
+    if (!pointerType->isOpaque()) {
+      return isFunctionPointerType(pointerType->getNonOpaquePointerElementType());
+    }
   }
   return T->isFunctionTy();
 }
@@ -563,8 +566,13 @@ Function *Inspector::extractVTableIndirectCall(Function *F, Instruction &I) {
       !(pointerType3 = dyn_cast<PointerType>(BCI->getSrcTy()))) {
     return nullptr;
   }
+
+  if (pointerType3->isOpaque()) {
+    return nullptr;
+  }
+
   std::string originalTargetClass;
-  Type *v13 = pointerType3->getElementType();
+  Type *v13 = pointerType3->getNonOpaquePointerElementType();;
   if (!v13->isStructTy()) {
     return nullptr;
   }
