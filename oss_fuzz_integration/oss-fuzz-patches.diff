@@ -6,7 +6,7 @@ index 475e5a7d..0d3d367c 100644
  
  ENV SANITIZER_FLAGS_thread "-fsanitize=thread"
  
-+ENV SANITIZER_FLAGS_instrumentor "-flegacy-pass-manager -flto"
++ENV SANITIZER_FLAGS_instrumentor "-flto"
 +
  # Do not use any sanitizers in the coverage build.
  ENV SANITIZER_FLAGS_coverage ""
@@ -86,11 +86,12 @@ diff --git a/infra/base-images/base-clang/Dockerfile b/infra/base-images/base-cl
 index 45260941..c533509e 100644
 --- a/infra/base-images/base-clang/Dockerfile
 +++ b/infra/base-images/base-clang/Dockerfile
-@@ -28,6 +28,8 @@ RUN apt-get update && apt-get install -y wget sudo && \
+@@ -28,6 +28,9 @@ RUN apt-get update && apt-get install -y wget sudo && \
      SUDO_FORCE_REMOVE=yes apt-get remove --purge -y wget sudo && \
      rm -rf /usr/local/doc/cmake /usr/local/bin/cmake-gui
  
 +COPY llvm /root/introspector-llvm/
++COPY sed_cmds.sh /root/introspector-llvm/
 +
  COPY checkout_build_install_llvm.sh /root/
  # Keep all steps in the same script to decrease the number of intermediate
@@ -108,7 +109,7 @@ index 4c3ea6a8..4bb962e5 100755
  # Use chromium's clang revision
  mkdir $SRC/chromium_tools
  cd $SRC/chromium_tools
-@@ -93,6 +95,23 @@ fi
+@@ -93,6 +95,24 @@ fi
  git -C $LLVM_SRC checkout $LLVM_REVISION
  echo "Using LLVM revision: $LLVM_REVISION"
  
@@ -122,10 +123,11 @@ index 4c3ea6a8..4bb962e5 100755
 +# LLVM currently does not support dynamically loading LTO passes. Thus,
 +# we hardcode it into Clang instead.
 +# Ref: https://reviews.llvm.org/D77704
-+sed -i 's/whole-program devirtualization and bitset lowering./whole-program devirtualization and bitset lowering.\nPM.add(createInspectorPass());/g' ./llvm/lib/Transforms/IPO/PassManagerBuilder.cpp
-+sed -i 's/using namespace/#include "llvm\/Transforms\/Inspector\/Inspector.h"\nusing namespace/g' ./llvm/lib/Transforms/IPO/PassManagerBuilder.cpp
-+echo "add_subdirectory(Inspector)" >> ./llvm/lib/Transforms/CMakeLists.txt
-+sed -i 's/Instrumentation/Instrumentation\n  Inspector/g' ./llvm/lib/Transforms/IPO/CMakeLists.txt
++/root/introspector-llvm/sed_cmds.sh
++#sed -i 's/whole-program devirtualization and bitset lowering./whole-program devirtualization and bitset lowering.\nPM.add(createInspectorPass());/g' ./llvm/lib/Transforms/IPO/PassManagerBuilder.cpp
++#sed -i 's/using namespace/#include "llvm\/Transforms\/Inspector\/Inspector.h"\nusing namespace/g' ./llvm/lib/Transforms/IPO/PassManagerBuilder.cpp
++#echo "add_subdirectory(Inspector)" >> ./llvm/lib/Transforms/CMakeLists.txt
++#sed -i 's/Instrumentation/Instrumentation\n  Inspector/g' ./llvm/lib/Transforms/IPO/CMakeLists.txt
 +cd $BBBASE
 +
 +

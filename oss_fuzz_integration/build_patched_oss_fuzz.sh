@@ -28,11 +28,11 @@ else
   echo "Done"
   cd ../
 fi
-
 rm -rf ./oss-fuzz/infra/base-images/base-clang/llvm
 rm -rf ./oss-fuzz/infra/base-images/base-builder/post-processing
 
 cp -rf ../llvm ./oss-fuzz/infra/base-images/base-clang/llvm
+cp ../sed_cmds.sh ./oss-fuzz/infra/base-images/base-clang/sed_cmds.sh
 cp -rf ../post-processing ./oss-fuzz/infra/base-images/base-builder/post-processing
 
 # Skip all.sh if CLOUD_BUILD_ENV is set (it is in cloud build).
