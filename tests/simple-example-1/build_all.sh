@@ -19,5 +19,5 @@ mkdir work
 cd work
 
 echo "[+] Linking the projects"
-../../../build/llvm-build/bin/clang -fsanitize=fuzzer-no-link -g -c -flto  -flegacy-pass-manager  ../fuzzer.c -o fuzzer.o
-../../../build/llvm-build/bin/clang -fsanitize=fuzzer -g -flto  -flegacy-pass-manager  fuzzer.o -o fuzzer
+../../../build/llvm-build/bin/clang -fsanitize=fuzzer-no-link -g -c -flto  ../fuzzer.c -o fuzzer.o
+../../../build/llvm-build/bin/clang -fsanitize=fuzzer -g -flto fuzzer.o -o fuzzer
