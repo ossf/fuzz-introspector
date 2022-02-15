@@ -129,7 +129,7 @@ def data_file_read_calltree(filename : str) -> CalltreeCallsite:
                 if curr_depth != -1:
                     ctcs.parent_calltree_callsite = curr_ctcs_node
                     curr_ctcs_node.children.append(ctcs)
-                    curr_ctcs_node.children = list(sorted(curr_ctcs_node.children, key=lambda x : x.src_linenumber))
+                    #curr_ctcs_node.children = list(sorted(curr_ctcs_node.children, key=lambda x : x.src_linenumber))
                 curr_depth = depth
 
             if "====================================" in line:
