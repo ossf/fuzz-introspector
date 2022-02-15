@@ -47,7 +47,7 @@ class FunctionProfile:
         self.bb_count = None
         self.i_count = None
         self.hitcount = 0
-        self.reached_by_fuzzer = list()
+        self.reached_by_fuzzers = list()
         self.edge_count = None
         self.cyclomatic_complexity = None
         self.functions_reached = None
@@ -251,12 +251,12 @@ class MergedProjectProfile:
                 if len([ef for ef in excluded_functions if ef in fd.function_name]) != 0:
                     continue
 
-                # populate hitcount and reached_by_fuzzer and whether it has been handled already
+                # populate hitcount and reached_by_fuzzers and whether it has been handled already
                 for fuzzer_profile in profiles:
                     if fuzzer_profile.reaches(fd.function_name):
                         fd.hitcount += 1
                         fuzzer_filename = fuzzer_profile.fuzzer_source_file.replace(" ", "").split("/")[-1]
-                        fd.reached_by_fuzzer.append(fuzzer_filename)
+                        fd.reached_by_fuzzers.append(fuzzer_filename)
                     if fd.function_name not in self.all_functions:
                         self.all_functions[fd.function_name] = fd
 
