@@ -28,8 +28,13 @@
 #include "llvm/Support/YAMLParser.h"
 #include "llvm/Support/YAMLTraits.h"
 #include "llvm/Support/raw_ostream.h"
-#include "llvm/Transforms/IPO/PassManagerBuilder.h"
+#include "llvm/InitializePasses.h"
+//#include "llvm/Transforms/IPO/PassManagerBuilder.h"
 #include "llvm/Transforms/Utils/CallGraphUpdater.h"
+
+#include "llvm/InitializePasses.h"
+#include "llvm/Pass.h"
+
 #include <algorithm>
 #include <bitset>
 #include <chrono>
@@ -40,6 +45,7 @@
 #include <set>
 #include <vector>
 #include <unistd.h>
+
 
 using namespace std;
 using namespace llvm;
@@ -166,16 +172,18 @@ static FILE *OutputFile = stderr;
 
 struct Inspector : public ModulePass {
   static char ID;
-
   Inspector() : ModulePass(ID) {
     errs() << "We are now in the Inspector module pass\n";
+    initializeInspectorPass(*PassRegistry::getPassRegistry());
   }
 
+  // Class variables
   int moduleLogLevel = 2;
   CalltreeNode FuzzerCalltree;
   std::set<StringRef> functionNamesToIgnore = {"llvm.", "sanitizer_cov",
                                                "sancov.module"};
 
+  // Function defs
   void resolveOutgoingEdges(Function *, std::vector<CalltreeNode *> *);
   bool isNodeInVector(CalltreeNode *Src, std::vector<CalltreeNode *> *Vec);
   void dumpCalltree(CalltreeNode *, std::string);
@@ -198,57 +206,66 @@ struct Inspector : public ModulePass {
   Function *value2Func(Value *Val);
   bool isFunctionPointerType(Type *type);
   Function *extractVTableIndirectCall(Function *, Instruction &);
-  std::string GenRandomStr(const int len);
+  std::string GenRandom(const int len);
 
+  void logPrintf(int LogLevel, const char *Fmt, ...);
+  bool runOnModule(Module &M) override;
 
-  void logPrintf(int LogLevel, const char *Fmt, ...) {
-    if (LogLevel > moduleLogLevel) {
-      return;
-    }
-    // Print time
-    struct tm * timeinfo;
-    auto SC = std::chrono::system_clock::now();
-    std::time_t end_time = std::chrono::system_clock::to_time_t(SC);
-    timeinfo = localtime (&end_time);
-    char buffer [80];
-    strftime (buffer,80,"%H:%M:%S",timeinfo);
-    fprintf(OutputFile, "[Log level %d] : %s : ", LogLevel, buffer);
-
-    // Print log statement
-    va_list ap;
-    va_start(ap, Fmt);
-    vfprintf(OutputFile, Fmt, ap);
-    va_end(ap);
-    fflush(OutputFile);
-  }
-
-  // Function entrypoint.
-  bool runOnModule(Module &M) override {
-    logPrintf(L1, "Running introspector on %s\n", M.getName());
-    if (shouldRunIntrospector(M) == false) {
-      return true;
-    }
-    // init randomness
-    srand((unsigned)time(NULL) * getpid());
-
-    logPrintf(L1, "This is a fuzzer, performing analysis\n");
-
-    // Extract and log reachability graph
-    std::string nextCalltreeFile = getNextLogFile();
-    extractFuzzerReachabilityGraph(M);
-    dumpCalltree(&FuzzerCalltree, nextCalltreeFile);
-
-    // Log data about all functions in the module
-    std::string nextYamlName = nextCalltreeFile + ".yaml";
-    extractAllFunctionDetailsToYaml(nextYamlName, M);
-
-    logPrintf(L1, "Finished introspector module\n");
-    return true;
-  }
 };
 } // end of anonymous namespace
 
+
+INITIALIZE_PASS_BEGIN(Inspector, "inspector", "inspector pass", false, false)
+
+INITIALIZE_PASS_END(Inspector, "inspector", "inspector pass", false, false)
+char Inspector::ID = 0;
+
 Pass *llvm::createInspectorPass() { return new Inspector(); }
+
+void Inspector::logPrintf(int LogLevel, const char *Fmt, ...) {
+  if (LogLevel > moduleLogLevel) {
+    return;
+  }
+  // Print time
+  struct tm * timeinfo;
+  auto SC = std::chrono::system_clock::now();
+  std::time_t end_time = std::chrono::system_clock::to_time_t(SC);
+  timeinfo = localtime (&end_time);
+  char buffer [80];
+  strftime (buffer,80,"%H:%M:%S",timeinfo);
+  fprintf(OutputFile, "[Log level %d] : %s : ", LogLevel, buffer);
+
+  // Print log statement
+  va_list ap;
+  va_start(ap, Fmt);
+  vfprintf(OutputFile, Fmt, ap);
+  va_end(ap);
+  fflush(OutputFile);
+}
+
+// Function entrypoint.
+bool Inspector::runOnModule(Module &M) {
+  logPrintf(L1, "Running introspector on %s\n", M.getName());
+  if (shouldRunIntrospector(M) == false) {
+    return false;
+  }
+  // init randomness
+  srand((unsigned)time(NULL) * getpid());
+
+  logPrintf(L1, "This is a fuzzer, performing analysis\n");
+
+  // Extract and log reachability graph
+  std::string nextCalltreeFile = getNextLogFile();
+  extractFuzzerReachabilityGraph(M);
+  dumpCalltree(&FuzzerCalltree, nextCalltreeFile);
+
+  // Log data about all functions in the module
+  std::string nextYamlName = nextCalltreeFile + ".yaml";
+  extractAllFunctionDetailsToYaml(nextYamlName, M);
+
+  logPrintf(L1, "Finished introspector module\n");
+  return true;
+}
 
 // Write details about all functions in the module to a YAML file
 void Inspector::extractAllFunctionDetailsToYaml(std::string nextYamlName,
@@ -277,34 +294,34 @@ FuzzerFunctionList Inspector::wrapAllFunctions(Module &M) {
   return ListWrapper;
 }
 
-std::string Inspector::GenRandomStr(const int Len) {
-    static const char Alphabet[] =
+std::string Inspector::GenRandom(const int len) {
+    static const char alphanum[] =
         "0123456789"
         "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
         "abcdefghijklmnopqrstuvwxyz";
-    std::string TmpS;
-    TmpS.reserve(Len);
+    std::string tmp_s;
+    tmp_s.reserve(len);
 
-    for (int i = 0; i < Len; i++) {
-        TmpS += Alphabet[rand() % (sizeof(Alphabet) - 1)];
+    for (int i = 0; i < len; ++i) {
+        tmp_s += alphanum[rand() % (sizeof(alphanum) - 1)];
     }
-
-    return TmpS;
+    
+    return tmp_s;
 }
 
 std::string Inspector::getNextLogFile() {
   std::string TargetLogName;
+  std::string RandomStr = GenRandom(10);
+  int Idx = 0;
+  do {
+    TargetLogName = formatv("fuzzerLogFile-{0}-{1}.data", std::to_string(Idx++), RandomStr);
+  } while (llvm::sys::fs::exists(TargetLogName));
 
   // Add a UID to the logname. The reason we do this is when fuzzers are compiled in different
   // locaitons, then the count may end up being the same for different log files at different locations.
   // The problem is that this can be annoying when doing some scripting, e.g. in the oss-fuzz integration
   // at some point. In reality it's not really fuzz introspectors responsibility, however,
   // to make things a bit easier we just do it here.
-  std::string RandomStrUUID = GenRandomStr(10);
-  int Idx = 0;
-  do {
-    TargetLogName = formatv("fuzzerLogFile-{0}-{1}.data", std::to_string(Idx++), RandomStrUUID);
-  } while (llvm::sys::fs::exists(TargetLogName));
 
   return TargetLogName;
 }
@@ -925,7 +942,15 @@ void Inspector::extractFuzzerReachabilityGraph(Module &M) {
   // reach target code, and should be considered another fuzzer entrypoint.
 }
 
-char Inspector::ID = 0;
+//char Inspector::ID = 0;
+
+PreservedAnalyses InspectorPass::run(Module &M, ModuleAnalysisManager &AM) {
+  Inspector Impl;
+  bool Changed = Impl.runOnModule(M);
+  if (!Changed)
+    return PreservedAnalyses::all();
+  return PreservedAnalyses::none();
+}
 /*
  *
  *

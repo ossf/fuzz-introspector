@@ -15,7 +15,8 @@ limitations under the License.
 
 
 // LLVM include
-#include "llvm/Pass.h"
+//#include "llvm/Pass.h"
+#include "llvm/IR/PassManager.h"
 #include "llvm/IR/Function.h"
 #include "llvm/ADT/Statistic.h"
 #include "llvm/Transforms/Utils/Local.h"
@@ -29,6 +30,11 @@ using namespace std;
 
 namespace llvm {
 	Pass *createInspectorPass();
+
+  class InspectorPass : public PassInfoMixin<InspectorPass> {
+  public:
+    PreservedAnalyses run(Module &M, ModuleAnalysisManager &AM);
+  };
 }
 
 #endif
