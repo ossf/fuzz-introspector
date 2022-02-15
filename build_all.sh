@@ -31,27 +31,12 @@ cd ${BUILD_BASE}
 git clone https://github.com/llvm/llvm-project/
 cd llvm-project/
 $BASE/sed_cmds.sh
-#cd llvm-project
-#git checkout 2feddb37b48ea55f0d586d2710b9bc17f607e3e1
-#git apply --ignore-space-change --ignore-whitespace $BASE/llvm_diff.patch
-#exit 0
 cd ${BUILD_BASE}
 
 # Now copy over the LLVM code we have
 # This includes our inspector pass and the files included.
 cp -rf ${BASE}/llvm/include/llvm/Transforms/Inspector/ ./llvm-project/llvm/include/llvm/Transforms/Inspector
 cp -rf ${BASE}/llvm/lib/Transforms/Inspector ./llvm-project/llvm/lib/Transforms/Inspector
-
-
-#$BASE/sed_cmds.sh
-
-# Apply changes in the existing LLVM code. This is only
-# to get our code integrated directly into Clang.
-#echo "add_subdirectory(Inspector)" >> ./llvm-project/llvm/lib/Transforms/CMakeLists.txt
-#sed -i 's/whole-program devirtualization and bitset lowering./whole-program devirtualization and bitset lowering.\nPM.add(createInspectorPass());/g' ./llvm-project/llvm/lib/Transforms/IPO/PassManagerBuilder.cpp
-#sed -i 's/using namespace/#include "llvm\/Transforms\/Inspector\/Inspector.h"\nusing namespace/g' ./llvm-project/llvm/lib/Transforms/IPO/PassManagerBuilder.cpp
-
-#sed -i 's/Instrumentation/Instrumentation\n  Inspector/g' ./llvm-project/llvm/lib/Transforms/IPO/CMakeLists.txt
 
 # Build LLVM
 mkdir llvm-build
