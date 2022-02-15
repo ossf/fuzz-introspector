@@ -14,7 +14,7 @@
  */
 
 #include "llvm/ADT/StringExtras.h"
-#include "llvm/Transforms/Inspector/Inspector.h"
+#include "llvm/Transforms/FuzzIntrospector/FuzzIntrospector.h"
 #include "llvm/IR/DebugInfoMetadata.h"
 #include "llvm/IR/DebugLoc.h"
 #include "llvm/IR/DerivedTypes.h"

@@ -1,5 +1,5 @@
-add_llvm_component_library( LLVMInspector
-  Inspector.cpp
+add_llvm_component_library( LLVMFuzzIntrospector
+  FuzzIntrospector.cpp
 
   PLUGIN_TOOL
   opt
