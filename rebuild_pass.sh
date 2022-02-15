@@ -19,11 +19,15 @@ BASE=$PWD
 cd build
 BUILD_BASE=$PWD
 cd ${BUILD_BASE}
+cd llvm-project
+git stash
+$BASE/sed_cmds.sh
+cd ../
 
-rm -rf ./llvm-project/llvm/include/llvm/Transforms/Inspector
-rm -rf ./llvm-project/llvm/lib/Transforms/Inspector
-cp -rf ${BASE}/llvm/include/llvm/Transforms/Inspector/ ./llvm-project/llvm/include/llvm/Transforms/Inspector
-cp -rf ${BASE}/llvm/lib/Transforms/Inspector ./llvm-project/llvm/lib/Transforms/Inspector
+rm -rf ./llvm-project/llvm/include/llvm/Transforms/FuzzIntrospector
+rm -rf ./llvm-project/llvm/lib/Transforms/FuzzIntrospector
+cp -rf ${BASE}/llvm/include/llvm/Transforms/FuzzIntrospector/ ./llvm-project/llvm/include/llvm/Transforms/FuzzIntrospector
+cp -rf ${BASE}/llvm/lib/Transforms/FuzzIntrospector ./llvm-project/llvm/lib/Transforms/FuzzIntrospector
 
 cd llvm-build
 make -j3
