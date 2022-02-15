@@ -15,7 +15,7 @@
 ################################################################################
 
 ROOT=$PWD
-for PROJ in htslib dng_sdk kamailio; do
+for PROJ in kamailio xpdf croaring kamailio htslib dng_sdk; do
   cd ${ROOT}/${PROJ}
   rm -rf ./web
 
