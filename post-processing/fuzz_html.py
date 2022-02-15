@@ -765,7 +765,7 @@ def create_html_report(
 
     for analysis in analysis_array:
         if analysis.name in analyses_to_run:
-            analysis.analysis_func(
+            html_string += analysis.analysis_func(
                 toc_list,
                 tables,
                 project_profile,
