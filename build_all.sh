@@ -29,17 +29,21 @@ cd ${BUILD_BASE}
 
 # Now build LLVM
 git clone https://github.com/llvm/llvm-project/
-cd llvm-project
-git checkout 2feddb37b48ea55f0d586d2710b9bc17f607e3e1
-git apply --ignore-space-change --ignore-whitespace $BASE/llvm_diff.patch
+cd llvm-project/
+$BASE/sed_cmds.sh
+#cd llvm-project
+#git checkout 2feddb37b48ea55f0d586d2710b9bc17f607e3e1
+#git apply --ignore-space-change --ignore-whitespace $BASE/llvm_diff.patch
 #exit 0
 cd ${BUILD_BASE}
 
 # Now copy over the LLVM code we have
 # This includes our inspector pass and the files included.
-cp -rf ${BASE}/llvm/include/llvm/Transforms/Inspector/ ./llvm-project/llvm/include/llvm/Transforms//Inspector
+cp -rf ${BASE}/llvm/include/llvm/Transforms/Inspector/ ./llvm-project/llvm/include/llvm/Transforms/Inspector
 cp -rf ${BASE}/llvm/lib/Transforms/Inspector ./llvm-project/llvm/lib/Transforms/Inspector
 
+
+#$BASE/sed_cmds.sh
 
 # Apply changes in the existing LLVM code. This is only
 # to get our code integrated directly into Clang.
