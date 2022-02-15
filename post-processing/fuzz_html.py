@@ -212,7 +212,7 @@ def create_all_function_table(
         function"""
     html_string = create_table_head(tables[-1],
                                     ["Func name", "Git URL", "Functions filename", "Arg count", "Args",
-                                     "Function call depth", "Fuzzers reach count", "Fuzzers runtime hit", "Func lines hit %", "I Count", "BB Count",
+                                     "Function call depth", "Fuzzers reach count", "Reached by Fuzzers", "Fuzzers runtime hit", "Func lines hit %", "I Count", "BB Count",
                                      "Cyclomatic complexity", "Functions reached",
                                      "Reached by functions", "Accumulated cyclomatic complexity",
                                      "Undiscovered complexity"])
@@ -241,6 +241,7 @@ def create_all_function_table(
             fd.arg_types,
             fd.function_depth,
             fd.hitcount,
+            fd.reached_by_fuzzers,
             "yes" if fuzz_utils.demangle_cpp_func(fd.function_name) in project_profile.runtime_coverage.functions_hit else "no",
             "%.5s"%(str(hit_percentage))+"%",
             fd.i_count,
