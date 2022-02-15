@@ -171,11 +171,11 @@ typedef struct CalltreeNode {
 
 static FILE *OutputFile = stderr;
 
-struct Inspector : public ModulePass {
+struct FuzzIntrospector : public ModulePass {
   static char ID;
-  Inspector() : ModulePass(ID) {
-    errs() << "We are now in the Inspector module pass\n";
-    initializeInspectorPass(*PassRegistry::getPassRegistry());
+  FuzzIntrospector() : ModulePass(ID) {
+    errs() << "We are now in the FuzzIntrospector module pass\n";
+    initializeFuzzIntrospectorPass(*PassRegistry::getPassRegistry());
   }
 
   // Class variables
@@ -216,14 +216,14 @@ struct Inspector : public ModulePass {
 } // end of anonymous namespace
 
 
-INITIALIZE_PASS_BEGIN(Inspector, "inspector", "inspector pass", false, false)
+INITIALIZE_PASS_BEGIN(FuzzIntrospector, "inspector", "inspector pass", false, false)
 
-INITIALIZE_PASS_END(Inspector, "inspector", "inspector pass", false, false)
-char Inspector::ID = 0;
+INITIALIZE_PASS_END(FuzzIntrospector, "inspector", "inspector pass", false, false)
+char FuzzIntrospector::ID = 0;
 
-Pass *llvm::createInspectorPass() { return new Inspector(); }
+Pass *llvm::createFuzzIntrospectorPass() { return new FuzzIntrospector(); }
 
-void Inspector::logPrintf(int LogLevel, const char *Fmt, ...) {
+void FuzzIntrospector::logPrintf(int LogLevel, const char *Fmt, ...) {
   if (LogLevel > moduleLogLevel) {
     return;
   }
@@ -245,7 +245,7 @@ void Inspector::logPrintf(int LogLevel, const char *Fmt, ...) {
 }
 
 // Function entrypoint.
-bool Inspector::runOnModule(Module &M) {
+bool FuzzIntrospector::runOnModule(Module &M) {
   logPrintf(L1, "Running introspector on %s\n", M.getName());
   if (shouldRunIntrospector(M) == false) {
     return false;
@@ -269,7 +269,7 @@ bool Inspector::runOnModule(Module &M) {
 }
 
 // Write details about all functions in the module to a YAML file
-void Inspector::extractAllFunctionDetailsToYaml(std::string nextYamlName,
+void FuzzIntrospector::extractAllFunctionDetailsToYaml(std::string nextYamlName,
                                                 Module &M) {
   std::error_code EC;
   logPrintf(L1, "Logging next yaml tile to %s\n", nextYamlName.c_str());
@@ -282,7 +282,7 @@ void Inspector::extractAllFunctionDetailsToYaml(std::string nextYamlName,
   YamlOut << fmi;
 }
 
-FuzzerFunctionList Inspector::wrapAllFunctions(Module &M) {
+FuzzerFunctionList FuzzIntrospector::wrapAllFunctions(Module &M) {
   FuzzerFunctionList ListWrapper;
   ListWrapper.ListName = "All functions";
   logPrintf(1, "Wrapping all functions\n");
@@ -295,7 +295,7 @@ FuzzerFunctionList Inspector::wrapAllFunctions(Module &M) {
   return ListWrapper;
 }
 
-std::string Inspector::GenRandom(const int len) {
+std::string FuzzIntrospector::GenRandom(const int len) {
     static const char alphanum[] =
         "0123456789"
         "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -310,7 +310,7 @@ std::string Inspector::GenRandom(const int len) {
     return tmp_s;
 }
 
-std::string Inspector::getNextLogFile() {
+std::string FuzzIntrospector::getNextLogFile() {
   std::string TargetLogName;
   std::string RandomStr = GenRandom(10);
   int Idx = 0;
@@ -329,7 +329,7 @@ std::string Inspector::getNextLogFile() {
 
 // Remove a suffix composed of a period and a number, e.g.:
 //  - this_func.1234 will be translated to this_func
-StringRef Inspector::removeDecSuffixFromName(StringRef FuncName) {
+StringRef FuzzIntrospector::removeDecSuffixFromName(StringRef FuncName) {
   StringRef FuncNameBeforeLastPeriod;
   StringRef FuncNameAfterLastPeriod;
 
@@ -348,7 +348,7 @@ StringRef Inspector::removeDecSuffixFromName(StringRef FuncName) {
   return FuncNameBeforeLastPeriod;
 }
 
-bool Inspector::shouldIgnoreFunction(StringRef FuncName) {
+bool FuzzIntrospector::shouldIgnoreFunction(StringRef FuncName) {
   for (auto &functionToIgnore : functionNamesToIgnore) {
     if (FuncName.contains(functionToIgnore)) {
       return true;
@@ -357,7 +357,7 @@ bool Inspector::shouldIgnoreFunction(StringRef FuncName) {
   return false;
 }
 
-int Inspector::getFunctionLinenumber(Function *F) {
+int FuzzIntrospector::getFunctionLinenumber(Function *F) {
   for (auto &I : instructions(*F)) {
     const llvm::DebugLoc &DebugInfo = I.getDebugLoc();
     if (DebugInfo) {
@@ -369,7 +369,7 @@ int Inspector::getFunctionLinenumber(Function *F) {
 
 // Return the path as a string to the file in which
 // the function is implemented.
-std::string Inspector::getFunctionFilename(Function *F) {
+std::string FuzzIntrospector::getFunctionFilename(Function *F) {
   StringRef Dir;
   StringRef Res;
 
@@ -401,7 +401,7 @@ std::string Inspector::getFunctionFilename(Function *F) {
 }
 
 // Convert an LLVM type into a c-like string
-std::string Inspector::resolveTypeName(Type *T) {
+std::string FuzzIntrospector::resolveTypeName(Type *T) {
   std::string RetType = "";
   std::string RetSuffix = "";
   while (T->isPointerTy()) {
@@ -439,7 +439,7 @@ std::string Inspector::resolveTypeName(Type *T) {
 // This should be changed to a proper data structure in the future,
 // for example something that we can attribute extensively
 // would be nice to have.
-void Inspector::logCalltree(CalltreeNode *Calltree, std::ofstream *CalltreeOut,
+void FuzzIntrospector::logCalltree(CalltreeNode *Calltree, std::ofstream *CalltreeOut,
                             int Depth) {
   if (!Calltree) {
     return;
@@ -453,7 +453,7 @@ void Inspector::logCalltree(CalltreeNode *Calltree, std::ofstream *CalltreeOut,
   }
 }
 
-void Inspector::dumpCalltree(CalltreeNode *Calltree, std::string TargetFile) {
+void FuzzIntrospector::dumpCalltree(CalltreeNode *Calltree, std::string TargetFile) {
   std::ofstream CalltreeOut;
   CalltreeOut.open(TargetFile);
   CalltreeOut << "Call tree\n";
@@ -462,7 +462,7 @@ void Inspector::dumpCalltree(CalltreeNode *Calltree, std::string TargetFile) {
   CalltreeOut.close();
 }
 
-Function *Inspector::value2Func(Value *Val) {
+Function *FuzzIntrospector::value2Func(Value *Val) {
   if (isa<llvm::GlobalVariable>(Val))
     return nullptr;
   if (Function *F = dyn_cast<Function>(Val))
@@ -475,7 +475,7 @@ Function *Inspector::value2Func(Value *Val) {
 }
 
 // Recursively resolve a type and check if it is a function.
-bool Inspector::isFunctionPointerType(Type *T) {
+bool FuzzIntrospector::isFunctionPointerType(Type *T) {
   if (PointerType *pointerType = dyn_cast<PointerType>(T)) {
     if (!pointerType->isOpaque()) {
       return isFunctionPointerType(pointerType->getNonOpaquePointerElementType());
@@ -484,7 +484,7 @@ bool Inspector::isFunctionPointerType(Type *T) {
   return T->isFunctionTy();
 }
 
-void Inspector::getFunctionsInAllNodes(std::vector<CalltreeNode *> *allNodes,
+void FuzzIntrospector::getFunctionsInAllNodes(std::vector<CalltreeNode *> *allNodes,
                                        std::set<StringRef> *UniqueNames) {
   for (auto PP : *allNodes) {
     UniqueNames->insert(PP->FunctionName);
@@ -533,7 +533,7 @@ void Inspector::getFunctionsInAllNodes(std::vector<CalltreeNode *> *allNodes,
 //   a global variable called "vtable for dng_info" where this name is mangled.
 //   If the global variable is found then get the right index in the vtable
 //   based on the index of the "getelementptr" instruction.
-Function *Inspector::extractVTableIndirectCall(Function *F, Instruction &I) {
+Function *FuzzIntrospector::extractVTableIndirectCall(Function *F, Instruction &I) {
 
   Value *opnd = cast<CallInst>(&I)->getCalledOperand();
 
@@ -627,7 +627,7 @@ Function *Inspector::extractVTableIndirectCall(Function *F, Instruction &I) {
 
 // Resolve all outgoing edges in a Function and populate
 // the OutgoingEdges vector with them.
-void Inspector::resolveOutgoingEdges(
+void FuzzIntrospector::resolveOutgoingEdges(
     Function *F, std::vector<CalltreeNode *> *OutgoingEdges) {
   for (auto &I : instructions(F)) {
 
@@ -690,7 +690,7 @@ void Inspector::resolveOutgoingEdges(
   }
 }
 
-bool Inspector::isNodeInVector(CalltreeNode *Src,
+bool FuzzIntrospector::isNodeInVector(CalltreeNode *Src,
                                std::vector<CalltreeNode *> *Vec) {
   for (CalltreeNode *TmpN : *Vec) {
     if (TmpN->LineNumber == Src->LineNumber &&
@@ -704,7 +704,7 @@ bool Inspector::isNodeInVector(CalltreeNode *Src,
 // Collects all functions reachable by the target function. This
 // is an approximation, e.g. we make few efforts into resolving
 // indirect calls.
-int Inspector::extractCalltree(Function *F, CalltreeNode *Calltree,
+int FuzzIntrospector::extractCalltree(Function *F, CalltreeNode *Calltree,
                                std::vector<CalltreeNode *> *allNodesInTree) {
   std::vector<CalltreeNode *> OutgoingEdges;
   resolveOutgoingEdges(F, &OutgoingEdges);
@@ -730,7 +730,7 @@ int Inspector::extractCalltree(Function *F, CalltreeNode *Calltree,
 // Wraps an LLVM function in a struct for conveniently outputting
 // to YAML. Also does minor meta-analysis, such as cyclomatic complexity
 // analysis.
-FuzzerFunctionWrapper Inspector::wrapFunction(Function *F) {
+FuzzerFunctionWrapper FuzzIntrospector::wrapFunction(Function *F) {
   FuzzerFunctionWrapper FuncWrap;
 
   FuncWrap.FunctionName = removeDecSuffixFromName(F->getName());
@@ -913,7 +913,7 @@ FuzzerFunctionWrapper Inspector::wrapFunction(Function *F) {
   return FuncWrap;
 }
 
-bool Inspector::shouldRunIntrospector(Module &M) {
+bool FuzzIntrospector::shouldRunIntrospector(Module &M) {
 
   // See if there is a main function in this application. If there is a main
   // function then it potentially means this is not a libfuzzer fuzzer being
@@ -933,7 +933,7 @@ bool Inspector::shouldRunIntrospector(Module &M) {
   return true;
 }
 
-void Inspector::extractFuzzerReachabilityGraph(Module &M) {
+void FuzzIntrospector::extractFuzzerReachabilityGraph(Module &M) {
   Function *FuzzEntryFunc = M.getFunction("LLVMFuzzerTestOneInput");
   if (FuzzEntryFunc == nullptr) {
     return;
@@ -950,10 +950,10 @@ void Inspector::extractFuzzerReachabilityGraph(Module &M) {
   // reach target code, and should be considered another fuzzer entrypoint.
 }
 
-//char Inspector::ID = 0;
+//char FuzzIntrospector::ID = 0;
 
-PreservedAnalyses InspectorPass::run(Module &M, ModuleAnalysisManager &AM) {
-  Inspector Impl;
+PreservedAnalyses FuzzIntrospectorPass::run(Module &M, ModuleAnalysisManager &AM) {
+  FuzzIntrospector Impl;
   bool Changed = Impl.runOnModule(M);
   if (!Changed)
     return PreservedAnalyses::all();
@@ -965,13 +965,13 @@ PreservedAnalyses InspectorPass::run(Module &M, ModuleAnalysisManager &AM) {
 // LLVM currently does not support dynamically loading LTO passes. Thus,
 // we dont register it as a pass as we have hardcoded it into Clang instead.
 // Ref: https://reviews.llvm.org/D77704
-static RegisterPass<Inspector> X("inspector", "Inspector Pass",
+static RegisterPass<FuzzIntrospector> X("inspector", "FuzzIntrospector Pass",
                                  false,
                                  false );
 
 static RegisterStandardPasses
     Y(PassManagerBuilder::EP_FullLinkTimeOptimizationEarly,
       [](const PassManagerBuilder &Builder, legacy::PassManagerBase &PM) {
-        PM.add(new Inspector());
+        PM.add(new FuzzIntrospector());
       });
 */

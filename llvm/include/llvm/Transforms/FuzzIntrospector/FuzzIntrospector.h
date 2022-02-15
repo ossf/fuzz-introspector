@@ -29,9 +29,9 @@ limitations under the License.
 using namespace std;
 
 namespace llvm {
-	Pass *createInspectorPass();
+	Pass *createFuzzIntrospectorPass();
 
-  class InspectorPass : public PassInfoMixin<InspectorPass> {
+  class FuzzIntrospectorPass : public PassInfoMixin<FuzzIntrospectorPass> {
   public:
     PreservedAnalyses run(Module &M, ModuleAnalysisManager &AM);
   };
