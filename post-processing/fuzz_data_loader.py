@@ -401,8 +401,8 @@ def add_func_to_reached_and_clone(merged_profile_old: MergedProjectProfile,
             l.error("Found mismatched function name between merged all_functions and functions_reached: %s"%(func_name))
             continue
         f = merged_profile.all_functions[func_name]
-        if f.hitcount == 0:
-            f.hitcount = 1
+        f.hitcount += 1
+        f.reached_by_fuzzers.append(func_to_add.function_name)
 
     # Recompute all analysis that is based on hitcounts in all functions as hitcount has
     # changed for elements in the dictionary.
