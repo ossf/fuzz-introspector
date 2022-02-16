@@ -477,9 +477,13 @@ Function *FuzzIntrospector::value2Func(Value *Val) {
 // Recursively resolve a type and check if it is a function.
 bool FuzzIntrospector::isFunctionPointerType(Type *T) {
   if (PointerType *pointerType = dyn_cast<PointerType>(T)) {
+#if LLVM_VERSION_MAJOR >= 15
     if (!pointerType->isOpaque()) {
       return isFunctionPointerType(pointerType->getNonOpaquePointerElementType());
     }
+#else
+    return isFunctionPointerType(pointerType->getPointerElementType());
+#endif
   }
   return T->isFunctionTy();
 }
@@ -567,12 +571,20 @@ Function *FuzzIntrospector::extractVTableIndirectCall(Function *F, Instruction &
     return nullptr;
   }
 
+#if LLVM_VERSION_MAJOR >= 15
   if (pointerType3->isOpaque()) {
     return nullptr;
   }
+#endif
 
   std::string originalTargetClass;
-  Type *v13 = pointerType3->getNonOpaquePointerElementType();;
+
+#if LLVM_VERSION_MAJOR >= 15
+  Type *v13 = pointerType3->getNonOpaquePointerElementType();
+#else
+  Type *v13 = pointerType3->getPointerElementType();
+#endif
+
   if (!v13->isStructTy()) {
     return nullptr;
   }
