@@ -216,9 +216,9 @@ struct FuzzIntrospector : public ModulePass {
 } // end of anonymous namespace
 
 
-INITIALIZE_PASS_BEGIN(FuzzIntrospector, "inspector", "inspector pass", false, false)
+INITIALIZE_PASS_BEGIN(FuzzIntrospector, "fuzz-introspector", "fuzz-introspector pass", false, false)
 
-INITIALIZE_PASS_END(FuzzIntrospector, "inspector", "inspector pass", false, false)
+INITIALIZE_PASS_END(FuzzIntrospector, "fuzz-introspector", "fuzz-introspector pass", false, false)
 char FuzzIntrospector::ID = 0;
 
 Pass *llvm::createFuzzIntrospectorPass() { return new FuzzIntrospector(); }
@@ -965,7 +965,7 @@ PreservedAnalyses FuzzIntrospectorPass::run(Module &M, ModuleAnalysisManager &AM
 // LLVM currently does not support dynamically loading LTO passes. Thus,
 // we dont register it as a pass as we have hardcoded it into Clang instead.
 // Ref: https://reviews.llvm.org/D77704
-static RegisterPass<FuzzIntrospector> X("inspector", "FuzzIntrospector Pass",
+static RegisterPass<FuzzIntrospector> X("fuzz-introspector", "FuzzIntrospector Pass",
                                  false,
                                  false );
 
