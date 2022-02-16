@@ -577,7 +577,6 @@ Function *FuzzIntrospector::extractVTableIndirectCall(Function *F, Instruction &
   }
 #endif
 
-  std::string originalTargetClass;
 
 #if LLVM_VERSION_MAJOR >= 15
   Type *v13 = pointerType3->getNonOpaquePointerElementType();
@@ -590,7 +589,7 @@ Function *FuzzIntrospector::extractVTableIndirectCall(Function *F, Instruction &
   }
   StructType *SSM = cast<StructType>(v13);
   // Now we remove the "class." from the name, and then we have it.
-  originalTargetClass = SSM->getName().str().substr(6);
+  std::string originalTargetClass = SSM->getName().str().substr(6);
   logPrintf(L1, "Shortened name that we can use for analysis: %s\n", originalTargetClass.c_str());
 
   // We find the global variable corresponding to the vtable by
@@ -961,8 +960,6 @@ void FuzzIntrospector::extractFuzzerReachabilityGraph(Module &M) {
   // TODO: handle LLVMFuzzerInitialize as this function may also
   // reach target code, and should be considered another fuzzer entrypoint.
 }
-
-//char FuzzIntrospector::ID = 0;
 
 PreservedAnalyses FuzzIntrospectorPass::run(Module &M, ModuleAnalysisManager &AM) {
   FuzzIntrospector Impl;
