@@ -46,6 +46,8 @@ class FunctionProfile:
         self.arg_names = None
         self.bb_count = None
         self.i_count = None
+        self.hitcount = 0
+        self.reached_by_fuzzers = list()
         self.edge_count = None
         self.cyclomatic_complexity = None
         self.functions_reached = None
@@ -168,7 +170,7 @@ class FuzzerProfile:
         all_callsites = fuzz_cfg_load.extract_all_callsites(self.function_call_depths)
         for cs in all_callsites:
             if cs.dst_function_source_file.replace(" ","") == "":
-                contineu
+                continue
             if cs.dst_function_source_file not in self.file_targets:
                 self.file_targets[cs.dst_function_source_file] = set()
             self.file_targets[cs.dst_function_source_file].add(cs.dst_function_source_file)
@@ -249,11 +251,14 @@ class MergedProjectProfile:
                 if len([ef for ef in excluded_functions if ef in fd.function_name]) != 0:
                     continue
 
-                # Find hit count and whether it has been handled already
-                hitcount = len([p for p in profiles if p.reaches(fd.function_name)])
-                fd.hitcount = hitcount
-                if fd.function_name not in self.all_functions:
-                    self.all_functions[fd.function_name] = fd
+                # populate hitcount and reached_by_fuzzers and whether it has been handled already
+                for fuzzer_profile in profiles:
+                    if fuzzer_profile.reaches(fd.function_name):
+                        fd.hitcount += 1
+                        fuzzer_filename = fuzzer_profile.fuzzer_source_file.replace(" ", "").split("/")[-1]
+                        fd.reached_by_fuzzers.append(fuzzer_filename)
+                    if fd.function_name not in self.all_functions:
+                        self.all_functions[fd.function_name] = fd
 
         # Gather complexity information about each function
         l.info("Gathering complexity and incoming references of each function")
@@ -396,8 +401,8 @@ def add_func_to_reached_and_clone(merged_profile_old: MergedProjectProfile,
             l.error("Found mismatched function name between merged all_functions and functions_reached: %s"%(func_name))
             continue
         f = merged_profile.all_functions[func_name]
-        if f.hitcount == 0:
-            f.hitcount = 1
+        f.hitcount += 1
+        f.reached_by_fuzzers.append(func_to_add.function_name)
 
     # Recompute all analysis that is based on hitcounts in all functions as hitcount has
     # changed for elements in the dictionary.

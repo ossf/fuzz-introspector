@@ -40,6 +40,9 @@ import lxml.html as lh
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 
+import random
+import string
+
 l = logging.getLogger(name=__name__)
 
 class AnalysisInterface(NamedTuple):
@@ -210,9 +213,10 @@ def create_all_function_table(
         basefolder: str) -> str:
     """Table for all functions in the project. Contains many details about each
         function"""
+    random_suffix = '_'+''.join(random.choices(string.ascii_lowercase + string.ascii_uppercase, k=7))
     html_string = create_table_head(tables[-1],
                                     ["Func name", "Git URL", "Functions filename", "Arg count", "Args",
-                                     "Function call depth", "Fuzzers reach count", "Fuzzers runtime hit", "Func lines hit %", "I Count", "BB Count",
+                                     "Function call depth", "Fuzzers reach count", "Reached by Fuzzers", "Fuzzers runtime hit", "Func lines hit %", "I Count", "BB Count",
                                      "Cyclomatic complexity", "Functions reached",
                                      "Reached by functions", "Accumulated cyclomatic complexity",
                                      "Undiscovered complexity"])
@@ -232,6 +236,7 @@ def create_all_function_table(
             hit_percentage = (hit_lines / func_total_lines) * 100.0
         except:
             hit_percentage = 0.0
+        collapsible_id = fuzz_utils.demangle_cpp_func(fd.function_name) + random_suffix
         html_string += html_table_add_row([
             "%s" % ("<a href='%s'><code class='language-clike'>" % ("%s%s.html#L%d" % (coverage_url,
                     fd.function_source_file, fd.function_linenumber)) + fuzz_utils.demangle_cpp_func(fd.function_name) + "</code></a>"),
@@ -241,6 +246,9 @@ def create_all_function_table(
             fd.arg_types,
             fd.function_depth,
             fd.hitcount,
+            "%s" % ((f"<div class='wrap-collabsible'><input id='{collapsible_id}' class='toggle' type='checkbox'>"
+            f"<label for='{collapsible_id}' class='lbl-toggle'>View List</label><div class='collapsible-content'>"
+            f"<div class='content-inner'><p> {fd.reached_by_fuzzers}</p></div></div></div>")) if fd.reached_by_fuzzers else "None",
             "yes" if fuzz_utils.demangle_cpp_func(fd.function_name) in project_profile.runtime_coverage.functions_hit else "no",
             "%.5s"%(str(hit_percentage))+"%",
             fd.i_count,
