@@ -15,14 +15,16 @@
 ################################################################################
 
 ROOT=$PWD
-
+export FUZZ_INTROSPECTOR=1
 for PROJ in simple-example-0; do
   cd ${ROOT}/${PROJ}
   rm -rf ./web
 
   ./build_all.sh
+  python3 ${ROOT}/../post-processing/main.py correlate --binaries-dir=./work/
+  #exit 0
   ./build_cov.sh || true
   mkdir web
   cd web
-  python3 ${ROOT}/../post-processing/main.py --target_dir=../
+  python3 ${ROOT}/../post-processing/main.py report --correlation-file=../exe_to_fuzz_introspector_logs.yaml --target_dir=../
 done
