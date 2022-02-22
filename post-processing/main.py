@@ -58,7 +58,7 @@ def run_analysis_on_dir(target_folder,
         print("Profile file: %s"%(os.path.basename(profile.introspector_data_file)))
         if "pairings" in correlation_dict:
             for elem in correlation_dict['pairings']:
-                if "%s.data"%(elem['fuzzer_log_file']) == os.path.basename(profile.introspector_data_file):
+                if os.path.basename(profile.introspector_data_file) in "%s.data"%(elem['fuzzer_log_file']):
                     profile.binary_executable = "%s"%(elem['executable_path'])
                     print("Found a match")
 
