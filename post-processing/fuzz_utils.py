@@ -115,4 +115,6 @@ def scan_executables_for_fuzz_introspector_logs(exec_dir: str):
                         print(found_str)
 
                         executable_to_fuzz_reports.append({'executable_path' : full_path, 'fuzzer_log_file': found_str})
+    # We need to ensure there are enough elements to force Yaml into creating a list.
+    #executable_to_fuzz_reports.append({'executable_path' : 'empty', 'fuzzer_log_file': 'empty'})
     return executable_to_fuzz_reports

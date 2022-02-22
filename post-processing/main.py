@@ -26,8 +26,9 @@ l = logging.getLogger(name=__name__)
 
 def correlate_binaries_to_logs(binaries_dir):
     pairings = fuzz_utils.scan_executables_for_fuzz_introspector_logs(args.binaries_dir)
+    print("Pairings: %s"%(str(pairings)))
     with open("exe_to_fuzz_introspector_logs.yaml", "w+") as etf:
-        etf.write(yaml.dump_all(pairings))
+        etf.write(yaml.dump({'pairings' : pairings}))
 
 
 def run_analysis_on_dir(target_folder,
@@ -41,17 +42,24 @@ def run_analysis_on_dir(target_folder,
         l.info("Found no profiles. Exiting")
         exit(0)
 
+    correlation_dict = {}
     if correlation_file != "" and os.path.isfile(correlation_file):
         l.info("Loading correlation file %s"%(correlation_file))
         with open(correlation_file, "r") as yf:
             try:
-                print(yaml.safe_load(yf))
+                correlation_dict = yaml.safe_load(yf)
             except:
                 print("Exception")
 
     l.info("[+] Accummulating profiles")
     for profile in profiles:
         profile.accummulate_profile(target_folder)
+        print(correlation_dict)
+        print("Profile file: %s"%(os.path.basename(profile.introspector_data_file)))
+        for elem in correlation_dict['pairings']:
+            if "%s.data"%(elem['fuzzer_log_file']) == os.path.basename(profile.introspector_data_file):
+                profile.binary_executable = "%s"%(elem['executable_path'])
+                print("Found a match")
 
     l.info("[+] Creating project profile")
     project_profile = fuzz_data_loader.MergedProjectProfile(profiles)

@@ -82,8 +82,10 @@ class FuzzerProfile:
     plugin. That means, the output from the plugin for a single fuzzer.
     """
     def __init__(self, filename: str, data_dict_yaml: Dict[Any, Any]):
+        self.introspector_data_file = filename
         self.function_call_depths = fuzz_cfg_load.data_file_read_calltree(filename)
         self.fuzzer_source_file = data_dict_yaml['Fuzzer filename']
+        self.binary_executable = None
 
         # Create a list of all the functions.
         self.all_class_functions = dict()
