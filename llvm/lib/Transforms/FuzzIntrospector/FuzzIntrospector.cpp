@@ -246,6 +246,14 @@ void FuzzIntrospector::logPrintf(int LogLevel, const char *Fmt, ...) {
 
 // Function entrypoint.
 bool FuzzIntrospector::runOnModule(Module &M) {
+  // Require that FUZZ_INTROSPECTOR environment variable is set
+  if (!getenv("FUZZ_INTROSPECTOR")) {
+    logPrintf(L1, "Fuzz introspector is not running\n");
+    return false;
+  }
+
+  logPrintf(L1, "Fuzz introspector is running\n");
+
   logPrintf(L1, "Running introspector on %s\n", M.getName());
   if (shouldRunIntrospector(M) == false) {
     return false;
