@@ -177,7 +177,8 @@ def create_overview_table(tables: List[str],
                               profiles: List[fuzz_data_loader.FuzzerProfile]) -> str:
     """Table with an overview of all the fuzzers"""
     html_string = create_table_head(tables[-1],
-                                    ["Fuzzer filename",
+                                    ["Fuzzer binary",
+                                     "Fuzzer filename",
                                      "Functions Reached",
                                      "Functions unreached",
                                      "Fuzzer depth",
@@ -193,6 +194,7 @@ def create_overview_table(tables: List[str],
                 max_depth = cs.depth
 
         html_string += html_table_add_row([
+            profile.binary_executable,
             fuzzer_filename,
             len(profile.functions_reached_by_fuzzer),
             len(profile.functions_unreached_by_fuzzer),
