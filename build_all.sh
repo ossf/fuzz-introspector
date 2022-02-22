@@ -35,8 +35,8 @@ cd ${BUILD_BASE}
 
 # Now copy over the LLVM code we have
 # This includes our inspector pass and the files included.
-cp -rf ${BASE}/llvm/include/llvm/Transforms/Inspector/ ./llvm-project/llvm/include/llvm/Transforms/Inspector
-cp -rf ${BASE}/llvm/lib/Transforms/Inspector ./llvm-project/llvm/lib/Transforms/Inspector
+cp -rf ${BASE}/llvm/include/llvm/Transforms/FuzzIntrospector/ ./llvm-project/llvm/include/llvm/Transforms/FuzzIntrospector
+cp -rf ${BASE}/llvm/lib/Transforms/FuzzIntrospector ./llvm-project/llvm/lib/Transforms/FuzzIntrospector
 
 # Build LLVM
 mkdir llvm-build
