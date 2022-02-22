@@ -91,3 +91,27 @@ def demangle_cpp_func(funcname: str) -> str:
         return demangled
     except:
         return funcname
+
+# fuzzer files can only have a name using limited characters
+regex = '[%s]{%d,}' % (r"A-Za-z0-9_-", 10)
+fuzzer_log_file_pattern = re.compile(regex)
+def process(stream):
+    data = stream.read().decode('ascii', 'ignore')
+    return pattern.findall(data)
+
+def scan_executables_for_fuzz_introspector_logs(exec_dir: str):
+    if not os.path.isdir(exec_dir):
+        return []
+    executable_to_fuzz_reports = []
+    for f in os.listdir(exec_dir):
+        full_path = os.path.join(exec_dir, f)
+        if os.access(full_path, os.X_OK):
+            print("File: %s is executable"%(full_path))
+            # Read all of the strings in this file
+            with open(full_path, "rb") as fp:
+                all_ascii_data = fp.read().decode('ascii', 'ignore')
+                for found_str in fuzzer_log_file_pattern.findall(all_ascii_data):
+                    if "fuzzerLog" in found_str:
+                        print(found_str)
+                        executable_to_fuzz_reports.append((full_path, found_str))
+    return executable_to_fuzz_reports

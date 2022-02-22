@@ -33,6 +33,9 @@ def run_analysis_on_dir(target_folder,
         l.info("Found no profiles. Exiting")
         exit(0)
 
+    if args.binaries_dir != "":
+        fuzz_utils.scan_executables_for_fuzz_introspector_logs(args.binaries_dir)
+
     l.info("[+] Accummulating profiles")
     for profile in profiles:
         profile.accummulate_profile(target_folder)
@@ -73,6 +76,10 @@ def create_parser():
                         nargs="+",
                         default=["OptimalTargets", "OptimalCoverageTargets"],
                         help="Analyses to run. Available options: OptimalTargets, FuzzEngineInput")
+    parser.add_argument("--binaries-dir",
+                        type=str,
+                        default="",
+                        help="Directory with binaries to scan for Fuzz introspector tags")
 
     args = parser.parse_args()
     return args
