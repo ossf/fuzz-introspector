@@ -56,10 +56,11 @@ def run_analysis_on_dir(target_folder,
         profile.accummulate_profile(target_folder)
         print(correlation_dict)
         print("Profile file: %s"%(os.path.basename(profile.introspector_data_file)))
-        for elem in correlation_dict['pairings']:
-            if "%s.data"%(elem['fuzzer_log_file']) == os.path.basename(profile.introspector_data_file):
-                profile.binary_executable = "%s"%(elem['executable_path'])
-                print("Found a match")
+        if "pairings" in correlation_dict:
+            for elem in correlation_dict['pairings']:
+                if "%s.data"%(elem['fuzzer_log_file']) == os.path.basename(profile.introspector_data_file):
+                    profile.binary_executable = "%s"%(elem['executable_path'])
+                    print("Found a match")
 
     l.info("[+] Creating project profile")
     project_profile = fuzz_data_loader.MergedProjectProfile(profiles)
@@ -103,7 +104,7 @@ def parse_cmdline():
                         nargs="+",
                         default=["OptimalTargets", "OptimalCoverageTargets"],
                         help="Analyses to run. Available options: OptimalTargets, FuzzEngineInput")
-    report_parser.add_argument("--correlation-file",
+    report_parser.add_argument("--correlation_file",
                         type=str,
                         default="",
                         help="File with correlation data")
@@ -111,7 +112,7 @@ def parse_cmdline():
     # Correlate binary files to fuzzerLog files
     correlate_parser = subparsers.add_parser(
             'correlate', help='correlate executable files to fuzzer introspector logs')
-    correlate_parser.add_argument("--binaries-dir",
+    correlate_parser.add_argument("--binaries_dir",
                         type=str,
                         required=True,
                         help="Directory with binaries to scan for Fuzz introspector tags")
