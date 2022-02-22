@@ -33,13 +33,21 @@ def correlate_binaries_to_logs(binaries_dir):
 def run_analysis_on_dir(target_folder,
         git_repo_url,
         coverage_url,
-        analyses_to_run):
+        analyses_to_run,
+        correlation_file):
     l.info("[+] Loading profiles")
     profiles = fuzz_data_loader.load_all_profiles(target_folder)
     if len(profiles) == 0:
         l.info("Found no profiles. Exiting")
         exit(0)
 
+    if correlation_file != "" and os.path.isfile(correlation_file):
+        l.info("Loading correlation file %s"%(correlation_file))
+        with open(correlation_file, "r") as yf:
+            try:
+                print(yaml.safe_load(yf))
+            except:
+                print("Exception")
 
     l.info("[+] Accummulating profiles")
     for profile in profiles:
@@ -87,10 +95,10 @@ def parse_cmdline():
                         nargs="+",
                         default=["OptimalTargets", "OptimalCoverageTargets"],
                         help="Analyses to run. Available options: OptimalTargets, FuzzEngineInput")
-    report_parser.add_argument("--binaries-dir",
+    report_parser.add_argument("--correlation-file",
                         type=str,
                         default="",
-                        help="Directory with binaries to scan for Fuzz introspector tags")
+                        help="File with correlation data")
 
     # Correlate binary files to fuzzerLog files
     correlate_parser = subparsers.add_parser(
@@ -108,7 +116,7 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     args = parse_cmdline()
     if args.command == 'report':
-        run_analysis_on_dir(args.target_dir, args.git_repo_url, args.coverage_url, args.analyses)
+        run_analysis_on_dir(args.target_dir, args.git_repo_url, args.coverage_url, args.analyses, args.correlation_file)
     elif args.command == 'correlate':
         correlate_binaries_to_logs(args.binaries_dir)
     l.info("Ending fuzz introspector post-processing")
