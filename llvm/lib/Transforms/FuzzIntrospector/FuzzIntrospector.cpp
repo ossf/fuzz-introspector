@@ -19,6 +19,7 @@
 #include "llvm/IR/DebugLoc.h"
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/Function.h"
+#include "llvm/IR/GlobalVariable.h"
 #include "llvm/IR/IntrinsicInst.h"
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/IR/Module.h"
@@ -265,6 +266,19 @@ bool FuzzIntrospector::runOnModule(Module &M) {
 
   // Extract and log reachability graph
   std::string nextCalltreeFile = getNextLogFile();
+
+  // Insert the logfile as a global variable. We use this to associate a given binary
+  // with a given fuzz report.
+  Constant *FuzzIntrospectorTag = ConstantDataArray::getString(M.getContext(), nextCalltreeFile, false);
+  llvm::GlobalVariable *GV = new GlobalVariable(
+                                      M,
+                                      FuzzIntrospectorTag->getType(),
+                                      true,
+                                      llvm::GlobalValue::LinkageTypes::ExternalLinkage,
+                                      FuzzIntrospectorTag,
+                                      "FuzzIntrospectorTag");
+  GV->setInitializer(FuzzIntrospectorTag);
+
   extractFuzzerReachabilityGraph(M);
   dumpCalltree(&FuzzerCalltree, nextCalltreeFile);
 
