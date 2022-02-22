@@ -14,6 +14,7 @@
 
 import os
 import sys
+import yaml
 import logging
 import argparse
 
@@ -22,6 +23,12 @@ import fuzz_html
 import fuzz_utils
 
 l = logging.getLogger(name=__name__)
+
+def correlate_binaries_to_logs(binaries_dir):
+    pairings = fuzz_utils.scan_executables_for_fuzz_introspector_logs(args.binaries_dir)
+    with open("exe_to_fuzz_introspector_logs.yaml", "w+") as etf:
+        etf.write(yaml.dump_all(pairings))
+
 
 def run_analysis_on_dir(target_folder,
         git_repo_url,
@@ -33,8 +40,6 @@ def run_analysis_on_dir(target_folder,
         l.info("Found no profiles. Exiting")
         exit(0)
 
-    if args.binaries_dir != "":
-        fuzz_utils.scan_executables_for_fuzz_introspector_logs(args.binaries_dir)
 
     l.info("[+] Accummulating profiles")
     for profile in profiles:
@@ -58,27 +63,41 @@ def run_analysis_on_dir(target_folder,
             git_repo_url,
             project_profile.basefolder)
 
-def create_parser():
+def parse_cmdline():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--target_dir", 
+
+    subparsers = parser.add_subparsers(dest='command')
+
+    # Report generation
+    report_parser = subparsers.add_parser(
+            'report', help='generate fuzz-introspector HTML report')
+    report_parser.add_argument("--target_dir",
                         type=str,
                         help="Directory where the data files are",
                         required=True)
-    parser.add_argument('--git_repo_url', 
+    report_parser.add_argument('--git_repo_url',
                         type=str,
                         help="Git repository with the source code",
                         default="")
-    parser.add_argument('--coverage_url', 
+    report_parser.add_argument('--coverage_url',
                         type=str,
                         help="URL with coverage information", 
                         default="/covreport/linux")
-    parser.add_argument("--analyses",
+    report_parser.add_argument("--analyses",
                         nargs="+",
                         default=["OptimalTargets", "OptimalCoverageTargets"],
                         help="Analyses to run. Available options: OptimalTargets, FuzzEngineInput")
-    parser.add_argument("--binaries-dir",
+    report_parser.add_argument("--binaries-dir",
                         type=str,
                         default="",
+                        help="Directory with binaries to scan for Fuzz introspector tags")
+
+    # Correlate binary files to fuzzerLog files
+    correlate_parser = subparsers.add_parser(
+            'correlate', help='correlate executable files to fuzzer introspector logs')
+    correlate_parser.add_argument("--binaries-dir",
+                        type=str,
+                        required=True,
                         help="Directory with binaries to scan for Fuzz introspector tags")
 
     args = parser.parse_args()
@@ -87,6 +106,9 @@ def create_parser():
 if __name__ == "__main__":
     l.info("Running fuzz introspector post-processing")
     logging.basicConfig(level=logging.INFO)
-    args = create_parser()
-    run_analysis_on_dir(args.target_dir, args.git_repo_url, args.coverage_url, args.analyses)
+    args = parse_cmdline()
+    if args.command == 'report':
+        run_analysis_on_dir(args.target_dir, args.git_repo_url, args.coverage_url, args.analyses)
+    elif args.command == 'correlate':
+        correlate_binaries_to_logs(args.binaries_dir)
     l.info("Ending fuzz introspector post-processing")

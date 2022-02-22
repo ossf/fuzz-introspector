@@ -113,5 +113,6 @@ def scan_executables_for_fuzz_introspector_logs(exec_dir: str):
                 for found_str in fuzzer_log_file_pattern.findall(all_ascii_data):
                     if "fuzzerLog" in found_str:
                         print(found_str)
-                        executable_to_fuzz_reports.append((full_path, found_str))
+
+                        executable_to_fuzz_reports.append({'executable_path' : full_path, 'fuzzer_log_file': found_str})
     return executable_to_fuzz_reports
