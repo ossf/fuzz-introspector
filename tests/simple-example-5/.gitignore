@@ -1,0 +1,5 @@
+*.data
+web
+fuzzer
+fuzzer.o
+exe_to_fuzz_introspector_logs.yaml
