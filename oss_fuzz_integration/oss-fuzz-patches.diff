@@ -1,5 +1,5 @@
 diff --git a/infra/base-images/base-builder/Dockerfile b/infra/base-images/base-builder/Dockerfile
-index 475e5a7d..0d3d367c 100644
+index 475e5a7d..fca8165d 100644
 --- a/infra/base-images/base-builder/Dockerfile
 +++ b/infra/base-images/base-builder/Dockerfile
 @@ -82,6 +82,8 @@ ENV SANITIZER_FLAGS_dataflow "-fsanitize=dataflow"
@@ -21,10 +21,10 @@ index 475e5a7d..0d3d367c 100644
  RUN precompile_honggfuzz
  
 diff --git a/infra/base-images/base-builder/compile b/infra/base-images/base-builder/compile
-index c934d3b5..181a70d2 100755
+index c934d3b5..f332f891 100755
 --- a/infra/base-images/base-builder/compile
 +++ b/infra/base-images/base-builder/compile
-@@ -146,6 +146,20 @@ if [ "$FUZZING_LANGUAGE" = "jvm" ]; then
+@@ -146,6 +146,22 @@ if [ "$FUZZING_LANGUAGE" = "jvm" ]; then
    export CXXFLAGS="$CXXFLAGS -fno-sanitize=leak"
  fi
  
@@ -40,12 +40,14 @@ index c934d3b5..181a70d2 100755
 +
 +  ln -s /usr/local/bin/llvm-ar /usr/bin/ar
 +  ln -s /usr/local/bin/llvm-ranlib /usr/bin/ranlib
++
++  export FUZZ_INTROSPECTOR=1
 +fi
 +
  echo "---------------------------------------------------------------"
  echo "CC=$CC"
  echo "CXX=$CXX"
-@@ -186,6 +200,36 @@ else
+@@ -186,6 +202,38 @@ else
    fi
  fi
  
@@ -72,7 +74,9 @@ index c934d3b5..181a70d2 100755
 +  ls -la $SRC/inspector-tmp
 +
 +  cd $SRC/inspector-tmp
-+  python3 $SRC/post-processing/main.py --target_dir=$SRC/inspector-tmp --git_repo_url=$GITHUB_REPO
++  python3 $SRC/post-processing/main.py correlate --binaries_dir=$OUT/
++  python3 $SRC/post-processing/main.py report --target_dir=$SRC/inspector-tmp --git_repo_url=$GITHUB_REPO --correlation_file=exe_to_fuzz_introspector_logs.yaml
++  
 +  #find $SRC/ -name "fuzz_report.html" -exec cp {} $OUT/ \;
 +  #mv fuzz_report.html $SRC/inspector-tmp/fuzz_report.html
 +
@@ -83,7 +87,7 @@ index c934d3b5..181a70d2 100755
    # Remove seed corpus as it can be huge but is not needed for a dataflow build.
    rm -f $OUT/*.zip
 diff --git a/infra/base-images/base-clang/Dockerfile b/infra/base-images/base-clang/Dockerfile
-index 45260941..c533509e 100644
+index 45260941..51cb2731 100644
 --- a/infra/base-images/base-clang/Dockerfile
 +++ b/infra/base-images/base-clang/Dockerfile
 @@ -28,6 +28,9 @@ RUN apt-get update && apt-get install -y wget sudo && \
@@ -97,7 +101,7 @@ index 45260941..c533509e 100644
  # Keep all steps in the same script to decrease the number of intermediate
  # layes in docker file.
 diff --git a/infra/base-images/base-clang/checkout_build_install_llvm.sh b/infra/base-images/base-clang/checkout_build_install_llvm.sh
-index 4c3ea6a8..4bb962e5 100755
+index 4c3ea6a8..4e275cb2 100755
 --- a/infra/base-images/base-clang/checkout_build_install_llvm.sh
 +++ b/infra/base-images/base-clang/checkout_build_install_llvm.sh
 @@ -61,6 +61,8 @@ function cmake_llvm {
@@ -178,7 +182,7 @@ index a323a436..68c006d1 100644
  ARCHITECTURES = ['i386', 'x86_64']
  ENGINES = ['libfuzzer', 'afl', 'honggfuzz', 'dataflow', 'none']
 diff --git a/infra/helper.py b/infra/helper.py
-index 2478048a..ca498bbb 100755
+index 2478048a..235763ae 100755
 --- a/infra/helper.py
 +++ b/infra/helper.py
 @@ -274,6 +274,9 @@ def get_parser():  # pylint: disable=too-many-statements
@@ -207,7 +211,7 @@ index 2478048a..ca498bbb 100755
    ]
  
    _add_oss_fuzz_ci_if_needed(env)
-@@ -693,6 +699,7 @@ def build_fuzzers(args):
+@@ -693,6 +698,7 @@ def build_fuzzers(args):
                              args.architecture,
                              args.e,
                              args.source_path,
