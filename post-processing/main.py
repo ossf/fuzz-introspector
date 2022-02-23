@@ -42,25 +42,24 @@ def run_analysis_on_dir(target_folder,
         l.info("Found no profiles. Exiting")
         exit(0)
 
-    correlation_dict = {}
-    if correlation_file != "" and os.path.isfile(correlation_file):
-        l.info("Loading correlation file %s"%(correlation_file))
-        with open(correlation_file, "r") as yf:
-            try:
-                correlation_dict = yaml.safe_load(yf)
-            except:
-                print("Exception")
 
     l.info("[+] Accummulating profiles")
     for profile in profiles:
         profile.accummulate_profile(target_folder)
-        print(correlation_dict)
-        print("Profile file: %s"%(os.path.basename(profile.introspector_data_file)))
-        if "pairings" in correlation_dict:
+
+
+    l.info("[+] Correlating executables to Fuzz introspector reports")
+    correlation_dict = fuzz_utils.data_file_read_yaml(correlation_file)
+    if correlation_dict != None and "pairings" in correlation_dict:
+        for profile in profiles:
             for elem in correlation_dict['pairings']:
                 if os.path.basename(profile.introspector_data_file) in "%s.data"%(elem['fuzzer_log_file']):
                     profile.binary_executable = "%s"%(elem['executable_path'])
-                    print("Found a match")
+                    l.info("Matched %s with %s"%(
+                        os.path.basename(profile.introspector_data_file),
+                        "%s.data"%(elem['fuzzer_log_file'])))
+    else:
+        l.info("- Nothing to correlate")
 
     l.info("[+] Creating project profile")
     project_profile = fuzz_data_loader.MergedProjectProfile(profiles)

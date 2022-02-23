@@ -78,6 +78,11 @@ def data_file_read_yaml(filename: str) -> Dict[Any, Any]:
     Reads a file as a yaml file. This is used to load data
     from fuzz-introspectors compiler plugin output.
     """
+    if filename == "":
+        return None
+    if not os.path.isfile(filename):
+        return None
+
     with open(filename, 'r') as stream:
         try:
             data_dict = yaml.safe_load(stream)
