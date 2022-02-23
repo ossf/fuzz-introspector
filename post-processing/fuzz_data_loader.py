@@ -86,6 +86,7 @@ class FuzzerProfile:
         self.function_call_depths = fuzz_cfg_load.data_file_read_calltree(filename)
         self.fuzzer_source_file = data_dict_yaml['Fuzzer filename']
         self.binary_executable = None
+        self.coverage = None
 
         # Create a list of all the functions.
         self.all_class_functions = dict()
@@ -210,6 +211,15 @@ class FuzzerProfile:
         self.get_total_basic_blocks()
         self.get_total_cyclomatic_complexity()
 
+    def get_cov_uncovered_reachable_funcs(self):
+        if self.coverage == None:
+            return None
+
+        uncovered_funcs = []
+        for funcname in self.functions_reached_by_fuzzer:
+            if len(self.get_function_coverage(funcname)) == 0:
+                uncovered_funcs.append(funcname)
+        return uncovered_funcs
 
 class MergedProjectProfile:
     """

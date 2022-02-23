@@ -439,6 +439,20 @@ def create_fuzzer_detailed_section(
             l.error("Could not write coverage line for function %s"%(funcname))
     html_string += "</table>"
 
+    # Get how many functions are covered relative to reachability
+    html_string += "<br>"
+    uncovered_reachable_funcs = len(profile.get_cov_uncovered_reachable_funcs())
+    reachable_funcs = len(profile.functions_reached_by_fuzzer)
+    reached_funcs = reachable_funcs - uncovered_reachable_funcs
+
+    html_string += "Uncovered functions that are reachable: %s"%(uncovered_reachable_funcs)
+    html_string += "<br>"
+    html_string += "Reachable functions: %s"%(reachable_funcs)
+    html_string += "<br>"
+    cov_reach_proportion = (float(reached_funcs) / float(reachable_funcs)) * 100.0
+    html_string += "Percentage of reachable functions covered: %.5s%%"%(str(cov_reach_proportion))
+
+
     # Calltree generation
     html_string += html_add_header_with_link(
         "Call tree overview", 3, toc_list, link=f"call_tree_{curr_tt_profile}")
@@ -651,7 +665,7 @@ def extract_highlevel_guidance(
 
     html_string += "<ul>"
 
-    # Statement about reachability
+    # Statement about reachability, based on functions.
     total_functions, reached_func_count, unreached_func_count, reached_percentage, unreached_percentage = project_profile.get_function_summaries()
     sentence = ""
     if reached_percentage > 90.0:
@@ -665,6 +679,7 @@ def extract_highlevel_guidance(
     else:
         sentence = "Fuzzers reach less than 25% of functions. Improvements need to be made"
     html_string += "<li>%s</li>"%(sentence)
+
     html_string += "</ul>"
 
     return html_string
