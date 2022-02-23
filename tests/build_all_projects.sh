@@ -15,6 +15,7 @@
 ################################################################################
 
 ROOT=$PWD
+export FUZZ_INTROSPECTOR=1
 for PROJ in kamailio xpdf croaring kamailio htslib dng_sdk; do
   cd ${ROOT}/${PROJ}
   rm -rf ./web
