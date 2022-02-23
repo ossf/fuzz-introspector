@@ -659,6 +659,25 @@ def handle_analysis_1(
     return html_string
 
 
+def extract_highlevel_guidance(
+	    toc_list: List[Tuple[str, str, int]],
+            tables: List[str],
+            project_profile: fuzz_data_loader.MergedProjectProfile,
+            profiles: List[fuzz_data_loader.FuzzerProfile],
+            basefolder: str,
+            git_repo_url: str,
+            coverage_url: str) -> str:
+    l.info("Extracting high level guidance")
+    html_string = ""
+    html_string += html_add_header_with_link(
+        "High level conclusions", 2, toc_list)
+
+    html_string += "<ul>"
+    html_string += "<li>Suggestion 1</li>"
+    html_string += "</ul>"
+
+    return html_string
+
 def create_html_report(
         profiles: List[fuzz_data_loader.FuzzerProfile],
         project_profile: fuzz_data_loader.MergedProjectProfile,
@@ -694,6 +713,18 @@ def create_html_report(
     tables.append("myTable%d" % (len(tables)))
     html_string += "<p class='no-top-margin'>This is the overview of reachability by the existing fuzzers in the project</p>"
     html_string += create_top_summary_info(tables, project_profile)
+
+
+    #############################################
+    # Section with high level suggestions
+    #############################################
+    html_string += extract_highlevel_guidance(toc_list,
+                tables,
+                project_profile,
+                profiles,
+                basefolder,
+                git_repo_url,
+                coverage_url)
 
     #############################################
     # Table with overview of all fuzzers.
