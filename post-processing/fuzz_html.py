@@ -307,7 +307,6 @@ def write_wrapped_html_file(html_string, filename):
     html_end += "<script src=\"clike.js\"></script>"
     html_end += "<script src=\"custom.js\"></script>"
 
-
     with open(filename, "w+") as cf:
         cf.write(html_header)
         cf.write(html_string)
@@ -651,7 +650,21 @@ def extract_highlevel_guidance(
         "High level conclusions", 2, toc_list)
 
     html_string += "<ul>"
-    html_string += "<li>Suggestion 1</li>"
+
+    # Statement about reachability
+    total_functions, reached_func_count, unreached_func_count, reached_percentage, unreached_percentage = project_profile.get_function_summaries()
+    sentence = ""
+    if reached_percentage > 90.0:
+        sentence = "Fuzzers reach more than 90% of functions. This is great"
+    elif reached_percentage > 75.0:
+        sentence = "Fuzzers reach more than 75% of functions. This is good"
+    elif reached_percentage > 50.0:
+        sentence = "Fuzzers reach more than 50% of functions. This is good, but improvements can be made"
+    elif reached_percentage > 25.0:
+        sentence = "Fuzzers reach more than 25% of functions. Improvements should be made"
+    else:
+        sentence = "Fuzzers reach less than 25% of functions. Improvements need to be made"
+    html_string += "<li>%s</li>"%(sentence)
     html_string += "</ul>"
 
     return html_string
