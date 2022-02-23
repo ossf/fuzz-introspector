@@ -343,6 +343,31 @@ class MergedProjectProfile:
                 reached_function_count += 1
         return reached_function_count
 
+    def get_function_reach_percentage(self) -> float:
+        total_functions = float(self.get_total_unreached_function_count() + self.get_total_reached_function_count())
+        reached_percentage = float(self.get_total_reached_function_count() / total_functions) * 100.0
+        return reached_percentage
+
+    def get_function_summaries(self) -> Tuple[int, int, int, float, float]:
+        reached_func_count = self.get_total_reached_function_count()
+        unreached_func_count = self.get_total_unreached_function_count()
+        total_functions = reached_func_count + unreached_func_count
+        reached_percentage = (float(reached_func_count) / float(total_functions)) *100
+        unreached_percentage = (float(unreached_func_count) / float(total_functions)) *100
+        return total_functions, reached_func_count, unreached_func_count, reached_percentage, unreached_percentage
+
+    def get_complexity_summaries(self) -> Tuple[int, int, int, float, float]:
+
+        complexity_reached, complexity_unreached = self.get_total_complexity()
+        complexity_reached = float(complexity_reached)
+        complexity_unreached = float(complexity_unreached)
+        total_complexity = complexity_unreached + complexity_reached
+
+        reached_complexity_percentage = (complexity_reached / (total_complexity)) * 100.0
+        unreached_complexity_percentage = (complexity_unreached / (total_complexity)) * 100.0
+
+        return total_complexity, complexity_reached, complexity_unreached, reached_complexity_percentage, unreached_complexity_percentage
+
     def set_basefolder(self) -> None:
         """
         Identifies a common path-prefix amongst source files in 

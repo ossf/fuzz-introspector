@@ -271,35 +271,20 @@ def create_top_summary_info(
     html_string = ""
 
     # Get complexity and function counts
-    unreached_functions = float(project_profile.get_total_unreached_function_count())
-    reached_functions = float(project_profile.get_total_reached_function_count())
-    total_functions = unreached_functions + reached_functions
-
-    complexity_reached, complexity_unreached = project_profile.get_total_complexity()
-    complexity_reached = float(complexity_reached)
-    complexity_unreached = float(complexity_unreached)
-
+    total_functions, reached_func_count, unreached_func_count, reached_percentage, unreached_percentage = project_profile.get_function_summaries()
+    total_complexity, complexity_reached, complexity_unreached, reached_complexity_percentage, unreached_complexity_percentage = project_profile.get_complexity_summaries()
     html_string += create_table_head(tables[-1],
                                      ["", "Reached", "Unreached"])
 
-    complexity_percentage = (complexity_reached / (complexity_reached + complexity_unreached))*100
-
-    reached_funcs_percentage = (reached_functions / (reached_functions + unreached_functions))*100
-    unreached_funcs_percentage = ((unreached_functions) / ((total_functions))) * 100.0
-
-    total_complexity = complexity_unreached + complexity_reached
-    reached_complexity_percentage = (complexity_reached / (total_complexity)) * 100.0
-    unreached_complexity_percentage = (complexity_unreached / (total_complexity)) * 100.0
-
     html_string += html_table_add_row([
         "Functions", 
-        "%.5s%% (%d / %d)"%(str(reached_funcs_percentage),reached_functions,total_functions),
-        "%.5s%% (%d / %d)"%(str(unreached_funcs_percentage), unreached_functions,total_functions)
+        "%.5s%% (%d / %d)"%(str(reached_percentage), reached_func_count, total_functions),
+        "%.5s%% (%d / %d)"%(str(unreached_percentage), unreached_func_count,total_functions)
         ])
     html_string += html_table_add_row([
         "Complexity", 
-        "%.5s%% (%d / %d)"%(reached_complexity_percentage, complexity_reached, total_complexity),
-        "%.5s%% (%d / %d)"%(unreached_complexity_percentage, complexity_unreached, total_complexity)
+        "%.5s%% (%d / %d)"%(reached_complexity_percentage, complexity_reached, int(total_complexity)),
+        "%.5s%% (%d / %d)"%(unreached_complexity_percentage, complexity_unreached, int(total_complexity))
         ])
     html_string += ("</table>\n")
     return html_string
