@@ -662,7 +662,7 @@ def extract_highlevel_guidance(
     html_string += html_add_header_with_link(
         "High level conclusions", 2, toc_list)
 
-    html_string += "<ul>"
+    html_string += "<div class=\"high-level-conclusions-wrapper\">"
 
     # Statement about reachability, based on functions.
     total_functions, reached_func_count, unreached_func_count, reached_percentage, unreached_percentage = project_profile.get_function_summaries()
@@ -677,8 +677,7 @@ def extract_highlevel_guidance(
         sentence = "Fuzzers reach more than 25% of functions. Improvements should be made"
     else:
         sentence = "Fuzzers reach less than 25% of functions. Improvements need to be made"
-    html_string += "<li>%s</li>"%(sentence)
-
+    html_string += "<div class=\"line-wrapper\"><span class=\"high-level-conclusion red-conclusion\">%s</span></div>"%(sentence)
 
     # Go through each fuzzer and check their efficiency
     for profile in profiles:
@@ -687,9 +686,9 @@ def extract_highlevel_guidance(
         reached_funcs = reachable_funcs - uncovered_reachable_funcs
         cov_reach_proportion = (float(reached_funcs) / float(reachable_funcs)) * 100.0
         if cov_reach_proportion < 30.0:
-            html_string += f"""<li>Fuzzer { profile.binary_executable } is blocked: runtime coverage only covers {"%.5s%%"%(str(cov_reach_proportion))} of its reachable functions.</li>"""
+            html_string += f"""<div class=\"line-wrapper\"><span class=\"high-level-conclusion red-conclusion\">Fuzzer { profile.binary_executable } is blocked: runtime coverage only covers {"%.5s%%"%(str(cov_reach_proportion))} of its reachable functions.</span></div>"""
 
-    html_string += "</ul>"
+    html_string += "</div>"
 
     return html_string
 

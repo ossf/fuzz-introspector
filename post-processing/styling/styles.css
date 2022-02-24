@@ -314,3 +314,26 @@ input[type="checkbox"] {
 .collapsible-content p {
   margin-bottom: 0;
 }
+.high-level-conclusions-wrapper {
+	display: flex;
+	flex-direction: column;
+}
+.high-level-conclusions-wrapper .line-wrapper {
+    margin-bottom: 23px;
+}
+.high-level-conclusion {
+	border-radius: 5px;
+    padding: 10px 20px;
+}
+.high-level-conclusion.yellow-conclusion {
+    background: #fffddb;
+    color: #916f00;
+}
+.high-level-conclusion.red-conclusion {
+    background: #ffd7d4;
+    color: #820900;
+}
+.high-level-conclusion.green-conclusion {
+    background: #eaffd4;
+    color: #3b7300;
+}
