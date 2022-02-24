@@ -679,6 +679,16 @@ def extract_highlevel_guidance(
         sentence = "Fuzzers reach less than 25% of functions. Improvements need to be made"
     html_string += "<li>%s</li>"%(sentence)
 
+
+    # Go through each fuzzer and check their efficiency
+    for profile in profiles:
+        uncovered_reachable_funcs = len(profile.get_cov_uncovered_reachable_funcs())
+        reachable_funcs = len(profile.functions_reached_by_fuzzer)
+        reached_funcs = reachable_funcs - uncovered_reachable_funcs
+        cov_reach_proportion = (float(reached_funcs) / float(reachable_funcs)) * 100.0
+        if cov_reach_proportion < 30.0:
+            html_string += f"""<li>Fuzzer { profile.binary_executable } is blocked: runtime coverage only covers {"%.5s%%"%(str(cov_reach_proportion))} of its reachable functions.</li>"""
+
     html_string += "</ul>"
 
     return html_string
