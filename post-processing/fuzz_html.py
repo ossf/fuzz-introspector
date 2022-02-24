@@ -273,7 +273,8 @@ def create_all_function_table(
 
 def create_top_summary_info(
         tables: List[str],
-        project_profile: fuzz_data_loader.MergedProjectProfile) -> str:
+        project_profile: fuzz_data_loader.MergedProjectProfile,
+        conclusions, extract_conclusion) -> str:
     html_string = ""
 
     # Get complexity and function counts
@@ -293,6 +294,26 @@ def create_top_summary_info(
         "%.5s%% (%d / %d)"%(unreached_complexity_percentage, complexity_unreached, int(total_complexity))
         ])
     html_string += ("</table>\n")
+
+    # Add conclusion
+    if extract_conclusion:
+        if reached_percentage > 90.0:
+            warning = 10
+            sentence = "Fuzzers reach more than 90% of functions. This is great"
+        elif reached_percentage > 75.0:
+            warning = 8
+            sentence = "Fuzzers reach more than 75% of functions. This is good"
+        elif reached_percentage > 50.0:
+            warning = 6
+            sentence = "Fuzzers reach more than 50% of functions. This is good, but improvements can be made"
+        elif reached_percentage > 25.0:
+            warning = 4
+            sentence = "Fuzzers reach more than 25% of functions. Improvements should be made"
+        else:
+            warning = 2
+            sentence = "Fuzzers reach less than 25% of functions. Improvements need to be made"
+        conclusions.append((warning, sentence))
+
     return html_string
 
 
@@ -397,7 +418,8 @@ def create_fuzzer_detailed_section(
         project_profile: fuzz_data_loader.MergedProjectProfile,
         coverage_url: str,
         git_repo_url: str,
-        basefolder: str) -> str:
+        basefolder: str,
+        conclusions, extract_conclusion) -> str:
     html_string = ""
     fuzzer_filename = profile.fuzzer_source_file
     html_string += html_add_header_with_link("Fuzzer: %s" % (
@@ -438,6 +460,10 @@ def create_fuzzer_detailed_section(
     reachable_funcs = len(profile.functions_reached_by_fuzzer)
     reached_funcs = reachable_funcs - uncovered_reachable_funcs
     cov_reach_proportion = (float(reached_funcs) / float(reachable_funcs)) * 100.0
+
+    if extract_conclusion:
+        if cov_reach_proportion < 30.0:
+            conclusions.append((2, f"""Fuzzer { profile.binary_executable } is blocked: runtime coverage only covers {"%.5s%%"%(str(cov_reach_proportion))} of its reachable functions."""))
 
     html_string += f"""<br>
 Uncovered functions that are reachable:{uncovered_reachable_funcs}
@@ -484,7 +510,8 @@ def handle_analysis_3(
             profiles: List[fuzz_data_loader.FuzzerProfile],
             basefolder: str,
             git_repo_url: str,
-            coverage_url: str) -> str:
+            coverage_url: str,
+            conclusions) -> str:
     l.info("In analysis 3")
 
     functions_of_interest = fuzz_analysis.analysis_coverage_runtime_analysis(profiles, project_profile)
@@ -519,7 +546,8 @@ def handle_analysis_2(
             profiles: List[fuzz_data_loader.FuzzerProfile],
             basefolder: str,
             git_repo_url: str,
-            coverage_url: str) -> str:
+            coverage_url: str,
+            conclusions) -> str:
     l.info("In analysis 2")
 
     html_string = ""
@@ -560,7 +588,8 @@ def handle_analysis_1(
             profiles: List[fuzz_data_loader.FuzzerProfile],
             basefolder: str,
             git_repo_url: str,
-            coverage_url: str) -> str:
+            coverage_url: str,
+            conclusions) -> str:
     """
     Performs an analysis based on optimal target selection.
 
@@ -584,7 +613,7 @@ def handle_analysis_1(
         project_profile)
     html_string += "<p>If you implement fuzzers that target the <a href=\"#Remaining-optimal-interesting-functions\">remaining optimal functions</a> then the reachability will be:</p>"
     tables.append(f"myTable{len(tables)}")
-    html_string += create_top_summary_info(tables, new_profile)
+    html_string += create_top_summary_info(tables, new_profile, conclusions, False)
 
     # Table with details about optimal target functions
     html_string += html_add_header_with_link(
@@ -636,7 +665,7 @@ def handle_analysis_1(
     html_string += html_add_header_with_link(
         "Function reachability if adopted", 3, toc_list)
     tables.append("myTable%d" % (len(tables)))
-    html_string += create_top_summary_info(tables, new_profile)
+    html_string += create_top_summary_info(tables, new_profile, conclusions, False)
 
     # Table with details about all functions in the project in case the
     # suggested fuzzers are implemented.
@@ -649,43 +678,23 @@ def handle_analysis_1(
     return html_string
 
 
-def extract_highlevel_guidance(
-	    toc_list: List[Tuple[str, str, int]],
-            tables: List[str],
-            project_profile: fuzz_data_loader.MergedProjectProfile,
-            profiles: List[fuzz_data_loader.FuzzerProfile],
-            basefolder: str,
-            git_repo_url: str,
-            coverage_url: str) -> str:
+def extract_highlevel_guidance(conclusions) -> str:
+    """
+    Creates colorful boxes for the conlusions made throughout the analysis
+    """
     l.info("Extracting high level guidance")
     html_string = ""
-
     html_string += "<div class=\"high-level-conclusions-wrapper\">"
-
-    # Statement about reachability, based on functions.
-    total_functions, reached_func_count, unreached_func_count, reached_percentage, unreached_percentage = project_profile.get_function_summaries()
-    sentence = ""
-    if reached_percentage > 90.0:
-        sentence = "Fuzzers reach more than 90% of functions. This is great"
-    elif reached_percentage > 75.0:
-        sentence = "Fuzzers reach more than 75% of functions. This is good"
-    elif reached_percentage > 50.0:
-        sentence = "Fuzzers reach more than 50% of functions. This is good, but improvements can be made"
-    elif reached_percentage > 25.0:
-        sentence = "Fuzzers reach more than 25% of functions. Improvements should be made"
-    else:
-        sentence = "Fuzzers reach less than 25% of functions. Improvements need to be made"
-    html_string += "<div class=\"line-wrapper\"><span class=\"high-level-conclusion red-conclusion\">%s</span></div>"%(sentence)
-
-    # Go through each fuzzer and check their efficiency
-    for profile in profiles:
-        uncovered_reachable_funcs = len(profile.get_cov_uncovered_reachable_funcs())
-        reachable_funcs = len(profile.functions_reached_by_fuzzer)
-        reached_funcs = reachable_funcs - uncovered_reachable_funcs
-        cov_reach_proportion = (float(reached_funcs) / float(reachable_funcs)) * 100.0
-        if cov_reach_proportion < 30.0:
-            html_string += f"""<div class=\"line-wrapper\"><span class=\"high-level-conclusion red-conclusion\">Fuzzer { profile.binary_executable } is blocked: runtime coverage only covers {"%.5s%%"%(str(cov_reach_proportion))} of its reachable functions.</span></div>"""
-
+    for lvl, sentence in conclusions:
+        conclusion = ""
+        if lvl < 5:
+            conclusion += "<div class=\"line-wrapper\"><span class=\"high-level-conclusion red-conclusion\">"
+        elif lvl < 8:
+            conclusion += "<div class=\"line-wrapper\"><span class=\"high-level-conclusion yellow-conclusion\">"
+        else:
+            conclusion += "<div class=\"line-wrapper\"><span class=\"high-level-conclusion green-conclusion\">"
+        conclusion += "%s</span></div>"%(sentence)
+        html_string += conclusion
     html_string += "</div>"
 
     return html_string
@@ -703,6 +712,7 @@ def create_html_report(
     """
     tables = list()
     toc_list = list()
+    conclusions = []
 
     l.info(" - Creating HTML report")
 
@@ -721,31 +731,23 @@ def create_html_report(
     # Reachability overview
     #############################################
     l.info(" - Creating reachability overview table")
-    html_report_core = html_add_header_with_link("Reachability overview", 3, toc_list)
+    html_report_top = html_add_header_with_link("Reachability overview", 3, toc_list)
     tables.append("myTable%d" % (len(tables)))
-    html_report_core += "<p class='no-top-margin'>This is the overview of reachability by the existing fuzzers in the project</p>"
-    html_report_core += create_top_summary_info(tables, project_profile)
+    html_report_top += "<p class='no-top-margin'>This is the overview of reachability by the existing fuzzers in the project</p>"
+    html_report_top += create_top_summary_info(tables, project_profile, conclusions, True)
 
 
     #############################################
     # Section with high level suggestions
     #############################################
-
-    html_report_core += html_add_header_with_link(
+    html_report_top += html_add_header_with_link(
         "High level conclusions", 2, toc_list)
-    html_report_core += extract_highlevel_guidance(toc_list,
-                tables,
-                project_profile,
-                profiles,
-                basefolder,
-                git_repo_url,
-                coverage_url)
 
     #############################################
     # Table with overview of all fuzzers.
     #############################################
     l.info(" - Creating table with overview of all fuzzers")
-    html_report_core += html_add_header_with_link("Fuzzers overview", 3, toc_list)
+    html_report_core = html_add_header_with_link("Fuzzers overview", 3, toc_list)
     tables.append("myTable%d" % (len(tables)))
     html_report_core += create_overview_table(tables, profiles)
 
@@ -801,7 +803,7 @@ def create_html_report(
     l.info(" - Creating section with details about each fuzzer")
     html_report_core += html_add_header_with_link("Fuzzer details", 1, toc_list)
     for profile_idx in range(len(profiles)):
-        html_report_core += create_fuzzer_detailed_section(profiles[profile_idx], toc_list, tables, profile_idx, project_profile, coverage_url, git_repo_url, basefolder)
+        html_report_core += create_fuzzer_detailed_section(profiles[profile_idx], toc_list, tables, profile_idx, project_profile, coverage_url, git_repo_url, basefolder, conclusions, True)
 
 
     html_report_core += "<hr>"
@@ -828,11 +830,17 @@ def create_html_report(
                 profiles,
                 basefolder,
                 git_repo_url,
-                coverage_url)
+                coverage_url,
+                conclusions)
 
     #############################################
     # End of optional analyses
     #############################################
+
+    #############################################
+    # Create top level conclusions
+    #############################################
+    html_report_top += extract_highlevel_guidance(conclusions)
 
     ## Wrap up the HTML generation
     # Close the content div and content_wrapper
@@ -870,7 +878,7 @@ def create_html_report(
     html_toc_string = html_get_table_of_contents(toc_list)
 
     # Assemble the final HTML report and write it to a file.
-    html_full_doc = html_header + html_toc_string + html_body_start + html_overview + html_report_core + html_body_end + html_footer
+    html_full_doc = html_header + html_toc_string + html_body_start + html_overview + html_report_top + html_report_core + html_body_end + html_footer
 
     # Pretty print the html document
     soup = bs(html_full_doc, "lxml")
