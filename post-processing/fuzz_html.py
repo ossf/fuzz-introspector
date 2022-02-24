@@ -107,6 +107,7 @@ def create_horisontal_calltree_image(image_name: str, profile: fuzz_data_loader.
     l.info("- saving image")
     plt.title(image_name.split(".")[0])
     plt.savefig(image_name)
+    l.info("- image saved")
 
 def create_table_head(table_head: str, items: List[str]) -> str:
     html_str = f"<table id='{table_head}' class='cell-border compact stripe'><thead><tr>\n"
@@ -368,6 +369,7 @@ def create_fuzz_blocker_table(
     """
     Creates HTML string for table showing fuzz blockers.
     """
+    l.info("Creating fuzz blocker table")
     nodes_sorted_by_red_ahead = list(reversed(list(sorted(fuzz_cfg_load.extract_all_callsites(profile.function_call_depths), key=lambda x:x.cov_forward_reds))))
     max_idx = 10
     html_table_string = create_table_head(tables[-1], ['Blocked nodes', 'Calltree index', 'Parent function', 'Callsite', 'Largest blocked function'])
@@ -390,6 +392,7 @@ def create_calltree(
     """
     Creates the HTML of the calltree. Returns the HTML as a string.
     """
+    l.info("Creating calltree HTML code")
     # Generate HTML for the calltree
     calltree_html_string = "<div class='section-wrapper'>"
     for node in fuzz_cfg_load.extract_all_callsites(profile.function_call_depths):
@@ -417,13 +420,14 @@ def create_calltree(
   <span class="coverage-line-filename"> {func_href} <a href="{callsite_link}">[call site2]</a>[calltree idx: {ct_idx_str}]<span></span>
 </div>"""
     calltree_html_string += "</div>"
+    l.info("Calltree created")
 
     # Write the HTML to a file called calltree_view_XX.html where XX is a counter.
     calltree_file_idx = 0
     calltree_html_file = "calltree_view_%d.html"%(calltree_file_idx)
     while os.path.isfile(calltree_html_file):
         calltree_file_idx += 1
-        fname = "calltree_view_%d.html"%(calltree_file_idx)
+        calltree_html_file = "calltree_view_%d.html"%(calltree_file_idx)
     write_wrapped_html_file(calltree_html_string, calltree_html_file)
 
     return calltree_html_file
