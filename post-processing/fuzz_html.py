@@ -659,8 +659,6 @@ def extract_highlevel_guidance(
             coverage_url: str) -> str:
     l.info("Extracting high level guidance")
     html_string = ""
-    html_string += html_add_header_with_link(
-        "High level conclusions", 2, toc_list)
 
     html_string += "<div class=\"high-level-conclusions-wrapper\">"
 
@@ -713,26 +711,29 @@ def create_html_report(
     html_header = html_get_header()
 
     # Start creation of core html
-    html_string = '<div class="content-section">'
+    html_body_start = '<div class="content-section">'
+    html_overview = html_add_header_with_link("Project overview", 1, toc_list)
 
     # Project overview
-    html_string += html_add_header_with_link("Project overview", 1, toc_list)
-    html_string += html_add_header_with_link("Project information", 2, toc_list)
+    html_overview += html_add_header_with_link("Project information", 2, toc_list)
 
     #############################################
     # Reachability overview
     #############################################
     l.info(" - Creating reachability overview table")
-    html_string += html_add_header_with_link("Reachability overview", 3, toc_list)
+    html_report_core = html_add_header_with_link("Reachability overview", 3, toc_list)
     tables.append("myTable%d" % (len(tables)))
-    html_string += "<p class='no-top-margin'>This is the overview of reachability by the existing fuzzers in the project</p>"
-    html_string += create_top_summary_info(tables, project_profile)
+    html_report_core += "<p class='no-top-margin'>This is the overview of reachability by the existing fuzzers in the project</p>"
+    html_report_core += create_top_summary_info(tables, project_profile)
 
 
     #############################################
     # Section with high level suggestions
     #############################################
-    html_string += extract_highlevel_guidance(toc_list,
+
+    html_report_core += html_add_header_with_link(
+        "High level conclusions", 2, toc_list)
+    html_report_core += extract_highlevel_guidance(toc_list,
                 tables,
                 project_profile,
                 profiles,
@@ -744,18 +745,18 @@ def create_html_report(
     # Table with overview of all fuzzers.
     #############################################
     l.info(" - Creating table with overview of all fuzzers")
-    html_string += html_add_header_with_link("Fuzzers overview", 3, toc_list)
+    html_report_core += html_add_header_with_link("Fuzzers overview", 3, toc_list)
     tables.append("myTable%d" % (len(tables)))
-    html_string += create_overview_table(tables, profiles)
+    html_report_core += create_overview_table(tables, profiles)
 
     #############################################
     # Table with details about all functions in the target project.
     #############################################
     l.info(" - Creating table with information about all functions in target")
-    html_string += html_add_header_with_link(
+    html_report_core += html_add_header_with_link(
         "Project functions overview", 2, toc_list)
     tables.append("myTable%d" % (len(tables)))
-    html_string += """<p>
+    html_report_core += """<p>
     In the following function table the context of the columns have specific meaning. The description of the columnets are as follows:
 <table>
     <thead>
@@ -789,26 +790,26 @@ def create_html_report(
 </table>
 <br>
 </p>"""
-    html_string += create_all_function_table(
+    html_report_core += create_all_function_table(
         tables, project_profile, coverage_url, git_repo_url, basefolder)
 
-    html_string += "<hr>"
+    html_report_core += "<hr>"
 
     #############################################
     # Section with details about each fuzzer, including calltree.
     #############################################
     l.info(" - Creating section with details about each fuzzer")
-    html_string += html_add_header_with_link("Fuzzer details", 1, toc_list)
+    html_report_core += html_add_header_with_link("Fuzzer details", 1, toc_list)
     for profile_idx in range(len(profiles)):
-        html_string += create_fuzzer_detailed_section(profiles[profile_idx], toc_list, tables, profile_idx, project_profile, coverage_url, git_repo_url, basefolder)
+        html_report_core += create_fuzzer_detailed_section(profiles[profile_idx], toc_list, tables, profile_idx, project_profile, coverage_url, git_repo_url, basefolder)
 
 
-    html_string += "<hr>"
+    html_report_core += "<hr>"
     #############################################
     # Handle optional analyses
     #############################################
     l.info(" - Handling optional analyses")
-    html_string += html_add_header_with_link(
+    html_report_core += html_add_header_with_link(
         "Analyses and suggestions", 1, toc_list)
 
     # Ordering here is important as top analysis will be shown first in the report
@@ -820,7 +821,7 @@ def create_html_report(
 
     for analysis in analysis_array:
         if analysis.name in analyses_to_run:
-            html_string += analysis.analysis_func(
+            html_report_core += analysis.analysis_func(
                 toc_list,
                 tables,
                 project_profile,
@@ -835,33 +836,33 @@ def create_html_report(
 
     ## Wrap up the HTML generation
     # Close the content div and content_wrapper
-    html_string += "</div>\n</div>\n"
+    html_body_end = "</div>\n</div>\n"
 
     # Add PrismJs for code snippet styling
-    html_string += "<script src=\"prism.js\"></script>"
-    html_string += "<script src=\"clike.js\"></script>"
-    html_string += "<script src=\"custom.js\"></script>"
+    html_body_end += "<script src=\"prism.js\"></script>"
+    html_body_end += "<script src=\"clike.js\"></script>"
+    html_body_end += "<script src=\"custom.js\"></script>"
 
     ###########################
     # Footer
     ###########################
-    html_string += "<script>\n"
+    html_footer = "<script>\n"
 
     # Create array of all table ids
-    html_string += "var tableIds = ["
+    html_footer += "var tableIds = ["
     counter = 0
     for tablename in tables:
-        html_string += "'%s'"%(tablename)
+        html_footer += "'%s'"%(tablename)
         if counter!=len(tables)-1:
-            html_string += ", "
+            html_footer += ", "
         else:
-            html_string += "];\n"
+            html_footer += "];\n"
         counter += 1
 
     # Closing tags
-    html_string += ("</script>\n")
-    html_string += ("</body>\n")
-    html_string += ("</html>\n")
+    html_footer += ("</script>\n")
+    html_footer += ("</body>\n")
+    html_footer += ("</html>\n")
 
     ###########################
     # Fix up table of contents.
@@ -869,7 +870,7 @@ def create_html_report(
     html_toc_string = html_get_table_of_contents(toc_list)
 
     # Assemble the final HTML report and write it to a file.
-    html_full_doc = html_header + html_toc_string + html_string
+    html_full_doc = html_header + html_toc_string + html_body_start + html_overview + html_report_core + html_body_end + html_footer
 
     # Pretty print the html document
     soup = bs(html_full_doc, "lxml")
