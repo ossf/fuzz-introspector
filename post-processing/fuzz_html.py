@@ -56,12 +56,13 @@ def create_horisontal_calltree_image(image_name: str, profile: fuzz_data_loader.
     each element on the x-axis shows a node in the calltree in the form
     of a rectangle. The rectangle is red if not visited and green if visited.
     """
-    l.info("Creating image %s"%(image_name))
 
+    l.info("Creating image %s"%(image_name))
     # Extract color sequence
     color_list = []
     for node in fuzz_cfg_load.extract_all_callsites(profile.function_call_depths):
         color_list.append(node.cov_color)
+    l.info("- extracted the callsites (%d nodes)"%(len(color_list)))
 
     # Show one read rectangle if the list is empty. An alternative is
     # to not include the image at all.
@@ -94,6 +95,7 @@ def create_horisontal_calltree_image(image_name: str, profile: fuzz_data_loader.
             curr_start_x += curr_size
             curr_color = color_list[i]
             curr_size = 1.0
+    l.info("- iterated over color list")
 
     # Plot the last case
     final_start_x = curr_start_x * multiplier
@@ -102,6 +104,7 @@ def create_horisontal_calltree_image(image_name: str, profile: fuzz_data_loader.
     ax.add_patch(Rectangle((final_start_x, 0.0), final_size, 1, color=curr_color))
 
     # Save the image
+    l.info("- saving image")
     plt.title(image_name.split(".")[0])
     plt.savefig(image_name)
 
@@ -282,7 +285,6 @@ def create_top_summary_info(
     total_complexity, complexity_reached, complexity_unreached, reached_complexity_percentage, unreached_complexity_percentage = project_profile.get_complexity_summaries()
     html_string += create_table_head(tables[-1],
                                      ["", "Reached", "Unreached"])
-
     html_string += html_table_add_row([
         "Functions", 
         "%.5s%% (%d / %d)"%(str(reached_percentage), reached_func_count, total_functions),
@@ -297,6 +299,7 @@ def create_top_summary_info(
 
     # Add conclusion
     if extract_conclusion:
+        # Functions reachability
         if reached_percentage > 90.0:
             warning = 10
             sentence = "Fuzzers reach more than 90% of functions. This is great"
@@ -312,6 +315,21 @@ def create_top_summary_info(
         else:
             warning = 2
             sentence = "Fuzzers reach less than 25% of functions. Improvements need to be made"
+        conclusions.append((warning, sentence))
+
+        # Complexity reachability
+        if reached_complexity_percentage > 90.0:
+            warning = 10
+            sentence = "Fuzzers reach more than 90% complexity. This is great"
+        elif reached_complexity_percentage > 70.0:
+            warning = 8
+            sentence = "Fuzzers reach more than 70% complexity. This is pretty nice"
+        elif reached_complexity_percentage > 50.0:
+            warning = 6
+            sentence = "Fuzzers reach more than 50% complexity. This is okay"
+        else:
+            warning = 2
+            sentence = "Fuzzers reach less than 50% complexity. Improvements could be made"
         conclusions.append((warning, sentence))
 
     return html_string
