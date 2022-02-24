@@ -423,43 +423,39 @@ def create_fuzzer_detailed_section(
                 ["Function name", "source code lines", "source lines hit", "percentage hit"])
 
     for funcname in profile.coverage.covmap:
-        try:
-            total_func_lines, hit_lines = profile.coverage.get_hit_summary(fuzz_utils.demangle_cpp_func(funcname))
-            hit_percentage = (hit_lines / total_func_lines) * 100.0
-        except:
-            hit_percentage = 0.0
-        try:
-            total_func_lines, hit_lines = profile.coverage.get_hit_summary(fuzz_utils.demangle_cpp_func(funcname))
+        total_func_lines, hit_lines, hit_percentage = profile.get_cov_metrics(fuzz_utils.demangle_cpp_func(funcname))
+        if hit_percentage != None:
             html_string += html_table_add_row([
                 funcname,
                 total_func_lines,
                 hit_lines,
                 "%.5s"%(str(hit_percentage))+"%"])
-        except:
+        else:
             l.error("Could not write coverage line for function %s"%(funcname))
     html_string += "</table>"
 
     # Get how many functions are covered relative to reachability
-    html_string += "<br>"
     uncovered_reachable_funcs = len(profile.get_cov_uncovered_reachable_funcs())
     reachable_funcs = len(profile.functions_reached_by_fuzzer)
     reached_funcs = reachable_funcs - uncovered_reachable_funcs
-
-    html_string += "Uncovered functions that are reachable: %s"%(uncovered_reachable_funcs)
-    html_string += "<br>"
-    html_string += "Reachable functions: %s"%(reachable_funcs)
-    html_string += "<br>"
     cov_reach_proportion = (float(reached_funcs) / float(reachable_funcs)) * 100.0
-    html_string += "Percentage of reachable functions covered: %.5s%%"%(str(cov_reach_proportion))
 
+    html_string += f"""<br>
+Uncovered functions that are reachable:{uncovered_reachable_funcs}
+<br>
+Reachable functions: {reachable_funcs}
+<br>
+Percentage of reachable functions covered: {"%.5s%%"%(str(cov_reach_proportion))}
+<br>
+"""
 
     # Calltree generation
     html_string += html_add_header_with_link(
         "Call tree overview", 3, toc_list, link=f"call_tree_{curr_tt_profile}")
-    html_string += ("<p class='no-top-margin'>The following is the call tree with color coding for which "
-                    "functions are hit/not hit. This info is based on the coverage "
-                    "achieved of all fuzzers together and not just this specific "
-                    "fuzzer. This should change in the future to be per-fuzzer-basis.</p>")
+    html_string += """<p class='no-top-margin'>The following is the call tree with color coding for which 
+functions are hit/not hit. This info is based on the coverage 
+achieved of all fuzzers together and not just this specific 
+fuzzer. This should change in the future to be per-fuzzer-basis.</p>"""
     image_name = "%s_colormap.png"%(fuzzer_filename.replace(" ", "").split("/")[-1])
     html_string += "<img src=\"%s\">"%(image_name)
 

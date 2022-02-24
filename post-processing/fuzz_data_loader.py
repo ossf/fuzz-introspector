@@ -221,6 +221,14 @@ class FuzzerProfile:
                 uncovered_funcs.append(funcname)
         return uncovered_funcs
 
+    def get_cov_metrics(self, funcname: str) -> [int, int, float]:
+        try:
+            total_func_lines, hit_lines = self.coverage.get_hit_summary(funcname)
+            hit_percentage = (hit_lines / total_func_lines) * 100.0
+            return total_func_lines, hit_lines, hit_percentage
+        except:
+            return None, None, None
+
 class MergedProjectProfile:
     """
     Class for storing information about all fuzzers combined in a given project.
