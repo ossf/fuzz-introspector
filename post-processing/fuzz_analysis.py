@@ -38,8 +38,7 @@ def overlay_calltree_with_coverage(
         project_profile: fuzz_data_loader.MergedProjectProfile,
         coverage_url: str,
         git_repo_url: str,
-        basefolder: str,
-        image_name: str) -> None:
+        basefolder: str) -> None:
     # We use the callstack to keep track of all function parents. We need this
     # when looking up if a callsite was hit or not. This is because the coverage
     # information about a callsite is located in coverage data of the function

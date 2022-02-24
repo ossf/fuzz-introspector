@@ -325,9 +325,6 @@ def create_calltree(
     Creates the HTML of the calltree. Returns the HTML as a string.
     """
 
-    # Overlay statically extracted calltree with runtime coverage information
-    fuzz_analysis.overlay_calltree_with_coverage(profile, project_profile, coverage_url, git_repo_url, basefolder, image_name)
- 
     # Highlight the ten most useful places
     nodes_sorted_by_red_ahead = list(reversed(list(sorted(fuzz_cfg_load.extract_all_callsites(profile.function_call_depths), key=lambda x:x.cov_forward_reds))))
     max_idx = 10
@@ -339,16 +336,10 @@ def create_calltree(
         max_idx -= 1
     html_table_string += "</table>"
 
-    # Generate calltree overlay HTML
-    # Open a new file for the calltree.
+    # Generate HTML for the calltree
     calltree_html_string = "<div class='section-wrapper'>"
     for node in fuzz_cfg_load.extract_all_callsites(profile.function_call_depths):
-
         demangled_name = fuzz_utils.demangle_cpp_func(node.dst_function_name)
-        color_to_be = node.cov_color
-        callsite_link = node.cov_callsite_link
-        link = node.cov_link
-
         # We may not want to show certain functions at times, e.g. libc functions
         # in case it bloats the calltree
         #libc_funcs = { "free" }
@@ -357,31 +348,29 @@ def create_calltree(
         if avoid:
             continue
 
-        # Create the HTML code for the line in the calltree
+        # Prepare strings needed in the HTML
+        color_to_be = node.cov_color
+        callsite_link = node.cov_callsite_link
+        link = node.cov_link
         ct_idx_str = "%s%s"%("0"*(len("00000") - len(str(node.cov_ct_idx))), str(node.cov_ct_idx))
-
         indentation = int(node.depth)*16
         horisontal_spacing = "&nbsp;"*4*int(node.depth)
-        calltree_html_string += "<div style='margin-left: %spx' class=\"%s-background\">"%(str(indentation), color_to_be)
-        calltree_html_string += "<span class=\"coverage-line-inner\">%d <code class=\"language-clike\">%s</code>"%(int(node.depth), demangled_name)
+        # Only display [function] link if we have, otherwhise show no [function] text.
+        func_href = "<a href=\"%s\">[function]</a>"%(link) if node.dst_function_source_file.replace(" ","") != "/" else ""
 
-        if node.dst_function_source_file.replace(" ","") == "/":
-            func_href = ""
-        else:
-            func_href = "<a href=\"%s\">[function]</a>"%(link)
-
-        calltree_html_string += "<span class=\"coverage-line-filename\">%s<a href=\"%s\">[call site2]</a>[calltree idx: %s]<span></span></div>\n"%(func_href, callsite_link, ct_idx_str)
+        calltree_html_string += f"""<div style='margin-left: {indentation}px' class="{color_to_be}-background">
+  <span class="coverage-line-inner"> {node.depth} <code class="language-clike"> {demangled_name} </code>
+  <span class="coverage-line-filename"> {func_href} <a href="{callsite_link}">[call site2]</a>[calltree idx: {ct_idx_str}]<span></span>
+</div>"""
     calltree_html_string += "</div>"
 
+    # Write the HTML to a file called calltree_view_XX.html where XX is a counter.
     calltree_file_idx = 0
     fname = "calltree_view_%d.html"%(calltree_file_idx)
     while os.path.isfile(fname):
         calltree_file_idx += 1
         fname = "calltree_view_%d.html"%(calltree_file_idx)
     write_wrapped_html_file(calltree_html_string, fname)
-
-    # Add link to the calltree report
-    #html_string += "<h2><a href=\"%s\">Calltree view</a></h2>"%(fname)
 
     # Create fixed-width color sequence image
     color_sequence = []

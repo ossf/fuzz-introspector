@@ -18,6 +18,7 @@ import yaml
 import logging
 import argparse
 
+import fuzz_analysis
 import fuzz_data_loader
 import fuzz_html
 import fuzz_utils
@@ -67,6 +68,15 @@ def run_analysis_on_dir(target_folder,
     l.info("[+] Refining profiles")
     for profile in profiles:
         profile.refine_paths(project_profile.basefolder)
+
+    # Overlay coverage in each profile
+    for profile in profiles:
+        fuzz_analysis.overlay_calltree_with_coverage(
+                    profile,
+                    project_profile,
+                    coverage_url,
+                    git_repo_url,
+                    project_profile.basefolder)
 
     print("%s"%(str(analyses_to_run)))
 
