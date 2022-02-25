@@ -187,7 +187,7 @@ def create_overview_table(tables: List[str],
                               profiles: List[fuzz_data_loader.FuzzerProfile]) -> str:
     """Table with an overview of all the fuzzers"""
     html_string = create_table_head(tables[-1],
-                                    ["Fuzzer binary",
+                                    ["Fuzzer",
                                      "Fuzzer filename",
                                      "Functions Reached",
                                      "Functions unreached",
@@ -447,8 +447,9 @@ def create_fuzzer_detailed_section(
         conclusions, extract_conclusion) -> str:
     html_string = ""
     fuzzer_filename = profile.fuzzer_source_file
+
     html_string += html_add_header_with_link("Fuzzer: %s" % (
-        fuzzer_filename.replace(" ", "").split("/")[-1]), 2, toc_list)
+        profile.get_key()), 2, toc_list)
 
     # Table showing which files this fuzzer hits.
     html_string += html_add_header_with_link(

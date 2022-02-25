@@ -293,7 +293,7 @@ class MergedProjectProfile:
                     if fuzzer_profile.reaches(fd.function_name):
                         fd.hitcount += 1
                         fuzzer_filename = fuzzer_profile.fuzzer_source_file.replace(" ", "").split("/")[-1]
-                        fd.reached_by_fuzzers.append(fuzzer_filename)
+                        fd.reached_by_fuzzers.append(fuzzer_profile.get_key())
                     if fd.function_name not in self.all_functions:
                         self.all_functions[fd.function_name] = fd
 
@@ -464,6 +464,9 @@ def add_func_to_reached_and_clone(merged_profile_old: MergedProjectProfile,
             continue
         f = merged_profile.all_functions[func_name]
         f.hitcount += 1
+
+        # This seems incorrect? reached_by_fuzzers is fuzzer names not function names?
+        # TODO: investigate further
         f.reached_by_fuzzers.append(func_to_add.function_name)
 
     # Recompute all analysis that is based on hitcounts in all functions as hitcount has
