@@ -371,6 +371,9 @@ def create_fuzz_blocker_table(
     """
     l.info("Creating fuzz blocker table")
     nodes_sorted_by_red_ahead = list(reversed(list(sorted(fuzz_cfg_load.extract_all_callsites(profile.function_call_depths), key=lambda x:x.cov_forward_reds))))
+    #l.info("All blocked nodes:")
+    #for n1 in nodes_sorted_by_red_ahead:
+    #    l.info("forwards %d, parent: %s"%(n1.cov_forward_reds, n1.cov_parent))
     max_idx = 10
     html_table_string = create_table_head(tables[-1], ['Blocked nodes', 'Calltree index', 'Parent function', 'Callsite', 'Largest blocked function'])
     for node in nodes_sorted_by_red_ahead:

@@ -145,9 +145,13 @@ def overlay_calltree_with_coverage(
 
     # Extract data about which nodes unlocks data
     all_callsites = fuzz_cfg_load.extract_all_callsites(profile.function_call_depths)
+    prev_end = -1
     for idx1 in range(len(all_callsites)):#range(len(profile.function_call_depths)):
         n1 = all_callsites[idx1]
-        if n1.cov_hitcount == 0:
+        prev = None
+        if idx1 > 0:
+            prev = all_callsites[idx1-1]
+        if n1.cov_hitcount == 0 and ((prev != None and prev.depth <= n1.depth) or idx1 < prev_end):
             n1.cov_forward_reds = 0
             n1.cov_largest_blocked_func = "none"
             continue
@@ -183,7 +187,8 @@ def overlay_calltree_with_coverage(
 
             forward_red += 1
             idx2 += 1
-
+        prev_end = idx2-1
+        #l.info("Assigning forward red: %d for index %d"%(forward_red, idx1))
         n1.cov_forward_reds = forward_red
         n1.cov_largest_blocked_func = largest_blocked_name
 
