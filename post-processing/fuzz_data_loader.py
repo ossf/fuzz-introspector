@@ -125,6 +125,23 @@ class FuzzerProfile:
     def reaches(self, func_name: str) -> bool:
         return func_name in self.functions_reached_by_fuzzer
 
+    def correlate_executable_name(self, correlation_dict):
+        for elem in correlation_dict['pairings']:
+            if os.path.basename(self.introspector_data_file) in "%s.data"%(elem['fuzzer_log_file']):
+                self.binary_executable = "%s"%(elem['executable_path'])
+                l.info("Correlated %s with %s"%(
+                    os.path.basename(self.introspector_data_file),
+                    "%s.data"%(elem['fuzzer_log_file'])))
+
+    def get_key(self):
+        """
+        Returns the "key" we use to identify this Fuzzer profile.
+        """
+        if self.binary_executable != None:
+            return os.path.basename(self.binary_executable)
+
+        return self.fuzzer_source_file
+
     def set_all_unreached_functions(self):
         """
         sets self.functions_unreached_by_fuzzer to all functiosn in self.all_class_functions

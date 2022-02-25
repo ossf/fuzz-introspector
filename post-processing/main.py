@@ -53,12 +53,7 @@ def run_analysis_on_dir(target_folder,
     correlation_dict = fuzz_utils.data_file_read_yaml(correlation_file)
     if correlation_dict != None and "pairings" in correlation_dict:
         for profile in profiles:
-            for elem in correlation_dict['pairings']:
-                if os.path.basename(profile.introspector_data_file) in "%s.data"%(elem['fuzzer_log_file']):
-                    profile.binary_executable = "%s"%(elem['executable_path'])
-                    l.info("Matched %s with %s"%(
-                        os.path.basename(profile.introspector_data_file),
-                        "%s.data"%(elem['fuzzer_log_file'])))
+            profile.correlate_executable_name(correlation_dict)
     else:
         l.info("- Nothing to correlate")
 

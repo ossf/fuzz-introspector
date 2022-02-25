@@ -204,7 +204,7 @@ def create_overview_table(tables: List[str],
                 max_depth = cs.depth
 
         html_string += html_table_add_row([
-            profile.binary_executable,
+            profile.get_key(),
             fuzzer_filename,
             len(profile.functions_reached_by_fuzzer),
             len(profile.functions_unreached_by_fuzzer),
