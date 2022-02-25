@@ -489,7 +489,7 @@ def create_fuzzer_detailed_section(
 
     if extract_conclusion:
         if cov_reach_proportion < 30.0:
-            conclusions.append((2, f"""Fuzzer { profile.binary_executable } is blocked: runtime coverage only covers {"%.5s%%"%(str(cov_reach_proportion))} of its reachable functions."""))
+            conclusions.append((2, f"""Fuzzer { profile.get_key() } is blocked: runtime coverage only covers {"%.5s%%"%(str(cov_reach_proportion))} of its reachable functions."""))
 
     html_string += f"""<br>
 Uncovered functions that are reachable:{uncovered_reachable_funcs}
