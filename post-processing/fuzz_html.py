@@ -711,6 +711,9 @@ def extract_highlevel_guidance(conclusions) -> str:
     l.info("Extracting high level guidance")
     html_string = ""
     html_string += "<div class=\"high-level-conclusions-wrapper\">"
+
+    # Sort conclusions to show highest level (positive conclusion) first
+    conclusions = list(reversed(sorted(conclusions)))
     for lvl, sentence in conclusions:
         conclusion = ""
         if lvl < 5:
