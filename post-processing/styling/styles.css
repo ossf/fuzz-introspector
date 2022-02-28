@@ -93,9 +93,12 @@ table.dataTable {
 	/*width: calc(100% - 20px);*/
 }
 .left-sidebar-content-box {
+	width: calc(350px - 20px);
 	position:  fixed;
-	top: 5%;
-	padding:  20px;
+	top: 70px;
+	padding-left:  20px;
+	overflow-y: auto;
+	max-height: 100vh;
 }
 .left-sidebar-content-box a {
 	color:  #7b7b7b;
