@@ -336,8 +336,12 @@ std::string FuzzIntrospector::getNextLogFile() {
   std::string TargetLogName;
   std::string RandomStr = GenRandom(10);
   int Idx = 0;
+  std::string prefix = "";
+  if (getenv("FUZZINTRO_OUTDIR")) {
+    prefix = std::string(getenv("FUZZINTRO_OUTDIR")) + "/";
+  }
   do {
-    TargetLogName = formatv("fuzzerLogFile-{0}-{1}.data", std::to_string(Idx++), RandomStr);
+    TargetLogName = formatv("{0}fuzzerLogFile-{1}-{2}.data", prefix, std::to_string(Idx++), RandomStr);
   } while (llvm::sys::fs::exists(TargetLogName));
 
   // Add a UID to the logname. The reason we do this is when fuzzers are compiled in different
