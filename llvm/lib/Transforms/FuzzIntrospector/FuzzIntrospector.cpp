@@ -337,8 +337,8 @@ std::string FuzzIntrospector::getNextLogFile() {
   std::string RandomStr = GenRandom(10);
   int Idx = 0;
   std::string prefix = "";
-  if (getenv("SRC")) {
-    prefix = std::string(getenv("SRC")) + "/";
+  if (getenv("FUZZINTRO_OUTDIR")) {
+    prefix = std::string(getenv("FUZZINTRO_OUTDIR")) + "/";
   }
   do {
     TargetLogName = formatv("{0}fuzzerLogFile-{1}-{2}.data", prefix, std::to_string(Idx++), RandomStr);
