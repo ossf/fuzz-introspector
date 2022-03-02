@@ -340,3 +340,6 @@ input[type="checkbox"] {
     background: #eaffd4;
     color: #3b7300;
 }
+.colormap {
+	width: 100%;
+}

@@ -510,7 +510,7 @@ fuzzer. This should change in the future to be per-fuzzer-basis.</p>"""
     image_name = "%s_colormap.png"%(fuzzer_filename.replace(" ", "").split("/")[-1])
 
     create_horisontal_calltree_image(image_name, profile)
-    html_string += "<img src=\"%s\">"%(image_name)
+    html_string += "<img class=\"colormap\" src=\"%s\">"%(image_name)
 
     # Fuzz blocker table
     html_string += html_add_header_with_link(
