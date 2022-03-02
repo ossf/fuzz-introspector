@@ -465,9 +465,7 @@ def add_func_to_reached_and_clone(merged_profile_old: MergedProjectProfile,
         f = merged_profile.all_functions[func_name]
         f.hitcount += 1
 
-        # This seems incorrect? reached_by_fuzzers is fuzzer names not function names?
-        # TODO: investigate further
-        f.reached_by_fuzzers.append(func_to_add.function_name)
+        f.reached_by_fuzzers.append(fuzz_utils.demangle_cpp_func(func_to_add.function_name))
 
     # Recompute all analysis that is based on hitcounts in all functions as hitcount has
     # changed for elements in the dictionary.
