@@ -15,8 +15,16 @@ $( document ).ready(function() {
 //    vary)
 function createTables() {
   $.each(tableIds, function(index, value) {
+    createTable(value, false);
+  });
 
-    // Get number of rows in this table
+  // Tables with the "source code lines column" are
+  // sorted by that column:
+  recreateSCLTables();
+}
+
+function createTable(value, sortByCustomHeader, columnIndex=0) {
+  // Get number of rows in this table
     var rowCount = $('#'+value+' tr').length;
     
 
@@ -41,10 +49,35 @@ function createTables() {
       bInfo = true;
     }
 
-    // Create the table:
-    $('#'+value).DataTable({'bPaginate': bPaginate,
+    var tableConfig = {'bPaginate': bPaginate,
                             'bLengthChange': bLengthChange,
                             'bInfo': bInfo,
-                            'bFilter': bFilter});
-  });
+                            'bFilter': bFilter}
+
+    if(sortByCustomHeader) {
+      tableConfig.order = [[columnIndex, "desc"]]
+    }
+    
+    // Create the table:
+    $('#'+value).DataTable(tableConfig);
+
+}
+
+function recreateSCLTables() {
+  var tables = document.getElementsByTagName("table");
+
+  for (var i = 0; i < tables.length; i++) {
+    var table = tables[i];
+    var tableId = table.id;
+    var ths = table.getElementsByTagName("th");
+
+    for (var j = 0; j < ths.length; j++) {
+      var text = ths[j].innerText;
+      if(text==="source code lines") {
+        $('#'+tableId).DataTable().destroy();
+        createTable(tableId, true, j);
+      }
+    }
+  }
+
 }
