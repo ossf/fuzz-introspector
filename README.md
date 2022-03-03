@@ -66,26 +66,60 @@ in the OSS-Fuzz environment.
 
 ### Build locally
 
-#### Start a python venv
+#### TLDR
+```
+git clone https://github.com/ossf/fuzz-introspector
+cd fuzz-introspector
+
+# Get python dependencies
+python3 -m venv .venv
+. .venv/bin/activate
+pip install -r requirements.txt
+
+# Build custom clang with Fuzz introspector LLVM pass
+./build_all.sh
+
+cd tests
+./build_simple_example.sh
+cd simple-example-0/web
+python3 -m http.server 8008
+```
+
+#### step 1: Start a python venv
 1. Create a venv: `python3 -m venv /path/to/new/virtual/environment`
 2. Activate the venv
 3. Install dependencies with `pip install -r requirements.txt`
 
-#### Build custom clang
-(expect this part to take at least 1 hour)
+#### step 2: Build custom clang
+Fuzz-introspector relies on an LTO LLVM pass and this requires us to build a custom Clang where the LTO pass is part of the compiler tool chain (see https://github.com/ossf/fuzz-introspector/issues/57 for more details on why this is needed).
+
+To build the custom clang from the root of this repository:
+
 ```
-git clone https://github.com/ossf/fuzz-introspector
-cd fuzz-introspector
-./build_all.sh
+mkdir build
+cd build
+git clone https://github.com/llvm/llvm-project/
+cd llvm-project/
+../../sed_cmds.sh
+cp ../../llvm/include/llvm/Transforms/FuzzIntrospector/ ./llvm/include/llvm/Transforms/FuzzIntrospector
+cp ../../llvm/lib/Transforms/FuzzIntrospector ./llvm/lib/Transforms/FuzzIntrospector
+cd ../
+mkdir llvm-build
+cd llvm-build
+cmake -G "Unix Makefiles" -DLLVM_ENABLE_PROJECTS="clang;compiler-rt"  \
+      -DLLVM_BINUTILS_INCDIR=../binutils/include \
+      -DLLVM_TARGETS_TO_BUILD="X86" ../llvm-project/llvm/
+make llvm-headers
+make -j5
 ```
 
-#### Run local example
+#### step 3: Run local example
 After having built the custom clang above, you can try an example:
 ```
 cd tests
 ./build_simple_examples.sh
-cd simple-example-4/web
-python3 -m http.server 5002
+cd simple-example-0/web
+python3 -m http.server 8008
 ```
 
 You can also use the `build_all_projects.sh` and `build_all_web_only.sh` scripts to control
