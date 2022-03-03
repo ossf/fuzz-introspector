@@ -343,3 +343,16 @@ input[type="checkbox"] {
 .colormap {
 	width: 100%;
 }
+/* custom data table settings: */
+.dataTables_filter {
+	float:  left!important;
+	text-align: left!important;
+	margin-left:  20px;
+}
+.dataTables_paginate.paging_simple_numbers {
+	float: left!important;
+}
+.dataTables_wrapper .dataTables_info {
+	float: none!important;
+	font-size: .8rem;
+}
