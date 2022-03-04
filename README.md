@@ -114,11 +114,27 @@ make -j5
 ```
 
 #### step 3: Run local example
-After having built the custom clang above, you can try an example:
+
+Now we have two options, to run the fuzz introspector tools without collecting
+runtime coverage and doing it with collecting coverage. We go through each of the two options:
+
+#### step 3, option 1, only static analysis
+After having built the custom clang above, you build a test case:
 ```
-cd tests
-./build_simple_examples.sh
-cd simple-example-0/web
+# From the root of the fuzz-introspector repository
+cd tests/simple-example-0
+
+# Run compiler pass to generate *.data and *.data.yaml files
+mkdir work
+cd work
+FUZZ_INTROSPECTOR=1 ../../../build/llvm-build/bin/clang -fsanitize=fuzzer -flto -g ../fuzzer.c -o fuzzer
+
+# Run post-processing to analyse data files and generate HTML report
+python3 ../../../post-processing/main.py report --target_dir=.
+
+# The post-processing will have generated various .html, .js, .css and .png fies,
+# and these are accessible in the current folder. Simply start a webserver and 
+# navigate to the report in your local browser (localhost:8008):
 python3 -m http.server 8008
 ```
 
