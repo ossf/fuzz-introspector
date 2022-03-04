@@ -9,10 +9,12 @@ Fuzz-introspector can on a high-level guide on how to improve fuzzing of a proje
 - introduce new fuzzers to a fuzz harness
 - modify existing fuzzers to improve the quality of your harness.
 
-
 By and large these capabilities will remain the goals of fuzz-introspector. The focus is on improving these.
 
 A video demonstration of fuzz-introspector is given [here](https://www.youtube.com/watch?v=cheo-liJhuE)
+
+- [Use with OSS-Fuzz](#oss_fuzz_integration/)
+- [Use without OSS-Fuzz](#testing-without-oss-fuzz-integration)
 
 ## Features
 **High-level features**
@@ -52,8 +54,7 @@ runtime coverage data with the compiler plugin.
 
 
 ## Testing without OSS-Fuzz integration
-You can also build and run the introspector outside the OSS-Fuzz environment.
-
+You can build and run fuzz introspector outside the OSS-Fuzz environment.
 We use this mainly to develop the LLVM LTO pass as compilation of clang goes
 faster (recompilation in particular). However, for the full experience we 
 recommend working in the OSS-Fuzz environment as described above.
@@ -66,8 +67,8 @@ in the OSS-Fuzz environment.
 
 ### Build locally
 
-#### TLDR
-```
+#### TLDR:
+```bash
 git clone https://github.com/ossf/fuzz-introspector
 cd fuzz-introspector
 
@@ -95,7 +96,7 @@ Fuzz-introspector relies on an LTO LLVM pass and this requires us to build a cus
 
 To build the custom clang from the root of this repository:
 
-```
+```bash
 mkdir build
 cd build
 git clone https://github.com/llvm/llvm-project/
