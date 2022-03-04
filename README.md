@@ -105,13 +105,23 @@ To build the custom clang from the root of this repository:
 ```bash
 mkdir build
 cd build
+
+# Build binutils
+git clone --depth 1 git://sourceware.org/git/binutils-gdb.git binutils
+mkdir build
+cd ./build
+../binutils/configure --enable-gold --enable-plugins --disable-werror
+make all-gold
+cd ../
+
+# Build LLVM and Clang
 git clone https://github.com/llvm/llvm-project/
 cd llvm-project/
 
 # Patch Clang to run fuzz introspector
 ../../sed_cmds.sh
-cp ../../llvm/include/llvm/Transforms/FuzzIntrospector/ ./llvm/include/llvm/Transforms/FuzzIntrospector
-cp ../../llvm/lib/Transforms/FuzzIntrospector ./llvm/lib/Transforms/FuzzIntrospector
+cp -rf ../../llvm/include/llvm/Transforms/FuzzIntrospector/ ./llvm/include/llvm/Transforms/FuzzIntrospector
+cp -rf ../../llvm/lib/Transforms/FuzzIntrospector ./llvm/lib/Transforms/FuzzIntrospector
 cd ../
 
 # Build LLVM and clang
