@@ -13,7 +13,7 @@ By and large these capabilities will remain the goals of fuzz-introspector. The 
 
 A video demonstration of fuzz-introspector is given [here](https://www.youtube.com/watch?v=cheo-liJhuE)
 
-- [Use with OSS-Fuzz](#oss_fuzz_integration/)
+- [Use with OSS-Fuzz](#testing-with-oss-fuzz)
 - [Use without OSS-Fuzz](#testing-without-oss-fuzz-integration)
 
 ## Features
@@ -86,12 +86,18 @@ cd simple-example-0/web
 python3 -m http.server 8008
 ```
 
-#### step 1: Start a python venv
-1. Create a venv: `python3 -m venv /path/to/new/virtual/environment`
-2. Activate the venv
-3. Install dependencies with `pip install -r requirements.txt`
+#### Full process
+##### step 1: Start a python venv
+```bash
+git clone https://github.com/ossf/fuzz-introspector
 
-#### step 2: Build custom clang
+# create virtual environment
+python3 -m venv .venv
+. .venv/bin/activate
+pip install -r requirements.txt
+```
+
+##### step 2: Build custom clang
 Fuzz-introspector relies on an LTO LLVM pass and this requires us to build a custom Clang where the LTO pass is part of the compiler tool chain (see https://github.com/ossf/fuzz-introspector/issues/57 for more details on why this is needed).
 
 To build the custom clang from the root of this repository:
@@ -101,10 +107,14 @@ mkdir build
 cd build
 git clone https://github.com/llvm/llvm-project/
 cd llvm-project/
+
+# Patch Clang to run fuzz introspector
 ../../sed_cmds.sh
 cp ../../llvm/include/llvm/Transforms/FuzzIntrospector/ ./llvm/include/llvm/Transforms/FuzzIntrospector
 cp ../../llvm/lib/Transforms/FuzzIntrospector ./llvm/lib/Transforms/FuzzIntrospector
 cd ../
+
+# Build LLVM and clang
 mkdir llvm-build
 cd llvm-build
 cmake -G "Unix Makefiles" -DLLVM_ENABLE_PROJECTS="clang;compiler-rt"  \
@@ -114,12 +124,12 @@ make llvm-headers
 make -j5
 ```
 
-#### step 3: Run local example
+##### step 3: Run local example
 
 Now we have two options, to run the fuzz introspector tools without collecting
 runtime coverage and doing it with collecting coverage. We go through each of the two options:
 
-#### step 3, option 1, only static analysis
+##### step 3, option 1, only static analysis
 After having built the custom clang above, you build a test case:
 ```
 # From the root of the fuzz-introspector repository
@@ -141,7 +151,7 @@ python3 -m http.server 8008
 ```
 
 
-#### step 3, option 2, include runtime coverage analysis
+##### step 3, option 2, include runtime coverage analysis
 ```
 # From the root of the fuzz-introspector repository
 cd tests/simple-example-0
