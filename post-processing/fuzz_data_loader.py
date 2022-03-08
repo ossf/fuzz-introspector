@@ -105,6 +105,10 @@ class FuzzerProfile:
         """
         Removes the project_profile's basefolder from source paths in a given profile. 
         """
+        # Only do this is basefolder is not wrong
+        if basefolder == "/":
+            return
+
         self.fuzzer_source_file = self.fuzzer_source_file.replace(basefolder, "")
 
         all_callsites = fuzz_cfg_load.extract_all_callsites(self.function_call_depths)
