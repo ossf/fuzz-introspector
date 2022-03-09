@@ -30,6 +30,10 @@ cd ${BUILD_BASE}
 # Now build LLVM
 git clone https://github.com/llvm/llvm-project/
 cd llvm-project/
+
+#git stash
+git checkout release/14.x
+
 $BASE/sed_cmds.sh
 cd ${BUILD_BASE}
 
