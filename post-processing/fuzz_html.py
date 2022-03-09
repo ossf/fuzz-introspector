@@ -109,8 +109,8 @@ def create_horisontal_calltree_image(image_name: str, profile: fuzz_data_loader.
     plt.savefig(image_name)
     l.info("- image saved")
 
-def create_table_head(table_head: str, items: List[str]) -> str:
-    html_str = f"<table id='{table_head}' class='cell-border compact stripe'><thead><tr>\n"
+def create_table_head(table_head: str, items: List[str], sort_by_column: int = 0, sort_order: str = "asc") -> str:
+    html_str = f"<table id='{table_head}' class='cell-border compact stripe' data-sort-by-column='{sort_by_column}' data-sort-order='{sort_order}'><thead><tr>\n"
     #html_str = ""
     for elem in items:
         html_str += f"<th>{elem}</th>\n"
@@ -470,7 +470,7 @@ def create_fuzzer_detailed_section(
             "Functions hit (dynamic analysis based)", 3, toc_list, link="functions_cov_hit_%d"%(curr_tt_profile))
     tables.append(f"myTable{len(tables)}")
     html_string += create_table_head(tables[-1],
-                ["Function name", "source code lines", "source lines hit", "percentage hit"])
+                ["Function name", "source code lines", "source lines hit", "percentage hit"], 1, "desc")
 
     for funcname in profile.coverage.covmap:
         total_func_lines, hit_lines, hit_percentage = profile.get_cov_metrics(fuzz_utils.demangle_cpp_func(funcname))

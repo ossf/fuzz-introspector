@@ -15,69 +15,46 @@ $( document ).ready(function() {
 //    vary)
 function createTables() {
   $.each(tableIds, function(index, value) {
-    createTable(value, false);
+    createTable(value);
   });
-
-  // Tables with the "source code lines column" are
-  // sorted by that column:
-  recreateSCLTables();
 }
 
-function createTable(value, sortByCustomHeader, columnIndex=0) {
+function createTable(value) {
   // Get number of rows in this table
-    var rowCount = $('#'+value+' tr').length;
-    
+  var rowCount = $('#'+value+' tr').length;
+  var sortByColumn = $('#'+value).data('sort-by-column');
+  var sortOrder = $('#'+value).data('sort-order');
+  
 
-    var bPaginate;
-    var bLengthChange;
-    var bInfo;
-    var bFilter;
+  var bPaginate;
+  var bLengthChange;
+  var bInfo;
+  var bFilter;
 
-    if(rowCount<6) {
-      bFilter = false;
-    } else {
-      bFilter = true;
-    }
-
-    if(rowCount<12) {
-      bPaginate = false;
-      bLengthChange = false;
-      bInfo = false;
-    } else {      
-      bPaginate = true;
-      bLengthChange = true;
-      bInfo = true;
-    }
-
-    var tableConfig = {'bPaginate': bPaginate,
-                            'bLengthChange': bLengthChange,
-                            'bInfo': bInfo,
-                            'bFilter': bFilter}
-
-    if(sortByCustomHeader) {
-      tableConfig.order = [[columnIndex, "desc"]]
-    }
-    
-    // Create the table:
-    $('#'+value).DataTable(tableConfig);
-
-}
-
-function recreateSCLTables() {
-  var tables = document.getElementsByTagName("table");
-
-  for (var i = 0; i < tables.length; i++) {
-    var table = tables[i];
-    var tableId = table.id;
-    var ths = table.getElementsByTagName("th");
-
-    for (var j = 0; j < ths.length; j++) {
-      var text = ths[j].innerText;
-      if(text==="source code lines") {
-        $('#'+tableId).DataTable().destroy();
-        createTable(tableId, true, j);
-      }
-    }
+  if(rowCount<6) {
+    bFilter = false;
+  } else {
+    bFilter = true;
   }
 
+  if(rowCount<12) {
+    bPaginate = false;
+    bLengthChange = false;
+    bInfo = false;
+  } else {      
+    bPaginate = true;
+    bLengthChange = true;
+    bInfo = true;
+  }
+
+  var tableConfig = {'bPaginate': bPaginate,
+                          'bLengthChange': bLengthChange,
+                          'bInfo': bInfo,
+                          'bFilter': bFilter}
+
+  
+  tableConfig.order = [[sortByColumn, sortOrder]]
+  
+  // Create the table:
+  $('#'+value).DataTable(tableConfig);
 }
