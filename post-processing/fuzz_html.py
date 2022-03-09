@@ -109,11 +109,24 @@ def create_horisontal_calltree_image(image_name: str, profile: fuzz_data_loader.
     plt.savefig(image_name)
     l.info("- image saved")
 
+# Add table id and text in the th field here to add a title tag for it in the frontend.
+def get_th_hover_text(table_id: str, th_text: str) -> str:
+    tables = {"remaining_optimal_interesting_functions": {"bb count": "bb count"}}
+    if table_id not in tables:
+        return None
+    if th_text not in tables[table_id]:
+        return None
+    return tables[table_id][th_text]
+
 def create_table_head(table_head: str, items: List[str], sort_by_column: int = 0, sort_order: str = "asc") -> str:
     html_str = f"<table id='{table_head}' class='cell-border compact stripe' data-sort-by-column='{sort_by_column}' data-sort-order='{sort_order}'><thead><tr>\n"
     #html_str = ""
     for elem in items:
-        html_str += f"<th>{elem}</th>\n"
+        title_tag_text = get_th_hover_text(table_head, elem)
+        if title_tag_text != None:
+            html_str += f"<th title='{title_tag_text}'>{elem}</th>\n"
+        else:
+            html_str += f"<th>{elem}</th>\n"
     html_str += "</tr></thead><tbody>"
     return html_str
 
@@ -647,9 +660,14 @@ def handle_analysis_1(
     # Table with details about optimal target functions
     html_string += html_add_header_with_link(
         "Remaining optimal interesting functions", 3, toc_list)
-    tables.append("myTable%d" % (len(tables)))
-    html_string += create_table_head(tables[-1],
-                                     ["Func name", "Functions filename", "Arg count", "Args", "Function depth", "hitcount", "instr count", "bb count", "cyclomatic complexity", "Reachable functions", "Incoming references", "total cyclomatic complexity", "Unreached complexity"])
+    table_id = "remaining_optimal_interesting_functions"
+    tables.append(table_id)
+    html_string += create_table_head(table_id,
+                                     ["Func name", "Functions filename", "Arg count",
+                                      "Args", "Function depth", "hitcount", "instr count",
+                                      "bb count", "cyclomatic complexity", "Reachable functions",
+                                      "Incoming references", "total cyclomatic complexity",
+                                      "Unreached complexity"])
     for fd in optimal_target_functions:
         if basefolder == "/":
             basefolder = "WRONG"
