@@ -222,11 +222,14 @@ def create_all_function_table(
         project_profile: fuzz_data_loader.MergedProjectProfile,
         coverage_url: str,
         git_repo_url: str,
-        basefolder: str) -> str:
+        basefolder: str,
+        table_id: str = None) -> str:
     """Table for all functions in the project. Contains many details about each
         function"""
     random_suffix = '_'+''.join(random.choices(string.ascii_lowercase + string.ascii_uppercase, k=7))
-    html_string = create_table_head(tables[-1],
+    if table_id == None:
+        table_id = tables[-1]
+    html_string = create_table_head(table_id,
                                     ["Func name", "Git URL", "Functions filename", "Arg count", "Args",
                                      "Function call depth", "Fuzzers reach count", "Reached by Fuzzers", "Fuzzers runtime hit", "Func lines hit %", "I Count", "BB Count",
                                      "Cyclomatic complexity", "Functions reached",
@@ -697,9 +700,10 @@ def handle_analysis_1(
     # suggested fuzzers are implemented.
     html_string += html_add_header_with_link(
         "All functions overview", 4, toc_list)
-    tables.append("myTable%d" % (len(tables)))
+    table_id = "all_functions_overview_table"
+    tables.append(table_id)
     html_string += create_all_function_table(
-        tables, new_profile, coverage_url, git_repo_url, basefolder)
+        tables, new_profile, coverage_url, git_repo_url, basefolder, table_id)
 
     return html_string
 
@@ -786,7 +790,6 @@ def create_html_report(
     l.info(" - Creating table with information about all functions in target")
     html_report_core += html_add_header_with_link(
         "Project functions overview", 2, toc_list)
-    tables.append("myTable%d" % (len(tables)))
     html_report_core += """<p>
     In the following function table the context of the columns have specific meaning. The description of the columnets are as follows:
 <table>
@@ -821,8 +824,10 @@ def create_html_report(
 </table>
 <br>
 </p>"""
+    table_id = "fuzzers_overview_table"
+    tables.append(table_id)
     html_report_core += create_all_function_table(
-        tables, project_profile, coverage_url, git_repo_url, basefolder)
+        tables, project_profile, coverage_url, git_repo_url, basefolder, table_id)
 
     html_report_core += "<hr>"
 
