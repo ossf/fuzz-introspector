@@ -16,15 +16,15 @@
 
 ROOT=$PWD
 export FUZZ_INTROSPECTOR=1
-for PROJ in kamailio xpdf croaring kamailio htslib dng_sdk; do
+for PROJ in jsoncpp kamailio xpdf croaring kamailio htslib dng_sdk; do
   cd ${ROOT}/${PROJ}
   rm -rf ./web
 
   ./build_all.sh
-
+  #exit 0
   mkdir web
   cd web
 
-  python3 ${ROOT}/../post-processing/main.py correlate --binaries_dir=./work/
-  python3 ${ROOT}/../post-processing/main.py report --correlation_file=../exe_to_fuzz_introspector_logs.yaml --target_dir=../
+  python3 ${ROOT}/../post-processing/main.py correlate --binaries_dir=../work/
+  python3 ${ROOT}/../post-processing/main.py report --correlation_file=./exe_to_fuzz_introspector_logs.yaml --target_dir=../
 done
