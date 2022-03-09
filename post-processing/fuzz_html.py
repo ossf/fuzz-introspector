@@ -798,26 +798,25 @@ def create_html_report(
     html_overview += html_add_header_with_link("Project information", 2, toc_list)
 
     #############################################
+    # Section with high level suggestions
+    #############################################
+    html_report_top = html_add_header_with_link(
+        "High level conclusions", 2, toc_list)
+
+    #############################################
     # Reachability overview
     #############################################
     l.info(" - Creating reachability overview table")
-    html_report_top = html_add_header_with_link("Reachability overview", 3, toc_list)
+    html_report_core = html_add_header_with_link("Reachability overview", 3, toc_list)
     tables.append("myTable%d" % (len(tables)))
-    html_report_top += "<p class='no-top-margin'>This is the overview of reachability by the existing fuzzers in the project</p>"
-    html_report_top += create_top_summary_info(tables, project_profile, conclusions, True)
-
-
-    #############################################
-    # Section with high level suggestions
-    #############################################
-    html_report_top += html_add_header_with_link(
-        "High level conclusions", 2, toc_list)
+    html_report_core += "<p class='no-top-margin'>This is the overview of reachability by the existing fuzzers in the project</p>"
+    html_report_core += create_top_summary_info(tables, project_profile, conclusions, True)
 
     #############################################
     # Table with overview of all fuzzers.
     #############################################
     l.info(" - Creating table with overview of all fuzzers")
-    html_report_core = html_add_header_with_link("Fuzzers overview", 3, toc_list)
+    html_report_core += html_add_header_with_link("Fuzzers overview", 3, toc_list)
     tables.append("myTable%d" % (len(tables)))
     html_report_core += create_overview_table(tables, profiles)
 
