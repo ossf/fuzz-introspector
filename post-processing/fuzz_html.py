@@ -118,15 +118,18 @@ def get_th_hover_text(table_id: str, th_text: str) -> str:
         return None
     return tables[table_id][th_text]
 
-def create_table_head(table_head: str, items: List[str], sort_by_column: int = 0, sort_order: str = "asc") -> str:
+def create_table_head(
+        table_head: str, 
+        items: List[Tuple[str, str]], 
+        sort_by_column: int = 0, 
+        sort_order: str = "asc") -> str:
     html_str = f"<table id='{table_head}' class='cell-border compact stripe' data-sort-by-column='{sort_by_column}' data-sort-order='{sort_order}'><thead><tr>\n"
-    #html_str = ""
-    for elem in items:
-        title_tag_text = get_th_hover_text(table_head, elem)
-        if title_tag_text != None:
-            html_str += f"<th title='{title_tag_text}'>{elem}</th>\n"
+
+    for column_title, column_description in items:
+        if column_description == "":
+            html_str += f"<th>{column_title}</th>\n"
         else:
-            html_str += f"<th>{elem}</th>\n"
+            html_str += f"<th title='{column_description}'>{column_title}</th>\n"
     html_str += "</tr></thead><tbody>"
     return html_str
 
@@ -200,15 +203,15 @@ def create_overview_table(tables: List[str],
                               profiles: List[fuzz_data_loader.FuzzerProfile]) -> str:
     """Table with an overview of all the fuzzers"""
     html_string = create_table_head(tables[-1],
-                                    ["Fuzzer",
-                                     "Fuzzer filename",
-                                     "Functions Reached",
-                                     "Functions unreached",
-                                     "Fuzzer depth",
-                                     "Files reached",
-                                     "Basic blocks reached",
-                                     "Cyclomatic complexity",
-                                     "Details"])
+                                    [("Fuzzer", "Fuzzer key. Usually fuzzer executable file"),
+                                     ("Fuzzer filename", "Fuzzer source code file"),
+                                     ("Functions Reached", ""),
+                                     ("Functions unreached",""),
+                                     ("Fuzzer depth",""),
+                                     ("Files reached",""),
+                                     ("Basic blocks reached",""),
+                                     ("Cyclomatic complexity",""),
+                                     ("Details", "")])
     for profile in profiles:  # create a row for each fuzzer.
         fuzzer_filename = profile.fuzzer_source_file
         max_depth = 0
@@ -243,11 +246,24 @@ def create_all_function_table(
     if table_id == None:
         table_id = tables[-1]
     html_string = create_table_head(table_id,
-                                    ["Func name", "Git URL", "Functions filename", "Arg count", "Args",
-                                     "Function call depth", "Fuzzers reach count", "Reached by Fuzzers", "Fuzzers runtime hit", "Func lines hit %", "I Count", "BB Count",
-                                     "Cyclomatic complexity", "Functions reached",
-                                     "Reached by functions", "Accumulated cyclomatic complexity",
-                                     "Undiscovered complexity"])
+                                    [
+                                ("Func name", ""),
+                                ("Git URL", ""),
+                                ("Functions filename", ""),
+                                ("Arg count", ""),
+                                ("Args", ""),
+                                ("Function call depth", ""),
+                                ("Fuzzers reach count", ""),
+                                ("Reached by Fuzzers", ""),
+                                ("Fuzzers runtime hit", ""),
+                                ("Func lines hit %", ""),
+                                ("I Count", ""),
+                                ("BB Count",""),
+                                ("Cyclomatic complexity",""),
+                                ("Functions reached",""),
+                                ("Reached by functions",""),
+                                ("Accumulated cyclomatic complexity",""),
+                                ("Undiscovered complexity", "")])
 
     if basefolder == "/":
         basefolder = "WRONG"
@@ -301,7 +317,9 @@ def create_top_summary_info(
     total_functions, reached_func_count, unreached_func_count, reached_percentage, unreached_percentage = project_profile.get_function_summaries()
     total_complexity, complexity_reached, complexity_unreached, reached_complexity_percentage, unreached_complexity_percentage = project_profile.get_complexity_summaries()
     html_string += create_table_head(tables[-1],
-                                     ["", "Reached", "Unreached"])
+                                     [("", ""), 
+                                     ("Reached", ""),
+                                     ("Unreached", "")])
     html_string += html_table_add_row([
         "Functions", 
         "%.5s%% (%d / %d)"%(str(reached_percentage), reached_func_count, total_functions),
@@ -391,7 +409,13 @@ def create_fuzz_blocker_table(
     #for n1 in nodes_sorted_by_red_ahead:
     #    l.info("forwards %d, parent: %s"%(n1.cov_forward_reds, n1.cov_parent))
     max_idx = 10
-    html_table_string = create_table_head(tables[-1], ['Blocked nodes', 'Calltree index', 'Parent function', 'Callsite', 'Largest blocked function'])
+    html_table_string = create_table_head(
+            tables[-1], 
+               [('Blocked nodes', ""),
+                ('Calltree index', ""),
+                ('Parent function', ""),
+                ('Callsite',""),
+                ('Largest blocked function',"")])
     for node in nodes_sorted_by_red_ahead:
         html_table_string += html_table_add_row([str(node.cov_forward_reds), str(node.cov_ct_idx), node.cov_parent, "<a href=%s>call site</a>"%(node.cov_callsite_link), node.cov_largest_blocked_func])
         if max_idx == 0:
@@ -472,7 +496,7 @@ def create_fuzzer_detailed_section(
         "Files hit", 3, toc_list, link="files_hit_%d" % (curr_tt_profile))
     tables.append(f"myTable{len(tables)}")
     html_string += create_table_head(tables[-1],
-                                     ["filename", "functions hit"])
+                                     [("filename",""), ("functions hit","")])
     for k in profile.file_targets:
         html_string += html_table_add_row([k,
                                           len(profile.file_targets[k])])
@@ -483,7 +507,11 @@ def create_fuzzer_detailed_section(
             "Functions hit (dynamic analysis based)", 3, toc_list, link="functions_cov_hit_%d"%(curr_tt_profile))
     tables.append(f"myTable{len(tables)}")
     html_string += create_table_head(tables[-1],
-                ["Function name", "source code lines", "source lines hit", "percentage hit"], 1, "desc")
+                   [("Function name", ""),
+                    ("source code lines",""),
+                    ("source lines hit",""),
+                    ("percentage hit", "")], 
+                1, "desc")
 
     for funcname in profile.coverage.covmap:
         total_func_lines, hit_lines, hit_percentage = profile.get_cov_metrics(fuzz_utils.demangle_cpp_func(funcname))
@@ -568,7 +596,7 @@ def handle_analysis_3(
         "Complex functions with low coverage", 3, toc_list)
     tables.append("myTable%d" % (len(tables)))
     html_string += create_table_head(tables[-1],
-            ["Func name", "lines of code", "LoC runtime coverage", "percentage covered"])
+            [("Func name", ""), ("lines of code", ""), ("LoC runtime coverage",""), ("percentage covered", "")])
 
     for funcname in functions_of_interest:
         total_func_lines, hit_lines = project_profile.runtime_coverage.get_hit_summary(funcname)
@@ -663,11 +691,11 @@ def handle_analysis_1(
     table_id = "remaining_optimal_interesting_functions"
     tables.append(table_id)
     html_string += create_table_head(table_id,
-                                     ["Func name", "Functions filename", "Arg count",
-                                      "Args", "Function depth", "hitcount", "instr count",
-                                      "bb count", "cyclomatic complexity", "Reachable functions",
-                                      "Incoming references", "total cyclomatic complexity",
-                                      "Unreached complexity"])
+                                     [("Func name", ""), ("Functions filename", ""), ("Arg count",""),
+                                      ("Args", ""),("Function depth",""), ("hitcount", ""), ("instr count",""),
+                                      ("bb count",""), ("cyclomatic complexity", ""), ("Reachable functions",""),
+                                      ("Incoming references", ""), ("total cyclomatic complexity",""),
+                                      ("Unreached complexity", "")])
     for fd in optimal_target_functions:
         if basefolder == "/":
             basefolder = "WRONG"
