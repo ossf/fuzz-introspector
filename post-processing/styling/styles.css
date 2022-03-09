@@ -356,3 +356,7 @@ input[type="checkbox"] {
 	float: none!important;
 	font-size: .8rem;
 }
+.dataTables_wrapper table tbody tr td code,
+.dataTables_wrapper table tbody tr td  {
+	word-wrap: break-word;
+}
