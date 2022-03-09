@@ -18,6 +18,7 @@ import sys
 import cxxfilt
 import logging
 import shutil
+from bs4 import BeautifulSoup as bs
 
 from typing import (
     Any,
@@ -108,6 +109,8 @@ def create_horisontal_calltree_image(image_name: str, profile: fuzz_data_loader.
     plt.title(image_name.split(".")[0])
     plt.savefig(image_name)
     l.info("- image saved")
+
+
 
 def create_table_head(
         table_head: str, 
@@ -366,24 +369,33 @@ def create_top_summary_info(
 def write_wrapped_html_file(html_string, filename):
     """
     Write a wrapped HTML file with the tags needed from fuzz-introspector
-    We use this mainly for wrapping calltrees at the moment, however, down
+    We use this only for wrapping calltrees at the moment, however, down
     the line it makes sense to have an easy wrapper for other HTML pages too.
     """
-
+    complete_html_string = ""
     # HTML start
     html_header = html_get_header()
     html_header += '<div class="content-section">'
+    complete_html_string += html_header
+
+    complete_html_string += html_string
+    complete_html_string += "</div></div></div></div>"
 
     # HTML end
     html_end = '</div>'
     html_end += "<script src=\"prism.js\"></script>"
     html_end += "<script src=\"clike.js\"></script>"
-    html_end += "<script src=\"custom.js\"></script>"
+    html_end += "<script src=\"calltree.js\"></script>"
+    complete_html_string += html_end
+
+    complete_html_string += "</body></html>"
+
+    soup = bs(complete_html_string, 'lxml')
+    pretty_html = soup.prettify()
+    #pretty_html = calltree_html_string
 
     with open(filename, "w+") as cf:
-        cf.write(html_header)
-        cf.write(html_string)
-        cf.write(html_end)
+        cf.write(pretty_html)
 
 def create_fuzz_blocker_table(
         profile: fuzz_data_loader.FuzzerProfile,
@@ -417,6 +429,8 @@ def create_fuzz_blocker_table(
     html_table_string += "</table>"
     return html_table_string
 
+
+
 def create_calltree(
         profile: fuzz_data_loader.FuzzerProfile,
         project_profile: fuzz_data_loader.MergedProjectProfile,
@@ -431,7 +445,10 @@ def create_calltree(
     l.info("Creating calltree HTML code")
     # Generate HTML for the calltree
     calltree_html_string = "<div class='section-wrapper'>"
-    for node in fuzz_cfg_load.extract_all_callsites(profile.function_call_depths):
+    nodes = fuzz_cfg_load.extract_all_callsites(profile.function_call_depths)
+    for i in range(len(nodes)):
+        node = nodes[i]
+
         demangled_name = fuzz_utils.demangle_cpp_func(node.dst_function_name)
         # We may not want to show certain functions at times, e.g. libc functions
         # in case it bloats the calltree
@@ -446,15 +463,36 @@ def create_calltree(
         callsite_link = node.cov_callsite_link
         link = node.cov_link
         ct_idx_str = "%s%s"%("0"*(len("00000") - len(str(node.cov_ct_idx))), str(node.cov_ct_idx))
+
         indentation = int(node.depth)*16
-        horisontal_spacing = "&nbsp;"*4*int(node.depth)
         # Only display [function] link if we have, otherwhise show no [function] text.
         func_href = "<a href=\"%s\">[function]</a>"%(link) if node.dst_function_source_file.replace(" ","") != "/" else ""
 
-        calltree_html_string += f"""<div style='margin-left: {indentation}px' class="{color_to_be}-background">
-  <span class="coverage-line-inner"> {node.depth} <code class="language-clike"> {demangled_name} </code>
-  <span class="coverage-line-filename"> {func_href} <a href="{callsite_link}">[call site2]</a>[calltree idx: {ct_idx_str}]<span></span>
-</div>"""
+        if i>0:
+            previous_node = nodes[i-1]
+            if previous_node.depth==node.depth:
+                calltree_html_string += "</div>"
+            depth_diff = previous_node.depth-node.depth
+            if depth_diff>=1:
+                closing_divs = "</div>" # To close "calltree-line-wrapper"
+                closing_divs = "</div>"*(int(depth_diff)+1)
+                calltree_html_string += closing_divs
+
+        calltree_html_string += f"""
+    <div class="{color_to_be}-background coverage-line">
+        <span class="coverage-line-inner"> {node.depth} <code class="language-clike"> {demangled_name} </code>
+            <span class="coverage-line-filename"> {func_href} <a href="{callsite_link}">[call site2]</a>[calltree idx: {ct_idx_str}]</span>
+        </span>
+    """
+        if i!=len(nodes)-1:
+            next_node = nodes[i+1]
+            if next_node.depth>node.depth:
+                calltree_html_string += f"""<div class="calltree-line-wrapper level-{int(node.depth)}" style="padding-left: 16px">"""
+            elif next_node.depth<node.depth:
+                depth_diff = int(node.depth-next_node.depth)
+                calltree_html_string += "</div>"*depth_diff
+            
+
     calltree_html_string += "</div>"
     l.info("Calltree created")
 
@@ -464,6 +502,8 @@ def create_calltree(
     while os.path.isfile(calltree_html_file):
         calltree_file_idx += 1
         calltree_html_file = "calltree_view_%d.html"%(calltree_file_idx)
+
+    
     write_wrapped_html_file(calltree_html_string, calltree_html_file)
 
     return calltree_html_file
@@ -941,5 +981,5 @@ def create_html_report(
     # Copy all of the styling into the directory.
     basedir = os.path.dirname(os.path.realpath(__file__))
     style_dir = os.path.join(basedir, "styling")
-    for s in ["clike.js", "prism.css", "prism.js", "styles.css", "custom.js"]:
+    for s in ["clike.js", "prism.css", "prism.js", "styles.css", "custom.js", "calltree.js"]:
         shutil.copy(os.path.join(style_dir, s), s)
