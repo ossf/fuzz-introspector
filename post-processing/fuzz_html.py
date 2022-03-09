@@ -109,15 +109,6 @@ def create_horisontal_calltree_image(image_name: str, profile: fuzz_data_loader.
     plt.savefig(image_name)
     l.info("- image saved")
 
-# Add table id and text in the th field here to add a title tag for it in the frontend.
-def get_th_hover_text(table_id: str, th_text: str) -> str:
-    tables = {"remaining_optimal_interesting_functions": {"bb count": "bb count"}}
-    if table_id not in tables:
-        return None
-    if th_text not in tables[table_id]:
-        return None
-    return tables[table_id][th_text]
-
 def create_table_head(
         table_head: str, 
         items: List[Tuple[str, str]], 
@@ -203,15 +194,15 @@ def create_overview_table(tables: List[str],
                               profiles: List[fuzz_data_loader.FuzzerProfile]) -> str:
     """Table with an overview of all the fuzzers"""
     html_string = create_table_head(tables[-1],
-                                    [("Fuzzer", "Fuzzer key. Usually fuzzer executable file"),
-                                     ("Fuzzer filename", "Fuzzer source code file"),
-                                     ("Functions Reached", ""),
-                                     ("Functions unreached",""),
-                                     ("Fuzzer depth",""),
-                                     ("Files reached",""),
-                                     ("Basic blocks reached",""),
-                                     ("Cyclomatic complexity",""),
-                                     ("Details", "")])
+                    [("Fuzzer", "Fuzzer key. Usually fuzzer executable file"),
+                     ("Fuzzer filename", "Fuzzer source code file"),
+                     ("Functions Reached", "Number of functions this fuzzer reaches. This data is based on static analysis."),
+                     ("Functions unreached","Number of functions unreached by this fuzzer. This data is based on static analysis."),
+                     ("Fuzzer depth", "Function call depth of this fuzer."),
+                     ("Files reached", "Source code files reached by the fuzzer. This is identified by look at the source code file of each funciton reached by the fuzzer."),
+                     ("Basic blocks reached", "The total number of basic blocks of all functions reached by the fuzzer."),
+                     ("Cyclomatic complexity", "The accummulated cyclomatic complexity of all functions reached by the fuzzer."),
+                     ("Details", "")])
     for profile in profiles:  # create a row for each fuzzer.
         fuzzer_filename = profile.fuzzer_source_file
         max_depth = 0
@@ -246,24 +237,24 @@ def create_all_function_table(
     if table_id == None:
         table_id = tables[-1]
     html_string = create_table_head(table_id,
-                                    [
-                                ("Func name", ""),
-                                ("Git URL", ""),
-                                ("Functions filename", ""),
-                                ("Arg count", ""),
-                                ("Args", ""),
-                                ("Function call depth", ""),
-                                ("Fuzzers reach count", ""),
-                                ("Reached by Fuzzers", ""),
-                                ("Fuzzers runtime hit", ""),
-                                ("Func lines hit %", ""),
-                                ("I Count", ""),
-                                ("BB Count",""),
-                                ("Cyclomatic complexity",""),
-                                ("Functions reached",""),
-                                ("Reached by functions",""),
-                                ("Accumulated cyclomatic complexity",""),
-                                ("Undiscovered complexity", "")])
+                    [
+                    ("Func name", ""),
+                    ("Git URL", ""),
+                    ("Functions filename", "Source code file where function is defined."),
+                    ("Arg count", "Number of arguments to the function."),
+                    ("Args", "Types of arguments to this function."),
+                    ("Function call depth", "Function call depth based on static analysis."),
+                    ("Fuzzers reach count", "The number of fuzzers that reach this function. Based on static analysis."),
+                    ("Reached by Fuzzers", "The specific fuzzers that reach this function. Based on static analysis."),
+                    ("Fuzzers runtime hit", "Indicates whether the function is hit at runtime by the given corpus. Based on dynamic analysis."),
+                    ("Func lines hit %", "Indicates the percentage of the function that is covered at runtime. This is based on dynamic analysis."),
+                    ("I Count", "Instruction count. The number of LLVM instructions in the function."),
+                    ("BB Count", "Basic block count. The number of basic blocks in the function."),
+                    ("Cyclomatic complexity", "The cyclomatic complexity of the function."),
+                    ("Functions reached", "The number of functions reached, based on static analysis."),
+                    ("Reached by functions", "The number of functions that reaches this function, based on static analysis."),
+                    ("Accumulated cyclomatic complexity", "Accummulated cyclomatic complexity of all functions reachable by this function. Based on static analysis."),
+                    ("Undiscovered complexity", "")])
 
     if basefolder == "/":
         basefolder = "WRONG"
@@ -836,40 +827,6 @@ def create_html_report(
     l.info(" - Creating table with information about all functions in target")
     html_report_core += html_add_header_with_link(
         "Project functions overview", 2, toc_list)
-    html_report_core += """<p>
-    In the following function table the context of the columns have specific meaning. The description of the columnets are as follows:
-<table>
-    <thead>
-        <tr>
-            <th>Column name</th>
-            <th>Description</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td><b>Func name</b></td>
-            <td>Name of function</td>
-        </tr>
-        <tr>
-            <td><b>Fuzzers reach count</b></td>
-            <td>[Static analysis] The amount of fuzzers that reach the function based on static analysis</td>
-        </tr>
-        <tr>
-            <td><b>Fuzzers runtime hit</b></td>
-            <td>[Dynamic analysis] Whether the function was hit during runtime coverage analysis</td>
-        </tr>
-        <tr>
-            <td><b>Func lines hit %</b></td>
-            <td>[Dynamic analysis] The percentage of the function's lines hit during runtime coverage analysis</td>
-        </tr>
-        <tr>
-            <td><b>Accumulated cyclomatic complexity</b></td>
-            <td>[Static analysis] The total amount of cyclomatic complexity of this function and all functions it reaches</td>
-        </tr>
-    </tbody>
-</table>
-<br>
-</p>"""
     table_id = "fuzzers_overview_table"
     tables.append(table_id)
     html_report_core += create_all_function_table(
