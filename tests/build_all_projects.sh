@@ -21,7 +21,10 @@ for PROJ in kamailio xpdf croaring kamailio htslib dng_sdk; do
   rm -rf ./web
 
   ./build_all.sh
+
   mkdir web
   cd web
-  python3 ${ROOT}/../post-processing/main.py --target_dir=../
+
+  python3 ${ROOT}/../post-processing/main.py correlate --binaries_dir=./work/
+  python3 ${ROOT}/../post-processing/main.py report --correlation_file=../exe_to_fuzz_introspector_logs.yaml --target_dir=../
 done
