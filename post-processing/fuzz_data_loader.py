@@ -382,6 +382,12 @@ class MergedProjectProfile:
                 reached_function_count += 1
         return reached_function_count
 
+    def get_all_runtime_covered_functions(self):
+        all_covered_functions = []
+        for funcname in self.runtime_coverage.covmap:
+            all_covered_functions.append(funcname)
+        return all_covered_functions
+
     def get_function_reach_percentage(self) -> float:
         total_functions = float(self.get_total_unreached_function_count() + self.get_total_reached_function_count())
         reached_percentage = float(self.get_total_reached_function_count() / total_functions) * 100.0

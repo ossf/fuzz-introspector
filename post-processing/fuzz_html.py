@@ -301,7 +301,9 @@ def create_all_function_table(
 def create_top_summary_info(
         tables: List[str],
         project_profile: fuzz_data_loader.MergedProjectProfile,
-        conclusions, extract_conclusion) -> str:
+        conclusions,
+        extract_conclusion,
+        display_coverage = False) -> str:
     html_string = ""
 
     # Get complexity and function counts
@@ -313,6 +315,13 @@ def create_top_summary_info(
     html_string += "<br>"
     html_string += f"""Reachable cylcomatic complexity: {"%.5s%% (%d / %d)"%(reached_complexity_percentage, complexity_reached, int(total_complexity))}"""
     html_string += "<br>"
+    if display_coverage:
+        l.info("Displaying coverage in summary")
+        covered_funcs = project_profile.get_all_runtime_covered_functions()
+        html_string += f"""Runtime covered functions: { len(covered_funcs) }"""
+        html_string += "<br>"
+    else:
+        l.info("Not displaying coverage in summary")
 
     # Add conclusion
     if extract_conclusion:
@@ -801,7 +810,7 @@ def create_html_report(
     html_report_core = html_add_header_with_link("Reachability and coverage overview", 3, toc_list)
     tables.append("myTable%d" % (len(tables)))
     html_report_core += "<p class='no-top-margin'>This is the overview of reachability by the existing fuzzers in the project</p>"
-    html_report_core += create_top_summary_info(tables, project_profile, conclusions, True)
+    html_report_core += create_top_summary_info(tables, project_profile, conclusions, True, display_coverage=True)
 
     #############################################
     # Table with overview of all fuzzers.
