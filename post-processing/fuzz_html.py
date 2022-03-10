@@ -311,14 +311,14 @@ def create_top_summary_info(
     total_complexity, complexity_reached, complexity_unreached, reached_complexity_percentage, unreached_complexity_percentage = project_profile.get_complexity_summaries()
 
     # Display reachability information
-    html_string += f"""Reachable functions: {"%.5s%% (%d / %d)"%(str(reached_percentage), reached_func_count, total_functions)}"""
+    html_string += f"""Functions statically reachable by fuzzers: {"%.5s%% (%d / %d)"%(str(reached_percentage), reached_func_count, total_functions)}"""
     html_string += "<br>"
-    html_string += f"""Reachable cylcomatic complexity: {"%.5s%% (%d / %d)"%(reached_complexity_percentage, complexity_reached, int(total_complexity))}"""
+    html_string += f"""Cyclomatic complexity statically reachable by fuzzers: {"%.5s%% (%d / %d)"%(reached_complexity_percentage, complexity_reached, int(total_complexity))}"""
     html_string += "<br>"
     if display_coverage:
         l.info("Displaying coverage in summary")
         covered_funcs = project_profile.get_all_runtime_covered_functions()
-        html_string += f"""Runtime covered functions: { len(covered_funcs) }"""
+        html_string += f"""Functions covered at runtime: { len(covered_funcs) }"""
         html_string += "<br>"
     else:
         l.info("Not displaying coverage in summary")
@@ -504,9 +504,11 @@ def create_fuzzer_detailed_section(
                     ("percentage hit", "")], 
                 1, "desc")
 
+    total_hit_functions = 0
     for funcname in profile.coverage.covmap:
         total_func_lines, hit_lines, hit_percentage = profile.get_cov_metrics(fuzz_utils.demangle_cpp_func(funcname))
         if hit_percentage != None:
+            total_hit_functions += 1
             html_string += html_table_add_row([
                 funcname,
                 total_func_lines,
@@ -527,12 +529,15 @@ def create_fuzzer_detailed_section(
             conclusions.append((2, f"""Fuzzer { profile.get_key() } is blocked: runtime coverage only covers {"%.5s%%"%(str(cov_reach_proportion))} of its reachable functions."""))
 
     html_string += f"""<br>
-Uncovered functions that are reachable:{uncovered_reachable_funcs}
+Covered functions: { total_hit_functions }
 <br>
-Reachable functions: {reachable_funcs}
+Functions that are reachable but not covered: { uncovered_reachable_funcs }
+<br>
+Reachable functions: { reachable_funcs }
 <br>
 Percentage of reachable functions covered: {"%.5s%%"%(str(cov_reach_proportion))}
 <br>
+<b>NB:</b> The sum of <i>covered functions</i> and <i>functions that are reachable but not covered</i> need not be <i>Reachable functions</i>. This is because the reachability analysis is an approximation and thus at runtime some functions may be covered that are not included in the reachability analysis. This is a limitation our of our static analysis capabilities.
 """
 
     # Calltree fixed-width image
@@ -809,8 +814,9 @@ def create_html_report(
     l.info(" - Creating reachability overview table")
     html_report_core = html_add_header_with_link("Reachability and coverage overview", 3, toc_list)
     tables.append("myTable%d" % (len(tables)))
-    html_report_core += "<p class='no-top-margin'>This is the overview of reachability by the existing fuzzers in the project</p>"
+    html_report_core += "<p class='no-top-margin'>"
     html_report_core += create_top_summary_info(tables, project_profile, conclusions, True, display_coverage=True)
+    html_report_core == "</p>"
 
     #############################################
     # Table with overview of all fuzzers.
