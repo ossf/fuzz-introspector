@@ -307,21 +307,12 @@ def create_top_summary_info(
     # Get complexity and function counts
     total_functions, reached_func_count, unreached_func_count, reached_percentage, unreached_percentage = project_profile.get_function_summaries()
     total_complexity, complexity_reached, complexity_unreached, reached_complexity_percentage, unreached_complexity_percentage = project_profile.get_complexity_summaries()
-    html_string += create_table_head(tables[-1],
-                                     [("", ""), 
-                                     ("Reached", ""),
-                                     ("Unreached", "")])
-    html_string += html_table_add_row([
-        "Functions", 
-        "%.5s%% (%d / %d)"%(str(reached_percentage), reached_func_count, total_functions),
-        "%.5s%% (%d / %d)"%(str(unreached_percentage), unreached_func_count,total_functions)
-        ])
-    html_string += html_table_add_row([
-        "Complexity", 
-        "%.5s%% (%d / %d)"%(reached_complexity_percentage, complexity_reached, int(total_complexity)),
-        "%.5s%% (%d / %d)"%(unreached_complexity_percentage, complexity_unreached, int(total_complexity))
-        ])
-    html_string += ("</table>\n")
+
+    # Display reachability information
+    html_string += f"""Reachable functions: {"%.5s%% (%d / %d)"%(str(reached_percentage), reached_func_count, total_functions)}"""
+    html_string += "<br>"
+    html_string += f"""Reachable cylcomatic complexity: {"%.5s%% (%d / %d)"%(reached_complexity_percentage, complexity_reached, int(total_complexity))}"""
+    html_string += "<br>"
 
     # Add conclusion
     if extract_conclusion:
@@ -795,19 +786,19 @@ def create_html_report(
     html_overview = html_add_header_with_link("Project overview", 1, toc_list)
 
     # Project overview
-    html_overview += html_add_header_with_link("Project information", 2, toc_list)
+    #html_overview += html_add_header_with_link("Project information", 2, toc_list)
 
     #############################################
     # Section with high level suggestions
     #############################################
     html_report_top = html_add_header_with_link(
-        "High level conclusions", 2, toc_list)
+        "High level conclusions", 3, toc_list)
 
     #############################################
     # Reachability overview
     #############################################
     l.info(" - Creating reachability overview table")
-    html_report_core = html_add_header_with_link("Reachability overview", 3, toc_list)
+    html_report_core = html_add_header_with_link("Reachability and coverage overview", 3, toc_list)
     tables.append("myTable%d" % (len(tables)))
     html_report_core += "<p class='no-top-margin'>This is the overview of reachability by the existing fuzzers in the project</p>"
     html_report_core += create_top_summary_info(tables, project_profile, conclusions, True)
