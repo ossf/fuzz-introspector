@@ -196,7 +196,11 @@ h1 {
 	color:  #a20000;
 	padding:  0px 0px
 }
-.red-background .language-clike {
+.red-background .coverage-line-inner .language-clike,
+.lawngreen-background .red-background .coverage-line-inner .language-clike, 
+.gold-background .red-background .coverage-line-inner .language-clike, 
+.yellow-background .red-background .coverage-line-inner .language-clike, 
+.greenyellow-background .red-background .coverage-line-inner .language-clike {
 	background:  #bf4343;
 }
 
@@ -210,7 +214,11 @@ h1 {
 	color:  #a20000;
 	padding:  0px 0px
 }
-.gold-background .language-clike {
+.gold-background .coverage-line-inner .language-clike,
+.lawngreen-background .gold-background .coverage-line-inner .language-clike, 
+.red-background .gold-background .coverage-line-inner .language-clike, 
+.yellow-background .gold-background .coverage-line-inner .language-clike, 
+.greenyellow-background .gold-background .coverage-line-inner .language-clike  {
 	background:  #DCC80D;
 }
 
@@ -223,7 +231,11 @@ h1 {
 	color:  #a20000;
 	padding:  0px 0px
 }
-.yellow-background .language-clike {
+.yellow-background .coverage-line-inner .language-clike,
+.lawngreen-background .yellow-background .coverage-line-inner .language-clike, 
+.red-background .yellow-background .coverage-line-inner .language-clike, 
+.gold-background .yellow-background .coverage-line-inner .language-clike, 
+.greenyellow-background .yellow-background .coverage-line-inner .language-clike  {
 	background:  #DADA25;
 }
 
@@ -236,7 +248,11 @@ h1 {
 	color:  #a20000;
 	padding:  0px 0px
 }
-.greenyellow-background .language-clike {
+.greenyellow-background .coverage-line-inner .language-clike,
+.lawngreen-background .greenyellow-background .coverage-line-inner .language-clike, 
+.red-background .greenyellow-background .coverage-line-inner .language-clike, 
+.gold-background .greenyellow-background .coverage-line-inner .language-clike, 
+.yellow-background .greenyellow-background .coverage-line-inner .language-clike {
 	background:  #67C30C;
 }
 
@@ -250,7 +266,11 @@ h1 {
 	color:  #a20000;
 	padding:  0px 0px
 }
-.lawngreen-background .language-clike {
+.lawngreen-background .coverage-line-inner .language-clike,
+.greenyellow-background .lawngreen-background .coverage-line-inner .language-clike, 
+.red-background .lawngreen-background .coverage-line-inner .language-clike, 
+.gold-background .lawngreen-background .coverage-line-inner .language-clike, 
+.yellow-background .lawngreen-background .coverage-line-inner .language-clike {
 	background:  #00CC00;
 }
 
@@ -359,4 +379,20 @@ input[type="checkbox"] {
 .dataTables_wrapper table tbody tr td code,
 .dataTables_wrapper table tbody tr td  {
 	word-wrap: break-word;
+}
+/************************************************************/
+/* Calltree */
+.calltree-line-wrapper {
+	height: 0px;
+	overflow-y: hidden;
+}
+.calltree-line-wrapper.open {
+	height: auto;
+}
+.calltree-line-wrapper.level-0 {
+	height: auto;
+}
+.coverage-line-inner:hover {
+	cursor:  pointer;
+	background: #c7c7c7;
 }
