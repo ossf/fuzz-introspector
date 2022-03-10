@@ -326,36 +326,38 @@ def create_top_summary_info(
     # Add conclusion
     if extract_conclusion:
         # Functions reachability
+        sentence = f"""Fuzzers reach { "%.5s%%"%(str(reached_percentage)) } of all functions. """
         if reached_percentage > 90.0:
             warning = 10
-            sentence = "Fuzzers reach more than 90% of functions. This is great"
+            sentence += "This is great."
         elif reached_percentage > 75.0:
             warning = 8
-            sentence = "Fuzzers reach more than 75% of functions. This is good"
+            sentence += "This is good"
         elif reached_percentage > 50.0:
             warning = 6
-            sentence = "Fuzzers reach more than 50% of functions. This is good, but improvements can be made"
+            sentence += "This is good, but improvements can be made"
         elif reached_percentage > 25.0:
             warning = 4
-            sentence = "Fuzzers reach more than 25% of functions. Improvements should be made"
+            sentence += "Improvements should be made"
         else:
             warning = 2
-            sentence = "Fuzzers reach less than 25% of functions. Improvements need to be made"
+            sentence += "Improvements need to be made"
         conclusions.append((warning, sentence))
 
         # Complexity reachability
+        sentence = f"""Fuzzers reach { "%.5s%%"%(str(reached_complexity_percentage)) } of cyclomatic complexity. """
         if reached_complexity_percentage > 90.0:
             warning = 10
-            sentence = "Fuzzers reach more than 90% complexity. This is great"
+            sentence += "This is great."
         elif reached_complexity_percentage > 70.0:
             warning = 8
-            sentence = "Fuzzers reach more than 70% complexity. This is pretty nice"
+            sentence += "This is pretty nice."
         elif reached_complexity_percentage > 50.0:
             warning = 6
-            sentence = "Fuzzers reach more than 50% complexity. This is okay"
+            sentence += "This is okay."
         else:
             warning = 2
-            sentence = "Fuzzers reach less than 50% complexity. Improvements could be made"
+            sentence += "Improvements could be made"
         conclusions.append((warning, sentence))
 
     return html_string
