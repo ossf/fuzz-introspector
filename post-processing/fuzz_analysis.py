@@ -112,7 +112,7 @@ def overlay_calltree_with_coverage(
 
         # Get URL to coverage report for the node.
         link = "#"
-        for fd_k, fd in project_profile.all_functions.items():
+        for fd_k, fd in profile.all_class_functions.items():
             if fd.function_name == node.dst_function_name:
                 link = coverage_url + \
                     "%s.html#L%d" % (
@@ -124,7 +124,7 @@ def overlay_calltree_with_coverage(
         callsite_link = "#"
         if callstack_has_parent(node, callstack):
             parent_fname = callstack_get_parent(node, callstack)
-            for fd_k, fd in project_profile.all_functions.items():
+            for fd_k, fd in profile.all_class_functions.items():
                 if fuzz_utils.demangle_cpp_func(fd.function_name) == parent_fname:
                     callsite_link = coverage_url + "%s.html#L%d" % (
                             fd.function_source_file,   # parent source file
