@@ -952,20 +952,41 @@ FuzzerFunctionWrapper FuzzIntrospector::wrapFunction(Function *F) {
   return FuncWrap;
 }
 
+// See if there is a main function in this application. If there is a main
+// function then it potentially means this is not a libfuzzer fuzzer being
+// linked, which is often used in projects to have "standalone-tests". In this
+// case we do not want to proceed to avoid having duplicate information.
+// There are cases where there will be a main function in the fuzzer, but which
+// is weakly defined (see details: https://github.com/ossf/fuzz-introspector/issues/66#issuecomment-1063475323).
+// In these cases we check if the main function is empty and if there is an
+// LLVMFuzzerTestOneInput function, and, if so, determine that we should do analysis.
+// More heuristics may come in the future for determining if a linking operation
+// is for a fuzz target.
 bool FuzzIntrospector::shouldRunIntrospector(Module &M) {
-
-  // See if there is a main function in this application. If there is a main
-  // function then it potentially means this is not a libfuzzer fuzzer being
-  // linked, which is often used in projects to have "standalone-tests". In this
-  // case we do not want to proceed to avoid having duplicate information.
+  Function *FuzzEntryFunc = M.getFunction("LLVMFuzzerTestOneInput");
   Function *MainFunc = M.getFunction("main");
   if (MainFunc != nullptr) {
-    logPrintf(L1, "Main function filename: %s\n", getFunctionFilename(MainFunc).c_str());
+    std::string MainFuncFilename = getFunctionFilename(MainFunc);
+    logPrintf(L1, "Main function filename: %s\n", MainFuncFilename.c_str());
+
+    if (MainFunc->empty()) {
+      logPrintf(L1, "Main function is empty. Checking if there is a LLVMFuzzerTestOneInput\n");
+      if (FuzzEntryFunc != nullptr) {
+        logPrintf(L1, "There is an LLVMFuzzerTestOneInput function. Doing introspector analysis\n");
+        return true;
+      }
+    }
+    logPrintf(L1, "Main function is non-empty\n");
     logPrintf(L1, "This means a main function is in the source code rather in the "
                   "libfuzzer "
                   "library, and thus we do not care about it. We only want to "
                   "study the "
                   "actual fuzzers. Exiting this run.\n");
+    return false;
+  }
+
+  if (FuzzEntryFunc == nullptr) {
+    logPrintf(L1, "There is no fuzzer entrypoint.\n");
     return false;
   }
 
