@@ -482,16 +482,32 @@ def create_fuzzer_detailed_section(
     html_string += html_add_header_with_link("Fuzzer: %s" % (
         profile.get_key()), 2, toc_list)
 
-    # Table showing which files this fuzzer hits.
+    # Calltree fixed-width image
     html_string += html_add_header_with_link(
-        "Files hit", 3, toc_list, link="files_hit_%d" % (curr_tt_profile))
+        "Call tree overview", 3, toc_list, link=f"call_tree_{curr_tt_profile}")
+    html_string += """<p class='no-top-margin'>The following is the call tree with color coding for which 
+functions are hit/not hit. This info is based on the coverage 
+achieved of all fuzzers together and not just this specific 
+fuzzer. This should change in the future to be per-fuzzer-basis.</p>"""
+    image_name = "%s_colormap.png"%(fuzzer_filename.replace(" ", "").split("/")[-1])
+
+    create_horisontal_calltree_image(image_name, profile)
+    html_string += "<img class=\"colormap\" src=\"%s\">"%(image_name)
+
+    # Full calltree
+    html_string += html_add_header_with_link(
+            "Full calltree", 3, toc_list, link=f"full_calltree_{curr_tt_profile}")
+    calltree_file_name = create_calltree(profile, project_profile, coverage_url, git_repo_url, basefolder, image_name, tables)
+    html_string += ("<p class='no-top-margin'>The following link provides a visualisation "
+                    "of the full calltree overlayed with coverage information: <a href=\"%s\">full calltree</a></p>"%(calltree_file_name))
+
+    # Fuzz blocker table
+    html_string += html_add_header_with_link(
+            "Fuzz blockers", 3, toc_list, link=f"fuzz_blocker{curr_tt_profile}")
+    html_string += "<p class='no-top-margin'>The followings nodes represent call sites where fuzz blockers occur</p>"
     tables.append(f"myTable{len(tables)}")
-    html_string += create_table_head(tables[-1],
-                                     [("filename",""), ("functions hit","")])
-    for k in profile.file_targets:
-        html_string += html_table_add_row([k,
-                                          len(profile.file_targets[k])])
-    html_string += "</table>\n"
+    html_fuzz_blocker_table = create_fuzz_blocker_table(profile, project_profile, coverage_url, git_repo_url, basefolder, image_name, tables)
+    html_string += html_fuzz_blocker_table
 
     # Table with all functions hit by this fuzzer
     html_string += html_add_header_with_link(
@@ -540,32 +556,17 @@ Percentage of reachable functions covered: {"%.5s%%"%(str(cov_reach_proportion))
 <b>NB:</b> The sum of <i>covered functions</i> and <i>functions that are reachable but not covered</i> need not be <i>Reachable functions</i>. This is because the reachability analysis is an approximation and thus at runtime some functions may be covered that are not included in the reachability analysis. This is a limitation our of our static analysis capabilities.
 """
 
-    # Calltree fixed-width image
+    # Table showing which files this fuzzer hits.
     html_string += html_add_header_with_link(
-        "Call tree overview", 3, toc_list, link=f"call_tree_{curr_tt_profile}")
-    html_string += """<p class='no-top-margin'>The following is the call tree with color coding for which 
-functions are hit/not hit. This info is based on the coverage 
-achieved of all fuzzers together and not just this specific 
-fuzzer. This should change in the future to be per-fuzzer-basis.</p>"""
-    image_name = "%s_colormap.png"%(fuzzer_filename.replace(" ", "").split("/")[-1])
-
-    create_horisontal_calltree_image(image_name, profile)
-    html_string += "<img class=\"colormap\" src=\"%s\">"%(image_name)
-
-    # Fuzz blocker table
-    html_string += html_add_header_with_link(
-            "Fuzz blockers", 3, toc_list, link=f"fuzz_blocker{curr_tt_profile}")
-    html_string += "<p class='no-top-margin'>The followings nodes represent call sites where fuzz blockers occur</p>"
+        "Files hit", 3, toc_list, link="files_hit_%d" % (curr_tt_profile))
     tables.append(f"myTable{len(tables)}")
-    html_fuzz_blocker_table = create_fuzz_blocker_table(profile, project_profile, coverage_url, git_repo_url, basefolder, image_name, tables)
-    html_string += html_fuzz_blocker_table
+    html_string += create_table_head(tables[-1],
+                                     [("filename",""), ("functions hit","")])
+    for k in profile.file_targets:
+        html_string += html_table_add_row([k,
+                                          len(profile.file_targets[k])])
+    html_string += "</table>\n"
 
-    # Full calltree
-    html_string += html_add_header_with_link(
-            "Full calltree", 3, toc_list, link=f"full_calltree_{curr_tt_profile}")
-    calltree_file_name = create_calltree(profile, project_profile, coverage_url, git_repo_url, basefolder, image_name, tables)
-    html_string += ("<p class='no-top-margin'>The following link provides a visualisation "
-                    "of the full calltree overlayed with coverage information: <a href=\"%s\">full calltree</a></p>"%(calltree_file_name))
 
     return html_string
 
