@@ -31,6 +31,7 @@ import fuzz_utils
 
 l = logging.getLogger(name=__name__)
 
+
 class FunctionProfile:
     """
     Class for storing information about a given Function
@@ -74,6 +75,7 @@ class FunctionProfile:
         self.function_depth = elem['functionDepth']
         self.constants_touched = elem['constantsTouched']
 
+
 class FuzzerProfile:
     """
     Class for storing information about a given Fuzzer.
@@ -95,7 +97,7 @@ class FuzzerProfile:
             if "." in elem['functionName']:
                 split_name = elem['functionName'].split(".")
                 if split_name[-1].isnumeric():
-                    l.info("We may have a non-normalised function name: %s"%(elem['functionName']))
+                    l.info("We may have a non-normalised function name: %s" % elem['functionName'])
 
             func_profile = FunctionProfile(elem['functionName'])
             func_profile.migrate_from_yaml_elem(elem)
@@ -103,7 +105,7 @@ class FuzzerProfile:
 
     def refine_paths(self, basefolder: str) -> None:
         """
-        Removes the project_profile's basefolder from source paths in a given profile. 
+        Removes the project_profile's basefolder from source paths in a given profile.
         """
         # Only do this is basefolder is not wrong
         if basefolder == "/":
@@ -131,17 +133,17 @@ class FuzzerProfile:
 
     def correlate_executable_name(self, correlation_dict):
         for elem in correlation_dict['pairings']:
-            if os.path.basename(self.introspector_data_file) in "%s.data"%(elem['fuzzer_log_file']):
-                self.binary_executable = "%s"%(elem['executable_path'])
-                l.info("Correlated %s with %s"%(
+            if os.path.basename(self.introspector_data_file) in "%s.data" % elem['fuzzer_log_file']:
+                self.binary_executable = "%s" % elem['executable_path']
+                l.info("Correlated %s with %s" % (
                     os.path.basename(self.introspector_data_file),
-                    "%s.data"%(elem['fuzzer_log_file'])))
+                    "%s.data" % elem['fuzzer_log_file']))
 
     def get_key(self):
         """
         Returns the "key" we use to identify this Fuzzer profile.
         """
-        if self.binary_executable != None:
+        if self.binary_executable is not None:
             return os.path.basename(self.binary_executable)
 
         return self.fuzzer_source_file
@@ -151,22 +153,28 @@ class FuzzerProfile:
         sets self.functions_unreached_by_fuzzer to all functiosn in self.all_class_functions
         that are not in self.functions_reached_by_fuzzer
         """
-        self.functions_unreached_by_fuzzer = [f.function_name for f
-                in self.all_class_functions.values()
-                if f.function_name not in self.functions_reached_by_fuzzer]
+        self.functions_unreached_by_fuzzer = [
+            f.function_name for f
+            in self.all_class_functions.values()
+            if f.function_name not in self.functions_reached_by_fuzzer
+        ]
 
     def load_coverage(self, target_folder: str) -> None:
         """
         Load coverage data for this profile
         """
-        self.coverage = fuzz_cov_load.llvm_cov_load(target_folder, self.get_target_fuzzer_filename())
+        self.coverage = fuzz_cov_load.llvm_cov_load(
+            target_folder,
+            self.get_target_fuzzer_filename())
 
-    def get_function_coverage(self, function_name: str, should_normalise: bool=False) -> List[str]:
+    def get_function_coverage(self,
+                              function_name: str,
+                              should_normalise: bool = False) -> List[str]:
         """
         Get the tuples reflecting coverage map of a given function
         """
         if not should_normalise:
-            if not function_name in self.coverage.covmap:
+            if function_name not in self.coverage.covmap:
                 return []
             return self.coverage.covmap[function_name]
         # should_normalise
@@ -178,9 +186,8 @@ class FuzzerProfile:
         # In case of errs return empty list
         return []
 
-
     def get_target_fuzzer_filename(self) -> str:
-        return self.fuzzer_source_file.split("/")[-1].replace(".cpp","").replace(".c","")
+        return self.fuzzer_source_file.split("/")[-1].replace(".cpp", "").replace(".c", "")
 
     def get_file_targets(self) -> None:
         """
@@ -189,11 +196,10 @@ class FuzzerProfile:
         a set of strings containing strings which are the names of the functions
         in the given file that are reached by the fuzzer.
         """
-        filenames = set()
         self.file_targets = dict()
         all_callsites = fuzz_cfg_load.extract_all_callsites(self.function_call_depths)
         for cs in all_callsites:
-            if cs.dst_function_source_file.replace(" ","") == "":
+            if cs.dst_function_source_file.replace(" ", "") == "":
                 continue
             if cs.dst_function_source_file not in self.file_targets:
                 self.file_targets[cs.dst_function_source_file] = set()
@@ -233,7 +239,7 @@ class FuzzerProfile:
         self.get_total_cyclomatic_complexity()
 
     def get_cov_uncovered_reachable_funcs(self):
-        if self.coverage == None:
+        if self.coverage is None:
             return None
 
         uncovered_funcs = []
@@ -247,8 +253,9 @@ class FuzzerProfile:
             total_func_lines, hit_lines = self.coverage.get_hit_summary(funcname)
             hit_percentage = (hit_lines / total_func_lines) * 100.0
             return total_func_lines, hit_lines, hit_percentage
-        except:
+        except Exception:
             return None, None, None
+
 
 class MergedProjectProfile:
     """
@@ -266,7 +273,7 @@ class MergedProjectProfile:
         self.unreached_functions = set()
         self.functions_reached = set()
 
-        l.info("Creating merged profile of %d profiles"%(len(self.profiles)))
+        l.info("Creating merged profile of %d profiles" % len(self.profiles))
         # Populate functions reached
         l.info("Populating functions reached")
         for profile in profiles:
@@ -284,8 +291,8 @@ class MergedProjectProfile:
         # add duplicates
         l.info("Creating all_functions dictionary")
         excluded_functions = {
-                    "sanitizer", "llvm"
-                }
+            "sanitizer", "llvm"
+        }
         for profile in profiles:
             for fd in profile.all_class_functions.values():
                 # continue if the function is to be excluded
@@ -296,7 +303,6 @@ class MergedProjectProfile:
                 for fuzzer_profile in profiles:
                     if fuzzer_profile.reaches(fd.function_name):
                         fd.hitcount += 1
-                        fuzzer_filename = fuzzer_profile.fuzzer_source_file.replace(" ", "").split("/")[-1]
                         fd.reached_by_fuzzers.append(fuzzer_profile.get_key())
                     if fd.function_name not in self.all_functions:
                         self.all_functions[fd.function_name] = fd
@@ -306,11 +312,10 @@ class MergedProjectProfile:
         for fp_obj in self.all_functions.values():
             total_cyclomatic_complexity = 0
             total_new_complexity = 0
-            incoming_references = list()
 
             for reached_func_name in fp_obj.functions_reached:
                 if reached_func_name not in self.all_functions:
-                    l.error("Found mismatched function name between all_functions and functions_reached: %s"%(reached_func_name))
+                    l.error("Mismatched function name: %s" % reached_func_name)
                     continue
                 reached_func_obj = self.all_functions[reached_func_name]
                 reached_func_obj.incoming_references.append(fp_obj.function_name)
@@ -397,8 +402,8 @@ class MergedProjectProfile:
         reached_func_count = self.get_total_reached_function_count()
         unreached_func_count = self.get_total_unreached_function_count()
         total_functions = reached_func_count + unreached_func_count
-        reached_percentage = (float(reached_func_count) / float(total_functions)) *100
-        unreached_percentage = (float(unreached_func_count) / float(total_functions)) *100
+        reached_percentage = (float(reached_func_count) / float(total_functions)) * 100
+        unreached_percentage = (float(unreached_func_count) / float(total_functions)) * 100
         return total_functions, reached_func_count, unreached_func_count, reached_percentage, unreached_percentage
 
     def get_complexity_summaries(self) -> Tuple[int, int, int, float, float]:
@@ -415,8 +420,8 @@ class MergedProjectProfile:
 
     def set_basefolder(self) -> None:
         """
-        Identifies a common path-prefix amongst source files in 
-        This is used to remove locations within a host system to 
+        Identifies a common path-prefix amongst source files in
+        This is used to remove locations within a host system to
         essentially make paths as if they were from the root of the source code project.
         """
         all_strs = [f.function_source_file for f
@@ -426,17 +431,18 @@ class MergedProjectProfile:
 
         self.basefolder = fuzz_utils.longest_common_prefix(all_strs)
 
+
 def read_fuzzer_data_file_to_profile(filename: str) -> Optional[FuzzerProfile]:
     """
     For a given .data file (CFG) read the corresponding .yaml file
     This is a bit odd way of doing it and should probably be improved.
     """
-    l.info(" - loading %s"%(filename))
+    l.info(" - loading %s" % filename)
     if not os.path.isfile(filename) or not os.path.isfile(filename+".yaml"):
         return None
 
     data_dict_yaml = fuzz_utils.data_file_read_yaml(filename + ".yaml")
-    if data_dict_yaml == None:
+    if data_dict_yaml is None:
         return None
 
     FP = FuzzerProfile(filename, data_dict_yaml)
@@ -445,13 +451,14 @@ def read_fuzzer_data_file_to_profile(filename: str) -> Optional[FuzzerProfile]:
 
     return FP
 
+
 def add_func_to_reached_and_clone(merged_profile_old: MergedProjectProfile,
                                   func_to_add: FunctionProfile) -> MergedProjectProfile:
     """
     Add new functions as "reached" in a merged profile, and returns
     a new copy of the merged profile with reachability information as if the
     functions in func_to_add are added to the merged profile.
- 
+
     The use of this is to calculate what the state will be of a merged profile
     by targetting a new set of functions.
 
@@ -470,7 +477,7 @@ def add_func_to_reached_and_clone(merged_profile_old: MergedProjectProfile,
     # Update hitcount of all functions reached by the function
     for func_name in func_to_add.functions_reached:
         if func_name not in merged_profile.all_functions:
-            l.error("Found mismatched function name between merged all_functions and functions_reached: %s"%(func_name))
+            l.error("Mismatched function name: %s" % func_name)
             continue
         f = merged_profile.all_functions[func_name]
         f.hitcount += 1
@@ -485,13 +492,13 @@ def add_func_to_reached_and_clone(merged_profile_old: MergedProjectProfile,
         uncovered_cc = 0
         for reached_func_name in f_profile.functions_reached:
             if reached_func_name not in merged_profile.all_functions:
-                l.error("Found mismatched function name between merged all_functions and functions_reached: %s"%(reached_func_name))
+                l.error("Mismatched function name: %s" % reached_func_name)
                 continue
             f_reached = merged_profile.all_functions[reached_func_name]
             cc += f_reached.cyclomatic_complexity
             if f_reached.hitcount == 0:
                 uncovered_cc += f_reached.cyclomatic_complexity
- 
+
         # set complexity fields in the function
         f_profile.new_unreached_complexity = uncovered_cc
         if f_profile.hitcount == 0:
@@ -499,14 +506,14 @@ def add_func_to_reached_and_clone(merged_profile_old: MergedProjectProfile,
         f_profile.total_cyclomatic_complexity = cc + f_profile.cyclomatic_complexity
 
     return merged_profile
-    
+
 
 def load_all_profiles(target_folder: str) -> List[FuzzerProfile]:
     profiles = []
     data_files = fuzz_utils.get_all_files_in_tree_with_regex(target_folder, "fuzzerLogFile.*\.data$")
-    l.info(" - found %d profiles to load"%(len(data_files)))
+    l.info(" - found %d profiles to load" % len(data_files))
     for data_file in data_files:
         profile = read_fuzzer_data_file_to_profile(data_file)
-        if profile != None:
+        if profile is not None:
             profiles.append(profile)
     return profiles
