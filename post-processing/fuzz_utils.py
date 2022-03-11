@@ -26,6 +26,7 @@ import yaml
 
 l = logging.getLogger(name=__name__)
 
+
 def longest_common_prefix(strs: List[str]) -> str:
     """
     Returns the longest common prefix of all the strings in strs
@@ -33,31 +34,34 @@ def longest_common_prefix(strs: List[str]) -> str:
     if len(strs) == 0:
         return ""
     current = strs[0]
-    for i in range(1,len(strs)):
+    for i in range(1, len(strs)):
         temp = ""
         if len(current) == 0:
             break
         for j in range(len(strs[i])):
-            if j<len(current) and current[j] == strs[i][j]:
-                temp+=current[j]
+            if j < len(current) and current[j] == strs[i][j]:
+                temp += current[j]
             else:
                 break
         current = temp
     return current
 
+
 def normalise_str(s1: str) -> str:
     return s1.replace("\t", "").replace("\r", "").replace("\n", "").replace(" ", "")
+
 
 def safe_decode(data) -> str:
     try:
         return data.decode()
-    except:
+    except Exception:
         None
     try:
         return data.decode('unicode-escape')
-    except:
+    except Exception:
         None
     return None
+
 
 def get_all_files_in_tree_with_regex(basedir: str, regex_str: str) -> List[str]:
     """
@@ -69,9 +73,10 @@ def get_all_files_in_tree_with_regex(basedir: str, regex_str: str) -> List[str]:
     for root, dirs, files in os.walk(basedir):
         for f in files:
             if r.match(f):
-                l.info("f: %s -- matches regex: %s"%(f, regex_str))
+                l.info("f: %s -- matches regex: %s" % f, regex_str)
                 data_files.append(os.path.join(root, f))
     return data_files
+
 
 def data_file_read_yaml(filename: str) -> Dict[Any, Any]:
     """
@@ -87,39 +92,37 @@ def data_file_read_yaml(filename: str) -> Dict[Any, Any]:
         try:
             data_dict = yaml.safe_load(stream)
             return data_dict
-        except yaml.YAMLError as exc:
+        except yaml.YAMLError:
             return None
+
 
 def demangle_cpp_func(funcname: str) -> str:
     try:
-        demangled = cxxfilt.demangle(funcname.replace(" ",""))
+        demangled = cxxfilt.demangle(funcname.replace(" ", ""))
         return demangled
-    except:
+    except Exception:
         return funcname
 
-# fuzzer files can only have a name using limited characters
-regex = '[%s]{%d,}' % (r"A-Za-z0-9_-", 10)
-fuzzer_log_file_pattern = re.compile(regex)
-def process(stream):
-    data = stream.read().decode('ascii', 'ignore')
-    return pattern.findall(data)
 
+# fuzzer files can only have a name using limited characters
 def scan_executables_for_fuzz_introspector_logs(exec_dir: str):
+    regex = '[%s]{%d,}' % (r"A-Za-z0-9_-", 10)
+    fuzzer_log_file_pattern = re.compile(regex)
     if not os.path.isdir(exec_dir):
         return []
     executable_to_fuzz_reports = []
     for f in os.listdir(exec_dir):
         full_path = os.path.join(exec_dir, f)
         if os.access(full_path, os.X_OK) and os.path.isfile(full_path):
-            print("File: %s is executable"%(full_path))
+            print("File: %s is executable" % full_path)
             # Read all of the strings in this file
             with open(full_path, "rb") as fp:
                 all_ascii_data = fp.read().decode('ascii', 'ignore')
                 for found_str in fuzzer_log_file_pattern.findall(all_ascii_data):
                     if "fuzzerLogFile" in found_str:
                         print(found_str)
-
-                        executable_to_fuzz_reports.append({'executable_path' : full_path, 'fuzzer_log_file': found_str})
-    # We need to ensure there are enough elements to force Yaml into creating a list.
-    #executable_to_fuzz_reports.append({'executable_path' : 'empty', 'fuzzer_log_file': 'empty'})
+                        executable_to_fuzz_reports.append({
+                            'executable_path': full_path,
+                            'fuzzer_log_file': found_str
+                        })
     return executable_to_fuzz_reports
