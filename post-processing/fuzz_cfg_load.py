@@ -13,12 +13,10 @@
 # limitations under the License.
 """ Module for loading CFG files """
 
-import os
-import sys
-
 from typing import (
     List
 )
+
 
 class CalltreeCallsite():
     """
@@ -47,8 +45,10 @@ class CalltreeCallsite():
         self.cov_forward_reds = None
         self.cov_largest_blocked_func = None
 
-def extract_all_callsites_recursive(calltree : CalltreeCallsite,
-				    callsite_nodes : List) -> List[CalltreeCallsite]:
+
+def extract_all_callsites_recursive(
+        calltree: CalltreeCallsite,
+        callsite_nodes: List):
     """
     Given a node, will assemble all callsites in the children. Recursive function.
     """
@@ -56,17 +56,24 @@ def extract_all_callsites_recursive(calltree : CalltreeCallsite,
     for c in calltree.children:
         extract_all_callsites_recursive(c, callsite_nodes)
 
-def extract_all_callsites(calltree : CalltreeCallsite) -> List[CalltreeCallsite]:
+
+def extract_all_callsites(calltree: CalltreeCallsite) -> List[CalltreeCallsite]:
     cs_list = []
     extract_all_callsites_recursive(calltree, cs_list)
     return cs_list
 
-def print_ctcs_tree(ctcs : CalltreeCallsite):
-    print("%s%s -- %s -- %d"%((" "*int(ctcs.depth)), ctcs.dst_function_name, ctcs.dst_function_source_file, ctcs.src_linenumber))
+
+def print_ctcs_tree(ctcs: CalltreeCallsite):
+    print("%s%s -- %s -- %d" % (
+        (" " * int(ctcs.depth)),
+        ctcs.dst_function_name,
+        ctcs.dst_function_source_file,
+        ctcs.src_linenumber))
     for c in ctcs.children:
         print_ctcs_tree(c)
 
-def data_file_read_calltree(filename : str) -> CalltreeCallsite:
+
+def data_file_read_calltree(filename: str) -> CalltreeCallsite:
     """
     Extracts the calltree of a fuzzer from a .data file.
     This is for C/C++ files
@@ -76,21 +83,19 @@ def data_file_read_calltree(filename : str) -> CalltreeCallsite:
     read_tree = False
     curr_ctcs_node = None
     curr_depth = -1
-    depth_stack = dict()
     with open(filename, "r") as flog:
         for line in flog:
             line = line.replace("\n", "")
             if read_tree and "======" not in line:
                 stripped_line = line.strip().split(" ")
-                
                 # Parse the line
                 # Type: {spacing depth} {target filename} {line count}
                 if len(stripped_line) == 3:
                     filename = stripped_line[1]
-                    linenumber = int(stripped_line[2].replace("linenumber=",""))
-                else: 
+                    linenumber = int(stripped_line[2].replace("linenumber=", ""))
+                else:
                     filename = ""
-                    linenumber=0
+                    linenumber = 0
                 space_count = len(line) - len(line.lstrip(' '))
                 depth = space_count / 2
 
@@ -108,9 +113,11 @@ def data_file_read_calltree(filename : str) -> CalltreeCallsite:
                     curr_ctcs_node = ctcs
                 elif depth > curr_depth:
                     # We are going one calldepth deeper
-                    # Special case in the root parent case, where we have no parent in the current node
+                    # Special case in the root parent case, where we have no parent in the current
+                    # node
                     # and also no children.
-                    if curr_ctcs_node.parent_calltree_callsite == None and len(curr_ctcs_node.children) == 0:
+                    if (curr_ctcs_node.parent_calltree_callsite is None
+                            and len(curr_ctcs_node.children) == 0):
                         None
                     else:
                         curr_ctcs_node = curr_ctcs_node.children[-1]
@@ -120,16 +127,14 @@ def data_file_read_calltree(filename : str) -> CalltreeCallsite:
                     depth_diff = int(curr_depth - depth)
                     tmp_node = curr_ctcs_node
                     idx = 0
-                    while idx < depth_diff and tmp_node.parent_calltree_callsite != None:
+                    while idx < depth_diff and tmp_node.parent_calltree_callsite is not None:
                         tmp_node = tmp_node.parent_calltree_callsite
-                        idx +=  1
+                        idx += 1
                     curr_ctcs_node = tmp_node
-                
                 # Add the node to the current parent
                 if curr_depth != -1:
                     ctcs.parent_calltree_callsite = curr_ctcs_node
                     curr_ctcs_node.children.append(ctcs)
-                    #curr_ctcs_node.children = list(sorted(curr_ctcs_node.children, key=lambda x : x.src_linenumber))
                 curr_depth = depth
 
             if "====================================" in line:
@@ -138,14 +143,12 @@ def data_file_read_calltree(filename : str) -> CalltreeCallsite:
                 read_tree = True
 
     # move upwards from any node in the tree
-    if curr_ctcs_node == None:
+    if curr_ctcs_node is None:
         return None
 
     ctcs_root = curr_ctcs_node
     while ctcs_root.depth != 0:
         ctcs_root = ctcs_root.parent_calltree_callsite
-        if ctcs_root == None:
+        if ctcs_root is None:
             return None
-    #print_ctcs_tree(ctcs_root)
-
     return ctcs_root
