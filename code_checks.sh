@@ -17,3 +17,4 @@
 set -x
 pep8 --first ./post-process
 flake8 --ignore=W503 --max-line-length=100 ./post-processing/
+mypy -p post-processing

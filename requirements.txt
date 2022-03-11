@@ -6,3 +6,4 @@ PyYAML==5.4.1
 soupsieve==2.2.1
 flake8
 pep8
+mypy
