@@ -197,7 +197,7 @@ class FuzzerProfile:
                 continue
             if cs.dst_function_source_file not in self.file_targets:
                 self.file_targets[cs.dst_function_source_file] = set()
-            self.file_targets[cs.dst_function_source_file].add(cs.dst_function_source_file)
+            self.file_targets[cs.dst_function_source_file].add(cs.dst_function_name)
 
     def get_total_basic_blocks(self) -> None:
         """
