@@ -409,7 +409,24 @@ def create_fuzz_blocker_table(
     Creates HTML string for table showing fuzz blockers.
     """
     l.info("Creating fuzz blocker table")
-    html_table_string = create_table_head(
+    # Identify if there are any fuzz blockers
+    all_callsites = fuzz_cfg_load.extract_all_callsites(profile.function_call_depths)
+    nodes_sorted_by_red_ahead = sorted(all_callsites,
+                                       key=lambda x:x.cov_forward_reds,
+                                       reverse=True)
+
+    has_blockers = False
+    for node in nodes_sorted_by_red_ahead:
+        if node.cov_forward_reds > 0:
+            has_blockers = True
+
+    if not has_blockers:
+        l.info("There are no fuzz blockers")
+        return None
+
+    html_table_string = "<p class='no-top-margin'>The followings nodes represent call sites where fuzz blockers occur</p>"
+    tables.append(f"myTable{len(tables)}")
+    html_table_string += create_table_head(
             tables[-1], 
                [('Blocked nodes', ""),
                 ('Calltree index', ""),
@@ -419,10 +436,6 @@ def create_fuzz_blocker_table(
             sort_by_column = 0,
             sort_order = "desc")
     max_idx = 10
-    all_callsites = fuzz_cfg_load.extract_all_callsites(profile.function_call_depths)
-    nodes_sorted_by_red_ahead = sorted(all_callsites,
-                                       key=lambda x:x.cov_forward_reds,
-                                       reverse=True)
     for node in nodes_sorted_by_red_ahead:
         if max_idx == 0 or node.cov_forward_reds == 0:
             break
@@ -434,8 +447,8 @@ def create_fuzz_blocker_table(
                                     node.cov_largest_blocked_func])
         max_idx -= 1
     html_table_string += "</table>"
-    return html_table_string
 
+    return html_table_string
 
 
 def create_calltree(
@@ -551,12 +564,18 @@ fuzzer. This should change in the future to be per-fuzzer-basis.</p>"""
                     "of the full calltree overlayed with coverage information: <a href=\"%s\">full calltree</a></p>"%(calltree_file_name))
 
     # Fuzz blocker table
-    html_string += html_add_header_with_link(
-            "Fuzz blockers", 3, toc_list, link=f"fuzz_blocker{curr_tt_profile}")
-    html_string += "<p class='no-top-margin'>The followings nodes represent call sites where fuzz blockers occur</p>"
-    tables.append(f"myTable{len(tables)}")
-    html_fuzz_blocker_table = create_fuzz_blocker_table(profile, project_profile, coverage_url, git_repo_url, basefolder, image_name, tables)
-    html_string += html_fuzz_blocker_table
+    html_fuzz_blocker_table = create_fuzz_blocker_table(
+                                            profile,
+                                            project_profile,
+                                            coverage_url,
+                                            git_repo_url,
+                                            basefolder,
+                                            image_name,
+                                            tables)
+    if html_fuzz_blocker_table != None:
+        html_string += html_add_header_with_link(
+                "Fuzz blockers", 3, toc_list, link=f"fuzz_blocker{curr_tt_profile}")
+        html_string += html_fuzz_blocker_table
 
     # Table with all functions hit by this fuzzer
     html_string += html_add_header_with_link(
