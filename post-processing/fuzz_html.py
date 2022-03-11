@@ -301,7 +301,7 @@ def create_all_function_table(
     return html_string
 
 def create_percentage_graph(title: str, percentage: str) -> str:
-    return f"""<div style="flex:1; " class="report-box">
+    return f"""<div style="flex:1; margin-right: 20px"class="report-box">
             <div style="font-weight: 600; text-align: center;">
                 {title}
             </div>
@@ -326,7 +326,7 @@ def create_percentage_graph(title: str, percentage: str) -> str:
         </div>"""
 
 def create_covered_func_box(covered_funcs: str) -> str:
-    return f"""<div style="flex:1; flex-direction: column; display: flex; margin-left: 20px" class="report-box">
+    return f"""<div style="flex:1; flex-direction: column; display: flex;" class="report-box">
             <div style="font-weight: 600; text-align: center; flex: 1">
                 Functions covered at runtime
             </div>
