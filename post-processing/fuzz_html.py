@@ -300,35 +300,67 @@ def create_all_function_table(
     html_string += ("</table>\n")
     return html_string
 
+def create_percentage_graph(title: str, percentage: str) -> str:
+    return f"""<div style="flex:1; " class="report-box">
+            <div style="font-weight: 600; text-align: center;">
+                {title}
+            </div>
+            <div class="flex-wrapper">
+              <div class="single-chart">
+                <svg viewBox="0 0 36 36" class="circular-chart green">
+                  <path class="circle-bg"
+                    d="M18 2.0845
+                      a 15.9155 15.9155 0 0 1 0 31.831
+                      a 15.9155 15.9155 0 0 1 0 -31.831"
+                  />
+                  <path class="circle"
+                    stroke-dasharray="{percentage}, 100"
+                    d="M18 2.0845
+                      a 15.9155 15.9155 0 0 1 0 31.831
+                      a 15.9155 15.9155 0 0 1 0 -31.831"
+                  />
+                  <text x="18" y="20.35" class="percentage">{percentage}%</text>
+                </svg>
+              </div>
+            </div>
+        </div>"""
 
-def create_top_summary_info(
+def create_covered_func_box(covered_funcs: str) -> str:
+    return f"""<div style="flex:1; flex-direction: column; display: flex; margin-left: 20px" class="report-box">
+            <div style="font-weight: 600; text-align: center; flex: 1">
+                Functions covered at runtime
+            </div>
+            <div style="text-align: center; font-size: 3rem; font-weight: 450; flex: 3; padding-top: 20%">
+                {covered_funcs}
+            </div>
+        </div>"""
+
+def create_boxed_top_summary_info(
         tables: List[str],
         project_profile: fuzz_data_loader.MergedProjectProfile,
         conclusions,
         extract_conclusion,
         display_coverage = False) -> str:
     html_string = ""
-
     # Get complexity and function counts
     total_functions, reached_func_count, unreached_func_count, reached_percentage, unreached_percentage = project_profile.get_function_summaries()
     total_complexity, complexity_reached, complexity_unreached, reached_complexity_percentage, unreached_complexity_percentage = project_profile.get_complexity_summaries()
 
-    # Display reachability information
-    html_string += f"""Functions statically reachable by fuzzers: {"%.5s%% (%d / %d)"%(str(reached_percentage), reached_func_count, total_functions)}"""
-    html_string += "<br>"
-    html_string += f"""Cyclomatic complexity statically reachable by fuzzers: {"%.5s%% (%d / %d)"%(reached_complexity_percentage, complexity_reached, int(total_complexity))}"""
-    html_string += "<br>"
+    html_string += create_percentage_graph("Functions statically reachable by fuzzers", str(round(reached_percentage, 2)))
+    html_string += create_percentage_graph("Cyclomatic complexity statically reachable by fuzzers", str(round(reached_complexity_percentage, 2)))
     if display_coverage:
         l.info("Displaying coverage in summary")
         covered_funcs = project_profile.get_all_runtime_covered_functions()
-        html_string += f"""Functions covered at runtime: { len(covered_funcs) }"""
-        html_string += "<br>"
-    else:
-        l.info("Not displaying coverage in summary")
+        html_string += create_covered_func_box(str(len(covered_funcs)))
 
     # Add conclusion
     if extract_conclusion:
-        # Functions reachability
+        create_conclusions(conclusions, reached_percentage, reached_complexity_percentage)
+    return html_string
+
+
+def create_conclusions(conclusions, reached_percentage, reached_complexity_percentage):
+    # Functions reachability
         sentence = f"""Fuzzers reach { "%.5s%%"%(str(reached_percentage)) } of all functions. """
         if reached_percentage > 90.0:
             warning = 10
@@ -362,6 +394,36 @@ def create_top_summary_info(
             warning = 2
             sentence += "Improvements could be made"
         conclusions.append((warning, sentence))
+
+def create_top_summary_info(
+        tables: List[str],
+        project_profile: fuzz_data_loader.MergedProjectProfile,
+        conclusions,
+        extract_conclusion,
+        display_coverage = False) -> str:
+    html_string = ""
+
+    # Get complexity and function counts
+    total_functions, reached_func_count, unreached_func_count, reached_percentage, unreached_percentage = project_profile.get_function_summaries()
+    total_complexity, complexity_reached, complexity_unreached, reached_complexity_percentage, unreached_complexity_percentage = project_profile.get_complexity_summaries()
+
+    # Display reachability information
+    html_string += f"""Functions statically reachable by fuzzers: {"%.5s%% (%d / %d)"%(str(reached_percentage), reached_func_count, total_functions)}"""
+    html_string += "<br>"
+    html_string += f"""Cyclomatic complexity statically reachable by fuzzers: {"%.5s%% (%d / %d)"%(reached_complexity_percentage, complexity_reached, int(total_complexity))}"""
+    html_string += "<br>"
+    if display_coverage:
+        l.info("Displaying coverage in summary")
+        covered_funcs = project_profile.get_all_runtime_covered_functions()
+        html_string += f"""Functions covered at runtime: { len(covered_funcs) }"""
+        html_string += "<br>"
+    else:
+        l.info("Not displaying coverage in summary")
+
+    # Add conclusion
+    if extract_conclusion:
+        create_conclusions(conclusions, reached_percentage, reached_complexity_percentage)
+        
 
     return html_string
 
@@ -652,6 +714,7 @@ def handle_analysis_3(
     functions_of_interest = fuzz_analysis.analysis_coverage_runtime_analysis(profiles, project_profile)
 
     html_string = ""
+    html_string += "<div class=\"report-box\">"
     html_string += html_add_header_with_link(
             "Runtime coverage analysis",
             1, toc_list)
@@ -672,6 +735,7 @@ def handle_analysis_3(
                 "%.5s"%(str((hit_lines / total_func_lines) * 100.0))
             ])
     html_string += "</table>"
+    html_string += "</div>" # report-box
     return html_string
 
 def handle_analysis_2(
@@ -815,6 +879,7 @@ def handle_analysis_1(
     tables.append(table_id)
     html_string += create_all_function_table(
         tables, new_profile, coverage_url, git_repo_url, basefolder, table_id)
+    html_string += "</div>" # close report-box
 
     return html_string
 
@@ -883,9 +948,9 @@ def create_html_report(
     l.info(" - Creating reachability overview table")
     html_report_core = html_add_header_with_link("Reachability and coverage overview", 3, toc_list)
     tables.append("myTable%d" % (len(tables)))
-    html_report_core += "<p class='no-top-margin'>"
-    html_report_core += create_top_summary_info(tables, project_profile, conclusions, True, display_coverage=True)
-    html_report_core == "</p>"
+    html_report_core += "<div style=\"display: flex; max-width: 800px\">"
+    html_report_core += create_boxed_top_summary_info(tables, project_profile, conclusions, True, display_coverage=True)
+    html_report_core += "</div>"
 
     #############################################
     # Table with overview of all fuzzers.
@@ -899,29 +964,31 @@ def create_html_report(
     # Table with details about all functions in the target project.
     #############################################
     l.info(" - Creating table with information about all functions in target")
+    html_report_core += "<div class=\"report-box\">"
     html_report_core += html_add_header_with_link(
         "Project functions overview", 2, toc_list)
     table_id = "fuzzers_overview_table"
     tables.append(table_id)
     html_report_core += create_all_function_table(
         tables, project_profile, coverage_url, git_repo_url, basefolder, table_id)
+    html_report_core += "</div>" # report box
 
-    html_report_core += "<hr>"
 
     #############################################
     # Section with details about each fuzzer, including calltree.
     #############################################
     l.info(" - Creating section with details about each fuzzer")
+    html_report_core += "<div class=\"report-box\">"
     html_report_core += html_add_header_with_link("Fuzzer details", 1, toc_list)
     for profile_idx in range(len(profiles)):
         html_report_core += create_fuzzer_detailed_section(profiles[profile_idx], toc_list, tables, profile_idx, project_profile, coverage_url, git_repo_url, basefolder, conclusions, True)
+    html_report_core += "</div>" # report box
 
-
-    html_report_core += "<hr>"
     #############################################
     # Handle optional analyses
     #############################################
     l.info(" - Handling optional analyses")
+    html_report_core += "<div class=\"report-box\">"
     html_report_core += html_add_header_with_link(
         "Analyses and suggestions", 1, toc_list)
 
@@ -943,6 +1010,7 @@ def create_html_report(
                 git_repo_url,
                 coverage_url,
                 conclusions)
+    html_report_core += "</div>" # report box
 
     #############################################
     # End of optional analyses
