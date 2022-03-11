@@ -642,8 +642,10 @@ fuzzer. This should change in the future to be per-fuzzer-basis.</p>"""
     # Table with all functions hit by this fuzzer
     html_string += html_add_header_with_link(
             "Functions hit (dynamic analysis based)", 3, toc_list, link="functions_cov_hit_%d"%(curr_tt_profile))
+    
     tables.append(f"myTable{len(tables)}")
-    html_string += create_table_head(tables[-1],
+    func_hit_table_string = ""
+    func_hit_table_string += create_table_head(tables[-1],
                    [("Function name", ""),
                     ("source code lines",""),
                     ("source lines hit",""),
@@ -655,14 +657,14 @@ fuzzer. This should change in the future to be per-fuzzer-basis.</p>"""
         total_func_lines, hit_lines, hit_percentage = profile.get_cov_metrics(fuzz_utils.demangle_cpp_func(funcname))
         if hit_percentage != None:
             total_hit_functions += 1
-            html_string += html_table_add_row([
+            func_hit_table_string += html_table_add_row([
                 funcname,
                 total_func_lines,
                 hit_lines,
                 "%.5s"%(str(hit_percentage))+"%"])
         else:
             l.error("Could not write coverage line for function %s"%(funcname))
-    html_string += "</table>"
+    func_hit_table_string += "</table>"
 
     # Get how many functions are covered relative to reachability
     uncovered_reachable_funcs = len(profile.get_cov_uncovered_reachable_funcs())
@@ -674,17 +676,17 @@ fuzzer. This should change in the future to be per-fuzzer-basis.</p>"""
         if cov_reach_proportion < 30.0:
             conclusions.append((2, f"""Fuzzer { profile.get_key() } is blocked: runtime coverage only covers {"%.5s%%"%(str(cov_reach_proportion))} of its reachable functions."""))
 
-    html_string += f"""<br>
-Covered functions: { total_hit_functions }
-<br>
-Functions that are reachable but not covered: { uncovered_reachable_funcs }
-<br>
-Reachable functions: { reachable_funcs }
-<br>
-Percentage of reachable functions covered: {"%.5s%%"%(str(cov_reach_proportion))}
-<br>
-<b>NB:</b> The sum of <i>covered functions</i> and <i>functions that are reachable but not covered</i> need not be <i>Reachable functions</i>. This is because the reachability analysis is an approximation and thus at runtime some functions may be covered that are not included in the reachability analysis. This is a limitation our of our static analysis capabilities.
-"""
+    html_string += "<div style=\"display: flex; margin-bottom: 10px;\">"
+    html_string += get_simple_box("Covered functions", str(total_hit_functions))
+    html_string += get_simple_box("Functions that are reachable but not covered", str(uncovered_reachable_funcs))
+    html_string += get_simple_box("Reachable functions", str(reachable_funcs))
+    html_string += get_simple_box("Percentage of reachable functions covered", str(round(cov_reach_proportion, 2)))
+    html_string += "</div>"
+    html_string += "<div style=\"font-size: 0.85rem; color: #adadad; margin-bottom: 40px\">"
+    html_string += "<b>NB:</b> The sum of <i>covered functions</i> and <i>functions that are reachable but not covered</i> need not be <i>Reachable functions</i>. This is because the reachability analysis is an approximation and thus at runtime some functions may be covered that are not included in the reachability analysis. This is a limitation our of our static analysis capabilities."
+    html_string += "</div>"
+
+    html_string += func_hit_table_string
 
     # Table showing which files this fuzzer hits.
     html_string += html_add_header_with_link(
@@ -699,6 +701,16 @@ Percentage of reachable functions covered: {"%.5s%%"%(str(cov_reach_proportion))
 
 
     return html_string
+
+def get_simple_box(title: str, value: str) -> str:
+    return f"""<div class="report-box" style="flex: 1; display: flex; flex-direction: column;">
+        <div style="font-size: 0.9rem;">
+          {title}
+        </div>
+        <div style="font-size: 1.2rem; font-weight: 550;">
+          {value}
+        </div>
+      </div>"""
 
 def handle_analysis_3(
 	    toc_list: List[Tuple[str, str, int]],
