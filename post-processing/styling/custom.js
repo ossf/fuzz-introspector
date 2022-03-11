@@ -51,6 +51,10 @@ function createTable(value) {
                           'bLengthChange': bLengthChange,
                           'bInfo': bInfo,
                           'bFilter': bFilter}
+  var language = {"lengthMenu": "_MENU_ per page",
+                  "searchPlaceholder": "Search table",
+                  "search": "_INPUT_"}
+  tableConfig.language = language;
 
   
   tableConfig.order = [[sortByColumn, sortOrder]]
