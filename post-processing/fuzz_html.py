@@ -409,22 +409,29 @@ def create_fuzz_blocker_table(
     Creates HTML string for table showing fuzz blockers.
     """
     l.info("Creating fuzz blocker table")
-    nodes_sorted_by_red_ahead = list(reversed(list(sorted(fuzz_cfg_load.extract_all_callsites(profile.function_call_depths), key=lambda x:x.cov_forward_reds))))
-    #l.info("All blocked nodes:")
-    #for n1 in nodes_sorted_by_red_ahead:
-    #    l.info("forwards %d, parent: %s"%(n1.cov_forward_reds, n1.cov_parent))
-    max_idx = 10
     html_table_string = create_table_head(
             tables[-1], 
                [('Blocked nodes', ""),
                 ('Calltree index', ""),
                 ('Parent function', ""),
                 ('Callsite',""),
-                ('Largest blocked function',"")])
+                ('Largest blocked function',"")],
+            sort_by_column = 0,
+            sort_order = "desc")
+    max_idx = 10
+    all_callsites = fuzz_cfg_load.extract_all_callsites(profile.function_call_depths)
+    nodes_sorted_by_red_ahead = sorted(all_callsites,
+                                       key=lambda x:x.cov_forward_reds,
+                                       reverse=True)
     for node in nodes_sorted_by_red_ahead:
-        html_table_string += html_table_add_row([str(node.cov_forward_reds), str(node.cov_ct_idx), node.cov_parent, "<a href=%s>call site</a>"%(node.cov_callsite_link), node.cov_largest_blocked_func])
-        if max_idx == 0:
+        if max_idx == 0 or node.cov_forward_reds == 0:
             break
+        html_table_string += html_table_add_row([
+                                    str(node.cov_forward_reds),
+                                    str(node.cov_ct_idx),
+                                    node.cov_parent,
+                                    "<a href=%s>call site</a>"%(node.cov_callsite_link),
+                                    node.cov_largest_blocked_func])
         max_idx -= 1
     html_table_string += "</table>"
     return html_table_string
