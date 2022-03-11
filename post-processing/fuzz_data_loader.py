@@ -173,6 +173,8 @@ class FuzzerProfile:
         """
         Get the tuples reflecting coverage map of a given function
         """
+        if self.coverage is None:
+            return []
         if not should_normalise:
             if function_name not in self.coverage.covmap:
                 return []
@@ -248,7 +250,10 @@ class FuzzerProfile:
                 uncovered_funcs.append(funcname)
         return uncovered_funcs
 
-    def get_cov_metrics(self, funcname: str) -> [int, int, float]:
+    def get_cov_metrics(self,
+                        funcname: str) -> Tuple[Optional[int], Optional[int], Optional[float]]:
+        if self.coverage is None:
+            return None, None, None
         try:
             total_func_lines, hit_lines = self.coverage.get_hit_summary(funcname)
             hit_percentage = (hit_lines / total_func_lines) * 100.0
@@ -331,6 +336,8 @@ class MergedProjectProfile:
         # Accumulate run-time coverage mapping
         self.runtime_coverage = fuzz_cov_load.CoverageProfile()
         for profile in profiles:
+            if profile.coverage is None:
+                continue
             for func_name in profile.coverage.functions_hit:
                 if func_name not in self.runtime_coverage.covmap:
                     self.runtime_coverage.functions_hit.add(func_name)
@@ -438,7 +445,7 @@ def read_fuzzer_data_file_to_profile(filename: str) -> Optional[FuzzerProfile]:
     This is a bit odd way of doing it and should probably be improved.
     """
     l.info(" - loading %s" % filename)
-    if not os.path.isfile(filename) or not os.path.isfile(filename+".yaml"):
+    if not os.path.isfile(filename) or not os.path.isfile(filename + ".yaml"):
         return None
 
     data_dict_yaml = fuzz_utils.data_file_read_yaml(filename + ".yaml")
