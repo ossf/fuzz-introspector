@@ -89,6 +89,7 @@ table.dataTable {
 	/*max-width:  calc(100vw - 350px);*/
 	overflow: scroll;
 	padding-left: 10px;
+	background:  #f7f7fa;
 	/*border-left: 1px solid #d9d9d9;*/
 	/*width: calc(100% - 20px);*/
 }
@@ -395,4 +396,79 @@ input[type="checkbox"] {
 .coverage-line-inner:hover {
 	cursor:  pointer;
 	background: #c7c7c7;
+}
+.report-box {
+	border:  2px solid #f0f0f0;
+	padding:  20px;
+	border-radius: 4px;
+	margin-top: 30px;
+	max-width: calc(100% - 20px - 40px);
+	background: white;
+	width: auto;
+}
+.report-box h2,
+.report-box h1 {
+	margin-top: 10px;
+}
+.report-box table {
+	max-width:  100%;
+}
+
+/*********************************************/
+/********** Circular charts ******************/
+/*********************************************/
+.flex-wrapper {
+  display: flex;
+  flex-flow: row nowrap;
+  justify-content: center;
+}
+
+.single-chart {
+  width: 63%;
+  justify-content: space-around ;
+}
+
+.circular-chart {
+  display: block;
+  margin: 10px auto;
+  max-width: 80%;
+  max-height: 250px;
+}
+
+.circle-bg {
+  fill: none;
+  stroke: #f3e4f5;
+  stroke-width: .5;
+}
+
+.circle {
+  fill: none;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  /*animation: progress 1s ease-out forwards;*/
+}
+
+@keyframes progress {
+  0% {
+    stroke-dasharray: 0 100;
+  }
+}
+
+.circular-chart.orange .circle {
+  stroke: #ff9f00;
+}
+
+.circular-chart.green .circle {
+  stroke: #850096;
+}
+
+.circular-chart.blue .circle {
+  stroke: #3c9ee5;
+}
+
+.percentage {
+  fill: #666;
+  font-family: sans-serif;
+  font-size: 0.4em;
+  text-anchor: middle;
 }
