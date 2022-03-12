@@ -492,3 +492,7 @@ input[type="checkbox"] {
 	color: #adadad;
 	font-size: .95rem;
 }
+
+.left-sidebar-content-box .activeMenuText{
+	color: #8100a1!important;
+}

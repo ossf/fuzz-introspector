@@ -1,5 +1,27 @@
 $( document ).ready(function() {
     createTables();
+
+    // Scroll effect for showing in the menu where you are on the page
+    $(".content-section").on('scroll', e => {
+      $('.report-title').each(function() {
+        if($(this).offset().top - 200 < $(window).scrollTop()) {
+          var elemId;
+          elemId = $(this).closest("a").attr('id');
+          $(".left-sidebar-content-box > div > a").each(function( index ) {
+              console.log("link: ", $(this).attr("href").replace("#", ""));
+              if($(this).attr("href").replace("#", "")===elemId) {
+                if(!$(this).hasClass("activeMenuText")) {
+                  $(this).addClass("activeMenuText");
+                }
+              } else {
+                if($(this).hasClass("activeMenuText")) {
+                  $(this).removeClass("activeMenuText");
+                }                
+              }            
+          })
+        };
+      });
+    });
 });
 
 // createTables instantiates the datatables.
@@ -17,6 +39,10 @@ function createTables() {
   $.each(tableIds, function(index, value) {
     createTable(value);
   });
+
+
+
+
 }
 
 function createTable(value) {

@@ -189,7 +189,7 @@ def html_add_header_with_link(header_title: str,
         link = header_title.replace(" ", "-")
     toc_list.append((header_title, link, title_type-1))
     html_string = f"<a id=\"{link}\">"
-    html_string += f"<h{title_type}>{header_title}</h{title_type}>\n"
+    html_string += f"<h{title_type} class=\"report-title\">{header_title}</h{title_type}>\n"
     return html_string
 
 
