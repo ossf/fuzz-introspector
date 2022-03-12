@@ -179,6 +179,9 @@ table.dataTable.cell-border tbody th, table.dataTable.cell-border tbody td {
 table.dataTable {
 	width:  auto !important;
 }
+.dataTables_wrapper .dataTables_info {
+	color: #adadad;
+}
 h1 {
 	margin-top: 57px;
 }
@@ -471,4 +474,21 @@ input[type="checkbox"] {
   font-family: sans-serif;
   font-size: 0.4em;
   text-anchor: middle;
+}
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+	color: #8a8a8a!important;
+	padding: 0!important;
+}
+.dataTables_wrapper .dataTables_paginate .paginate_button.current, .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+	border: none!important;
+	font-weight: 550;
+}
+.dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+	background: none!important;
+	border: 1px solid white!important;
+	color: black!important;
+}
+.dataTables_wrapper .dataTables_length, .dataTables_wrapper .dataTables_filter, .dataTables_wrapper .dataTables_info, .dataTables_wrapper .dataTables_processing, .dataTables_wrapper .dataTables_paginate {
+	color: #adadad;
+	font-size: .95rem;
 }
