@@ -697,7 +697,7 @@ fuzzer. This should change in the future to be per-fuzzer-basis.</p>"""
     html_string += get_simple_box("Covered functions", str(total_hit_functions))
     html_string += get_simple_box("Functions that are reachable but not covered", str(uncovered_reachable_funcs))
     html_string += get_simple_box("Reachable functions", str(reachable_funcs))
-    html_string += get_simple_box("Percentage of reachable functions covered", str(round(cov_reach_proportion, 2)))
+    html_string += get_simple_box("Percentage of reachable functions covered", "%s%%"%str(round(cov_reach_proportion, 2)))
     html_string += "</div>"
     html_string += "<div style=\"font-size: 0.85rem; color: #adadad; margin-bottom: 40px\">"
     html_string += "<b>NB:</b> The sum of <i>covered functions</i> and <i>functions that are reachable but not covered</i> need not be <i>Reachable functions</i>. This is because the reachability analysis is an approximation and thus at runtime some functions may be covered that are not included in the reachability analysis. This is a limitation our of our static analysis capabilities."
