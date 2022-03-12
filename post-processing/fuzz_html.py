@@ -300,7 +300,7 @@ def create_all_function_table(
     html_string += ("</table>\n")
     return html_string
 
-def create_percentage_graph(title: str, percentage: str) -> str:
+def create_percentage_graph(title: str, percentage: str, numbers: str) -> str:
     return f"""<div style="flex:1; margin-right: 20px"class="report-box">
             <div style="font-weight: 600; text-align: center;">
                 {title}
@@ -322,6 +322,9 @@ def create_percentage_graph(title: str, percentage: str) -> str:
                   <text x="18" y="20.35" class="percentage">{percentage}%</text>
                 </svg>
               </div>
+            </div>
+            <div style="font-size: .9rem; color: #b5b5b5; text-align: center">
+              {numbers}
             </div>
         </div>"""
 
@@ -346,8 +349,15 @@ def create_boxed_top_summary_info(
     total_functions, reached_func_count, unreached_func_count, reached_percentage, unreached_percentage = project_profile.get_function_summaries()
     total_complexity, complexity_reached, complexity_unreached, reached_complexity_percentage, unreached_complexity_percentage = project_profile.get_complexity_summaries()
 
-    html_string += create_percentage_graph("Functions statically reachable by fuzzers", str(round(reached_percentage, 2)))
-    html_string += create_percentage_graph("Cyclomatic complexity statically reachable by fuzzers", str(round(reached_complexity_percentage, 2)))
+    graph1_title = "Functions statically reachable by fuzzers"
+    graph1_percentage = str(round(reached_percentage, 2))
+    graph1_numbers = "%d/%d"%(reached_func_count, total_functions)
+    html_string += create_percentage_graph(graph1_title, graph1_percentage, graph1_numbers)
+
+    graph2_title = "Cyclomatic complexity statically reachable by fuzzers"
+    graph2_percentage =str(round(reached_complexity_percentage, 2))
+    graph2_numbers = "%d/%d"%(complexity_reached, int(total_complexity))
+    html_string += create_percentage_graph(graph2_title, graph2_percentage, graph2_numbers)
     if display_coverage:
         l.info("Displaying coverage in summary")
         covered_funcs = project_profile.get_all_runtime_covered_functions()
