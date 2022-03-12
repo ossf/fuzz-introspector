@@ -46,30 +46,30 @@ import string
 
 l = logging.getLogger(name=__name__)
 
+
 class AnalysisInterface(NamedTuple):
-    name : str
-    analysis_func : Callable
+    name: str
+    analysis_func: Callable
 
 
 def create_horisontal_calltree_image(image_name: str, profile: fuzz_data_loader.FuzzerProfile) -> None:
     """
-    Creates a horisontal image of the calltree. The height is fixed and 
+    Creates a horisontal image of the calltree. The height is fixed and
     each element on the x-axis shows a node in the calltree in the form
     of a rectangle. The rectangle is red if not visited and green if visited.
     """
 
-    l.info("Creating image %s"%(image_name))
+    l.info("Creating image %s" % image_name)
     # Extract color sequence
     color_list = []
     for node in fuzz_cfg_load.extract_all_callsites(profile.function_call_depths):
         color_list.append(node.cov_color)
-    l.info("- extracted the callsites (%d nodes)"%(len(color_list)))
+    l.info("- extracted the callsites (%d nodes)" % len(color_list))
 
     # Show one read rectangle if the list is empty. An alternative is
     # to not include the image at all.
     if len(color_list) == 0:
         color_list = ['red']
-    #plot_size = 10.0
     plot_size = len(color_list)
     multiplier = plot_size / len(color_list)
 
@@ -111,11 +111,10 @@ def create_horisontal_calltree_image(image_name: str, profile: fuzz_data_loader.
     l.info("- image saved")
 
 
-
 def create_table_head(
-        table_head: str, 
-        items: List[Tuple[str, str]], 
-        sort_by_column: int = 0, 
+        table_head: str,
+        items: List[Tuple[str, str]],
+        sort_by_column: int = 0,
         sort_order: str = "asc") -> str:
     html_str = f"<table id='{table_head}' class='cell-border compact stripe' data-sort-by-column='{sort_by_column}' data-sort-order='{sort_order}'><thead><tr>\n"
 
@@ -127,12 +126,14 @@ def create_table_head(
     html_str += "</tr></thead><tbody>"
     return html_str
 
+
 def html_table_add_row(elems: List[str]) -> str:
     html_str = "<tr>\n"
     for elem in elems:
         html_str += f"<td>{elem}</td>\n"
     html_str += "</tr>\n"
     return html_str
+
 
 def html_get_header() -> str:
     header = """<html>
@@ -150,6 +151,7 @@ def html_get_header() -> str:
     header = header+"<div class='content-wrapper'>"
     return header
 
+
 def html_get_navbar() -> str:
     navbar = """\n<div class="top-navbar">\n
                     <div class="top-navbar-accordion">\n
@@ -166,14 +168,15 @@ def html_get_navbar() -> str:
                 </div>\n"""
     return navbar
 
+
 def html_get_table_of_contents(toc_list: List[Tuple[str, str, str]]) -> str:
     html_toc_string = ""
     html_toc_string += '<div class="left-sidebar">\
                             <div class="left-sidebar-content-box">\
                                 <h2>Table of contents</h2>'
     for k, v, d in toc_list:
-        indentation = d*16
-        html_toc_string += "<div style='margin-left: %spx'>"%(indentation)
+        indentation = d * 16
+        html_toc_string += "<div style='margin-left: %spx'>" % indentation
         html_toc_string += "    <a href=\"#%s\">%s</a>\n" % (v, k)
         html_toc_string += "</div>\n"
     html_toc_string += '    </div>\
@@ -182,10 +185,10 @@ def html_get_table_of_contents(toc_list: List[Tuple[str, str, str]]) -> str:
 
 
 def html_add_header_with_link(header_title: str,
-                                  title_type: int,
-                                  toc_list: List[Tuple[str, str, str]],
-                                  link: str=None) -> str:
-    if link == None:
+                              title_type: int,
+                              toc_list: List[Tuple[str, str, str]],
+                              link: str=None) -> str:
+    if link is None:
         link = header_title.replace(" ", "-")
     toc_list.append((header_title, link, title_type-1))
     html_string = f"<a id=\"{link}\">"
@@ -194,18 +197,19 @@ def html_add_header_with_link(header_title: str,
 
 
 def create_overview_table(tables: List[str],
-                              profiles: List[fuzz_data_loader.FuzzerProfile]) -> str:
+                          profiles: List[fuzz_data_loader.FuzzerProfile]) -> str:
     """Table with an overview of all the fuzzers"""
-    html_string = create_table_head(tables[-1],
-                    [("Fuzzer", "Fuzzer key. Usually fuzzer executable file"),
-                     ("Fuzzer filename", "Fuzzer source code file"),
-                     ("Functions Reached", "Number of functions this fuzzer reaches. This data is based on static analysis."),
-                     ("Functions unreached","Number of functions unreached by this fuzzer. This data is based on static analysis."),
-                     ("Fuzzer depth", "Function call depth of this fuzer."),
-                     ("Files reached", "Source code files reached by the fuzzer. This is identified by look at the source code file of each funciton reached by the fuzzer."),
-                     ("Basic blocks reached", "The total number of basic blocks of all functions reached by the fuzzer."),
-                     ("Cyclomatic complexity", "The accummulated cyclomatic complexity of all functions reached by the fuzzer."),
-                     ("Details", "")])
+    html_string = create_table_head(tables[-1], [
+        ("Fuzzer", "Fuzzer key. Usually fuzzer executable file"),
+        ("Fuzzer filename", "Fuzzer source code file"),
+        ("Functions Reached", "Number of functions this fuzzer reaches. This data is based on static analysis."),
+        ("Functions unreached", "Number of functions unreached by this fuzzer. This data is based on static analysis."),
+        ("Fuzzer depth", "Function call depth of this fuzer."),
+        ("Files reached", "Source code files reached by the fuzzer. This is identified by look at the source code file of each funciton reached by the fuzzer."),
+        ("Basic blocks reached", "The total number of basic blocks of all functions reached by the fuzzer."),
+        ("Cyclomatic complexity", "The accummulated cyclomatic complexity of all functions reached by the fuzzer."),
+        ("Details", "")
+    ])
     for profile in profiles:  # create a row for each fuzzer.
         fuzzer_filename = profile.fuzzer_source_file
         max_depth = 0
@@ -237,27 +241,26 @@ def create_all_function_table(
     """Table for all functions in the project. Contains many details about each
         function"""
     random_suffix = '_'+''.join(random.choices(string.ascii_lowercase + string.ascii_uppercase, k=7))
-    if table_id == None:
+    if table_id is None:
         table_id = tables[-1]
-    html_string = create_table_head(table_id,
-                    [
-                    ("Func name", ""),
-                    ("Git URL", ""),
-                    ("Functions filename", "Source code file where function is defined."),
-                    ("Arg count", "Number of arguments to the function."),
-                    ("Args", "Types of arguments to this function."),
-                    ("Function call depth", "Function call depth based on static analysis."),
-                    ("Fuzzers reach count", "The number of fuzzers that reach this function. Based on static analysis."),
-                    ("Reached by Fuzzers", "The specific fuzzers that reach this function. Based on static analysis."),
-                    ("Fuzzers runtime hit", "Indicates whether the function is hit at runtime by the given corpus. Based on dynamic analysis."),
-                    ("Func lines hit %", "Indicates the percentage of the function that is covered at runtime. This is based on dynamic analysis."),
-                    ("I Count", "Instruction count. The number of LLVM instructions in the function."),
-                    ("BB Count", "Basic block count. The number of basic blocks in the function."),
-                    ("Cyclomatic complexity", "The cyclomatic complexity of the function."),
-                    ("Functions reached", "The number of functions reached, based on static analysis."),
-                    ("Reached by functions", "The number of functions that reaches this function, based on static analysis."),
-                    ("Accumulated cyclomatic complexity", "Accummulated cyclomatic complexity of all functions reachable by this function. Based on static analysis."),
-                    ("Undiscovered complexity", "")])
+    html_string = create_table_head(table_id, [
+        ("Func name", ""),
+        ("Git URL", ""),
+        ("Functions filename", "Source code file where function is defined."),
+        ("Arg count", "Number of arguments to the function."),
+        ("Args", "Types of arguments to this function."),
+        ("Function call depth", "Function call depth based on static analysis."),
+        ("Fuzzers reach count", "The number of fuzzers that reach this function. Based on static analysis."),
+        ("Reached by Fuzzers", "The specific fuzzers that reach this function. Based on static analysis."),
+        ("Fuzzers runtime hit", "Indicates whether the function is hit at runtime by the given corpus. Based on dynamic analysis."),
+        ("Func lines hit %", "Indicates the percentage of the function that is covered at runtime. This is based on dynamic analysis."),
+        ("I Count", "Instruction count. The number of LLVM instructions in the function."),
+        ("BB Count", "Basic block count. The number of basic blocks in the function."),
+        ("Cyclomatic complexity", "The cyclomatic complexity of the function."),
+        ("Functions reached", "The number of functions reached, based on static analysis."),
+        ("Reached by functions", "The number of functions that reaches this function, based on static analysis."),
+        ("Accumulated cyclomatic complexity", "Accummulated cyclomatic complexity of all functions reachable by this function. Based on static analysis."),
+        ("Undiscovered complexity", "")])
 
     if basefolder == "/":
         basefolder = "WRONG"
@@ -300,6 +303,7 @@ def create_all_function_table(
     html_string += ("</table>\n")
     return html_string
 
+
 def create_percentage_graph(title: str, percentage: str, numbers: str) -> str:
     return f"""<div style="flex:1; margin-right: 20px"class="report-box">
             <div style="font-weight: 600; text-align: center;">
@@ -328,6 +332,7 @@ def create_percentage_graph(title: str, percentage: str, numbers: str) -> str:
             </div>
         </div>"""
 
+
 def create_covered_func_box(covered_funcs: str) -> str:
     return f"""<div style="flex:1; flex-direction: column; display: flex;" class="report-box">
             <div style="font-weight: 600; text-align: center; flex: 1">
@@ -338,12 +343,12 @@ def create_covered_func_box(covered_funcs: str) -> str:
             </div>
         </div>"""
 
-def create_boxed_top_summary_info(
-        tables: List[str],
-        project_profile: fuzz_data_loader.MergedProjectProfile,
-        conclusions,
-        extract_conclusion,
-        display_coverage = False) -> str:
+
+def create_boxed_top_summary_info(tables: List[str],
+                                  project_profile: fuzz_data_loader.MergedProjectProfile,
+                                  conclusions,
+                                  extract_conclusion,
+                                  display_coverage=False) -> str:
     html_string = ""
     # Get complexity and function counts
     total_functions, reached_func_count, unreached_func_count, reached_percentage, unreached_percentage = project_profile.get_function_summaries()
@@ -355,7 +360,7 @@ def create_boxed_top_summary_info(
     html_string += create_percentage_graph(graph1_title, graph1_percentage, graph1_numbers)
 
     graph2_title = "Cyclomatic complexity statically reachable by fuzzers"
-    graph2_percentage =str(round(reached_complexity_percentage, 2))
+    graph2_percentage = str(round(reached_complexity_percentage, 2))
     graph2_numbers = "%d/%d"%(complexity_reached, int(total_complexity))
     html_string += create_percentage_graph(graph2_title, graph2_percentage, graph2_numbers)
     if display_coverage:
@@ -405,12 +410,13 @@ def create_conclusions(conclusions, reached_percentage, reached_complexity_perce
             sentence += "Improvements could be made"
         conclusions.append((warning, sentence))
 
+
 def create_top_summary_info(
         tables: List[str],
         project_profile: fuzz_data_loader.MergedProjectProfile,
         conclusions,
         extract_conclusion,
-        display_coverage = False) -> str:
+        display_coverage=False) -> str:
     html_string = ""
 
     # Get complexity and function counts
@@ -440,7 +446,6 @@ def create_top_summary_info(
     # Add conclusion
     if extract_conclusion:
         create_conclusions(conclusions, reached_percentage, reached_complexity_percentage)
-        
 
     return html_string
 
@@ -471,10 +476,10 @@ def write_wrapped_html_file(html_string, filename):
 
     soup = bs(complete_html_string, 'lxml')
     pretty_html = soup.prettify()
-    #pretty_html = calltree_html_string
 
     with open(filename, "w+") as cf:
         cf.write(pretty_html)
+
 
 def create_fuzz_blocker_table(
         profile: fuzz_data_loader.FuzzerProfile,
@@ -491,7 +496,7 @@ def create_fuzz_blocker_table(
     # Identify if there are any fuzz blockers
     all_callsites = fuzz_cfg_load.extract_all_callsites(profile.function_call_depths)
     nodes_sorted_by_red_ahead = sorted(all_callsites,
-                                       key=lambda x:x.cov_forward_reds,
+                                       key=lambda x: x.cov_forward_reds,
                                        reverse=True)
 
     has_blockers = False
@@ -506,14 +511,16 @@ def create_fuzz_blocker_table(
     html_table_string = "<p class='no-top-margin'>The followings nodes represent call sites where fuzz blockers occur</p>"
     tables.append(f"myTable{len(tables)}")
     html_table_string += create_table_head(
-            tables[-1], 
-               [('Blocked nodes', ""),
+            tables[-1],
+            [
+                ('Blocked nodes', ""),
                 ('Calltree index', ""),
                 ('Parent function', ""),
-                ('Callsite',""),
-                ('Largest blocked function',"")],
-            sort_by_column = 0,
-            sort_order = "desc")
+                ('Callsite', ""),
+                ('Largest blocked function', "")
+            ],
+            sort_by_column=0,
+            sort_order="desc")
     max_idx = 10
     for node in nodes_sorted_by_red_ahead:
         if max_idx == 0 or node.cov_forward_reds == 0:
@@ -551,8 +558,8 @@ def create_calltree(
         demangled_name = fuzz_utils.demangle_cpp_func(node.dst_function_name)
         # We may not want to show certain functions at times, e.g. libc functions
         # in case it bloats the calltree
-        #libc_funcs = { "free" }
-        libc_funcs = { }
+        # libc_funcs = { "free" }
+        libc_funcs = {}
         avoid = len([fn for fn in libc_funcs if fn in demangled_name]) > 0
         if avoid:
             continue
@@ -565,16 +572,16 @@ def create_calltree(
 
         indentation = int(node.depth)*16
         # Only display [function] link if we have, otherwhise show no [function] text.
-        func_href = "<a href=\"%s\">[function]</a>"%(link) if node.dst_function_source_file.replace(" ","") != "/" else ""
+        func_href = "<a href=\"%s\">[function]</a>"%(link) if node.dst_function_source_file.replace(" ", "") != "/" else ""
 
-        if i>0:
+        if i > 0:
             previous_node = nodes[i-1]
-            if previous_node.depth==node.depth:
+            if previous_node.depth == node.depth:
                 calltree_html_string += "</div>"
             depth_diff = previous_node.depth-node.depth
-            if depth_diff>=1:
-                closing_divs = "</div>" # To close "calltree-line-wrapper"
-                closing_divs = "</div>"*(int(depth_diff)+1)
+            if depth_diff >= 1:
+                closing_divs = "</div>"  # To close "calltree-line-wrapper"
+                closing_divs = "</div>" * (int(depth_diff)+1)
                 calltree_html_string += closing_divs
 
         calltree_html_string += f"""
@@ -583,14 +590,13 @@ def create_calltree(
             <span class="coverage-line-filename"> {func_href} <a href="{callsite_link}">[call site2]</a>[calltree idx: {ct_idx_str}]</span>
         </span>
     """
-        if i!=len(nodes)-1:
+        if i != len(nodes)-1:
             next_node = nodes[i+1]
-            if next_node.depth>node.depth:
+            if next_node.depth > node.depth:
                 calltree_html_string += f"""<div class="calltree-line-wrapper level-{int(node.depth)}" style="padding-left: 16px">"""
             elif next_node.depth<node.depth:
                 depth_diff = int(node.depth-next_node.depth)
                 calltree_html_string += "</div>"*depth_diff
-            
 
     calltree_html_string += "</div>"
     l.info("Calltree created")
@@ -602,10 +608,9 @@ def create_calltree(
         calltree_file_idx += 1
         calltree_html_file = "calltree_view_%d.html"%(calltree_file_idx)
 
-    
     write_wrapped_html_file(calltree_html_string, calltree_html_file)
-
     return calltree_html_file
+
 
 def create_fuzzer_detailed_section(
         profile: fuzz_data_loader.FuzzerProfile,
@@ -643,36 +648,39 @@ fuzzer. This should change in the future to be per-fuzzer-basis.</p>"""
                     "of the full calltree overlayed with coverage information: <a href=\"%s\">full calltree</a></p>"%(calltree_file_name))
 
     # Fuzz blocker table
-    html_fuzz_blocker_table = create_fuzz_blocker_table(
-                                            profile,
-                                            project_profile,
-                                            coverage_url,
-                                            git_repo_url,
-                                            basefolder,
-                                            image_name,
-                                            tables)
-    if html_fuzz_blocker_table != None:
+    html_fuzz_blocker_table = create_fuzz_blocker_table(profile,
+                                                        project_profile,
+                                                        coverage_url,
+                                                        git_repo_url,
+                                                        basefolder,
+                                                        image_name,
+                                                        tables)
+    if html_fuzz_blocker_table is not None:
         html_string += html_add_header_with_link(
                 "Fuzz blockers", 3, toc_list, link=f"fuzz_blocker{curr_tt_profile}")
         html_string += html_fuzz_blocker_table
 
     # Table with all functions hit by this fuzzer
-    html_string += html_add_header_with_link(
-            "Functions hit (dynamic analysis based)", 3, toc_list, link="functions_cov_hit_%d"%(curr_tt_profile))
-    
+    html_string += html_add_header_with_link("Functions hit (dynamic analysis based)",
+                                             3,
+                                             toc_list,
+                                             link="functions_cov_hit_%d" % curr_tt_profile)
     tables.append(f"myTable{len(tables)}")
     func_hit_table_string = ""
     func_hit_table_string += create_table_head(tables[-1],
-                   [("Function name", ""),
-                    ("source code lines",""),
-                    ("source lines hit",""),
-                    ("percentage hit", "")], 
-                1, "desc")
+                                               [
+                                                   ("Function name", ""),
+                                                   ("source code lines", ""),
+                                                   ("source lines hit", ""),
+                                                   ("percentage hit", "")
+                                               ], 
+                                               1,
+                                               "desc")
 
     total_hit_functions = 0
     for funcname in profile.coverage.covmap:
         total_func_lines, hit_lines, hit_percentage = profile.get_cov_metrics(fuzz_utils.demangle_cpp_func(funcname))
-        if hit_percentage != None:
+        if hit_percentage is not None:
             total_hit_functions += 1
             func_hit_table_string += html_table_add_row([
                 funcname,
@@ -710,14 +718,16 @@ fuzzer. This should change in the future to be per-fuzzer-basis.</p>"""
         "Files hit", 3, toc_list, link="files_hit_%d" % (curr_tt_profile))
     tables.append(f"myTable{len(tables)}")
     html_string += create_table_head(tables[-1],
-                                     [("filename",""), ("functions hit","")])
+                                     [
+                                         ("filename", ""),
+                                         ("functions hit", "")
+                                     ])
     for k in profile.file_targets:
         html_string += html_table_add_row([k,
                                           len(profile.file_targets[k])])
     html_string += "</table>\n"
-
-
     return html_string
+
 
 def get_simple_box(title: str, value: str) -> str:
     return f"""<div class="report-box" style="flex: 1; display: flex; flex-direction: column;">
@@ -729,15 +739,15 @@ def get_simple_box(title: str, value: str) -> str:
         </div>
       </div>"""
 
-def handle_analysis_3(
-	    toc_list: List[Tuple[str, str, int]],
-            tables: List[str],
-            project_profile: fuzz_data_loader.MergedProjectProfile,
-            profiles: List[fuzz_data_loader.FuzzerProfile],
-            basefolder: str,
-            git_repo_url: str,
-            coverage_url: str,
-            conclusions) -> str:
+
+def handle_analysis_3(toc_list: List[Tuple[str, str, int]],
+                      tables: List[str],
+                      project_profile: fuzz_data_loader.MergedProjectProfile,
+                      profiles: List[fuzz_data_loader.FuzzerProfile],
+                      basefolder: str,
+                      git_repo_url: str,
+                      coverage_url: str,
+                      conclusions) -> str:
     l.info("In analysis 3")
 
     functions_of_interest = fuzz_analysis.analysis_coverage_runtime_analysis(profiles, project_profile)
@@ -753,7 +763,12 @@ def handle_analysis_3(
         "Complex functions with low coverage", 3, toc_list)
     tables.append("myTable%d" % (len(tables)))
     html_string += create_table_head(tables[-1],
-            [("Func name", ""), ("lines of code", ""), ("LoC runtime coverage",""), ("percentage covered", "")])
+                                     [
+                                         ("Func name", ""),
+                                         ("lines of code", ""),
+                                         ("LoC runtime coverage", ""),
+                                         ("percentage covered", "")
+                                     ])
 
     for funcname in functions_of_interest:
         total_func_lines, hit_lines = project_profile.runtime_coverage.get_hit_summary(funcname)
@@ -764,18 +779,18 @@ def handle_analysis_3(
                 "%.5s"%(str((hit_lines / total_func_lines) * 100.0))
             ])
     html_string += "</table>"
-    html_string += "</div>" # report-box
+    html_string += "</div>"  # report-box
     return html_string
 
-def handle_analysis_2(
-	    toc_list: List[Tuple[str, str, int]],
-            tables: List[str],
-            project_profile: fuzz_data_loader.MergedProjectProfile,
-            profiles: List[fuzz_data_loader.FuzzerProfile],
-            basefolder: str,
-            git_repo_url: str,
-            coverage_url: str,
-            conclusions) -> str:
+
+def handle_analysis_2(toc_list: List[Tuple[str, str, int]],
+                      tables: List[str],
+                      project_profile: fuzz_data_loader.MergedProjectProfile,
+                      profiles: List[fuzz_data_loader.FuzzerProfile],
+                      basefolder: str,
+                      git_repo_url: str,
+                      coverage_url: str,
+                      conclusions) -> str:
     l.info("In analysis 2")
 
     html_string = ""
@@ -784,7 +799,6 @@ def handle_analysis_2(
     html_string += "<p>This sections provides heuristics that can be used as input to a fuzz engine when running a given fuzz target. The current focus is on providing input that is usable by libFuzzer.</p>"
 
     for profile_idx in range(len(profiles)):
-       
         html_string += html_add_header_with_link(
                 "%s"%(profiles[profile_idx].fuzzer_source_file), 2, toc_list)
         html_string += html_add_header_with_link(
@@ -793,14 +807,13 @@ def handle_analysis_2(
 
         html_string += "<pre><code class='language-clike'>"
         kn=0
-        for fn in profiles[profile_idx].functions_reached_by_fuzzer:#all_class_functions:
+        for fn in profiles[profile_idx].functions_reached_by_fuzzer:
             fp = profiles[profile_idx].all_class_functions[fn]
             #print(fp.constants_touched)
             for const in fp.constants_touched:
                 html_string += "k%d=\"%s\"\n"%(kn, const)
                 kn += 1
         html_string += "</code></pre><br>"
-
 
         html_string += html_add_header_with_link(
                 "Fuzzer function priority", 3, toc_list)
@@ -809,15 +822,15 @@ def handle_analysis_2(
 
     return html_string
 
-def handle_analysis_1(
-	    toc_list: List[Tuple[str, str, int]],
-            tables: List[str],
-            project_profile: fuzz_data_loader.MergedProjectProfile,
-            profiles: List[fuzz_data_loader.FuzzerProfile],
-            basefolder: str,
-            git_repo_url: str,
-            coverage_url: str,
-            conclusions) -> str:
+
+def handle_analysis_1(toc_list: List[Tuple[str, str, int]],
+                      tables: List[str],
+                      project_profile: fuzz_data_loader.MergedProjectProfile,
+                      profiles: List[fuzz_data_loader.FuzzerProfile],
+                      basefolder: str,
+                      git_repo_url: str,
+                      coverage_url: str,
+                      conclusions) -> str:
     """
     Performs an analysis based on optimal target selection.
 
@@ -849,11 +862,21 @@ def handle_analysis_1(
     table_id = "remaining_optimal_interesting_functions"
     tables.append(table_id)
     html_string += create_table_head(table_id,
-                                     [("Func name", ""), ("Functions filename", ""), ("Arg count",""),
-                                      ("Args", ""),("Function depth",""), ("hitcount", ""), ("instr count",""),
-                                      ("bb count",""), ("cyclomatic complexity", ""), ("Reachable functions",""),
-                                      ("Incoming references", ""), ("total cyclomatic complexity",""),
-                                      ("Unreached complexity", "")])
+                                     [
+                                         ("Func name", ""),
+                                         ("Functions filename", ""),
+                                         ("Arg count", ""),
+                                         ("Args", ""),
+                                         ("Function depth", ""),
+                                         ("hitcount", ""),
+                                         ("instr count", ""),
+                                         ("bb count", ""),
+                                         ("cyclomatic complexity", ""),
+                                         ("Reachable functions", ""),
+                                         ("Incoming references", ""),
+                                         ("total cyclomatic complexity", ""),
+                                         ("Unreached complexity", "")
+                                     ])
     for fd in optimal_target_functions:
         if basefolder == "/":
             basefolder = "WRONG"
@@ -908,7 +931,7 @@ def handle_analysis_1(
     tables.append(table_id)
     html_string += create_all_function_table(
         tables, new_profile, coverage_url, git_repo_url, basefolder, table_id)
-    html_string += "</div>" # close report-box
+    html_string += "</div>"  # close report-box
 
     return html_string
 
@@ -936,6 +959,7 @@ def extract_highlevel_guidance(conclusions) -> str:
     html_string += "</div>"
 
     return html_string
+
 
 def create_html_report(
         profiles: List[fuzz_data_loader.FuzzerProfile],
@@ -1000,8 +1024,7 @@ def create_html_report(
     tables.append(table_id)
     html_report_core += create_all_function_table(
         tables, project_profile, coverage_url, git_repo_url, basefolder, table_id)
-    html_report_core += "</div>" # report box
-
+    html_report_core += "</div>"  # report box
 
     #############################################
     # Section with details about each fuzzer, including calltree.
@@ -1011,7 +1034,7 @@ def create_html_report(
     html_report_core += html_add_header_with_link("Fuzzer details", 1, toc_list)
     for profile_idx in range(len(profiles)):
         html_report_core += create_fuzzer_detailed_section(profiles[profile_idx], toc_list, tables, profile_idx, project_profile, coverage_url, git_repo_url, basefolder, conclusions, True)
-    html_report_core += "</div>" # report box
+    html_report_core += "</div>"  # report box
 
     #############################################
     # Handle optional analyses
@@ -1023,10 +1046,10 @@ def create_html_report(
 
     # Ordering here is important as top analysis will be shown first in the report
     analysis_array = [
-                AnalysisInterface("OptimalTargets",handle_analysis_1),
-                AnalysisInterface("FuzzEngineInput", handle_analysis_2),
-                AnalysisInterface("OptimalCoverageTargets", handle_analysis_3)
-            ]
+        AnalysisInterface("OptimalTargets", handle_analysis_1),
+        AnalysisInterface("FuzzEngineInput", handle_analysis_2),
+        AnalysisInterface("OptimalCoverageTargets", handle_analysis_3)
+    ]
 
     for analysis in analysis_array:
         if analysis.name in analyses_to_run:
@@ -1039,7 +1062,7 @@ def create_html_report(
                 git_repo_url,
                 coverage_url,
                 conclusions)
-    html_report_core += "</div>" # report box
+    html_report_core += "</div>"  # report box
 
     #############################################
     # End of optional analyses
@@ -1050,7 +1073,7 @@ def create_html_report(
     #############################################
     html_report_top += extract_highlevel_guidance(conclusions)
 
-    ## Wrap up the HTML generation
+    # Wrap up the HTML generation
     # Close the content div and content_wrapper
     html_body_end = "</div>\n</div>\n"
 
