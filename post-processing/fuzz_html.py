@@ -418,10 +418,17 @@ def create_top_summary_info(
     total_complexity, complexity_reached, complexity_unreached, reached_complexity_percentage, unreached_complexity_percentage = project_profile.get_complexity_summaries()
 
     # Display reachability information
-    html_string += f"""Functions statically reachable by fuzzers: {"%.5s%% (%d / %d)"%(str(reached_percentage), reached_func_count, total_functions)}"""
-    html_string += "<br>"
-    html_string += f"""Cyclomatic complexity statically reachable by fuzzers: {"%.5s%% (%d / %d)"%(reached_complexity_percentage, complexity_reached, int(total_complexity))}"""
-    html_string += "<br>"
+    html_string += "<div style=\"display: flex; max-width: 50%\">"
+    graph1_title = "Functions statically reachable by fuzzers"
+    graph1_percentage = str(round(reached_percentage, 2))
+    graph1_numbers = "%d/%d"%(reached_func_count, total_functions)
+    html_string += create_percentage_graph(graph1_title, graph1_percentage, graph1_numbers)
+
+    graph2_title = "Cyclomatic complexity statically reachable by fuzzers"
+    graph2_percentage = str(round(reached_complexity_percentage, 2))
+    graph2_numbers = "%d / %d"%(complexity_reached, int(total_complexity))
+    html_string += create_percentage_graph(graph2_title, graph2_percentage, graph2_numbers)
+    html_string += "</div>"
     if display_coverage:
         l.info("Displaying coverage in summary")
         covered_funcs = project_profile.get_all_runtime_covered_functions()
