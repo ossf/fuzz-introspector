@@ -14,16 +14,11 @@
 
 """Module for creating HTML reports"""
 import os
-import sys
-import cxxfilt
 import logging
 import shutil
-from bs4 import BeautifulSoup as bs
 
 from typing import (
-    Any,
     Callable,
-    Dict,
     List,
     Tuple,
     NamedTuple,
@@ -36,7 +31,6 @@ import fuzz_cfg_load
 
 # For pretty printing the html code:
 from bs4 import BeautifulSoup as bs
-import lxml.html as lh
 
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
@@ -52,7 +46,8 @@ class AnalysisInterface(NamedTuple):
     analysis_func: Callable
 
 
-def create_horisontal_calltree_image(image_name: str, profile: fuzz_data_loader.FuzzerProfile) -> None:
+def create_horisontal_calltree_image(image_name: str,
+                                     profile: fuzz_data_loader.FuzzerProfile) -> None:
     """
     Creates a horisontal image of the calltree. The height is fixed and
     each element on the x-axis shows a node in the calltree in the form
@@ -116,8 +111,9 @@ def create_table_head(
         items: List[Tuple[str, str]],
         sort_by_column: int = 0,
         sort_order: str = "asc") -> str:
-    html_str = f"<table id='{table_head}' class='cell-border compact stripe' data-sort-by-column='{sort_by_column}' data-sort-order='{sort_order}'><thead><tr>\n"
-
+    html_str = (f"<table id='{table_head}' class='cell-border compact stripe' "
+                f"data-sort-by-column='{sort_by_column}' data-sort-order='{sort_order}'>")
+    html_str += "<thead><tr>\n"
     for column_title, column_description in items:
         if column_description == "":
             html_str += f"<th>{column_title}</th>\n"
@@ -147,8 +143,8 @@ def html_get_header() -> str:
                     <link rel='stylesheet' href='https://cdn.datatables.net/1.10.25/css/jquery.dataTables.min.css'>
                     <link rel='stylesheet' href='styles.css'>"""
     # Add navbar to header
-    header = header+html_get_navbar()
-    header = header+"<div class='content-wrapper'>"
+    header = header + html_get_navbar()
+    header = header + "<div class='content-wrapper'>"
     return header
 
 
@@ -187,10 +183,10 @@ def html_get_table_of_contents(toc_list: List[Tuple[str, str, str]]) -> str:
 def html_add_header_with_link(header_title: str,
                               title_type: int,
                               toc_list: List[Tuple[str, str, str]],
-                              link: str=None) -> str:
+                              link: str = None) -> str:
     if link is None:
         link = header_title.replace(" ", "-")
-    toc_list.append((header_title, link, title_type-1))
+    toc_list.append((header_title, link, title_type - 1))
     html_string = f"<a id=\"{link}\">"
     html_string += f"<h{title_type} class=\"report-title\">{header_title}</h{title_type}>\n"
     return html_string
@@ -240,7 +236,7 @@ def create_all_function_table(
         table_id: str = None) -> str:
     """Table for all functions in the project. Contains many details about each
         function"""
-    random_suffix = '_'+''.join(random.choices(string.ascii_lowercase + string.ascii_uppercase, k=7))
+    random_suffix = '_' + ''.join(random.choices(string.ascii_lowercase + string.ascii_uppercase, k=7))
     if table_id is None:
         table_id = tables[-1]
     html_string = create_table_head(table_id, [
@@ -291,7 +287,7 @@ def create_all_function_table(
             f"<label for='{collapsible_id}' class='lbl-toggle'>View List</label><div class='collapsible-content'>"
             f"<div class='content-inner'><p> {fd.reached_by_fuzzers}</p></div></div></div>")) if fd.reached_by_fuzzers else "None",
             "yes" if fuzz_utils.demangle_cpp_func(fd.function_name) in project_profile.runtime_coverage.functions_hit else "no",
-            "%.5s"%(str(hit_percentage))+"%",
+            "%.5s" % (str(hit_percentage)) + "%",
             fd.i_count,
             fd.bb_count,
             fd.cyclomatic_complexity,
@@ -356,12 +352,12 @@ def create_boxed_top_summary_info(tables: List[str],
 
     graph1_title = "Functions statically reachable by fuzzers"
     graph1_percentage = str(round(reached_percentage, 2))
-    graph1_numbers = "%d/%d"%(reached_func_count, total_functions)
+    graph1_numbers = "%d/%d" % (reached_func_count, total_functions)
     html_string += create_percentage_graph(graph1_title, graph1_percentage, graph1_numbers)
 
     graph2_title = "Cyclomatic complexity statically reachable by fuzzers"
     graph2_percentage = str(round(reached_complexity_percentage, 2))
-    graph2_numbers = "%d/%d"%(complexity_reached, int(total_complexity))
+    graph2_numbers = "%d/%d" % (complexity_reached, int(total_complexity))
     html_string += create_percentage_graph(graph2_title, graph2_percentage, graph2_numbers)
     if display_coverage:
         l.info("Displaying coverage in summary")
@@ -376,39 +372,39 @@ def create_boxed_top_summary_info(tables: List[str],
 
 def create_conclusions(conclusions, reached_percentage, reached_complexity_percentage):
     # Functions reachability
-        sentence = f"""Fuzzers reach { "%.5s%%"%(str(reached_percentage)) } of all functions. """
-        if reached_percentage > 90.0:
-            warning = 10
-            sentence += "This is great."
-        elif reached_percentage > 75.0:
-            warning = 8
-            sentence += "This is good"
-        elif reached_percentage > 50.0:
-            warning = 6
-            sentence += "This is good, but improvements can be made"
-        elif reached_percentage > 25.0:
-            warning = 4
-            sentence += "Improvements should be made"
-        else:
-            warning = 2
-            sentence += "Improvements need to be made"
-        conclusions.append((warning, sentence))
+    sentence = f"""Fuzzers reach { "%.5s%%"%(str(reached_percentage)) } of all functions. """
+    if reached_percentage > 90.0:
+        warning = 10
+        sentence += "This is great."
+    elif reached_percentage > 75.0:
+        warning = 8
+        sentence += "This is good"
+    elif reached_percentage > 50.0:
+        warning = 6
+        sentence += "This is good, but improvements can be made"
+    elif reached_percentage > 25.0:
+        warning = 4
+        sentence += "Improvements should be made"
+    else:
+        warning = 2
+        sentence += "Improvements need to be made"
+    conclusions.append((warning, sentence))
 
-        # Complexity reachability
-        sentence = f"""Fuzzers reach { "%.5s%%"%(str(reached_complexity_percentage)) } of cyclomatic complexity. """
-        if reached_complexity_percentage > 90.0:
-            warning = 10
-            sentence += "This is great."
-        elif reached_complexity_percentage > 70.0:
-            warning = 8
-            sentence += "This is pretty nice."
-        elif reached_complexity_percentage > 50.0:
-            warning = 6
-            sentence += "This is okay."
-        else:
-            warning = 2
-            sentence += "Improvements could be made"
-        conclusions.append((warning, sentence))
+    # Complexity reachability
+    sentence = f"""Fuzzers reach { "%.5s%%"%(str(reached_complexity_percentage)) } of cyclomatic complexity. """
+    if reached_complexity_percentage > 90.0:
+        warning = 10
+        sentence += "This is great."
+    elif reached_complexity_percentage > 70.0:
+        warning = 8
+        sentence += "This is pretty nice."
+    elif reached_complexity_percentage > 50.0:
+        warning = 6
+        sentence += "This is okay."
+    else:
+        warning = 2
+        sentence += "Improvements could be made"
+    conclusions.append((warning, sentence))
 
 
 def create_top_summary_info(
@@ -427,12 +423,12 @@ def create_top_summary_info(
     html_string += "<div style=\"display: flex; max-width: 50%\">"
     graph1_title = "Functions statically reachable by fuzzers"
     graph1_percentage = str(round(reached_percentage, 2))
-    graph1_numbers = "%d/%d"%(reached_func_count, total_functions)
+    graph1_numbers = "%d/%d" % (reached_func_count, total_functions)
     html_string += create_percentage_graph(graph1_title, graph1_percentage, graph1_numbers)
 
     graph2_title = "Cyclomatic complexity statically reachable by fuzzers"
     graph2_percentage = str(round(reached_complexity_percentage, 2))
-    graph2_numbers = "%d / %d"%(complexity_reached, int(total_complexity))
+    graph2_numbers = "%d / %d" % (complexity_reached, int(total_complexity))
     html_string += create_percentage_graph(graph2_title, graph2_percentage, graph2_numbers)
     html_string += "</div>"
     if display_coverage:
@@ -529,7 +525,7 @@ def create_fuzz_blocker_table(
                                     str(node.cov_forward_reds),
                                     str(node.cov_ct_idx),
                                     node.cov_parent,
-                                    "<a href=%s>call site</a>"%(node.cov_callsite_link),
+                                    "<a href=%s>call site</a>" % node.cov_callsite_link,
                                     node.cov_largest_blocked_func])
         max_idx -= 1
     html_table_string += "</table>"
@@ -568,20 +564,20 @@ def create_calltree(
         color_to_be = node.cov_color
         callsite_link = node.cov_callsite_link
         link = node.cov_link
-        ct_idx_str = "%s%s"%("0"*(len("00000") - len(str(node.cov_ct_idx))), str(node.cov_ct_idx))
+        ct_idx_str = "%s%s" % ("0" * (len("00000") - len(str(node.cov_ct_idx))), str(node.cov_ct_idx))
 
-        indentation = int(node.depth)*16
+        indentation = int(node.depth) * 16
         # Only display [function] link if we have, otherwhise show no [function] text.
-        func_href = "<a href=\"%s\">[function]</a>"%(link) if node.dst_function_source_file.replace(" ", "") != "/" else ""
+        func_href = "<a href=\"%s\">[function]</a>" % (link) if node.dst_function_source_file.replace(" ", "") != "/" else ""
 
         if i > 0:
-            previous_node = nodes[i-1]
+            previous_node = nodes[i - 1]
             if previous_node.depth == node.depth:
                 calltree_html_string += "</div>"
-            depth_diff = previous_node.depth-node.depth
+            depth_diff = previous_node.depth - node.depth
             if depth_diff >= 1:
                 closing_divs = "</div>"  # To close "calltree-line-wrapper"
-                closing_divs = "</div>" * (int(depth_diff)+1)
+                closing_divs = "</div>" * (int(depth_diff) + 1)
                 calltree_html_string += closing_divs
 
         calltree_html_string += f"""
@@ -590,23 +586,23 @@ def create_calltree(
             <span class="coverage-line-filename"> {func_href} <a href="{callsite_link}">[call site2]</a>[calltree idx: {ct_idx_str}]</span>
         </span>
     """
-        if i != len(nodes)-1:
-            next_node = nodes[i+1]
+        if i != len(nodes) - 1:
+            next_node = nodes[i + 1]
             if next_node.depth > node.depth:
                 calltree_html_string += f"""<div class="calltree-line-wrapper level-{int(node.depth)}" style="padding-left: 16px">"""
-            elif next_node.depth<node.depth:
-                depth_diff = int(node.depth-next_node.depth)
-                calltree_html_string += "</div>"*depth_diff
+            elif next_node.depth < node.depth:
+                depth_diff = int(node.depth - next_node.depth)
+                calltree_html_string += "</div>" * depth_diff
 
     calltree_html_string += "</div>"
     l.info("Calltree created")
 
     # Write the HTML to a file called calltree_view_XX.html where XX is a counter.
     calltree_file_idx = 0
-    calltree_html_file = "calltree_view_%d.html"%(calltree_file_idx)
+    calltree_html_file = "calltree_view_%d.html" % calltree_file_idx
     while os.path.isfile(calltree_html_file):
         calltree_file_idx += 1
-        calltree_html_file = "calltree_view_%d.html"%(calltree_file_idx)
+        calltree_html_file = "calltree_view_%d.html" % calltree_file_idx
 
     write_wrapped_html_file(calltree_html_string, calltree_html_file)
     return calltree_html_file
@@ -635,17 +631,17 @@ def create_fuzzer_detailed_section(
 functions are hit/not hit. This info is based on the coverage 
 achieved of all fuzzers together and not just this specific 
 fuzzer. This should change in the future to be per-fuzzer-basis.</p>"""
-    image_name = "%s_colormap.png"%(fuzzer_filename.replace(" ", "").split("/")[-1])
+    image_name = "%s_colormap.png" % (fuzzer_filename.replace(" ", "").split("/")[-1])
 
     create_horisontal_calltree_image(image_name, profile)
-    html_string += "<img class=\"colormap\" src=\"%s\">"%(image_name)
+    html_string += "<img class=\"colormap\" src=\"%s\">" % image_name
 
     # Full calltree
     html_string += html_add_header_with_link(
             "Full calltree", 3, toc_list, link=f"full_calltree_{curr_tt_profile}")
     calltree_file_name = create_calltree(profile, project_profile, coverage_url, git_repo_url, basefolder, image_name, tables)
     html_string += ("<p class='no-top-margin'>The following link provides a visualisation "
-                    "of the full calltree overlayed with coverage information: <a href=\"%s\">full calltree</a></p>"%(calltree_file_name))
+                    "of the full calltree overlayed with coverage information: <a href=\"%s\">full calltree</a></p>" % (calltree_file_name))
 
     # Fuzz blocker table
     html_fuzz_blocker_table = create_fuzz_blocker_table(profile,
@@ -686,9 +682,9 @@ fuzzer. This should change in the future to be per-fuzzer-basis.</p>"""
                 funcname,
                 total_func_lines,
                 hit_lines,
-                "%.5s"%(str(hit_percentage))+"%"])
+                "%.5s" % (str(hit_percentage)) + "%"])
         else:
-            l.error("Could not write coverage line for function %s"%(funcname))
+            l.error("Could not write coverage line for function %s" % funcname)
     func_hit_table_string += "</table>"
 
     # Get how many functions are covered relative to reachability
@@ -705,7 +701,7 @@ fuzzer. This should change in the future to be per-fuzzer-basis.</p>"""
     html_string += get_simple_box("Covered functions", str(total_hit_functions))
     html_string += get_simple_box("Functions that are reachable but not covered", str(uncovered_reachable_funcs))
     html_string += get_simple_box("Reachable functions", str(reachable_funcs))
-    html_string += get_simple_box("Percentage of reachable functions covered", "%s%%"%str(round(cov_reach_proportion, 2)))
+    html_string += get_simple_box("Percentage of reachable functions covered", "%s%%" % str(round(cov_reach_proportion, 2)))
     html_string += "</div>"
     html_string += "<div style=\"font-size: 0.85rem; color: #adadad; margin-bottom: 40px\">"
     html_string += "<b>NB:</b> The sum of <i>covered functions</i> and <i>functions that are reachable but not covered</i> need not be <i>Reachable functions</i>. This is because the reachability analysis is an approximation and thus at runtime some functions may be covered that are not included in the reachability analysis. This is a limitation our of our static analysis capabilities."
@@ -776,7 +772,7 @@ def handle_analysis_3(toc_list: List[Tuple[str, str, int]],
                 fuzz_utils.demangle_cpp_func(funcname),
                 total_func_lines,
                 hit_lines,
-                "%.5s"%(str((hit_lines / total_func_lines) * 100.0))
+                "%.5s" % (str((hit_lines / total_func_lines) * 100.0))
             ])
     html_string += "</table>"
     html_string += "</div>"  # report-box
@@ -800,18 +796,18 @@ def handle_analysis_2(toc_list: List[Tuple[str, str, int]],
 
     for profile_idx in range(len(profiles)):
         html_string += html_add_header_with_link(
-                "%s"%(profiles[profile_idx].fuzzer_source_file), 2, toc_list)
+                "%s" % (profiles[profile_idx].fuzzer_source_file), 2, toc_list)
         html_string += html_add_header_with_link(
                 "Dictionary", 3, toc_list)
         html_string += "<p>Use this with the libFuzzer -dict=DICT.file flag</p>"
 
         html_string += "<pre><code class='language-clike'>"
-        kn=0
+        kn = 0
         for fn in profiles[profile_idx].functions_reached_by_fuzzer:
             fp = profiles[profile_idx].all_class_functions[fn]
             #print(fp.constants_touched)
             for const in fp.constants_touched:
-                html_string += "k%d=\"%s\"\n"%(kn, const)
+                html_string += "k%d=\"%s\"\n" % (kn, const)
                 kn += 1
         html_string += "</code></pre><br>"
 
@@ -954,7 +950,7 @@ def extract_highlevel_guidance(conclusions) -> str:
             conclusion += "<div class=\"line-wrapper\"><span class=\"high-level-conclusion yellow-conclusion\">"
         else:
             conclusion += "<div class=\"line-wrapper\"><span class=\"high-level-conclusion green-conclusion\">"
-        conclusion += "%s</span></div>"%(sentence)
+        conclusion += "%s</span></div>" % sentence
         html_string += conclusion
     html_string += "</div>"
 
@@ -1091,8 +1087,8 @@ def create_html_report(
     html_footer += "var tableIds = ["
     counter = 0
     for tablename in tables:
-        html_footer += "'%s'"%(tablename)
-        if counter!=len(tables)-1:
+        html_footer += "'%s'" % tablename
+        if counter != len(tables) - 1:
             html_footer += ", "
         else:
             html_footer += "];\n"
