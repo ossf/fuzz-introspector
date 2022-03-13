@@ -97,7 +97,9 @@ class FuzzerProfile:
             if "." in elem['functionName']:
                 split_name = elem['functionName'].split(".")
                 if split_name[-1].isnumeric():
-                    logger.info("We may have a non-normalised function name: %s" % elem['functionName'])
+                    logger.info(
+                        "We may have a non-normalised function name: %s" % elem['functionName']
+                    )
 
             func_profile = FunctionProfile(elem['functionName'])
             func_profile.migrate_from_yaml_elem(elem)
@@ -124,9 +126,12 @@ class FuzzerProfile:
 
     def set_all_reached_functions(self) -> None:
         """
-        sets self.functions_reached_by_fuzzer to all functions reached by LLVMFuzzerTestOneInput
+        sets self.functions_reached_by_fuzzer to all functions reached
+        by LLVMFuzzerTestOneInput
         """
-        self.functions_reached_by_fuzzer = self.all_class_functions["LLVMFuzzerTestOneInput"].functions_reached
+        self.functions_reached_by_fuzzer = (self
+                                            .all_class_functions["LLVMFuzzerTestOneInput"]
+                                            .functions_reached)
 
     def reaches(self, func_name: str) -> bool:
         return func_name in self.functions_reached_by_fuzzer
@@ -328,10 +333,16 @@ class MergedProjectProfile:
                 if reached_func_obj.hitcount == 0:
                     total_new_complexity += reached_func_obj.cyclomatic_complexity
             if fp_obj.hitcount == 0:
-                fp_obj.new_unreached_complexity = total_new_complexity + (fp_obj.cyclomatic_complexity)
+                fp_obj.new_unreached_complexity = (
+                    total_new_complexity
+                    + fp_obj.cyclomatic_complexity
+                )
             else:
                 fp_obj.new_unreached_complexity = total_new_complexity
-            fp_obj.total_cyclomatic_complexity = total_cyclomatic_complexity + fp_obj.cyclomatic_complexity
+            fp_obj.total_cyclomatic_complexity = (
+                total_cyclomatic_complexity
+                + fp_obj.cyclomatic_complexity
+            )
 
         # Accumulate run-time coverage mapping
         self.runtime_coverage = fuzz_cov_load.CoverageProfile()
@@ -349,21 +360,20 @@ class MergedProjectProfile:
                     # maps have the same number of elements with the same line numbers but
                     # different hit counts.
                     new_line_counts = list()
-                    to_add = True
                     for idx1 in range(len(self.runtime_coverage.covmap[func_name])):
                         try:
                             ln1, ht1 = self.runtime_coverage.covmap[func_name][idx1]
                             ln2, ht2 = profile.coverage.covmap[func_name][idx1]
-                        except:
+                        except Exception:
                             ln1, ht1 = self.runtime_coverage.covmap[func_name][idx1]
                             ln2, ht2 = self.runtime_coverage.covmap[func_name][idx1]
-                        # It may be that line numbers are not the same for the same function name across
-                        # different fuzzers.
+                        # It may be that line numbers are not the same for the same function
+                        # name across different fuzzers.
                         # This *could* actually happen, and will often (almost always) happen for
-                        # LLVMFuzzerTestOneInput. In this case we just gracefully continue and ignore issues.
+                        # LLVMFuzzerTestOneInput. In this case we just gracefully
+                        # continue and ignore issues.
                         if ln1 != ln2:
                             logger.error("Line numbers are different in the same function")
-                            to_add = False
                             continue
                         new_line_counts.append((ln1, max(ht1, ht2)))
                     self.runtime_coverage.covmap[func_name] = new_line_counts
@@ -401,8 +411,14 @@ class MergedProjectProfile:
         return all_covered_functions
 
     def get_function_reach_percentage(self) -> float:
-        total_functions = float(self.get_total_unreached_function_count() + self.get_total_reached_function_count())
-        reached_percentage = float(self.get_total_reached_function_count() / total_functions) * 100.0
+        total_functions = (
+            float(self.get_total_unreached_function_count()
+                  + self.get_total_reached_function_count())
+        )
+        reached_percentage = (
+            float(self.get_total_reached_function_count() / total_functions)
+            * 100.0
+        )
         return reached_percentage
 
     def get_function_summaries(self) -> Tuple[int, int, int, float, float]:
@@ -411,7 +427,13 @@ class MergedProjectProfile:
         total_functions = reached_func_count + unreached_func_count
         reached_percentage = (float(reached_func_count) / float(total_functions)) * 100
         unreached_percentage = (float(unreached_func_count) / float(total_functions)) * 100
-        return total_functions, reached_func_count, unreached_func_count, reached_percentage, unreached_percentage
+        return (
+            total_functions,
+            reached_func_count,
+            unreached_func_count,
+            reached_percentage,
+            unreached_percentage
+        )
 
     def get_complexity_summaries(self) -> Tuple[int, int, int, float, float]:
 
@@ -423,7 +445,13 @@ class MergedProjectProfile:
         reached_complexity_percentage = (complexity_reached / (total_complexity)) * 100.0
         unreached_complexity_percentage = (complexity_unreached / (total_complexity)) * 100.0
 
-        return total_complexity, complexity_reached, complexity_unreached, reached_complexity_percentage, unreached_complexity_percentage
+        return (
+            total_complexity,
+            complexity_reached,
+            complexity_unreached,
+            reached_complexity_percentage,
+            unreached_complexity_percentage
+        )
 
     def set_basefolder(self) -> None:
         """
@@ -431,10 +459,13 @@ class MergedProjectProfile:
         This is used to remove locations within a host system to
         essentially make paths as if they were from the root of the source code project.
         """
-        all_strs = [f.function_source_file for f
-                    in self.all_functions.values()
-                    if f.function_source_file != "/" and
-                    "/usr/include/" not in f.function_source_file]
+        all_strs = []
+        for f in self.all_functions.values():
+            if f.function_source_file == "/":
+                continue
+            if "/usr/include/" in f.function_source_file:
+                continue
+            all_strs.append(f.function_source_file)
 
         self.basefolder = fuzz_utils.longest_common_prefix(all_strs)
 
@@ -517,7 +548,10 @@ def add_func_to_reached_and_clone(merged_profile_old: MergedProjectProfile,
 
 def load_all_profiles(target_folder: str) -> List[FuzzerProfile]:
     profiles = []
-    data_files = fuzz_utils.get_all_files_in_tree_with_regex(target_folder, "fuzzerLogFile.*\.data$")
+    data_files = fuzz_utils.get_all_files_in_tree_with_regex(
+        target_folder,
+        "fuzzerLogFile.*\.data$"
+    )
     logger.info(" - found %d profiles to load" % len(data_files))
     for data_file in data_files:
         profile = read_fuzzer_data_file_to_profile(data_file)

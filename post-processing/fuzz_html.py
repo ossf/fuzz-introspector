@@ -268,8 +268,6 @@ def create_all_function_table(
     html_string = create_table_head(table_id, [
         ("Func name",
          ""),
-        ("Git URL",
-         ""),
         ("Functions filename",
          "Source code file where function is defined."),
         ("Arg count",
@@ -303,36 +301,63 @@ def create_all_function_table(
          "Based on static analysis."),
         ("Undiscovered complexity", "")])
 
-    if basefolder == "/":
-        basefolder = "WRONG"
-
     for fd_k, fd in project_profile.all_functions.items():
-        if basefolder == "WRONG":
-            fd_github_url = "%s/%s#L%d" % (git_repo_url, "/".join(
-                fd.function_source_file.split("/")[3:]), fd.function_linenumber)
-        else:
-            fd_github_url = "%s/%s#L%d" % (git_repo_url, fd.function_source_file.replace(
-                basefolder, ""), fd.function_linenumber)
+        demangled_func_name = fuzz_utils.demangle_cpp_func(fd.function_name)
         try:
             func_total_lines, hit_lines = project_profile.runtime_coverage.get_hit_summary(
-                fuzz_utils.demangle_cpp_func(fd.function_name))
+                demangled_func_name
+            )
             hit_percentage = (hit_lines / func_total_lines) * 100.0
         except Exception:
             hit_percentage = 0.0
-        collapsible_id = fuzz_utils.demangle_cpp_func(fd.function_name) + random_suffix
+
+        collapsible_id = demangled_func_name + random_suffix
+
+        func_cov_url = "%s%s.html#L%d" % (
+            coverage_url,
+            fd.function_source_file,
+            fd.function_linenumber
+        )
+        func_name_row = f"""<a href='{ func_cov_url }'><code class='language-clike'>
+{ demangled_func_name }
+</code></a>"""
+
+        if demangled_func_name in project_profile.runtime_coverage.functions_hit:
+            func_hit_at_runtime_row = "yes"
+        else:
+            func_hit_at_runtime_row = "no"
+
+        if fd.reached_by_fuzzers:
+            reached_by_fuzzers_row = f"""<div
+ class='wrap-collabsible'>
+    <input id='{collapsible_id}'
+           class='toggle'
+           type='checkbox'>
+        <label
+            for='{collapsible_id}'
+            class='lbl-toggle'>
+                View List
+        </label>
+    <div class='collapsible-content'>
+        <div class='content-inner'>
+            <p>
+                {fd.reached_by_fuzzers}
+            </p>
+        </div>
+    </div>
+</div>"""
+        else:
+            reached_by_fuzzers_row = "None"
+
         html_string += html_table_add_row([
-            "%s" % ("<a href='%s'><code class='language-clike'>" % ("%s%s.html#L%d" % (coverage_url,
-                    fd.function_source_file, fd.function_linenumber)) + fuzz_utils.demangle_cpp_func(fd.function_name) + "</code></a>"),
-            "<a href=\"%s\">LINK</a>" % (fd_github_url),
-            "%s" % fd.function_source_file,
+            func_name_row,
+            fd.function_source_file,
             fd.arg_count,
             fd.arg_types,
             fd.function_depth,
             fd.hitcount,
-            "%s" % ((f"<div class='wrap-collabsible'><input id='{collapsible_id}' class='toggle' type='checkbox'>"
-            f"<label for='{collapsible_id}' class='lbl-toggle'>View List</label><div class='collapsible-content'>"
-            f"<div class='content-inner'><p> {fd.reached_by_fuzzers}</p></div></div></div>")) if fd.reached_by_fuzzers else "None",
-            "yes" if fuzz_utils.demangle_cpp_func(fd.function_name) in project_profile.runtime_coverage.functions_hit else "no",
+            reached_by_fuzzers_row,
+            func_hit_at_runtime_row,
             "%.5s" % (str(hit_percentage)) + "%",
             fd.i_count,
             fd.bb_count,
@@ -1018,19 +1043,9 @@ def handle_analysis_1(toc_list: List[Tuple[str, str, int]],
                                          ("Unreached complexity", "")
                                      ])
     for fd in optimal_target_functions:
-        if basefolder == "/":
-            basefolder = "WRONG"
-
-        if basefolder == "WRONG":
-            fd_github_url = "%s/%s#L%d" % (git_repo_url, "/".join(
-                fd.function_source_file.split("/")[3:]), fd.function_linenumber)
-        else:
-            fd_github_url = "%s/%s#L%d" % (git_repo_url, fd.function_source_file.replace(
-                basefolder, ""), fd.function_linenumber)
-
         html_string += html_table_add_row([
-            "<a href=\"%s\"><code class='language-clike'>%s</code></a>" % (
-                fd_github_url, fuzz_utils.demangle_cpp_func(fd.function_name)),
+            "<a href=\"#\"><code class='language-clike'>%s</code></a>" % (
+                fuzz_utils.demangle_cpp_func(fd.function_name)),
             fd.function_source_file,
             fd.arg_count,
             fd.arg_types,
