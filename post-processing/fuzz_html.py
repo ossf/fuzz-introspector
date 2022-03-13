@@ -38,7 +38,7 @@ from matplotlib.patches import Rectangle
 import random
 import string
 
-l = logging.getLogger(name=__name__)
+logger = logging.getLogger(name=__name__)
 
 
 class AnalysisInterface(NamedTuple):
@@ -54,12 +54,12 @@ def create_horisontal_calltree_image(image_name: str,
     of a rectangle. The rectangle is red if not visited and green if visited.
     """
 
-    l.info("Creating image %s" % image_name)
+    logger.info("Creating image %s" % image_name)
     # Extract color sequence
     color_list = []
     for node in fuzz_cfg_load.extract_all_callsites(profile.function_call_depths):
         color_list.append(node.cov_color)
-    l.info("- extracted the callsites (%d nodes)" % len(color_list))
+    logger.info("- extracted the callsites (%d nodes)" % len(color_list))
 
     # Show one read rectangle if the list is empty. An alternative is
     # to not include the image at all.
@@ -91,7 +91,7 @@ def create_horisontal_calltree_image(image_name: str,
             curr_start_x += curr_size
             curr_color = color_list[i]
             curr_size = 1.0
-    l.info("- iterated over color list")
+    logger.info("- iterated over color list")
 
     # Plot the last case
     final_start_x = curr_start_x * multiplier
@@ -100,10 +100,10 @@ def create_horisontal_calltree_image(image_name: str,
     ax.add_patch(Rectangle((final_start_x, 0.0), final_size, 1, color=curr_color))
 
     # Save the image
-    l.info("- saving image")
+    logger.info("- saving image")
     plt.title(image_name.split(".")[0])
     plt.savefig(image_name)
-    l.info("- image saved")
+    logger.info("- image saved")
 
 
 def create_table_head(
@@ -400,7 +400,7 @@ def create_boxed_top_summary_info(tables: List[str],
     graph2_numbers = "%d/%d" % (complexity_reached, int(total_complexity))
     html_string += create_percentage_graph(graph2_title, graph2_percentage, graph2_numbers)
     if display_coverage:
-        l.info("Displaying coverage in summary")
+        logger.info("Displaying coverage in summary")
         covered_funcs = project_profile.get_all_runtime_covered_functions()
         html_string += create_covered_func_box(str(len(covered_funcs)))
 
@@ -481,12 +481,12 @@ def create_top_summary_info(
     html_string += create_percentage_graph(graph2_title, graph2_percentage, graph2_numbers)
     html_string += "</div>"
     if display_coverage:
-        l.info("Displaying coverage in summary")
+        logger.info("Displaying coverage in summary")
         covered_funcs = project_profile.get_all_runtime_covered_functions()
         html_string += f"""Functions covered at runtime: { len(covered_funcs) }"""
         html_string += "<br>"
     else:
-        l.info("Not displaying coverage in summary")
+        logger.info("Not displaying coverage in summary")
 
     # Add conclusion
     if extract_conclusion:
@@ -537,7 +537,7 @@ def create_fuzz_blocker_table(
     """
     Creates HTML string for table showing fuzz blockers.
     """
-    l.info("Creating fuzz blocker table")
+    logger.info("Creating fuzz blocker table")
     # Identify if there are any fuzz blockers
     all_callsites = fuzz_cfg_load.extract_all_callsites(profile.function_call_depths)
     nodes_sorted_by_red_ahead = sorted(all_callsites,
@@ -550,7 +550,7 @@ def create_fuzz_blocker_table(
             has_blockers = True
 
     if not has_blockers:
-        l.info("There are no fuzz blockers")
+        logger.info("There are no fuzz blockers")
         return None
 
     html_table_string = "<p class='no-top-margin'>The followings nodes represent call sites where fuzz blockers occur</p>"
@@ -593,7 +593,7 @@ def create_calltree(
     """
     Creates the HTML of the calltree. Returns the HTML as a string.
     """
-    l.info("Creating calltree HTML code")
+    logger.info("Creating calltree HTML code")
     # Generate HTML for the calltree
     calltree_html_string = "<div class='section-wrapper'>"
     nodes = fuzz_cfg_load.extract_all_callsites(profile.function_call_depths)
@@ -659,7 +659,7 @@ def create_calltree(
                 calltree_html_string += "</div>" * depth_diff
 
     calltree_html_string += "</div>"
-    l.info("Calltree created")
+    logger.info("Calltree created")
 
     # Write the HTML to a file called calltree_view_XX.html where XX is a counter.
     calltree_file_idx = 0
@@ -752,7 +752,7 @@ fuzzer. This should change in the future to be per-fuzzer-basis.
                 hit_lines,
                 "%.5s" % (str(hit_percentage)) + "%"])
         else:
-            l.error("Could not write coverage line for function %s" % funcname)
+            logger.error("Could not write coverage line for function %s" % funcname)
     func_hit_table_string += "</table>"
 
     # Get how many functions are covered relative to reachability
@@ -812,7 +812,7 @@ def handle_analysis_3(toc_list: List[Tuple[str, str, int]],
                       git_repo_url: str,
                       coverage_url: str,
                       conclusions) -> str:
-    l.info("In analysis 3")
+    logger.info("In analysis 3")
 
     functions_of_interest = fuzz_analysis.analysis_coverage_runtime_analysis(profiles, project_profile)
 
@@ -855,7 +855,7 @@ def handle_analysis_2(toc_list: List[Tuple[str, str, int]],
                       git_repo_url: str,
                       coverage_url: str,
                       conclusions) -> str:
-    l.info("In analysis 2")
+    logger.info("In analysis 2")
 
     html_string = ""
     html_string += html_add_header_with_link(
@@ -910,7 +910,7 @@ def handle_analysis_1(toc_list: List[Tuple[str, str, int]],
     any fuzzers. This means it can be used to expand the current fuzzing harness
     rather than substitute it.
     """
-    l.info(" - Identifying optimal targets")
+    logger.info(" - Identifying optimal targets")
 
     html_string = ""
     html_string += html_add_header_with_link(
@@ -1005,7 +1005,7 @@ def extract_highlevel_guidance(conclusions) -> str:
     """
     Creates colorful boxes for the conlusions made throughout the analysis
     """
-    l.info("Extracting high level guidance")
+    logger.info("Extracting high level guidance")
     html_string = ""
     html_string += "<div class=\"high-level-conclusions-wrapper\">"
 
@@ -1042,7 +1042,7 @@ def create_html_report(
     toc_list = list()
     conclusions = []
 
-    l.info(" - Creating HTML report")
+    logger.info(" - Creating HTML report")
 
     # Create html header, which will be used to assemble the doc at the
     # end of this function.
@@ -1064,7 +1064,7 @@ def create_html_report(
     #############################################
     # Reachability overview
     #############################################
-    l.info(" - Creating reachability overview table")
+    logger.info(" - Creating reachability overview table")
     html_report_core = html_add_header_with_link("Reachability and coverage overview", 3, toc_list)
     tables.append("myTable%d" % (len(tables)))
     html_report_core += "<div style=\"display: flex; max-width: 800px\">"
@@ -1074,7 +1074,7 @@ def create_html_report(
     #############################################
     # Table with overview of all fuzzers.
     #############################################
-    l.info(" - Creating table with overview of all fuzzers")
+    logger.info(" - Creating table with overview of all fuzzers")
     html_report_core += html_add_header_with_link("Fuzzers overview", 3, toc_list)
     tables.append("myTable%d" % (len(tables)))
     html_report_core += create_overview_table(tables, profiles)
@@ -1082,7 +1082,7 @@ def create_html_report(
     #############################################
     # Table with details about all functions in the target project.
     #############################################
-    l.info(" - Creating table with information about all functions in target")
+    logger.info(" - Creating table with information about all functions in target")
     html_report_core += "<div class=\"report-box\">"
     html_report_core += html_add_header_with_link(
         "Project functions overview", 2, toc_list)
@@ -1095,7 +1095,7 @@ def create_html_report(
     #############################################
     # Section with details about each fuzzer, including calltree.
     #############################################
-    l.info(" - Creating section with details about each fuzzer")
+    logger.info(" - Creating section with details about each fuzzer")
     html_report_core += "<div class=\"report-box\">"
     html_report_core += html_add_header_with_link("Fuzzer details", 1, toc_list)
     for profile_idx in range(len(profiles)):
@@ -1105,7 +1105,7 @@ def create_html_report(
     #############################################
     # Handle optional analyses
     #############################################
-    l.info(" - Handling optional analyses")
+    logger.info(" - Handling optional analyses")
     html_report_core += "<div class=\"report-box\">"
     html_report_core += html_add_header_with_link(
         "Analyses and suggestions", 1, toc_list)

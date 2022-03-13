@@ -29,7 +29,7 @@ import fuzz_cfg_load
 import fuzz_cov_load
 import fuzz_utils
 
-l = logging.getLogger(name=__name__)
+logger = logging.getLogger(name=__name__)
 
 
 class FunctionProfile:
@@ -97,7 +97,7 @@ class FuzzerProfile:
             if "." in elem['functionName']:
                 split_name = elem['functionName'].split(".")
                 if split_name[-1].isnumeric():
-                    l.info("We may have a non-normalised function name: %s" % elem['functionName'])
+                    logger.info("We may have a non-normalised function name: %s" % elem['functionName'])
 
             func_profile = FunctionProfile(elem['functionName'])
             func_profile.migrate_from_yaml_elem(elem)
@@ -135,7 +135,7 @@ class FuzzerProfile:
         for elem in correlation_dict['pairings']:
             if os.path.basename(self.introspector_data_file) in "%s.data" % elem['fuzzer_log_file']:
                 self.binary_executable = "%s" % elem['executable_path']
-                l.info("Correlated %s with %s" % (
+                logger.info("Correlated %s with %s" % (
                     os.path.basename(self.introspector_data_file),
                     "%s.data" % elem['fuzzer_log_file']))
 
@@ -278,15 +278,15 @@ class MergedProjectProfile:
         self.unreached_functions = set()
         self.functions_reached = set()
 
-        l.info("Creating merged profile of %d profiles" % len(self.profiles))
+        logger.info("Creating merged profile of %d profiles" % len(self.profiles))
         # Populate functions reached
-        l.info("Populating functions reached")
+        logger.info("Populating functions reached")
         for profile in profiles:
             for func_name in profile.functions_reached_by_fuzzer:
                 self.functions_reached.add(func_name)
 
         # Set all unreached functions
-        l.info("Populating functions unreached")
+        logger.info("Populating functions unreached")
         for profile in profiles:
             for func_name in profile.functions_unreached_by_fuzzer:
                 if func_name not in self.functions_reached:
@@ -294,7 +294,7 @@ class MergedProjectProfile:
 
         # Add all functions from the various profiles into the merged profile. Don't
         # add duplicates
-        l.info("Creating all_functions dictionary")
+        logger.info("Creating all_functions dictionary")
         excluded_functions = {
             "sanitizer", "llvm"
         }
@@ -313,14 +313,14 @@ class MergedProjectProfile:
                         self.all_functions[fd.function_name] = fd
 
         # Gather complexity information about each function
-        l.info("Gathering complexity and incoming references of each function")
+        logger.info("Gathering complexity and incoming references of each function")
         for fp_obj in self.all_functions.values():
             total_cyclomatic_complexity = 0
             total_new_complexity = 0
 
             for reached_func_name in fp_obj.functions_reached:
                 if reached_func_name not in self.all_functions:
-                    l.error("Mismatched function name: %s" % reached_func_name)
+                    logger.error("Mismatched function name: %s" % reached_func_name)
                     continue
                 reached_func_obj = self.all_functions[reached_func_name]
                 reached_func_obj.incoming_references.append(fp_obj.function_name)
@@ -362,13 +362,13 @@ class MergedProjectProfile:
                         # This *could* actually happen, and will often (almost always) happen for
                         # LLVMFuzzerTestOneInput. In this case we just gracefully continue and ignore issues.
                         if ln1 != ln2:
-                            l.error("Line numbers are different in the same function")
+                            logger.error("Line numbers are different in the same function")
                             to_add = False
                             continue
                         new_line_counts.append((ln1, max(ht1, ht2)))
                     self.runtime_coverage.covmap[func_name] = new_line_counts
         self.set_basefolder()
-        l.info("Completed creationg of merged profile")
+        logger.info("Completed creationg of merged profile")
 
     def get_total_complexity(self) -> Tuple[int, int]:
         reached_complexity = 0
@@ -444,7 +444,7 @@ def read_fuzzer_data_file_to_profile(filename: str) -> Optional[FuzzerProfile]:
     For a given .data file (CFG) read the corresponding .yaml file
     This is a bit odd way of doing it and should probably be improved.
     """
-    l.info(" - loading %s" % filename)
+    logger.info(" - loading %s" % filename)
     if not os.path.isfile(filename) or not os.path.isfile(filename + ".yaml"):
         return None
 
@@ -472,11 +472,11 @@ def add_func_to_reached_and_clone(merged_profile_old: MergedProjectProfile,
     We can use this function in a computation of "optimum fuzzer target analysis", which
     computes what the combination of ideal function targets.
     """
-    l.info("Creating a deepcopy")
+    logger.info("Creating a deepcopy")
     merged_profile = copy.deepcopy(merged_profile_old)
 
     # Update hitcount of the function in the new merged profile
-    l.info("Updating hitcount")
+    logger.info("Updating hitcount")
     f = merged_profile.all_functions[func_to_add.function_name]
     if f.cyclomatic_complexity == func_to_add.cyclomatic_complexity:
         f.hitcount = 1
@@ -484,7 +484,7 @@ def add_func_to_reached_and_clone(merged_profile_old: MergedProjectProfile,
     # Update hitcount of all functions reached by the function
     for func_name in func_to_add.functions_reached:
         if func_name not in merged_profile.all_functions:
-            l.error("Mismatched function name: %s" % func_name)
+            logger.error("Mismatched function name: %s" % func_name)
             continue
         f = merged_profile.all_functions[func_name]
         f.hitcount += 1
@@ -493,13 +493,13 @@ def add_func_to_reached_and_clone(merged_profile_old: MergedProjectProfile,
 
     # Recompute all analysis that is based on hitcounts in all functions as hitcount has
     # changed for elements in the dictionary.
-    l.info("Updating hitcount-related data")
+    logger.info("Updating hitcount-related data")
     for f_profile in merged_profile.all_functions.values():
         cc = 0
         uncovered_cc = 0
         for reached_func_name in f_profile.functions_reached:
             if reached_func_name not in merged_profile.all_functions:
-                l.error("Mismatched function name: %s" % reached_func_name)
+                logger.error("Mismatched function name: %s" % reached_func_name)
                 continue
             f_reached = merged_profile.all_functions[reached_func_name]
             cc += f_reached.cyclomatic_complexity
@@ -518,7 +518,7 @@ def add_func_to_reached_and_clone(merged_profile_old: MergedProjectProfile,
 def load_all_profiles(target_folder: str) -> List[FuzzerProfile]:
     profiles = []
     data_files = fuzz_utils.get_all_files_in_tree_with_regex(target_folder, "fuzzerLogFile.*\.data$")
-    l.info(" - found %d profiles to load" % len(data_files))
+    logger.info(" - found %d profiles to load" % len(data_files))
     for data_file in data_files:
         profile = read_fuzzer_data_file_to_profile(data_file)
         if profile is not None:

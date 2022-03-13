@@ -20,7 +20,7 @@ At the moment only C/C++ is supported. Other languages coming up soon.
 import fuzz_utils
 import logging
 
-l = logging.getLogger(name=__name__)
+logger = logging.getLogger(name=__name__)
 
 
 class CoverageProfile:
@@ -68,7 +68,7 @@ def llvm_cov_load(target_dir, target_name=None):
     use all of them.
     """
     coverage_reports = fuzz_utils.get_all_files_in_tree_with_regex(target_dir, ".*\.covreport$")
-    l.info("Found %d coverage reports" % len(coverage_reports))
+    logger.info("Found %d coverage reports" % len(coverage_reports))
 
     # Check if there is a meaningful profile and if not, we need to use all.
     found_name = False
@@ -84,7 +84,7 @@ def llvm_cov_load(target_dir, target_name=None):
         if found_name and target_name not in profile_file:
             continue
 
-        l.info("Reading coverage report: %s" % profile_file)
+        logger.info("Reading coverage report: %s" % profile_file)
         with open(profile_file, 'rb') as pf:
             cp.covreports.append(profile_file)
             curr_func = None

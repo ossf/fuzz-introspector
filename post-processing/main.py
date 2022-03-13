@@ -21,7 +21,7 @@ import fuzz_data_loader
 import fuzz_html
 import fuzz_utils
 
-l = logging.getLogger(name=__name__)
+logger = logging.getLogger(name=__name__)
 
 
 def correlate_binaries_to_logs(binaries_dir):
@@ -36,28 +36,28 @@ def run_analysis_on_dir(target_folder,
                         coverage_url,
                         analyses_to_run,
                         correlation_file):
-    l.info("[+] Loading profiles")
+    logger.info("[+] Loading profiles")
     profiles = fuzz_data_loader.load_all_profiles(target_folder)
     if len(profiles) == 0:
-        l.info("Found no profiles. Exiting")
+        logger.info("Found no profiles. Exiting")
         exit(0)
 
-    l.info("[+] Accummulating profiles")
+    logger.info("[+] Accummulating profiles")
     for profile in profiles:
         profile.accummulate_profile(target_folder)
 
-    l.info("[+] Correlating executables to Fuzz introspector reports")
+    logger.info("[+] Correlating executables to Fuzz introspector reports")
     correlation_dict = fuzz_utils.data_file_read_yaml(correlation_file)
     if correlation_dict is not None and "pairings" in correlation_dict:
         for profile in profiles:
             profile.correlate_executable_name(correlation_dict)
     else:
-        l.info("- Nothing to correlate")
+        logger.info("- Nothing to correlate")
 
-    l.info("[+] Creating project profile")
+    logger.info("[+] Creating project profile")
     project_profile = fuzz_data_loader.MergedProjectProfile(profiles)
 
-    l.info("[+] Refining profiles")
+    logger.info("[+] Refining profiles")
     for profile in profiles:
         profile.refine_paths(project_profile.basefolder)
 
@@ -72,7 +72,7 @@ def run_analysis_on_dir(target_folder,
 
     print("%s" % str(analyses_to_run))
 
-    l.info("[+] Creating HTML report")
+    logger.info("[+] Creating HTML report")
     fuzz_html.create_html_report(profiles,
                                  project_profile,
                                  analyses_to_run,
@@ -123,7 +123,7 @@ def parse_cmdline():
 
 
 if __name__ == "__main__":
-    l.info("Running fuzz introspector post-processing")
+    logger.info("Running fuzz introspector post-processing")
     logging.basicConfig(level=logging.INFO)
     args = parse_cmdline()
     if args.command == 'report':
@@ -134,4 +134,4 @@ if __name__ == "__main__":
                             args.correlation_file)
     elif args.command == 'correlate':
         correlate_binaries_to_logs(args.binaries_dir)
-    l.info("Ending fuzz introspector post-processing")
+    logger.info("Ending fuzz introspector post-processing")
