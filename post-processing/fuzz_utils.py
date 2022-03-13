@@ -24,7 +24,7 @@ from typing import (
 )
 import yaml
 
-l = logging.getLogger(name=__name__)
+logger = logging.getLogger(name=__name__)
 
 
 def longest_common_prefix(strs: List[str]) -> str:
@@ -73,7 +73,7 @@ def get_all_files_in_tree_with_regex(basedir: str, regex_str: str) -> List[str]:
     for root, dirs, files in os.walk(basedir):
         for f in files:
             if r.match(f):
-                l.info("f: %s -- matches regex: %s" % (f, regex_str))
+                logger.info("f: %s -- matches regex: %s" % (f, regex_str))
                 data_files.append(os.path.join(root, f))
     return data_files
 

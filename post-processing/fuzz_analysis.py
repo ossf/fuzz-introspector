@@ -29,7 +29,7 @@ import fuzz_utils
 import fuzz_cfg_load
 import fuzz_data_loader
 
-l = logging.getLogger(name=__name__)
+logger = logging.getLogger(name=__name__)
 
 
 def overlay_calltree_with_coverage(
@@ -74,11 +74,11 @@ def overlay_calltree_with_coverage(
             # have a single seed, and in this specific case LLVMFuzzerTestOneInput
             # will be red.
             if not demangled_name == "LLVMFuzzerTestOneInput":
-                l.error("LLVMFuzzerTestOneInput must be the first node in the calltree")
+                logger.error("LLVMFuzzerTestOneInput must be the first node in the calltree")
                 exit(1)
             coverage_data = profile.get_function_coverage("LLVMFuzzerTestOneInput")
             if len(coverage_data) == 0:
-                l.error("There is no coverage data (not even all negative).")
+                logger.error("There is no coverage data (not even all negative).")
             node.cov_parent = "EP"
 
             node_hitcount = 0
@@ -96,7 +96,7 @@ def overlay_calltree_with_coverage(
                     node_hitcount = hit_count_cov
             node.cov_parent = callstack_get_parent(node, callstack)
         else:
-            l.error("A node should either be the first or it must have a parent")
+            logger.error("A node should either be the first or it must have a parent")
             exit(1)
         node.cov_hitcount = node_hitcount
 
@@ -199,7 +199,7 @@ def overlay_calltree_with_coverage(
             forward_red += 1
             idx2 += 1
         prev_end = idx2 - 1
-        # l.info("Assigning forward red: %d for index %d"%(forward_red, idx1))
+        # logger.info("Assigning forward red: %d for index %d"%(forward_red, idx1))
         n1.cov_forward_reds = forward_red
         n1.cov_largest_blocked_func = largest_blocked_name
 
@@ -212,7 +212,7 @@ def analysis_get_optimal_targets(
     Each of these functions is not be reachable by another function
     in the returned set, but, they may reach some of the same functions.
     """
-    l.info("    - in analysis_get_optimal_targets")
+    logger.info("    - in analysis_get_optimal_targets")
     optimal_set = set()
     target_fds = list()
     for fd in reversed(sorted(list(merged_profile.all_functions.values()),
@@ -259,7 +259,7 @@ def analysis_get_optimal_targets(
             optimal_set.add(func_name)
 
         target_fds.append(fd)
-    l.info(". Done")
+    logger.info(". Done")
     return target_fds, optimal_set
 
 
@@ -279,7 +279,7 @@ def analysis_synthesize_simple_targets(
     In a sense, this is more of a PoC wy to do some analysis on the data we have.
     It is likely that we could do something much better.
     '''
-    l.info("  - in analysis_synthesize_simple_targets")
+    logger.info("  - in analysis_synthesize_simple_targets")
     new_merged_profile = copy.deepcopy(merged_profile)
     target_fds, optimal_set = analysis_get_optimal_targets(merged_profile)
     fuzzer_code = "#include \"ada_fuzz_header.h\"\n"
@@ -302,11 +302,11 @@ def analysis_synthesize_simple_targets(
         max_count = 10
     curr_count = 0
     while curr_count < max_count:
-        l.info("  - sorting by unreached complexity. ")
+        logger.info("  - sorting by unreached complexity. ")
         sorted_by_undiscovered_complexity = list(reversed(sorted(target_fds,
                                                                  key=lambda x: int(
                                                                      x.new_unreached_complexity))))
-        l.info(". Done")
+        logger.info(". Done")
 
         try:
             tfd = sorted_by_undiscovered_complexity[0]
@@ -374,15 +374,15 @@ def analysis_synthesize_simple_targets(
         target_codes[tfd.function_source_file]['source_code'] += code
         target_codes[tfd.function_source_file]['target_fds'].append(tfd)
 
-        l.info("  - calling add_func_t_reached_and_clone. ")
+        logger.info("  - calling add_func_t_reached_and_clone. ")
         new_merged_profile = fuzz_data_loader.add_func_to_reached_and_clone(new_merged_profile, tfd)
 
         # Ensure hitcount is set
         tmp_ff = new_merged_profile.all_functions[tfd.function_name]
         if tmp_ff.hitcount == 0:
-            l.info("Error. Hitcount did not get set for some reason. Exiting")
+            logger.info("Error. Hitcount did not get set for some reason. Exiting")
             exit(0)
-        l.info(". Done")
+        logger.info(". Done")
 
         # We need to update the optimal targets here.
         # We only need to do this operation if we are actually going to continue analysis
@@ -401,7 +401,7 @@ def analysis_synthesize_simple_targets(
         final_fuzzers[filename]['source_code'] = file_fuzzer_code
         final_fuzzers[filename]['target_fds'] = target_codes[filename]['target_fds']
 
-    l.info("Found the following optimal functions: { %s }" % (
+    logger.info("Found the following optimal functions: { %s }" % (
         str([f.function_name for f in optimal_functions_targeted])))
 
     return final_fuzzers, new_merged_profile, optimal_functions_targeted
@@ -431,5 +431,5 @@ def analysis_coverage_runtime_analysis(
             if total_lines > 50 and hit_proportion < 20:
                 functions_of_interest.append(funcname)
         except Exception:
-            l.error("Error getting hit-summary information for %s" % funcname)
+            logger.error("Error getting hit-summary information for %s" % funcname)
     return functions_of_interest
