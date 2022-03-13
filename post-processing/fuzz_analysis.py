@@ -18,11 +18,11 @@ import copy
 import logging
 
 from typing import (
-    Any,
     Dict,
     List,
     Set,
     Tuple,
+    TypedDict,
 )
 
 import fuzz_utils
@@ -30,6 +30,11 @@ import fuzz_cfg_load
 import fuzz_data_loader
 
 logger = logging.getLogger(name=__name__)
+
+TargetCodesType = TypedDict('TargetCodesType', {
+    'source_code': str,
+    'target_fds': List[fuzz_data_loader.FunctionProfile]
+})
 
 
 def overlay_calltree_with_coverage(
@@ -42,7 +47,7 @@ def overlay_calltree_with_coverage(
     # when looking up if a callsite was hit or not. This is because the coverage
     # information about a callsite is located in coverage data of the function
     # in which the callsite is placed.
-    callstack = dict()
+    callstack: Dict[int, str] = dict()
 
     def callstack_get_parent(n, c):
         return c[int(n.depth) - 1]
@@ -213,8 +218,9 @@ def analysis_get_optimal_targets(
     in the returned set, but, they may reach some of the same functions.
     """
     logger.info("    - in analysis_get_optimal_targets")
-    optimal_set = set()
-    target_fds = list()
+    optimal_set: Set[str] = set()
+    target_fds: List[fuzz_data_loader.FunctionProfile] = list()
+
     for fd in reversed(sorted(list(merged_profile.all_functions.values()),
                               key=lambda x: len(x.functions_reached))):
         total_vals = 0
@@ -266,7 +272,7 @@ def analysis_get_optimal_targets(
 def analysis_synthesize_simple_targets(
         merged_profile: fuzz_data_loader.MergedProjectProfile) -> (
             Tuple[
-                Dict[str, Dict[str, Any]],
+                Dict[str, TargetCodesType],
                 fuzz_data_loader.MergedProjectProfile,
                 List[fuzz_data_loader.FuzzerProfile]
             ]):
@@ -287,7 +293,7 @@ def analysis_synthesize_simple_targets(
     fuzzer_code += "int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {\n"
     fuzzer_code += "  af_safe_gb_init(data, size);\n\n"
 
-    target_codes = dict()
+    target_codes: Dict[str, TargetCodesType] = dict()
     optimal_functions_targeted = []
 
     var_idx = 0
@@ -367,10 +373,10 @@ def analysis_synthesize_simple_targets(
         code += ");\n"
         code += "\n"
         if tfd.function_source_file not in target_codes:
-            target_codes[tfd.function_source_file] = dict()
-            target_codes[tfd.function_source_file]['source_code'] = ""
-            target_codes[tfd.function_source_file]['target_fds'] = list()
-
+            target_codes[tfd.function_source_file] = {
+                'source_code': "",
+                'target_fds': list()
+            }
         target_codes[tfd.function_source_file]['source_code'] += code
         target_codes[tfd.function_source_file]['target_fds'].append(tfd)
 
@@ -389,17 +395,18 @@ def analysis_synthesize_simple_targets(
 
         if curr_count < max_count:
             target_fds, optimal_set = analysis_get_optimal_targets(new_merged_profile)
-    final_fuzzers = dict()
 
+    final_fuzzers: Dict[str, TargetCodesType] = dict()
     for filename in target_codes:
         file_fuzzer_code = fuzzer_code
         file_fuzzer_code += target_codes[filename]['source_code']
         file_fuzzer_code += "  af_safe_gb_cleanup();\n"
         file_fuzzer_code += "}\n"
 
-        final_fuzzers[filename] = dict()
-        final_fuzzers[filename]['source_code'] = file_fuzzer_code
-        final_fuzzers[filename]['target_fds'] = target_codes[filename]['target_fds']
+        final_fuzzers[filename] = {
+            'source_code': file_fuzzer_code,
+            'target_fds': target_codes[filename]['target_fds']
+        }
 
     logger.info("Found the following optimal functions: { %s }" % (
         str([f.function_name for f in optimal_functions_targeted])))

@@ -14,7 +14,8 @@
 """ Module for loading CFG files """
 
 from typing import (
-    List
+    List,
+    Optional
 )
 
 
@@ -48,7 +49,7 @@ class CalltreeCallsite():
 
 def extract_all_callsites_recursive(
         calltree: CalltreeCallsite,
-        callsite_nodes: List):
+        callsite_nodes: List[CalltreeCallsite]):
     """
     Given a node, will assemble all callsites in the children. Recursive function.
     """
@@ -58,7 +59,7 @@ def extract_all_callsites_recursive(
 
 
 def extract_all_callsites(calltree: CalltreeCallsite) -> List[CalltreeCallsite]:
-    cs_list = []
+    cs_list: List[CalltreeCallsite] = []
     extract_all_callsites_recursive(calltree, cs_list)
     return cs_list
 
@@ -73,7 +74,7 @@ def print_ctcs_tree(ctcs: CalltreeCallsite):
         print_ctcs_tree(c)
 
 
-def data_file_read_calltree(filename: str) -> CalltreeCallsite:
+def data_file_read_calltree(filename: str) -> Optional[CalltreeCallsite]:
     """
     Extracts the calltree of a fuzzer from a .data file.
     This is for C/C++ files
@@ -97,7 +98,7 @@ def data_file_read_calltree(filename: str) -> CalltreeCallsite:
                     filename = ""
                     linenumber = 0
                 space_count = len(line) - len(line.lstrip(' '))
-                depth = space_count / 2
+                depth = int(space_count / 2)
 
                 # Create a callsite nide
                 ctcs = CalltreeCallsite()
@@ -111,7 +112,7 @@ def data_file_read_calltree(filename: str) -> CalltreeCallsite:
                 if curr_depth == -1:
                     # First node
                     curr_ctcs_node = ctcs
-                elif depth > curr_depth:
+                elif depth > curr_depth and curr_ctcs_node is not None:
                     # We are going one calldepth deeper
                     # Special case in the root parent case, where we have no parent in the current
                     # node
@@ -122,7 +123,7 @@ def data_file_read_calltree(filename: str) -> CalltreeCallsite:
                     else:
                         curr_ctcs_node = curr_ctcs_node.children[-1]
 
-                elif depth < curr_depth:
+                elif depth < curr_depth and curr_ctcs_node is not None:
                     # We are going up, find out how much
                     depth_diff = int(curr_depth - depth)
                     tmp_node = curr_ctcs_node
@@ -132,7 +133,7 @@ def data_file_read_calltree(filename: str) -> CalltreeCallsite:
                         idx += 1
                     curr_ctcs_node = tmp_node
                 # Add the node to the current parent
-                if curr_depth != -1:
+                if curr_depth != -1 and curr_ctcs_node is not None:
                     ctcs.parent_calltree_callsite = curr_ctcs_node
                     curr_ctcs_node.children.append(ctcs)
                 curr_depth = depth

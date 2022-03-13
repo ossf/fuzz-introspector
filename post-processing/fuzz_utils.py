@@ -21,6 +21,7 @@ from typing import (
     Any,
     List,
     Dict,
+    Optional,
 )
 import yaml
 
@@ -51,7 +52,7 @@ def normalise_str(s1: str) -> str:
     return s1.replace("\t", "").replace("\r", "").replace("\n", "").replace(" ", "")
 
 
-def safe_decode(data) -> str:
+def safe_decode(data) -> Optional[str]:
     try:
         return data.decode()
     except Exception:
@@ -78,7 +79,7 @@ def get_all_files_in_tree_with_regex(basedir: str, regex_str: str) -> List[str]:
     return data_files
 
 
-def data_file_read_yaml(filename: str) -> Dict[Any, Any]:
+def data_file_read_yaml(filename: str) -> Optional[Dict[Any, Any]]:
     """
     Reads a file as a yaml file. This is used to load data
     from fuzz-introspectors compiler plugin output.

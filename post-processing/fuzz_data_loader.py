@@ -22,6 +22,7 @@ from typing import (
     Dict,
     List,
     Optional,
+    Set,
     Tuple,
 )
 
@@ -56,6 +57,8 @@ class FunctionProfile:
         self.function_depth = None
         self.incoming_references = list()
         self.constants_touched = list()
+        self.new_unreached_complexity = None
+        self.total_cyclomatic_complexity = None
 
     def migrate_from_yaml_elem(self, elem):
         self.function_name = elem['functionName']
@@ -89,6 +92,7 @@ class FuzzerProfile:
         self.fuzzer_source_file = data_dict_yaml['Fuzzer filename']
         self.binary_executable = None
         self.coverage = None
+        self.file_targets: Dict[str, Set[str]] = dict()
 
         # Create a list of all the functions.
         self.all_class_functions = dict()
@@ -203,7 +207,6 @@ class FuzzerProfile:
         a set of strings containing strings which are the names of the functions
         in the given file that are reached by the fuzzer.
         """
-        self.file_targets = dict()
         all_callsites = fuzz_cfg_load.extract_all_callsites(self.function_call_depths)
         for cs in all_callsites:
             if cs.dst_function_source_file.replace(" ", "") == "":
@@ -279,7 +282,7 @@ class MergedProjectProfile:
     def __init__(self, profiles: List[FuzzerProfile]):
         self.name = None
         self.profiles = profiles
-        self.all_functions = dict()
+        self.all_functions: Dict[str, FunctionProfile] = dict()
         self.unreached_functions = set()
         self.functions_reached = set()
 
@@ -438,12 +441,10 @@ class MergedProjectProfile:
     def get_complexity_summaries(self) -> Tuple[int, int, int, float, float]:
 
         complexity_reached, complexity_unreached = self.get_total_complexity()
-        complexity_reached = float(complexity_reached)
-        complexity_unreached = float(complexity_unreached)
         total_complexity = complexity_unreached + complexity_reached
 
-        reached_complexity_percentage = (complexity_reached / (total_complexity)) * 100.0
-        unreached_complexity_percentage = (complexity_unreached / (total_complexity)) * 100.0
+        reached_complexity_percentage = (float(complexity_reached) / (total_complexity)) * 100.0
+        unreached_complexity_percentage = (float(complexity_unreached) / (total_complexity)) * 100.0
 
         return (
             total_complexity,
