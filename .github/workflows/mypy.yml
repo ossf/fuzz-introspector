@@ -1,0 +1,20 @@
+name: Mypy
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Mypy
+    steps:
+    - uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # v2.4.0
+    - name: Set up Python 3.8
+      uses: actions/setup-python@0ebf233433c08fb9061af664d501c3f3ff0e9e20 # v3.0.0
+      with:
+        python-version: 3.8
+    - name: Install Dependencies
+      run: |
+        pip install mypy types-PyYAML
+    - name: mypy
+      run: |
+        cd post-processing && mypy --ignore-missing-imports -m main
