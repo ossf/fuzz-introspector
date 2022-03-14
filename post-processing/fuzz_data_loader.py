@@ -119,14 +119,15 @@ class FuzzerProfile:
 
         self.fuzzer_source_file = self.fuzzer_source_file.replace(basefolder, "")
 
-        all_callsites = fuzz_cfg_load.extract_all_callsites(self.function_call_depths)
-        for cs in all_callsites:
-            cs.dst_function_source_file = cs.dst_function_source_file.replace(basefolder, "")
+        if self.function_call_depths is not None:
+            all_callsites = fuzz_cfg_load.extract_all_callsites(self.function_call_depths)
+            for cs in all_callsites:
+                cs.dst_function_source_file = cs.dst_function_source_file.replace(basefolder, "")
 
-        new_dict = {}
-        for key in self.file_targets:
-            new_dict[key.replace(basefolder, "")] = self.file_targets[key]
-        self.file_targets = new_dict
+            new_dict = {}
+            for key in self.file_targets:
+                new_dict[key.replace(basefolder, "")] = self.file_targets[key]
+            self.file_targets = new_dict
 
     def set_all_reached_functions(self) -> None:
         """
@@ -207,13 +208,14 @@ class FuzzerProfile:
         a set of strings containing strings which are the names of the functions
         in the given file that are reached by the fuzzer.
         """
-        all_callsites = fuzz_cfg_load.extract_all_callsites(self.function_call_depths)
-        for cs in all_callsites:
-            if cs.dst_function_source_file.replace(" ", "") == "":
-                continue
-            if cs.dst_function_source_file not in self.file_targets:
-                self.file_targets[cs.dst_function_source_file] = set()
-            self.file_targets[cs.dst_function_source_file].add(cs.dst_function_name)
+        if self.function_call_depths is not None:
+            all_callsites = fuzz_cfg_load.extract_all_callsites(self.function_call_depths)
+            for cs in all_callsites:
+                if cs.dst_function_source_file.replace(" ", "") == "":
+                    continue
+                if cs.dst_function_source_file not in self.file_targets:
+                    self.file_targets[cs.dst_function_source_file] = set()
+                self.file_targets[cs.dst_function_source_file].add(cs.dst_function_name)
 
     def get_total_basic_blocks(self) -> None:
         """

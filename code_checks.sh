@@ -15,6 +15,9 @@
 #
 ################################################################################
 set -x
+echo "pep8"
 pep8 --first ./post-processing/
-flake8 --ignore=W503 --max-line-length=100 ./post-processing/
+echo "flake8"
+flake8 --ignore=W503,W605 --max-line-length=100 ./post-processing/
+echo "mypy"
 mypy -p post-processing
