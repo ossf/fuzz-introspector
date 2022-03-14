@@ -60,6 +60,8 @@ def overlay_calltree_with_coverage(
 
     is_first = True
     ct_idx = 0
+    if profile.function_call_depths is None:
+        return
     for node in fuzz_cfg_load.extract_all_callsites(profile.function_call_depths):
         node.cov_ct_idx = ct_idx
         ct_idx += 1

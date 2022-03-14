@@ -58,6 +58,9 @@ def create_horisontal_calltree_image(image_name: str,
     """
 
     logger.info("Creating image %s" % image_name)
+
+    if profile.function_call_depths is None:
+        return
     # Extract color sequence
     color_list = []
     for node in fuzz_cfg_load.extract_all_callsites(profile.function_call_depths):
@@ -814,19 +817,20 @@ def create_fuzzer_detailed_section(
     )
 
     total_hit_functions = 0
-    for funcname in profile.coverage.covmap:
-        (total_func_lines,
-         hit_lines,
-         hit_percentage) = profile.get_cov_metrics(fuzz_utils.demangle_cpp_func(funcname))
-        if hit_percentage is not None:
-            total_hit_functions += 1
-            func_hit_table_string += html_table_add_row([
-                funcname,
-                total_func_lines,
-                hit_lines,
-                "%.5s" % (str(hit_percentage)) + "%"])
-        else:
-            logger.error("Could not write coverage line for function %s" % funcname)
+    if profile.coverage is not None:
+        for funcname in profile.coverage.covmap:
+            (total_func_lines,
+             hit_lines,
+             hit_percentage) = profile.get_cov_metrics(fuzz_utils.demangle_cpp_func(funcname))
+            if hit_percentage is not None:
+                total_hit_functions += 1
+                func_hit_table_string += html_table_add_row([
+                    funcname,
+                    total_func_lines,
+                    hit_lines,
+                    "%.5s" % (str(hit_percentage)) + "%"])
+            else:
+                logger.error("Could not write coverage line for function %s" % funcname)
     func_hit_table_string += "</table>"
 
     # Get how many functions are covered relative to reachability
