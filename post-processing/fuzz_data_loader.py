@@ -183,7 +183,7 @@ class FuzzerProfile:
         """
         Get the tuples reflecting coverage map of a given function
         """
-        logger.info("getting function coverage of %s"%(function_name))
+        logger.info(f"getting function coverage of { function_name }")
         if self.coverage is None:
             logger.info("Returning None")
             return []
@@ -196,7 +196,9 @@ class FuzzerProfile:
         # should_normalise
         logger.info("Should normalise")
         for funcname in self.coverage.covmap:
-            normalised_funcname = fuzz_utils.normalise_str(fuzz_utils.demangle_cpp_func(fuzz_utils.normalise_str(funcname)))
+            normalised_funcname = fuzz_utils.normalise_str(
+                fuzz_utils.demangle_cpp_func(fuzz_utils.normalise_str(funcname))
+            )
             if normalised_funcname == function_name:
                 logger.info(f"Found normalised: {normalised_funcname}")
                 return self.coverage.covmap[funcname]

@@ -100,7 +100,7 @@ def llvm_cov_load(target_dir, target_name=None):
                     continue
 
                 line = line.replace("\n", "")
-                logger.info("cov-readline: %s"%(line))
+                logger.info(f"cov-readline: { line }")
 
                 # Parse lines that signal function names. These linse indicate that the
                 # lines following this line will be the specific source code lines of
@@ -149,7 +149,8 @@ def llvm_cov_load(target_dir, target_name=None):
                     except Exception:
                         hit_times = 0
                     # Add source code line and hitcount to coverage map of current function
-                    logger.info(f"reading coverage: {fname} -- {curr_func} -- {line_number} -- {hit_times}")
+                    logger.info(f"reading coverage: {fname} -- {curr_func} "
+                                f"-- {line_number} -- {hit_times}")
                     cp.covmap[curr_func].append((line_number, hit_times))
     return cp
 

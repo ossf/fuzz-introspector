@@ -98,10 +98,9 @@ def overlay_calltree_with_coverage(
             # Find the parent function and check coverage of the node
             logger.info("Extracting data")
             coverage_data = profile.get_function_coverage(
-                fuzz_utils.normalise_str(
-                    callstack_get_parent(node, callstack)),
-                    True
-                )
+                fuzz_utils.normalise_str(callstack_get_parent(node, callstack)),
+                True
+            )
             for (n_line_number, hit_count_cov) in coverage_data:
                 logger.info(f"  - iterating {n_line_number} : {hit_count_cov}")
                 if n_line_number == node.src_linenumber and hit_count_cov > 0:
