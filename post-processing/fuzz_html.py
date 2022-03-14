@@ -776,7 +776,7 @@ def create_fuzzer_detailed_section(
     )
     html_string += f"""<p class='no-top-margin'>The following link provides a visualisation
  of the full calltree overlayed with coverage information:
- <a href="{ calltree_file_name }%s">full calltree</a></p>"""
+ <a href="{ calltree_file_name }">full calltree</a></p>"""
 
     # Fuzz blocker table
     html_fuzz_blocker_table = create_fuzz_blocker_table(profile,
