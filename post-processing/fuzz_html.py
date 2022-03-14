@@ -705,7 +705,7 @@ def create_calltree(
             next_node = nodes[i + 1]
             if next_node.depth > node.depth:
                 calltree_html_string += f"""<div
-    class="calltree-line-wrapper level-{int(node.depth)}"
+    class="calltree-line-wrapper open level-{int(node.depth)}"
     style="padding-left: 16px">"""
             elif next_node.depth < node.depth:
                 depth_diff = int(node.depth - next_node.depth)
