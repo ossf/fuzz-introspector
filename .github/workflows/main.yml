@@ -1,0 +1,21 @@
+name: flake8 Lint
+
+on: [push, pull_request]
+
+jobs:
+  flake8-lint:
+    runs-on: ubuntu-latest
+    name: Lint
+    steps:
+      - name: Check out source repository
+        uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # v2.4.0
+      - name: Set up Python environment
+        uses: actions/setup-python@0ebf233433c08fb9061af664d501c3f3ff0e9e20 # v3.0.0
+        with:
+          python-version: "3.8"
+      - name: flake8 Lint
+        uses: py-actions/flake8@6b71483a8fe60d4cb967d3aa4ee56e5e52711d30 # v2
+        with:
+          ignore: "W503,W605"
+          max-line-length: "100"
+          path: "post-processing/"
