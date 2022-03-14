@@ -70,7 +70,7 @@ def overlay_calltree_with_coverage(
         callstack_set_curr_node(node, demangled_name, callstack)
 
         # Get hitcount for this node
-        node_hitcount = 0
+        node_hitcount: int = 0
         if is_first:
             # The first node is always the entry of LLVMFuzzerTestOneInput
             # LLVMFuzzerTestOneInput will never have a parent in the calltree. As such, we
@@ -141,18 +141,6 @@ def overlay_calltree_with_coverage(
                         node.src_linenumber)       # callsite line number
         node.cov_callsite_link = callsite_link
 
-        # Get the Github URL to the node. However, if we got a "/" basefolder it means
-        # it is a wrong basefolder and we handle this by removing the two first folders
-        # in the complete path (which shuold be in most cases /src/NAME where NAME
-        # is the project folder.
-        if basefolder == "/":
-            fd_github_url = "%s/%s#L%d" % (git_repo_url, "/".join(
-                fd.function_source_file.split("/")[3:]), fd.function_linenumber)
-        else:
-            fd_github_url = "%s/%s#L%d" % (git_repo_url, fd.function_source_file.replace(
-                basefolder, ""), fd.function_linenumber)
-        node.cov_github_url = fd_github_url
-
     # Extract data about which nodes unlocks data
     all_callsites = fuzz_cfg_load.extract_all_callsites(profile.function_call_depths)
     prev_end = -1
@@ -211,7 +199,7 @@ def overlay_calltree_with_coverage(
 
 def analysis_get_optimal_targets(
     merged_profile: fuzz_data_loader.MergedProjectProfile
-) -> Tuple[List[fuzz_data_loader.FuzzerProfile], Set[str]]:
+) -> Tuple[List[fuzz_data_loader.FunctionProfile], Set[str]]:
     """
     Finds the top reachable functions with minimum overlap.
     Each of these functions is not be reachable by another function
@@ -274,7 +262,7 @@ def analysis_synthesize_simple_targets(
             Tuple[
                 Dict[str, TargetCodesType],
                 fuzz_data_loader.MergedProjectProfile,
-                List[fuzz_data_loader.FuzzerProfile]
+                List[fuzz_data_loader.FunctionProfile]
             ]):
     '''
     Function for synthesizing fuzz targets. The way this one works is by finding
@@ -294,7 +282,7 @@ def analysis_synthesize_simple_targets(
     fuzzer_code += "  af_safe_gb_init(data, size);\n\n"
 
     target_codes: Dict[str, TargetCodesType] = dict()
-    optimal_functions_targeted = []
+    optimal_functions_targeted: List[fuzz_data_loader.FunctionProfile] = []
 
     var_idx = 0
     func_count = len(merged_profile.all_functions)

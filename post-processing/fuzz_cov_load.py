@@ -20,6 +20,11 @@ At the moment only C/C++ is supported. Other languages coming up soon.
 import fuzz_utils
 import logging
 
+from typing import (
+    Dict,
+    Tuple
+)
+
 logger = logging.getLogger(name=__name__)
 
 
@@ -29,7 +34,7 @@ class CoverageProfile:
     """
     def __init__(self):
         self.functions_hit = set()
-        self.covmap = dict()
+        self.covmap: Dict[str, List[Tuple[int, int]]] = dict()
         self.covreports = list()
 
     def get_all_hit_functions(self):

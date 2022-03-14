@@ -178,7 +178,7 @@ class FuzzerProfile:
 
     def get_function_coverage(self,
                               function_name: str,
-                              should_normalise: bool = False) -> List[str]:
+                              should_normalise: bool = False) -> List[Tuple[int, int]]:
         """
         Get the tuples reflecting coverage map of a given function
         """
