@@ -22,7 +22,8 @@ import logging
 
 from typing import (
     Dict,
-    Tuple
+    List,
+    Tuple,
 )
 
 logger = logging.getLogger(name=__name__)

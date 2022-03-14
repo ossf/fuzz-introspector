@@ -101,10 +101,12 @@ def parse_cmdline():
                                type=str,
                                help="URL with coverage information",
                                default="/covreport/linux")
-    report_parser.add_argument("--analyses",
-                               nargs="+",
-                               default=["OptimalTargets", "OptimalCoverageTargets"],
-                               help="Analyses to run. Available options: OptimalTargets, FuzzEngineInput")
+    report_parser.add_argument(
+        "--analyses",
+        nargs="+",
+        default=["OptimalTargets", "OptimalCoverageTargets"],
+        help="Analyses to run. Available options: OptimalTargets, FuzzEngineInput"
+    )
     report_parser.add_argument("--correlation_file",
                                type=str,
                                default="",
