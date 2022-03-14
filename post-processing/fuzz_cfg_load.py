@@ -159,4 +159,5 @@ def data_file_read_calltree(filename: str) -> Optional[CalltreeCallsite]:
         ctcs_root = ctcs_root.parent_calltree_callsite
         if ctcs_root is None:
             return None
+    print_ctcs_tree(ctcs_root)
     return ctcs_root
