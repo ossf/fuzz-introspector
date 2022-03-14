@@ -18,10 +18,13 @@ import logging
 import shutil
 
 from typing import (
+    Any,
     Callable,
     List,
     Tuple,
     NamedTuple,
+    Optional,
+    Set,
 )
 
 import fuzz_analysis
@@ -121,7 +124,7 @@ def create_table_head(
     return html_str
 
 
-def html_table_add_row(elems: List[str]) -> str:
+def html_table_add_row(elems: List[Any]) -> str:
     html_str = "<tr>\n"
     for elem in elems:
         html_str += f"<td>{elem}</td>\n"
@@ -181,7 +184,7 @@ def html_get_navbar() -> str:
     return navbar
 
 
-def html_get_table_of_contents(toc_list: List[Tuple[str, str, str]]) -> str:
+def html_get_table_of_contents(toc_list: List[Tuple[str, str, int]]) -> str:
     html_toc_string = ""
     html_toc_string += '<div class="left-sidebar">\
                             <div class="left-sidebar-content-box">\
@@ -198,7 +201,7 @@ def html_get_table_of_contents(toc_list: List[Tuple[str, str, str]]) -> str:
 
 def html_add_header_with_link(header_title: str,
                               title_type: int,
-                              toc_list: List[Tuple[str, str, str]],
+                              toc_list: List[Tuple[str, str, int]],
                               link: str = None) -> str:
     if link is None:
         link = header_title.replace(" ", "-")
@@ -416,7 +419,7 @@ def create_covered_func_box(covered_funcs: str) -> str:
 
 def create_boxed_top_summary_info(tables: List[str],
                                   project_profile: fuzz_data_loader.MergedProjectProfile,
-                                  conclusions,
+                                  conclusions: List[Tuple[int, str]],
                                   extract_conclusion,
                                   display_coverage=False) -> str:
     html_string = ""
@@ -452,7 +455,9 @@ def create_boxed_top_summary_info(tables: List[str],
     return html_string
 
 
-def create_conclusions(conclusions, reached_percentage, reached_complexity_percentage):
+def create_conclusions(conclusions: List[Tuple[int, str]],
+                       reached_percentage,
+                       reached_complexity_percentage):
     # Functions reachability
     sentence = f"""Fuzzers reach { "%.5s%%"%(str(reached_percentage)) } of all functions. """
     if reached_percentage > 90.0:
@@ -575,7 +580,7 @@ def create_fuzz_blocker_table(
         git_repo_url: str,
         basefolder: str,
         image_name: str,
-        tables: List[str]) -> str:
+        tables: List[str]) -> Optional[str]:
     """
     Creates HTML string for table showing fuzz blockers.
     """
@@ -649,7 +654,7 @@ def create_calltree(
         # We may not want to show certain functions at times, e.g. libc functions
         # in case it bloats the calltree
         # libc_funcs = { "free" }
-        libc_funcs = {}
+        libc_funcs: Set[str] = set()
         avoid = len([fn for fn in libc_funcs if fn in demangled_name]) > 0
         if avoid:
             continue
@@ -731,7 +736,10 @@ def create_fuzzer_detailed_section(
     fuzzer_filename = profile.fuzzer_source_file
 
     html_string += html_add_header_with_link("Fuzzer: %s" % (
-        profile.get_key()), 2, toc_list)
+        profile.get_key()),
+        2,
+        toc_list
+    )
 
     # Calltree fixed-width image
     html_string += html_add_header_with_link(
@@ -1129,9 +1137,9 @@ def create_html_report(
     Logs a complete report. This is the current main place for looking at
     data produced by fuzz introspector.
     """
-    tables = list()
-    toc_list = list()
-    conclusions = []
+    tables: List[str] = list()
+    toc_list: List[Tuple[str, str, int]] = list()
+    conclusions: List[Tuple[int, str]] = []
 
     logger.info(" - Creating HTML report")
 
