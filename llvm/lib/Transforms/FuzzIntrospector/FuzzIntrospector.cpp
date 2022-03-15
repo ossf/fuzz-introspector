@@ -718,12 +718,24 @@ void FuzzIntrospector::resolveOutgoingEdges(
       // Get the line number of the instruction.
       // We use this when visualizing the calltree.
       if (debugInfo) {
-        CSLinenumber = debugInfo.getLine();
+        //errs() << "Printing debugLoc\n";
+        //debugInfo.print(errs());
+        //errs() << "\n---------------\n";
+        if (llvm::DebugLoc InlinedAtDL = debugInfo.getInlinedAt()) {
+          //errs() << "Getting inlined line number\n";
+          CSLinenumber = InlinedAtDL.getLine();
+        }
+        else {
+          //errs() << "Getting non-inlined line number\n";
+          CSLinenumber = debugInfo.getLine();
+        }
+        //errs() << "\n--- " << CSLinenumber << "\n";
       }
 
       StringRef NormalisedDstName = removeDecSuffixFromName(CSElem->getName());
       CalltreeNode *Node = new CalltreeNode(
           NormalisedDstName, getFunctionFilename(CSElem), CSLinenumber, CSElem);
+      //errs() << "Inserting callsite " << NormalisedDstName.str() << " -- line number: " << CSLinenumber << " destination file " << getFunctionFilename(CSElem) << "\n";
       OutgoingEdges->push_back(Node);
     }
   }
