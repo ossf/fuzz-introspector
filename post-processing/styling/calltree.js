@@ -11,9 +11,16 @@ $( document ).ready(function() {
       var nextLevel = "level-"+(level+1);
       console.log("len of elems: ", $(this).find(".calltree-line-wrapper."+nextLevel).length)
       $(this).closest(".coverage-line").find(".calltree-line-wrapper."+nextLevel).toggleClass("open");
+      $(this).toggleClass("expand-symbol collapse-symbol");
   });
+    createNavBar();
+    addExpandSymbols();
 
-    // Nav bar
+    
+    
+});
+
+function createNavBar() {
     let e = document.createElement("div");
     e.classList.add("calltree-navbar")
 
@@ -57,5 +64,13 @@ $( document ).ready(function() {
         }
       });
     })
-    
-});
+}
+
+function addExpandSymbols() {
+  $( ".coverage-line-inner").each(function( index ) {
+    var numberOfSubNodes = $(this).closest(".coverage-line").find(".coverage-line-inner").length
+    if(numberOfSubNodes>1) {
+      $(this).addClass("collapse-symbol");
+    }
+  });
+}
