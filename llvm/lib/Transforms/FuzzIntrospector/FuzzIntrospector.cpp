@@ -517,7 +517,7 @@ std::string FuzzIntrospector::resolveTypeName(Type *T) {
       RetType = T->getStructName().str();
     }
   } else if (T->isFunctionTy()) {
-    RetType == "func_type";
+    RetType += "func_type";
   }
   if (RetType == "") {
     return "N/A";
