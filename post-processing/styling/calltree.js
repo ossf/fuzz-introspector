@@ -50,18 +50,20 @@ function createNavBar() {
     });
 
     $("#expand-all-button").click(function(){
-      $( ".calltree-line-wrapper").each(function( index ) {
+      $(".calltree-line-wrapper").each(function( index ) {
         if(!$(this).hasClass("open")) {
           $(this).addClass("open");
         }
+        $(".coverage-line-inner.expand-symbol").toggleClass("collapse-symbol expand-symbol");
       });
     })
 
     $("#collapse-all-button").click(function(){
-      $( ".calltree-line-wrapper").each(function( index ) {
+      $(".calltree-line-wrapper").each(function( index ) {
         if($(this).hasClass("open")) {
           $(this).removeClass("open");
         }
+        $(".coverage-line-inner.collapse-symbol").toggleClass("collapse-symbol expand-symbol");
       });
     })
 }
