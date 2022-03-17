@@ -216,6 +216,7 @@ struct FuzzIntrospector : public ModulePass {
   Function *extractVTableIndirectCall(Function *, Instruction &);
   std::string GenRandom(const int len);
   void readConfig();
+  void makeDefaultConfig();
   bool shouldAvoidFunction(std::string function_name);
 
   void logPrintf(int LogLevel, const char *Fmt, ...);
@@ -254,25 +255,46 @@ void FuzzIntrospector::logPrintf(int LogLevel, const char *Fmt, ...) {
 }
 
 void FuzzIntrospector::readConfig() {
-  fstream configFile;
   std::string configPath = getenv("FUZZ_INTROSPECTOR_CONFIG");
   ifstream configFile(configPath);
 
+  logPrintf(2, "Opening the configuration file %s\n", configPath.str().c_str());
+
   std::string line;
-  std::vector<string> current = ConfigFuncsToAvoidFuncBeginsWith;
+  std::vector<string> *current = &ConfigFuncsToAvoidFuncBeginsWith;
   bool shouldAnalyse = false;
   while (std::getline(configFile, line)) {
     if (shouldAnalyse) {
-      current.push_back(line);
+      logPrintf(2, "Inserting avoidance element %s\n", line.str().c_str());
+      current->push_back(line);
     }
     if (line.find("FUNC_BEGINS_WITH") != std::string::npos) {
-      current = ConfigFuncsToAvoidFuncBeginsWith;
+      current = &ConfigFuncsToAvoidFuncBeginsWith;
       shouldAnalyse = true;
     }
     else if (line.find("FUNC_NON_STRICT")  != std::string::npos) {
-      current = ConfigFuncsToAvoidStrict;
+      current = &ConfigFuncsToAvoidStrict;
       shouldAnalyse = true;
     }
+  }
+}
+
+void FuzzIntrospector::makeDefaultConfig() {
+  logPrintf(2, "Using default configuration\n");
+  std::vector<std::string> FuncsToAvoidNonStrict = {
+    "_ZNSt3", // mangled std::
+  };
+  std::vector<std::string> FuncsToAvoidStrict = {
+    "free",
+    "malloc"
+  };
+  std::vector<string> *current = &ConfigFuncsToAvoidFuncBeginsWith;
+  for (auto &s : FuncsToAvoidNonStrict) {
+    current->push_back(s);
+  }
+  std::vector<string> *current = &ConfigFuncsToAvoidStrict;
+  for (auto &s : FuncsToAvoidNonStrict) {
+    current->push_back(s);
   }
 }
 
@@ -298,7 +320,9 @@ bool FuzzIntrospector::runOnModule(Module &M) {
     logPrintf(L1, "Reading fuzz introspector config file\n");
     readConfig();
   }
-
+  if (getenv("FUZZ_INTROSPECTOR_CONFIG_DEFAULT")) {
+    makeDefaultConfig();
+  }
 
   // Extract and log reachability graph
   std::string nextCalltreeFile = getNextLogFile();
@@ -795,15 +819,6 @@ bool FuzzIntrospector::isNodeInVector(CalltreeNode *Src,
 
 // Returns true if the function shuold be avoided from analysis
 bool FuzzIntrospector::shouldAvoidFunction(std::string TargetFunctionName) {
-  std::vector<std::string> FuncsToAvoidNonStrict = {
-    "_ZNSt3", // mangled std::
-  };
-  std::vector<std::string> FuncsToAvoidStrict = {
-    "free",
-    "malloc"
-  };
-
-  //for (auto &FuncToAvoid : FuncsToAvoidNonStrict) {
   for (auto &FuncToAvoid : ConfigFuncsToAvoidFuncBeginsWith) {
     if (TargetFunctionName.rfind(FuncToAvoid, 0) == 0) {
       return true;
