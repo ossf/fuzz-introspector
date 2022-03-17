@@ -187,6 +187,10 @@ struct FuzzIntrospector : public ModulePass {
   std::set<StringRef> functionNamesToIgnore = {"llvm.", "sanitizer_cov",
                                                "sancov.module"};
 
+  std::vector<string> ConfigFuncsToAvoidFuncBeginsWith;
+  std::vector<string> ConfigFuncsToAvoidStrict;
+
+
   // Function defs
   void resolveOutgoingEdges(Function *, std::vector<CalltreeNode *> *);
   bool isNodeInVector(CalltreeNode *Src, std::vector<CalltreeNode *> *Vec);
@@ -211,6 +215,7 @@ struct FuzzIntrospector : public ModulePass {
   bool isFunctionPointerType(Type *type);
   Function *extractVTableIndirectCall(Function *, Instruction &);
   std::string GenRandom(const int len);
+  void readConfig();
   bool shouldAvoidFunction(std::string function_name);
 
   void logPrintf(int LogLevel, const char *Fmt, ...);
@@ -248,6 +253,29 @@ void FuzzIntrospector::logPrintf(int LogLevel, const char *Fmt, ...) {
   fflush(OutputFile);
 }
 
+void FuzzIntrospector::readConfig() {
+  fstream configFile;
+  std::string configPath = getenv("FUZZ_INTROSPECTOR_CONFIG");
+  ifstream configFile(configPath);
+
+  std::string line;
+  std::vector<string> current = ConfigFuncsToAvoidFuncBeginsWith;
+  bool shouldAnalyse = false;
+  while (std::getline(configFile, line)) {
+    if (shouldAnalyse) {
+      current.push_back(line);
+    }
+    if (line.find("FUNC_BEGINS_WITH") != std::string::npos) {
+      current = ConfigFuncsToAvoidFuncBeginsWith;
+      shouldAnalyse = true;
+    }
+    else if (line.find("FUNC_NON_STRICT")  != std::string::npos) {
+      current = ConfigFuncsToAvoidStrict;
+      shouldAnalyse = true;
+    }
+  }
+}
+
 // Function entrypoint.
 bool FuzzIntrospector::runOnModule(Module &M) {
   // Require that FUZZ_INTROSPECTOR environment variable is set
@@ -266,6 +294,11 @@ bool FuzzIntrospector::runOnModule(Module &M) {
   srand((unsigned)time(NULL) * getpid());
 
   logPrintf(L1, "This is a fuzzer, performing analysis\n");
+  if (getenv("FUZZ_INTROSPECTOR_CONFIG")) {
+    logPrintf(L1, "Reading fuzz introspector config file\n");
+    readConfig();
+  }
+
 
   // Extract and log reachability graph
   std::string nextCalltreeFile = getNextLogFile();
@@ -770,12 +803,13 @@ bool FuzzIntrospector::shouldAvoidFunction(std::string TargetFunctionName) {
     "malloc"
   };
 
-  for (auto &FuncToAvoid : FuncsToAvoidNonStrict) {
+  //for (auto &FuncToAvoid : FuncsToAvoidNonStrict) {
+  for (auto &FuncToAvoid : ConfigFuncsToAvoidFuncBeginsWith) {
     if (TargetFunctionName.rfind(FuncToAvoid, 0) == 0) {
       return true;
     }
   }
-  for (auto &FuncToAvoid : FuncsToAvoidStrict) {
+  for (auto &FuncToAvoid : ConfigFuncsToAvoidStrict) {
     if (TargetFunctionName == FuncToAvoid) {
       return true;
     }
