@@ -491,6 +491,7 @@ input[type="checkbox"] {
 	min-width: 30px;
 	font-size: .8rem;
 	font-weight: 550;
+	margin-right: 5px;
 	cursor: pointer;
 	transition: .2s ease-out;
 }
@@ -499,4 +500,40 @@ input[type="checkbox"] {
 }
 .calltree-idx.hidden {
 	display: none;
+}
+.coverage-line-inner {
+	position: relative;
+}
+.coverage-line-inner.expand-symbol::after {
+  content: "+";
+  background-color: #d000fa;
+  color: white;
+  font-weight: bold;
+  position: absolute;
+  top: 0;
+  right: -25px;
+  padding: 5px;
+  width: 10px;
+  height: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 20px;
+}
+.coverage-line-inner.collapse-symbol::after {
+  content: "-";
+  background-color: #d000fa;
+  color: white;
+  font-weight: bold;
+  position: absolute;
+  top: 0;
+  right: -25px;
+  padding: 5px;
+  width: 10px;
+  height: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 20px;
+
 }
