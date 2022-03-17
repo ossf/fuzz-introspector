@@ -211,6 +211,7 @@ struct FuzzIntrospector : public ModulePass {
   bool isFunctionPointerType(Type *type);
   Function *extractVTableIndirectCall(Function *, Instruction &);
   std::string GenRandom(const int len);
+  bool shouldAvoidFunction(std::string function_name);
 
   void logPrintf(int LogLevel, const char *Fmt, ...);
   bool runOnModule(Module &M) override;
@@ -312,6 +313,10 @@ FuzzerFunctionList FuzzIntrospector::wrapAllFunctions(Module &M) {
   logPrintf(1, "Wrapping all functions\n");
   for (auto &F : M) {
     logPrintf(2, "Wrapping function %s\n", F.getName().str().c_str());
+    if (shouldAvoidFunction(F.getName().str())) {
+      logPrintf(2, "Skipping this function\n");
+      continue;
+    }
     ListWrapper.Functions.push_back(wrapFunction(&F));
   }
   logPrintf(2, "Ended wrapping all functions\n");
@@ -669,7 +674,6 @@ Function *FuzzIntrospector::extractVTableIndirectCall(Function *F, Instruction &
 void FuzzIntrospector::resolveOutgoingEdges(
     Function *F, std::vector<CalltreeNode *> *OutgoingEdges) {
   for (auto &I : instructions(F)) {
-
     std::vector<Function *> FuncPoints;
     Function *CallsiteDst = nullptr;
     // Resolve the function destinations of this callsite.
@@ -713,6 +717,10 @@ void FuzzIntrospector::resolveOutgoingEdges(
     }
 
     for (auto CSElem : FuncPoints) {
+      // Check if this is a function to avoid before adding it.
+      if (shouldAvoidFunction(CSElem->getName().str())) {
+        continue;
+      }
       int CSLinenumber = -1;
       const llvm::DebugLoc &debugInfo = I.getDebugLoc();
       // Get the line number of the instruction.
@@ -746,6 +754,29 @@ bool FuzzIntrospector::isNodeInVector(CalltreeNode *Src,
   for (CalltreeNode *TmpN : *Vec) {
     if (TmpN->LineNumber == Src->LineNumber &&
         TmpN->FileName.compare(Src->FileName) == 0) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// Returns true if the function shuold be avoided from analysis
+bool FuzzIntrospector::shouldAvoidFunction(std::string TargetFunctionName) {
+  std::vector<std::string> FuncsToAvoidNonStrict = {
+    "_ZNSt3", // mangled std::
+  };
+  std::vector<std::string> FuncsToAvoidStrict = {
+    "free",
+    "malloc"
+  };
+
+  for (auto &FuncToAvoid : FuncsToAvoidNonStrict) {
+    if (TargetFunctionName.rfind(FuncToAvoid, 0) == 0) {
+      return true;
+    }
+  }
+  for (auto &FuncToAvoid : FuncsToAvoidStrict) {
+    if (TargetFunctionName == FuncToAvoid) {
       return true;
     }
   }
