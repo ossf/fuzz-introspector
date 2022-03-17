@@ -258,14 +258,14 @@ void FuzzIntrospector::readConfig() {
   std::string configPath = getenv("FUZZ_INTROSPECTOR_CONFIG");
   ifstream configFile(configPath);
 
-  logPrintf(2, "Opening the configuration file %s\n", configPath.str().c_str());
+  logPrintf(2, "Opening the configuration file %s\n", configPath.c_str());
 
   std::string line;
   std::vector<string> *current = &ConfigFuncsToAvoidFuncBeginsWith;
   bool shouldAnalyse = false;
   while (std::getline(configFile, line)) {
     if (shouldAnalyse) {
-      logPrintf(2, "Inserting avoidance element %s\n", line.str().c_str());
+      logPrintf(2, "Inserting avoidance element %s\n", line.c_str());
       current->push_back(line);
     }
     if (line.find("FUNC_BEGINS_WITH") != std::string::npos) {
@@ -292,7 +292,7 @@ void FuzzIntrospector::makeDefaultConfig() {
   for (auto &s : FuncsToAvoidNonStrict) {
     current->push_back(s);
   }
-  std::vector<string> *current = &ConfigFuncsToAvoidStrict;
+  current = &ConfigFuncsToAvoidStrict;
   for (auto &s : FuncsToAvoidNonStrict) {
     current->push_back(s);
   }
