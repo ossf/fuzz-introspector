@@ -135,7 +135,7 @@ def html_table_add_row(elems: List[Any]) -> str:
     return html_str
 
 
-def html_get_header() -> str:
+def html_get_header(calltree: bool = False) -> str:
     header = """<html>
     <head>
         <link
@@ -162,7 +162,10 @@ def html_get_header() -> str:
                 href='styles.css'>"""
     # Add navbar to header
     header = header + html_get_navbar()
-    header = header + "<div class='content-wrapper'>"
+    if calltree:
+        header = header + "<div class='content-wrapper calltree-page'>"
+    else:
+        header = header + "<div class='content-wrapper report-page'>"
     return header
 
 
@@ -553,7 +556,7 @@ def write_wrapped_html_file(html_string, filename):
     """
     complete_html_string = ""
     # HTML start
-    html_header = html_get_header()
+    html_header = html_get_header(calltree=True)
     html_header += '<div class="content-section">'
     complete_html_string += html_header
 

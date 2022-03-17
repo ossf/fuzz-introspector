@@ -46,9 +46,12 @@ table.dataTable {
 .no-top-margin {
 	margin-top:  0px;
 }
-.content-wrapper {
+.content-wrapper.report-page{
 	display: grid;
 	grid-template-columns: 350px auto;
+}
+.content-wrapper .calltree-page {
+	display: grid;
 }
 .top-navbar {
 	height: 70px;
