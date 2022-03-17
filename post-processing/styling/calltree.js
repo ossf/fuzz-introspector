@@ -13,19 +13,49 @@ $( document ).ready(function() {
       $(this).closest(".coverage-line").find(".calltree-line-wrapper."+nextLevel).toggleClass("open");
   });
 
+    // Nav bar
     let e = document.createElement("div");
     e.classList.add("calltree-navbar")
 
     let btn1 = document.createElement("span");
     btn1.classList.add("calltree-nav-btn");
     btn1.classList.add("active");
+    btn1.id = "show-idx-button"
     btn1.innerText = "show idx";
     e.prepend(btn1);
+
+    let btn2 = document.createElement("span");
+    btn2.classList.add("calltree-nav-btn");
+    btn2.id = "expand-all-button"
+    btn2.innerText = "Expand all";
+    e.append(btn2);
+
+    let btn3 = document.createElement("span");
+    btn3.classList.add("calltree-nav-btn");
+    btn3.id = "collapse-all-button"
+    btn3.innerText = "Collapse all";
+    e.append(btn3);
     document.getElementsByClassName("content-wrapper")[0].prepend(e);
 
-    $('.calltree-nav-btn').click(function(){
+    $('#show-idx-button').click(function(){
       $(this).toggleClass("active");
       $(".calltree-idx").toggleClass("hidden");
     });
+
+    $("#expand-all-button").click(function(){
+      $( ".calltree-line-wrapper").each(function( index ) {
+        if(!$(this).hasClass("open")) {
+          $(this).addClass("open");
+        }
+      });
+    })
+
+    $("#collapse-all-button").click(function(){
+      $( ".calltree-line-wrapper").each(function( index ) {
+        if($(this).hasClass("open")) {
+          $(this).removeClass("open");
+        }
+      });
+    })
     
 });
