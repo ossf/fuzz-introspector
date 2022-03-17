@@ -700,7 +700,7 @@ def create_calltree(
             <a href="{callsite_link}">
                 [call site2]
             </a>
-            [calltree idx: {ct_idx_str}]
+            <span class="calltree-idx">[calltree idx: {ct_idx_str}]</span>
         </span>
     </span>
     """
