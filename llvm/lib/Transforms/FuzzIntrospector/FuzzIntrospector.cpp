@@ -282,7 +282,13 @@ void FuzzIntrospector::readConfig() {
 void FuzzIntrospector::makeDefaultConfig() {
   logPrintf(2, "Using default configuration\n");
   std::vector<std::string> FuncsToAvoidNonStrict = {
-    "_ZNSt3", // mangled std::
+    "_ZNSt3",                       // mangled std::
+    "_ZSt",                         // functions in std:: library
+    "_ZNKSt",                       // std::__xxxbasic_string
+    "_ZTv0_n24_NSt",                // Some virtual functions for basic streams, e.g. virtual thunk to std::__1::basic_ostream<char, std::__1::char_traits<char> >::~basic_ostream()
+    "_ZN18FuzzedDataProvider",      // FuzzedDataProvider
+    "_Zd",                          // "operator delete(...)"
+    "_Zn",                          // operator new (...)"
   };
   std::vector<std::string> FuncsToAvoidStrict = {
     "free",
