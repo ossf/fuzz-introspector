@@ -542,5 +542,11 @@ input[type="checkbox"] {
   align-items: center;
   justify-content: center;
   border-radius: 20px;
-
+}
+.fuzz-blocker-info-btn {
+	position: absolute;
+	right: 0px;
+	top: 15px;
+	font-size: .70rem;
+	color: #aeb7bd;
 }
