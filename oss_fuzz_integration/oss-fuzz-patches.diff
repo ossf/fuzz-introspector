@@ -6,7 +6,7 @@ index 475e5a7d..fca8165d 100644
  
  ENV SANITIZER_FLAGS_thread "-fsanitize=thread"
  
-+ENV SANITIZER_FLAGS_instrumentor "-flto"
++ENV SANITIZER_FLAGS_instrumentor "-flto -fno-gnu-inline-asm -fno-inline-functions"
 +
  # Do not use any sanitizers in the coverage build.
  ENV SANITIZER_FLAGS_coverage ""
