@@ -16,6 +16,7 @@
 import os
 import logging
 import shutil
+import json
 
 from typing import (
     Any,
@@ -548,7 +549,7 @@ def create_top_summary_info(
     return html_string
 
 
-def write_wrapped_html_file(html_string, filename):
+def write_wrapped_html_file(html_string, filename, blocker_idxs):
     """
     Write a wrapped HTML file with the tags needed from fuzz-introspector
     We use this only for wrapping calltrees at the moment, however, down
@@ -565,6 +566,11 @@ def write_wrapped_html_file(html_string, filename):
 
     # HTML end
     html_end = '</div>'
+
+    if blocker_idxs is not None and len(blocker_idxs) != 0:
+        html_end = "<script>"
+        html_end += f"var fuzz_blocker_idxs = {json.dumps(blocker_idxs)};"
+        html_end += "</script>"
     html_end += "<script src=\"prism.js\"></script>"
     html_end += "<script src=\"clike.js\"></script>"
     html_end += "<script src=\"calltree.js\"></script>"
@@ -577,6 +583,45 @@ def write_wrapped_html_file(html_string, filename):
 
     with open(filename, "w+") as cf:
         cf.write(pretty_html)
+
+
+def get_fuzz_blocker_data(profile: fuzz_data_loader.FuzzerProfile):
+    all_callsites = fuzz_cfg_load.extract_all_callsites(profile.function_call_depths)
+    nodes_sorted_by_red_ahead = sorted(all_callsites,
+                                       key=lambda x: x.cov_forward_reds,
+                                       reverse=True)
+
+    has_blockers = False
+    for node in nodes_sorted_by_red_ahead:
+        if node.cov_forward_reds > 0:
+            has_blockers = True
+
+    if not has_blockers:
+        logger.info("There are no fuzz blockers")
+        return None
+    return nodes_sorted_by_red_ahead
+
+
+def get_fuzz_blocker_idxs(profile: fuzz_data_loader.FuzzerProfile):
+    nodes_sorted_by_red_ahead = get_fuzz_blocker_data(profile)
+    if nodes_sorted_by_red_ahead is None:
+        return None
+    idx_list = list()
+    max_idx = 10
+    for node in nodes_sorted_by_red_ahead:
+        if break_blocker_node(max_idx, node):
+            break
+        ct_idx_str = "%s%s" % ("0" * (len("00000") - len(str(node.cov_ct_idx))),
+                               str(node.cov_ct_idx))
+        idx_list.append(ct_idx_str)
+        max_idx -= 1
+    return idx_list
+
+
+def break_blocker_node(max_idx, node) -> bool:
+    if max_idx == 0 or node.cov_forward_reds == 0:
+        return True
+    return False
 
 
 def create_fuzz_blocker_table(
@@ -592,18 +637,8 @@ def create_fuzz_blocker_table(
     """
     logger.info("Creating fuzz blocker table")
     # Identify if there are any fuzz blockers
-    all_callsites = fuzz_cfg_load.extract_all_callsites(profile.function_call_depths)
-    nodes_sorted_by_red_ahead = sorted(all_callsites,
-                                       key=lambda x: x.cov_forward_reds,
-                                       reverse=True)
-
-    has_blockers = False
-    for node in nodes_sorted_by_red_ahead:
-        if node.cov_forward_reds > 0:
-            has_blockers = True
-
-    if not has_blockers:
-        logger.info("There are no fuzz blockers")
+    nodes_sorted_by_red_ahead = get_fuzz_blocker_data(profile)
+    if nodes_sorted_by_red_ahead is None:
         return None
 
     html_table_string = "<p class='no-top-margin'>The followings nodes " \
@@ -623,7 +658,7 @@ def create_fuzz_blocker_table(
     )
     max_idx = 10
     for node in nodes_sorted_by_red_ahead:
-        if max_idx == 0 or node.cov_forward_reds == 0:
+        if break_blocker_node(max_idx, node):
             break
         html_table_string += html_table_add_row([
             str(node.cov_forward_reds),
@@ -690,7 +725,7 @@ def create_calltree(
 
         calltree_html_string += f"""
 <div class="{color_to_be}-background coverage-line">
-    <span class="coverage-line-inner">
+    <span class="coverage-line-inner" data-calltree-idx="{ct_idx_str}">
         {node.depth}
         <code class="language-clike">
             {demangled_name}
@@ -724,7 +759,8 @@ def create_calltree(
         calltree_file_idx += 1
         calltree_html_file = "calltree_view_%d.html" % calltree_file_idx
 
-    write_wrapped_html_file(calltree_html_string, calltree_html_file)
+    blocker_idxs = get_fuzz_blocker_idxs(profile)
+    write_wrapped_html_file(calltree_html_string, calltree_html_file, blocker_idxs)
     return calltree_html_file
 
 
