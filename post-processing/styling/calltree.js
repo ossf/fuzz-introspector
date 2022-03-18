@@ -11,18 +11,33 @@ $( document ).ready(function() {
       var nextLevel = "level-"+(level+1);
       console.log("len of elems: ", $(this).find(".calltree-line-wrapper."+nextLevel).length)
       $(this).closest(".coverage-line").find(".calltree-line-wrapper."+nextLevel).toggleClass("open");
-      $(this).toggleClass("expand-symbol collapse-symbol");
+      if($(this).hasClass("expand-symbol")) {
+        $(this).removeClass("expand-symbol");
+        $(this).addClass("collapse-symbol");
+      }else if($(this).hasClass("collapse-symbol")) {
+        $(this).removeClass("collapse-symbol");
+        $(this).addClass("expand-symbol");
+      }
   });
     createNavBar();
+    addFuzzBlockerLines();
     addExpandSymbols();
-
-    
-    
 });
+
+function addFuzzBlockerLines() {
+  var coverageLines;
+  coverageLines = document.getElementsByClassName("coverage-line-inner");
+  for(var j=0;j<coverageLines.length;j++) {
+    var thisDataIdx = coverageLines[j].getAttribute("data-calltree-idx");
+    if(thisDataIdx!==null && fuzz_blocker_idxs.includes(thisDataIdx)) {
+      coverageLines[j].classList.add("with-fuzz-blocker-line");
+    }
+  }
+}
 
 function createNavBar() {
     let e = document.createElement("div");
-    e.classList.add("calltree-navbar")
+    e.classList.add("calltree-navbar");
 
     let backBtn = document.createElement("a");
     backBtn.style.marginRight = "10px";
