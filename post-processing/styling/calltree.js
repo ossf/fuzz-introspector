@@ -31,6 +31,10 @@ function addFuzzBlockerLines() {
     var thisDataIdx = coverageLines[j].getAttribute("data-calltree-idx");
     if(thisDataIdx!==null && fuzz_blocker_idxs.includes(thisDataIdx)) {
       coverageLines[j].classList.add("with-fuzz-blocker-line");
+      let infoBtn = document.createElement("div");
+      infoBtn.classList.add("fuzz-blocker-info-btn");
+      infoBtn.innerText = "FUZZ BLOCKER";
+      coverageLines[j].append(infoBtn);
     }
   }
 }
