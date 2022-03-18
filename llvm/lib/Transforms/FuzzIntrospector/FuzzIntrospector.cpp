@@ -326,7 +326,7 @@ bool FuzzIntrospector::runOnModule(Module &M) {
     logPrintf(L1, "Reading fuzz introspector config file\n");
     readConfig();
   }
-  if (getenv("FUZZ_INTROSPECTOR_CONFIG_DEFAULT")) {
+  if (!getenv("FUZZ_INTROSPECTOR_CONFIG_NO_DEFAULT")) {
     makeDefaultConfig();
   }
 
