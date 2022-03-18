@@ -26,7 +26,7 @@ logger = logging.getLogger(name=__name__)
 
 def correlate_binaries_to_logs(binaries_dir):
     pairings = fuzz_utils.scan_executables_for_fuzz_introspector_logs(args.binaries_dir)
-    print("Pairings: %s" % str(pairings))
+    logger.info("Pairings: %s" % str(pairings))
     with open("exe_to_fuzz_introspector_logs.yaml", "w+") as etf:
         etf.write(yaml.dump({'pairings': pairings}))
 
@@ -70,7 +70,7 @@ def run_analysis_on_dir(target_folder,
             git_repo_url,
             project_profile.basefolder)
 
-    print("%s" % str(analyses_to_run))
+    logger.info("Analyses to run: %s" % str(analyses_to_run))
 
     logger.info("[+] Creating HTML report")
     fuzz_html.create_html_report(profiles,

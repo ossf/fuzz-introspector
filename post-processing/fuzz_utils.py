@@ -115,13 +115,13 @@ def scan_executables_for_fuzz_introspector_logs(exec_dir: str):
     for f in os.listdir(exec_dir):
         full_path = os.path.join(exec_dir, f)
         if os.access(full_path, os.X_OK) and os.path.isfile(full_path):
-            print("File: %s is executable" % full_path)
+            logger.info("File: %s is executable" % full_path)
             # Read all of the strings in this file
             with open(full_path, "rb") as fp:
                 all_ascii_data = fp.read().decode('ascii', 'ignore')
                 for found_str in fuzzer_log_file_pattern.findall(all_ascii_data):
                     if "fuzzerLogFile" in found_str:
-                        print(found_str)
+                        logger.info("Found match %s" % found_str)
                         executable_to_fuzz_reports.append({
                             'executable_path': full_path,
                             'fuzzer_log_file': found_str

@@ -419,7 +419,7 @@ def analysis_coverage_runtime_analysis(
     in contrast to statically-extracted data which gives a hit/not-hit
     verdict on a given function entirely.
     """
-    print("In coverage optimal analysis")
+    logger.info("In coverage optimal analysis")
 
     # Find all functions that satisfy:
     # - source lines above 50

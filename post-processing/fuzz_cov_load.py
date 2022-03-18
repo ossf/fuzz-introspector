@@ -156,13 +156,13 @@ def llvm_cov_load(target_dir, target_name=None):
 
 
 if __name__ == "__main__":
-    print("Starting coverage loader")
+    logger.info("Starting coverage loader")
     cp = llvm_cov_load(".")
-    print("Functions hit:")
+    logger.info("Functions hit:")
     for fn in cp.functions_hit:
-        print(fn)
+        logger.info(fn)
 
-    print("Coverage map keys")
+    logger.info("Coverage map keys")
     for fn in cp.covmap:
-        print(fn)
-    print("Coverage loader end")
+        logger.info(fn)
+    logger.info("Coverage loader end")
