@@ -184,11 +184,10 @@ struct FuzzIntrospector : public ModulePass {
   // Class variables
   int moduleLogLevel = 2;
   CalltreeNode FuzzerCalltree;
-  std::set<StringRef> functionNamesToIgnore = {"llvm.", "sanitizer_cov",
-                                               "sancov.module"};
 
   std::vector<string> ConfigFuncsToAvoidFuncBeginsWith;
   std::vector<string> ConfigFuncsToAvoidStrict;
+  std::vector<string> ConfigFuncsToAvoidInclusion;
 
 
   // Function defs
@@ -203,7 +202,6 @@ struct FuzzIntrospector : public ModulePass {
   void logCalltree(struct CalltreeNode *calltree, std::ofstream *, int Depth);
   FuzzerFunctionWrapper wrapFunction(Function *func);
   void extractAllFunctionDetailsToYaml(std::string nextYamlName, Module &M);
-  bool shouldIgnoreFunction(StringRef functionName);
   StringRef removeDecSuffixFromName(StringRef funcName);
   std::string getNextLogFile();
   bool shouldRunIntrospector(Module &M);
@@ -294,12 +292,21 @@ void FuzzIntrospector::makeDefaultConfig() {
     "free",
     "malloc"
   };
+  std::vector<std::string> FuncsToAvoidInclusion = {
+    "llvm.",
+    "sanitizer_cov",
+    "sancov.module"
+  };
   std::vector<string> *current = &ConfigFuncsToAvoidFuncBeginsWith;
   for (auto &s : FuncsToAvoidNonStrict) {
     current->push_back(s);
   }
   current = &ConfigFuncsToAvoidStrict;
   for (auto &s : FuncsToAvoidNonStrict) {
+    current->push_back(s);
+  }
+  current = &ConfigFuncsToAvoidInclusion;
+  for (auto &s : FuncsToAvoidInclusion) {
     current->push_back(s);
   }
 }
@@ -442,15 +449,6 @@ StringRef FuzzIntrospector::removeDecSuffixFromName(StringRef FuncName) {
     return FuncName;
   }
   return FuncNameBeforeLastPeriod;
-}
-
-bool FuzzIntrospector::shouldIgnoreFunction(StringRef FuncName) {
-  for (auto &functionToIgnore : functionNamesToIgnore) {
-    if (FuncName.contains(functionToIgnore)) {
-      return true;
-    }
-  }
-  return false;
 }
 
 int FuzzIntrospector::getFunctionLinenumber(Function *F) {
@@ -788,10 +786,12 @@ void FuzzIntrospector::resolveOutgoingEdges(
       const llvm::DebugLoc &debugInfo = I.getDebugLoc();
       // Get the line number of the instruction.
       // We use this when visualizing the calltree.
+      //errs() << "\n";
+      //I.print(errs());
       if (debugInfo) {
         //errs() << "Printing debugLoc\n";
         //debugInfo.print(errs());
-        //errs() << "\n---------------\n";
+       // errs() << "\n---------------\n";
         if (llvm::DebugLoc InlinedAtDL = debugInfo.getInlinedAt()) {
           //errs() << "Getting inlined line number\n";
           CSLinenumber = InlinedAtDL.getLine();
@@ -800,7 +800,7 @@ void FuzzIntrospector::resolveOutgoingEdges(
           //errs() << "Getting non-inlined line number\n";
           CSLinenumber = debugInfo.getLine();
         }
-        //errs() << "\n--- " << CSLinenumber << "\n";
+        //errs() << "line number: " << CSLinenumber << "\n";
       }
 
       StringRef NormalisedDstName = removeDecSuffixFromName(CSElem->getName());
@@ -835,6 +835,12 @@ bool FuzzIntrospector::shouldAvoidFunction(std::string TargetFunctionName) {
       return true;
     }
   }
+
+  for (auto &FuncToAvoid : ConfigFuncsToAvoidInclusion) {
+    if (TargetFunctionName.find(FuncToAvoid) != std::string::npos) {
+      return true;
+    }
+  }
   return false;
 }
 
@@ -848,8 +854,7 @@ int FuzzIntrospector::extractCalltree(Function *F, CalltreeNode *Calltree,
 
   int MaxDepthOfEdges = 0;
   for (CalltreeNode *OutEdge : OutgoingEdges) {
-    if (shouldIgnoreFunction(OutEdge->FunctionName) ||
-        isNodeInVector(OutEdge, allNodesInTree)) {
+    if (isNodeInVector(OutEdge, allNodesInTree)) {
       continue;
     }
 
