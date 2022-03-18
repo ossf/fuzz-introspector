@@ -24,12 +24,22 @@ function createNavBar() {
     let e = document.createElement("div");
     e.classList.add("calltree-navbar")
 
+    let backBtn = document.createElement("a");
+    backBtn.style.marginRight = "10px";
+    backBtn.href = "/fuzz_report.html"
+    let backBtnInner = document.createElement("span");
+    backBtnInner.classList.add("calltree-nav-btn");
+    backBtnInner.innerText = "<- Back to report";
+    backBtn.prepend(backBtnInner);
+    e.prepend(backBtn);
+
+
     let btn1 = document.createElement("span");
     btn1.classList.add("calltree-nav-btn");
     btn1.classList.add("active");
     btn1.id = "show-idx-button"
     btn1.innerText = "show idx";
-    e.prepend(btn1);
+    e.append(btn1);
 
     let btn2 = document.createElement("span");
     btn2.classList.add("calltree-nav-btn");
