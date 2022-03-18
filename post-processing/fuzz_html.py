@@ -602,6 +602,10 @@ def get_fuzz_blocker_data(profile: fuzz_data_loader.FuzzerProfile):
     return nodes_sorted_by_red_ahead
 
 
+def create_str_node_ctx_idx(cov_ct_idx):
+    return "%s%s" % ("0" * (len("00000") - len(cov_ct_idx)), cov_ct_idx)
+
+
 def get_fuzz_blocker_idxs(profile: fuzz_data_loader.FuzzerProfile):
     nodes_sorted_by_red_ahead = get_fuzz_blocker_data(profile)
     if nodes_sorted_by_red_ahead is None:
@@ -611,8 +615,7 @@ def get_fuzz_blocker_idxs(profile: fuzz_data_loader.FuzzerProfile):
     for node in nodes_sorted_by_red_ahead:
         if break_blocker_node(max_idx, node):
             break
-        ct_idx_str = "%s%s" % ("0" * (len("00000") - len(str(node.cov_ct_idx))),
-                               str(node.cov_ct_idx))
+        ct_idx_str = create_str_node_ctx_idx(str(node.cov_ct_idx))
         idx_list.append(ct_idx_str)
         max_idx -= 1
     return idx_list
@@ -704,8 +707,7 @@ def create_calltree(
         color_to_be = node.cov_color
         callsite_link = node.cov_callsite_link
         link = node.cov_link
-        ct_idx_str = "%s%s" % ("0" * (len("00000") - len(str(node.cov_ct_idx))),
-                               str(node.cov_ct_idx))
+        ct_idx_str = create_str_node_ctx_idx(str(node.cov_ct_idx))
 
         # Only display [function] link if we have, otherwhise show no [function] text.
         if node.dst_function_source_file.replace(" ", "") != "/":
