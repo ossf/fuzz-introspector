@@ -24,7 +24,7 @@ diff --git a/infra/base-images/base-builder/compile b/infra/base-images/base-bui
 index c934d3b5..f332f891 100755
 --- a/infra/base-images/base-builder/compile
 +++ b/infra/base-images/base-builder/compile
-@@ -146,6 +146,23 @@ if [ "$FUZZING_LANGUAGE" = "jvm" ]; then
+@@ -146,6 +146,22 @@ if [ "$FUZZING_LANGUAGE" = "jvm" ]; then
    export CXXFLAGS="$CXXFLAGS -fno-sanitize=leak"
  fi
  
@@ -42,7 +42,6 @@ index c934d3b5..f332f891 100755
 +  ln -s /usr/local/bin/llvm-ranlib /usr/bin/ranlib
 +
 +  export FUZZ_INTROSPECTOR=1
-+  export FUZZ_INTROSPECTOR_CONFIG_DEFAULT=1
 +fi
 +
  echo "---------------------------------------------------------------"
