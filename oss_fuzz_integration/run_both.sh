@@ -18,11 +18,11 @@
 
 SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 python3 ${SCRIPT_DIR}/get_full_coverage.py $1 $2
-python3 ./infra/helper.py build_fuzzers --sanitizer=instrumentor $1
+python3 ./infra/helper.py build_fuzzers --sanitizer=introspector $1
 
 LATEST_CORPUS_DIR=$(ls | grep "corpus-" | sed 's/corpus-//' | sort -n | tail -1)
 
-cp -rf ./build/out/$1/inspector-tmp/ ./corpus-$LATEST_CORPUS_DIR/inspector-report
+cp -rf ./build/out/$1/inspector/ ./corpus-$LATEST_CORPUS_DIR/inspector-report
 cp -rf ./corpus-$LATEST_CORPUS_DIR/report/ ./corpus-$LATEST_CORPUS_DIR/inspector-report/covreport
 
 echo "If all worked, then you should be able to start a webserver at port 8008 in ./corpus-${LATEST_CORPUS_DIR}/inspector-report/"
