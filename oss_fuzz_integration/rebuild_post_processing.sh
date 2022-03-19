@@ -14,27 +14,17 @@
 # limitations under the License.
 #
 ################################################################################
-#
+
 # This script should be run from the fuzz-introspector/oss_fuzz_integration folder
 
 # Copy over new post-processing
 rm -rf ./oss-fuzz/infra/base-images/base-builder/post-processing
 cp -rf ../post-processing ./oss-fuzz/infra/base-images/base-builder/post-processing
-
 cd oss-fuzz
-
-#docker build --pull -t gcr.io/oss-fuzz-base/base-image "$@" infra/base-images/base-image
-#docker build -t gcr.io/oss-fuzz-base/base-clang "$@" infra/base-images/base-clang
 docker build -t gcr.io/oss-fuzz-base/base-builder "$@" infra/base-images/base-builder
-#docker build -t gcr.io/oss-fuzz-base/base-builder-go "$@" infra/base-images/base-builder-go
-#docker build -t gcr.io/oss-fuzz-base/base-builder-jvm "$@" infra/base-images/base-builder-jvm
-#docker build -t gcr.io/oss-fuzz-base/base-builder-python "$@" infra/base-images/base-builder-python
-#docker build -t gcr.io/oss-fuzz-base/base-builder-rust "$@" infra/base-images/base-builder-rust
-#docker build -t gcr.io/oss-fuzz-base/base-builder-swift "$@" infra/base-images/base-builder-swift
 
 # Sometimes you may want to rebuild base runner but only rarely.
 # As such, one should provide an argument for that.
 if [[ $# -eq 1 ]]; then
   docker build -t gcr.io/oss-fuzz-base/base-runner "$@" infra/base-images/base-runner
 fi
-#docker build -t gcr.io/oss-fuzz-base/base-runner-debug "$@" infra/base-images/base-runner-debug
