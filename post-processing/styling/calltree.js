@@ -142,31 +142,31 @@ function createNavBar() {
     btn4.innerHTML = `<div class="dropdown">
       <button onclick="displayNavBar()" class="dropbtn">Std C funcs</button>
       <div id="myDropdown" class="dropdown-content">
-        <div style="display:flex">
+        <div style="display:flex" class="checkbox-line-wrapper">
           <div style="flex:1"><input type="checkbox" name="free-chckbox" id="free-chckbox" class="shown-checkbox" checked></div>
           <div style="flex:3">free</div>
         </div>
-        <div style="display:flex">
+        <div style="display:flex" class="checkbox-line-wrapper">
           <div style="flex:1"><input type="checkbox" name="abort-chckbox" id="abort-chckbox" class="shown-checkbox" checked></div>
           <div style="flex:3">abort</div>
         </div>
-        <div style="display:flex">
+        <div style="display:flex" class="checkbox-line-wrapper">
           <div style="flex:1"><input type="checkbox" name="malloc-chckbox" id="malloc-chckbox" class="shown-checkbox" checked></div>
           <div style="flex:3">malloc</div>
         </div>
-        <div style="display:flex">
+        <div style="display:flex" class="checkbox-line-wrapper">
           <div style="flex:1"><input type="checkbox" name="calloc-chckbox" id="calloc-chckbox" class="shown-checkbox" checked></div>
           <div style="flex:3">calloc</div>
         </div>
-        <div style="display:flex">
+        <div style="display:flex" class="checkbox-line-wrapper">
           <div style="flex:1"><input type="checkbox" name="exit-chckbox" id="exit-chckbox" class="shown-checkbox" checked></div>
           <div style="flex:3">exit</div>
         </div>
-        <div style="display:flex">
+        <div style="display:flex" class="checkbox-line-wrapper">
           <div style="flex:1"><input type="checkbox" name="memcmp-chckbox" id="memcmp-chckbox" class="shown-checkbox" checked></div>
           <div style="flex:3">memcmp</div>
         </div>
-        <div style="display:flex">
+        <div style="display:flex" class="checkbox-line-wrapper">
           <div style="flex:1"><input type="checkbox" name="strlen-chckbox" id="strlen-chckbox" class="shown-checkbox" checked></div>
           <div style="flex:3">strlen</div>
         </div>
