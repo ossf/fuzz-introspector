@@ -585,13 +585,15 @@ input[type="checkbox"] {
 
 /* Dropdown Content (Hidden by Default) */
 .dropdown-content {
-  display: none;
+	visibility: hidden;
+  /*display: none;*/
   position: absolute;
-  background-color: #f1f1f1;
   min-width: 160px;
   box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
   z-index: 1;
-  top: 37px;
+  top: 7px;
+  background: white;
+  border-radius: 4px;
 }
 
 /* Links inside the dropdown */
@@ -606,12 +608,20 @@ input[type="checkbox"] {
 .dropdown-content span.dropdown-checkbox-wrapper {background-color: #ddd}
 
 /* Show the dropdown menu (use JS to add this class to the .dropdown-content container when the user clicks on the dropdown button) */
-.show {display:block;}
+.dropdown-content.show {
+	visibility: visible;
+	display:block;
+	transform: translateY(30px);
+	transition: .1s ease;
+}
 .shown-checkbox {
 	display: block!important;
 }
-.dropdown-content {
-	padding: 3px 6px;
+.checkbox-line-wrapper {
+	padding: 5px 10px;
+}
+.checkbox-line-wrapper:hover {
+	background: #edfeff;
 }
 .coverage-line-inner.hidden {
 	display:  none;
