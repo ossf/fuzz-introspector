@@ -99,7 +99,7 @@ function addFuzzBlockerLines() {
 
 /* When the user clicks on the button,
 toggle between hiding and showing the dropdown content */
-function myFunction() {
+function displayNavBar() {
   document.getElementById("myDropdown").classList.toggle("show");
 }
 
@@ -140,7 +140,7 @@ function createNavBar() {
     btn4.classList.add("calltree-nav-btn2");
     btn4.id = "std-lib-functions";
     btn4.innerHTML = `<div class="dropdown">
-      <button onclick="myFunction()" class="dropbtn">Dropdown</button>
+      <button onclick="displayNavBar()" class="dropbtn">Std C funcs</button>
       <div id="myDropdown" class="dropdown-content">
         <div style="display:flex">
           <div style="flex:1"><input type="checkbox" name="free-chckbox" id="free-chckbox" class="shown-checkbox" checked></div>
