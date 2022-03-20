@@ -109,6 +109,7 @@ function createNavBar() {
 
     let backBtn = document.createElement("a");
     backBtn.style.marginRight = "10px";
+    backBtn.style.textDecoration = "none";
     backBtn.href = "/fuzz_report.html"
     let backBtnInner = document.createElement("span");
     backBtnInner.classList.add("calltree-nav-btn");
