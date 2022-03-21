@@ -1,7 +1,16 @@
 diff --git a/infra/base-images/base-builder/Dockerfile b/infra/base-images/base-builder/Dockerfile
-index c76bd011..76acdfe3 100644
+index c76bd011..4fabd098 100644
 --- a/infra/base-images/base-builder/Dockerfile
 +++ b/infra/base-images/base-builder/Dockerfile
+@@ -83,7 +83,7 @@ ENV SANITIZER_FLAGS_dataflow "-fsanitize=dataflow"
+ 
+ ENV SANITIZER_FLAGS_thread "-fsanitize=thread"
+ 
+-ENV SANITIZER_FLAGS_introspector "-flegacy-pass-manager -flto"
++ENV SANITIZER_FLAGS_introspector "-flegacy-pass-manager -flto  -fno-gnu-inline-asm -fno-inline-functions"
+ 
+ # Do not use any sanitizers in the coverage build.
+ ENV SANITIZER_FLAGS_coverage ""
 @@ -162,5 +162,7 @@ COPY cargo compile compile_afl compile_dataflow compile_libfuzzer compile_honggf
  COPY llvmsymbol.diff $SRC
  COPY detect_repo.py /opt/cifuzz/
