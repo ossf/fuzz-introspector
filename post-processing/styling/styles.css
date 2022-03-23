@@ -611,12 +611,21 @@ input[type="checkbox"] {
 	visibility: hidden;
   /*display: none;*/
   position: absolute;
-  min-width: 160px;
   box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
   z-index: 1;
   top: 7px;
   background: white;
   border-radius: 4px;
+}
+.dropdown-content.stdlibc {
+  min-width: 160px;	
+}
+.dropdown-content.fontsize {
+  padding: 5px;
+	left: 10px;
+}
+.fontsize-option {
+	padding: 5px;
 }
 
 /* Links inside the dropdown */

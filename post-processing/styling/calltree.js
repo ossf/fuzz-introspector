@@ -33,10 +33,12 @@ $( document ).ready(function() {
     addFuzzBlockerLines();
     addExpandSymbols();
 
+    addNavbarClickEffects();
+
     document.addEventListener('click', function(e) {
       e = e || window.event;
       var target = e.target;
-      var menuElement = document.getElementById("std-lib-functions");
+      var menuElement = document.getElementById("myDropdown");
       if(isDescendant(menuElement, target)) {
          e.stopPropagation();
       }
@@ -78,6 +80,7 @@ $( document ).ready(function() {
     checkbox7.addEventListener('change', (event) => {
       hideNodesWithText("strlen")
     })
+
 });
 
 
@@ -154,8 +157,8 @@ function createNavBar() {
     btn4.classList.add("calltree-nav-btn2");
     btn4.id = "std-lib-functions";
     btn4.innerHTML = `<div class="dropdown">
-      <button onclick="displayNavBar()" class="dropbtn">Std C funcs</button>
-      <div id="myDropdown" class="dropdown-content">
+      <button onclick="displayNavBar()" class="dropbtn std-c-func-list">Std C funcs</button>
+      <div id="myDropdown" class="dropdown-content stdlibc">
         <div style="display:flex" class="checkbox-line-wrapper">
           <div style="flex:1"><input type="checkbox" name="free-chckbox" id="free-chckbox" class="shown-checkbox" checked></div>
           <div style="flex:3">free</div>
@@ -191,22 +194,6 @@ function createNavBar() {
     e.append(createFontSizeDropdown());
 
     document.getElementsByClassName("content-wrapper")[0].prepend(e);
-
-    
-
-    // Close the dropdown menu if the user clicks outside of it
-    window.onclick = function(event) {
-      if (!event.target.matches('.dropbtn')) {
-        var dropdowns = document.getElementsByClassName("dropdown-content");
-        var i;
-        for (i = 0; i < dropdowns.length; i++) {
-          var openDropdown = dropdowns[i];
-          if (openDropdown.classList.contains('show')) {
-            openDropdown.classList.remove('show');
-          }
-        }
-      }
-    }
     
 
     $('#show-idx-button').click(function(){
@@ -231,6 +218,45 @@ function createNavBar() {
         $(".coverage-line-inner.collapse-symbol").toggleClass("collapse-symbol expand-symbol");
       });
     })
+
+    $(".fontsize-option").click(function(){
+      var selectedFontSize=$(this).data("fontsize");
+      $(".coverage-line-inner").css("font-size", selectedFontSize);
+      
+    })
+}
+
+function addNavbarClickEffects() {
+  // std c funcs dropdown
+  // Close the dropdown menu if the user clicks outside of it
+  window.onclick = function(event) {
+    if (!event.target.matches(['.std-c-func-list','.font-size-dropdown'])) {
+
+      var stdCDropdown = document.getElementById("myDropdown");
+      if(stdCDropdown.classList.contains("show")) {
+        stdCDropdown.classList.remove("show");
+      }
+
+      var fontSize = document.getElementById("fontSizeDropdown");
+      if(fontSize.classList.contains("show")) {
+        fontSize.classList.remove("show");
+      }
+    } else if(event.target.matches('.std-c-func-list')) {
+
+      var fontSize = document.getElementById("fontSizeDropdown");
+      if(fontSize.classList.contains("show")) {
+        fontSize.classList.remove("show");
+      }
+
+    } else if(event.target.matches('.font-size-dropdown')) {
+
+      var stdCDropdown = document.getElementById("myDropdown");
+      if(stdCDropdown.classList.contains("show")) {
+        stdCDropdown.classList.remove("show");
+      }
+
+    }
+  }
 }
 
 function hideNodesWithText(text) {
@@ -255,9 +281,9 @@ function createFontSizeDropdown() {
     let btn = document.createElement("span");
     btn.classList.add("calltree-nav-btn2");
     btn.id = "font-size-dropdown-btn";
-    btn.innerHTML = `<div class="dropdown">
-      <button onclick="displayFontSizeDropdown()" class="dropbtn">Fontsize</button>
-      <div id="fontSizeDropdown" class="dropdown-content">
+    btn.innerHTML = `<div class="dropdown ">
+      <button onclick="displayFontSizeDropdown()" id="font-size-dropdown-btn2" class="dropbtn font-size-dropdown">Fontsize</button>
+      <div id="fontSizeDropdown" class="dropdown-content fontsize">
         <div>
           <div style="display:block" class="fontsize-option" data-fontsize="10px">10</div>
           <div style="display:block" class="fontsize-option" data-fontsize="11px">11</div>
