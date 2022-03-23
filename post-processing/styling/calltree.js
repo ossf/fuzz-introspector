@@ -9,8 +9,18 @@ $( document ).ready(function() {
         }
       }
       var nextLevel = "level-"+(level+1);
-      console.log("len of elems: ", $(this).find(".calltree-line-wrapper."+nextLevel).length)
-      $(this).closest(".coverage-line").find(".calltree-line-wrapper."+nextLevel).toggleClass("open");
+      var childLineWrapper = $(this).closest(".coverage-line").find(".calltree-line-wrapper."+nextLevel);
+      if($(childLineWrapper).hasClass("open")) {
+        $(childLineWrapper).height($(childLineWrapper).get(0).scrollHeight).height("0px").toggleClass("open");
+      } else {
+        $(childLineWrapper).height($(childLineWrapper).get(0).scrollHeight).toggleClass("open");
+        // If we don't use a timeout here, then the height is changed before the csss transition
+        // is executed, and the css transition will not be used. We have to set auto height here,
+        // because we nested collapsibles.
+        setTimeout(function() {
+          $(childLineWrapper).height("auto");
+        }, 200);
+      }
       if($(this).hasClass("expand-symbol")) {
         $(this).removeClass("expand-symbol");
         $(this).addClass("collapse-symbol");
@@ -102,6 +112,9 @@ toggle between hiding and showing the dropdown content */
 function displayNavBar() {
   document.getElementById("myDropdown").classList.toggle("show");
 }
+function displayFontSizeDropdown() {
+  document.getElementById("fontSizeDropdown").classList.toggle("show");
+}
 
 function createNavBar() {
     let e = document.createElement("div");
@@ -175,6 +188,8 @@ function createNavBar() {
     </div>`;
     e.append(btn4);
 
+    e.append(createFontSizeDropdown());
+
     document.getElementsByClassName("content-wrapper")[0].prepend(e);
 
     
@@ -234,4 +249,25 @@ function addExpandSymbols() {
       $(this).addClass("collapse-symbol");
     }
   });
+}
+
+function createFontSizeDropdown() {
+    let btn = document.createElement("span");
+    btn.classList.add("calltree-nav-btn2");
+    btn.id = "font-size-dropdown-btn";
+    btn.innerHTML = `<div class="dropdown">
+      <button onclick="displayFontSizeDropdown()" class="dropbtn">Fontsize</button>
+      <div id="fontSizeDropdown" class="dropdown-content">
+        <div>
+          <div style="display:block" class="fontsize-option" data-fontsize="10px">10</div>
+          <div style="display:block" class="fontsize-option" data-fontsize="11px">11</div>
+          <div style="display:block" class="fontsize-option" data-fontsize="12px">12</div>
+          <div style="display:block" class="fontsize-option" data-fontsize="13px">13</div>
+          <div style="display:block" class="fontsize-option" data-fontsize="14px">14</div>
+          <div style="display:block" class="fontsize-option" data-fontsize="15px">15</div>
+          <div style="display:block" class="fontsize-option" data-fontsize="16px">16</div>
+        </div>
+      </div>
+    </div>`;
+    return btn
 }

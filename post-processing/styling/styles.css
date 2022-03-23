@@ -362,9 +362,11 @@ input[type="checkbox"] {
 .calltree-line-wrapper {
 	height: 0px;
 	overflow-y: hidden;
+	transition: height .2s ease-out;
 }
 .calltree-line-wrapper.open {
 	height: auto;
+	transition: height .2s ease-out;
 }
 .calltree-line-wrapper.level-0 {
 	height: auto;
@@ -505,6 +507,27 @@ input[type="checkbox"] {
 	position: relative;
 	display: block;
 	max-width: 80%;
+}
+.coverage-line-inner.fontsize10px {
+	font-size: 10px;
+}
+.coverage-line-inner.fontsize11px {
+	font-size: 11px;
+}
+.coverage-line-inner.fontsize12px {
+	font-size: 12px;
+}
+.coverage-line-inner.fontsize13px {
+	font-size: 13px;
+}
+.coverage-line-inner.fontsize14px {
+	font-size: 14px;
+}
+.coverage-line-inner.fontsize15px {
+	font-size: 15px;
+}
+.coverage-line-inner.fontsize16px {
+	font-size: 16px;
 }
 .coverage-line-inner.with-fuzz-blocker-line {
 	padding-bottom: 5px;
