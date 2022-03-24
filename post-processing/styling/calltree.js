@@ -33,7 +33,9 @@ $( document ).ready(function() {
     addFuzzBlockerLines();
     addExpandSymbols();
 
+
     addNavbarClickEffects();
+    addCollapsibleFunctionsToDropdown();
 
     document.addEventListener('click', function(e) {
       e = e || window.event;
@@ -42,7 +44,32 @@ $( document ).ready(function() {
       if(isDescendant(menuElement, target)) {
          e.stopPropagation();
       }
-  }, false);
+    }, false);
+
+
+
+
+
+    var innerNodes = document.getElementsByClassName("collapse-function-with-name");
+
+    for (var i = 0; i < innerNodes.length; i++) {
+      innerNodes[i].addEventListener('click', function(e) {
+      e = e || window.event;
+      var target = e.target;
+      var funcName = target.innerText;
+
+      // Close all nodes with this funcName:
+      var elems = document.getElementsByClassName("coverage-line-inner collapse-symbol");
+      for(var i=0;i<elems.length;i++) {
+        if(elems[i].querySelector(".language-clike").innerText.trim()===funcName) {
+          elems[i].click()
+          //elems[i].classList.remove("collapse-symbol")
+          //elems[i].classList.add("expand-symbol")
+        }
+      }
+    }, false);
+    }
+
 
 
 
@@ -118,6 +145,9 @@ function displayNavBar() {
 function displayFontSizeDropdown() {
   document.getElementById("fontSizeDropdown").classList.toggle("show");
 }
+function displayCollapseByName() {
+  document.getElementById("collapseByNameDropdown").classList.toggle("show");
+}
 
 function createNavBar() {
     let e = document.createElement("div");
@@ -153,43 +183,11 @@ function createNavBar() {
     btn3.innerText = "Collapse all";
     e.append(btn3);
 
-    let btn4 = document.createElement("span");
-    btn4.classList.add("calltree-nav-btn2");
-    btn4.id = "std-lib-functions";
-    btn4.innerHTML = `<div class="dropdown">
-      <button onclick="displayNavBar()" class="dropbtn std-c-func-list">Std C funcs</button>
-      <div id="myDropdown" class="dropdown-content stdlibc">
-        <div style="display:flex" class="checkbox-line-wrapper">
-          <div style="flex:1"><input type="checkbox" name="free-chckbox" id="free-chckbox" class="shown-checkbox" checked></div>
-          <div style="flex:3">free</div>
-        </div>
-        <div style="display:flex" class="checkbox-line-wrapper">
-          <div style="flex:1"><input type="checkbox" name="abort-chckbox" id="abort-chckbox" class="shown-checkbox" checked></div>
-          <div style="flex:3">abort</div>
-        </div>
-        <div style="display:flex" class="checkbox-line-wrapper">
-          <div style="flex:1"><input type="checkbox" name="malloc-chckbox" id="malloc-chckbox" class="shown-checkbox" checked></div>
-          <div style="flex:3">malloc</div>
-        </div>
-        <div style="display:flex" class="checkbox-line-wrapper">
-          <div style="flex:1"><input type="checkbox" name="calloc-chckbox" id="calloc-chckbox" class="shown-checkbox" checked></div>
-          <div style="flex:3">calloc</div>
-        </div>
-        <div style="display:flex" class="checkbox-line-wrapper">
-          <div style="flex:1"><input type="checkbox" name="exit-chckbox" id="exit-chckbox" class="shown-checkbox" checked></div>
-          <div style="flex:3">exit</div>
-        </div>
-        <div style="display:flex" class="checkbox-line-wrapper">
-          <div style="flex:1"><input type="checkbox" name="memcmp-chckbox" id="memcmp-chckbox" class="shown-checkbox" checked></div>
-          <div style="flex:3">memcmp</div>
-        </div>
-        <div style="display:flex" class="checkbox-line-wrapper">
-          <div style="flex:1"><input type="checkbox" name="strlen-chckbox" id="strlen-chckbox" class="shown-checkbox" checked></div>
-          <div style="flex:3">strlen</div>
-        </div>
-      </div>
-    </div>`;
+    let btn4 = createStdCDropdown();
     e.append(btn4);
+
+    let btn5 = createCollapseByName();
+    e.append(btn5);
 
     e.append(createFontSizeDropdown());
 
@@ -226,11 +224,112 @@ function createNavBar() {
     })
 }
 
+// Returns an array of all functions in the calltree sorted alphabetically
+function getAllFuncNames() {
+  let clikeElems = document.getElementsByClassName("language-clike");
+  let funcList = [];
+  for(var i=0;i<clikeElems.length;i++) {
+    let funcName = clikeElems[i].innerText.trim();
+    if(!funcList.includes(funcName)) {
+      funcList.push(funcName)
+    }
+  }
+  return funcList.sort();
+}
+
+// Returns an array of function names that are collapsible
+function getCollapsibleFunctions() {
+  let ctNodes = document.getElementsByClassName("coverage-line-inner collapse-symbol");
+  let funcList = [];
+  console.log(ctNodes.length)
+  for(var i=0;i<ctNodes.length;i++) {
+    if(ctNodes[i].querySelector(".language-clike")===undefined) {
+      continue
+    }
+    let funcName = ctNodes[i].querySelector(".language-clike").innerText.trim();
+    if(!funcList.includes(funcName)) {
+      funcList.push(funcName)
+    }
+  }
+  console.log("Length of funcList: ", funcList.length)
+  return funcList.sort();
+}
+
+// Adds collapsible functions to the dropdown
+function addCollapsibleFunctionsToDropdown() {
+  var collapseByNameDropdown = document.getElementById("collapseByNameDropdown");
+  let funcNames = getCollapsibleFunctions();
+  for(var i=0;i<funcNames.length;i++) {
+    let listItem = document.createElement("div");
+    listItem.classList.add("checkbox-line-wrapper");
+    listItem.classList.add("collapse-function-with-name");
+    listItem.style.display = "block"
+    listItem.innerText = funcNames[i];
+    collapseByNameDropdown.append(listItem)
+  }
+}
+
+function createCollapseByName() {
+    let btn4 = document.createElement("span");
+    btn4.classList.add("calltree-nav-btn2");
+    btn4.id = "collapse-by-name";
+    var htmlString = "";
+    htmlString += `<div class="dropdown">
+      <button onclick="displayCollapseByName()" class="dropbtn collapse-by-name-dropdown">Collapse by name</button>
+      <div id="collapseByNameDropdown" class="dropdown-content coll-by-name" style="max-height: 500px; overflow-y: scroll">`
+
+          
+    htmlString += `</div>
+    </div>`;
+    btn4.innerHTML = htmlString;
+    return btn4;
+}
+
+function createStdCDropdown() {
+    let btn4 = document.createElement("span");
+    btn4.classList.add("calltree-nav-btn2");
+    btn4.id = "std-lib-functions";
+    btn4.innerHTML = `<div class="dropdown">
+      <button onclick="displayNavBar()" class="dropbtn std-c-func-list">Std C funcs</button>
+      <div id="myDropdown" class="dropdown-content stdlibc">
+        <div style="display:flex" class="checkbox-line-wrapper">
+          <div style="flex:1"><input type="checkbox" name="free-chckbox" id="free-chckbox" class="shown-checkbox" checked></div>
+          <div style="flex:3">free</div>
+        </div>
+        <div style="display:flex" class="checkbox-line-wrapper">
+          <div style="flex:1"><input type="checkbox" name="abort-chckbox" id="abort-chckbox" class="shown-checkbox" checked></div>
+          <div style="flex:3">abort</div>
+        </div>
+        <div style="display:flex" class="checkbox-line-wrapper">
+          <div style="flex:1"><input type="checkbox" name="malloc-chckbox" id="malloc-chckbox" class="shown-checkbox" checked></div>
+          <div style="flex:3">malloc</div>
+        </div>
+        <div style="display:flex" class="checkbox-line-wrapper">
+          <div style="flex:1"><input type="checkbox" name="calloc-chckbox" id="calloc-chckbox" class="shown-checkbox" checked></div>
+          <div style="flex:3">calloc</div>
+        </div>
+        <div style="display:flex" class="checkbox-line-wrapper">
+          <div style="flex:1"><input type="checkbox" name="exit-chckbox" id="exit-chckbox" class="shown-checkbox" checked></div>
+          <div style="flex:3">exit</div>
+        </div>
+        <div style="display:flex" class="checkbox-line-wrapper">
+          <div style="flex:1"><input type="checkbox" name="memcmp-chckbox" id="memcmp-chckbox" class="shown-checkbox" checked></div>
+          <div style="flex:3">memcmp</div>
+        </div>
+        <div style="display:flex" class="checkbox-line-wrapper">
+          <div style="flex:1"><input type="checkbox" name="strlen-chckbox" id="strlen-chckbox" class="shown-checkbox" checked></div>
+          <div style="flex:3">strlen</div>
+        </div>
+      </div>
+    </div>`;
+    return btn4;
+}
+
 function addNavbarClickEffects() {
   // std c funcs dropdown
   // Close the dropdown menu if the user clicks outside of it
   window.onclick = function(event) {
-    if (!event.target.matches(['.std-c-func-list','.font-size-dropdown'])) {
+    if (!event.target.matches(['.std-c-func-list','.font-size-dropdown', '.collapse-by-name-dropdown'])) {
 
       var stdCDropdown = document.getElementById("myDropdown");
       if(stdCDropdown.classList.contains("show")) {
@@ -238,25 +337,33 @@ function addNavbarClickEffects() {
       }
 
       var fontSize = document.getElementById("fontSizeDropdown");
+      if(fontSize.classList.contains("show")) {
+        fontSize.classList.remove("show");
+      }
+
+      var fontSize = document.getElementById("collapseByNameDropdown");
       if(fontSize.classList.contains("show")) {
         fontSize.classList.remove("show");
       }
     } else if(event.target.matches('.std-c-func-list')) {
-
-      var fontSize = document.getElementById("fontSizeDropdown");
-      if(fontSize.classList.contains("show")) {
-        fontSize.classList.remove("show");
-      }
-
+      hideDropdown("collapseByNameDropdown");
+      hideDropdown("fontSizeDropdown");
     } else if(event.target.matches('.font-size-dropdown')) {
-
-      var stdCDropdown = document.getElementById("myDropdown");
-      if(stdCDropdown.classList.contains("show")) {
-        stdCDropdown.classList.remove("show");
-      }
+      hideDropdown("collapseByNameDropdown");
+      hideDropdown("myDropdown");
+    } else if(event.target.matches('.collapse-by-name-dropdown')) {
+      hideDropdown("fontSizeDropdown");
+      hideDropdown("myDropdown");
 
     }
   }
+}
+
+function hideDropdown(dropdownId) {
+    var stdCDropdown = document.getElementById(dropdownId);
+    if(stdCDropdown.classList.contains("show")) {
+      stdCDropdown.classList.remove("show");
+    }
 }
 
 function hideNodesWithText(text) {
