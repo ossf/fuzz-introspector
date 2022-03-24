@@ -96,6 +96,9 @@ table.dataTable {
 	/*border-left: 1px solid #d9d9d9;*/
 	/*width: calc(100% - 20px);*/
 }
+.content-section.calltree-content-section {
+	height: calc(100vh - 120px);
+}
 .left-sidebar-content-box {
 	width: calc(350px - 20px);
 	position:  fixed;

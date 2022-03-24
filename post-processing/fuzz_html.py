@@ -558,7 +558,7 @@ def write_wrapped_html_file(html_string, filename, blocker_idxs):
     complete_html_string = ""
     # HTML start
     html_header = html_get_header(calltree=True)
-    html_header += '<div class="content-section">'
+    html_header += '<div class="content-section calltree-content-section">'
     complete_html_string += html_header
 
     complete_html_string += html_string
