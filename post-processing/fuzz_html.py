@@ -972,8 +972,8 @@ def handle_analysis_3(toc_list: List[Tuple[str, str, int]],
         tables[-1],
         [
             ("Func name", ""),
-            ("lines of code", ""),
-            ("LoC runtime coverage", ""),
+            ("Function total lines", ""),
+            ("Lines covered at runtime", ""),
             ("percentage covered", "")
         ])
 
