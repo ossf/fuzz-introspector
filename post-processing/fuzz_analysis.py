@@ -428,7 +428,7 @@ def analysis_coverage_runtime_analysis(
     for funcname in merged_profile.runtime_coverage.get_all_hit_functions():
         try:
             total_lines, hit_lines = merged_profile.runtime_coverage.get_hit_summary(funcname)
-            hit_proportion = (total_lines / hit_lines) * 100.0
+            hit_proportion = (hit_lines / total_lines) * 100.0
             if total_lines > 50 and hit_proportion < 20:
                 functions_of_interest.append(funcname)
         except Exception:
