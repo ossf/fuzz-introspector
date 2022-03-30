@@ -1264,7 +1264,7 @@ def create_html_report(
         if os.environ.get('FUZZ_INTROSPECTOR'):
             target_name = profiles[profile_idx].fuzzer_source_file
             target_coverage_url = get_target_coverage_url(coverage_url, target_name)
-        else: # This is temporary for local runs.
+        else:  # This is temporary for local runs.
             target_coverage_url = coverage_url
         html_report_core += create_fuzzer_detailed_section(
             profiles[profile_idx],
