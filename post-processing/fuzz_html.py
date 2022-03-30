@@ -650,11 +650,18 @@ def create_fuzz_blocker_table(
     html_table_string += create_table_head(
         tables[-1],
         [
-            ('Blocked nodes', ""),
-            ('Calltree index', ""),
-            ('Parent function', ""),
-            ('Callsite', ""),
-            ('Largest blocked function', "")
+            ("Amount of callsites blocked",
+             "Total amount of callsites blocked"),
+            ("Calltree index",
+             "Index in call tree where the fuzz blocker is."),
+            ("Parent function",
+             "Function in which the call site that blocks resides."),
+            ("Callsite",
+             ""),
+            ("Largest blocked function",
+             "This is the function with highest cyclomatiic complexity amongst"
+             "all of the functions that are blocked. As such, it's a way of "
+             "highlighting a potentially important function being blocked")
         ],
         sort_by_column=0,
         sort_order="desc"
