@@ -1261,8 +1261,11 @@ def create_html_report(
     html_report_core += "<div class=\"report-box\">"
     html_report_core += html_add_header_with_link("Fuzzer details", 1, toc_list)
     for profile_idx in range(len(profiles)):
-        target_name = profiles[profile_idx].fuzzer_source_file
-        target_coverage_url = get_target_coverage_url(coverage_url, target_name)
+        if os.environ.get('FUZZ_INTROSPECTOR'):
+            target_name = profiles[profile_idx].fuzzer_source_file
+            target_coverage_url = get_target_coverage_url(coverage_url, target_name)
+        else: # This is temporary for local runs.
+            target_coverage_url = coverage_url
         html_report_core += create_fuzzer_detailed_section(
             profiles[profile_idx],
             toc_list,
