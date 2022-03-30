@@ -628,7 +628,8 @@ def create_fuzz_blocker_table(
         git_repo_url: str,
         basefolder: str,
         image_name: str,
-        tables: List[str]) -> Optional[str]:
+        tables: List[str],
+        calltree_file_name: str) -> Optional[str]:
     """
     Creates HTML string for table showing fuzz blockers.
     """
@@ -664,11 +665,17 @@ def create_fuzz_blocker_table(
     for node in nodes_sorted_by_red_ahead:
         if break_blocker_node(max_idx, node):
             break
+        link_prefix = "0" * (5 - len(str(node.cov_ct_idx)))
+        node_link = "%s?scrollToNode=%s%s" % (
+            calltree_file_name,
+            link_prefix,
+            node.cov_ct_idx
+        )
         html_table_string += html_table_add_row([
             str(node.cov_forward_reds),
             str(node.cov_ct_idx),
             node.cov_parent,
-            "<a href=%s>call site</a>" % node.cov_callsite_link,
+            "<a href=%s>call site</a>" % node_link,
             node.cov_largest_blocked_func
         ])
         max_idx -= 1
@@ -838,7 +845,8 @@ def create_fuzzer_detailed_section(
                                                         git_repo_url,
                                                         basefolder,
                                                         image_name,
-                                                        tables)
+                                                        tables,
+                                                        calltree_file_name)
     if html_fuzz_blocker_table is not None:
         html_string += html_add_header_with_link(
             "Fuzz blockers",
