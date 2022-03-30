@@ -358,7 +358,7 @@ def create_all_function_table(
         html_string += html_table_add_row([
             func_name_row,
             fd.function_source_file,
-            "%s : %s"%(str(fd.arg_count), str(fd.arg_types)),
+            "%s : %s" % (str(fd.arg_count), str(fd.arg_types)),
             fd.function_depth,
             reached_by_fuzzers_row,
             func_hit_at_runtime_row,
