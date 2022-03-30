@@ -280,14 +280,10 @@ def create_all_function_table(
          ""),
         ("Functions filename",
          "Source code file where function is defined."),
-        ("Arg count",
-         "Number of arguments to the function."),
         ("Args",
          "Types of arguments to this function."),
         ("Function call depth",
          "Function call depth based on static analysis."),
-        ("Fuzzers reach count",
-         "The number of fuzzers that reach this function. Based on static analysis."),
         ("Reached by Fuzzers",
          "The specific fuzzers that reach this function. Based on static analysis."),
         ("Fuzzers runtime hit",
@@ -338,7 +334,7 @@ def create_all_function_table(
             func_hit_at_runtime_row = "no"
 
         if fd.reached_by_fuzzers:
-            reached_by_fuzzers_row = f"""<div
+            reached_by_fuzzers_row = f"""{ fd.hitcount } : <div
  class='wrap-collabsible'>
     <input id='{collapsible_id}'
            class='toggle'
@@ -357,15 +353,13 @@ def create_all_function_table(
     </div>
 </div>"""
         else:
-            reached_by_fuzzers_row = "None"
+            reached_by_fuzzers_row = "0"
 
         html_string += html_table_add_row([
             func_name_row,
             fd.function_source_file,
-            fd.arg_count,
-            fd.arg_types,
+            "%s : %s" % (str(fd.arg_count), str(fd.arg_types)),
             fd.function_depth,
-            fd.hitcount,
             reached_by_fuzzers_row,
             func_hit_at_runtime_row,
             "%.5s" % (str(hit_percentage)) + "%",
