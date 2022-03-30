@@ -108,7 +108,25 @@ $( document ).ready(function() {
       hideNodesWithText("strlen")
     })
 
+    scrollOnLoad();
+
 });
+
+// Scrolls to a node if the "scrollToNode" parameters is given
+function scrollOnLoad() {
+  const queryString = window.location.search;
+  const urlParams = new URLSearchParams(queryString);
+  const scrollToNode = urlParams.get('scrollToNode')
+  if(scrollToNode!==null) {
+    var dataValue = "[data-calltree-idx='"+scrollToNode+"']";
+    var elementToScrollTo = document.querySelector(dataValue);
+    if(elementToScrollTo===null) {
+      return
+    }
+    elementToScrollTo.style.background = "#ffe08c";
+    document.querySelector(".calltree-content-section").scrollTop = elementToScrollTo.offsetTop-500;
+  }
+}
 
 
 function isDescendant(parent, child) {
