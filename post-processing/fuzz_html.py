@@ -766,6 +766,7 @@ def create_calltree(
     write_wrapped_html_file(calltree_html_string, calltree_html_file, blocker_idxs)
     return calltree_html_file
 
+
 def get_target_coverage_url(coverage_url: str, target_name: str) -> str:
     """
     This function changes overall coverage URL to per-target coverage URL. Like:
@@ -773,7 +774,9 @@ def get_target_coverage_url(coverage_url: str, target_name: str) -> str:
         to
         https://storage.googleapis.com/oss-fuzz-coverage/<project>/reports-by-target/<report-date>/<target-name>/linux
     """
-    return coverage_url.replace("reports", "reports-by-target").replace("linux", f"{target_name}/linux")
+    return coverage_url.replace("reports", "reports-by-target").replace("linux",
+                                                                        f"{target_name}/linux")
+
 
 def create_fuzzer_detailed_section(
         profile: fuzz_data_loader.FuzzerProfile,
