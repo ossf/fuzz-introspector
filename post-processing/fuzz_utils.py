@@ -127,3 +127,17 @@ def scan_executables_for_fuzz_introspector_logs(exec_dir: str):
                             'fuzzer_log_file': found_str
                         })
     return executable_to_fuzz_reports
+
+
+def get_target_coverage_url(coverage_url: str, target_name: str) -> str:
+    """
+    This function changes overall coverage URL to per-target coverage URL. Like:
+        https://storage.googleapis.com/oss-fuzz-coverage/<project>/reports/<report-date>/linux
+        to
+        https://storage.googleapis.com/oss-fuzz-coverage/<project>/reports-by-target/<report-date>/<target-name>/linux
+    """
+    if os.environ.get('FUZZ_INTROSPECTOR'):
+        return coverage_url.replace("reports", "reports-by-target").replace("linux",
+                                                                            f"{target_name}/linux")
+    else:  # (TODO) This is temporary for local runs.
+        return coverage_url

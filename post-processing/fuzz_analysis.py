@@ -62,6 +62,11 @@ def overlay_calltree_with_coverage(
     ct_idx = 0
     if profile.function_call_depths is None:
         return
+
+    target_name = profile.get_key()
+    target_coverage_url = fuzz_utils.get_target_coverage_url(coverage_url, target_name)
+    logger.info(f"Using coverage url: {target_coverage_url}")
+
     for node in fuzz_cfg_load.extract_all_callsites(profile.function_call_depths):
         node.cov_ct_idx = ct_idx
         ct_idx += 1
@@ -130,7 +135,7 @@ def overlay_calltree_with_coverage(
         link = "#"
         for fd_k, fd in profile.all_class_functions.items():
             if fd.function_name == node.dst_function_name:
-                link = coverage_url + \
+                link = target_coverage_url + \
                     "%s.html#L%d" % (
                         fd.function_source_file, fd.function_linenumber)
                 break
@@ -142,7 +147,7 @@ def overlay_calltree_with_coverage(
             parent_fname = callstack_get_parent(node, callstack)
             for fd_k, fd in profile.all_class_functions.items():
                 if fuzz_utils.demangle_cpp_func(fd.function_name) == parent_fname:
-                    callsite_link = coverage_url + "%s.html#L%d" % (
+                    callsite_link = target_coverage_url + "%s.html#L%d" % (
                         fd.function_source_file,   # parent source file
                         node.src_linenumber)       # callsite line number
         node.cov_callsite_link = callsite_link
