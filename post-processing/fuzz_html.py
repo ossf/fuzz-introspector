@@ -623,11 +623,6 @@ def break_blocker_node(max_idx, node) -> bool:
 
 def create_fuzz_blocker_table(
         profile: fuzz_data_loader.FuzzerProfile,
-        project_profile: fuzz_data_loader.MergedProjectProfile,
-        coverage_url: str,
-        git_repo_url: str,
-        basefolder: str,
-        image_name: str,
         tables: List[str],
         calltree_file_name: str) -> Optional[str]:
     """
@@ -684,14 +679,7 @@ def create_fuzz_blocker_table(
     return html_table_string
 
 
-def create_calltree(
-        profile: fuzz_data_loader.FuzzerProfile,
-        project_profile: fuzz_data_loader.MergedProjectProfile,
-        coverage_url: str,
-        git_repo_url: str,
-        basefolder: str,
-        image_name: str,
-        tables: List[str]) -> str:
+def create_calltree(profile: fuzz_data_loader.FuzzerProfile) -> str:
     """
     Creates the HTML of the calltree. Returns the HTML as a string.
     """
@@ -779,10 +767,6 @@ def create_fuzzer_detailed_section(
         toc_list: List[Tuple[str, str, int]],
         tables: List[str],
         curr_tt_profile: int,
-        project_profile: fuzz_data_loader.MergedProjectProfile,
-        target_coverage_url: str,
-        git_repo_url: str,
-        basefolder: str,
         conclusions, extract_conclusion) -> str:
     html_string = ""
     fuzzer_filename = profile.fuzzer_source_file
@@ -814,28 +798,13 @@ def create_fuzzer_detailed_section(
         toc_list,
         link=f"full_calltree_{curr_tt_profile}"
     )
-    calltree_file_name = create_calltree(
-        profile,
-        project_profile,
-        target_coverage_url,
-        git_repo_url,
-        basefolder,
-        image_name,
-        tables
-    )
+    calltree_file_name = create_calltree(profile)
     html_string += f"""<p class='no-top-margin'>The following link provides a visualisation
  of the full calltree overlayed with coverage information:
  <a href="{ calltree_file_name }">full calltree</a></p>"""
 
     # Fuzz blocker table
-    html_fuzz_blocker_table = create_fuzz_blocker_table(profile,
-                                                        project_profile,
-                                                        target_coverage_url,
-                                                        git_repo_url,
-                                                        basefolder,
-                                                        image_name,
-                                                        tables,
-                                                        calltree_file_name)
+    html_fuzz_blocker_table = create_fuzz_blocker_table(profile, tables, calltree_file_name)
     if html_fuzz_blocker_table is not None:
         html_string += html_add_header_with_link(
             "Fuzz blockers",
@@ -1258,18 +1227,11 @@ def create_html_report(
     html_report_core += "<div class=\"report-box\">"
     html_report_core += html_add_header_with_link("Fuzzer details", 1, toc_list)
     for profile_idx in range(len(profiles)):
-        target_name = profiles[profile_idx].get_key()
-        target_coverage_url = fuzz_utils.get_target_coverage_url(coverage_url, target_name)
-        logger.info(f"Using coverage url: {target_coverage_url}")
         html_report_core += create_fuzzer_detailed_section(
             profiles[profile_idx],
             toc_list,
             tables,
             profile_idx,
-            project_profile,
-            target_coverage_url,
-            git_repo_url,
-            basefolder,
             conclusions,
             True
         )
