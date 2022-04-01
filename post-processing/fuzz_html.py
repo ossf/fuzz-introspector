@@ -774,17 +774,6 @@ def create_calltree(
     return calltree_html_file
 
 
-def get_target_coverage_url(coverage_url: str, target_name: str) -> str:
-    """
-    This function changes overall coverage URL to per-target coverage URL. Like:
-        https://storage.googleapis.com/oss-fuzz-coverage/<project>/reports/<report-date>/linux
-        to
-        https://storage.googleapis.com/oss-fuzz-coverage/<project>/reports-by-target/<report-date>/<target-name>/linux
-    """
-    return coverage_url.replace("reports", "reports-by-target").replace("linux",
-                                                                        f"{target_name}/linux")
-
-
 def create_fuzzer_detailed_section(
         profile: fuzz_data_loader.FuzzerProfile,
         toc_list: List[Tuple[str, str, int]],
@@ -1269,11 +1258,9 @@ def create_html_report(
     html_report_core += "<div class=\"report-box\">"
     html_report_core += html_add_header_with_link("Fuzzer details", 1, toc_list)
     for profile_idx in range(len(profiles)):
-        if os.environ.get('FUZZ_INTROSPECTOR'):
-            target_name = profiles[profile_idx].fuzzer_source_file
-            target_coverage_url = get_target_coverage_url(coverage_url, target_name)
-        else:  # This is temporary for local runs.
-            target_coverage_url = coverage_url
+        target_name = profiles[profile_idx].get_key()
+        target_coverage_url = fuzz_utils.get_target_coverage_url(coverage_url, target_name)
+        logger.info(f"Using coverage url: {target_coverage_url}")
         html_report_core += create_fuzzer_detailed_section(
             profiles[profile_idx],
             toc_list,
