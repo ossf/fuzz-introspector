@@ -238,6 +238,8 @@ function createNavBar() {
     $(".fontsize-option").click(function(){
       var selectedFontSize=$(this).data("fontsize");
       $(".coverage-line-inner").css("font-size", selectedFontSize);
+      $(".fontsize-option").removeClass("active");
+      $(this).addClass("active");
       
     })
 }
@@ -414,7 +416,7 @@ function createFontSizeDropdown() {
           <div style="display:block" class="fontsize-option" data-fontsize="11px">11</div>
           <div style="display:block" class="fontsize-option" data-fontsize="12px">12</div>
           <div style="display:block" class="fontsize-option" data-fontsize="13px">13</div>
-          <div style="display:block" class="fontsize-option" data-fontsize="14px">14</div>
+          <div style="display:block" class="fontsize-option active" data-fontsize="14px">14</div>
           <div style="display:block" class="fontsize-option" data-fontsize="15px">15</div>
           <div style="display:block" class="fontsize-option" data-fontsize="16px">16</div>
         </div>
