@@ -1204,7 +1204,11 @@ def create_html_report(
     logger.info(" - Creating table with information about all functions in target")
     html_report_core += "<div class=\"report-box\">"
     html_report_core += html_add_header_with_link(
-        "Project functions overview", 2, toc_list)
+        "Project functions overview", 1, toc_list)
+    html_report_core += "<p> The following table shows data about each function in the project. " \
+                        "The functions included in this table corresponds to all functions " \
+                        "that exist in the executables of the fuzzers. As such, there may  " \
+                        "be functions that are from third-party libraries.</p>"
     table_id = "fuzzers_overview_table"
     tables.append(table_id)
     all_function_table, all_functions_json = create_all_function_table(
