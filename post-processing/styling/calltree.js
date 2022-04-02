@@ -1,3 +1,8 @@
+var StdCFuncNames;
+StdCFuncNames = ["free", "abort", "malloc", "calloc", "exit", "memcmp", "strlen"]
+
+
+
 $( document ).ready(function() {
     $('.coverage-line-inner').click(function(){
       var wrapper = $(this).closest(".calltree-line-wrapper");
@@ -43,15 +48,6 @@ $( document ).ready(function() {
   addNavbarClickEffects();
   addCollapsibleFunctionsToDropdown();
 
-  document.addEventListener('click', function(e) {
-    e = e || window.event;
-    var target = e.target;
-    var menuElement = document.getElementById("myDropdown");
-    if(isDescendant(menuElement, target)) {
-       e.stopPropagation();
-    }
-  }, false);
-
 
 
   var innerNodes = document.getElementsByClassName("collapse-function-with-name");
@@ -72,41 +68,6 @@ $( document ).ready(function() {
     }, false);
   }
 
-
-  const checkbox = document.getElementById('free-chckbox');
-  checkbox.addEventListener('change', (event) => {
-    hideNodesWithText("free")
-  })
-
-  const checkbox2 = document.getElementById("abort-chckbox");
-  checkbox2.addEventListener('change', (event) => {
-    hideNodesWithText("abort")
-  })
-
-  const checkbox3 = document.getElementById("malloc-chckbox");
-  checkbox3.addEventListener('change', (event) => {
-    hideNodesWithText("malloc")
-  })
-
-  const checkbox4 = document.getElementById("calloc-chckbox");
-  checkbox4.addEventListener('change', (event) => {
-    hideNodesWithText("calloc")
-  })
-
-  const checkbox5 = document.getElementById("exit-chckbox");
-  checkbox5.addEventListener('change', (event) => {
-    hideNodesWithText("exit")
-  })
-
-  const checkbox6 = document.getElementById("memcmp-chckbox");
-  checkbox6.addEventListener('change', (event) => {
-    hideNodesWithText("memcmp")
-  })
-
-  const checkbox7 = document.getElementById("strlen-chckbox");
-  checkbox7.addEventListener('change', (event) => {
-    hideNodesWithText("strlen")
-  })
 
   scrollOnLoad();
 });
@@ -186,37 +147,6 @@ function createNavBar() {
 
   document.getElementsByClassName("content-wrapper")[0].prepend(e);
   
-  // Adds click effects here
-
-  $('#show-idx-button').click(function(){
-    $(this).toggleClass("active");
-    $(".calltree-idx").toggleClass("hidden");
-  });
-
-  $("#expand-all-button").click(function(){
-    $(".calltree-line-wrapper").each(function( index ) {
-      if(!$(this).hasClass("open")) {
-        $(this).addClass("open");
-      }
-      $(".coverage-line-inner.expand-symbol").toggleClass("collapse-symbol expand-symbol");
-    });
-  })
-
-  $("#collapse-all-button").click(function(){
-    $(".calltree-line-wrapper").each(function( index ) {
-      if($(this).hasClass("open")) {
-        $(this).removeClass("open");
-      }
-      $(".coverage-line-inner.collapse-symbol").toggleClass("collapse-symbol expand-symbol");
-    });
-  })
-
-  $(".fontsize-option").click(function(){
-    var selectedFontSize=$(this).data("fontsize");
-    $(".coverage-line-inner").css("font-size", selectedFontSize);
-    $(".fontsize-option").removeClass("active");
-    $(this).addClass("active");
-  })
 }
 
 // Returns an array of function names that are collapsible
@@ -320,7 +250,7 @@ function createStdCDropdown() {
     <button onclick="displayNavBar()" class="dropbtn std-c-func-list">Std C funcs</button>
     <div id="myDropdown" class="dropdown-content stdlibc">`
   
-  var funcNames = ["free", "abort", "malloc", "calloc", "exit", "memcmp", "strlen"]
+  var funcNames = StdCFuncNames;
   for(var i=0;i<funcNames.length;i++) {
     var funcName = funcNames[i];
     dropDownHtml += `<div style="display:flex" class="checkbox-line-wrapper">
@@ -363,9 +293,75 @@ function addNavbarClickEffects() {
     } else if(event.target.matches('.collapse-by-name-dropdown')) {
       hideDropdown("fontSizeDropdown");
       hideDropdown("myDropdown");
-
     }
   }
+  // Don't close std c funcs drop down when (un)checking a checkbox:
+  document.addEventListener('click', function(e) {
+    e = e || window.event;
+    var target = e.target;
+    var menuElement = document.getElementById("myDropdown");
+    if(isDescendant(menuElement, target)) {
+       e.stopPropagation();
+    }
+  }, false);
+
+  // Click click effects for hide/show std c funcs
+  createStdCClickeffects();
+
+  // Other click effects
+  $('#show-idx-button').click(function(){
+    $(this).toggleClass("active");
+    $(".calltree-idx").toggleClass("hidden");
+  });
+
+  $("#expand-all-button").click(function(){
+    $(".calltree-line-wrapper").each(function( index ) {
+      if(!$(this).hasClass("open")) {
+        $(this).addClass("open");
+      }
+      $(".coverage-line-inner.expand-symbol").toggleClass("collapse-symbol expand-symbol");
+    });
+  })
+
+  $("#collapse-all-button").click(function(){
+    $(".calltree-line-wrapper").each(function( index ) {
+      if($(this).hasClass("open")) {
+        $(this).removeClass("open");
+      }
+      $(".coverage-line-inner.collapse-symbol").toggleClass("collapse-symbol expand-symbol");
+    });
+  })
+
+  $(".fontsize-option").click(function(){
+    var selectedFontSize=$(this).data("fontsize");
+    $(".coverage-line-inner").css("font-size", selectedFontSize);
+    $(".fontsize-option").removeClass("active");
+    $(this).addClass("active");
+  })
+
+}
+
+function createStdCClickeffects() {  
+  // Add click effects to std c checkboxes
+  var funcNames = StdCFuncNames;
+
+  // Create array of the elements
+  var elemsArray;
+  elemsArray = [];
+  for(var i=0;i<funcNames.length;i++) {
+    var funcName = funcNames[i];
+    var checkboxIdString = funcName+'-chckbox'
+    let elem = document.getElementById(checkboxIdString);
+    elemsArray.push(elem);
+  }
+
+  // Create click effects of the elements
+  elemsArray.forEach(function(element) {
+    element.addEventListener("change", function() {
+      var funcName = this.id.split("-")[0];
+      hideNodesWithText(funcName);
+    });
+  });
 }
 
 function hideDropdown(dropdownId) {
@@ -376,6 +372,7 @@ function hideDropdown(dropdownId) {
 }
 
 function hideNodesWithText(text) {
+  console.log("changing nodes with text ", text)
   $(".coverage-line-inner").each(function( index ) {
     var funcName = $( this ).find(".language-clike").text().trim()
     if(funcName===text) {
