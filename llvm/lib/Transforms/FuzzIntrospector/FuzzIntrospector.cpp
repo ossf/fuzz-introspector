@@ -16,6 +16,7 @@
 #include "llvm/ADT/StringExtras.h"
 #include "llvm/Transforms/FuzzIntrospector/FuzzIntrospector.h"
 #include "llvm/IR/DebugInfoMetadata.h"
+#include "llvm/IR/DebugInfo.h"
 #include "llvm/IR/DebugLoc.h"
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/Function.h"
@@ -29,6 +30,7 @@
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/FormatVariadic.h"
+#include "llvm/Support/Regex.h"
 #include "llvm/Support/YAMLParser.h"
 #include "llvm/Support/YAMLTraits.h"
 #include "llvm/Support/raw_ostream.h"
@@ -185,10 +187,8 @@ struct FuzzIntrospector : public ModulePass {
   int moduleLogLevel = 2;
   CalltreeNode FuzzerCalltree;
 
-  std::vector<string> ConfigFuncsToAvoidFuncBeginsWith;
-  std::vector<string> ConfigFuncsToAvoidStrict;
-  std::vector<string> ConfigFuncsToAvoidInclusion;
-
+  std::vector<string> ConfigFuncsToAvoid;
+  std::vector<string> ConfigFilesToAvoid;
 
   // Function defs
   void resolveOutgoingEdges(Function *, std::vector<CalltreeNode *> *);
@@ -215,7 +215,7 @@ struct FuzzIntrospector : public ModulePass {
   std::string GenRandom(const int len);
   void readConfig();
   void makeDefaultConfig();
-  bool shouldAvoidFunction(std::string function_name);
+  bool shouldAvoidFunction(Function *Func);
 
   void logPrintf(int LogLevel, const char *Fmt, ...);
   bool runOnModule(Module &M) override;
@@ -259,19 +259,19 @@ void FuzzIntrospector::readConfig() {
   logPrintf(2, "Opening the configuration file %s\n", configPath.c_str());
 
   std::string line;
-  std::vector<string> *current = &ConfigFuncsToAvoidFuncBeginsWith;
+  std::vector<string> *current = &ConfigFuncsToAvoid;
   bool shouldAnalyse = false;
   while (std::getline(configFile, line)) {
     if (shouldAnalyse) {
       logPrintf(2, "Inserting avoidance element %s\n", line.c_str());
       current->push_back(line);
     }
-    if (line.find("FUNC_BEGINS_WITH") != std::string::npos) {
-      current = &ConfigFuncsToAvoidFuncBeginsWith;
+    if (line.find("FUNCS_TO_AVOID") != std::string::npos) {
+      current = &ConfigFuncsToAvoid;
       shouldAnalyse = true;
     }
-    else if (line.find("FUNC_NON_STRICT")  != std::string::npos) {
-      current = &ConfigFuncsToAvoidStrict;
+    else if (line.find("FILES_TO_AVOID") != std::string::npos) {
+      current = &ConfigFilesToAvoid;
       shouldAnalyse = true;
     }
   }
@@ -279,34 +279,24 @@ void FuzzIntrospector::readConfig() {
 
 void FuzzIntrospector::makeDefaultConfig() {
   logPrintf(2, "Using default configuration\n");
-  std::vector<std::string> FuncsToAvoidNonStrict = {
-    "_ZNSt3",                       // mangled std::
-    "_ZSt",                         // functions in std:: library
-    "_ZNKSt",                       // std::__xxxbasic_string
-    "_ZTv0_n24_NSt",                // Some virtual functions for basic streams, e.g. virtual thunk to std::__1::basic_ostream<char, std::__1::char_traits<char> >::~basic_ostream()
-    "_ZN18FuzzedDataProvider",      // FuzzedDataProvider
-    "_Zd",                          // "operator delete(...)"
-    "_Zn",                          // operator new (...)"
-  };
-  std::vector<std::string> FuncsToAvoidStrict = {
-    "free",
-    "malloc"
-  };
-  std::vector<std::string> FuncsToAvoidInclusion = {
-    "llvm.",
+
+  std::vector<std::string> FuncsToAvoid = {
+    "^_ZNSt3",                       // mangled std::
+    "^_ZSt",                         // functions in std:: library
+    "^_ZNKSt",                       // std::__xxxbasic_string
+    "^_ZTv0_n24_NSt",                // Some virtual functions for basic streams, e.g. virtual thunk to std::__1::basic_ostream<char, std::__1::char_traits<char> >::~basic_ostream()
+    "^_ZN18FuzzedDataProvider",      // FuzzedDataProvider
+    "^_Zd",                          // "operator delete(...)"
+    "^_Zn",                          // operator new (...)"
+    "^free$",
+    "^malloc$",
+    "llvm[.]",
     "sanitizer_cov",
-    "sancov.module"
+    "sancov[.]module",
   };
-  std::vector<string> *current = &ConfigFuncsToAvoidFuncBeginsWith;
-  for (auto &s : FuncsToAvoidNonStrict) {
-    current->push_back(s);
-  }
-  current = &ConfigFuncsToAvoidStrict;
-  for (auto &s : FuncsToAvoidNonStrict) {
-    current->push_back(s);
-  }
-  current = &ConfigFuncsToAvoidInclusion;
-  for (auto &s : FuncsToAvoidInclusion) {
+
+  std::vector<string> *current = &ConfigFuncsToAvoid;
+  for (auto &s : FuncsToAvoid) {
     current->push_back(s);
   }
 }
@@ -383,7 +373,7 @@ FuzzerFunctionList FuzzIntrospector::wrapAllFunctions(Module &M) {
   logPrintf(1, "Wrapping all functions\n");
   for (auto &F : M) {
     logPrintf(2, "Wrapping function %s\n", F.getName().str().c_str());
-    if (shouldAvoidFunction(F.getName().str())) {
+    if (shouldAvoidFunction(&F)) {
       logPrintf(2, "Skipping this function\n");
       continue;
     }
@@ -779,7 +769,7 @@ void FuzzIntrospector::resolveOutgoingEdges(
 
     for (auto CSElem : FuncPoints) {
       // Check if this is a function to avoid before adding it.
-      if (shouldAvoidFunction(CSElem->getName().str())) {
+      if (shouldAvoidFunction(CSElem)) {
         continue;
       }
       int CSLinenumber = -1;
@@ -824,21 +814,27 @@ bool FuzzIntrospector::isNodeInVector(CalltreeNode *Src,
 }
 
 // Returns true if the function shuold be avoided from analysis
-bool FuzzIntrospector::shouldAvoidFunction(std::string TargetFunctionName) {
-  for (auto &FuncToAvoid : ConfigFuncsToAvoidFuncBeginsWith) {
-    if (TargetFunctionName.rfind(FuncToAvoid, 0) == 0) {
-      return true;
-    }
-  }
-  for (auto &FuncToAvoid : ConfigFuncsToAvoidStrict) {
-    if (TargetFunctionName == FuncToAvoid) {
-      return true;
+bool FuzzIntrospector::shouldAvoidFunction(Function *Func) {
+  std::string TargetFunctionName = Func->getName().str();
+
+  // Avoid by function name
+  for (auto &FuncToAvoidRegex : ConfigFuncsToAvoid) {
+    Regex Re(FuncToAvoidRegex);
+    if (Re.isValid()) {
+      if (Re.match(TargetFunctionName)) {
+        return true;
+      }
     }
   }
 
-  for (auto &FuncToAvoid : ConfigFuncsToAvoidInclusion) {
-    if (TargetFunctionName.find(FuncToAvoid) != std::string::npos) {
-      return true;
+  // Avoid by source file
+  std::string FuncFilename = getFunctionFilename(Func);
+  for (auto &FileToAvoid : ConfigFilesToAvoid) {
+    Regex Re(FileToAvoid);
+    if (Re.isValid()) {
+      if (Re.match(FuncFilename)) {
+        return true;
+      }
     }
   }
   return false;
