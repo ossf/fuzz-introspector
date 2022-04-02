@@ -24,19 +24,18 @@ index 372e89a8..be760cc3 100755
    cp -rf $SRC/inspector $OUT/inspector
  fi
 diff --git a/infra/base-images/base-clang/Dockerfile b/infra/base-images/base-clang/Dockerfile
-index 46a9ac77..d7d6dd8c 100644
+index fec65ab1..dfe7826e 100644
 --- a/infra/base-images/base-clang/Dockerfile
 +++ b/infra/base-images/base-clang/Dockerfile
-@@ -38,6 +38,9 @@ RUN apt-get update && apt-get install -y git && \
-     cd fuzz-introspector && \
-     git checkout 9f02f35b0b104f4ceb4da2fe34e97e6cc646c4f7 && \
-     apt-get remove --purge -y git
-+RUN rm -rf /fuzz-introspector
-+COPY fuzz-introspector fuzz-introspector
-+
- 
+@@ -42,6 +42,8 @@ RUN apt-get update && apt-get install -y git && \
  COPY checkout_build_install_llvm.sh /root/
  # Keep all steps in the same script to decrease the number of intermediate
+ # layes in docker file.
++RUN rm -rf /fuzz-introspector
++COPY fuzz-introspector fuzz-introspector
+ RUN /root/checkout_build_install_llvm.sh
+ RUN rm /root/checkout_build_install_llvm.sh
+ 
 diff --git a/infra/base-images/base-runner/coverage b/infra/base-images/base-runner/coverage
 index 243c7284..e6f0a91c 100755
 --- a/infra/base-images/base-runner/coverage
