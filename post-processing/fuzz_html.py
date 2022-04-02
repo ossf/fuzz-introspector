@@ -545,7 +545,7 @@ def write_wrapped_html_file(html_string,
     complete_html_string += html_header
 
     fuzz_blocker_table = create_fuzz_blocker_table(profile, [], "")
-    if fuzz_blocker_table != None:
+    if fuzz_blocker_table is not None:
         complete_html_string += "<div class=\"report-box\">"
         complete_html_string += "<h1>Fuzz blockers</h1>"
         complete_html_string += fuzz_blocker_table
