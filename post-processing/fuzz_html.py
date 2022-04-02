@@ -1026,7 +1026,6 @@ def handle_analysis_1(toc_list: List[Tuple[str, str, int]],
         project_profile
     )
 
-
     # Table with details about optimal target functions
     html_string += html_add_header_with_link(
         "Remaining optimal interesting functions", 3, toc_list)
@@ -1084,7 +1083,9 @@ def handle_analysis_1(toc_list: List[Tuple[str, str, int]],
             html_string += html_add_header_with_link("%s" %
                                                      (filename.split("/")[-1]), 4, toc_list)
             html_string += "<b>Target file:</b>%s<br>" % (filename)
-            all_functions = ", ".join([f.function_name for f in fuzz_targets[filename]['target_fds']])
+            all_functions = ", ".join(
+                [f.function_name for f in fuzz_targets[filename]['target_fds']]
+            )
             html_string += "<b>Target functions:</b> %s" % (all_functions)
             html_string += "<pre><code class='language-clike'>%s</code></pre><br>" % (
                 fuzz_targets[filename]['source_code'])
@@ -1204,7 +1205,11 @@ def create_html_report(
     logger.info(" - Creating table with information about all functions in target")
     html_report_core += "<div class=\"report-box\">"
     html_report_core += html_add_header_with_link(
-        "Project functions overview", 2, toc_list)
+        "Project functions overview", 1, toc_list)
+    html_report_core += "<p> The following table shows data about each function in the project. " \
+                        "The functions included in this table corresponds to all functions " \
+                        "that exist in the executables of the fuzzers. As such, there may  " \
+                        "be functions that are from third-party libraries.</p>"
     table_id = "fuzzers_overview_table"
     tables.append(table_id)
     all_function_table, all_functions_json = create_all_function_table(
