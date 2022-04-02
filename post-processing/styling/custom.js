@@ -126,12 +126,37 @@ function createTable(value) {
 
       var styledFuncName = styleFuncName(rowData["func_name"], true, "#")
 
+      var viewListBox;
+      if(rowData["reached_by_fuzzers"].length!==0) {
+      viewListBox = `<div
+        class='wrap-collabsible'>
+          <input id='${rowData["collapsible_id"]}'
+                 class='toggle'
+                 type='checkbox'>
+              <label
+                  for='${rowData["collapsible_id"]}'
+                  class='lbl-toggle'>
+                      View List
+              </label>
+          <div class='collapsible-content'>
+              <div class='content-inner'>
+                  <p>
+                      ${rowData["reached_by_fuzzers"]}
+                  </p>
+              </div>
+          </div>
+        </div>`        
+      } else {
+        viewListBox = "";
+      }
+
+
       table.rows.add([{
         "Func name": styledFuncName,
         "Functions filename": rowData["function_source_file"],
         "Args": rowData["args"],
         "Function call depth": rowData["function_depth"],
-        "Reached by Fuzzers": rowData["reached_by_fuzzers"],
+        "Reached by Fuzzers": viewListBox,
         "Fuzzers runtime hit": rowData["func_hit_at_runtime_row"],
         "Func lines hit %": rowData["hit_percentage"],
         "I Count": rowData["i_count"],
