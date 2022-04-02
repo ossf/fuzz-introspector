@@ -17,6 +17,7 @@ import os
 import logging
 import shutil
 import json
+import typing
 
 from typing import (
     Any,
@@ -268,7 +269,7 @@ def create_all_function_table(
         coverage_url: str,
         git_repo_url: str,
         basefolder: str,
-        table_id: str = None) -> str:
+        table_id: str = None) -> Tuple[str, List[typing.Dict[str, Any]]]:
     """Table for all functions in the project. Contains many details about each
         function"""
     random_suffix = '_' + ''.join(
@@ -307,6 +308,11 @@ def create_all_function_table(
          "Based on static analysis."),
         ("Undiscovered complexity", "")])
 
+    # an array in development to replace html generation in python.
+    # this will be stored as a json object and will be used to populate
+    # the table in the frontend
+    table_rows = []
+
     for fd_k, fd in project_profile.all_functions.items():
         demangled_func_name = fuzz_utils.demangle_cpp_func(fd.function_name)
         try:
@@ -324,55 +330,32 @@ def create_all_function_table(
             fd.function_source_file,
             fd.function_linenumber
         )
-        func_name_row = f"""<a href='{ func_cov_url }'><code class='language-clike'>
-{ demangled_func_name }
-</code></a>"""
 
         if demangled_func_name in project_profile.runtime_coverage.functions_hit:
             func_hit_at_runtime_row = "yes"
         else:
             func_hit_at_runtime_row = "no"
 
-        if fd.reached_by_fuzzers:
-            reached_by_fuzzers_row = f"""{ fd.hitcount } : <div
- class='wrap-collabsible'>
-    <input id='{collapsible_id}'
-           class='toggle'
-           type='checkbox'>
-        <label
-            for='{collapsible_id}'
-            class='lbl-toggle'>
-                View List
-        </label>
-    <div class='collapsible-content'>
-        <div class='content-inner'>
-            <p>
-                {fd.reached_by_fuzzers}
-            </p>
-        </div>
-    </div>
-</div>"""
-        else:
-            reached_by_fuzzers_row = "0"
-
-        html_string += html_table_add_row([
-            func_name_row,
-            fd.function_source_file,
-            "%s : %s" % (str(fd.arg_count), str(fd.arg_types)),
-            fd.function_depth,
-            reached_by_fuzzers_row,
-            func_hit_at_runtime_row,
-            "%.5s" % (str(hit_percentage)) + "%",
-            fd.i_count,
-            fd.bb_count,
-            fd.cyclomatic_complexity,
-            len(fd.functions_reached),
-            len(fd.incoming_references),
-            fd.total_cyclomatic_complexity,
-            fd.new_unreached_complexity
-        ])
+        table_rows.append({
+            "func_name": demangled_func_name,
+            "func_url": func_cov_url,
+            "function_source_file": fd.function_source_file,
+            "args": "%s : %s" % (str(fd.arg_count), str(fd.arg_types)),
+            "function_depth": fd.function_depth,
+            "reached_by_fuzzers": fd.reached_by_fuzzers,
+            "collapsible_id": collapsible_id,
+            "func_hit_at_runtime_row": func_hit_at_runtime_row,
+            "hit_percentage": "%.5s" % (str(hit_percentage)) + "%",
+            "i_count": fd.i_count,
+            "bb_count": fd.bb_count,
+            "cyclomatic_complexity": fd.cyclomatic_complexity,
+            "functions_reached": len(fd.functions_reached),
+            "incoming_references": len(fd.incoming_references),
+            "total_cyclomatic_complexity": fd.total_cyclomatic_complexity,
+            "new_unreached_complexity": fd.new_unreached_complexity
+        })
     html_string += ("</table>\n")
-    return html_string
+    return html_string, table_rows
 
 
 def create_percentage_graph(title: str, percentage: str, numbers: str) -> str:
@@ -1116,9 +1099,20 @@ def handle_analysis_1(toc_list: List[Tuple[str, str, int]],
         "All functions overview", 4, toc_list)
     table_id = "all_functions_overview_table"
     tables.append(table_id)
-    html_string += create_all_function_table(
+    all_function_table, all_functions_json = create_all_function_table(
         tables, new_profile, coverage_url, git_repo_url, basefolder, table_id)
+    html_string += all_function_table
     html_string += "</div>"  # close report-box
+
+    # Remove existing all funcs .js file
+    report_name = "analysis_1.js"
+    if os.path.isfile(report_name):
+        os.remove(report_name)
+
+    # Write all functions to the .js file
+    with open(report_name, "a+") as all_funcs_json_file:
+        all_funcs_json_file.write("var analysis_1_data = ")
+        all_funcs_json_file.write(json.dumps(all_functions_json))
 
     return html_string
 
@@ -1216,8 +1210,9 @@ def create_html_report(
         "Project functions overview", 2, toc_list)
     table_id = "fuzzers_overview_table"
     tables.append(table_id)
-    html_report_core += create_all_function_table(
+    all_function_table, all_functions_json = create_all_function_table(
         tables, project_profile, coverage_url, git_repo_url, basefolder, table_id)
+    html_report_core += all_function_table
     html_report_core += "</div>"  # report box
 
     #############################################
@@ -1282,6 +1277,8 @@ def create_html_report(
     html_body_end += "<script src=\"prism.js\"></script>"
     html_body_end += "<script src=\"clike.js\"></script>"
     html_body_end += "<script src=\"custom.js\"></script>"
+    html_body_end += "<script src=\"all_functions.js\"></script>"
+    html_body_end += "<script src=\"analysis_1.js\"></script>"
 
     ###########################
     # Footer
@@ -1331,6 +1328,16 @@ def create_html_report(
     # Write new html report
     with open(report_name, "a+") as html_report:
         html_report.write(prettyHTML)
+
+    # Remove existing all funcs .js file
+    report_name = "all_functions.js"
+    if os.path.isfile(report_name):
+        os.remove(report_name)
+
+    # Write all functions to the .js file
+    with open(report_name, "a+") as all_funcs_json_file:
+        all_funcs_json_file.write("var all_functions_table_data = ")
+        all_funcs_json_file.write(json.dumps(all_functions_json))
 
     # Copy all of the styling into the directory.
     basedir = os.path.dirname(os.path.realpath(__file__))
