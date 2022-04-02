@@ -999,7 +999,8 @@ def handle_analysis_1(toc_list: List[Tuple[str, str, int]],
                       profiles: List[fuzz_data_loader.FuzzerProfile],
                       basefolder: str,
                       coverage_url: str,
-                      conclusions) -> str:
+                      conclusions,
+                      should_synthetise: bool = False) -> str:
     """
     Performs an analysis based on optimal target selection.
 
@@ -1025,15 +1026,14 @@ def handle_analysis_1(toc_list: List[Tuple[str, str, int]],
         project_profile
     )
 
-    html_string += "<p>If you implement fuzzers that target the "          \
-                   "<a href=\"#Remaining-optimal-interesting-functions\">" \
-                   "remaining optimal functions</a> then the reachability will be:</p>"
-    tables.append(f"myTable{len(tables)}")
-    html_string += create_top_summary_info(tables, new_profile, conclusions, False)
 
     # Table with details about optimal target functions
     html_string += html_add_header_with_link(
         "Remaining optimal interesting functions", 3, toc_list)
+    html_string += "<p> The following table shows a list of functions that "   \
+                   "are optimal targets. Optimal targets are identified by "   \
+                   "finding the functions that in combination reaches a high " \
+                   "amount of code coverage. </p>"
     table_id = "remaining_optimal_interesting_functions"
     tables.append(table_id)
     html_string += create_table_head(table_id,
@@ -1070,29 +1070,31 @@ def handle_analysis_1(toc_list: List[Tuple[str, str, int]],
             fd.new_unreached_complexity])
     html_string += ("</table>\n")
 
-    # Section with code for new fuzzing harnesses
-    html_string += html_add_header_with_link("New fuzzers", 3, toc_list)
-    html_string += "<p>The below fuzzers are templates and suggestions for how " \
-                   "to target the set of optimal functions above</p>"
-    for filename in fuzz_targets:
-        html_string += html_add_header_with_link("%s" %
-                                                 (filename.split("/")[-1]), 4, toc_list)
-        html_string += "<b>Target file:</b>%s<br>" % (filename)
-        all_functions = ", ".join([f.function_name for f in fuzz_targets[filename]['target_fds']])
-        html_string += "<b>Target functions:</b> %s" % (all_functions)
-        html_string += "<pre><code class='language-clike'>%s</code></pre><br>" % (
-            fuzz_targets[filename]['source_code'])
-
-    # Table overview with how reachability is if the new fuzzers are applied.
-    html_string += html_add_header_with_link(
-        "Function reachability if adopted", 3, toc_list)
-    tables.append("myTable%d" % (len(tables)))
+    html_string += "<p>Implementing fuzzers that target the above functions " \
+                   "will improve reachability such that it becomes:</p>"
+    tables.append(f"myTable{len(tables)}")
     html_string += create_top_summary_info(tables, new_profile, conclusions, False)
+
+    # Section with code for new fuzzing harnesses
+    if should_synthetise:
+        html_string += html_add_header_with_link("New fuzzers", 3, toc_list)
+        html_string += "<p>The below fuzzers are templates and suggestions for how " \
+                       "to target the set of optimal functions above</p>"
+        for filename in fuzz_targets:
+            html_string += html_add_header_with_link("%s" %
+                                                     (filename.split("/")[-1]), 4, toc_list)
+            html_string += "<b>Target file:</b>%s<br>" % (filename)
+            all_functions = ", ".join([f.function_name for f in fuzz_targets[filename]['target_fds']])
+            html_string += "<b>Target functions:</b> %s" % (all_functions)
+            html_string += "<pre><code class='language-clike'>%s</code></pre><br>" % (
+                fuzz_targets[filename]['source_code'])
 
     # Table with details about all functions in the project in case the
     # suggested fuzzers are implemented.
     html_string += html_add_header_with_link(
         "All functions overview", 4, toc_list)
+    html_string += "<p> The status of all functions in the project will be as follows if you " \
+                   "implement fuzzers for these functions</p>"
     table_id = "all_functions_overview_table"
     tables.append(table_id)
     all_function_table, all_functions_json = create_all_function_table(
