@@ -29,8 +29,14 @@ $( document ).ready(function() {
         $(this).addClass("expand-symbol");
       }
   });
+
+  // Create nav bar
   createNavBar();
+
+  // Add blocker lines to the calltree
   addFuzzBlockerLines();
+
+  // Add the expand symbols to all nodes that are expandable
   addExpandSymbols();
 
 
@@ -103,7 +109,6 @@ $( document ).ready(function() {
   })
 
   scrollOnLoad();
-
 });
 
 // Scrolls to a node if the "scrollToNode" parameters is given
@@ -122,7 +127,7 @@ function scrollOnLoad() {
   }
 }
 
-
+// Checks whether child is a descendant of parent.
 function isDescendant(parent, child) {
   var node = child.parentNode;
   while (node != null) {
@@ -134,6 +139,7 @@ function isDescendant(parent, child) {
   return false;
 }
 
+// Adds the fuzz blocker lines to the nodes in the calltree
 function addFuzzBlockerLines() {
   var coverageLines;
   coverageLines = document.getElementsByClassName("coverage-line-inner");
@@ -162,41 +168,16 @@ function displayCollapseByName() {
 }
 
 function createNavBar() {
+  // Create the navbar wrapper element
   let e = document.createElement("div");
   e.classList.add("calltree-navbar");
 
-  let backBtn = document.createElement("a");
-  backBtn.style.marginRight = "10px";
-  backBtn.style.textDecoration = "none";
-  backBtn.href = "fuzz_report.html"
-  let backBtnInner = document.createElement("span");
-  backBtnInner.classList.add("calltree-nav-btn");
-  backBtnInner.innerText = "<- Back to report";
-  backBtn.prepend(backBtnInner);
-  e.prepend(backBtn);
-
-
-  let btn1 = document.createElement("span");
-  btn1.classList.add("calltree-nav-btn");
-  btn1.classList.add("active");
-  btn1.id = "show-idx-button"
-  btn1.innerText = "show idx";
-  e.append(btn1);
-
-  let btn2 = document.createElement("span");
-  btn2.classList.add("calltree-nav-btn");
-  btn2.id = "expand-all-button"
-  btn2.innerText = "Expand all";
-  e.append(btn2);
-
-  let btn3 = document.createElement("span");
-  btn3.classList.add("calltree-nav-btn");
-  btn3.id = "collapse-all-button"
-  btn3.innerText = "Collapse all";
-  e.append(btn3);
-
-  let btn4 = createStdCDropdown();
-  e.append(btn4);
+  // Add buttons to the navbar
+  addBackButton(e)
+  addShowIdxButton(e);
+  addExpandAllBtn(e);
+  addCollapseAllBtn(e);
+  addStdCDropdown(e);
 
   let btn5 = createCollapseByName();
   e.append(btn5);
@@ -205,6 +186,7 @@ function createNavBar() {
 
   document.getElementsByClassName("content-wrapper")[0].prepend(e);
   
+  // Adds click effects here
 
   $('#show-idx-button').click(function(){
     $(this).toggleClass("active");
@@ -281,43 +263,75 @@ function createCollapseByName() {
   return btn4;
 }
 
+// Adds the back button to the nav bar
+function addBackButton(parentElement) {
+  let backBtn = document.createElement("a");
+  backBtn.style.marginRight = "10px";
+  backBtn.style.textDecoration = "none";
+  backBtn.href = "fuzz_report.html"
+  let backBtnInner = document.createElement("span");
+  backBtnInner.classList.add("calltree-nav-btn");
+  backBtnInner.innerText = "< Back to report";
+  backBtn.prepend(backBtnInner);
+  parentElement.prepend(backBtn);
+}
+
+// Adds the show-idx btn to "parentElement"
+function addShowIdxButton(parentElement) {  
+  let btn = document.createElement("span");
+  btn.classList.add("calltree-nav-btn");
+  btn.classList.add("active");
+  btn.id = "show-idx-button"
+  btn.innerText = "show idx";
+  parentElement.append(btn);
+}
+
+// Adds the expand all btn to "parentElement"
+function addExpandAllBtn(parentElement) {
+  let btn = document.createElement("span");
+  btn.classList.add("calltree-nav-btn");
+  btn.id = "expand-all-button"
+  btn.innerText = "Expand all";
+  parentElement.append(btn);
+}
+
+// Adds the collapse all btn to "parentElement"
+function addCollapseAllBtn(parentElement) {
+  let btn = document.createElement("span");
+  btn.classList.add("calltree-nav-btn");
+  btn.id = "collapse-all-button"
+  btn.innerText = "Collapse all";
+  parentElement.append(btn);  
+}
+
+// Adds the std c dropdown to "parentElement"
+function addStdCDropdown(parentElement) {
+  let btn = createStdCDropdown();
+  parentElement.append(btn);
+}
+
 function createStdCDropdown() {
   let btn4 = document.createElement("span");
   btn4.classList.add("calltree-nav-btn2");
   btn4.id = "std-lib-functions";
-  btn4.innerHTML = `<div class="dropdown">
+
+  // Create the html
+  var dropDownHtml = `<div class="dropdown">
     <button onclick="displayNavBar()" class="dropbtn std-c-func-list">Std C funcs</button>
-    <div id="myDropdown" class="dropdown-content stdlibc">
-      <div style="display:flex" class="checkbox-line-wrapper">
-        <div style="flex:1"><input type="checkbox" name="free-chckbox" id="free-chckbox" class="shown-checkbox" checked></div>
-        <div style="flex:3">free</div>
-      </div>
-      <div style="display:flex" class="checkbox-line-wrapper">
-        <div style="flex:1"><input type="checkbox" name="abort-chckbox" id="abort-chckbox" class="shown-checkbox" checked></div>
-        <div style="flex:3">abort</div>
-      </div>
-      <div style="display:flex" class="checkbox-line-wrapper">
-        <div style="flex:1"><input type="checkbox" name="malloc-chckbox" id="malloc-chckbox" class="shown-checkbox" checked></div>
-        <div style="flex:3">malloc</div>
-      </div>
-      <div style="display:flex" class="checkbox-line-wrapper">
-        <div style="flex:1"><input type="checkbox" name="calloc-chckbox" id="calloc-chckbox" class="shown-checkbox" checked></div>
-        <div style="flex:3">calloc</div>
-      </div>
-      <div style="display:flex" class="checkbox-line-wrapper">
-        <div style="flex:1"><input type="checkbox" name="exit-chckbox" id="exit-chckbox" class="shown-checkbox" checked></div>
-        <div style="flex:3">exit</div>
-      </div>
-      <div style="display:flex" class="checkbox-line-wrapper">
-        <div style="flex:1"><input type="checkbox" name="memcmp-chckbox" id="memcmp-chckbox" class="shown-checkbox" checked></div>
-        <div style="flex:3">memcmp</div>
-      </div>
-      <div style="display:flex" class="checkbox-line-wrapper">
-        <div style="flex:1"><input type="checkbox" name="strlen-chckbox" id="strlen-chckbox" class="shown-checkbox" checked></div>
-        <div style="flex:3">strlen</div>
-      </div>
-    </div>
-  </div>`;
+    <div id="myDropdown" class="dropdown-content stdlibc">`
+  
+  var funcNames = ["free", "abort", "malloc", "calloc", "exit", "memcmp", "strlen"]
+  for(var i=0;i<funcNames.length;i++) {
+    var funcName = funcNames[i];
+    dropDownHtml += `<div style="display:flex" class="checkbox-line-wrapper">
+        <div style="flex:1"><input type="checkbox" name="${funcName}-chckbox" id="${funcName}-chckbox" class="shown-checkbox" checked></div>
+        <div style="flex:3">${funcName}</div>
+      </div>`
+  }
+
+  // Close the html
+  dropDownHtml += "</div></div>";
+  btn4.innerHTML = dropDownHtml;
   return btn4;
 }
 
