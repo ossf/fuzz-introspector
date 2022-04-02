@@ -624,11 +624,17 @@ input[type="checkbox"] {
   min-width: 160px;	
 }
 .dropdown-content.fontsize {
-  padding: 5px;
 	left: 10px;
 }
 .fontsize-option {
-	padding: 5px;
+	padding: 10px 20px;
+}
+.fontsize-option.active {
+	background: #5bb0b5!important;
+}
+.fontsize-option:hover {
+	background: #edfeff;
+	cursor:  pointer;
 }
 
 /* Links inside the dropdown */
@@ -657,6 +663,7 @@ input[type="checkbox"] {
 }
 .checkbox-line-wrapper:hover {
 	background: #edfeff;
+	cursor:  pointer;
 }
 .coverage-line-inner.hidden {
 	display:  none;
