@@ -1026,7 +1026,6 @@ def handle_analysis_1(toc_list: List[Tuple[str, str, int]],
         project_profile
     )
 
-
     # Table with details about optimal target functions
     html_string += html_add_header_with_link(
         "Remaining optimal interesting functions", 3, toc_list)
@@ -1084,7 +1083,9 @@ def handle_analysis_1(toc_list: List[Tuple[str, str, int]],
             html_string += html_add_header_with_link("%s" %
                                                      (filename.split("/")[-1]), 4, toc_list)
             html_string += "<b>Target file:</b>%s<br>" % (filename)
-            all_functions = ", ".join([f.function_name for f in fuzz_targets[filename]['target_fds']])
+            all_functions = ", ".join(
+                [f.function_name for f in fuzz_targets[filename]['target_fds']]
+            )
             html_string += "<b>Target functions:</b> %s" % (all_functions)
             html_string += "<pre><code class='language-clike'>%s</code></pre><br>" % (
                 fuzz_targets[filename]['source_code'])
