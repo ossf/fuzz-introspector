@@ -544,6 +544,11 @@ def write_wrapped_html_file(html_string,
     html_header += '<div class="content-section calltree-content-section">'
     complete_html_string += html_header
 
+    complete_html_string += "<div class=\"report-box\">"
+    complete_html_string += "<h1>Fuzz blockers</h1>"
+    complete_html_string += create_fuzz_blocker_table(profile, [], "")
+    complete_html_string += "</div>"
+
     complete_html_string += html_string
     complete_html_string += "</div></div></div></div>"
 
@@ -675,6 +680,7 @@ def create_calltree(profile: fuzz_data_loader.FuzzerProfile) -> str:
     logger.info("Creating calltree HTML code")
     # Generate HTML for the calltree
     calltree_html_string = "<div class='section-wrapper'>"
+    calltree_html_string += "<h1>Fuzzer calltree</h1>"
     nodes = fuzz_cfg_load.extract_all_callsites(profile.function_call_depths)
     for i in range(len(nodes)):
         node = nodes[i]
