@@ -44,10 +44,12 @@ $( document ).ready(function() {
   // Add the expand symbols to all nodes that are expandable
   addExpandSymbols();
 
-
+  // Instantiate all click events for buttons in the navbar
   addNavbarClickEffects();
-  addCollapsibleFunctionsToDropdown();
 
+  // Add all collapsible functions to the collapse-by-funcname dropdown.
+  // This is done here AFTER the dropdown itself has been created.
+  addCollapsibleFunctionsToDropdown();
 
 
   var innerNodes = document.getElementsByClassName("collapse-function-with-name");
@@ -67,8 +69,7 @@ $( document ).ready(function() {
       }
     }, false);
   }
-
-
+  
   scrollOnLoad();
 });
 
@@ -130,8 +131,7 @@ function displayCollapseByName() {
 
 function createNavBar() {
   // Create the navbar wrapper element
-  let e = document.createElement("div");
-  e.classList.add("calltree-navbar");
+  let e = createNavbarButtonsWrapper();
 
   // Add buttons to the navbar
   addBackButton(e)
@@ -139,14 +139,28 @@ function createNavBar() {
   addExpandAllBtn(e);
   addCollapseAllBtn(e);
   addStdCDropdown(e);
+  addCollapseByNameBtn(e);
+  addFontSizeDropdown(e);
 
-  let btn5 = createCollapseByName();
-  e.append(btn5);
+  // All buttons have been added. Add the wrapper to the navbar
+  addButtonsWrapperToNavbar(e);
+}
 
-  e.append(createFontSizeDropdown());
+// Instantiates an empty wrapper for the buttons in the navbar
+function createNavbarButtonsWrapper() {
+  let e = document.createElement("div");
+  e.classList.add("calltree-navbar");
+  return e;  
+}
 
-  document.getElementsByClassName("content-wrapper")[0].prepend(e);
-  
+// Adds the buttons wrapper element to the navbar
+function addButtonsWrapperToNavbar(buttonsWrapper) {
+  document.getElementsByClassName("content-wrapper")[0].prepend(buttonsWrapper);
+}
+
+// Adds the font size dropdown to "parentElement"
+function addFontSizeDropdown(parentElement) {
+  parentElement.append(createFontSizeDropdown());
 }
 
 // Returns an array of function names that are collapsible
@@ -263,6 +277,12 @@ function createStdCDropdown() {
   dropDownHtml += "</div></div>";
   btn4.innerHTML = dropDownHtml;
   return btn4;
+}
+
+// Adds the collapse by name button to parentElement
+function addCollapseByNameBtn(parentElement) {
+  let btn = createCollapseByName();
+  parentElement.append(btn);  
 }
 
 function addNavbarClickEffects() {
