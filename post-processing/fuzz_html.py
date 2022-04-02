@@ -137,7 +137,8 @@ def html_table_add_row(elems: List[Any]) -> str:
     return html_str
 
 
-def html_get_header(calltree: bool = False) -> str:
+def html_get_header(calltree: bool = False,
+                    title: str = "Fuzz introspector") -> str:
     header = """<html>
     <head>
         <link
@@ -163,7 +164,7 @@ def html_get_header(calltree: bool = False) -> str:
                 rel='stylesheet'
                 href='styles.css'>"""
     # Add navbar to header
-    header = header + html_get_navbar()
+    header = header + html_get_navbar(title)
     if calltree:
         header = header + "<div class='content-wrapper calltree-page'>"
     else:
@@ -171,8 +172,8 @@ def html_get_header(calltree: bool = False) -> str:
     return header
 
 
-def html_get_navbar() -> str:
-    navbar = """<div class="top-navbar">
+def html_get_navbar(title: str) -> str:
+    navbar = f"""<div class="top-navbar">
     <div class="top-navbar-accordion">
         <svg
             viewBox="0 0 24 24"
@@ -186,7 +187,7 @@ def html_get_navbar() -> str:
         </svg>
     </div>
     <div class="top-navbar-title">
-        Fuzz introspector
+        { title }
     </div>
 </div>"""
     return navbar
@@ -525,7 +526,10 @@ def create_top_summary_info(
     return html_string
 
 
-def write_wrapped_html_file(html_string, filename, blocker_idxs):
+def write_wrapped_html_file(html_string,
+                            filename,
+                            blocker_idxs,
+                            profile: fuzz_data_loader.FuzzerProfile):
     """
     Write a wrapped HTML file with the tags needed from fuzz-introspector
     We use this only for wrapping calltrees at the moment, however, down
@@ -533,7 +537,10 @@ def write_wrapped_html_file(html_string, filename, blocker_idxs):
     """
     complete_html_string = ""
     # HTML start
-    html_header = html_get_header(calltree=True)
+    html_header = html_get_header(
+        calltree=True,
+        title=f"Fuzz introspector: { profile.get_key() }"
+    )
     html_header += '<div class="content-section calltree-content-section">'
     complete_html_string += html_header
 
@@ -740,7 +747,7 @@ def create_calltree(profile: fuzz_data_loader.FuzzerProfile) -> str:
         calltree_html_file = "calltree_view_%d.html" % calltree_file_idx
 
     blocker_idxs = get_fuzz_blocker_idxs(profile)
-    write_wrapped_html_file(calltree_html_string, calltree_html_file, blocker_idxs)
+    write_wrapped_html_file(calltree_html_string, calltree_html_file, blocker_idxs, profile)
     return calltree_html_file
 
 
