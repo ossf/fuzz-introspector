@@ -267,7 +267,6 @@ def create_all_function_table(
         tables: List[str],
         project_profile: fuzz_data_loader.MergedProjectProfile,
         coverage_url: str,
-        git_repo_url: str,
         basefolder: str,
         table_id: str = None) -> Tuple[str, List[typing.Dict[str, Any]]]:
     """Table for all functions in the project. Contains many details about each
@@ -906,7 +905,6 @@ def handle_analysis_3(toc_list: List[Tuple[str, str, int]],
                       project_profile: fuzz_data_loader.MergedProjectProfile,
                       profiles: List[fuzz_data_loader.FuzzerProfile],
                       basefolder: str,
-                      git_repo_url: str,
                       coverage_url: str,
                       conclusions) -> str:
     logger.info("In analysis 3")
@@ -956,7 +954,6 @@ def handle_analysis_2(toc_list: List[Tuple[str, str, int]],
                       project_profile: fuzz_data_loader.MergedProjectProfile,
                       profiles: List[fuzz_data_loader.FuzzerProfile],
                       basefolder: str,
-                      git_repo_url: str,
                       coverage_url: str,
                       conclusions) -> str:
     logger.info("In analysis 2")
@@ -1001,7 +998,6 @@ def handle_analysis_1(toc_list: List[Tuple[str, str, int]],
                       project_profile: fuzz_data_loader.MergedProjectProfile,
                       profiles: List[fuzz_data_loader.FuzzerProfile],
                       basefolder: str,
-                      git_repo_url: str,
                       coverage_url: str,
                       conclusions) -> str:
     """
@@ -1100,7 +1096,7 @@ def handle_analysis_1(toc_list: List[Tuple[str, str, int]],
     table_id = "all_functions_overview_table"
     tables.append(table_id)
     all_function_table, all_functions_json = create_all_function_table(
-        tables, new_profile, coverage_url, git_repo_url, basefolder, table_id)
+        tables, new_profile, coverage_url, basefolder, table_id)
     html_string += all_function_table
     html_string += "</div>"  # close report-box
 
@@ -1148,7 +1144,6 @@ def create_html_report(
         project_profile: fuzz_data_loader.MergedProjectProfile,
         analyses_to_run: List[str],
         coverage_url: str,
-        git_repo_url: str,
         basefolder: str) -> None:
     """
     Logs a complete report. This is the current main place for looking at
@@ -1211,7 +1206,7 @@ def create_html_report(
     table_id = "fuzzers_overview_table"
     tables.append(table_id)
     all_function_table, all_functions_json = create_all_function_table(
-        tables, project_profile, coverage_url, git_repo_url, basefolder, table_id)
+        tables, project_profile, coverage_url, basefolder, table_id)
     html_report_core += all_function_table
     html_report_core += "</div>"  # report box
 
@@ -1255,7 +1250,6 @@ def create_html_report(
                 project_profile,
                 profiles,
                 basefolder,
-                git_repo_url,
                 coverage_url,
                 conclusions)
     html_report_core += "</div>"  # report box

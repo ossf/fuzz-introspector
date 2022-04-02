@@ -32,7 +32,6 @@ def correlate_binaries_to_logs(binaries_dir):
 
 
 def run_analysis_on_dir(target_folder,
-                        git_repo_url,
                         coverage_url,
                         analyses_to_run,
                         correlation_file):
@@ -67,7 +66,6 @@ def run_analysis_on_dir(target_folder,
             profile,
             project_profile,
             coverage_url,
-            git_repo_url,
             project_profile.basefolder)
 
     logger.info("Analyses to run: %s" % str(analyses_to_run))
@@ -77,7 +75,6 @@ def run_analysis_on_dir(target_folder,
                                  project_profile,
                                  analyses_to_run,
                                  coverage_url,
-                                 git_repo_url,
                                  project_profile.basefolder)
 
 
@@ -130,7 +127,6 @@ if __name__ == "__main__":
     args = parse_cmdline()
     if args.command == 'report':
         run_analysis_on_dir(args.target_dir,
-                            args.git_repo_url,
                             args.coverage_url,
                             args.analyses,
                             args.correlation_file)
