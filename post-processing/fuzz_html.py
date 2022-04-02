@@ -544,10 +544,12 @@ def write_wrapped_html_file(html_string,
     html_header += '<div class="content-section calltree-content-section">'
     complete_html_string += html_header
 
-    complete_html_string += "<div class=\"report-box\">"
-    complete_html_string += "<h1>Fuzz blockers</h1>"
-    complete_html_string += create_fuzz_blocker_table(profile, [], "")
-    complete_html_string += "</div>"
+    fuzz_blocker_table = create_fuzz_blocker_table(profile, [], "")
+    if fuzz_blocker_table != None:
+        complete_html_string += "<div class=\"report-box\">"
+        complete_html_string += "<h1>Fuzz blockers</h1>"
+        complete_html_string += fuzz_blocker_table
+        complete_html_string += "</div>"
 
     complete_html_string += html_string
     complete_html_string += "</div></div></div></div>"
