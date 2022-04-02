@@ -336,26 +336,56 @@ def create_all_function_table(
         else:
             func_hit_at_runtime_row = "no"
 
+        func_name_row = f"""<a href='{ func_cov_url }'><code class='language-clike'>
+            { demangled_func_name }
+            </code></a>"""
+
+        reached_by_fuzzers_row = create_reached_by_fuzzers(fd, collapsible_id)
+
         table_rows.append({
-            "func_name": demangled_func_name,
+            "Func name": func_name_row,
             "func_url": func_cov_url,
-            "function_source_file": fd.function_source_file,
-            "args": "%s : %s" % (str(fd.arg_count), str(fd.arg_types)),
-            "function_depth": fd.function_depth,
-            "reached_by_fuzzers": fd.reached_by_fuzzers,
+            "Functions filename": fd.function_source_file,
+            "Args": "%s : %s" % (str(fd.arg_count), str(fd.arg_types)),
+            "Function call depth": fd.function_depth,
+            "Reached by Fuzzers": reached_by_fuzzers_row,
             "collapsible_id": collapsible_id,
-            "func_hit_at_runtime_row": func_hit_at_runtime_row,
-            "hit_percentage": "%.5s" % (str(hit_percentage)) + "%",
-            "i_count": fd.i_count,
-            "bb_count": fd.bb_count,
-            "cyclomatic_complexity": fd.cyclomatic_complexity,
-            "functions_reached": len(fd.functions_reached),
-            "incoming_references": len(fd.incoming_references),
-            "total_cyclomatic_complexity": fd.total_cyclomatic_complexity,
-            "new_unreached_complexity": fd.new_unreached_complexity
+            "Fuzzers runtime hit": func_hit_at_runtime_row,
+            "Func lines hit %": "%.5s" % (str(hit_percentage)) + "%",
+            "I Count": fd.i_count,
+            "BB Count": fd.bb_count,
+            "Cyclomatic complexity": fd.cyclomatic_complexity,
+            "Functions reached": len(fd.functions_reached),
+            "Reached by functions": len(fd.incoming_references),
+            "Accumulated cyclomatic complexity": fd.total_cyclomatic_complexity,
+            "Undiscovered complexity": fd.new_unreached_complexity
         })
     html_string += ("</table>\n")
     return html_string, table_rows
+
+
+def create_reached_by_fuzzers(fd, collapsible_id) -> str:
+    if fd.reached_by_fuzzers:
+        return f"""{ fd.hitcount } : <div
+        class='wrap-collabsible'>
+            <input id='{collapsible_id}'
+                   class='toggle'
+                   type='checkbox'>
+                <label
+                    for='{collapsible_id}'
+                    class='lbl-toggle'>
+                        View List
+                </label>
+            <div class='collapsible-content'>
+                <div class='content-inner'>
+                    <p>
+                        {fd.reached_by_fuzzers}
+                    </p>
+                </div>
+            </div>
+        </div>"""
+    else:
+        return "0"
 
 
 def create_percentage_graph(title: str, percentage: str, numbers: str) -> str:
@@ -764,7 +794,8 @@ def create_fuzzer_detailed_section(
         toc_list: List[Tuple[str, str, int]],
         tables: List[str],
         curr_tt_profile: int,
-        conclusions, extract_conclusion) -> str:
+        conclusions, extract_conclusion,
+        fuzzer_table_data) -> str:
     html_string = ""
     fuzzer_filename = profile.fuzzer_source_file
 
@@ -818,7 +849,12 @@ def create_fuzzer_detailed_section(
         toc_list,
         link="functions_cov_hit_%d" % curr_tt_profile
     )
-    tables.append(f"myTable{len(tables)}")
+    table_name = f"myTable{len(tables)}"
+
+    # Add this table name to fuzzer_table_data
+    fuzzer_table_data[table_name] = []
+
+    tables.append(table_name)
     func_hit_table_string = ""
     func_hit_table_string += create_table_head(
         tables[-1],
@@ -840,11 +876,17 @@ def create_fuzzer_detailed_section(
              hit_percentage) = profile.get_cov_metrics(fuzz_utils.demangle_cpp_func(funcname))
             if hit_percentage is not None:
                 total_hit_functions += 1
-                func_hit_table_string += html_table_add_row([
+                fuzzer_table_data[table_name].append({
+                    "Function name": funcname,
+                    "source code lines": total_func_lines,
+                    "source lines hit": hit_lines,
+                    "percentage hit": "%.5s" % (str(hit_percentage)) + "%"
+                })
+                '''func_hit_table_string += html_table_add_row([
                     funcname,
                     total_func_lines,
                     hit_lines,
-                    "%.5s" % (str(hit_percentage)) + "%"])
+                    "%.5s" % (str(hit_percentage)) + "%"])'''
             else:
                 logger.error("Could not write coverage line for function %s" % funcname)
     func_hit_table_string += "</table>"
@@ -1236,6 +1278,7 @@ def create_html_report(
     # Section with details about each fuzzer, including calltree.
     #############################################
     logger.info(" - Creating section with details about each fuzzer")
+    fuzzer_table_data = typing.Dict[str, Any]
     html_report_core += "<div class=\"report-box\">"
     html_report_core += html_add_header_with_link("Fuzzer details", 1, toc_list)
     for profile_idx in range(len(profiles)):
@@ -1245,7 +1288,8 @@ def create_html_report(
             tables,
             profile_idx,
             conclusions,
-            True
+            True,
+            fuzzer_table_data
         )
     html_report_core += "</div>"  # report box
 
@@ -1295,6 +1339,7 @@ def create_html_report(
     html_body_end += "<script src=\"custom.js\"></script>"
     html_body_end += "<script src=\"all_functions.js\"></script>"
     html_body_end += "<script src=\"analysis_1.js\"></script>"
+    html_body_end += "<script src=\"fuzzer_table_data.js\"></script>"
 
     ###########################
     # Footer
@@ -1354,6 +1399,16 @@ def create_html_report(
     with open(report_name, "a+") as all_funcs_json_file:
         all_funcs_json_file.write("var all_functions_table_data = ")
         all_funcs_json_file.write(json.dumps(all_functions_json))
+
+    # Remove existing fuzzer table data .js file
+    js_file = "fuzzer_table_data.js"
+    if os.path.isfile(js_file):
+        os.remove(js_file)
+
+    # Write fuzzer table data to the .js file
+    with open(js_file, "a+") as fuzzer_table_data_file:
+        fuzzer_table_data_file.write("var fuzzer_table_data = ")
+        fuzzer_table_data_file.write(json.dumps(fuzzer_table_data))
 
     # Copy all of the styling into the directory.
     basedir = os.path.dirname(os.path.realpath(__file__))
