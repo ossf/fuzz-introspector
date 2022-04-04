@@ -1278,7 +1278,7 @@ def create_html_report(
     # Section with details about each fuzzer, including calltree.
     #############################################
     logger.info(" - Creating section with details about each fuzzer")
-    fuzzer_table_data = typing.Dict[str, Any]
+    fuzzer_table_data: typing.Dict[str, Any] = dict()
     html_report_core += "<div class=\"report-box\">"
     html_report_core += html_add_header_with_link("Fuzzer details", 1, toc_list)
     for profile_idx in range(len(profiles)):
