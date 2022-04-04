@@ -8,7 +8,6 @@ $( document ).ready(function() {
           var elemId;
           elemId = $(this).closest("a").attr('id');
           $(".left-sidebar-content-box > div > a").each(function( index ) {
-            //console.log("link: ", $(this).attr("href").replace("#", ""));
             if($(this).attr("href").replace("#", "")===elemId) {
               if(!$(this).hasClass("activeMenuText")) {
                 $(this).addClass("activeMenuText");
@@ -39,10 +38,7 @@ function createTables() {
   $.each(tableIds, function(index, value) {
     createTable(value);
   });
-
-
-
-
+  populateTableData();
 }
 
 function createTable(value) {
@@ -107,86 +103,46 @@ function createTable(value) {
       {data: "Accumulated cyclomatic complexity"},
       {data: "Undiscovered complexity"}]
   }
+
+  // Fuzzer function hit tables
+  if(value in fuzzer_table_data) {
+    tableConfig.columns = [
+      {data: "Function name"},
+      {data: "source code lines"},
+      {data: "source lines hit"},
+      {data: "percentage hit"}
+    ]
+  }
   
   // Create the table:
-  var table = $('#'+value).DataTable(tableConfig);
-
-  if(value==="fuzzers_overview_table" || value==="all_functions_overview_table") {
-
-    var dataSet;
-
-    if(value==="fuzzers_overview_table") {
-      dataSet = all_functions_table_data;
-    }else if(value==="all_functions_overview_table") {
-      dataSet = analysis_1_data;
-    }
-
-    for(var i=0;i<dataSet.length;i++) {
-      var rowData = dataSet[i]
-
-      var styledFuncName = styleFuncName(rowData["func_name"], true, "#")
-
-      var viewListBox;
-      if(rowData["reached_by_fuzzers"].length!==0) {
-      viewListBox = `<div
-        class='wrap-collabsible'>
-          <input id='${rowData["collapsible_id"]}'
-                 class='toggle'
-                 type='checkbox'>
-              <label
-                  for='${rowData["collapsible_id"]}'
-                  class='lbl-toggle'>
-                      View List
-              </label>
-          <div class='collapsible-content'>
-              <div class='content-inner'>
-                  <p>
-                      ${rowData["reached_by_fuzzers"]}
-                  </p>
-              </div>
-          </div>
-        </div>`        
-      } else {
-        viewListBox = "";
-      }
-
-
-      table.rows.add([{
-        "Func name": styledFuncName,
-        "Functions filename": rowData["function_source_file"],
-        "Args": rowData["args"],
-        "Function call depth": rowData["function_depth"],
-        "Reached by Fuzzers": viewListBox,
-        "Fuzzers runtime hit": rowData["func_hit_at_runtime_row"],
-        "Func lines hit %": rowData["hit_percentage"],
-        "I Count": rowData["i_count"],
-        "BB Count": rowData["bb_count"],
-        "Cyclomatic complexity": rowData["cyclomatic_complexity"],
-        "Functions reached": rowData["functions_reached"],
-        "Reached by functions": rowData["incoming_references"],
-        "Accumulated cyclomatic complexity": rowData["total_cyclomatic_complexity"],
-        "Undiscovered complexity": rowData["new_unreached_complexity"]
-      }]);
-    }
-    table.draw();
-  }
-
-
-
+  var table = $('#'+value).dataTable(tableConfig);    
 }
 
-function styleFuncName(funcName, withLink=false, url=null) {
-  if(withLink===true) {
-    return `
-      <a href='${url}'><code class='language-clike'>
-        ${funcName}
-      </code></a>
-      `;
-  }else{
-    return `
-      <code class='language-clike'>
-        ${funcName}
-      </code>
-      `;
+function populateTableData() {
+  populateFuzzersOverviewTable("fuzzers_overview_table");
+  populateFuzzersOverviewTable("all_functions_overview_table");
+  populateFunctionsHitTable();
+}
+
+function populateFunctionsHitTable() {
+  // Add rows for "Functions hit" table for each fuzzer
+  for (const [key, value] of Object.entries(fuzzer_table_data)) {
+    var table = $('#'+key).DataTable();
+    table.rows.add(fuzzer_table_data[key]);
   }
+  table.draw();
+
+}
+function populateFuzzersOverviewTable(value) {
+  var table = $('#'+value).DataTable();
+  var dataSet;
+
+  if(value==="fuzzers_overview_table") {
+    dataSet = all_functions_table_data;
+  }else if(value==="all_functions_overview_table") {
+    dataSet = analysis_1_data;
+  }
+
+  table.rows.add(dataSet);
+  table.draw();  
 }
