@@ -90,10 +90,6 @@ def parse_cmdline():
                                type=str,
                                help="Directory where the data files are",
                                required=True)
-    report_parser.add_argument('--git_repo_url',
-                               type=str,
-                               help="Git repository with the source code",
-                               default="")
     report_parser.add_argument('--coverage_url',
                                type=str,
                                help="URL with coverage information",
