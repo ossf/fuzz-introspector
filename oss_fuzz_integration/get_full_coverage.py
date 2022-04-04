@@ -121,6 +121,7 @@ def get_coverage(project_name):
 
     print("Copying report")
     shutil.copytree("./build/out/%s/report"%(project_name), "./%s/report"%(corpus_dir))
+    shutil.copytree("./build/out/%s/report_target"%(project_name), "./%s/report_target"%(corpus_dir))
     try:
         summary_file = "build/out/%s/report/linux/summary.json"%(project_name)
         with open(summary_file, "r") as fj:
