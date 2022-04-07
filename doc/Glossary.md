@@ -3,9 +3,11 @@
 This document provides definitions of concepts in fuzz-introspector and
 clarification of why a certain concept is relevant for fuzzing.
 
-## Concepts
+The document is arranged to show details about each section in the same
+way that the Fuzz introspector HTML report is generated.
 
-### Project functions overview
+
+## Project functions overview
 This table lists information about each function in the project.
 
 #### Func name
@@ -37,7 +39,7 @@ Instruction count, based on the LLVM IR instructions.
 #### BB Count
 Basic block count, based on the LLVM basic block count.
 
-### Cyclomatic complexity
+#### Cyclomatic complexity
 **Definition:** Cyclomatic complexity is a metric for the complexity of software. 
 In simple terms it's a metric that is based on discrete graphs and uses the
 number of nodes, number of edges and number of connected components to compute
@@ -69,7 +71,8 @@ The sum of cyclomatic complexity of all functions that are reachable by the give
 subtracted by the cyclomatic complexity of all of the reachable functions that are
 also reachable from any of the fuzzers in the project.
 
-### Call tree overview
+## Fuzzer details
+#### Call tree overview
 **Definition:** Fuzz-introspector includes for each fuzzer a bitmap called the *call tree overview*.
 This bitmap is a combination of the call tree extracted through static analysis,
 run time coverage data and a way of plotting this data onto a x,y axis with each
@@ -94,5 +97,21 @@ can invoke the additional paths, or whether using other techniques, e.g. corpus
 addition, dictionaries or a completely new fuzzer is needed.
 
 
-### Full calltree
+#### Full calltree
 Description about full calltree
+**Definition:**
+**Why is it important for fuzzing?**
+
+#### Fuzz blockers
+Description about fuzz blockers
+**Definition:**
+**Why is it important for fuzzing?**
+
+
+## Analyses and suggestions
+Details about each analysis section.
+
+## Runtime coverage analysis
+Details about the runtime coverage analysis.
+**Definition:**
+**Why is it important for fuzzing?**
