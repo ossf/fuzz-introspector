@@ -180,8 +180,8 @@ def overlay_calltree_with_coverage(
             #   calltree
             # - the higehr the depth, the lower down (further away from LLVMFuzzerTestOneInput)
             #   in the calltree
-            if n2.depth < n1.depth:
-                break
+            # if n2.depth < n1.depth:
+            #     break
 
             # break if the node is visited. We *could* change this to another metric, e.g.
             # all nodes underneath n1 that are off, i.e. instead of breaking here we would
