@@ -92,3 +92,7 @@ static analysis) but not in practice (at run time).
 We can use the call tree to determine if we should change the fuzz driver so it
 can invoke the additional paths, or whether using other techniques, e.g. corpus
 addition, dictionaries or a completely new fuzzer is needed.
+
+
+### Full calltree
+Description about full calltree
