@@ -12,5 +12,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-GIT_REPO="https://github.com/ossf/fuzz-introspector"
-GIT_BRANCH_URL="%s/tree/main/"%(GIT_REPO)
+GIT_REPO = "https://github.com/ossf/fuzz-introspector"
+GIT_BRANCH_URL = "%s/tree/main/", GIT_REPO
