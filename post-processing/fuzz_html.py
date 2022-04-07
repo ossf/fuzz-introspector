@@ -33,6 +33,7 @@ import fuzz_analysis
 import fuzz_data_loader
 import fuzz_utils
 import fuzz_cfg_load
+import fuzz_constants
 
 # For pretty printing the html code:
 from bs4 import BeautifulSoup as bs
@@ -808,11 +809,15 @@ def create_fuzzer_detailed_section(
     # Calltree fixed-width image
     html_string += html_add_header_with_link(
         "Call tree overview", 3, toc_list, link=f"call_tree_{curr_tt_profile}")
-    html_string += """<p class='no-top-margin'>
+    html_string += f"""<p class='no-top-margin'>
  The following is the call tree with color coding for which
  functions are hit/not hit. This info is based on the coverage
  achieved of all fuzzers together and not just this specific
  fuzzer. This should change in the future to be per-fuzzer-basis.
+</p>
+<p>
+For further technical details on what the call tree overview is, please see the
+<a href="{fuzz_constants.GIT_BRANCH_URL}/doc/Glossary.md#call-tree-overview">Glossary</a>.
 </p>"""
     image_name = "%s_colormap.png" % (fuzzer_filename.replace(" ", "").split("/")[-1])
 
@@ -830,6 +835,8 @@ def create_fuzzer_detailed_section(
     html_string += f"""<p class='no-top-margin'>The following link provides a visualisation
  of the full calltree overlayed with coverage information:
  <a href="{ calltree_file_name }">full calltree</a></p>"""
+    html_string += "<p>For futher technical details on how the call tree is made, please " \
+                   "see the <a href=\"%s/doc/Glossary.md#full-callree\">Glossary</a>."
 
     # Fuzz blocker table
     html_fuzz_blocker_table = create_fuzz_blocker_table(profile, tables, calltree_file_name)
@@ -1267,6 +1274,11 @@ def create_html_report(
                         "The functions included in this table corresponds to all functions " \
                         "that exist in the executables of the fuzzers. As such, there may  " \
                         "be functions that are from third-party libraries.</p>"
+    html_report_core += f"<p>For further technical details on the meaning of columns in the " \
+                        f"below table, please see the " \
+                        f"<a href=\"{fuzz_constants.GIT_BRANCH_URL}/doc/Glossary.md#project-"\
+                        f"functions-overview\">Glossary</a>.</p>"
+
     table_id = "fuzzers_overview_table"
     tables.append(table_id)
     all_function_table, all_functions_json = create_all_function_table(
