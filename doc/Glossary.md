@@ -6,12 +6,15 @@ clarification of why a certain concept is relevant for fuzzing.
 ## Concepts
 
 ### Project functions overview
+This table lists information about each function in the project.
+
 #### Func name
 Name of the function
 
 #### Functions filename
 Filename, on the system, in which the function is defined. In the event of OSS-Fuzz, this
 is the filename in the OSS-Fuzz build container.
+
 #### Args
 Arguments to the function
 
@@ -51,9 +54,20 @@ and bug count of code. Therefore, we often look to fuzz code that is the most co
 We use in fuzz-introspector as it helps search for complex code.
 
 #### Functions reached
+The amount of functions that are statically reachable by ths given function.
+
 #### Reached by functions
+The amount of functions that statically reach the given function.
+
 #### Accumulated cyclomatic complexity
+The sum of cyclomatic complexity of all functions that are statically reachable by the given function.
+
 #### Undiscovered complexity
+**Definition:**
+
+The sum of cyclomatic complexity of all functions that are reachable by the given function
+subtracted by the cyclomatic complexity of all of the reachable functions that are
+also reachable from any of the fuzzers in the project.
 
 ### Call tree overview
 **Definition:** Fuzz-introspector includes for each fuzzer a bitmap called the *call tree overview*.
