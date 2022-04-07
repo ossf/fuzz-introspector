@@ -835,8 +835,9 @@ For further technical details on what the call tree overview is, please see the
     html_string += f"""<p class='no-top-margin'>The following link provides a visualisation
  of the full calltree overlayed with coverage information:
  <a href="{ calltree_file_name }">full calltree</a></p>"""
-    html_string += "<p>For futher technical details on how the call tree is made, please " \
-                   "see the <a href=\"%s/doc/Glossary.md#full-callree\">Glossary</a>."
+    html_string += f"<p>For futher technical details on how the call tree is made, please " \
+                   f"see the <a href=\"{fuzz_constants.GIT_BRANCH_URL}/doc/Glossary.md#full" \
+                   f"-calltree\">Glossary</a>.</p>"
 
     # Fuzz blocker table
     html_fuzz_blocker_table = create_fuzz_blocker_table(profile, tables, calltree_file_name)
@@ -987,7 +988,9 @@ def handle_analysis_3(toc_list: List[Tuple[str, str, int]],
     )
     html_string += "<p>This section gives analysis based on data about the runtime " \
                    "coverage information</p>"
-
+    html_string += f"<p>For futher technical details on how this section is made, please " \
+                   f"see the <a href=\"{fuzz_constants.GIT_BRANCH_URL}/doc/Glossary.md#runtime" \
+                   f"-coverage-analysis\">Glossary</a>.</p>"
     html_string += html_add_header_with_link(
         "Complex functions with low coverage", 3, toc_list)
     tables.append("myTable%d" % (len(tables)))
