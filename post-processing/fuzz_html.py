@@ -1274,7 +1274,7 @@ def create_html_report(
                         "be functions that are from third-party libraries.</p>"
     html_report_core += "<p>For further technical details on what the call tree overview is, " \
                         "please see the " \
-                        "<a href=\"%s/Glossary.md#cyclomatic-complexity\">Glossary</a>." \
+                        "<a href=\"%s/Glossary.md#project-functions-overview\">Glossary</a>." \
                         "</p>" % (fuzz_constants.GIT_BRANCH_URL)
 
     table_id = "fuzzers_overview_table"
