@@ -808,12 +808,17 @@ def create_fuzzer_detailed_section(
     # Calltree fixed-width image
     html_string += html_add_header_with_link(
         "Call tree overview", 3, toc_list, link=f"call_tree_{curr_tt_profile}")
+    fuzz_introspector_repo = "https://github.com/ossf/fuzz-introspector"
     html_string += """<p class='no-top-margin'>
  The following is the call tree with color coding for which
  functions are hit/not hit. This info is based on the coverage
  achieved of all fuzzers together and not just this specific
  fuzzer. This should change in the future to be per-fuzzer-basis.
-</p>"""
+</p>
+<p>
+For further technical details on what the call tree overview is, please see the
+<a href="%s/blob/main/doc/Glossary.md#call-tree-overview">Glossary</a>.
+</p>"""%(fuzz_introspector_repo)
     image_name = "%s_colormap.png" % (fuzzer_filename.replace(" ", "").split("/")[-1])
 
     create_horisontal_calltree_image(image_name, profile)
