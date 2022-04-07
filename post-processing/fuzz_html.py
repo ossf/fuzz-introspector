@@ -989,7 +989,7 @@ def handle_analysis_3(toc_list: List[Tuple[str, str, int]],
     html_string += "<p>This section gives analysis based on data about the runtime " \
                    "coverage information</p>"
     html_string += f"<p>For futher technical details on how this section is made, please " \
-                   f"see the <a href=\"{fuzz_constants.GIT_BRANCH_URL}/doc/Glossary.md#runtime-" \
+                   f"see the <a href=\"{fuzz_constants.GIT_BRANCH_URL}/doc/Glossary.md#runtime" \
                    f"-coverage-analysis\">Glossary</a>.</p>"
     html_string += html_add_header_with_link(
         "Complex functions with low coverage", 3, toc_list)
