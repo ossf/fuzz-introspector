@@ -6,6 +6,29 @@ clarification of why a certain concept is relevant for fuzzing.
 The document is arranged to show details about each section in the same
 way that the Fuzz introspector HTML report is generated.
 
+## Table of contents
+- [Glossary](#glossary)
+  * [Project functions overview](#project-functions-overview)
+      - [Func name](#func-name)
+      - [Functions filename](#functions-filename)
+      - [Args](#args)
+      - [Function call depth](#function-call-depth)
+      - [Reached by Fuzzers](#reached-by-fuzzers)
+      - [Fuzzers runtime hit](#fuzzers-runtime-hit)
+      - [Func lines hit %](#func-lines-hit--)
+      - [I Count](#i-count)
+      - [BB Count](#bb-count)
+      - [Cyclomatic complexity](#cyclomatic-complexity)
+      - [Functions reached](#functions-reached)
+      - [Reached by functions](#reached-by-functions)
+      - [Accumulated cyclomatic complexity](#accumulated-cyclomatic-complexity)
+      - [Undiscovered complexity](#undiscovered-complexity)
+  * [Fuzzer details](#fuzzer-details)
+      - [Call tree overview](#call-tree-overview)
+      - [Full calltree](#full-calltree)
+      - [Fuzz blockers](#fuzz-blockers)
+  * [Analyses and suggestions](#analyses-and-suggestions)
+  * [Runtime coverage analysis](#runtime-coverage-analysis)
 
 ## Project functions overview
 This table lists information about each function in the project.
