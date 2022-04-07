@@ -165,7 +165,7 @@ def overlay_calltree_with_coverage(
             n1.cov_largest_blocked_func = "none"
             continue
 
-        # Read forward untill we see a green node. Depth must be the same or higher
+        # Read forward untill we see a green node.
         idx2 = idx1 + 1
         forward_red = 0
         largest_blocked_name = ""
@@ -173,15 +173,6 @@ def overlay_calltree_with_coverage(
         while idx2 < len(all_callsites):
             # Check if we should break or increment forward_red
             n2 = all_callsites[idx2]
-
-            # Break if the node is not at depth or deeper in the calltree than n1
-            # Remember:
-            # - the lower the depth, the higher up (closer to LLVMFuzzerTestOneInput) in the
-            #   calltree
-            # - the higehr the depth, the lower down (further away from LLVMFuzzerTestOneInput)
-            #   in the calltree
-            if n2.depth < n1.depth:
-                break
 
             # break if the node is visited. We *could* change this to another metric, e.g.
             # all nodes underneath n1 that are off, i.e. instead of breaking here we would
