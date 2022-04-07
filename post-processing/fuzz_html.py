@@ -818,7 +818,7 @@ def create_fuzzer_detailed_section(
 <p>
 For further technical details on what the call tree overview is, please see the
 <a href="%s/Glossary.md#call-tree-overview">Glossary</a>.
-</p>""" % (GIT_BRANCH_URL)
+</p>""" % (fuzz_constants.GIT_BRANCH_URL)
     image_name = "%s_colormap.png" % (fuzzer_filename.replace(" ", "").split("/")[-1])
 
     create_horisontal_calltree_image(image_name, profile)
@@ -1275,7 +1275,7 @@ def create_html_report(
     html_report_core += "<p>For further technical details on what the call tree overview is, " \
                         "please see the " \
                         "<a href=\"%s/Glossary.md#cyclomatic-complexity\">Glossary</a>." \
-                        "</p>" % (GIT_BRANCH_URL)
+                        "</p>" % (fuzz_constants.GIT_BRANCH_URL)
 
     table_id = "fuzzers_overview_table"
     tables.append(table_id)
