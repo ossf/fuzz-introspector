@@ -817,8 +817,8 @@ def create_fuzzer_detailed_section(
 </p>
 <p>
 For further technical details on what the call tree overview is, please see the
-<a href="%s/Glossary.md#call-tree-overview">Glossary</a>.
-</p>""" % (fuzz_constants.GIT_BRANCH_URL)
+<a href="%s/doc/Glossary.md#call-tree-overview">Glossary</a>.
+</p>"""%(fuzz_constants.GIT_BRANCH_URL)
     image_name = "%s_colormap.png" % (fuzzer_filename.replace(" ", "").split("/")[-1])
 
     create_horisontal_calltree_image(image_name, profile)
@@ -835,6 +835,8 @@ For further technical details on what the call tree overview is, please see the
     html_string += f"""<p class='no-top-margin'>The following link provides a visualisation
  of the full calltree overlayed with coverage information:
  <a href="{ calltree_file_name }">full calltree</a></p>"""
+    html_string += "<p>For futher technical details on how the call tree is made, please " \
+                   "see the <a href=\"%s/doc/Glossary.md#full-callree\">Glossary</a>."
 
     # Fuzz blocker table
     html_fuzz_blocker_table = create_fuzz_blocker_table(profile, tables, calltree_file_name)
@@ -1272,10 +1274,10 @@ def create_html_report(
                         "The functions included in this table corresponds to all functions " \
                         "that exist in the executables of the fuzzers. As such, there may  " \
                         "be functions that are from third-party libraries.</p>"
-    html_report_core += "<p>For further technical details on what the call tree overview is, " \
-                        "please see the " \
-                        "<a href=\"%s/Glossary.md#project-functions-overview\">Glossary</a>." \
-                        "</p>" % (fuzz_constants.GIT_BRANCH_URL)
+    html_report_core += f"<p>For further technical details on the meaning of columns in the " \
+                        f"below table, please see the " \
+                        f"<a href=\"{fuzz_constants.GIT_BRANCH_URL}/doc/Glossary.md#project-"\
+                        f"functions-overview\">Glossary</a>.</p>"
 
     table_id = "fuzzers_overview_table"
     tables.append(table_id)
