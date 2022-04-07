@@ -5,6 +5,35 @@ clarification of why a certain concept is relevant for fuzzing.
 
 ## Concepts
 
+### Project functions overview
+#### Func name
+Name of the function
+
+#### Functions filename
+Filename, on the system, in which the function is defined. In the event of OSS-Fuzz, this
+is the filename in the OSS-Fuzz build container.
+#### Args
+Arguments to the function
+
+#### Function call depth
+Call depth the function
+
+#### Reached by Fuzzers
+Names of the fuzzers that statically reach this function.
+
+#### Fuzzers runtime hit
+Yes/No based on whether the function is hit at runtime.
+
+#### Func lines hit %
+The percentage of source code lines of the function that is
+executed at runtime.
+
+#### I Count
+Instruction count, based on the LLVM IR instructions.
+
+#### BB Count
+Basic block count, based on the LLVM basic block count.
+
 ### Cyclomatic complexity
 **Definition:** Cyclomatic complexity is a metric for the complexity of software. 
 In simple terms it's a metric that is based on discrete graphs and uses the
@@ -21,6 +50,10 @@ is that we can quantify code complexity.
 and bug count of code. Therefore, we often look to fuzz code that is the most complex.
 We use in fuzz-introspector as it helps search for complex code.
 
+#### Functions reached
+#### Reached by functions
+#### Accumulated cyclomatic complexity
+#### Undiscovered complexity
 
 ### Call tree overview
 **Definition:** Fuzz-introspector includes for each fuzzer a bitmap called the *call tree overview*.
