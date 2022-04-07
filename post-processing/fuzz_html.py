@@ -33,6 +33,7 @@ import fuzz_analysis
 import fuzz_data_loader
 import fuzz_utils
 import fuzz_cfg_load
+import fuzz_constants
 
 # For pretty printing the html code:
 from bs4 import BeautifulSoup as bs
@@ -808,7 +809,6 @@ def create_fuzzer_detailed_section(
     # Calltree fixed-width image
     html_string += html_add_header_with_link(
         "Call tree overview", 3, toc_list, link=f"call_tree_{curr_tt_profile}")
-    fuzz_introspector_repo = "https://github.com/ossf/fuzz-introspector"
     html_string += """<p class='no-top-margin'>
  The following is the call tree with color coding for which
  functions are hit/not hit. This info is based on the coverage
@@ -817,8 +817,8 @@ def create_fuzzer_detailed_section(
 </p>
 <p>
 For further technical details on what the call tree overview is, please see the
-<a href="%s/blob/main/doc/Glossary.md#call-tree-overview">Glossary</a>.
-</p>"""%(fuzz_introspector_repo)
+<a href="%s/Glossary.md#call-tree-overview">Glossary</a>.
+</p>""" % (GIT_BRANCH_URL)
     image_name = "%s_colormap.png" % (fuzzer_filename.replace(" ", "").split("/")[-1])
 
     create_horisontal_calltree_image(image_name, profile)
@@ -1272,6 +1272,11 @@ def create_html_report(
                         "The functions included in this table corresponds to all functions " \
                         "that exist in the executables of the fuzzers. As such, there may  " \
                         "be functions that are from third-party libraries.</p>"
+    html_report_core += "<p>For further technical details on what the call tree overview is, " \
+                        "please see the " \
+                        "<a href=\"%s/Glossary.md#cyclomatic-complexity\">Glossary</a>." \
+                        "</p>" % (GIT_BRANCH_URL)
+
     table_id = "fuzzers_overview_table"
     tables.append(table_id)
     all_function_table, all_functions_json = create_all_function_table(
