@@ -111,6 +111,8 @@ Description about fuzz blockers
 ## Analyses and suggestions
 Details about each analysis section.
 
+- [OptimalTargets analysis](/doc/analyses/OptimalTargets.md)
+
 ## Runtime coverage analysis
 Details about the runtime coverage analysis.
 **Definition:**
