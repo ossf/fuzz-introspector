@@ -89,5 +89,135 @@ are not perfect and often approximations. This is not something we expect to be 
 #### Indirect pointers makes approximate calltrees
 
 #### C++ inheritance makes approximate calltrees
+Extracting calltrees from C++ code is non-trivial. To show this, consider the following C++
+classes:
+```c++
+class B
+{
+public:
+  virtual void bar();
+  virtual void qux();
+};
+
+void B::bar()
+{
+  std::cout << "This is B's implementation of bar" << std::endl;
+}
+
+void B::qux()
+{
+  std::cout << "This is B's implementation of qux" << std::endl;
+}
+
+
+class C : public B
+{
+public:
+  void bar() override;
+};
+
+void C::bar()
+{
+  std::cout << "This is C's implementation of bar" << std::endl;
+}
+```
+
+Then, consider the fuzzers and their respective calltrees as extracted by Fuzz Introspector:
+
+##### Example 1
+```c++
+void ex1() {
+  B* b = new B();
+  b->bar();
+}
+
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
+  ex1();
+  return 0;
+}
+```
+The corresponding calltree as extract by Fuzz Introspector:
+
+##### Example 2
+```c++
+void ex2() {
+  C* c = new C();
+  c->bar();
+}
+```
+The corresponding calltree as extract by Fuzz Introspector:
+
+##### Example 3
+```c++
+void ex3() {
+  B* b = new C();
+  b->bar();
+}
+```
+The corresponding calltree as extract by Fuzz Introspector:
+
+##### Example 4
+```c++
+void ex4(size_t s) {
+  B *t;
+
+  if (s < 10) {
+    t = new B();
+  }
+  else {
+    t = new C();
+  }
+  t->bar();
+}
+```
+The corresponding calltree as extract by Fuzz Introspector:
+
 
 #### Coloring of the calltree does not follow control-flow
+Runtime coverage is not correlated with control-flow: a function may be executed once
+during runtime extraction, but this does not mean all places that reference the function
+are executed. We make no efforts to analyse if coverage makes sense from a control-flow
+perspective as it brings other issues (see below).
+
+For example, consider this fuzzer:
+
+```c
+void C() {
+  printf("Hello");
+}
+
+void D() {
+  printf("D");
+  C();  
+} 
+
+void A(size_t arg1, size_t arg2) {
+  if (arg1 != arg2) {
+    D();
+  }
+}
+
+void B(size_t arg1, size_t arg2) {
+  if (arg1 != arg2) {
+    C();
+  }
+}
+
+int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
+  A(size, size);
+  B(size, 3);
+}
+```
+
+In this case `D` will never be reached, but `C` will be reached. Thus, when we visualise the
+calltree of the application `C` will be green but `D` will be red, despite `C` being a child
+of `D` (`B` too calls into C, which is what makes it green).
+
+Fuzz-introspector used to have a heuristic that would analyse the control-flow and for each
+red node in the calltree would make the children of that node red as well. We decided to remove
+this as it brought some other issues, e.g. when looking at the coverage report and correlating
+with the calltree sometimes you would end up looking at code that was covered in the coverage
+report but the calltree would say it was red. As such, we switched it back to being fully verbose
+in the sense that the calltree shows control-flow and we simply overlay it with the runtime
+coverage data without doing any analysis on it.
+
