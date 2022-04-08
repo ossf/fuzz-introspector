@@ -129,9 +129,24 @@ fuzzers.
 We have a dedicated page for the Calltree [here](/doc/Calltree.md)
 
 #### Fuzz blockers
-Description about fuzz blockers
 **Definition:**
+A fuzz blocker is a place in the code where a fuzzer should be able to execute code
+deeper based on static analysis but at runtime the code that should be reachable
+is not executed. It is often a sign of some condition in the code that either:
+1) Is a condition that will never be satisfiable in the given fuzzer
+2) Is a condition that will be satisfiable if the fuzzer continues to run, but it
+has not yet found out how to satisfy the condition.
+
 **Why is it important for fuzzing?**
+We're often interested in identifying these blockers to ensure our fuzzers continue
+progressing exploring code.
+
+The most important fuzz blockers are those that hinder the fuzzer in executing a lot
+of code. As such, Fuzz Introspector ranks the fuzz blockers based on how much code
+they're blocking.
+
+As a fuzz developer, we often need to change certain aspects in our fuzzers to ensure
+they're not blocked, or write an entire new fuzzer that executes the code that is blocked.
 
 
 ## Analyses and suggestions
