@@ -63,7 +63,7 @@ Instruction count, based on the LLVM IR instructions.
 Basic block count, based on the LLVM basic block count.
 
 #### Cyclomatic complexity
-**Definition:** Cyclomatic complexity is a metric for the complexity of software. 
+*Definition:* Cyclomatic complexity is a metric for the complexity of software. 
 In simple terms it's a metric that is based on discrete graphs and uses the
 number of nodes, number of edges and number of connected components to compute
 it's given value. In practice, we calculate the cyclomatic complexity over the
@@ -74,7 +74,7 @@ The more complex code is the higher cyclomatic complexity it will have. The bene
 is that we can quantify code complexity.
 
 
-**Why is it important for fuzzing?** There is a correlation between complexity
+*Why is it important for fuzzing?* There is a correlation between complexity
 and bug count of code. Therefore, we often look to fuzz code that is the most complex.
 We use in fuzz-introspector as it helps search for complex code.
 
@@ -88,7 +88,7 @@ The amount of functions that statically reach the given function.
 The sum of cyclomatic complexity of all functions that are statically reachable by the given function.
 
 #### Undiscovered complexity
-**Definition:**
+*Definition:*
 
 The sum of cyclomatic complexity of all functions that are reachable by the given function
 subtracted by the cyclomatic complexity of all of the reachable functions that are
@@ -161,7 +161,7 @@ The key idea is to show functions that have a high amount of source code lines a
 are covered at runtime, but only a fraction of the source code is actually exercised.
 
 
-**Why is it important for fuzzing?**
+*Why is it important for fuzzing?*  
 Complex functions are often responsible for where bugs occur. As such, it's important to
 exercises as much of the code in the complex functions, and this analysis is used to highlight
 where complex functions *are* hit but not sufficiently.
