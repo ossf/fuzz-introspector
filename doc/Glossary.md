@@ -124,7 +124,7 @@ addition, dictionaries or a completely new fuzzer is needed.
 
 
 ### Full calltree
-*Definition:*
+*Definition:*  
 The calltree shows the callsites of a control-flow graph of a given fuzzer. This
 is one of the core data structures that Fuzz Introspector use to reason about
 fuzzers.
