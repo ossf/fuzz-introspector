@@ -121,14 +121,32 @@ addition, dictionaries or a completely new fuzzer is needed.
 
 
 #### Full calltree
-Description about full calltree
 **Definition:**
-**Why is it important for fuzzing?**
+The calltree shows the callsites of a control-flow graph of a given fuzzer. This
+is one of the core data structures that Fuzz Introspector use to reason about
+fuzzers.
+
+We have a dedicated page for the Calltree [here](/doc/Calltree.md)
 
 #### Fuzz blockers
-Description about fuzz blockers
 **Definition:**
+A fuzz blocker is a place in the code where a fuzzer should be able to execute code
+deeper based on static analysis but at runtime the code that should be reachable
+is not executed. It is often a sign of some condition in the code that either:
+1) Is a condition that will never be satisfiable in the given fuzzer
+2) Is a condition that will be satisfiable if the fuzzer continues to run, but it
+has not yet found out how to satisfy the condition.
+
 **Why is it important for fuzzing?**
+We're often interested in identifying these blockers to ensure our fuzzers continue
+progressing exploring code.
+
+The most important fuzz blockers are those that hinder the fuzzer in executing a lot
+of code. As such, Fuzz Introspector ranks the fuzz blockers based on how much code
+they're blocking.
+
+As a fuzz developer, we often need to change certain aspects in our fuzzers to ensure
+they're not blocked, or write an entire new fuzzer that executes the code that is blocked.
 
 
 ## Analyses and suggestions
@@ -137,6 +155,13 @@ Details about each analysis section.
 - [OptimalTargets analysis](/doc/analyses/OptimalTargets.md)
 
 ## Runtime coverage analysis
-Details about the runtime coverage analysis.
-**Definition:**
+This section provides analysis based mostly on runtime coverage data, but includes some
+analysis that uses lightweight static analysis.
+The key idea is to show functions that have a high amount of source code lines and that
+are covered at runtime, but only a fraction of the source code is actually exercised.
+
+
 **Why is it important for fuzzing?**
+Complex functions are often responsible for where bugs occur. As such, it's important to
+exercises as much of the code in the complex functions, and this analysis is used to highlight
+where complex functions *are* hit but not sufficiently.
