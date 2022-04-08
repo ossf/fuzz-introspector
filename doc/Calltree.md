@@ -88,6 +88,14 @@ are not perfect and often approximations. This is not something we expect to be 
 
 #### Indirect pointers makes approximate calltrees
 
+Fuzz Introspector does not do much work to resolve indirect calls at the moment. As such,
+indirect calls will likely not be shown in the calltree.
+
+One exception is C++ VTables, where Fuzz Introspector makes an effort into resolving calls.
+In particular, Fuzz Introspector will do *some* analysis on the LLVM IR to extract the class
+and function of a given indirect call that is a VTable call. See below examples for more
+about how Fuzz Introspector resolves calltrees of C++ code.
+
 #### C++ inheritance makes approximate calltrees
 Extracting calltrees from C++ code is non-trivial. To show this, consider the following C++
 classes:
