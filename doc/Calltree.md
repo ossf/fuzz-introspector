@@ -2,6 +2,18 @@
 
 This documentation goes in detail with the calltree.
 
+- [Calltree](#calltree)
+  * [Concept](#concept)
+  * [Discrepancies and pitfalls](#discrepancies-and-pitfalls)
+      - [Recursion is only displayed once](#recursion-is-only-displayed-once)
+      - [Indirect pointers makes approximate calltrees](#indirect-pointers-makes-approximate-calltrees)
+      - [C++ inheritance makes approximate calltrees](#c---inheritance-makes-approximate-calltrees)
+        * [Example 1](#example-1)
+        * [Example 2](#example-2)
+        * [Example 3](#example-3)
+        * [Example 4](#example-4)
+      - [Coloring of the calltree does not follow control-flow](#coloring-of-the-calltree-does-not-follow-control-flow)
+
 ## Concept
 The calltree shows the callsites of a control-flow graph of a given fuzzer. This
 is one of the core data structures that Fuzz Introspector use to reason about
