@@ -137,6 +137,13 @@ Details about each analysis section.
 - [OptimalTargets analysis](/doc/analyses/OptimalTargets.md)
 
 ## Runtime coverage analysis
-Details about the runtime coverage analysis.
-**Definition:**
+This section provides analysis based mostly on runtime coverage data, but includes some
+analysis that uses lightweight static analysis.
+The key idea is to show functions that have a high amount of source code lines and that
+are covered at runtime, but only a fraction of the source code is actually exercised.
+
+
 **Why is it important for fuzzing?**
+Complex functions are often responsible for where bugs occur. As such, it's important to
+exercises as much of the code in the complex functions, and this analysis is used to highlight
+where complex functions *are* hit but not sufficiently.
