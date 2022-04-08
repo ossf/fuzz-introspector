@@ -63,7 +63,8 @@ Instruction count, based on the LLVM IR instructions.
 Basic block count, based on the LLVM basic block count.
 
 #### Cyclomatic complexity
-**Definition:** Cyclomatic complexity is a metric for the complexity of software. 
+*Definition:*  
+Cyclomatic complexity is a metric for the complexity of software. 
 In simple terms it's a metric that is based on discrete graphs and uses the
 number of nodes, number of edges and number of connected components to compute
 it's given value. In practice, we calculate the cyclomatic complexity over the
@@ -74,7 +75,8 @@ The more complex code is the higher cyclomatic complexity it will have. The bene
 is that we can quantify code complexity.
 
 
-**Why is it important for fuzzing?** There is a correlation between complexity
+*Why is it important for fuzzing?*  
+There is a correlation between complexity
 and bug count of code. Therefore, we often look to fuzz code that is the most complex.
 We use in fuzz-introspector as it helps search for complex code.
 
@@ -88,15 +90,15 @@ The amount of functions that statically reach the given function.
 The sum of cyclomatic complexity of all functions that are statically reachable by the given function.
 
 #### Undiscovered complexity
-**Definition:**
-
+*Definition:*  
 The sum of cyclomatic complexity of all functions that are reachable by the given function
 subtracted by the cyclomatic complexity of all of the reachable functions that are
 also reachable from any of the fuzzers in the project.
 
 ## Fuzzer details
-#### Call tree overview
-**Definition:** Fuzz-introspector includes for each fuzzer a bitmap called the *call tree overview*.
+### Call tree overview
+*Definition:*  
+Fuzz-introspector includes for each fuzzer a bitmap called the *call tree overview*.
 This bitmap is a combination of the call tree extracted through static analysis,
 run time coverage data and a way of plotting this data onto a x,y axis with each
 y value having the same value but different color.
@@ -109,7 +111,8 @@ looking at the bitmap.
 The y-axis is colored based on whether the given node in the call tree was hit
 at run time. As such, call tree overview relies on interpreting coverage reports.
 
-**Why is it important for fuzzing?** The call tree overview makes it rapid to
+*Why is it important for fuzzing?*  
+The call tree overview makes it rapid to
 detect whether all nodes in a fuzzers call tree are hit at run time. This is
 used to determine if a fuzzer is blocked at some location, i.e. whether there
 is a code location the fuzzer should reach in theory (based on approximating
@@ -120,16 +123,16 @@ can invoke the additional paths, or whether using other techniques, e.g. corpus
 addition, dictionaries or a completely new fuzzer is needed.
 
 
-#### Full calltree
-**Definition:**
+### Full calltree
+*Definition:*  
 The calltree shows the callsites of a control-flow graph of a given fuzzer. This
 is one of the core data structures that Fuzz Introspector use to reason about
 fuzzers.
 
 We have a dedicated page for the Calltree [here](/doc/Calltree.md)
 
-#### Fuzz blockers
-**Definition:**
+### Fuzz blockers
+*Definition:*  
 A fuzz blocker is a place in the code where a fuzzer should be able to execute code
 deeper based on static analysis but at runtime the code that should be reachable
 is not executed. It is often a sign of some condition in the code that either:
@@ -137,7 +140,7 @@ is not executed. It is often a sign of some condition in the code that either:
 2) Is a condition that will be satisfiable if the fuzzer continues to run, but it
 has not yet found out how to satisfy the condition.
 
-**Why is it important for fuzzing?**
+*Why is it important for fuzzing?*  
 We're often interested in identifying these blockers to ensure our fuzzers continue
 progressing exploring code.
 
@@ -161,7 +164,7 @@ The key idea is to show functions that have a high amount of source code lines a
 are covered at runtime, but only a fraction of the source code is actually exercised.
 
 
-**Why is it important for fuzzing?**
+*Why is it important for fuzzing?*  
 Complex functions are often responsible for where bugs occur. As such, it's important to
 exercises as much of the code in the complex functions, and this analysis is used to highlight
 where complex functions *are* hit but not sufficiently.
