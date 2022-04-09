@@ -184,7 +184,7 @@ class FuzzerProfile:
         """
         Get the tuples reflecting coverage map of a given function
         """
-        logger.info(f"getting function coverage of { function_name }")
+        logger.debug(f"getting function coverage of { function_name }")
         if self.coverage is None:
             logger.info("Returning None")
             return []
