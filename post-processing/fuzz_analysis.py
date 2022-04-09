@@ -30,6 +30,7 @@ import fuzz_cfg_load
 import fuzz_data_loader
 
 logger = logging.getLogger(name=__name__)
+logger.setLevel(logging.INFO)
 
 TargetCodesType = TypedDict('TargetCodesType', {
     'source_code': str,
@@ -75,7 +76,7 @@ def overlay_calltree_with_coverage(
         # Add to callstack
         callstack_set_curr_node(node, demangled_name, callstack)
 
-        logger.info(f"Checking callsite: { demangled_name}")
+        logger.debug(f"Checking callsite: { demangled_name}")
 
         # Get hitcount for this node
         node_hitcount: int = 0
@@ -100,13 +101,13 @@ def overlay_calltree_with_coverage(
             is_first = False
         elif callstack_has_parent(node, callstack):
             # Find the parent function and check coverage of the node
-            logger.info("Extracting data")
+            logger.debug("Extracting data")
             coverage_data = profile.get_function_coverage(
                 fuzz_utils.normalise_str(callstack_get_parent(node, callstack)),
                 True
             )
             for (n_line_number, hit_count_cov) in coverage_data:
-                logger.info(f"  - iterating {n_line_number} : {hit_count_cov}")
+                logger.debug(f"  - iterating {n_line_number} : {hit_count_cov}")
                 if n_line_number == node.src_linenumber and hit_count_cov > 0:
                     node_hitcount = hit_count_cov
             node.cov_parent = callstack_get_parent(node, callstack)
