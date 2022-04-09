@@ -256,14 +256,14 @@ void FuzzIntrospector::readConfig() {
   std::string configPath = getenv("FUZZ_INTROSPECTOR_CONFIG");
   ifstream configFile(configPath);
 
-  logPrintf(2, "Opening the configuration file %s\n", configPath.c_str());
+  logPrintf(L1, "Opening the configuration file %s\n", configPath.c_str());
 
   std::string line;
   std::vector<string> *current = &ConfigFuncsToAvoid;
   bool shouldAnalyse = false;
   while (std::getline(configFile, line)) {
     if (shouldAnalyse) {
-      logPrintf(2, "Inserting avoidance element %s\n", line.c_str());
+      logPrintf(L2, "Inserting avoidance element %s\n", line.c_str());
       current->push_back(line);
     }
     if (line.find("FUNCS_TO_AVOID") != std::string::npos) {
@@ -278,7 +278,7 @@ void FuzzIntrospector::readConfig() {
 }
 
 void FuzzIntrospector::makeDefaultConfig() {
-  logPrintf(2, "Using default configuration\n");
+  logPrintf(L2, "Using default configuration\n");
 
   std::vector<std::string> FuncsToAvoid = {
     "^_ZNSt3",                       // mangled std::
@@ -370,16 +370,16 @@ void FuzzIntrospector::extractAllFunctionDetailsToYaml(std::string nextYamlName,
 FuzzerFunctionList FuzzIntrospector::wrapAllFunctions(Module &M) {
   FuzzerFunctionList ListWrapper;
   ListWrapper.ListName = "All functions";
-  logPrintf(1, "Wrapping all functions\n");
+  logPrintf(L1, "Wrapping all functions\n");
   for (auto &F : M) {
-    logPrintf(2, "Wrapping function %s\n", F.getName().str().c_str());
+    logPrintf(L3, "Wrapping function %s\n", F.getName().str().c_str());
     if (shouldAvoidFunction(&F)) {
-      logPrintf(2, "Skipping this function\n");
+      logPrintf(L3, "Skipping this function\n");
       continue;
     }
     ListWrapper.Functions.push_back(wrapFunction(&F));
   }
-  logPrintf(2, "Ended wrapping all functions\n");
+  logPrintf(L1, "Ended wrapping all functions\n");
 
   return ListWrapper;
 }
@@ -674,7 +674,7 @@ Function *FuzzIntrospector::extractVTableIndirectCall(Function *F, Instruction &
   StructType *SSM = cast<StructType>(v13);
   // Now we remove the "class." from the name, and then we have it.
   std::string originalTargetClass = SSM->getName().str().substr(6);
-  logPrintf(L1, "Shortened name that we can use for analysis: %s\n", originalTargetClass.c_str());
+  logPrintf(L3, "Shortened name that we can use for analysis: %s\n", originalTargetClass.c_str());
 
   // We find the global variable corresponding to the vtable by
   // way of naming convetions. Specifically, we look for the
@@ -715,7 +715,7 @@ Function *FuzzIntrospector::extractVTableIndirectCall(Function *F, Instruction &
   // Extract the function pointer corresponding to the constant expression.
   Function *VTableTargetFunc = value2Func(FunctionPtrConstant);
   if (VTableTargetFunc != nullptr) {
-    logPrintf(L1, "The actual function name (from earlyCaught) %s\n", VTableTargetFunc->getName().str().c_str());
+    logPrintf(L3, "The actual function name (from earlyCaught) %s\n", VTableTargetFunc->getName().str().c_str());
   }
   return VTableTargetFunc;
 }

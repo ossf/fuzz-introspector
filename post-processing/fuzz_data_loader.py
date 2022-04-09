@@ -31,6 +31,7 @@ import fuzz_cov_load
 import fuzz_utils
 
 logger = logging.getLogger(name=__name__)
+logger.setLevel(logging.INFO)
 
 
 class FunctionProfile:
@@ -188,19 +189,19 @@ class FuzzerProfile:
             logger.info("Returning None")
             return []
         if not should_normalise:
-            logger.info("Should not normalise")
+            logger.debug("Should not normalise")
             if function_name not in self.coverage.covmap:
                 return []
             return self.coverage.covmap[function_name]
 
         # should_normalise
-        logger.info("Should normalise")
+        logger.debug("Should normalise")
         for funcname in self.coverage.covmap:
             normalised_funcname = fuzz_utils.normalise_str(
                 fuzz_utils.demangle_cpp_func(fuzz_utils.normalise_str(funcname))
             )
             if normalised_funcname == function_name:
-                logger.info(f"Found normalised: {normalised_funcname}")
+                logger.debug(f"Found normalised: {normalised_funcname}")
                 return self.coverage.covmap[funcname]
 
         # In case of errs return empty list
