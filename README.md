@@ -86,7 +86,15 @@ cd simple-example-0/web
 python3 -m http.server 8008
 ```
 
+#### Use Docker
+
+```
+docker build -t "fuzz-introspector:Dockerfile" .
+```
+
 #### Full process
+
+
 ##### step 1: Start a python venv
 ```bash
 git clone https://github.com/ossf/fuzz-introspector
