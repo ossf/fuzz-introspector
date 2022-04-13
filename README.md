@@ -88,8 +88,12 @@ python3 -m http.server 8008
 
 #### Use Docker
 
+Will use sources cloned to /your/path/to/source
+
 ```
-docker build -t "fuzz-introspector:Dockerfile" .
+docker build  -t "fuzz-introspector:Dockerfile" .
+docker run --rm -it -v /your/path/to/source:/src fuzz-introspector:Dockerfile
+
 ```
 
 #### Full process
