@@ -47,20 +47,11 @@ ENV LLVM_CONFIG=llvm-config-12
 RUN apt update
 RUN apt-get install python3.8-venv -y
 RUN apt-get install texinfo cmake -y
-WORKDIR /
-RUN git clone https://github.com/ossf/fuzz-introspector
-WORKDIR /fuzz-introspector
-
-# Get python dependencies
-RUN python3 -m venv .venv
-RUN . .venv/bin/activate && pip3 install -r requirements.txt
-
-# Build custom clang with Fuzz introspector LLVM pass
-RUN ./build_all.sh
-
-
 
 RUN echo 'alias joe="jupp --wordwrap"' >> ~/.bashrc
 RUN echo 'export PS1="[fuzz-introspector]$PS1"' >> ~/.bashrc
 ENV IS_DOCKER="1"
+
+WORKDIR /src
+ENTRYPOINT "/src/build_all.sh"
 
