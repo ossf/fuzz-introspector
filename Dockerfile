@@ -1,7 +1,7 @@
 FROM ubuntu:20.04 AS fuzz-introspector
 
 # GCC-10 and CLANG/LLVM 12
-# Copyright 2021 Fuzz Introspector Authors
+# Copyright 2022 Fuzz Introspector Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
