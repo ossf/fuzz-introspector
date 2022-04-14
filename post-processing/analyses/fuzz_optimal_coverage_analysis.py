@@ -13,6 +13,8 @@
 # limitations under the License.
 """Analysis for creating optimal coverage targets"""
 
+import logging
+
 from typing import (
     Any,
     List,
@@ -20,8 +22,12 @@ from typing import (
 )
 
 import fuzz_analysis
+import fuzz_constants
 import fuzz_data_loader
 import fuzz_html_helpers
+import fuzz_utils
+
+logger = logging.getLogger(name=__name__)
 
 
 def handle_analysis_3(toc_list: List[Tuple[str, str, int]],

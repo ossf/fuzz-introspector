@@ -13,6 +13,10 @@
 # limitations under the License.
 """Analysis for identifying optimal targets"""
 
+import os
+import json
+import logging
+
 from typing import (
     Any,
     List,
@@ -23,6 +27,8 @@ import fuzz_analysis
 import fuzz_data_loader
 import fuzz_html_helpers
 import fuzz_utils
+
+logger = logging.getLogger(name=__name__)
 
 
 def handle_analysis_1(toc_list: List[Tuple[str, str, int]],
@@ -104,7 +110,7 @@ def handle_analysis_1(toc_list: List[Tuple[str, str, int]],
     html_string += "<p>Implementing fuzzers that target the above functions " \
                    "will improve reachability such that it becomes:</p>"
     tables.append(f"myTable{len(tables)}")
-    html_string += create_top_summary_info(tables, new_profile, conclusions, False)
+    # html_string += create_top_summary_info(tables, new_profile, conclusions, False)
 
     # Section with code for new fuzzing harnesses
     if should_synthetise:

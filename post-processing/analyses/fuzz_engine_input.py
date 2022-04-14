@@ -13,6 +13,8 @@
 # limitations under the License.
 """Analysis for creating input consumed by a fuzzer, e.g. a dictionary"""
 
+import logging
+
 from typing import (
     Any,
     List,
@@ -22,6 +24,8 @@ from typing import (
 import fuzz_analysis
 import fuzz_data_loader
 import fuzz_html_helpers
+
+logger = logging.getLogger(name=__name__)
 
 
 def handle_analysis_2(toc_list: List[Tuple[str, str, int]],
