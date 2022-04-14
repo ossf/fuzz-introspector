@@ -13,27 +13,13 @@
 # limitations under the License.
 
 """Module for creating HTML reports"""
-import os
-import logging
-import shutil
-import json
-import typing
 
 from typing import (
     Any,
-    Callable,
     List,
     Tuple,
-    NamedTuple,
-    Optional,
-    Set,
 )
 
-import fuzz_analysis
-import fuzz_data_loader
-import fuzz_utils
-import fuzz_cfg_load
-import fuzz_constants
 
 def html_table_add_row(elems: List[Any]) -> str:
     html_str = "<tr>\n"
@@ -124,6 +110,7 @@ def html_add_header_with_link(header_title: str,
     html_string = f"<a id=\"{link}\">"
     html_string += f"<h{title_type} class=\"report-title\">{header_title}</h{title_type}>\n"
     return html_string
+
 
 def html_create_table_head(
         table_head: str,
