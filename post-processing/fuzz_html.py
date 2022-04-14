@@ -1040,8 +1040,11 @@ def handle_analysis_1(toc_list: List[Tuple[str, str, int]],
         html_string += "<p>The below fuzzers are templates and suggestions for how " \
                        "to target the set of optimal functions above</p>"
         for filename in fuzz_targets:
-            html_string += fuzz_html_helpers.html_add_header_with_link("%s" %
-                                                     (filename.split("/")[-1]), 4, toc_list)
+            html_string += fuzz_html_helpers.html_add_header_with_link(
+                "%s" % filename.split("/")[-1],
+                4,
+                toc_list
+            )
             html_string += "<b>Target file:</b>%s<br>" % (filename)
             all_functions = ", ".join(
                 [f.function_name for f in fuzz_targets[filename]['target_fds']]
@@ -1127,7 +1130,8 @@ def create_html_report(
     html_overview = fuzz_html_helpers.html_add_header_with_link("Project overview", 1, toc_list)
 
     # Project overview
-    # html_overview += fuzz_html_helpers.html_add_header_with_link("Project information", 2, toc_list)
+    # html_overview += fuzz_html_helpers.html_add_header_with_link(
+    #   "Project information", 2, toc_list)
 
     #############################################
     # Section with high level suggestions
@@ -1139,7 +1143,11 @@ def create_html_report(
     # Reachability overview
     #############################################
     logger.info(" - Creating reachability overview table")
-    html_report_core = fuzz_html_helpers.html_add_header_with_link("Reachability and coverage overview", 3, toc_list)
+    html_report_core = fuzz_html_helpers.html_add_header_with_link(
+        "Reachability and coverage overview",
+        3,
+        toc_list
+    )
     tables.append("myTable%d" % (len(tables)))
     html_report_core += "<div style=\"display: flex; max-width: 800px\">"
     html_report_core += create_boxed_top_summary_info(
