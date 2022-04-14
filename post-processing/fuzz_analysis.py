@@ -14,11 +14,11 @@
 
 """Performs analysis on the profiles output from fuzz introspector LLVM pass"""
 
+import abc
 import copy
 import logging
 
 from typing import (
-    Callable,
     Dict,
     List,
     Set,
@@ -39,9 +39,20 @@ TargetCodesType = TypedDict('TargetCodesType', {
 })
 
 
-class AnalysisInterface():
+class AnalysisInterface(abc.ABC):
     name: str
-    analysis_func: Callable
+
+    @abc.abstractmethod
+    def analysis_func(self,
+                      toc_list: List[Tuple[str, str, int]],
+                      tables: List[str],
+                      project_profile: fuzz_data_loader.MergedProjectProfile,
+                      profiles: List[fuzz_data_loader.FuzzerProfile],
+                      basefolder: str,
+                      coverage_url: str,
+                      conclusions) -> str:
+        """Core analysis function."""
+        pass
 
 
 def overlay_calltree_with_coverage(
