@@ -39,7 +39,7 @@ class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
                       basefolder: str,
                       coverage_url: str,
                       conclusions) -> str:
-        logger.info("In analysis 2")
+        logger.info(f" - Running analysis {self.name}")
 
         html_string = ""
         html_string += fuzz_html_helpers.html_add_header_with_link(
@@ -74,4 +74,5 @@ class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
                            "-focus_function=FUNC_NAME</p>"
             html_string += "<pre><code class='language-clike'>TBD</code></pre><br>"
 
+        logger.info(f" - Completed analysis {self.name}")
         return html_string
