@@ -21,10 +21,8 @@ import typing
 
 from typing import (
     Any,
-    Callable,
     List,
     Tuple,
-    NamedTuple,
     Optional,
     Set,
 )
@@ -1221,7 +1219,6 @@ def create_html_report(
         fuzz_optimal_targets,
         fuzz_optimal_coverage_analysis,
     )
-
 
     A1 = fuzz_engine_input.FuzzEngineInputAnalysis()
     A2 = fuzz_optimal_targets.FuzzOptimalTargetAnalysis()

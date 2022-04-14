@@ -16,7 +16,6 @@
 import logging
 
 from typing import (
-    Any,
     List,
     Tuple,
 )
@@ -70,6 +69,7 @@ def handle_analysis_2(toc_list: List[Tuple[str, str, int]],
         html_string += "<pre><code class='language-clike'>TBD</code></pre><br>"
 
     return html_string
+
 
 class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
     def __init__(self):
