@@ -153,7 +153,7 @@ def overlay_calltree_with_coverage(
         for fd_k, fd in profile.all_class_functions.items():
             if fd.function_name == node.dst_function_name:
                 link = (
-                    target_coverage_url +
+                    f"{target_coverage_url}" 
                     f"{fd.function_source_file}.html#L{fd.function_linenumber}"
                 )
                 break
@@ -166,7 +166,7 @@ def overlay_calltree_with_coverage(
             for fd_k, fd in profile.all_class_functions.items():
                 if fuzz_utils.demangle_cpp_func(fd.function_name) == parent_fname:
                     callsite_link = (
-                        target_coverage_url +
+                        f"{target_coverage_url}"
                         f"{fd.function_source_file}.html#L{node.src_linenumber}"
                     )
         node.cov_callsite_link = callsite_link
