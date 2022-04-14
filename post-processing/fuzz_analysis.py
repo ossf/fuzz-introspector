@@ -18,8 +18,10 @@ import copy
 import logging
 
 from typing import (
+    Callable,
     Dict,
     List,
+    NamedTuple,
     Set,
     Tuple,
     TypedDict,
@@ -36,6 +38,11 @@ TargetCodesType = TypedDict('TargetCodesType', {
     'source_code': str,
     'target_fds': List[fuzz_data_loader.FunctionProfile]
 })
+
+
+class AnalysisInterface():
+    name: str
+    analysis_func: Callable
 
 
 def overlay_calltree_with_coverage(
