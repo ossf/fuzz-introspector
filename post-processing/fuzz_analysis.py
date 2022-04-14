@@ -19,7 +19,6 @@ import copy
 import logging
 
 from typing import (
-    Callable,
     Dict,
     List,
     Set,

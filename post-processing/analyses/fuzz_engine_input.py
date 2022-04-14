@@ -70,7 +70,8 @@ class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
                 3,
                 toc_list
             )
-            html_string += "<p>Use this as input to libfuzzer with flag: -focus_function=FUNC_NAME</p>"
+            html_string += "<p>Use this as input to libfuzzer with flag: " \
+                           "-focus_function=FUNC_NAME</p>"
             html_string += "<pre><code class='language-clike'>TBD</code></pre><br>"
 
         return html_string
