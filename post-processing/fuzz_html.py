@@ -694,16 +694,19 @@ def create_fuzzer_detailed_section(
     # Calltree fixed-width image
     html_string += fuzz_html_helpers.html_add_header_with_link(
         "Call tree overview", 3, toc_list, link=f"call_tree_{curr_tt_profile}")
-    html_string += f"""<p class='no-top-margin'>
- The following is the call tree with color coding for which
- functions are hit/not hit. This info is based on the coverage
- achieved of all fuzzers together and not just this specific
- fuzzer. This should change in the future to be per-fuzzer-basis.
-</p>
-<p>
-For further technical details on what the call tree overview is, please see the
-<a href="{fuzz_constants.GIT_BRANCH_URL}/doc/Glossary.md#call-tree-overview">Glossary</a>.
-</p>"""
+    html_string += (
+        f"<p class='no-top-margin'>\n"
+        f"The following is the call tree with color coding for which"
+        f"functions are hit/not hit. This info is based on the coverage"
+        f"achieved of all fuzzers together and not just this specific"
+        f"fuzzer. This should change in the future to be per-fuzzer-basis."
+        f"</p>"
+        f"<p>"
+        f"For further technical details on what the call tree overview is"
+        f", please see the <a href=\"{fuzz_constants.GIT_BRANCH_URL}/doc/"
+        f"Glossary.md#call-tree-overview\">Glossary</a>."
+        f"</p>"
+    )
     image_name = "%s_colormap.png" % (fuzzer_filename.replace(" ", "").split("/")[-1])
 
     create_horisontal_calltree_image(image_name, profile)
