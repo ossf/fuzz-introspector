@@ -27,7 +27,6 @@ from typing import (
     Set,
 )
 
-import fuzz_analysis
 import fuzz_data_loader
 import fuzz_utils
 import fuzz_cfg_load
