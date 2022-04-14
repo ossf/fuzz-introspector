@@ -21,7 +21,6 @@ from typing import (
     Callable,
     Dict,
     List,
-    NamedTuple,
     Set,
     Tuple,
     TypedDict,
