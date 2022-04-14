@@ -63,7 +63,7 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
                        f"-coverage-analysis\">Glossary</a>.</p>"
         html_string += fuzz_html_helpers.html_add_header_with_link(
             "Complex functions with low coverage", 3, toc_list)
-        tables.append("myTable%d" % (len(tables)))
+        tables.append(f"myTable{len(tables)}")
         html_string += fuzz_html_helpers.html_create_table_head(
             tables[-1],
             [

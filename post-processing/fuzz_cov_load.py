@@ -75,7 +75,7 @@ def llvm_cov_load(target_dir, target_name=None):
     use all of them.
     """
     coverage_reports = fuzz_utils.get_all_files_in_tree_with_regex(target_dir, ".*\.covreport$")
-    logger.info("Found %d coverage reports" % len(coverage_reports))
+    logger.info(f"Found {len(coverage_reports)} coverage reports")
 
     # Check if there is a meaningful profile and if not, we need to use all.
     found_name = False
@@ -91,7 +91,7 @@ def llvm_cov_load(target_dir, target_name=None):
         if found_name and target_name not in profile_file:
             continue
 
-        logger.info("Reading coverage report: %s" % profile_file)
+        logger.info(f"Reading coverage report: {profile_file}")
         with open(profile_file, 'rb') as pf:
             cp.covreports.append(profile_file)
             curr_func = None

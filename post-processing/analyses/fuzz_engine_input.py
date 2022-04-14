@@ -61,7 +61,7 @@ class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
             for fn in profiles[profile_idx].functions_reached_by_fuzzer:
                 fp = profiles[profile_idx].all_class_functions[fn]
                 for const in fp.constants_touched:
-                    html_string += "k%d=\"%s\"\n" % (kn, const)
+                    html_string += f"k{kn}=\"{const}\"\n"
                     kn += 1
             html_string += "</code></pre><br>"
 
