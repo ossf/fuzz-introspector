@@ -21,10 +21,8 @@ import typing
 
 from typing import (
     Any,
-    Callable,
     List,
     Tuple,
-    NamedTuple,
     Optional,
     Set,
 )
@@ -46,11 +44,6 @@ import random
 import string
 
 logger = logging.getLogger(name=__name__)
-
-
-class AnalysisInterface(NamedTuple):
-    name: str
-    analysis_func: Callable
 
 
 def create_horisontal_calltree_image(image_name: str,
@@ -1221,10 +1214,19 @@ def create_html_report(
         "Analyses and suggestions", 1, toc_list)
 
     # Ordering here is important as top analysis will be shown first in the report
+    from analyses import (
+        fuzz_engine_input,
+        fuzz_optimal_targets,
+        fuzz_optimal_coverage_analysis,
+    )
+
+    A1 = fuzz_engine_input.FuzzEngineInputAnalysis()
+    A2 = fuzz_optimal_targets.FuzzOptimalTargetAnalysis()
+    A3 = fuzz_optimal_coverage_analysis.FuzzOptimalTargetAnalysis()
     analysis_array = [
-        AnalysisInterface("OptimalTargets", handle_analysis_1),
-        AnalysisInterface("FuzzEngineInput", handle_analysis_2),
-        AnalysisInterface("OptimalCoverageTargets", handle_analysis_3)
+        A2,
+        A1,
+        A3
     ]
 
     for analysis in analysis_array:
