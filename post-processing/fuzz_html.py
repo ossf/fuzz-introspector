@@ -36,12 +36,6 @@ import fuzz_cfg_load
 import fuzz_constants
 import fuzz_html_helpers
 
-from analyses import (
-    fuzz_engine_input,
-    fuzz_optimal_targets,
-    fuzz_optimal_coverage_analysis,
-)
-
 # For pretty printing the html code:
 from bs4 import BeautifulSoup as bs
 
@@ -1222,6 +1216,13 @@ def create_html_report(
         "Analyses and suggestions", 1, toc_list)
 
     # Ordering here is important as top analysis will be shown first in the report
+    from analyses import (
+        fuzz_engine_input,
+        fuzz_optimal_targets,
+        fuzz_optimal_coverage_analysis,
+    )
+
+
     A1 = fuzz_engine_input.FuzzEngineInputAnalysis()
     A2 = fuzz_optimal_targets.FuzzOptimalTargetAnalysis()
     A3 = fuzz_optimal_coverage_analysis.FuzzOptimalTargetAnalysis()

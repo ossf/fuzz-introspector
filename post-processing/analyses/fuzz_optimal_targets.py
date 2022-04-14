@@ -25,6 +25,7 @@ from typing import (
 
 import fuzz_analysis
 import fuzz_data_loader
+import fuzz_html
 import fuzz_html_helpers
 import fuzz_utils
 
@@ -139,7 +140,7 @@ def handle_analysis_1(toc_list: List[Tuple[str, str, int]],
                    "implement fuzzers for these functions</p>"
     table_id = "all_functions_overview_table"
     tables.append(table_id)
-    all_function_table, all_functions_json = fuzz_html_helpers.html_create_all_function_table(
+    all_function_table, all_functions_json = fuzz_html.create_all_function_table(
         tables, new_profile, coverage_url, basefolder, table_id)
     html_string += all_function_table
     html_string += "</div>"  # close report-box
