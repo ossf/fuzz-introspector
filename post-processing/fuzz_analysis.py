@@ -153,7 +153,7 @@ def overlay_calltree_with_coverage(
         for fd_k, fd in profile.all_class_functions.items():
             if fd.function_name == node.dst_function_name:
                 link = (
-                    f"{target_coverage_url}" 
+                    f"{target_coverage_url}"
                     f"{fd.function_source_file}.html#L{fd.function_linenumber}"
                 )
                 break
