@@ -841,8 +841,9 @@ For further technical details on what the call tree overview is, please see the
             ("functions hit", "")
         ])
     for k in profile.file_targets:
-        html_string += fuzz_html_helpers.html_table_add_row([k,
-                                          len(profile.file_targets[k])])
+        html_string += fuzz_html_helpers.html_table_add_row(
+            [k, len(profile.file_targets[k])]
+        )
     html_string += "</table>\n"
     return html_string
 
@@ -995,22 +996,24 @@ def handle_analysis_1(toc_list: List[Tuple[str, str, int]],
                    "amount of code coverage. </p>"
     table_id = "remaining_optimal_interesting_functions"
     tables.append(table_id)
-    html_string += fuzz_html_helpers.html_create_table_head(table_id,
-                                     [
-                                         ("Func name", ""),
-                                         ("Functions filename", ""),
-                                         ("Arg count", ""),
-                                         ("Args", ""),
-                                         ("Function depth", ""),
-                                         ("hitcount", ""),
-                                         ("instr count", ""),
-                                         ("bb count", ""),
-                                         ("cyclomatic complexity", ""),
-                                         ("Reachable functions", ""),
-                                         ("Incoming references", ""),
-                                         ("total cyclomatic complexity", ""),
-                                         ("Unreached complexity", "")
-                                     ])
+    html_string += fuzz_html_helpers.html_create_table_head(
+        table_id,
+        [
+            ("Func name", ""),
+            ("Functions filename", ""),
+            ("Arg count", ""),
+            ("Args", ""),
+            ("Function depth", ""),
+            ("hitcount", ""),
+            ("instr count", ""),
+            ("bb count", ""),
+            ("cyclomatic complexity", ""),
+            ("Reachable functions", ""),
+            ("Incoming references", ""),
+            ("total cyclomatic complexity", ""),
+            ("Unreached complexity", "")
+        ]
+    )
     for fd in optimal_target_functions:
         html_string += fuzz_html_helpers.html_table_add_row([
             "<a href=\"#\"><code class='language-clike'>%s</code></a>" % (

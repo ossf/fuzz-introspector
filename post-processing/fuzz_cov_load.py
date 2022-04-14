@@ -151,7 +151,7 @@ def llvm_cov_load(target_dir, target_name=None):
                         hit_times = 0
                     # Add source code line and hitcount to coverage map of current function
                     logger.debug(f"reading coverage: {fname} -- {curr_func} "
-                                f"-- {line_number} -- {hit_times}")
+                                 f"-- {line_number} -- {hit_times}")
                     cp.covmap[curr_func].append((line_number, hit_times))
     return cp
 
