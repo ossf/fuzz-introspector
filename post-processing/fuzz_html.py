@@ -53,7 +53,7 @@ def create_horisontal_calltree_image(image_name: str,
     of a rectangle. The rectangle is red if not visited and green if visited.
     """
 
-    logger.info("Creating image %s" % image_name)
+    logger.info(f"Creating image {image_name}")
 
     if profile.function_call_depths is None:
         return
@@ -61,7 +61,7 @@ def create_horisontal_calltree_image(image_name: str,
     color_list = []
     for node in fuzz_cfg_load.extract_all_callsites(profile.function_call_depths):
         color_list.append(node.cov_color)
-    logger.info("- extracted the callsites (%d nodes)" % len(color_list))
+    logger.info(f"- extracted the callsites ({len(color_list)} nodes)")
 
     # Show one read rectangle if the list is empty. An alternative is
     # to not include the image at all.
@@ -232,7 +232,7 @@ def create_all_function_table(
             "Func name": func_name_row,
             "func_url": func_cov_url,
             "Functions filename": fd.function_source_file,
-            "Args": "%s : %s" % (str(fd.arg_count), str(fd.arg_types)),
+            "Args": f"{str(fd.arg_count)} : {str(fd.arg_types)}",
             "Function call depth": fd.function_depth,
             "Reached by Fuzzers": reached_by_fuzzers_row,
             "collapsible_id": collapsible_id,
@@ -337,12 +337,12 @@ def create_boxed_top_summary_info(tables: List[str],
 
     graph1_title = "Functions statically reachable by fuzzers"
     graph1_percentage = str(round(reached_percentage, 2))
-    graph1_numbers = "%d/%d" % (reached_func_count, total_functions)
+    graph1_numbers = f"{reached_func_count}/{total_functions}"
     html_string += create_percentage_graph(graph1_title, graph1_percentage, graph1_numbers)
 
     graph2_title = "Cyclomatic complexity statically reachable by fuzzers"
     graph2_percentage = str(round(reached_complexity_percentage, 2))
-    graph2_numbers = "%d/%d" % (complexity_reached, int(total_complexity))
+    graph2_numbers = f"{complexity_reached}/{int(total_complexity)}"
     html_string += create_percentage_graph(graph2_title, graph2_percentage, graph2_numbers)
     if display_coverage:
         logger.info("Displaying coverage in summary")
@@ -419,18 +419,18 @@ def create_top_summary_info(
     html_string += "<div style=\"display: flex; max-width: 50%\">"
     graph1_title = "Functions statically reachable by fuzzers"
     graph1_percentage = str(round(reached_percentage, 2))
-    graph1_numbers = "%d/%d" % (reached_func_count, total_functions)
+    graph1_numbers = f"{reached_func_count}/{total_functions}"
     html_string += create_percentage_graph(graph1_title, graph1_percentage, graph1_numbers)
 
     graph2_title = "Cyclomatic complexity statically reachable by fuzzers"
     graph2_percentage = str(round(reached_complexity_percentage, 2))
-    graph2_numbers = "%d / %d" % (complexity_reached, int(total_complexity))
+    graph2_numbers = f"{complexity_reached} / {int(total_complexity)}"
     html_string += create_percentage_graph(graph2_title, graph2_percentage, graph2_numbers)
     html_string += "</div>"
     if display_coverage:
         logger.info("Displaying coverage in summary")
         covered_funcs = project_profile.get_all_runtime_covered_functions()
-        html_string += f"""Functions covered at runtime: { len(covered_funcs) }"""
+        html_string += f"Functions covered at runtime: { len(covered_funcs) }"
         html_string += "<br>"
     else:
         logger.info("Not displaying coverage in summary")
@@ -509,7 +509,8 @@ def get_fuzz_blocker_data(profile: fuzz_data_loader.FuzzerProfile):
 
 
 def create_str_node_ctx_idx(cov_ct_idx):
-    return "%s%s" % ("0" * (len("00000") - len(cov_ct_idx)), cov_ct_idx)
+    prefixed_zeros = "0" * (len("00000") - len(cov_ct_idx))
+    return f"{prefixed_zeros}{cov_ct_idx}"
 
 
 def get_fuzz_blocker_idxs(profile: fuzz_data_loader.FuzzerProfile):
@@ -582,7 +583,7 @@ def create_fuzz_blocker_table(
             str(node.cov_forward_reds),
             str(node.cov_ct_idx),
             node.cov_parent,
-            "<a href=%s>call site</a>" % node_link,
+            f"<a href={node_link}>call site</a>",
             node.cov_largest_blocked_func
         ])
         max_idx -= 1
@@ -665,10 +666,10 @@ def create_calltree(profile: fuzz_data_loader.FuzzerProfile) -> str:
 
     # Write the HTML to a file called calltree_view_XX.html where XX is a counter.
     calltree_file_idx = 0
-    calltree_html_file = "calltree_view_%d.html" % calltree_file_idx
+    calltree_html_file = f"calltree_view_{calltree_file_idx}.html"
     while os.path.isfile(calltree_html_file):
         calltree_file_idx += 1
-        calltree_html_file = "calltree_view_%d.html" % calltree_file_idx
+        calltree_html_file = f"calltree_view_{calltree_file_idx}.html"
 
     blocker_idxs = get_fuzz_blocker_idxs(profile)
     write_wrapped_html_file(calltree_html_string, calltree_html_file, blocker_idxs, profile)
@@ -685,8 +686,8 @@ def create_fuzzer_detailed_section(
     html_string = ""
     fuzzer_filename = profile.fuzzer_source_file
 
-    html_string += fuzz_html_helpers.html_add_header_with_link("Fuzzer: %s" % (
-        profile.get_key()),
+    html_string += fuzz_html_helpers.html_add_header_with_link(
+        f"Fuzzer: {profile.get_key()}",
         2,
         toc_list
     )
@@ -707,10 +708,11 @@ def create_fuzzer_detailed_section(
         f"Glossary.md#call-tree-overview\">Glossary</a>."
         f"</p>"
     )
-    image_name = "%s_colormap.png" % (fuzzer_filename.replace(" ", "").split("/")[-1])
+    colormap_file_prefix = fuzzer_filename.replace(" ", "").split("/")[-1]
+    image_name = f"{colormap_file_prefix}_colormap.png"
 
     create_horisontal_calltree_image(image_name, profile)
-    html_string += "<img class=\"colormap\" src=\"%s\">" % image_name
+    html_string += f"<img class=\"colormap\" src=\"{image_name}\">"
 
     # Full calltree
     html_string += fuzz_html_helpers.html_add_header_with_link(
@@ -743,7 +745,7 @@ def create_fuzzer_detailed_section(
         "Functions hit (dynamic analysis based)",
         3,
         toc_list,
-        link="functions_cov_hit_%d" % curr_tt_profile
+        link=f"functions_cov_hit_{curr_tt_profile}"
     )
     table_name = f"myTable{len(tables)}"
 
@@ -827,7 +829,7 @@ def create_fuzzer_detailed_section(
 
     # Table showing which files this fuzzer hits.
     html_string += fuzz_html_helpers.html_add_header_with_link(
-        "Files hit", 3, toc_list, link="files_hit_%d" % (curr_tt_profile))
+        "Files hit", 3, toc_list, link=f"files_hit_{curr_tt_profile}")
     tables.append(f"myTable{len(tables)}")
     html_string += fuzz_html_helpers.html_create_table_head(
         tables[-1],
@@ -923,7 +925,7 @@ def create_html_report(
         3,
         toc_list
     )
-    tables.append("myTable%d" % (len(tables)))
+    tables.append(f"myTable{len(tables)}")
     html_report_core += "<div style=\"display: flex; max-width: 800px\">"
     html_report_core += create_boxed_top_summary_info(
         tables,
@@ -939,7 +941,7 @@ def create_html_report(
     #############################################
     logger.info(" - Creating table with overview of all fuzzers")
     html_report_core += fuzz_html_helpers.html_add_header_with_link("Fuzzers overview", 3, toc_list)
-    tables.append("myTable%d" % (len(tables)))
+    tables.append(f"myTable{len(tables)}")
     html_report_core += create_overview_table(tables, profiles)
 
     #############################################
@@ -1050,7 +1052,7 @@ def create_html_report(
     html_footer += "var tableIds = ["
     counter = 0
     for tablename in tables:
-        html_footer += "'%s'" % tablename
+        html_footer += f"'{tablename}'"
         if counter != len(tables) - 1:
             html_footer += ", "
         else:
