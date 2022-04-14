@@ -56,7 +56,7 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
         any fuzzers. This means it can be used to expand the current fuzzing harness
         rather than substitute it.
         """
-        logger.info(" - Identifying optimal targets")
+        logger.info(f" - Running analysis {self.name}")
 
         html_string = ""
         html_string += fuzz_html_helpers.html_add_header_with_link(
@@ -115,7 +115,7 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
         html_string += "<p>Implementing fuzzers that target the above functions " \
                        "will improve reachability such that it becomes:</p>"
         tables.append(f"myTable{len(tables)}")
-        # html_string += create_top_summary_info(tables, new_profile, conclusions, False)
+        html_string += fuzz_html.create_top_summary_info(tables, new_profile, conclusions, False)
 
         # Section with code for new fuzzing harnesses
         if should_synthetise:
@@ -159,4 +159,5 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
             all_funcs_json_file.write("var analysis_1_data = ")
             all_funcs_json_file.write(json.dumps(all_functions_json))
 
+        logger.info(f" - Completed analysis {self.name}")
         return html_string

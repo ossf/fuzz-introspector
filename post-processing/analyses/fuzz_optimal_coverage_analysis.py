@@ -41,7 +41,7 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
                       basefolder: str,
                       coverage_url: str,
                       conclusions) -> str:
-        logger.info("In analysis 3")
+        logger.info(f" - Running analysis {self.name}")
 
         functions_of_interest = fuzz_analysis.analysis_coverage_runtime_analysis(
             profiles,
@@ -83,4 +83,6 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
             ])
         html_string += "</table>"
         html_string += "</div>"  # report-box
+
+        logger.info(f" - Completed analysis {self.name}")
         return html_string
