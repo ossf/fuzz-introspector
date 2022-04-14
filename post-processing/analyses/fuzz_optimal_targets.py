@@ -95,21 +95,28 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
             ]
         )
         for fd in optimal_target_functions:
-            html_string += fuzz_html_helpers.html_table_add_row([
-                "<a href=\"#\"><code class='language-clike'>%s</code></a>" % (
-                    fuzz_utils.demangle_cpp_func(fd.function_name)),
-                fd.function_source_file,
-                fd.arg_count,
-                fd.arg_types,
-                fd.function_depth,
-                fd.hitcount,
-                fd.i_count,
-                fd.bb_count,
-                fd.cyclomatic_complexity,
-                len(fd.functions_reached),
-                len(fd.incoming_references),
-                fd.total_cyclomatic_complexity,
-                fd.new_unreached_complexity])
+            html_func_row = (
+                f"<a href=\"#\"><code class='language-clike'>"
+                f"{fuzz_utils.demangle_cpp_func(fd.function_name)}"
+                f"</code></a>"
+            )
+            html_string += fuzz_html_helpers.html_table_add_row(
+                [
+                    html_func_row,
+                    fd.function_source_file,
+                    fd.arg_count,
+                    fd.arg_types,
+                    fd.function_depth,
+                    fd.hitcount,
+                    fd.i_count,
+                    fd.bb_count,
+                    fd.cyclomatic_complexity,
+                    len(fd.functions_reached),
+                    len(fd.incoming_references),
+                    fd.total_cyclomatic_complexity,
+                    fd.new_unreached_complexity
+                ]
+            )
         html_string += ("</table>\n")
 
         html_string += "<p>Implementing fuzzers that target the above functions " \
@@ -124,17 +131,20 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
                            "to target the set of optimal functions above</p>"
             for filename in fuzz_targets:
                 html_string += fuzz_html_helpers.html_add_header_with_link(
-                    "%s" % filename.split("/")[-1],
+                    str(filename.split("/")[-1]),
                     4,
                     toc_list
                 )
-                html_string += "<b>Target file:</b>%s<br>" % (filename)
+                html_string += "f<b>Target file:</b>{filename}<br>"
                 all_functions = ", ".join(
                     [f.function_name for f in fuzz_targets[filename]['target_fds']]
                 )
-                html_string += "<b>Target functions:</b> %s" % (all_functions)
-                html_string += "<pre><code class='language-clike'>%s</code></pre><br>" % (
-                    fuzz_targets[filename]['source_code'])
+                html_string += f"<b>Target functions:</b> {all_functions}"
+                html_string += (
+                    f"<pre><code class='language-clike'>"
+                    f"{fuzz_targets[filename]['source_code']}"
+                    f"</code></pre><br>"
+                )
 
         # Table with details about all functions in the project in case the
         # suggested fuzzers are implemented.

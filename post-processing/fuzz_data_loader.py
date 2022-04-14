@@ -103,7 +103,7 @@ class FuzzerProfile:
                 split_name = elem['functionName'].split(".")
                 if split_name[-1].isnumeric():
                     logger.info(
-                        "We may have a non-normalised function name: %s" % elem['functionName']
+                        f"We may have a non-normalised function name: {elem['functionName']}"
                     )
 
             func_profile = FunctionProfile(elem['functionName'])
@@ -144,11 +144,12 @@ class FuzzerProfile:
 
     def correlate_executable_name(self, correlation_dict):
         for elem in correlation_dict['pairings']:
-            if os.path.basename(self.introspector_data_file) in "%s.data" % elem['fuzzer_log_file']:
-                self.binary_executable = "%s" % elem['executable_path']
-                logger.info("Correlated %s with %s" % (
-                    os.path.basename(self.introspector_data_file),
-                    "%s.data" % elem['fuzzer_log_file']))
+            if os.path.basename(self.introspector_data_file) in f"{elem['fuzzer_log_file']}.data":
+                self.binary_executable = str(elem['executable_path'])
+
+                lval = os.path.basename(self.introspector_data_file)
+                rval = f"{elem['fuzzer_log_file']}.data"
+                logger.info(f"Correlated {lval} with {rval}")
 
     def get_key(self):
         """
@@ -297,7 +298,7 @@ class MergedProjectProfile:
         self.unreached_functions = set()
         self.functions_reached = set()
 
-        logger.info("Creating merged profile of %d profiles" % len(self.profiles))
+        logger.info(f"Creating merged profile of {len(self.profiles)} profiles")
         # Populate functions reached
         logger.info("Populating functions reached")
         for profile in profiles:
@@ -339,7 +340,7 @@ class MergedProjectProfile:
 
             for reached_func_name in fp_obj.functions_reached:
                 if reached_func_name not in self.all_functions:
-                    logger.error("Mismatched function name: %s" % reached_func_name)
+                    logger.error(f"Mismatched function name: {reached_func_name}")
                     continue
                 reached_func_obj = self.all_functions[reached_func_name]
                 reached_func_obj.incoming_references.append(fp_obj.function_name)
@@ -487,7 +488,7 @@ def read_fuzzer_data_file_to_profile(filename: str) -> Optional[FuzzerProfile]:
     For a given .data file (CFG) read the corresponding .yaml file
     This is a bit odd way of doing it and should probably be improved.
     """
-    logger.info(" - loading %s" % filename)
+    logger.info(f" - loading {filename}")
     if not os.path.isfile(filename) or not os.path.isfile(filename + ".yaml"):
         return None
 
@@ -527,7 +528,7 @@ def add_func_to_reached_and_clone(merged_profile_old: MergedProjectProfile,
     # Update hitcount of all functions reached by the function
     for func_name in func_to_add.functions_reached:
         if func_name not in merged_profile.all_functions:
-            logger.error("Mismatched function name: %s" % func_name)
+            logger.error(f"Mismatched function name: {func_name}")
             continue
         f = merged_profile.all_functions[func_name]
         f.hitcount += 1
@@ -542,7 +543,7 @@ def add_func_to_reached_and_clone(merged_profile_old: MergedProjectProfile,
         uncovered_cc = 0
         for reached_func_name in f_profile.functions_reached:
             if reached_func_name not in merged_profile.all_functions:
-                logger.error("Mismatched function name: %s" % reached_func_name)
+                logger.error(f"Mismatched function name: {reached_func_name}")
                 continue
             f_reached = merged_profile.all_functions[reached_func_name]
             cc += f_reached.cyclomatic_complexity
@@ -564,7 +565,7 @@ def load_all_profiles(target_folder: str) -> List[FuzzerProfile]:
         target_folder,
         "fuzzerLogFile.*\.data$"
     )
-    logger.info(" - found %d profiles to load" % len(data_files))
+    logger.info(f" - found {len(data_files)} profiles to load")
     for data_file in data_files:
         profile = read_fuzzer_data_file_to_profile(data_file)
         if profile is not None:

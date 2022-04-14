@@ -152,9 +152,10 @@ def overlay_calltree_with_coverage(
         link = "#"
         for fd_k, fd in profile.all_class_functions.items():
             if fd.function_name == node.dst_function_name:
-                link = target_coverage_url + \
-                    "%s.html#L%d" % (
-                        fd.function_source_file, fd.function_linenumber)
+                link = (
+                    f"{target_coverage_url}"
+                    f"{fd.function_source_file}.html#L{fd.function_linenumber}"
+                )
                 break
         node.cov_link = link
 
@@ -164,9 +165,10 @@ def overlay_calltree_with_coverage(
             parent_fname = callstack_get_parent(node, callstack)
             for fd_k, fd in profile.all_class_functions.items():
                 if fuzz_utils.demangle_cpp_func(fd.function_name) == parent_fname:
-                    callsite_link = target_coverage_url + "%s.html#L%d" % (
-                        fd.function_source_file,   # parent source file
-                        node.src_linenumber)       # callsite line number
+                    callsite_link = (
+                        f"{target_coverage_url}"
+                        f"{fd.function_source_file}.html#L{node.src_linenumber}"
+                    )
         node.cov_callsite_link = callsite_link
 
     # Extract data about which nodes unlocks data
@@ -415,8 +417,10 @@ def analysis_synthesize_simple_targets(
             'target_fds': target_codes[filename]['target_fds']
         }
 
-    logger.info("Found the following optimal functions: { %s }" % (
-        str([f.function_name for f in optimal_functions_targeted])))
+    optimal_functions_str = ""
+    for f in optimal_functions_targeted:
+        optimal_functions_str += f"{f.function_name} "
+    logger.info(f"Found the following optimal functions: { optimal_functions_str }")
 
     return final_fuzzers, new_merged_profile, optimal_functions_targeted
 
@@ -445,5 +449,5 @@ def analysis_coverage_runtime_analysis(
             if total_lines > 50 and hit_proportion < 20:
                 functions_of_interest.append(funcname)
         except Exception:
-            logger.error("Error getting hit-summary information for %s" % funcname)
+            logger.error(f"Error getting hit-summary information for {funcname}")
     return functions_of_interest
