@@ -151,6 +151,34 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
         logger.info(f" - Completed analysis {self.name}")
         return html_string
 
+    def qualifies_as_optimal_target(self, fd):
+        """
+        Hard conditions for whether a target qualifies as a potential
+        optimal target. These are minimum conditions, i.e. the analysis
+        will still pick a subset of all functions that satisfy the
+        conditions.
+        """
+        if fd.hitcount != 0:
+            return False
+
+        if len(fd.functions_reached) < 1:
+            return False
+
+        if fd.arg_count == 0:
+            return False
+
+        # We do not care about "main2" functions
+        if "main2" in fd.function_name:
+            return False
+
+        if fd.total_cyclomatic_complexity < 20:
+            return False
+
+        if fd.bb_count <= 1:
+            return False
+
+        return True
+
     def analysis_get_optimal_targets(
         self,
         merged_profile: fuzz_data_loader.MergedProjectProfile
@@ -164,50 +192,19 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
         optimal_set: Set[str] = set()
         target_fds: List[fuzz_data_loader.FunctionProfile] = list()
 
-        for fd in reversed(sorted(list(merged_profile.all_functions.values()),
-                                  key=lambda x: len(x.functions_reached))):
-            total_vals = 0
-            for t in optimal_set:
-                if t in fd.functions_reached:
-                    total_vals += 1
-
-            if fd.hitcount != 0:
-                continue
-
-            if len(fd.functions_reached) < 1:
-                continue
-
-            if fd.arg_count == 0:
-                continue
-
-            # We do not care about "main2" functions
-            if "main2" in fd.function_name:
-                continue
-
-            if fd.total_cyclomatic_complexity < 20:
-                continue
-
-            # Ensure that the overlap with existing functions in our optimal set is not excessive
-            # set is not excessive. There is likely some overlap because of use of
-            # utility functions and similar.
-            # proportion = (total_vals*1.0)/(len(fd['functionsReached'])*1.0)
-
-            # if proportion == 1.0:
-            #    continue
-
-            # condition1 = proportion < 0.5
-            condition1 = True
-
-            # We also want to include all targets that have a fairly high complexity.
-            condition2 = fd.bb_count > 1
-
-            if not (condition1 or condition2):
+        funcs_by_reached = sorted(
+            list(merged_profile.all_functions.values()),
+            key=lambda x: len(x.functions_reached),
+            reverse=True
+        )
+        for fd in funcs_by_reached:
+            if not self.qualifies_as_optimal_target(fd):
                 continue
 
             for func_name in fd.functions_reached:
                 optimal_set.add(func_name)
-
             target_fds.append(fd)
+
         logger.info(". Done")
         return target_fds, optimal_set
 
@@ -237,25 +234,29 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
         optimal_functions_targeted: List[fuzz_data_loader.FunctionProfile] = []
 
         func_count = len(merged_profile.all_functions)
-        if func_count > 20000:
-            max_count = 1
-        elif func_count > 10000 and func_count < 20000:
-            max_count = 5
-        elif func_count > 2000 and func_count < 10000:
-            max_count = 7
-        else:
-            max_count = 10
-        while len(optimal_functions_targeted) < max_count:
+
+        # Determine number of fuzzers to create
+        drivers_to_create = 10
+        count_ranges = [
+            (20000, 1),
+            (10000, 5),
+            (2000, 7),
+        ]
+        for top, count in count_ranges:
+            if func_count > top:
+                drivers_to_create = count
+                break
+        logger.info(f"Getting {drivers_to_create} optimal targets")
+        while len(optimal_functions_targeted) < drivers_to_create:
             logger.info("  - sorting by unreached complexity. ")
             sorted_by_undiscovered_complexity = list(
-                reversed(
-                    sorted(
-                        target_fds,
-                        key=lambda x: int(x.new_unreached_complexity)
-                    )
+                sorted(
+                    target_fds,
+                    key=lambda x: int(x.new_unreached_complexity),
+                    reverse=True
                 )
             )
-            logger.info(". Done")
+            logger.info(f". Done - length of the list: {len(sorted_by_undiscovered_complexity)}")
 
             try:
                 tfd = sorted_by_undiscovered_complexity[0]
@@ -263,7 +264,6 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
                 break
             if tfd is None:
                 break
-
             if tfd.new_unreached_complexity <= 35:
                 break
 
@@ -276,16 +276,14 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
             )
 
             # Ensure hitcount is set
-            tmp_ff = new_merged_profile.all_functions[tfd.function_name]
-            if tmp_ff.hitcount == 0:
+            if new_merged_profile.all_functions[tfd.function_name].hitcount == 0:
                 logger.info("Error. Hitcount did not get set for some reason. Exiting")
                 exit(0)
             logger.info(". Done")
 
-            # We need to update the optimal targets here.
-            # We only need to do this operation if we are actually going to continue analysis
-
-            if len(optimal_functions_targeted) < max_count:
+            # Update the optimal targets. We only need to do this
+            # if more drivers need to be created.
+            if len(optimal_functions_targeted) < drivers_to_create:
                 target_fds, optimal_set = self.analysis_get_optimal_targets(new_merged_profile)
 
         logger.info("Found the following optimal functions: { %s }" % (
