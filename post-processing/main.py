@@ -97,7 +97,11 @@ def parse_cmdline():
     report_parser.add_argument(
         "--analyses",
         nargs="+",
-        default=["OptimalTargets", "OptimalCoverageTargets"],
+        default=[
+            "OptimalTargets",
+            "OptimalCoverageTargets",
+            "FuzzDriverSynthesizerAnalysis"
+        ],
         help="Analyses to run. Available options: OptimalTargets, FuzzEngineInput"
     )
     report_parser.add_argument("--correlation_file",

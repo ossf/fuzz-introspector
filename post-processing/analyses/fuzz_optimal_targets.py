@@ -19,10 +19,8 @@ import json
 import logging
 
 from typing import (
-    Dict,
     List,
     Tuple,
-    TypedDict,
     Set
 )
 
@@ -33,11 +31,6 @@ import fuzz_html_helpers
 import fuzz_utils
 
 logger = logging.getLogger(name=__name__)
-
-TargetCodesType = TypedDict('TargetCodesType', {
-    'source_code': str,
-    'target_fds': List[fuzz_data_loader.FunctionProfile]
-})
 
 
 class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
@@ -70,9 +63,8 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
         html_string = ""
         html_string += fuzz_html_helpers.html_add_header_with_link(
             "Optimal target analysis", 2, toc_list)
-        (fuzz_targets,
-         new_profile,
-         optimal_target_functions) = self.analysis_synthesize_simple_targets(
+
+        new_profile, optimal_target_functions = self.analysis_synthesize_simple_targets(
             project_profile
         )
 
@@ -132,28 +124,6 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
                        "will improve reachability such that it becomes:</p>"
         tables.append(f"myTable{len(tables)}")
         html_string += fuzz_html.create_top_summary_info(tables, new_profile, conclusions, False)
-
-        # Section with code for new fuzzing harnesses
-        if should_synthetise:
-            html_string += fuzz_html_helpers.html_add_header_with_link("New fuzzers", 3, toc_list)
-            html_string += "<p>The below fuzzers are templates and suggestions for how " \
-                           "to target the set of optimal functions above</p>"
-            for filename in fuzz_targets:
-                html_string += fuzz_html_helpers.html_add_header_with_link(
-                    str(filename.split("/")[-1]),
-                    4,
-                    toc_list
-                )
-                html_string += "f<b>Target file:</b>{filename}<br>"
-                all_functions = ", ".join(
-                    [f.function_name for f in fuzz_targets[filename]['target_fds']]
-                )
-                html_string += f"<b>Target functions:</b> {all_functions}"
-                html_string += (
-                    f"<pre><code class='language-clike'>"
-                    f"{fuzz_targets[filename]['source_code']}"
-                    f"</code></pre><br>"
-                )
 
         # Table with details about all functions in the project in case the
         # suggested fuzzers are implemented.
@@ -245,7 +215,6 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
             self,
             merged_profile: fuzz_data_loader.MergedProjectProfile) -> (
                 Tuple[
-                    Dict[str, TargetCodesType],
                     fuzz_data_loader.MergedProjectProfile,
                     List[fuzz_data_loader.FunctionProfile]
                 ]):
@@ -265,10 +234,8 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
         fuzzer_code += "int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {\n"
         fuzzer_code += "  af_safe_gb_init(data, size);\n\n"
 
-        target_codes: Dict[str, TargetCodesType] = dict()
         optimal_functions_targeted: List[fuzz_data_loader.FunctionProfile] = []
 
-        var_idx = 0
         func_count = len(merged_profile.all_functions)
         if func_count > 20000:
             max_count = 1
@@ -278,8 +245,7 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
             max_count = 7
         else:
             max_count = 10
-        curr_count = 0
-        while curr_count < max_count:
+        while len(optimal_functions_targeted) < max_count:
             logger.info("  - sorting by unreached complexity. ")
             sorted_by_undiscovered_complexity = list(
                 reversed(
@@ -300,62 +266,8 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
 
             if tfd.new_unreached_complexity <= 35:
                 break
-            curr_count += 1
 
             optimal_functions_targeted.append(tfd)
-
-            code = ""
-            code_var_decl = ""
-            var_order = []
-            for arg_type in tfd.arg_types:
-                arg_type = arg_type.replace(" ", "")
-                if arg_type == "char**":
-                    code_var_decl += "  char **new_var%d = af_get_double_char_p();\n" % var_idx
-                    # We dont want the below line but instead we want to ensure
-                    # we always return something valid.
-                    var_order.append("new_var%d" % var_idx)
-                    var_idx += 1
-                elif arg_type == "char*":
-                    code_var_decl += "  char *new_var%d = ada_safe_get_char_p();\n" % var_idx
-                    var_order.append("new_var%d" % var_idx)
-                    var_idx += 1
-                elif arg_type == "int":
-                    code_var_decl += "  int new_var%d = ada_safe_get_int();\n" % var_idx
-                    var_order.append("new_var%d" % var_idx)
-                    var_idx += 1
-                elif arg_type == "int*":
-                    code_var_decl += "  int *new_var%d = af_get_int_p();\n" % var_idx
-                    var_order.append("new_var%d" % var_idx)
-                    var_idx += 1
-                elif "struct" in arg_type and "*" in arg_type and "**" not in arg_type:
-                    code_var_decl += "  %s new_var%d = calloc(sizeof(%s), 1);\n" % (
-                        arg_type.replace(".", " "),
-                        var_idx,
-                        arg_type.replace(".", " ").replace("*", ""))
-                    var_order.append("new_var%d" % var_idx)
-                    var_idx += 1
-                else:
-                    code_var_decl += "  UNKNOWN_TYPE unknown_%d;\n" % var_idx
-                    var_order.append("unknown_%d" % var_idx)
-                    var_idx += 1
-
-            # Now add the function call.
-            code += "  /* target %s */\n" % tfd.function_name
-            code += code_var_decl
-            code += "  %s(" % tfd.function_name
-            for idx in range(len(var_order)):
-                code += var_order[idx]
-                if idx < (len(var_order) - 1):
-                    code += ", "
-            code += ");\n"
-            code += "\n"
-            if tfd.function_source_file not in target_codes:
-                target_codes[tfd.function_source_file] = {
-                    'source_code': "",
-                    'target_fds': list()
-                }
-            target_codes[tfd.function_source_file]['source_code'] += code
-            target_codes[tfd.function_source_file]['target_fds'].append(tfd)
 
             logger.info("  - calling add_func_t_reached_and_clone. ")
             new_merged_profile = fuzz_data_loader.add_func_to_reached_and_clone(
@@ -373,22 +285,10 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
             # We need to update the optimal targets here.
             # We only need to do this operation if we are actually going to continue analysis
 
-            if curr_count < max_count:
+            if len(optimal_functions_targeted) < max_count:
                 target_fds, optimal_set = self.analysis_get_optimal_targets(new_merged_profile)
-
-        final_fuzzers: Dict[str, TargetCodesType] = dict()
-        for filename in target_codes:
-            file_fuzzer_code = fuzzer_code
-            file_fuzzer_code += target_codes[filename]['source_code']
-            file_fuzzer_code += "  af_safe_gb_cleanup();\n"
-            file_fuzzer_code += "}\n"
-
-            final_fuzzers[filename] = {
-                'source_code': file_fuzzer_code,
-                'target_fds': target_codes[filename]['target_fds']
-            }
 
         logger.info("Found the following optimal functions: { %s }" % (
             str([f.function_name for f in optimal_functions_targeted])))
 
-        return final_fuzzers, new_merged_profile, optimal_functions_targeted
+        return new_merged_profile, optimal_functions_targeted
