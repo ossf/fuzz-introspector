@@ -179,7 +179,6 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
 
         return True
 
-
     def analysis_get_optimal_targets(
         self,
         merged_profile: fuzz_data_loader.MergedProjectProfile
