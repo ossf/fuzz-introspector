@@ -257,7 +257,7 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
                 )
             )
             logger.info(f". Done - length of the list: {len(sorted_by_undiscovered_complexity)}")
-            if len(sorted_by_undiscovered_complexity) is 0:
+            if len(sorted_by_undiscovered_complexity) == 0:
                 break
 
             # Add function to optimal targets
