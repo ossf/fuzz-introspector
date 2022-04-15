@@ -556,6 +556,10 @@ def add_func_to_reached_and_clone(merged_profile_old: MergedProjectProfile,
             f_profile.new_unreached_complexity += f_profile.cyclomatic_complexity
         f_profile.total_cyclomatic_complexity = cc + f_profile.cyclomatic_complexity
 
+    if merged_profile.all_functions[func_to_add.function_name].hitcount == 0:
+        logger.info("Error. Hitcount did not get set for some reason. Exiting")
+        exit(0)
+
     return merged_profile
 
 
