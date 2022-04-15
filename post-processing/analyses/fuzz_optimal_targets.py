@@ -34,11 +34,6 @@ import fuzz_utils
 
 logger = logging.getLogger(name=__name__)
 
-TargetCodesType = TypedDict('TargetCodesType', {
-    'source_code': str,
-    'target_fds': List[fuzz_data_loader.FunctionProfile]
-})
-
 
 class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
     def __init__(self):
@@ -241,7 +236,6 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
         fuzzer_code += "int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {\n"
         fuzzer_code += "  af_safe_gb_init(data, size);\n\n"
 
-        target_codes: Dict[str, TargetCodesType] = dict()
         optimal_functions_targeted: List[fuzz_data_loader.FunctionProfile] = []
 
         func_count = len(merged_profile.all_functions)

@@ -38,6 +38,11 @@ from analyses import (
 
 logger = logging.getLogger(name=__name__)
 
+TargetCodesType = TypedDict('TargetCodesType', {
+        'source_code': str,
+            'target_fds': List[fuzz_data_loader.FunctionProfile]
+            })
+
 
 class FuzzDriverSynthesizerAnalysis(fuzz_analysis.AnalysisInterface):
     def __init__(self):
