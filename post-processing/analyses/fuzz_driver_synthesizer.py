@@ -13,9 +13,6 @@
 # limitations under the License.
 """Analysis for synthesizing fuzz drivers"""
 
-import copy
-import os
-import json
 import logging
 
 from typing import (
@@ -23,14 +20,11 @@ from typing import (
     List,
     Tuple,
     TypedDict,
-    Set
 )
 
 import fuzz_analysis
 import fuzz_data_loader
-import fuzz_html
 import fuzz_html_helpers
-import fuzz_utils
 
 from analyses import (
     fuzz_optimal_targets
@@ -39,9 +33,9 @@ from analyses import (
 logger = logging.getLogger(name=__name__)
 
 TargetCodesType = TypedDict('TargetCodesType', {
-        'source_code': str,
-            'target_fds': List[fuzz_data_loader.FunctionProfile]
-            })
+    'source_code': str,
+    'target_fds': List[fuzz_data_loader.FunctionProfile]
+})
 
 
 class FuzzDriverSynthesizerAnalysis(fuzz_analysis.AnalysisInterface):
