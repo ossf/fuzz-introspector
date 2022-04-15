@@ -50,7 +50,7 @@ class FuzzDriverSynthesizerAnalysis(fuzz_analysis.AnalysisInterface):
                       basefolder: str,
                       coverage_url: str,
                       conclusions,
-                      fuzz_targets = None) -> str:
+                      fuzz_targets=None) -> str:
         logger.info(f" - Running analysis {self.name}")
         html_string = ""
         html_string += fuzz_html_helpers.html_add_header_with_link(
@@ -61,7 +61,7 @@ class FuzzDriverSynthesizerAnalysis(fuzz_analysis.AnalysisInterface):
 
         if fuzz_targets is None or len(fuzz_targets) == 0:
             A1 = fuzz_optimal_targets.FuzzOptimalTargetAnalysis()
-            
+
             _, optimal_target_functions = A1.analysis_synthesize_simple_targets(
                 project_profile
             )
@@ -72,8 +72,8 @@ class FuzzDriverSynthesizerAnalysis(fuzz_analysis.AnalysisInterface):
         fuzzer_code = "#include \"ada_fuzz_header.h\"\n"
         fuzzer_code += "\n"
         fuzzer_code += "int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {\n"
-        fuzzer_code += "  af_safe_gb_init(data, size);\n\n" 
-        
+        fuzzer_code += "  af_safe_gb_init(data, size);\n\n"
+
         var_idx = 0
         for tfd in fuzz_targets:
             code = ""
@@ -129,7 +129,7 @@ class FuzzDriverSynthesizerAnalysis(fuzz_analysis.AnalysisInterface):
             target_codes[tfd.function_source_file]['source_code'] += code
             target_codes[tfd.function_source_file]['target_fds'].append(tfd)
 
-            logger.info(". Done") 
+            logger.info(". Done")
 
         final_fuzzers: Dict[str, TargetCodesType] = dict()
         for filename in target_codes:
@@ -141,7 +141,7 @@ class FuzzDriverSynthesizerAnalysis(fuzz_analysis.AnalysisInterface):
             final_fuzzers[filename] = {
                 'source_code': file_fuzzer_code,
                 'target_fds': target_codes[filename]['target_fds']
-            }        
+            }
         logger.info("Synthesizing drivers for the following optimal functions: { %s }" % (
             str([f.function_name for f in fuzz_targets])))
 

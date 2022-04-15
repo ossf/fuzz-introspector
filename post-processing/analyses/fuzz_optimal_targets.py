@@ -19,10 +19,8 @@ import json
 import logging
 
 from typing import (
-    Dict,
     List,
     Tuple,
-    TypedDict,
     Set
 )
 
@@ -65,7 +63,7 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
         html_string = ""
         html_string += fuzz_html_helpers.html_add_header_with_link(
             "Optimal target analysis", 2, toc_list)
-        
+
         new_profile, optimal_target_functions = self.analysis_synthesize_simple_targets(
             project_profile
         )
