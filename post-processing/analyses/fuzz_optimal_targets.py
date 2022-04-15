@@ -39,6 +39,7 @@ TargetCodesType = TypedDict('TargetCodesType', {
     'target_fds': List[fuzz_data_loader.FunctionProfile]
 })
 
+
 class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
     def __init__(self):
         self.name = "OptimalTargets"
@@ -180,7 +181,6 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
         logger.info(f" - Completed analysis {self.name}")
         return html_string
 
-
     def analysis_get_optimal_targets(
         self,
         merged_profile: fuzz_data_loader.MergedProjectProfile
@@ -241,7 +241,6 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
         logger.info(". Done")
         return target_fds, optimal_set
 
-
     def analysis_synthesize_simple_targets(
             self,
             merged_profile: fuzz_data_loader.MergedProjectProfile) -> (
@@ -282,9 +281,14 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
         curr_count = 0
         while curr_count < max_count:
             logger.info("  - sorting by unreached complexity. ")
-            sorted_by_undiscovered_complexity = list(reversed(sorted(target_fds,
-                                                                     key=lambda x: int(
-                                                                         x.new_unreached_complexity))))
+            sorted_by_undiscovered_complexity = list(
+                reversed(
+                    sorted(
+                        target_fds,
+                        key=lambda x: int(x.new_unreached_complexity)
+                    )
+                )
+            )
             logger.info(". Done")
 
             try:
@@ -354,7 +358,10 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
             target_codes[tfd.function_source_file]['target_fds'].append(tfd)
 
             logger.info("  - calling add_func_t_reached_and_clone. ")
-            new_merged_profile = fuzz_data_loader.add_func_to_reached_and_clone(new_merged_profile, tfd)
+            new_merged_profile = fuzz_data_loader.add_func_to_reached_and_clone(
+                new_merged_profile,
+                tfd
+            )
 
             # Ensure hitcount is set
             tmp_ff = new_merged_profile.all_functions[tfd.function_name]

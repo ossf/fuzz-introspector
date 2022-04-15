@@ -15,15 +15,12 @@
 """Performs analysis on the profiles output from fuzz introspector LLVM pass"""
 
 import abc
-import copy
 import logging
 
 from typing import (
     Dict,
     List,
-    Set,
     Tuple,
-    TypedDict,
 )
 
 import fuzz_utils
