@@ -15,15 +15,12 @@
 """Performs analysis on the profiles output from fuzz introspector LLVM pass"""
 
 import abc
-import copy
 import logging
 
 from typing import (
     Dict,
     List,
-    Set,
     Tuple,
-    TypedDict,
 )
 
 import fuzz_utils
@@ -32,11 +29,6 @@ import fuzz_data_loader
 
 logger = logging.getLogger(name=__name__)
 logger.setLevel(logging.INFO)
-
-TargetCodesType = TypedDict('TargetCodesType', {
-    'source_code': str,
-    'target_fds': List[fuzz_data_loader.FunctionProfile]
-})
 
 
 class AnalysisInterface(abc.ABC):
@@ -216,213 +208,6 @@ def overlay_calltree_with_coverage(
         # logger.info("Assigning forward red: %d for index %d"%(forward_red, idx1))
         n1.cov_forward_reds = forward_red
         n1.cov_largest_blocked_func = largest_blocked_name
-
-
-def analysis_get_optimal_targets(
-    merged_profile: fuzz_data_loader.MergedProjectProfile
-) -> Tuple[List[fuzz_data_loader.FunctionProfile], Set[str]]:
-    """
-    Finds the top reachable functions with minimum overlap.
-    Each of these functions is not be reachable by another function
-    in the returned set, but, they may reach some of the same functions.
-    """
-    logger.info("    - in analysis_get_optimal_targets")
-    optimal_set: Set[str] = set()
-    target_fds: List[fuzz_data_loader.FunctionProfile] = list()
-
-    for fd in reversed(sorted(list(merged_profile.all_functions.values()),
-                              key=lambda x: len(x.functions_reached))):
-        total_vals = 0
-        for t in optimal_set:
-            if t in fd.functions_reached:
-                total_vals += 1
-
-        if fd.hitcount != 0:
-            continue
-
-        if len(fd.functions_reached) < 1:
-            continue
-
-        if fd.arg_count == 0:
-            continue
-
-        # We do not care about "main2" functions
-        if "main2" in fd.function_name:
-            continue
-
-        if fd.total_cyclomatic_complexity < 20:
-            continue
-
-        # Ensure that the overlap with existing functions in our optimal set is not excessive
-        # set is not excessive. There is likely some overlap because of use of
-        # utility functions and similar.
-        # proportion = (total_vals*1.0)/(len(fd['functionsReached'])*1.0)
-
-        # if proportion == 1.0:
-        #    continue
-
-        # condition1 = proportion < 0.5
-        condition1 = True
-
-        # We also want to include all targets that have a fairly high complexity.
-        condition2 = fd.bb_count > 1
-
-        if not (condition1 or condition2):
-            continue
-
-        for func_name in fd.functions_reached:
-            optimal_set.add(func_name)
-
-        target_fds.append(fd)
-    logger.info(". Done")
-    return target_fds, optimal_set
-
-
-def analysis_synthesize_simple_targets(
-        merged_profile: fuzz_data_loader.MergedProjectProfile) -> (
-            Tuple[
-                Dict[str, TargetCodesType],
-                fuzz_data_loader.MergedProjectProfile,
-                List[fuzz_data_loader.FunctionProfile]
-            ]):
-    '''
-    Function for synthesizing fuzz targets. The way this one works is by finding
-    optimal targets that don't overlap too much with each other. The fuzz targets
-    are created to target functions in specific files, so all functions targeted
-    in each fuzzer will be from the same source file.
-
-    In a sense, this is more of a PoC wy to do some analysis on the data we have.
-    It is likely that we could do something much better.
-    '''
-    logger.info("  - in analysis_synthesize_simple_targets")
-    new_merged_profile = copy.deepcopy(merged_profile)
-    target_fds, optimal_set = analysis_get_optimal_targets(merged_profile)
-    fuzzer_code = "#include \"ada_fuzz_header.h\"\n"
-    fuzzer_code += "\n"
-    fuzzer_code += "int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {\n"
-    fuzzer_code += "  af_safe_gb_init(data, size);\n\n"
-
-    target_codes: Dict[str, TargetCodesType] = dict()
-    optimal_functions_targeted: List[fuzz_data_loader.FunctionProfile] = []
-
-    var_idx = 0
-    func_count = len(merged_profile.all_functions)
-    if func_count > 20000:
-        max_count = 1
-    elif func_count > 10000 and func_count < 20000:
-        max_count = 5
-    elif func_count > 2000 and func_count < 10000:
-        max_count = 7
-    else:
-        max_count = 10
-    curr_count = 0
-    while curr_count < max_count:
-        logger.info("  - sorting by unreached complexity. ")
-        sorted_by_undiscovered_complexity = list(reversed(sorted(target_fds,
-                                                                 key=lambda x: int(
-                                                                     x.new_unreached_complexity))))
-        logger.info(". Done")
-
-        try:
-            tfd = sorted_by_undiscovered_complexity[0]
-        except Exception:
-            break
-        if tfd is None:
-            break
-
-        if tfd.new_unreached_complexity <= 35:
-            break
-        curr_count += 1
-
-        optimal_functions_targeted.append(tfd)
-
-        code = ""
-        code_var_decl = ""
-        var_order = []
-        for arg_type in tfd.arg_types:
-            arg_type = arg_type.replace(" ", "")
-            if arg_type == "char**":
-                code_var_decl += "  char **new_var%d = af_get_double_char_p();\n" % var_idx
-                # We dont want the below line but instead we want to ensure
-                # we always return something valid.
-                var_order.append("new_var%d" % var_idx)
-                var_idx += 1
-            elif arg_type == "char*":
-                code_var_decl += "  char *new_var%d = ada_safe_get_char_p();\n" % var_idx
-                var_order.append("new_var%d" % var_idx)
-                var_idx += 1
-            elif arg_type == "int":
-                code_var_decl += "  int new_var%d = ada_safe_get_int();\n" % var_idx
-                var_order.append("new_var%d" % var_idx)
-                var_idx += 1
-            elif arg_type == "int*":
-                code_var_decl += "  int *new_var%d = af_get_int_p();\n" % var_idx
-                var_order.append("new_var%d" % var_idx)
-                var_idx += 1
-            elif "struct" in arg_type and "*" in arg_type and "**" not in arg_type:
-                code_var_decl += "  %s new_var%d = calloc(sizeof(%s), 1);\n" % (
-                    arg_type.replace(".", " "),
-                    var_idx,
-                    arg_type.replace(".", " ").replace("*", ""))
-                var_order.append("new_var%d" % var_idx)
-                var_idx += 1
-            else:
-                code_var_decl += "  UNKNOWN_TYPE unknown_%d;\n" % var_idx
-                var_order.append("unknown_%d" % var_idx)
-                var_idx += 1
-
-        # Now add the function call.
-        code += "  /* target %s */\n" % tfd.function_name
-        code += code_var_decl
-        code += "  %s(" % tfd.function_name
-        for idx in range(len(var_order)):
-            code += var_order[idx]
-            if idx < (len(var_order) - 1):
-                code += ", "
-        code += ");\n"
-        code += "\n"
-        if tfd.function_source_file not in target_codes:
-            target_codes[tfd.function_source_file] = {
-                'source_code': "",
-                'target_fds': list()
-            }
-        target_codes[tfd.function_source_file]['source_code'] += code
-        target_codes[tfd.function_source_file]['target_fds'].append(tfd)
-
-        logger.info("  - calling add_func_t_reached_and_clone. ")
-        new_merged_profile = fuzz_data_loader.add_func_to_reached_and_clone(new_merged_profile, tfd)
-
-        # Ensure hitcount is set
-        tmp_ff = new_merged_profile.all_functions[tfd.function_name]
-        if tmp_ff.hitcount == 0:
-            logger.info("Error. Hitcount did not get set for some reason. Exiting")
-            exit(0)
-        logger.info(". Done")
-
-        # We need to update the optimal targets here.
-        # We only need to do this operation if we are actually going to continue analysis
-
-        if curr_count < max_count:
-            target_fds, optimal_set = analysis_get_optimal_targets(new_merged_profile)
-
-    final_fuzzers: Dict[str, TargetCodesType] = dict()
-    for filename in target_codes:
-        file_fuzzer_code = fuzzer_code
-        file_fuzzer_code += target_codes[filename]['source_code']
-        file_fuzzer_code += "  af_safe_gb_cleanup();\n"
-        file_fuzzer_code += "}\n"
-
-        final_fuzzers[filename] = {
-            'source_code': file_fuzzer_code,
-            'target_fds': target_codes[filename]['target_fds']
-        }
-
-    optimal_functions_str = ""
-    for f in optimal_functions_targeted:
-        optimal_functions_str += f"{f.function_name} "
-    logger.info(f"Found the following optimal functions: { optimal_functions_str }")
-
-    return final_fuzzers, new_merged_profile, optimal_functions_targeted
 
 
 def analysis_coverage_runtime_analysis(
