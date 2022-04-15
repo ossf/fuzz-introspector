@@ -996,6 +996,7 @@ def create_html_report(
 
     # Ordering here is important as top analysis will be shown first in the report
     from analyses import (
+        fuzz_driver_synthesizer,
         fuzz_engine_input,
         fuzz_optimal_targets,
         fuzz_optimal_coverage_analysis,
@@ -1004,10 +1005,12 @@ def create_html_report(
     A1 = fuzz_engine_input.FuzzEngineInputAnalysis()
     A2 = fuzz_optimal_targets.FuzzOptimalTargetAnalysis()
     A3 = fuzz_optimal_coverage_analysis.FuzzOptimalTargetAnalysis()
+    A4 = fuzz_driver_synthesizer.FuzzDriverSynthesizerAnalysis()
     analysis_array = [
         A2,
         A1,
-        A3
+        A3,
+        A4
     ]
 
     for analysis in analysis_array:
