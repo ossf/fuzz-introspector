@@ -62,7 +62,7 @@ class FuzzDriverSynthesizerAnalysis(fuzz_analysis.AnalysisInterface):
         if fuzz_targets is None or len(fuzz_targets) == 0:
             A1 = fuzz_optimal_targets.FuzzOptimalTargetAnalysis()
 
-            _, optimal_target_functions = A1.analysis_synthesize_simple_targets(
+            _, optimal_target_functions = A1.iteratively_get_optimal_targets(
                 project_profile
             )
             fuzz_targets = optimal_target_functions

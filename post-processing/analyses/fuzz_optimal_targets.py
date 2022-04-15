@@ -64,7 +64,7 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
         html_string += fuzz_html_helpers.html_add_header_with_link(
             "Optimal target analysis", 2, toc_list)
 
-        new_profile, optimal_target_functions = self.analysis_synthesize_simple_targets(
+        new_profile, optimal_target_functions = self.iteratively_get_optimal_targets(
             project_profile
         )
 
@@ -177,6 +177,9 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
         if fd.bb_count <= 1:
             return False
 
+        if fd.new_unreached_complexity < 35:
+            return False
+
         return True
 
     def analysis_get_optimal_targets(
@@ -208,7 +211,7 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
         logger.info(". Done")
         return target_fds, optimal_set
 
-    def analysis_synthesize_simple_targets(
+    def iteratively_get_optimal_targets(
             self,
             merged_profile: fuzz_data_loader.MergedProjectProfile) -> (
                 Tuple[
@@ -223,15 +226,12 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
         In a sense, this is more of a PoC wy to do some analysis on the data we have.
         It is likely that we could do something much better.
         '''
-        logger.info("  - in analysis_synthesize_simple_targets")
+        logger.info("  - in iteratively_get_optimal_targets")
         new_merged_profile = copy.deepcopy(merged_profile)
-        target_fds, optimal_set = self.analysis_get_optimal_targets(merged_profile)
-        fuzzer_code = "#include \"ada_fuzz_header.h\"\n"
-        fuzzer_code += "\n"
-        fuzzer_code += "int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {\n"
-        fuzzer_code += "  af_safe_gb_init(data, size);\n\n"
-
         optimal_functions_targeted: List[fuzz_data_loader.FunctionProfile] = []
+
+        # Extract all candidates
+        target_fds, optimal_set = self.analysis_get_optimal_targets(merged_profile)
 
         func_count = len(merged_profile.all_functions)
 
@@ -257,29 +257,17 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
                 )
             )
             logger.info(f". Done - length of the list: {len(sorted_by_undiscovered_complexity)}")
-
-            try:
-                tfd = sorted_by_undiscovered_complexity[0]
-            except Exception:
-                break
-            if tfd is None:
-                break
-            if tfd.new_unreached_complexity <= 35:
+            if len(sorted_by_undiscovered_complexity) == 0:
                 break
 
+            # Add function to optimal targets
+            tfd = sorted_by_undiscovered_complexity[0]
             optimal_functions_targeted.append(tfd)
 
-            logger.info("  - calling add_func_t_reached_and_clone. ")
             new_merged_profile = fuzz_data_loader.add_func_to_reached_and_clone(
                 new_merged_profile,
                 tfd
             )
-
-            # Ensure hitcount is set
-            if new_merged_profile.all_functions[tfd.function_name].hitcount == 0:
-                logger.info("Error. Hitcount did not get set for some reason. Exiting")
-                exit(0)
-            logger.info(". Done")
 
             # Update the optimal targets. We only need to do this
             # if more drivers need to be created.
