@@ -34,7 +34,19 @@ def correlate_binaries_to_logs(binaries_dir):
 def run_analysis_on_dir(target_folder,
                         coverage_url,
                         analyses_to_run,
-                        correlation_file):
+                        correlation_file,
+                        enable_all_analyses):
+    if enable_all_analyses:
+        all_analyses = [
+            "OptimalTargets",
+            "OptimalCoverageTargets",
+            "FuzzDriverSynthesizerAnalysis",
+            "FuzzEngineInputAnalysis"
+        ]
+        for analysis in all_analyses:
+            if analysis not in analyses_to_run:
+                analyses_to_run.append(analysis)
+
     logger.info("[+] Loading profiles")
     profiles = fuzz_data_loader.load_all_profiles(target_folder)
     if len(profiles) == 0:
@@ -103,6 +115,13 @@ def parse_cmdline():
         ],
         help="Analyses to run. Available options: OptimalTargets, FuzzEngineInput"
     )
+    report_parser.add_argument(
+        "--enable-all-analyses",
+        action='store_true',
+        default=False,
+        help="Enables all analyses"
+    )
+
     report_parser.add_argument("--correlation_file",
                                type=str,
                                default="",
@@ -128,7 +147,8 @@ if __name__ == "__main__":
         run_analysis_on_dir(args.target_dir,
                             args.coverage_url,
                             args.analyses,
-                            args.correlation_file)
+                            args.correlation_file,
+                            args.enable_all_analyses)
     elif args.command == 'correlate':
         correlate_binaries_to_logs(args.binaries_dir)
     logger.info("Ending fuzz introspector post-processing")
