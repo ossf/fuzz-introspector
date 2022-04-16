@@ -21,7 +21,6 @@ import logging
 from typing import (
     List,
     Tuple,
-    Set
 )
 
 import fuzz_analysis
@@ -64,13 +63,153 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
         html_string += fuzz_html_helpers.html_add_header_with_link(
             "Optimal target analysis", 2, toc_list)
 
+        # Create optimal target section
         new_profile, optimal_target_functions = self.iteratively_get_optimal_targets(
             project_profile
         )
+        html_string += self.get_optimal_target_section(
+            optimal_target_functions,
+            toc_list,
+            tables
+        )
 
+        # Create section for how the state of the project will be if
+        # the optimal target functions are hit.
+        html_string += self.get_consequential_section(
+            new_profile,
+            conclusions,
+            tables,
+            toc_list,
+            coverage_url,
+            basefolder
+        )
+
+        logger.info(f" - Completed analysis {self.name}")
+        return html_string
+
+    def qualifies_as_optimal_target(self, fd):
+        """
+        Hard conditions for whether a target qualifies as a potential
+        optimal target. These are minimum conditions, i.e. the analysis
+        will still pick a subset of all functions that satisfy the
+        conditions.
+        """
+        if fd.hitcount != 0:
+            return False
+
+        if len(fd.functions_reached) < 1:
+            return False
+
+        if fd.arg_count == 0:
+            return False
+
+        # We do not care about "main2" functions
+        if "main2" in fd.function_name:
+            return False
+
+        if fd.total_cyclomatic_complexity < 20:
+            return False
+
+        if fd.bb_count <= 1:
+            return False
+
+        if fd.new_unreached_complexity < 35:
+            return False
+
+        return True
+
+    def analysis_get_optimal_targets(
+        self,
+        merged_profile: fuzz_data_loader.MergedProjectProfile
+    ) -> List[fuzz_data_loader.FunctionProfile]:
+        """
+        Finds the top reachable functions with minimum overlap.
+        Each of these functions is not be reachable by another function
+        in the returned set, but, they may reach some of the same functions.
+        """
+        logger.info("    - in analysis_get_optimal_targets")
+
+        target_fds: List[fuzz_data_loader.FunctionProfile] = list()
+        for fd in merged_profile.all_functions.values():
+            if not self.qualifies_as_optimal_target(fd):
+                continue
+            target_fds.append(fd)
+
+        return target_fds
+
+    def iteratively_get_optimal_targets(
+            self,
+            merged_profile: fuzz_data_loader.MergedProjectProfile) -> (
+                Tuple[
+                    fuzz_data_loader.MergedProjectProfile,
+                    List[fuzz_data_loader.FunctionProfile]
+                ]):
+        '''
+        Function for synthesizing fuzz targets. The way this one works is by finding
+        optimal targets that don't overlap too much with each other. The fuzz targets
+        are created to target functions in specific files, so all functions targeted
+        in each fuzzer will be from the same source file.
+        In a sense, this is more of a PoC wy to do some analysis on the data we have.
+        It is likely that we could do something much better.
+        '''
+        logger.info("  - in iteratively_get_optimal_targets")
+        new_merged_profile = copy.deepcopy(merged_profile)
+        optimal_functions_targeted: List[fuzz_data_loader.FunctionProfile] = []
+
+        # Extract all candidates
+        target_fds = self.analysis_get_optimal_targets(merged_profile)
+
+        # Determine number of fuzzers to create
+        drivers_to_create = 10
+        count_ranges = [
+            (20000, 1),
+            (10000, 5),
+            (2000, 7),
+        ]
+        for top, count in count_ranges:
+            if len(merged_profile.all_functions) > top:
+                drivers_to_create = count
+                break
+        logger.info(f"Getting {drivers_to_create} optimal targets")
+        while len(optimal_functions_targeted) < drivers_to_create:
+            logger.info("  - sorting by unreached complexity. ")
+            sorted_by_undiscovered_complexity = list(
+                sorted(
+                    target_fds,
+                    key=lambda x: int(x.new_unreached_complexity),
+                    reverse=True
+                )
+            )
+            logger.info(f". Done - length of the list: {len(sorted_by_undiscovered_complexity)}")
+            if len(sorted_by_undiscovered_complexity) == 0:
+                break
+
+            # Add function to optimal targets
+            optimal_func = sorted_by_undiscovered_complexity[0]
+            optimal_functions_targeted.append(optimal_func)
+
+            new_merged_profile = fuzz_data_loader.add_func_to_reached_and_clone(
+                new_merged_profile,
+                optimal_func
+            )
+
+            # Update the optimal targets. We only need to do this
+            # if more drivers need to be created.
+            if len(optimal_functions_targeted) < drivers_to_create:
+                target_fds = self.analysis_get_optimal_targets(new_merged_profile)
+
+        logger.info("Found the following optimal functions: { %s }" % (
+            str([f.function_name for f in optimal_functions_targeted])))
+
+        return new_merged_profile, optimal_functions_targeted
+
+    def get_optimal_target_section(self, optimal_target_functions, toc_list, tables):
         # Table with details about optimal target functions
-        html_string += fuzz_html_helpers.html_add_header_with_link(
-            "Remaining optimal interesting functions", 3, toc_list)
+        html_string = fuzz_html_helpers.html_add_header_with_link(
+            "Remaining optimal interesting functions",
+            3,
+            toc_list
+        )
         html_string += "<p> The following table shows a list of functions that "   \
                        "are optimal targets. Optimal targets are identified by "   \
                        "finding the functions that in combination reaches a high " \
@@ -119,11 +258,29 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
                 ]
             )
         html_string += ("</table>\n")
+        return html_string
 
-        html_string += "<p>Implementing fuzzers that target the above functions " \
-                       "will improve reachability such that it becomes:</p>"
+    def get_consequential_section(
+            self,
+            new_profile,
+            conclusions,
+            tables,
+            toc_list,
+            coverage_url,
+            basefolder):
+
+        """Create section showing state of project if optimal targets are hit"""
+        html_string = (
+            "<p>Implementing fuzzers that target the above functions "
+            "will improve reachability such that it becomes:</p>"
+        )
         tables.append(f"myTable{len(tables)}")
-        html_string += fuzz_html.create_top_summary_info(tables, new_profile, conclusions, False)
+        html_string += fuzz_html.create_top_summary_info(
+            tables,
+            new_profile,
+            conclusions,
+            False
+        )
 
         # Table with details about all functions in the project in case the
         # suggested fuzzers are implemented.
@@ -147,134 +304,4 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
         with open(report_name, "a+") as all_funcs_json_file:
             all_funcs_json_file.write("var analysis_1_data = ")
             all_funcs_json_file.write(json.dumps(all_functions_json))
-
-        logger.info(f" - Completed analysis {self.name}")
         return html_string
-
-    def qualifies_as_optimal_target(self, fd):
-        """
-        Hard conditions for whether a target qualifies as a potential
-        optimal target. These are minimum conditions, i.e. the analysis
-        will still pick a subset of all functions that satisfy the
-        conditions.
-        """
-        if fd.hitcount != 0:
-            return False
-
-        if len(fd.functions_reached) < 1:
-            return False
-
-        if fd.arg_count == 0:
-            return False
-
-        # We do not care about "main2" functions
-        if "main2" in fd.function_name:
-            return False
-
-        if fd.total_cyclomatic_complexity < 20:
-            return False
-
-        if fd.bb_count <= 1:
-            return False
-
-        if fd.new_unreached_complexity < 35:
-            return False
-
-        return True
-
-    def analysis_get_optimal_targets(
-        self,
-        merged_profile: fuzz_data_loader.MergedProjectProfile
-    ) -> Tuple[List[fuzz_data_loader.FunctionProfile], Set[str]]:
-        """
-        Finds the top reachable functions with minimum overlap.
-        Each of these functions is not be reachable by another function
-        in the returned set, but, they may reach some of the same functions.
-        """
-        logger.info("    - in analysis_get_optimal_targets")
-        optimal_set: Set[str] = set()
-        target_fds: List[fuzz_data_loader.FunctionProfile] = list()
-
-        funcs_by_reached = sorted(
-            list(merged_profile.all_functions.values()),
-            key=lambda x: len(x.functions_reached),
-            reverse=True
-        )
-        for fd in funcs_by_reached:
-            if not self.qualifies_as_optimal_target(fd):
-                continue
-
-            for func_name in fd.functions_reached:
-                optimal_set.add(func_name)
-            target_fds.append(fd)
-
-        logger.info(". Done")
-        return target_fds, optimal_set
-
-    def iteratively_get_optimal_targets(
-            self,
-            merged_profile: fuzz_data_loader.MergedProjectProfile) -> (
-                Tuple[
-                    fuzz_data_loader.MergedProjectProfile,
-                    List[fuzz_data_loader.FunctionProfile]
-                ]):
-        '''
-        Function for synthesizing fuzz targets. The way this one works is by finding
-        optimal targets that don't overlap too much with each other. The fuzz targets
-        are created to target functions in specific files, so all functions targeted
-        in each fuzzer will be from the same source file.
-        In a sense, this is more of a PoC wy to do some analysis on the data we have.
-        It is likely that we could do something much better.
-        '''
-        logger.info("  - in iteratively_get_optimal_targets")
-        new_merged_profile = copy.deepcopy(merged_profile)
-        optimal_functions_targeted: List[fuzz_data_loader.FunctionProfile] = []
-
-        # Extract all candidates
-        target_fds, optimal_set = self.analysis_get_optimal_targets(merged_profile)
-
-        func_count = len(merged_profile.all_functions)
-
-        # Determine number of fuzzers to create
-        drivers_to_create = 10
-        count_ranges = [
-            (20000, 1),
-            (10000, 5),
-            (2000, 7),
-        ]
-        for top, count in count_ranges:
-            if func_count > top:
-                drivers_to_create = count
-                break
-        logger.info(f"Getting {drivers_to_create} optimal targets")
-        while len(optimal_functions_targeted) < drivers_to_create:
-            logger.info("  - sorting by unreached complexity. ")
-            sorted_by_undiscovered_complexity = list(
-                sorted(
-                    target_fds,
-                    key=lambda x: int(x.new_unreached_complexity),
-                    reverse=True
-                )
-            )
-            logger.info(f". Done - length of the list: {len(sorted_by_undiscovered_complexity)}")
-            if len(sorted_by_undiscovered_complexity) == 0:
-                break
-
-            # Add function to optimal targets
-            tfd = sorted_by_undiscovered_complexity[0]
-            optimal_functions_targeted.append(tfd)
-
-            new_merged_profile = fuzz_data_loader.add_func_to_reached_and_clone(
-                new_merged_profile,
-                tfd
-            )
-
-            # Update the optimal targets. We only need to do this
-            # if more drivers need to be created.
-            if len(optimal_functions_targeted) < drivers_to_create:
-                target_fds, optimal_set = self.analysis_get_optimal_targets(new_merged_profile)
-
-        logger.info("Found the following optimal functions: { %s }" % (
-            str([f.function_name for f in optimal_functions_targeted])))
-
-        return new_merged_profile, optimal_functions_targeted

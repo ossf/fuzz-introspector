@@ -53,6 +53,7 @@ class FuzzDriverSynthesizerAnalysis(fuzz_analysis.AnalysisInterface):
                       fuzz_targets=None) -> str:
         logger.info(f" - Running analysis {self.name}")
         html_string = ""
+        html_string += "<div class=\"report-box\">"
         html_string += fuzz_html_helpers.html_add_header_with_link(
             "Fuzz driver synthesis",
             1,
@@ -167,5 +168,6 @@ class FuzzDriverSynthesizerAnalysis(fuzz_analysis.AnalysisInterface):
                 f"</code></pre><br>"
             )
 
+        html_string += "</div>"  # report-box
         logger.info(f" - Completed analysis {self.name}")
         return html_string

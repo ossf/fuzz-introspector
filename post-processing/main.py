@@ -100,7 +100,6 @@ def parse_cmdline():
         default=[
             "OptimalTargets",
             "OptimalCoverageTargets",
-            "FuzzDriverSynthesizerAnalysis"
         ],
         help="Analyses to run. Available options: OptimalTargets, FuzzEngineInput"
     )
