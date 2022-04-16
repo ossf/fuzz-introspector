@@ -46,7 +46,6 @@ def run_analysis_on_dir(target_folder,
         for analysis in all_analyses:
             if analysis not in analyses_to_run:
                 analyses_to_run.append(analysis)
- 
 
     logger.info("[+] Loading profiles")
     profiles = fuzz_data_loader.load_all_profiles(target_folder)
