@@ -168,7 +168,6 @@ class FuzzDriverSynthesizerAnalysis(fuzz_analysis.AnalysisInterface):
                 f"</code></pre><br>"
             )
 
-        html_string += "</div>" # report-box
-
+        html_string += "</div>"  # report-box
         logger.info(f" - Completed analysis {self.name}")
         return html_string

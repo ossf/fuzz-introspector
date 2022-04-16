@@ -68,7 +68,7 @@ class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
                 profiles[profile_idx],
                 toc_list
             )
-        html_string += "</div>" # report-box
+        html_string += "</div>"  # report-box
 
         logger.info(f" - Completed analysis {self.name}")
         return html_string

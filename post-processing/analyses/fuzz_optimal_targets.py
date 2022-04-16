@@ -204,7 +204,6 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
 
         return new_merged_profile, optimal_functions_targeted
 
-
     def get_optimal_target_section(self, optimal_target_functions, toc_list, tables):
         # Table with details about optimal target functions
         html_string = fuzz_html_helpers.html_add_header_with_link(
@@ -272,8 +271,10 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
             basefolder):
 
         """Create section showing state of project if optimal targets are hit"""
-        html_string = "<p>Implementing fuzzers that target the above functions " \
-                       "will improve reachability such that it becomes:</p>"
+        html_string = (
+            "<p>Implementing fuzzers that target the above functions "
+            "will improve reachability such that it becomes:</p>"
+        )
         tables.append(f"myTable{len(tables)}")
         html_string += fuzz_html.create_top_summary_info(
             tables,
