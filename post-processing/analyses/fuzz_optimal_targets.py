@@ -122,7 +122,7 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
     def analysis_get_optimal_targets(
         self,
         merged_profile: fuzz_data_loader.MergedProjectProfile
-    ) -> Tuple[List[fuzz_data_loader.FunctionProfile], Set[str]]:
+    ) -> List[fuzz_data_loader.FunctionProfile]:
         """
         Finds the top reachable functions with minimum overlap.
         Each of these functions is not be reachable by another function
