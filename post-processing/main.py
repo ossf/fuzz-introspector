@@ -39,7 +39,7 @@ def run_analysis_on_dir(target_folder,
     if enable_all_analyses:
         all_analyses = [
             "OptimalTargets",
-            "OptimalCoverageTargets",
+            "RuntimeCoverageAnalysis",
             "FuzzDriverSynthesizerAnalysis",
             "FuzzEngineInputAnalysis"
         ]
@@ -111,7 +111,7 @@ def parse_cmdline():
         nargs="+",
         default=[
             "OptimalTargets",
-            "OptimalCoverageTargets",
+            "RuntimeCoverageAnalysis",
         ],
         help="Analyses to run. Available options: OptimalTargets, FuzzEngineInput"
     )
