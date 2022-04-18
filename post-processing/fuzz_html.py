@@ -999,12 +999,12 @@ def create_html_report(
         fuzz_driver_synthesizer,
         fuzz_engine_input,
         fuzz_optimal_targets,
-        fuzz_optimal_coverage_analysis,
+        fuzz_runtime_coverage_analysis,
     )
 
     A1 = fuzz_engine_input.FuzzEngineInputAnalysis()
     A2 = fuzz_optimal_targets.FuzzOptimalTargetAnalysis()
-    A3 = fuzz_optimal_coverage_analysis.FuzzOptimalTargetAnalysis()
+    A3 = fuzz_runtime_coverage_analysis.FuzzRuntimeCoverageAnalysis()
     A4 = fuzz_driver_synthesizer.FuzzDriverSynthesizerAnalysis()
     analysis_array = [
         A2,

@@ -29,9 +29,9 @@ import fuzz_utils
 logger = logging.getLogger(name=__name__)
 
 
-class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
+class FuzzRuntimeCoverageAnalysis(fuzz_analysis.AnalysisInterface):
     def __init__(self):
-        self.name = "OptimalCoverageTargets"
+        self.name = "RuntimeCoverageAnalysis"
 
     def analysis_func(self,
                       toc_list: List[Tuple[str, str, int]],
