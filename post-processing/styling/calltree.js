@@ -71,6 +71,7 @@ $( document ).ready(function() {
   }
   
   scrollOnLoad();
+  tabLineHover();
 });
 
 // Scrolls to a node if the "scrollToNode" parameters is given
@@ -429,4 +430,26 @@ function createFontSizeDropdown() {
     </div>
   </div>`;
   return btn
+}
+
+function tabLineHover() {
+  $(".coverage-line-inner").on({
+    mouseenter: function () {
+      var parent = $(this).closest(".coverage-line");
+      if(parent===null) {
+        return;
+      } else {
+        $(parent).addClass("hovered");
+      }
+
+    },
+    mouseleave: function () {
+      var parent = $(this).closest(".coverage-line");
+      if(parent===null) {
+        return;
+      } else {
+        $(parent).removeClass("hovered");
+      }
+    }
+});
 }
