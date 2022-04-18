@@ -199,6 +199,21 @@ h1 {
 	display: block;
 	margin-bottom: 0px;
 }
+.coverage-line {
+	position: relative;
+}
+.coverage-line::before {
+	content:  "";
+	position: absolute;
+	left: 3.25px;
+	height: 100%;
+	width: 1.5px;
+	background: #d1dded;
+	transition: .1s ease-out;
+}
+.coverage-line.hovered::before {
+	background: #bac9db;
+}
 .red-background .coverage-line-inner {
 	/*background: #ffeaea;*/
 	color:  #a20000;
@@ -250,7 +265,8 @@ h1 {
 .lawngreen-background .coverage-line-inner {
 	/* background: #ffeaea; */
 	color:  #a20000;
-	padding:  0px 0px
+	padding:  0px 0px;
+	background:  #f2f7fa;
 }
 .lawngreen-background > .coverage-line-inner > .language-clike {
 	background:  #00CC00!important;
