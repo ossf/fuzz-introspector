@@ -47,6 +47,24 @@ class AnalysisInterface(abc.ABC):
         pass
 
 
+def get_all_analyses() -> List[AnalysisInterface]:
+    # Ordering here is important as top analysis will be shown first in the report
+    from analyses import (
+        fuzz_driver_synthesizer,
+        fuzz_engine_input,
+        fuzz_optimal_targets,
+        fuzz_runtime_coverage_analysis,
+    )
+
+    analysis_array = [
+        fuzz_optimal_targets.FuzzOptimalTargetAnalysis(),
+        fuzz_engine_input.FuzzEngineInputAnalysis(),
+        fuzz_runtime_coverage_analysis.FuzzRuntimeCoverageAnalysis(),
+        fuzz_driver_synthesizer.FuzzDriverSynthesizerAnalysis()
+    ]
+    return analysis_array
+
+
 def overlay_calltree_with_coverage(
         profile: fuzz_data_loader.FuzzerProfile,
         project_profile: fuzz_data_loader.MergedProjectProfile,
