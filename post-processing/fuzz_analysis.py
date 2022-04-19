@@ -46,6 +46,7 @@ class AnalysisInterface(abc.ABC):
         """Core analysis function."""
         pass
 
+
 def get_all_analyses() -> List[AnalysisInterface]:
     # Ordering here is important as top analysis will be shown first in the report
     from analyses import (
@@ -62,6 +63,7 @@ def get_all_analyses() -> List[AnalysisInterface]:
         fuzz_driver_synthesizer.FuzzDriverSynthesizerAnalysis()
     ]
     return analysis_array
+
 
 def overlay_calltree_with_coverage(
         profile: fuzz_data_loader.FuzzerProfile,
