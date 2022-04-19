@@ -27,6 +27,7 @@ from typing import (
     Set,
 )
 
+import fuzz_analysis
 import fuzz_data_loader
 import fuzz_utils
 import fuzz_cfg_load
@@ -994,25 +995,7 @@ def create_html_report(
     html_report_core += fuzz_html_helpers.html_add_header_with_link(
         "Analyses and suggestions", 1, toc_list)
 
-    # Ordering here is important as top analysis will be shown first in the report
-    from analyses import (
-        fuzz_driver_synthesizer,
-        fuzz_engine_input,
-        fuzz_optimal_targets,
-        fuzz_runtime_coverage_analysis,
-    )
-
-    A1 = fuzz_engine_input.FuzzEngineInputAnalysis()
-    A2 = fuzz_optimal_targets.FuzzOptimalTargetAnalysis()
-    A3 = fuzz_runtime_coverage_analysis.FuzzRuntimeCoverageAnalysis()
-    A4 = fuzz_driver_synthesizer.FuzzDriverSynthesizerAnalysis()
-    analysis_array = [
-        A2,
-        A1,
-        A3,
-        A4
-    ]
-
+    analysis_array = fuzz_analysis.get_all_analyses()
     for analysis in analysis_array:
         if analysis.name in analyses_to_run:
             html_report_core += analysis.analysis_func(
