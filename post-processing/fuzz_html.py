@@ -773,6 +773,14 @@ def create_fuzzer_detailed_section(
             (total_func_lines,
              hit_lines,
              hit_percentage) = profile.get_cov_metrics(fuzz_utils.demangle_cpp_func(funcname))
+
+            # This is a bit hacky, but in case of failure above we try again without
+            # demangling the function name, which may help.
+            if hit_percentage is None:
+                (total_func_lines,
+                 hit_lines,
+                 hit_percentage) = profile.get_cov_metrics(funcname)
+
             if hit_percentage is not None:
                 total_hit_functions += 1
                 fuzzer_table_data[table_name].append({

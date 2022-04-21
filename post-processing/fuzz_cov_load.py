@@ -113,6 +113,7 @@ def llvm_cov_load(target_dir, target_name=None):
                         curr_func = line.split(":")[1].replace(" ", "").replace(":", "")
                     else:
                         curr_func = line.replace(" ", "").replace(":", "")
+                    curr_func = fuzz_utils.demangle_cpp_func(curr_func)
                     cp.covmap[curr_func] = list()
 
                     # Normalise the function name and add it to functions_hit.
@@ -122,10 +123,10 @@ def llvm_cov_load(target_dir, target_name=None):
                     fname = line
                     if ".cpp" in fname:
                         fname = fname.split(".cpp")[-1].replace(":", "")
-                        fname = fuzz_utils.demangle_cpp_func(fname)
                     elif ".c" in fname:
                         fname = fname.split(".c")[-1].replace(":", "")
                     fname = fname.replace(":", "")
+                    fname = fuzz_utils.demangle_cpp_func(fname)
                     cp.functions_hit.add(fname)
 
                 # Parse lines that signal specific line of code. These lines only
@@ -157,6 +158,7 @@ def llvm_cov_load(target_dir, target_name=None):
 
 
 if __name__ == "__main__":
+    logging.basicConfig()
     logger.info("Starting coverage loader")
     cp = llvm_cov_load(".")
     logger.info("Functions hit:")
