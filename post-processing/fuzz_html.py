@@ -216,7 +216,7 @@ def create_all_function_table(
             fd.function_linenumber
         )
 
-        if demangled_func_name in project_profile.runtime_coverage.functions_hit:
+        if project_profile.runtime_coverage.is_func_hit(fd.function_name):
             func_hit_at_runtime_row = "yes"
         else:
             func_hit_at_runtime_row = "no"
