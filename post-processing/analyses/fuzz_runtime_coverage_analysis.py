@@ -47,7 +47,6 @@ class FuzzRuntimeCoverageAnalysis(fuzz_analysis.AnalysisInterface):
             profiles,
             project_profile
         )
-        logger.debug("Got functions of interest: %s"%(str(functions_of_interest)))
 
         html_string = ""
         html_string += "<div class=\"report-box\">"
