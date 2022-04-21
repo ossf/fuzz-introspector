@@ -128,7 +128,6 @@ def llvm_cov_load(target_dir, target_name=None):
                     curr_func = fuzz_utils.demangle_cpp_func(curr_func)
                     cp.covmap[curr_func] = list()
 
-
                 # Parse lines that signal specific line of code. These lines only
                 # offer after the function names parsed above.
                 # Example line:
