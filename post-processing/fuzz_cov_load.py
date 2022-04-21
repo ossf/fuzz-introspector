@@ -47,10 +47,17 @@ class CoverageProfile:
         returns the hit summary of a give function, in the form of
         a tuple (total_function_lines, hit_lines)
         """
-        if funcname not in self.covmap:
+        fuzz_key = None
+        if funcname in self.covmap:
+            fuzz_key = funcname
+        elif fuzz_utils.demangle_cpp_func(funcname) in self.covmap:
+            fuzz_key = fuzz_utils.demangle_cpp_func(funcname)
+
+        if fuzz_key is None:
             return None, None
-        lines_hit = [ht for ln, ht in self.covmap[funcname] if ht > 0]
-        return len(self.covmap[funcname]), len(lines_hit)
+
+        lines_hit = [ht for ln, ht in self.covmap[fuzz_key] if ht > 0]
+        return len(self.covmap[fuzz_key]), len(lines_hit)
 
 
 def llvm_cov_load(target_dir, target_name=None):
