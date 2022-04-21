@@ -210,8 +210,6 @@ def create_all_function_table(
         except Exception:
             hit_percentage = 0.0
 
-        collapsible_id = demangled_func_name + random_suffix
-
         func_cov_url = "%s%s.html#L%d" % (
             coverage_url,
             fd.function_source_file,
@@ -227,13 +225,31 @@ def create_all_function_table(
             { demangled_func_name }
             </code></a>"""
 
-        reached_by_fuzzers_row = create_reached_by_fuzzers(fd, collapsible_id)
+        collapsible_id = demangled_func_name + random_suffix
+
+        if fd.hitcount > 0:
+            reached_by_fuzzers_row = create_collapsible_element(
+                str(fd.hitcount),
+                str(fd.reached_by_fuzzers),
+                collapsible_id
+            )
+        else:
+            reached_by_fuzzers_row = "0"
+
+        if fd.arg_count > 0:
+            args_row = create_collapsible_element(
+                str(fd.arg_count),
+                str(fd.arg_types),
+                collapsible_id + "2"
+            )
+        else:
+            args_row = "0"
 
         table_rows.append({
             "Func name": func_name_row,
             "func_url": func_cov_url,
             "Functions filename": fd.function_source_file,
-            "Args": f"{str(fd.arg_count)} : {str(fd.arg_types)}",
+            "Args": args_row,
             "Function call depth": fd.function_depth,
             "Reached by Fuzzers": reached_by_fuzzers_row,
             "collapsible_id": collapsible_id,
@@ -251,28 +267,28 @@ def create_all_function_table(
     return html_string, table_rows
 
 
-def create_reached_by_fuzzers(fd, collapsible_id) -> str:
-    if fd.reached_by_fuzzers:
-        return f"""{ fd.hitcount } : <div
-        class='wrap-collabsible'>
-            <input id='{collapsible_id}'
-                   class='toggle'
-                   type='checkbox'>
-                <label
-                    for='{collapsible_id}'
-                    class='lbl-toggle'>
-                        View List
-                </label>
-            <div class='collapsible-content'>
-                <div class='content-inner'>
-                    <p>
-                        {fd.reached_by_fuzzers}
-                    </p>
-                </div>
+def create_collapsible_element(
+        non_collapsed: str,
+        collapsed: str,
+        collapsible_id) -> str:
+    return f"""{ non_collapsed } : <div
+    class='wrap-collabsible'>
+        <input id='{collapsible_id}'
+               class='toggle'
+               type='checkbox'>
+            <label
+                for='{collapsible_id}'
+                class='lbl-toggle'>
+                    View List
+            </label>
+        <div class='collapsible-content'>
+            <div class='content-inner'>
+                <p>
+                    {collapsed}
+                </p>
             </div>
-        </div>"""
-    else:
-        return "0"
+        </div>
+    </div>"""
 
 
 def create_percentage_graph(title: str, percentage: str, numbers: str) -> str:
