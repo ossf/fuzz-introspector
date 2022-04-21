@@ -43,7 +43,7 @@ class FuzzRuntimeCoverageAnalysis(fuzz_analysis.AnalysisInterface):
                       conclusions) -> str:
         logger.info(f" - Running analysis {self.name}")
 
-        functions_of_interest = fuzz_analysis.analysis_coverage_runtime_analysis(
+        functions_of_interest = self.analysis_coverage_runtime_analysis(
             profiles,
             project_profile
         )
@@ -87,3 +87,35 @@ class FuzzRuntimeCoverageAnalysis(fuzz_analysis.AnalysisInterface):
 
         logger.info(f" - Completed analysis {self.name}")
         return html_string
+
+    def analysis_coverage_runtime_analysis(
+            self,
+            profiles: List[fuzz_data_loader.FuzzerProfile],
+            merged_profile: fuzz_data_loader.MergedProjectProfile):
+        """
+        Identifies the functions that are hit in terms of coverage, but
+        only has a low percentage overage in terms of lines covered in the
+        target program.
+        This is useful to highlight functions that need inspection and is
+        in contrast to statically-extracted data which gives a hit/not-hit
+        verdict on a given function entirely.
+        """
+        logger.info("In coverage optimal analysis")
+
+        # Find all functions that satisfy:
+        # - source lines above 50
+        # - less than 15% coverage
+        functions_of_interest = []
+        for funcname in merged_profile.runtime_coverage.get_all_hit_functions():
+            logger.debug(f"Going through {funcname}")
+
+            total_lines, hit_lines = merged_profile.runtime_coverage.get_hit_summary(funcname)
+            logger.debug(f"Total lines: {total_lines} -- hit_lines: {hit_lines}")
+            if total_lines == 0:
+                continue
+
+            hit_proportion = (hit_lines / total_lines) * 100.0
+            logger.debug(f"hit proportion {hit_proportion}")
+            if total_lines > 30 and hit_proportion < 55:
+                functions_of_interest.append(funcname)
+        return functions_of_interest
