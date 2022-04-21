@@ -826,6 +826,21 @@ def create_fuzzer_detailed_section(
                    "limitation our of our static analysis capabilities."
     html_string += "</div>"
 
+    if total_hit_functions > reachable_funcs:
+        html_string += (
+            "<div class=\"high-level-conclusions-wrapper\">"
+            "<span class=\"high-level-conclusion red-conclusion\">"
+            "<b>Warning:</b> The amount of covered functions are larger than the "
+            "amount of reachable functions. This means the functions covered at runtime "
+            "is larger than those extract using static analysis. As such, the static "
+            "analysis component is either failing to extract the right callgraph or "
+            "the coverage runtime is compiled with sanitizerse in code that the static "
+            "analysis has not analysed. This can happen if lto/gold is not used in "
+            "all places that coverage instrumentation is used."
+            "</span>"
+            "</div>"
+        )
+
     html_string += func_hit_table_string
 
     # Table showing which files this fuzzer hits.
