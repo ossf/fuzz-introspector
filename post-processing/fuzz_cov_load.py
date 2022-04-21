@@ -35,12 +35,17 @@ class CoverageProfile:
     Class for storing information about a runtime coverage report
     """
     def __init__(self):
-        self.functions_hit = set()
         self.covmap: Dict[str, List[Tuple[int, int]]] = dict()
         self.covreports = list()
 
     def get_all_hit_functions(self):
         return self.covmap.keys()
+
+    def is_func_hit(self, funcname):
+        _, lines_hit = self.get_hit_summary(funcname)
+        if lines_hit is not None and lines_hit > 0:
+            return True
+        return False
 
     def get_hit_summary(self, funcname):
         """
@@ -123,18 +128,6 @@ def llvm_cov_load(target_dir, target_name=None):
                     curr_func = fuzz_utils.demangle_cpp_func(curr_func)
                     cp.covmap[curr_func] = list()
 
-                    # Normalise the function name and add it to functions_hit.
-                    # Notice there is something quite odd here in that we keep function names
-                    # both in cp.covmap and also cp.fuctions_hit. TODO: David, why was this
-                    # set up using both? It would be smarter to just use cp.covmap?
-                    fname = line
-                    if ".cpp" in fname:
-                        fname = fname.split(".cpp")[-1].replace(":", "")
-                    elif ".c" in fname:
-                        fname = fname.split(".c")[-1].replace(":", "")
-                    fname = fname.replace(":", "")
-                    fname = fuzz_utils.demangle_cpp_func(fname)
-                    cp.functions_hit.add(fname)
 
                 # Parse lines that signal specific line of code. These lines only
                 # offer after the function names parsed above.
@@ -158,7 +151,7 @@ def llvm_cov_load(target_dir, target_name=None):
                     except Exception:
                         hit_times = 0
                     # Add source code line and hitcount to coverage map of current function
-                    logger.debug(f"reading coverage: {fname} -- {curr_func} "
+                    logger.debug(f"reading coverage: {curr_func} "
                                  f"-- {line_number} -- {hit_times}")
                     cp.covmap[curr_func].append((line_number, hit_times))
     return cp
@@ -168,9 +161,6 @@ if __name__ == "__main__":
     logging.basicConfig()
     logger.info("Starting coverage loader")
     cp = llvm_cov_load(".")
-    logger.info("Functions hit:")
-    for fn in cp.functions_hit:
-        logger.info(fn)
 
     logger.info("Coverage map keys")
     for fn in cp.covmap:

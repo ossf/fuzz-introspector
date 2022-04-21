@@ -364,9 +364,6 @@ class MergedProjectProfile:
         for profile in profiles:
             if profile.coverage is None:
                 continue
-            for func_name in profile.coverage.functions_hit:
-                if func_name not in self.runtime_coverage.covmap:
-                    self.runtime_coverage.functions_hit.add(func_name)
             for func_name in profile.coverage.covmap:
                 if func_name not in self.runtime_coverage.covmap:
                     self.runtime_coverage.covmap[func_name] = profile.coverage.covmap[func_name]
