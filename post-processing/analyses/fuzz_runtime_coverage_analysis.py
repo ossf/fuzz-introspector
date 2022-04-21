@@ -74,6 +74,7 @@ class FuzzRuntimeCoverageAnalysis(fuzz_analysis.AnalysisInterface):
             ])
 
         for funcname in functions_of_interest:
+            logger.debug(f"Iterating the function {funcname}")
             total_func_lines, hit_lines = project_profile.runtime_coverage.get_hit_summary(funcname)
             html_string += fuzz_html_helpers.html_table_add_row([
                 fuzz_utils.demangle_cpp_func(funcname),
