@@ -210,7 +210,6 @@ def create_all_function_table(
         except Exception:
             hit_percentage = 0.0
 
-
         func_cov_url = "%s%s.html#L%d" % (
             coverage_url,
             fd.function_source_file,
@@ -241,7 +240,7 @@ def create_all_function_table(
             args_row = create_collapsible_element(
                 str(fd.arg_count),
                 str(fd.arg_types),
-                collapsible_id+"2"
+                collapsible_id + "2"
             )
         else:
             args_row = "0"
