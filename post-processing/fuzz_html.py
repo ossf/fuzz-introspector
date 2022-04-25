@@ -23,8 +23,6 @@ from typing import (
     Any,
     List,
     Tuple,
-    Optional,
-    Set,
 )
 
 import fuzz_analysis
@@ -459,247 +457,6 @@ def create_top_summary_info(
     return html_string
 
 
-def html_create_dedicated_calltree_file(
-        calltree_html_string,
-        filename,
-        profile: fuzz_data_loader.FuzzerProfile):
-    """
-    Write a wrapped HTML file with the tags needed from fuzz-introspector
-    We use this only for wrapping calltrees at the moment, however, down
-    the line it makes sense to have an easy wrapper for other HTML pages too.
-    """
-    complete_html_string = ""
-
-    # HTML start
-    html_header = fuzz_html_helpers.html_get_header(
-        calltree=True,
-        title=f"Fuzz introspector: { profile.get_key() }"
-    )
-    html_header += '<div class="content-section calltree-content-section">'
-    complete_html_string += html_header
-
-    # Display fuzz blocker at top of page
-    fuzz_blockers = get_fuzz_blockers(
-        profile,
-        max_blockers_to_extract=12
-    )
-
-    fuzz_blocker_table = create_fuzz_blocker_table(profile, [], "", fuzz_blockers)
-    if fuzz_blocker_table is not None:
-        complete_html_string += "<div class=\"report-box\">"
-        complete_html_string += "<h1>Fuzz blockers</h1>"
-        complete_html_string += fuzz_blocker_table
-        complete_html_string += "</div>"
-
-    # Display calltree
-    complete_html_string += calltree_html_string
-    complete_html_string += "</div></div></div></div>"
-
-    # HTML end
-    html_end = '</div>'
-    blocker_idxs = []
-    for node in fuzz_blockers:
-        blocker_idxs.append(create_str_node_ctx_idx(str(node.cov_ct_idx)))
-
-    if len(blocker_idxs) > 0:
-        html_end = "<script>"
-        html_end += f"var fuzz_blocker_idxs = {json.dumps(blocker_idxs)};"
-        html_end += "</script>"
-
-    html_end += "<script src=\"prism.js\"></script>"
-    html_end += "<script src=\"clike.js\"></script>"
-    html_end += "<script src=\"calltree.js\"></script>"
-    complete_html_string += html_end
-
-    complete_html_string += "</body></html>"
-
-    # Beautify and write HTML
-    soup = bs(complete_html_string, 'lxml')
-    pretty_html = soup.prettify()
-    with open(filename, "w+") as cf:
-        cf.write(pretty_html)
-
-
-def create_str_node_ctx_idx(cov_ct_idx):
-    prefixed_zeros = "0" * (len("00000") - len(cov_ct_idx))
-    return f"{prefixed_zeros}{cov_ct_idx}"
-
-
-def get_fuzz_blockers(
-        profile: fuzz_data_loader.FuzzerProfile,
-        max_blockers_to_extract=999):
-    """Gets a list of fuzz blockers"""
-    blocker_list: List[fuzz_cfg_load.CalltreeCallsite] = list()
-
-    # Extract all callsites in calltree and exit early if none
-    all_callsites = fuzz_cfg_load.extract_all_callsites(profile.function_call_depths)
-    if len(all_callsites) == 0:
-        return blocker_list
-
-    # Filter nodes that has forward reds. Extract maximum max_blockers_to_extract nodes.
-    nodes_sorted_by_red_ahead = sorted(all_callsites,
-                                       key=lambda x: x.cov_forward_reds,
-                                       reverse=True)
-    for node in nodes_sorted_by_red_ahead:
-        if node.cov_forward_reds == 0 or len(blocker_list) >= max_blockers_to_extract:
-            break
-        blocker_list.append(node)
-    return blocker_list
-
-
-def break_blocker_node(max_idx, node) -> bool:
-    if max_idx == 0 or node.cov_forward_reds == 0:
-        return True
-    return False
-
-
-def create_fuzz_blocker_table(
-        profile: fuzz_data_loader.FuzzerProfile,
-        tables: List[str],
-        calltree_file_name: str,
-        fuzz_blockers=None) -> Optional[str]:
-    """
-    Creates HTML string for table showing fuzz blockers.
-    """
-    logger.info("Creating fuzz blocker table")
-
-    # Get the fuzz blockers
-    if fuzz_blockers is None:
-        fuzz_blockers = get_fuzz_blockers(
-            profile,
-            max_blockers_to_extract=12
-        )
-    if len(fuzz_blockers) == 0:
-        return None
-
-    html_table_string = "<p class='no-top-margin'>The followings nodes " \
-                        "represent call sites where fuzz blockers occur</p>"
-    tables.append(f"myTable{len(tables)}")
-    html_table_string += fuzz_html_helpers.html_create_table_head(
-        tables[-1],
-        [
-            ("Amount of callsites blocked",
-             "Total amount of callsites blocked"),
-            ("Calltree index",
-             "Index in call tree where the fuzz blocker is."),
-            ("Parent function",
-             "Function in which the call site that blocks resides."),
-            ("Callsite",
-             ""),
-            ("Largest blocked function",
-             "This is the function with highest cyclomatiic complexity amongst"
-             "all of the functions that are blocked. As such, it's a way of "
-             "highlighting a potentially important function being blocked")
-        ],
-        sort_by_column=0,
-        sort_order="desc"
-    )
-    for node in fuzz_blockers:
-        link_prefix = "0" * (5 - len(str(node.cov_ct_idx)))
-        node_link = "%s?scrollToNode=%s%s" % (
-            calltree_file_name,
-            link_prefix,
-            node.cov_ct_idx
-        )
-        html_table_string += fuzz_html_helpers.html_table_add_row([
-            str(node.cov_forward_reds),
-            str(node.cov_ct_idx),
-            node.cov_parent,
-            f"<a href={node_link}>call site</a>",
-            node.cov_largest_blocked_func
-        ])
-    html_table_string += "</table>"
-
-    return html_table_string
-
-
-def create_calltree(profile: fuzz_data_loader.FuzzerProfile) -> str:
-    """
-    Creates the HTML of the calltree. Returns the HTML as a string.
-    """
-    logger.info("Creating calltree HTML code")
-    # Generate HTML for the calltree
-    calltree_html_string = "<div class='section-wrapper'>"
-    calltree_html_string += "<h1>Fuzzer calltree</h1>"
-    nodes = fuzz_cfg_load.extract_all_callsites(profile.function_call_depths)
-    for i in range(len(nodes)):
-        node = nodes[i]
-
-        demangled_name = fuzz_utils.demangle_cpp_func(node.dst_function_name)
-        # We may not want to show certain functions at times, e.g. libc functions
-        # in case it bloats the calltree
-        # libc_funcs = { "free" }
-        libc_funcs: Set[str] = set()
-        avoid = len([fn for fn in libc_funcs if fn in demangled_name]) > 0
-        if avoid:
-            continue
-
-        # Prepare strings needed in the HTML
-        color_to_be = node.cov_color
-        callsite_link = node.cov_callsite_link
-        link = node.cov_link
-        ct_idx_str = create_str_node_ctx_idx(str(node.cov_ct_idx))
-
-        # Only display [function] link if we have, otherwhise show no [function] text.
-        if node.dst_function_source_file.replace(" ", "") != "/":
-            func_href = f"""<a href="{link}">[function]</a>"""
-        else:
-            func_href = ""
-
-        if i > 0:
-            previous_node = nodes[i - 1]
-            if previous_node.depth == node.depth:
-                calltree_html_string += "</div>"
-            depth_diff = previous_node.depth - node.depth
-            if depth_diff >= 1:
-                closing_divs = "</div>"  # To close "calltree-line-wrapper"
-                closing_divs = "</div>" * (int(depth_diff) + 1)
-                calltree_html_string += closing_divs
-
-        calltree_html_string += f"""
-<div class="{color_to_be}-background coverage-line">
-    <span class="coverage-line-inner" data-calltree-idx="{ct_idx_str}">
-        {node.depth}
-        <code class="language-clike">
-            {demangled_name}
-        </code>
-        <span class="coverage-line-filename">
-            {func_href}
-            <a href="{callsite_link}">
-                [call site2]
-            </a>
-            <span class="calltree-idx">[calltree idx: {ct_idx_str}]</span>
-        </span>
-    </span>
-    """
-        if i != len(nodes) - 1:
-            next_node = nodes[i + 1]
-            if next_node.depth > node.depth:
-                calltree_html_string += f"""<div
-    class="calltree-line-wrapper open level-{int(node.depth)}"
-    style="padding-left: 16px">"""
-            elif next_node.depth < node.depth:
-                depth_diff = int(node.depth - next_node.depth)
-                calltree_html_string += "</div>" * depth_diff
-
-    calltree_html_string += "</div>"
-    logger.info("Calltree created")
-
-    # Write the HTML to a file called calltree_view_XX.html where XX is a counter.
-    calltree_file_idx = 0
-    calltree_html_file = f"calltree_view_{calltree_file_idx}.html"
-    while os.path.isfile(calltree_html_file):
-        calltree_file_idx += 1
-        calltree_html_file = f"calltree_view_{calltree_file_idx}.html"
-
-    html_create_dedicated_calltree_file(
-        calltree_html_string,
-        calltree_html_file,
-        profile,
-    )
-    return calltree_html_file
-
-
 def create_fuzzer_detailed_section(
         profile: fuzz_data_loader.FuzzerProfile,
         toc_list: List[Tuple[str, str, int]],
@@ -745,7 +502,11 @@ def create_fuzzer_detailed_section(
         [],
         link=f"full_calltree_{curr_tt_profile}"
     )
-    calltree_file_name = create_calltree(profile)
+
+    from analyses import fuzz_calltree_analysis
+    calltree_analysis = fuzz_calltree_analysis.FuzzCalltreeAnalysis()
+    calltree_file_name = calltree_analysis.create_calltree(profile)
+
     html_string += f"""<p class='no-top-margin'>The following link provides a visualisation
  of the full calltree overlayed with coverage information:
  <a href="{ calltree_file_name }">full calltree</a></p>"""
@@ -754,7 +515,11 @@ def create_fuzzer_detailed_section(
                    f"-calltree\">Glossary</a>.</p>"
 
     # Fuzz blocker table
-    html_fuzz_blocker_table = create_fuzz_blocker_table(profile, tables, calltree_file_name)
+    html_fuzz_blocker_table = calltree_analysis.create_fuzz_blocker_table(
+        profile,
+        tables,
+        calltree_file_name
+    )
     if html_fuzz_blocker_table is not None:
         html_string += fuzz_html_helpers.html_add_header_with_link(
             "Fuzz blockers",
