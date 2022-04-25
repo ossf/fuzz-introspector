@@ -515,9 +515,9 @@ def create_str_node_ctx_idx(cov_ct_idx):
 
 def get_fuzz_blockers(
         profile: fuzz_data_loader.FuzzerProfile,
-        max_blockers_to_extract = 999):
+        max_blockers_to_extract=999):
     """Gets a list of fuzz blockers"""
-    blocker_list:List[fuzz_cfg_load.CalltreeCallsite] = list()
+    blocker_list: List[fuzz_cfg_load.CalltreeCallsite] = list()
 
     # Extract all callsites in calltree and exit early if none
     all_callsites = fuzz_cfg_load.extract_all_callsites(profile.function_call_depths)
@@ -531,7 +531,6 @@ def get_fuzz_blockers(
     for node in nodes_sorted_by_red_ahead:
         if node.cov_forward_reds == 0 or len(blocker_list) >= max_blockers_to_extract:
             break
-        ct_idx_str = create_str_node_ctx_idx(str(node.cov_ct_idx))
         blocker_list.append(node)
     return blocker_list
 
@@ -554,7 +553,7 @@ def create_fuzz_blocker_table(
     # Get the fuzz blockers
     fuzz_blockers = get_fuzz_blockers(
         profile,
-        max_blockers_to_extract = 12
+        max_blockers_to_extract=12
     )
     if len(fuzz_blockers) == 0:
         return None
