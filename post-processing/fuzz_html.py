@@ -517,7 +517,7 @@ def get_fuzz_blockers(
         profile: fuzz_data_loader.FuzzerProfile,
         max_blockers_to_extract = 999):
     """Gets a list of fuzz blockers"""
-    blocker_list = list()
+    blocker_list:List[fuzz_cfg_load.CalltreeCallsite] = list()
 
     # Extract all callsites in calltree and exit early if none
     all_callsites = fuzz_cfg_load.extract_all_callsites(profile.function_call_depths)
