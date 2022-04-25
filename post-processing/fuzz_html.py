@@ -459,14 +459,6 @@ def create_top_summary_info(
     return html_string
 
 
-def break_blocker_node(max_idx, node) -> bool:
-    if max_idx == 0 or node.cov_forward_reds == 0:
-        return True
-    return False
-
-
-
-
 def create_fuzzer_detailed_section(
         profile: fuzz_data_loader.FuzzerProfile,
         toc_list: List[Tuple[str, str, int]],
