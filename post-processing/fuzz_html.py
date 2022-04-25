@@ -23,8 +23,6 @@ from typing import (
     Any,
     List,
     Tuple,
-    Optional,
-    Set,
 )
 
 import fuzz_analysis
@@ -517,7 +515,11 @@ def create_fuzzer_detailed_section(
                    f"-calltree\">Glossary</a>.</p>"
 
     # Fuzz blocker table
-    html_fuzz_blocker_table = calltree_analysis.create_fuzz_blocker_table(profile, tables, calltree_file_name)
+    html_fuzz_blocker_table = calltree_analysis.create_fuzz_blocker_table(
+        profile,
+        tables,
+        calltree_file_name
+    )
     if html_fuzz_blocker_table is not None:
         html_string += fuzz_html_helpers.html_add_header_with_link(
             "Fuzz blockers",

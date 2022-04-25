@@ -35,6 +35,7 @@ from bs4 import BeautifulSoup as bs
 
 logger = logging.getLogger(name=__name__)
 
+
 class FuzzCalltreeAnalysis(fuzz_analysis.AnalysisInterface):
     def __init__(self):
         self.name = "FuzzCalltreeAnalysis"
@@ -137,7 +138,6 @@ class FuzzCalltreeAnalysis(fuzz_analysis.AnalysisInterface):
         )
         return calltree_html_file
 
-
     def html_create_dedicated_calltree_file(
             self,
             calltree_html_string,
@@ -197,12 +197,11 @@ class FuzzCalltreeAnalysis(fuzz_analysis.AnalysisInterface):
         soup = bs(complete_html_string, 'lxml')
         pretty_html = soup.prettify()
         with open(filename, "w+") as cf:
-            cf.write(pretty_html) 
+            cf.write(pretty_html)
 
     def create_str_node_ctx_idx(self, cov_ct_idx):
         prefixed_zeros = "0" * (len("00000") - len(cov_ct_idx))
         return f"{prefixed_zeros}{cov_ct_idx}"
-
 
     def get_fuzz_blockers(
             self,
@@ -285,4 +284,3 @@ class FuzzCalltreeAnalysis(fuzz_analysis.AnalysisInterface):
         html_table_string += "</table>"
 
         return html_table_string
-
