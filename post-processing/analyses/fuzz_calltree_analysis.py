@@ -15,12 +15,9 @@
 
 import os
 import logging
-import shutil
 import json
-import typing
 
 from typing import (
-    Any,
     List,
     Tuple,
     Optional,
@@ -31,17 +28,10 @@ import fuzz_analysis
 import fuzz_data_loader
 import fuzz_utils
 import fuzz_cfg_load
-import fuzz_constants
 import fuzz_html_helpers
 
 # For pretty printing the html code:
 from bs4 import BeautifulSoup as bs
-
-import matplotlib.pyplot as plt
-from matplotlib.patches import Rectangle
-
-import random
-import string
 
 logger = logging.getLogger(name=__name__)
 
@@ -62,6 +52,7 @@ class FuzzCalltreeAnalysis(fuzz_analysis.AnalysisInterface):
         Creates the HTML of the calltree. Returns the HTML as a string.
         """
         logger.info("Not implemented")
+        return ""
 
     def create_calltree(self, profile: fuzz_data_loader.FuzzerProfile) -> str:
         logger.info("In calltree")
