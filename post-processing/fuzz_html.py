@@ -508,41 +508,31 @@ def write_wrapped_html_file(html_string,
         cf.write(pretty_html)
 
 
-def get_fuzz_blocker_data(profile: fuzz_data_loader.FuzzerProfile):
-    all_callsites = fuzz_cfg_load.extract_all_callsites(profile.function_call_depths)
-    nodes_sorted_by_red_ahead = sorted(all_callsites,
-                                       key=lambda x: x.cov_forward_reds,
-                                       reverse=True)
-
-    has_blockers = False
-    for node in nodes_sorted_by_red_ahead:
-        if node.cov_forward_reds > 0:
-            has_blockers = True
-
-    if not has_blockers:
-        logger.info("There are no fuzz blockers")
-        return None
-    return nodes_sorted_by_red_ahead
-
-
 def create_str_node_ctx_idx(cov_ct_idx):
     prefixed_zeros = "0" * (len("00000") - len(cov_ct_idx))
     return f"{prefixed_zeros}{cov_ct_idx}"
 
 
-def get_fuzz_blocker_idxs(profile: fuzz_data_loader.FuzzerProfile):
-    nodes_sorted_by_red_ahead = get_fuzz_blocker_data(profile)
-    if nodes_sorted_by_red_ahead is None:
-        return None
-    idx_list = list()
-    max_idx = 10
+def get_fuzz_blockers(
+        profile: fuzz_data_loader.FuzzerProfile,
+        max_blockers_to_extract=999):
+    """Gets a list of fuzz blockers"""
+    blocker_list: List[fuzz_cfg_load.CalltreeCallsite] = list()
+
+    # Extract all callsites in calltree and exit early if none
+    all_callsites = fuzz_cfg_load.extract_all_callsites(profile.function_call_depths)
+    if len(all_callsites) == 0:
+        return blocker_list
+
+    # Filter nodes that has forward reds. Extract maximum max_blockers_to_extract nodes.
+    nodes_sorted_by_red_ahead = sorted(all_callsites,
+                                       key=lambda x: x.cov_forward_reds,
+                                       reverse=True)
     for node in nodes_sorted_by_red_ahead:
-        if break_blocker_node(max_idx, node):
+        if node.cov_forward_reds == 0 or len(blocker_list) >= max_blockers_to_extract:
             break
-        ct_idx_str = create_str_node_ctx_idx(str(node.cov_ct_idx))
-        idx_list.append(ct_idx_str)
-        max_idx -= 1
-    return idx_list
+        blocker_list.append(node)
+    return blocker_list
 
 
 def break_blocker_node(max_idx, node) -> bool:
@@ -559,9 +549,13 @@ def create_fuzz_blocker_table(
     Creates HTML string for table showing fuzz blockers.
     """
     logger.info("Creating fuzz blocker table")
-    # Identify if there are any fuzz blockers
-    nodes_sorted_by_red_ahead = get_fuzz_blocker_data(profile)
-    if nodes_sorted_by_red_ahead is None:
+
+    # Get the fuzz blockers
+    fuzz_blockers = get_fuzz_blockers(
+        profile,
+        max_blockers_to_extract=12
+    )
+    if len(fuzz_blockers) == 0:
         return None
 
     html_table_string = "<p class='no-top-margin'>The followings nodes " \
@@ -586,10 +580,7 @@ def create_fuzz_blocker_table(
         sort_by_column=0,
         sort_order="desc"
     )
-    max_idx = 10
-    for node in nodes_sorted_by_red_ahead:
-        if break_blocker_node(max_idx, node):
-            break
+    for node in fuzz_blockers:
         link_prefix = "0" * (5 - len(str(node.cov_ct_idx)))
         node_link = "%s?scrollToNode=%s%s" % (
             calltree_file_name,
@@ -603,7 +594,6 @@ def create_fuzz_blocker_table(
             f"<a href={node_link}>call site</a>",
             node.cov_largest_blocked_func
         ])
-        max_idx -= 1
     html_table_string += "</table>"
 
     return html_table_string
@@ -688,7 +678,13 @@ def create_calltree(profile: fuzz_data_loader.FuzzerProfile) -> str:
         calltree_file_idx += 1
         calltree_html_file = f"calltree_view_{calltree_file_idx}.html"
 
-    blocker_idxs = get_fuzz_blocker_idxs(profile)
+    fuzz_blockers = get_fuzz_blockers(
+        profile,
+        max_blockers_to_extract=12
+    )
+    blocker_idxs = []
+    for node in fuzz_blockers:
+        blocker_idxs.append(create_str_node_ctx_idx(str(node.cov_ct_idx)))
     write_wrapped_html_file(calltree_html_string, calltree_html_file, blocker_idxs, profile)
     return calltree_html_file
 
