@@ -459,16 +459,17 @@ def create_top_summary_info(
     return html_string
 
 
-def write_wrapped_html_file(html_string,
-                            filename,
-                            blocker_idxs,
-                            profile: fuzz_data_loader.FuzzerProfile):
+def html_create_dedicated_calltree_file(
+        calltree_html_string,
+        filename,
+        profile: fuzz_data_loader.FuzzerProfile):
     """
     Write a wrapped HTML file with the tags needed from fuzz-introspector
     We use this only for wrapping calltrees at the moment, however, down
     the line it makes sense to have an easy wrapper for other HTML pages too.
     """
     complete_html_string = ""
+
     # HTML start
     html_header = fuzz_html_helpers.html_get_header(
         calltree=True,
@@ -477,23 +478,34 @@ def write_wrapped_html_file(html_string,
     html_header += '<div class="content-section calltree-content-section">'
     complete_html_string += html_header
 
-    fuzz_blocker_table = create_fuzz_blocker_table(profile, [], "")
+    # Display fuzz blocker at top of page
+    fuzz_blockers = get_fuzz_blockers(
+        profile,
+        max_blockers_to_extract=12
+    )
+
+    fuzz_blocker_table = create_fuzz_blocker_table(profile, [], "", fuzz_blockers)
     if fuzz_blocker_table is not None:
         complete_html_string += "<div class=\"report-box\">"
         complete_html_string += "<h1>Fuzz blockers</h1>"
         complete_html_string += fuzz_blocker_table
         complete_html_string += "</div>"
 
-    complete_html_string += html_string
+    # Display calltree
+    complete_html_string += calltree_html_string
     complete_html_string += "</div></div></div></div>"
 
     # HTML end
     html_end = '</div>'
+    blocker_idxs = []
+    for node in fuzz_blockers:
+        blocker_idxs.append(create_str_node_ctx_idx(str(node.cov_ct_idx)))
 
-    if blocker_idxs is not None and len(blocker_idxs) != 0:
+    if len(blocker_idxs) > 0:
         html_end = "<script>"
         html_end += f"var fuzz_blocker_idxs = {json.dumps(blocker_idxs)};"
         html_end += "</script>"
+
     html_end += "<script src=\"prism.js\"></script>"
     html_end += "<script src=\"clike.js\"></script>"
     html_end += "<script src=\"calltree.js\"></script>"
@@ -501,9 +513,9 @@ def write_wrapped_html_file(html_string,
 
     complete_html_string += "</body></html>"
 
+    # Beautify and write HTML
     soup = bs(complete_html_string, 'lxml')
     pretty_html = soup.prettify()
-
     with open(filename, "w+") as cf:
         cf.write(pretty_html)
 
@@ -544,17 +556,19 @@ def break_blocker_node(max_idx, node) -> bool:
 def create_fuzz_blocker_table(
         profile: fuzz_data_loader.FuzzerProfile,
         tables: List[str],
-        calltree_file_name: str) -> Optional[str]:
+        calltree_file_name: str,
+        fuzz_blockers=None) -> Optional[str]:
     """
     Creates HTML string for table showing fuzz blockers.
     """
     logger.info("Creating fuzz blocker table")
 
     # Get the fuzz blockers
-    fuzz_blockers = get_fuzz_blockers(
-        profile,
-        max_blockers_to_extract=12
-    )
+    if fuzz_blockers is None:
+        fuzz_blockers = get_fuzz_blockers(
+            profile,
+            max_blockers_to_extract=12
+        )
     if len(fuzz_blockers) == 0:
         return None
 
@@ -678,14 +692,11 @@ def create_calltree(profile: fuzz_data_loader.FuzzerProfile) -> str:
         calltree_file_idx += 1
         calltree_html_file = f"calltree_view_{calltree_file_idx}.html"
 
-    fuzz_blockers = get_fuzz_blockers(
+    html_create_dedicated_calltree_file(
+        calltree_html_string,
+        calltree_html_file,
         profile,
-        max_blockers_to_extract=12
     )
-    blocker_idxs = []
-    for node in fuzz_blockers:
-        blocker_idxs.append(create_str_node_ctx_idx(str(node.cov_ct_idx)))
-    write_wrapped_html_file(calltree_html_string, calltree_html_file, blocker_idxs, profile)
     return calltree_html_file
 
 
