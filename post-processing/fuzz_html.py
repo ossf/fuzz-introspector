@@ -711,7 +711,7 @@ def create_fuzzer_detailed_section(
 
     # Calltree fixed-width image
     html_string += fuzz_html_helpers.html_add_header_with_link(
-        "Call tree overview", 3, toc_list, link=f"call_tree_{curr_tt_profile}")
+        "Call tree", 3, toc_list, link=f"call_tree_{curr_tt_profile}")
     html_string += (
         f"<p class='no-top-margin'>\n"
         f"The following is the call tree with color coding for which"
@@ -735,7 +735,7 @@ def create_fuzzer_detailed_section(
     html_string += fuzz_html_helpers.html_add_header_with_link(
         "Full calltree",
         3,
-        toc_list,
+        [],
         link=f"full_calltree_{curr_tt_profile}"
     )
     calltree_file_name = create_calltree(profile)
@@ -759,7 +759,7 @@ def create_fuzzer_detailed_section(
 
     # Table with all functions hit by this fuzzer
     html_string += fuzz_html_helpers.html_add_header_with_link(
-        "Functions hit (dynamic analysis based)",
+        "Runtime coverage analysis",
         3,
         toc_list,
         link=f"functions_cov_hit_{curr_tt_profile}"
@@ -862,7 +862,7 @@ def create_fuzzer_detailed_section(
 
     # Table showing which files this fuzzer hits.
     html_string += fuzz_html_helpers.html_add_header_with_link(
-        "Files hit", 3, toc_list, link=f"files_hit_{curr_tt_profile}")
+        "Files reached", 3, toc_list, link=f"files_hit_{curr_tt_profile}")
     tables.append(f"myTable{len(tables)}")
     html_string += fuzz_html_helpers.html_create_table_head(
         tables[-1],
@@ -1025,7 +1025,10 @@ def create_html_report(
     logger.info(" - Handling optional analyses")
     html_report_core += "<div class=\"report-box\">"
     html_report_core += fuzz_html_helpers.html_add_header_with_link(
-        "Analyses and suggestions", 1, toc_list)
+        "Analyses and suggestions",
+        1,
+        toc_list
+    )
 
     analysis_array = fuzz_analysis.get_all_analyses()
     for analysis in analysis_array:
