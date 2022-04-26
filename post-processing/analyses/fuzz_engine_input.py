@@ -50,7 +50,6 @@ class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
                        "to a fuzz engine when running a given fuzz target. The current " \
                        "focus is on providing input that is usable by libFuzzer.</p>"
 
-
         for profile_idx in range(len(profiles)):
             logger.info(f"Generating input for {profiles[profile_idx].get_key()}")
             html_string += fuzz_html_helpers.html_add_header_with_link(
