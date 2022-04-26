@@ -36,6 +36,8 @@ The code for this is located in [post-processing](/post-processing/)
 
 Coverage collection is not done by fuzz-introspector itself and must be run separately.
 
+**Caveats**
+
 The code is in development mode and things can change somewhat rapidly. We try to keep the documentation up to date, but may miss certain areas. If there are questions about current status quo please feel free to submit a Github issue with the question.
 
 ## Features
