@@ -23,6 +23,7 @@ from typing import (
 import fuzz_analysis
 import fuzz_data_loader
 import fuzz_html_helpers
+from analyses import fuzz_calltree_analysis
 
 logger = logging.getLogger(name=__name__)
 
@@ -50,6 +51,7 @@ class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
                        "focus is on providing input that is usable by libFuzzer.</p>"
 
         for profile_idx in range(len(profiles)):
+            logger.info(f"Generating input for {profiles[profile_idx].get_key()}")
             html_string += fuzz_html_helpers.html_add_header_with_link(
                 "%s" % (profiles[profile_idx].fuzzer_source_file),
                 2,
@@ -66,7 +68,7 @@ class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
             # Create focus function section
             html_string += self.get_fuzzer_focus_function_section(
                 profiles[profile_idx],
-                toc_list
+                toc_list,
             )
         html_string += "</div>"  # report-box
 
@@ -108,7 +110,21 @@ class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
             3,
             toc_list
         )
-        html_string += "<p>Use this as input to libfuzzer with flag: " \
-                       "-focus_function=FUNC_NAME</p>"
-        html_string += "<pre><code class='language-clike'>TBD</code></pre><br>"
+
+        calltree_analysis = fuzz_calltree_analysis.FuzzCalltreeAnalysis()
+        fuzz_blocker = calltree_analysis.get_fuzz_blockers(
+            profile,
+            max_blockers_to_extract=1
+        )
+
+        if len(fuzz_blocker) == 0:
+            logger.info("Found no fuzz blockers and thus no focus function")
+            return ""
+
+        html_string += (
+            f"<p>Use this as input to libfuzzer with flag: -focus_function name </p>"
+            f"<pre><code class='language-clike'>"
+            f"-focus_function={fuzz_blocker[0].dst_function_name}"
+            f"</code></pre><br>"
+        )
         return html_string
