@@ -404,6 +404,10 @@ function hideNodesWithText(text) {
 
 function addExpandSymbols() {
   $( ".coverage-line-inner").each(function( index ) {
+    console.log("Setting padding-left:")
+    $(this).css('padding-left', function() {
+      return $(this).data('paddingleft')*16+40;
+    });
     var numberOfSubNodes = $(this).closest(".coverage-line").find(".coverage-line-inner").length
     if(numberOfSubNodes>1) {
       $(this).addClass("collapse-symbol");
