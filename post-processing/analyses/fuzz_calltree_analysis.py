@@ -97,7 +97,7 @@ class FuzzCalltreeAnalysis(fuzz_analysis.AnalysisInterface):
 
             calltree_html_string += f"""
     <div class="{color_to_be}-background coverage-line">
-        <span class="coverage-line-inner" data-calltree-idx="{ct_idx_str}" 
+        <span class="coverage-line-inner" data-calltree-idx="{ct_idx_str}"
         data-paddingleft="{int(node.depth)}">
             <span class="node-depth-wrapper">{node.depth}</span>
             <code class="language-clike">
