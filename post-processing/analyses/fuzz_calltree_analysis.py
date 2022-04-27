@@ -58,7 +58,7 @@ class FuzzCalltreeAnalysis(fuzz_analysis.AnalysisInterface):
     def create_calltree(self, profile: fuzz_data_loader.FuzzerProfile) -> str:
         logger.info("In calltree")
         # Generate HTML for the calltree
-        calltree_html_string = "<div class='section-wrapper'>"
+        calltree_html_string = "<div class='section-wrapper call-tree-section-wrapper'>"
         calltree_html_string += "<h1>Fuzzer calltree</h1>"
         nodes = fuzz_cfg_load.extract_all_callsites(profile.function_call_depths)
         for i in range(len(nodes)):
@@ -97,8 +97,9 @@ class FuzzCalltreeAnalysis(fuzz_analysis.AnalysisInterface):
 
             calltree_html_string += f"""
     <div class="{color_to_be}-background coverage-line">
-        <span class="coverage-line-inner" data-calltree-idx="{ct_idx_str}">
-            {node.depth}
+        <span class="coverage-line-inner" data-calltree-idx="{ct_idx_str}"
+        data-paddingleft="{int(node.depth)}">
+            <span class="node-depth-wrapper">{node.depth}</span>
             <code class="language-clike">
                 {demangled_name}
             </code>
@@ -115,8 +116,8 @@ class FuzzCalltreeAnalysis(fuzz_analysis.AnalysisInterface):
                 next_node = nodes[i + 1]
                 if next_node.depth > node.depth:
                     calltree_html_string += f"""<div
-        class="calltree-line-wrapper open level-{int(node.depth)}"
-        style="padding-left: 16px">"""
+        class="calltree-line-wrapper open level-{int(node.depth)}
+        data-paddingleft="{int(node.depth)}">"""
                 elif next_node.depth < node.depth:
                     depth_diff = int(node.depth - next_node.depth)
                     calltree_html_string += "</div>" * depth_diff

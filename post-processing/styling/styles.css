@@ -70,7 +70,9 @@ table.dataTable {
 	border-bottom-right-radius: 2px;
 	box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 1px 5px 0 rgba(0, 0, 0, 0.12), 0 3px 1px -2px rgba(0, 0, 0, 0.2);;
 }
-
+.section-wrapper.call-tree-section-wrapper {
+	padding-left: 40px;
+}
 .top-navbar-accordion {
 	position:  absolute;
 	left: 2%;
@@ -202,10 +204,64 @@ h1 {
 .coverage-line {
 	position: relative;
 }
+.calltree-line-wrapper.open.level-0 .coverage-line::before {
+	left: calc(19.25px + 40px);
+}
+.calltree-line-wrapper.open.level-1 .coverage-line::before {
+	left: calc(36.25px + 40px);
+}
+.calltree-line-wrapper.open.level-2 .coverage-line::before {
+	left: calc(51.25px + 40px);
+}
+.calltree-line-wrapper.open.level-3 .coverage-line::before {
+	left: calc(67.25px + 40px);
+}
+.calltree-line-wrapper.open.level-4 .coverage-line::before {
+	left: calc(84.25px + 40px);
+}
+.calltree-line-wrapper.open.level-5 .coverage-line::before {
+	left: calc(100.25px + 40px);
+}
+.calltree-line-wrapper.open.level-6 .coverage-line::before {
+	left: calc(116.25px + 40px);
+}
+.calltree-line-wrapper.open.level-7 .coverage-line::before {
+	left: calc(132.25px + 40px);
+}
+.calltree-line-wrapper.open.level-8 .coverage-line::before {
+	left: calc(148.25px + 40px);
+}
+.calltree-line-wrapper.open.level-9 .coverage-line::before {
+	left: calc(162.25px + 40px);
+}
+.calltree-line-wrapper.open.level-10 .coverage-line::before {
+	left: calc(178.25px + 40px);
+}
+.calltree-line-wrapper.open.level-11 .coverage-line::before {
+	left: calc(19.25px + 40px);
+}
+.calltree-line-wrapper.open.level-12 .coverage-line::before {
+	left: calc( 210.25px + 40px);
+}
+.calltree-line-wrapper.open.level-13 .coverage-line::before {
+	left: calc(226.25px + 40px);
+}
+.calltree-line-wrapper.open.level-14 .coverage-line::before {
+	left: calc(242.25px + 40px);
+}
+.calltree-line-wrapper.open.level-15 .coverage-line::before {
+	left: calc(258.25px + 40px);
+}
+.coverage-line-inner:hover .node-depth-wrapper {
+	background: #c7c7c7
+}
+.node-depth-wrapper {
+	background: #f2f7fa;
+}
 .coverage-line::before {
 	content:  "";
 	position: absolute;
-	left: 3.25px;
+	left: 43.25px;
 	height: 100%;
 	width: 1.5px;
 	background: #d1dded;
@@ -266,7 +322,7 @@ h1 {
 	/* background: #ffeaea; */
 	color:  #a20000;
 	padding:  0px 0px;
-	background:  #f2f7fa;
+	/*background:  #f2f7fa;*/
 }
 .lawngreen-background > .coverage-line-inner > .language-clike {
 	background:  #00CC00!important;
@@ -560,7 +616,7 @@ input[type="checkbox"] {
   font-weight: bold;
   position: absolute;
   top: 0;
-  right: -25px;
+  left: 2px;
   padding: 5px;
   width: 10px;
   height: 10px;
@@ -576,7 +632,7 @@ input[type="checkbox"] {
   font-weight: bold;
   position: absolute;
   top: 0;
-  right: -25px;
+  left: 2px;
   padding: 5px;
   width: 10px;
   height: 10px;
