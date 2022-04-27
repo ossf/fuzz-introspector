@@ -35,6 +35,9 @@ class CoverageProfile:
     Class for storing information about a runtime coverage report
     """
     def __init__(self):
+        # Covmap is a dictionary of string to list of tuples of int.
+        # The tupls correspond to line number and hitcount in the
+        # source code.
         self.covmap: Dict[str, List[Tuple[int, int]]] = dict()
         self.covreports = list()
 
@@ -46,6 +49,23 @@ class CoverageProfile:
         if lines_hit is not None and lines_hit > 0:
             return True
         return False
+
+    def get_hit_details(self, funcname):
+        """
+        Returns a list containiner tupls [line number, hit count]
+        of the function given as argument. If there is no coverage,
+        i.e. the function is not in the covmap of the coverage profile,
+        then an empty list is returned.
+        """
+        fuzz_key = None
+        if funcname in self.covmap:
+            fuzz_key = funcname
+        elif fuzz_utils.demangle_cpp_func(funcname) in self.covmap:
+            fuzz_key = fuzz_utils.demangle_cpp_func(funcname)
+
+        if fuzz_key is None or fuzz_key not in self.covmap:
+            return []
+        return self.covmap[fuzz_key]
 
     def get_hit_summary(self, funcname):
         """
