@@ -179,35 +179,6 @@ class FuzzerProfile:
             target_folder,
             self.get_target_fuzzer_filename())
 
-    def get_function_coverage(self,
-                              function_name: str,
-                              should_normalise: bool = False) -> List[Tuple[int, int]]:
-        """
-        Get the tuples reflecting coverage map of a given function
-        """
-        logger.debug(f"getting function coverage of { function_name }")
-        if self.coverage is None:
-            logger.info("Returning None")
-            return []
-        if not should_normalise:
-            logger.debug("Should not normalise")
-            if function_name not in self.coverage.covmap:
-                return []
-            return self.coverage.covmap[function_name]
-
-        # should_normalise
-        logger.debug("Should normalise")
-        for funcname in self.coverage.covmap:
-            normalised_funcname = fuzz_utils.normalise_str(
-                fuzz_utils.demangle_cpp_func(fuzz_utils.normalise_str(funcname))
-            )
-            if normalised_funcname == function_name:
-                logger.debug(f"Found normalised: {normalised_funcname}")
-                return self.coverage.covmap[funcname]
-
-        # In case of errs return empty list
-        return []
-
     def get_target_fuzzer_filename(self) -> str:
         return self.fuzzer_source_file.split("/")[-1].replace(".cpp", "").replace(".c", "")
 
@@ -266,7 +237,11 @@ class FuzzerProfile:
 
         uncovered_funcs = []
         for funcname in self.functions_reached_by_fuzzer:
-            if len(self.get_function_coverage(funcname)) == 0:
+            total_func_lines, hit_lines, hit_percentage = self.get_cov_metrics(funcname)
+            if total_func_lines is None:
+                uncovered_funcs.append(funcname)
+                continue
+            if hit_lines == 0:
                 uncovered_funcs.append(funcname)
         return uncovered_funcs
 

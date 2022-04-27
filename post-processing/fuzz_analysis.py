@@ -117,7 +117,7 @@ def overlay_calltree_with_coverage(
             if not demangled_name == "LLVMFuzzerTestOneInput":
                 logger.error("LLVMFuzzerTestOneInput must be the first node in the calltree")
                 exit(1)
-            coverage_data = profile.get_function_coverage("LLVMFuzzerTestOneInput")
+            coverage_data = profile.coverage.get_hit_details("LLVMFuzzerTestOneInput")
             if len(coverage_data) == 0:
                 logger.error("There is no coverage data (not even all negative).")
             node.cov_parent = "EP"
@@ -129,9 +129,8 @@ def overlay_calltree_with_coverage(
         elif callstack_has_parent(node, callstack):
             # Find the parent function and check coverage of the node
             logger.debug("Extracting data")
-            coverage_data = profile.get_function_coverage(
-                fuzz_utils.normalise_str(callstack_get_parent(node, callstack)),
-                True
+            coverage_data = profile.coverage.get_hit_details(
+                fuzz_utils.normalise_str(callstack_get_parent(node, callstack))
             )
             for (n_line_number, hit_count_cov) in coverage_data:
                 logger.debug(f"  - iterating {n_line_number} : {hit_count_cov}")
