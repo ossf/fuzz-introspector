@@ -58,7 +58,7 @@ class FuzzCalltreeAnalysis(fuzz_analysis.AnalysisInterface):
     def create_calltree(self, profile: fuzz_data_loader.FuzzerProfile) -> str:
         logger.info("In calltree")
         # Generate HTML for the calltree
-        calltree_html_string = "<div class='section-wrapper call-tree-section-wrapper'>"
+        calltree_html_string = "<div class='call-tree-section-wrapper'>"
         calltree_html_string += "<h1>Fuzzer calltree</h1>"
         nodes = fuzz_cfg_load.extract_all_callsites(profile.function_call_depths)
         for i in range(len(nodes)):
@@ -108,7 +108,7 @@ class FuzzCalltreeAnalysis(fuzz_analysis.AnalysisInterface):
                 <a href="{callsite_link}">
                     [call site2]
                 </a>
-                <span class="calltree-idx">[calltree idx: {ct_idx_str}]</span>
+                <span class="calltree-idx">{ct_idx_str}</span>
             </span>
         </span>
         """
