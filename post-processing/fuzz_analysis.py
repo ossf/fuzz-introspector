@@ -76,6 +76,9 @@ def overlay_calltree_with_coverage(
     # in which the callsite is placed.
     callstack: Dict[int, str] = dict()
 
+    if profile.coverage is None:
+        return
+
     def callstack_get_parent(n, c):
         return c[int(n.depth) - 1]
 
