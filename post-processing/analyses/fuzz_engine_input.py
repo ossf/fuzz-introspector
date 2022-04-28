@@ -13,7 +13,9 @@
 # limitations under the License.
 """Analysis for creating input consumed by a fuzzer, e.g. a dictionary"""
 
+import json
 import logging
+import os
 
 from typing import (
     List,
@@ -144,7 +146,7 @@ class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
             logger.info("Could not find focus function")
             return ""
 
-        fuzz_utils.add_to_json_file(
+        self.add_to_json_file(
             fuzz_constants.ENGINE_INPUT_FILE,
             profile.get_key(),
             "focus-function",
@@ -158,3 +160,27 @@ class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
             f"</code></pre><br>"
         )
         return html_string
+
+    def add_to_json_file(
+	    json_file_path: str,
+	    fuzzer_name: str,
+	    key: str,
+	    val: str):
+	# Create file if it does not exist
+	if not os.path.isfile(json_file_path):
+	    json_data = dict()
+	else:
+	    json_fd = open(json_file_path)
+	    json_data = json.load(json_fd)
+	    json_fd.close()
+	if 'fuzzers' not in json_data:
+	    json_data['fuzzers'] = dict()
+
+	if fuzzer_name not in json_data['fuzzers']:
+	    json_data['fuzzers'][fuzzer_name] = dict()
+
+	json_data['fuzzers'][fuzzer_name][key] = val
+
+	with open(json_file_path, 'w') as json_file:
+	    json.dump(json_data, json_file)
+
