@@ -62,6 +62,8 @@ class CoverageProfile:
             fuzz_key = funcname
         elif fuzz_utils.demangle_cpp_func(funcname) in self.covmap:
             fuzz_key = fuzz_utils.demangle_cpp_func(funcname)
+        elif fuzz_utils.normalise_str(funcname) in self.covmap:
+            fuzz_key = fuzz_utils.normalise_str(funcname)
 
         if fuzz_key is None or fuzz_key not in self.covmap:
             return []
