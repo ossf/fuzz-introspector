@@ -34,6 +34,7 @@ logger = logging.getLogger(name=__name__)
 class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
     def __init__(self):
         self.name = "FuzzEngineInputAnalysis"
+        self.display_html = False
 
     def analysis_func(self,
                       toc_list: List[Tuple[str, str, int]],
@@ -45,10 +46,17 @@ class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
                       conclusions) -> str:
         logger.info(f" - Running analysis {self.name}")
 
+        if not self.display_html:
+            tables = []
+            toc_list = []
+
         html_string = ""
         html_string += "<div class=\"report-box\">"
         html_string += fuzz_html_helpers.html_add_header_with_link(
-            "Fuzz engine guidance", 1, toc_list)
+            "Fuzz engine guidance",
+            1,
+            toc_list
+        )
         html_string += "<p>This sections provides heuristics that can be used as input " \
                        "to a fuzz engine when running a given fuzz target. The current " \
                        "focus is on providing input that is usable by libFuzzer.</p>"
@@ -56,9 +64,10 @@ class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
         for profile_idx in range(len(profiles)):
             logger.info(f"Generating input for {profiles[profile_idx].get_key()}")
             html_string += fuzz_html_helpers.html_add_header_with_link(
-                "%s" % (profiles[profile_idx].fuzzer_source_file),
+                profiles[profile_idx].fuzzer_source_file,
                 2,
-                toc_list)
+                toc_list
+            )
 
             # Create dictionary section
             html_string += self.get_dictionary_section(
@@ -76,6 +85,9 @@ class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
         html_string += "</div>"  # report-box
 
         logger.info(f" - Completed analysis {self.name}")
+        if not self.display_html:
+            html_string = ""
+
         return html_string
 
     def get_dictionary(self, profile):
