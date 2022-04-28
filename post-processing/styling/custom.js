@@ -115,8 +115,13 @@ function createTable(value) {
       {data: "Accumulated cyclomatic complexity"},
       {data: "Undiscovered complexity"}]
       tableConfig.columnDefs = [
-        // hide "Args", "I Count", "BB Count" per default
-        {targets: [2, 7, 8], visible: false}
+        // By default hide the columns:
+        // "Args",
+        // Function call depth
+        // "Fuzzes runtime hit",
+        // "I Count",
+        // "BB Count"
+        {targets: [2, 3, 5, 7, 8], visible: false}
       ]
   }
 
