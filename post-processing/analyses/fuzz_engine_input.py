@@ -21,8 +21,11 @@ from typing import (
 )
 
 import fuzz_analysis
+import fuzz_constants
 import fuzz_data_loader
 import fuzz_html_helpers
+import fuzz_utils
+
 from analyses import fuzz_calltree_analysis
 
 logger = logging.getLogger(name=__name__)
@@ -121,10 +124,26 @@ class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
             logger.info("Found no fuzz blockers and thus no focus function")
             return ""
 
+        # Only succeed if we can get the name of the function in which the
+        # fuzz blocker callsite resides.
+        if fuzz_blocker[0].src_function_name != None:
+            fuzzer_focus_function = fuzz_blocker[0].src_function_name
+            logger.info(f"Found focus function: {fuzzer_focus_function}")
+        else:
+            logger.info("Could not find focus function")
+            return ""
+
+        fuzz_utils.add_to_json_file(
+            fuzz_constants.ENGINE_INPUT_FILE,
+            profile.get_key(),
+            "focus-function",
+            fuzzer_focus_function
+        )
+
         html_string += (
             f"<p>Use this as input to libfuzzer with flag: -focus_function name </p>"
             f"<pre><code class='language-clike'>"
-            f"-focus_function={fuzz_blocker[0].dst_function_name}"
+            f"-focus_function={fuzzer_focus_function}"
             f"</code></pre><br>"
         )
         return html_string

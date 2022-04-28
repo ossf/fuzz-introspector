@@ -142,6 +142,7 @@ def data_file_read_calltree(filename: str) -> Optional[CalltreeCallsite]:
                 # Add the node to the current parent
                 if curr_depth != -1 and curr_ctcs_node is not None:
                     ctcs.parent_calltree_callsite = curr_ctcs_node
+                    ctcs.src_function_name = ctcs.parent_calltree_callsite.dst_function_name
                     curr_ctcs_node.children.append(ctcs)
                 curr_depth = depth
 

@@ -13,6 +13,7 @@
 # limitations under the License.
 """ Utility functions """
 
+import json
 import logging
 import cxxfilt
 import os
@@ -127,6 +128,31 @@ def scan_executables_for_fuzz_introspector_logs(exec_dir: str):
                             'fuzzer_log_file': found_str
                         })
     return executable_to_fuzz_reports
+
+
+def add_to_json_file(
+    json_file_path: str,
+    fuzzer_name: str,
+    key: str,
+    val: str):
+
+    # Create file if it does not exist
+    if not os.path.isfile(json_file_path):
+        json_data = dict()
+    else:
+        json_fd = open(json_file_path)
+        json_data = json.load(json_fd)
+        json_fd.close()
+    if 'fuzzers' not in json_data:
+        json_data['fuzzers'] = dict()
+
+    if fuzzer_name not in json_data['fuzzers']:
+        json_data['fuzzers'][fuzzer_name] = dict()
+
+    json_data['fuzzers'][fuzzer_name][key] = val
+
+    with open(json_file_path, 'w') as json_file:
+        json.dump(json_data, json_file)
 
 
 def get_target_coverage_url(coverage_url: str, target_name: str) -> str:
