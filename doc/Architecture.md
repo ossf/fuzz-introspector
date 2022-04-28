@@ -34,6 +34,45 @@ patch clang in order to instantiate our pass. As such, it's a minor patch
 only involving a few lines of code. We have an issue open
 [here](https://github.com/ossf/fuzz-introspector/issues/57) for discussions on this.
 
+The important part of the patch is that we change [these LLVM lines](https://github.com/llvm/llvm-project/blob/be656df18721dc55a1de2eea64a3f73b6afa29a2/llvm/lib/Passes/PassBuilderPipelines.cpp#L1462-L1476)
+from 
+```c++
+ModulePassManager
+PassBuilder::buildLTODefaultPipeline(OptimizationLevel Level,
+                                     ModuleSummaryIndex *ExportSummary) {
+  ModulePassManager MPM;
+
+  // Convert @llvm.global.annotations to !annotation metadata.
+  MPM.addPass(Annotation2MetadataPass());
+
+  for (auto &C : FullLinkTimeOptimizationEarlyEPCallbacks)
+    C(MPM, Level);
+
+  // Create a function that performs CFI checks for cross-DSO calls with targets
+  // in the current module.
+  MPM.addPass(CrossDSOCFIPass());
+```
+
+to:
+```c++
+ModulePassManager
+PassBuilder::buildLTODefaultPipeline(OptimizationLevel Level,
+                                     ModuleSummaryIndex *ExportSummary) {
+  ModulePassManager MPM;
+
+  // Convert @llvm.global.annotations to !annotation metadata.
+  MPM.addPass(Annotation2MetadataPass());
+
+  for (auto &C : FullLinkTimeOptimizationEarlyEPCallbacks)
+    C(MPM, Level);
+
+  // Create a function that performs CFI checks for cross-DSO calls with targets
+  // in the current module.
+  MPM.addPass(CrossDSOCFIPass());
+  MPM.addPass(FuzzIntrospectorPass());
+```
+i.e. we only add `MPM.addPass(FuzzIntrospectorPass());` to the LTO pass builder pipeline. All
+of the patches are given in [sed_cmds.sh](/sed_cmds.sh)
 
 ### Output of LLVM plugin
 The output of the LLVM pass is composed of two files for each fuzzer executable
