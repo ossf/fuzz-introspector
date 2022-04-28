@@ -70,7 +70,9 @@ $( document ).ready(function() {
     }, false);
   }
   
+  // if "scrollToNode" was passed to the URL, scroll:
   scrollOnLoad();
+
   tabLineHover();
 });
 
@@ -85,8 +87,9 @@ function scrollOnLoad() {
     if(elementToScrollTo===null) {
       return
     }
+    var offset = elementToScrollTo.getBoundingClientRect();
     elementToScrollTo.style.background = "#ffe08c";
-    document.querySelector(".calltree-content-section").scrollTop = elementToScrollTo.offsetTop-500;
+    document.querySelector(".calltree-content-section").scrollTop = offset.top-500;
   }
 }
 
