@@ -54,7 +54,10 @@ def html_get_header(calltree: bool = False,
                 href='https://cdn.datatables.net/1.10.25/css/jquery.dataTables.min.css'>
             <link
                 rel='stylesheet'
-                href='styles.css'>"""
+                href='styles.css'>
+            <link
+                rel='stylesheet'
+                href='https://cdn.datatables.net/buttons/2.2.2/css/buttons.dataTables.min.css'>"""
     # Add navbar to header
     header = header + html_get_navbar(title)
     if calltree:

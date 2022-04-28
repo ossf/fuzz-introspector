@@ -80,7 +80,7 @@ class FuzzRuntimeCoverageAnalysis(fuzz_analysis.AnalysisInterface):
                 fuzz_utils.demangle_cpp_func(funcname),
                 total_func_lines,
                 hit_lines,
-                "%.5s" % (str((hit_lines / total_func_lines) * 100.0))
+                "%.5s%%" % (str((hit_lines / total_func_lines) * 100.0))
             ])
         html_string += "</table>"
         html_string += "</div>"  # report-box

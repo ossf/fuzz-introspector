@@ -828,13 +828,13 @@ def create_html_report(
     # Close the content div and content_wrapper
     html_body_end = "</div>\n</div>\n"
 
-    # Add PrismJs for code snippet styling
-    html_body_end += "<script src=\"prism.js\"></script>"
-    html_body_end += "<script src=\"clike.js\"></script>"
-    html_body_end += "<script src=\"custom.js\"></script>"
-    html_body_end += "<script src=\"all_functions.js\"></script>"
-    html_body_end += "<script src=\"analysis_1.js\"></script>"
-    html_body_end += "<script src=\"fuzzer_table_data.js\"></script>"
+    # .js files to add to report
+    js_files = ["prism.js", "clike.js", "custom.js", "all_functions.js",
+                "analysis_1.js", "fuzzer_table_data.js",
+                "https://cdn.datatables.net/buttons/2.2.2/js/dataTables.buttons.min.js",
+                "https://cdn.datatables.net/buttons/2.2.2/js/buttons.colVis.min.js"]
+    for js_file in js_files:
+        html_body_end += f"<script src=\"{js_file}\"></script>"
 
     ###########################
     # Footer
