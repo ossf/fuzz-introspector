@@ -1,4 +1,6 @@
 # [xpdf](https://storage.googleapis.com/oss-fuzz-introspector/xpdf/inspector-report/20220321/fuzz_report.html)
+Introspector report: [link](https://storage.googleapis.com/oss-fuzz-introspector/xpdf/inspector-report/20220321/fuzz_report.html)
+
 A [previous blog post by Project Zero](https://googleprojectzero.blogspot.com/2021/12/a-deep-dive-into-nso-zero-click.html)
 details a vulnerability exploited by NSO to hack iOS users in xpdf. This vulnerability is in the `JBIG2Stream::readTextRegionSeg`
 function in xpdf.
@@ -27,6 +29,8 @@ function [`JBIG2stream::readTextRegionSeg()`](https://storage.googleapis.com/oss
 This proves the usefulness of Fuzz Introspector in identifying and suggesting interesting new fuzz targets.
 
 # [jsonnet](https://oss-fuzz-introspector.storage.googleapis.com/jsonnet/inspector-report/20220315/fuzz_report.html)
+
+Introspector report: [link](https://oss-fuzz-introspector.storage.googleapis.com/jsonnet/inspector-report/20220315/fuzz_report.html)
 
 Fuzz Introspector provides a [call-tree overview](https://oss-fuzz-introspector.storage.googleapis.com/jsonnet/inspector-report/20220315/fuzz_report.html#call_tree_0) for each fuzz target (Figure 2).
 This [overview](https://github.com/ossf/fuzz-introspector/blob/main/doc/Glossary.md#call-tree-overview)
