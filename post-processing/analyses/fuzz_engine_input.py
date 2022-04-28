@@ -26,7 +26,6 @@ import fuzz_analysis
 import fuzz_constants
 import fuzz_data_loader
 import fuzz_html_helpers
-import fuzz_utils
 
 from analyses import fuzz_calltree_analysis
 
@@ -162,6 +161,7 @@ class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
         return html_string
 
     def add_to_json_file(
+            self,
             json_file_path: str,
             fuzzer_name: str,
             key: str,
