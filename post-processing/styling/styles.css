@@ -745,3 +745,40 @@ input[type="checkbox"] {
 .coverage-line-inner.hidden {
 	display:  none;
 }
+.percentage-wrapper {
+	font-weight: 650;
+	border-radius: 5px;
+	padding: 6.5px;
+}
+.p0-10 {
+	background: #f2d3e1;
+	color: #ba4178;
+}
+.p10-20 {
+	background: #f2ddd3;
+	color: #ba6341;
+}
+.p20-30 {
+	color: #ba7441;
+	background: #f2e2d3;
+}
+.p30-40 {
+	background: #f2ecd3;
+	color: #d5976a
+}
+.p40-50 {
+	color: #d5ba6a;
+	background: #ede3b9;
+}
+.p50-60 {
+	background: #e2edb9;
+	color: #aeb959;
+}
+.p60-70 {
+	color: #75b959;
+	background: #c8edb9;
+}
+.p70-100 {
+	background: #b8f5ba;
+	color: #4fb327;
+}

@@ -74,10 +74,19 @@ function createTable(value) {
     bInfo = true;
 
   var tableConfig = {'bPaginate': bPaginate,
-                          'bLengthChange': bLengthChange,
-                          'bInfo': bInfo,
-                          'bFilter': bFilter,
-                          'pageLength': 10}
+                      'bLengthChange': bLengthChange,
+                      'bInfo': bInfo,
+                      'bFilter': bFilter,
+                      'pageLength': 10,
+                      'autoWidth': false,
+                      dom:            "Bfrtip",
+                      paging: true, 
+                      scrollCollapse: true,
+                      buttons:        [ 'colvis' ],
+                      fixedColumns:   {
+                          left: 2
+                      }
+                    }
   var language = {"lengthMenu": "_MENU_ per page",
                   "searchPlaceholder": "Search table",
                   "search": "_INPUT_"}
@@ -134,15 +143,61 @@ function populateFunctionsHitTable() {
 
 }
 function populateFuzzersOverviewTable(value) {
+  console.log(value)
   var table = $('#'+value).DataTable();
   var dataSet;
+  var dataWithMarkup;
+  dataWithMarkup = [];
 
   if(value==="fuzzers_overview_table") {
-    dataSet = all_functions_table_data;
-  }else if(value==="all_functions_overview_table") {
-    dataSet = analysis_1_data;
-  }
+    for(var i=0;i<all_functions_table_data.length;i++) {
+      dataWithMarkup.push(all_functions_table_data[i]);
 
+      // Add styling to percentages
+      var wrapper = getPercentageWrapper(dataWithMarkup[i]["Func lines hit %"]);
+      dataWithMarkup[i]["Func lines hit %"] = wrapper;
+    }
+    dataSet = all_functions_table_data;
+
+  }else if(value==="all_functions_overview_table") {
+    for(var i=0;i<analysis_1_data.length;i++) {
+      dataWithMarkup.push(analysis_1_data[i]);
+
+      // Add styling to percentages
+      var wrapper = getPercentageWrapper(dataWithMarkup[i]["Func lines hit %"]);
+      dataWithMarkup[i]["Func lines hit %"] = wrapper;
+    }
+    dataSet = dataWithMarkup;
+  }
   table.rows.add(dataSet);
   table.draw();  
+}
+
+function getPercentageWrapper(val) {
+  var numberString = val.replace('%','');
+  var numberFloat = parseFloat(numberString);
+  var className = getClassName(numberFloat);
+   return `<span class='${className} percentage-wrapper'>${numberString}%</span>`
+
+}
+
+function getClassName(val) {
+  if(val<10) {
+    return "p0-10"
+  }else if(val>10 && val<=20) {
+    return "p10-20"
+  }else if(val>20 && val<=30) {
+    return "p20-30"
+  }else if (val>30 && val<=40) {
+    return "p30-40"
+  }else if (val>40 && val<=50) {
+    return "p40-50"
+  }else if (val>50 && val<=60) {
+    return "p50-60"
+  }else if (val>60 && val<=70) {
+    return "p60-70"
+  } else if (val>70) {
+    return "p70-100"
+  }
+
 }
