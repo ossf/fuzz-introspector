@@ -16,29 +16,11 @@ A video demonstration of fuzz-introspector is given [here](https://www.youtube.c
 - [Use with OSS-Fuzz](#testing-with-oss-fuzz)
 - [Use without OSS-Fuzz](#testing-without-oss-fuzz-integration)
 
-## Arthictecture
+## Architecture
 The workflow of fuzz-introspector can be visualised as follows:
 ![Functions table](/doc/img/fuzz-introspector-architecture.png)
 
-**Compilation-based static analysis**
-
-The compiler-based static analysis is responsible for collecting data about the code under analysis. The analysis is done by way of link-time optimisations, which makes it possible to do program-wide analysis. The analysis collects data about all code that is present in each fuzzer executable at link time.
-
-The code for this is located in [llvm](/llvm/)
-
-**Post-processing**
-
-The post-processing logic is responsible for digesting data and doing analyses on it. The architectecture goal of the post-processing is to be modular to make analysis plugin writing easy.
-
-The code for this is located in [post-processing](/post-processing/)
-
-**Dynamic analysis**
-
-Coverage collection is not done by fuzz-introspector itself and must be run separately.
-
-**Caveats**
-
-The code is in development mode and things can change somewhat rapidly. We try to keep the documentation up to date, but may miss certain areas. If there are questions about current status quo please feel free to submit a Github issue with the question.
+A more detailed description is available in [doc/Architecture](/doc/Architecture.md)
 
 ## Features
 **High-level features**
