@@ -1,4 +1,4 @@
-# Arthictecture
+# Architecture
 
 The overall workflow of fuzz-introspector can be visualised as follows:
 ![Functions table](/doc/img/fuzz-introspector-architecture.png)
@@ -22,7 +22,7 @@ to compile by way of LTO.
 
 The LLVM pass is set to run only when fuzzer executables are linked. However,
 at that stage the code in the executables will be compiled with LTO, which
-enables the pass operate on the code of the full program.
+enables the pass to operate on the code of the full program.
 
 To use the fuzz-introspector pass simply compile a given project and the fuzzers
 using lto and the gold linker (`-flto` and `-fuse-ld=gold`) clang flags, and then
@@ -206,7 +206,7 @@ level as well as merging all data into a project-wide analysis.
 The post-processing part has some core analysis in the [post-processing](/post-processing/) and
 also plugin-like analyses in [post-processing/analyses](/post-processing/analyses/).
 
-The primary output of the post-processing logic is an HTML report that can interpreted by humans.
+The primary output of the post-processing logic is an HTML report that can be interpreted by humans.
 However, there is currently development taking place in extracting data that is useful by fuzzers
 to improve the fuzzing, e.g. the analysis plugin [fuzz_engine_input.py](/post-processing/analyses/fuzz_engine_input.py)
 
