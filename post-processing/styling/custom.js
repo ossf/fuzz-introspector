@@ -82,7 +82,10 @@ function createTable(value) {
                       dom:            "Bfrtip",
                       paging: true, 
                       scrollCollapse: true,
-                      buttons:        [ 'colvis' ],
+                      buttons:        [ {
+                        extend: 'colvis',
+                        text: "Columns"
+                        } ],
                       fixedColumns:   {
                           left: 2
                       }
@@ -111,6 +114,10 @@ function createTable(value) {
       {data: "Reached by functions"},
       {data: "Accumulated cyclomatic complexity"},
       {data: "Undiscovered complexity"}]
+      tableConfig.columnDefs = [
+        // hide "Args", "I Count", "BB Count" per default
+        {targets: [2, 7, 8], visible: false}
+      ]
   }
 
   // Fuzzer function hit tables
@@ -124,7 +131,7 @@ function createTable(value) {
   }
   
   // Create the table:
-  var table = $('#'+value).dataTable(tableConfig);    
+  var table = $('#'+value).dataTable(tableConfig);
 }
 
 function populateTableData() {
@@ -140,7 +147,6 @@ function populateFunctionsHitTable() {
     table.rows.add(fuzzer_table_data[key]);
   }
   table.draw();
-
 }
 function populateFuzzersOverviewTable(value) {
   console.log(value)
