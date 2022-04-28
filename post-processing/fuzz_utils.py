@@ -131,11 +131,11 @@ def scan_executables_for_fuzz_introspector_logs(exec_dir: str):
 
 
 def add_to_json_file(
-    json_file_path: str,
-    fuzzer_name: str,
-    key: str,
-    val: str):
-
+        json_file_path: str,
+        fuzzer_name: str,
+        key: str,
+        val: str
+        ):
     # Create file if it does not exist
     if not os.path.isfile(json_file_path):
         json_data = dict()

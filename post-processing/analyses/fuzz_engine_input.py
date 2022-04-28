@@ -47,7 +47,6 @@ class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
         logger.info(f" - Running analysis {self.name}")
 
         if not self.display_html:
-            tables = []
             toc_list = []
 
         html_string = ""
@@ -138,7 +137,7 @@ class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
 
         # Only succeed if we can get the name of the function in which the
         # fuzz blocker callsite resides.
-        if fuzz_blocker[0].src_function_name != None:
+        if fuzz_blocker[0].src_function_name is not None:
             fuzzer_focus_function = fuzz_blocker[0].src_function_name
             logger.info(f"Found focus function: {fuzzer_focus_function}")
         else:
