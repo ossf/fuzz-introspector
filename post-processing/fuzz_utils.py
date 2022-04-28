@@ -13,10 +13,11 @@
 # limitations under the License.
 """ Utility functions """
 
-import logging
 import cxxfilt
+import logging
 import os
 import re
+
 from typing import (
     Any,
     List,

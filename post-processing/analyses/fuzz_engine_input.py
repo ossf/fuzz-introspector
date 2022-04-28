@@ -13,7 +13,9 @@
 # limitations under the License.
 """Analysis for creating input consumed by a fuzzer, e.g. a dictionary"""
 
+import json
 import logging
+import os
 
 from typing import (
     List,
@@ -21,8 +23,10 @@ from typing import (
 )
 
 import fuzz_analysis
+import fuzz_constants
 import fuzz_data_loader
 import fuzz_html_helpers
+
 from analyses import fuzz_calltree_analysis
 
 logger = logging.getLogger(name=__name__)
@@ -31,6 +35,7 @@ logger = logging.getLogger(name=__name__)
 class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
     def __init__(self):
         self.name = "FuzzEngineInputAnalysis"
+        self.display_html = False
 
     def analysis_func(self,
                       toc_list: List[Tuple[str, str, int]],
@@ -42,10 +47,16 @@ class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
                       conclusions) -> str:
         logger.info(f" - Running analysis {self.name}")
 
+        if not self.display_html:
+            toc_list = []
+
         html_string = ""
         html_string += "<div class=\"report-box\">"
         html_string += fuzz_html_helpers.html_add_header_with_link(
-            "Fuzz engine guidance", 1, toc_list)
+            "Fuzz engine guidance",
+            1,
+            toc_list
+        )
         html_string += "<p>This sections provides heuristics that can be used as input " \
                        "to a fuzz engine when running a given fuzz target. The current " \
                        "focus is on providing input that is usable by libFuzzer.</p>"
@@ -53,9 +64,10 @@ class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
         for profile_idx in range(len(profiles)):
             logger.info(f"Generating input for {profiles[profile_idx].get_key()}")
             html_string += fuzz_html_helpers.html_add_header_with_link(
-                "%s" % (profiles[profile_idx].fuzzer_source_file),
+                profiles[profile_idx].fuzzer_source_file,
                 2,
-                toc_list)
+                toc_list
+            )
 
             # Create dictionary section
             html_string += self.get_dictionary_section(
@@ -73,6 +85,9 @@ class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
         html_string += "</div>"  # report-box
 
         logger.info(f" - Completed analysis {self.name}")
+        if not self.display_html:
+            html_string = ""
+
         return html_string
 
     def get_dictionary(self, profile):
@@ -121,10 +136,50 @@ class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
             logger.info("Found no fuzz blockers and thus no focus function")
             return ""
 
+        # Only succeed if we can get the name of the function in which the
+        # fuzz blocker callsite resides.
+        if fuzz_blocker[0].src_function_name is not None:
+            fuzzer_focus_function = fuzz_blocker[0].src_function_name
+            logger.info(f"Found focus function: {fuzzer_focus_function}")
+        else:
+            logger.info("Could not find focus function")
+            return ""
+
+        self.add_to_json_file(
+            fuzz_constants.ENGINE_INPUT_FILE,
+            profile.get_key(),
+            "focus-function",
+            fuzzer_focus_function
+        )
+
         html_string += (
             f"<p>Use this as input to libfuzzer with flag: -focus_function name </p>"
             f"<pre><code class='language-clike'>"
-            f"-focus_function={fuzz_blocker[0].dst_function_name}"
+            f"-focus_function={fuzzer_focus_function}"
             f"</code></pre><br>"
         )
         return html_string
+
+    def add_to_json_file(
+            self,
+            json_file_path: str,
+            fuzzer_name: str,
+            key: str,
+            val: str):
+        # Create file if it does not exist
+        if not os.path.isfile(json_file_path):
+            json_data = dict()
+        else:
+            json_fd = open(json_file_path)
+            json_data = json.load(json_fd)
+            json_fd.close()
+        if 'fuzzers' not in json_data:
+            json_data['fuzzers'] = dict()
+
+        if fuzzer_name not in json_data['fuzzers']:
+            json_data['fuzzers'][fuzzer_name] = dict()
+
+        json_data['fuzzers'][fuzzer_name][key] = val
+
+        with open(json_file_path, 'w') as json_file:
+            json.dump(json_data, json_file)
