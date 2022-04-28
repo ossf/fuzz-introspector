@@ -3,14 +3,14 @@
 The overall workflow of fuzz-introspector can be visualised as follows:
 ![Functions table](/doc/img/fuzz-introspector-architecture.png)
 
-The two main parts to fuzz-introspector is the *compilation-based static analysis*
-and *post-processing*. Fuzz-introspector has capabilities to integrate data from
+The two main parts to fuzz-introspector is the **compilation-based static analysis**
+and **post-processing**. Fuzz-introspector has capabilities to integrate data from
 runtime coverage collection, and in order to use this features fuzz-introspector
 relies on external infrastructure to extract this coverage. Focus is particularly
 on using OSS-Fuzz for this, although fuzz-introspector can be integrated into
 other workflows.
 
-**Compilation-based static analysis**
+## Compilation-based static analysis
 
 The code for this is located in [llvm](/llvm/)
 
@@ -24,6 +24,12 @@ The LLVM pass is set to run only when fuzzer executables are linked. However,
 at that stage the code in the executables will be compiled with LTO, which
 enables the pass operate on the code of the full program.
 
+To use the fuzz-introspector pass simply compile a given project and the fuzzers
+using lto and the gold linker (`-flto` and `-fuse-ld=gold`) clang flags, and then
+also set the `FUZZ_INTROSPECTOR` environment variable during the compilation and
+linking process. However, we currently rely on adding the LTO pass into the clang
+build pass pipeline by patching clang, and consequentially you need to use a custom Clang
+for using fuzz-introspector, see [Custom clang](#custom-clang).
 
 ### Custom clang
 
