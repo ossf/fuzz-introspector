@@ -162,25 +162,24 @@ class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
         return html_string
 
     def add_to_json_file(
-	    json_file_path: str,
-	    fuzzer_name: str,
-	    key: str,
-	    val: str):
-	# Create file if it does not exist
-	if not os.path.isfile(json_file_path):
-	    json_data = dict()
-	else:
-	    json_fd = open(json_file_path)
-	    json_data = json.load(json_fd)
-	    json_fd.close()
-	if 'fuzzers' not in json_data:
-	    json_data['fuzzers'] = dict()
+            json_file_path: str,
+            fuzzer_name: str,
+            key: str,
+            val: str):
+        # Create file if it does not exist
+        if not os.path.isfile(json_file_path):
+            json_data = dict()
+        else:
+            json_fd = open(json_file_path)
+            json_data = json.load(json_fd)
+            json_fd.close()
+        if 'fuzzers' not in json_data:
+            json_data['fuzzers'] = dict()
 
-	if fuzzer_name not in json_data['fuzzers']:
-	    json_data['fuzzers'][fuzzer_name] = dict()
+        if fuzzer_name not in json_data['fuzzers']:
+            json_data['fuzzers'][fuzzer_name] = dict()
 
-	json_data['fuzzers'][fuzzer_name][key] = val
+        json_data['fuzzers'][fuzzer_name][key] = val
 
-	with open(json_file_path, 'w') as json_file:
-	    json.dump(json_data, json_file)
-
+        with open(json_file_path, 'w') as json_file:
+            json.dump(json_data, json_file)
