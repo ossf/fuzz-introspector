@@ -78,24 +78,124 @@ PassBuilder::buildLTODefaultPipeline(OptimizationLevel Level,
   MPM.addPass(FuzzIntrospectorPass());
 ```
 i.e. we only add `MPM.addPass(FuzzIntrospectorPass());` to the LTO pass builder pipeline. All
-of the patches are given in [sed_cmds.sh](/sed_cmds.sh)
+of the LLVM patches are given in [sed_cmds.sh](/sed_cmds.sh)
 
 ### Output of LLVM plugin
 The output of the LLVM pass is composed of two files for each fuzzer executable
 analysed:
-- fuzzerLogDataXXXX
-- otherFile2
+- fuzzerLogFile-X-YYYYY.data
+- fuzzerLogFile-X-YYYYY.data.yaml
 
+where `X` is a counter and `YYYYY` is a uid.
+
+***fuzzerLogFile-X-YYYYY.data***
+Holds the calltree of a given fuzzer and the content of it looks as follows:
+```
+Call tree
+LLVMFuzzerTestOneInput /src/htslib/test/fuzz/hts_open_fuzzer.c linenumber=-1
+  abort / linenumber=123
+  hopen /src/htslib/hfile.c linenumber=127
+    find_scheme_handler /src/htslib/hfile.c linenumber=1259
+      isalnum_c /src/htslib/./textutils_internal.h linenumber=1125
+        __ctype_b_loc / linenumber=161
+      tolower_c /src/htslib/./textutils_internal.h linenumber=1126
+        __ctype_tolower_loc / linenumber=171
+      pthread_mutex_lock / linenumber=1134
+      load_hfile_plugins /src/htslib/hfile.c linenumber=1135
+        kh_init_scheme_string /src/htslib/hfile.c linenumber=1057
+          calloc / linenumber=915
+        hfile_add_scheme_handler /src/htslib/hfile.c linenumber=1061
+...
+...
+```
+
+Each row holds three items that are data about a given callsite:
+- The name of the destination function.
+- The file in which the destination function is placed.
+- The line in the source code in which the callsite is.
+
+Following the above example corresponds to the code [here](https://github.com/samtools/htslib/blob/d7cc10de075735d07eb8da0538cbdc0f331f7bd1/test/fuzz/hts_open_fuzzer.c#L119-L131)
+in file `hts_open_fuzzer.c`:
+```c
+119  int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
+120      hFILE *memfile;
+121      uint8_t *copy = malloc(size);
+122      if (copy == NULL) {
+123          abort();
+124      }
+125      memcpy(copy, data, size);
+126      // hopen does not take ownership of `copy`, but hts_hopen does.
+127      memfile = hopen("mem:", "rb:", copy, size);
+128      if (memfile == NULL) {
+129          free(copy);
+130          return 0;
+131      }
+```
+
+The `LLVMFuzzerTestOneInput /src/htslib/test/fuzz/hts_open_fuzzer.c linenumber=-1` is the
+entrypoint of the fuzzer. The three data items are:
+- destination function is `LLVMFuzzerTestOneInput`
+- file in which the destination function resides is `/src/htslib/test/fuzz/hts_open_fuzzer.c` because it corresponds to the location on disk
+- linenumber is -1 because there is no callsite to LLVMFuzzerTestOneInput as this is called by the fuzz engine, e.g. libFuzzer.
+
+***fuzzerLogFile-X-YYYYY.data.yaml***
+Holds information about each function in the module that was compiled by the LTO pass. Examples contents are:
+```
+---
+Fuzzer filename: '/src/htslib/test/fuzz/hts_open_fuzzer.c'
+All functions:
+  Function list name: All functions
+  Elements:
+    - functionName:    hts_close_or_abort
+      functionSourceFile: '/src/htslib/test/fuzz/hts_open_fuzzer.c'
+      linkageType:     InternalLinkage
+      functionLinenumber: 40
+      functionDepth:   18
+      returnType:      'N/A'
+      argCount:        1
+      argTypes:
+        - 'struct.htsFile *'
+      constantsTouched: []
+      argNames:
+        - ''
+      BBCount:         5
+      ICount:          23
+      EdgeCount:       5
+      CyclomaticComplexity: 2
+      functionsReached:
+        - BZ2_bzBuffToBuffCompress
+        - BZ2_bzBuffToBuffDecompress
+        - RC_Decode
+        ...
+        ...
+        - zlib_mem_deflate
+        - zlib_mem_inflate
+      functionUses:    4
+    - functionName:    abort
+      functionSourceFile: '/'
+      linkageType:     externalLinkage
+      functionLinenumber: -1
+      functionDepth:   0
+      returnType:      'N/A'
+```
+
+This is a very verbose file because it enables the post-processing logic to
+implement the analysis parts. In this
+sense the high-level goal for the compilation-based static analysis is to extract large
+volumes of data and then use the post-processing for analysis.
 
 
 
 ## Post-processing
 
-The post-processing logic is responsible for digesting data and doing analyses on it.
-The architectecture goal of the post-processing is to be modular to make analysis plugin
-writing easy.
-
 The code for this is located in [post-processing](/post-processing/)
+
+The post-processing logic is responsible for digesting and analysing data from the
+compilation-based analysis and also runtime coverage data.
+The architectecture goal of the post-processing is to be modular to make analysis plugin
+writing easy. For this reason the code is also written in Python to enable rapid
+prototyping.
+
 
 **Dynamic analysis**
 
