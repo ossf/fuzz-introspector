@@ -58,4 +58,4 @@ for fuzzname in htslib unrar jsoncpp; do
   cp -rf ./corpus-$LATEST_CORPUS_DIR $NEW_TEST_DIR/
 done
 
-python3 $SCRIPTS_DIR/project-checker.py --test-dir=$NEW_TEST_DIR/
+python3 $SCRIPT_DIR/project-checker.py --test-dir=$NEW_TEST_DIR/
