@@ -44,7 +44,7 @@ for fuzzname in htslib unrar jsoncpp; do
 
   mv get_coverage.log ./corpus-$LATEST_CORPUS_DIR/get_coverage.log
   mv build_introspector.log ./corpus-$LATEST_CORPUS_DIR/build_introspector.log
-  echo "$fuzzname" >> ./corpus-$LATEST_CORPUS_DIR/project_name.txt
+  echo "$fuzzname" >> ./corpus-$LATEST_CORPUS_DIR/project_name
 
   # Look for the last logging statement of fuzz-introspector. If that statement is printed, then
   # it means no exceptions were thrown. This shows the build didn't crash.
