@@ -261,7 +261,7 @@ class FuzzerProfile:
         fuzz_utils.write_to_summary_file(
             self.get_key(),
             "stats",
-            { 
+            {
                 "total-basic-blocks": self.total_basic_blocks,
                 "total-cyclomatic-complexity": self.total_cyclomatic_complexity,
                 "file-target-count": file_target_count,
