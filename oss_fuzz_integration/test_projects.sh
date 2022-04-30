@@ -21,20 +21,15 @@ SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 # create next test report directory
 TEST_REPORT_NAME="test-report-"
 if [ $(ls | grep $TEST_REPORT_NAME | wc -l) -gt 0 ]; then
-  echo "once"
   LATEST_TEST_DIR_NUM=$(ls | grep "$TEST_REPORT_NAME" | sed "s/$TEST_REPORT_NAME//" | sort -n | tail -1)
 
 else
   LATEST_TEST_DIR_NUM=0
-  echo "twice"
 fi
 NEW_TEST_COUNT=$(($LATEST_TEST_DIR_NUM+1))
 NEW_TEST_DIR="$TEST_REPORT_NAME$NEW_TEST_COUNT"
 echo "NEW_TEST_DIR: $NEW_TEST_DIR"
 mkdir $NEW_TEST_DIR
-
-#exit 0
-
 
 for fuzzname in htslib unrar jsoncpp; do
   echo "Testing $fuzzname"
