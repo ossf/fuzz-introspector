@@ -591,8 +591,8 @@ def create_fuzzer_detailed_section(
         profile.get_key(),
         "coverage-blocker-stats",
         {
-            "reachable-funcs" : reachable_funcs,
-            "reached-funcs" : reached_funcs,
+            "reachable-funcs": reachable_funcs,
+            "reached-funcs": reached_funcs,
             "cov-reach-proportion": cov_reach_proportion,
         }
     )

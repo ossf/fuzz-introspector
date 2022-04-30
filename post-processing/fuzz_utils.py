@@ -152,7 +152,7 @@ def write_to_summary_file(fuzzer, key, value):
 
     with open(fuzz_constants.SUMMARY_FILE, 'w') as json_file:
         json.dump(json_data, json_file)
-        
+ 
 
 def get_target_coverage_url(coverage_url: str, target_name: str) -> str:
     """
