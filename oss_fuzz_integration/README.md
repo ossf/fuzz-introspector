@@ -48,7 +48,10 @@ You can now navigate to `http://localhost:8008/fuzz_report.html`
 # Testing before bumping OSS-Fuzz
 To prevent and catch regressions we use a testing framework that verifies
 the results of running fuzz-introspector on various OSS-Fuzz integrations.
-The framework catches build issues and logic issues in the results.
+
+The framework is designed to catch regressions of the form:
+- Build issues that may be introduced, i.e. projects that are expected to succeed no longer succeeds.
+- Logical regressions, focusing on if results are as expected.
 
 The testing framework has some hard-coded boundary checks on the data
 for a given project. It has to be boundaries rather than fixed values
