@@ -54,10 +54,48 @@ def check_project_htslib(summary_dict):
     # Success
     return
 
+
+def check_project_jsoncpp(summary_dict):
+    """Checks summary dict against htslib details"""
+    fuzzer_list = []
+    for k in summary_dict:
+        if k != "MergedProjectProfile":
+            fuzzer_list.append(k)
+    if len(fuzzer_list) != 2:
+        guide_exit("jsoncpp fuzzer count is wrong")
+    if summary_dict['jsoncpp_fuzzer']['coverage-blocker-stats']['cov-reach-proportion'] < 50.0:
+        guide_exit("coverage reach proportion seems off.")
+    if summary_dict['jsoncpp_proto_fuzzer']['coverage-blocker-stats']['cov-reach-proportion'] < 50.0:
+        guide_exit("coverage reach proportion seems off.")
+
+    # Success
+    return
+
+
+def check_project_unrar(summary_dict):
+    """Checks summary dict against htslib details"""
+    fuzzer_list = []
+    for k in summary_dict:
+        if k != "MergedProjectProfile":
+            fuzzer_list.append(k)
+    if len(fuzzer_list) != 1:
+        guide_exit("unrar fuzzer count is wrong")
+    if summary_dict['unrar_fuzzer']['coverage-blocker-stats']['cov-reach-proportion'] < 10.0:
+        guide_exit("coverage reach proportion seems off.")
+    if summary_dict['unrar_fuzzer']['coverage-blocker-stats']['cov-reach-proportion'] > 80.0:
+        guide_exit("coverage reach proportion seems off.")
+    if summary_dict['unrar_fuzzer']['stats']['file-target-count'] < 40:
+        guide_exit("file target count seems off.")
+
+    # Success
+    return
+
 def check_specific_project(proj_name, build_log_file,coverage_log,summary_json):
     print(f"Checking {proj_name}")
     name_to_check_mapping = {
-        "htslib" : check_project_htslib
+        "htslib":  check_project_htslib,
+        "jsoncpp": check_project_jsoncpp,
+        "unrar":   check_project_unrar
     }
 
     if proj_name not in name_to_check_mapping:
@@ -118,3 +156,5 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     check_test_directory(args.test_directory)
+
+    print("Successfully finished testing projects.")
