@@ -5,7 +5,7 @@ A [previous blog post by Project Zero](https://googleprojectzero.blogspot.com/20
 details a vulnerability exploited by NSO to hack iOS users in xpdf. This vulnerability is in the `JBIG2Stream::readTextRegionSeg`
 function in xpdf.
 
-xpdf is integrated into OSS-Fuzz, but the existing fuzzing did not cover `JBIG2Stream::readTextRegionSeg`.
+xpdf is integrated into OSS-Fuzz, but the existing fuzzing did not cover [`JBIG2Stream::readTextRegionSeg`](https://storage.googleapis.com/oss-fuzz-coverage/xpdf/reports/20220331/linux/src/xpdf-4.03/xpdf/JBIG2Stream.cc.html#L1953).
 As shown in Figure 1, in the "Optimal target analysis" section of Fuzz Introspector report for xpdf, the
 second function suggested is `JBIG2Stream::reset()`.
 
