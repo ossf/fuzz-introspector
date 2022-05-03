@@ -44,8 +44,7 @@ As Figure 1 shows, jsonnet fuzz target fails to cover a big chunk of code.
 Looking at the Fuzz blocker table (Figure 3), the top blocker is in  the [`jsonnet_evaluate_snippet_aux()`](https://storage.googleapis.com/oss-fuzz-coverage/jsonnet/reports/20220314/linux/src/jsonnet/core/libjsonnet.cpp.html#L482) funcion,
 where a [switch statement](https://storage.googleapis.com/oss-fuzz-coverage/jsonnet/reports/20220314/linux/src/jsonnet/core/libjsonnet.cpp.html#L501) branches on an argument of type EvalKind. 
 
-![image3](https://user-images.githubusercontent.com/759062/165666690-b8ad408a-3da2-4a82-bb36-703d499a36fe.png)
-
+![image3](https://user-images.githubusercontent.com/19780488/166503231-d698f922-95ea-45d4-b93f-7d40477d1edd.png)
 
 <p align="center">Figure 3: Top fuzz blockers for jsonnet</p>
 
