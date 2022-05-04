@@ -16,3 +16,4 @@ GIT_REPO = "https://github.com/ossf/fuzz-introspector"
 GIT_BRANCH_URL = f"{GIT_REPO}/tree/main/"
 
 ENGINE_INPUT_FILE = "fuzz-introspector-engine-input.json"
+SUMMARY_FILE = "summary.json"

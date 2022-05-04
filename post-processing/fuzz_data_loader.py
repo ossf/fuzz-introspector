@@ -256,6 +256,18 @@ class FuzzerProfile:
         except Exception:
             return None, None, None
 
+    def write_stats_to_summary_file(self):
+        file_target_count = len(self.file_targets) if self.file_targets is not None else 0
+        fuzz_utils.write_to_summary_file(
+            self.get_key(),
+            "stats",
+            {
+                "total-basic-blocks": self.total_basic_blocks,
+                "total-cyclomatic-complexity": self.total_cyclomatic_complexity,
+                "file-target-count": file_target_count,
+            }
+        )
+
 
 class MergedProjectProfile:
     """
@@ -436,6 +448,25 @@ class MergedProjectProfile:
             complexity_unreached,
             reached_complexity_percentage,
             unreached_complexity_percentage
+        )
+
+    def write_stats_to_summary_file(self):
+        (total_complexity,
+         complexity_reached,
+         complexity_unreached,
+         reached_complexity_percentage,
+         unreached_complexity_percentage) = self.get_complexity_summaries()
+
+        fuzz_utils.write_to_summary_file(
+            "MergedProjectProfile",
+            "stats",
+            {
+                "total-complexity": total_complexity,
+                "complexity-reached": complexity_reached,
+                "complexity-unreached": complexity_unreached,
+                "reached-complexity-percentage": complexity_unreached,
+                "unreached-complexity-percentage": unreached_complexity_percentage
+            }
         )
 
     def set_basefolder(self) -> None:

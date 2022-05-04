@@ -529,6 +529,8 @@ def create_fuzzer_detailed_section(
         )
         html_string += html_fuzz_blocker_table
 
+    profile.write_stats_to_summary_file()
+
     # Table with all functions hit by this fuzzer
     html_string += fuzz_html_helpers.html_add_header_with_link(
         "Runtime coverage analysis",
@@ -584,10 +586,18 @@ def create_fuzzer_detailed_section(
     reachable_funcs = len(profile.functions_reached_by_fuzzer)
     reached_funcs = reachable_funcs - uncovered_reachable_funcs
     cov_reach_proportion = (float(reached_funcs) / float(reachable_funcs)) * 100.0
-
+    str_percentage = "%.5s%%" % str(cov_reach_proportion)
+    fuzz_utils.write_to_summary_file(
+        profile.get_key(),
+        "coverage-blocker-stats",
+        {
+            "reachable-funcs": reachable_funcs,
+            "reached-funcs": reached_funcs,
+            "cov-reach-proportion": cov_reach_proportion,
+        }
+    )
     if extract_conclusion:
         if cov_reach_proportion < 30.0:
-            str_percentage = "%.5s%%" % str(cov_reach_proportion)
             conclusions.append((
                 2,
                 (f"Fuzzer { profile.get_key() } is blocked: runtime coverage only "
@@ -710,6 +720,7 @@ def create_html_report(
     # Start creation of core html
     html_body_start = '<div class="content-section">'
     html_overview = fuzz_html_helpers.html_add_header_with_link("Project overview", 1, toc_list)
+    project_profile.write_stats_to_summary_file()
 
     # Project overview
     # html_overview += fuzz_html_helpers.html_add_header_with_link(

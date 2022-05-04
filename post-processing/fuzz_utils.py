@@ -15,8 +15,10 @@
 
 import cxxfilt
 import logging
+import json
 import os
 import re
+import yaml
 
 from typing import (
     Any,
@@ -24,7 +26,8 @@ from typing import (
     Dict,
     Optional,
 )
-import yaml
+
+import fuzz_constants
 
 logger = logging.getLogger(name=__name__)
 
@@ -128,6 +131,27 @@ def scan_executables_for_fuzz_introspector_logs(exec_dir: str):
                             'fuzzer_log_file': found_str
                         })
     return executable_to_fuzz_reports
+
+
+def write_to_summary_file(fuzzer, key, value):
+    """Writes a key value pair to summary file, for a given fuzzer
+    key. If the fuzzer does not exist as top key in the summary file
+    then it is created"""
+
+    if not os.path.isfile(fuzz_constants.SUMMARY_FILE):
+        json_data = dict()
+    else:
+        json_fd = open(fuzz_constants.SUMMARY_FILE)
+        json_data = json.load(json_fd)
+        json_fd.close()
+
+    if fuzzer not in json_data:
+        json_data[fuzzer] = dict()
+
+    json_data[fuzzer][key] = value
+
+    with open(fuzz_constants.SUMMARY_FILE, 'w') as json_file:
+        json.dump(json_data, json_file)
 
 
 def get_target_coverage_url(coverage_url: str, target_name: str) -> str:

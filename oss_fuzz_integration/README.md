@@ -44,3 +44,34 @@ Serving the report on http://127.0.0.1:8008/linux/index.html
 Serving HTTP on 0.0.0.0 port 8008 (http://0.0.0.0:8008/) ...
 ```
 You can now navigate to `http://localhost:8008/fuzz_report.html`
+
+# Testing before bumping OSS-Fuzz
+To prevent and catch regressions we use a testing framework that verifies
+the results of running fuzz-introspector on various OSS-Fuzz integrations.
+
+The framework is designed to catch regressions of the form:
+- Build issues that may be introduced, i.e. projects that are expected to succeed no longer succeeds.
+- Logical regressions, focusing on if results are as expected.
+
+The testing framework has some hard-coded boundary checks on the data
+for a given project. It has to be boundaries rather than fixed values
+since the data may change from run to run depending on the fuzzing
+results.
+
+To run the test suite, please perform the following steps from this
+directory:
+
+```
+# Clean up any installation you may have
+sudo docker system prune -a
+
+# Rebuild images using local set up
+./build_patched_oss_fuzz.sh
+
+# Test fuzz-introspector against various projects
+cd oss-fuzz
+../test_projects.sh
+```
+
+If the above steps end with the string "Successfully finished testing projects."
+being printed, then the tests passed!
