@@ -156,7 +156,8 @@ class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
         )
 
         html_string += (
-            f"<p>Use one of these functions as input to libfuzzer with flag: -focus_function name </p>"
+            f"<p>Use one of these functions as input to libfuzzer with flag: "
+            f"-focus_function name </p>"
             f"<pre><code class='language-clike'>"
             f"-focus_function={focus_functions}"
             f"</code></pre><br>"
