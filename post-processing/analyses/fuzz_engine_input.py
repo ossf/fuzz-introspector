@@ -127,35 +127,39 @@ class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
         )
 
         calltree_analysis = fuzz_calltree_analysis.FuzzCalltreeAnalysis()
-        fuzz_blocker = calltree_analysis.get_fuzz_blockers(
+        fuzz_blockers = calltree_analysis.get_fuzz_blockers(
             profile,
-            max_blockers_to_extract=1
+            max_blockers_to_extract=10
         )
 
-        if len(fuzz_blocker) == 0:
+        if len(fuzz_blockers) == 0:
             logger.info("Found no fuzz blockers and thus no focus function")
             return ""
 
         # Only succeed if we can get the name of the function in which the
         # fuzz blocker callsite resides.
-        if fuzz_blocker[0].src_function_name is not None:
-            fuzzer_focus_function = fuzz_blocker[0].src_function_name
-            logger.info(f"Found focus function: {fuzzer_focus_function}")
-        else:
-            logger.info("Could not find focus function")
-            return ""
+        focus_functions = []
+        for fuzz_blocker in fuzz_blockers:
+            ffname = fuzz_blocker.src_function_name
+            if ffname is not None and ffname not in focus_functions:
+                focus_functions.append(fuzz_blocker.src_function_name)
+                logger.info(f"Found focus function: {fuzz_blocker.src_function_name}")
+
+        if len(focus_functions) == 0:
+            return
 
         self.add_to_json_file(
             fuzz_constants.ENGINE_INPUT_FILE,
             profile.get_key(),
-            "focus-function",
-            fuzzer_focus_function
+            "focus-functions",
+            focus_functions
         )
 
         html_string += (
-            f"<p>Use this as input to libfuzzer with flag: -focus_function name </p>"
+            f"<p>Use one of these functions as input to libfuzzer with flag: "
+            f"-focus_function name </p>"
             f"<pre><code class='language-clike'>"
-            f"-focus_function={fuzzer_focus_function}"
+            f"-focus_function={focus_functions}"
             f"</code></pre><br>"
         )
         return html_string
