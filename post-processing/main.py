@@ -27,7 +27,7 @@ import fuzz_utils
 logger = logging.getLogger(name=__name__)
 
 
-def correlate_binaries_to_logs(binaries_dir: str) -> None:
+def correlate_binaries_to_logs(binaries_dir: str) -> int:
     pairings = fuzz_utils.scan_executables_for_fuzz_introspector_logs(binaries_dir)
     logger.info(f"Pairings: {str(pairings)}")
     with open("exe_to_fuzz_introspector_logs.yaml", "w+") as etf:
