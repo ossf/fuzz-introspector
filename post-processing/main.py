@@ -81,6 +81,11 @@ def run_analysis_on_dir(
     for profile in profiles:
         profile.refine_paths(project_profile.basefolder)
 
+    logger.info("[+] Loading branch profiles")
+    branch_profiles = fuzz_data_loader.load_all_branch_profiles(target_folder)
+    if len(branch_profiles) == 0:
+        logger.info("[X][X] Found no branch profiles!")
+
     # Overlay coverage in each profile
     for profile in profiles:
         fuzz_analysis.overlay_calltree_with_coverage(
