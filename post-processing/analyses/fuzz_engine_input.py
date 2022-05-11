@@ -26,6 +26,7 @@ import fuzz_analysis
 import fuzz_constants
 import fuzz_data_loader
 import fuzz_html_helpers
+import fuzz_utils
 
 from analyses import fuzz_calltree_analysis
 
@@ -142,7 +143,9 @@ class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
         for fuzz_blocker in fuzz_blockers:
             ffname = fuzz_blocker.src_function_name
             if ffname is not None and ffname not in focus_functions:
-                focus_functions.append(fuzz_blocker.src_function_name)
+                focus_functions.append(
+                    fuzz_utils.demangle_cpp_func(fuzz_blocker.src_function_name)
+                )
                 logger.info(f"Found focus function: {fuzz_blocker.src_function_name}")
 
         if len(focus_functions) == 0:
