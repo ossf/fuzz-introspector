@@ -113,6 +113,23 @@ typedef struct FuzzerModuleIntrospection {
       : FuzzerFileName(A), AllFunctions(B) {}
 } FuzzerModuleIntrospection;
 
+typedef struct BranchSidesComplexity {
+  std::string TrueSideString;
+  size_t TrueSideComp;
+  std::string FalseSideString;
+  size_t FalseSideComp;
+
+  BranchSidesComplexity ()
+      : TrueSideString(), TrueSideComp(0), FalseSideString(), FalseSideComp(0) {}
+  BranchSidesComplexity(std::string TS, size_t TC, std::string FS, size_t FC)
+      : TrueSideString(TS), TrueSideComp(TC), FalseSideString(FS), FalseSideComp(FC) {}
+} BranchSidesComplexity;
+
+typedef struct BranchProfileEntry {
+  std::string BranchString;
+  BranchSidesComplexity BranchSidesComp;
+} BranchProfileEntry;
+
 // YAML mappings for outputting the typedefs above
 template <> struct yaml::MappingTraits<FuzzerFunctionWrapper> {
   static void mapping(IO &io, FuzzerFunctionWrapper &Func) {
@@ -156,6 +173,25 @@ template <> struct yaml::MappingTraits<FuzzerModuleIntrospection> {
     io.mapRequired("All functions", introspectorModule.AllFunctions);
   }
 };
+
+template <> struct yaml::MappingTraits<BranchSidesComplexity> {
+  static void mapping(IO &io, BranchSidesComplexity &branchSidesComp) {
+    io.mapRequired("TrueSide", branchSidesComp.TrueSideString);
+    io.mapRequired("TrueSideComp", branchSidesComp.TrueSideComp);
+    io.mapRequired("FalseSide", branchSidesComp.FalseSideString);
+    io.mapRequired("FalseSideComp", branchSidesComp.FalseSideComp);
+  }
+};
+
+template <> struct yaml::MappingTraits<BranchProfileEntry> {
+  static void mapping(IO &io, BranchProfileEntry &bpe) {
+    io.mapRequired("Branch String", bpe.BranchString);
+    io.mapRequired("Branch Sides", bpe.BranchSidesComp);
+  }
+};
+LLVM_YAML_IS_SEQUENCE_VECTOR(BranchProfileEntry)
+
+
 // end of YAML mappings
 
 namespace {
@@ -175,6 +211,8 @@ typedef struct CalltreeNode {
 } CalltreeNode;
 
 static FILE *OutputFile = stderr;
+
+std::map<const Function *, size_t> FuncComplexityMap;
 
 struct FuzzIntrospector : public ModulePass {
   static char ID;
@@ -220,6 +258,15 @@ struct FuzzIntrospector : public ModulePass {
   void logPrintf(int LogLevel, const char *Fmt, ...);
   bool runOnModule(Module &M) override;
 
+  void branchProfiler(Module &M);
+  SmallPtrSet<BasicBlock *, 32> findReachables(BasicBlock *src);
+  std::pair<size_t, size_t> findComplexities(SmallPtrSet<BasicBlock *, 32>, SmallPtrSet<BasicBlock *, 32>, std::map<BasicBlock *, size_t>);
+  std::string getInsnDebugInfo(Instruction *I);
+  std::string getBBDebugInfo(BasicBlock *BB);
+  // void writeOutMap(std::map<std::string, std::vector<std::pair<std::string, size_t>>>, std::string);
+  // void writeOutMap(std::map<std::string, BranchSidesComplexity> outMap, std::string fileName);
+  void writeOutMap(std::vector<BranchProfileEntry> outMap, std::string fileName);
+  size_t calculateBBComplexity(BasicBlock *BB);
 };
 } // end of anonymous namespace
 
@@ -348,6 +395,8 @@ bool FuzzIntrospector::runOnModule(Module &M) {
   // Log data about all functions in the module
   std::string nextYamlName = nextCalltreeFile + ".yaml";
   extractAllFunctionDetailsToYaml(nextYamlName, M);
+
+  branchProfiler(M);
 
   logPrintf(L1, "Finished introspector module\n");
   return true;
@@ -1037,6 +1086,8 @@ FuzzerFunctionWrapper FuzzIntrospector::wrapFunction(Function *F) {
     FuncWrap.CyclomaticComplexity = 1;
   }
 
+  FuncComplexityMap[F] = FuncWrap.CyclomaticComplexity;
+
   std::set<StringRef> FuncReaches;
   std::vector<CalltreeNode *> Nodes;
   // TODO: extractCalltree should not be run on all functions in this manner.
@@ -1132,3 +1183,184 @@ static RegisterStandardPasses
         PM.add(new FuzzIntrospector());
       });
 */
+
+void FuzzIntrospector::branchProfiler(Module &M) {
+
+  SmallPtrSet<const BasicBlock *, 32> visistedBBs;
+  SmallVector<const BasicBlock *, 32> worklist;
+  std::string outFileName = getNextLogFile() + ".branchProfile.yaml";
+  std::vector<BranchProfileEntry> outMap;
+
+
+  logPrintf(L1, "We are in branch profiler.\n");
+
+  for (const auto &F: M) {
+    // Skip declarations or the functions that are not wrapped e.g. not reachable from entry point
+    if(F.isDeclaration() || FuncComplexityMap.find(&F) == FuncComplexityMap.end()) {
+      continue;
+    }
+    auto fName = F.getName().str();
+    logPrintf(L1, "We are in branch profiler for %s\n", fName.c_str());
+
+    // This map is function level
+    std::map<BasicBlock *, size_t> BBComplexityMap;
+
+    for (const auto &BB: F) {
+      auto TI = BB.getTerminator();
+      auto BI = dyn_cast<BranchInst>(TI);
+      if (BI && BI->isConditional()) {
+        auto trueSide = BI->getSuccessor(0);
+        auto falseSide = BI->getSuccessor(1);
+
+        auto trueReachable = findReachables(trueSide);
+        auto falseReachable = findReachables(falseSide);
+
+        std::pair<size_t, size_t> complexities = findComplexities(trueReachable, falseReachable, BBComplexityMap);
+
+        auto trueSideComp = complexities.first;
+        auto falseSideComp = complexities.second;
+
+        auto BRstring = getInsnDebugInfo((Instruction *)BI);
+        auto trueSideString = getBBDebugInfo(trueSide);
+        auto falseSideString = getBBDebugInfo(falseSide);
+        // TODO: assert on non-empty strings
+
+        BranchSidesComplexity entry_val(trueSideString, trueSideComp, falseSideString, falseSideComp);
+        BranchProfileEntry entry = {BRstring, entry_val};
+        outMap.push_back(entry);
+
+      }
+    }
+
+  } // End of loop over M
+  writeOutMap(outMap, outFileName);
+}
+
+// Simple intra-procedural CFG traversal
+SmallPtrSet<BasicBlock *, 32> FuzzIntrospector::findReachables(BasicBlock *src) {
+  SmallVector<BasicBlock *, 32> worklist;
+  SmallPtrSet<BasicBlock *, 32> allReachables;
+
+  worklist.push_back(src);
+
+  while (!worklist.empty())
+  {
+    auto currBB = worklist.pop_back_val();
+
+    // This adds to the set and returns false if already was in the set: avoids loop
+    if (!allReachables.insert(currBB).second) {
+      continue;
+    }
+
+    if (auto TI = currBB->getTerminator()) {
+      for (unsigned i = 0, NSucc = TI->getNumSuccessors(); i < NSucc; ++i) {
+        worklist.push_back(TI->getSuccessor(i));
+      }
+    }
+  }
+
+  return allReachables;
+}
+
+// Calculate complexities reachable from each reachable unique BBs
+// TODO: for now, this function just accounts for complexity of callee functions from 
+// the reachable BBs. We can do better by carefully calculating complexity of the reachable
+// regions of the code i.e. intra-procedural complexity by counting the number of unique 
+// edges and nodes for each reachable set.
+std::pair<size_t, size_t> FuzzIntrospector::findComplexities(SmallPtrSet<BasicBlock *, 32> trueReachable, SmallPtrSet<BasicBlock *, 32> falseReachable, std::map<BasicBlock *, size_t> BBComplexityMap) {
+  size_t trueComp = 0, falseComp = 0;
+
+  // iterate and skip those reachable by false side
+  for (auto BB: trueReachable) {
+    if (falseReachable.find(BB) != falseReachable.end()) {
+      continue;
+    }
+
+    if (BBComplexityMap.find(BB) == BBComplexityMap.end()) {
+      BBComplexityMap[BB] = calculateBBComplexity(BB);
+    }
+    trueComp += BBComplexityMap[BB];
+  }
+
+  // iterate and skip those reachable by true side
+  for (auto BB: falseReachable) {
+    if (trueReachable.find(BB) != trueReachable.end()) {
+      continue;
+    }
+
+    if (BBComplexityMap.find(BB) == BBComplexityMap.end()) {
+      BBComplexityMap[BB] = calculateBBComplexity(BB);
+    }
+    falseComp += BBComplexityMap[BB];
+  }
+
+  return make_pair(trueComp, falseComp);
+}
+
+std::string FuzzIntrospector::getInsnDebugInfo(Instruction *I) {
+  std::string ret_string = "";
+
+  DILocation *Loc = I->getDebugLoc();
+  if (Loc != NULL)
+  {
+    ret_string = Loc->getFilename().str() +
+              +":" + std::to_string(Loc->getLine());
+  }
+  else {
+    logPrintf(L1, "No debug info!!\n");
+  }
+
+  return ret_string;
+}
+
+std::string FuzzIntrospector::getBBDebugInfo(BasicBlock *BB) {
+  std::string ret_string = "";
+
+  for (auto &I: *BB) {
+    ret_string = getInsnDebugInfo(&I);
+    if (ret_string.length() > 0) {
+      break;
+    }
+  }
+  return ret_string;
+}
+
+// void FuzzIntrospector::writeOutMap(std::map<std::string, std::vector<std::pair<std::string, size_t>>> outMap, std::string fileName) {
+// void FuzzIntrospector::writeOutMap(std::map<std::string, BranchSidesComplexity> outMap, std::string fileName) {
+void FuzzIntrospector::writeOutMap(std::vector<BranchProfileEntry> outMap, std::string fileName) {
+  std::error_code EC;
+  logPrintf(L1, "Logging branchProfile to %s\n", fileName.c_str());
+
+  auto YamlStream = std::make_unique<raw_fd_ostream>(
+      fileName, EC, llvm::sys::fs::OpenFlags::OF_None);
+  yaml::Output YamlOut(*YamlStream);
+
+  YamlOut << outMap;
+}
+
+// Return cyclomatic complexity of called functions in the BB
+size_t FuzzIntrospector::calculateBBComplexity(BasicBlock *BB) {
+  size_t cc = 0;
+
+  for (auto &I: *BB) {
+    // Skip debugging insns
+    if (isa<DbgInfoIntrinsic>(&I)) {
+      continue;
+    }
+
+    if (isa<CallInst>(I) || isa<InvokeInst>(I)) {
+      Function *callee;
+      if (auto CI = dyn_cast<CallInst>(&I)) {
+        callee = value2Func(CI->getCalledOperand());
+      } else if (auto II = dyn_cast<InvokeInst>(&I)) {
+        callee = value2Func(II->getCalledOperand());
+      }
+      if (FuncComplexityMap.find(callee) != FuncComplexityMap.end()) {
+        cc += FuncComplexityMap[callee];
+      }
+    }
+
+  }
+
+  return cc;
+}
