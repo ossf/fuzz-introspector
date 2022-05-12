@@ -26,6 +26,7 @@ from typing import (
 import fuzz_utils
 import fuzz_cfg_load
 import fuzz_data_loader
+import fuzz_cov_load
 
 logger = logging.getLogger(name=__name__)
 logger.setLevel(logging.INFO)
@@ -71,7 +72,8 @@ def overlay_calltree_with_coverage(
         profile: fuzz_data_loader.FuzzerProfile,
         project_profile: fuzz_data_loader.MergedProjectProfile,
         coverage_url: str,
-        basefolder: str) -> None:
+        basefolder: str,
+        branch_profiles: Dict[str, fuzz_data_loader.BranchProfile]) -> None:
     # We use the callstack to keep track of all function parents. We need this
     # when looking up if a callsite was hit or not. This is because the coverage
     # information about a callsite is located in coverage data of the function
@@ -234,6 +236,9 @@ def overlay_calltree_with_coverage(
         n1.cov_forward_reds = forward_red
         n1.cov_largest_blocked_func = largest_blocked_name
 
+    branch_blockers = detect_branch_level_blockers(profile.coverage, branch_profiles)
+    print("[+] found %d branch blockers." %len(branch_blockers))
+    #TODO: use these results appropriately ...
 
 def analysis_coverage_runtime_analysis(
         profiles: List[fuzz_data_loader.FuzzerProfile],
@@ -267,3 +272,7 @@ def analysis_coverage_runtime_analysis(
         except Exception:
             logger.error(f"Error getting hit-summary information for {funcname}")
     return functions_of_interest
+
+def detect_branch_level_blockers(coverage: fuzz_cov_load.CoverageProfile, branch_profile_dict: Dict[str, fuzz_data_loader.BranchProfile]) -> List[any]:
+    # TODO
+    return []

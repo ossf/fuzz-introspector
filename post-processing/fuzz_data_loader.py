@@ -421,6 +421,8 @@ class MergedProjectProfile:
                             continue
                         new_line_counts.append((ln1, max(ht1, ht2)))
                     self.runtime_coverage.covmap[func_name] = new_line_counts
+            #TODO (navidem): will need to merge branch coverages (branch_cov_map) if we need to 
+            # identify blockers based on all fuzz targets coverage
         self.set_basefolder()
         logger.info("Completed creationg of merged profile")
 
