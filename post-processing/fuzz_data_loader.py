@@ -611,7 +611,7 @@ def try_load_input_bugs() -> List[InputBug]:
 
 
 def load_input_bugs(bug_file: str) -> List[InputBug]:
-    input_bugs: List[InputBug]= []
+    input_bugs: List[InputBug] = []
     if not os.path.isfile(bug_file):
         return input_bugs
 
@@ -636,7 +636,7 @@ def load_input_bugs(bug_file: str) -> List[InputBug]:
                 bug_dict['bug_type']
             )
             input_bugs.append(ib)
-        except:
+        except Exception:
             continue
 
     return input_bugs
