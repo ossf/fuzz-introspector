@@ -197,7 +197,7 @@ def create_all_function_table(
     html_string = fuzz_html_helpers.html_create_table_head(
         table_id,
         table_columns,
-        sort_by_column=len(table_columns)-1,
+        sort_by_column=len(table_columns) - 1,
         sort_order="desc"
     )
 
