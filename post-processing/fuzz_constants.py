@@ -17,3 +17,6 @@ GIT_BRANCH_URL = f"{GIT_REPO}/tree/main/"
 
 ENGINE_INPUT_FILE = "fuzz-introspector-engine-input.json"
 SUMMARY_FILE = "summary.json"
+
+APP_EXIT_ERROR = 1
+APP_EXIT_SUCCESS = 0
