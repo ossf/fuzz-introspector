@@ -1304,7 +1304,7 @@ std::string FuzzIntrospector::getInsnDebugInfo(Instruction *I) {
   if (Loc != NULL)
   {
     ret_string = Loc->getFilename().str() +
-              +":" + std::to_string(Loc->getLine());
+              +":" + std::to_string(Loc->getLine()) + "," + std::to_string(Loc->getColumn());
   }
   else {
     logPrintf(L1, "No debug info!!\n");
