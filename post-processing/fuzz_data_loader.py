@@ -15,6 +15,7 @@
 
 import os
 import copy
+import json
 import logging
 
 from typing import (
@@ -27,11 +28,33 @@ from typing import (
 )
 
 import fuzz_cfg_load
+import fuzz_constants
 import fuzz_cov_load
 import fuzz_utils
 
 logger = logging.getLogger(name=__name__)
 logger.setLevel(logging.INFO)
+
+
+class InputBug:
+    """
+    Holds data about a given bug found by fuzzers.
+    """
+    def __init__(
+        self,
+        source_file: str,
+        source_line: str,
+        function_name: str,
+        fuzzer_name: str,
+        description: str,
+        bug_type: str
+    ) -> None:
+        self.source_file = source_file
+        self.source_line = source_line
+        self.function_name = function_name
+        self.fuzzer_name = fuzzer_name
+        self.description = description
+        self.bug_type = bug_type
 
 
 class FunctionProfile:
@@ -578,3 +601,42 @@ def load_all_profiles(target_folder: str) -> List[FuzzerProfile]:
         if profile is not None:
             profiles.append(profile)
     return profiles
+
+
+def try_load_input_bugs() -> List[InputBug]:
+    """Loads input bugs as list. Returns empty list if none"""
+    if not os.path.isfile(fuzz_constants.INPUT_BUG_FILE):
+        return []
+    return load_input_bugs(fuzz_constants.INPUT_BUG_FILE)
+
+
+def load_input_bugs(bug_file: str) -> List[InputBug]:
+    input_bugs: List[InputBug] = []
+    if not os.path.isfile(bug_file):
+        return input_bugs
+
+    # Read file line by line
+    with open(bug_file, "r") as f:
+        data = json.load(f)
+
+    if type(data) != dict:
+        return input_bugs
+
+    if "bugs" not in data:
+        return input_bugs
+
+    for bug_dict in data["bugs"]:
+        try:
+            ib = InputBug(
+                bug_dict['source_file'],
+                bug_dict['source_line'],
+                bug_dict['function_name'],
+                bug_dict['fuzzer_name'],
+                bug_dict['description'],
+                bug_dict['bug_type']
+            )
+            input_bugs.append(ib)
+        except Exception:
+            continue
+
+    return input_bugs

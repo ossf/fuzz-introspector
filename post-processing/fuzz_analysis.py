@@ -54,13 +54,15 @@ def get_all_analyses() -> List[AnalysisInterface]:
         fuzz_engine_input,
         fuzz_optimal_targets,
         fuzz_runtime_coverage_analysis,
+        fuzz_bug_digestor
     )
 
     analysis_array = [
         fuzz_optimal_targets.FuzzOptimalTargetAnalysis(),
         fuzz_engine_input.FuzzEngineInputAnalysis(),
         fuzz_runtime_coverage_analysis.FuzzRuntimeCoverageAnalysis(),
-        fuzz_driver_synthesizer.FuzzDriverSynthesizerAnalysis()
+        fuzz_driver_synthesizer.FuzzDriverSynthesizerAnalysis(),
+        fuzz_bug_digestor.FuzzBugDigestorAnalysis()
     ]
     return analysis_array
 

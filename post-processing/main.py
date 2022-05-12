@@ -59,6 +59,9 @@ def run_analysis_on_dir(
         logger.info("Found no profiles. Exiting")
         return fuzz_constants.APP_EXIT_ERROR
 
+    input_bugs = fuzz_data_loader.try_load_input_bugs()
+    logger.info(f"[+] Loaded {len(input_bugs)} bugs")
+
     logger.info("[+] Accummulating profiles")
     for profile in profiles:
         profile.accummulate_profile(target_folder)
