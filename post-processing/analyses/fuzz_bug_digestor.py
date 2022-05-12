@@ -32,14 +32,16 @@ class FuzzBugDigestorAnalysis(fuzz_analysis.AnalysisInterface):
         self.name = "BugDigestorAnalysis"
         self.display_html = False
 
-    def analysis_func(self,
-                      toc_list: List[Tuple[str, str, int]],
-                      tables: List[str],
-                      project_profile: fuzz_data_loader.MergedProjectProfile,
-                      profiles: List[fuzz_data_loader.FuzzerProfile],
-                      basefolder: str,
-                      coverage_url: str,
-                      conclusions) -> str:
+    def analysis_func(
+        self,
+        toc_list: List[Tuple[str, str, int]],
+        tables: List[str],
+        project_profile: fuzz_data_loader.MergedProjectProfile,
+        profiles: List[fuzz_data_loader.FuzzerProfile],
+        basefolder: str,
+        coverage_url: str,
+        conclusions
+    ) -> str:
         logger.info(f" - Running analysis {self.name}")
         input_bugs = fuzz_data_loader.try_load_input_bugs()
         if len(input_bugs) == 0:
