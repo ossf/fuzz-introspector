@@ -13,9 +13,7 @@
 # limitations under the License.
 """Analysis for creating input consumed by a fuzzer, e.g. a dictionary"""
 
-import json
 import logging
-import os
 
 from typing import (
     List,
@@ -23,12 +21,8 @@ from typing import (
 )
 
 import fuzz_analysis
-import fuzz_constants
 import fuzz_data_loader
 import fuzz_html_helpers
-import fuzz_utils
-
-from analyses import fuzz_calltree_analysis
 
 logger = logging.getLogger(name=__name__)
 
@@ -64,7 +58,6 @@ class FuzzBugDigestorAnalysis(fuzz_analysis.AnalysisInterface):
             "found by fuzzers with data about the rest of the analysis. "
             "This section is still in development and should be considered "
             "beta at most.</p>"
-            
         )
 
         # Create table header
