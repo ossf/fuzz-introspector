@@ -161,7 +161,8 @@ def create_all_function_table(
         random.choices(string.ascii_lowercase + string.ascii_uppercase, k=7))
     if table_id is None:
         table_id = tables[-1]
-    html_string = fuzz_html_helpers.html_create_table_head(table_id, [
+
+    table_columns = [
         ("Func name",
          ""),
         ("Functions filename",
@@ -191,7 +192,14 @@ def create_all_function_table(
         ("Accumulated cyclomatic complexity",
          "Accummulated cyclomatic complexity of all functions reachable by this function. "
          "Based on static analysis."),
-        ("Undiscovered complexity", "")])
+        ("Undiscovered complexity", "")
+    ]
+    html_string = fuzz_html_helpers.html_create_table_head(
+        table_id,
+        table_columns,
+        sort_by_column=len(table_columns) - 1,
+        sort_order="desc"
+    )
 
     # an array in development to replace html generation in python.
     # this will be stored as a json object and will be used to populate
