@@ -30,7 +30,7 @@ logger = logging.getLogger(name=__name__)
 
 
 class FuzzRuntimeCoverageAnalysis(fuzz_analysis.AnalysisInterface):
-    def __init__(self):
+    def __init__(self) -> None:
         self.name = "RuntimeCoverageAnalysis"
 
     def analysis_func(
@@ -41,7 +41,7 @@ class FuzzRuntimeCoverageAnalysis(fuzz_analysis.AnalysisInterface):
         profiles: List[fuzz_data_loader.FuzzerProfile],
         basefolder: str,
         coverage_url: str,
-        conclusions
+        conclusions: List[Tuple[int, str]]
     ) -> str:
         logger.info(f" - Running analysis {self.name}")
 

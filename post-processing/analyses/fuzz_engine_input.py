@@ -34,18 +34,20 @@ logger = logging.getLogger(name=__name__)
 
 
 class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
-    def __init__(self):
+    def __init__(self) -> None:
         self.name = "FuzzEngineInputAnalysis"
         self.display_html = False
 
-    def analysis_func(self,
-                      toc_list: List[Tuple[str, str, int]],
-                      tables: List[str],
-                      project_profile: fuzz_data_loader.MergedProjectProfile,
-                      profiles: List[fuzz_data_loader.FuzzerProfile],
-                      basefolder: str,
-                      coverage_url: str,
-                      conclusions) -> str:
+    def analysis_func(
+        self,
+        toc_list: List[Tuple[str, str, int]],
+        tables: List[str],
+        project_profile: fuzz_data_loader.MergedProjectProfile,
+        profiles: List[fuzz_data_loader.FuzzerProfile],
+        basefolder: str,
+        coverage_url: str,
+        conclusions: List[Tuple[int, str]]
+    ) -> str:
         logger.info(f" - Running analysis {self.name}")
 
         if not self.display_html:
@@ -91,10 +93,13 @@ class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
 
         return html_string
 
-    def get_dictionary(self, profile):
+    def get_dictionary(self, profile: fuzz_data_loader.FuzzerProfile) -> str:
         """Extracts a fuzzer dictionary"""
         kn = 0
         dictionary_content = ""
+        if profile.functions_reached_by_fuzzer is None:
+            return ""
+
         for fn in profile.functions_reached_by_fuzzer:
             fp = profile.all_class_functions[fn]
             for const in fp.constants_touched:
@@ -102,7 +107,11 @@ class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
                 kn += 1
         return dictionary_content
 
-    def get_dictionary_section(self, profile, toc_list):
+    def get_dictionary_section(
+        self,
+        profile: fuzz_data_loader.FuzzerProfile,
+        toc_list: List[Tuple[str, str, int]]
+    ) -> str:
         """
         Returns a HTML string with dictionary content, and adds the section
         link to the toc_list.
@@ -119,7 +128,11 @@ class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
         html_string += "</code></pre>"
         return html_string
 
-    def get_fuzzer_focus_function_section(self, profile, toc_list) -> str:
+    def get_fuzzer_focus_function_section(
+        self,
+        profile: fuzz_data_loader.FuzzerProfile,
+        toc_list: List[Tuple[str, str, int]]
+    ) -> str:
         """Returns HTML string with fuzzer focus function"""
         html_string = fuzz_html_helpers.html_add_header_with_link(
             "Fuzzer function priority",
@@ -168,11 +181,12 @@ class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
         return html_string
 
     def add_to_json_file(
-            self,
-            json_file_path: str,
-            fuzzer_name: str,
-            key: str,
-            val: List[str]):
+        self,
+        json_file_path: str,
+        fuzzer_name: str,
+        key: str,
+        val: List[str]
+    ) -> None:
         # Create file if it does not exist
         if not os.path.isfile(json_file_path):
             json_data = dict()

@@ -21,6 +21,7 @@ import typing
 
 from typing import (
     Any,
+    Dict,
     List,
     Tuple,
 )
@@ -274,9 +275,10 @@ def create_all_function_table(
 
 
 def create_collapsible_element(
-        non_collapsed: str,
-        collapsed: str,
-        collapsible_id) -> str:
+    non_collapsed: str,
+    collapsed: str,
+    collapsible_id: str
+) -> str:
     return f"""{ non_collapsed } : <div
     class='wrap-collabsible'>
         <input id='{collapsible_id}'
@@ -340,11 +342,13 @@ def create_covered_func_box(covered_funcs: str) -> str:
 </div>"""
 
 
-def create_boxed_top_summary_info(tables: List[str],
-                                  project_profile: fuzz_data_loader.MergedProjectProfile,
-                                  conclusions: List[Tuple[int, str]],
-                                  extract_conclusion,
-                                  display_coverage=False) -> str:
+def create_boxed_top_summary_info(
+    tables: List[str],
+    project_profile: fuzz_data_loader.MergedProjectProfile,
+    conclusions: List[Tuple[int, str]],
+    extract_conclusion: bool,
+    display_coverage:bool=False
+) -> str:
     html_string = ""
     # Get complexity and function counts
     (total_functions,
@@ -378,9 +382,11 @@ def create_boxed_top_summary_info(tables: List[str],
     return html_string
 
 
-def create_conclusions(conclusions: List[Tuple[int, str]],
-                       reached_percentage,
-                       reached_complexity_percentage):
+def create_conclusions(
+    conclusions: List[Tuple[int, str]],
+    reached_percentage: float,
+    reached_complexity_percentage: float
+) -> None:
     # Functions reachability
     sentence = f"""Fuzzers reach { "%.5s%%"%(str(reached_percentage)) } of all functions. """
     if reached_percentage > 90.0:
@@ -421,9 +427,9 @@ def create_conclusions(conclusions: List[Tuple[int, str]],
 def create_top_summary_info(
         tables: List[str],
         project_profile: fuzz_data_loader.MergedProjectProfile,
-        conclusions,
-        extract_conclusion,
-        display_coverage=False) -> str:
+        conclusions: List[Tuple[int, str]],
+        extract_conclusion: bool,
+        display_coverage:bool=False) -> str:
     html_string = ""
 
     # Get complexity and function counts
@@ -466,12 +472,14 @@ def create_top_summary_info(
 
 
 def create_fuzzer_detailed_section(
-        profile: fuzz_data_loader.FuzzerProfile,
-        toc_list: List[Tuple[str, str, int]],
-        tables: List[str],
-        curr_tt_profile: int,
-        conclusions, extract_conclusion,
-        fuzzer_table_data) -> str:
+    profile: fuzz_data_loader.FuzzerProfile,
+    toc_list: List[Tuple[str, str, int]],
+    tables: List[str],
+    curr_tt_profile: int,
+    conclusions: List[Tuple[int, str]],
+    extract_conclusion: bool,
+    fuzzer_table_data: Dict[str, Any]
+) -> str:
     html_string = ""
     fuzzer_filename = profile.fuzzer_source_file
 
@@ -679,7 +687,7 @@ def get_simple_box(title: str, value: str) -> str:
       </div>"""
 
 
-def extract_highlevel_guidance(conclusions) -> str:
+def extract_highlevel_guidance(conclusions: List[Tuple[int, str]]) -> str:
     """
     Creates colorful boxes for the conlusions made throughout the analysis
     """
@@ -795,7 +803,7 @@ def create_html_report(
     # Section with details about each fuzzer, including calltree.
     #############################################
     logger.info(" - Creating section with details about each fuzzer")
-    fuzzer_table_data: typing.Dict[str, Any] = dict()
+    fuzzer_table_data: Dict[str, Any] = dict()
     html_report_core += "<div class=\"report-box\">"
     html_report_core += fuzz_html_helpers.html_add_header_with_link("Fuzzer details", 1, toc_list)
     for profile_idx in range(len(profiles)):

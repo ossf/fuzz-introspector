@@ -37,7 +37,7 @@ logger = logging.getLogger(name=__name__)
 
 
 class FuzzCalltreeAnalysis(fuzz_analysis.AnalysisInterface):
-    def __init__(self):
+    def __init__(self) -> None:
         self.name = "FuzzCalltreeAnalysis"
         logger.info("Creating FuzzCalltreeAnalysis")
 

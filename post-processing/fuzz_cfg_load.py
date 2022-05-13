@@ -27,18 +27,16 @@ class CalltreeCallsite():
     """
     Represents a single node in the calltree
     """
-    def __init__(self):
+    def __init__(self) -> None:
         # Destination information
-        self.dst_function_name = None
-        self.dst_function_source_file = None
-        self.depth = None
-
-        self.src_linenumber = None
-
-        self.src_function_source_file = None
-        self.src_function_name = None
-        self.parent_calltree_callsite = None
-        self.children = []
+        self.dst_function_name: Optional[str] = None
+        self.dst_function_source_file: Optional[str] = None
+        self.src_linenumber: Optional[int] = None
+        self.src_function_source_file: Optional[str] = None
+        self.src_function_name: Optional[str] = None
+        self.depth: Optional[int] = None
+        self.parent_calltree_callsite: Optional[CalltreeCallsite] = None
+        self.children: List[CalltreeCallsite] = []
 
         self.cov_ct_idx = None
         self.cov_parent = None
@@ -52,8 +50,9 @@ class CalltreeCallsite():
 
 
 def extract_all_callsites_recursive(
-        calltree: CalltreeCallsite,
-        callsite_nodes: List[CalltreeCallsite]):
+    calltree: CalltreeCallsite,
+    callsite_nodes: List[CalltreeCallsite]
+) -> None:
     """
     Given a node, will assemble all callsites in the children. Recursive function.
     """
@@ -71,7 +70,7 @@ def extract_all_callsites(calltree: Optional[CalltreeCallsite]) -> List[Calltree
     return cs_list
 
 
-def print_ctcs_tree(ctcs: CalltreeCallsite):
+def print_ctcs_tree(ctcs: CalltreeCallsite) -> None:
     print("%s%s -- %s -- %d" % (
         (" " * int(ctcs.depth)),
         ctcs.dst_function_name,
@@ -152,10 +151,9 @@ def data_file_read_calltree(filename: str) -> Optional[CalltreeCallsite]:
                 read_tree = True
 
     # move upwards from any node in the tree
-    if curr_ctcs_node is None:
+    ctcs_root: Optional[CalltreeCallsite] = curr_ctcs_node
+    if ctcs_root is None:
         return None
-
-    ctcs_root = curr_ctcs_node
     while ctcs_root.depth != 0:
         ctcs_root = ctcs_root.parent_calltree_callsite
         if ctcs_root is None:

@@ -95,7 +95,7 @@ def data_file_read_yaml(filename: str) -> Optional[Dict[Any, Any]]:
 
     with open(filename, 'r') as stream:
         try:
-            data_dict = yaml.safe_load(stream)
+            data_dict: Dict[Any, Any] = yaml.safe_load(stream)
             return data_dict
         except yaml.YAMLError:
             return None
@@ -103,14 +103,16 @@ def data_file_read_yaml(filename: str) -> Optional[Dict[Any, Any]]:
 
 def demangle_cpp_func(funcname: str) -> str:
     try:
-        demangled = cxxfilt.demangle(funcname.replace(" ", ""))
+        demangled: str = cxxfilt.demangle(funcname.replace(" ", ""))
         return demangled
     except Exception:
         return funcname
 
 
 # fuzzer files can only have a name using limited characters
-def scan_executables_for_fuzz_introspector_logs(exec_dir: str):
+def scan_executables_for_fuzz_introspector_logs(
+    exec_dir: str
+) -> List[Dict[str, str]]:
     regex = '[%s]{%d,}' % (r"A-Za-z0-9_-", 10)
     fuzzer_log_file_pattern = re.compile(regex)
     if not os.path.isdir(exec_dir):
@@ -133,7 +135,7 @@ def scan_executables_for_fuzz_introspector_logs(exec_dir: str):
     return executable_to_fuzz_reports
 
 
-def write_to_summary_file(fuzzer, key, value):
+def write_to_summary_file(fuzzer: str, key: str, value: Any) -> None:
     """Writes a key value pair to summary file, for a given fuzzer
     key. If the fuzzer does not exist as top key in the summary file
     then it is created"""
