@@ -71,11 +71,11 @@ def extract_all_callsites(calltree: Optional[CalltreeCallsite]) -> List[Calltree
 
 
 def print_ctcs_tree(ctcs: CalltreeCallsite) -> None:
-    print("%s%s -- %s -- %d" % (
-        (" " * int(ctcs.depth)),
-        ctcs.dst_function_name,
-        ctcs.dst_function_source_file,
-        ctcs.src_linenumber))
+    spacing = " "*int(ctcs.depth)
+    print(
+        f"{spacing}{ctcs.dst_function_name}"
+        f" -- {ctcs.dst_function_source_file} -- {ctcs.src_linenumber}"
+    )
     for c in ctcs.children:
         print_ctcs_tree(c)
 
