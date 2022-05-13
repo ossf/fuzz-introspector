@@ -49,7 +49,7 @@ class CalltreeCallsite():
         self.cov_ct_idx: int = -1
         self.cov_parent: str = ""
         self.cov_hitcount: int = -1
-        self.cov_color = None
+        self.cov_color:str = ""
         self.hitcount = 0
         self.cov_link: str = ""
         self.cov_callsite_link: str = ""
