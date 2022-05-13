@@ -27,17 +27,25 @@ class CalltreeCallsite():
     """
     Represents a single node in the calltree
     """
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        dst_function_name: str,
+        dst_function_source_file: str,
+        depth: int,
+        src_linenumber: int,
+        parent_calltree_callsite: Optional[CalltreeCallsite]
+    ) -> None:
+
         # Destination information
-        self.dst_function_name: Optional[str] = None
-        self.dst_function_source_file: Optional[str] = None
-        self.src_linenumber: Optional[int] = None
+        self.dst_function_name: str = dst_function_name
+        self.dst_function_source_file: str = dst_function_source_file
+        self.src_linenumber: int = src_linenumber
+        self.parent_calltree_callsite: CalltreeCallsite = parent_calltree_callsite
+        self.depth = depth
+
         self.src_function_source_file: Optional[str] = None
         self.src_function_name: Optional[str] = None
-        self.depth: Optional[int] = None
-        self.parent_calltree_callsite: Optional[CalltreeCallsite] = None
         self.children: List[CalltreeCallsite] = []
-
         self.cov_ct_idx = None
         self.cov_parent = None
         self.cov_hitcount = None
@@ -107,12 +115,13 @@ def data_file_read_calltree(filename: str) -> Optional[CalltreeCallsite]:
                 depth = int(space_count / 2)
 
                 # Create a callsite nide
-                ctcs = CalltreeCallsite()
-                ctcs.dst_function_name = stripped_line[0]
-                ctcs.dst_function_source_file = filename
-                ctcs.depth = depth
-                ctcs.src_linenumber = linenumber
-                ctcs.parent_calltree_callsite = curr_ctcs_node
+                ctcs = CalltreeCallsite(
+                    stripped_line[0],
+                    filename,
+                    depth,
+                    linenumber,
+                    curr_ctcs_node
+                )
 
                 # Check if this node is still a child of the current parent node and handle if not.
                 if curr_depth == -1:

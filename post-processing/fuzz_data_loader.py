@@ -61,30 +61,7 @@ class FunctionProfile:
     """
     Class for storing information about a given Function
     """
-    def __init__(self, function_name: str) -> None:
-        self.function_name = function_name
-        self.function_source_file = None
-        self.linkage_type = None
-        self.function_linenumber = None
-        self.return_type = None
-        self.arg_count = None
-        self.arg_types = None
-        self.arg_names = None
-        self.bb_count = None
-        self.i_count = None
-        self.hitcount = 0
-        self.reached_by_fuzzers = list()
-        self.edge_count = None
-        self.cyclomatic_complexity = None
-        self.functions_reached = None
-        self.function_uses = None
-        self.function_depth = None
-        self.incoming_references = list()
-        self.constants_touched = list()
-        self.new_unreached_complexity = None
-        self.total_cyclomatic_complexity = None
-
-    def migrate_from_yaml_elem(self, elem) -> None:
+    def __init__(self, elem) -> None:
         self.function_name = elem['functionName']
         self.function_source_file = elem['functionSourceFile']
         self.linkage_type = elem['linkageType']
@@ -101,6 +78,31 @@ class FunctionProfile:
         self.function_uses = elem['functionUses']
         self.function_depth = elem['functionDepth']
         self.constants_touched = elem['constantsTouched']
+        #function_name: str) -> None:
+        #self.function_name = function_name
+        #self.function_source_file = None
+        #self.linkage_type = None
+        #self.function_linenumber = None
+        #self.return_type = None
+        #self.arg_count = None
+        #self.arg_types = None
+        #self.arg_names = None
+        #self.bb_count = None
+        #self.i_count = None
+        #self.edge_count = None
+        #self.cyclomatic_complexity = None
+        #self.functions_reached = None
+        #self.function_uses = None
+        #self.function_depth = None
+        #self.constants_touched = list()
+
+
+        # These are set later.
+        self.hitcount = 0
+        self.reached_by_fuzzers:List[str] = []
+        self.incoming_references:List[str] = []
+        self.new_unreached_complexity:int = 0
+        self.total_cyclomatic_complexity:int = 0
 
 
 class FuzzerProfile:
@@ -113,9 +115,9 @@ class FuzzerProfile:
     def __init__(self, filename: str, data_dict_yaml: Dict[Any, Any]):
         self.introspector_data_file = filename
         self.function_call_depths = fuzz_cfg_load.data_file_read_calltree(filename)
-        self.fuzzer_source_file = data_dict_yaml['Fuzzer filename']
+        self.fuzzer_source_file:str = data_dict_yaml['Fuzzer filename']
         self.binary_executable = None
-        self.coverage = None
+        self.coverage:Optional[CoverageProfile] = None
         self.file_targets: Dict[str, Set[str]] = dict()
 
         # Create a list of all the functions.
@@ -129,8 +131,7 @@ class FuzzerProfile:
                         f"We may have a non-normalised function name: {elem['functionName']}"
                     )
 
-            func_profile = FunctionProfile(elem['functionName'])
-            func_profile.migrate_from_yaml_elem(elem)
+            func_profile = FunctionProfile(elem)
             self.all_class_functions[func_profile.function_name] = func_profile
 
     def refine_paths(self, basefolder: str) -> None:
@@ -200,7 +201,8 @@ class FuzzerProfile:
         """
         self.coverage = fuzz_cov_load.llvm_cov_load(
             target_folder,
-            self.get_target_fuzzer_filename())
+            self.get_target_fuzzer_filename()
+        )
 
     def get_target_fuzzer_filename(self) -> str:
         return self.fuzzer_source_file.split("/")[-1].replace(".cpp", "").replace(".c", "")

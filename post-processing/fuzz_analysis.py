@@ -81,7 +81,10 @@ def overlay_calltree_with_coverage(
     if profile.coverage is None:
         return
 
-    def callstack_get_parent(n, c):
+    def callstack_get_parent(
+        n: fuzz_cfg_ld.CalltreeCallsite,
+        c: Dict[int, str]
+    ) -> str:
         return c[int(n.depth) - 1]
 
     def callstack_has_parent(n, c):

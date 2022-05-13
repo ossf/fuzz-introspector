@@ -34,7 +34,7 @@ class CoverageProfile:
     """
     Class for storing information about a runtime coverage report
     """
-    def __init__(self):
+    def __init__(self) -> None:
         # Covmap is a dictionary of string to list of tuples of int.
         # The tupls correspond to line number and hitcount in the
         # source code.
@@ -87,7 +87,7 @@ class CoverageProfile:
         return len(self.covmap[fuzz_key]), len(lines_hit)
 
 
-def llvm_cov_load(target_dir, target_name=None):
+def llvm_cov_load(target_dir, target_name=None) -> CoverageProfile:
     """
     Scans a directory to read one or more coverage reports, and returns a CoverageProfile
 
