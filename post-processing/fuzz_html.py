@@ -157,7 +157,7 @@ def create_all_function_table(
         coverage_url: str,
         basefolder: str,
         table_id: Optional[str] = None
-    ) -> Tuple[str, List[typing.Dict[str, Any]]]:
+) -> Tuple[str, List[typing.Dict[str, Any]]]:
     """Table for all functions in the project. Contains many details about each
         function"""
     random_suffix = '_' + ''.join(
@@ -352,7 +352,7 @@ def create_boxed_top_summary_info(
     project_profile: fuzz_data_loader.MergedProjectProfile,
     conclusions: List[Tuple[int, str]],
     extract_conclusion: bool,
-    display_coverage:bool=False
+    display_coverage: bool=False
 ) -> str:
     html_string = ""
     # Get complexity and function counts
@@ -434,7 +434,7 @@ def create_top_summary_info(
         project_profile: fuzz_data_loader.MergedProjectProfile,
         conclusions: List[Tuple[int, str]],
         extract_conclusion: bool,
-        display_coverage:bool=False) -> str:
+        display_coverage: bool=False) -> str:
     html_string = ""
 
     # Get complexity and function counts

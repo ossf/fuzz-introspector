@@ -78,24 +78,6 @@ class FunctionProfile:
         self.function_uses = elem['functionUses']
         self.function_depth = elem['functionDepth']
         self.constants_touched = elem['constantsTouched']
-        #function_name: str) -> None:
-        #self.function_name = function_name
-        #self.function_source_file = None
-        #self.linkage_type = None
-        #self.function_linenumber = None
-        #self.return_type = None
-        #self.arg_count = None
-        #self.arg_types = None
-        #self.arg_names = None
-        #self.bb_count = None
-        #self.i_count = None
-        #self.edge_count = None
-        #self.cyclomatic_complexity = None
-        #self.functions_reached = None
-        #self.function_uses = None
-        #self.function_depth = None
-        #self.constants_touched = list()
-
 
         # These are set later.
         self.hitcount = 0
