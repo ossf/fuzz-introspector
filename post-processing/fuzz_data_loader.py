@@ -80,11 +80,11 @@ class FunctionProfile:
         self.constants_touched = elem['constantsTouched']
 
         # These are set later.
-        self.hitcount = 0
-        self.reached_by_fuzzers:List[str] = []
-        self.incoming_references:List[str] = []
-        self.new_unreached_complexity:int = 0
-        self.total_cyclomatic_complexity:int = 0
+        self.hitcount: int = 0
+        self.reached_by_fuzzers: List[str] = []
+        self.incoming_references: List[str] = []
+        self.new_unreached_complexity: int = 0
+        self.total_cyclomatic_complexity: int = 0
 
 
 class FuzzerProfile:
