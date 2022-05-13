@@ -20,9 +20,6 @@ from typing import (
     Optional
 )
 
-# This is for forwardly referencing CalltreeCallsite in its class init
-from __future__ import annotations
-
 logger = logging.getLogger(name=__name__)
 
 
