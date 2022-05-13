@@ -101,7 +101,8 @@ class BranchProfile:
         self.branch_false_side_hitcount = -1
 
     def assign_from_yaml_elem(self, elem):
-        self.branch_line = elem['Branch String']
+        # This skips the path, as it may cause incosistancy vs coverage file names path
+        self.branch_line = elem['Branch String'].split('/')[-1]
         self.branch_true_side_line = elem['Branch Sides']['TrueSide']
         self.branch_false_side_line = elem['Branch Sides']['FalseSide']
         self.branch_true_side_complexity = int(elem['Branch Sides']['TrueSideComp'])

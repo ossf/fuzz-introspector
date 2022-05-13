@@ -297,11 +297,14 @@ def detect_branch_level_blockers(fuzz_profile: fuzz_data_loader.FuzzerProfile, l
         true_hitcount, false_hitcount = coverage.branch_cov_map[branch_string]
         function_name, rest_string = branch_string.split(':')
         line_number, column_number = rest_string.split(',')
-        source_file_name = functions_profile[function_name].function_source_file
+        # Just extract the file name and skip the path
+        source_file_name = functions_profile[function_name].function_source_file.split('/')[-1]
         llvm_branch_string = f'{source_file_name}:{line_number},{column_number}'
 
         if llvm_branch_string not in llvm_branch_profile:
-            logger.info(f"[X][X] debug: failed to find branch profile for {llvm_branch_string}")
+            # TODO: there are cases that the column number of the branch is not consistent between 
+            # llvm and coverage debug info. For now we skip those cases.
+            # logger.info(f"[X][X] debug: failed to find branch profile for {llvm_branch_string}")
             continue
 
         # For now this checks for not-taken branch sides, instead
