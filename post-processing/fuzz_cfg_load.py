@@ -40,21 +40,21 @@ class CalltreeCallsite():
         self.dst_function_name: str = dst_function_name
         self.dst_function_source_file: str = dst_function_source_file
         self.src_linenumber: int = src_linenumber
-        self.parent_calltree_callsite: CalltreeCallsite = parent_calltree_callsite
+        self.parent_calltree_callsite: Optional[CalltreeCallsite] = parent_calltree_callsite
         self.depth = depth
 
         self.src_function_source_file: Optional[str] = None
         self.src_function_name: Optional[str] = None
         self.children: List[CalltreeCallsite] = []
-        self.cov_ct_idx = None
-        self.cov_parent = None
-        self.cov_hitcount = None
+        self.cov_ct_idx: int = -1
+        self.cov_parent: str = ""
+        self.cov_hitcount: int = -1
         self.cov_color = None
-        self.cov_callsite_link = None
         self.hitcount = 0
-        self.cov_link = None
-        self.cov_forward_reds = None
-        self.cov_largest_blocked_func = None
+        self.cov_link: str = ""
+        self.cov_callsite_link: str = ""
+        self.cov_forward_reds: int = -1
+        self.cov_largest_blocked_func:str = ""
 
 
 def extract_all_callsites_recursive(

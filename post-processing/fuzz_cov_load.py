@@ -42,7 +42,11 @@ class CoverageProfile:
         self.covreports = list()
 
     def get_all_hit_functions(self) -> List[str]:
-        return self.covmap.keys()
+        # Hacky way to satisfy typing
+        all_keys: List[str]
+        for k in self.covmap.keys():
+            all_keys.append(k)
+        return all_keys
 
     def is_func_hit(self, funcname: str) -> bool:
         _, lines_hit = self.get_hit_summary(funcname)
@@ -69,7 +73,7 @@ class CoverageProfile:
             return []
         return self.covmap[fuzz_key]
 
-    def get_hit_summary(self, funcname: str) -> Tuple[int, int]:
+    def get_hit_summary(self, funcname: str) -> Tuple[Optional[int], Optional[int]]:
         """
         returns the hit summary of a give function, in the form of
         a tuple (total_function_lines, hit_lines)
