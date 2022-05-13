@@ -23,6 +23,7 @@ from typing import (
     Any,
     Dict,
     List,
+    Optional,
     Tuple,
 )
 
@@ -155,7 +156,8 @@ def create_all_function_table(
         project_profile: fuzz_data_loader.MergedProjectProfile,
         coverage_url: str,
         basefolder: str,
-        table_id: str = None) -> Tuple[str, List[typing.Dict[str, Any]]]:
+        table_id: Optional[str] = None
+    ) -> Tuple[str, List[typing.Dict[str, Any]]]:
     """Table for all functions in the project. Contains many details about each
         function"""
     random_suffix = '_' + ''.join(

@@ -116,7 +116,7 @@ class FuzzerProfile:
         self.introspector_data_file = filename
         self.function_call_depths = fuzz_cfg_load.data_file_read_calltree(filename)
         self.fuzzer_source_file:str = data_dict_yaml['Fuzzer filename']
-        self.binary_executable = None
+        self.binary_executable: str = ""
         self.coverage:Optional[CoverageProfile] = None
         self.file_targets: Dict[str, Set[str]] = dict()
 
@@ -179,7 +179,7 @@ class FuzzerProfile:
         """
         Returns the "key" we use to identify this Fuzzer profile.
         """
-        if self.binary_executable is not None:
+        if self.binary_executable != "":
             return os.path.basename(self.binary_executable)
 
         return self.fuzzer_source_file

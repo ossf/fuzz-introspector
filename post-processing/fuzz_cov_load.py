@@ -23,6 +23,7 @@ import logging
 from typing import (
     Dict,
     List,
+    Optional,
     Tuple,
 )
 
@@ -39,7 +40,7 @@ class CoverageProfile:
         # The tupls correspond to line number and hitcount in the
         # source code.
         self.covmap: Dict[str, List[Tuple[int, int]]] = dict()
-        self.covreports = list()
+        self.covreports : List[str] = list()
 
     def get_all_hit_functions(self) -> List[str]:
         # Hacky way to satisfy typing
@@ -118,8 +119,8 @@ def llvm_cov_load(target_dir, target_name=None) -> CoverageProfile:
     # Check if there is a meaningful profile and if not, we need to use all.
     found_name = False
     if target_name is not None:
-        for pf in coverage_reports:
-            if target_name in pf:
+        for cov_report in coverage_reports:
+            if target_name in cov_report:
                 found_name = True
 
     cp = CoverageProfile()
@@ -133,8 +134,8 @@ def llvm_cov_load(target_dir, target_name=None) -> CoverageProfile:
         with open(profile_file, 'rb') as pf:
             cp.covreports.append(profile_file)
             curr_func = None
-            for line in pf:
-                line = fuzz_utils.safe_decode(line)
+            for raw_line in pf:
+                line = fuzz_utils.safe_decode(raw_line)
                 if line is None:
                     continue
 
