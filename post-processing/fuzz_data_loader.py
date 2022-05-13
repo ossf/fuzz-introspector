@@ -97,9 +97,9 @@ class FuzzerProfile:
     def __init__(self, filename: str, data_dict_yaml: Dict[Any, Any]):
         self.introspector_data_file = filename
         self.function_call_depths = fuzz_cfg_load.data_file_read_calltree(filename)
-        self.fuzzer_source_file:str = data_dict_yaml['Fuzzer filename']
+        self.fuzzer_source_file: str = data_dict_yaml['Fuzzer filename']
         self.binary_executable: str = ""
-        self.coverage:Optional[fuzz_cov_load.CoverageProfile] = None
+        self.coverage: Optional[fuzz_cov_load.CoverageProfile] = None
         self.file_targets: Dict[str, Set[str]] = dict()
 
         # Create a list of all the functions.

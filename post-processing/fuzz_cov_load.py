@@ -40,7 +40,7 @@ class CoverageProfile:
         # The tupls correspond to line number and hitcount in the
         # source code.
         self.covmap: Dict[str, List[Tuple[int, int]]] = dict()
-        self.covreports : List[str] = list()
+        self.covreports: List[str] = list()
 
     def get_all_hit_functions(self) -> List[str]:
         # Hacky way to satisfy typing

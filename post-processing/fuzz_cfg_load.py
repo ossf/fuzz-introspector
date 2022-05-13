@@ -49,12 +49,12 @@ class CalltreeCallsite():
         self.cov_ct_idx: int = -1
         self.cov_parent: str = ""
         self.cov_hitcount: int = -1
-        self.cov_color:str = ""
+        self.cov_color: str = ""
         self.hitcount = 0
         self.cov_link: str = ""
         self.cov_callsite_link: str = ""
         self.cov_forward_reds: int = -1
-        self.cov_largest_blocked_func:str = ""
+        self.cov_largest_blocked_func: str = ""
 
 
 def extract_all_callsites_recursive(
@@ -79,7 +79,7 @@ def extract_all_callsites(calltree: Optional[CalltreeCallsite]) -> List[Calltree
 
 
 def print_ctcs_tree(ctcs: CalltreeCallsite) -> None:
-    spacing = " "*int(ctcs.depth)
+    spacing = " " * int(ctcs.depth)
     print(
         f"{spacing}{ctcs.dst_function_name}"
         f" -- {ctcs.dst_function_source_file} -- {ctcs.src_linenumber}"
