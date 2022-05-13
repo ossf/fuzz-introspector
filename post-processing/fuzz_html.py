@@ -59,7 +59,7 @@ def create_horisontal_calltree_image(image_name: str,
     if profile.function_call_depths is None:
         return
     # Extract color sequence
-    color_list = []
+    color_list: List[str] = []
     for node in fuzz_cfg_load.extract_all_callsites(profile.function_call_depths):
         color_list.append(node.cov_color)
     logger.info(f"- extracted the callsites ({len(color_list)} nodes)")
@@ -215,7 +215,10 @@ def create_all_function_table(
             func_total_lines, hit_lines = project_profile.runtime_coverage.get_hit_summary(
                 demangled_func_name
             )
-            hit_percentage = (hit_lines / func_total_lines) * 100.0
+            if hit_lines is None or func_total_lines is None:
+                hit_percentage = 0.0
+            else:
+                hit_percentage = (hit_lines / func_total_lines) * 100.0
         except Exception:
             hit_percentage = 0.0
 
