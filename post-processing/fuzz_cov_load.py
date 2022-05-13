@@ -44,7 +44,7 @@ class CoverageProfile:
 
     def get_all_hit_functions(self) -> List[str]:
         # Hacky way to satisfy typing
-        all_keys: List[str]
+        all_keys: List[str] = []
         for k in self.covmap.keys():
             all_keys.append(k)
         return all_keys
