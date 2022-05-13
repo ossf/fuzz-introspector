@@ -89,8 +89,8 @@ class FuzzRuntimeCoverageAnalysis(fuzz_analysis.AnalysisInterface):
                 reached_by = ""
             html_string += fuzz_html_helpers.html_table_add_row([
                 fuzz_utils.demangle_cpp_func(funcname),
-                func_lines,
-                hit_lines,
+                func_lines if func_lines is not None else 0,
+                hit_lines if hit_lines is not None else 0,
                 "%.5s%%" % (str((hit_lines / func_lines) * 100.0)),
                 reached_by
             ])
@@ -124,7 +124,7 @@ class FuzzRuntimeCoverageAnalysis(fuzz_analysis.AnalysisInterface):
 
             total_lines, hit_lines = merged_profile.runtime_coverage.get_hit_summary(funcname)
             logger.debug(f"Total lines: {total_lines} -- hit_lines: {hit_lines}")
-            if total_lines == 0:
+            if total_lines is None or hit_lines is None or total_lines == 0:
                 continue
 
             hit_proportion = (hit_lines / total_lines) * 100.0
