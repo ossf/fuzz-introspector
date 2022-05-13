@@ -83,14 +83,17 @@ class FuzzRuntimeCoverageAnalysis(fuzz_analysis.AnalysisInterface):
             logger.debug(f"Iterating the function {funcname}")
             func_lines, hit_lines = project_profile.runtime_coverage.get_hit_summary(funcname)
 
+            if func_lines is None or hit_lines is None:
+                continue
+
             if funcname in project_profile.all_functions:
                 reached_by = str(project_profile.all_functions[funcname].reached_by_fuzzers)
             else:
                 reached_by = ""
             html_string += fuzz_html_helpers.html_table_add_row([
                 fuzz_utils.demangle_cpp_func(funcname),
-                func_lines if func_lines is not None else 0,
-                hit_lines if hit_lines is not None else 0,
+                func_lines,
+                hit_lines,
                 "%.5s%%" % (str((hit_lines / func_lines) * 100.0)),
                 reached_by
             ])
