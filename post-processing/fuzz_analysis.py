@@ -82,7 +82,7 @@ def overlay_calltree_with_coverage(
         return
 
     def callstack_get_parent(
-        n: fuzz_cfg_ld.CalltreeCallsite,
+        n: fuzz_cfg_load.CalltreeCallsite,
         c: Dict[int, str]
     ) -> str:
         return c[int(n.depth) - 1]
@@ -257,6 +257,8 @@ def analysis_coverage_runtime_analysis(
 
         total_lines, hit_lines = merged_profile.runtime_coverage.get_hit_summary(funcname)
         logger.debug(f"Total lines: {total_lines} -- hit_lines: {hit_lines}")
+        if total_lines is None or hit_lines is None:
+            continue
         try:
             hit_proportion = (hit_lines / total_lines) * 100.0
             logger.debug(f"hit proportion {hit_proportion}")
