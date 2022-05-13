@@ -28,7 +28,7 @@ logger = logging.getLogger(name=__name__)
 
 
 class FuzzBugDigestorAnalysis(fuzz_analysis.AnalysisInterface):
-    def __init__(self):
+    def __init__(self) -> None:
         self.name = "BugDigestorAnalysis"
         self.display_html = False
 
@@ -40,7 +40,7 @@ class FuzzBugDigestorAnalysis(fuzz_analysis.AnalysisInterface):
         profiles: List[fuzz_data_loader.FuzzerProfile],
         basefolder: str,
         coverage_url: str,
-        conclusions
+        conclusions: List[Tuple[int, str]]
     ) -> str:
         logger.info(f" - Running analysis {self.name}")
         input_bugs = fuzz_data_loader.try_load_input_bugs()

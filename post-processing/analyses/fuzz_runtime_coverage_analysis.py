@@ -30,7 +30,7 @@ logger = logging.getLogger(name=__name__)
 
 
 class FuzzRuntimeCoverageAnalysis(fuzz_analysis.AnalysisInterface):
-    def __init__(self):
+    def __init__(self) -> None:
         self.name = "RuntimeCoverageAnalysis"
 
     def analysis_func(
@@ -41,7 +41,7 @@ class FuzzRuntimeCoverageAnalysis(fuzz_analysis.AnalysisInterface):
         profiles: List[fuzz_data_loader.FuzzerProfile],
         basefolder: str,
         coverage_url: str,
-        conclusions
+        conclusions: List[Tuple[int, str]]
     ) -> str:
         logger.info(f" - Running analysis {self.name}")
 
@@ -82,6 +82,9 @@ class FuzzRuntimeCoverageAnalysis(fuzz_analysis.AnalysisInterface):
         for funcname in functions_of_interest:
             logger.debug(f"Iterating the function {funcname}")
             func_lines, hit_lines = project_profile.runtime_coverage.get_hit_summary(funcname)
+
+            if func_lines is None or hit_lines is None:
+                continue
 
             if funcname in project_profile.all_functions:
                 reached_by = str(project_profile.all_functions[funcname].reached_by_fuzzers)
@@ -124,7 +127,7 @@ class FuzzRuntimeCoverageAnalysis(fuzz_analysis.AnalysisInterface):
 
             total_lines, hit_lines = merged_profile.runtime_coverage.get_hit_summary(funcname)
             logger.debug(f"Total lines: {total_lines} -- hit_lines: {hit_lines}")
-            if total_lines == 0:
+            if total_lines is None or hit_lines is None or total_lines == 0:
                 continue
 
             hit_proportion = (hit_lines / total_lines) * 100.0

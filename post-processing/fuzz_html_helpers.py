@@ -17,6 +17,7 @@
 from typing import (
     Any,
     List,
+    Optional,
     Tuple,
 )
 
@@ -103,10 +104,12 @@ def html_get_table_of_contents(toc_list: List[Tuple[str, str, int]]) -> str:
     return html_toc_string
 
 
-def html_add_header_with_link(header_title: str,
-                              title_type: int,
-                              toc_list: List[Tuple[str, str, int]],
-                              link: str = None) -> str:
+def html_add_header_with_link(
+    header_title: str,
+    title_type: int,
+    toc_list: List[Tuple[str, str, int]],
+    link: Optional[str] = None
+) -> str:
     if link is None:
         link = header_title.replace(" ", "-")
     toc_list.append((header_title, link, title_type - 1))

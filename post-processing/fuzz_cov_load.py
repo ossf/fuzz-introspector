@@ -23,6 +23,7 @@ import logging
 from typing import (
     Dict,
     List,
+    Optional,
     Tuple,
 )
 
@@ -34,17 +35,21 @@ class CoverageProfile:
     """
     Class for storing information about a runtime coverage report
     """
-    def __init__(self):
+    def __init__(self) -> None:
         # Covmap is a dictionary of string to list of tuples of int.
         # The tupls correspond to line number and hitcount in the
         # source code.
         self.covmap: Dict[str, List[Tuple[int, int]]] = dict()
-        self.covreports = list()
+        self.covreports: List[str] = list()
 
-    def get_all_hit_functions(self):
-        return self.covmap.keys()
+    def get_all_hit_functions(self) -> List[str]:
+        # Hacky way to satisfy typing
+        all_keys: List[str] = []
+        for k in self.covmap.keys():
+            all_keys.append(k)
+        return all_keys
 
-    def is_func_hit(self, funcname):
+    def is_func_hit(self, funcname: str) -> bool:
         _, lines_hit = self.get_hit_summary(funcname)
         if lines_hit is not None and lines_hit > 0:
             return True
@@ -69,7 +74,7 @@ class CoverageProfile:
             return []
         return self.covmap[fuzz_key]
 
-    def get_hit_summary(self, funcname):
+    def get_hit_summary(self, funcname: str) -> Tuple[Optional[int], Optional[int]]:
         """
         returns the hit summary of a give function, in the form of
         a tuple (total_function_lines, hit_lines)
@@ -87,7 +92,7 @@ class CoverageProfile:
         return len(self.covmap[fuzz_key]), len(lines_hit)
 
 
-def llvm_cov_load(target_dir, target_name=None):
+def llvm_cov_load(target_dir, target_name=None) -> CoverageProfile:
     """
     Scans a directory to read one or more coverage reports, and returns a CoverageProfile
 
@@ -114,8 +119,8 @@ def llvm_cov_load(target_dir, target_name=None):
     # Check if there is a meaningful profile and if not, we need to use all.
     found_name = False
     if target_name is not None:
-        for pf in coverage_reports:
-            if target_name in pf:
+        for cov_report in coverage_reports:
+            if target_name in cov_report:
                 found_name = True
 
     cp = CoverageProfile()
@@ -129,8 +134,8 @@ def llvm_cov_load(target_dir, target_name=None):
         with open(profile_file, 'rb') as pf:
             cp.covreports.append(profile_file)
             curr_func = None
-            for line in pf:
-                line = fuzz_utils.safe_decode(line)
+            for raw_line in pf:
+                line = fuzz_utils.safe_decode(raw_line)
                 if line is None:
                     continue
 

@@ -33,18 +33,20 @@ logger = logging.getLogger(name=__name__)
 
 
 class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
-    def __init__(self):
+    def __init__(self) -> None:
         self.name = "OptimalTargets"
 
-    def analysis_func(self,
-                      toc_list: List[Tuple[str, str, int]],
-                      tables: List[str],
-                      project_profile: fuzz_data_loader.MergedProjectProfile,
-                      profiles: List[fuzz_data_loader.FuzzerProfile],
-                      basefolder: str,
-                      coverage_url: str,
-                      conclusions,
-                      should_synthetise: bool = False) -> str:
+    def analysis_func(
+        self,
+        toc_list: List[Tuple[str, str, int]],
+        tables: List[str],
+        project_profile: fuzz_data_loader.MergedProjectProfile,
+        profiles: List[fuzz_data_loader.FuzzerProfile],
+        basefolder: str,
+        coverage_url: str,
+        conclusions: List[Tuple[int, str]],
+        should_synthetise: bool = False
+    ) -> str:
         """
         Performs an analysis based on optimal target selection.
         Finds a set of optimal functions based on complexity reach and:
@@ -87,7 +89,7 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
         logger.info(f" - Completed analysis {self.name}")
         return html_string
 
-    def qualifies_as_optimal_target(self, fd):
+    def qualifies_as_optimal_target(self, fd: fuzz_data_loader.FunctionProfile) -> bool:
         """
         Hard conditions for whether a target qualifies as a potential
         optimal target. These are minimum conditions, i.e. the analysis
@@ -138,12 +140,12 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
         return target_fds
 
     def iteratively_get_optimal_targets(
-            self,
-            merged_profile: fuzz_data_loader.MergedProjectProfile) -> (
-                Tuple[
-                    fuzz_data_loader.MergedProjectProfile,
-                    List[fuzz_data_loader.FunctionProfile]
-                ]):
+        self,
+        merged_profile: fuzz_data_loader.MergedProjectProfile
+    ) -> Tuple[
+        fuzz_data_loader.MergedProjectProfile,
+        List[fuzz_data_loader.FunctionProfile]
+    ]:
         '''
         Function for synthesizing fuzz targets. The way this one works is by finding
         optimal targets that don't overlap too much with each other. The fuzz targets
@@ -203,7 +205,12 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
 
         return new_merged_profile, optimal_functions_targeted
 
-    def get_optimal_target_section(self, optimal_target_functions, toc_list, tables):
+    def get_optimal_target_section(
+        self,
+        optimal_target_functions: List[fuzz_data_loader.FunctionProfile],
+        toc_list: List[Tuple[str, str, int]],
+        tables: List[str]
+    ) -> str:
         # Table with details about optimal target functions
         html_string = fuzz_html_helpers.html_add_header_with_link(
             "Remaining optimal interesting functions",
@@ -261,14 +268,14 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
         return html_string
 
     def get_consequential_section(
-            self,
-            new_profile,
-            conclusions,
-            tables,
-            toc_list,
-            coverage_url,
-            basefolder):
-
+        self,
+        new_profile: fuzz_data_loader.MergedProjectProfile,
+        conclusions: List[Tuple[int, str]],
+        tables: List[str],
+        toc_list: List[Tuple[str, str, int]],
+        coverage_url: str,
+        basefolder: str
+    ) -> str:
         """Create section showing state of project if optimal targets are hit"""
         html_string = (
             "<p>Implementing fuzzers that target the above functions "

@@ -61,30 +61,7 @@ class FunctionProfile:
     """
     Class for storing information about a given Function
     """
-    def __init__(self, function_name):
-        self.function_name = function_name
-        self.function_source_file = None
-        self.linkage_type = None
-        self.function_linenumber = None
-        self.return_type = None
-        self.arg_count = None
-        self.arg_types = None
-        self.arg_names = None
-        self.bb_count = None
-        self.i_count = None
-        self.hitcount = 0
-        self.reached_by_fuzzers = list()
-        self.edge_count = None
-        self.cyclomatic_complexity = None
-        self.functions_reached = None
-        self.function_uses = None
-        self.function_depth = None
-        self.incoming_references = list()
-        self.constants_touched = list()
-        self.new_unreached_complexity = None
-        self.total_cyclomatic_complexity = None
-
-    def migrate_from_yaml_elem(self, elem):
+    def __init__(self, elem) -> None:
         self.function_name = elem['functionName']
         self.function_source_file = elem['functionSourceFile']
         self.linkage_type = elem['linkageType']
@@ -102,6 +79,13 @@ class FunctionProfile:
         self.function_depth = elem['functionDepth']
         self.constants_touched = elem['constantsTouched']
 
+        # These are set later.
+        self.hitcount: int = 0
+        self.reached_by_fuzzers: List[str] = []
+        self.incoming_references: List[str] = []
+        self.new_unreached_complexity: int = 0
+        self.total_cyclomatic_complexity: int = 0
+
 
 class FuzzerProfile:
     """
@@ -113,9 +97,9 @@ class FuzzerProfile:
     def __init__(self, filename: str, data_dict_yaml: Dict[Any, Any]):
         self.introspector_data_file = filename
         self.function_call_depths = fuzz_cfg_load.data_file_read_calltree(filename)
-        self.fuzzer_source_file = data_dict_yaml['Fuzzer filename']
-        self.binary_executable = None
-        self.coverage = None
+        self.fuzzer_source_file: str = data_dict_yaml['Fuzzer filename']
+        self.binary_executable: str = ""
+        self.coverage: Optional[fuzz_cov_load.CoverageProfile] = None
         self.file_targets: Dict[str, Set[str]] = dict()
 
         # Create a list of all the functions.
@@ -129,8 +113,7 @@ class FuzzerProfile:
                         f"We may have a non-normalised function name: {elem['functionName']}"
                     )
 
-            func_profile = FunctionProfile(elem['functionName'])
-            func_profile.migrate_from_yaml_elem(elem)
+            func_profile = FunctionProfile(elem)
             self.all_class_functions[func_profile.function_name] = func_profile
 
     def refine_paths(self, basefolder: str) -> None:
@@ -165,7 +148,7 @@ class FuzzerProfile:
     def reaches(self, func_name: str) -> bool:
         return func_name in self.functions_reached_by_fuzzer
 
-    def correlate_executable_name(self, correlation_dict):
+    def correlate_executable_name(self, correlation_dict) -> None:
         for elem in correlation_dict['pairings']:
             if os.path.basename(self.introspector_data_file) in f"{elem['fuzzer_log_file']}.data":
                 self.binary_executable = str(elem['executable_path'])
@@ -174,16 +157,16 @@ class FuzzerProfile:
                 rval = f"{elem['fuzzer_log_file']}.data"
                 logger.info(f"Correlated {lval} with {rval}")
 
-    def get_key(self):
+    def get_key(self) -> str:
         """
         Returns the "key" we use to identify this Fuzzer profile.
         """
-        if self.binary_executable is not None:
+        if self.binary_executable != "":
             return os.path.basename(self.binary_executable)
 
         return self.fuzzer_source_file
 
-    def set_all_unreached_functions(self):
+    def set_all_unreached_functions(self) -> None:
         """
         sets self.functions_unreached_by_fuzzer to all functiosn in self.all_class_functions
         that are not in self.functions_reached_by_fuzzer
@@ -200,7 +183,8 @@ class FuzzerProfile:
         """
         self.coverage = fuzz_cov_load.llvm_cov_load(
             target_folder,
-            self.get_target_fuzzer_filename())
+            self.get_target_fuzzer_filename()
+        )
 
     def get_target_fuzzer_filename(self) -> str:
         return self.fuzzer_source_file.split("/")[-1].replace(".cpp", "").replace(".c", "")
@@ -254,9 +238,9 @@ class FuzzerProfile:
         self.get_total_basic_blocks()
         self.get_total_cyclomatic_complexity()
 
-    def get_cov_uncovered_reachable_funcs(self):
+    def get_cov_uncovered_reachable_funcs(self) -> List[str]:
         if self.coverage is None:
-            return None
+            return []
 
         uncovered_funcs = []
         for funcname in self.functions_reached_by_fuzzer:
@@ -268,18 +252,23 @@ class FuzzerProfile:
                 uncovered_funcs.append(funcname)
         return uncovered_funcs
 
-    def get_cov_metrics(self,
-                        funcname: str) -> Tuple[Optional[int], Optional[int], Optional[float]]:
+    def get_cov_metrics(
+        self,
+        funcname: str
+    ) -> Tuple[Optional[int], Optional[int], Optional[float]]:
         if self.coverage is None:
             return None, None, None
         try:
             total_func_lines, hit_lines = self.coverage.get_hit_summary(funcname)
+            if total_func_lines is None or hit_lines is None:
+                return None, None, None
+
             hit_percentage = (hit_lines / total_func_lines) * 100.0
             return total_func_lines, hit_lines, hit_percentage
         except Exception:
             return None, None, None
 
-    def write_stats_to_summary_file(self):
+    def write_stats_to_summary_file(self) -> None:
         file_target_count = len(self.file_targets) if self.file_targets is not None else 0
         fuzz_utils.write_to_summary_file(
             self.get_key(),
@@ -426,7 +415,7 @@ class MergedProjectProfile:
                 reached_function_count += 1
         return reached_function_count
 
-    def get_all_runtime_covered_functions(self):
+    def get_all_runtime_covered_functions(self) -> List[str]:
         all_covered_functions = []
         for funcname in self.runtime_coverage.covmap:
             all_covered_functions.append(funcname)
@@ -473,7 +462,7 @@ class MergedProjectProfile:
             unreached_complexity_percentage
         )
 
-    def write_stats_to_summary_file(self):
+    def write_stats_to_summary_file(self) -> None:
         (total_complexity,
          complexity_reached,
          complexity_unreached,
