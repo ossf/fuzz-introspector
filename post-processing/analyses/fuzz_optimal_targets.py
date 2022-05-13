@@ -142,12 +142,10 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
     def iteratively_get_optimal_targets(
         self,
         merged_profile: fuzz_data_loader.MergedProjectProfile
-        ) -> (Tuple
-            [
-                fuzz_data_loader.MergedProjectProfile,
-                List[fuzz_data_loader.FunctionProfile]
-            ]
-    ):
+    ) -> Tuple[
+        fuzz_data_loader.MergedProjectProfile,
+        List[fuzz_data_loader.FunctionProfile]
+    ]:
         '''
         Function for synthesizing fuzz targets. The way this one works is by finding
         optimal targets that don't overlap too much with each other. The fuzz targets
