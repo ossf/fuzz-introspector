@@ -20,6 +20,9 @@ from typing import (
     Optional
 )
 
+# This is for forwardly referencing CalltreeCallsite in its class init
+from __future__ import annotations
+
 logger = logging.getLogger(name=__name__)
 
 
@@ -33,7 +36,7 @@ class CalltreeCallsite():
         dst_function_source_file: str,
         depth: int,
         src_linenumber: int,
-        parent_calltree_callsite: Optional[CalltreeCallsite]
+        parent_calltree_callsite: Optional['CalltreeCallsite']
     ) -> None:
 
         # Destination information
