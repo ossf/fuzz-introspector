@@ -185,7 +185,7 @@ def llvm_cov_load(target_dir, target_name=None) -> CoverageProfile:
                                         ".", ""))
                     except Exception:
                         continue
-                    branch_string = curr_func + ':' + line_number + ',' + column_number
+                    branch_string = f'{curr_func}:{line_number},{column_number}'
                     cp.branch_cov_map[branch_string] = (true_hit, false_hit)
                 # Parse lines that signal specific line of code. These lines only
                 # offer after the function names parsed above.
