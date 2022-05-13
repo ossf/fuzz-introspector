@@ -119,7 +119,7 @@ class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
         html_string += "</code></pre>"
         return html_string
 
-    def get_fuzzer_focus_function_section(self, profile, toc_list):
+    def get_fuzzer_focus_function_section(self, profile, toc_list) -> str:
         """Returns HTML string with fuzzer focus function"""
         html_string = fuzz_html_helpers.html_add_header_with_link(
             "Fuzzer function priority",
@@ -149,7 +149,7 @@ class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
                 logger.info(f"Found focus function: {fuzz_blocker.src_function_name}")
 
         if len(focus_functions) == 0:
-            return
+            return ""
 
         self.add_to_json_file(
             fuzz_constants.ENGINE_INPUT_FILE,
@@ -172,7 +172,7 @@ class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
             json_file_path: str,
             fuzzer_name: str,
             key: str,
-            val: str):
+            val: List[str]):
         # Create file if it does not exist
         if not os.path.isfile(json_file_path):
             json_data = dict()
