@@ -261,10 +261,8 @@ struct FuzzIntrospector : public ModulePass {
   void branchProfiler(Module &M);
   SmallPtrSet<BasicBlock *, 32> findReachables(BasicBlock *src);
   std::pair<size_t, size_t> findComplexities(SmallPtrSet<BasicBlock *, 32>, SmallPtrSet<BasicBlock *, 32>, std::map<BasicBlock *, size_t>);
-  std::string getInsnDebugInfo(Instruction *I);
-  std::string getBBDebugInfo(BasicBlock *BB);
-  // void writeOutMap(std::map<std::string, std::vector<std::pair<std::string, size_t>>>, std::string);
-  // void writeOutMap(std::map<std::string, BranchSidesComplexity> outMap, std::string fileName);
+  std::pair<std::string, std::string> getInsnDebugInfo(Instruction *I);
+  std::pair<std::string, std::string> getBBDebugInfo(BasicBlock *BB);
   void writeOutMap(std::vector<BranchProfileEntry> outMap, std::string fileName);
   size_t calculateBBComplexity(BasicBlock *BB);
 };
@@ -1209,23 +1207,46 @@ void FuzzIntrospector::branchProfiler(Module &M) {
       auto TI = BB.getTerminator();
       auto BI = dyn_cast<BranchInst>(TI);
       if (BI && BI->isConditional()) {
-        auto trueSide = BI->getSuccessor(0);
-        auto falseSide = BI->getSuccessor(1);
+        auto side0 = BI->getSuccessor(0); 
+        auto side1 = BI->getSuccessor(1);
 
-        auto trueReachable = findReachables(trueSide);
-        auto falseReachable = findReachables(falseSide);
+        auto reachable0 = findReachables(side0);
+        auto reachable1 = findReachables(side1);
 
-        std::pair<size_t, size_t> complexities = findComplexities(trueReachable, falseReachable, BBComplexityMap);
+        std::pair<size_t, size_t> complexities = findComplexities(reachable0, reachable1, BBComplexityMap);
 
-        auto trueSideComp = complexities.first;
-        auto falseSideComp = complexities.second;
+        auto side0Comp = complexities.first;
+        auto side1Comp = complexities.second;
 
-        auto BRstring = getInsnDebugInfo((Instruction *)BI);
-        auto trueSideString = getBBDebugInfo(trueSide);
-        auto falseSideString = getBBDebugInfo(falseSide);
-        // TODO: assert on non-empty strings
+        std::pair<std::string, std::string> dbgExtracts;
+        dbgExtracts = getInsnDebugInfo((Instruction *)BI);
+        auto BRstring = dbgExtracts.first;
+        if (BRstring.length() == 0) {
+          continue; // Failed to get debug info
+        }
+        dbgExtracts = getBBDebugInfo(side0);
+        auto side0String = dbgExtracts.first;
+        auto side0Line = std::stoi(dbgExtracts.second);
+        dbgExtracts = getBBDebugInfo(side1);
+        auto side1String = dbgExtracts.first;
+        auto side1Line = std::stoi(dbgExtracts.second);
 
-        BranchSidesComplexity entry_val(trueSideString, trueSideComp, falseSideString, falseSideComp);
+        // Decide on the sides based on line number distance; This is how coverage reports the sides
+        std::string trueSideString, falseSideString;
+        size_t trueSideCmp, falseSideComp;
+        if (side0Line > side1Line) {
+          trueSideString = side1String;
+          trueSideCmp = side1Comp;
+          falseSideString = side0String;
+          falseSideComp = side0Comp;
+        } else {
+          trueSideString = side0String;
+          trueSideCmp = side0Comp;
+          falseSideString = side1String;
+          falseSideComp = side1Comp;
+        }
+
+        BranchSidesComplexity entry_val(trueSideString, trueSideCmp, falseSideString, falseSideComp);
         BranchProfileEntry entry = {BRstring, entry_val};
         outMap.push_back(entry);
 
@@ -1297,32 +1318,33 @@ std::pair<size_t, size_t> FuzzIntrospector::findComplexities(SmallPtrSet<BasicBl
   return make_pair(trueComp, falseComp);
 }
 
-std::string FuzzIntrospector::getInsnDebugInfo(Instruction *I) {
-  std::string ret_string = "";
+std::pair<std::string, std::string> FuzzIntrospector::getInsnDebugInfo(Instruction *I) {
+  std::string ret_string = "", ret_line = "";
 
   DILocation *Loc = I->getDebugLoc();
   if (Loc != NULL)
   {
+    ret_line = std::to_string(Loc->getLine());
     ret_string = Loc->getFilename().str() +
-              +":" + std::to_string(Loc->getLine()) + "," + std::to_string(Loc->getColumn());
+              +":" + ret_line + "," + std::to_string(Loc->getColumn());
   }
   else {
     logPrintf(L1, "No debug info!!\n");
   }
 
-  return ret_string;
+  return make_pair(ret_string, ret_line);
 }
 
-std::string FuzzIntrospector::getBBDebugInfo(BasicBlock *BB) {
-  std::string ret_string = "";
+std::pair<std::string, std::string> FuzzIntrospector::getBBDebugInfo(BasicBlock *BB) {
+  std::pair<std::string, std::string> result = make_pair("", "");
 
   for (auto &I: *BB) {
-    ret_string = getInsnDebugInfo(&I);
-    if (ret_string.length() > 0) {
+    result = getInsnDebugInfo(&I);
+    if (result.first.length() > 0) {
       break;
     }
   }
-  return ret_string;
+  return result;
 }
 
 // void FuzzIntrospector::writeOutMap(std::map<std::string, std::vector<std::pair<std::string, size_t>>> outMap, std::string fileName) {
