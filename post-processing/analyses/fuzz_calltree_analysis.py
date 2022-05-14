@@ -41,14 +41,16 @@ class FuzzCalltreeAnalysis(fuzz_analysis.AnalysisInterface):
         self.name = "FuzzCalltreeAnalysis"
         logger.info("Creating FuzzCalltreeAnalysis")
 
-    def analysis_func(self,
-                      toc_list: List[Tuple[str, str, int]],
-                      tables: List[str],
-                      project_profile: fuzz_data_loader.MergedProjectProfile,
-                      profiles: List[fuzz_data_loader.FuzzerProfile],
-                      basefolder: str,
-                      coverage_url: str,
-                      conclusions) -> str:
+    def analysis_func(
+        self,
+        toc_list: List[Tuple[str, str, int]],
+        tables: List[str],
+        project_profile: fuzz_data_loader.MergedProjectProfile,
+        profiles: List[fuzz_data_loader.FuzzerProfile],
+        basefolder: str,
+        coverage_url: str,
+        conclusions
+    ) -> str:
         """
         Creates the HTML of the calltree. Returns the HTML as a string.
         """
@@ -140,10 +142,11 @@ class FuzzCalltreeAnalysis(fuzz_analysis.AnalysisInterface):
         return calltree_html_file
 
     def html_create_dedicated_calltree_file(
-            self,
-            calltree_html_string,
-            filename,
-            profile: fuzz_data_loader.FuzzerProfile):
+        self,
+        calltree_html_string,
+        filename,
+        profile: fuzz_data_loader.FuzzerProfile
+    ) -> None:
         """
         Write a wrapped HTML file with the tags needed from fuzz-introspector
         We use this only for wrapping calltrees at the moment, however, down
@@ -205,9 +208,10 @@ class FuzzCalltreeAnalysis(fuzz_analysis.AnalysisInterface):
         return f"{prefixed_zeros}{cov_ct_idx}"
 
     def get_fuzz_blockers(
-            self,
-            profile: fuzz_data_loader.FuzzerProfile,
-            max_blockers_to_extract=999):
+        self,
+        profile: fuzz_data_loader.FuzzerProfile,
+        max_blockers_to_extract=999
+    ) -> List[fuzz_cfg_load.CalltreeCallsite]:
         """Gets a list of fuzz blockers"""
         blocker_list: List[fuzz_cfg_load.CalltreeCallsite] = list()
 
@@ -227,11 +231,12 @@ class FuzzCalltreeAnalysis(fuzz_analysis.AnalysisInterface):
         return blocker_list
 
     def create_fuzz_blocker_table(
-            self,
-            profile: fuzz_data_loader.FuzzerProfile,
-            tables: List[str],
-            calltree_file_name: str,
-            fuzz_blockers=None) -> Optional[str]:
+        self,
+        profile: fuzz_data_loader.FuzzerProfile,
+        tables: List[str],
+        calltree_file_name: str,
+        fuzz_blockers=None
+    ) -> Optional[str]:
         """
         Creates HTML string for table showing fuzz blockers.
         """
