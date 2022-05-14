@@ -28,6 +28,9 @@ def guide_exit(msg):
     )
     err_exit(msg)
 
+def range_check(value, expected, d):
+    return value > (expected - d) and value < (expected + d)
+
 # We write some checkers for each project. This is a bit hacky, but I think it
 # can quickly break if we make the data too tight.
 def check_project_htslib(summary_dict):
@@ -42,14 +45,19 @@ def check_project_htslib(summary_dict):
         guide_exit("htslib fuzzer name is wrong")
 
     # check stats
-    if summary_dict['hts_open_fuzzer']['stats']['total-basic-blocks'] < 25000:
+    hts_open_fuzzer = summary_dict['hts_open_fuzzer']
+    if hts_open_fuzzer['stats']['total-basic-blocks'] < 25000:
         guide_exit("htslib basic block count seems off.")
-    if (summary_dict['MergedProjectProfile']['stats']['unreached-complexity-percentage'] < 30.0 or
-        summary_dict['MergedProjectProfile']['stats']['unreached-complexity-percentage'] > 40.0):
-        guide_exit("htslib unreached complexity percentage seems off.")
-    if (summary_dict['hts_open_fuzzer']['coverage-blocker-stats']['cov-reach-proportion'] < 10.0 or
-        summary_dict['hts_open_fuzzer']['coverage-blocker-stats']['cov-reach-proportion'] > 20.0):
+
+    val = hts_open_fuzzer['coverage-blocker-stats']['cov-reach-proportion']
+    if not range_check(val, 15.0, 5.0):
         guide_exit("coverage reach proportion seems off.")
+
+    merged_profile = summary_dict['MergedProjectProfile']
+    val = merged_profile['stats']['unreached-complexity-percentage']
+    if not range_check(val, 35.0, 5.0):
+        guide_exit("htslib unreached complexity percentage seems off.")
+
 
     # Success
     return
@@ -63,13 +71,31 @@ def check_project_jsoncpp(summary_dict):
             fuzzer_list.append(k)
     if len(fuzzer_list) != 2:
         guide_exit("jsoncpp fuzzer count is wrong")
-    if summary_dict['jsoncpp_fuzzer']['coverage-blocker-stats']['cov-reach-proportion'] < 50.0:
+
+    jsoncpp_fuzzer_cov_block_stats = summary_dict['jsoncpp_fuzzer']['coverage-blocker-stats']
+    if jsoncpp_fuzzer_cov_block_stats['cov-reach-proportion'] < 50.0:
         guide_exit("coverage reach proportion seems off.")
-    if summary_dict['jsoncpp_proto_fuzzer']['coverage-blocker-stats']['cov-reach-proportion'] < 50.0:
+
+    jsoncpp_proto_fuzzer_cov_block_stats = summary_dict['jsoncpp_proto_fuzzer']['coverage-blocker-stats']
+    if jsoncpp_proto_fuzzer_cov_block_stats['cov-reach-proportion'] < 50.0:
         guide_exit("coverage reach proportion seems off.")
 
     # Success
     return
+
+
+def check_project_leveldb(summary_dict):
+    """Checks leveldb after 10 sec execution"""
+
+    if "fuzz_db" not in summary_dict:
+        guide_exit("Did not find fuzz_db in leveldb")
+    fuzz_db = summary_dict['fuzz_db']
+
+    if not range_check(fuzz_db['stats']['total-basic-blocks'], 3000, 200):
+        guide_exit("Basic block count in leveldb seem off")
+    if not range_check(fuzz_db['coverage-blocker-stats']['cov-reach-proportion'], 50.0, 10.0):
+        guide_exit("coverage reach proportion in leveldb seem off")
+
 
 
 def check_project_unrar(summary_dict):
@@ -80,11 +106,15 @@ def check_project_unrar(summary_dict):
             fuzzer_list.append(k)
     if len(fuzzer_list) != 1:
         guide_exit("unrar fuzzer count is wrong")
-    if summary_dict['unrar_fuzzer']['coverage-blocker-stats']['cov-reach-proportion'] < 10.0:
+
+    cov_block_stats = summary_dict['unrar_fuzzer']['coverage-blocker-stats']
+    if cov_block_stats['cov-reach-proportion'] < 10.0:
         guide_exit("coverage reach proportion seems off.")
-    if summary_dict['unrar_fuzzer']['coverage-blocker-stats']['cov-reach-proportion'] > 80.0:
+    if cov_block_stats['cov-reach-proportion'] > 80.0:
         guide_exit("coverage reach proportion seems off.")
-    if summary_dict['unrar_fuzzer']['stats']['file-target-count'] < 40:
+
+    stats = summary_dict['unrar_fuzzer']['stats']
+    if stats['file-target-count'] < 40:
         guide_exit("file target count seems off.")
 
     # Success
@@ -95,7 +125,8 @@ def check_specific_project(proj_name, build_log_file,coverage_log,summary_json):
     name_to_check_mapping = {
         "htslib":  check_project_htslib,
         "jsoncpp": check_project_jsoncpp,
-        "unrar":   check_project_unrar
+        "unrar":   check_project_unrar,
+        "leveldb": check_project_leveldb
     }
 
     if proj_name not in name_to_check_mapping:
