@@ -394,7 +394,10 @@ bool FuzzIntrospector::runOnModule(Module &M) {
   std::string nextYamlName = nextCalltreeFile + ".yaml";
   extractAllFunctionDetailsToYaml(nextYamlName, M);
 
-  branchProfiler(M);
+  if (getenv("FI_BRANCH_PROFILE")) {
+    branchProfiler(M);
+  }
+
 
   logPrintf(L1, "Finished introspector module\n");
   return true;
