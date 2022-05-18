@@ -262,7 +262,7 @@ struct FuzzIntrospector : public ModulePass {
   SmallPtrSet<BasicBlock *, 32> findReachables(BasicBlock *src);
   std::pair<size_t, size_t> findComplexities(SmallPtrSet<BasicBlock *, 32>, SmallPtrSet<BasicBlock *, 32>, std::map<BasicBlock *, size_t>);
   std::pair<std::string, std::string> getInsnDebugInfo(Instruction *I);
-  std::pair<std::string, std::string> getBBDebugInfo(BasicBlock *BB);
+  std::pair<std::string, std::string> getBBDebugInfo(BasicBlock *BB, DILocation *prevLoc);
   void writeOutMap(std::vector<BranchProfileEntry> outMap, std::string fileName);
   size_t calculateBBComplexity(BasicBlock *BB);
 };
@@ -1209,6 +1209,7 @@ void FuzzIntrospector::branchProfiler(Module &M) {
       if (BI && BI->isConditional()) {
         auto side0 = BI->getSuccessor(0); 
         auto side1 = BI->getSuccessor(1);
+        auto BILoc = BI->getDebugLoc();
 
         auto reachable0 = findReachables(side0);
         auto reachable1 = findReachables(side1);
@@ -1224,11 +1225,15 @@ void FuzzIntrospector::branchProfiler(Module &M) {
         if (BRstring.length() == 0) {
           continue; // Failed to get debug info
         }
-        dbgExtracts = getBBDebugInfo(side0);
+        dbgExtracts = getBBDebugInfo(side0, BILoc);
         auto side0String = dbgExtracts.first;
+        if (side0String.length() == 0)
+          continue;
         auto side0Line = std::stoi(dbgExtracts.second);
-        dbgExtracts = getBBDebugInfo(side1);
+        dbgExtracts = getBBDebugInfo(side1, BILoc);
         auto side1String = dbgExtracts.first;
+        if (side1String.length() == 0)
+          continue;
         auto side1Line = std::stoi(dbgExtracts.second);
 
         // Decide on the sides based on line number distance; This is how coverage reports the sides
@@ -1335,15 +1340,36 @@ std::pair<std::string, std::string> FuzzIntrospector::getInsnDebugInfo(Instructi
   return make_pair(ret_string, ret_line);
 }
 
-std::pair<std::string, std::string> FuzzIntrospector::getBBDebugInfo(BasicBlock *BB) {
+std::pair<std::string, std::string> FuzzIntrospector::getBBDebugInfo(BasicBlock *BB, DILocation *prevLoc) {
   std::pair<std::string, std::string> result = make_pair("", "");
 
-  for (auto &I: *BB) {
-    result = getInsnDebugInfo(&I);
-    if (result.first.length() > 0) {
+  BasicBlock *currBB = BB;
+  BranchInst *currBI;
+  Instruction *currTI, *currI;
+  DILocation *currLoc;
+
+  do {
+    currTI = currBB->getTerminator();
+    currI = currBB->getFirstNonPHIOrDbgOrLifetime(true);
+    if (currI == nullptr)
       break;
+    currLoc = currI->getDebugLoc();
+    currBI = dyn_cast<BranchInst>(currTI);
+    if (currBI && !currBI->isConditional()){
+      currBB = currBI->getSuccessor(0);
     }
-  }
+    else
+      break;
+  } while (currLoc == prevLoc);
+
+  if (currI)
+    result = getInsnDebugInfo(currI);
+  // for (auto &I: *BB) {
+  //   result = getInsnDebugInfo(&I);
+  //   if (result.first.length() > 0) {
+  //     break;
+  //   }
+  // }
   return result;
 }
 
