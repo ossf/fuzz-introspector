@@ -42,8 +42,8 @@ class CoverageProfile:
         self.covmap: Dict[str, List[Tuple[int, int]]] = dict()
         self.covreports: List[str] = list()
 
-        # branch_cov_map is dictionary to collect the branch coverage info 
-        # in the form of current_func:line_number as the key and true_hit and 
+        # branch_cov_map is dictionary to collect the branch coverage info
+        # in the form of current_func:line_number as the key and true_hit and
         # false_hit as a tuple value
         self.branch_cov_map: Dict[str, Tuple[int, int]] = dict()
 
@@ -163,26 +163,26 @@ def llvm_cov_load(target_dir, target_name=None) -> CoverageProfile:
                 #  |  Branch (81:7): [True: 1.2k, False: 0]
                 if curr_func and "Branch (" in line:
                     try:
-                        line_number = line.split('(')[1].split(':')[0]
+                        line_number = int(line.split('(')[1].split(':')[0])
                     except Exception:
                         continue
                     try:
-                        column_number = line.split(':')[1].split(')')[0]
+                        column_number = int(line.split(':')[1].split(')')[0])
                     except Exception:
                         continue
 
                     try:
                         true_hit = int(line.split('True:')[1].split(',')[0].replace(
-                                "k", "00").replace(
-                                    "M", "0000").replace(
-                                        ".", ""))
+                            "k", "00").replace(
+                                "M", "0000").replace(
+                                    ".", ""))
                     except Exception:
                         continue
                     try:
                         false_hit = int(line.split('False:')[1].replace("]", "").replace(
-                                "k", "00").replace(
-                                    "M", "0000").replace(
-                                        ".", ""))
+                            "k", "00").replace(
+                                "M", "0000").replace(
+                                    ".", ""))
                     except Exception:
                         continue
                     branch_string = f'{curr_func}:{line_number},{column_number}'

@@ -18,6 +18,7 @@ import abc
 import logging
 
 from typing import (
+    Any,
     Dict,
     List,
     Tuple,
@@ -51,6 +52,7 @@ class AnalysisInterface(abc.ABC):
 class BlockedSide(Enum):
     TRUE = 1
     FALSE = 2
+
 
 class FuzzBlocker:
     def __init__(self, side, comp, filename, b_line, s_line, fname) -> None:
@@ -252,7 +254,8 @@ def overlay_calltree_with_coverage(
 
     branch_blockers = detect_branch_level_blockers(profile, branch_profiles)
     logger.info(f"[+] found {len(branch_blockers)} branch blockers.")
-    #TODO: use these results appropriately ...
+    # TODO: use these results appropriately ...
+
 
 def analysis_coverage_runtime_analysis(
         profiles: List[fuzz_data_loader.FuzzerProfile],
@@ -287,9 +290,15 @@ def analysis_coverage_runtime_analysis(
             logger.error(f"Error getting hit-summary information for {funcname}")
     return functions_of_interest
 
-def detect_branch_level_blockers(fuzz_profile: fuzz_data_loader.FuzzerProfile, llvm_branch_profile: Dict[str, fuzz_data_loader.BranchProfile]) -> List[any]:
+
+def detect_branch_level_blockers(fuzz_profile: fuzz_data_loader.FuzzerProfile, llvm_branch_profile:
+                                 Dict[str, fuzz_data_loader.BranchProfile]) -> List[Any]:
     fuzz_blockers = []
 
+    if fuzz_profile.coverage is None:
+        logger.error(f"No coverage for fuzzer {fuzz_profile.binary_executable}."
+                     "Skipping branch blocker detection.")
+        return []
     coverage = fuzz_profile.coverage
     functions_profile = fuzz_profile.all_class_functions
     for branch_string in coverage.branch_cov_map:
@@ -302,28 +311,29 @@ def detect_branch_level_blockers(fuzz_profile: fuzz_data_loader.FuzzerProfile, l
         llvm_branch_string = f'{source_file_name}:{line_number},{column_number}'
 
         if llvm_branch_string not in llvm_branch_profile:
-            # TODO: there are cases that the column number of the branch is not consistent between 
+            # TODO: there are cases that the column number of the branch is not consistent between
             # llvm and coverage debug info. For now we skip those cases.
             # logger.info(f"[X][X] debug: failed to find branch profile for {llvm_branch_string}")
             continue
 
+        llvm_branch = llvm_branch_profile[llvm_branch_string]
         # For now this checks for not-taken branch sides, instead
         # it may become interesting to report less-taken side: like
         # the side that is taken less than 20% of the times
         if true_hitcount == 0 and false_hitcount != 0:
             blocked_side = BlockedSide.TRUE
-            blocked_complexity = llvm_branch_profile[llvm_branch_string].branch_true_side_complexity
-            side_line = llvm_branch_profile[llvm_branch_string].branch_true_side_line
+            blocked_complexity = llvm_branch.branch_true_side_complexity
+            side_line = llvm_branch.branch_true_side_line
             side_line_number = side_line.split(':')[1].split(',')[0]
         elif true_hitcount != 0 and false_hitcount == 0:
             blocked_side = BlockedSide.FALSE
-            blocked_complexity = llvm_branch_profile[llvm_branch_string].branch_false_side_complexity
-            side_line = llvm_branch_profile[llvm_branch_string].branch_false_side_line
+            blocked_complexity = llvm_branch.branch_false_side_complexity
+            side_line = llvm_branch.branch_false_side_line
             side_line_number = side_line.split(':')[1].split(',')[0]
 
         if blocked_side:
             fuzz_blockers.append(FuzzBlocker(blocked_side, blocked_complexity, source_file_name,
-                line_number, side_line_number, function_name))
+                                 line_number, side_line_number, function_name))
 
-    fuzz_blockers.sort(key=lambda x : x.blocked_complexity, reverse=True)
+    fuzz_blockers.sort(key=lambda x: x.blocked_complexity, reverse=True)
     return fuzz_blockers
