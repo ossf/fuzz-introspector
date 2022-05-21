@@ -87,6 +87,40 @@ class FunctionProfile:
         self.total_cyclomatic_complexity: int = 0
 
 
+class BranchProfile:
+    """
+    Class for storing information about conditional branches collected by LLVM pass.
+    """
+    def __init__(self) -> None:
+        self.branch_line = str()
+        self.branch_true_side_line = str()
+        self.branch_false_side_line = str()
+        self.branch_true_side_complexity = -1
+        self.branch_false_side_complexity = -1
+        self.branch_true_side_hitcount = -1
+        self.branch_false_side_hitcount = -1
+
+    def assign_from_yaml_elem(self, elem):
+        # This skips the path, as it may cause incosistancy vs coverage file names path
+        self.branch_line = elem['Branch String'].split('/')[-1]
+        self.branch_true_side_line = elem['Branch Sides']['TrueSide']
+        self.branch_false_side_line = elem['Branch Sides']['FalseSide']
+        self.branch_true_side_complexity = int(elem['Branch Sides']['TrueSideComp'])
+        self.branch_false_side_complexity = int(elem['Branch Sides']['FalseSideComp'])
+
+    def assign_from_coverage(self, true_count, false_count):
+        self.branch_true_side_hitcount = int(true_count)
+        self.branch_false_side_hitcount = int(false_count)
+
+    def dump(self):
+        """
+        For debugging purposes, may be removed later.
+        """
+        print(self.branch_line, self.branch_true_side_line, self.branch_false_side_line,
+              self.branch_true_side_complexity, self.branch_false_side_complexity,
+              self.branch_true_side_hitcount, self.branch_true_side_hitcount)
+
+
 class FuzzerProfile:
     """
     Class for storing information about a given Fuzzer.
@@ -388,6 +422,8 @@ class MergedProjectProfile:
                             continue
                         new_line_counts.append((ln1, max(ht1, ht2)))
                     self.runtime_coverage.covmap[func_name] = new_line_counts
+            # TODO (navidem): will need to merge branch coverages (branch_cov_map) if we need to
+            # identify blockers based on all fuzz targets coverage
         self.set_basefolder()
         logger.info("Completed creationg of merged profile")
 
@@ -629,3 +665,31 @@ def load_input_bugs(bug_file: str) -> List[InputBug]:
             continue
 
     return input_bugs
+
+
+def read_branch_data_file_to_profile(filename: str, BP_dict: dict):
+    """
+    Loads branch profiles from LLVM pass output yaml file.
+    """
+    logger.info(f" - loading {filename}")
+    if not os.path.isfile(filename):
+        return
+
+    data_dict_yaml = fuzz_utils.data_file_read_yaml(filename)
+    if data_dict_yaml is None:
+        return
+
+    for elem in data_dict_yaml:
+        new_branch = BranchProfile()
+        new_branch.assign_from_yaml_elem(elem)
+        BP_dict[new_branch.branch_line] = new_branch
+
+
+def load_all_branch_profiles(target_folder: str) -> Dict[str, BranchProfile]:
+    all_branch_profiles: Dict[str, BranchProfile] = dict()
+    data_files = fuzz_utils.get_all_files_in_tree_with_regex(target_folder,
+                                                             ".*branchProfile\.yaml$")
+    logger.info(f" - found {len(data_files)} branchProfiles to load")
+    for data_file in data_files:
+        read_branch_data_file_to_profile(data_file, all_branch_profiles)
+    return all_branch_profiles

@@ -42,6 +42,11 @@ class CoverageProfile:
         self.covmap: Dict[str, List[Tuple[int, int]]] = dict()
         self.covreports: List[str] = list()
 
+        # branch_cov_map is dictionary to collect the branch coverage info
+        # in the form of current_func:line_number as the key and true_hit and
+        # false_hit as a tuple value
+        self.branch_cov_map: Dict[str, Tuple[int, int]] = dict()
+
     def get_all_hit_functions(self) -> List[str]:
         # Hacky way to satisfy typing
         all_keys: List[str] = []
@@ -154,12 +159,39 @@ def llvm_cov_load(target_dir, target_name=None) -> CoverageProfile:
                         curr_func = line.replace(" ", "").replace(":", "")
                     curr_func = fuzz_utils.demangle_cpp_func(curr_func)
                     cp.covmap[curr_func] = list()
+                # This parses Branch cov info in the form of:
+                #  |  Branch (81:7): [True: 1.2k, False: 0]
+                if curr_func and "Branch (" in line:
+                    try:
+                        line_number = int(line.split('(')[1].split(':')[0])
+                    except Exception:
+                        continue
+                    try:
+                        column_number = int(line.split(':')[1].split(')')[0])
+                    except Exception:
+                        continue
 
+                    try:
+                        true_hit = int(line.split('True:')[1].split(',')[0].replace(
+                            "k", "00").replace(
+                                "M", "0000").replace(
+                                    ".", ""))
+                    except Exception:
+                        continue
+                    try:
+                        false_hit = int(line.split('False:')[1].replace("]", "").replace(
+                            "k", "00").replace(
+                                "M", "0000").replace(
+                                    ".", ""))
+                    except Exception:
+                        continue
+                    branch_string = f'{curr_func}:{line_number},{column_number}'
+                    cp.branch_cov_map[branch_string] = (true_hit, false_hit)
                 # Parse lines that signal specific line of code. These lines only
                 # offer after the function names parsed above.
                 # Example line:
                 #  "   83|  5.99M|    char *kldfj = (char*)malloc(123);\n"
-                if curr_func is not None and "|" in line:
+                elif curr_func is not None and "|" in line:
                     # Extract source code line number
                     try:
                         line_number = int(line.split("|")[0])

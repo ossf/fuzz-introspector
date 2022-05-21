@@ -13,19 +13,21 @@
  * limitations under the License.
  */
 
-#include "llvm/ADT/StringExtras.h"
 #include "llvm/Transforms/FuzzIntrospector/FuzzIntrospector.h"
-#include "llvm/IR/DebugInfoMetadata.h"
+
+#include "llvm/ADT/StringExtras.h"
 #include "llvm/IR/DebugInfo.h"
+#include "llvm/IR/DebugInfoMetadata.h"
 #include "llvm/IR/DebugLoc.h"
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/GlobalVariable.h"
-#include "llvm/IR/IntrinsicInst.h"
 #include "llvm/IR/InstIterator.h"
+#include "llvm/IR/IntrinsicInst.h"
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Operator.h"
+#include "llvm/InitializePasses.h"
 #include "llvm/Pass.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/FileSystem.h"
@@ -34,12 +36,8 @@
 #include "llvm/Support/YAMLParser.h"
 #include "llvm/Support/YAMLTraits.h"
 #include "llvm/Support/raw_ostream.h"
-#include "llvm/InitializePasses.h"
-//#include "llvm/Transforms/IPO/PassManagerBuilder.h"
-#include "llvm/Transforms/Utils/CallGraphUpdater.h"
-
-#include "llvm/InitializePasses.h"
-#include "llvm/Pass.h"
+// #include "llvm/Transforms/IPO/PassManagerBuilder.h"
+#include <unistd.h>
 
 #include <algorithm>
 #include <bitset>
@@ -50,8 +48,10 @@
 #include <iostream>
 #include <set>
 #include <vector>
-#include <unistd.h>
 
+#include "llvm/InitializePasses.h"
+#include "llvm/Pass.h"
+#include "llvm/Transforms/Utils/CallGraphUpdater.h"
 
 using namespace std;
 using namespace llvm;
@@ -113,6 +113,25 @@ typedef struct FuzzerModuleIntrospection {
       : FuzzerFileName(A), AllFunctions(B) {}
 } FuzzerModuleIntrospection;
 
+typedef struct BranchSidesComplexity {
+  std::string TrueSideString;
+  size_t TrueSideComp;
+  std::string FalseSideString;
+  size_t FalseSideComp;
+
+  BranchSidesComplexity()
+      : TrueSideString(), TrueSideComp(0), FalseSideString(), FalseSideComp(0) {
+  }
+  BranchSidesComplexity(std::string TS, size_t TC, std::string FS, size_t FC)
+      : TrueSideString(TS), TrueSideComp(TC), FalseSideString(FS),
+        FalseSideComp(FC) {}
+} BranchSidesComplexity;
+
+typedef struct BranchProfileEntry {
+  std::string BranchString;
+  BranchSidesComplexity BranchSidesComp;
+} BranchProfileEntry;
+
 // YAML mappings for outputting the typedefs above
 template <> struct yaml::MappingTraits<FuzzerFunctionWrapper> {
   static void mapping(IO &io, FuzzerFunctionWrapper &Func) {
@@ -156,6 +175,24 @@ template <> struct yaml::MappingTraits<FuzzerModuleIntrospection> {
     io.mapRequired("All functions", introspectorModule.AllFunctions);
   }
 };
+
+template <> struct yaml::MappingTraits<BranchSidesComplexity> {
+  static void mapping(IO &io, BranchSidesComplexity &branchSidesComp) {
+    io.mapRequired("TrueSide", branchSidesComp.TrueSideString);
+    io.mapRequired("TrueSideComp", branchSidesComp.TrueSideComp);
+    io.mapRequired("FalseSide", branchSidesComp.FalseSideString);
+    io.mapRequired("FalseSideComp", branchSidesComp.FalseSideComp);
+  }
+};
+
+template <> struct yaml::MappingTraits<BranchProfileEntry> {
+  static void mapping(IO &io, BranchProfileEntry &bpe) {
+    io.mapRequired("Branch String", bpe.BranchString);
+    io.mapRequired("Branch Sides", bpe.BranchSidesComp);
+  }
+};
+LLVM_YAML_IS_SEQUENCE_VECTOR(BranchProfileEntry)
+
 // end of YAML mappings
 
 namespace {
@@ -175,6 +212,8 @@ typedef struct CalltreeNode {
 } CalltreeNode;
 
 static FILE *OutputFile = stderr;
+
+std::map<const Function *, size_t> FuncComplexityMap;
 
 struct FuzzIntrospector : public ModulePass {
   static char ID;
@@ -220,13 +259,24 @@ struct FuzzIntrospector : public ModulePass {
   void logPrintf(int LogLevel, const char *Fmt, ...);
   bool runOnModule(Module &M) override;
 
+  void branchProfiler(Module &M);
+  SmallPtrSet<BasicBlock *, 32> findReachables(BasicBlock *);
+  std::pair<size_t, size_t> findComplexities(SmallPtrSet<BasicBlock *, 32>,
+                                             SmallPtrSet<BasicBlock *, 32>,
+                                             std::map<BasicBlock *, size_t>);
+  std::pair<std::string, std::string> getInsnDebugInfo(Instruction *I);
+  std::pair<std::string, std::string> getBBDebugInfo(BasicBlock *,
+                                                     DILocation *);
+  void writeOutMap(std::vector<BranchProfileEntry>, std::string);
+  size_t calculateBBComplexity(BasicBlock *);
 };
 } // end of anonymous namespace
 
+INITIALIZE_PASS_BEGIN(FuzzIntrospector, "fuzz-introspector",
+                      "fuzz-introspector pass", false, false)
 
-INITIALIZE_PASS_BEGIN(FuzzIntrospector, "fuzz-introspector", "fuzz-introspector pass", false, false)
-
-INITIALIZE_PASS_END(FuzzIntrospector, "fuzz-introspector", "fuzz-introspector pass", false, false)
+INITIALIZE_PASS_END(FuzzIntrospector, "fuzz-introspector",
+                    "fuzz-introspector pass", false, false)
 char FuzzIntrospector::ID = 0;
 
 Pass *llvm::createFuzzIntrospectorPass() { return new FuzzIntrospector(); }
@@ -236,12 +286,12 @@ void FuzzIntrospector::logPrintf(int LogLevel, const char *Fmt, ...) {
     return;
   }
   // Print time
-  struct tm * timeinfo;
+  struct tm *timeinfo;
   auto SC = std::chrono::system_clock::now();
   std::time_t end_time = std::chrono::system_clock::to_time_t(SC);
-  timeinfo = localtime (&end_time);
-  char buffer [80];
-  strftime (buffer,80,"%H:%M:%S",timeinfo);
+  timeinfo = localtime(&end_time);
+  char buffer[80];
+  strftime(buffer, 80, "%H:%M:%S", timeinfo);
   fprintf(OutputFile, "[Log level %d] : %s : ", LogLevel, buffer);
 
   // Print log statement
@@ -269,8 +319,7 @@ void FuzzIntrospector::readConfig() {
     if (line.find("FUNCS_TO_AVOID") != std::string::npos) {
       current = &ConfigFuncsToAvoid;
       shouldAnalyse = true;
-    }
-    else if (line.find("FILES_TO_AVOID") != std::string::npos) {
+    } else if (line.find("FILES_TO_AVOID") != std::string::npos) {
       current = &ConfigFilesToAvoid;
       shouldAnalyse = true;
     }
@@ -281,18 +330,20 @@ void FuzzIntrospector::makeDefaultConfig() {
   logPrintf(L2, "Using default configuration\n");
 
   std::vector<std::string> FuncsToAvoid = {
-    "^_ZNSt3",                       // mangled std::
-    "^_ZSt",                         // functions in std:: library
-    "^_ZNKSt",                       // std::__xxxbasic_string
-    "^_ZTv0_n24_NSt",                // Some virtual functions for basic streams, e.g. virtual thunk to std::__1::basic_ostream<char, std::__1::char_traits<char> >::~basic_ostream()
-    "^_ZN18FuzzedDataProvider",      // FuzzedDataProvider
-    "^_Zd",                          // "operator delete(...)"
-    "^_Zn",                          // operator new (...)"
-    "^free$",
-    "^malloc$",
-    "llvm[.]",
-    "sanitizer_cov",
-    "sancov[.]module",
+      "^_ZNSt3",        // mangled std::
+      "^_ZSt",          // functions in std:: library
+      "^_ZNKSt",        // std::__xxxbasic_string
+      "^_ZTv0_n24_NSt", // Some virtual functions for basic streams, e.g.
+                        // virtual thunk to std::__1::basic_ostream<char,
+                        // std::__1::char_traits<char> >::~basic_ostream()
+      "^_ZN18FuzzedDataProvider", // FuzzedDataProvider
+      "^_Zd",                     // "operator delete(...)"
+      "^_Zn",                     // operator new (...)"
+      "^free$",
+      "^malloc$",
+      "llvm[.]",
+      "sanitizer_cov",
+      "sancov[.]module",
   };
 
   std::vector<string> *current = &ConfigFuncsToAvoid;
@@ -330,16 +381,14 @@ bool FuzzIntrospector::runOnModule(Module &M) {
   // Extract and log reachability graph
   std::string nextCalltreeFile = getNextLogFile();
 
-  // Insert the logfile as a global variable. We use this to associate a given binary
-  // with a given fuzz report.
-  Constant *FuzzIntrospectorTag = ConstantDataArray::getString(M.getContext(), nextCalltreeFile, false);
-  llvm::GlobalVariable *GV = new GlobalVariable(
-                                      M,
-                                      FuzzIntrospectorTag->getType(),
-                                      true,
-                                      llvm::GlobalValue::LinkageTypes::ExternalLinkage,
-                                      FuzzIntrospectorTag,
-                                      "FuzzIntrospectorTag");
+  // Insert the logfile as a global variable. We use this to associate a given
+  // binary with a given fuzz report.
+  Constant *FuzzIntrospectorTag =
+      ConstantDataArray::getString(M.getContext(), nextCalltreeFile, false);
+  llvm::GlobalVariable *GV =
+      new GlobalVariable(M, FuzzIntrospectorTag->getType(), true,
+                         llvm::GlobalValue::LinkageTypes::ExternalLinkage,
+                         FuzzIntrospectorTag, "FuzzIntrospectorTag");
   GV->setInitializer(FuzzIntrospectorTag);
 
   extractFuzzerReachabilityGraph(M);
@@ -349,13 +398,17 @@ bool FuzzIntrospector::runOnModule(Module &M) {
   std::string nextYamlName = nextCalltreeFile + ".yaml";
   extractAllFunctionDetailsToYaml(nextYamlName, M);
 
+  if (getenv("FI_BRANCH_PROFILE")) {
+    branchProfiler(M);
+  }
+
   logPrintf(L1, "Finished introspector module\n");
   return true;
 }
 
 // Write details about all functions in the module to a YAML file
 void FuzzIntrospector::extractAllFunctionDetailsToYaml(std::string nextYamlName,
-                                                Module &M) {
+                                                       Module &M) {
   std::error_code EC;
   logPrintf(L1, "Logging next yaml tile to %s\n", nextYamlName.c_str());
 
@@ -385,18 +438,17 @@ FuzzerFunctionList FuzzIntrospector::wrapAllFunctions(Module &M) {
 }
 
 std::string FuzzIntrospector::GenRandom(const int len) {
-    static const char alphanum[] =
-        "0123456789"
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        "abcdefghijklmnopqrstuvwxyz";
-    std::string tmp_s;
-    tmp_s.reserve(len);
+  static const char alphanum[] = "0123456789"
+                                 "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                                 "abcdefghijklmnopqrstuvwxyz";
+  std::string tmp_s;
+  tmp_s.reserve(len);
 
-    for (int i = 0; i < len; ++i) {
-        tmp_s += alphanum[rand() % (sizeof(alphanum) - 1)];
-    }
-    
-    return tmp_s;
+  for (int i = 0; i < len; ++i) {
+    tmp_s += alphanum[rand() % (sizeof(alphanum) - 1)];
+  }
+
+  return tmp_s;
 }
 
 std::string FuzzIntrospector::getNextLogFile() {
@@ -408,14 +460,16 @@ std::string FuzzIntrospector::getNextLogFile() {
     prefix = std::string(getenv("FUZZINTRO_OUTDIR")) + "/";
   }
   do {
-    TargetLogName = formatv("{0}fuzzerLogFile-{1}-{2}.data", prefix, std::to_string(Idx++), RandomStr);
+    TargetLogName = formatv("{0}fuzzerLogFile-{1}-{2}.data", prefix,
+                            std::to_string(Idx++), RandomStr);
   } while (llvm::sys::fs::exists(TargetLogName));
 
-  // Add a UID to the logname. The reason we do this is when fuzzers are compiled in different
-  // locaitons, then the count may end up being the same for different log files at different locations.
-  // The problem is that this can be annoying when doing some scripting, e.g. in the oss-fuzz integration
-  // at some point. In reality it's not really fuzz introspectors responsibility, however,
-  // to make things a bit easier we just do it here.
+  // Add a UID to the logname. The reason we do this is when fuzzers are
+  // compiled in different locaitons, then the count may end up being the same
+  // for different log files at different locations. The problem is that this
+  // can be annoying when doing some scripting, e.g. in the oss-fuzz integration
+  // at some point. In reality it's not really fuzz introspectors
+  // responsibility, however, to make things a bit easier we just do it here.
 
   return TargetLogName;
 }
@@ -523,8 +577,8 @@ std::string FuzzIntrospector::resolveTypeName(Type *T) {
 // This should be changed to a proper data structure in the future,
 // for example something that we can attribute extensively
 // would be nice to have.
-void FuzzIntrospector::logCalltree(CalltreeNode *Calltree, std::ofstream *CalltreeOut,
-                            int Depth) {
+void FuzzIntrospector::logCalltree(CalltreeNode *Calltree,
+                                   std::ofstream *CalltreeOut, int Depth) {
   if (!Calltree) {
     return;
   }
@@ -537,7 +591,8 @@ void FuzzIntrospector::logCalltree(CalltreeNode *Calltree, std::ofstream *Calltr
   }
 }
 
-void FuzzIntrospector::dumpCalltree(CalltreeNode *Calltree, std::string TargetFile) {
+void FuzzIntrospector::dumpCalltree(CalltreeNode *Calltree,
+                                    std::string TargetFile) {
   std::ofstream CalltreeOut;
   CalltreeOut.open(TargetFile);
   CalltreeOut << "Call tree\n";
@@ -563,7 +618,8 @@ bool FuzzIntrospector::isFunctionPointerType(Type *T) {
   if (PointerType *pointerType = dyn_cast<PointerType>(T)) {
 #if LLVM_VERSION_MAJOR >= 15
     if (!pointerType->isOpaque()) {
-      return isFunctionPointerType(pointerType->getNonOpaquePointerElementType());
+      return isFunctionPointerType(
+          pointerType->getNonOpaquePointerElementType());
     }
 #else
     return isFunctionPointerType(pointerType->getPointerElementType());
@@ -572,8 +628,8 @@ bool FuzzIntrospector::isFunctionPointerType(Type *T) {
   return T->isFunctionTy();
 }
 
-void FuzzIntrospector::getFunctionsInAllNodes(std::vector<CalltreeNode *> *allNodes,
-                                       std::set<StringRef> *UniqueNames) {
+void FuzzIntrospector::getFunctionsInAllNodes(
+    std::vector<CalltreeNode *> *allNodes, std::set<StringRef> *UniqueNames) {
   for (auto PP : *allNodes) {
     UniqueNames->insert(PP->FunctionName);
   }
@@ -598,19 +654,25 @@ void FuzzIntrospector::getFunctionsInAllNodes(std::vector<CalltreeNode *> *allNo
 //   %this1 = load %class.dng_info*, %class.dng_info** %this.addr, align 8
 //
 //   [A virtual call based on a vtable resolution]
-//   %43 = bitcast %class.dng_info* %this1 to void (%class.dng_info*, %class.dng_host .....
-//   %vtable32 = load void (%class.dng_info*, %class.dng ..... d*, i64, i64, i32)*** %43, 
-//   %vfn33 = getelementptr inbounds void (%class.dng .... 4, i64, i32)** %vtable32, i64 8, !dbg !4560
-//   %44 = load void (%class.dng_info*, %class ...... i64, i64, i32)** %vfn33,
-//   call void %44(%class.dng_info* nonnull dereferenceable(332) %this1,  ...
+//   %43 = bitcast %class.dng_info* %this1 to void (%class.dng_info*,
+//   %class.dng_host ..... %vtable32 = load void (%class.dng_info*, %class.dng
+//   ..... d*, i64, i64, i32)*** %43, %vfn33 = getelementptr inbounds void
+//   (%class.dng .... 4, i64, i32)** %vtable32, i64 8, !dbg !4560 %44 = load
+//   void (%class.dng_info*, %class ...... i64, i64, i32)** %vfn33, call void
+//   %44(%class.dng_info* nonnull dereferenceable(332) %this1,  ...
 //
 //   with the following global variable declared:
-//   _ZTV8dng_info = { [15 x i8*] [i8* null, 
-//                                 i8* bitcast ({ i8*, i8* }* @_ZTI8dng_info to i8*), 
-//                                 i8* bitcast (void (%class.dng_info*)* @_ZN8dng_infoD1Ev to i8*), 
-//                                 i8* bitcast (void (%class.dng_info*)* @_ZN8dng_infoD0Ev to i8*), 
-//                                 i8* bitcast (void (%class.dng_info*, %class.dng_host*, %class.dng_stream*)* @_ZN8dng_info5ParseER8dng_hostR10dng_stream to i8*),
-//                                 i8* bitcast (void (%class.dng_info*, %class.dng_host*)* @_ZN8dng_info9PostParseER8dng_host to i8*),
+//   _ZTV8dng_info = { [15 x i8*] [i8* null,
+//                                 i8* bitcast ({ i8*, i8* }* @_ZTI8dng_info to
+//                                 i8*), i8* bitcast (void (%class.dng_info*)*
+//                                 @_ZN8dng_infoD1Ev to i8*), i8* bitcast (void
+//                                 (%class.dng_info*)* @_ZN8dng_infoD0Ev to
+//                                 i8*), i8* bitcast (void (%class.dng_info*,
+//                                 %class.dng_host*, %class.dng_stream*)*
+//                                 @_ZN8dng_info5ParseER8dng_hostR10dng_stream
+//                                 to i8*), i8* bitcast (void (%class.dng_info*,
+//                                 %class.dng_host*)*
+//                                 @_ZN8dng_info9PostParseER8dng_host to i8*),
 //                                 ...
 //                                 ...
 //   }
@@ -621,8 +683,8 @@ void FuzzIntrospector::getFunctionsInAllNodes(std::vector<CalltreeNode *> *allNo
 //   a global variable called "vtable for dng_info" where this name is mangled.
 //   If the global variable is found then get the right index in the vtable
 //   based on the index of the "getelementptr" instruction.
-Function *FuzzIntrospector::extractVTableIndirectCall(Function *F, Instruction &I) {
-
+Function *FuzzIntrospector::extractVTableIndirectCall(Function *F,
+                                                      Instruction &I) {
   Value *opnd = cast<CallInst>(&I)->getCalledOperand();
 
   LoadInst *LI = nullptr;
@@ -661,7 +723,6 @@ Function *FuzzIntrospector::extractVTableIndirectCall(Function *F, Instruction &
   }
 #endif
 
-
 #if LLVM_VERSION_MAJOR >= 15
   Type *v13 = pointerType3->getNonOpaquePointerElementType();
 #else
@@ -674,7 +735,8 @@ Function *FuzzIntrospector::extractVTableIndirectCall(Function *F, Instruction &
   StructType *SSM = cast<StructType>(v13);
   // Now we remove the "class." from the name, and then we have it.
   std::string originalTargetClass = SSM->getName().str().substr(6);
-  logPrintf(L3, "Shortened name that we can use for analysis: %s\n", originalTargetClass.c_str());
+  logPrintf(L3, "Shortened name that we can use for analysis: %s\n",
+            originalTargetClass.c_str());
 
   // We find the global variable corresponding to the vtable by
   // way of naming convetions. Specifically, we look for the
@@ -715,7 +777,8 @@ Function *FuzzIntrospector::extractVTableIndirectCall(Function *F, Instruction &
   // Extract the function pointer corresponding to the constant expression.
   Function *VTableTargetFunc = value2Func(FunctionPtrConstant);
   if (VTableTargetFunc != nullptr) {
-    logPrintf(L3, "The actual function name (from earlyCaught) %s\n", VTableTargetFunc->getName().str().c_str());
+    logPrintf(L3, "The actual function name (from earlyCaught) %s\n",
+              VTableTargetFunc->getName().str().c_str());
   }
   return VTableTargetFunc;
 }
@@ -776,34 +839,35 @@ void FuzzIntrospector::resolveOutgoingEdges(
       const llvm::DebugLoc &debugInfo = I.getDebugLoc();
       // Get the line number of the instruction.
       // We use this when visualizing the calltree.
-      //errs() << "\n";
-      //I.print(errs());
+      // errs() << "\n";
+      // I.print(errs());
       if (debugInfo) {
-        //errs() << "Printing debugLoc\n";
-        //debugInfo.print(errs());
-       // errs() << "\n---------------\n";
+        // errs() << "Printing debugLoc\n";
+        // debugInfo.print(errs());
+        // errs() << "\n---------------\n";
         if (llvm::DebugLoc InlinedAtDL = debugInfo.getInlinedAt()) {
-          //errs() << "Getting inlined line number\n";
+          // errs() << "Getting inlined line number\n";
           CSLinenumber = InlinedAtDL.getLine();
-        }
-        else {
-          //errs() << "Getting non-inlined line number\n";
+        } else {
+          // errs() << "Getting non-inlined line number\n";
           CSLinenumber = debugInfo.getLine();
         }
-        //errs() << "line number: " << CSLinenumber << "\n";
+        // errs() << "line number: " << CSLinenumber << "\n";
       }
 
       StringRef NormalisedDstName = removeDecSuffixFromName(CSElem->getName());
       CalltreeNode *Node = new CalltreeNode(
           NormalisedDstName, getFunctionFilename(CSElem), CSLinenumber, CSElem);
-      //errs() << "Inserting callsite " << NormalisedDstName.str() << " -- line number: " << CSLinenumber << " destination file " << getFunctionFilename(CSElem) << "\n";
+      // errs() << "Inserting callsite " << NormalisedDstName.str() << " -- line
+      // number: " << CSLinenumber << " destination file " <<
+      // getFunctionFilename(CSElem) << "\n";
       OutgoingEdges->push_back(Node);
     }
   }
 }
 
 bool FuzzIntrospector::isNodeInVector(CalltreeNode *Src,
-                               std::vector<CalltreeNode *> *Vec) {
+                                      std::vector<CalltreeNode *> *Vec) {
   for (CalltreeNode *TmpN : *Vec) {
     if (TmpN->LineNumber == Src->LineNumber &&
         TmpN->FileName.compare(Src->FileName) == 0) {
@@ -843,8 +907,9 @@ bool FuzzIntrospector::shouldAvoidFunction(Function *Func) {
 // Collects all functions reachable by the target function. This
 // is an approximation, e.g. we make few efforts into resolving
 // indirect calls.
-int FuzzIntrospector::extractCalltree(Function *F, CalltreeNode *Calltree,
-                               std::vector<CalltreeNode *> *allNodesInTree) {
+int FuzzIntrospector::extractCalltree(
+    Function *F, CalltreeNode *Calltree,
+    std::vector<CalltreeNode *> *allNodesInTree) {
   std::vector<CalltreeNode *> OutgoingEdges;
   resolveOutgoingEdges(F, &OutgoingEdges);
 
@@ -858,8 +923,8 @@ int FuzzIntrospector::extractCalltree(Function *F, CalltreeNode *Calltree,
     if (Calltree != nullptr) {
       Calltree->Outgoings.push_back(OutEdge);
     }
-    int OutEdgeDepth = 1 + extractCalltree(OutEdge->CallsiteDst, OutEdge,
-                                    allNodesInTree);
+    int OutEdgeDepth =
+        1 + extractCalltree(OutEdge->CallsiteDst, OutEdge, allNodesInTree);
     MaxDepthOfEdges = std::max(MaxDepthOfEdges, OutEdgeDepth);
   }
   return MaxDepthOfEdges;
@@ -961,55 +1026,61 @@ FuzzerFunctionWrapper FuzzIntrospector::wrapFunction(Function *F) {
         continue;
       }
 
-      //I.dump();
-      // Check if the operands refer to a global value and extract data.
+      // I.dump();
+      //  Check if the operands refer to a global value and extract data.
       for (int opndIdx = 0; opndIdx < I.getNumOperands(); opndIdx++) {
         Value *opndI = I.getOperand(opndIdx);
-        //opndI->dump();
-        // Is this a global variable?
+        // opndI->dump();
+        //  Is this a global variable?
         if (GlobalVariable *GV = dyn_cast<GlobalVariable>(opndI)) {
-          //GV->dump();
+          // GV->dump();
           if (GV->hasInitializer()) {
             Constant *GVI = GV->getInitializer();
             if (ConstantData *GD = dyn_cast<ConstantData>(GVI)) {
-              //logPrintf(L1, "ConstantData\n");
-              // Integer case
+              // logPrintf(L1, "ConstantData\n");
+              //  Integer case
               if (ConstantInt *GI = dyn_cast<ConstantInt>(GD)) {
                 logPrintf(L1, "Constant Int\n");
                 uint64_t zext_val = GI->getZExtValue();
                 errs() << "Zexct val: " << zext_val << "\n";
               }
-            }
-            else if (ConstantExpr *GE = dyn_cast<ConstantExpr>(GVI)) {
+            } else if (ConstantExpr *GE = dyn_cast<ConstantExpr>(GVI)) {
               logPrintf(L1, "Constant expr: %s\n", GE->getName().str().c_str());
-              //GE->dump();
-              if (GEPOperator* gepo = dyn_cast<GEPOperator>(GE)) {
+              // GE->dump();
+              if (GEPOperator *gepo = dyn_cast<GEPOperator>(GE)) {
                 errs() << "GEPOperator\n";
-                if (GlobalVariable* gv12 = dyn_cast<GlobalVariable>(gepo->getPointerOperand())) {
+                if (GlobalVariable *gv12 =
+                        dyn_cast<GlobalVariable>(gepo->getPointerOperand())) {
                   errs() << "GV - " << *gv12 << "\n";
                   if (gv12->hasInitializer()) {
                     errs() << "Has initializer\n";
                     Constant *C222 = gv12->getInitializer();
                     if (ConstantData *GD23 = dyn_cast<ConstantData>(C222)) {
                       errs() << "ConstantData\n";
-                      if (ConstantDataArray *Carr = dyn_cast<ConstantDataArray>(GD23)) {
-                        // This is constant data. We should be able to dump it down.
+                      if (ConstantDataArray *Carr =
+                              dyn_cast<ConstantDataArray>(GD23)) {
+                        // This is constant data. We should be able to dump it
+                        // down.
                         errs() << "ConstantArray. Type:\n";
-                        //Carr->getElementType()->dump();
-                        errs() << "Number of elements: " << Carr->getNumElements() << "\n";
+                        // Carr->getElementType()->dump();
+                        errs()
+                            << "Number of elements: " << Carr->getNumElements()
+                            << "\n";
                         Type *baseType = Carr->getElementType();
                         if (baseType->isIntegerTy()) {
-                            errs() << "Base types\n";
-                            for (int i = 0; i < Carr->getNumElements(); i++) {
-                              std::string s1 = toHex(Carr->getElementAsInteger(i));
-                              errs() << "0x" << s1 << "\n";
-                            }
+                          errs() << "Base types\n";
+                          for (int i = 0; i < Carr->getNumElements(); i++) {
+                            std::string s1 =
+                                toHex(Carr->getElementAsInteger(i));
+                            errs() << "0x" << s1 << "\n";
+                          }
                         }
                         if (Carr->isString()) {
-                          errs() << "The string: " << Carr->getAsString() << "\n";
-                          FuncWrap.ConstantsTouched.push_back(Carr->getAsString().str());
-                        }
-                        else {
+                          errs()
+                              << "The string: " << Carr->getAsString() << "\n";
+                          FuncWrap.ConstantsTouched.push_back(
+                              Carr->getAsString().str());
+                        } else {
                           errs() << "No this is not a string\n";
                         }
                       }
@@ -1037,6 +1108,8 @@ FuzzerFunctionWrapper FuzzIntrospector::wrapFunction(Function *F) {
     FuncWrap.CyclomaticComplexity = 1;
   }
 
+  FuncComplexityMap[F] = FuncWrap.CyclomaticComplexity;
+
   std::set<StringRef> FuncReaches;
   std::vector<CalltreeNode *> Nodes;
   // TODO: extractCalltree should not be run on all functions in this manner.
@@ -1056,11 +1129,12 @@ FuzzerFunctionWrapper FuzzIntrospector::wrapFunction(Function *F) {
 // linked, which is often used in projects to have "standalone-tests". In this
 // case we do not want to proceed to avoid having duplicate information.
 // There are cases where there will be a main function in the fuzzer, but which
-// is weakly defined (see details: https://github.com/ossf/fuzz-introspector/issues/66#issuecomment-1063475323).
+// is weakly defined (see details:
+// https://github.com/ossf/fuzz-introspector/issues/66#issuecomment-1063475323).
 // In these cases we check if the main function is empty and if there is an
-// LLVMFuzzerTestOneInput function, and, if so, determine that we should do analysis.
-// More heuristics may come in the future for determining if a linking operation
-// is for a fuzz target.
+// LLVMFuzzerTestOneInput function, and, if so, determine that we should do
+// analysis. More heuristics may come in the future for determining if a linking
+// operation is for a fuzz target.
 bool FuzzIntrospector::shouldRunIntrospector(Module &M) {
   Function *FuzzEntryFunc = M.getFunction("LLVMFuzzerTestOneInput");
   Function *MainFunc = M.getFunction("main");
@@ -1069,18 +1143,21 @@ bool FuzzIntrospector::shouldRunIntrospector(Module &M) {
     logPrintf(L1, "Main function filename: %s\n", MainFuncFilename.c_str());
 
     if (MainFunc->empty()) {
-      logPrintf(L1, "Main function is empty. Checking if there is a LLVMFuzzerTestOneInput\n");
+      logPrintf(L1, "Main function is empty. Checking if there is a "
+                    "LLVMFuzzerTestOneInput\n");
       if (FuzzEntryFunc != nullptr) {
-        logPrintf(L1, "There is an LLVMFuzzerTestOneInput function. Doing introspector analysis\n");
+        logPrintf(L1, "There is an LLVMFuzzerTestOneInput function. Doing "
+                      "introspector analysis\n");
         return true;
       }
     }
     logPrintf(L1, "Main function is non-empty\n");
-    logPrintf(L1, "This means a main function is in the source code rather in the "
-                  "libfuzzer "
-                  "library, and thus we do not care about it. We only want to "
-                  "study the "
-                  "actual fuzzers. Exiting this run.\n");
+    logPrintf(L1,
+              "This means a main function is in the source code rather in the "
+              "libfuzzer "
+              "library, and thus we do not care about it. We only want to "
+              "study the "
+              "actual fuzzers. Exiting this run.\n");
     return false;
   }
 
@@ -1109,7 +1186,8 @@ void FuzzIntrospector::extractFuzzerReachabilityGraph(Module &M) {
   // reach target code, and should be considered another fuzzer entrypoint.
 }
 
-PreservedAnalyses FuzzIntrospectorPass::run(Module &M, ModuleAnalysisManager &AM) {
+PreservedAnalyses FuzzIntrospectorPass::run(Module &M,
+                                            ModuleAnalysisManager &AM) {
   FuzzIntrospector Impl;
   bool Changed = Impl.runOnModule(M);
   if (!Changed)
@@ -1122,9 +1200,8 @@ PreservedAnalyses FuzzIntrospectorPass::run(Module &M, ModuleAnalysisManager &AM
 // LLVM currently does not support dynamically loading LTO passes. Thus,
 // we dont register it as a pass as we have hardcoded it into Clang instead.
 // Ref: https://reviews.llvm.org/D77704
-static RegisterPass<FuzzIntrospector> X("fuzz-introspector", "FuzzIntrospector Pass",
-                                 false,
-                                 false );
+static RegisterPass<FuzzIntrospector> X("fuzz-introspector", "FuzzIntrospector
+Pass", false, false );
 
 static RegisterStandardPasses
     Y(PassManagerBuilder::EP_FullLinkTimeOptimizationEarly,
@@ -1132,3 +1209,230 @@ static RegisterStandardPasses
         PM.add(new FuzzIntrospector());
       });
 */
+
+void FuzzIntrospector::branchProfiler(Module &M) {
+  std::string OutFileName = getNextLogFile() + ".branchProfile.yaml";
+  std::vector<BranchProfileEntry> OutMap;
+
+  logPrintf(L1, "We are in branch profiler.\n");
+
+  for (const auto &F : M) {
+    // Skip declarations or the functions that are not wrapped e.g. not
+    // reachable from entry point
+    if (F.isDeclaration() ||
+        FuncComplexityMap.find(&F) == FuncComplexityMap.end()) {
+      continue;
+    }
+    auto fName = F.getName().str();
+    logPrintf(L1, "We are in branch profiler for %s\n", fName.c_str());
+
+    // This map is function level
+    std::map<BasicBlock *, size_t> BBComplexityMap;
+
+    for (const auto &BB : F) {
+      auto TI = BB.getTerminator();
+      auto BI = dyn_cast<BranchInst>(TI);
+      if (BI && BI->isConditional()) {
+        auto Side0 = BI->getSuccessor(0);
+        auto Side1 = BI->getSuccessor(1);
+        auto BILoc = BI->getDebugLoc();
+
+        auto Reachable0 = findReachables(Side0);
+        auto Reachable1 = findReachables(Side1);
+
+        std::pair<size_t, size_t> Complexities =
+            findComplexities(Reachable0, Reachable1, BBComplexityMap);
+
+        auto Side0Comp = Complexities.first;
+        auto Side1Comp = Complexities.second;
+
+        std::pair<std::string, std::string> DbgExtracts;
+        DbgExtracts = getInsnDebugInfo((Instruction *)BI);
+        auto BRstring = DbgExtracts.first;
+        if (BRstring.length() == 0) {
+          continue; // Failed to get debug info
+        }
+        DbgExtracts = getBBDebugInfo(Side0, BILoc);
+        auto Side0String = DbgExtracts.first;
+        if (Side0String.length() == 0)
+          continue;
+        auto Side0Line = std::stoi(DbgExtracts.second);
+        DbgExtracts = getBBDebugInfo(Side1, BILoc);
+        auto Side1String = DbgExtracts.first;
+        if (Side1String.length() == 0)
+          continue;
+        auto Side1Line = std::stoi(DbgExtracts.second);
+
+        // Decide on the sides based on line number distance; This is how
+        // coverage reports the sides
+        std::string TrueSideString, FalseSideString;
+        size_t TrueSideCmp, FalseSideComp;
+        if (Side0Line > Side1Line) {
+          TrueSideString = Side1String;
+          TrueSideCmp = Side1Comp;
+          FalseSideString = Side0String;
+          FalseSideComp = Side0Comp;
+        } else {
+          TrueSideString = Side0String;
+          TrueSideCmp = Side0Comp;
+          FalseSideString = Side1String;
+          FalseSideComp = Side1Comp;
+        }
+
+        BranchSidesComplexity Entry_val(TrueSideString, TrueSideCmp,
+                                        FalseSideString, FalseSideComp);
+        BranchProfileEntry Entry = {BRstring, Entry_val};
+        OutMap.push_back(Entry);
+      }
+    }
+
+  } // End of loop over M
+  writeOutMap(OutMap, OutFileName);
+}
+
+// Simple intra-procedural CFG traversal
+SmallPtrSet<BasicBlock *, 32>
+FuzzIntrospector::findReachables(BasicBlock *Src) {
+  SmallVector<BasicBlock *, 32> Worklist;
+  SmallPtrSet<BasicBlock *, 32> AllReachables;
+
+  Worklist.push_back(Src);
+
+  while (!Worklist.empty()) {
+    auto CurrBB = Worklist.pop_back_val();
+
+    // This adds to the set and returns false if already was in the set: avoids
+    // loop
+    if (!AllReachables.insert(CurrBB).second) {
+      continue;
+    }
+
+    if (auto TI = CurrBB->getTerminator()) {
+      for (unsigned i = 0, NSucc = TI->getNumSuccessors(); i < NSucc; ++i) {
+        Worklist.push_back(TI->getSuccessor(i));
+      }
+    }
+  }
+
+  return AllReachables;
+}
+
+// Calculate complexities reachable from each reachable unique BBs
+// TODO: for now, this function just accounts for complexity of callee functions
+// from the reachable BBs. We can do better by carefully calculating complexity
+// of the reachable regions of the code i.e. intra-procedural complexity by
+// counting the number of unique edges and nodes for each reachable set.
+std::pair<size_t, size_t> FuzzIntrospector::findComplexities(
+    SmallPtrSet<BasicBlock *, 32> TrueReachable,
+    SmallPtrSet<BasicBlock *, 32> FalseReachable,
+    std::map<BasicBlock *, size_t> BBComplexityMap) {
+  size_t TrueComp = 0, FalseComp = 0;
+
+  // iterate and skip those reachable by false side
+  for (auto BB : TrueReachable) {
+    if (FalseReachable.find(BB) != FalseReachable.end()) {
+      continue;
+    }
+
+    if (BBComplexityMap.find(BB) == BBComplexityMap.end()) {
+      BBComplexityMap[BB] = calculateBBComplexity(BB);
+    }
+    TrueComp += BBComplexityMap[BB];
+  }
+
+  // iterate and skip those reachable by true side
+  for (auto BB : FalseReachable) {
+    if (TrueReachable.find(BB) != TrueReachable.end()) {
+      continue;
+    }
+
+    if (BBComplexityMap.find(BB) == BBComplexityMap.end()) {
+      BBComplexityMap[BB] = calculateBBComplexity(BB);
+    }
+    FalseComp += BBComplexityMap[BB];
+  }
+
+  return make_pair(TrueComp, FalseComp);
+}
+
+std::pair<std::string, std::string>
+FuzzIntrospector::getInsnDebugInfo(Instruction *I) {
+  std::string Ret_string = "", Ret_line = "";
+
+  DILocation *Loc = I->getDebugLoc();
+  if (Loc != NULL) {
+    Ret_line = std::to_string(Loc->getLine());
+    Ret_string = Loc->getFilename().str() + +":" + Ret_line + "," +
+                 std::to_string(Loc->getColumn());
+  } else {
+    logPrintf(L1, "No debug info!!\n");
+  }
+
+  return make_pair(Ret_string, Ret_line);
+}
+
+std::pair<std::string, std::string>
+FuzzIntrospector::getBBDebugInfo(BasicBlock *BB, DILocation *PrevLoc) {
+  std::pair<std::string, std::string> Result = make_pair("", "");
+
+  BasicBlock *CurrBB = BB;
+  BranchInst *CurrBI;
+  Instruction *CurrTI, *CurrI;
+  DILocation *CurrLoc;
+
+  do {
+    CurrTI = CurrBB->getTerminator();
+    CurrI = CurrBB->getFirstNonPHIOrDbgOrLifetime(true);
+    if (CurrI == nullptr)
+      break;
+    CurrLoc = CurrI->getDebugLoc();
+    CurrBI = dyn_cast<BranchInst>(CurrTI);
+    if (CurrBI && !CurrBI->isConditional()) {
+      CurrBB = CurrBI->getSuccessor(0);
+    } else
+      break;
+  } while (CurrLoc == PrevLoc);
+
+  if (CurrI)
+    Result = getInsnDebugInfo(CurrI);
+
+  return Result;
+}
+
+void FuzzIntrospector::writeOutMap(std::vector<BranchProfileEntry> OutMap,
+                                   std::string FileName) {
+  std::error_code EC;
+  logPrintf(L1, "Logging branchProfile to %s\n", FileName.c_str());
+
+  auto YamlStream = std::make_unique<raw_fd_ostream>(
+      FileName, EC, llvm::sys::fs::OpenFlags::OF_None);
+  yaml::Output YamlOut(*YamlStream);
+
+  YamlOut << OutMap;
+}
+
+// Return cyclomatic complexity of called functions in the BB
+size_t FuzzIntrospector::calculateBBComplexity(BasicBlock *BB) {
+  size_t CC = 0;
+
+  for (auto &I : *BB) {
+    // Skip debugging insns
+    if (isa<DbgInfoIntrinsic>(&I)) {
+      continue;
+    }
+
+    if (isa<CallInst>(I) || isa<InvokeInst>(I)) {
+      Function *Callee;
+      if (auto CI = dyn_cast<CallInst>(&I)) {
+        Callee = value2Func(CI->getCalledOperand());
+      } else if (auto II = dyn_cast<InvokeInst>(&I)) {
+        Callee = value2Func(II->getCalledOperand());
+      }
+      if (FuncComplexityMap.find(Callee) != FuncComplexityMap.end()) {
+        CC += FuncComplexityMap[Callee];
+      }
+    }
+  }
+
+  return CC;
+}
