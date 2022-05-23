@@ -35,7 +35,7 @@ Introspector report: [link](https://oss-fuzz-introspector.storage.googleapis.com
 Fuzz Introspector provides a [call-tree overview](https://oss-fuzz-introspector.storage.googleapis.com/jsonnet/inspector-report/20220315/fuzz_report.html#call_tree_0) for each fuzz target (Figure 2).
 This [overview](https://github.com/ossf/fuzz-introspector/blob/main/doc/Glossary.md#call-tree-overview)
 shows the fuzz target coverage by color coding the call instructions. The red shaded areas are where the target fails to cover.
-As Figure 1 shows, jsonnet fuzz target fails to cover a big chunk of code.
+As Figure 2 shows, jsonnet fuzz target fails to cover a big chunk of code.
 
 ![image2](https://user-images.githubusercontent.com/759062/165666474-6d631019-8cb5-42ae-8e5b-94d8c3dbbc73.png)
 
