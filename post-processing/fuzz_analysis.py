@@ -54,7 +54,7 @@ class BlockedSide(Enum):
     FALSE = 2
 
 
-class FuzzBlocker:
+class FuzzBranchBlocker:
     def __init__(self, side, comp, filename, b_line, s_line, fname) -> None:
         self.blocked_side = side
         self.blocked_complexity = comp
@@ -255,6 +255,19 @@ def overlay_calltree_with_coverage(
     branch_blockers = detect_branch_level_blockers(profile, branch_profiles)
     logger.info(f"[+] found {len(branch_blockers)} branch blockers.")
     # TODO: use these results appropriately ...
+    branch_blockers_list = []
+    for br_blocker in branch_blockers[:10]:
+        branch_blockers_list.append(
+            {
+                'blocked_side': repr(br_blocker.blocked_side),
+                'blocked_complexity': br_blocker.blocked_complexity,
+                'source_file_name': br_blocker.source_file_name,
+                'branch_line_number': br_blocker.branch_line_number,
+                'blocked_side_line_numder': br_blocker.blocked_side_line_numder,
+                'function_name': br_blocker.function_name
+            }
+        )
+    fuzz_utils.write_to_summary_file(profile.get_key(), 'branch_blockers', branch_blockers_list)
 
 
 def analysis_coverage_runtime_analysis(
@@ -323,17 +336,17 @@ def detect_branch_level_blockers(fuzz_profile: fuzz_data_loader.FuzzerProfile, l
         if true_hitcount == 0 and false_hitcount != 0:
             blocked_side = BlockedSide.TRUE
             blocked_complexity = llvm_branch.branch_true_side_complexity
-            side_line = llvm_branch.branch_true_side_line
+            side_line = llvm_branch.branch_true_side_pos
             side_line_number = side_line.split(':')[1].split(',')[0]
         elif true_hitcount != 0 and false_hitcount == 0:
             blocked_side = BlockedSide.FALSE
             blocked_complexity = llvm_branch.branch_false_side_complexity
-            side_line = llvm_branch.branch_false_side_line
+            side_line = llvm_branch.branch_false_side_pos
             side_line_number = side_line.split(':')[1].split(',')[0]
 
         if blocked_side:
-            fuzz_blockers.append(FuzzBlocker(blocked_side, blocked_complexity, source_file_name,
-                                 line_number, side_line_number, function_name))
+            fuzz_blockers.append(FuzzBranchBlocker(blocked_side, blocked_complexity,
+                                 source_file_name, line_number, side_line_number, function_name))
 
     fuzz_blockers.sort(key=lambda x: x.blocked_complexity, reverse=True)
     return fuzz_blockers
