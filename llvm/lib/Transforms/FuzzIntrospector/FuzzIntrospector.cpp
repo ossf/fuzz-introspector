@@ -127,9 +127,16 @@ typedef struct BranchSidesComplexity {
         FalseSideComp(FC) {}
 } BranchSidesComplexity;
 
+typedef struct BranchSides {
+  std::string TrueSideString;
+  std::vector<StringRef> TrueSideFuncs;
+  std::string FalseSideString;
+  std::vector<StringRef> FalseSideFuncs;
+} BranchSides;
+
 typedef struct BranchProfileEntry {
   std::string BranchString;
-  BranchSidesComplexity BranchSidesComp;
+  BranchSides BranchSidesInfo;
 } BranchProfileEntry;
 
 // YAML mappings for outputting the typedefs above
@@ -185,10 +192,19 @@ template <> struct yaml::MappingTraits<BranchSidesComplexity> {
   }
 };
 
+template <> struct yaml::MappingTraits<BranchSides> {
+  static void mapping(IO &io, BranchSides &branchSides) {
+    io.mapRequired("TrueSide", branchSides.TrueSideString);
+    io.mapRequired("TrueSideFuncs", branchSides.TrueSideFuncs);
+    io.mapRequired("FalseSide", branchSides.FalseSideString);
+    io.mapRequired("FalseSideFuncs", branchSides.FalseSideFuncs);
+  }
+};
+
 template <> struct yaml::MappingTraits<BranchProfileEntry> {
   static void mapping(IO &io, BranchProfileEntry &bpe) {
     io.mapRequired("Branch String", bpe.BranchString);
-    io.mapRequired("Branch Sides", bpe.BranchSidesComp);
+    io.mapRequired("Branch Sides", bpe.BranchSidesInfo);
   }
 };
 LLVM_YAML_IS_SEQUENCE_VECTOR(BranchProfileEntry)
@@ -261,6 +277,7 @@ struct FuzzIntrospector : public ModulePass {
 
   void branchProfiler(Module &M);
   SmallPtrSet<BasicBlock *, 32> findReachables(BasicBlock *);
+  vector<StringRef> findReachableFuncs(BasicBlock *);
   std::pair<size_t, size_t> findComplexities(SmallPtrSet<BasicBlock *, 32>,
                                              SmallPtrSet<BasicBlock *, 32>,
                                              std::map<BasicBlock *, size_t>);
@@ -1237,51 +1254,52 @@ void FuzzIntrospector::branchProfiler(Module &M) {
         auto Side1 = BI->getSuccessor(1);
         auto BILoc = BI->getDebugLoc();
 
-        auto Reachable0 = findReachables(Side0);
-        auto Reachable1 = findReachables(Side1);
+        auto ReachableFuncs0 = findReachableFuncs(Side0);
+        auto ReachableFuncs1 = findReachableFuncs(Side1);
 
-        std::pair<size_t, size_t> Complexities =
-            findComplexities(Reachable0, Reachable1, BBComplexityMap);
+        // std::pair<size_t, size_t> Complexities =
+        //     findComplexities(Reachable0, Reachable1, BBComplexityMap);
 
-        auto Side0Comp = Complexities.first;
-        auto Side1Comp = Complexities.second;
+        // auto Side0Comp = Complexities.first;
+        // auto Side1Comp = Complexities.second;
 
         std::pair<std::string, std::string> DbgExtracts;
         DbgExtracts = getInsnDebugInfo((Instruction *)BI);
-        auto BRstring = DbgExtracts.first;
+        std::string BRstring = DbgExtracts.first;
         if (BRstring.length() == 0) {
           continue; // Failed to get debug info
         }
         DbgExtracts = getBBDebugInfo(Side0, BILoc);
-        auto Side0String = DbgExtracts.first;
+        std::string Side0String = DbgExtracts.first;
         if (Side0String.length() == 0)
           continue;
         auto Side0Line = std::stoi(DbgExtracts.second);
         DbgExtracts = getBBDebugInfo(Side1, BILoc);
-        auto Side1String = DbgExtracts.first;
+        std::string Side1String = DbgExtracts.first;
         if (Side1String.length() == 0)
           continue;
         auto Side1Line = std::stoi(DbgExtracts.second);
 
-        // Decide on the sides based on line number distance; This is how
-        // coverage reports the sides
+        // Decide on the sides based on line number distance
         std::string TrueSideString, FalseSideString;
-        size_t TrueSideCmp, FalseSideComp;
+        std::vector<StringRef> *TrueSideFuncs, *FalseSideFuncs;
         if (Side0Line > Side1Line) {
           TrueSideString = Side1String;
-          TrueSideCmp = Side1Comp;
+          TrueSideFuncs = &ReachableFuncs1;
           FalseSideString = Side0String;
-          FalseSideComp = Side0Comp;
+          FalseSideFuncs = &ReachableFuncs0;
         } else {
           TrueSideString = Side0String;
-          TrueSideCmp = Side0Comp;
+          TrueSideFuncs = &ReachableFuncs0;
           FalseSideString = Side1String;
-          FalseSideComp = Side1Comp;
+          FalseSideFuncs = &ReachableFuncs1;
         }
 
-        BranchSidesComplexity Entry_val(TrueSideString, TrueSideCmp,
-                                        FalseSideString, FalseSideComp);
-        BranchProfileEntry Entry = {BRstring, Entry_val};
+        // BranchSidesComplexity Entry_val(TrueSideString, *TrueSideFuncs,
+        //                                 FalseSideString, *FalseSideFuncs);
+        BranchSides BranchSidesVal = {TrueSideString, *TrueSideFuncs,
+                                      FalseSideString, *FalseSideFuncs};
+        BranchProfileEntry Entry = {BRstring, BranchSidesVal};
         OutMap.push_back(Entry);
       }
     }
@@ -1315,6 +1333,52 @@ FuzzIntrospector::findReachables(BasicBlock *Src) {
   }
 
   return AllReachables;
+}
+
+vector<StringRef> FuzzIntrospector::findReachableFuncs(BasicBlock *Src) {
+  SmallVector<BasicBlock *, 32> Worklist;
+  SmallPtrSet<BasicBlock *, 32> AllReachables;
+  vector<StringRef> ReachedFuncs;
+
+  Worklist.push_back(Src);
+
+  while (!Worklist.empty()) {
+    auto CurrBB = Worklist.pop_back_val();
+
+    // This adds to the set and returns false if already was in the set: avoids
+    // loop
+    if (!AllReachables.insert(CurrBB).second) {
+      continue;
+    }
+
+    for (auto &I: *CurrBB) {
+      // Skip debugging insns
+      if (isa<DbgInfoIntrinsic>(&I)) {
+        continue;
+      }
+
+      if (isa<CallInst>(I) || isa<InvokeInst>(I)) {
+        Function *Callee = nullptr;
+        if (auto CI = dyn_cast<CallInst>(&I)) {
+          Callee = value2Func(CI->getCalledOperand());
+        } else if (auto II = dyn_cast<InvokeInst>(&I)) {
+          Callee = value2Func(II->getCalledOperand());
+        }
+
+        if (Callee) {
+          ReachedFuncs.push_back(Callee->getName());
+        }
+      }
+    }
+
+    if (auto TI = CurrBB->getTerminator()) {
+      for (unsigned i = 0, NSucc = TI->getNumSuccessors(); i < NSucc; ++i) {
+        Worklist.push_back(TI->getSuccessor(i));
+      }
+    }
+  }
+
+  return ReachedFuncs;
 }
 
 // Calculate complexities reachable from each reachable unique BBs
