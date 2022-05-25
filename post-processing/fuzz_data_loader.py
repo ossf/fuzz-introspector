@@ -92,9 +92,9 @@ class BranchProfile:
     Class for storing information about conditional branches collected by LLVM pass.
     """
     def __init__(self) -> None:
-        self.branch_line = str()
-        self.branch_true_side_line = str()
-        self.branch_false_side_line = str()
+        self.branch_pos = str()
+        self.branch_true_side_pos = str()
+        self.branch_false_side_pos = str()
         self.branch_true_side_complexity = -1
         self.branch_false_side_complexity = -1
         self.branch_true_side_hitcount = -1
@@ -102,9 +102,9 @@ class BranchProfile:
 
     def assign_from_yaml_elem(self, elem):
         # This skips the path, as it may cause incosistancy vs coverage file names path
-        self.branch_line = elem['Branch String'].split('/')[-1]
-        self.branch_true_side_line = elem['Branch Sides']['TrueSide']
-        self.branch_false_side_line = elem['Branch Sides']['FalseSide']
+        self.branch_pos = elem['Branch String'].split('/')[-1]
+        self.branch_true_side_pos = elem['Branch Sides']['TrueSide']
+        self.branch_false_side_pos = elem['Branch Sides']['FalseSide']
         self.branch_true_side_complexity = int(elem['Branch Sides']['TrueSideComp'])
         self.branch_false_side_complexity = int(elem['Branch Sides']['FalseSideComp'])
 
@@ -116,7 +116,7 @@ class BranchProfile:
         """
         For debugging purposes, may be removed later.
         """
-        print(self.branch_line, self.branch_true_side_line, self.branch_false_side_line,
+        print(self.branch_pos, self.branch_true_side_pos, self.branch_false_side_pos,
               self.branch_true_side_complexity, self.branch_false_side_complexity,
               self.branch_true_side_hitcount, self.branch_true_side_hitcount)
 
@@ -667,7 +667,7 @@ def load_input_bugs(bug_file: str) -> List[InputBug]:
     return input_bugs
 
 
-def read_branch_data_file_to_profile(filename: str, BP_dict: dict):
+def read_branch_data_file_to_profile(filename: str, bp_dict: dict):
     """
     Loads branch profiles from LLVM pass output yaml file.
     """
@@ -682,7 +682,7 @@ def read_branch_data_file_to_profile(filename: str, BP_dict: dict):
     for elem in data_dict_yaml:
         new_branch = BranchProfile()
         new_branch.assign_from_yaml_elem(elem)
-        BP_dict[new_branch.branch_line] = new_branch
+        bp_dict[new_branch.branch_pos] = new_branch
 
 
 def load_all_branch_profiles(target_folder: str) -> Dict[str, BranchProfile]:
