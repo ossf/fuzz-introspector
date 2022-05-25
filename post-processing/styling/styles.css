@@ -615,9 +615,8 @@ input[type="checkbox"] {
 	border-bottom: 7px solid purple;
 }
 .coverage-line-inner.expand-symbol::after {
-  content: "+";
-  background-color: #d000fa;
-  color: white;
+	content:url('data:image/svg+xml,<svg width="1em" height="1em" fill="gray" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M15.7 11.3l-6-6c-0.4-0.4-1-0.4-1.4 0s-0.4 1 0 1.4l5.3 5.3-5.3 5.3c-0.4 0.4-0.4 1 0 1.4 0.2 0.2 0.4 0.3 0.7 0.3s0.5-0.1 0.7-0.3l6-6c0.4-0.4 0.4-1 0-1.4z"></path></svg>');
+  color: #999fa8;
   font-weight: bold;
   position: absolute;
   top: 0;
@@ -629,11 +628,11 @@ input[type="checkbox"] {
   align-items: center;
   justify-content: center;
   border-radius: 20px;
+  /*transform: scale(0.02);*/
 }
 .coverage-line-inner.collapse-symbol::after {
-  content: "-";
-  background-color: #d000fa;
-  color: white;
+	content:url('data:image/svg+xml,<svg width="1em" height="1em" fill="gray" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M15.7 11.3l-6-6c-0.4-0.4-1-0.4-1.4 0s-0.4 1 0 1.4l5.3 5.3-5.3 5.3c-0.4 0.4-0.4 1 0 1.4 0.2 0.2 0.4 0.3 0.7 0.3s0.5-0.1 0.7-0.3l6-6c0.4-0.4 0.4-1 0-1.4z"></path></svg>');
+  color: #999fa8;
   font-weight: bold;
   position: absolute;
   top: 0;
@@ -645,6 +644,7 @@ input[type="checkbox"] {
   align-items: center;
   justify-content: center;
   border-radius: 20px;
+  transform: rotate(90deg);
 }
 .fuzz-blocker-info-btn {
 	position: absolute;
