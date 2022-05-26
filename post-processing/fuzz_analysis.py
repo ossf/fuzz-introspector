@@ -304,10 +304,12 @@ def analysis_coverage_runtime_analysis(
             logger.error(f"Error getting hit-summary information for {funcname}")
     return functions_of_interest
 
+
 def update_branch_complexities(branch_profiles: Dict[str, fuzz_data_loader.BranchProfile],
                                all_functions: Dict[str, fuzz_data_loader.FunctionProfile]) -> None:
     """
-    Traverse every branch profile and update the side complexities based on reached funcs complexity.
+    Traverse every branch profile and update the side complexities based on reached funcs
+    complexity.
     """
     for branch_k, branch in branch_profiles.items():
         branch.branch_false_side_complexity = 0
@@ -320,6 +322,7 @@ def update_branch_complexities(branch_profiles: Dict[str, fuzz_data_loader.Branc
             # Same as above
             if fn in all_functions and all_functions[fn].hitcount == 0:
                 branch.branch_true_side_complexity += all_functions[fn].total_cyclomatic_complexity
+
 
 def detect_branch_level_blockers(fuzz_profile: fuzz_data_loader.FuzzerProfile, llvm_branch_profile:
                                  Dict[str, fuzz_data_loader.BranchProfile]) -> List[Any]:
