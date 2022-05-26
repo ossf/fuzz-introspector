@@ -99,8 +99,8 @@ class BranchProfile:
         self.branch_false_side_complexity = -1
         self.branch_true_side_hitcount = -1
         self.branch_false_side_hitcount = -1
-        self.branch_true_side_funcs : List[str] = []
-        self.branch_false_side_funcs : List[str] = []
+        self.branch_true_side_funcs: List[str] = []
+        self.branch_false_side_funcs: List[str] = []
 
     def assign_from_yaml_elem(self, elem):
         # This skips the path, as it may cause incosistancy vs coverage file names path
