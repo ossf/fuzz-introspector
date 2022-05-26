@@ -88,8 +88,7 @@ def overlay_calltree_with_coverage(
         profile: fuzz_data_loader.FuzzerProfile,
         project_profile: fuzz_data_loader.MergedProjectProfile,
         coverage_url: str,
-        basefolder: str,
-        branch_profiles: Dict[str, fuzz_data_loader.BranchProfile]) -> None:
+        basefolder: str) -> None:
     # We use the callstack to keep track of all function parents. We need this
     # when looking up if a callsite was hit or not. This is because the coverage
     # information about a callsite is located in coverage data of the function
@@ -252,7 +251,8 @@ def overlay_calltree_with_coverage(
         n1.cov_forward_reds = forward_red
         n1.cov_largest_blocked_func = largest_blocked_name
 
-    branch_blockers = detect_branch_level_blockers(profile, branch_profiles)
+    update_branch_complexities(profile.all_class_functions)
+    branch_blockers = detect_branch_level_blockers(profile)
     logger.info(f"[+] found {len(branch_blockers)} branch blockers.")
     # TODO: use these results appropriately ...
     branch_blockers_list = []
@@ -304,8 +304,29 @@ def analysis_coverage_runtime_analysis(
     return functions_of_interest
 
 
-def detect_branch_level_blockers(fuzz_profile: fuzz_data_loader.FuzzerProfile, llvm_branch_profile:
-                                 Dict[str, fuzz_data_loader.BranchProfile]) -> List[Any]:
+def update_branch_complexities(all_functions: Dict[str, fuzz_data_loader.FunctionProfile]) -> None:
+    """
+    Traverse every branch profile and update the side complexities based on reached funcs
+    complexity.
+    """
+    # for branch_k, branch in branch_profiles.items():
+    for func_k, func in all_functions.items():
+        for branch_k, branch in func.branch_profiles.items():
+            branch.branch_false_side_complexity = 0
+            branch.branch_true_side_complexity = 0
+            for fn in branch.branch_false_side_funcs:
+                # Accoounts for non-covered functions
+                if fn in all_functions and all_functions[fn].hitcount == 0:
+                    branch.branch_false_side_complexity += (
+                        all_functions[fn].total_cyclomatic_complexity)
+            for fn in branch.branch_true_side_funcs:
+                # Same as above
+                if fn in all_functions and all_functions[fn].hitcount == 0:
+                    branch.branch_true_side_complexity += (
+                        all_functions[fn].total_cyclomatic_complexity)
+
+
+def detect_branch_level_blockers(fuzz_profile: fuzz_data_loader.FuzzerProfile) -> List[Any]:
     fuzz_blockers = []
 
     if fuzz_profile.coverage is None:
@@ -314,11 +335,14 @@ def detect_branch_level_blockers(fuzz_profile: fuzz_data_loader.FuzzerProfile, l
         return []
     coverage = fuzz_profile.coverage
     functions_profile = fuzz_profile.all_class_functions
+
     for branch_string in coverage.branch_cov_map:
         blocked_side = None
         true_hitcount, false_hitcount = coverage.branch_cov_map[branch_string]
         function_name, rest_string = branch_string.split(':')
         line_number, column_number = rest_string.split(',')
+
+        llvm_branch_profile = functions_profile[function_name].branch_profiles
         # Just extract the file name and skip the path
         source_file_name = functions_profile[function_name].function_source_file.split('/')[-1]
         llvm_branch_string = f'{source_file_name}:{line_number},{column_number}'

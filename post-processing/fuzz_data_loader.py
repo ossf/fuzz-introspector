@@ -57,6 +57,42 @@ class InputBug:
         self.bug_type = bug_type
 
 
+class BranchProfile:
+    """
+    Class for storing information about conditional branches collected by LLVM pass.
+    """
+    def __init__(self) -> None:
+        self.branch_pos = str()
+        self.branch_true_side_pos = str()
+        self.branch_false_side_pos = str()
+        self.branch_true_side_complexity = -1
+        self.branch_false_side_complexity = -1
+        self.branch_true_side_hitcount = -1
+        self.branch_false_side_hitcount = -1
+        self.branch_true_side_funcs: List[str] = []
+        self.branch_false_side_funcs: List[str] = []
+
+    def assign_from_yaml_elem(self, elem):
+        # This skips the path, as it may cause incosistancy vs coverage file names path
+        self.branch_pos = elem['Branch String'].split('/')[-1]
+        self.branch_true_side_pos = elem['Branch Sides']['TrueSide']
+        self.branch_false_side_pos = elem['Branch Sides']['FalseSide']
+        self.branch_true_side_funcs = elem['Branch Sides']['TrueSideFuncs']
+        self.branch_false_side_complexity = elem['Branch Sides']['FalseSideFuncs']
+
+    def assign_from_coverage(self, true_count, false_count):
+        self.branch_true_side_hitcount = int(true_count)
+        self.branch_false_side_hitcount = int(false_count)
+
+    def dump(self):
+        """
+        For debugging purposes, may be removed later.
+        """
+        print(self.branch_pos, self.branch_true_side_pos, self.branch_false_side_pos,
+              self.branch_true_side_complexity, self.branch_false_side_complexity,
+              self.branch_true_side_hitcount, self.branch_true_side_hitcount)
+
+
 class FunctionProfile:
     """
     Class for storing information about a given Function
@@ -78,6 +114,7 @@ class FunctionProfile:
         self.function_uses = elem['functionUses']
         self.function_depth = elem['functionDepth']
         self.constants_touched = elem['constantsTouched']
+        self.branch_profiles = self.load_func_branch_profiles(elem['BranchProfiles'])
 
         # These are set later.
         self.hitcount: int = 0
@@ -86,39 +123,14 @@ class FunctionProfile:
         self.new_unreached_complexity: int = 0
         self.total_cyclomatic_complexity: int = 0
 
+    def load_func_branch_profiles(self, yaml_branch_profiles: Any) -> Dict[str, BranchProfile]:
+        bp_loaded = {}
+        for entry in yaml_branch_profiles:
+            new_branch = BranchProfile()
+            new_branch.assign_from_yaml_elem(entry)
+            bp_loaded[new_branch.branch_pos] = new_branch
 
-class BranchProfile:
-    """
-    Class for storing information about conditional branches collected by LLVM pass.
-    """
-    def __init__(self) -> None:
-        self.branch_pos = str()
-        self.branch_true_side_pos = str()
-        self.branch_false_side_pos = str()
-        self.branch_true_side_complexity = -1
-        self.branch_false_side_complexity = -1
-        self.branch_true_side_hitcount = -1
-        self.branch_false_side_hitcount = -1
-
-    def assign_from_yaml_elem(self, elem):
-        # This skips the path, as it may cause incosistancy vs coverage file names path
-        self.branch_pos = elem['Branch String'].split('/')[-1]
-        self.branch_true_side_pos = elem['Branch Sides']['TrueSide']
-        self.branch_false_side_pos = elem['Branch Sides']['FalseSide']
-        self.branch_true_side_complexity = int(elem['Branch Sides']['TrueSideComp'])
-        self.branch_false_side_complexity = int(elem['Branch Sides']['FalseSideComp'])
-
-    def assign_from_coverage(self, true_count, false_count):
-        self.branch_true_side_hitcount = int(true_count)
-        self.branch_false_side_hitcount = int(false_count)
-
-    def dump(self):
-        """
-        For debugging purposes, may be removed later.
-        """
-        print(self.branch_pos, self.branch_true_side_pos, self.branch_false_side_pos,
-              self.branch_true_side_complexity, self.branch_false_side_complexity,
-              self.branch_true_side_hitcount, self.branch_true_side_hitcount)
+        return bp_loaded
 
 
 class FuzzerProfile:
