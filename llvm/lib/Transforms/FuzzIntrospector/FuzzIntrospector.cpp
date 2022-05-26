@@ -76,6 +76,18 @@ using yaml::MappingTraits;
 using yaml::Output;
 
 // Typedefs used by the introspector pass
+typedef struct BranchSides {
+  std::string TrueSideString;
+  std::vector<StringRef> TrueSideFuncs;
+  std::string FalseSideString;
+  std::vector<StringRef> FalseSideFuncs;
+} BranchSides;
+
+typedef struct BranchProfileEntry {
+  std::string BranchString;
+  BranchSides BranchSidesInfo;
+} BranchProfileEntry;
+
 typedef struct fuzzFuncWrapper {
   StringRef FunctionName;
   std::string FunctionSourceFile;
@@ -93,6 +105,7 @@ typedef struct fuzzFuncWrapper {
   size_t CyclomaticComplexity;
   int FunctionUses;
   std::vector<StringRef> FunctionsReached;
+  std::vector<BranchProfileEntry> BranchProfiles;
 } FuzzerFunctionWrapper;
 
 typedef struct FuzzerStringList {
@@ -127,18 +140,6 @@ typedef struct BranchSidesComplexity {
         FalseSideComp(FC) {}
 } BranchSidesComplexity;
 
-typedef struct BranchSides {
-  std::string TrueSideString;
-  std::vector<StringRef> TrueSideFuncs;
-  std::string FalseSideString;
-  std::vector<StringRef> FalseSideFuncs;
-} BranchSides;
-
-typedef struct BranchProfileEntry {
-  std::string BranchString;
-  BranchSides BranchSidesInfo;
-} BranchProfileEntry;
-
 // YAML mappings for outputting the typedefs above
 template <> struct yaml::MappingTraits<FuzzerFunctionWrapper> {
   static void mapping(IO &io, FuzzerFunctionWrapper &Func) {
@@ -158,6 +159,7 @@ template <> struct yaml::MappingTraits<FuzzerFunctionWrapper> {
     io.mapRequired("CyclomaticComplexity", Func.CyclomaticComplexity);
     io.mapRequired("functionsReached", Func.FunctionsReached);
     io.mapRequired("functionUses", Func.FunctionUses);
+    io.mapRequired("BranchProfiles", Func.BranchProfiles);
   }
 };
 LLVM_YAML_IS_SEQUENCE_VECTOR(FuzzerFunctionWrapper)
@@ -275,7 +277,8 @@ struct FuzzIntrospector : public ModulePass {
   void logPrintf(int LogLevel, const char *Fmt, ...);
   bool runOnModule(Module &M) override;
 
-  void branchProfiler(Module &M);
+  // void branchProfiler(Module &M);
+  std::vector<BranchProfileEntry> branchProfiler(Function *);
   SmallPtrSet<BasicBlock *, 32> findReachables(BasicBlock *);
   vector<StringRef> findReachableFuncs(BasicBlock *);
   std::pair<size_t, size_t> findComplexities(SmallPtrSet<BasicBlock *, 32>,
@@ -415,9 +418,9 @@ bool FuzzIntrospector::runOnModule(Module &M) {
   std::string nextYamlName = nextCalltreeFile + ".yaml";
   extractAllFunctionDetailsToYaml(nextYamlName, M);
 
-  if (getenv("FI_BRANCH_PROFILE")) {
-    branchProfiler(M);
-  }
+  // if (getenv("FI_BRANCH_PROFILE")) {
+  //   branchProfiler(M);
+  // }
 
   logPrintf(L1, "Finished introspector module\n");
   return true;
@@ -1138,6 +1141,11 @@ FuzzerFunctionWrapper FuzzIntrospector::wrapFunction(Function *F) {
   std::copy(FuncReaches.begin(), FuncReaches.end(),
             std::back_inserter(FuncWrap.FunctionsReached));
 
+  
+  if (getenv("FI_BRANCH_PROFILE")) {
+    FuncWrap.BranchProfiles = branchProfiler(F);
+  }
+
   return FuncWrap;
 }
 
@@ -1227,26 +1235,26 @@ static RegisterStandardPasses
       });
 */
 
-void FuzzIntrospector::branchProfiler(Module &M) {
-  std::string OutFileName = getNextLogFile() + ".branchProfile.yaml";
-  std::vector<BranchProfileEntry> OutMap;
+std::vector<BranchProfileEntry> FuzzIntrospector::branchProfiler(Function *F) {
+  // std::string OutFileName = getNextLogFile() + ".branchProfile.yaml";
+  std::vector<BranchProfileEntry> FuncBranchProfile;
 
-  logPrintf(L1, "We are in branch profiler.\n");
+  // logPrintf(L1, "We are in branch profiler.\n");
 
-  for (const auto &F : M) {
+  // for (const auto &F : M) {
     // Skip declarations or the functions that are not wrapped e.g. not
     // reachable from entry point
-    if (F.isDeclaration() ||
-        FuncComplexityMap.find(&F) == FuncComplexityMap.end()) {
-      continue;
-    }
-    auto fName = F.getName().str();
+    // if (F.isDeclaration() ||
+    //     FuncComplexityMap.find(&F) == FuncComplexityMap.end()) {
+    //   continue;
+    // }
+    auto fName = F->getName().str();
     logPrintf(L1, "We are in branch profiler for %s\n", fName.c_str());
 
     // This map is function level
     std::map<BasicBlock *, size_t> BBComplexityMap;
 
-    for (const auto &BB : F) {
+    for (const auto &BB : *F) {
       auto TI = BB.getTerminator();
       auto BI = dyn_cast<BranchInst>(TI);
       if (BI && BI->isConditional()) {
@@ -1300,12 +1308,13 @@ void FuzzIntrospector::branchProfiler(Module &M) {
         BranchSides BranchSidesVal = {TrueSideString, *TrueSideFuncs,
                                       FalseSideString, *FalseSideFuncs};
         BranchProfileEntry Entry = {BRstring, BranchSidesVal};
-        OutMap.push_back(Entry);
+        FuncBranchProfile.push_back(Entry);
       }
     }
 
-  } // End of loop over M
-  writeOutMap(OutMap, OutFileName);
+  // } // End of loop over M
+  // writeOutMap(OutMap, OutFileName);
+  return FuncBranchProfile;
 }
 
 // Simple intra-procedural CFG traversal
@@ -1335,6 +1344,7 @@ FuzzIntrospector::findReachables(BasicBlock *Src) {
   return AllReachables;
 }
 
+// Traverse intra-procedural CFG starting from Src and list all called functions.
 vector<StringRef> FuzzIntrospector::findReachableFuncs(BasicBlock *Src) {
   SmallVector<BasicBlock *, 32> Worklist;
   SmallPtrSet<BasicBlock *, 32> AllReachables;

@@ -57,36 +57,6 @@ class InputBug:
         self.bug_type = bug_type
 
 
-class FunctionProfile:
-    """
-    Class for storing information about a given Function
-    """
-    def __init__(self, elem) -> None:
-        self.function_name = elem['functionName']
-        self.function_source_file = elem['functionSourceFile']
-        self.linkage_type = elem['linkageType']
-        self.function_linenumber = elem['functionLinenumber']
-        self.return_type = elem['returnType']
-        self.arg_count = elem['argCount']
-        self.arg_types = elem['argTypes']
-        self.arg_names = elem['argNames']
-        self.bb_count = elem['BBCount']
-        self.i_count = elem['ICount']
-        self.edge_count = elem['EdgeCount']
-        self.cyclomatic_complexity = elem['CyclomaticComplexity']
-        self.functions_reached = elem['functionsReached']
-        self.function_uses = elem['functionUses']
-        self.function_depth = elem['functionDepth']
-        self.constants_touched = elem['constantsTouched']
-
-        # These are set later.
-        self.hitcount: int = 0
-        self.reached_by_fuzzers: List[str] = []
-        self.incoming_references: List[str] = []
-        self.new_unreached_complexity: int = 0
-        self.total_cyclomatic_complexity: int = 0
-
-
 class BranchProfile:
     """
     Class for storing information about conditional branches collected by LLVM pass.
@@ -121,6 +91,46 @@ class BranchProfile:
         print(self.branch_pos, self.branch_true_side_pos, self.branch_false_side_pos,
               self.branch_true_side_complexity, self.branch_false_side_complexity,
               self.branch_true_side_hitcount, self.branch_true_side_hitcount)
+
+
+class FunctionProfile:
+    """
+    Class for storing information about a given Function
+    """
+    def __init__(self, elem) -> None:
+        self.function_name = elem['functionName']
+        self.function_source_file = elem['functionSourceFile']
+        self.linkage_type = elem['linkageType']
+        self.function_linenumber = elem['functionLinenumber']
+        self.return_type = elem['returnType']
+        self.arg_count = elem['argCount']
+        self.arg_types = elem['argTypes']
+        self.arg_names = elem['argNames']
+        self.bb_count = elem['BBCount']
+        self.i_count = elem['ICount']
+        self.edge_count = elem['EdgeCount']
+        self.cyclomatic_complexity = elem['CyclomaticComplexity']
+        self.functions_reached = elem['functionsReached']
+        self.function_uses = elem['functionUses']
+        self.function_depth = elem['functionDepth']
+        self.constants_touched = elem['constantsTouched']
+        self.branch_profiles = self.load_func_branch_profiles(elem['BranchProfiles'])
+
+        # These are set later.
+        self.hitcount: int = 0
+        self.reached_by_fuzzers: List[str] = []
+        self.incoming_references: List[str] = []
+        self.new_unreached_complexity: int = 0
+        self.total_cyclomatic_complexity: int = 0
+
+    def load_func_branch_profiles(self, yaml_branch_profiles: Any) -> Dict[str, BranchProfile]:
+        bp_loaded = {}
+        for entry in yaml_branch_profiles:
+            new_branch = BranchProfile()
+            new_branch.assign_from_yaml_elem(entry)
+            bp_loaded[new_branch.branch_pos] = new_branch
+
+        return bp_loaded
 
 
 class FuzzerProfile:
