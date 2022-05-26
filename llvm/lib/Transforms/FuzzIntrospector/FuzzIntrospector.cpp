@@ -1444,6 +1444,7 @@ FuzzIntrospector::getBBDebugInfo(BasicBlock *BB, DILocation *PrevLoc) {
   Instruction *CurrTI, *CurrI;
   DILocation *CurrLoc;
 
+  // Traverse all dummy BBs associated with the previous Loc.
   do {
     CurrTI = CurrBB->getTerminator();
     CurrI = CurrBB->getFirstNonPHIOrDbgOrLifetime(true);
@@ -1457,6 +1458,10 @@ FuzzIntrospector::getBBDebugInfo(BasicBlock *BB, DILocation *PrevLoc) {
       break;
   } while (CurrLoc == PrevLoc);
 
+  // To skip the return BB in optimized CFG.
+  if (dyn_cast<ReturnInst>(CurrTI)){
+    CurrI = BB->getFirstNonPHIOrDbgOrLifetime(true);
+  }
   if (CurrI)
     Result = getInsnDebugInfo(CurrI);
 
