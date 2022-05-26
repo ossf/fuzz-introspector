@@ -99,14 +99,16 @@ class BranchProfile:
         self.branch_false_side_complexity = -1
         self.branch_true_side_hitcount = -1
         self.branch_false_side_hitcount = -1
+        self.branch_true_side_funcs = list()
+        self.branch_false_side_funcs = list()
 
     def assign_from_yaml_elem(self, elem):
         # This skips the path, as it may cause incosistancy vs coverage file names path
         self.branch_pos = elem['Branch String'].split('/')[-1]
         self.branch_true_side_pos = elem['Branch Sides']['TrueSide']
         self.branch_false_side_pos = elem['Branch Sides']['FalseSide']
-        self.branch_true_side_complexity = int(elem['Branch Sides']['TrueSideComp'])
-        self.branch_false_side_complexity = int(elem['Branch Sides']['FalseSideComp'])
+        self.branch_true_side_funcs = elem['Branch Sides']['TrueSideFuncs']
+        self.branch_false_side_complexity = elem['Branch Sides']['FalseSideFuncs']
 
     def assign_from_coverage(self, true_count, false_count):
         self.branch_true_side_hitcount = int(true_count)
