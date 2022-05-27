@@ -15,7 +15,7 @@
 import sys
 import atheris
 with atheris.instrument_imports():
-    os
+    import os
 
 def reachable_1(data):
     return
