@@ -31,7 +31,7 @@ NEW_TEST_DIR="$TEST_REPORT_NAME$NEW_TEST_COUNT"
 echo "NEW_TEST_DIR: $NEW_TEST_DIR"
 mkdir $NEW_TEST_DIR
 
-for fuzzname in leveldb htslib unrar jsoncpp; do
+for fuzzname in leveldb htslib unrar jsoncpp tarantool fio; do
   echo "Testing $fuzzname"
   python3 ${SCRIPT_DIR}/get_full_coverage.py $fuzzname 10 > get_coverage.log 2>&1
   python3 ./infra/helper.py build_fuzzers --sanitizer=introspector $fuzzname  > build_introspector.log 2>&1
@@ -46,12 +46,13 @@ for fuzzname in leveldb htslib unrar jsoncpp; do
   mv build_introspector.log ./corpus-$LATEST_CORPUS_DIR/build_introspector.log
   echo "$fuzzname" >> ./corpus-$LATEST_CORPUS_DIR/project_name
 
-  # Look for the last logging statement of fuzz-introspector. If that statement is printed, then
+  # Look for the last report logging statement of fuzz-introspector. If that statement is printed, then
   # it means no exceptions were thrown. This shows the build didn't crash.
-  if [ $(grep "Ending fuzz introspector post-processing" ./corpus-$LATEST_CORPUS_DIR/build_introspector.log | wc -l) -gt 0 ]; then
+  if [ $(grep "Ending fuzz introspector report generation" ./corpus-$LATEST_CORPUS_DIR/build_introspector.log | wc -l) -gt 0 ]; then
     echo "Success"
   else
-    echo "Failure"
+    echo "Failure: failed running report generation for $fuzzname"
+    exit 1
   fi
 
   # Now copy the data into the test directory
