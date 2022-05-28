@@ -513,7 +513,7 @@ def create_fuzzer_detailed_section(
         f"<p class='no-top-margin'>\n"
         f"The following is the call tree with color coding for which"
         f"functions are hit/not hit. This info is based on the coverage"
-        f"achieved of all fuzzers together and not just this specific"
+        f"achieved of all fuzzers together and not just this specific "
         f"fuzzer."
         f"</p>"
         f"<p><ul>"
