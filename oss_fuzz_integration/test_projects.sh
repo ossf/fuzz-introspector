@@ -31,7 +31,7 @@ NEW_TEST_DIR="$TEST_REPORT_NAME$NEW_TEST_COUNT"
 echo "NEW_TEST_DIR: $NEW_TEST_DIR"
 mkdir $NEW_TEST_DIR
 
-for fuzzname in leveldb htslib unrar jsoncpp tarantool fio; do
+for fuzzname in leveldb htslib unrar jsoncpp tarantool fio wuffs; do
   echo "Testing $fuzzname"
   python3 ${SCRIPT_DIR}/get_full_coverage.py $fuzzname 10 > get_coverage.log 2>&1
   python3 ./infra/helper.py build_fuzzers --sanitizer=introspector $fuzzname  > build_introspector.log 2>&1
