@@ -181,6 +181,7 @@ def main() -> int:
             args.correlation_file,
             args.enable_all_analyses
         )
+        logger.info("Ending fuzz introspector report generation")
     elif args.command == 'correlate':
         return_code = correlate_binaries_to_logs(args.binaries_dir)
     logger.info("Ending fuzz introspector post-processing")
