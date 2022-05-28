@@ -339,8 +339,13 @@ def detect_branch_level_blockers(fuzz_profile: fuzz_data_loader.FuzzerProfile) -
     for branch_string in coverage.branch_cov_map:
         blocked_side = None
         true_hitcount, false_hitcount = coverage.branch_cov_map[branch_string]
-        function_name, rest_string = branch_string.split(':')
-        line_number, column_number = rest_string.split(',')
+
+        # Catch exceptions in case some of the string splitting fails
+        try:
+            function_name, rest_string = branch_string.split(':')
+            line_number, column_number = rest_string.split(',')
+        except ValueError:
+            continue
 
         llvm_branch_profile = functions_profile[function_name].branch_profiles
         # Just extract the file name and skip the path
