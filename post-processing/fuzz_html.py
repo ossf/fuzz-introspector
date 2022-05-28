@@ -73,13 +73,14 @@ def create_horisontal_calltree_image(image_name: str,
 
     fig, ax = plt.subplots()
     ax.clear()
-    fig.set_size_inches(15, 2)
+    fig.set_size_inches(15, 2.5)
     ax.plot()
 
     # Create our rectangles
     curr_start_x = 0.0
     curr_size = 1.0
     curr_color = color_list[0]
+    height = 1.0
 
     for i in range(1, len(color_list)):
         if curr_color == color_list[i]:
@@ -87,7 +88,14 @@ def create_horisontal_calltree_image(image_name: str,
         else:
             final_start_x = curr_start_x * multiplier
             final_size = curr_size * multiplier
-            ax.add_patch(Rectangle((final_start_x, 0.0), final_size, 1, color=curr_color))
+            ax.add_patch(
+                Rectangle(
+                    (final_start_x, 0.0),
+                    final_size,
+                    height,
+                    color=curr_color
+                )
+            )
 
             # Start next color area
             curr_start_x += curr_size
@@ -98,12 +106,16 @@ def create_horisontal_calltree_image(image_name: str,
     # Plot the last case
     final_start_x = curr_start_x * multiplier
     final_size = curr_size * multiplier
-    ax.add_patch(Rectangle((final_start_x, 0.0), final_size, 1, color=curr_color))
+    ax.add_patch(Rectangle((final_start_x, 0.0), final_size, height, color=curr_color))
+    ax.set_yticklabels([])
+    ax.set_yticks([])
+    xlabel = ax.set_xlabel("Callsite index")
 
     # Save the image
     logger.info("- saving image")
     plt.title(image_name.split(".")[0])
-    plt.savefig(image_name)
+    fig.tight_layout()
+    fig.savefig(image_name, bbox_extra_artists=[xlabel])
     logger.info("- image saved")
 
 
@@ -501,9 +513,14 @@ def create_fuzzer_detailed_section(
         f"<p class='no-top-margin'>\n"
         f"The following is the call tree with color coding for which"
         f"functions are hit/not hit. This info is based on the coverage"
-        f"achieved of all fuzzers together and not just this specific"
-        f"fuzzer. This should change in the future to be per-fuzzer-basis."
+        f"achieved of all fuzzers together and not just this specific "
+        f"fuzzer."
         f"</p>"
+        f"<p><ul>"
+        f"<li>Red: not hit at all</li>"
+        f"<li>Green: hit many times</li>"
+        f"<li>Yellow: hit a few times </li>"
+        f"</ul></p>"
         f"<p>"
         f"For further technical details on what the call tree overview is"
         f", please see the <a href=\"{fuzz_constants.GIT_BRANCH_URL}/doc/"
