@@ -345,6 +345,11 @@ def detect_branch_level_blockers(fuzz_profile: fuzz_data_loader.FuzzerProfile) -
             function_name, rest_string = branch_string.split(':')
             line_number, column_number = rest_string.split(',')
         except ValueError:
+            logger.error("branch-profiling: error getting function name")
+            continue
+
+        if function_name not in functions_profile:
+            logger.error("branch-profiling: func name not in functions_profile")
             continue
 
         llvm_branch_profile = functions_profile[function_name].branch_profiles
