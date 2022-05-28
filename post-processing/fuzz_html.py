@@ -113,7 +113,7 @@ def create_horisontal_calltree_image(image_name: str,
 
     # Save the image
     logger.info("- saving image")
-    plt.title(image_name.replace(".png","").replace("_colormap",""))
+    plt.title(image_name.replace(".png", "").replace("_colormap", ""))
     fig.tight_layout()
     fig.savefig(image_name, bbox_extra_artists=[xlabel])
     logger.info("- image saved")
@@ -498,8 +498,6 @@ def create_fuzzer_detailed_section(
     fuzzer_table_data: Dict[str, Any]
 ) -> str:
     html_string = ""
-    fuzzer_filename = profile.fuzzer_source_file
-
     html_string += fuzz_html_helpers.html_add_header_with_link(
         f"Fuzzer: {profile.get_key()}",
         2,
