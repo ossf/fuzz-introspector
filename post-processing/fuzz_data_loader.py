@@ -160,7 +160,7 @@ class FuzzerProfile:
                     )
 
             func_profile = FunctionProfile(elem)
-            logger.info(f"Adding {func_profile.function_name}"%)
+            logger.info(f"Adding {func_profile.function_name}")
             self.all_class_functions[func_profile.function_name] = func_profile
 
     def refine_paths(self, basefolder: str) -> None:
