@@ -34,6 +34,7 @@ def main():
     )
     args = parser.parse_args()
     run_fuzz_pass(args.fuzzer, args.package)
+    print("Done running pass")
 
 def resolve_package(fuzzer_path):
     """Resolves the package of a fuzzer"""
@@ -90,10 +91,47 @@ def run_fuzz_pass(fuzzer, package):
         print("Could not convert calltree to string. Exiting")
         sys.exit(1)
 
+    # Do analysis on the data
+    converge_reachables(cg_extended)
+    find_all_uses(cg_extended)
+
     translated_cg = translate_cg(cg_extended, fuzzer)
 
     fuzzer_name = os.path.basename(fuzzer).replace(".py", "")
     dump_fuzz_logic(fuzzer_name, translated_cg, calltree)
+
+def find_all_uses(cg_extended):
+    """Sets functionUses"""
+    for elem in cg_extended['cg']:
+        all_uses = []
+        for elem2 in cg_extended['cg']:
+            if elem == elem2:
+                continue
+            if elem in cg_extended['cg'][elem2]['all_reachables']:
+                all_uses.append(elem2)
+        cg_extended['cg'][elem]['all_uses'] = len(all_uses)
+
+def extract_local_reachables(elem):
+    print(elem)
+    s = set()
+    for dst in elem['dsts']:
+        s.add(dst['dst'])
+    return s
+
+def converge_reachables(cg_extended):
+    """For each of the elements in the cg_extended cg we converge their reachables"""
+    for elem in cg_extended['cg']:
+        print(f"Converging {elem}")
+        # 'dsts': [{'dst': '<builtin>.type'
+        all_reachables = set()
+        ws = extract_local_reachables(cg_extended['cg'][elem])
+        while len(ws) > 0:
+            e1 = ws.pop()
+            if e1 not in all_reachables:
+                all_reachables.add(e1)
+                ws = ws.union(extract_local_reachables(cg_extended['cg'][e1]))
+        #print(elem)
+        cg_extended['cg'][elem]['all_reachables'] = list(all_reachables)
 
 def translate_cg(cg_extended, fuzzer_filename):
     """Converts the PyCG data into fuzz-introspector data"""
@@ -124,8 +162,8 @@ def translate_cg(cg_extended, fuzzer_filename):
         d['ICount'] = 0
         d['EdgeCount'] = 0
         d['CyclomaticComplexity'] = 0
-        d['functionsReached'] = []
-        d['functionUses'] = 13
+        d['functionsReached'] = elem_dict['all_reachables']
+        d['functionUses'] = elem_dict['all_uses']
         d['BranchProfiles'] = []
         new_dict['All functions']['Elements'].append(d)
     return new_dict
@@ -154,10 +192,10 @@ def convert_to_fuzzing_cfg(cg_extended):
     # Extract fuzzer entrypoint and print calltree.
     ep_key = cg_extended['ep']['mod'] + "." + cg_extended['ep']['name']    
     ep_node = cg_extended['cg'][ep_key]
-    print(json.dumps(cg_extended, indent=4))
+    #print(json.dumps(cg_extended, indent=4))
     calltree = "Call tree\n"
     calltree += get_calltree_as_str(cg_extended['cg'], ep_key, set())
-    print(calltree)
+    #print(calltree)
     return calltree
 
 def get_calltree_as_str(cg_extended, k, s1, depth=0, lineno=-1, themod="", ext_mod=""):
