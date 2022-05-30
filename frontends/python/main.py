@@ -83,9 +83,65 @@ def run_fuzz_pass(fuzzer, package):
     cg.analyze()
 
     formatter = formats.Fuzz(cg)
-    output = formatter.generate()
+    cg_extended = formatter.generate()
 
-    convert_to_fuzzing_cfg(output)
+    calltree = convert_to_fuzzing_cfg(cg_extended)
+    if calltree == None:
+        print("Could not convert calltree to string. Exiting")
+        sys.exit(1)
+
+    translated_cg = translate_cg(cg_extended, fuzzer)
+
+    fuzzer_name = os.path.basename(fuzzer).replace(".py", "")
+    dump_fuzz_logic(fuzzer_name, translated_cg, calltree)
+
+def translate_cg(cg_extended, fuzzer_filename):
+    """Converts the PyCG data into fuzz-introspector data"""
+    new_dict = dict()
+    new_dict['Fuzzer filename'] = fuzzer_filename
+    new_dict['All functions'] = dict()
+    new_dict['All functions']['Function list name'] = "All functions"
+    new_dict['All functions']['Elements'] = []
+
+    # TODO: do the implementation necessary to carry these out.
+    for elem in cg_extended['cg']:
+        elem_dict = cg_extended['cg'][elem]
+        d = dict()
+        d['functionName'] = elem
+        d['functionSourceFile'] = elem_dict['meta']['modname']
+        d['linkageType'] = "pythonLinkage"
+        if 'lineno' in elem_dict['meta']:
+          d['functionLinenumber'] = elem_dict['meta']['lineno']
+        else:
+          d['functionLinenumber'] = -1
+        d['functionDepth'] = 0
+        d['returnType'] = "N/A"
+        d['argCount'] = 0
+        d['argTypes'] = []
+        d['constantsTouched'] = []
+        d['argNames'] = []
+        d['BBCount'] = 0
+        d['ICount'] = 0
+        d['EdgeCount'] = 0
+        d['CyclomaticComplexity'] = 0
+        d['functionsReached'] = []
+        d['functionUses'] = 13
+        d['BranchProfiles'] = []
+        new_dict['All functions']['Elements'].append(d)
+    return new_dict
+
+
+def dump_fuzz_logic(fuzzer_name, cg_extended, calltree):
+    import yaml
+    calltree_file = fuzzer_name + ".data"
+    fuzzer_func_data = fuzzer_name + ".data.yaml"
+
+    with open(calltree_file, "w+") as cf:
+        cf.write(calltree)
+
+    with open(fuzzer_func_data, "w+") as ffdf:
+        ffdf.write(yaml.dump(cg_extended))
+
 
 def convert_to_fuzzing_cfg(cg_extended):
     """Utility to translate the CG to something fuzz-introspector post-processing
@@ -93,29 +149,36 @@ def convert_to_fuzzing_cfg(cg_extended):
     print("Printing CFG output")
     if "ep" not in cg_extended:
         print("No entrypoints found")
-        return
+        return None
 
     # Extract fuzzer entrypoint and print calltree.
     ep_key = cg_extended['ep']['mod'] + "." + cg_extended['ep']['name']    
     ep_node = cg_extended['cg'][ep_key]
     print(json.dumps(cg_extended, indent=4))
-    print_calltree(cg_extended['cg'], ep_key, set())
+    calltree = "Call tree\n"
+    calltree += get_calltree_as_str(cg_extended['cg'], ep_key, set())
+    print(calltree)
+    return calltree
 
-def print_calltree(cg_extended, k, s1, depth=0, lineno=-1, themod="", ext_mod=""):
+def get_calltree_as_str(cg_extended, k, s1, depth=0, lineno=-1, themod="", ext_mod=""):
     """Prints a calltree where k is the key in the cg of the root"""
 
-    if depth > 20:
-        return
-    print("%s%s src_mod=%s src_linenumber=%d dst_mod=%s"%(" "*(depth*2), k, themod, lineno, ext_mod))
+    #strline = "%s%s src_mod=%s src_linenumber=%d dst_mod=%s\n"%(" "*(depth*2), k, themod, lineno, ext_mod)
+    if themod == "":
+        themod="/"
+    strline = "%s%s %s %d\n"%(" "*(depth*2), k, themod, lineno)
+    #strline = "%s%s src_mod=%s src_linenumber=%d dst_mod=%s\n"%(" "*(depth*2), k, themod, lineno, ext_mod)
+    #print("%s%s src_mod=%s src_linenumber=%d dst_mod=%s"%(" "*(depth*2), k, themod, lineno, ext_mod))
     sorted_keys = sorted(cg_extended[k]['dsts'], key=lambda x: x['lineno'])
 
     # Avoid deep recursions
     if k in s1:
-        return
+        return strline
 
     s1.add(k)
     for dst in cg_extended[k]['dsts']:
-        print_calltree(cg_extended, dst['dst'], s1, depth+1, dst['lineno'], dst['mod'], dst['ext_mod'])
+        strline += get_calltree_as_str(cg_extended, dst['dst'], s1, depth+1, dst['lineno'], dst['mod'], dst['ext_mod'])
 
+    return strline
 if __name__ == "__main__":
     main()
