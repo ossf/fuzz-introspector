@@ -626,7 +626,7 @@ def create_fuzzer_detailed_section(
     reached_funcs = reachable_funcs - uncovered_reachable_funcs
     try:
         cov_reach_proportion = (float(reached_funcs) / float(reachable_funcs)) * 100.0
-    except:
+    except Exception:
         logger.info("reachable funcs is 0")
         cov_reach_proportion=0.0
     str_percentage = "%.5s%%" % str(cov_reach_proportion)

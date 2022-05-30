@@ -140,7 +140,7 @@ def overlay_calltree_with_coverage(
             # have a single seed, and in this specific case LLVMFuzzerTestOneInput
             # will be red.
             if demangled_name != "LLVMFuzzerTestOneInput" and "TestOneInput" not in demangled_name:
-                logger.info("LLVMFuzzerTestOneInput or TestOneInput must be the first node in the calltree")
+                logger.info("Unexpected first node in the calltree.")
                 logger.info(f"Found: {demangled_name}")
                 exit(1)
             coverage_data = profile.coverage.get_hit_details("LLVMFuzzerTestOneInput")

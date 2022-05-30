@@ -160,7 +160,7 @@ class FuzzerProfile:
                     )
 
             func_profile = FunctionProfile(elem)
-            logger.info("Adding %s"%(func_profile.function_name))
+            logger.info(f"Adding {func_profile.function_name}"%)
             self.all_class_functions[func_profile.function_name] = func_profile
 
     def refine_paths(self, basefolder: str) -> None:
@@ -197,7 +197,8 @@ class FuzzerProfile:
         # Find Python entrypoint
         for func_name in self.all_class_functions:
             if "TestOneInput" in func_name:
-                self.functions_reached_by_fuzzer = self.all_class_functions[func_name].functions_reached
+                reached = self.all_class_functions[func_name].functions_reached
+                self.functions_reached_by_fuzzer = reached
                 return
 
         # TODO: make fuzz-introspector exceptions
@@ -512,12 +513,12 @@ class MergedProjectProfile:
 
         try:
             reached_complexity_percentage = (float(complexity_reached) / (total_complexity)) * 100.0
-        except:
+        except Exception:
             logger.info("Total complexity is 0")
             reached_complexity_percentage = 0
         try:
             unreached_complexity_percentage = (float(complexity_unreached) / (total_complexity)) * 100.0
-        except:
+        except Exception:
             logger.info("Total complexity is 0")
             unreached_complexity_percentage = 0
 
