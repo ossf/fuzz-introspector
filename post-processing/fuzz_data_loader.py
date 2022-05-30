@@ -517,7 +517,9 @@ class MergedProjectProfile:
             logger.info("Total complexity is 0")
             reached_complexity_percentage = 0
         try:
-            unreached_complexity_percentage = (float(complexity_unreached) / (total_complexity)) * 100.0
+            unreached_complexity_percentage = (
+                (float(complexity_unreached) / (total_complexity)) * 100.0
+            )
         except Exception:
             logger.info("Total complexity is 0")
             unreached_complexity_percentage = 0
