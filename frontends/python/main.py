@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import os
+import sys
 import json
 import argparse
 
@@ -23,9 +24,8 @@ from pycg.utils.constants import CALL_GRAPH_OP
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "entry_point",
-        nargs="*",
-        help="Entry points to be processed"
+        "--fuzzer",
+        help="Fuzzer to be processed"
     )
     parser.add_argument(
         "--package",
@@ -33,11 +33,49 @@ def main():
         default=None
     )
     args = parser.parse_args()
-    run_fuzz_pass(args.package, args.entry_point)
+    run_fuzz_pass(args.fuzzer, args.package)
 
-def run_fuzz_pass(package, entry_point):
+def resolve_package(fuzzer_path):
+    """Resolves the package of a fuzzer"""
+    print("Fuzzer path: %s"%(fuzzer_path))
+    dirpath = os.path.dirname(fuzzer_path)
+
+    # sanity check one
+    all_dirs = []
+    for d in os.listdir(dirpath):
+        if os.path.isdir(os.path.join(dirpath, d)):
+            all_dirs.append(d)
+
+    # Read all potential imports in the fuzzer
+    fuzz_content = ""
+    with open(fuzzer_path, "r") as fp:
+        fuzz_content = fp.read()
+
+    # Now go through each of the directories and check if any dir is in the fuzzer
+    imported_dirs = []
+    for d in all_dirs:
+        if d in fuzz_content:
+            print("Directory: %s"%(d))
+            imported_dirs.append(d)
+
+    if len(imported_dirs) > 0:
+        print("Package path: %s"%(dirpath))
+        return dirpath + "/"
+
+    print("Could not identify the package")
+    return None
+
+def run_fuzz_pass(fuzzer, package):
+    if package is None:
+        package = resolve_package(fuzzer)
+        if package is None:
+            print("No package. Exiting early now as the results will not be good")
+            sys.exit(1)
+
+    print("Fuzzer: %s"%(fuzzer))
+    print("Package: %s"%(package))
     cg = CallGraphGenerator(
-        entry_point,
+        [ fuzzer ],
         package,
         -1,
         CALL_GRAPH_OP
@@ -60,11 +98,7 @@ def convert_to_fuzzing_cfg(cg_extended):
     # Extract fuzzer entrypoint and print calltree.
     ep_key = cg_extended['ep']['mod'] + "." + cg_extended['ep']['name']    
     ep_node = cg_extended['cg'][ep_key]
-
-    # Dump the full cg to json. This includes information about each function.
     print(json.dumps(cg_extended, indent=4))
-
-    # Print the calltree for the given fuzzer
     print_calltree(cg_extended['cg'], ep_key, set())
 
 def print_calltree(cg_extended, k, s1, depth=0, lineno=-1, themod="", ext_mod=""):
