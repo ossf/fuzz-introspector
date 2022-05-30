@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import os
+import json
 import argparse
 
 from pycg.pycg import CallGraphGenerator
@@ -59,15 +60,28 @@ def convert_to_fuzzing_cfg(cg_extended):
     # Extract fuzzer entrypoint and print calltree.
     ep_key = cg_extended['ep']['mod'] + "." + cg_extended['ep']['name']    
     ep_node = cg_extended['cg'][ep_key]
+
+    # Dump the full cg to json. This includes information about each function.
+    print(json.dumps(cg_extended, indent=4))
+
+    # Print the calltree for the given fuzzer
     print_calltree(cg_extended['cg'], ep_key, set())
 
-def print_calltree(cg_extended, k, s1, depth=0):
+def print_calltree(cg_extended, k, s1, depth=0, lineno=-1, themod="", ext_mod=""):
     """Prints a calltree where k is the key in the cg of the root"""
 
-    print("%s%s"%(" "*(depth*2), k))
-    sorted_keys = sorted(cg_extended[k], key=lambda x: x['lineno'])
-    for dst in cg_extended[k]:
-        print_calltree(cg_extended, dst['dst'], s1, depth+1)
+    if depth > 20:
+        return
+    print("%s%s src_mod=%s src_linenumber=%d dst_mod=%s"%(" "*(depth*2), k, themod, lineno, ext_mod))
+    sorted_keys = sorted(cg_extended[k]['dsts'], key=lambda x: x['lineno'])
+
+    # Avoid deep recursions
+    if k in s1:
+        return
+
+    s1.add(k)
+    for dst in cg_extended[k]['dsts']:
+        print_calltree(cg_extended, dst['dst'], s1, depth+1, dst['lineno'], dst['mod'], dst['ext_mod'])
 
 if __name__ == "__main__":
     main()
