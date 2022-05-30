@@ -139,8 +139,9 @@ def overlay_calltree_with_coverage(
             # hardcoding LLVMFuzzerTestOneInput to be green because some fuzzers may not
             # have a single seed, and in this specific case LLVMFuzzerTestOneInput
             # will be red.
-            if not demangled_name == "LLVMFuzzerTestOneInput":
-                logger.error("LLVMFuzzerTestOneInput must be the first node in the calltree")
+            if demangled_name != "LLVMFuzzerTestOneInput" and "TestOneInput" not in demangled_name:
+                logger.info("Unexpected first node in the calltree.")
+                logger.info(f"Found: {demangled_name}")
                 exit(1)
             coverage_data = profile.coverage.get_hit_details("LLVMFuzzerTestOneInput")
             if len(coverage_data) == 0:

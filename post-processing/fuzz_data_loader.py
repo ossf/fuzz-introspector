@@ -160,6 +160,7 @@ class FuzzerProfile:
                     )
 
             func_profile = FunctionProfile(elem)
+            logger.info(f"Adding {func_profile.function_name}")
             self.all_class_functions[func_profile.function_name] = func_profile
 
     def refine_paths(self, basefolder: str) -> None:
@@ -187,9 +188,21 @@ class FuzzerProfile:
         sets self.functions_reached_by_fuzzer to all functions reached
         by LLVMFuzzerTestOneInput
         """
-        self.functions_reached_by_fuzzer = (self
-                                            .all_class_functions["LLVMFuzzerTestOneInput"]
-                                            .functions_reached)
+        if "LLVMFuzzerTestOneInput" in self.all_class_functions:
+            self.functions_reached_by_fuzzer = (
+                self.all_class_functions["LLVMFuzzerTestOneInput"].functions_reached
+            )
+            return
+
+        # Find Python entrypoint
+        for func_name in self.all_class_functions:
+            if "TestOneInput" in func_name:
+                reached = self.all_class_functions[func_name].functions_reached
+                self.functions_reached_by_fuzzer = reached
+                return
+
+        # TODO: make fuzz-introspector exceptions
+        raise Exception
 
     def reaches(self, func_name: str) -> bool:
         return func_name in self.functions_reached_by_fuzzer
@@ -495,12 +508,21 @@ class MergedProjectProfile:
         )
 
     def get_complexity_summaries(self) -> Tuple[int, int, int, float, float]:
-
         complexity_reached, complexity_unreached = self.get_total_complexity()
         total_complexity = complexity_unreached + complexity_reached
 
-        reached_complexity_percentage = (float(complexity_reached) / (total_complexity)) * 100.0
-        unreached_complexity_percentage = (float(complexity_unreached) / (total_complexity)) * 100.0
+        try:
+            reached_complexity_percentage = (float(complexity_reached) / (total_complexity)) * 100.0
+        except Exception:
+            logger.info("Total complexity is 0")
+            reached_complexity_percentage = 0
+        try:
+            unreached_complexity_percentage = (
+                (float(complexity_unreached) / (total_complexity)) * 100.0
+            )
+        except Exception:
+            logger.info("Total complexity is 0")
+            unreached_complexity_percentage = 0
 
         return (
             total_complexity,
@@ -560,10 +582,19 @@ def read_fuzzer_data_file_to_profile(filename: str) -> Optional[FuzzerProfile]:
         return None
 
     FP = FuzzerProfile(filename, data_dict_yaml)
-    if "LLVMFuzzerTestOneInput" not in FP.all_class_functions:
-        return None
 
-    return FP
+    # Check we have a valid entrypoint
+    if "LLVMFuzzerTestOneInput" in FP.all_class_functions:
+        return FP
+
+    # Check for python fuzzers. The following assumes the entrypoint
+    # currently has "TestOneInput" int its name
+    for name in FP.all_class_functions:
+        if "TestOneInput" in name:
+            return FP
+
+    logger.info("Found no fuzzer entrypoints")
+    return None
 
 
 def add_func_to_reached_and_clone(merged_profile_old: MergedProjectProfile,

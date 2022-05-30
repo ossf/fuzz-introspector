@@ -624,7 +624,11 @@ def create_fuzzer_detailed_section(
     uncovered_reachable_funcs = len(profile.get_cov_uncovered_reachable_funcs())
     reachable_funcs = len(profile.functions_reached_by_fuzzer)
     reached_funcs = reachable_funcs - uncovered_reachable_funcs
-    cov_reach_proportion = (float(reached_funcs) / float(reachable_funcs)) * 100.0
+    try:
+        cov_reach_proportion = (float(reached_funcs) / float(reachable_funcs)) * 100.0
+    except Exception:
+        logger.info("reachable funcs is 0")
+        cov_reach_proportion = 0.0
     str_percentage = "%.5s%%" % str(cov_reach_proportion)
     fuzz_utils.write_to_summary_file(
         profile.get_key(),
