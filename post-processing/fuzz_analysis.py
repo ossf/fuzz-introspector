@@ -29,6 +29,8 @@ import fuzz_cfg_load
 import fuzz_data_loader
 from enum import Enum
 
+from exceptions import AnalysisError
+
 logger = logging.getLogger(name=__name__)
 logger.setLevel(logging.INFO)
 
@@ -142,7 +144,9 @@ def overlay_calltree_with_coverage(
             if demangled_name != "LLVMFuzzerTestOneInput" and "TestOneInput" not in demangled_name:
                 logger.info("Unexpected first node in the calltree.")
                 logger.info(f"Found: {demangled_name}")
-                exit(1)
+                raise AnalysisError(
+                    "First node in calltree seems to be non-fuzzer function"
+                )
             coverage_data = profile.coverage.get_hit_details("LLVMFuzzerTestOneInput")
             if len(coverage_data) == 0:
                 logger.error("There is no coverage data (not even all negative).")
@@ -165,7 +169,9 @@ def overlay_calltree_with_coverage(
             node.cov_parent = callstack_get_parent(node, callstack)
         else:
             logger.error("A node should either be the first or it must have a parent")
-            exit(1)
+            raise AnalysisError(
+                "A node should either be the first or it must have a parent"
+            )
         node.cov_hitcount = node_hitcount
 
         # Map hitcount to color of target.
