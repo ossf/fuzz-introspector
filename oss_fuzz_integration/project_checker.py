@@ -17,9 +17,15 @@ import json
 import sys
 import argparse
 
+class ProjectCheckError(Exception):
+    def __init__(self, message):
+        self.message = message
+
+    def __str__(self):
+        return self.message
+
 def err_exit(msg):
-    print(f"Error {msg}")
-    exit(0)
+    raise ProjectCheckError(f"Error {msg}")
 
 def guide_exit(msg):
     msg += (
