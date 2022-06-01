@@ -162,13 +162,16 @@ def translate_cg(cg_extended, fuzzer_filename):
         d['constantsTouched'] = []
         d['argNames'] = elem_dict['meta']['argNames'] if 'argNames' in elem_dict['meta'] else []
         d['argTypes'] = elem_dict['meta']['argTypes'] if 'argTypes' in elem_dict['meta'] else []
-        d['BBCount'] = 0
-        d['ICount'] = 0
-        d['EdgeCount'] = 0
-        d['CyclomaticComplexity'] = 0
+        d['ICount'] = elem_dict['meta']['exprCount'] if 'exprCount' in elem_dict['meta'] else 0
+        d['IfCount'] = elem_dict['meta']['ifCount'] if 'ifCount' in elem_dict['meta'] else 0
         d['functionsReached'] = elem_dict['all_reachables']
         d['functionUses'] = elem_dict['all_uses']
         d['BranchProfiles'] = []
+
+        # Set the following based on ifCount. This should be refined to be more accurrate.
+        d['BBCount'] = d['IfCount']
+        d['EdgeCount'] = int((d['IfCount']+1) * 1.4)
+        d['CyclomaticComplexity'] = d['EdgeCount'] - d['BBCount'] + 2
         new_dict['All functions']['Elements'].append(d)
     return new_dict
 
