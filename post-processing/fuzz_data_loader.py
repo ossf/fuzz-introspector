@@ -32,6 +32,8 @@ import fuzz_constants
 import fuzz_cov_load
 import fuzz_utils
 
+from exceptions import DataLoaderError
+
 logger = logging.getLogger(name=__name__)
 logger.setLevel(logging.INFO)
 
@@ -652,7 +654,9 @@ def add_func_to_reached_and_clone(merged_profile_old: MergedProjectProfile,
 
     if merged_profile.all_functions[func_to_add.function_name].hitcount == 0:
         logger.info("Error. Hitcount did not get set for some reason. Exiting")
-        exit(1)
+        raise DataLoaderError(
+            "Hitcount did not get set for some reason"
+        )
 
     return merged_profile
 
