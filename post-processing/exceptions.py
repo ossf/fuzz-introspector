@@ -13,14 +13,18 @@
 # limitations under the License.
 """Exceptions used throughout the package."""
 
+
 class FuzzIntrospectorError(Exception):
     """Base error"""
+
 
 class CalltreeError(FuzzIntrospectorError):
     """Error for when dealing with calltrees"""
 
+
 class AnalysisError(FuzzIntrospectorError):
     """Error for analysis logic"""
+
 
 class DataLoaderError(FuzzIntrospectorError):
     """Error for handling data loader issues"""
