@@ -81,12 +81,14 @@ def run_fuzz_pass(fuzzer, package):
         -1,
         CALL_GRAPH_OP
     )
+    print("Analysing1")
     cg.analyze()
+    print("Analysing2")
 
     formatter = formats.Fuzz(cg)
     cg_extended = formatter.generate()
 
-    calltree = convert_to_fuzzing_cfg(cg_extended)
+    calltree, max_depth = convert_to_fuzzing_cfg(cg_extended)
     if calltree == None:
         print("Could not convert calltree to string. Exiting")
         sys.exit(1)
@@ -144,6 +146,8 @@ def translate_cg(cg_extended, fuzzer_filename):
     # TODO: do the implementation necessary to carry these out.
     for elem in cg_extended['cg']:
         elem_dict = cg_extended['cg'][elem]
+        tmpval, max_depth = get_calltree_as_str(cg_extended['cg'], elem, set())
+
         d = dict()
         d['functionName'] = elem
         d['functionSourceFile'] = elem_dict['meta']['modname']
@@ -152,12 +156,12 @@ def translate_cg(cg_extended, fuzzer_filename):
           d['functionLinenumber'] = elem_dict['meta']['lineno']
         else:
           d['functionLinenumber'] = -1
-        d['functionDepth'] = 0
+        d['functionDepth'] = max_depth
         d['returnType'] = "N/A"
-        d['argCount'] = 0
-        d['argTypes'] = []
+        d['argCount'] = elem_dict['meta']['argCount'] if 'argCount' in elem_dict['meta'] else 0
         d['constantsTouched'] = []
-        d['argNames'] = []
+        d['argNames'] = elem_dict['meta']['argNames'] if 'argNames' in elem_dict['meta'] else []
+        d['argTypes'] = elem_dict['meta']['argTypes'] if 'argTypes' in elem_dict['meta'] else []
         d['BBCount'] = 0
         d['ICount'] = 0
         d['EdgeCount'] = 0
@@ -194,9 +198,10 @@ def convert_to_fuzzing_cfg(cg_extended):
     ep_node = cg_extended['cg'][ep_key]
     #print(json.dumps(cg_extended, indent=4))
     calltree = "Call tree\n"
-    calltree += get_calltree_as_str(cg_extended['cg'], ep_key, set())
+    calltree2, max_depth = get_calltree_as_str(cg_extended['cg'], ep_key, set())
+    calltree = calltree + calltree2
     #print(calltree)
-    return calltree
+    return calltree, max_depth
 
 def get_calltree_as_str(cg_extended, k, s1, depth=0, lineno=-1, themod="", ext_mod=""):
     """Prints a calltree where k is the key in the cg of the root"""
@@ -211,12 +216,15 @@ def get_calltree_as_str(cg_extended, k, s1, depth=0, lineno=-1, themod="", ext_m
 
     # Avoid deep recursions
     if k in s1:
-        return strline
+        return strline, depth
 
     s1.add(k)
+    next_depth = depth
     for dst in cg_extended[k]['dsts']:
-        strline += get_calltree_as_str(cg_extended, dst['dst'], s1, depth+1, dst['lineno'], dst['mod'], dst['ext_mod'])
+        tmps, m_depth = get_calltree_as_str(cg_extended, dst['dst'], s1, depth+1, dst['lineno'], dst['mod'], dst['ext_mod'])
+        next_depth = max(m_depth, next_depth)
+        strline += tmps
 
-    return strline
+    return strline, next_depth
 if __name__ == "__main__":
     main()
