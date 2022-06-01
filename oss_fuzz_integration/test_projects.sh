@@ -59,4 +59,4 @@ for fuzzname in leveldb htslib unrar jsoncpp tarantool fio wuffs; do
   cp -rf ./corpus-$LATEST_CORPUS_DIR $NEW_TEST_DIR/
 done
 
-python3 $SCRIPT_DIR/project-checker.py --test-dir=$NEW_TEST_DIR/
+python3 $SCRIPT_DIR/project_checker.py --test-dir=$NEW_TEST_DIR/
