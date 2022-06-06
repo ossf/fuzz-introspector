@@ -25,17 +25,32 @@ import shutil
 
 def build_proj_with_default(project_name):
     try:
-        subprocess.check_call("python3 infra/helper.py build_fuzzers --clean %s"%(project_name), shell=True)
+        subprocess.check_call(
+            "python3 infra/helper.py build_fuzzers --clean %s"%(project_name),
+            shell=True
+        )
     except:
         print("Building default failed")
         exit(5)
 
+
 def build_proj_with_coverage(project_name):
+    cmd = [
+        "python3",
+        "infra/helper.py",
+        "build_fuzzers",
+        "--sanitizer=coverage",
+        project_name
+    ]
     try:
-        subprocess.check_call("python3 infra/helper.py build_fuzzers --sanitizer=coverage %s"%(project_name), shell=True)
+        subprocess.check_call(
+            " ".join(cmd),
+            shell=True
+        )
     except:
         print("Building with coverage failed")
         exit(5)
+
 
 def get_fuzzers(project_name):
     execs = []
@@ -47,6 +62,7 @@ def get_fuzzers(project_name):
             execs.append(l)
     print("Executable files: %s"%(str(execs)))
     return execs
+
 
 def get_next_corpus_dir():
     max_idx = -1
@@ -60,6 +76,7 @@ def get_next_corpus_dir():
                 None
     return "corpus-%d"%(max_idx+1)
 
+
 def get_recent_corpus_dir():
     max_idx = -1
     for f in os.listdir("."):
@@ -71,6 +88,7 @@ def get_recent_corpus_dir():
             except:
                 None
     return "corpus-%d"%(max_idx)
+
 
 def run_all_fuzzers(project_name, fuzztime):
     # First get all fuzzers names
@@ -85,7 +103,17 @@ def run_all_fuzzers(project_name, fuzztime):
         os.mkdir(target_corpus)
         os.mkdir(target_crashes)
 
-        cmd = ["python3 ./infra/helper.py run_fuzzer --corpus-dir=%s %s %s -- -max_total_time=%d -detect_leaks=0"%(target_corpus, project_name, f, fuzztime)]
+        cmd = [
+            "python3",
+            "./infra/helper.py",
+            "run_fuzzer",
+            "--corpus-dir=%s"%(target_corpus),
+            "%s"%(project_name),
+            "%s"%(f),
+            "--",
+            "-max_total_time=%d"%(fuzztime),
+            "-detect_leaks=0"
+        ]
         try:
             subprocess.check_call(" ".join(cmd), shell=True)
             print("Execution finished without exception")
@@ -97,6 +125,7 @@ def run_all_fuzzers(project_name, fuzztime):
             if "crash-" in l or "leak-" in l:
                 shutil.move(l, target_crashes)
 
+
 def get_coverage(project_name):
     #1 Find all coverage reports
     corpus_dir = get_recent_corpus_dir()
@@ -105,23 +134,37 @@ def get_coverage(project_name):
     for f in os.listdir(corpus_dir):
         if os.path.isdir("build/corpus/%s/%s"%(project_name, f)):
             shutil.rmtree("build/corpus/%s/%s"%(project_name, f))
-        shutil.copytree(os.path.join(corpus_dir, f), "build/corpus/%s/%s"%(project_name, f))
+        shutil.copytree(
+            os.path.join(corpus_dir, f),
+            "build/corpus/%s/%s"%(project_name, f)
+            )
 
     #3 run coverage command
+    cmd = [
+        "python3",
+        "infra/helper.py",
+        "coverage",
+        "--no-corpus-download",
+        project_name
+    ]
     try:
-        subprocess.check_call("python3 infra/helper.py coverage  --no-corpus-download %s"%(project_name), shell=True)#, timeout=60)
+        subprocess.check_call(
+            " ".join(cmd),
+            shell=True
+        )
     except:
         print("Could not run coverage reports")
 
 
-    #try:
-    #    subprocess.check_call("docker kill $(docker ps -qa)", shell=True)
-    #except:
-    #    None
-
     print("Copying report")
-    shutil.copytree("./build/out/%s/report"%(project_name), "./%s/report"%(corpus_dir))
-    shutil.copytree("./build/out/%s/report_target"%(project_name), "./%s/report_target"%(corpus_dir))
+    shutil.copytree(
+        "./build/out/%s/report"%(project_name),
+        "./%s/report"%(corpus_dir)
+    )
+    shutil.copytree(
+        "./build/out/%s/report_target"%(project_name),
+        "./%s/report_target"%(corpus_dir)
+    )
     try:
         summary_file = "build/out/%s/report/linux/summary.json"%(project_name)
         with open(summary_file, "r") as fj:
@@ -148,12 +191,24 @@ def complete_coverage_check(project_name, fuzztime):
  
     return percent
 
+
 def get_single_cov(project, target, corpus_dir):
     print("BUilding single project")
     build_proj_with_coverage(project)
 
+    cmd = [
+        "python3",
+        "infra/helper.py",
+        "coverage",
+        "--no-corpus-download",
+        "--fuzz-target",
+        target,
+        "--corpus-dir",
+        corpus_dir,
+        project_name
+    ]
     try:
-        subprocess.check_call("python3 infra/helper.py coverage --no-corpus-download --fuzz-target %s --corpus-dir %s %s"%(target, corpus_dir, project_name), shell=True)#, timeout=60)
+        subprocess.check_call(" ".join(cmd))
     except:
         print("Could not run coverage reports")
 
