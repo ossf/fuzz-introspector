@@ -72,7 +72,8 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
         html_string += self.get_optimal_target_section(
             optimal_target_functions,
             toc_list,
-            tables
+            tables,
+            coverage_url
         )
 
         # Create section for how the state of the project will be if
@@ -209,7 +210,8 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
         self,
         optimal_target_functions: List[fuzz_data_loader.FunctionProfile],
         toc_list: List[Tuple[str, str, int]],
-        tables: List[str]
+        tables: List[str],
+        coverage_url: str
     ) -> str:
         # Table with details about optimal target functions
         html_string = fuzz_html_helpers.html_add_header_with_link(
@@ -242,8 +244,13 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
             ]
         )
         for fd in optimal_target_functions:
+            func_cov_url = "%s%s.html#L%d" % (
+                coverage_url,
+                fd.function_source_file,
+                fd.function_linenumber
+            )
             html_func_row = (
-                f"<a href=\"#\"><code class='language-clike'>"
+                f"<a href=\"{ func_cov_url }\"><code class='language-clike'>"
                 f"{fuzz_utils.demangle_cpp_func(fd.function_name)}"
                 f"</code></a>"
             )
