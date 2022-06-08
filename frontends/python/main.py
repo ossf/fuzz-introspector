@@ -32,8 +32,20 @@ def main():
         help="Package containing the code to be analyzed",
         default=None
     )
+    parser.add_argument(
+        "--sources",
+        help="Extra help for identifying sources",
+        default=[],
+        nargs="+"
+    )
+    parser.add_argument(
+        "--scan",
+        default=False,
+        help="Set if package should be scanned for sources",
+        action="store_true"
+    )
     args = parser.parse_args()
-    run_fuzz_pass(args.fuzzer, args.package)
+    run_fuzz_pass(args.fuzzer, args.package, args.sources, args.scan)
     print("Done running pass")
 
 def resolve_package(fuzzer_path):
@@ -66,17 +78,29 @@ def resolve_package(fuzzer_path):
     print("Could not identify the package")
     return None
 
-def run_fuzz_pass(fuzzer, package):
+def run_fuzz_pass(fuzzer, package, sources, scan):
     if package is None:
         package = resolve_package(fuzzer)
         if package is None:
             print("No package. Exiting early now as the results will not be good")
             sys.exit(1)
 
+    # Check if we should scan
+    scanned_sources = []
+    package_abs_path = os.path.abspath(package)
+    if scan:
+        for l in os.listdir(package_abs_path):
+            if not l.endswith(".py"):
+                continue
+            full_path = os.path.join(package_abs_path, l)
+            if os.path.basename(full_path) == os.path.basename(fuzzer):
+                continue
+            scanned_sources.append(full_path)
+
     print("Fuzzer: %s"%(fuzzer))
     print("Package: %s"%(package))
     cg = CallGraphGenerator(
-        [ fuzzer ],
+        [ fuzzer ] + sources + scanned_sources,
         package,
         -1,
         CALL_GRAPH_OP
