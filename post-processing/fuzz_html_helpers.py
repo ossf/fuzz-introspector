@@ -87,7 +87,11 @@ def html_get_navbar(title: str) -> str:
             { title }
         </div>
         <div style="margin:0; font-size: 10px">
-          For issues and ideas: https://github.com/ossf/fuzz-introspector/issues
+          For issues and ideas:
+          <a href="https://github.com/ossf/fuzz-introspector/issues"
+             style="color:#FFFFFF;">
+            https://github.com/ossf/fuzz-introspector/issues
+          </a>
         </div>
     </div>
 </div>"""
