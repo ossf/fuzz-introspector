@@ -178,8 +178,11 @@ def translate_cg(cg_extended, fuzzer_filename):
 
 def dump_fuzz_logic(fuzzer_name, cg_extended, calltree):
     import yaml
-    calltree_file = fuzzer_name + ".data"
-    fuzzer_func_data = fuzzer_name + ".data.yaml"
+
+    # Prefix for post-processing
+    prefix="fuzzerLogFile-"
+    calltree_file = prefix + fuzzer_name + ".data"
+    fuzzer_func_data = prefix + fuzzer_name + ".data.yaml"
 
     with open(calltree_file, "w+") as cf:
         cf.write(calltree)
