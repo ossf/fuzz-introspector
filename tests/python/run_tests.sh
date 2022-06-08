@@ -25,7 +25,7 @@ for PROJ in test1 test2 test3 test4; do
   cd work
 
   # Extract data
-  python3 $ROOT/../../frontends/python/main.py --fuzzer $PWD/../fuzz_test.py --package=$PWD/../
+  python3 $ROOT/../../frontends/python/main.py --fuzzer $PWD/../fuzz_test.py --package=$PWD/../ --scan
   cd ../
 
   # Run post-processing
