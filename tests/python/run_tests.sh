@@ -17,7 +17,10 @@
 # Ensure https://github.com/AdaLogics/PyCG is in your PYTHONPATH
 
 ROOT=$PWD
-export PYTHONPATH=$ROOT/../../frontends/python/PyCG/
+rm -rf ./PyCG
+git clone --depth=1 https://github.com/AdaLogics/PyCG
+export PYTHONPATH=$ROOT/PyCG/
+
 for PROJ in test1 test2 test3 test4; do
   cd $ROOT/$PROJ
   rm -rf ./work
