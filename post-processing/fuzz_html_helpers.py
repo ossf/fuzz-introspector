@@ -82,8 +82,17 @@ def html_get_navbar(title: str) -> str:
             </g>
         </svg>
     </div>
-    <div class="top-navbar-title">
-        { title }
+    <div class="top-navbar-title-wrapper" style="text-align: center">
+        <div class="top-navbar-title" style="margin-bottom: 10px; font-size:25px">
+            { title }
+        </div>
+        <div style="margin:0; font-size: 10px">
+          For issues and ideas:
+          <a href="https://github.com/ossf/fuzz-introspector/issues"
+             style="color:#FFFFFF;">
+            https://github.com/ossf/fuzz-introspector/issues
+          </a>
+        </div>
     </div>
 </div>"""
     return navbar
