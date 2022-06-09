@@ -27,6 +27,7 @@ from typing import (
 import fuzz_utils
 import fuzz_cfg_load
 import fuzz_data_loader
+import fuzz_cov_load
 from enum import Enum
 
 from exceptions import AnalysisError
@@ -258,7 +259,7 @@ def overlay_calltree_with_coverage(
         n1.cov_forward_reds = forward_red
         n1.cov_largest_blocked_func = largest_blocked_name
 
-    update_branch_complexities(profile.all_class_functions)
+    update_branch_complexities(profile.all_class_functions, profile.coverage)
     branch_blockers = detect_branch_level_blockers(profile)
     logger.info(f"[+] found {len(branch_blockers)} branch blockers.")
     # TODO: use these results appropriately ...
@@ -311,7 +312,8 @@ def analysis_coverage_runtime_analysis(
     return functions_of_interest
 
 
-def update_branch_complexities(all_functions: Dict[str, fuzz_data_loader.FunctionProfile]) -> None:
+def update_branch_complexities(all_functions: Dict[str, fuzz_data_loader.FunctionProfile],
+                               coverage: fuzz_cov_load.CoverageProfile) -> None:
     """
     Traverse every branch profile and update the side complexities based on reached funcs
     complexity.
@@ -323,12 +325,12 @@ def update_branch_complexities(all_functions: Dict[str, fuzz_data_loader.Functio
             branch.branch_true_side_complexity = 0
             for fn in branch.branch_false_side_funcs:
                 # Accoounts for non-covered functions
-                if fn in all_functions and all_functions[fn].hitcount == 0:
+                if fn in all_functions and coverage.is_func_hit(fn) is False:
                     branch.branch_false_side_complexity += (
                         all_functions[fn].total_cyclomatic_complexity)
             for fn in branch.branch_true_side_funcs:
                 # Same as above
-                if fn in all_functions and all_functions[fn].hitcount == 0:
+                if fn in all_functions and coverage.is_func_hit(fn) is False:
                     branch.branch_true_side_complexity += (
                         all_functions[fn].total_cyclomatic_complexity)
 
