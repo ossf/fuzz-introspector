@@ -198,7 +198,7 @@ class FuzzCalltreeAnalysis(fuzz_analysis.AnalysisInterface):
         complete_html_string += "</body></html>"
 
         # Beautify and write HTML
-        soup = bs(complete_html_string, 'lxml')
+        soup = bs(complete_html_string, "html.parser")
         pretty_html = soup.prettify()
         with open(filename, "w+") as cf:
             cf.write(pretty_html)

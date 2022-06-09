@@ -83,12 +83,13 @@ def run_fuzz_pass(fuzzer, package, sources, scan):
         package = resolve_package(fuzzer)
         if package is None:
             print("No package. Exiting early now as the results will not be good")
-            sys.exit(1)
+            package=""
+            #sys.exit(1)
 
     # Check if we should scan
     scanned_sources = []
-    package_abs_path = os.path.abspath(package)
     if scan:
+        package_abs_path = os.path.abspath(package)
         for l in os.listdir(package_abs_path):
             if not l.endswith(".py"):
                 continue
