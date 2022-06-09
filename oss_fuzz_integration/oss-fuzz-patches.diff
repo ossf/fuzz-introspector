@@ -12,18 +12,9 @@ index df23f03b..2f1acf9f 100644
  
  CMD ["compile"]
 diff --git a/infra/base-images/base-builder/compile b/infra/base-images/base-builder/compile
-index f783b277..5439780b 100755
+index 6e2bff24..5439780b 100755
 --- a/infra/base-images/base-builder/compile
 +++ b/infra/base-images/base-builder/compile
-@@ -18,7 +18,7 @@
- echo "---------------------------------------------------------------"
- 
- # This is a temporary fix: fall back to LLVM14's old pass manager
--if [ -n "$OLD_LLVMPASS" ]; then
-+if [ -n "${OLD_LLVMPASS-}" ]; then
-   export SANITIZER_FLAGS_introspector=$(echo $SANITIZER_FLAGS_introspector | sed -r 's/-O0/-flegacy-pass-manager/')
- fi
- 
 @@ -47,8 +47,8 @@ if [ "$FUZZING_LANGUAGE" = "python" ]; then
      echo "ERROR: Python projects can be fuzzed with libFuzzer engine only."
      exit 1
@@ -95,10 +86,10 @@ index f783b277..5439780b 100755
  
  if [[ "$FUZZING_ENGINE" = "dataflow" ]]; then
 diff --git a/infra/base-images/base-builder/compile_python_fuzzer b/infra/base-images/base-builder/compile_python_fuzzer
-index e7c7f0a3..8727b935 100755
+index e7c7f0a3..35394f37 100755
 --- a/infra/base-images/base-builder/compile_python_fuzzer
 +++ b/infra/base-images/base-builder/compile_python_fuzzer
-@@ -24,6 +24,18 @@ fuzzer_package=${fuzzer_basename}.pkg
+@@ -24,6 +24,22 @@ fuzzer_package=${fuzzer_basename}.pkg
  PYFUZZ_WORKPATH=$SRC/pyfuzzworkdir/
  FUZZ_WORKPATH=$PYFUZZ_WORKPATH/$fuzzer_basename
  
@@ -109,6 +100,10 @@ index e7c7f0a3..8727b935 100755
 +    export PYTHONPATH=$PWD/PyCG/
 +
 +    ARGS="--fuzzer $fuzzer_path"
++    if [ -n "${PYFUZZPACKAGE-}" ]; then
++      ARGS="$ARGS --package=${PYFUZZPACKAGE}"
++      ARGS="$ARGS --scan"
++    fi
 +    python3 /fuzz-introspector/frontends/python/main.py $ARGS
 +    ls -la ./
 +    exit 0
@@ -141,3 +136,31 @@ index 400247bf..78353d6d 100755
 -  python3 -m http.server $HTTP_PORT
 +  #python3 -m http.server $HTTP_PORT
  fi
+diff --git a/projects/pyxdg/build.sh b/projects/pyxdg/build.sh
+index 2347e65a..10208571 100644
+--- a/projects/pyxdg/build.sh
++++ b/projects/pyxdg/build.sh
+@@ -23,6 +23,8 @@ python3 ./setup.py install
+ cd $SRC/pyxdg
+ pip3 install .
+ 
++export PYFUZZPACKAGE=$PWD
++
+ # Build fuzzers in $OUT.
+ # Remove fuzzers in lxml
+ find $SRC/lxml -name fuzz*.py -exec rm {} \;
+diff --git a/projects/pyyaml/build.sh b/projects/pyyaml/build.sh
+index 98f406ad..62485ae4 100644
+--- a/projects/pyyaml/build.sh
++++ b/projects/pyyaml/build.sh
+@@ -14,7 +14,10 @@
+ # limitations under the License.
+ #
+ ################################################################################
++
++
+ cd pyyaml
++export PYFUZZPACKAGE=$PWD/lib/
+ python3 ./setup.py --without-libyaml install
+ 
+ # Build fuzzers in $OUT.
