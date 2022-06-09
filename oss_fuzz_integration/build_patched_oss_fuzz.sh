@@ -29,6 +29,7 @@ else
 fi
 
 rm -rf ./oss-fuzz/infra/base-images/base-builder/post-processing/
+rm -rf ./oss-fuzz/infra/base-images/base-builder/frontends
 rm -rf ./oss-fuzz/infra/base-images/base-clang/fuzz-introspector/
 
 mkdir ./oss-fuzz/infra/base-images/base-clang/fuzz-introspector/
@@ -37,6 +38,8 @@ cp -rf ../llvm ./oss-fuzz/infra/base-images/base-clang/fuzz-introspector/llvm
 cp ../sed_cmds.sh ./oss-fuzz/infra/base-images/base-clang/fuzz-introspector/sed_cmds.sh
 cp -rf ../post-processing ./oss-fuzz/infra/base-images/base-clang/fuzz-introspector/post-processing
 cp -rf ../post-processing ./oss-fuzz/infra/base-images/base-builder/post-processing
+
+cp -rf ../frontends ./oss-fuzz/infra/base-images/base-builder/frontends
 
 # Skip all.sh if CLOUD_BUILD_ENV is set (it is in cloud build).
 if [[ -z ${CLOUD_BUILD_ENV:+dummy} ]]; then
@@ -49,6 +52,7 @@ if [[ -z ${CLOUD_BUILD_ENV:+dummy} ]]; then
   docker build -t gcr.io/oss-fuzz-base/base-clang --build-arg introspector=local infra/base-images/base-clang
   docker build -t gcr.io/oss-fuzz-base/base-builder "$@" infra/base-images/base-builder
   docker build -t gcr.io/oss-fuzz-base/base-runner "$@" infra/base-images/base-runner
+  docker build -t gcr.io/oss-fuzz-base/base-builder-python "$@" infra/base-images/base-builder-python
 
   #./infra/base-images/all.sh
 fi

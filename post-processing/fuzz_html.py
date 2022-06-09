@@ -927,7 +927,7 @@ def create_html_report(
                      + html_footer)
 
     # Pretty print the html document
-    soup = bs(html_full_doc, "lxml")
+    soup = bs(html_full_doc, "html.parser")
     prettyHTML = soup.prettify()
 
     # Remove existing html report

@@ -20,8 +20,13 @@
 # Copy over new post-processing
 rm -rf ./oss-fuzz/infra/base-images/base-builder/post-processing
 cp -rf ../post-processing ./oss-fuzz/infra/base-images/base-builder/post-processing
+
+rm -rf ./oss-fuzz/infra/base-images/base-builder/frontends
+cp -rf ../frontends/ ./oss-fuzz/infra/base-images/base-builder/frontends
+
 cd oss-fuzz
 docker build -t gcr.io/oss-fuzz-base/base-builder "$@" infra/base-images/base-builder
+docker build -t gcr.io/oss-fuzz-base/base-builder-python "$@" infra/base-images/base-builder-python
 
 # Sometimes you may want to rebuild base runner but only rarely.
 # As such, one should provide an argument for that.
