@@ -12,7 +12,7 @@ index df23f03b..2f1acf9f 100644
  
  CMD ["compile"]
 diff --git a/infra/base-images/base-builder/compile b/infra/base-images/base-builder/compile
-index 6e2bff24..5439780b 100755
+index 6e2bff24..7d2e4079 100755
 --- a/infra/base-images/base-builder/compile
 +++ b/infra/base-images/base-builder/compile
 @@ -47,8 +47,8 @@ if [ "$FUZZING_LANGUAGE" = "python" ]; then
@@ -26,7 +26,7 @@ index 6e2bff24..5439780b 100755
      exit 1
    fi
    if [ "$ARCHITECTURE" != "x86_64" ]; then
-@@ -215,11 +215,11 @@ if [ "$SANITIZER" = "introspector" ]; then
+@@ -215,34 +215,42 @@ if [ "$SANITIZER" = "introspector" ]; then
    unset CFLAGS
    apt-get install -y libjpeg-dev zlib1g-dev
    pip3 install --upgrade setuptools
@@ -41,7 +41,9 @@ index 6e2bff24..5439780b 100755
    # Move coverage report.
    if [ -d "$OUT/textcov_reports" ]
    then
-@@ -228,21 +228,29 @@ if [ "$SANITIZER" = "introspector" ]; then
+-    cp $OUT/textcov_reports/*.covreport $SRC/inspector/
++    find $OUT/textcov_reports/ -name *.covreport -exec cp {} $SRC/inspector/ \;
+   fi
  
    cd $SRC/inspector
  

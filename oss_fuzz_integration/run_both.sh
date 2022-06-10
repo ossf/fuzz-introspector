@@ -24,7 +24,9 @@ LATEST_CORPUS_DIR=$(ls | grep "corpus-" | sed 's/corpus-//' | sort -n | tail -1)
 
 cp -rf ./build/out/$1/inspector/ ./corpus-$LATEST_CORPUS_DIR/inspector-report
 cp -rf ./corpus-$LATEST_CORPUS_DIR/report/ ./corpus-$LATEST_CORPUS_DIR/inspector-report/covreport
-cp -rf ./corpus-$LATEST_CORPUS_DIR/report_target/* ./corpus-$LATEST_CORPUS_DIR/inspector-report/covreport/
+
+# We need to allow the following to fail because it will do so for Python projects
+cp -rf ./corpus-$LATEST_CORPUS_DIR/report_target/* ./corpus-$LATEST_CORPUS_DIR/inspector-report/covreport/ || true
 
 echo "If all worked, then you should be able to start a webserver at port 8008 in ./corpus-${LATEST_CORPUS_DIR}/inspector-report/"
 cd ./corpus-${LATEST_CORPUS_DIR}/inspector-report/
