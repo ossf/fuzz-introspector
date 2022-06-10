@@ -7,3 +7,4 @@ soupsieve==2.2.1
 flake8
 pep8
 mypy
+psutil
