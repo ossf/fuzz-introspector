@@ -37,6 +37,9 @@ git checkout release/14.x
 $BASE/sed_cmds.sh
 cd ${BUILD_BASE}
 
+# Required for multicore support
+python3 -m pip install psutil
+
 # Now copy over the LLVM code we have
 # This includes our inspector pass and the files included.
 cp -rf ${BASE}/llvm/include/llvm/Transforms/FuzzIntrospector/ ./llvm-project/llvm/include/llvm/Transforms/FuzzIntrospector

@@ -21,6 +21,7 @@ import sys
 import json
 import threading
 import shutil
+import psutil
 
 
 def build_proj_with_default(project_name):
@@ -94,6 +95,8 @@ def run_all_fuzzers(project_name, fuzztime):
     # First get all fuzzers names
     fuzzer_names = get_fuzzers(project_name)
 
+    #Utilize half of the cores
+    core_num = round(psutil.cpu_count()/2)
     corpus_dir = get_next_corpus_dir()
     os.mkdir(corpus_dir)
     for f in fuzzer_names:
@@ -112,6 +115,8 @@ def run_all_fuzzers(project_name, fuzztime):
             "%s"%(f),
             "--",
             "-max_total_time=%d"%(fuzztime),
+            "-workers=%d"%(core_num),
+            "-jobs=%d"%(core_num),
             "-detect_leaks=0"
         ]
         try:
