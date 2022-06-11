@@ -58,6 +58,10 @@ def resolve_package(fuzzer_path):
     return None
 
 
+def should_debug() -> bool:
+    return "PYINTROSPECTOR_DEBUG" in os.environ
+
+
 def run_fuzz_pass(
     fuzzer: str,
     package: str,
@@ -95,6 +99,11 @@ def run_fuzz_pass(
     cg.analyze()
     formatter = formats.Fuzz(cg)
     cg_extended = formatter.generate()
+
+    if should_debug():
+        logger.info("Printing extended cg")
+        print(json.dumps(cg_extended, sort_keys=False, indent=4))
+        logger.info("Done printing cg")
 
     # Post analysis
     res = post_analysis(cg_extended, fuzzer)
