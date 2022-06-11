@@ -1249,7 +1249,7 @@ std::vector<BranchProfileEntry> FuzzIntrospector::branchProfiler(Function *F) {
     //   continue;
     // }
     auto fName = F->getName().str();
-    logPrintf(L1, "We are in branch profiler for %s\n", fName.c_str());
+    logPrintf(L3, "We are in branch profiler for %s\n", fName.c_str());
 
     // This map is function level
     std::map<BasicBlock *, size_t> BBComplexityMap;
@@ -1439,7 +1439,7 @@ FuzzIntrospector::getInsnDebugInfo(Instruction *I) {
     Ret_string = Loc->getFilename().str() + +":" + Ret_line + "," +
                  std::to_string(Loc->getColumn());
   } else {
-    logPrintf(L1, "No debug info!!\n");
+    logPrintf(L3, "No debug info!!\n");
   }
 
   return make_pair(Ret_string, Ret_line);
