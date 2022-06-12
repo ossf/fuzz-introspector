@@ -97,7 +97,10 @@ class CoverageProfile:
         return len(self.covmap[fuzz_key]), len(lines_hit)
 
 
-def llvm_cov_load(target_dir: str, target_name:Optional[str]=None) -> CoverageProfile:
+def llvm_cov_load(
+    target_dir: str,
+    target_name: Optional[str] = None
+) -> CoverageProfile:
     """
     Scans a directory to read one or more coverage reports, and returns a CoverageProfile
 

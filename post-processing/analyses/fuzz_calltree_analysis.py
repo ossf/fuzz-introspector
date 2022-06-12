@@ -210,7 +210,7 @@ class FuzzCalltreeAnalysis(fuzz_analysis.AnalysisInterface):
     def get_fuzz_blockers(
         self,
         profile: fuzz_data_loader.FuzzerProfile,
-        max_blockers_to_extract:int=999
+        max_blockers_to_extract: int = 999
     ) -> List[fuzz_cfg_load.CalltreeCallsite]:
         """Gets a list of fuzz blockers"""
         blocker_list: List[fuzz_cfg_load.CalltreeCallsite] = list()
@@ -235,7 +235,7 @@ class FuzzCalltreeAnalysis(fuzz_analysis.AnalysisInterface):
         profile: fuzz_data_loader.FuzzerProfile,
         tables: List[str],
         calltree_file_name: str,
-        fuzz_blockers: Optional[List[fuzz_cfg_load.CalltreeCallsite]]=None
+        fuzz_blockers: Optional[List[fuzz_cfg_load.CalltreeCallsite]] = None
     ) -> Optional[str]:
         """
         Creates HTML string for table showing fuzz blockers.
