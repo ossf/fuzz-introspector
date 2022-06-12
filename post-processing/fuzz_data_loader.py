@@ -74,7 +74,7 @@ class BranchProfile:
         self.branch_true_side_funcs: List[str] = []
         self.branch_false_side_funcs: List[str] = []
 
-    def assign_from_yaml_elem(self, elem):
+    def assign_from_yaml_elem(self, elem: Dict[Any, Any]) -> None:
         # This skips the path, as it may cause incosistancy vs coverage file names path
         self.branch_pos = elem['Branch String'].split('/')[-1]
         self.branch_true_side_pos = elem['Branch Sides']['TrueSide']
@@ -82,11 +82,11 @@ class BranchProfile:
         self.branch_true_side_funcs = elem['Branch Sides']['TrueSideFuncs']
         self.branch_false_side_complexity = elem['Branch Sides']['FalseSideFuncs']
 
-    def assign_from_coverage(self, true_count, false_count):
+    def assign_from_coverage(self, true_count: str, false_count: str) -> None:
         self.branch_true_side_hitcount = int(true_count)
         self.branch_false_side_hitcount = int(false_count)
 
-    def dump(self):
+    def dump(self) -> None:
         """
         For debugging purposes, may be removed later.
         """
@@ -99,7 +99,7 @@ class FunctionProfile:
     """
     Class for storing information about a given Function
     """
-    def __init__(self, elem) -> None:
+    def __init__(self, elem: Dict[Any, Any]) -> None:
         self.function_name = elem['functionName']
         self.function_source_file = elem['functionSourceFile']
         self.linkage_type = elem['linkageType']
@@ -714,7 +714,7 @@ def load_input_bugs(bug_file: str) -> List[InputBug]:
     return input_bugs
 
 
-def read_branch_data_file_to_profile(filename: str, bp_dict: dict):
+def read_branch_data_file_to_profile(filename: str, bp_dict: Dict[Any, Any]) -> None:
     """
     Loads branch profiles from LLVM pass output yaml file.
     """

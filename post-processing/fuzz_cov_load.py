@@ -60,7 +60,7 @@ class CoverageProfile:
             return True
         return False
 
-    def get_hit_details(self, funcname):
+    def get_hit_details(self, funcname: str) -> List[Tuple[int, int]]:
         """
         Returns a list containiner tupls [line number, hit count]
         of the function given as argument. If there is no coverage,
@@ -97,7 +97,7 @@ class CoverageProfile:
         return len(self.covmap[fuzz_key]), len(lines_hit)
 
 
-def llvm_cov_load(target_dir, target_name=None) -> CoverageProfile:
+def llvm_cov_load(target_dir: str, target_name:Optional[str]=None) -> CoverageProfile:
     """
     Scans a directory to read one or more coverage reports, and returns a CoverageProfile
 
