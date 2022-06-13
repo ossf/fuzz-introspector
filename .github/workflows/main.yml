@@ -13,7 +13,7 @@ jobs:
         uses: actions/setup-python@98f2ad02fd48d057ee3b4d4f66525b231c3e52b6 # v3.0.0
         with:
           python-version: "3.8"
-      - name: flake8 Lint: post-processing
+      - name: flake8 Lint
         uses: py-actions/flake8@6b71483a8fe60d4cb967d3aa4ee56e5e52711d30 # v2
         with:
           ignore: "W503,W605"
