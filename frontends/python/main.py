@@ -18,7 +18,7 @@ import json
 import logging
 import argparse
 
-from typing import List, Set
+from typing import List
 
 from pycg.pycg import CallGraphGenerator
 from pycg import formats
@@ -29,7 +29,7 @@ logger = logging.getLogger(name=__name__)
 
 def resolve_package(fuzzer_path):
     """Resolves the package of a fuzzer"""
-    print("Fuzzer path: %s"%(fuzzer_path))
+    print(f"Fuzzer path: {fuzzer_path}")
     dirpath = os.path.dirname(fuzzer_path)
 
     # sanity check one
@@ -47,11 +47,11 @@ def resolve_package(fuzzer_path):
     imported_dirs = []
     for d in all_dirs:
         if d in fuzz_content:
-            print("Directory: %s"%(d))
+            print(f"Directory: {d}")
             imported_dirs.append(d)
 
     if len(imported_dirs) > 0:
-        print("Package path: %s"%(dirpath))
+        print(f"Package path: {dirpath}")
         return dirpath + "/"
 
     print("Could not identify the package")
@@ -73,16 +73,16 @@ def run_fuzz_pass(
         package = resolve_package(fuzzer)
         if package is None:
             logger.error("No package. Exiting early now as the results will not be good")
-            package=""
+            package = ""
 
     # Check if we should scan
     scanned_sources = []
     if scan:
         package_abs_path = os.path.abspath(package)
-        for l in os.listdir(package_abs_path):
-            if not l.endswith(".py"):
+        for potential_script in os.listdir(package_abs_path):
+            if not potential_script.endswith(".py"):
                 continue
-            full_path = os.path.join(package_abs_path, l)
+            full_path = os.path.join(package_abs_path, potential_script)
             if os.path.basename(full_path) == os.path.basename(fuzzer):
                 continue
             scanned_sources.append(full_path)
@@ -91,7 +91,7 @@ def run_fuzz_pass(
         f"Running analysis with arguments: {{fuzzer: {fuzzer}, package: {package} }}"
     )
     cg = CallGraphGenerator(
-        [ fuzzer ] + sources + scanned_sources,
+        [fuzzer] + sources + scanned_sources,
         package,
         -1,
         CALL_GRAPH_OP
@@ -107,7 +107,7 @@ def run_fuzz_pass(
 
     # Post analysis
     res = post_analysis(cg_extended, fuzzer)
-    if res == None:
+    if res is None:
         logger.error("Could not convert calltree to string.")
         return 1
 
@@ -123,7 +123,7 @@ def post_analysis(cg_extended, fuzzer):
     post-processing can use.
     """
     calltree, max_depth = convert_to_fuzzing_cfg(cg_extended)
-    if calltree == None:
+    if calltree is None:
         print("Could not convert calltree to string. Exiting")
         return None
 
@@ -163,7 +163,7 @@ def set_all_reachables(cg_extended):
     for elem in cg_extended['cg']:
         logger.info(f"Converging {elem}")
         all_reachables = set()
-        ws = { dst['dst'] for dst in cg_extended['cg'][elem]['dsts'] }
+        ws = {dst['dst'] for dst in cg_extended['cg'][elem]['dsts']}
         while len(ws) > 0:
             e1 = ws.pop()
             if e1 not in all_reachables:
@@ -192,9 +192,9 @@ def convert_cg_to_introspector_data(cg_extended, fuzzer_filename):
         d['functionSourceFile'] = elem_dict['meta']['modname']
         d['linkageType'] = "pythonLinkage"
         if 'lineno' in elem_dict['meta']:
-          d['functionLinenumber'] = elem_dict['meta']['lineno']
+            d['functionLinenumber'] = elem_dict['meta']['lineno']
         else:
-          d['functionLinenumber'] = -1
+            d['functionLinenumber'] = -1
         d['functionDepth'] = max_depth
         d['returnType'] = "N/A"
         d['argCount'] = elem_dict['meta']['argCount'] if 'argCount' in elem_dict['meta'] else 0
@@ -209,7 +209,7 @@ def convert_cg_to_introspector_data(cg_extended, fuzzer_filename):
 
         # Set the following based on ifCount. This should be refined to be more accurrate.
         d['BBCount'] = d['IfCount']
-        d['EdgeCount'] = int((d['IfCount']+1) * 1.4)
+        d['EdgeCount'] = int((d['IfCount'] + 1) * 1.4)
         d['CyclomaticComplexity'] = d['EdgeCount'] - d['BBCount'] + 2
         new_dict['All functions']['Elements'].append(d)
     return new_dict
@@ -219,7 +219,7 @@ def dump_fuzz_logic(fuzzer_name, cg_extended, calltree):
     import yaml
 
     # Prefix for post-processing
-    prefix="fuzzerLogFile-"
+    prefix = "fuzzerLogFile-"
     calltree_file = prefix + fuzzer_name + ".data"
     fuzzer_func_data = prefix + fuzzer_name + ".data.yaml"
 
@@ -243,8 +243,7 @@ def convert_to_fuzzing_cfg(cg_extended):
         return None
 
     # Extract fuzzer entrypoint
-    ep_key = cg_extended['ep']['mod'] + "." + cg_extended['ep']['name']    
-    ep_node = cg_extended['cg'][ep_key]
+    ep_key = cg_extended['ep']['mod'] + "." + cg_extended['ep']['name']
 
     # Get calltree as string
     calltree, max_depth = get_calltree_as_str(
@@ -276,7 +275,7 @@ def get_calltree_as_str(
 
     if key_mod == "":
         key_mod = "/"
-    strline = "%s%s %s %d\n"%(" "*(depth*2), key, key_mod, lineno)
+    strline = "%s%s %s %d\n" % (" " * (depth * 2), key, key_mod, lineno)
     sorted_keys = sorted(cg_extended[key]['dsts'], key=lambda x: x['lineno'])
 
     # Avoid deep recursions
@@ -285,14 +284,14 @@ def get_calltree_as_str(
 
     visited.add(key)
     next_depth = depth
-    for dst in cg_extended[key]['dsts']:
+    for dst in sorted_keys:
         tmps, m_depth = get_calltree_as_str(
             cg_extended,
             dst['dst'],
             visited,
-            depth = depth+1,
-            lineno = dst['lineno'],
-            key_mod = dst['mod']
+            depth=depth + 1,
+            lineno=dst['lineno'],
+            key_mod=dst['mod']
         )
         next_depth = max(m_depth, next_depth)
         strline += tmps
