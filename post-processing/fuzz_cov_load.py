@@ -60,7 +60,7 @@ class CoverageProfile:
             return True
         return False
 
-    def get_hit_details(self, funcname):
+    def get_hit_details(self, funcname: str) -> List[Tuple[int, int]]:
         """
         Returns a list containiner tupls [line number, hit count]
         of the function given as argument. If there is no coverage,
@@ -97,7 +97,10 @@ class CoverageProfile:
         return len(self.covmap[fuzz_key]), len(lines_hit)
 
 
-def llvm_cov_load(target_dir, target_name=None) -> CoverageProfile:
+def llvm_cov_load(
+    target_dir: str,
+    target_name: Optional[str] = None
+) -> CoverageProfile:
     """
     Scans a directory to read one or more coverage reports, and returns a CoverageProfile
 
@@ -122,17 +125,17 @@ def llvm_cov_load(target_dir, target_name=None) -> CoverageProfile:
     logger.info(f"Found {len(coverage_reports)} coverage reports")
 
     # Check if there is a meaningful profile and if not, we need to use all.
-    found_name = False
+    found_name: Optional[str] = None
     if target_name is not None:
         for cov_report in coverage_reports:
             if target_name in cov_report:
-                found_name = True
+                found_name = target_name
 
     cp = CoverageProfile()
     for profile_file in coverage_reports:
         # If only coverage from a specific report should be used then filter
         # here. Otherwise, include coverage from all reports.
-        if found_name and target_name not in profile_file:
+        if found_name is not None and found_name not in profile_file:
             continue
 
         logger.info(f"Reading coverage report: {profile_file}")

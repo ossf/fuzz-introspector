@@ -18,7 +18,6 @@ import abc
 import logging
 
 from typing import (
-    Any,
     Dict,
     List,
     Tuple,
@@ -40,14 +39,16 @@ class AnalysisInterface(abc.ABC):
     name: str
 
     @abc.abstractmethod
-    def analysis_func(self,
-                      toc_list: List[Tuple[str, str, int]],
-                      tables: List[str],
-                      project_profile: fuzz_data_loader.MergedProjectProfile,
-                      profiles: List[fuzz_data_loader.FuzzerProfile],
-                      basefolder: str,
-                      coverage_url: str,
-                      conclusions) -> str:
+    def analysis_func(
+        self,
+        toc_list: List[Tuple[str, str, int]],
+        tables: List[str],
+        project_profile: fuzz_data_loader.MergedProjectProfile,
+        profiles: List[fuzz_data_loader.FuzzerProfile],
+        basefolder: str,
+        coverage_url: str,
+        conclusions: List[Tuple[int, str]]
+    ) -> str:
         """Core analysis function."""
         pass
 
@@ -107,11 +108,18 @@ def overlay_calltree_with_coverage(
     ) -> str:
         return c[int(n.depth) - 1]
 
-    def callstack_has_parent(n, c):
+    def callstack_has_parent(
+        n: fuzz_cfg_load.CalltreeCallsite,
+        c: Dict[int, str]
+    ) -> bool:
         return int(n.depth) - 1 in c
 
-    def callstack_set_curr_node(n, name, c):
-        c[int(node.depth)] = name
+    def callstack_set_curr_node(
+        n: fuzz_cfg_load.CalltreeCallsite,
+        name: str,
+        c: Dict[int, str]
+    ) -> None:
+        c[int(n.depth)] = name
 
     is_first = True
     ct_idx = 0
@@ -176,7 +184,7 @@ def overlay_calltree_with_coverage(
         node.cov_hitcount = node_hitcount
 
         # Map hitcount to color of target.
-        def get_hit_count_color(hit_count):
+        def get_hit_count_color(hit_count: int) -> str:
             color_schemes = [
                 (0, 1, "red"),
                 (1, 10, "gold"),
@@ -279,8 +287,9 @@ def overlay_calltree_with_coverage(
 
 
 def analysis_coverage_runtime_analysis(
-        profiles: List[fuzz_data_loader.FuzzerProfile],
-        merged_profile: fuzz_data_loader.MergedProjectProfile):
+    profiles: List[fuzz_data_loader.FuzzerProfile],
+    merged_profile: fuzz_data_loader.MergedProjectProfile
+) -> List[str]:
     """
     Identifies the functions that are hit in terms of coverage, but
     only has a low percentage overage in terms of lines covered in the
@@ -335,7 +344,9 @@ def update_branch_complexities(all_functions: Dict[str, fuzz_data_loader.Functio
                         all_functions[fn].total_cyclomatic_complexity)
 
 
-def detect_branch_level_blockers(fuzz_profile: fuzz_data_loader.FuzzerProfile) -> List[Any]:
+def detect_branch_level_blockers(
+    fuzz_profile: fuzz_data_loader.FuzzerProfile
+) -> List[FuzzBranchBlocker]:
     fuzz_blockers = []
 
     if fuzz_profile.coverage is None:

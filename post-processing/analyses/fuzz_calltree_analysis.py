@@ -143,8 +143,8 @@ class FuzzCalltreeAnalysis(fuzz_analysis.AnalysisInterface):
 
     def html_create_dedicated_calltree_file(
         self,
-        calltree_html_string,
-        filename,
+        calltree_html_string: str,
+        filename: str,
         profile: fuzz_data_loader.FuzzerProfile
     ) -> None:
         """
@@ -203,14 +203,14 @@ class FuzzCalltreeAnalysis(fuzz_analysis.AnalysisInterface):
         with open(filename, "w+") as cf:
             cf.write(pretty_html)
 
-    def create_str_node_ctx_idx(self, cov_ct_idx):
+    def create_str_node_ctx_idx(self, cov_ct_idx: str) -> str:
         prefixed_zeros = "0" * (len("00000") - len(cov_ct_idx))
         return f"{prefixed_zeros}{cov_ct_idx}"
 
     def get_fuzz_blockers(
         self,
         profile: fuzz_data_loader.FuzzerProfile,
-        max_blockers_to_extract=999
+        max_blockers_to_extract: int = 999
     ) -> List[fuzz_cfg_load.CalltreeCallsite]:
         """Gets a list of fuzz blockers"""
         blocker_list: List[fuzz_cfg_load.CalltreeCallsite] = list()
@@ -235,7 +235,7 @@ class FuzzCalltreeAnalysis(fuzz_analysis.AnalysisInterface):
         profile: fuzz_data_loader.FuzzerProfile,
         tables: List[str],
         calltree_file_name: str,
-        fuzz_blockers=None
+        fuzz_blockers: Optional[List[fuzz_cfg_load.CalltreeCallsite]] = None
     ) -> Optional[str]:
         """
         Creates HTML string for table showing fuzz blockers.

@@ -39,18 +39,20 @@ TargetCodesType = TypedDict('TargetCodesType', {
 
 
 class FuzzDriverSynthesizerAnalysis(fuzz_analysis.AnalysisInterface):
-    def __init__(self):
+    def __init__(self) -> None:
         self.name = "FuzzDriverSynthesizerAnalysis"
 
-    def analysis_func(self,
-                      toc_list: List[Tuple[str, str, int]],
-                      tables: List[str],
-                      project_profile: fuzz_data_loader.MergedProjectProfile,
-                      profiles: List[fuzz_data_loader.FuzzerProfile],
-                      basefolder: str,
-                      coverage_url: str,
-                      conclusions,
-                      fuzz_targets=None) -> str:
+    def analysis_func(
+        self,
+        toc_list: List[Tuple[str, str, int]],
+        tables: List[str],
+        project_profile: fuzz_data_loader.MergedProjectProfile,
+        profiles: List[fuzz_data_loader.FuzzerProfile],
+        basefolder: str,
+        coverage_url: str,
+        conclusions: List[Tuple[int, str]],
+        fuzz_targets=None
+    ) -> str:
         logger.info(f" - Running analysis {self.name}")
         html_string = ""
         html_string += "<div class=\"report-box\">"
