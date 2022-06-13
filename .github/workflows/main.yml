@@ -18,10 +18,4 @@ jobs:
         with:
           ignore: "W503,W605"
           max-line-length: "100"
-          path: "post-processing/"
-      - name: flake8 Lint: frontends
-        uses: py-actions/flake8@6b71483a8fe60d4cb967d3aa4ee56e5e52711d30 # v2
-        with:
-          ignore: "W503,W605"
-          max-line-length: "100"
           path: "frontends/python/"
