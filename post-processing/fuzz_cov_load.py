@@ -42,10 +42,24 @@ class CoverageProfile:
         self.covmap: Dict[str, List[Tuple[int, int]]] = dict()
         self.covreports: List[str] = list()
 
+        # File to cov map: {filename: [ (linenumber, hit), ... ]}
+        self.file_map: Dict[str, List[Tuple[int, int]]] = dict()
+
         # branch_cov_map is dictionary to collect the branch coverage info
         # in the form of current_func:line_number as the key and true_hit and
         # false_hit as a tuple value
         self.branch_cov_map: Dict[str, Tuple[int, int]] = dict()
+
+        self.cov_type = ""
+
+    def set_type(self, cov_type: str) -> None:
+        self.cov_type = cov_type
+
+    def get_type(self) -> str:
+        return self.cov_type
+
+    def is_type_set(self) -> bool:
+        return self.cov_type != ""
 
     def get_all_hit_functions(self) -> List[str]:
         # Hacky way to satisfy typing
@@ -53,6 +67,39 @@ class CoverageProfile:
         for k in self.covmap.keys():
             all_keys.append(k)
         return all_keys
+
+    def generic_check_hit(
+        self,
+        key: str,
+        lineno: int,
+        resolve_name: bool = False
+    ) -> bool:
+        """Checks if a file is hit. This is a generic function that first checks
+        what type of coverage mapping this is.
+        """
+        if self.get_type() == "file":
+            target_key = key
+            if resolve_name:
+                # Try to resolve the key. This is needed to e.g. normalise
+                # file names.
+                refined_key = key.replace(".", "/")
+                if not refined_key.endswith(".py"):
+                    refined_key = refined_key + ".py"
+                found_key = ""
+                for potential_key in self.file_map:
+                    if potential_key.endswith(refined_key):
+                        found_key = potential_key
+                        break
+                if found_key == "":
+                    return False
+                target_key = found_key
+
+            if target_key not in self.file_map:
+                return False
+            for key_lineno in self.file_map[target_key]:
+                if key_lineno == lineno:
+                    return True
+        return False
 
     def is_func_hit(self, funcname: str) -> bool:
         _, lines_hit = self.get_hit_summary(funcname)
@@ -218,12 +265,45 @@ def llvm_cov_load(
     return cp
 
 
+def load_python_json_cov(
+    json_file: str,
+    strip_pyinstaller_prefix: bool = True
+):
+    """Loads a python json coverage file.
+
+    The specific json file that is handled by the coverage output from:
+    - https://coverage.readthedocs.io/en/latest/cmd.html#json-reporting-coverage-json
+
+    Return a CoverageProfile
+    """
+    import json
+    cp = CoverageProfile()
+    cp.set_type("file")
+
+    with open(json_file, "r") as f:
+        data = json.load(f)
+
+    for entry in data['files']:
+        cov_entry = entry
+
+        # Strip any directories added by pyinstaller or oss-fuzz coverage handling
+        if strip_pyinstaller_prefix:
+            prefixed_entry = entry.replace("/pythoncovmergedfiles", "")
+            prefixed_entry = prefixed_entry.replace("/medio", "")
+            cov_entry = prefixed_entry
+        cp.file_map[cov_entry] = data['files'][entry]['executed_lines']
+
+    return cp
+
+
 if __name__ == "__main__":
     logging.basicConfig()
     logger.info("Starting coverage loader")
-    cp = llvm_cov_load(".")
+    cp = load_python_json_cov("total_coverage.json")
 
     logger.info("Coverage map keys")
-    for fn in cp.covmap:
+    for fn in cp.file_map:
         logger.info(fn)
     logger.info("Coverage loader end")
+    is_hit = cp.generic_check_hit("yaml.reader", 150, True)
+    logger.info(f"Checking hit {is_hit}")
