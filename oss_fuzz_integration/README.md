@@ -70,7 +70,7 @@ sudo docker system prune -a
 
 # Test fuzz-introspector against various projects
 cd oss-fuzz
-../test_projects.sh
+python3 ../test_projects.sh
 ```
 
 If the above steps end with the string "Successfully finished testing projects."
