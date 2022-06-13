@@ -275,7 +275,7 @@ def get_calltree_as_str(
 
     if key_mod == "":
         key_mod = "/"
-    strline = "%s%s %s %d\n" % (" "*(depth*2), key, key_mod, lineno)
+    strline = "%s%s %s %d\n" % (" " * (depth * 2), key, key_mod, lineno)
     sorted_keys = sorted(cg_extended[key]['dsts'], key=lambda x: x['lineno'])
 
     # Avoid deep recursions
@@ -284,14 +284,14 @@ def get_calltree_as_str(
 
     visited.add(key)
     next_depth = depth
-    for dst in cg_extended[key]['dsts']:
+    for dst in sorted_keys:
         tmps, m_depth = get_calltree_as_str(
             cg_extended,
             dst['dst'],
             visited,
-            depth = depth+1,
-            lineno = dst['lineno'],
-            key_mod = dst['mod']
+            depth=depth + 1,
+            lineno=dst['lineno'],
+            key_mod=dst['mod']
         )
         next_depth = max(m_depth, next_depth)
         strline += tmps
