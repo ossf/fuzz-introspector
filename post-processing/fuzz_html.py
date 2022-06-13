@@ -741,11 +741,13 @@ def extract_highlevel_guidance(conclusions: List[Tuple[int, str]]) -> str:
 
 
 def create_html_report(
-        profiles: List[fuzz_data_loader.FuzzerProfile],
-        project_profile: fuzz_data_loader.MergedProjectProfile,
-        analyses_to_run: List[str],
-        coverage_url: str,
-        basefolder: str) -> None:
+    profiles: List[fuzz_data_loader.FuzzerProfile],
+    project_profile: fuzz_data_loader.MergedProjectProfile,
+    analyses_to_run: List[str],
+    coverage_url: str,
+    basefolder: str,
+    report_name: str
+) -> None:
     """
     Logs a complete report. This is the current main place for looking at
     data produced by fuzz introspector.
@@ -762,7 +764,12 @@ def create_html_report(
 
     # Start creation of core html
     html_body_start = '<div class="content-section">'
-    html_overview = fuzz_html_helpers.html_add_header_with_link("Project overview", 1, toc_list)
+    html_overview = fuzz_html_helpers.html_add_header_with_link(
+        f"Project overview: {report_name}",
+        1,
+        toc_list,
+        link="Project-overview"
+    )
     project_profile.write_stats_to_summary_file()
 
     # Project overview
