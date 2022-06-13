@@ -45,6 +45,13 @@ Serving HTTP on 0.0.0.0 port 8008 (http://0.0.0.0:8008/) ...
 ```
 You can now navigate to `http://localhost:8008/fuzz_report.html`
 
+You can run multiple fuzzers by passing `--jobs=X` at the end of the
+argument list to `run_both.sh`. For example, to run `htslib` fuzzers
+for `30` sec each using 2 cores, use the command:
+`run_both.sh htslib 30 --jobs=2`
+
+If you add `--jobs=0` then half of the cores availabe will be used.
+
 # Testing before bumping OSS-Fuzz
 To prevent and catch regressions we use a testing framework that verifies
 the results of running fuzz-introspector on various OSS-Fuzz integrations.

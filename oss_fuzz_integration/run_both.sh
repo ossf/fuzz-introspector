@@ -17,12 +17,15 @@
 ################################################################################
 
 SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-python3 ${SCRIPT_DIR}/get_full_coverage.py $1 $2
-python3 ./infra/helper.py build_fuzzers --sanitizer=introspector $1
+
+PROJ=$1
+# Pass all arguments to get_full_coverage.py
+python3 ${SCRIPT_DIR}/get_full_coverage.py $@
+python3 ./infra/helper.py build_fuzzers --sanitizer=introspector $PROJ
 
 LATEST_CORPUS_DIR=$(ls | grep "corpus-" | sed 's/corpus-//' | sort -n | tail -1)
 
-cp -rf ./build/out/$1/inspector/ ./corpus-$LATEST_CORPUS_DIR/inspector-report
+cp -rf ./build/out/$PROJ/inspector/ ./corpus-$LATEST_CORPUS_DIR/inspector-report
 cp -rf ./corpus-$LATEST_CORPUS_DIR/report/ ./corpus-$LATEST_CORPUS_DIR/inspector-report/covreport
 
 # We need to allow the following to fail because it will do so for Python projects

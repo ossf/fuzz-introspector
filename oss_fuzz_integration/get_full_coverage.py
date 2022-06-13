@@ -91,12 +91,10 @@ def get_recent_corpus_dir():
     return "corpus-%d"%(max_idx)
 
 
-def run_all_fuzzers(project_name, fuzztime):
+def run_all_fuzzers(project_name, fuzztime, job_count):
     # First get all fuzzers names
     fuzzer_names = get_fuzzers(project_name)
 
-    #Utilize half of the cores
-    core_num = round(psutil.cpu_count()/2)
     corpus_dir = get_next_corpus_dir()
     os.mkdir(corpus_dir)
     for f in fuzzer_names:
@@ -115,10 +113,21 @@ def run_all_fuzzers(project_name, fuzztime):
             "%s"%(f),
             "--",
             "-max_total_time=%d"%(fuzztime),
-            "-workers=%d"%(core_num),
-            "-jobs=%d"%(core_num),
             "-detect_leaks=0"
         ]
+
+        # If job count is non-standard, apply here
+        if job_count != 1:
+            #Utilize half cores if max is indicated
+            max_core_num = round(psutil.cpu_count()/2)
+            if job_count == 0 or job_count > max_core_num:
+                job_count = max_core_num
+
+            print("Non-standard job count. Running: %d jobs"%(job_count))
+            cmd.append("-workers=%d"%(job_count))
+            cmd.append("-jobs=%d"%(job_count))
+
+
         try:
             subprocess.check_call(" ".join(cmd), shell=True)
             print("Execution finished without exception")
@@ -188,9 +197,9 @@ def get_coverage(project_name):
     print("Finished")
 
 
-def complete_coverage_check(project_name, fuzztime):
+def complete_coverage_check(project_name: str, fuzztime: int, job_count: int):
     build_proj_with_default(project_name)
-    run_all_fuzzers(project_name, fuzztime)
+    run_all_fuzzers(project_name, fuzztime, job_count)
     build_proj_with_coverage(project_name)
     percent = get_coverage(project_name)
  
@@ -218,14 +227,33 @@ def get_single_cov(project, target, corpus_dir):
         print("Could not run coverage reports")
 
 
-if __name__ == "__main__":
-    if len(sys.argv) != 3:
-        print("usage: python3 ./get_full_coverage.py PROJECT_NAME FUZZTIME")
-        exit(5)
-    try:
-        fuzztime = int(sys.argv[2])
-    except:
-        fuzztime = 40
-    print("Using fuzztime %d"%(fuzztime))
+def get_cmdline_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "project",
+        metavar="P",
+        help="Name of project to run"
+    )
+    parser.add_argument(
+        "fuzztime",
+        metavar="T",
+        help="Number of seconds to run fuzzers for",
+        type=int
+    )
+    parser.add_argument(
+        "--jobs",
+        type=int,
+        help="Number of jobs to run in parallel. Zero indicates max count (half CPU cores)",
+        default=1
+    )
+    return parser
 
-    complete_coverage_check(sys.argv[1], fuzztime)
+if __name__ == "__main__":
+    parser = get_cmdline_parser()
+    args = parser.parse_args()
+
+    print("Getting full coverage:")
+    print("  project = %s"%(args.project))
+    print("  fuzztime = %d"%(args.fuzztime))
+    print("  jobs = %d"%(args.jobs))
+    complete_coverage_check(args.project, args.fuzztime, args.jobs)
