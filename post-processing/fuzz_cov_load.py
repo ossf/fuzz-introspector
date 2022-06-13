@@ -77,7 +77,7 @@ class CoverageProfile:
         """Checks if a file is hit. This is a generic function that first checks
         what type of coverage mapping this is.
         """
-        if self.get_type() is "file":
+        if self.get_type() == "file":
             target_key = key
             if resolve_name:
                 # Try to resolve the key. This is needed to e.g. normalise
@@ -100,8 +100,6 @@ class CoverageProfile:
                 if key_lineno == lineno:
                     return True
         return False
-
-
 
     def is_func_hit(self, funcname: str) -> bool:
         _, lines_hit = self.get_hit_summary(funcname)
@@ -303,11 +301,9 @@ if __name__ == "__main__":
     logger.info("Starting coverage loader")
     cp = load_python_json_cov("total_coverage.json")
 
-    #cp = llvm_cov_load(".")
     logger.info("Coverage map keys")
     for fn in cp.file_map:
         logger.info(fn)
-        #logger.info(cp.file_map[fn])
     logger.info("Coverage loader end")
     is_hit = cp.generic_check_hit("yaml.reader", 150, True)
     logger.info(f"Checking hit {is_hit}")
