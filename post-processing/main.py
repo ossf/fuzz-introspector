@@ -40,7 +40,8 @@ def run_analysis_on_dir(
     coverage_url: str,
     analyses_to_run: List[str],
     correlation_file: str,
-    enable_all_analyses: bool
+    enable_all_analyses: bool,
+    report_name: str
 ) -> int:
     if enable_all_analyses:
         all_analyses = [
@@ -92,7 +93,8 @@ def run_analysis_on_dir(
             profile,
             project_profile,
             coverage_url,
-            project_profile.basefolder)
+            project_profile.basefolder
+        )
 
     logger.info(f"Analyses to run: {str(analyses_to_run)}")
 
@@ -102,7 +104,8 @@ def run_analysis_on_dir(
         project_profile,
         analyses_to_run,
         coverage_url,
-        project_profile.basefolder
+        project_profile.basefolder,
+        report_name
     )
     return fuzz_constants.APP_EXIT_SUCCESS
 
@@ -151,6 +154,12 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
         default="",
         help="File with correlation data"
     )
+    report_parser.add_argument(
+        "--name",
+        type=str,
+        default="",
+        help="Name of project"
+    )
 
     # Command for correlating binary files to fuzzerLog files
     correlate_parser = subparsers.add_parser(
@@ -179,7 +188,8 @@ def main() -> int:
             args.coverage_url,
             args.analyses,
             args.correlation_file,
-            args.enable_all_analyses
+            args.enable_all_analyses,
+            args.name
         )
         logger.info("Ending fuzz introspector report generation")
     elif args.command == 'correlate':
