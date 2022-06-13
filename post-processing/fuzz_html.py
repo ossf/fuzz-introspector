@@ -768,7 +768,7 @@ def create_html_report(
         f"Project overview: {report_name}",
         1,
         toc_list,
-        link = "Project-overview"
+        link="Project-overview"
     )
     project_profile.write_stats_to_summary_file()
 
