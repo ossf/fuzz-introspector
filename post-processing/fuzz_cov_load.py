@@ -99,7 +99,8 @@ class CoverageProfile:
             for key_lineno in self.file_map[target_key]:
                 if key_lineno == lineno:
                     return True
-            return False
+        return False
+
 
 
     def is_func_hit(self, funcname: str) -> bool:
