@@ -12,7 +12,7 @@ index df23f03b..2f1acf9f 100644
  
  CMD ["compile"]
 diff --git a/infra/base-images/base-builder/compile b/infra/base-images/base-builder/compile
-index 6e2bff24..7d2e4079 100755
+index 6e2bff24..bbc35301 100755
 --- a/infra/base-images/base-builder/compile
 +++ b/infra/base-images/base-builder/compile
 @@ -47,8 +47,8 @@ if [ "$FUZZING_LANGUAGE" = "python" ]; then
@@ -26,7 +26,7 @@ index 6e2bff24..7d2e4079 100755
      exit 1
    fi
    if [ "$ARCHITECTURE" != "x86_64" ]; then
-@@ -215,34 +215,42 @@ if [ "$SANITIZER" = "introspector" ]; then
+@@ -215,34 +215,48 @@ if [ "$SANITIZER" = "introspector" ]; then
    unset CFLAGS
    apt-get install -y libjpeg-dev zlib1g-dev
    pip3 install --upgrade setuptools
@@ -43,6 +43,7 @@ index 6e2bff24..7d2e4079 100755
    then
 -    cp $OUT/textcov_reports/*.covreport $SRC/inspector/
 +    find $OUT/textcov_reports/ -name *.covreport -exec cp {} $SRC/inspector/ \;
++    find $OUT/textcov_reports/ -name *.json -exec cp {} $SRC/inspector/ \;
    fi
  
    cd $SRC/inspector
@@ -58,7 +59,11 @@ index 6e2bff24..7d2e4079 100755
 -    REPORT_ARGS="$REPORT_ARGS --coverage_url=${COVERAGE_URL}"
 +  # Do different things depending on languages
 +  if [ "$FUZZING_LANGUAGE" = "python" ]; then
-+    python3 /fuzz-introspector/post-processing/main.py report --target_dir=$SRC/inspector
++    echo "GOING python route"
++    set -x
++    REPORT_ARGS="--target_dir=$SRC/inspector"
++    REPORT_ARGS="$REPORT_ARGS --language=python"
++    python3 /fuzz-introspector/post-processing/main.py report $REPORT_ARGS
 +    cp -rf $SRC/inspector $OUT/inspector
 +  else
 +    # C/C++
@@ -75,7 +80,8 @@ index 6e2bff24..7d2e4079 100755
 +    fi
 +    # Use the just-generated correlation file
 +    REPORT_ARGS="$REPORT_ARGS --correlation_file=exe_to_fuzz_introspector_logs.yaml"
-+    python3 /fuzz-introspector/post-processing/main.py report $REPORT_ARGS
++    REPORT_ARGS="$REPORT_ARGS --name=$PROJECT_NAME"
++    python3 /fuzz-introspector/post-processing/main.py report $REPORT_ARGS || true
 +
 +    cp -rf $SRC/inspector $OUT/inspector
    fi
@@ -88,18 +94,19 @@ index 6e2bff24..7d2e4079 100755
  
  if [[ "$FUZZING_ENGINE" = "dataflow" ]]; then
 diff --git a/infra/base-images/base-builder/compile_python_fuzzer b/infra/base-images/base-builder/compile_python_fuzzer
-index e7c7f0a3..35394f37 100755
+index e7c7f0a3..829db7d1 100755
 --- a/infra/base-images/base-builder/compile_python_fuzzer
 +++ b/infra/base-images/base-builder/compile_python_fuzzer
-@@ -24,6 +24,22 @@ fuzzer_package=${fuzzer_basename}.pkg
+@@ -24,6 +24,23 @@ fuzzer_package=${fuzzer_basename}.pkg
  PYFUZZ_WORKPATH=$SRC/pyfuzzworkdir/
  FUZZ_WORKPATH=$PYFUZZ_WORKPATH/$fuzzer_basename
  
 +if [[ $SANITIZER = *introspector* ]]; then
 +    pip3 install pyyaml
-+    rm -rf ./PyCG
-+    git clone --depth=1 https://github.com/AdaLogics/PyCG
-+    export PYTHONPATH=$PWD/PyCG/
++    #rm -rf ./PyCG
++    #git clone --depth=1 https://github.com/AdaLogics/PyCG
++    export PYTHONPATH="/fuzz-introspector/frontends/python/PyCG/"
++    #export PYTHONPATH=$PWD/PyCG/
 +
 +    ARGS="--fuzzer $fuzzer_path"
 +    if [ -n "${PYFUZZPACKAGE-}" ]; then
@@ -128,29 +135,45 @@ index a920bc35..62452ab4 100644
  RUN rm /root/checkout_build_install_llvm.sh
  
 diff --git a/infra/base-images/base-runner/coverage b/infra/base-images/base-runner/coverage
-index 400247bf..78353d6d 100755
+index 400247bf..0c09d438 100755
 --- a/infra/base-images/base-runner/coverage
 +++ b/infra/base-images/base-runner/coverage
-@@ -399,5 +399,5 @@ if [[ -n $HTTP_PORT ]]; then
+@@ -310,13 +310,16 @@ elif [[ $FUZZING_LANGUAGE == "python" ]]; then
+     mv $OUT/.coverage_$fuzzer .coverage
+     python3 /usr/local/bin/python_coverage_runner_help.py translate /pythoncovmergedfiles/medio
+     cp .new_coverage $PYCOVDIR/.coverage_$fuzzer
++    cp .new_coverage $OUT/coverage_d_$fuzzer
+   done
+ 
+   # Combine coverage
+   cd $PYCOVDIR
+   python3 /usr/local/bin/python_coverage_runner_help.py combine .coverage_*
+   python3 /usr/local/bin/python_coverage_runner_help.py html
++  python3 /usr/local/bin/python_coverage_runner_help.py json -o ${TEXTCOV_REPORT_DIR}/all_cov.json
+   mv htmlcov/* $REPORT_PLATFORM_DIR/
++  mv .coverage_* $REPORT_PLATFORM_DIR/
+ 
+   # Create an empty summary file for now
+   echo "{}" >> $SUMMARY_FILE
+@@ -399,5 +402,5 @@ if [[ -n $HTTP_PORT ]]; then
    # Serve the report locally.
    echo "Serving the report on http://127.0.0.1:$HTTP_PORT/linux/index.html"
    cd $REPORT_ROOT_DIR
 -  python3 -m http.server $HTTP_PORT
 +  #python3 -m http.server $HTTP_PORT
  fi
-diff --git a/projects/pyxdg/build.sh b/projects/pyxdg/build.sh
-index 2347e65a..10208571 100644
---- a/projects/pyxdg/build.sh
-+++ b/projects/pyxdg/build.sh
-@@ -23,6 +23,8 @@ python3 ./setup.py install
- cd $SRC/pyxdg
- pip3 install .
+diff --git a/infra/helper.py b/infra/helper.py
+index ad417375..35223b86 100755
+--- a/infra/helper.py
++++ b/infra/helper.py
+@@ -642,6 +642,7 @@ def build_fuzzers_impl(  # pylint: disable=too-many-arguments,too-many-locals,to
+       'FUZZING_ENGINE=' + engine,
+       'SANITIZER=' + sanitizer,
+       'ARCHITECTURE=' + architecture,
++      'PROJECT_NAME=' + project.name
+   ]
  
-+export PYFUZZPACKAGE=$PWD
-+
- # Build fuzzers in $OUT.
- # Remove fuzzers in lxml
- find $SRC/lxml -name fuzz*.py -exec rm {} \;
+   _add_oss_fuzz_ci_if_needed(env)
 diff --git a/projects/pyyaml/build.sh b/projects/pyyaml/build.sh
 index 98f406ad..62485ae4 100644
 --- a/projects/pyyaml/build.sh
@@ -166,3 +189,15 @@ index 98f406ad..62485ae4 100644
  python3 ./setup.py --without-libyaml install
  
  # Build fuzzers in $OUT.
+diff --git a/projects/xlrd/build.sh b/projects/xlrd/build.sh
+index 95f3540d..bb770cfa 100644
+--- a/projects/xlrd/build.sh
++++ b/projects/xlrd/build.sh
+@@ -18,6 +18,7 @@
+ pip3 install .
+ 
+ # Build fuzzers in $OUT.
++export PYFUZZPACKAGE=$PWD/xlrd
+ for fuzzer in $(find $SRC -name 'fuzz_*.py'); do
+   compile_python_fuzzer $fuzzer
+ done
