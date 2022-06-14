@@ -41,7 +41,8 @@ def run_analysis_on_dir(
     analyses_to_run: List[str],
     correlation_file: str,
     enable_all_analyses: bool,
-    report_name: str
+    report_name: str,
+    language: str
 ) -> int:
     if enable_all_analyses:
         all_analyses = [
@@ -55,7 +56,7 @@ def run_analysis_on_dir(
                 analyses_to_run.append(analysis)
 
     logger.info("[+] Loading profiles")
-    profiles = fuzz_data_loader.load_all_profiles(target_folder)
+    profiles = fuzz_data_loader.load_all_profiles(target_folder, language)
     if len(profiles) == 0:
         logger.info("Found no profiles. Exiting")
         return fuzz_constants.APP_EXIT_ERROR
@@ -160,6 +161,12 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
         default="",
         help="Name of project"
     )
+    report_parser.add_argument(
+        "--language",
+        type=str,
+        default="c-cpp",
+        help="Language of project"
+    )
 
     # Command for correlating binary files to fuzzerLog files
     correlate_parser = subparsers.add_parser(
@@ -189,7 +196,8 @@ def main() -> int:
             args.analyses,
             args.correlation_file,
             args.enable_all_analyses,
-            args.name
+            args.name,
+            args.language
         )
         logger.info("Ending fuzz introspector report generation")
     elif args.command == 'correlate':

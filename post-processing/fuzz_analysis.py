@@ -168,13 +168,26 @@ def overlay_calltree_with_coverage(
         elif callstack_has_parent(node, callstack):
             # Find the parent function and check coverage of the node
             logger.debug("Extracting data")
-            coverage_data = profile.coverage.get_hit_details(
-                callstack_get_parent(node, callstack)
+            logger.info(
+                f"Getting hit details {node.dst_function_name} -- "
+                f"{node.cov_ct_idx} -- {node.src_linenumber}"
             )
-            for (n_line_number, hit_count_cov) in coverage_data:
-                logger.debug(f"  - iterating {n_line_number} : {hit_count_cov}")
-                if n_line_number == node.src_linenumber and hit_count_cov > 0:
-                    node_hitcount = hit_count_cov
+            if profile.target_lang == "python":
+                ih = profile.coverage.generic_check_hit(
+                    callstack_get_parent(node, callstack),
+                    node.src_linenumber,
+                    True
+                )
+                if ih:
+                    node_hitcount = 200
+            else:
+                coverage_data = profile.coverage.get_hit_details(
+                    callstack_get_parent(node, callstack)
+                )
+                for (n_line_number, hit_count_cov) in coverage_data:
+                    logger.debug(f"  - iterating {n_line_number} : {hit_count_cov}")
+                    if n_line_number == node.src_linenumber and hit_count_cov > 0:
+                        node_hitcount = hit_count_cov
             node.cov_parent = callstack_get_parent(node, callstack)
         else:
             logger.error("A node should either be the first or it must have a parent")

@@ -142,13 +142,19 @@ class FuzzerProfile:
     This class essentially holds data corresponding to the output of run of the LLVM
     plugin. That means, the output from the plugin for a single fuzzer.
     """
-    def __init__(self, filename: str, data_dict_yaml: Dict[Any, Any]):
+    def __init__(
+        self,
+        filename: str,
+        data_dict_yaml: Dict[Any, Any],
+        target_lang: str = "c-cpp"
+    ) -> None:
         self.introspector_data_file = filename
         self.function_call_depths = fuzz_cfg_load.data_file_read_calltree(filename)
         self.fuzzer_source_file: str = data_dict_yaml['Fuzzer filename']
         self.binary_executable: str = ""
         self.coverage: Optional[fuzz_cov_load.CoverageProfile] = None
         self.file_targets: Dict[str, Set[str]] = dict()
+        self.target_lang = target_lang
 
         # Create a list of all the functions.
         self.all_class_functions = dict()
@@ -239,13 +245,21 @@ class FuzzerProfile:
         ]
 
     def load_coverage(self, target_folder: str) -> None:
-        """
-        Load coverage data for this profile
-        """
-        self.coverage = fuzz_cov_load.llvm_cov_load(
-            target_folder,
-            self.get_target_fuzzer_filename()
-        )
+        """Load coverage data for this profile"""
+        logger.info(f"Loading coverage of type {self.target_lang}")
+        if self.target_lang == "c-cpp":
+            self.coverage = fuzz_cov_load.llvm_cov_load(
+                target_folder,
+                self.get_target_fuzzer_filename()
+            )
+        elif self.target_lang == "python":
+            self.coverage = fuzz_cov_load.load_python_json_cov(
+                target_folder
+            )
+        else:
+            raise DataLoaderError(
+                "The profile target has no coverage loading support"
+            )
 
     def get_target_fuzzer_filename(self) -> str:
         return self.fuzzer_source_file.split("/")[-1].replace(".cpp", "").replace(".c", "")
@@ -570,7 +584,10 @@ class MergedProjectProfile:
         self.basefolder = fuzz_utils.longest_common_prefix(all_strs)
 
 
-def read_fuzzer_data_file_to_profile(filename: str) -> Optional[FuzzerProfile]:
+def read_fuzzer_data_file_to_profile(
+    filename: str,
+    language: str
+) -> Optional[FuzzerProfile]:
     """
     For a given .data file (CFG) read the corresponding .yaml file
     This is a bit odd way of doing it and should probably be improved.
@@ -583,7 +600,7 @@ def read_fuzzer_data_file_to_profile(filename: str) -> Optional[FuzzerProfile]:
     if data_dict_yaml is None:
         return None
 
-    FP = FuzzerProfile(filename, data_dict_yaml)
+    FP = FuzzerProfile(filename, data_dict_yaml, language)
 
     # Check we have a valid entrypoint
     if "LLVMFuzzerTestOneInput" in FP.all_class_functions:
@@ -661,7 +678,7 @@ def add_func_to_reached_and_clone(merged_profile_old: MergedProjectProfile,
     return merged_profile
 
 
-def load_all_profiles(target_folder: str) -> List[FuzzerProfile]:
+def load_all_profiles(target_folder: str, language: str) -> List[FuzzerProfile]:
     profiles = []
     data_files = fuzz_utils.get_all_files_in_tree_with_regex(
         target_folder,
@@ -669,7 +686,7 @@ def load_all_profiles(target_folder: str) -> List[FuzzerProfile]:
     )
     logger.info(f" - found {len(data_files)} profiles to load")
     for data_file in data_files:
-        profile = read_fuzzer_data_file_to_profile(data_file)
+        profile = read_fuzzer_data_file_to_profile(data_file, language)
         if profile is not None:
             profiles.append(profile)
     return profiles
