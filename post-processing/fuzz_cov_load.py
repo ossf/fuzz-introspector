@@ -98,21 +98,20 @@ class CoverageProfile:
                         if potential_key.endswith(p):
                             found_key = potential_key
                             break
-                logger.info(f"Found key: {str(found_key)} %s")
+                logger.info(f"Found key: {str(found_key)}")
                 if found_key == "":
                     logger.info("Could not find key")
-                    logger.info("R1")
                     return False
                 target_key = found_key
 
             if target_key not in self.file_map:
-                logger.info("R2")
+                logger.info("Target key is not in file_map")
                 return False
             for key_lineno in self.file_map[target_key]:
                 if key_lineno == lineno:
-                    logger.info("R3")
+                    logger.info("Success")
                     return True
-        logger.info("R4")
+        logger.info("Failed to check hit")
         return False
 
     def is_func_hit(self, funcname: str) -> bool:
