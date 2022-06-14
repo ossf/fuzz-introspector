@@ -1,4 +1,4 @@
-#!/bin/bash -eu
+#!/bin/bash -eux
 # Copyright 2021 Fuzz Introspector Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,11 +25,11 @@ rm -rf ./oss-fuzz/infra/base-images/base-builder/frontends
 cp -rf ../frontends/ ./oss-fuzz/infra/base-images/base-builder/frontends
 
 cd oss-fuzz
-docker build -t gcr.io/oss-fuzz-base/base-builder "$@" infra/base-images/base-builder
-docker build -t gcr.io/oss-fuzz-base/base-builder-python "$@" infra/base-images/base-builder-python
+docker build -t gcr.io/oss-fuzz-base/base-builder infra/base-images/base-builder
+docker build -t gcr.io/oss-fuzz-base/base-builder-python infra/base-images/base-builder-python
 
 # Sometimes you may want to rebuild base runner but only rarely.
 # As such, one should provide an argument for that.
 if [[ $# -eq 1 ]]; then
-  docker build -t gcr.io/oss-fuzz-base/base-runner "$@" infra/base-images/base-runner
+  docker build -t gcr.io/oss-fuzz-base/base-runner infra/base-images/base-runner
 fi
