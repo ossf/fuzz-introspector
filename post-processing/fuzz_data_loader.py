@@ -67,8 +67,10 @@ class BranchProfile:
         self.branch_pos = str()
         self.branch_true_side_pos = str()
         self.branch_false_side_pos = str()
-        self.branch_true_side_complexity = -1
-        self.branch_false_side_complexity = -1
+        self.branch_true_side_reachable_complexity = -1
+        self.branch_false_side_reachable_complexity = -1
+        self.branch_true_side_not_covered_complexity = -1
+        self.branch_false_side_not_covered_complexity = -1
         self.branch_true_side_hitcount = -1
         self.branch_false_side_hitcount = -1
         self.branch_true_side_funcs: List[str] = []
@@ -91,7 +93,10 @@ class BranchProfile:
         For debugging purposes, may be removed later.
         """
         print(self.branch_pos, self.branch_true_side_pos, self.branch_false_side_pos,
-              self.branch_true_side_complexity, self.branch_false_side_complexity,
+              self.branch_true_side_reachable_complexity,
+              self.branch_false_side_reachable_complexity,
+              self.branch_true_side_not_covered_complexity,
+              self.branch_false_side_not_covered_complexity,
               self.branch_true_side_hitcount, self.branch_true_side_hitcount)
 
 
