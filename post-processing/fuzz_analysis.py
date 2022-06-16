@@ -59,9 +59,10 @@ class BlockedSide(Enum):
 
 
 class FuzzBranchBlocker:
-    def __init__(self, side, comp, filename, b_line, s_line, fname) -> None:
+    def __init__(self, side, not_cov_comp, reach_comp, filename, b_line, s_line, fname) -> None:
         self.blocked_side = side
-        self.blocked_complexity = comp
+        self.blocked_not_covered_complexity = not_cov_comp
+        self.blocked_reachable_complexity = reach_comp
         self.source_file_name = filename
         self.branch_line_number = b_line
         self.blocked_side_line_numder = s_line
@@ -289,7 +290,8 @@ def overlay_calltree_with_coverage(
         branch_blockers_list.append(
             {
                 'blocked_side': repr(br_blocker.blocked_side),
-                'blocked_complexity': br_blocker.blocked_complexity,
+                'blocked_not_covered_complexity': br_blocker.blocked_not_covered_complexity,
+                'blocked_reachable_complexity': br_blocker.blocked_reachable_complexity,
                 'source_file_name': br_blocker.source_file_name,
                 'branch_line_number': br_blocker.branch_line_number,
                 'blocked_side_line_numder': br_blocker.blocked_side_line_numder,
@@ -343,17 +345,26 @@ def update_branch_complexities(all_functions: Dict[str, fuzz_data_loader.Functio
     # for branch_k, branch in branch_profiles.items():
     for func_k, func in all_functions.items():
         for branch_k, branch in func.branch_profiles.items():
-            branch.branch_false_side_complexity = 0
-            branch.branch_true_side_complexity = 0
+            branch.branch_false_side_reachable_complexity = 0
+            branch.branch_true_side_reachable_complexity = 0
+            branch.branch_false_side_not_covered_complexity = 0
+            branch.branch_true_side_not_covered_complexity = 0
             for fn in branch.branch_false_side_funcs:
-                # Accoounts for non-covered functions
-                if fn in all_functions and coverage.is_func_hit(fn) is False:
-                    branch.branch_false_side_complexity += (
+                if fn not in all_functions:
+                    continue
+                branch.branch_false_side_reachable_complexity += (
+                    all_functions[fn].total_cyclomatic_complexity)
+                if coverage.is_func_hit(fn) is False:
+                    branch.branch_false_side_not_covered_complexity += (
                         all_functions[fn].total_cyclomatic_complexity)
+
             for fn in branch.branch_true_side_funcs:
-                # Same as above
-                if fn in all_functions and coverage.is_func_hit(fn) is False:
-                    branch.branch_true_side_complexity += (
+                if fn not in all_functions:
+                    continue
+                branch.branch_true_side_reachable_complexity += (
+                    all_functions[fn].total_cyclomatic_complexity)
+                if coverage.is_func_hit(fn) is False:
+                    branch.branch_true_side_not_covered_complexity += (
                         all_functions[fn].total_cyclomatic_complexity)
 
 
@@ -402,18 +413,22 @@ def detect_branch_level_blockers(
         # the side that is taken less than 20% of the times
         if true_hitcount == 0 and false_hitcount != 0:
             blocked_side = BlockedSide.TRUE
-            blocked_complexity = llvm_branch.branch_true_side_complexity
+            blocked_reachable_complexity = llvm_branch.branch_true_side_reachable_complexity
+            blocked_not_covered_complexity = llvm_branch.branch_true_side_not_covered_complexity
             side_line = llvm_branch.branch_true_side_pos
             side_line_number = side_line.split(':')[1].split(',')[0]
         elif true_hitcount != 0 and false_hitcount == 0:
             blocked_side = BlockedSide.FALSE
-            blocked_complexity = llvm_branch.branch_false_side_complexity
+            blocked_reachable_complexity = llvm_branch.branch_false_side_reachable_complexity
+            blocked_not_covered_complexity = llvm_branch.branch_false_side_not_covered_complexity
             side_line = llvm_branch.branch_false_side_pos
             side_line_number = side_line.split(':')[1].split(',')[0]
 
         if blocked_side:
-            fuzz_blockers.append(FuzzBranchBlocker(blocked_side, blocked_complexity,
-                                 source_file_name, line_number, side_line_number, function_name))
+            fuzz_blockers.append(FuzzBranchBlocker(blocked_side, blocked_not_covered_complexity,
+                                 blocked_reachable_complexity, source_file_name, line_number,
+                                 side_line_number, function_name))
 
-    fuzz_blockers.sort(key=lambda x: x.blocked_complexity, reverse=True)
+    fuzz_blockers.sort(key=lambda x: [x.blocked_not_covered_complexity,
+                                      x.blocked_reachable_complexity], reverse=True)
     return fuzz_blockers
