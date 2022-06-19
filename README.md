@@ -125,6 +125,7 @@ mkdir build
 cd build
 
 # Build binutils
+apt install texinfo
 git clone --depth 1 git://sourceware.org/git/binutils-gdb.git binutils
 mkdir build
 cd ./build
