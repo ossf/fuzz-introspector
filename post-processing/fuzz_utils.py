@@ -191,15 +191,23 @@ def write_to_summary_file(fuzzer: str, key: str, value: Any) -> None:
         json.dump(json_data, json_file)
 
 
-def get_target_coverage_url(coverage_url: str, target_name: str) -> str:
+def get_target_coverage_url(
+    coverage_url: str,
+    target_name: str,
+    target_lang: str
+) -> str:
     """
     This function changes overall coverage URL to per-target coverage URL. Like:
         https://storage.googleapis.com/oss-fuzz-coverage/<project>/reports/<report-date>/linux
         to
         https://storage.googleapis.com/oss-fuzz-coverage/<project>/reports-by-target/<report-date>/<target-name>/linux
     """
+    logger.info(f"Extracting coverage for {coverage_url} -- {target_name}")
     if os.environ.get('FUZZ_INTROSPECTOR'):
-        return coverage_url.replace("reports", "reports-by-target").replace("linux",
+        if target_lang == "c-cpp":
+            return coverage_url.replace("reports", "reports-by-target").replace("linux",
                                                                             f"{target_name}/linux")
+        else:
+            return coverage_url
     else:  # (TODO) This is temporary for local runs.
         return coverage_url

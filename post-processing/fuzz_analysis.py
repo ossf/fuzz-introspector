@@ -127,7 +127,11 @@ def overlay_calltree_with_coverage(
         return
 
     target_name = profile.get_key()
-    target_coverage_url = fuzz_utils.get_target_coverage_url(coverage_url, target_name)
+    target_coverage_url = fuzz_utils.get_target_coverage_url(
+        coverage_url,
+        target_name,
+        profile.target_lang
+    )
     logger.info(f"Using coverage url: {target_coverage_url}")
 
     for node in fuzz_cfg_load.extract_all_callsites(profile.function_call_depths):
@@ -224,8 +228,8 @@ def overlay_calltree_with_coverage(
                     fd.function_linenumber,
                     fd.function_name
                 )
-                if link != "#":
-                    link = "covreport/linux/" + link
+                #if link != "#":
+                #    link = "covreport/linux/" + link
                 #link = (
                 #    f"{target_coverage_url}"
                 #    f"{fd.function_source_file}.html#L{fd.function_linenumber}"
@@ -244,8 +248,8 @@ def overlay_calltree_with_coverage(
                     #    f"{target_coverage_url}"
                     #    f"{fd.function_source_file}.html#L{node.src_linenumber}"
                     #)
-                    if callsite_link != "#":
-                        callsite_link = "covreport/linux/" + callsite_link
+                    #if callsite_link != "#":
+                    #    callsite_link = "covreport/linux/" + callsite_link
 
         node.cov_callsite_link = callsite_link
 

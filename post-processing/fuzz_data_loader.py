@@ -181,9 +181,12 @@ class FuzzerProfile:
         """Resolves a link to a coverage report."""
 
         logger.info("RESOLVING LINK\n"*30)
-        # Determine type
+
+        # For C/CPP
         if self.target_lang == "c-cpp":
             return cov_url + source_file + ".html#L" + lineno
+
+        # For Python
         logger.info(f"Can't get link for {cov_url} -- {source_file} -- {lineno}")
         cc = os.getcwd()
         for l2 in os.listdir(cc):
@@ -208,7 +211,7 @@ class FuzzerProfile:
                     data['files'][fl]['index']['relative_filename'],
                 )
                 if found_target:
-                    return fl + ".html" + "#t" + str(lineno)
+                    return cov_url + "/" +  fl + ".html" + "#t" + str(lineno)
 
 
         logger.info(f"Html summaries: {str(html_summaries)}")
