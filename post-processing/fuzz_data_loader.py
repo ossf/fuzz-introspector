@@ -171,6 +171,50 @@ class FuzzerProfile:
             logger.info(f"Adding {func_profile.function_name}")
             self.all_class_functions[func_profile.function_name] = func_profile
 
+    def resolve_coverage_link(
+        self,
+        cov_url: str,
+        source_file: str,
+        lineno: int,
+        function_name: str
+    ) -> str:
+        """Resolves a link to a coverage report."""
+
+        logger.info("RESOLVING LINK\n"*30)
+        # Determine type
+        if self.target_lang == "c-cpp":
+            return cov_url + source_file + ".html#L" + lineno
+        logger.info(f"Can't get link for {cov_url} -- {source_file} -- {lineno}")
+        cc = os.getcwd()
+        for l2 in os.listdir(cc):
+            logger.info(f"--- {l2}")
+        
+        logger.info("############")
+        if os.path.isdir("/covreport"):
+            for l3 in os.listdir("/covreport"):
+                logger.info("--- {l3}")
+
+        html_summaries = fuzz_utils.get_all_files_in_tree_with_regex(".", ".*html_status.json$")
+        logger.info(str(html_summaries))
+        if len(html_summaries) > 0:
+            html_idx = html_summaries[0]
+            with open(html_idx, "r") as jf:
+                data = json.load(jf)
+            for fl in data['files']:
+                logger.info(f"Fl: {fl}")
+                logger.info(f"--ref: {data['files'][fl]['index']['relative_filename']}")
+                found_target = fuzz_utils.approximate_python_coverage_files(
+                    function_name,
+                    data['files'][fl]['index']['relative_filename'],
+                )
+                if found_target:
+                    return fl + ".html" + "#t" + str(lineno)
+
+
+        logger.info(f"Html summaries: {str(html_summaries)}")
+        return "#"
+        #raise DataLoaderError
+
     def refine_paths(self, basefolder: str) -> None:
         """
         Removes the project_profile's basefolder from source paths in a given profile.

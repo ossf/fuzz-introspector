@@ -135,6 +135,41 @@ def scan_executables_for_fuzz_introspector_logs(
     return executable_to_fuzz_reports
 
 
+def approximate_python_coverage_files(src1: str, src2: str) -> bool:
+    logger.info(f"Approximating {src1} to {src2}")
+    if src1.startswith("."):
+        while True:
+            if src1[0] == ".":
+                src1 = src1[1:]
+            else:
+                break
+    possible_candidates = []
+    splits = src1.split(".")
+    c = ""
+    for s2 in splits:
+        c = c + s2
+        possible_candidates.append(c + ".py")
+        c = c + "/"
+    
+    # Start from backwards to find te longest possible candidate
+    target=None
+    for candidate in reversed(possible_candidates):
+        if src2.endswith(candidate):
+            # ensure the entire filename is matched in the event of not slashes
+            if "/" not in candidate:
+                if not src2.split("/")[-1] == candidate:
+                    continue
+            target = candidate
+            break
+
+    if target != None:
+        logger.info(f"Found target {target}")
+        return True
+    else:
+        logger.info("Found no target")
+        return False
+
+
 def write_to_summary_file(fuzzer: str, key: str, value: Any) -> None:
     """Writes a key value pair to summary file, for a given fuzzer
     key. If the fuzzer does not exist as top key in the summary file

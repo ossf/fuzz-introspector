@@ -213,12 +213,23 @@ def overlay_calltree_with_coverage(
 
         # Get URL to coverage report for the node.
         link = "#"
+        #fuzz_cov_load.approximate_python_coverage_files
+        logger.info("FINDING LINK: %s -- %s"%(node.dst_function_name, target_coverage_url))
         for fd_k, fd in profile.all_class_functions.items():
             if fd.function_name == node.dst_function_name:
-                link = (
-                    f"{target_coverage_url}"
-                    f"{fd.function_source_file}.html#L{fd.function_linenumber}"
+                logger.info("FOUND FUNCTION MATCH %s -- %s -- %d"%(fd.function_name, fd.function_source_file, fd.function_linenumber))
+                link = profile.resolve_coverage_link(
+                    target_coverage_url,
+                    fd.function_name,
+                    fd.function_linenumber,
+                    fd.function_name
                 )
+                if link != "#":
+                    link = "covreport/linux/" + link
+                #link = (
+                #    f"{target_coverage_url}"
+                #    f"{fd.function_source_file}.html#L{fd.function_linenumber}"
+                #)
                 break
         node.cov_link = link
 
@@ -228,10 +239,14 @@ def overlay_calltree_with_coverage(
             parent_fname = callstack_get_parent(node, callstack)
             for fd_k, fd in profile.all_class_functions.items():
                 if fuzz_utils.demangle_cpp_func(fd.function_name) == parent_fname:
-                    callsite_link = (
-                        f"{target_coverage_url}"
-                        f"{fd.function_source_file}.html#L{node.src_linenumber}"
-                    )
+                    callsite_link = profile.resolve_coverage_link(target_coverage_url, fd.function_name, node.src_linenumber, fd.function_name)
+                    #callsite_link = (
+                    #    f"{target_coverage_url}"
+                    #    f"{fd.function_source_file}.html#L{node.src_linenumber}"
+                    #)
+                    if callsite_link != "#":
+                        callsite_link = "covreport/linux/" + callsite_link
+
         node.cov_callsite_link = callsite_link
 
     # Extract data about which nodes unlocks data
