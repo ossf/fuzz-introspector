@@ -14,13 +14,13 @@ jobs:
         with:
           python-version: "3.8"
       - name: flake8 Lint post process
-        uses: py-actions/flake8@6b71483a8fe60d4cb967d3aa4ee56e5e52711d30 # v2
+        uses: py-actions/flake8@c0cc06a1cede84110831f3a7e6e45b83eff9feab # v2
         with:
           ignore: "W503,W605"
           max-line-length: "100"
           path: "post-processing/"
       - name: flake8 Lint python frontend
-        uses: py-actions/flake8@6b71483a8fe60d4cb967d3aa4ee56e5e52711d30 # v2
+        uses: py-actions/flake8@c0cc06a1cede84110831f3a7e6e45b83eff9feab # v2
         with:
           ignore: "W503,W605"
           max-line-length: "100"
