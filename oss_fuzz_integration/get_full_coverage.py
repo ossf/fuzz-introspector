@@ -21,7 +21,6 @@ import sys
 import json
 import threading
 import shutil
-import psutil
 
 
 def build_proj_with_default(project_name):
@@ -118,6 +117,9 @@ def run_all_fuzzers(project_name, fuzztime, job_count):
 
         # If job count is non-standard, apply here
         if job_count != 1:
+            # import psutil here to avoid having to install package
+            # when not using this feature
+            import psutil
             #Utilize half cores if max is indicated
             max_core_num = round(psutil.cpu_count()/2)
             if job_count == 0 or job_count > max_core_num:
