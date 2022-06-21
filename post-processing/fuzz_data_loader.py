@@ -180,18 +180,17 @@ class FuzzerProfile:
     ) -> str:
         """Resolves a link to a coverage report."""
 
-        logger.info("RESOLVING LINK\n"*30)
-
         # For C/CPP
         if self.target_lang == "c-cpp":
-            return cov_url + source_file + ".html#L" + lineno
+            return cov_url + source_file + ".html#L" + str(lineno)
 
         # For Python
-        logger.info(f"Can't get link for {cov_url} -- {source_file} -- {lineno}")
+        logger.debug(f"Can't get link for {cov_url} -- {source_file} -- {lineno}")
+
+        # Temporarily for debugging purposes. TODO: David remove this later
         cc = os.getcwd()
         for l2 in os.listdir(cc):
             logger.info(f"--- {l2}")
-        
         logger.info("############")
         if os.path.isdir("/covreport"):
             for l3 in os.listdir("/covreport"):
@@ -212,11 +211,7 @@ class FuzzerProfile:
                 )
                 if found_target:
                     return cov_url + "/" +  fl + ".html" + "#t" + str(lineno)
-
-
-        logger.info(f"Html summaries: {str(html_summaries)}")
-        return "#"
-        #raise DataLoaderError
+        raise DataLoaderError
 
     def refine_paths(self, basefolder: str) -> None:
         """
