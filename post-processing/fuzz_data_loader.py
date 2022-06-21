@@ -210,7 +210,7 @@ class FuzzerProfile:
                     data['files'][fl]['index']['relative_filename'],
                 )
                 if found_target:
-                    return cov_url + "/" +  fl + ".html" + "#t" + str(lineno)
+                    return cov_url + "/" + fl + ".html" + "#t" + str(lineno)
         raise DataLoaderError
 
     def refine_paths(self, basefolder: str) -> None:
