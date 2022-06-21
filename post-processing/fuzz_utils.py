@@ -150,9 +150,9 @@ def approximate_python_coverage_files(src1: str, src2: str) -> bool:
         c = c + s2
         possible_candidates.append(c + ".py")
         c = c + "/"
-    
+
     # Start from backwards to find te longest possible candidate
-    target=None
+    target = None
     for candidate in reversed(possible_candidates):
         if src2.endswith(candidate):
             # ensure the entire filename is matched in the event of not slashes
@@ -162,7 +162,7 @@ def approximate_python_coverage_files(src1: str, src2: str) -> bool:
             target = candidate
             break
 
-    if target != None:
+    if target is not None:
         logger.info(f"Found target {target}")
         return True
     else:
@@ -205,8 +205,9 @@ def get_target_coverage_url(
     logger.info(f"Extracting coverage for {coverage_url} -- {target_name}")
     if os.environ.get('FUZZ_INTROSPECTOR'):
         if target_lang == "c-cpp":
-            return coverage_url.replace("reports", "reports-by-target").replace("linux",
-                                                                            f"{target_name}/linux")
+            return coverage_url.replace(
+                "reports", "reports-by-target"
+            ).replace("linux", f"{target_name}/linux")
         else:
             return coverage_url
     else:  # (TODO) This is temporary for local runs.

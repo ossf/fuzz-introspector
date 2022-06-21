@@ -217,10 +217,9 @@ def overlay_calltree_with_coverage(
 
         # Get URL to coverage report for the node.
         link = "#"
-        logger.debug("Finding link: %s -- %s"%(node.dst_function_name, target_coverage_url))
         for fd_k, fd in profile.all_class_functions.items():
             if fd.function_name == node.dst_function_name:
-                logger.debug("Found %s -- %s -- %d"%(
+                logger.debug("Found %s -- %s -- %d" % (
                     fd.function_name,
                     fd.function_source_file,
                     fd.function_linenumber
