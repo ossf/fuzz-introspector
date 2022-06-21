@@ -211,7 +211,8 @@ class FuzzerProfile:
                 )
                 if found_target:
                     return cov_url + "/" + fl + ".html" + "#t" + str(lineno)
-        raise DataLoaderError
+        #raise DataLoaderError
+        return "#"
 
     def refine_paths(self, basefolder: str) -> None:
         """
