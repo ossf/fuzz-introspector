@@ -137,19 +137,17 @@ def scan_executables_for_fuzz_introspector_logs(
 
 def approximate_python_coverage_files(src1: str, src2: str) -> bool:
     logger.info(f"Approximating {src1} to {src2}")
-    if src1.startswith("."):
-        while True:
-            if src1[0] == ".":
-                src1 = src1[1:]
-            else:
-                break
+    # Remove prefixed .....
+    src1 = src1.lstrip(".")
+
+    # Generate list of potential candidates
     possible_candidates = []
     splits = src1.split(".")
-    c = ""
+    curr_str = ""
     for s2 in splits:
-        c = c + s2
-        possible_candidates.append(c + ".py")
-        c = c + "/"
+        curr_str = curr_str + s2
+        possible_candidates.append(curr_str + ".py")
+        curr_str = curr_str + "/"
 
     # Start from backwards to find te longest possible candidate
     target = None
