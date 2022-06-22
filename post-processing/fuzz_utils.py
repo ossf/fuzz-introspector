@@ -135,6 +135,39 @@ def scan_executables_for_fuzz_introspector_logs(
     return executable_to_fuzz_reports
 
 
+def approximate_python_coverage_files(src1: str, src2: str) -> bool:
+    logger.info(f"Approximating {src1} to {src2}")
+    # Remove prefixed .....
+    src1 = src1.lstrip(".")
+
+    # Generate list of potential candidates
+    possible_candidates = []
+    splits = src1.split(".")
+    curr_str = ""
+    for s2 in splits:
+        curr_str = curr_str + s2
+        possible_candidates.append(curr_str + ".py")
+        curr_str = curr_str + "/"
+
+    # Start from backwards to find te longest possible candidate
+    target = None
+    for candidate in reversed(possible_candidates):
+        if src2.endswith(candidate):
+            # ensure the entire filename is matched in the event of not slashes
+            if "/" not in candidate:
+                if not src2.split("/")[-1] == candidate:
+                    continue
+            target = candidate
+            break
+
+    if target is not None:
+        logger.info(f"Found target {target}")
+        return True
+    else:
+        logger.info("Found no target")
+        return False
+
+
 def write_to_summary_file(fuzzer: str, key: str, value: Any) -> None:
     """Writes a key value pair to summary file, for a given fuzzer
     key. If the fuzzer does not exist as top key in the summary file
@@ -156,15 +189,24 @@ def write_to_summary_file(fuzzer: str, key: str, value: Any) -> None:
         json.dump(json_data, json_file)
 
 
-def get_target_coverage_url(coverage_url: str, target_name: str) -> str:
+def get_target_coverage_url(
+    coverage_url: str,
+    target_name: str,
+    target_lang: str
+) -> str:
     """
     This function changes overall coverage URL to per-target coverage URL. Like:
         https://storage.googleapis.com/oss-fuzz-coverage/<project>/reports/<report-date>/linux
         to
         https://storage.googleapis.com/oss-fuzz-coverage/<project>/reports-by-target/<report-date>/<target-name>/linux
     """
+    logger.info(f"Extracting coverage for {coverage_url} -- {target_name}")
     if os.environ.get('FUZZ_INTROSPECTOR'):
-        return coverage_url.replace("reports", "reports-by-target").replace("linux",
-                                                                            f"{target_name}/linux")
+        if target_lang == "c-cpp":
+            return coverage_url.replace(
+                "reports", "reports-by-target"
+            ).replace("linux", f"{target_name}/linux")
+        else:
+            return coverage_url
     else:  # (TODO) This is temporary for local runs.
         return coverage_url

@@ -128,7 +128,11 @@ def overlay_calltree_with_coverage(
         return
 
     target_name = profile.get_key()
-    target_coverage_url = fuzz_utils.get_target_coverage_url(coverage_url, target_name)
+    target_coverage_url = fuzz_utils.get_target_coverage_url(
+        coverage_url,
+        target_name,
+        profile.target_lang
+    )
     logger.info(f"Using coverage url: {target_coverage_url}")
 
     for node in fuzz_cfg_load.extract_all_callsites(profile.function_call_depths):
@@ -216,9 +220,16 @@ def overlay_calltree_with_coverage(
         link = "#"
         for fd_k, fd in profile.all_class_functions.items():
             if fd.function_name == node.dst_function_name:
-                link = (
-                    f"{target_coverage_url}"
-                    f"{fd.function_source_file}.html#L{fd.function_linenumber}"
+                logger.debug("Found %s -- %s -- %d" % (
+                    fd.function_name,
+                    fd.function_source_file,
+                    fd.function_linenumber
+                ))
+                link = profile.resolve_coverage_link(
+                    target_coverage_url,
+                    fd.function_source_file,
+                    fd.function_linenumber,
+                    fd.function_name
                 )
                 break
         node.cov_link = link
@@ -229,10 +240,13 @@ def overlay_calltree_with_coverage(
             parent_fname = callstack_get_parent(node, callstack)
             for fd_k, fd in profile.all_class_functions.items():
                 if fuzz_utils.demangle_cpp_func(fd.function_name) == parent_fname:
-                    callsite_link = (
-                        f"{target_coverage_url}"
-                        f"{fd.function_source_file}.html#L{node.src_linenumber}"
+                    callsite_link = profile.resolve_coverage_link(
+                        target_coverage_url,
+                        fd.function_source_file,
+                        node.src_linenumber,
+                        fd.function_name
                     )
+
         node.cov_callsite_link = callsite_link
 
     # Extract data about which nodes unlocks data
