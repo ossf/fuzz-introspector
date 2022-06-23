@@ -17,7 +17,9 @@
 #rm -rf ./work_cov
 #mkdir work_cov
 #cd work_cov
-cd work
+if [ -d "work" ]; then
+    cd work
+fi
 
 ../../../build/llvm-build/bin/clang -flegacy-pass-manager -fprofile-instr-generate -fcoverage-mapping -fsanitize=fuzzer -g ../fuzzer.c -o fuzzer
 ./fuzzer -max_total_time=3
