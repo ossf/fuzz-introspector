@@ -48,8 +48,8 @@ class FuzzRuntimeCoverageAnalysis(fuzz_analysis.AnalysisInterface):
         functions_of_interest = self.get_low_cov_high_line_funcs(
             profiles,
             project_profile,
-            min_total_lines = 30,
-            max_hit_proportion = 55
+            min_total_lines=30,
+            max_hit_proportion=55
         )
 
         html_string = ""
@@ -132,8 +132,8 @@ class FuzzRuntimeCoverageAnalysis(fuzz_analysis.AnalysisInterface):
             hit_proportion = (hit_lines / total_lines) * 100.0
             logger.debug(f"hit proportion {hit_proportion}")
             if (
-                total_lines > min_total_lines and
-                hit_proportion < max_hit_proportion
+                total_lines > min_total_lines
+                and hit_proportion < max_hit_proportion
             ):
                 functions_of_interest.append(funcname)
         return functions_of_interest
