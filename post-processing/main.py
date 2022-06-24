@@ -183,6 +183,7 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
 
     return parser
 
+
 def set_logging_level() -> None:
     if os.environ.get("FUZZ_LOGLEVEL"):
         level = os.environ.get("FUZZ_LOGLEVEL")
