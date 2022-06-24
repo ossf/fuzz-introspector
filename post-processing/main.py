@@ -14,6 +14,7 @@
 
 import argparse
 import logging
+import os
 import sys
 import yaml
 from typing import List
@@ -183,9 +184,22 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def set_logging_level() -> None:
+    if os.environ.get("FUZZ_LOGLEVEL"):
+        level = os.environ.get("FUZZ_LOGLEVEL")
+        if level == "debug":
+            logging.basicConfig(level=logging.DEBUG)
+        else:
+            logging.basicConfig(level=logging.INFO)
+    else:
+        logging.basicConfig(level=logging.INFO)
+    logger.info("Logging level set")
+    logger.debug("Logging level set")
+
+
 def main() -> int:
     logger.info("Running fuzz introspector post-processing")
-    logging.basicConfig(level=logging.INFO)
+    set_logging_level()
 
     parser = get_cmdline_parser()
     args = parser.parse_args()
@@ -202,6 +216,8 @@ def main() -> int:
         logger.info("Ending fuzz introspector report generation")
     elif args.command == 'correlate':
         return_code = correlate_binaries_to_logs(args.binaries_dir)
+    else:
+        return_code = fuzz_constants.APP_EXIT_ERROR
     logger.info("Ending fuzz introspector post-processing")
     sys.exit(return_code)
 
