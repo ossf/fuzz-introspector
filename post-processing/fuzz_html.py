@@ -814,9 +814,17 @@ def create_html_report(
     # Table with overview of all fuzzers.
     #############################################
     logger.info(" - Creating table with overview of all fuzzers")
-    html_report_core += fuzz_html_helpers.html_add_header_with_link("Fuzzers overview", 3, toc_list)
+    html_report_core += "<div class=\"report-box\">"
+    html_report_core += fuzz_html_helpers.html_add_header_with_link(
+        "Fuzzers overview",
+        1,
+        toc_list
+    )
     tables.append(f"myTable{len(tables)}")
     html_report_core += create_overview_table(tables, profiles)
+
+    # report-box
+    html_report_core += "</div>"
 
     #############################################
     # Table with details about all functions in the target project.
