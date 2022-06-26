@@ -65,7 +65,7 @@ class FuzzFilepathAnalyser(fuzz_analysis.AnalysisInterface):
 
         # Table with all files
         html_string += fuzz_html_helpers.html_add_header_with_link(
-            "Files and Directories considered in report",
+            "Files and Directories in report",
             1,
             toc_list
         )
