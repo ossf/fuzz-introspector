@@ -782,3 +782,31 @@ input[type="checkbox"] {
 	background: #b8f5ba;
 	color: #4fb327;
 }
+.collapsible {
+	height:  auto;
+}
+.collapsible.collapsed {
+	height: 0px;
+	overflow-y: hidden;
+}
+h1.report-title {
+	position: relative;	
+	padding-left: 30px;
+}
+h1.report-title:hover {
+	cursor: pointer;
+}
+h1.report-title::before {
+	content: "\27A4";
+	transform: rotate(90deg);
+	position: absolute;
+	left: 0px;
+	top: 0px;
+}
+h1.report-title.collapsed::before {
+	content: "\27A4";
+	transform: rotate(0deg);
+}
+.no-pseudo::before {
+	display: none;
+}

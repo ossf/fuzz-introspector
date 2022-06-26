@@ -60,6 +60,7 @@ class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
             1,
             toc_list
         )
+        html_string += "<div class=\"collapsible\">"
         html_string += "<p>This sections provides heuristics that can be used as input " \
                        "to a fuzz engine when running a given fuzz target. The current " \
                        "focus is on providing input that is usable by libFuzzer.</p>"
@@ -85,6 +86,7 @@ class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
                 profiles[profile_idx],
                 toc_list,
             )
+        html_string += "</div>"  # .collapsible
         html_string += "</div>"  # report-box
 
         logger.info(f" - Completed analysis {self.name}")
