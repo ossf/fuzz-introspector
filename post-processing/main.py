@@ -141,6 +141,7 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
             "OptimalTargets",
             "RuntimeCoverageAnalysis",
             "FuzzEngineInputAnalysis",
+            "FilePathAnalyser"
         ],
         help="Analyses to run. Available options: OptimalTargets, FuzzEngineInput"
     )
