@@ -82,6 +82,11 @@ class FuzzFilepathAnalyser(fuzz_analysis.AnalysisInterface):
             "Config.md#code-exclusion-from-the-report\">link</a></p>"
         )
 
+        html_string += fuzz_html_helpers.html_add_header_with_link(
+            "Files in report",
+            2,
+            toc_list
+        )
         tables.append(f"myTable{len(tables)}")
         html_string += fuzz_html_helpers.html_create_table_head(
             tables[-1],
@@ -94,7 +99,11 @@ class FuzzFilepathAnalyser(fuzz_analysis.AnalysisInterface):
         html_string += "</table>"
 
         # Table with all directories
-        html_string += "<br>Directories"
+        html_string += fuzz_html_helpers.html_add_header_with_link(
+            "Directories in report",
+            2,
+            toc_list
+        )
         tables.append(f"myTable{len(tables)}")
         html_string += fuzz_html_helpers.html_create_table_head(
             tables[-1],
