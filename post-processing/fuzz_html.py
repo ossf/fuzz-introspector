@@ -509,8 +509,8 @@ def create_fuzzer_detailed_section(
         "Call tree", 3, toc_list, link=f"call_tree_{curr_tt_profile}")
     html_string += (
         f"<p class='no-top-margin'>\n"
-        f"The following is the call tree with color coding for which"
-        f"functions are hit/not hit. This info is based on the coverage"
+        f"The following is the call tree with color coding for which "
+        f"functions are hit/not hit. This info is based on the coverage "
         f"achieved of all fuzzers together and not just this specific "
         f"fuzzer."
         f"</p>"
