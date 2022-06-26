@@ -69,6 +69,19 @@ class FuzzFilepathAnalyser(fuzz_analysis.AnalysisInterface):
             1,
             toc_list
         )
+        html_string += (
+            "<p>This section shows which files and directories are considered "
+            "in this report. The main reason for showing this is fuzz introspector "
+            "may include more code in the reasoning than is desired. This section "
+            "helps identify if too many files/directories are included, e.g. "
+            "third party code, which may be irrelevant for the threat model. "
+            "In the event too much is included, fuzz introspector supports a "
+            "configuration file that can exclude data from the report. See "
+            "the following link for more information on how to create a config file: "
+            "<a href=\"https://github.com/ossf/fuzz-introspector/blob/main/doc/"
+            "Config.md#code-exclusion-from-the-report\">link</a></p>"
+        )
+
         tables.append(f"myTable{len(tables)}")
         html_string += fuzz_html_helpers.html_create_table_head(
             tables[-1],
