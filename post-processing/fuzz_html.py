@@ -764,7 +764,8 @@ def create_html_report(
 
     # Start creation of core html
     html_body_start = '<div class="content-section">'
-    html_overview = fuzz_html_helpers.html_add_header_with_link(
+    html_overview = "<div class=\"report-box\">"
+    html_overview += fuzz_html_helpers.html_add_header_with_link(
         f"Project overview: {report_name}",
         1,
         toc_list,
@@ -780,7 +781,10 @@ def create_html_report(
     # Section with high level suggestions
     #############################################
     html_report_top = fuzz_html_helpers.html_add_header_with_link(
-        "High level conclusions", 3, toc_list)
+        "High level conclusions",
+        2,
+        toc_list
+    )
 
     #############################################
     # Reachability overview
@@ -788,7 +792,7 @@ def create_html_report(
     logger.info(" - Creating reachability overview table")
     html_report_core = fuzz_html_helpers.html_add_header_with_link(
         "Reachability and coverage overview",
-        3,
+        2,
         toc_list
     )
     tables.append(f"myTable{len(tables)}")
@@ -800,15 +804,27 @@ def create_html_report(
         True,
         display_coverage=True
     )
+    # Boxed summary
+    html_report_core += "</div>"
+
+    # report-box
     html_report_core += "</div>"
 
     #############################################
     # Table with overview of all fuzzers.
     #############################################
     logger.info(" - Creating table with overview of all fuzzers")
-    html_report_core += fuzz_html_helpers.html_add_header_with_link("Fuzzers overview", 3, toc_list)
+    html_report_core += "<div class=\"report-box\">"
+    html_report_core += fuzz_html_helpers.html_add_header_with_link(
+        "Fuzzers overview",
+        1,
+        toc_list
+    )
     tables.append(f"myTable{len(tables)}")
     html_report_core += create_overview_table(tables, profiles)
+
+    # report-box
+    html_report_core += "</div>"
 
     #############################################
     # Table with details about all functions in the target project.
