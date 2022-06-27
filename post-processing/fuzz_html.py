@@ -820,10 +820,12 @@ def create_html_report(
         1,
         toc_list
     )
+    html_report_core += "<div class=\"collapsible\">"
     tables.append(f"myTable{len(tables)}")
     html_report_core += create_overview_table(tables, profiles)
 
     # report-box
+    html_report_core += "</div>"  # .collapsible
     html_report_core += "</div>"
 
     #############################################
@@ -833,6 +835,7 @@ def create_html_report(
     html_report_core += "<div class=\"report-box\">"
     html_report_core += fuzz_html_helpers.html_add_header_with_link(
         "Project functions overview", 1, toc_list)
+    html_report_core += "<div class=\"collapsible\">"
     html_report_core += "<p> The following table shows data about each function in the project. " \
                         "The functions included in this table corresponds to all functions " \
                         "that exist in the executables of the fuzzers. As such, there may  " \
@@ -847,6 +850,7 @@ def create_html_report(
     all_function_table, all_functions_json = create_all_function_table(
         tables, project_profile, coverage_url, basefolder, table_id)
     html_report_core += all_function_table
+    html_report_core += "</div>"  # .collapsible
     html_report_core += "</div>"  # report box
 
     #############################################
@@ -856,6 +860,7 @@ def create_html_report(
     fuzzer_table_data: Dict[str, Any] = dict()
     html_report_core += "<div class=\"report-box\">"
     html_report_core += fuzz_html_helpers.html_add_header_with_link("Fuzzer details", 1, toc_list)
+    html_report_core += "<div class=\"collapsible\">"
     for profile_idx in range(len(profiles)):
         html_report_core += create_fuzzer_detailed_section(
             profiles[profile_idx],
@@ -866,6 +871,7 @@ def create_html_report(
             True,
             fuzzer_table_data
         )
+    html_report_core += "</div>"  # .collapsible
     html_report_core += "</div>"  # report box
 
     #############################################
@@ -878,6 +884,7 @@ def create_html_report(
         1,
         toc_list
     )
+    html_report_core += "<div class=\"collapsible\">"
 
     analysis_array = fuzz_analysis.get_all_analyses()
     for analysis in analysis_array:
@@ -890,6 +897,7 @@ def create_html_report(
                 basefolder,
                 coverage_url,
                 conclusions)
+    html_report_core += "</div>"  # .collapsible
     html_report_core += "</div>"  # report box
 
     #############################################

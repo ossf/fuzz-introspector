@@ -69,6 +69,7 @@ class FuzzFilepathAnalyser(fuzz_analysis.AnalysisInterface):
             1,
             toc_list
         )
+        html_string += "<div class=\"collapsible\">"
         html_string += (
             "<p>This section shows which files and directories are considered "
             "in this report. The main reason for showing this is fuzz introspector "
@@ -115,5 +116,6 @@ class FuzzFilepathAnalyser(fuzz_analysis.AnalysisInterface):
             html_string += fuzz_html_helpers.html_table_add_row([f"{dr}"])
         html_string += "</table>"
 
-        html_string += "</div>"
+        html_string += "</div>"  # .collapsible
+        html_string += "</div>"  # report-box
         return html_string

@@ -54,6 +54,7 @@ class FuzzBugDigestorAnalysis(fuzz_analysis.AnalysisInterface):
             1,
             toc_list
         )
+        html_string += "<div class=\"collapsible\">"
 
         html_string += (
             "<p>This section provices analysis that matches bugs "
@@ -80,5 +81,6 @@ class FuzzBugDigestorAnalysis(fuzz_analysis.AnalysisInterface):
                 ]
             )
         html_string += "</table>"
-        html_string += "</div>"
+        html_string += "</div>"  # .collapsible
+        html_string += "</div>"  # report-box
         return html_string

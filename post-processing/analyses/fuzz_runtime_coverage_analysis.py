@@ -59,6 +59,7 @@ class FuzzRuntimeCoverageAnalysis(fuzz_analysis.AnalysisInterface):
             1,
             toc_list
         )
+        html_string += "<div class=\"collapsible\">"
         html_string += "<p>This section gives analysis based on data about the runtime " \
                        "coverage information</p>"
         html_string += (
@@ -100,6 +101,7 @@ class FuzzRuntimeCoverageAnalysis(fuzz_analysis.AnalysisInterface):
                 reached_by
             ])
         html_string += "</table>"
+        html_string += "</div>"  # .collapsible
         html_string += "</div>"  # report-box
 
         logger.info(f" - Completed analysis {self.name}")

@@ -61,6 +61,7 @@ class FuzzDriverSynthesizerAnalysis(fuzz_analysis.AnalysisInterface):
             1,
             toc_list
         )
+        html_string += "<div class=\"collapsible\">"
 
         if fuzz_targets is None or len(fuzz_targets) == 0:
             A1 = fuzz_optimal_targets.FuzzOptimalTargetAnalysis()
@@ -170,6 +171,7 @@ class FuzzDriverSynthesizerAnalysis(fuzz_analysis.AnalysisInterface):
                 f"</code></pre><br>"
             )
 
+        html_string += "</div>"  # .collapsible
         html_string += "</div>"  # report-box
         logger.info(f" - Completed analysis {self.name}")
         return html_string

@@ -1,4 +1,10 @@
+// TODO AdamKorcz: This is too hacky. It should be handled during code generation.
+$("h1:first").addClass("no-pseudo");
+$("h1:first").css("padding-left", "0px")
+
+
 $( document ).ready(function() {
+
     createTables();
 
     // Scroll effect for showing in the menu where you are on the page
@@ -21,6 +27,14 @@ $( document ).ready(function() {
         };
       });
     });
+
+  // Make report boxes collapsible
+  $('.report-title').click(function(){
+    $(this).toggleClass("collapsed")
+    if($(this).closest(".report-box").find(".collapsible").length!==0){
+      $(this).closest(".report-box").find(".collapsible").toggleClass("collapsed");
+    }
+  });
 });
 
 // createTables instantiates the datatables.
@@ -212,3 +226,4 @@ function getClassName(val) {
   }
 
 }
+

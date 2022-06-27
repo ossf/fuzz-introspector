@@ -88,6 +88,7 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
         )
 
         logger.info(f" - Completed analysis {self.name}")
+        html_string += "</div>"  # .collapsible
         return html_string
 
     def qualifies_as_optimal_target(self, fd: fuzz_data_loader.FunctionProfile) -> bool:
