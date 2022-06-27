@@ -825,7 +825,7 @@ def create_html_report(
     html_report_core += create_overview_table(tables, profiles)
 
     # report-box
-    html_report_core += "</div>" # .collapsible
+    html_report_core += "</div>"  # .collapsible
     html_report_core += "</div>"
 
     #############################################
@@ -850,7 +850,7 @@ def create_html_report(
     all_function_table, all_functions_json = create_all_function_table(
         tables, project_profile, coverage_url, basefolder, table_id)
     html_report_core += all_function_table
-    html_report_core += "</div>" # .collapsible
+    html_report_core += "</div>"  # .collapsible
     html_report_core += "</div>"  # report box
 
     #############################################
@@ -871,7 +871,7 @@ def create_html_report(
             True,
             fuzzer_table_data
         )
-    html_report_core += "</div>" # .collapsible
+    html_report_core += "</div>"  # .collapsible
     html_report_core += "</div>"  # report box
 
     #############################################
@@ -897,7 +897,7 @@ def create_html_report(
                 basefolder,
                 coverage_url,
                 conclusions)
-    html_report_core += "</div>" # .collapsible
+    html_report_core += "</div>"  # .collapsible
     html_report_core += "</div>"  # report box
 
     #############################################

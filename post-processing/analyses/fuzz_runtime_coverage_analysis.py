@@ -101,7 +101,7 @@ class FuzzRuntimeCoverageAnalysis(fuzz_analysis.AnalysisInterface):
                 reached_by
             ])
         html_string += "</table>"
-        html_string += "</div>" # .collapsible
+        html_string += "</div>"  # .collapsible
         html_string += "</div>"  # report-box
 
         logger.info(f" - Completed analysis {self.name}")

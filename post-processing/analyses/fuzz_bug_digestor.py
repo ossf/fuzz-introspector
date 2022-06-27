@@ -81,6 +81,6 @@ class FuzzBugDigestorAnalysis(fuzz_analysis.AnalysisInterface):
                 ]
             )
         html_string += "</table>"
-        html_string += "</div>" # .collapsible
-        html_string += "</div>" # report-box
+        html_string += "</div>"  # .collapsible
+        html_string += "</div>"  # report-box
         return html_string
