@@ -136,7 +136,7 @@ index 82a21cdf..dd907935 100644
  RUN rm /root/checkout_build_install_llvm.sh
  
 diff --git a/infra/base-images/base-runner/coverage b/infra/base-images/base-runner/coverage
-index 400247bf..a12a5af4 100755
+index 400247bf..5f2da460 100755
 --- a/infra/base-images/base-runner/coverage
 +++ b/infra/base-images/base-runner/coverage
 @@ -310,13 +310,20 @@ elif [[ $FUZZING_LANGUAGE == "python" ]]; then
@@ -151,9 +151,9 @@ index 400247bf..a12a5af4 100755
    python3 /usr/local/bin/python_coverage_runner_help.py combine .coverage_*
    python3 /usr/local/bin/python_coverage_runner_help.py html
 +  python3 /usr/local/bin/python_coverage_runner_help.py json -o ${TEXTCOV_REPORT_DIR}/all_cov.json
-+  #find htmlcov/ -name "*.json" -exec cp {} ${TEXTCOV_REPORT_DIR}/ \;
++
++  # Copy coverage date out
 +  cp htmlcov/status.json ${TEXTCOV_REPORT_DIR}/html_status.json
-+  cp -rf htmlcov $OUT/DDDD
 +
    mv htmlcov/* $REPORT_PLATFORM_DIR/
 +  mv .coverage_* $REPORT_PLATFORM_DIR/
