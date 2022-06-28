@@ -516,7 +516,7 @@ def create_fuzzer_detailed_section(
         f"</p>"
         f"<p><ul>"
         f"<li>Red: no hits</li>"
-        f"<li>Yellow: few hits</li>"        
+        f"<li>Yellow: few hits</li>"
         f"<li>Green: many hits</li>"
         f"</ul></p>"
         f"<p>"
