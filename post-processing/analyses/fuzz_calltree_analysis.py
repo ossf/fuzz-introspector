@@ -252,7 +252,7 @@ class FuzzCalltreeAnalysis(fuzz_analysis.AnalysisInterface):
             return None
 
         html_table_string = "<p class='no-top-margin'>The followings nodes " \
-                            "represent call sites where fuzz blockers occur</p>"
+                            "represent call sites where fuzz blockers occur.</p>"
         tables.append(f"myTable{len(tables)}")
         html_table_string += fuzz_html_helpers.html_create_table_head(
             tables[-1],

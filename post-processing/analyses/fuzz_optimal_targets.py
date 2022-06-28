@@ -222,8 +222,8 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
         )
         html_string += "<p> The following table shows a list of functions that "   \
                        "are optimal targets. Optimal targets are identified by "   \
-                       "finding the functions that in combination reaches a high " \
-                       "amount of code coverage. </p>"
+                       "finding the functions that in combination, yield a high " \
+                       "code coverage. </p>"
         table_id = "remaining_optimal_interesting_functions"
         tables.append(table_id)
         html_string += fuzz_html_helpers.html_create_table_head(
@@ -301,8 +301,8 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
         # suggested fuzzers are implemented.
         html_string += fuzz_html_helpers.html_add_header_with_link(
             "All functions overview", 4, toc_list)
-        html_string += "<p> The status of all functions in the project will be as follows if you " \
-                       "implement fuzzers for these functions</p>"
+        html_string += "<p> If you implement fuzzers for these functions, the status of all " \
+                       "functions in the project will be:</p>"
         table_id = "all_functions_overview_table"
         tables.append(table_id)
         all_function_table, all_functions_json = fuzz_html.create_all_function_table(

@@ -60,10 +60,9 @@ class FuzzRuntimeCoverageAnalysis(fuzz_analysis.AnalysisInterface):
             toc_list
         )
         html_string += "<div class=\"collapsible\">"
-        html_string += "<p>This section gives analysis based on data about the runtime " \
-                       "coverage information</p>"
+        html_string += "<p>This section shows analysis of runtime coverage data.</p> "
         html_string += (
-            f"<p>For futher technical details on how this section is made, please "
+            f"<p>For futher technical details on how this section is generated, please "
             f"see the "
             f"<a href=\"{fuzz_constants.GIT_BRANCH_URL}/doc/Glossary.md#runtime"
             f"-coverage-analysis\">Glossary</a>.</p>"
