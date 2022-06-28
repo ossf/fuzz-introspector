@@ -414,7 +414,7 @@ def create_conclusions(
         sentence += "This is good"
     elif reached_percentage > 50.0:
         warning = 6
-        sentence += "This is good, but improvements can be made"
+        sentence += "This is good, but there's room for improvement."
     elif reached_percentage > 25.0:
         warning = 4
         sentence += "Improvements should be made"
@@ -515,12 +515,12 @@ def create_fuzzer_detailed_section(
         f"fuzzer."
         f"</p>"
         f"<p><ul>"
-        f"<li>Red: not hit at all</li>"
-        f"<li>Green: hit many times</li>"
-        f"<li>Yellow: hit a few times </li>"
+        f"<li>Red: no hits</li>"
+        f"<li>Yellow: few hits</li>"
+        f"<li>Green: many hits</li>"
         f"</ul></p>"
         f"<p>"
-        f"For further technical details on what the call tree overview is"
+        f"For further technical details on the call tree overview"
         f", please see the <a href=\"{fuzz_constants.GIT_BRANCH_URL}/doc/"
         f"Glossary.md#call-tree-overview\">Glossary</a>."
         f"</p>"
@@ -536,7 +536,7 @@ def create_fuzzer_detailed_section(
 
     # Full calltree
     html_string += fuzz_html_helpers.html_add_header_with_link(
-        "Full calltree",
+        "Full call tree",
         3,
         [],
         link=f"full_calltree_{curr_tt_profile}"
@@ -547,9 +547,9 @@ def create_fuzzer_detailed_section(
     calltree_file_name = calltree_analysis.create_calltree(profile)
 
     html_string += f"""<p class='no-top-margin'>The following link provides a visualisation
- of the full calltree overlayed with coverage information:
- <a href="{ calltree_file_name }">full calltree</a></p>"""
-    html_string += f"<p>For futher technical details on how the call tree is made, please " \
+ of the full call tree overlaid with coverage information:
+ <a href="{ calltree_file_name }">full call tree</a></p>"""
+    html_string += f"<p>For further technical details on how the call tree is generated, please " \
                    f"see the <a href=\"{fuzz_constants.GIT_BRANCH_URL}/doc/Glossary.md#full" \
                    f"-calltree\">Glossary</a>.</p>"
 
@@ -661,22 +661,22 @@ def create_fuzzer_detailed_section(
     html_string += "</div>"
     html_string += "<div style=\"font-size: 0.85rem; color: #adadad; margin-bottom: 40px\">"
     html_string += "<b>NB:</b> The sum of <i>covered functions</i> and <i>functions " \
-                   "that are reachable but not covered</i> need not be <i>Reachable " \
+                   "that are reachable but not covered</i> need not be equal to <i>Reachable " \
                    "functions</i>. This is because the reachability analysis is an "  \
                    "approximation and thus at runtime some functions may be covered " \
                    "that are not included in the reachability analysis. This is a "   \
-                   "limitation our of our static analysis capabilities."
+                   "limitation of our static analysis capabilities."
     html_string += "</div>"
 
     if total_hit_functions > reachable_funcs:
         html_string += (
             "<div class=\"high-level-conclusions-wrapper\">"
             "<span class=\"high-level-conclusion red-conclusion\">"
-            "<b>Warning:</b> The amount of covered functions are larger than the "
-            "amount of reachable functions. This means the functions covered at runtime "
-            "is larger than those extracted using static analysis. This is likely a result "
+            "<b>Warning:</b> The number of covered functions are larger than the "
+            "number of reachable functions. This means that there are more functions covered at "
+            "runtime than are extracted using static analysis. This is likely a result "
             "of the static analysis component failing to extract the right "
-            "callgraph or the coverage runtime being compiled with sanitizerse in code that "
+            "call graph or the coverage runtime being compiled with sanitizers in code that "
             "the static analysis has not analysed. This can happen if lto/gold is not "
             "used in all places that coverage instrumentation is used."
             "</span>"
@@ -837,7 +837,7 @@ def create_html_report(
         "Project functions overview", 1, toc_list)
     html_report_core += "<div class=\"collapsible\">"
     html_report_core += "<p> The following table shows data about each function in the project. " \
-                        "The functions included in this table corresponds to all functions " \
+                        "The functions included in this table correspond to all functions " \
                         "that exist in the executables of the fuzzers. As such, there may  " \
                         "be functions that are from third-party libraries.</p>"
     html_report_core += f"<p>For further technical details on the meaning of columns in the " \
