@@ -98,11 +98,20 @@ def html_get_navbar(title: str) -> str:
     return navbar
 
 
-def html_get_table_of_contents(toc_list: List[Tuple[str, str, int]]) -> str:
+def html_get_table_of_contents(
+        toc_list: List[Tuple[str, str, int]],
+        coverage_url: str) -> str:
     html_toc_string = ""
-    html_toc_string += '<div class="left-sidebar">\
+    html_toc_string += f"""<div class="left-sidebar">\
+                            <div class="left-sidebar-content-box">
+                                <a href="{coverage_url}">
+                                    <div class="yellow-button">
+                                        Coverage report
+                                    </div>
+                                </a>
+                            </div>
                             <div class="left-sidebar-content-box">\
-                                <h2>Table of contents</h2>'
+                                <h2>Table of contents</h2>"""
     for k, v, d in toc_list:
         indentation = d * 16
         html_toc_string += "<div style='margin-left: %spx'>" % indentation
