@@ -829,3 +829,12 @@ h1.report-title.collapsed::before {
 .yellow-button:hover {
 	background: #f4bc00;
 }
+/* Column-selection button: */
+.dt-button.buttons-collection.buttons-colvis {
+	background: white;
+	border: 1px solid #aaa
+}
+/* Search box for datatables */
+input[type=search] {
+	min-height: 38.58px;
+}
