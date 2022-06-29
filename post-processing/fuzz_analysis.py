@@ -16,6 +16,7 @@
 
 import abc
 import logging
+import os
 
 from typing import (
     Dict,
@@ -379,7 +380,7 @@ def detect_branch_level_blockers(
         llvm_branch_profile = functions_profile[function_name].branch_profiles
         source_file_path = functions_profile[function_name].function_source_file
         # Just extract the file name and skip the path
-        source_file_name = source_file_path.split('/')[-1]
+        source_file_name = os.path.basename(source_file_path)
         llvm_branch_string = f'{source_file_name}:{line_number},{column_number}'
 
         if llvm_branch_string not in llvm_branch_profile:
