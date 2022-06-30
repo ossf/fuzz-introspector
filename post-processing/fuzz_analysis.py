@@ -60,10 +60,12 @@ class BlockedSide(Enum):
 
 
 class FuzzBranchBlocker:
-    def __init__(self, side, not_cov_comp, reach_comp, filename, b_line, s_line, fname) -> None:
+    def __init__(self, side, not_cov_comp, reach_comp, hitcount_diff, filename, b_line, s_line,
+                 fname) -> None:
         self.blocked_side = side
         self.blocked_not_covered_complexity = not_cov_comp
         self.blocked_reachable_complexity = reach_comp
+        self.sides_hitcount_diff = hitcount_diff
         self.source_file = filename
         self.branch_line_number = b_line
         self.blocked_side_line_numder = s_line
@@ -309,6 +311,7 @@ def overlay_calltree_with_coverage(
                 'blocked_side': repr(br_blocker.blocked_side),
                 'blocked_not_covered_complexity': br_blocker.blocked_not_covered_complexity,
                 'blocked_reachable_complexity': br_blocker.blocked_reachable_complexity,
+                'sides_hitcount_diff': br_blocker.sides_hitcount_diff,
                 'source_file': br_blocker.source_file,
                 'branch_line_number': br_blocker.branch_line_number,
                 'blocked_side_line_numder': br_blocker.blocked_side_line_numder,
@@ -407,9 +410,10 @@ def detect_branch_level_blockers(
             side_line_number = side_line.split(':')[1].split(',')[0]
 
         if blocked_side:
+            hitcount_diff = abs(true_hitcount - false_hitcount)
             fuzz_blockers.append(FuzzBranchBlocker(blocked_side, blocked_not_covered_complexity,
-                                 blocked_reachable_complexity, source_file_path, line_number,
-                                 side_line_number, function_name))
+                                 blocked_reachable_complexity, hitcount_diff, source_file_path,
+                                 line_number, side_line_number, function_name))
 
     fuzz_blockers.sort(key=lambda x: [x.blocked_not_covered_complexity,
                                       x.blocked_reachable_complexity], reverse=True)
