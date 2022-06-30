@@ -16,6 +16,7 @@
 
 import abc
 import logging
+import os
 
 from typing import (
     Dict,
@@ -63,7 +64,7 @@ class FuzzBranchBlocker:
         self.blocked_side = side
         self.blocked_not_covered_complexity = not_cov_comp
         self.blocked_reachable_complexity = reach_comp
-        self.source_file_name = filename
+        self.source_file = filename
         self.branch_line_number = b_line
         self.blocked_side_line_numder = s_line
         self.function_name = fname
@@ -308,7 +309,7 @@ def overlay_calltree_with_coverage(
                 'blocked_side': repr(br_blocker.blocked_side),
                 'blocked_not_covered_complexity': br_blocker.blocked_not_covered_complexity,
                 'blocked_reachable_complexity': br_blocker.blocked_reachable_complexity,
-                'source_file_name': br_blocker.source_file_name,
+                'source_file': br_blocker.source_file,
                 'branch_line_number': br_blocker.branch_line_number,
                 'blocked_side_line_numder': br_blocker.blocked_side_line_numder,
                 'function_name': br_blocker.function_name
@@ -323,7 +324,6 @@ def update_branch_complexities(all_functions: Dict[str, fuzz_data_loader.Functio
     Traverse every branch profile and update the side complexities based on reached funcs
     complexity.
     """
-    # for branch_k, branch in branch_profiles.items():
     for func_k, func in all_functions.items():
         for branch_k, branch in func.branch_profiles.items():
             branch.branch_false_side_reachable_complexity = 0
@@ -378,8 +378,9 @@ def detect_branch_level_blockers(
             continue
 
         llvm_branch_profile = functions_profile[function_name].branch_profiles
+        source_file_path = functions_profile[function_name].function_source_file
         # Just extract the file name and skip the path
-        source_file_name = functions_profile[function_name].function_source_file.split('/')[-1]
+        source_file_name = os.path.basename(source_file_path)
         llvm_branch_string = f'{source_file_name}:{line_number},{column_number}'
 
         if llvm_branch_string not in llvm_branch_profile:
@@ -407,7 +408,7 @@ def detect_branch_level_blockers(
 
         if blocked_side:
             fuzz_blockers.append(FuzzBranchBlocker(blocked_side, blocked_not_covered_complexity,
-                                 blocked_reachable_complexity, source_file_name, line_number,
+                                 blocked_reachable_complexity, source_file_path, line_number,
                                  side_line_number, function_name))
 
     fuzz_blockers.sort(key=lambda x: [x.blocked_not_covered_complexity,
