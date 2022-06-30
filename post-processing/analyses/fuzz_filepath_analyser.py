@@ -93,7 +93,7 @@ class FuzzFilepathAnalyser(fuzz_analysis.AnalysisInterface):
             tables[-1],
             [
                 ("Source file", ""),
-                ("Reached by" , "")
+                ("Reached by", "")
             ]
         )
         for fnm in all_proj_files:
