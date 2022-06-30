@@ -255,6 +255,20 @@ class FuzzerProfile:
         # TODO: make fuzz-introspector exceptions
         raise Exception
 
+    def reaches_file(
+        self,
+        file_name: str,
+        basefolder: Optional[set] = None
+    ) -> bool:
+        logger.info(f"Checking up {file_name}")
+        if basefolder is not None:
+            file_name = file_name.replace(basefolder, "")
+
+        for ff in self.file_targets:
+            logger.info(f"\t{ff}")
+        logger.info(f"{file_name in self.file_targets}")
+        return file_name in self.file_targets
+
     def reaches(self, func_name: str) -> bool:
         return func_name in self.functions_reached_by_fuzzer
 
