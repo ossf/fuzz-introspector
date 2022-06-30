@@ -258,7 +258,7 @@ class FuzzerProfile:
     def reaches_file(
         self,
         file_name: str,
-        basefolder: Optional[set] = None
+        basefolder: Optional[str] = None
     ) -> bool:
         logger.info(f"Checking up {file_name}")
         if basefolder is not None:
