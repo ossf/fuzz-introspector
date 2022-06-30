@@ -93,7 +93,8 @@ class FuzzFilepathAnalyser(fuzz_analysis.AnalysisInterface):
             tables[-1],
             [
                 ("Source file", ""),
-                ("Reached by", "")
+                ("Reached by", ""),
+                ("Covered by", "")
             ]
         )
         for fnm in all_proj_files:
@@ -101,10 +102,21 @@ class FuzzFilepathAnalyser(fuzz_analysis.AnalysisInterface):
             for profile in profiles:
                 if profile.reaches_file(fnm, project_profile.basefolder):
                     profiles_that_hit.append(profile.get_key())
+
+            profiles_that_cover = []
+            for profile in profiles:
+                is_file_covered = profile.is_file_covered(
+                    fnm,
+                    project_profile.basefolder
+                )
+                if is_file_covered:
+                    profiles_that_cover.append(profile.get_key())
+
             html_string += fuzz_html_helpers.html_table_add_row(
                 [
                     f"{fnm}",
-                    f"{str(profiles_that_hit)}"
+                    f"{str(profiles_that_hit)}",
+                    f"{str(profiles_that_cover)}"
                 ]
             )
         html_string += "</table>"
