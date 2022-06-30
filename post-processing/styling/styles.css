@@ -90,6 +90,7 @@ table.dataTable tbody tr.even {
 	/*border-right: 1px solid #d9d9d9;*/
 	background:  #EBEDEE;
 	position: fixed;
+	height: 100vh;
 }
 .content-section {
 	height: calc(100vh - 70px);
@@ -105,11 +106,13 @@ table.dataTable tbody tr.even {
 	height: calc(100vh - 120px);
 }
 .left-sidebar-content-box {
-	width: calc(350px - 60px);
+	width: calc(350px - 80px);
 	/*position:  fixed;*/
-	top: 70px;
+	position: relative;
+	/*top: 70px;*/
 	padding-left:  20px;
-	overflow-y: auto;
+	padding-right: 20px;
+	/*overflow-y: auto;*/
 	max-height: 100vh;
 	margin: 20px;
 	background: white;
@@ -817,17 +820,19 @@ h1.report-title.collapsed::before {
 	display: none;
 }
 .yellow-button {
-	max-width: 80%;
+	max-width: 100%;
 	background: #FCC200;
 	color: #222;
 	font-size: 18px;
 	padding: 10px;
 	text-align: center;
 	font-weight: 700;
-	margin: 30px 0;
+	/*margin: 30px 0;*/
 }
-.yellow-button:hover {
+.yellow-button:hover,
+.pfc-list-item:hover {
 	background: #f4bc00;
+	cursor: pointer;
 }
 /* Column-selection button: */
 .dt-button.buttons-collection.buttons-colvis {
@@ -837,4 +842,30 @@ h1.report-title.collapsed::before {
 /* Search box for datatables */
 input[type=search] {
 	min-height: 38.58px;
+}
+.per-fuzzer-coverage-dropdown {
+	position: absolute;
+	background: #FCC200;
+	color: #222;
+	top: 100%;
+	left: 0px;
+	display: none;
+	width: 100%;
+}
+.per-fuzzer-coverage-dropdown.show {
+	display: block;
+}
+.per-fuzzer-coverage-button:hover {
+	cursor: pointer;
+}
+.pfc-list-item {
+	font-size: 1.3rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 16px;
+	padding: 10px;
+}
+.yellow-button-wrapper {
+	margin: 30px 0;
 }
