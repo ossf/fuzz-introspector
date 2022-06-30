@@ -178,7 +178,7 @@ def overlay_calltree_with_coverage(
         elif callstack_has_parent(node, callstack):
             # Find the parent function and check coverage of the node
             logger.debug("Extracting data")
-            logger.info(
+            logger.debug(
                 f"Getting hit details {node.dst_function_name} -- "
                 f"{node.cov_ct_idx} -- {node.src_linenumber}"
             )
