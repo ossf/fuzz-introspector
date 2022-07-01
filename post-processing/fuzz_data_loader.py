@@ -255,6 +255,22 @@ class FuzzerProfile:
         # TODO: make fuzz-introspector exceptions
         raise Exception
 
+    def reaches_file(
+        self,
+        file_name: str,
+        basefolder: Optional[str] = None
+    ) -> bool:
+        if basefolder is not None:
+            new_file_name = file_name.replace(basefolder, "")
+        else:
+            new_file_name = file_name
+
+        for ff in self.file_targets:
+            logger.info(f"\t{ff}")
+
+        # Only some file paths have removed base folder. We must check for both.
+        return (file_name in self.file_targets) or (new_file_name in self.file_targets)
+
     def reaches(self, func_name: str) -> bool:
         return func_name in self.functions_reached_by_fuzzer
 
@@ -369,6 +385,36 @@ class FuzzerProfile:
             if hit_lines == 0:
                 uncovered_funcs.append(funcname)
         return uncovered_funcs
+
+    def is_file_covered(
+        self,
+        file_name: str,
+        basefolder: Optional[str] = None
+    ) -> bool:
+        # We need to refine the pathname to match how coverage file paths are.
+        file_name = os.path.abspath(file_name)
+
+        # Refine filename if needed
+        if basefolder is not None and basefolder != "/":
+            new_file_name = file_name.replace(basefolder, "")
+        else:
+            new_file_name = file_name
+
+        for funcname in self.all_class_functions:
+            # Check it's a relevant filename
+            func_file_name = self.all_class_functions[funcname].function_source_file
+            if basefolder is not None and basefolder != "/":
+                new_func_file_name = func_file_name.replace(basefolder, "")
+            else:
+                new_func_file_name = func_file_name
+            if func_file_name != file_name and new_func_file_name != new_file_name:
+                continue
+            # Return true if the function is hit
+            tf, hl, hp = self.get_cov_metrics(funcname)
+            if hp is not None and hp > 0.0:
+                if func_file_name in self.file_targets or new_file_name in self.file_targets:
+                    return True
+        return False
 
     def get_cov_metrics(
         self,
