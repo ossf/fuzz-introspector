@@ -393,9 +393,12 @@ class FuzzerProfile:
     ) -> bool:
         # We need to refine the pathname to match how coverage file paths are.
         file_name = os.path.abspath(file_name)
+
         # Refine filename if needed
         if basefolder is not None and basefolder != "/":
-            file_name = file_name.replace(basefolder, "")
+            new_file_name = file_name.replace(basefolder, "")
+        else:
+            new_file_name = file_name
 
         for funcname in self.all_class_functions:
             # Check it's a relevant filename
@@ -404,14 +407,12 @@ class FuzzerProfile:
                 new_func_file_name = func_file_name.replace(basefolder, "")
             else:
                 new_func_file_name = func_file_name
-
-            if func_file_name != file_name and new_func_file_name != file_name:
+            if func_file_name != file_name and new_func_file_name != new_file_name:
                 continue
-
             # Return true if the function is hit
             tf, hl, hp = self.get_cov_metrics(funcname)
             if hp is not None and hp > 0.0:
-                if func_file_name in self.file_targets:
+                if func_file_name in self.file_targets or new_file_name in self.file_targets:
                     return True
         return False
 
