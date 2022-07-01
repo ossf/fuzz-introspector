@@ -5,6 +5,15 @@ $("h1:first").css("padding-left", "0px")
 
 $( document ).ready(function() {
 
+  window.onclick = function(event) {
+    if (!event.target.matches(['#per-fuzzer-coverage-button'])) {
+      var stdCDropdown = document.getElementById("per-fuzzer-coverage-dropdown");
+        if(stdCDropdown.classList.contains("show")) {
+          stdCDropdown.classList.remove("show");
+        }
+      }
+    }
+
     createTables();
 
     // Scroll effect for showing in the menu where you are on the page
@@ -226,4 +235,9 @@ function getClassName(val) {
   }
 
 }
+
+function displayCollapseByName() {
+  document.getElementById("per-fuzzer-coverage-dropdown").classList.toggle("show");
+}
+
 

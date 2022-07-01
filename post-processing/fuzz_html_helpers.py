@@ -21,6 +21,9 @@ from typing import (
     Tuple,
 )
 
+import fuzz_utils
+import fuzz_data_loader
+
 
 def html_table_add_row(elems: List[Any]) -> str:
     html_str = "<tr>\n"
@@ -98,17 +101,53 @@ def html_get_navbar(title: str) -> str:
     return navbar
 
 
+def create_pfc_button(
+        profiles: List[fuzz_data_loader.FuzzerProfile],
+        coverage_url: str) -> str:
+    html_string = ""
+    html_string += """
+                    <div class="yellow-button-wrapper"
+                        style="position: relative; margin: 5px 0 30px 0">
+                        <div class="yellow-button"
+                        onclick="displayCollapseByName()" id="per-fuzzer-coverage-button">
+                            Per-fuzzer coverage
+                        </div>
+                    <div class="per-fuzzer-coverage-dropdown" id="per-fuzzer-coverage-dropdown">"""
+    for profile in profiles:
+        target_name = profile.get_key()
+        target_coverage_url = fuzz_utils.get_target_coverage_url(
+            coverage_url,
+            target_name,
+            profile.target_lang
+        )
+        html_string += f"""
+            <a href="{target_coverage_url}">
+                <div class="pfc-list-item">
+                    {target_name}
+                </div>
+            </a>"""
+    html_string += "</div></div>"
+    return html_string
+
+
 def html_get_table_of_contents(
         toc_list: List[Tuple[str, str, int]],
-        coverage_url: str) -> str:
+        coverage_url: str,
+        profiles: List[fuzz_data_loader.FuzzerProfile]) -> str:
+    per_fuzzer_coverage_button = create_pfc_button(profiles, coverage_url)
     html_toc_string = ""
     html_toc_string += f"""<div class="left-sidebar">\
-                            <div class="left-sidebar-content-box">
-                                <a href="{coverage_url}">
-                                    <div class="yellow-button">
-                                        Coverage report
-                                    </div>
-                                </a>
+                            <div class="left-sidebar-content-box"
+                                style="display:flex;flex-direction:column">
+                                <div class="yellow-button-wrapper"
+                                    style="position: relative; margin: 30px 0 5px 0">
+                                    <a href="{coverage_url}">
+                                        <div class="yellow-button">
+                                            Coverage report
+                                        </div>
+                                    </a>
+                                </div>
+                                {per_fuzzer_coverage_button}
                             </div>
                             <div class="left-sidebar-content-box">\
                                 <h2>Table of contents</h2>"""

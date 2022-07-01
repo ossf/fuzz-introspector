@@ -945,7 +945,7 @@ def create_html_report(
     ###########################
     # Fix up table of contents.
     ###########################
-    html_toc_string = fuzz_html_helpers.html_get_table_of_contents(toc_list, coverage_url)
+    html_toc_string = fuzz_html_helpers.html_get_table_of_contents(toc_list, coverage_url, profiles)
 
     # Assemble the final HTML report and write it to a file.
     html_full_doc = (html_header
