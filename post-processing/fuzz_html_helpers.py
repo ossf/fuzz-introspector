@@ -72,32 +72,21 @@ def html_get_header(calltree: bool = False,
 
 
 def html_get_navbar(title: str) -> str:
-    navbar = f"""<div class="top-navbar">
-    <div class="top-navbar-accordion">
-        <svg
-            viewBox="0 0 24 24"
-            preserveAspectRatio="xMidYMid meet"
-            focusable="false"
-            style="pointer-events: none; display: block; width: 100%; height: 100%;">
-            <g>
-                <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z">
-                </path>
-            </g>
-        </svg>
-    </div>
-    <div class="top-navbar-title-wrapper" style="text-align: center">
-        <div class="top-navbar-title" style="margin-bottom: 10px; font-size:25px">
-            { title }
+    navbar = f"""
+    <div class="top-navbar">
+        <div class="top-navbar-title-wrapper">
+            <div class="top-navbar-title" style="margin-bottom: 10px; font-size:25px">
+                { title }
+            </div>
+            <div style="margin:0; font-size: 10px">
+              For issues and ideas:
+              <a href="https://github.com/ossf/fuzz-introspector/issues"
+                 style="color:#FFFFFF;">
+                https://github.com/ossf/fuzz-introspector/issues
+              </a>
+            </div>
         </div>
-        <div style="margin:0; font-size: 10px">
-          For issues and ideas:
-          <a href="https://github.com/ossf/fuzz-introspector/issues"
-             style="color:#FFFFFF;">
-            https://github.com/ossf/fuzz-introspector/issues
-          </a>
-        </div>
-    </div>
-</div>"""
+    </div>"""
     return navbar
 
 
@@ -138,7 +127,8 @@ def html_get_table_of_contents(
     html_toc_string = ""
     html_toc_string += f"""<div class="left-sidebar">\
                             <div class="left-sidebar-content-box"
-                                style="display:flex;flex-direction:column">
+                                style="display:flex;flex-direction:column;
+                                 padding: 0 20px; margin-top: 30px">
                                 <div class="yellow-button-wrapper"
                                     style="position: relative; margin: 30px 0 5px 0">
                                     <a href="{coverage_url}">
@@ -150,7 +140,7 @@ def html_get_table_of_contents(
                                 {per_fuzzer_coverage_button}
                             </div>
                             <div class="left-sidebar-content-box">\
-                                <h2>Table of contents</h2>"""
+                                <h2 style="margin-top:0px">Table of contents</h2>"""
     for k, v, d in toc_list:
         indentation = d * 16
         html_toc_string += "<div style='margin-left: %spx'>" % indentation
