@@ -32,6 +32,8 @@ import fuzz_constants
 import fuzz_cov_load
 import fuzz_utils
 
+import datatypes.branch_profile
+
 from exceptions import DataLoaderError
 
 logger = logging.getLogger(name=__name__)
@@ -68,10 +70,13 @@ class FunctionProfile:
         self.new_unreached_complexity: int = 0
         self.total_cyclomatic_complexity: int = 0
 
-    def load_func_branch_profiles(self, yaml_branch_profiles: Any) -> Dict[str, BranchProfile]:
+    def load_func_branch_profiles(
+        self,
+        yaml_branch_profiles: Any
+    ) -> Dict[str, datatypes.branch_profile.BranchProfile]:
         bp_loaded = {}
         for entry in yaml_branch_profiles:
-            new_branch = BranchProfile()
+            new_branch = datatypes.branch_profile.BranchProfile()
             new_branch.assign_from_yaml_elem(entry)
             bp_loaded[new_branch.branch_pos] = new_branch
 

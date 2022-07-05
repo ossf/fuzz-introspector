@@ -32,6 +32,8 @@ import fuzz_constants
 import fuzz_cov_load
 import fuzz_utils
 
+import datatypes.function_profile
+
 import datatypes.fuzzer_profile
 from exceptions import DataLoaderError
 
@@ -50,7 +52,7 @@ class MergedProjectProfile:
     def __init__(self, profiles: List[datatypes.fuzzer_profile.FuzzerProfile]):
         self.name = None
         self.profiles = profiles
-        self.all_functions: Dict[str, FunctionProfile] = dict()
+        self.all_functions: Dict[str, datatypes.function_profile.FunctionProfile] = dict()
         self.unreached_functions = set()
         self.functions_reached = set()
 

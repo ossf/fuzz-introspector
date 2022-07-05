@@ -34,6 +34,9 @@ import fuzz_utils
 
 import datatypes.project_profile
 import datatypes.fuzzer_profile
+import datatypes.function_profile
+import datatypes.branch_profile
+import datatypes.bug
 
 from exceptions import DataLoaderError
 
@@ -75,7 +78,7 @@ def read_fuzzer_data_file_to_profile(
 
 def add_func_to_reached_and_clone(
     merged_profile_old: datatypes.project_profile.MergedProjectProfile,
-    func_to_add: FunctionProfile
+    func_to_add: datatypes.function_profile.FunctionProfile
 ) -> datatypes.project_profile.MergedProjectProfile:
     """
     Add new functions as "reached" in a merged profile, and returns
@@ -154,15 +157,15 @@ def load_all_profiles(
     return profiles
 
 
-def try_load_input_bugs() -> List[InputBug]:
+def try_load_input_bugs() -> List[datatypes.bug.Bug]:
     """Loads input bugs as list. Returns empty list if none"""
     if not os.path.isfile(fuzz_constants.INPUT_BUG_FILE):
         return []
     return load_input_bugs(fuzz_constants.INPUT_BUG_FILE)
 
 
-def load_input_bugs(bug_file: str) -> List[InputBug]:
-    input_bugs: List[InputBug] = []
+def load_input_bugs(bug_file: str) -> List[datatypes.bug.Bug]:
+    input_bugs: List[datatypes.bug.Bug] = []
     if not os.path.isfile(bug_file):
         return input_bugs
 
@@ -178,7 +181,7 @@ def load_input_bugs(bug_file: str) -> List[InputBug]:
 
     for bug_dict in data["bugs"]:
         try:
-            ib = InputBug(
+            ib = datatypes.bug.Bug(
                 bug_dict['source_file'],
                 bug_dict['source_line'],
                 bug_dict['function_name'],
@@ -206,13 +209,13 @@ def read_branch_data_file_to_profile(filename: str, bp_dict: Dict[Any, Any]) -> 
         return
 
     for elem in data_dict_yaml:
-        new_branch = BranchProfile()
+        new_branch = datatypes.branch_profile.BranchProfile()
         new_branch.assign_from_yaml_elem(elem)
         bp_dict[new_branch.branch_pos] = new_branch
 
 
-def load_all_branch_profiles(target_folder: str) -> Dict[str, BranchProfile]:
-    all_branch_profiles: Dict[str, BranchProfile] = dict()
+def load_all_branch_profiles(target_folder: str) -> Dict[str, datatypes.branch_profile.BranchProfile]:
+    all_branch_profiles: Dict[str, datatypes.branch_profile.BranchProfile] = dict()
     data_files = fuzz_utils.get_all_files_in_tree_with_regex(target_folder,
                                                              ".*branchProfile\.yaml$")
     logger.info(f" - found {len(data_files)} branchProfiles to load")

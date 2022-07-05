@@ -32,6 +32,8 @@ import fuzz_constants
 import fuzz_cov_load
 import fuzz_utils
 
+import datatypes.function_profile
+
 from exceptions import DataLoaderError
 
 logger = logging.getLogger(name=__name__)
@@ -69,7 +71,7 @@ class FuzzerProfile:
                         f"We may have a non-normalised function name: {elem['functionName']}"
                     )
 
-            func_profile = FunctionProfile(elem)
+            func_profile = datatypes.function_profile.FunctionProfile(elem)
             logger.debug(f"Adding {func_profile.function_name}")
             self.all_class_functions[func_profile.function_name] = func_profile
 
