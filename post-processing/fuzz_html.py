@@ -317,7 +317,7 @@ def create_collapsible_element(
 
 
 def create_percentage_graph(title: str, percentage: str, numbers: str) -> str:
-    return f"""<div style="flex:1; margin-right: 20px"class="report-box">
+    return f"""<div style="flex:1; margin-right: 20px"class="report-box mt-0">
             <div style="font-weight: 600; text-align: center;">
                 {title}
             </div>
@@ -732,9 +732,12 @@ def extract_highlevel_guidance(conclusions: List[Tuple[int, str]]) -> str:
         else:
             conclusion_color = "green"
         html_string += f"""<div class="line-wrapper">
-    <span class="high-level-conclusion { conclusion_color }-conclusion">
+    <div class="high-level-conclusion { conclusion_color }-conclusion collapsed">
     { sentence }
-    </span>
+        <div class="high-level-extended" style="background:transparent; overflow:hidden">
+            Description
+        </div>
+    </div>
 </div>"""
     html_string += "</div>"
     return html_string
@@ -772,6 +775,7 @@ def create_html_report(
         link="Project-overview"
     )
     project_profile.write_stats_to_summary_file()
+    html_overview += "<div class=\"collapsible\">"
 
     # Project overview
     # html_overview += fuzz_html_helpers.html_add_header_with_link(
@@ -805,6 +809,9 @@ def create_html_report(
         display_coverage=True
     )
     # Boxed summary
+    html_report_core += "</div>"
+
+    # .collapsible
     html_report_core += "</div>"
 
     # report-box

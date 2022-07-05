@@ -61,7 +61,8 @@ table.dataTable tbody tr.even {
 	position: relative;
 	color: white;
 	align-items: center;
-	justify-content: center;
+	/*justify-content: center;*/
+	padding-left: 20px;
 }
 .section-wrapper {
 	width:  calc(100% - 34px);
@@ -109,9 +110,10 @@ table.dataTable tbody tr.even {
 	width: calc(350px - 80px);
 	/*position:  fixed;*/
 	position: relative;
+	display: flex;
+	flex-direction: column;
 	/*top: 70px;*/
-	padding-left:  20px;
-	padding-right: 20px;
+	padding: 20px;
 	/*overflow-y: auto;*/
 	max-height: 100vh;
 	margin: 20px;
@@ -404,10 +406,34 @@ input[type="checkbox"] {
 }
 .high-level-conclusions-wrapper .line-wrapper {
     margin-bottom: 23px;
+    position: relative;
+}
+.line-wrapper:hover {
+	cursor: pointer;
 }
 .high-level-conclusion {
 	border-radius: 5px;
-    padding: 10px 20px;
+  padding: 10px 30px;
+  display: flex;
+  flex-direction: column;
+  max-width: 600px;
+  width: 50%;
+}
+.high-level-conclusion::before {
+	content: "\27A4";
+	transform: rotate(90deg);
+	position: absolute;
+	top: 8px;
+	left: 10px;
+}
+.high-level-conclusion.collapsed::before {
+	content: "\27A4";
+	transform: rotate(0deg);
+	top: 8px;
+	left: 10px;
+}
+.high-level-conclusion.collapsed .high-level-extended {
+	height: 0px;
 }
 .high-level-conclusion.yellow-conclusion {
     background: #fffddb;
@@ -828,6 +854,7 @@ h1.report-title.collapsed::before {
 	text-align: center;
 	font-weight: 700;
 	/*margin: 30px 0;*/
+	margin: 0 auto;
 }
 .yellow-button:hover,
 .pfc-list-item:hover {
@@ -868,4 +895,14 @@ input[type=search] {
 }
 .yellow-button-wrapper {
 	margin: 30px 0;
+}
+/* Buttons for selecting columns in tables */
+div.dt-button-collection button.dt-button:active:not(.disabled), div.dt-button-collection button.dt-button.active:not(.disabled), div.dt-button-collection div.dt-button:active:not(.disabled), div.dt-button-collection div.dt-button.active:not(.disabled), div.dt-button-collection a.dt-button:active:not(.disabled), div.dt-button-collection a.dt-button.active:not(.disabled) {
+	background: #FCC200!important;
+}
+button.dt-button:active:not(.disabled):hover:not(.disabled), button.dt-button.active:not(.disabled):hover:not(.disabled), div.dt-button:active:not(.disabled):hover:not(.disabled), div.dt-button.active:not(.disabled):hover:not(.disabled), a.dt-button:active:not(.disabled):hover:not(.disabled), a.dt-button.active:not(.disabled):hover:not(.disabled), input.dt-button:active:not(.disabled):hover:not(.disabled), input.dt-button.active:not(.disabled):hover:not(.disabled) {
+	background: #f4bc00!important;
+}
+.mt-0 {
+	margin-top: 0px;
 }
