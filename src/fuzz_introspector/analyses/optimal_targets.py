@@ -23,15 +23,15 @@ from typing import (
     Tuple,
 )
 
-import analysis
-import data_loader
-import html_report
-import html_helpers
-import utils
+from fuzz_introspector import analysis
+from fuzz_introspector import data_loader
+from fuzz_introspector import html_report
+from fuzz_introspector import html_helpers
+from fuzz_introspector import utils
 
-import datatypes.project_profile
-import datatypes.fuzzer_profile
-import datatypes.function_profile
+from fuzz_introspector import datatypes.project_profile
+from fuzz_introspector import datatypes.fuzzer_profile
+from fuzz_introspector import datatypes.function_profile
 
 logger = logging.getLogger(name=__name__)
 

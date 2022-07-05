@@ -19,13 +19,12 @@ import sys
 import yaml
 from typing import List
 
-import analysis
-import constants
-import data_loader
-import html_report
-import utils
-
-import datatypes.project_profile
+from fuzz_introspector import analysis
+from fuzz_introspector import constants
+from fuzz_introspector import data_loader
+from fuzz_introspector import html_report
+from fuzz_introspector import utils
+from fuzz_introspector import datatypes.project_profile
 
 logger = logging.getLogger(name=__name__)
 

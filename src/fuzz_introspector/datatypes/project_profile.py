@@ -21,11 +21,10 @@ from typing import (
     Tuple,
 )
 
-import cov_load
-import utils
-
-import datatypes.function_profile
-import datatypes.fuzzer_profile
+from fuzz_introspector import cov_load
+from fuzz_introspector import utils
+from fuzz_introspector import datatypes.function_profile
+from fuzz_introspector import datatypes.fuzzer_profile
 
 logger = logging.getLogger(name=__name__)
 logger.setLevel(logging.INFO)

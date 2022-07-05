@@ -22,14 +22,12 @@ from typing import (
     TypedDict,
 )
 
-import analysis
-import html_helpers
-
-import datatypes.project_profile
-import datatypes.fuzzer_profile
-import datatypes.function_profile
-
-import analyses.optimal_targets
+from fuzz_introspector import analysis
+from fuzz_introspector import html_helpers
+from fuzz_introspector import datatypes.project_profile
+from fuzz_introspector import datatypes.fuzzer_profile
+from fuzz_introspector import datatypes.function_profile
+from fuzz_introspector import analyses.optimal_targets
 
 logger = logging.getLogger(name=__name__)
 

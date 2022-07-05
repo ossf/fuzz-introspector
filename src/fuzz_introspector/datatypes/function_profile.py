@@ -21,7 +21,7 @@ from typing import (
     List,
 )
 
-import datatypes.branch_profile
+from fuzz_introspector import datatypes.branch_profile
 
 logger = logging.getLogger(name=__name__)
 logger.setLevel(logging.INFO)

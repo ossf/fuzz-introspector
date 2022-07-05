@@ -26,13 +26,11 @@ from typing import (
     Tuple,
 )
 
-import cfg_load
-import cov_load
-import utils
-
-import datatypes.function_profile
-
-from exceptions import DataLoaderError
+from fuzz_introspector import cfg_load
+from fuzz_introspector import cov_load
+from fuzz_introspector import utils
+from fuzz_introspector import datatypes.function_profile
+from fuzz_introspector.exceptions import DataLoaderError
 
 logger = logging.getLogger(name=__name__)
 logger.setLevel(logging.INFO)

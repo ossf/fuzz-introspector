@@ -27,7 +27,7 @@ from typing import (
     Optional,
 )
 
-import constants
+from fuzz_introspector import constants
 
 logger = logging.getLogger(name=__name__)
 

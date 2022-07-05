@@ -21,8 +21,8 @@ from typing import (
     Tuple,
 )
 
-import utils
-import datatypes.fuzzer_profile
+from fuzz_introspector import utils
+from fuzz_introspector import datatypes.fuzzer_profile
 
 
 def html_table_add_row(elems: List[Any]) -> str:

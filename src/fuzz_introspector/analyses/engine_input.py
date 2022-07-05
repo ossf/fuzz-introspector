@@ -22,15 +22,13 @@ from typing import (
     Tuple,
 )
 
-import analysis
-import constants
-import html_helpers
-import utils
-
-import datatypes.project_profile
-import datatypes.fuzzer_profile
-
-import analyses.calltree_analysis
+from fuzz_introspector import analysis
+from fuzz_introspector import constants
+from fuzz_introspector import html_helpers
+from fuzz_introspector import utils
+from fuzz_introspector import datatypes.project_profile
+from fuzz_introspector import datatypes.fuzzer_profile
+from fuzz_introspector import analyses.calltree_analysis
 
 logger = logging.getLogger(name=__name__)
 

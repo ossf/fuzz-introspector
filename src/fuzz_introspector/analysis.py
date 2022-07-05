@@ -18,22 +18,21 @@ import abc
 import logging
 import os
 
+from enum import Enum
+
 from typing import (
     Dict,
     List,
     Tuple,
 )
 
-import utils
-import cfg_load
-import cov_load
-from enum import Enum
-
-import datatypes.project_profile
-import datatypes.fuzzer_profile
-import datatypes.function_profile
-
-from exceptions import AnalysisError
+from fuzz_introspector import utils
+from fuzz_introspector import cfg_load
+from fuzz_introspector import cov_load
+from fuzz_introspector import datatypes.project_profile
+from fuzz_introspector import datatypes.fuzzer_profile
+from fuzz_introspector import datatypes.function_profile
+from fuzz_introspector.exceptions import AnalysisError
 
 logger = logging.getLogger(name=__name__)
 logger.setLevel(logging.INFO)

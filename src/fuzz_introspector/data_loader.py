@@ -25,14 +25,13 @@ from typing import (
     Optional,
 )
 
-import constants
-import utils
-
-import datatypes.project_profile
-import datatypes.fuzzer_profile
-import datatypes.function_profile
-import datatypes.branch_profile
-import datatypes.bug
+from fuzz_introspector import constants
+from fuzz_introspector import utils
+from fuzz_introspector import datatypes.project_profile
+from fuzz_introspector import datatypes.fuzzer_profile
+from fuzz_introspector import datatypes.function_profile
+from fuzz_introspector import datatypes.branch_profile
+from fuzz_introspector import datatypes.bug
 
 from exceptions import DataLoaderError
 
