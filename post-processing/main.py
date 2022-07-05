@@ -25,6 +25,8 @@ import fuzz_data_loader
 import fuzz_html
 import fuzz_utils
 
+import datatypes.project_profile
+
 logger = logging.getLogger(name=__name__)
 
 
@@ -78,7 +80,7 @@ def run_analysis_on_dir(
         logger.info("- Nothing to correlate")
 
     logger.info("[+] Creating project profile")
-    project_profile = fuzz_data_loader.MergedProjectProfile(profiles)
+    project_profile = datatypes.project_profile.MergedProjectProfile(profiles)
 
     logger.info("[+] Refining profiles")
     for profile in profiles:

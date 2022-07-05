@@ -32,6 +32,9 @@ import fuzz_constants
 import fuzz_cov_load
 import fuzz_utils
 
+import datatypes.project_profile
+import datatypes.fuzzer_profile
+
 from exceptions import DataLoaderError
 
 logger = logging.getLogger(name=__name__)
@@ -41,7 +44,7 @@ logger.setLevel(logging.INFO)
 def read_fuzzer_data_file_to_profile(
     filename: str,
     language: str
-) -> Optional[FuzzerProfile]:
+) -> Optional[datatypes.fuzzer_profile.FuzzerProfile]:
     """
     For a given .data file (CFG) read the corresponding .yaml file
     This is a bit odd way of doing it and should probably be improved.
@@ -54,7 +57,7 @@ def read_fuzzer_data_file_to_profile(
     if data_dict_yaml is None:
         return None
 
-    FP = FuzzerProfile(filename, data_dict_yaml, language)
+    FP = datatypes.fuzzer_profile.FuzzerProfile(filename, data_dict_yaml, language)
 
     # Check we have a valid entrypoint
     if "LLVMFuzzerTestOneInput" in FP.all_class_functions:
@@ -70,8 +73,10 @@ def read_fuzzer_data_file_to_profile(
     return None
 
 
-def add_func_to_reached_and_clone(merged_profile_old: MergedProjectProfile,
-                                  func_to_add: FunctionProfile) -> MergedProjectProfile:
+def add_func_to_reached_and_clone(
+    merged_profile_old: datatypes.project_profile.MergedProjectProfile,
+    func_to_add: FunctionProfile
+) -> datatypes.project_profile.MergedProjectProfile:
     """
     Add new functions as "reached" in a merged profile, and returns
     a new copy of the merged profile with reachability information as if the
@@ -132,7 +137,10 @@ def add_func_to_reached_and_clone(merged_profile_old: MergedProjectProfile,
     return merged_profile
 
 
-def load_all_profiles(target_folder: str, language: str) -> List[FuzzerProfile]:
+def load_all_profiles(
+    target_folder: str,
+    language: str
+) -> List[datatypes.fuzzer_profile.FuzzerProfile]:
     profiles = []
     data_files = fuzz_utils.get_all_files_in_tree_with_regex(
         target_folder,

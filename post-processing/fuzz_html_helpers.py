@@ -24,6 +24,8 @@ from typing import (
 import fuzz_utils
 import fuzz_data_loader
 
+import datatypes.fuzzer_profile
+
 
 def html_table_add_row(elems: List[Any]) -> str:
     html_str = "<tr>\n"
@@ -91,7 +93,7 @@ def html_get_navbar(title: str) -> str:
 
 
 def create_pfc_button(
-        profiles: List[fuzz_data_loader.FuzzerProfile],
+        profiles: List[datatypes.fuzzer_profile.FuzzerProfile],
         coverage_url: str) -> str:
     html_string = ""
     html_string += """
@@ -122,7 +124,7 @@ def create_pfc_button(
 def html_get_table_of_contents(
         toc_list: List[Tuple[str, str, int]],
         coverage_url: str,
-        profiles: List[fuzz_data_loader.FuzzerProfile]) -> str:
+        profiles: List[datatypes.fuzzer_profile.FuzzerProfile]) -> str:
     per_fuzzer_coverage_button = create_pfc_button(profiles, coverage_url)
     html_toc_string = ""
     html_toc_string += f"""<div class="left-sidebar">\

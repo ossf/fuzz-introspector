@@ -30,6 +30,9 @@ import fuzz_utils
 import fuzz_cfg_load
 import fuzz_html_helpers
 
+import datatypes.project_profile
+import datatypes.fuzzer_profile
+
 # For pretty printing the html code:
 from bs4 import BeautifulSoup as bs
 
@@ -45,8 +48,8 @@ class FuzzCalltreeAnalysis(fuzz_analysis.AnalysisInterface):
         self,
         toc_list: List[Tuple[str, str, int]],
         tables: List[str],
-        project_profile: fuzz_data_loader.MergedProjectProfile,
-        profiles: List[fuzz_data_loader.FuzzerProfile],
+        project_profile: datatypes.project_profile.MergedProjectProfile,
+        profiles: List[datatypes.fuzzer_profile.FuzzerProfile],
         basefolder: str,
         coverage_url: str,
         conclusions
@@ -57,7 +60,7 @@ class FuzzCalltreeAnalysis(fuzz_analysis.AnalysisInterface):
         logger.info("Not implemented")
         return ""
 
-    def create_calltree(self, profile: fuzz_data_loader.FuzzerProfile) -> str:
+    def create_calltree(self, profile: datatypes.fuzzer_profile.FuzzerProfile) -> str:
         logger.info("In calltree")
         # Generate HTML for the calltree
         calltree_html_string = "<div class='call-tree-section-wrapper'>"
@@ -145,7 +148,7 @@ class FuzzCalltreeAnalysis(fuzz_analysis.AnalysisInterface):
         self,
         calltree_html_string: str,
         filename: str,
-        profile: fuzz_data_loader.FuzzerProfile
+        profile: datatypes.fuzzer_profile.FuzzerProfile
     ) -> None:
         """
         Write a wrapped HTML file with the tags needed from fuzz-introspector
@@ -209,7 +212,7 @@ class FuzzCalltreeAnalysis(fuzz_analysis.AnalysisInterface):
 
     def get_fuzz_blockers(
         self,
-        profile: fuzz_data_loader.FuzzerProfile,
+        profile: datatypes.fuzzer_profile.FuzzerProfile,
         max_blockers_to_extract: int = 999
     ) -> List[fuzz_cfg_load.CalltreeCallsite]:
         """Gets a list of fuzz blockers"""
@@ -232,7 +235,7 @@ class FuzzCalltreeAnalysis(fuzz_analysis.AnalysisInterface):
 
     def create_fuzz_blocker_table(
         self,
-        profile: fuzz_data_loader.FuzzerProfile,
+        profile: datatypes.fuzzer_profile.FuzzerProfile,
         tables: List[str],
         calltree_file_name: str,
         fuzz_blockers: Optional[List[fuzz_cfg_load.CalltreeCallsite]] = None

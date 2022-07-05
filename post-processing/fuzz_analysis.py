@@ -30,6 +30,9 @@ import fuzz_data_loader
 import fuzz_cov_load
 from enum import Enum
 
+import datatypes.project_profile
+import datatypes.fuzzer_profile
+
 from exceptions import AnalysisError
 
 logger = logging.getLogger(name=__name__)
@@ -44,8 +47,8 @@ class AnalysisInterface(abc.ABC):
         self,
         toc_list: List[Tuple[str, str, int]],
         tables: List[str],
-        project_profile: fuzz_data_loader.MergedProjectProfile,
-        profiles: List[fuzz_data_loader.FuzzerProfile],
+        project_profile: datatypes.project_profile.MergedProjectProfile,
+        profiles: List[datatypes.fuzzer_profile.FuzzerProfile],
         basefolder: str,
         coverage_url: str,
         conclusions: List[Tuple[int, str]]
@@ -95,8 +98,8 @@ def get_all_analyses() -> List[AnalysisInterface]:
 
 
 def overlay_calltree_with_coverage(
-        profile: fuzz_data_loader.FuzzerProfile,
-        project_profile: fuzz_data_loader.MergedProjectProfile,
+        profile: datatypes.fuzzer_profile.FuzzerProfile,
+        project_profile: datatypes.project_profile.MergedProjectProfile,
         coverage_url: str,
         basefolder: str) -> None:
     # We use the callstack to keep track of all function parents. We need this
@@ -353,7 +356,7 @@ def update_branch_complexities(all_functions: Dict[str, fuzz_data_loader.Functio
 
 
 def detect_branch_level_blockers(
-    fuzz_profile: fuzz_data_loader.FuzzerProfile
+    fuzz_profile: datatypes.fuzzer_profile.FuzzerProfile
 ) -> List[FuzzBranchBlocker]:
     fuzz_blockers = []
 

@@ -29,6 +29,9 @@ import fuzz_html
 import fuzz_html_helpers
 import fuzz_utils
 
+import datatypes.project_profile
+import datatypes.fuzzer_profile
+
 logger = logging.getLogger(name=__name__)
 
 
@@ -40,8 +43,8 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
         self,
         toc_list: List[Tuple[str, str, int]],
         tables: List[str],
-        project_profile: fuzz_data_loader.MergedProjectProfile,
-        profiles: List[fuzz_data_loader.FuzzerProfile],
+        project_profile: datatypes.project_profile.MergedProjectProfile,
+        profiles: List[datatypes.fuzzer_profile.FuzzerProfile],
         basefolder: str,
         coverage_url: str,
         conclusions: List[Tuple[int, str]],
@@ -124,7 +127,7 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
 
     def analysis_get_optimal_targets(
         self,
-        merged_profile: fuzz_data_loader.MergedProjectProfile
+        merged_profile: datatypes.project_profile.MergedProjectProfile
     ) -> List[fuzz_data_loader.FunctionProfile]:
         """
         Finds the top reachable functions with minimum overlap.
@@ -143,9 +146,9 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
 
     def iteratively_get_optimal_targets(
         self,
-        merged_profile: fuzz_data_loader.MergedProjectProfile
+        merged_profile: datatypes.project_profile.MergedProjectProfile
     ) -> Tuple[
-        fuzz_data_loader.MergedProjectProfile,
+        datatypes.project_profile.MergedProjectProfile,
         List[fuzz_data_loader.FunctionProfile]
     ]:
         '''
@@ -277,7 +280,7 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
 
     def get_consequential_section(
         self,
-        new_profile: fuzz_data_loader.MergedProjectProfile,
+        new_profile: datatypes.project_profile.MergedProjectProfile,
         conclusions: List[Tuple[int, str]],
         tables: List[str],
         toc_list: List[Tuple[str, str, int]],

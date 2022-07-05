@@ -28,6 +28,9 @@ import fuzz_data_loader
 import fuzz_html_helpers
 import fuzz_utils
 
+import datatypes.project_profile
+import datatypes.fuzzer_profile
+
 from analyses import fuzz_calltree_analysis
 
 logger = logging.getLogger(name=__name__)
@@ -42,8 +45,8 @@ class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
         self,
         toc_list: List[Tuple[str, str, int]],
         tables: List[str],
-        project_profile: fuzz_data_loader.MergedProjectProfile,
-        profiles: List[fuzz_data_loader.FuzzerProfile],
+        project_profile: datatypes.project_profile.MergedProjectProfile,
+        profiles: List[datatypes.fuzzer_profile.FuzzerProfile],
         basefolder: str,
         coverage_url: str,
         conclusions: List[Tuple[int, str]]
@@ -95,7 +98,7 @@ class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
 
         return html_string
 
-    def get_dictionary(self, profile: fuzz_data_loader.FuzzerProfile) -> str:
+    def get_dictionary(self, profile: datatypes.fuzzer_profile.FuzzerProfile) -> str:
         """Extracts a fuzzer dictionary"""
         kn = 0
         dictionary_content = ""
@@ -111,7 +114,7 @@ class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
 
     def get_dictionary_section(
         self,
-        profile: fuzz_data_loader.FuzzerProfile,
+        profile: datatypes.fuzzer_profile.FuzzerProfile,
         toc_list: List[Tuple[str, str, int]]
     ) -> str:
         """
@@ -132,7 +135,7 @@ class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
 
     def get_fuzzer_focus_function_section(
         self,
-        profile: fuzz_data_loader.FuzzerProfile,
+        profile: datatypes.fuzzer_profile.FuzzerProfile,
         toc_list: List[Tuple[str, str, int]]
     ) -> str:
         """Returns HTML string with fuzzer focus function"""

@@ -24,6 +24,9 @@ import fuzz_analysis
 import fuzz_data_loader
 import fuzz_html_helpers
 
+import datatypes.project_profile
+import datatypes.fuzzer_profile
+
 logger = logging.getLogger(name=__name__)
 
 
@@ -36,8 +39,8 @@ class FuzzBugDigestorAnalysis(fuzz_analysis.AnalysisInterface):
         self,
         toc_list: List[Tuple[str, str, int]],
         tables: List[str],
-        project_profile: fuzz_data_loader.MergedProjectProfile,
-        profiles: List[fuzz_data_loader.FuzzerProfile],
+        project_profile: datatypes.project_profile.MergedProjectProfile,
+        profiles: List[datatypes.fuzzer_profile.FuzzerProfile],
         basefolder: str,
         coverage_url: str,
         conclusions: List[Tuple[int, str]]

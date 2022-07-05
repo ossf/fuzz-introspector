@@ -34,6 +34,9 @@ import fuzz_cfg_load
 import fuzz_constants
 import fuzz_html_helpers
 
+import datatypes.project_profile
+import datatypes.fuzzer_profile
+
 # For pretty printing the html code:
 from bs4 import BeautifulSoup as bs
 
@@ -46,8 +49,10 @@ import string
 logger = logging.getLogger(name=__name__)
 
 
-def create_horisontal_calltree_image(image_name: str,
-                                     profile: fuzz_data_loader.FuzzerProfile) -> None:
+def create_horisontal_calltree_image(
+    image_name: str,
+    profile: datatypes.fuzzer_profile.FuzzerProfile
+) -> None:
     """
     Creates a horisontal image of the calltree. The height is fixed and
     each element on the x-axis shows a node in the calltree in the form
@@ -119,8 +124,10 @@ def create_horisontal_calltree_image(image_name: str,
     logger.info("- image saved")
 
 
-def create_overview_table(tables: List[str],
-                          profiles: List[fuzz_data_loader.FuzzerProfile]) -> str:
+def create_overview_table(
+    tables: List[str],
+    profiles: List[datatypes.fuzzer_profile.FuzzerProfile]
+) -> str:
     """Table with an overview of all the fuzzers"""
     html_string = fuzz_html_helpers.html_create_table_head(tables[-1], [
         ("Fuzzer",
@@ -165,7 +172,7 @@ def create_overview_table(tables: List[str],
 
 def create_all_function_table(
         tables: List[str],
-        project_profile: fuzz_data_loader.MergedProjectProfile,
+        project_profile: datatypes.project_profile.MergedProjectProfile,
         coverage_url: str,
         basefolder: str,
         table_id: Optional[str] = None
@@ -361,7 +368,7 @@ def create_covered_func_box(covered_funcs: str) -> str:
 
 def create_boxed_top_summary_info(
     tables: List[str],
-    project_profile: fuzz_data_loader.MergedProjectProfile,
+    project_profile: datatypes.project_profile.MergedProjectProfile,
     conclusions: List[Tuple[int, str]],
     extract_conclusion: bool,
     display_coverage: bool = False
@@ -443,7 +450,7 @@ def create_conclusions(
 
 def create_top_summary_info(
         tables: List[str],
-        project_profile: fuzz_data_loader.MergedProjectProfile,
+        project_profile: datatypes.project_profile.MergedProjectProfile,
         conclusions: List[Tuple[int, str]],
         extract_conclusion: bool,
         display_coverage: bool = False) -> str:
@@ -489,7 +496,7 @@ def create_top_summary_info(
 
 
 def create_fuzzer_detailed_section(
-    profile: fuzz_data_loader.FuzzerProfile,
+    profile: datatypes.fuzzer_profile.FuzzerProfile,
     toc_list: List[Tuple[str, str, int]],
     tables: List[str],
     curr_tt_profile: int,
@@ -744,8 +751,8 @@ def extract_highlevel_guidance(conclusions: List[Tuple[int, str]]) -> str:
 
 
 def create_html_report(
-    profiles: List[fuzz_data_loader.FuzzerProfile],
-    project_profile: fuzz_data_loader.MergedProjectProfile,
+    profiles: List[datatypes.fuzzer_profile.FuzzerProfile],
+    project_profile: datatypes.project_profile.MergedProjectProfile,
     analyses_to_run: List[str],
     coverage_url: str,
     basefolder: str,
