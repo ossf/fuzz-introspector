@@ -27,13 +27,14 @@ from typing import (
 
 from fuzz_introspector import constants
 from fuzz_introspector import utils
-from fuzz_introspector import datatypes.project_profile
-from fuzz_introspector import datatypes.fuzzer_profile
-from fuzz_introspector import datatypes.function_profile
-from fuzz_introspector import datatypes.branch_profile
-from fuzz_introspector import datatypes.bug
-
-from exceptions import DataLoaderError
+from fuzz_introspector.datatypes import (
+    project_profile,
+    fuzzer_profile,
+    function_profile,
+    branch_profile,
+    bug
+)
+from fuzz_introspector.exceptions import DataLoaderError
 
 logger = logging.getLogger(name=__name__)
 logger.setLevel(logging.INFO)
@@ -42,7 +43,7 @@ logger.setLevel(logging.INFO)
 def read_fuzzer_data_file_to_profile(
     filename: str,
     language: str
-) -> Optional[datatypes.fuzzer_profile.FuzzerProfile]:
+) -> Optional[fuzzer_profile.FuzzerProfile]:
     """
     For a given .data file (CFG) read the corresponding .yaml file
     This is a bit odd way of doing it and should probably be improved.
@@ -55,7 +56,7 @@ def read_fuzzer_data_file_to_profile(
     if data_dict_yaml is None:
         return None
 
-    FP = datatypes.fuzzer_profile.FuzzerProfile(filename, data_dict_yaml, language)
+    FP = fuzzer_profile.FuzzerProfile(filename, data_dict_yaml, language)
 
     # Check we have a valid entrypoint
     if "LLVMFuzzerTestOneInput" in FP.all_class_functions:
@@ -72,9 +73,9 @@ def read_fuzzer_data_file_to_profile(
 
 
 def add_func_to_reached_and_clone(
-    merged_profile_old: datatypes.project_profile.MergedProjectProfile,
-    func_to_add: datatypes.function_profile.FunctionProfile
-) -> datatypes.project_profile.MergedProjectProfile:
+    merged_profile_old: project_profile.MergedProjectProfile,
+    func_to_add: function_profile.FunctionProfile
+) -> project_profile.MergedProjectProfile:
     """
     Add new functions as "reached" in a merged profile, and returns
     a new copy of the merged profile with reachability information as if the
@@ -138,7 +139,7 @@ def add_func_to_reached_and_clone(
 def load_all_profiles(
     target_folder: str,
     language: str
-) -> List[datatypes.fuzzer_profile.FuzzerProfile]:
+) -> List[fuzzer_profile.FuzzerProfile]:
     profiles = []
     data_files = utils.get_all_files_in_tree_with_regex(
         target_folder,
@@ -152,15 +153,15 @@ def load_all_profiles(
     return profiles
 
 
-def try_load_input_bugs() -> List[datatypes.bug.Bug]:
+def try_load_input_bugs() -> List[bug.Bug]:
     """Loads input bugs as list. Returns empty list if none"""
     if not os.path.isfile(constants.INPUT_BUG_FILE):
         return []
     return load_input_bugs(constants.INPUT_BUG_FILE)
 
 
-def load_input_bugs(bug_file: str) -> List[datatypes.bug.Bug]:
-    input_bugs: List[datatypes.bug.Bug] = []
+def load_input_bugs(bug_file: str) -> List[bug.Bug]:
+    input_bugs: List[bug.Bug] = []
     if not os.path.isfile(bug_file):
         return input_bugs
 
@@ -176,7 +177,7 @@ def load_input_bugs(bug_file: str) -> List[datatypes.bug.Bug]:
 
     for bug_dict in data["bugs"]:
         try:
-            ib = datatypes.bug.Bug(
+            ib = bug.Bug(
                 bug_dict['source_file'],
                 bug_dict['source_line'],
                 bug_dict['function_name'],
@@ -204,15 +205,15 @@ def read_branch_data_file_to_profile(filename: str, bp_dict: Dict[Any, Any]) -> 
         return
 
     for elem in data_dict_yaml:
-        new_branch = datatypes.branch_profile.BranchProfile()
+        new_branch = branch_profile.BranchProfile()
         new_branch.assign_from_yaml_elem(elem)
         bp_dict[new_branch.branch_pos] = new_branch
 
 
 def load_all_branch_profiles(
     target_folder: str
-) -> Dict[str, datatypes.branch_profile.BranchProfile]:
-    all_branch_profiles: Dict[str, datatypes.branch_profile.BranchProfile] = dict()
+) -> Dict[str, branch_profile.BranchProfile]:
+    all_branch_profiles: Dict[str, branch_profile.BranchProfile] = dict()
     data_files = utils.get_all_files_in_tree_with_regex(
         target_folder,
         ".*branchProfile\.yaml$"

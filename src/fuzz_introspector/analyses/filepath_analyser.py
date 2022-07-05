@@ -24,8 +24,8 @@ from typing import (
 
 from fuzz_introspector import analysis
 from fuzz_introspector import html_helpers
-from fuzz_introspector import datatypes.project_profile
-from fuzz_introspector import datatypes.fuzzer_profile
+from fuzz_introspector import project_profile
+from fuzz_introspector import fuzzer_profile
 
 logger = logging.getLogger(name=__name__)
 
@@ -36,7 +36,7 @@ class FuzzFilepathAnalyser(analysis.AnalysisInterface):
 
     def all_files_targeted(
         self,
-        project_profile: datatypes.project_profile.MergedProjectProfile
+        project_profile: project_profile.MergedProjectProfile
     ) -> Set[str]:
         s1 = set()
         for prof in project_profile.profiles:
@@ -48,8 +48,8 @@ class FuzzFilepathAnalyser(analysis.AnalysisInterface):
         self,
         toc_list: List[Tuple[str, str, int]],
         tables: List[str],
-        project_profile: datatypes.project_profile.MergedProjectProfile,
-        profiles: List[datatypes.fuzzer_profile.FuzzerProfile],
+        project_profile: project_profile.MergedProjectProfile,
+        profiles: List[fuzzer_profile.FuzzerProfile],
         basefolder: str,
         coverage_url: str,
         conclusions: List[Tuple[int, str]]

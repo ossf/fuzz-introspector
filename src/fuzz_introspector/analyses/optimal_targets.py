@@ -45,8 +45,8 @@ class FuzzOptimalTargetAnalysis(analysis.AnalysisInterface):
         self,
         toc_list: List[Tuple[str, str, int]],
         tables: List[str],
-        project_profile: datatypes.project_profile.MergedProjectProfile,
-        profiles: List[datatypes.fuzzer_profile.FuzzerProfile],
+        project_profile: project_profile.MergedProjectProfile,
+        profiles: List[fuzzer_profile.FuzzerProfile],
         basefolder: str,
         coverage_url: str,
         conclusions: List[Tuple[int, str]],
@@ -96,7 +96,7 @@ class FuzzOptimalTargetAnalysis(analysis.AnalysisInterface):
         html_string += "</div>"  # .collapsible
         return html_string
 
-    def qualifies_as_optimal_target(self, fd: datatypes.function_profile.FunctionProfile) -> bool:
+    def qualifies_as_optimal_target(self, fd: function_profile.FunctionProfile) -> bool:
         """
         Hard conditions for whether a target qualifies as a potential
         optimal target. These are minimum conditions, i.e. the analysis
@@ -129,8 +129,8 @@ class FuzzOptimalTargetAnalysis(analysis.AnalysisInterface):
 
     def analysis_get_optimal_targets(
         self,
-        merged_profile: datatypes.project_profile.MergedProjectProfile
-    ) -> List[datatypes.function_profile.FunctionProfile]:
+        merged_profile: project_profile.MergedProjectProfile
+    ) -> List[function_profile.FunctionProfile]:
         """
         Finds the top reachable functions with minimum overlap.
         Each of these functions is not be reachable by another function
@@ -138,7 +138,7 @@ class FuzzOptimalTargetAnalysis(analysis.AnalysisInterface):
         """
         logger.info("    - in analysis_get_optimal_targets")
 
-        target_fds: List[datatypes.function_profile.FunctionProfile] = list()
+        target_fds: List[function_profile.FunctionProfile] = list()
         for fd in merged_profile.all_functions.values():
             if not self.qualifies_as_optimal_target(fd):
                 continue
@@ -148,10 +148,10 @@ class FuzzOptimalTargetAnalysis(analysis.AnalysisInterface):
 
     def iteratively_get_optimal_targets(
         self,
-        merged_profile: datatypes.project_profile.MergedProjectProfile
+        merged_profile: project_profile.MergedProjectProfile
     ) -> Tuple[
-        datatypes.project_profile.MergedProjectProfile,
-        List[datatypes.function_profile.FunctionProfile]
+        project_profile.MergedProjectProfile,
+        List[function_profile.FunctionProfile]
     ]:
         '''
         Function for synthesizing fuzz targets. The way this one works is by finding
@@ -163,7 +163,7 @@ class FuzzOptimalTargetAnalysis(analysis.AnalysisInterface):
         '''
         logger.info("  - in iteratively_get_optimal_targets")
         new_merged_profile = copy.deepcopy(merged_profile)
-        optimal_functions_targeted: List[datatypes.function_profile.FunctionProfile] = []
+        optimal_functions_targeted: List[function_profile.FunctionProfile] = []
 
         # Extract all candidates
         target_fds = self.analysis_get_optimal_targets(merged_profile)
@@ -214,7 +214,7 @@ class FuzzOptimalTargetAnalysis(analysis.AnalysisInterface):
 
     def get_optimal_target_section(
         self,
-        optimal_target_functions: List[datatypes.function_profile.FunctionProfile],
+        optimal_target_functions: List[function_profile.FunctionProfile],
         toc_list: List[Tuple[str, str, int]],
         tables: List[str],
         coverage_url: str
@@ -282,7 +282,7 @@ class FuzzOptimalTargetAnalysis(analysis.AnalysisInterface):
 
     def get_consequential_section(
         self,
-        new_profile: datatypes.project_profile.MergedProjectProfile,
+        new_profile: project_profile.MergedProjectProfile,
         conclusions: List[Tuple[int, str]],
         tables: List[str],
         toc_list: List[Tuple[str, str, int]],

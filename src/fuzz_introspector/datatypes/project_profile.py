@@ -37,10 +37,10 @@ class MergedProjectProfile:
     example, it does project-wide analysis of reachable/unreachable functions by
     digesting data from all the fuzzers in the project.
     """
-    def __init__(self, profiles: List[datatypes.fuzzer_profile.FuzzerProfile]):
+    def __init__(self, profiles: List[fuzzer_profile.FuzzerProfile]):
         self.name = None
         self.profiles = profiles
-        self.all_functions: Dict[str, datatypes.function_profile.FunctionProfile] = dict()
+        self.all_functions: Dict[str, function_profile.FunctionProfile] = dict()
         self.unreached_functions = set()
         self.functions_reached = set()
 

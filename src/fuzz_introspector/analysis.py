@@ -29,9 +29,11 @@ from typing import (
 from fuzz_introspector import utils
 from fuzz_introspector import cfg_load
 from fuzz_introspector import cov_load
-from fuzz_introspector import datatypes.project_profile
-from fuzz_introspector import datatypes.fuzzer_profile
-from fuzz_introspector import datatypes.function_profile
+from fuzz_introspector.datatypes import (
+    project_profile,
+    fuzzer_profile,
+    function_profile
+)
 from fuzz_introspector.exceptions import AnalysisError
 
 logger = logging.getLogger(name=__name__)
@@ -46,8 +48,8 @@ class AnalysisInterface(abc.ABC):
         self,
         toc_list: List[Tuple[str, str, int]],
         tables: List[str],
-        project_profile: datatypes.project_profile.MergedProjectProfile,
-        profiles: List[datatypes.fuzzer_profile.FuzzerProfile],
+        project_profile: project_profile.MergedProjectProfile,
+        profiles: List[fuzzer_profile.FuzzerProfile],
         basefolder: str,
         coverage_url: str,
         conclusions: List[Tuple[int, str]]
@@ -97,8 +99,8 @@ def get_all_analyses() -> List[AnalysisInterface]:
 
 
 def overlay_calltree_with_coverage(
-        profile: datatypes.fuzzer_profile.FuzzerProfile,
-        project_profile: datatypes.project_profile.MergedProjectProfile,
+        profile: fuzzer_profile.FuzzerProfile,
+        project_profile: project_profile.MergedProjectProfile,
         coverage_url: str,
         basefolder: str) -> None:
     # We use the callstack to keep track of all function parents. We need this
@@ -323,7 +325,7 @@ def overlay_calltree_with_coverage(
     utils.write_to_summary_file(profile.get_key(), 'branch_blockers', branch_blockers_list)
 
 
-def update_branch_complexities(all_functions: Dict[str, datatypes.function_profile.FunctionProfile],
+def update_branch_complexities(all_functions: Dict[str, function_profile.FunctionProfile],
                                coverage: cov_load.CoverageProfile) -> None:
     """
     Traverse every branch profile and update the side complexities based on reached funcs
@@ -355,7 +357,7 @@ def update_branch_complexities(all_functions: Dict[str, datatypes.function_profi
 
 
 def detect_branch_level_blockers(
-    fuzz_profile: datatypes.fuzzer_profile.FuzzerProfile
+    fuzz_profile: fuzzer_profile.FuzzerProfile
 ) -> List[FuzzBranchBlocker]:
     fuzz_blockers = []
 

@@ -60,10 +60,10 @@ class FunctionProfile:
     def load_func_branch_profiles(
         self,
         yaml_branch_profiles: Any
-    ) -> Dict[str, datatypes.branch_profile.BranchProfile]:
+    ) -> Dict[str, branch_profile.BranchProfile]:
         bp_loaded = {}
         for entry in yaml_branch_profiles:
-            new_branch = datatypes.branch_profile.BranchProfile()
+            new_branch = branch_profile.BranchProfile()
             new_branch.assign_from_yaml_elem(entry)
             bp_loaded[new_branch.branch_pos] = new_branch
 

@@ -67,7 +67,7 @@ class FuzzerProfile:
                         f"We may have a non-normalised function name: {elem['functionName']}"
                     )
 
-            func_profile = datatypes.function_profile.FunctionProfile(elem)
+            func_profile = function_profile.FunctionProfile(elem)
             logger.debug(f"Adding {func_profile.function_name}")
             self.all_class_functions[func_profile.function_name] = func_profile
 
