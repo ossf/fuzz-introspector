@@ -900,9 +900,9 @@ def create_html_report(
     html_report_core += "<div class=\"collapsible\">"
 
     analysis_array = analysis.get_all_analyses()
-    for analysis in analysis_array:
-        if analysis.name in analyses_to_run:
-            html_report_core += analysis.analysis_func(
+    for analysis_interface in analysis_array:
+        if analysis_interface.name in analyses_to_run:
+            html_report_core += analysis_interface.analysis_func(
                 toc_list,
                 tables,
                 project_profile,

@@ -54,9 +54,9 @@ def run_analysis_on_dir(
             "FuzzDriverSynthesizerAnalysis",
             "FuzzEngineInputAnalysis"
         ]
-        for analysis in all_analyses:
-            if analysis not in analyses_to_run:
-                analyses_to_run.append(analysis)
+        for analysis_interface in all_analyses:
+            if analysis_interface not in analyses_to_run:
+                analyses_to_run.append(analysis_interface)
 
     logger.info("[+] Loading profiles")
     profiles = data_loader.load_all_profiles(target_folder, language)
