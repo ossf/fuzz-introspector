@@ -11,30 +11,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Reads the data output from the fuzz introspector LLVM plugin."""
+"""Function profile"""
 
-import os
-import copy
-import json
 import logging
 
 from typing import (
     Any,
     Dict,
     List,
-    Optional,
-    Set,
-    Tuple,
 )
 
-import fuzz_cfg_load
-import fuzz_constants
-import fuzz_cov_load
-import fuzz_utils
-
 import datatypes.branch_profile
-
-from exceptions import DataLoaderError
 
 logger = logging.getLogger(name=__name__)
 logger.setLevel(logging.INFO)

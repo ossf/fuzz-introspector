@@ -13,29 +13,19 @@
 # limitations under the License.
 """Reads the data output from the fuzz introspector LLVM plugin."""
 
-import os
-import copy
-import json
 import logging
 
 from typing import (
-    Any,
     Dict,
     List,
-    Optional,
-    Set,
     Tuple,
 )
 
-import fuzz_cfg_load
-import fuzz_constants
 import fuzz_cov_load
 import fuzz_utils
 
 import datatypes.function_profile
-
 import datatypes.fuzzer_profile
-from exceptions import DataLoaderError
 
 logger = logging.getLogger(name=__name__)
 logger.setLevel(logging.INFO)

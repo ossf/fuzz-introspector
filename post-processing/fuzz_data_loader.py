@@ -23,13 +23,9 @@ from typing import (
     Dict,
     List,
     Optional,
-    Set,
-    Tuple,
 )
 
-import fuzz_cfg_load
 import fuzz_constants
-import fuzz_cov_load
 import fuzz_utils
 
 import datatypes.project_profile
@@ -214,7 +210,9 @@ def read_branch_data_file_to_profile(filename: str, bp_dict: Dict[Any, Any]) -> 
         bp_dict[new_branch.branch_pos] = new_branch
 
 
-def load_all_branch_profiles(target_folder: str) -> Dict[str, datatypes.branch_profile.BranchProfile]:
+def load_all_branch_profiles(
+    target_folder: str
+) -> Dict[str, datatypes.branch_profile.BranchProfile]:
     all_branch_profiles: Dict[str, datatypes.branch_profile.BranchProfile] = dict()
     data_files = fuzz_utils.get_all_files_in_tree_with_regex(target_folder,
                                                              ".*branchProfile\.yaml$")

@@ -14,7 +14,6 @@
 """Reads the data output from the fuzz introspector LLVM plugin."""
 
 import os
-import copy
 import json
 import logging
 
@@ -28,7 +27,6 @@ from typing import (
 )
 
 import fuzz_cfg_load
-import fuzz_constants
 import fuzz_cov_load
 import fuzz_utils
 
