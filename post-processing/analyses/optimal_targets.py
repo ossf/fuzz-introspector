@@ -26,7 +26,7 @@ from typing import (
 import fuzz_analysis
 import fuzz_data_loader
 import fuzz_html
-import fuzz_html_helpers
+import html_helpers
 import utils
 
 import datatypes.project_profile
@@ -66,7 +66,7 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
         logger.info(f" - Running analysis {self.name}")
 
         html_string = ""
-        html_string += fuzz_html_helpers.html_add_header_with_link(
+        html_string += html_helpers.html_add_header_with_link(
             "Optimal target analysis", 2, toc_list)
 
         # Create optimal target section
@@ -219,7 +219,7 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
         coverage_url: str
     ) -> str:
         # Table with details about optimal target functions
-        html_string = fuzz_html_helpers.html_add_header_with_link(
+        html_string = html_helpers.html_add_header_with_link(
             "Remaining optimal interesting functions",
             3,
             toc_list
@@ -230,7 +230,7 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
                        "code coverage. </p>"
         table_id = "remaining_optimal_interesting_functions"
         tables.append(table_id)
-        html_string += fuzz_html_helpers.html_create_table_head(
+        html_string += html_helpers.html_create_table_head(
             table_id,
             [
                 ("Func name", ""),
@@ -259,7 +259,7 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
                 f"{utils.demangle_cpp_func(fd.function_name)}"
                 f"</code></a>"
             )
-            html_string += fuzz_html_helpers.html_table_add_row(
+            html_string += html_helpers.html_table_add_row(
                 [
                     html_func_row,
                     fd.function_source_file,
@@ -303,7 +303,7 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
 
         # Table with details about all functions in the project in case the
         # suggested fuzzers are implemented.
-        html_string += fuzz_html_helpers.html_add_header_with_link(
+        html_string += html_helpers.html_add_header_with_link(
             "All functions overview", 4, toc_list)
         html_string += "<p> If you implement fuzzers for these functions, the status of all " \
                        "functions in the project will be:</p>"

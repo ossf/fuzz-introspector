@@ -22,7 +22,7 @@ from typing import (
 
 import fuzz_analysis
 import fuzz_data_loader
-import fuzz_html_helpers
+import html_helpers
 
 import datatypes.project_profile
 import datatypes.fuzzer_profile
@@ -52,7 +52,7 @@ class FuzzBugDigestorAnalysis(fuzz_analysis.AnalysisInterface):
 
         html_string = ""
         html_string += "<div class=\"report-box\">"
-        html_string += fuzz_html_helpers.html_add_header_with_link(
+        html_string += html_helpers.html_add_header_with_link(
             "Bug detector analysis",
             1,
             toc_list
@@ -68,7 +68,7 @@ class FuzzBugDigestorAnalysis(fuzz_analysis.AnalysisInterface):
 
         # Create table header
         tables.append(f"myTable{len(tables)}")
-        html_string += fuzz_html_helpers.html_create_table_head(
+        html_string += html_helpers.html_create_table_head(
             tables[-1],
             [
                 ("Bug type", "The type of bug."),
@@ -77,7 +77,7 @@ class FuzzBugDigestorAnalysis(fuzz_analysis.AnalysisInterface):
         )
         for bug in input_bugs:
             logger.info("Adding row in input bugs table")
-            html_string += fuzz_html_helpers.html_table_add_row(
+            html_string += html_helpers.html_table_add_row(
                 [
                     bug.bug_type,
                     bug.function_name

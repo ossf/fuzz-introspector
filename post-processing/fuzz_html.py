@@ -31,7 +31,7 @@ import fuzz_analysis
 import utils
 import cfg_load
 import constants
-import fuzz_html_helpers
+import html_helpers
 
 import datatypes.project_profile
 import datatypes.fuzzer_profile
@@ -128,7 +128,7 @@ def create_overview_table(
     profiles: List[datatypes.fuzzer_profile.FuzzerProfile]
 ) -> str:
     """Table with an overview of all the fuzzers"""
-    html_string = fuzz_html_helpers.html_create_table_head(tables[-1], [
+    html_string = html_helpers.html_create_table_head(tables[-1], [
         ("Fuzzer",
          "Fuzzer key. Usually fuzzer executable file"),
         ("Fuzzer filename",
@@ -155,7 +155,7 @@ def create_overview_table(
             if cs.depth > max_depth:
                 max_depth = cs.depth
 
-        html_string += fuzz_html_helpers.html_table_add_row([
+        html_string += html_helpers.html_table_add_row([
             profile.get_key(),
             fuzzer_filename,
             len(profile.functions_reached_by_fuzzer),
@@ -215,7 +215,7 @@ def create_all_function_table(
          "Based on static analysis."),
         ("Undiscovered complexity", "")
     ]
-    html_string = fuzz_html_helpers.html_create_table_head(
+    html_string = html_helpers.html_create_table_head(
         table_id,
         table_columns,
         sort_by_column=len(table_columns) - 1,
@@ -504,14 +504,14 @@ def create_fuzzer_detailed_section(
     fuzzer_table_data: Dict[str, Any]
 ) -> str:
     html_string = ""
-    html_string += fuzz_html_helpers.html_add_header_with_link(
+    html_string += html_helpers.html_add_header_with_link(
         f"Fuzzer: {profile.get_key()}",
         2,
         toc_list
     )
 
     # Calltree fixed-width image
-    html_string += fuzz_html_helpers.html_add_header_with_link(
+    html_string += html_helpers.html_add_header_with_link(
         "Call tree", 3, toc_list, link=f"call_tree_{curr_tt_profile}")
     html_string += (
         f"<p class='no-top-margin'>\n"
@@ -541,7 +541,7 @@ def create_fuzzer_detailed_section(
     html_string += f"<img class=\"colormap\" src=\"{image_name}\">"
 
     # Full calltree
-    html_string += fuzz_html_helpers.html_add_header_with_link(
+    html_string += html_helpers.html_add_header_with_link(
         "Full call tree",
         3,
         [],
@@ -566,7 +566,7 @@ def create_fuzzer_detailed_section(
         calltree_file_name
     )
     if html_fuzz_blocker_table is not None:
-        html_string += fuzz_html_helpers.html_add_header_with_link(
+        html_string += html_helpers.html_add_header_with_link(
             "Fuzz blockers",
             3,
             toc_list,
@@ -577,7 +577,7 @@ def create_fuzzer_detailed_section(
     profile.write_stats_to_summary_file()
 
     # Table with all functions hit by this fuzzer
-    html_string += fuzz_html_helpers.html_add_header_with_link(
+    html_string += html_helpers.html_add_header_with_link(
         "Runtime coverage analysis",
         3,
         toc_list,
@@ -590,7 +590,7 @@ def create_fuzzer_detailed_section(
 
     tables.append(table_name)
     func_hit_table_string = ""
-    func_hit_table_string += fuzz_html_helpers.html_create_table_head(
+    func_hit_table_string += html_helpers.html_create_table_head(
         tables[-1],
         [
             ("Function name", ""),
@@ -692,17 +692,17 @@ def create_fuzzer_detailed_section(
     html_string += func_hit_table_string
 
     # Table showing which files this fuzzer hits.
-    html_string += fuzz_html_helpers.html_add_header_with_link(
+    html_string += html_helpers.html_add_header_with_link(
         "Files reached", 3, toc_list, link=f"files_hit_{curr_tt_profile}")
     tables.append(f"myTable{len(tables)}")
-    html_string += fuzz_html_helpers.html_create_table_head(
+    html_string += html_helpers.html_create_table_head(
         tables[-1],
         [
             ("filename", ""),
             ("functions hit", "")
         ])
     for k in profile.file_targets:
-        html_string += fuzz_html_helpers.html_table_add_row(
+        html_string += html_helpers.html_table_add_row(
             [k, len(profile.file_targets[k])]
         )
     html_string += "</table>\n"
@@ -769,12 +769,12 @@ def create_html_report(
 
     # Create html header, which will be used to assemble the doc at the
     # end of this function.
-    html_header = fuzz_html_helpers.html_get_header()
+    html_header = html_helpers.html_get_header()
 
     # Start creation of core html
     html_body_start = '<div class="content-section">'
     html_overview = "<div class=\"report-box\">"
-    html_overview += fuzz_html_helpers.html_add_header_with_link(
+    html_overview += html_helpers.html_add_header_with_link(
         f"Project overview: {report_name}",
         1,
         toc_list,
@@ -784,13 +784,13 @@ def create_html_report(
     html_overview += "<div class=\"collapsible\">"
 
     # Project overview
-    # html_overview += fuzz_html_helpers.html_add_header_with_link(
+    # html_overview += html_helpers.html_add_header_with_link(
     #   "Project information", 2, toc_list)
 
     #############################################
     # Section with high level suggestions
     #############################################
-    html_report_top = fuzz_html_helpers.html_add_header_with_link(
+    html_report_top = html_helpers.html_add_header_with_link(
         "High level conclusions",
         2,
         toc_list
@@ -800,7 +800,7 @@ def create_html_report(
     # Reachability overview
     #############################################
     logger.info(" - Creating reachability overview table")
-    html_report_core = fuzz_html_helpers.html_add_header_with_link(
+    html_report_core = html_helpers.html_add_header_with_link(
         "Reachability and coverage overview",
         2,
         toc_list
@@ -828,7 +828,7 @@ def create_html_report(
     #############################################
     logger.info(" - Creating table with overview of all fuzzers")
     html_report_core += "<div class=\"report-box\">"
-    html_report_core += fuzz_html_helpers.html_add_header_with_link(
+    html_report_core += html_helpers.html_add_header_with_link(
         "Fuzzers overview",
         1,
         toc_list
@@ -846,7 +846,7 @@ def create_html_report(
     #############################################
     logger.info(" - Creating table with information about all functions in target")
     html_report_core += "<div class=\"report-box\">"
-    html_report_core += fuzz_html_helpers.html_add_header_with_link(
+    html_report_core += html_helpers.html_add_header_with_link(
         "Project functions overview", 1, toc_list)
     html_report_core += "<div class=\"collapsible\">"
     html_report_core += "<p> The following table shows data about each function in the project. " \
@@ -872,7 +872,7 @@ def create_html_report(
     logger.info(" - Creating section with details about each fuzzer")
     fuzzer_table_data: Dict[str, Any] = dict()
     html_report_core += "<div class=\"report-box\">"
-    html_report_core += fuzz_html_helpers.html_add_header_with_link("Fuzzer details", 1, toc_list)
+    html_report_core += html_helpers.html_add_header_with_link("Fuzzer details", 1, toc_list)
     html_report_core += "<div class=\"collapsible\">"
     for profile_idx in range(len(profiles)):
         html_report_core += create_fuzzer_detailed_section(
@@ -892,7 +892,7 @@ def create_html_report(
     #############################################
     logger.info(" - Handling optional analyses")
     html_report_core += "<div class=\"report-box\">"
-    html_report_core += fuzz_html_helpers.html_add_header_with_link(
+    html_report_core += html_helpers.html_add_header_with_link(
         "Analyses and suggestions",
         1,
         toc_list
@@ -958,7 +958,7 @@ def create_html_report(
     ###########################
     # Fix up table of contents.
     ###########################
-    html_toc_string = fuzz_html_helpers.html_get_table_of_contents(toc_list, coverage_url, profiles)
+    html_toc_string = html_helpers.html_get_table_of_contents(toc_list, coverage_url, profiles)
 
     # Assemble the final HTML report and write it to a file.
     html_full_doc = (html_header

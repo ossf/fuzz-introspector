@@ -23,7 +23,7 @@ from typing import (
 )
 
 import fuzz_analysis
-import fuzz_html_helpers
+import html_helpers
 
 import datatypes.project_profile
 import datatypes.fuzzer_profile
@@ -57,7 +57,7 @@ class FuzzDriverSynthesizerAnalysis(fuzz_analysis.AnalysisInterface):
         logger.info(f" - Running analysis {self.name}")
         html_string = ""
         html_string += "<div class=\"report-box\">"
-        html_string += fuzz_html_helpers.html_add_header_with_link(
+        html_string += html_helpers.html_add_header_with_link(
             "Fuzz driver synthesis",
             1,
             toc_list
@@ -151,12 +151,12 @@ class FuzzDriverSynthesizerAnalysis(fuzz_analysis.AnalysisInterface):
             str([f.function_name for f in fuzz_targets])))
 
         # Create the necessary HTML code for displaying the fuzz drivers
-        html_string += fuzz_html_helpers.html_add_header_with_link("New fuzzers", 3, toc_list)
+        html_string += html_helpers.html_add_header_with_link("New fuzzers", 3, toc_list)
         html_string += "<p>The below fuzzers are templates and suggestions for how " \
                        "to target the set of optimal functions above</p>"
 
         for filename in final_fuzzers:
-            html_string += fuzz_html_helpers.html_add_header_with_link(
+            html_string += html_helpers.html_add_header_with_link(
                 str(filename.split("/")[-1]),
                 4,
                 toc_list

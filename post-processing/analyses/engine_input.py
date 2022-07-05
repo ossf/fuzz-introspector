@@ -24,7 +24,7 @@ from typing import (
 
 import fuzz_analysis
 import constants
-import fuzz_html_helpers
+import html_helpers
 import utils
 
 import datatypes.project_profile
@@ -57,7 +57,7 @@ class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
 
         html_string = ""
         html_string += "<div class=\"report-box\">"
-        html_string += fuzz_html_helpers.html_add_header_with_link(
+        html_string += html_helpers.html_add_header_with_link(
             "Fuzz engine guidance",
             1,
             toc_list
@@ -69,7 +69,7 @@ class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
 
         for profile_idx in range(len(profiles)):
             logger.info(f"Generating input for {profiles[profile_idx].get_key()}")
-            html_string += fuzz_html_helpers.html_add_header_with_link(
+            html_string += html_helpers.html_add_header_with_link(
                 profiles[profile_idx].fuzzer_source_file,
                 2,
                 toc_list
@@ -121,7 +121,7 @@ class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
         link to the toc_list.
         """
 
-        html_string = fuzz_html_helpers.html_add_header_with_link(
+        html_string = html_helpers.html_add_header_with_link(
             "Dictionary",
             3,
             toc_list
@@ -138,7 +138,7 @@ class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
         toc_list: List[Tuple[str, str, int]]
     ) -> str:
         """Returns HTML string with fuzzer focus function"""
-        html_string = fuzz_html_helpers.html_add_header_with_link(
+        html_string = html_helpers.html_add_header_with_link(
             "Fuzzer function priority",
             3,
             toc_list

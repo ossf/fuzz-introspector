@@ -22,7 +22,7 @@ from typing import (
 
 import fuzz_analysis
 import constants
-import fuzz_html_helpers
+import html_helpers
 import utils
 
 import datatypes.project_profile
@@ -56,7 +56,7 @@ class FuzzRuntimeCoverageAnalysis(fuzz_analysis.AnalysisInterface):
 
         html_string = ""
         html_string += "<div class=\"report-box\">"
-        html_string += fuzz_html_helpers.html_add_header_with_link(
+        html_string += html_helpers.html_add_header_with_link(
             "Runtime coverage analysis",
             1,
             toc_list
@@ -69,10 +69,10 @@ class FuzzRuntimeCoverageAnalysis(fuzz_analysis.AnalysisInterface):
             f"<a href=\"{constants.GIT_BRANCH_URL}/doc/Glossary.md#runtime"
             f"-coverage-analysis\">Glossary</a>.</p>"
         )
-        html_string += fuzz_html_helpers.html_add_header_with_link(
+        html_string += html_helpers.html_add_header_with_link(
             "Complex functions with low coverage", 3, toc_list)
         tables.append(f"myTable{len(tables)}")
-        html_string += fuzz_html_helpers.html_create_table_head(
+        html_string += html_helpers.html_create_table_head(
             tables[-1],
             [
                 ("Func name", ""),
@@ -94,7 +94,7 @@ class FuzzRuntimeCoverageAnalysis(fuzz_analysis.AnalysisInterface):
                 reached_by = str(project_profile.all_functions[funcname].reached_by_fuzzers)
             else:
                 reached_by = ""
-            html_string += fuzz_html_helpers.html_table_add_row([
+            html_string += html_helpers.html_table_add_row([
                 utils.demangle_cpp_func(funcname),
                 func_lines,
                 hit_lines,

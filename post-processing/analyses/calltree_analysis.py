@@ -27,7 +27,7 @@ from typing import (
 import fuzz_analysis
 import utils
 import cfg_load
-import fuzz_html_helpers
+import html_helpers
 
 import datatypes.project_profile
 import datatypes.fuzzer_profile
@@ -157,7 +157,7 @@ class FuzzCalltreeAnalysis(fuzz_analysis.AnalysisInterface):
         complete_html_string = ""
 
         # HTML start
-        html_header = fuzz_html_helpers.html_get_header(
+        html_header = html_helpers.html_get_header(
             calltree=True,
             title=f"Fuzz introspector: { profile.get_key() }"
         )
@@ -256,7 +256,7 @@ class FuzzCalltreeAnalysis(fuzz_analysis.AnalysisInterface):
         html_table_string = "<p class='no-top-margin'>The followings nodes " \
                             "represent call sites where fuzz blockers occur.</p>"
         tables.append(f"myTable{len(tables)}")
-        html_table_string += fuzz_html_helpers.html_create_table_head(
+        html_table_string += html_helpers.html_create_table_head(
             tables[-1],
             [
                 ("Amount of callsites blocked",
@@ -282,7 +282,7 @@ class FuzzCalltreeAnalysis(fuzz_analysis.AnalysisInterface):
                 link_prefix,
                 node.cov_ct_idx
             )
-            html_table_string += fuzz_html_helpers.html_table_add_row([
+            html_table_string += html_helpers.html_table_add_row([
                 str(node.cov_forward_reds),
                 str(node.cov_ct_idx),
                 node.cov_parent,
