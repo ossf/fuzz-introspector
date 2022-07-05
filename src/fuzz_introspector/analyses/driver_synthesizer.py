@@ -65,7 +65,7 @@ class FuzzDriverSynthesizerAnalysis(analysis.AnalysisInterface):
         html_string += "<div class=\"collapsible\">"
 
         if fuzz_targets is None or len(fuzz_targets) == 0:
-            A1 = analyses.optimal_targets.FuzzOptimalTargetAnalysis()
+            A1 = optimal_targets.FuzzOptimalTargetAnalysis()
 
             _, optimal_target_functions = A1.iteratively_get_optimal_targets(
                 proj_profile
