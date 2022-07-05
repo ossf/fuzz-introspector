@@ -29,7 +29,7 @@ from typing import (
 from fuzz_introspector import cfg_load
 from fuzz_introspector import cov_load
 from fuzz_introspector import utils
-from fuzz_introspector import datatypes.function_profile
+from fuzz_introspector.datatypes import function_profile
 from fuzz_introspector.exceptions import DataLoaderError
 
 logger = logging.getLogger(name=__name__)

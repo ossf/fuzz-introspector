@@ -24,10 +24,12 @@ from typing import (
 
 from fuzz_introspector import analysis
 from fuzz_introspector import html_helpers
-from fuzz_introspector import datatypes.project_profile
-from fuzz_introspector import datatypes.fuzzer_profile
-from fuzz_introspector import datatypes.function_profile
-from fuzz_introspector import analyses.optimal_targets
+from fuzz_introspector.datatyoes import (
+    project_profile,
+    fuzzer_profile,
+    function_profile
+)
+from fuzz_introspector.analyses import optimal_targets
 
 logger = logging.getLogger(name=__name__)
 

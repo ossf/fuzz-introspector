@@ -24,8 +24,7 @@ from fuzz_introspector import analysis
 from fuzz_introspector import constants
 from fuzz_introspector import html_helpers
 from fuzz_introspector import utils
-from fuzz_introspector import datatypes.project_profile
-from fuzz_introspector import datatypes.fuzzer_profile
+from fuzz_introspector.datatypes import project_profile, fuzzer_profile
 
 logger = logging.getLogger(name=__name__)
 

@@ -28,9 +28,7 @@ from fuzz_introspector import analysis
 from fuzz_introspector import utils
 from fuzz_introspector import cfg_load
 from fuzz_introspector import html_helpers
-
-from fuzz_introspector import datatypes.project_profile
-from fuzz_introspector import datatypes.fuzzer_profile
+from fuzz_introspector.datatypes import project_profile, fuzzer_profile
 
 # For pretty printing the html code:
 from bs4 import BeautifulSoup as bs
