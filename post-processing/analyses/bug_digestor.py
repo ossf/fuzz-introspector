@@ -20,7 +20,7 @@ from typing import (
     Tuple,
 )
 
-import fuzz_analysis
+import analysis
 import data_loader
 import html_helpers
 
@@ -30,7 +30,7 @@ import datatypes.fuzzer_profile
 logger = logging.getLogger(name=__name__)
 
 
-class FuzzBugDigestorAnalysis(fuzz_analysis.AnalysisInterface):
+class FuzzBugDigestorAnalysis(analysis.AnalysisInterface):
     def __init__(self) -> None:
         self.name = "BugDigestorAnalysis"
         self.display_html = False

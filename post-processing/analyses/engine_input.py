@@ -22,7 +22,7 @@ from typing import (
     Tuple,
 )
 
-import fuzz_analysis
+import analysis
 import constants
 import html_helpers
 import utils
@@ -35,7 +35,7 @@ import analyses.calltree_analysis
 logger = logging.getLogger(name=__name__)
 
 
-class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
+class FuzzEngineInputAnalysis(analysis.AnalysisInterface):
     def __init__(self) -> None:
         self.name = "FuzzEngineInputAnalysis"
         self.display_html = False

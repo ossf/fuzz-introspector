@@ -19,7 +19,7 @@ import sys
 import yaml
 from typing import List
 
-import fuzz_analysis
+import analysis
 import constants
 import data_loader
 import html_report
@@ -93,7 +93,7 @@ def run_analysis_on_dir(
 
     # Overlay coverage in each profile
     for profile in profiles:
-        fuzz_analysis.overlay_calltree_with_coverage(
+        analysis.overlay_calltree_with_coverage(
             profile,
             project_profile,
             coverage_url,

@@ -20,7 +20,7 @@ from typing import (
     Tuple,
 )
 
-import fuzz_analysis
+import analysis
 import constants
 import html_helpers
 import utils
@@ -31,7 +31,7 @@ import datatypes.fuzzer_profile
 logger = logging.getLogger(name=__name__)
 
 
-class FuzzRuntimeCoverageAnalysis(fuzz_analysis.AnalysisInterface):
+class FuzzRuntimeCoverageAnalysis(analysis.AnalysisInterface):
     def __init__(self) -> None:
         self.name = "RuntimeCoverageAnalysis"
 

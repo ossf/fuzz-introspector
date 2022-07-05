@@ -23,7 +23,7 @@ from typing import (
     Tuple,
 )
 
-import fuzz_analysis
+import analysis
 import data_loader
 import html_report
 import html_helpers
@@ -36,7 +36,7 @@ import datatypes.function_profile
 logger = logging.getLogger(name=__name__)
 
 
-class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
+class FuzzOptimalTargetAnalysis(analysis.AnalysisInterface):
     def __init__(self) -> None:
         self.name = "OptimalTargets"
 

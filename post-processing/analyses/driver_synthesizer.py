@@ -22,7 +22,7 @@ from typing import (
     TypedDict,
 )
 
-import fuzz_analysis
+import analysis
 import html_helpers
 
 import datatypes.project_profile
@@ -39,7 +39,7 @@ TargetCodesType = TypedDict('TargetCodesType', {
 })
 
 
-class FuzzDriverSynthesizerAnalysis(fuzz_analysis.AnalysisInterface):
+class FuzzDriverSynthesizerAnalysis(analysis.AnalysisInterface):
     def __init__(self) -> None:
         self.name = "FuzzDriverSynthesizerAnalysis"
 

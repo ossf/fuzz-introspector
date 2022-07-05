@@ -27,7 +27,7 @@ from typing import (
     Tuple,
 )
 
-import fuzz_analysis
+import analysis
 import utils
 import cfg_load
 import constants
@@ -899,7 +899,7 @@ def create_html_report(
     )
     html_report_core += "<div class=\"collapsible\">"
 
-    analysis_array = fuzz_analysis.get_all_analyses()
+    analysis_array = analysis.get_all_analyses()
     for analysis in analysis_array:
         if analysis.name in analyses_to_run:
             html_report_core += analysis.analysis_func(

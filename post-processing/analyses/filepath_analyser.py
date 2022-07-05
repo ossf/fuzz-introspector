@@ -22,7 +22,7 @@ from typing import (
     Tuple
 )
 
-import fuzz_analysis
+import analysis
 import html_helpers
 
 import datatypes.project_profile
@@ -31,7 +31,7 @@ import datatypes.fuzzer_profile
 logger = logging.getLogger(name=__name__)
 
 
-class FuzzFilepathAnalyser(fuzz_analysis.AnalysisInterface):
+class FuzzFilepathAnalyser(analysis.AnalysisInterface):
     def __init__(self) -> None:
         self.name = "FilePathAnalyser"
 

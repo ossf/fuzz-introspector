@@ -24,7 +24,7 @@ from typing import (
     Set,
 )
 
-import fuzz_analysis
+import analysis
 import utils
 import cfg_load
 import html_helpers
@@ -38,7 +38,7 @@ from bs4 import BeautifulSoup as bs
 logger = logging.getLogger(name=__name__)
 
 
-class FuzzCalltreeAnalysis(fuzz_analysis.AnalysisInterface):
+class FuzzCalltreeAnalysis(analysis.AnalysisInterface):
     def __init__(self) -> None:
         self.name = "FuzzCalltreeAnalysis"
         logger.info("Creating FuzzCalltreeAnalysis")
