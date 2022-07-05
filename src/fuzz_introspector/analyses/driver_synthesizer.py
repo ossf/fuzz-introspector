@@ -24,7 +24,7 @@ from typing import (
 
 from fuzz_introspector import analysis
 from fuzz_introspector import html_helpers
-from fuzz_introspector.datatyoes import (
+from fuzz_introspector.datatypes import (
     project_profile,
     fuzzer_profile,
     function_profile
@@ -47,7 +47,7 @@ class FuzzDriverSynthesizerAnalysis(analysis.AnalysisInterface):
         self,
         toc_list: List[Tuple[str, str, int]],
         tables: List[str],
-        project_profile: project_profile.MergedProjectProfile,
+        proj_profile: project_profile.MergedProjectProfile,
         profiles: List[fuzzer_profile.FuzzerProfile],
         basefolder: str,
         coverage_url: str,
@@ -68,7 +68,7 @@ class FuzzDriverSynthesizerAnalysis(analysis.AnalysisInterface):
             A1 = analyses.optimal_targets.FuzzOptimalTargetAnalysis()
 
             _, optimal_target_functions = A1.iteratively_get_optimal_targets(
-                project_profile
+                proj_profile
             )
             fuzz_targets = optimal_target_functions
 

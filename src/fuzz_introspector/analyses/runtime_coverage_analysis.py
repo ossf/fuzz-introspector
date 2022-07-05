@@ -37,7 +37,7 @@ class FuzzRuntimeCoverageAnalysis(analysis.AnalysisInterface):
         self,
         toc_list: List[Tuple[str, str, int]],
         tables: List[str],
-        project_profile: project_profile.MergedProjectProfile,
+        proj_profile: project_profile.MergedProjectProfile,
         profiles: List[fuzzer_profile.FuzzerProfile],
         basefolder: str,
         coverage_url: str,
@@ -47,7 +47,7 @@ class FuzzRuntimeCoverageAnalysis(analysis.AnalysisInterface):
 
         functions_of_interest = self.get_low_cov_high_line_funcs(
             profiles,
-            project_profile,
+            proj_profile,
             min_total_lines=30,
             max_hit_proportion=55
         )
@@ -83,13 +83,13 @@ class FuzzRuntimeCoverageAnalysis(analysis.AnalysisInterface):
 
         for funcname in functions_of_interest:
             logger.debug(f"Iterating the function {funcname}")
-            func_lines, hit_lines = project_profile.runtime_coverage.get_hit_summary(funcname)
+            func_lines, hit_lines = proj_profile.runtime_coverage.get_hit_summary(funcname)
 
             if func_lines is None or hit_lines is None:
                 continue
 
-            if funcname in project_profile.all_functions:
-                reached_by = str(project_profile.all_functions[funcname].reached_by_fuzzers)
+            if funcname in proj_profile.all_functions:
+                reached_by = str(proj_profile.all_functions[funcname].reached_by_fuzzers)
             else:
                 reached_by = ""
             html_string += html_helpers.html_table_add_row([

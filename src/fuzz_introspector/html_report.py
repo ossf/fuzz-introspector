@@ -32,9 +32,7 @@ from fuzz_introspector import utils
 from fuzz_introspector import cfg_load
 from fuzz_introspector import constants
 from fuzz_introspector import html_helpers
-
-from fuzz_introspector import project_profile
-from fuzz_introspector import fuzzer_profile
+from fuzz_introspector.datatypes import project_profile, fuzzer_profile
 
 # For pretty printing the html code:
 from bs4 import BeautifulSoup as bs
@@ -171,7 +169,7 @@ def create_overview_table(
 
 def create_all_function_table(
         tables: List[str],
-        project_profile: project_profile.MergedProjectProfile,
+        proj_profile: project_profile.MergedProjectProfile,
         coverage_url: str,
         basefolder: str,
         table_id: Optional[str] = None
@@ -227,10 +225,10 @@ def create_all_function_table(
     # the table in the frontend
     table_rows = []
 
-    for fd_k, fd in project_profile.all_functions.items():
+    for fd_k, fd in proj_profile.all_functions.items():
         demangled_func_name = utils.demangle_cpp_func(fd.function_name)
         try:
-            func_total_lines, hit_lines = project_profile.runtime_coverage.get_hit_summary(
+            func_total_lines, hit_lines = proj_profile.runtime_coverage.get_hit_summary(
                 demangled_func_name
             )
             if hit_lines is None or func_total_lines is None:
@@ -246,7 +244,7 @@ def create_all_function_table(
             fd.function_linenumber
         )
 
-        if project_profile.runtime_coverage.is_func_hit(fd.function_name):
+        if proj_profile.runtime_coverage.is_func_hit(fd.function_name):
             func_hit_at_runtime_row = "yes"
         else:
             func_hit_at_runtime_row = "no"
@@ -367,7 +365,7 @@ def create_covered_func_box(covered_funcs: str) -> str:
 
 def create_boxed_top_summary_info(
     tables: List[str],
-    project_profile: project_profile.MergedProjectProfile,
+    proj_profile: project_profile.MergedProjectProfile,
     conclusions: List[Tuple[int, str]],
     extract_conclusion: bool,
     display_coverage: bool = False
@@ -378,12 +376,12 @@ def create_boxed_top_summary_info(
      reached_func_count,
      unreached_func_count,
      reached_percentage,
-     unreached_percentage) = project_profile.get_function_summaries()
+     unreached_percentage) = proj_profile.get_function_summaries()
     (total_complexity,
      complexity_reached,
      complexity_unreached,
      reached_complexity_percentage,
-     unreached_complexity_percentage) = project_profile.get_complexity_summaries()
+     unreached_complexity_percentage) = proj_profile.get_complexity_summaries()
 
     graph1_title = "Functions statically reachable by fuzzers"
     graph1_percentage = str(round(reached_percentage, 2))
@@ -396,7 +394,7 @@ def create_boxed_top_summary_info(
     html_string += create_percentage_graph(graph2_title, graph2_percentage, graph2_numbers)
     if display_coverage:
         logger.info("Displaying coverage in summary")
-        covered_funcs = project_profile.get_all_runtime_covered_functions()
+        covered_funcs = proj_profile.get_all_runtime_covered_functions()
         html_string += create_covered_func_box(str(len(covered_funcs)))
 
     # Add conclusion
@@ -449,7 +447,7 @@ def create_conclusions(
 
 def create_top_summary_info(
         tables: List[str],
-        project_profile: project_profile.MergedProjectProfile,
+        proj_profile: project_profile.MergedProjectProfile,
         conclusions: List[Tuple[int, str]],
         extract_conclusion: bool,
         display_coverage: bool = False) -> str:
@@ -460,12 +458,12 @@ def create_top_summary_info(
      reached_func_count,
      unreached_func_count,
      reached_percentage,
-     unreached_percentage) = project_profile.get_function_summaries()
+     unreached_percentage) = proj_profile.get_function_summaries()
     (total_complexity,
      complexity_reached,
      complexity_unreached,
      reached_complexity_percentage,
-     unreached_complexity_percentage) = project_profile.get_complexity_summaries()
+     unreached_complexity_percentage) = proj_profile.get_complexity_summaries()
 
     # Display reachability information
     html_string += "<div style=\"display: flex; max-width: 50%\">"
@@ -481,7 +479,7 @@ def create_top_summary_info(
     html_string += "</div>"
     if display_coverage:
         logger.info("Displaying coverage in summary")
-        covered_funcs = project_profile.get_all_runtime_covered_functions()
+        covered_funcs = proj_profile.get_all_runtime_covered_functions()
         html_string += f"Functions covered at runtime: { len(covered_funcs) }"
         html_string += "<br>"
     else:
@@ -548,8 +546,8 @@ def create_fuzzer_detailed_section(
         link=f"full_calltree_{curr_tt_profile}"
     )
 
-    import analyses.calltree_analysis
-    calltree_analysis = analyses.calltree_analysis.FuzzCalltreeAnalysis()
+    from fuzz_introspector.analyses import calltree_analysis as cta
+    calltree_analysis = cta.FuzzCalltreeAnalysis()
     calltree_file_name = calltree_analysis.create_calltree(profile)
 
     html_string += f"""<p class='no-top-margin'>The following link provides a visualisation
@@ -751,7 +749,7 @@ def extract_highlevel_guidance(conclusions: List[Tuple[int, str]]) -> str:
 
 def create_html_report(
     profiles: List[fuzzer_profile.FuzzerProfile],
-    project_profile: project_profile.MergedProjectProfile,
+    proj_profile: project_profile.MergedProjectProfile,
     analyses_to_run: List[str],
     coverage_url: str,
     basefolder: str,
@@ -780,7 +778,7 @@ def create_html_report(
         toc_list,
         link="Project-overview"
     )
-    project_profile.write_stats_to_summary_file()
+    proj_profile.write_stats_to_summary_file()
     html_overview += "<div class=\"collapsible\">"
 
     # Project overview
@@ -809,7 +807,7 @@ def create_html_report(
     html_report_core += "<div style=\"display: flex; max-width: 800px\">"
     html_report_core += create_boxed_top_summary_info(
         tables,
-        project_profile,
+        proj_profile,
         conclusions,
         True,
         display_coverage=True
@@ -861,7 +859,7 @@ def create_html_report(
     table_id = "fuzzers_overview_table"
     tables.append(table_id)
     all_function_table, all_functions_json = create_all_function_table(
-        tables, project_profile, coverage_url, basefolder, table_id)
+        tables, proj_profile, coverage_url, basefolder, table_id)
     html_report_core += all_function_table
     html_report_core += "</div>"  # .collapsible
     html_report_core += "</div>"  # report box
@@ -905,7 +903,7 @@ def create_html_report(
             html_report_core += analysis_interface.analysis_func(
                 toc_list,
                 tables,
-                project_profile,
+                proj_profile,
                 profiles,
                 basefolder,
                 coverage_url,

@@ -24,8 +24,7 @@ from typing import (
 
 from fuzz_introspector import analysis
 from fuzz_introspector import html_helpers
-from fuzz_introspector import project_profile
-from fuzz_introspector import fuzzer_profile
+from fuzz_introspector.datatypes import project_profile, fuzzer_profile
 
 logger = logging.getLogger(name=__name__)
 
@@ -36,10 +35,10 @@ class FuzzFilepathAnalyser(analysis.AnalysisInterface):
 
     def all_files_targeted(
         self,
-        project_profile: project_profile.MergedProjectProfile
+        proj_profile: project_profile.MergedProjectProfile
     ) -> Set[str]:
         s1 = set()
-        for prof in project_profile.profiles:
+        for prof in proj_profile.profiles:
             for func in prof.all_class_functions:
                 s1.add(prof.all_class_functions[func].function_source_file)
         return s1
@@ -48,7 +47,7 @@ class FuzzFilepathAnalyser(analysis.AnalysisInterface):
         self,
         toc_list: List[Tuple[str, str, int]],
         tables: List[str],
-        project_profile: project_profile.MergedProjectProfile,
+        proj_profile: project_profile.MergedProjectProfile,
         profiles: List[fuzzer_profile.FuzzerProfile],
         basefolder: str,
         coverage_url: str,
@@ -56,7 +55,7 @@ class FuzzFilepathAnalyser(analysis.AnalysisInterface):
     ) -> str:
         logger.info(f" - Running analysis {self.name}")
 
-        all_proj_files = self.all_files_targeted(project_profile)
+        all_proj_files = self.all_files_targeted(proj_profile)
         all_proj_dirs = set()
         for fnm in all_proj_files:
             all_proj_dirs.add(fnm.replace(os.path.basename(fnm), ""))
@@ -101,14 +100,14 @@ class FuzzFilepathAnalyser(analysis.AnalysisInterface):
         for fnm in all_proj_files:
             profiles_that_hit = []
             for profile in profiles:
-                if profile.reaches_file(fnm, project_profile.basefolder):
+                if profile.reaches_file(fnm, proj_profile.basefolder):
                     profiles_that_hit.append(profile.get_key())
 
             profiles_that_cover = []
             for profile in profiles:
                 is_file_covered = profile.is_file_covered(
                     fnm,
-                    project_profile.basefolder
+                    proj_profile.basefolder
                 )
                 if is_file_covered:
                     profiles_that_cover.append(profile.get_key())

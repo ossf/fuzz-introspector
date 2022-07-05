@@ -1,4 +1,4 @@
-# Copyright 2021 Fuzz Introspector Authors
+# Copyright 2022 Fuzz Introspector Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Reads the data output from the fuzz introspector LLVM plugin."""
+"""Project profile"""
 
 import logging
 
@@ -23,7 +23,7 @@ from typing import (
 
 from fuzz_introspector import cov_load
 from fuzz_introspector import utils
-from fuzz_introspector.datetypes import function_profile, fuzzer_profile
+from fuzz_introspector.datatypes import function_profile, fuzzer_profile
 
 logger = logging.getLogger(name=__name__)
 logger.setLevel(logging.INFO)

@@ -26,10 +26,10 @@ from fuzz_introspector import analysis
 from fuzz_introspector import constants
 from fuzz_introspector import html_helpers
 from fuzz_introspector import utils
+from fuzz_introspector.analyses import calltree_analysis as cta
 from fuzz_introspector.datatypes import (
     project_profile,
     fuzzer_profile,
-    calltree_analysis
 )
 
 logger = logging.getLogger(name=__name__)
@@ -144,7 +144,7 @@ class FuzzEngineInputAnalysis(analysis.AnalysisInterface):
             toc_list
         )
 
-        calltree_analysis = analyses.calltree_analysis.FuzzCalltreeAnalysis()
+        calltree_analysis = cta.FuzzCalltreeAnalysis()
         fuzz_blockers = calltree_analysis.get_fuzz_blockers(
             profile,
             max_blockers_to_extract=10

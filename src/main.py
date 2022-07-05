@@ -24,7 +24,7 @@ from fuzz_introspector import constants
 from fuzz_introspector import data_loader
 from fuzz_introspector import html_report
 from fuzz_introspector import utils
-from fuzz_introspector import datatypes.project_profile
+from fuzz_introspector.datatypes import project_profile
 
 logger = logging.getLogger(name=__name__)
 
@@ -79,11 +79,11 @@ def run_analysis_on_dir(
         logger.info("- Nothing to correlate")
 
     logger.info("[+] Creating project profile")
-    project_profile = datatypes.project_profile.MergedProjectProfile(profiles)
+    proj_profile = project_profile.MergedProjectProfile(profiles)
 
     logger.info("[+] Refining profiles")
     for profile in profiles:
-        profile.refine_paths(project_profile.basefolder)
+        profile.refine_paths(proj_profile.basefolder)
 
     # logger.info("[+] Loading branch profiles")
     # branch_profiles = data_loader.load_all_branch_profiles(target_folder)
@@ -94,9 +94,9 @@ def run_analysis_on_dir(
     for profile in profiles:
         analysis.overlay_calltree_with_coverage(
             profile,
-            project_profile,
+            proj_profile,
             coverage_url,
-            project_profile.basefolder
+            proj_profile.basefolder
         )
 
     logger.info(f"Analyses to run: {str(analyses_to_run)}")
@@ -104,10 +104,10 @@ def run_analysis_on_dir(
     logger.info("[+] Creating HTML report")
     html_report.create_html_report(
         profiles,
-        project_profile,
+        proj_profile,
         analyses_to_run,
         coverage_url,
-        project_profile.basefolder,
+        proj_profile.basefolder,
         report_name
     )
     return constants.APP_EXIT_SUCCESS

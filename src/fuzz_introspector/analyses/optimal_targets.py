@@ -45,7 +45,7 @@ class FuzzOptimalTargetAnalysis(analysis.AnalysisInterface):
         self,
         toc_list: List[Tuple[str, str, int]],
         tables: List[str],
-        project_profile: project_profile.MergedProjectProfile,
+        proj_profile: project_profile.MergedProjectProfile,
         profiles: List[fuzzer_profile.FuzzerProfile],
         basefolder: str,
         coverage_url: str,
@@ -72,7 +72,7 @@ class FuzzOptimalTargetAnalysis(analysis.AnalysisInterface):
 
         # Create optimal target section
         new_profile, optimal_target_functions = self.iteratively_get_optimal_targets(
-            project_profile
+            proj_profile
         )
         html_string += self.get_optimal_target_section(
             optimal_target_functions,

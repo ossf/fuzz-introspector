@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Reads the data output from the fuzz introspector LLVM plugin."""
+"""Fuzzer profile"""
 
 import os
 import json

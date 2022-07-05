@@ -17,7 +17,6 @@ Module for loading coverage files and parsing them into something we can use in 
 At the moment only C/C++ is supported. Other languages coming up soon.
 """
 
-import utils
 import logging
 
 from typing import (
@@ -26,6 +25,8 @@ from typing import (
     Optional,
     Tuple,
 )
+
+from fuzz_introspector import utils
 
 logger = logging.getLogger(name=__name__)
 logger.setLevel(logging.INFO)

@@ -48,7 +48,7 @@ class AnalysisInterface(abc.ABC):
         self,
         toc_list: List[Tuple[str, str, int]],
         tables: List[str],
-        project_profile: project_profile.MergedProjectProfile,
+        proj_profile: project_profile.MergedProjectProfile,
         profiles: List[fuzzer_profile.FuzzerProfile],
         basefolder: str,
         coverage_url: str,
@@ -78,7 +78,7 @@ class FuzzBranchBlocker:
 
 def get_all_analyses() -> List[AnalysisInterface]:
     # Ordering here is important as top analysis will be shown first in the report
-    from analyses import (
+    from fuzz_introspector.analyses import (
         driver_synthesizer,
         engine_input,
         optimal_targets,
@@ -100,7 +100,7 @@ def get_all_analyses() -> List[AnalysisInterface]:
 
 def overlay_calltree_with_coverage(
         profile: fuzzer_profile.FuzzerProfile,
-        project_profile: project_profile.MergedProjectProfile,
+        proj_profile: project_profile.MergedProjectProfile,
         coverage_url: str,
         basefolder: str) -> None:
     # We use the callstack to keep track of all function parents. We need this
@@ -288,7 +288,7 @@ def overlay_calltree_with_coverage(
             if n2.cov_hitcount != 0:
                 break
 
-            for fd_k, fd in project_profile.all_functions.items():
+            for fd_k, fd in proj_profile.all_functions.items():
                 if (
                     utils.demangle_cpp_func(fd.function_name) == n2.dst_function_name
                     and fd.total_cyclomatic_complexity > largest_blocked_count
