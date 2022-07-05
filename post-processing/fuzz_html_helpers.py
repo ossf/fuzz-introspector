@@ -133,7 +133,7 @@ def html_get_table_of_contents(
                                     style="position: relative; margin: 30px 0 5px 0">
                                     <a href="{coverage_url}">
                                         <div class="yellow-button">
-                                            Coverage report
+                                            Project coverage
                                         </div>
                                     </a>
                                 </div>
