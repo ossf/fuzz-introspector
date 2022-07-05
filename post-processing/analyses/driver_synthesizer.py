@@ -29,9 +29,7 @@ import datatypes.project_profile
 import datatypes.fuzzer_profile
 import datatypes.function_profile
 
-from analyses import (
-    fuzz_optimal_targets
-)
+import analyses.optimal_targets
 
 logger = logging.getLogger(name=__name__)
 
@@ -67,7 +65,7 @@ class FuzzDriverSynthesizerAnalysis(fuzz_analysis.AnalysisInterface):
         html_string += "<div class=\"collapsible\">"
 
         if fuzz_targets is None or len(fuzz_targets) == 0:
-            A1 = fuzz_optimal_targets.FuzzOptimalTargetAnalysis()
+            A1 = analyses.optimal_targets.FuzzOptimalTargetAnalysis()
 
             _, optimal_target_functions = A1.iteratively_get_optimal_targets(
                 project_profile

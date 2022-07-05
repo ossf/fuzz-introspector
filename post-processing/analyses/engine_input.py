@@ -30,7 +30,7 @@ import fuzz_utils
 import datatypes.project_profile
 import datatypes.fuzzer_profile
 
-from analyses import fuzz_calltree_analysis
+import analyses.calltree_analysis
 
 logger = logging.getLogger(name=__name__)
 
@@ -144,7 +144,7 @@ class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
             toc_list
         )
 
-        calltree_analysis = fuzz_calltree_analysis.FuzzCalltreeAnalysis()
+        calltree_analysis = analyses.calltree_analysis.FuzzCalltreeAnalysis()
         fuzz_blockers = calltree_analysis.get_fuzz_blockers(
             profile,
             max_blockers_to_extract=10

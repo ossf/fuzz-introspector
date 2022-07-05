@@ -548,8 +548,8 @@ def create_fuzzer_detailed_section(
         link=f"full_calltree_{curr_tt_profile}"
     )
 
-    from analyses import fuzz_calltree_analysis
-    calltree_analysis = fuzz_calltree_analysis.FuzzCalltreeAnalysis()
+    import analyses.calltree_analysis
+    calltree_analysis = analyses.calltree_analysis.FuzzCalltreeAnalysis()
     calltree_file_name = calltree_analysis.create_calltree(profile)
 
     html_string += f"""<p class='no-top-margin'>The following link provides a visualisation

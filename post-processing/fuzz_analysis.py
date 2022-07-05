@@ -78,21 +78,21 @@ class FuzzBranchBlocker:
 def get_all_analyses() -> List[AnalysisInterface]:
     # Ordering here is important as top analysis will be shown first in the report
     from analyses import (
-        fuzz_driver_synthesizer,
-        fuzz_engine_input,
-        fuzz_optimal_targets,
-        fuzz_runtime_coverage_analysis,
-        fuzz_bug_digestor,
-        fuzz_filepath_analyser
+        driver_synthesizer,
+        engine_input,
+        optimal_targets,
+        runtime_coverage_analysis,
+        bug_digestor,
+        filepath_analyser
     )
 
     analysis_array = [
-        fuzz_optimal_targets.FuzzOptimalTargetAnalysis(),
-        fuzz_engine_input.FuzzEngineInputAnalysis(),
-        fuzz_runtime_coverage_analysis.FuzzRuntimeCoverageAnalysis(),
-        fuzz_driver_synthesizer.FuzzDriverSynthesizerAnalysis(),
-        fuzz_bug_digestor.FuzzBugDigestorAnalysis(),
-        fuzz_filepath_analyser.FuzzFilepathAnalyser()
+        optimal_targets.FuzzOptimalTargetAnalysis(),
+        engine_input.FuzzEngineInputAnalysis(),
+        runtime_coverage_analysis.FuzzRuntimeCoverageAnalysis(),
+        driver_synthesizer.FuzzDriverSynthesizerAnalysis(),
+        bug_digestor.FuzzBugDigestorAnalysis(),
+        filepath_analyser.FuzzFilepathAnalyser()
     ]
     return analysis_array
 
