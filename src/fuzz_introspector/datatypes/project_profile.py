@@ -71,10 +71,10 @@ class MergedProjectProfile:
                     continue
 
                 # populate hitcount and reached_by_fuzzers and whether it has been handled already
-                for fuzzer_profile in profiles:
-                    if fuzzer_profile.reaches(fd.function_name):
+                for profile2 in profiles:
+                    if profile2.reaches(fd.function_name):
                         fd.hitcount += 1
-                        fd.reached_by_fuzzers.append(fuzzer_profile.get_key())
+                        fd.reached_by_fuzzers.append(profile2.get_key())
                     if fd.function_name not in self.all_functions:
                         self.all_functions[fd.function_name] = fd
 
