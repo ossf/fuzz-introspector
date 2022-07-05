@@ -25,7 +25,7 @@ from typing import (
 )
 
 import utils
-import fuzz_cfg_load
+import cfg_load
 import cov_load
 from enum import Enum
 
@@ -112,19 +112,19 @@ def overlay_calltree_with_coverage(
         return
 
     def callstack_get_parent(
-        n: fuzz_cfg_load.CalltreeCallsite,
+        n: cfg_load.CalltreeCallsite,
         c: Dict[int, str]
     ) -> str:
         return c[int(n.depth) - 1]
 
     def callstack_has_parent(
-        n: fuzz_cfg_load.CalltreeCallsite,
+        n: cfg_load.CalltreeCallsite,
         c: Dict[int, str]
     ) -> bool:
         return int(n.depth) - 1 in c
 
     def callstack_set_curr_node(
-        n: fuzz_cfg_load.CalltreeCallsite,
+        n: cfg_load.CalltreeCallsite,
         name: str,
         c: Dict[int, str]
     ) -> None:
@@ -143,7 +143,7 @@ def overlay_calltree_with_coverage(
     )
     logger.info(f"Using coverage url: {target_coverage_url}")
 
-    for node in fuzz_cfg_load.extract_all_callsites(profile.function_call_depths):
+    for node in cfg_load.extract_all_callsites(profile.function_call_depths):
         node.cov_ct_idx = ct_idx
         ct_idx += 1
 
@@ -258,7 +258,7 @@ def overlay_calltree_with_coverage(
         node.cov_callsite_link = callsite_link
 
     # Extract data about which nodes unlocks data
-    all_callsites = fuzz_cfg_load.extract_all_callsites(profile.function_call_depths)
+    all_callsites = cfg_load.extract_all_callsites(profile.function_call_depths)
     prev_end = -1
     for idx1 in range(len(all_callsites)):
         n1 = all_callsites[idx1]

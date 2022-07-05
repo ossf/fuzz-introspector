@@ -29,7 +29,7 @@ from typing import (
 
 import fuzz_analysis
 import utils
-import fuzz_cfg_load
+import cfg_load
 import constants
 import fuzz_html_helpers
 
@@ -64,7 +64,7 @@ def create_horisontal_calltree_image(
         return
     # Extract color sequence
     color_list: List[str] = []
-    for node in fuzz_cfg_load.extract_all_callsites(profile.function_call_depths):
+    for node in cfg_load.extract_all_callsites(profile.function_call_depths):
         color_list.append(node.cov_color)
     logger.info(f"- extracted the callsites ({len(color_list)} nodes)")
 
@@ -151,7 +151,7 @@ def create_overview_table(
     for profile in profiles:  # create a row for each fuzzer.
         fuzzer_filename = profile.fuzzer_source_file
         max_depth = 0
-        for cs in fuzz_cfg_load.extract_all_callsites(profile.function_call_depths):
+        for cs in cfg_load.extract_all_callsites(profile.function_call_depths):
             if cs.depth > max_depth:
                 max_depth = cs.depth
 

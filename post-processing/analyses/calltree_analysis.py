@@ -26,7 +26,7 @@ from typing import (
 
 import fuzz_analysis
 import utils
-import fuzz_cfg_load
+import cfg_load
 import fuzz_html_helpers
 
 import datatypes.project_profile
@@ -64,7 +64,7 @@ class FuzzCalltreeAnalysis(fuzz_analysis.AnalysisInterface):
         # Generate HTML for the calltree
         calltree_html_string = "<div class='call-tree-section-wrapper'>"
         calltree_html_string += "<h1>Fuzzer calltree</h1>"
-        nodes = fuzz_cfg_load.extract_all_callsites(profile.function_call_depths)
+        nodes = cfg_load.extract_all_callsites(profile.function_call_depths)
         for i in range(len(nodes)):
             node = nodes[i]
 
@@ -213,12 +213,12 @@ class FuzzCalltreeAnalysis(fuzz_analysis.AnalysisInterface):
         self,
         profile: datatypes.fuzzer_profile.FuzzerProfile,
         max_blockers_to_extract: int = 999
-    ) -> List[fuzz_cfg_load.CalltreeCallsite]:
+    ) -> List[cfg_load.CalltreeCallsite]:
         """Gets a list of fuzz blockers"""
-        blocker_list: List[fuzz_cfg_load.CalltreeCallsite] = list()
+        blocker_list: List[cfg_load.CalltreeCallsite] = list()
 
         # Extract all callsites in calltree and exit early if none
-        all_callsites = fuzz_cfg_load.extract_all_callsites(profile.function_call_depths)
+        all_callsites = cfg_load.extract_all_callsites(profile.function_call_depths)
         if len(all_callsites) == 0:
             return blocker_list
 
@@ -237,7 +237,7 @@ class FuzzCalltreeAnalysis(fuzz_analysis.AnalysisInterface):
         profile: datatypes.fuzzer_profile.FuzzerProfile,
         tables: List[str],
         calltree_file_name: str,
-        fuzz_blockers: Optional[List[fuzz_cfg_load.CalltreeCallsite]] = None
+        fuzz_blockers: Optional[List[cfg_load.CalltreeCallsite]] = None
     ) -> Optional[str]:
         """
         Creates HTML string for table showing fuzz blockers.

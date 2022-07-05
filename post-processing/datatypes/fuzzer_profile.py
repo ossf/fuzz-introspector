@@ -26,7 +26,7 @@ from typing import (
     Tuple,
 )
 
-import fuzz_cfg_load
+import cfg_load
 import cov_load
 import utils
 
@@ -51,7 +51,7 @@ class FuzzerProfile:
         target_lang: str = "c-cpp"
     ) -> None:
         self.introspector_data_file = filename
-        self.function_call_depths = fuzz_cfg_load.data_file_read_calltree(filename)
+        self.function_call_depths = cfg_load.data_file_read_calltree(filename)
         self.fuzzer_source_file: str = data_dict_yaml['Fuzzer filename']
         self.binary_executable: str = ""
         self.coverage: Optional[cov_load.CoverageProfile] = None
@@ -122,7 +122,7 @@ class FuzzerProfile:
         self.fuzzer_source_file = self.fuzzer_source_file.replace(basefolder, "")
 
         if self.function_call_depths is not None:
-            all_callsites = fuzz_cfg_load.extract_all_callsites(self.function_call_depths)
+            all_callsites = cfg_load.extract_all_callsites(self.function_call_depths)
             for cs in all_callsites:
                 cs.dst_function_source_file = cs.dst_function_source_file.replace(basefolder, "")
 
@@ -228,7 +228,7 @@ class FuzzerProfile:
         in the given file that are reached by the fuzzer.
         """
         if self.function_call_depths is not None:
-            all_callsites = fuzz_cfg_load.extract_all_callsites(self.function_call_depths)
+            all_callsites = cfg_load.extract_all_callsites(self.function_call_depths)
             for cs in all_callsites:
                 if cs.dst_function_source_file.replace(" ", "") == "":
                     continue
