@@ -22,7 +22,7 @@ from typing import List
 import fuzz_analysis
 import constants
 import data_loader
-import fuzz_html
+import html_report
 import utils
 
 import datatypes.project_profile
@@ -103,7 +103,7 @@ def run_analysis_on_dir(
     logger.info(f"Analyses to run: {str(analyses_to_run)}")
 
     logger.info("[+] Creating HTML report")
-    fuzz_html.create_html_report(
+    html_report.create_html_report(
         profiles,
         project_profile,
         analyses_to_run,
