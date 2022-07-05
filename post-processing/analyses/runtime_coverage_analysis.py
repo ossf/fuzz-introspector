@@ -21,7 +21,7 @@ from typing import (
 )
 
 import fuzz_analysis
-import fuzz_constants
+import constants
 import fuzz_html_helpers
 import utils
 
@@ -66,7 +66,7 @@ class FuzzRuntimeCoverageAnalysis(fuzz_analysis.AnalysisInterface):
         html_string += (
             f"<p>For futher technical details on how this section is generated, please "
             f"see the "
-            f"<a href=\"{fuzz_constants.GIT_BRANCH_URL}/doc/Glossary.md#runtime"
+            f"<a href=\"{constants.GIT_BRANCH_URL}/doc/Glossary.md#runtime"
             f"-coverage-analysis\">Glossary</a>.</p>"
         )
         html_string += fuzz_html_helpers.html_add_header_with_link(

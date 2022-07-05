@@ -25,7 +25,7 @@ from typing import (
     Optional,
 )
 
-import fuzz_constants
+import constants
 import utils
 
 import datatypes.project_profile
@@ -155,9 +155,9 @@ def load_all_profiles(
 
 def try_load_input_bugs() -> List[datatypes.bug.Bug]:
     """Loads input bugs as list. Returns empty list if none"""
-    if not os.path.isfile(fuzz_constants.INPUT_BUG_FILE):
+    if not os.path.isfile(constants.INPUT_BUG_FILE):
         return []
-    return load_input_bugs(fuzz_constants.INPUT_BUG_FILE)
+    return load_input_bugs(constants.INPUT_BUG_FILE)
 
 
 def load_input_bugs(bug_file: str) -> List[datatypes.bug.Bug]:

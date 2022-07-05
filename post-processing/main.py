@@ -20,7 +20,7 @@ import yaml
 from typing import List
 
 import fuzz_analysis
-import fuzz_constants
+import constants
 import fuzz_data_loader
 import fuzz_html
 import utils
@@ -35,7 +35,7 @@ def correlate_binaries_to_logs(binaries_dir: str) -> int:
     logger.info(f"Pairings: {str(pairings)}")
     with open("exe_to_fuzz_introspector_logs.yaml", "w+") as etf:
         etf.write(yaml.dump({'pairings': pairings}))
-    return fuzz_constants.APP_EXIT_SUCCESS
+    return constants.APP_EXIT_SUCCESS
 
 
 def run_analysis_on_dir(
@@ -62,7 +62,7 @@ def run_analysis_on_dir(
     profiles = fuzz_data_loader.load_all_profiles(target_folder, language)
     if len(profiles) == 0:
         logger.info("Found no profiles. Exiting")
-        return fuzz_constants.APP_EXIT_ERROR
+        return constants.APP_EXIT_ERROR
 
     input_bugs = fuzz_data_loader.try_load_input_bugs()
     logger.info(f"[+] Loaded {len(input_bugs)} bugs")
@@ -111,7 +111,7 @@ def run_analysis_on_dir(
         project_profile.basefolder,
         report_name
     )
-    return fuzz_constants.APP_EXIT_SUCCESS
+    return constants.APP_EXIT_SUCCESS
 
 
 def get_cmdline_parser() -> argparse.ArgumentParser:
@@ -220,7 +220,7 @@ def main() -> int:
     elif args.command == 'correlate':
         return_code = correlate_binaries_to_logs(args.binaries_dir)
     else:
-        return_code = fuzz_constants.APP_EXIT_ERROR
+        return_code = constants.APP_EXIT_ERROR
     logger.info("Ending fuzz introspector post-processing")
     sys.exit(return_code)
 

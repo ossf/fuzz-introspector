@@ -30,7 +30,7 @@ from typing import (
 import fuzz_analysis
 import utils
 import fuzz_cfg_load
-import fuzz_constants
+import constants
 import fuzz_html_helpers
 
 import datatypes.project_profile
@@ -527,7 +527,7 @@ def create_fuzzer_detailed_section(
         f"</ul></p>"
         f"<p>"
         f"For further technical details on the call tree overview"
-        f", please see the <a href=\"{fuzz_constants.GIT_BRANCH_URL}/doc/"
+        f", please see the <a href=\"{constants.GIT_BRANCH_URL}/doc/"
         f"Glossary.md#call-tree-overview\">Glossary</a>."
         f"</p>"
     )
@@ -556,7 +556,7 @@ def create_fuzzer_detailed_section(
  of the full call tree overlaid with coverage information:
  <a href="{ calltree_file_name }">full call tree</a></p>"""
     html_string += f"<p>For further technical details on how the call tree is generated, please " \
-                   f"see the <a href=\"{fuzz_constants.GIT_BRANCH_URL}/doc/Glossary.md#full" \
+                   f"see the <a href=\"{constants.GIT_BRANCH_URL}/doc/Glossary.md#full" \
                    f"-calltree\">Glossary</a>.</p>"
 
     # Fuzz blocker table
@@ -855,7 +855,7 @@ def create_html_report(
                         "be functions that are from third-party libraries.</p>"
     html_report_core += f"<p>For further technical details on the meaning of columns in the " \
                         f"below table, please see the " \
-                        f"<a href=\"{fuzz_constants.GIT_BRANCH_URL}/doc/Glossary.md#project-"\
+                        f"<a href=\"{constants.GIT_BRANCH_URL}/doc/Glossary.md#project-"\
                         f"functions-overview\">Glossary</a>.</p>"
 
     table_id = "fuzzers_overview_table"

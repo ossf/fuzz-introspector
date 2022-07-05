@@ -23,7 +23,7 @@ from typing import (
 )
 
 import fuzz_analysis
-import fuzz_constants
+import constants
 import fuzz_html_helpers
 import utils
 
@@ -169,7 +169,7 @@ class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
             return ""
 
         self.add_to_json_file(
-            fuzz_constants.ENGINE_INPUT_FILE,
+            constants.ENGINE_INPUT_FILE,
             profile.get_key(),
             "focus-functions",
             focus_functions
