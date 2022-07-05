@@ -214,8 +214,10 @@ def load_all_branch_profiles(
     target_folder: str
 ) -> Dict[str, datatypes.branch_profile.BranchProfile]:
     all_branch_profiles: Dict[str, datatypes.branch_profile.BranchProfile] = dict()
-    data_files = utils.get_all_files_in_tree_with_regex(target_folder,
-                                                             ".*branchProfile\.yaml$")
+    data_files = utils.get_all_files_in_tree_with_regex(
+        target_folder,
+        ".*branchProfile\.yaml$"
+    )
     logger.info(f" - found {len(data_files)} branchProfiles to load")
     for data_file in data_files:
         read_branch_data_file_to_profile(data_file, all_branch_profiles)
