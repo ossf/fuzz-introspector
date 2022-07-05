@@ -23,11 +23,11 @@ from typing import (
 )
 
 import fuzz_analysis
-import fuzz_data_loader
 import fuzz_html_helpers
 
 import datatypes.project_profile
 import datatypes.fuzzer_profile
+import datatypes.function_profile
 
 from analyses import (
     fuzz_optimal_targets
@@ -37,7 +37,7 @@ logger = logging.getLogger(name=__name__)
 
 TargetCodesType = TypedDict('TargetCodesType', {
     'source_code': str,
-    'target_fds': List[fuzz_data_loader.FunctionProfile]
+    'target_fds': List[datatypes.function_profile.FunctionProfile]
 })
 
 

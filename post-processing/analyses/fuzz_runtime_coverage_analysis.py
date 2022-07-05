@@ -22,7 +22,6 @@ from typing import (
 
 import fuzz_analysis
 import fuzz_constants
-import fuzz_data_loader
 import fuzz_html_helpers
 import fuzz_utils
 

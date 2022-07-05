@@ -23,7 +23,6 @@ from typing import (
 )
 
 import fuzz_analysis
-import fuzz_data_loader
 import fuzz_html_helpers
 
 import datatypes.project_profile

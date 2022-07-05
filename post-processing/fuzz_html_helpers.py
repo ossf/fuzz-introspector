@@ -22,8 +22,6 @@ from typing import (
 )
 
 import fuzz_utils
-import fuzz_data_loader
-
 import datatypes.fuzzer_profile
 
 

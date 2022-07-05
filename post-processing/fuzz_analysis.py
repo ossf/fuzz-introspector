@@ -26,12 +26,12 @@ from typing import (
 
 import fuzz_utils
 import fuzz_cfg_load
-import fuzz_data_loader
 import fuzz_cov_load
 from enum import Enum
 
 import datatypes.project_profile
 import datatypes.fuzzer_profile
+import datatypes.function_profile
 
 from exceptions import AnalysisError
 
@@ -324,7 +324,7 @@ def overlay_calltree_with_coverage(
     fuzz_utils.write_to_summary_file(profile.get_key(), 'branch_blockers', branch_blockers_list)
 
 
-def update_branch_complexities(all_functions: Dict[str, fuzz_data_loader.FunctionProfile],
+def update_branch_complexities(all_functions: Dict[str, datatypes.function_profile.FunctionProfile],
                                coverage: fuzz_cov_load.CoverageProfile) -> None:
     """
     Traverse every branch profile and update the side complexities based on reached funcs

@@ -25,7 +25,6 @@ from typing import (
 )
 
 import fuzz_analysis
-import fuzz_data_loader
 import fuzz_utils
 import fuzz_cfg_load
 import fuzz_html_helpers
