@@ -26,7 +26,7 @@ from typing import (
 
 import utils
 import fuzz_cfg_load
-import fuzz_cov_load
+import cov_load
 from enum import Enum
 
 import datatypes.project_profile
@@ -325,7 +325,7 @@ def overlay_calltree_with_coverage(
 
 
 def update_branch_complexities(all_functions: Dict[str, datatypes.function_profile.FunctionProfile],
-                               coverage: fuzz_cov_load.CoverageProfile) -> None:
+                               coverage: cov_load.CoverageProfile) -> None:
     """
     Traverse every branch profile and update the side complexities based on reached funcs
     complexity.

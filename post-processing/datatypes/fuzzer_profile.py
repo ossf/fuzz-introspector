@@ -27,7 +27,7 @@ from typing import (
 )
 
 import fuzz_cfg_load
-import fuzz_cov_load
+import cov_load
 import utils
 
 import datatypes.function_profile
@@ -54,7 +54,7 @@ class FuzzerProfile:
         self.function_call_depths = fuzz_cfg_load.data_file_read_calltree(filename)
         self.fuzzer_source_file: str = data_dict_yaml['Fuzzer filename']
         self.binary_executable: str = ""
-        self.coverage: Optional[fuzz_cov_load.CoverageProfile] = None
+        self.coverage: Optional[cov_load.CoverageProfile] = None
         self.file_targets: Dict[str, Set[str]] = dict()
         self.target_lang = target_lang
 
@@ -204,12 +204,12 @@ class FuzzerProfile:
         """Load coverage data for this profile"""
         logger.info(f"Loading coverage of type {self.target_lang}")
         if self.target_lang == "c-cpp":
-            self.coverage = fuzz_cov_load.llvm_cov_load(
+            self.coverage = cov_load.llvm_cov_load(
                 target_folder,
                 self.get_target_fuzzer_filename()
             )
         elif self.target_lang == "python":
-            self.coverage = fuzz_cov_load.load_python_json_cov(
+            self.coverage = cov_load.load_python_json_cov(
                 target_folder
             )
         else:

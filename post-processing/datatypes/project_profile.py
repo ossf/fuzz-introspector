@@ -21,7 +21,7 @@ from typing import (
     Tuple,
 )
 
-import fuzz_cov_load
+import cov_load
 import utils
 
 import datatypes.function_profile
@@ -108,7 +108,7 @@ class MergedProjectProfile:
             )
 
         # Accumulate run-time coverage mapping
-        self.runtime_coverage = fuzz_cov_load.CoverageProfile()
+        self.runtime_coverage = cov_load.CoverageProfile()
         for profile in profiles:
             if profile.coverage is None:
                 continue
