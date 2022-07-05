@@ -25,7 +25,7 @@ from typing import (
 )
 
 import fuzz_analysis
-import fuzz_utils
+import utils
 import fuzz_cfg_load
 import fuzz_html_helpers
 
@@ -68,7 +68,7 @@ class FuzzCalltreeAnalysis(fuzz_analysis.AnalysisInterface):
         for i in range(len(nodes)):
             node = nodes[i]
 
-            demangled_name = fuzz_utils.demangle_cpp_func(node.dst_function_name)
+            demangled_name = utils.demangle_cpp_func(node.dst_function_name)
             # We may not want to show certain functions at times, e.g. libc functions
             # in case it bloats the calltree
             # libc_funcs = { "free" }

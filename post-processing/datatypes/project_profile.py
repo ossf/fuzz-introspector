@@ -22,7 +22,7 @@ from typing import (
 )
 
 import fuzz_cov_load
-import fuzz_utils
+import utils
 
 import datatypes.function_profile
 import datatypes.fuzzer_profile
@@ -229,7 +229,7 @@ class MergedProjectProfile:
          reached_complexity_percentage,
          unreached_complexity_percentage) = self.get_complexity_summaries()
 
-        fuzz_utils.write_to_summary_file(
+        utils.write_to_summary_file(
             "MergedProjectProfile",
             "stats",
             {
@@ -255,4 +255,4 @@ class MergedProjectProfile:
                 continue
             all_strs.append(f.function_source_file)
 
-        self.basefolder = fuzz_utils.longest_common_prefix(all_strs)
+        self.basefolder = utils.longest_common_prefix(all_strs)

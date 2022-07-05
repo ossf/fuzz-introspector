@@ -23,7 +23,7 @@ from typing import (
 import fuzz_analysis
 import fuzz_constants
 import fuzz_html_helpers
-import fuzz_utils
+import utils
 
 import datatypes.project_profile
 import datatypes.fuzzer_profile
@@ -95,7 +95,7 @@ class FuzzRuntimeCoverageAnalysis(fuzz_analysis.AnalysisInterface):
             else:
                 reached_by = ""
             html_string += fuzz_html_helpers.html_table_add_row([
-                fuzz_utils.demangle_cpp_func(funcname),
+                utils.demangle_cpp_func(funcname),
                 func_lines,
                 hit_lines,
                 "%.5s%%" % (str((hit_lines / func_lines) * 100.0)),

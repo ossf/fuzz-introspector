@@ -23,7 +23,7 @@ import fuzz_analysis
 import fuzz_constants
 import fuzz_data_loader
 import fuzz_html
-import fuzz_utils
+import utils
 
 import datatypes.project_profile
 
@@ -31,7 +31,7 @@ logger = logging.getLogger(name=__name__)
 
 
 def correlate_binaries_to_logs(binaries_dir: str) -> int:
-    pairings = fuzz_utils.scan_executables_for_fuzz_introspector_logs(binaries_dir)
+    pairings = utils.scan_executables_for_fuzz_introspector_logs(binaries_dir)
     logger.info(f"Pairings: {str(pairings)}")
     with open("exe_to_fuzz_introspector_logs.yaml", "w+") as etf:
         etf.write(yaml.dump({'pairings': pairings}))
@@ -72,7 +72,7 @@ def run_analysis_on_dir(
         profile.accummulate_profile(target_folder)
 
     logger.info("[+] Correlating executables to Fuzz introspector reports")
-    correlation_dict = fuzz_utils.data_file_read_yaml(correlation_file)
+    correlation_dict = utils.data_file_read_yaml(correlation_file)
     if correlation_dict is not None and "pairings" in correlation_dict:
         for profile in profiles:
             profile.correlate_executable_name(correlation_dict)

@@ -25,7 +25,7 @@ from typing import (
 import fuzz_analysis
 import fuzz_constants
 import fuzz_html_helpers
-import fuzz_utils
+import utils
 
 import datatypes.project_profile
 import datatypes.fuzzer_profile
@@ -161,7 +161,7 @@ class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
             ffname = fuzz_blocker.src_function_name
             if ffname is not None and ffname not in focus_functions:
                 focus_functions.append(
-                    fuzz_utils.demangle_cpp_func(ffname)
+                    utils.demangle_cpp_func(ffname)
                 )
                 logger.info(f"Found focus function: {fuzz_blocker.src_function_name}")
 

@@ -24,7 +24,7 @@ from typing import (
     Tuple,
 )
 
-import fuzz_utils
+import utils
 import fuzz_cfg_load
 import fuzz_cov_load
 from enum import Enum
@@ -136,7 +136,7 @@ def overlay_calltree_with_coverage(
         return
 
     target_name = profile.get_key()
-    target_coverage_url = fuzz_utils.get_target_coverage_url(
+    target_coverage_url = utils.get_target_coverage_url(
         coverage_url,
         target_name,
         profile.target_lang
@@ -147,7 +147,7 @@ def overlay_calltree_with_coverage(
         node.cov_ct_idx = ct_idx
         ct_idx += 1
 
-        demangled_name = fuzz_utils.demangle_cpp_func(node.dst_function_name)
+        demangled_name = utils.demangle_cpp_func(node.dst_function_name)
 
         # Add to callstack
         callstack_set_curr_node(node, demangled_name, callstack)
@@ -247,7 +247,7 @@ def overlay_calltree_with_coverage(
         if callstack_has_parent(node, callstack):
             parent_fname = callstack_get_parent(node, callstack)
             for fd_k, fd in profile.all_class_functions.items():
-                if fuzz_utils.demangle_cpp_func(fd.function_name) == parent_fname:
+                if utils.demangle_cpp_func(fd.function_name) == parent_fname:
                     callsite_link = profile.resolve_coverage_link(
                         target_coverage_url,
                         fd.function_source_file,
@@ -289,7 +289,7 @@ def overlay_calltree_with_coverage(
 
             for fd_k, fd in project_profile.all_functions.items():
                 if (
-                    fuzz_utils.demangle_cpp_func(fd.function_name) == n2.dst_function_name
+                    utils.demangle_cpp_func(fd.function_name) == n2.dst_function_name
                     and fd.total_cyclomatic_complexity > largest_blocked_count
                 ):
                     largest_blocked_count = fd.total_cyclomatic_complexity
@@ -321,7 +321,7 @@ def overlay_calltree_with_coverage(
                 'function_name': br_blocker.function_name
             }
         )
-    fuzz_utils.write_to_summary_file(profile.get_key(), 'branch_blockers', branch_blockers_list)
+    utils.write_to_summary_file(profile.get_key(), 'branch_blockers', branch_blockers_list)
 
 
 def update_branch_complexities(all_functions: Dict[str, datatypes.function_profile.FunctionProfile],

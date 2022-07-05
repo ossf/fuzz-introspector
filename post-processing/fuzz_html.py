@@ -28,7 +28,7 @@ from typing import (
 )
 
 import fuzz_analysis
-import fuzz_utils
+import utils
 import fuzz_cfg_load
 import fuzz_constants
 import fuzz_html_helpers
@@ -228,7 +228,7 @@ def create_all_function_table(
     table_rows = []
 
     for fd_k, fd in project_profile.all_functions.items():
-        demangled_func_name = fuzz_utils.demangle_cpp_func(fd.function_name)
+        demangled_func_name = utils.demangle_cpp_func(fd.function_name)
         try:
             func_total_lines, hit_lines = project_profile.runtime_coverage.get_hit_summary(
                 demangled_func_name
@@ -636,7 +636,7 @@ def create_fuzzer_detailed_section(
         logger.info("reachable funcs is 0")
         cov_reach_proportion = 0.0
     str_percentage = "%.5s%%" % str(cov_reach_proportion)
-    fuzz_utils.write_to_summary_file(
+    utils.write_to_summary_file(
         profile.get_key(),
         "coverage-blocker-stats",
         {

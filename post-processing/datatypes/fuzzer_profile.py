@@ -28,7 +28,7 @@ from typing import (
 
 import fuzz_cfg_load
 import fuzz_cov_load
-import fuzz_utils
+import utils
 
 import datatypes.function_profile
 
@@ -94,14 +94,14 @@ class FuzzerProfile:
         # coverate utility and contains mappings from source to html file. We
         # need this mapping in order to create links from the data extracted
         # during AST analysis, as there we only have the source code.
-        html_summaries = fuzz_utils.get_all_files_in_tree_with_regex(".", ".*html_status.json$")
+        html_summaries = utils.get_all_files_in_tree_with_regex(".", ".*html_status.json$")
         logger.info(str(html_summaries))
         if len(html_summaries) > 0:
             html_idx = html_summaries[0]
             with open(html_idx, "r") as jf:
                 data = json.load(jf)
             for fl in data['files']:
-                found_target = fuzz_utils.approximate_python_coverage_files(
+                found_target = utils.approximate_python_coverage_files(
                     function_name,
                     data['files'][fl]['index']['relative_filename'],
                 )
@@ -331,7 +331,7 @@ class FuzzerProfile:
 
     def write_stats_to_summary_file(self) -> None:
         file_target_count = len(self.file_targets) if self.file_targets is not None else 0
-        fuzz_utils.write_to_summary_file(
+        utils.write_to_summary_file(
             self.get_key(),
             "stats",
             {

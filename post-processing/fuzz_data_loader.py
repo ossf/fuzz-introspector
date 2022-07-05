@@ -26,7 +26,7 @@ from typing import (
 )
 
 import fuzz_constants
-import fuzz_utils
+import utils
 
 import datatypes.project_profile
 import datatypes.fuzzer_profile
@@ -52,7 +52,7 @@ def read_fuzzer_data_file_to_profile(
     if not os.path.isfile(filename) or not os.path.isfile(filename + ".yaml"):
         return None
 
-    data_dict_yaml = fuzz_utils.data_file_read_yaml(filename + ".yaml")
+    data_dict_yaml = utils.data_file_read_yaml(filename + ".yaml")
     if data_dict_yaml is None:
         return None
 
@@ -104,7 +104,7 @@ def add_func_to_reached_and_clone(
         f = merged_profile.all_functions[func_name]
         f.hitcount += 1
 
-        f.reached_by_fuzzers.append(fuzz_utils.demangle_cpp_func(func_to_add.function_name))
+        f.reached_by_fuzzers.append(utils.demangle_cpp_func(func_to_add.function_name))
 
     # Recompute all analysis that is based on hitcounts in all functions as hitcount has
     # changed for elements in the dictionary.
@@ -141,7 +141,7 @@ def load_all_profiles(
     language: str
 ) -> List[datatypes.fuzzer_profile.FuzzerProfile]:
     profiles = []
-    data_files = fuzz_utils.get_all_files_in_tree_with_regex(
+    data_files = utils.get_all_files_in_tree_with_regex(
         target_folder,
         "fuzzerLogFile.*\.data$"
     )
@@ -200,7 +200,7 @@ def read_branch_data_file_to_profile(filename: str, bp_dict: Dict[Any, Any]) -> 
     if not os.path.isfile(filename):
         return
 
-    data_dict_yaml = fuzz_utils.data_file_read_yaml(filename)
+    data_dict_yaml = utils.data_file_read_yaml(filename)
     if data_dict_yaml is None:
         return
 
@@ -214,7 +214,7 @@ def load_all_branch_profiles(
     target_folder: str
 ) -> Dict[str, datatypes.branch_profile.BranchProfile]:
     all_branch_profiles: Dict[str, datatypes.branch_profile.BranchProfile] = dict()
-    data_files = fuzz_utils.get_all_files_in_tree_with_regex(target_folder,
+    data_files = utils.get_all_files_in_tree_with_regex(target_folder,
                                                              ".*branchProfile\.yaml$")
     logger.info(f" - found {len(data_files)} branchProfiles to load")
     for data_file in data_files:

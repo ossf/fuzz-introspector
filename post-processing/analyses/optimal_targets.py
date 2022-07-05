@@ -27,7 +27,7 @@ import fuzz_analysis
 import fuzz_data_loader
 import fuzz_html
 import fuzz_html_helpers
-import fuzz_utils
+import utils
 
 import datatypes.project_profile
 import datatypes.fuzzer_profile
@@ -256,7 +256,7 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
             )
             html_func_row = (
                 f"<a href=\"{ func_cov_url }\"><code class='language-clike'>"
-                f"{fuzz_utils.demangle_cpp_func(fd.function_name)}"
+                f"{utils.demangle_cpp_func(fd.function_name)}"
                 f"</code></a>"
             )
             html_string += fuzz_html_helpers.html_table_add_row(

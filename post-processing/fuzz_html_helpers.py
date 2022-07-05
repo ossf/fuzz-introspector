@@ -21,7 +21,7 @@ from typing import (
     Tuple,
 )
 
-import fuzz_utils
+import utils
 import datatypes.fuzzer_profile
 
 
@@ -104,7 +104,7 @@ def create_pfc_button(
                     <div class="per-fuzzer-coverage-dropdown" id="per-fuzzer-coverage-dropdown">"""
     for profile in profiles:
         target_name = profile.get_key()
-        target_coverage_url = fuzz_utils.get_target_coverage_url(
+        target_coverage_url = utils.get_target_coverage_url(
             coverage_url,
             target_name,
             profile.target_lang
