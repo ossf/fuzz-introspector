@@ -24,7 +24,7 @@ from typing import (
 )
 
 import fuzz_analysis
-import fuzz_data_loader
+import data_loader
 import fuzz_html
 import html_helpers
 import utils
@@ -196,7 +196,7 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
             optimal_func = sorted_by_undiscovered_complexity[0]
             optimal_functions_targeted.append(optimal_func)
 
-            new_merged_profile = fuzz_data_loader.add_func_to_reached_and_clone(
+            new_merged_profile = data_loader.add_func_to_reached_and_clone(
                 new_merged_profile,
                 optimal_func
             )

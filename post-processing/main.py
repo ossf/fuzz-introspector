@@ -21,7 +21,7 @@ from typing import List
 
 import fuzz_analysis
 import constants
-import fuzz_data_loader
+import data_loader
 import fuzz_html
 import utils
 
@@ -59,12 +59,12 @@ def run_analysis_on_dir(
                 analyses_to_run.append(analysis)
 
     logger.info("[+] Loading profiles")
-    profiles = fuzz_data_loader.load_all_profiles(target_folder, language)
+    profiles = data_loader.load_all_profiles(target_folder, language)
     if len(profiles) == 0:
         logger.info("Found no profiles. Exiting")
         return constants.APP_EXIT_ERROR
 
-    input_bugs = fuzz_data_loader.try_load_input_bugs()
+    input_bugs = data_loader.try_load_input_bugs()
     logger.info(f"[+] Loaded {len(input_bugs)} bugs")
 
     logger.info("[+] Accummulating profiles")
@@ -87,7 +87,7 @@ def run_analysis_on_dir(
         profile.refine_paths(project_profile.basefolder)
 
     # logger.info("[+] Loading branch profiles")
-    # branch_profiles = fuzz_data_loader.load_all_branch_profiles(target_folder)
+    # branch_profiles = data_loader.load_all_branch_profiles(target_folder)
     # if len(branch_profiles) == 0:
     #     logger.info("[X][X] Found no branch profiles!")
 

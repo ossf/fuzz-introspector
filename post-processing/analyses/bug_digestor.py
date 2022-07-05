@@ -21,7 +21,7 @@ from typing import (
 )
 
 import fuzz_analysis
-import fuzz_data_loader
+import data_loader
 import html_helpers
 
 import datatypes.project_profile
@@ -46,7 +46,7 @@ class FuzzBugDigestorAnalysis(fuzz_analysis.AnalysisInterface):
         conclusions: List[Tuple[int, str]]
     ) -> str:
         logger.info(f" - Running analysis {self.name}")
-        input_bugs = fuzz_data_loader.try_load_input_bugs()
+        input_bugs = data_loader.try_load_input_bugs()
         if len(input_bugs) == 0:
             return ""
 
