@@ -24,6 +24,7 @@ from typing import (
 logger = logging.getLogger(name=__name__)
 logger.setLevel(logging.INFO)
 
+
 class BranchProfile:
     """
     Class for storing information about conditional branches collected by LLVM pass.

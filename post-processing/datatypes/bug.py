@@ -36,4 +36,3 @@ class Bug:
         self.fuzzer_name = fuzzer_name
         self.description = description
         self.bug_type = bug_type
-

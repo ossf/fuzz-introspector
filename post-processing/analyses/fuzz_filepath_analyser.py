@@ -50,7 +50,7 @@ class FuzzFilepathAnalyser(fuzz_analysis.AnalysisInterface):
         toc_list: List[Tuple[str, str, int]],
         tables: List[str],
         project_profile: datatypes.project_profile.MergedProjectProfile,
-        profiles: List[.types.fuzzer_profileFuzzerProfile],
+        profiles: List[datatypes.fuzzer_profile.FuzzerProfile],
         basefolder: str,
         coverage_url: str,
         conclusions: List[Tuple[int, str]]
