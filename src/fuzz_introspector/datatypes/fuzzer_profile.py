@@ -129,7 +129,7 @@ class FuzzerProfile:
                 new_dict[key.replace(basefolder, "")] = self.file_targets[key]
             self.file_targets = new_dict
 
-    def set_all_reached_functions(self) -> None:
+    def _set_all_reached_functions(self) -> None:
         """
         sets self.functions_reached_by_fuzzer to all functions reached
         by LLVMFuzzerTestOneInput
@@ -187,7 +187,7 @@ class FuzzerProfile:
 
         return self.fuzzer_source_file
 
-    def set_all_unreached_functions(self) -> None:
+    def _set_all_unreached_functions(self) -> None:
         """
         sets self.functions_unreached_by_fuzzer to all functiosn in self.all_class_functions
         that are not in self.functions_reached_by_fuzzer
@@ -198,7 +198,7 @@ class FuzzerProfile:
             if f.function_name not in self.functions_reached_by_fuzzer
         ]
 
-    def load_coverage(self, target_folder: str) -> None:
+    def _load_coverage(self, target_folder: str) -> None:
         """Load coverage data for this profile"""
         logger.info(f"Loading coverage of type {self.target_lang}")
         if self.target_lang == "c-cpp":
@@ -218,7 +218,7 @@ class FuzzerProfile:
     def get_target_fuzzer_filename(self) -> str:
         return self.fuzzer_source_file.split("/")[-1].replace(".cpp", "").replace(".c", "")
 
-    def get_file_targets(self) -> None:
+    def _set_file_targets(self) -> None:
         """
         Sets self.file_targets to be a dictionarty of string to string.
         Each key in the dictionary is a filename and the corresponding value is
@@ -234,7 +234,7 @@ class FuzzerProfile:
                     self.file_targets[cs.dst_function_source_file] = set()
                 self.file_targets[cs.dst_function_source_file].add(cs.dst_function_name)
 
-    def get_total_basic_blocks(self) -> None:
+    def _set_total_basic_blocks(self) -> None:
         """
         sets self.total_basic_blocks to the sym of basic blocks of all the functions
         reached by this fuzzer.
@@ -245,7 +245,7 @@ class FuzzerProfile:
             total_basic_blocks += fd.bb_count
         self.total_basic_blocks = total_basic_blocks
 
-    def get_total_cyclomatic_complexity(self) -> None:
+    def _set_total_cyclomatic_complexity(self) -> None:
         """
         sets self.total_cyclomatic_complexity to the sum of cyclomatic complexity
         of all functions reached by this fuzzer.
@@ -260,12 +260,12 @@ class FuzzerProfile:
         Triggers various analyses on the data of the fuzzer. This is used after a
         profile has been initialised to generate more interesting data.
         """
-        self.set_all_reached_functions()
-        self.set_all_unreached_functions()
-        self.load_coverage(target_folder)
-        self.get_file_targets()
-        self.get_total_basic_blocks()
-        self.get_total_cyclomatic_complexity()
+        self._set_all_reached_functions()
+        self._set_all_unreached_functions()
+        self._load_coverage(target_folder)
+        self._set_file_targets()
+        self._set_total_basic_blocks()
+        self._set_total_cyclomatic_complexity()
 
     def get_cov_uncovered_reachable_funcs(self) -> List[str]:
         if self.coverage is None:
