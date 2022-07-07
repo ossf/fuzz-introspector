@@ -332,7 +332,9 @@ class FuzzerProfile:
         """
         for elem in frontend_yaml['All functions']['Elements']:
             if self._is_func_name_missing_normalisation(elem['functionName']):
-                logger.info(f"May have non-normalised function: {func_name}")
+                logger.info(
+                    f"May have non-normalised function: {elem['functionName']}"
+                )
 
             func_profile = function_profile.FunctionProfile(elem)
             logger.debug(f"Adding {func_profile.function_name}")
