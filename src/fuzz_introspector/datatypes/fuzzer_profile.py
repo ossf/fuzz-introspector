@@ -149,7 +149,7 @@ class FuzzerProfile:
         # Only some file paths have removed base folder. We must check for both.
         return (file_name in self.file_targets) or (new_file_name in self.file_targets)
 
-    def reaches(self, func_name: str) -> bool:
+    def reaches_func(self, func_name: str) -> bool:
         return func_name in self.functions_reached_by_fuzzer
 
     def correlate_executable_name(self, correlation_dict) -> None:
