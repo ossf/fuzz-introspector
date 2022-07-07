@@ -864,8 +864,35 @@ h1.report-title.collapsed::before {
 }
 /* Column-selection button: */
 .dt-button.buttons-collection.buttons-colvis {
-	background: white;
-	border: 1px solid #aaa
+	background: #FCC200!important;
+	border: 1px solid #FCC200!important;
+}
+div.dt-button-collection button.dt-button:active:not(.disabled), div.dt-button-collection button.dt-button.active:not(.disabled), div.dt-button-collection div.dt-button:active:not(.disabled), div.dt-button-collection div.dt-button.active:not(.disabled), div.dt-button-collection a.dt-button:active:not(.disabled), div.dt-button-collection a.dt-button.active:not(.disabled) {
+	box-shadow: none!important;
+}
+.dt-button-background {
+	display: none!important;
+}
+button.dt-button:hover:not(.disabled), div.dt-button:hover:not(.disabled), a.dt-button:hover:not(.disabled), input.dt-button:hover:not(.disabled) {
+	background: #f4bc00!important;
+}
+div.dt-button-collection {
+	border-radius: 0px!important;
+	padding: 0!important;
+	border: none!important
+}
+div.dt-button-collection button.dt-button, div.dt-button-collection div.dt-button, div.dt-button-collection a.dt-button {
+	margin: 0px!important;
+}
+div.dt-button-collection button.dt-button:first-child, div.dt-button-collection div.dt-button:first-child, div.dt-button-collection a.dt-button:first-child {
+	border-top-left-radius: 0px!important;
+	border-top-right-radius: 0px!important;
+}
+button.dt-button, div.dt-button, a.dt-button, input.dt-button {
+	border: none!important;
+}
+button.dt-button:hover:not(.disabled), div.dt-button:hover:not(.disabled), a.dt-button:hover:not(.disabled), input.dt-button:hover:not(.disabled) {
+	border: 1px solid #f4bc00;
 }
 /* Search box for datatables */
 input[type=search] {
