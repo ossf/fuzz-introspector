@@ -135,8 +135,6 @@ def scan_executables_for_fuzz_introspector_logs(
 
     # Filter all executables containing "fuzzerLogFile" string
     executable_to_fuzz_reports = []
-    #regex = '[%s]{%d,}' % (r"A-Za-z0-9_-", 10)
-    #fuzzer_log_file_pattern = re.compile(regex)
     text_pattern = re.compile("[A-Za-z0-9_-]{10,}")
     for executable_path in executable_files:
         with open(executable_path, "rb") as fp:
