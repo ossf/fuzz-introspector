@@ -129,27 +129,6 @@ class FuzzerProfile:
                 new_dict[key.replace(basefolder, "")] = self.file_targets[key]
             self.file_targets = new_dict
 
-    def _set_all_reached_functions(self) -> None:
-        """
-        sets self.functions_reached_by_fuzzer to all functions reached
-        by LLVMFuzzerTestOneInput
-        """
-        if "LLVMFuzzerTestOneInput" in self.all_class_functions:
-            self.functions_reached_by_fuzzer = (
-                self.all_class_functions["LLVMFuzzerTestOneInput"].functions_reached
-            )
-            return
-
-        # Find Python entrypoint
-        for func_name in self.all_class_functions:
-            if "TestOneInput" in func_name:
-                reached = self.all_class_functions[func_name].functions_reached
-                self.functions_reached_by_fuzzer = reached
-                return
-
-        # TODO: make fuzz-introspector exceptions
-        raise Exception
-
     def reaches_file(
         self,
         file_name: str,
@@ -187,78 +166,9 @@ class FuzzerProfile:
 
         return self.fuzzer_source_file
 
-    def _set_all_unreached_functions(self) -> None:
-        """
-        sets self.functions_unreached_by_fuzzer to all functiosn in self.all_class_functions
-        that are not in self.functions_reached_by_fuzzer
-        """
-        self.functions_unreached_by_fuzzer = [
-            f.function_name for f
-            in self.all_class_functions.values()
-            if f.function_name not in self.functions_reached_by_fuzzer
-        ]
-
-    def _load_coverage(self, target_folder: str) -> None:
-        """Load coverage data for this profile"""
-        logger.info(f"Loading coverage of type {self.target_lang}")
-        if self.target_lang == "c-cpp":
-            self.coverage = cov_load.llvm_cov_load(
-                target_folder,
-                self._get_target_fuzzer_filename()
-            )
-        elif self.target_lang == "python":
-            self.coverage = cov_load.load_python_json_cov(
-                target_folder
-            )
-        else:
-            raise DataLoaderError(
-                "The profile target has no coverage loading support"
-            )
-
-    def _get_target_fuzzer_filename(self) -> str:
-        return self.fuzzer_source_file.split("/")[-1].replace(".cpp", "").replace(".c", "")
-
-    def _set_file_targets(self) -> None:
-        """
-        Sets self.file_targets to be a dictionarty of string to string.
-        Each key in the dictionary is a filename and the corresponding value is
-        a set of strings containing strings which are the names of the functions
-        in the given file that are reached by the fuzzer.
-        """
-        if self.function_call_depths is not None:
-            all_callsites = cfg_load.extract_all_callsites(self.function_call_depths)
-            for cs in all_callsites:
-                if cs.dst_function_source_file.replace(" ", "") == "":
-                    continue
-                if cs.dst_function_source_file not in self.file_targets:
-                    self.file_targets[cs.dst_function_source_file] = set()
-                self.file_targets[cs.dst_function_source_file].add(cs.dst_function_name)
-
-    def _set_total_basic_blocks(self) -> None:
-        """
-        sets self.total_basic_blocks to the sym of basic blocks of all the functions
-        reached by this fuzzer.
-        """
-        total_basic_blocks = 0
-        for func in self.functions_reached_by_fuzzer:
-            fd = self.all_class_functions[func]
-            total_basic_blocks += fd.bb_count
-        self.total_basic_blocks = total_basic_blocks
-
-    def _set_total_cyclomatic_complexity(self) -> None:
-        """
-        sets self.total_cyclomatic_complexity to the sum of cyclomatic complexity
-        of all functions reached by this fuzzer.
-        """
-        self.total_cyclomatic_complexity = 0
-        for func in self.functions_reached_by_fuzzer:
-            fd = self.all_class_functions[func]
-            self.total_cyclomatic_complexity += fd.cyclomatic_complexity
-
     def accummulate_profile(self, target_folder: str) -> None:
-        """
-        Triggers various analyses on the data of the fuzzer. This is used after a
-        profile has been initialised to generate more interesting data.
+        """Triggers various analyses on the data of the fuzzer. This is used
+        after a profile has been initialised to generate more interesting data.
         """
         self._set_all_reached_functions()
         self._set_all_unreached_functions()
@@ -268,6 +178,14 @@ class FuzzerProfile:
         self._set_total_cyclomatic_complexity()
 
     def get_cov_uncovered_reachable_funcs(self) -> List[str]:
+        """Gets all functions that are statically reachable but are not
+        covered by runtime coverage.
+
+        Returns:
+            List with names of all the functions that are reachable but not
+            covered.
+            If there is no coverage information returns empty list.
+        """
         if self.coverage is None:
             return []
 
@@ -338,3 +256,91 @@ class FuzzerProfile:
                 "file-target-count": file_target_count,
             }
         )
+    def _set_all_reached_functions(self) -> None:
+        """
+        sets self.functions_reached_by_fuzzer to all functions reached
+        by LLVMFuzzerTestOneInput
+        """
+        if "LLVMFuzzerTestOneInput" in self.all_class_functions:
+            self.functions_reached_by_fuzzer = (
+                self.all_class_functions["LLVMFuzzerTestOneInput"].functions_reached
+            )
+            return
+
+        # Find Python entrypoint
+        for func_name in self.all_class_functions:
+            if "TestOneInput" in func_name:
+                reached = self.all_class_functions[func_name].functions_reached
+                self.functions_reached_by_fuzzer = reached
+                return
+
+        # TODO: make fuzz-introspector exceptions
+        raise Exception
+
+    def _set_all_unreached_functions(self) -> None:
+        """
+        sets self.functions_unreached_by_fuzzer to all functiosn in self.all_class_functions
+        that are not in self.functions_reached_by_fuzzer
+        """
+        self.functions_unreached_by_fuzzer = [
+            f.function_name for f
+            in self.all_class_functions.values()
+            if f.function_name not in self.functions_reached_by_fuzzer
+        ]
+
+    def _load_coverage(self, target_folder: str) -> None:
+        """Load coverage data for this profile"""
+        logger.info(f"Loading coverage of type {self.target_lang}")
+        if self.target_lang == "c-cpp":
+            self.coverage = cov_load.llvm_cov_load(
+                target_folder,
+                self._get_target_fuzzer_filename()
+            )
+        elif self.target_lang == "python":
+            self.coverage = cov_load.load_python_json_cov(
+                target_folder
+            )
+        else:
+            raise DataLoaderError(
+                "The profile target has no coverage loading support"
+            )
+
+    def _get_target_fuzzer_filename(self) -> str:
+        return self.fuzzer_source_file.split("/")[-1].replace(".cpp", "").replace(".c", "")
+
+    def _set_file_targets(self) -> None:
+        """
+        Sets self.file_targets to be a dictionarty of string to string.
+        Each key in the dictionary is a filename and the corresponding value is
+        a set of strings containing strings which are the names of the functions
+        in the given file that are reached by the fuzzer.
+        """
+        if self.function_call_depths is not None:
+            all_callsites = cfg_load.extract_all_callsites(self.function_call_depths)
+            for cs in all_callsites:
+                if cs.dst_function_source_file.replace(" ", "") == "":
+                    continue
+                if cs.dst_function_source_file not in self.file_targets:
+                    self.file_targets[cs.dst_function_source_file] = set()
+                self.file_targets[cs.dst_function_source_file].add(cs.dst_function_name)
+
+    def _set_total_basic_blocks(self) -> None:
+        """
+        sets self.total_basic_blocks to the sym of basic blocks of all the functions
+        reached by this fuzzer.
+        """
+        total_basic_blocks = 0
+        for func in self.functions_reached_by_fuzzer:
+            fd = self.all_class_functions[func]
+            total_basic_blocks += fd.bb_count
+        self.total_basic_blocks = total_basic_blocks
+
+    def _set_total_cyclomatic_complexity(self) -> None:
+        """
+        sets self.total_cyclomatic_complexity to the sum of cyclomatic complexity
+        of all functions reached by this fuzzer.
+        """
+        self.total_cyclomatic_complexity = 0
+        for func in self.functions_reached_by_fuzzer:
+            fd = self.all_class_functions[func]
+            self.total_cyclomatic_complexity += fd.cyclomatic_complexity
