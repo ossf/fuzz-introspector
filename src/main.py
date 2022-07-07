@@ -19,21 +19,22 @@ import sys
 import yaml
 from typing import List
 
-import fuzz_analysis
-import fuzz_constants
-import fuzz_data_loader
-import fuzz_html
-import fuzz_utils
+from fuzz_introspector import analysis
+from fuzz_introspector import constants
+from fuzz_introspector import data_loader
+from fuzz_introspector import html_report
+from fuzz_introspector import utils
+from fuzz_introspector.datatypes import project_profile
 
 logger = logging.getLogger(name=__name__)
 
 
 def correlate_binaries_to_logs(binaries_dir: str) -> int:
-    pairings = fuzz_utils.scan_executables_for_fuzz_introspector_logs(binaries_dir)
+    pairings = utils.scan_executables_for_fuzz_introspector_logs(binaries_dir)
     logger.info(f"Pairings: {str(pairings)}")
     with open("exe_to_fuzz_introspector_logs.yaml", "w+") as etf:
         etf.write(yaml.dump({'pairings': pairings}))
-    return fuzz_constants.APP_EXIT_SUCCESS
+    return constants.APP_EXIT_SUCCESS
 
 
 def run_analysis_on_dir(
@@ -52,17 +53,17 @@ def run_analysis_on_dir(
             "FuzzDriverSynthesizerAnalysis",
             "FuzzEngineInputAnalysis"
         ]
-        for analysis in all_analyses:
-            if analysis not in analyses_to_run:
-                analyses_to_run.append(analysis)
+        for analysis_interface in all_analyses:
+            if analysis_interface not in analyses_to_run:
+                analyses_to_run.append(analysis_interface)
 
     logger.info("[+] Loading profiles")
-    profiles = fuzz_data_loader.load_all_profiles(target_folder, language)
+    profiles = data_loader.load_all_profiles(target_folder, language)
     if len(profiles) == 0:
         logger.info("Found no profiles. Exiting")
-        return fuzz_constants.APP_EXIT_ERROR
+        return constants.APP_EXIT_ERROR
 
-    input_bugs = fuzz_data_loader.try_load_input_bugs()
+    input_bugs = data_loader.try_load_input_bugs()
     logger.info(f"[+] Loaded {len(input_bugs)} bugs")
 
     logger.info("[+] Accummulating profiles")
@@ -70,7 +71,7 @@ def run_analysis_on_dir(
         profile.accummulate_profile(target_folder)
 
     logger.info("[+] Correlating executables to Fuzz introspector reports")
-    correlation_dict = fuzz_utils.data_file_read_yaml(correlation_file)
+    correlation_dict = utils.data_file_read_yaml(correlation_file)
     if correlation_dict is not None and "pairings" in correlation_dict:
         for profile in profiles:
             profile.correlate_executable_name(correlation_dict)
@@ -78,38 +79,38 @@ def run_analysis_on_dir(
         logger.info("- Nothing to correlate")
 
     logger.info("[+] Creating project profile")
-    project_profile = fuzz_data_loader.MergedProjectProfile(profiles)
+    proj_profile = project_profile.MergedProjectProfile(profiles)
 
     logger.info("[+] Refining profiles")
     for profile in profiles:
-        profile.refine_paths(project_profile.basefolder)
+        profile.refine_paths(proj_profile.basefolder)
 
     # logger.info("[+] Loading branch profiles")
-    # branch_profiles = fuzz_data_loader.load_all_branch_profiles(target_folder)
+    # branch_profiles = data_loader.load_all_branch_profiles(target_folder)
     # if len(branch_profiles) == 0:
     #     logger.info("[X][X] Found no branch profiles!")
 
     # Overlay coverage in each profile
     for profile in profiles:
-        fuzz_analysis.overlay_calltree_with_coverage(
+        analysis.overlay_calltree_with_coverage(
             profile,
-            project_profile,
+            proj_profile,
             coverage_url,
-            project_profile.basefolder
+            proj_profile.basefolder
         )
 
     logger.info(f"Analyses to run: {str(analyses_to_run)}")
 
     logger.info("[+] Creating HTML report")
-    fuzz_html.create_html_report(
+    html_report.create_html_report(
         profiles,
-        project_profile,
+        proj_profile,
         analyses_to_run,
         coverage_url,
-        project_profile.basefolder,
+        proj_profile.basefolder,
         report_name
     )
-    return fuzz_constants.APP_EXIT_SUCCESS
+    return constants.APP_EXIT_SUCCESS
 
 
 def get_cmdline_parser() -> argparse.ArgumentParser:
@@ -218,7 +219,7 @@ def main() -> int:
     elif args.command == 'correlate':
         return_code = correlate_binaries_to_logs(args.binaries_dir)
     else:
-        return_code = fuzz_constants.APP_EXIT_ERROR
+        return_code = constants.APP_EXIT_ERROR
     logger.info("Ending fuzz introspector post-processing")
     sys.exit(return_code)
 

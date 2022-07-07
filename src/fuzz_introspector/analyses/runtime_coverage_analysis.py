@@ -20,16 +20,16 @@ from typing import (
     Tuple,
 )
 
-import fuzz_analysis
-import fuzz_constants
-import fuzz_data_loader
-import fuzz_html_helpers
-import fuzz_utils
+from fuzz_introspector import analysis
+from fuzz_introspector import constants
+from fuzz_introspector import html_helpers
+from fuzz_introspector import utils
+from fuzz_introspector.datatypes import project_profile, fuzzer_profile
 
 logger = logging.getLogger(name=__name__)
 
 
-class FuzzRuntimeCoverageAnalysis(fuzz_analysis.AnalysisInterface):
+class FuzzRuntimeCoverageAnalysis(analysis.AnalysisInterface):
     def __init__(self) -> None:
         self.name = "RuntimeCoverageAnalysis"
 
@@ -37,8 +37,8 @@ class FuzzRuntimeCoverageAnalysis(fuzz_analysis.AnalysisInterface):
         self,
         toc_list: List[Tuple[str, str, int]],
         tables: List[str],
-        project_profile: fuzz_data_loader.MergedProjectProfile,
-        profiles: List[fuzz_data_loader.FuzzerProfile],
+        proj_profile: project_profile.MergedProjectProfile,
+        profiles: List[fuzzer_profile.FuzzerProfile],
         basefolder: str,
         coverage_url: str,
         conclusions: List[Tuple[int, str]]
@@ -47,14 +47,14 @@ class FuzzRuntimeCoverageAnalysis(fuzz_analysis.AnalysisInterface):
 
         functions_of_interest = self.get_low_cov_high_line_funcs(
             profiles,
-            project_profile,
+            proj_profile,
             min_total_lines=30,
             max_hit_proportion=55
         )
 
         html_string = ""
         html_string += "<div class=\"report-box\">"
-        html_string += fuzz_html_helpers.html_add_header_with_link(
+        html_string += html_helpers.html_add_header_with_link(
             "Runtime coverage analysis",
             1,
             toc_list
@@ -64,13 +64,13 @@ class FuzzRuntimeCoverageAnalysis(fuzz_analysis.AnalysisInterface):
         html_string += (
             f"<p>For futher technical details on how this section is generated, please "
             f"see the "
-            f"<a href=\"{fuzz_constants.GIT_BRANCH_URL}/doc/Glossary.md#runtime"
+            f"<a href=\"{constants.GIT_BRANCH_URL}/doc/Glossary.md#runtime"
             f"-coverage-analysis\">Glossary</a>.</p>"
         )
-        html_string += fuzz_html_helpers.html_add_header_with_link(
+        html_string += html_helpers.html_add_header_with_link(
             "Complex functions with low coverage", 3, toc_list)
         tables.append(f"myTable{len(tables)}")
-        html_string += fuzz_html_helpers.html_create_table_head(
+        html_string += html_helpers.html_create_table_head(
             tables[-1],
             [
                 ("Func name", ""),
@@ -83,17 +83,17 @@ class FuzzRuntimeCoverageAnalysis(fuzz_analysis.AnalysisInterface):
 
         for funcname in functions_of_interest:
             logger.debug(f"Iterating the function {funcname}")
-            func_lines, hit_lines = project_profile.runtime_coverage.get_hit_summary(funcname)
+            func_lines, hit_lines = proj_profile.runtime_coverage.get_hit_summary(funcname)
 
             if func_lines is None or hit_lines is None:
                 continue
 
-            if funcname in project_profile.all_functions:
-                reached_by = str(project_profile.all_functions[funcname].reached_by_fuzzers)
+            if funcname in proj_profile.all_functions:
+                reached_by = str(proj_profile.all_functions[funcname].reached_by_fuzzers)
             else:
                 reached_by = ""
-            html_string += fuzz_html_helpers.html_table_add_row([
-                fuzz_utils.demangle_cpp_func(funcname),
+            html_string += html_helpers.html_table_add_row([
+                utils.demangle_cpp_func(funcname),
                 func_lines,
                 hit_lines,
                 "%.5s%%" % (str((hit_lines / func_lines) * 100.0)),
@@ -108,8 +108,8 @@ class FuzzRuntimeCoverageAnalysis(fuzz_analysis.AnalysisInterface):
 
     def get_low_cov_high_line_funcs(
         self,
-        profiles: List[fuzz_data_loader.FuzzerProfile],
-        merged_profile: fuzz_data_loader.MergedProjectProfile,
+        profiles: List[fuzzer_profile.FuzzerProfile],
+        merged_profile: project_profile.MergedProjectProfile,
         min_total_lines: int,
         max_hit_proportion: int
     ) -> List[str]:

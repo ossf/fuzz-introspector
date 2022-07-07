@@ -27,7 +27,7 @@ from typing import (
     Optional,
 )
 
-import fuzz_constants
+from fuzz_introspector import constants
 
 logger = logging.getLogger(name=__name__)
 
@@ -173,10 +173,10 @@ def write_to_summary_file(fuzzer: str, key: str, value: Any) -> None:
     key. If the fuzzer does not exist as top key in the summary file
     then it is created"""
 
-    if not os.path.isfile(fuzz_constants.SUMMARY_FILE):
+    if not os.path.isfile(constants.SUMMARY_FILE):
         json_data = dict()
     else:
-        json_fd = open(fuzz_constants.SUMMARY_FILE)
+        json_fd = open(constants.SUMMARY_FILE)
         json_data = json.load(json_fd)
         json_fd.close()
 
@@ -185,7 +185,7 @@ def write_to_summary_file(fuzzer: str, key: str, value: Any) -> None:
 
     json_data[fuzzer][key] = value
 
-    with open(fuzz_constants.SUMMARY_FILE, 'w') as json_file:
+    with open(constants.SUMMARY_FILE, 'w') as json_file:
         json.dump(json_data, json_file)
 
 

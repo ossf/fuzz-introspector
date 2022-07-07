@@ -22,18 +22,20 @@ from typing import (
     Tuple,
 )
 
-import fuzz_analysis
-import fuzz_constants
-import fuzz_data_loader
-import fuzz_html_helpers
-import fuzz_utils
-
-from analyses import fuzz_calltree_analysis
+from fuzz_introspector import analysis
+from fuzz_introspector import constants
+from fuzz_introspector import html_helpers
+from fuzz_introspector import utils
+from fuzz_introspector.analyses import calltree_analysis as cta
+from fuzz_introspector.datatypes import (
+    project_profile,
+    fuzzer_profile,
+)
 
 logger = logging.getLogger(name=__name__)
 
 
-class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
+class FuzzEngineInputAnalysis(analysis.AnalysisInterface):
     def __init__(self) -> None:
         self.name = "FuzzEngineInputAnalysis"
         self.display_html = False
@@ -42,8 +44,8 @@ class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
         self,
         toc_list: List[Tuple[str, str, int]],
         tables: List[str],
-        project_profile: fuzz_data_loader.MergedProjectProfile,
-        profiles: List[fuzz_data_loader.FuzzerProfile],
+        project_profile: project_profile.MergedProjectProfile,
+        profiles: List[fuzzer_profile.FuzzerProfile],
         basefolder: str,
         coverage_url: str,
         conclusions: List[Tuple[int, str]]
@@ -55,7 +57,7 @@ class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
 
         html_string = ""
         html_string += "<div class=\"report-box\">"
-        html_string += fuzz_html_helpers.html_add_header_with_link(
+        html_string += html_helpers.html_add_header_with_link(
             "Fuzz engine guidance",
             1,
             toc_list
@@ -67,7 +69,7 @@ class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
 
         for profile_idx in range(len(profiles)):
             logger.info(f"Generating input for {profiles[profile_idx].get_key()}")
-            html_string += fuzz_html_helpers.html_add_header_with_link(
+            html_string += html_helpers.html_add_header_with_link(
                 profiles[profile_idx].fuzzer_source_file,
                 2,
                 toc_list
@@ -95,7 +97,7 @@ class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
 
         return html_string
 
-    def get_dictionary(self, profile: fuzz_data_loader.FuzzerProfile) -> str:
+    def get_dictionary(self, profile: fuzzer_profile.FuzzerProfile) -> str:
         """Extracts a fuzzer dictionary"""
         kn = 0
         dictionary_content = ""
@@ -111,7 +113,7 @@ class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
 
     def get_dictionary_section(
         self,
-        profile: fuzz_data_loader.FuzzerProfile,
+        profile: fuzzer_profile.FuzzerProfile,
         toc_list: List[Tuple[str, str, int]]
     ) -> str:
         """
@@ -119,7 +121,7 @@ class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
         link to the toc_list.
         """
 
-        html_string = fuzz_html_helpers.html_add_header_with_link(
+        html_string = html_helpers.html_add_header_with_link(
             "Dictionary",
             3,
             toc_list
@@ -132,17 +134,17 @@ class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
 
     def get_fuzzer_focus_function_section(
         self,
-        profile: fuzz_data_loader.FuzzerProfile,
+        profile: fuzzer_profile.FuzzerProfile,
         toc_list: List[Tuple[str, str, int]]
     ) -> str:
         """Returns HTML string with fuzzer focus function"""
-        html_string = fuzz_html_helpers.html_add_header_with_link(
+        html_string = html_helpers.html_add_header_with_link(
             "Fuzzer function priority",
             3,
             toc_list
         )
 
-        calltree_analysis = fuzz_calltree_analysis.FuzzCalltreeAnalysis()
+        calltree_analysis = cta.FuzzCalltreeAnalysis()
         fuzz_blockers = calltree_analysis.get_fuzz_blockers(
             profile,
             max_blockers_to_extract=10
@@ -159,7 +161,7 @@ class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
             ffname = fuzz_blocker.src_function_name
             if ffname is not None and ffname not in focus_functions:
                 focus_functions.append(
-                    fuzz_utils.demangle_cpp_func(ffname)
+                    utils.demangle_cpp_func(ffname)
                 )
                 logger.info(f"Found focus function: {fuzz_blocker.src_function_name}")
 
@@ -167,7 +169,7 @@ class FuzzEngineInputAnalysis(fuzz_analysis.AnalysisInterface):
             return ""
 
         self.add_to_json_file(
-            fuzz_constants.ENGINE_INPUT_FILE,
+            constants.ENGINE_INPUT_FILE,
             profile.get_key(),
             "focus-functions",
             focus_functions

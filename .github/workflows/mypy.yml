@@ -17,4 +17,4 @@ jobs:
         pip install mypy types-PyYAML
     - name: mypy
       run: |
-        cd post-processing && mypy --ignore-missing-imports -m main
+        cd src && mypy --ignore-missing-imports -m main

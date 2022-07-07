@@ -22,23 +22,24 @@ from typing import (
     TypedDict,
 )
 
-import fuzz_analysis
-import fuzz_data_loader
-import fuzz_html_helpers
-
-from analyses import (
-    fuzz_optimal_targets
+from fuzz_introspector import analysis
+from fuzz_introspector import html_helpers
+from fuzz_introspector.datatypes import (
+    project_profile,
+    fuzzer_profile,
+    function_profile
 )
+from fuzz_introspector.analyses import optimal_targets
 
 logger = logging.getLogger(name=__name__)
 
 TargetCodesType = TypedDict('TargetCodesType', {
     'source_code': str,
-    'target_fds': List[fuzz_data_loader.FunctionProfile]
+    'target_fds': List[function_profile.FunctionProfile]
 })
 
 
-class FuzzDriverSynthesizerAnalysis(fuzz_analysis.AnalysisInterface):
+class FuzzDriverSynthesizerAnalysis(analysis.AnalysisInterface):
     def __init__(self) -> None:
         self.name = "FuzzDriverSynthesizerAnalysis"
 
@@ -46,8 +47,8 @@ class FuzzDriverSynthesizerAnalysis(fuzz_analysis.AnalysisInterface):
         self,
         toc_list: List[Tuple[str, str, int]],
         tables: List[str],
-        project_profile: fuzz_data_loader.MergedProjectProfile,
-        profiles: List[fuzz_data_loader.FuzzerProfile],
+        proj_profile: project_profile.MergedProjectProfile,
+        profiles: List[fuzzer_profile.FuzzerProfile],
         basefolder: str,
         coverage_url: str,
         conclusions: List[Tuple[int, str]],
@@ -56,7 +57,7 @@ class FuzzDriverSynthesizerAnalysis(fuzz_analysis.AnalysisInterface):
         logger.info(f" - Running analysis {self.name}")
         html_string = ""
         html_string += "<div class=\"report-box\">"
-        html_string += fuzz_html_helpers.html_add_header_with_link(
+        html_string += html_helpers.html_add_header_with_link(
             "Fuzz driver synthesis",
             1,
             toc_list
@@ -64,10 +65,10 @@ class FuzzDriverSynthesizerAnalysis(fuzz_analysis.AnalysisInterface):
         html_string += "<div class=\"collapsible\">"
 
         if fuzz_targets is None or len(fuzz_targets) == 0:
-            A1 = fuzz_optimal_targets.FuzzOptimalTargetAnalysis()
+            A1 = optimal_targets.FuzzOptimalTargetAnalysis()
 
             _, optimal_target_functions = A1.iteratively_get_optimal_targets(
-                project_profile
+                proj_profile
             )
             fuzz_targets = optimal_target_functions
 
@@ -150,12 +151,12 @@ class FuzzDriverSynthesizerAnalysis(fuzz_analysis.AnalysisInterface):
             str([f.function_name for f in fuzz_targets])))
 
         # Create the necessary HTML code for displaying the fuzz drivers
-        html_string += fuzz_html_helpers.html_add_header_with_link("New fuzzers", 3, toc_list)
+        html_string += html_helpers.html_add_header_with_link("New fuzzers", 3, toc_list)
         html_string += "<p>The below fuzzers are templates and suggestions for how " \
                        "to target the set of optimal functions above</p>"
 
         for filename in final_fuzzers:
-            html_string += fuzz_html_helpers.html_add_header_with_link(
+            html_string += html_helpers.html_add_header_with_link(
                 str(filename.split("/")[-1]),
                 4,
                 toc_list

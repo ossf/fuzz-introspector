@@ -18,8 +18,8 @@
 # This script should be run from the fuzz-introspector/oss_fuzz_integration folder
 
 # Copy over new post-processing
-rm -rf ./oss-fuzz/infra/base-images/base-builder/post-processing
-cp -rf ../post-processing ./oss-fuzz/infra/base-images/base-builder/post-processing
+rm -rf ./oss-fuzz/infra/base-images/base-builder/src
+cp -rf ../src ./oss-fuzz/infra/base-images/base-builder/src
 
 rm -rf ./oss-fuzz/infra/base-images/base-builder/frontends
 cp -rf ../frontends/ ./oss-fuzz/infra/base-images/base-builder/frontends

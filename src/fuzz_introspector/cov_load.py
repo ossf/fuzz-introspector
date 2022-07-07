@@ -17,7 +17,6 @@ Module for loading coverage files and parsing them into something we can use in 
 At the moment only C/C++ is supported. Other languages coming up soon.
 """
 
-import fuzz_utils
 import logging
 
 from typing import (
@@ -26,6 +25,8 @@ from typing import (
     Optional,
     Tuple,
 )
+
+from fuzz_introspector import utils
 
 logger = logging.getLogger(name=__name__)
 logger.setLevel(logging.INFO)
@@ -130,10 +131,10 @@ class CoverageProfile:
         fuzz_key = None
         if funcname in self.covmap:
             fuzz_key = funcname
-        elif fuzz_utils.demangle_cpp_func(funcname) in self.covmap:
-            fuzz_key = fuzz_utils.demangle_cpp_func(funcname)
-        elif fuzz_utils.normalise_str(funcname) in self.covmap:
-            fuzz_key = fuzz_utils.normalise_str(funcname)
+        elif utils.demangle_cpp_func(funcname) in self.covmap:
+            fuzz_key = utils.demangle_cpp_func(funcname)
+        elif utils.normalise_str(funcname) in self.covmap:
+            fuzz_key = utils.normalise_str(funcname)
 
         if fuzz_key is None or fuzz_key not in self.covmap:
             return []
@@ -147,8 +148,8 @@ class CoverageProfile:
         fuzz_key = None
         if funcname in self.covmap:
             fuzz_key = funcname
-        elif fuzz_utils.demangle_cpp_func(funcname) in self.covmap:
-            fuzz_key = fuzz_utils.demangle_cpp_func(funcname)
+        elif utils.demangle_cpp_func(funcname) in self.covmap:
+            fuzz_key = utils.demangle_cpp_func(funcname)
 
         if fuzz_key is None:
             return None, None
@@ -181,7 +182,7 @@ def llvm_cov_load(
     that given name then the function will find *all* coverage reports it can and
     use all of them.
     """
-    coverage_reports = fuzz_utils.get_all_files_in_tree_with_regex(target_dir, ".*\.covreport$")
+    coverage_reports = utils.get_all_files_in_tree_with_regex(target_dir, ".*\.covreport$")
     logger.info(f"Found {len(coverage_reports)} coverage reports")
 
     # Check if there is a meaningful profile and if not, we need to use all.
@@ -203,7 +204,7 @@ def llvm_cov_load(
             cp.covreports.append(profile_file)
             curr_func = None
             for raw_line in pf:
-                line = fuzz_utils.safe_decode(raw_line)
+                line = utils.safe_decode(raw_line)
                 if line is None:
                     continue
 
@@ -220,7 +221,7 @@ def llvm_cov_load(
                         curr_func = line.split(":")[1].replace(" ", "").replace(":", "")
                     else:
                         curr_func = line.replace(" ", "").replace(":", "")
-                    curr_func = fuzz_utils.demangle_cpp_func(curr_func)
+                    curr_func = utils.demangle_cpp_func(curr_func)
                     cp.covmap[curr_func] = list()
                 # This parses Branch cov info in the form of:
                 #  |  Branch (81:7): [True: 1.2k, False: 0]
@@ -293,7 +294,7 @@ def load_python_json_cov(
     cp = CoverageProfile()
     cp.set_type("file")
 
-    coverage_reports = fuzz_utils.get_all_files_in_tree_with_regex(json_file, ".*all_cov.json$")
+    coverage_reports = utils.get_all_files_in_tree_with_regex(json_file, ".*all_cov.json$")
     logger.info(f"FOUND JSON FILES: {str(coverage_reports)}")
 
     if len(coverage_reports) > 0:

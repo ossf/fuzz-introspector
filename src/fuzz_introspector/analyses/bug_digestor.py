@@ -20,14 +20,15 @@ from typing import (
     Tuple,
 )
 
-import fuzz_analysis
-import fuzz_data_loader
-import fuzz_html_helpers
+from fuzz_introspector import analysis
+from fuzz_introspector import data_loader
+from fuzz_introspector import html_helpers
+from fuzz_introspector.datatypes import project_profile, fuzzer_profile
 
 logger = logging.getLogger(name=__name__)
 
 
-class FuzzBugDigestorAnalysis(fuzz_analysis.AnalysisInterface):
+class FuzzBugDigestorAnalysis(analysis.AnalysisInterface):
     def __init__(self) -> None:
         self.name = "BugDigestorAnalysis"
         self.display_html = False
@@ -36,20 +37,20 @@ class FuzzBugDigestorAnalysis(fuzz_analysis.AnalysisInterface):
         self,
         toc_list: List[Tuple[str, str, int]],
         tables: List[str],
-        project_profile: fuzz_data_loader.MergedProjectProfile,
-        profiles: List[fuzz_data_loader.FuzzerProfile],
+        proj_profile: project_profile.MergedProjectProfile,
+        profiles: List[fuzzer_profile.FuzzerProfile],
         basefolder: str,
         coverage_url: str,
         conclusions: List[Tuple[int, str]]
     ) -> str:
         logger.info(f" - Running analysis {self.name}")
-        input_bugs = fuzz_data_loader.try_load_input_bugs()
+        input_bugs = data_loader.try_load_input_bugs()
         if len(input_bugs) == 0:
             return ""
 
         html_string = ""
         html_string += "<div class=\"report-box\">"
-        html_string += fuzz_html_helpers.html_add_header_with_link(
+        html_string += html_helpers.html_add_header_with_link(
             "Bug detector analysis",
             1,
             toc_list
@@ -65,7 +66,7 @@ class FuzzBugDigestorAnalysis(fuzz_analysis.AnalysisInterface):
 
         # Create table header
         tables.append(f"myTable{len(tables)}")
-        html_string += fuzz_html_helpers.html_create_table_head(
+        html_string += html_helpers.html_create_table_head(
             tables[-1],
             [
                 ("Bug type", "The type of bug."),
@@ -74,7 +75,7 @@ class FuzzBugDigestorAnalysis(fuzz_analysis.AnalysisInterface):
         )
         for bug in input_bugs:
             logger.info("Adding row in input bugs table")
-            html_string += fuzz_html_helpers.html_table_add_row(
+            html_string += html_helpers.html_table_add_row(
                 [
                     bug.bug_type,
                     bug.function_name

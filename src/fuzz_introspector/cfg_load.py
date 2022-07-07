@@ -20,7 +20,7 @@ from typing import (
     Optional
 )
 
-from exceptions import CalltreeError
+from fuzz_introspector.exceptions import CalltreeError
 
 logger = logging.getLogger(name=__name__)
 

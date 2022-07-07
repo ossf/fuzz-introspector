@@ -18,19 +18,23 @@ import abc
 import logging
 import os
 
+from enum import Enum
+
 from typing import (
     Dict,
     List,
     Tuple,
 )
 
-import fuzz_utils
-import fuzz_cfg_load
-import fuzz_data_loader
-import fuzz_cov_load
-from enum import Enum
-
-from exceptions import AnalysisError
+from fuzz_introspector import utils
+from fuzz_introspector import cfg_load
+from fuzz_introspector import cov_load
+from fuzz_introspector.datatypes import (
+    project_profile,
+    fuzzer_profile,
+    function_profile
+)
+from fuzz_introspector.exceptions import AnalysisError
 
 logger = logging.getLogger(name=__name__)
 logger.setLevel(logging.INFO)
@@ -44,8 +48,8 @@ class AnalysisInterface(abc.ABC):
         self,
         toc_list: List[Tuple[str, str, int]],
         tables: List[str],
-        project_profile: fuzz_data_loader.MergedProjectProfile,
-        profiles: List[fuzz_data_loader.FuzzerProfile],
+        proj_profile: project_profile.MergedProjectProfile,
+        profiles: List[fuzzer_profile.FuzzerProfile],
         basefolder: str,
         coverage_url: str,
         conclusions: List[Tuple[int, str]]
@@ -74,29 +78,29 @@ class FuzzBranchBlocker:
 
 def get_all_analyses() -> List[AnalysisInterface]:
     # Ordering here is important as top analysis will be shown first in the report
-    from analyses import (
-        fuzz_driver_synthesizer,
-        fuzz_engine_input,
-        fuzz_optimal_targets,
-        fuzz_runtime_coverage_analysis,
-        fuzz_bug_digestor,
-        fuzz_filepath_analyser
+    from fuzz_introspector.analyses import (
+        driver_synthesizer,
+        engine_input,
+        optimal_targets,
+        runtime_coverage_analysis,
+        bug_digestor,
+        filepath_analyser
     )
 
     analysis_array = [
-        fuzz_optimal_targets.FuzzOptimalTargetAnalysis(),
-        fuzz_engine_input.FuzzEngineInputAnalysis(),
-        fuzz_runtime_coverage_analysis.FuzzRuntimeCoverageAnalysis(),
-        fuzz_driver_synthesizer.FuzzDriverSynthesizerAnalysis(),
-        fuzz_bug_digestor.FuzzBugDigestorAnalysis(),
-        fuzz_filepath_analyser.FuzzFilepathAnalyser()
+        optimal_targets.FuzzOptimalTargetAnalysis(),
+        engine_input.FuzzEngineInputAnalysis(),
+        runtime_coverage_analysis.FuzzRuntimeCoverageAnalysis(),
+        driver_synthesizer.FuzzDriverSynthesizerAnalysis(),
+        bug_digestor.FuzzBugDigestorAnalysis(),
+        filepath_analyser.FuzzFilepathAnalyser()
     ]
     return analysis_array
 
 
 def overlay_calltree_with_coverage(
-        profile: fuzz_data_loader.FuzzerProfile,
-        project_profile: fuzz_data_loader.MergedProjectProfile,
+        profile: fuzzer_profile.FuzzerProfile,
+        proj_profile: project_profile.MergedProjectProfile,
         coverage_url: str,
         basefolder: str) -> None:
     # We use the callstack to keep track of all function parents. We need this
@@ -109,19 +113,19 @@ def overlay_calltree_with_coverage(
         return
 
     def callstack_get_parent(
-        n: fuzz_cfg_load.CalltreeCallsite,
+        n: cfg_load.CalltreeCallsite,
         c: Dict[int, str]
     ) -> str:
         return c[int(n.depth) - 1]
 
     def callstack_has_parent(
-        n: fuzz_cfg_load.CalltreeCallsite,
+        n: cfg_load.CalltreeCallsite,
         c: Dict[int, str]
     ) -> bool:
         return int(n.depth) - 1 in c
 
     def callstack_set_curr_node(
-        n: fuzz_cfg_load.CalltreeCallsite,
+        n: cfg_load.CalltreeCallsite,
         name: str,
         c: Dict[int, str]
     ) -> None:
@@ -133,18 +137,18 @@ def overlay_calltree_with_coverage(
         return
 
     target_name = profile.get_key()
-    target_coverage_url = fuzz_utils.get_target_coverage_url(
+    target_coverage_url = utils.get_target_coverage_url(
         coverage_url,
         target_name,
         profile.target_lang
     )
     logger.info(f"Using coverage url: {target_coverage_url}")
 
-    for node in fuzz_cfg_load.extract_all_callsites(profile.function_call_depths):
+    for node in cfg_load.extract_all_callsites(profile.function_call_depths):
         node.cov_ct_idx = ct_idx
         ct_idx += 1
 
-        demangled_name = fuzz_utils.demangle_cpp_func(node.dst_function_name)
+        demangled_name = utils.demangle_cpp_func(node.dst_function_name)
 
         # Add to callstack
         callstack_set_curr_node(node, demangled_name, callstack)
@@ -244,7 +248,7 @@ def overlay_calltree_with_coverage(
         if callstack_has_parent(node, callstack):
             parent_fname = callstack_get_parent(node, callstack)
             for fd_k, fd in profile.all_class_functions.items():
-                if fuzz_utils.demangle_cpp_func(fd.function_name) == parent_fname:
+                if utils.demangle_cpp_func(fd.function_name) == parent_fname:
                     callsite_link = profile.resolve_coverage_link(
                         target_coverage_url,
                         fd.function_source_file,
@@ -255,7 +259,7 @@ def overlay_calltree_with_coverage(
         node.cov_callsite_link = callsite_link
 
     # Extract data about which nodes unlocks data
-    all_callsites = fuzz_cfg_load.extract_all_callsites(profile.function_call_depths)
+    all_callsites = cfg_load.extract_all_callsites(profile.function_call_depths)
     prev_end = -1
     for idx1 in range(len(all_callsites)):
         n1 = all_callsites[idx1]
@@ -284,9 +288,9 @@ def overlay_calltree_with_coverage(
             if n2.cov_hitcount != 0:
                 break
 
-            for fd_k, fd in project_profile.all_functions.items():
+            for fd_k, fd in proj_profile.all_functions.items():
                 if (
-                    fuzz_utils.demangle_cpp_func(fd.function_name) == n2.dst_function_name
+                    utils.demangle_cpp_func(fd.function_name) == n2.dst_function_name
                     and fd.total_cyclomatic_complexity > largest_blocked_count
                 ):
                     largest_blocked_count = fd.total_cyclomatic_complexity
@@ -318,11 +322,11 @@ def overlay_calltree_with_coverage(
                 'function_name': br_blocker.function_name
             }
         )
-    fuzz_utils.write_to_summary_file(profile.get_key(), 'branch_blockers', branch_blockers_list)
+    utils.write_to_summary_file(profile.get_key(), 'branch_blockers', branch_blockers_list)
 
 
-def update_branch_complexities(all_functions: Dict[str, fuzz_data_loader.FunctionProfile],
-                               coverage: fuzz_cov_load.CoverageProfile) -> None:
+def update_branch_complexities(all_functions: Dict[str, function_profile.FunctionProfile],
+                               coverage: cov_load.CoverageProfile) -> None:
     """
     Traverse every branch profile and update the side complexities based on reached funcs
     complexity.
@@ -353,7 +357,7 @@ def update_branch_complexities(all_functions: Dict[str, fuzz_data_loader.Functio
 
 
 def detect_branch_level_blockers(
-    fuzz_profile: fuzz_data_loader.FuzzerProfile
+    fuzz_profile: fuzzer_profile.FuzzerProfile
 ) -> List[FuzzBranchBlocker]:
     fuzz_blockers = []
 

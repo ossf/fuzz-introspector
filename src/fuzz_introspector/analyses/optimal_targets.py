@@ -23,16 +23,21 @@ from typing import (
     Tuple,
 )
 
-import fuzz_analysis
-import fuzz_data_loader
-import fuzz_html
-import fuzz_html_helpers
-import fuzz_utils
+from fuzz_introspector import analysis
+from fuzz_introspector import data_loader
+from fuzz_introspector import html_report
+from fuzz_introspector import html_helpers
+from fuzz_introspector import utils
+from fuzz_introspector.datatypes import (
+    project_profile,
+    fuzzer_profile,
+    function_profile
+)
 
 logger = logging.getLogger(name=__name__)
 
 
-class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
+class FuzzOptimalTargetAnalysis(analysis.AnalysisInterface):
     def __init__(self) -> None:
         self.name = "OptimalTargets"
 
@@ -40,8 +45,8 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
         self,
         toc_list: List[Tuple[str, str, int]],
         tables: List[str],
-        project_profile: fuzz_data_loader.MergedProjectProfile,
-        profiles: List[fuzz_data_loader.FuzzerProfile],
+        proj_profile: project_profile.MergedProjectProfile,
+        profiles: List[fuzzer_profile.FuzzerProfile],
         basefolder: str,
         coverage_url: str,
         conclusions: List[Tuple[int, str]],
@@ -62,12 +67,12 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
         logger.info(f" - Running analysis {self.name}")
 
         html_string = ""
-        html_string += fuzz_html_helpers.html_add_header_with_link(
+        html_string += html_helpers.html_add_header_with_link(
             "Optimal target analysis", 2, toc_list)
 
         # Create optimal target section
         new_profile, optimal_target_functions = self.iteratively_get_optimal_targets(
-            project_profile
+            proj_profile
         )
         html_string += self.get_optimal_target_section(
             optimal_target_functions,
@@ -91,7 +96,7 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
         html_string += "</div>"  # .collapsible
         return html_string
 
-    def qualifies_as_optimal_target(self, fd: fuzz_data_loader.FunctionProfile) -> bool:
+    def qualifies_as_optimal_target(self, fd: function_profile.FunctionProfile) -> bool:
         """
         Hard conditions for whether a target qualifies as a potential
         optimal target. These are minimum conditions, i.e. the analysis
@@ -124,8 +129,8 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
 
     def analysis_get_optimal_targets(
         self,
-        merged_profile: fuzz_data_loader.MergedProjectProfile
-    ) -> List[fuzz_data_loader.FunctionProfile]:
+        merged_profile: project_profile.MergedProjectProfile
+    ) -> List[function_profile.FunctionProfile]:
         """
         Finds the top reachable functions with minimum overlap.
         Each of these functions is not be reachable by another function
@@ -133,7 +138,7 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
         """
         logger.info("    - in analysis_get_optimal_targets")
 
-        target_fds: List[fuzz_data_loader.FunctionProfile] = list()
+        target_fds: List[function_profile.FunctionProfile] = list()
         for fd in merged_profile.all_functions.values():
             if not self.qualifies_as_optimal_target(fd):
                 continue
@@ -143,10 +148,10 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
 
     def iteratively_get_optimal_targets(
         self,
-        merged_profile: fuzz_data_loader.MergedProjectProfile
+        merged_profile: project_profile.MergedProjectProfile
     ) -> Tuple[
-        fuzz_data_loader.MergedProjectProfile,
-        List[fuzz_data_loader.FunctionProfile]
+        project_profile.MergedProjectProfile,
+        List[function_profile.FunctionProfile]
     ]:
         '''
         Function for synthesizing fuzz targets. The way this one works is by finding
@@ -158,7 +163,7 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
         '''
         logger.info("  - in iteratively_get_optimal_targets")
         new_merged_profile = copy.deepcopy(merged_profile)
-        optimal_functions_targeted: List[fuzz_data_loader.FunctionProfile] = []
+        optimal_functions_targeted: List[function_profile.FunctionProfile] = []
 
         # Extract all candidates
         target_fds = self.analysis_get_optimal_targets(merged_profile)
@@ -192,7 +197,7 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
             optimal_func = sorted_by_undiscovered_complexity[0]
             optimal_functions_targeted.append(optimal_func)
 
-            new_merged_profile = fuzz_data_loader.add_func_to_reached_and_clone(
+            new_merged_profile = data_loader.add_func_to_reached_and_clone(
                 new_merged_profile,
                 optimal_func
             )
@@ -209,13 +214,13 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
 
     def get_optimal_target_section(
         self,
-        optimal_target_functions: List[fuzz_data_loader.FunctionProfile],
+        optimal_target_functions: List[function_profile.FunctionProfile],
         toc_list: List[Tuple[str, str, int]],
         tables: List[str],
         coverage_url: str
     ) -> str:
         # Table with details about optimal target functions
-        html_string = fuzz_html_helpers.html_add_header_with_link(
+        html_string = html_helpers.html_add_header_with_link(
             "Remaining optimal interesting functions",
             3,
             toc_list
@@ -226,7 +231,7 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
                        "code coverage. </p>"
         table_id = "remaining_optimal_interesting_functions"
         tables.append(table_id)
-        html_string += fuzz_html_helpers.html_create_table_head(
+        html_string += html_helpers.html_create_table_head(
             table_id,
             [
                 ("Func name", ""),
@@ -252,10 +257,10 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
             )
             html_func_row = (
                 f"<a href=\"{ func_cov_url }\"><code class='language-clike'>"
-                f"{fuzz_utils.demangle_cpp_func(fd.function_name)}"
+                f"{utils.demangle_cpp_func(fd.function_name)}"
                 f"</code></a>"
             )
-            html_string += fuzz_html_helpers.html_table_add_row(
+            html_string += html_helpers.html_table_add_row(
                 [
                     html_func_row,
                     fd.function_source_file,
@@ -277,7 +282,7 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
 
     def get_consequential_section(
         self,
-        new_profile: fuzz_data_loader.MergedProjectProfile,
+        new_profile: project_profile.MergedProjectProfile,
         conclusions: List[Tuple[int, str]],
         tables: List[str],
         toc_list: List[Tuple[str, str, int]],
@@ -290,7 +295,7 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
             "will improve reachability such that it becomes:</p>"
         )
         tables.append(f"myTable{len(tables)}")
-        html_string += fuzz_html.create_top_summary_info(
+        html_string += html_report.create_top_summary_info(
             tables,
             new_profile,
             conclusions,
@@ -299,13 +304,13 @@ class FuzzOptimalTargetAnalysis(fuzz_analysis.AnalysisInterface):
 
         # Table with details about all functions in the project in case the
         # suggested fuzzers are implemented.
-        html_string += fuzz_html_helpers.html_add_header_with_link(
+        html_string += html_helpers.html_add_header_with_link(
             "All functions overview", 4, toc_list)
         html_string += "<p> If you implement fuzzers for these functions, the status of all " \
                        "functions in the project will be:</p>"
         table_id = "all_functions_overview_table"
         tables.append(table_id)
-        all_function_table, all_functions_json = fuzz_html.create_all_function_table(
+        all_function_table, all_functions_json = html_report.create_all_function_table(
             tables, new_profile, coverage_url, basefolder, table_id)
         html_string += all_function_table
         html_string += "</div>"  # close report-box
