@@ -109,29 +109,45 @@ def demangle_cpp_func(funcname: str) -> str:
         return funcname
 
 
-# fuzzer files can only have a name using limited characters
 def scan_executables_for_fuzz_introspector_logs(
     exec_dir: str
 ) -> List[Dict[str, str]]:
-    regex = '[%s]{%d,}' % (r"A-Za-z0-9_-", 10)
-    fuzzer_log_file_pattern = re.compile(regex)
+    """Finds all executables containing fuzzerLogFile string
+
+    Args:
+        exec_dir: Directory in which to search for executables.
+
+    Returns:
+        A list of dictionaries where each dictionary contains data about
+        an executable that contains fuzzerLogFile string.
+    """
     if not os.path.isdir(exec_dir):
         return []
-    executable_to_fuzz_reports = []
+
+    # Find all executables
+    executable_files = []
     for f in os.listdir(exec_dir):
         full_path = os.path.join(exec_dir, f)
         if os.access(full_path, os.X_OK) and os.path.isfile(full_path):
             logger.info("File: %s is executable" % full_path)
-            # Read all of the strings in this file
-            with open(full_path, "rb") as fp:
-                all_ascii_data = fp.read().decode('ascii', 'ignore')
-                for found_str in fuzzer_log_file_pattern.findall(all_ascii_data):
-                    if "fuzzerLogFile" in found_str:
-                        logger.info("Found match %s" % found_str)
-                        executable_to_fuzz_reports.append({
-                            'executable_path': full_path,
-                            'fuzzer_log_file': found_str
-                        })
+            executable_files.append(full_path)
+
+    # Filter all executables containing "fuzzerLogFile" string
+    executable_to_fuzz_reports = []
+    text_pattern = re.compile("[A-Za-z0-9_-]{10,}")
+    for executable_path in executable_files:
+        with open(executable_path, "rb") as fp:
+            all_ascii_data = fp.read().decode('ascii', 'ignore')
+
+        # Check if file contains fuzzerLogFile string
+        for found_str in text_pattern.findall(all_ascii_data):
+            if "fuzzerLogFile" not in found_str:
+                continue
+            logger.info("Found match %s" % found_str)
+            executable_to_fuzz_reports.append({
+                'executable_path': executable_path,
+                'fuzzer_log_file': found_str
+            })
     return executable_to_fuzz_reports
 
 
