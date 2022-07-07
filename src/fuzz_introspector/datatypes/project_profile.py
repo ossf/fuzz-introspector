@@ -170,17 +170,6 @@ class MergedProjectProfile:
             all_covered_functions.append(funcname)
         return all_covered_functions
 
-    def get_function_reach_percentage(self) -> float:
-        total_functions = (
-            float(self.get_total_unreached_function_count()
-                  + self.get_total_reached_function_count())
-        )
-        reached_percentage = (
-            float(self.get_total_reached_function_count() / total_functions)
-            * 100.0
-        )
-        return reached_percentage
-
     def get_function_summaries(self) -> Tuple[int, int, int, float, float]:
         reached_func_count = self.get_total_reached_function_count()
         unreached_func_count = self.get_total_unreached_function_count()
