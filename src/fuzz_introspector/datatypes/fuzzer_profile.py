@@ -326,7 +326,7 @@ class FuzzerProfile:
             fd = self.all_class_functions[func]
             self.total_cyclomatic_complexity += fd.cyclomatic_complexity
 
-    def _set_function_list(self, frontend_yaml: Dict[Any, Any]) ->  None:
+    def _set_function_list(self, frontend_yaml: Dict[Any, Any]) -> None:
         """Read all function field from yaml data dictionary into
         instances of FunctionProfile
         """
