@@ -258,6 +258,7 @@ class FuzzerProfile:
                 "file-target-count": file_target_count,
             }
         )
+
     def _set_all_reached_functions(self) -> None:
         """Sets self.functions_reached_by_fuzzer to all functions reached by
         the fuzzer. This is based on identifying all functions reached by the

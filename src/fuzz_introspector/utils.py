@@ -124,7 +124,6 @@ def scan_executables_for_fuzz_introspector_logs(
     if not os.path.isdir(exec_dir):
         return []
 
-
     # Find all executables
     executable_files = []
     for f in os.listdir(exec_dir):
