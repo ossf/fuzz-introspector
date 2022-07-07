@@ -50,9 +50,9 @@ class FuzzerProfile:
     ) -> None:
         # Defaults
         self.binary_executable: str = ""
-        self.all_class_functions = dict()
         self.file_targets: Dict[str, Set[str]] = dict()
         self.coverage: Optional[cov_load.CoverageProfile] = None
+        self.all_class_functions: Dict[str, function_profile.FunctionProfile] = dict()
 
         self.target_lang = target_lang
         self.introspector_data_file = cfg_file
