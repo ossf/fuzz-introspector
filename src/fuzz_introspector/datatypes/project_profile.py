@@ -137,32 +137,8 @@ class MergedProjectProfile:
                     self.runtime_coverage.covmap[func_name] = new_line_counts
             # TODO (navidem): will need to merge branch coverages (branch_cov_map) if we need to
             # identify blockers based on all fuzz targets coverage
-        self.set_basefolder()
+        self._set_basefolder()
         logger.info("Completed creationg of merged profile")
-
-    def get_total_complexity(self) -> Tuple[int, int]:
-        reached_complexity = 0
-        unreached_complexity = 0
-        for fd in self.all_functions.values():
-            if fd.hitcount == 0:
-                unreached_complexity += fd.cyclomatic_complexity
-            else:
-                reached_complexity += fd.cyclomatic_complexity
-        return reached_complexity, unreached_complexity
-
-    def get_total_unreached_function_count(self) -> int:
-        unreached_function_count = 0
-        for fd in self.all_functions.values():
-            if fd.hitcount == 0:
-                unreached_function_count += 1
-        return unreached_function_count
-
-    def get_total_reached_function_count(self) -> int:
-        reached_function_count = 0
-        for fd in self.all_functions.values():
-            if fd.hitcount != 0:
-                reached_function_count += 1
-        return reached_function_count
 
     def get_all_runtime_covered_functions(self) -> List[str]:
         all_covered_functions = []
@@ -170,20 +146,9 @@ class MergedProjectProfile:
             all_covered_functions.append(funcname)
         return all_covered_functions
 
-    def get_function_reach_percentage(self) -> float:
-        total_functions = (
-            float(self.get_total_unreached_function_count()
-                  + self.get_total_reached_function_count())
-        )
-        reached_percentage = (
-            float(self.get_total_reached_function_count() / total_functions)
-            * 100.0
-        )
-        return reached_percentage
-
     def get_function_summaries(self) -> Tuple[int, int, int, float, float]:
-        reached_func_count = self.get_total_reached_function_count()
-        unreached_func_count = self.get_total_unreached_function_count()
+        reached_func_count = self._get_total_reached_function_count()
+        unreached_func_count = self._get_total_unreached_function_count()
         total_functions = reached_func_count + unreached_func_count
         reached_percentage = (float(reached_func_count) / float(total_functions)) * 100
         unreached_percentage = (float(unreached_func_count) / float(total_functions)) * 100
@@ -196,7 +161,7 @@ class MergedProjectProfile:
         )
 
     def get_complexity_summaries(self) -> Tuple[int, int, int, float, float]:
-        complexity_reached, complexity_unreached = self.get_total_complexity()
+        complexity_reached, complexity_unreached = self._get_total_complexity()
         total_complexity = complexity_unreached + complexity_reached
 
         try:
@@ -239,11 +204,10 @@ class MergedProjectProfile:
             }
         )
 
-    def set_basefolder(self) -> None:
-        """
-        Identifies a common path-prefix amongst source files in
-        This is used to remove locations within a host system to
-        essentially make paths as if they were from the root of the source code project.
+    def _set_basefolder(self) -> None:
+        """Identifies a common path-prefix amongst source files in. This is
+        used to remove locations within a host system to essentially make
+        paths as if they were from the root of the source code project.
         """
         all_strs = []
         for f in self.all_functions.values():
@@ -254,3 +218,27 @@ class MergedProjectProfile:
             all_strs.append(f.function_source_file)
 
         self.basefolder = utils.longest_common_prefix(all_strs)
+
+    def _get_total_unreached_function_count(self) -> int:
+        unreached_function_count = 0
+        for fd in self.all_functions.values():
+            if fd.hitcount == 0:
+                unreached_function_count += 1
+        return unreached_function_count
+
+    def _get_total_reached_function_count(self) -> int:
+        reached_function_count = 0
+        for fd in self.all_functions.values():
+            if fd.hitcount != 0:
+                reached_function_count += 1
+        return reached_function_count
+
+    def _get_total_complexity(self) -> Tuple[int, int]:
+        reached_complexity = 0
+        unreached_complexity = 0
+        for fd in self.all_functions.values():
+            if fd.hitcount == 0:
+                unreached_complexity += fd.cyclomatic_complexity
+            else:
+                reached_complexity += fd.cyclomatic_complexity
+        return reached_complexity, unreached_complexity
