@@ -205,10 +205,9 @@ class MergedProjectProfile:
         )
 
     def _set_basefolder(self) -> None:
-        """
-        Identifies a common path-prefix amongst source files in
-        This is used to remove locations within a host system to
-        essentially make paths as if they were from the root of the source code project.
+        """Identifies a common path-prefix amongst source files in. This is
+        used to remove locations within a host system to essentially make
+        paths as if they were from the root of the source code project.
         """
         all_strs = []
         for f in self.all_functions.values():
