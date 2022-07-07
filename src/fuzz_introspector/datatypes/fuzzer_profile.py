@@ -204,7 +204,7 @@ class FuzzerProfile:
         if self.target_lang == "c-cpp":
             self.coverage = cov_load.llvm_cov_load(
                 target_folder,
-                self.get_target_fuzzer_filename()
+                self._get_target_fuzzer_filename()
             )
         elif self.target_lang == "python":
             self.coverage = cov_load.load_python_json_cov(
@@ -215,7 +215,7 @@ class FuzzerProfile:
                 "The profile target has no coverage loading support"
             )
 
-    def get_target_fuzzer_filename(self) -> str:
+    def _get_target_fuzzer_filename(self) -> str:
         return self.fuzzer_source_file.split("/")[-1].replace(".cpp", "").replace(".c", "")
 
     def _set_file_targets(self) -> None:
