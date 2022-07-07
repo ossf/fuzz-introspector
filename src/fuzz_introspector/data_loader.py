@@ -41,22 +41,22 @@ logger.setLevel(logging.INFO)
 
 
 def read_fuzzer_data_file_to_profile(
-    filename: str,
+    cfg_file: str,
     language: str
 ) -> Optional[fuzzer_profile.FuzzerProfile]:
     """
     For a given .data file (CFG) read the corresponding .yaml file
     This is a bit odd way of doing it and should probably be improved.
     """
-    logger.info(f" - loading {filename}")
-    if not os.path.isfile(filename) or not os.path.isfile(filename + ".yaml"):
+    logger.info(f" - loading {cfg_file}")
+    if not os.path.isfile(cfg_file) or not os.path.isfile(cfg_file + ".yaml"):
         return None
 
-    data_dict_yaml = utils.data_file_read_yaml(filename + ".yaml")
+    data_dict_yaml = utils.data_file_read_yaml(cfg_file + ".yaml")
     if data_dict_yaml is None:
         return None
 
-    FP = fuzzer_profile.FuzzerProfile(filename, data_dict_yaml, language)
+    FP = fuzzer_profile.FuzzerProfile(cfg_file, data_dict_yaml, language)
 
     # Check we have a valid entrypoint
     if "LLVMFuzzerTestOneInput" in FP.all_class_functions:
