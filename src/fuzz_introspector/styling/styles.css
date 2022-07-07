@@ -91,7 +91,8 @@ table.dataTable tbody tr.even {
 	/*border-right: 1px solid #d9d9d9;*/
 	background:  #EBEDEE;
 	position: fixed;
-	height: 100vh;
+	height: calc(100vh - 70px);
+	overflow-y: auto;
 }
 .content-section {
 	height: calc(100vh - 70px);
