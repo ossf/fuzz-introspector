@@ -110,10 +110,14 @@ class FuzzerProfile:
         return "#"
 
     def refine_paths(self, basefolder: str) -> None:
+        """Iterate over source files in the calltree and file_targets and remove
+        the fuzzer's basefolder from the path.
+
+        The main point for doing this is clearing any prefixed path that may
+        exist. This is, for example, the case in OSS-Fuzz projects where most
+        files will be prefixed with /src/project_name.
         """
-        Removes the project_profile's basefolder from source paths in a given profile.
-        """
-        # Only do this is basefolder is not wrong
+        # Only do this if basefolder is not wrong
         if basefolder == "/":
             return
 
@@ -158,9 +162,7 @@ class FuzzerProfile:
                 logger.info(f"Correlated {lval} with {rval}")
 
     def get_key(self) -> str:
-        """
-        Returns the "key" we use to identify this Fuzzer profile.
-        """
+        """Returns the "key" we use to identify this Fuzzer profile."""
         if self.binary_executable != "":
             return os.path.basename(self.binary_executable)
 
@@ -257,9 +259,9 @@ class FuzzerProfile:
             }
         )
     def _set_all_reached_functions(self) -> None:
-        """
-        sets self.functions_reached_by_fuzzer to all functions reached
-        by LLVMFuzzerTestOneInput
+        """Sets self.functions_reached_by_fuzzer to all functions reached by
+        the fuzzer. This is based on identifying all functions reached by the
+        fuzzer entrypoint function, e.g. LLVMFuzzerTestOneInput in C/C++.
         """
         if "LLVMFuzzerTestOneInput" in self.all_class_functions:
             self.functions_reached_by_fuzzer = (
@@ -278,9 +280,9 @@ class FuzzerProfile:
         raise Exception
 
     def _set_all_unreached_functions(self) -> None:
-        """
-        sets self.functions_unreached_by_fuzzer to all functiosn in self.all_class_functions
-        that are not in self.functions_reached_by_fuzzer
+        """Sets self.functions_unreached_by_fuzzer to all functions that are
+        statically unreached. This is computed as the set difference between
+        self.all_class_functions and self.functions_reached_by_fuzzer.
         """
         self.functions_unreached_by_fuzzer = [
             f.function_name for f
@@ -309,8 +311,7 @@ class FuzzerProfile:
         return self.fuzzer_source_file.split("/")[-1].replace(".cpp", "").replace(".c", "")
 
     def _set_file_targets(self) -> None:
-        """
-        Sets self.file_targets to be a dictionarty of string to string.
+        """Sets self.file_targets to be a dictionarty of string to string.
         Each key in the dictionary is a filename and the corresponding value is
         a set of strings containing strings which are the names of the functions
         in the given file that are reached by the fuzzer.
@@ -325,9 +326,8 @@ class FuzzerProfile:
                 self.file_targets[cs.dst_function_source_file].add(cs.dst_function_name)
 
     def _set_total_basic_blocks(self) -> None:
-        """
-        sets self.total_basic_blocks to the sym of basic blocks of all the functions
-        reached by this fuzzer.
+        """Sets self.total_basic_blocks to the sum of basic blocks of all the
+        functions reached by this fuzzer.
         """
         total_basic_blocks = 0
         for func in self.functions_reached_by_fuzzer:
@@ -336,9 +336,8 @@ class FuzzerProfile:
         self.total_basic_blocks = total_basic_blocks
 
     def _set_total_cyclomatic_complexity(self) -> None:
-        """
-        sets self.total_cyclomatic_complexity to the sum of cyclomatic complexity
-        of all functions reached by this fuzzer.
+        """Sets self.total_cyclomatic_complexity to the sum of cyclomatic
+        complexity of all functions reached by this fuzzer.
         """
         self.total_cyclomatic_complexity = 0
         for func in self.functions_reached_by_fuzzer:
