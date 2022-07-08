@@ -19,6 +19,7 @@ sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../")
 
 from fuzz_introspector import cfg_load  # noqa: E402
 
+
 @pytest.fixture
 def sample_cfg1():
     """Fixture for a sample (shortened paths) calltree"""
