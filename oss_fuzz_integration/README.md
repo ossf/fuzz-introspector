@@ -18,7 +18,7 @@ provided to support different types of workflow, e.g. development and testing
 purposes.
 
 1) For trying out Fuzz Introspector you should [build with existing OSS-Fuzz purposes](#build-with-existing-oss-fuzz-purposes).
-2) For testing development in `/src/fuzz_introspector` you should [nuild with OSS-Fuzz base clang image](#build-with-oss-fuzz-base-clang-image).
+2) For testing development in `/src/fuzz_introspector` you should [build with OSS-Fuzz base clang image](#build-with-oss-fuzz-base-clang-image).
 3) For testing development in the frontends (LLVM/Python Ast analyser) you should [build images completely from scratch](#build-images-completely-from-scratch).
 
 ### Build with existing OSS-Fuzz purposes
