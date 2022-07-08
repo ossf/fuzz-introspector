@@ -18,7 +18,17 @@ import pytest
 sys.path.append(os.path.dirname(os.path.realpath(__file__))+"/../")
 from fuzz_introspector import utils
 
-def test_normalise_str():
-    s1 = "willnotnormalise"
-    s2 = utils.normalise_str(s1)
-    assert s1 == s2
+@pytest.mark.parametrize(
+    ("s1", "should_change"),
+    [
+        ("willnotnormalise", False),
+        ("ksnfksjdgj", False),
+        ("randomstring", False),
+        ("this should change", True),
+        ("This\tShuold\nAlso\nchange", True),
+        ("should\tchange", True)
+    ]
+)
+def test_normalise_str(s1: str, should_change: bool):
+    changed = utils.normalise_str(s1) != s1
+    assert changed == should_change
