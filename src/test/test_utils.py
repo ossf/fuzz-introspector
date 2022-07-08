@@ -35,6 +35,7 @@ def test_normalise_str(s1: str, should_change: bool):
     changed = utils.normalise_str(s1) != s1
     assert changed == should_change
 
+
 @pytest.mark.parametrize(
     ("strs", "expected"),
     [
