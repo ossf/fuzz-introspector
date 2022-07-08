@@ -8,3 +8,4 @@ flake8
 pep8
 mypy
 psutil
+pytest
