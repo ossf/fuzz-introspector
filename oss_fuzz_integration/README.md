@@ -12,39 +12,69 @@ a small patch to Clang due to the following issue: https://reviews.llvm.org/D777
 In order to use the OSS-Fuzz integration you must have Docker installer, as this
 is a requirement for OSS-Fuzz itself.
 
-## Build the patched OSS-Fuzz
-From within this directory, run the command:
+## Build Fuzz Introspector with OSS-Fuzz
+There are several options for building with OSS-Fuzz. These options are
+provided to support different types of workflow, e.g. development and testing
+purposes.
+
+1) For trying out Fuzz Introspector you should [build with existing OSS-Fuzz purposes](#build-with-existing-oss-fuzz-purposes).
+2) For testing development in `/src/fuzz_introspector` you should [nuild with OSS-Fuzz base clang image](#build-with-oss-fuzz-base-clang-image).
+3) For testing development in the frontends (LLVM/Python Ast analyser) you should [build images completely from scratch](#build-images-completely-from-scratch).
+
+### Build with existing OSS-Fuzz purposes
+From within this directory, run the commands:
 ```
-./prepare_images.sh
+# Pull the most recent OSS-Fuzz Fuzz Introspector images
+./build_oss_fuzz_pulls.sh
+
+# Test a project
+cd oss-fuzz
+../run_both.sh htslib 20
 ```
 
 This will download OSS-Fuzz, pulls introspector images and tag them accordingly.
 
-## Run the introspector
+When you run above command, the OSS-Fuzz coverage run will start a webserver (like following logs) to
+serve coverage reports. You need to kill it using Ctrl-C to let the rest of
+script work correctly on your local machine. This is only the first time a HTTP
+server is started. The second time it will be the Fuzz Introspector report and
+when this shows you can navigate to `https://localhost:8008/fuzz_report.html`.
+
+### Build with OSS-Fuzz base clang image
 Following the above instructions, you can use the following command to perform
 a complete run of the introspector, including with coverage analysis.
 
-
 ```
+# Pull the most recent OSS-Fuzz Fuzz Introspector images
+./build_post_processing.sh
+
+# Test a project
+cd oss-fuzz
+../run_both.sh htslib 20
+```
+
+If all worked, then you should be able to start a webserver at port 8008 in ./corpus-0/inspector-report/
+Serving HTTP on 0.0.0.0 port 8008 (http://0.0.0.0:8008/) ...
+
+You can access the report by navigating to `https://localhost:8008/fuzz_report.html`
+
+### Build images completely from scratch
+This will build all images base images from scratch, and have all fuzz introspector
+ diffs. This is used when developing the frontends, e.g. the LLVM pass.
+```
+# Build all base images from scratch
+./build_all_custom_images.sh
+
 cd oss-fuzz
 ../run_both.sh htslib 30
 ...
+```
 If all worked, then you should be able to start a webserver at port 8008 in ./corpus-0/inspector-report/
 Serving HTTP on 0.0.0.0 port 8008 (http://0.0.0.0:8008/) ...
-```
 
-When you run above command, the OSS-Fuzz coverage run will start a webserver (like following logs) to
-serve coverage reports. You need to kill it using Ctrl-C to let the rest of
-script work correctly on your local machine.
+You can access the report by navigating to `https://localhost:8008/fuzz_report.html`
 
-```
-[ INFO] Index file for html report is generated as:
-"file:///out/report_target/hts_open_fuzzer/linux/index.html".
-Serving the report on http://127.0.0.1:8008/linux/index.html
-Serving HTTP on 0.0.0.0 port 8008 (http://0.0.0.0:8008/) ...
-```
-You can now navigate to `http://localhost:8008/fuzz_report.html`
-
+## Options for run_both.sh
 You can run multiple fuzzers by passing `--jobs=X` at the end of the
 argument list to `run_both.sh`. For example, to run `htslib` fuzzers
 for `30` sec each using 2 cores, use the command:
