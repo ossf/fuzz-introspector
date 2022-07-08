@@ -14,7 +14,7 @@ is a requirement for OSS-Fuzz itself.
 
 ## Build Fuzz Introspector with OSS-Fuzz
 There are several options for building with OSS-Fuzz. These options are
-provided to support differen types of workflow, e.g. development and testing
+provided to support different types of workflow, e.g. development and testing
 purposes.
 
 1) [Build with existing OSS-Fuzz purposes](#build-with-existing-oss-fuzz-purposes).
@@ -30,7 +30,7 @@ purposes.
 From within this directory, run the commands:
 ```
 # Pull the most recent OSS-Fuzz Fuzz Introspector images
-./prepare_images.sh
+./build_oss_fuzz_pulls.sh
 
 # Test a project
 cd oss-fuzz
@@ -63,7 +63,8 @@ Serving HTTP on 0.0.0.0 port 8008 (http://0.0.0.0:8008/) ...
 This will build all images base images from scratch, and have all fuzz introspector
  diffs. This is used when developing the frontends, e.g. the LLVM pass.
 ```
-# Overwrite base-builder, base-
+# Build all base images from scratch
+./build_all_custom_images.sh
 
 cd oss-fuzz
 ../run_both.sh htslib 30
