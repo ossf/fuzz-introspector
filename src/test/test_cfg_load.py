@@ -21,12 +21,13 @@ from fuzz_introspector import cfg_load  # noqa: E402
 
 @pytest.fixture
 def sample_cfg1():
+    """Fixture for a sample (shortened paths) calltree"""
     cfg_str = """Call tree
-LLVMFuzzerTestOneInput /src/wuffs/fuzz/c/std/../fuzzlib/fuzzlib.c linenumber=-1
-  llvmFuzzerTestOneInput /src/wuffs/fuzz/c/std/../fuzzlib/fuzzlib.c linenumber=93
+LLVMFuzzerTestOneInput /src/wuffs/fuzz/c/fuzzlib/fuzzlib.c linenumber=-1
+  llvmFuzzerTestOneInput /src/wuffs/fuzz/c/../fuzzlib/fuzzlib.c linenumber=93
     jenkins_hash_u32 /src/wuffs/fuzz/c/std/../fuzzlib/fuzzlib.c linenumber=67
     jenkins_hash_u32 /src/wuffs/fuzz/c/std/../fuzzlib/fuzzlib.c linenumber=68
-    wuffs_base__ptr_u8__reader /src/wuffs/fuzz/c/std/../../../release/c/wuffs-unsupported-snapshot.c linenumber=72
+    wuffs_base__ptr_u8__reader /src/wuffs/fuzz/...-snapshot.c linenumber=72
     fuzz /src/wuffs/fuzz/c/std/bmp_fuzzer.c linenumber=74"""
     return cfg_str
 
