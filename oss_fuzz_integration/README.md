@@ -17,14 +17,9 @@ There are several options for building with OSS-Fuzz. These options are
 provided to support different types of workflow, e.g. development and testing
 purposes.
 
-1) [Build with existing OSS-Fuzz purposes](#build-with-existing-oss-fuzz-purposes).
- For trying Fuzz Introspector locally.
-2) [Build with OSS-Fuzz base clang image](#build-with-oss-fuzz-base-clang-image).
- This is used when developing code in `/src/`, i.e. the Python part of Fuzz
- Introspector.
-3) [Build images completely from scratch](#build-images-completely-from-scratch).
- This is used when developing code in the frontends (i.e. the LLVM LTO or Python
- AST analyser).
+1) For trying out Fuzz Introspector you should [build with existing OSS-Fuzz purposes](#build-with-existing-oss-fuzz-purposes).
+2) For testing development in `/src/fuzz_introspector` you should [nuild with OSS-Fuzz base clang image](#build-with-oss-fuzz-base-clang-image).
+3) For testing development in the frontends (LLVM/Python Ast analyser) you should [build images completely from scratch](#build-images-completely-from-scratch).
 
 ### Build with existing OSS-Fuzz purposes
 From within this directory, run the commands:
@@ -41,7 +36,9 @@ This will download OSS-Fuzz, pulls introspector images and tag them accordingly.
 
 When you run above command, the OSS-Fuzz coverage run will start a webserver (like following logs) to
 serve coverage reports. You need to kill it using Ctrl-C to let the rest of
-script work correctly on your local machine.
+script work correctly on your local machine. This is only the first time a HTTP
+server is started. The second time it will be the Fuzz Introspector report and
+when this shows you can navigate to `https://localhost:8008/fuzz_report.html`.
 
 ### Build with OSS-Fuzz base clang image
 Following the above instructions, you can use the following command to perform
@@ -59,6 +56,8 @@ cd oss-fuzz
 If all worked, then you should be able to start a webserver at port 8008 in ./corpus-0/inspector-report/
 Serving HTTP on 0.0.0.0 port 8008 (http://0.0.0.0:8008/) ...
 
+You can access the report by navigating to `https://localhost:8008/fuzz_report.html`
+
 ### Build images completely from scratch
 This will build all images base images from scratch, and have all fuzz introspector
  diffs. This is used when developing the frontends, e.g. the LLVM pass.
@@ -72,6 +71,8 @@ cd oss-fuzz
 ```
 If all worked, then you should be able to start a webserver at port 8008 in ./corpus-0/inspector-report/
 Serving HTTP on 0.0.0.0 port 8008 (http://0.0.0.0:8008/) ...
+
+You can access the report by navigating to `https://localhost:8008/fuzz_report.html`
 
 ## Options for run_both.sh
 You can run multiple fuzzers by passing `--jobs=X` at the end of the
