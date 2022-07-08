@@ -34,3 +34,28 @@ from fuzz_introspector import utils  # noqa: E402
 def test_normalise_str(s1: str, should_change: bool):
     changed = utils.normalise_str(s1) != s1
     assert changed == should_change
+
+@pytest.mark.parametrize(
+    ("strs", "expected"),
+    [
+        (
+            [
+                "the_prefix_a",
+                "the_prefix_b",
+                "the_prefix_c"
+            ],
+            "the_prefix_"
+        ),
+        (
+            [
+                "/src/project_name/file1.c",
+                "/src/project_name/file2.c",
+                "/src/project_name/README.md",
+            ],
+            "/src/project_name/"
+        )
+    ]
+)
+def test_longest_common_prefix(strs: str, expected: str):
+    longest_prefix = utils.longest_common_prefix(strs)
+    assert longest_prefix == expected
