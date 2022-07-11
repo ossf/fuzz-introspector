@@ -18,7 +18,7 @@ import logging
 import os
 import sys
 
-from fuzz_introspector import commands
+from fuzz_introspector import commands, constants
 
 logger = logging.getLogger(name=__name__)
 
