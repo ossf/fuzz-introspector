@@ -17,7 +17,7 @@ import os
 import sys
 import atheris
 
-sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../")
+sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../")
 
 from fuzz_introspector import cfg_load  # noqa: E402
 
