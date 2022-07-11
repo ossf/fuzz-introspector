@@ -47,8 +47,7 @@ def run_analysis_on_dir(
     language: str
 ) -> int:
     if enable_all_analyses:
-        all_anlaysis = analysis.get_all_analyses()
-        for analysis_interface in all_analyses:
+        for analysis_interface in analysis.get_all_analyses():
             if analysis_interface.Analysis.get_name() not in analyses_to_run:
                 analyses_to_run.append(analysis_interface.Analysis.get_name())
 
