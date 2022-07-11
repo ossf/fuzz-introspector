@@ -22,7 +22,6 @@ sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../")
 from fuzz_introspector import cfg_load  # noqa: E402
 
 
-
 @atheris.instrument_func
 def TestOneInput(data):
     """Fuzz cfg_load.data_file_read_calltree"""
