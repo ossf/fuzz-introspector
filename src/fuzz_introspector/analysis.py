@@ -63,6 +63,10 @@ class AnalysisInterface(abc.ABC):
         """Return name of analysis"""
         pass
 
+    @staticmethod
+    def instantiate(cls: Type[AnalysisInterface]):
+        cls()
+
 
 class BlockedSide(Enum):
     TRUE = 1
