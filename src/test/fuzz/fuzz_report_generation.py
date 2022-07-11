@@ -20,8 +20,7 @@ import atheris
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../")
 
-from fuzz_introspector import commands  # noqa: E402
-from fuzz_introspector import exceptions
+from fuzz_introspector import commands, exceptions  # noqa: E402
 
 
 @atheris.instrument_func
