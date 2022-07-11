@@ -64,6 +64,7 @@ class AnalysisInterface(abc.ABC):
         """Return name of analysis"""
         pass
 
+
 def instantiate_analysis_interface(cls: Type[AnalysisInterface]):
     """Wrapper function to satisfy Mypy semantics"""
     return cls()
