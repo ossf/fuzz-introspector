@@ -64,9 +64,9 @@ class AnalysisInterface(abc.ABC):
         """Return name of analysis"""
         pass
 
-    @staticmethod
-    def instantiate(cls: Type[AnalysisInterface]):  # noqa: F821
-        cls()
+def instantiate_analysis_interface(cls: Type[AnalysisInterface]):
+    """Wrapper function to satisfy Mypy semantics"""
+    return cls()
 
 
 class BlockedSide(Enum):

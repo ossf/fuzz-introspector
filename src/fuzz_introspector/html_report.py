@@ -900,7 +900,9 @@ def create_html_report(
     analysis_array = analysis.get_all_analyses()
     for analysis_interface in analysis_array:
         if analysis_interface.get_name() in analyses_to_run:
-            analysis_instance = analysis.AnalysisInterface.instantiate(analysis_interface)
+            analysis_instance = analysis.instantiate_analysis_interface(
+                analysis_interface
+            )
             html_report_core += analysis_instance.analysis_func(
                 toc_list,
                 tables,
