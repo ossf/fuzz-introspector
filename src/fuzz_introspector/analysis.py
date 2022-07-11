@@ -65,7 +65,7 @@ class AnalysisInterface(abc.ABC):
         pass
 
     @staticmethod
-    def instantiate(cls: Type[AnalysisInterface]):
+    def instantiate(cls: Type[AnalysisInterface]):  # noqa: F821
         cls()
 
 
