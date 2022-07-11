@@ -29,9 +29,13 @@ from fuzz_introspector.datatypes import project_profile, fuzzer_profile
 logger = logging.getLogger(name=__name__)
 
 
-class FuzzRuntimeCoverageAnalysis(analysis.AnalysisInterface):
+class Analysis(analysis.AnalysisInterface):
     def __init__(self) -> None:
-        self.name = "RuntimeCoverageAnalysis"
+        pass
+
+    @staticmethod
+    def get_name():
+        return "RuntimeCoverageAnalysis"
 
     def analysis_func(
         self,
@@ -43,7 +47,7 @@ class FuzzRuntimeCoverageAnalysis(analysis.AnalysisInterface):
         coverage_url: str,
         conclusions: List[Tuple[int, str]]
     ) -> str:
-        logger.info(f" - Running analysis {self.name}")
+        logger.info(f" - Running analysis {Analysis.get_name()}")
 
         functions_of_interest = self.get_low_cov_high_line_funcs(
             profiles,
@@ -103,7 +107,7 @@ class FuzzRuntimeCoverageAnalysis(analysis.AnalysisInterface):
         html_string += "</div>"  # .collapsible
         html_string += "</div>"  # report-box
 
-        logger.info(f" - Completed analysis {self.name}")
+        logger.info(f" - Completed analysis {Analysis.get_name()}")
         return html_string
 
     def get_low_cov_high_line_funcs(

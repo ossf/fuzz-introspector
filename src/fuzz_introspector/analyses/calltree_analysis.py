@@ -36,10 +36,14 @@ from bs4 import BeautifulSoup as bs
 logger = logging.getLogger(name=__name__)
 
 
-class FuzzCalltreeAnalysis(analysis.AnalysisInterface):
+class Analysis(analysis.AnalysisInterface):
     def __init__(self) -> None:
-        self.name = "FuzzCalltreeAnalysis"
+        #self.name = "FuzzCalltreeAnalysis"
         logger.info("Creating FuzzCalltreeAnalysis")
+
+    @staticmethod
+    def get_name():
+        return "FuzzCalltreeAnalysis"
 
     def analysis_func(
         self,

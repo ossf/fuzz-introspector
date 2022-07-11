@@ -57,6 +57,12 @@ class AnalysisInterface(abc.ABC):
         """Core analysis function."""
         pass
 
+    @staticmethod
+    @abc.abstractmethod
+    def get_name():
+        """Return name of analysis"""
+        pass
+
 
 class BlockedSide(Enum):
     TRUE = 1
@@ -88,12 +94,12 @@ def get_all_analyses() -> List[AnalysisInterface]:
     )
 
     analysis_array = [
-        optimal_targets.FuzzOptimalTargetAnalysis(),
-        engine_input.FuzzEngineInputAnalysis(),
-        runtime_coverage_analysis.FuzzRuntimeCoverageAnalysis(),
-        driver_synthesizer.FuzzDriverSynthesizerAnalysis(),
-        bug_digestor.FuzzBugDigestorAnalysis(),
-        filepath_analyser.FuzzFilepathAnalyser()
+        optimal_targets,
+        engine_input,
+        runtime_coverage_analysis,
+        driver_synthesizer,
+        bug_digestor,
+        filepath_analyser
     ]
     return analysis_array
 
