@@ -547,7 +547,7 @@ def create_fuzzer_detailed_section(
     )
 
     from fuzz_introspector.analyses import calltree_analysis as cta
-    calltree_analysis = cta.FuzzCalltreeAnalysis()
+    calltree_analysis = cta.Analysis()
     calltree_file_name = calltree_analysis.create_calltree(profile)
 
     html_string += f"""<p class='no-top-margin'>The following link provides a visualisation
@@ -899,15 +899,19 @@ def create_html_report(
 
     analysis_array = analysis.get_all_analyses()
     for analysis_interface in analysis_array:
-        if analysis_interface.name in analyses_to_run:
-            html_report_core += analysis_interface.analysis_func(
+        if analysis_interface.get_name() in analyses_to_run:
+            analysis_instance = analysis.instantiate_analysis_interface(
+                analysis_interface
+            )
+            html_report_core += analysis_instance.analysis_func(
                 toc_list,
                 tables,
                 proj_profile,
                 profiles,
                 basefolder,
                 coverage_url,
-                conclusions)
+                conclusions
+            )
     html_report_core += "</div>"  # .collapsible
     html_report_core += "</div>"  # report box
 

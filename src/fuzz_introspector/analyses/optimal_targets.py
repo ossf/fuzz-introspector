@@ -37,9 +37,13 @@ from fuzz_introspector.datatypes import (
 logger = logging.getLogger(name=__name__)
 
 
-class FuzzOptimalTargetAnalysis(analysis.AnalysisInterface):
+class Analysis(analysis.AnalysisInterface):
     def __init__(self) -> None:
-        self.name = "OptimalTargets"
+        pass
+
+    @staticmethod
+    def get_name():
+        return "OptimalTargets"
 
     def analysis_func(
         self,
@@ -64,7 +68,7 @@ class FuzzOptimalTargetAnalysis(analysis.AnalysisInterface):
         any fuzzers. This means it can be used to expand the current fuzzing harness
         rather than substitute it.
         """
-        logger.info(f" - Running analysis {self.name}")
+        logger.info(f" - Running analysis {Analysis.get_name()}")
 
         html_string = ""
         html_string += html_helpers.html_add_header_with_link(
@@ -92,7 +96,7 @@ class FuzzOptimalTargetAnalysis(analysis.AnalysisInterface):
             basefolder
         )
 
-        logger.info(f" - Completed analysis {self.name}")
+        logger.info(f" - Completed analysis {Analysis.get_name()}")
         html_string += "</div>"  # .collapsible
         return html_string
 

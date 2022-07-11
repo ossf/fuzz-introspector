@@ -39,9 +39,13 @@ TargetCodesType = TypedDict('TargetCodesType', {
 })
 
 
-class FuzzDriverSynthesizerAnalysis(analysis.AnalysisInterface):
+class Analysis(analysis.AnalysisInterface):
     def __init__(self) -> None:
-        self.name = "FuzzDriverSynthesizerAnalysis"
+        pass
+
+    @staticmethod
+    def get_name():
+        return "FuzzDriverSynthesizerAnalysis"
 
     def analysis_func(
         self,
@@ -54,7 +58,7 @@ class FuzzDriverSynthesizerAnalysis(analysis.AnalysisInterface):
         conclusions: List[Tuple[int, str]],
         fuzz_targets=None
     ) -> str:
-        logger.info(f" - Running analysis {self.name}")
+        logger.info(f" - Running analysis {Analysis.get_name()}")
         html_string = ""
         html_string += "<div class=\"report-box\">"
         html_string += html_helpers.html_add_header_with_link(
@@ -65,7 +69,7 @@ class FuzzDriverSynthesizerAnalysis(analysis.AnalysisInterface):
         html_string += "<div class=\"collapsible\">"
 
         if fuzz_targets is None or len(fuzz_targets) == 0:
-            A1 = optimal_targets.FuzzOptimalTargetAnalysis()
+            A1 = optimal_targets.Analysis()
 
             _, optimal_target_functions = A1.iteratively_get_optimal_targets(
                 proj_profile
@@ -174,5 +178,5 @@ class FuzzDriverSynthesizerAnalysis(analysis.AnalysisInterface):
 
         html_string += "</div>"  # .collapsible
         html_string += "</div>"  # report-box
-        logger.info(f" - Completed analysis {self.name}")
+        logger.info(f" - Completed analysis {Analysis.get_name()}")
         return html_string

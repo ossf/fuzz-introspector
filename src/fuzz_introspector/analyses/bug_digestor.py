@@ -28,10 +28,13 @@ from fuzz_introspector.datatypes import project_profile, fuzzer_profile
 logger = logging.getLogger(name=__name__)
 
 
-class FuzzBugDigestorAnalysis(analysis.AnalysisInterface):
+class Analysis(analysis.AnalysisInterface):
     def __init__(self) -> None:
-        self.name = "BugDigestorAnalysis"
         self.display_html = False
+
+    @staticmethod
+    def get_name():
+        return "BugDigestorAnalysis"
 
     def analysis_func(
         self,
@@ -43,7 +46,7 @@ class FuzzBugDigestorAnalysis(analysis.AnalysisInterface):
         coverage_url: str,
         conclusions: List[Tuple[int, str]]
     ) -> str:
-        logger.info(f" - Running analysis {self.name}")
+        logger.info(f" - Running analysis {Analysis.get_name()}")
         input_bugs = data_loader.try_load_input_bugs()
         if len(input_bugs) == 0:
             return ""

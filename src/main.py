@@ -47,15 +47,9 @@ def run_analysis_on_dir(
     language: str
 ) -> int:
     if enable_all_analyses:
-        all_analyses = [
-            "OptimalTargets",
-            "RuntimeCoverageAnalysis",
-            "FuzzDriverSynthesizerAnalysis",
-            "FuzzEngineInputAnalysis"
-        ]
-        for analysis_interface in all_analyses:
-            if analysis_interface not in analyses_to_run:
-                analyses_to_run.append(analysis_interface)
+        for analysis_interface in analysis.get_all_analyses():
+            if analysis_interface.get_name() not in analyses_to_run:
+                analyses_to_run.append(analysis_interface.get_name())
 
     logger.info("[+] Loading profiles")
     profiles = data_loader.load_all_profiles(target_folder, language)

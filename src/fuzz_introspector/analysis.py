@@ -24,6 +24,7 @@ from typing import (
     Dict,
     List,
     Tuple,
+    Type,
 )
 
 from fuzz_introspector import utils
@@ -57,6 +58,17 @@ class AnalysisInterface(abc.ABC):
         """Core analysis function."""
         pass
 
+    @staticmethod
+    @abc.abstractmethod
+    def get_name():
+        """Return name of analysis"""
+        pass
+
+
+def instantiate_analysis_interface(cls: Type[AnalysisInterface]):
+    """Wrapper function to satisfy Mypy semantics"""
+    return cls()
+
 
 class BlockedSide(Enum):
     TRUE = 1
@@ -76,7 +88,7 @@ class FuzzBranchBlocker:
         self.function_name = fname
 
 
-def get_all_analyses() -> List[AnalysisInterface]:
+def get_all_analyses() -> List[Type[AnalysisInterface]]:
     # Ordering here is important as top analysis will be shown first in the report
     from fuzz_introspector.analyses import (
         driver_synthesizer,
@@ -88,12 +100,12 @@ def get_all_analyses() -> List[AnalysisInterface]:
     )
 
     analysis_array = [
-        optimal_targets.FuzzOptimalTargetAnalysis(),
-        engine_input.FuzzEngineInputAnalysis(),
-        runtime_coverage_analysis.FuzzRuntimeCoverageAnalysis(),
-        driver_synthesizer.FuzzDriverSynthesizerAnalysis(),
-        bug_digestor.FuzzBugDigestorAnalysis(),
-        filepath_analyser.FuzzFilepathAnalyser()
+        optimal_targets.Analysis,
+        engine_input.Analysis,
+        runtime_coverage_analysis.Analysis,
+        driver_synthesizer.Analysis,
+        bug_digestor.Analysis,
+        filepath_analyser.Analysis
     ]
     return analysis_array
 
