@@ -24,6 +24,7 @@ from typing import (
     Dict,
     List,
     Tuple,
+    Type,
 )
 
 from fuzz_introspector import utils
@@ -86,7 +87,7 @@ class FuzzBranchBlocker:
         self.function_name = fname
 
 
-def get_all_analyses() -> List[AnalysisInterface]:
+def get_all_analyses() -> List[Type[AnalysisInterface]]:
     # Ordering here is important as top analysis will be shown first in the report
     from fuzz_introspector.analyses import (
         driver_synthesizer,
