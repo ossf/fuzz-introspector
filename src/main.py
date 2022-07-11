@@ -48,8 +48,8 @@ def run_analysis_on_dir(
 ) -> int:
     if enable_all_analyses:
         for analysis_interface in analysis.get_all_analyses():
-            if analysis_interface.Analysis.get_name() not in analyses_to_run:
-                analyses_to_run.append(analysis_interface.Analysis.get_name())
+            if analysis_interface.get_name() not in analyses_to_run:
+                analyses_to_run.append(analysis_interface.get_name())
 
     logger.info("[+] Loading profiles")
     profiles = data_loader.load_all_profiles(target_folder, language)

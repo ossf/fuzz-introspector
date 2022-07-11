@@ -94,12 +94,12 @@ def get_all_analyses() -> List[AnalysisInterface]:
     )
 
     analysis_array = [
-        optimal_targets,
-        engine_input,
-        runtime_coverage_analysis,
-        driver_synthesizer,
-        bug_digestor,
-        filepath_analyser
+        optimal_targets.Analysis,
+        engine_input.Analysis,
+        runtime_coverage_analysis.Analysis,
+        driver_synthesizer.Analysis,
+        bug_digestor.Analysis,
+        filepath_analyser.Analysis
     ]
     return analysis_array
 
