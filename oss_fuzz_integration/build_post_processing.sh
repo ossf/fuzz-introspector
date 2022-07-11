@@ -29,7 +29,7 @@ else
 
   echo "Downloading base-image and base-clang OSS-Fuzz introspector builds"
   docker pull gcr.io/oss-fuzz-base/base-clang:introspector
-  docker pull gcr.io/oss-fuzz-base/base-builder:introspector
+  docker tag gcr.io/oss-fuzz-base/base-clang:introspector gcr.io/oss-fuzz-base/base-clang:latest
 fi
 
 echo "Building base-build, base-builder-python and base-runner for fuzz introspector"
