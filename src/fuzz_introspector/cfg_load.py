@@ -102,7 +102,15 @@ def data_file_read_calltree(filename: str) -> Optional[CalltreeCallsite]:
     curr_ctcs_node = None
     curr_depth = -1
     with open(filename, "r") as flog:
-        for line in flog:
+        # Read in all lines catching decode errors
+        all_lines = []
+        try:
+            for line in flog:
+                all_lines.append(line)
+        except UnicodeDecodeError:
+            raise CalltreeError("Decoding error when reading CFG file")
+
+        for line in all_lines:
             line = line.replace("\n", "")
             if read_tree and "======" not in line:
                 stripped_line = line.strip().split(" ")

@@ -97,7 +97,7 @@ def data_file_read_yaml(filename: str) -> Optional[Dict[Any, Any]]:
         try:
             data_dict: Dict[Any, Any] = yaml.safe_load(stream)
             return data_dict
-        except yaml.YAMLError:
+        except (yaml.YAMLError, UnicodeDecodeError):
             return None
 
 
