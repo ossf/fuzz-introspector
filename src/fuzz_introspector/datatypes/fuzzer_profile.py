@@ -61,7 +61,10 @@ class FuzzerProfile:
         self.function_call_depths = cfg_load.data_file_read_calltree(cfg_file)
 
         # Read yaml data (as dictionary) from frontend
-        self.fuzzer_source_file: str = frontend_yaml['Fuzzer filename']
+        try:
+            self.fuzzer_source_file: str = frontend_yaml['Fuzzer filename']
+        except KeyError:
+            raise DataLoaderError("Fuzzer filename not in loaded yaml")
         self._set_function_list(frontend_yaml)
 
     def resolve_coverage_link(

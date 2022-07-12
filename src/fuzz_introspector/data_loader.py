@@ -53,7 +53,9 @@ def read_fuzzer_data_file_to_profile(
         return None
 
     data_dict_yaml = utils.data_file_read_yaml(cfg_file + ".yaml")
-    if data_dict_yaml is None:
+
+    # Must be  dictionary
+    if data_dict_yaml is None or not isinstance(data_dict_yaml, dict):
         return None
 
     FP = fuzzer_profile.FuzzerProfile(cfg_file, data_dict_yaml, language)
