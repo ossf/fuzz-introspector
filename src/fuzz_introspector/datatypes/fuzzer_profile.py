@@ -146,7 +146,7 @@ class FuzzerProfile:
                            `file_name` argument.
         :type basefolder: str
 
-        :returns: `True` if the fuzzer statically reaches the file. `False` 
+        :returns: `True` if the fuzzer statically reaches the file. `False`
                   otherwise.
         :rtype: bool
         """
