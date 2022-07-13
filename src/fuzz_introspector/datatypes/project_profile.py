@@ -74,7 +74,7 @@ class MergedProjectProfile:
                 for profile2 in profiles:
                     if profile2.reaches_func(fd.function_name):
                         fd.hitcount += 1
-                        fd.reached_by_fuzzers.append(profile2.get_key())
+                        fd.reached_by_fuzzers.append(profile2.identifier)
                     if fd.function_name not in self.all_functions:
                         self.all_functions[fd.function_name] = fd
 
@@ -141,12 +141,21 @@ class MergedProjectProfile:
         logger.info("Completed creationg of merged profile")
 
     def get_all_runtime_covered_functions(self) -> List[str]:
+        """Gets the name of all functions that are covered by runtime
+        code coverage analysis.
+
+        :rtype: List[str]
+        :returns: List of strings corresponding to function names
+        """
         all_covered_functions = []
         for funcname in self.runtime_coverage.covmap:
             all_covered_functions.append(funcname)
         return all_covered_functions
 
     def get_function_summaries(self) -> Tuple[int, int, int, float, float]:
+        """Gets data points summarising data with respect to static reachability of
+        all functions in the project.
+        """
         reached_func_count = self._get_total_reached_function_count()
         unreached_func_count = self._get_total_unreached_function_count()
         total_functions = reached_func_count + unreached_func_count
@@ -161,6 +170,10 @@ class MergedProjectProfile:
         )
 
     def get_complexity_summaries(self) -> Tuple[int, int, int, float, float]:
+        """Gets data points summarising cyclomatic complexity across the project,
+        including total complexity, the amount of complexity that is statically
+        reached and the amount of complexity that is statically unreached.
+        """
         complexity_reached, complexity_unreached = self._get_total_complexity()
         total_complexity = complexity_unreached + complexity_reached
 

@@ -105,7 +105,7 @@ class Analysis(analysis.AnalysisInterface):
             profiles_that_hit = []
             for profile in profiles:
                 if profile.reaches_file(fnm, proj_profile.basefolder):
-                    profiles_that_hit.append(profile.get_key())
+                    profiles_that_hit.append(profile.identifier)
 
             profiles_that_cover = []
             for profile in profiles:
@@ -114,7 +114,7 @@ class Analysis(analysis.AnalysisInterface):
                     proj_profile.basefolder
                 )
                 if is_file_covered:
-                    profiles_that_cover.append(profile.get_key())
+                    profiles_that_cover.append(profile.identifier)
 
             html_string += html_helpers.html_table_add_row(
                 [

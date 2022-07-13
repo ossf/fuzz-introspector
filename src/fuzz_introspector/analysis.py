@@ -55,7 +55,36 @@ class AnalysisInterface(abc.ABC):
         coverage_url: str,
         conclusions: List[Tuple[int, str]]
     ) -> str:
-        """Core analysis function."""
+        """Entrypoint for analysis instance. This function can have side effects
+        on many of the arguments passed to it.
+
+        :param toc_list: table of content list for adding sections to HTML report.
+        :type toc_list: List[Tuple[str, str, int]]
+
+        :param tables: list of table ids to be styled in the report.
+        :type tables: List[str]
+
+        :param proj_profile: project profile involved in the analysis.
+        :type proj_profile: project_profile.MergedProjectProfile
+
+        :param profiles: all fuzzer profiles involved in the current analysis.
+        :type profiles: List[fuzzer_profile.FuzzerProfile]
+
+        :param basefolder: Basefolder of the files as placed on the file system.
+        :type basefolder: str
+
+        :param coverage_url: Base coverage URL.
+        :type coverage_url: str
+
+        :param conclusions: List of high level conclusions to be shown in the final
+                           report. Append to this list any conclusions that should
+                           be shown at the top of the report page.
+        :type conclusions: List[Tuple[int, str]]
+
+        :rtype: str
+        :returns:  A string that corresponds to HTML that can be embedded in the
+                   report.
+        """
         pass
 
     @staticmethod
@@ -148,7 +177,7 @@ def overlay_calltree_with_coverage(
     if profile.function_call_depths is None:
         return
 
-    target_name = profile.get_key()
+    target_name = profile.identifier
     target_coverage_url = utils.get_target_coverage_url(
         coverage_url,
         target_name,
@@ -334,7 +363,7 @@ def overlay_calltree_with_coverage(
                 'function_name': br_blocker.function_name
             }
         )
-    utils.write_to_summary_file(profile.get_key(), 'branch_blockers', branch_blockers_list)
+    utils.write_to_summary_file(profile.identifier, 'branch_blockers', branch_blockers_list)
 
 
 def update_branch_complexities(all_functions: Dict[str, function_profile.FunctionProfile],

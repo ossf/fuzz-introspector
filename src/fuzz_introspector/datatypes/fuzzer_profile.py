@@ -54,7 +54,7 @@ class FuzzerProfile:
         self.coverage: Optional[cov_load.CoverageProfile] = None
         self.all_class_functions: Dict[str, function_profile.FunctionProfile] = dict()
 
-        self.target_lang = target_lang
+        self._target_lang = target_lang
         self.introspector_data_file = cfg_file
 
         # Load calltree file
@@ -66,6 +66,19 @@ class FuzzerProfile:
         except KeyError:
             raise DataLoaderError("Fuzzer filename not in loaded yaml")
         self._set_function_list(frontend_yaml)
+
+    @property
+    def target_lang(self):
+        """Language the fuzzer is written in"""
+        return self._target_lang
+
+    @property
+    def identifier(self):
+        """Fuzzer identifier"""
+        if self.binary_executable != "":
+            return os.path.basename(self.binary_executable)
+
+        return self.fuzzer_source_file
 
     def resolve_coverage_link(
         self,
@@ -124,6 +137,19 @@ class FuzzerProfile:
         file_name: str,
         basefolder: Optional[str] = None
     ) -> bool:
+        """Identifies if the fuzzer statically reaches a given file
+
+        :param file_name: file to check if fuzzer reaches
+        :type file_name: str
+
+        :param basefolder: basefolder path. If not `None` will removed from
+                           `file_name` argument.
+        :type basefolder: str
+
+        :returns: `True` if the fuzzer statically reaches the file. `False`
+                  otherwise.
+        :rtype: bool
+        """
         if file_name in self.file_targets:
             return True
 
@@ -134,6 +160,15 @@ class FuzzerProfile:
         return False
 
     def reaches_func(self, func_name: str) -> bool:
+        """Identifies if the fuzzer statically reaches a given function
+
+        :param func_name: function to check for
+        :type func_name: str
+
+        :rtype: bool
+        :returns: `True` if the fuzzer statically reaches the function. `False`
+                  otherwise.
+        """
         return func_name in self.functions_reached_by_fuzzer
 
     def correlate_executable_name(self, correlation_dict) -> None:
@@ -190,6 +225,18 @@ class FuzzerProfile:
         file_name: str,
         basefolder: Optional[str] = None
     ) -> bool:
+        """Identifies whether a file is covered by runtime code coverage
+
+        :param file_name: file name
+        :type file_name: str
+
+        :param basefolder: basefolder to apply on the file name
+        :type basefolder: str
+
+        :rtype: bool
+        :returns: `True` if the file is covered by runtime code coverage,
+                  `False` otherwise.
+        """
         # We need to refine the pathname to match how coverage file paths are.
         file_name = os.path.abspath(file_name)
 
@@ -219,6 +266,20 @@ class FuzzerProfile:
         self,
         funcname: str
     ) -> Tuple[Optional[int], Optional[int], Optional[float]]:
+        """Fethes data points on runtime code coverage for a given function.
+
+        A triplet is returned where the first element is the total number of lines
+        in the function, the second element is a list of whether each line was
+        covered at runtime or not, and the third element is the percentage of lines
+        covered by runtime covevrage.
+
+        :param funcname: function to check for.
+        :type funcname: str
+
+        :rtype: Tuple[Optional[int], Optional[int], Optional[float]]
+        :returns: Triplet of int, int, float indicated numbers described above. Or,
+                  a triplet of `None` in the event an error ocurred.
+        """
         if self.coverage is None:
             return None, None, None
         try:
@@ -234,7 +295,7 @@ class FuzzerProfile:
     def write_stats_to_summary_file(self) -> None:
         file_target_count = len(self.file_targets) if self.file_targets is not None else 0
         utils.write_to_summary_file(
-            self.get_key(),
+            self.identifier,
             "stats",
             {
                 "total-basic-blocks": self.total_basic_blocks,

@@ -71,7 +71,7 @@ class Analysis(analysis.AnalysisInterface):
                        "focus is on providing input that is usable by libFuzzer.</p>"
 
         for profile_idx in range(len(profiles)):
-            logger.info(f"Generating input for {profiles[profile_idx].get_key()}")
+            logger.info(f"Generating input for {profiles[profile_idx].identifier}")
             html_string += html_helpers.html_add_header_with_link(
                 profiles[profile_idx].fuzzer_source_file,
                 2,
@@ -173,7 +173,7 @@ class Analysis(analysis.AnalysisInterface):
 
         self.add_to_json_file(
             constants.ENGINE_INPUT_FILE,
-            profile.get_key(),
+            profile.identifier,
             "focus-functions",
             focus_functions
         )

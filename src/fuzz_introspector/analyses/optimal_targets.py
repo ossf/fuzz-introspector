@@ -59,15 +59,18 @@ class Analysis(analysis.AnalysisInterface):
         """
         Performs an analysis based on optimal target selection.
         Finds a set of optimal functions based on complexity reach and:
-          - Displays the functions in a table.
-          - Calculates how the new all-function table will be in case the optimal
-            targets are implemented.
-          - Performs a simple synthesis on how to create fuzzers that target the
-            optimal functions.
+
+        1) Displays the functions in a table.
+        2) Calculates how the new all-function table will be in case the optimal
+           targets are implemented.
+        3) Performs a simple synthesis on how to create fuzzers that target the
+           optimal functions.
+
         The "optimal target function" is focused on code that is currently *not hit* by
         any fuzzers. This means it can be used to expand the current fuzzing harness
         rather than substitute it.
         """
+
         logger.info(f" - Running analysis {Analysis.get_name()}")
 
         html_string = ""
