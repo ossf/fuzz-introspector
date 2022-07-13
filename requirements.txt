@@ -9,3 +9,5 @@ pep8
 mypy
 psutil
 pytest
+sphinx
+sphinx_rtd_theme

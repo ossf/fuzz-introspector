@@ -13,7 +13,6 @@ cd fuzz-introspector
 python3 -m venv .venv
 . .venv/bin/activate
 pip3 install -r requirements.txt
-pip3 install sphinx sphinx_rtd_theme
 
 cd doc/sphinx
 make clean
