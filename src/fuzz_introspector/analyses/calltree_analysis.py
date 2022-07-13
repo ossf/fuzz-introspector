@@ -160,7 +160,7 @@ class Analysis(analysis.AnalysisInterface):
         # HTML start
         html_header = html_helpers.html_get_header(
             calltree=True,
-            title=f"Fuzz introspector: { profile.get_key() }"
+            title=f"Fuzz introspector: { profile.identifier }"
         )
         html_header += '<div class="content-section calltree-content-section">'
         complete_html_string += html_header

@@ -154,7 +154,7 @@ def create_overview_table(
                 max_depth = cs.depth
 
         html_string += html_helpers.html_table_add_row([
-            profile.get_key(),
+            profile.identifier,
             fuzzer_filename,
             len(profile.functions_reached_by_fuzzer),
             len(profile.functions_unreached_by_fuzzer),
@@ -503,7 +503,7 @@ def create_fuzzer_detailed_section(
 ) -> str:
     html_string = ""
     html_string += html_helpers.html_add_header_with_link(
-        f"Fuzzer: {profile.get_key()}",
+        f"Fuzzer: {profile.identifier}",
         2,
         toc_list
     )
@@ -530,7 +530,7 @@ def create_fuzzer_detailed_section(
         f"</p>"
     )
 
-    colormap_file_prefix = profile.get_key()
+    colormap_file_prefix = profile.identifier
     if "/" in colormap_file_prefix:
         colormap_file_prefix = colormap_file_prefix.replace("/", "_")
     image_name = f"{colormap_file_prefix}_colormap.png"
@@ -635,7 +635,7 @@ def create_fuzzer_detailed_section(
         cov_reach_proportion = 0.0
     str_percentage = "%.5s%%" % str(cov_reach_proportion)
     utils.write_to_summary_file(
-        profile.get_key(),
+        profile.identifier,
         "coverage-blocker-stats",
         {
             "reachable-funcs": reachable_funcs,
@@ -647,7 +647,7 @@ def create_fuzzer_detailed_section(
         if cov_reach_proportion < 30.0:
             conclusions.append((
                 2,
-                (f"Fuzzer { profile.get_key() } is blocked: runtime coverage only "
+                (f"Fuzzer { profile.identifier } is blocked: runtime coverage only "
                  f"covers { str_percentage } of its reachable functions.")
             ))
 
