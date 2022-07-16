@@ -502,6 +502,12 @@ input[type="checkbox"] {
 .report-box table {
 	max-width:  100%;
 }
+.report-box h1 {
+	-webkit-user-select: none; /* Safari */        
+	-moz-user-select: none; /* Firefox */
+	-ms-user-select: none; /* IE10+/Edge */
+	user-select: none; /* Standard */
+}
 
 /*********************************************/
 /********** Circular charts ******************/
@@ -623,6 +629,7 @@ input[type="checkbox"] {
 	position: relative;
 	display: block;
 	max-width: 80%;
+	padding-left: attr(data-paddingleft px)
 }
 .coverage-line-inner.fontsize10px {
 	font-size: 10px;

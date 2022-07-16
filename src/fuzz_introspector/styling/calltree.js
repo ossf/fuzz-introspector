@@ -2,7 +2,6 @@ var StdCFuncNames;
 StdCFuncNames = ["free", "abort", "malloc", "calloc", "exit", "memcmp", "strlen"]
 
 
-
 $( document ).ready(function() {
     $('.coverage-line-inner').click(function(){
       var wrapper = $(this).closest(".calltree-line-wrapper");
@@ -109,6 +108,7 @@ function isDescendant(parent, child) {
 function addFuzzBlockerLines() {
   var coverageLines;
   coverageLines = document.getElementsByClassName("coverage-line-inner");
+  var allDataIdx = document.querySelectorAll('[data-foo="value"]');
   for(var j=0;j<coverageLines.length;j++) {
     var thisDataIdx = coverageLines[j].getAttribute("data-calltree-idx");
     if(thisDataIdx!==null && fuzz_blocker_idxs.includes(thisDataIdx)) {
@@ -139,7 +139,6 @@ function createNavBar() {
 
   // Add buttons to the navbar
   addBackButton(e)
-  addShowIdxButton(e);
   addExpandAllBtn(e);
   addCollapseAllBtn(e);
   addStdCDropdown(e);
@@ -222,16 +221,6 @@ function addBackButton(parentElement) {
   backBtnInner.innerText = "< Back to report";
   backBtn.prepend(backBtnInner);
   parentElement.prepend(backBtn);
-}
-
-// Adds the show-idx btn to "parentElement"
-function addShowIdxButton(parentElement) {  
-  let btn = document.createElement("span");
-  btn.classList.add("calltree-nav-btn");
-  btn.classList.add("active");
-  btn.id = "show-idx-button"
-  btn.innerText = "show idx";
-  parentElement.append(btn);
 }
 
 // Adds the expand all btn to "parentElement"
@@ -332,12 +321,6 @@ function addNavbarClickEffects() {
   // Click click effects for hide/show std c funcs
   createStdCClickeffects();
 
-  // Other click effects
-  $('#show-idx-button').click(function(){
-    $(this).toggleClass("active");
-    $(".calltree-idx").toggleClass("hidden");
-  });
-
   $("#expand-all-button").click(function(){
     $(".calltree-line-wrapper").each(function( index ) {
       if(!$(this).hasClass("open")) {
@@ -406,11 +389,7 @@ function hideNodesWithText(text) {
 }
 
 function addExpandSymbols() {
-  $( ".coverage-line-inner").each(function( index ) {
-    console.log("Setting padding-left:")
-    $(this).css('padding-left', function() {
-      return $(this).data('paddingleft')*16+100;
-    });
+  $(".coverage-line-inner").each(function( index ) {
     var numberOfSubNodes = $(this).closest(".coverage-line").find(".coverage-line-inner").length
     if(numberOfSubNodes>1) {
       $(this).addClass("collapse-symbol");
@@ -458,5 +437,5 @@ function tabLineHover() {
         $(parent).removeClass("hovered");
       }
     }
-});
+  });
 }
