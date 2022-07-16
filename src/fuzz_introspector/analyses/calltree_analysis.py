@@ -90,6 +90,9 @@ class Analysis(analysis.AnalysisInterface):
             else:
                 func_href = ""
 
+            # indentation in html:
+            indentation = "%dpx" % (int(node.depth) * 16 + 100)
+
             if i > 0:
                 previous_node = nodes[i - 1]
                 if previous_node.depth == node.depth:
@@ -103,7 +106,7 @@ class Analysis(analysis.AnalysisInterface):
             calltree_html_string += f"""
     <div class="{color_to_be}-background coverage-line">
         <span class="coverage-line-inner" data-calltree-idx="{ct_idx_str}"
-        data-paddingleft="{int(node.depth)}">
+        data-paddingleft="{indentation}" style="padding-left: {indentation}">
             <span class="node-depth-wrapper">{node.depth}</span>
             <code class="language-clike">
                 {demangled_name}
@@ -122,7 +125,7 @@ class Analysis(analysis.AnalysisInterface):
                 if next_node.depth > node.depth:
                     calltree_html_string += f"""<div
         class="calltree-line-wrapper open level-{int(node.depth)}
-        data-paddingleft="{int(node.depth)}">"""
+        data-paddingleft="{indentation}" >"""
                 elif next_node.depth < node.depth:
                     depth_diff = int(node.depth - next_node.depth)
                     calltree_html_string += "</div>" * depth_diff
