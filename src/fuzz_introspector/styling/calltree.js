@@ -37,18 +37,18 @@ $( document ).ready(function() {
   // Create nav bar
   createNavBar();
 
-  // Add blocker lines to the calltree
-  addFuzzBlockerLines();
-
   // Add the expand symbols to all nodes that are expandable
   addExpandSymbols();
+
+  // Add blocker lines to the calltree
+  var funcList = addFuzzBlockerLines();
 
   // Instantiate all click events for buttons in the navbar
   addNavbarClickEffects();
 
   // Add all collapsible functions to the collapse-by-funcname dropdown.
   // This is done here AFTER the dropdown itself has been created.
-  addCollapsibleFunctionsToDropdown();
+  addCollapsibleFunctionsToDropdown(funcList);
 
 
   var innerNodes = document.getElementsByClassName("collapse-function-with-name");
@@ -109,16 +109,33 @@ function addFuzzBlockerLines() {
   var coverageLines;
   coverageLines = document.getElementsByClassName("coverage-line-inner");
   var allDataIdx = document.querySelectorAll('[data-foo="value"]');
-  for(var j=0;j<coverageLines.length;j++) {
-    var thisDataIdx = coverageLines[j].getAttribute("data-calltree-idx");
+
+  var funcList;
+  funcList = [];
+  for(var i=0;i<coverageLines.length;i++) {
+    // Add fuzz blocker line
+    var thisDataIdx = coverageLines[i].getAttribute("data-calltree-idx");
     if(thisDataIdx!==null && fuzz_blocker_idxs.includes(thisDataIdx)) {
-      coverageLines[j].classList.add("with-fuzz-blocker-line");
+      coverageLines[i].classList.add("with-fuzz-blocker-line");
       let infoBtn = document.createElement("div");
       infoBtn.classList.add("fuzz-blocker-info-btn");
       infoBtn.innerText = "FUZZ BLOCKER";
-      coverageLines[j].append(infoBtn);
+      coverageLines[i].append(infoBtn);
+    }
+
+    // Create function list
+    if(coverageLines[i].classList.contains("collapse-symbol")) {
+      if(coverageLines[i].querySelector(".language-clike")===undefined) {
+        continue
+      }
+      let funcName = coverageLines[i].querySelector(".language-clike").innerText.trim();
+      if(!funcList.includes(funcName)) {
+        funcList.push(funcName)
+      }
     }
   }
+  funcList.sort();
+  return funcList;
 }
 
 /* When the user clicks on the button,
@@ -166,26 +183,9 @@ function addFontSizeDropdown(parentElement) {
   parentElement.append(createFontSizeDropdown());
 }
 
-// Returns an array of function names that are collapsible
-function getCollapsibleFunctions() {
-  let ctNodes = document.getElementsByClassName("coverage-line-inner collapse-symbol");
-  let funcList = [];
-  for(var i=0;i<ctNodes.length;i++) {
-    if(ctNodes[i].querySelector(".language-clike")===undefined) {
-      continue
-    }
-    let funcName = ctNodes[i].querySelector(".language-clike").innerText.trim();
-    if(!funcList.includes(funcName)) {
-      funcList.push(funcName)
-    }
-  }
-  return funcList.sort();
-}
-
 // Adds collapsible functions to the dropdown
-function addCollapsibleFunctionsToDropdown() {
+function addCollapsibleFunctionsToDropdown(funcNames) {
   var collapseByNameDropdown = document.getElementById("collapseByNameDropdown");
-  let funcNames = getCollapsibleFunctions();
   for(var i=0;i<funcNames.length;i++) {
     let listItem = document.createElement("div");
     listItem.classList.add("checkbox-line-wrapper");
@@ -427,7 +427,6 @@ function tabLineHover() {
       } else {
         $(parent).addClass("hovered");
       }
-
     },
     mouseleave: function () {
       var parent = $(this).closest(".coverage-line");
