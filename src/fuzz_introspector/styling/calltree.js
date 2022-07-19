@@ -73,7 +73,71 @@ $( document ).ready(function() {
   scrollOnLoad();
 
   tabLineHover();
+
+  addImageOverview();
 });
+
+function addImageOverview() {
+  let box = document.getElementsByClassName('coverage-line')[0];
+  let height = box.offsetHeight;
+  let os = box.offsetTop;
+
+  let imgWrapper = document.createElement("div");
+  imgWrapper.style.position = "absolute";
+  imgWrapper.style.bottom = "70px";
+  imgWrapper.style.right = "-250px";
+  imgWrapper.style.transition = "top .1s ease";
+  imgWrapper.style.transform = "rotate(90deg)";
+  imgWrapper.style.width = "800px";
+  imgWrapper.style.display = "flex";
+  imgWrapper.zIndex = "100";
+  imgWrapper.id = "right-side-overview-image"
+
+  let title = document.createElement("div");
+  title.innerText = "Static overview";
+  title.style.writingMode = "tb-rl";
+  title.style.transform = "rotate(180deg)";
+
+  let img = document.createElement("img");
+  let imageName = document.getElementsByClassName("top-navbar-title")[0].innerText.split("Fuzz introspector: ")[1];
+  img.src = sanitizeString(imageName)+"_colormap.png";
+  img.style.width = "100%";
+
+  imgWrapper.append(title);
+  imgWrapper.append(img);
+  console.log(document.getElementsByClassName("content-wrapper")[0])
+  document.getElementsByClassName("call-tree-section-wrapper")[0].prepend(imgWrapper);
+}
+
+function sanitizeString(str){
+    str = str.replace(/[^a-z0-9áéíóúñü \.,_-]/gim,"");
+    return str.trim();
+}
+
+// This event controls the positioning of the right-side 
+// overview image.
+document.getElementsByClassName("content-section")[0].addEventListener("scroll", function(event){
+  let box = document.getElementsByClassName('coverage-line')[0];
+  let box3 = document.getElementsByClassName('call-tree-section-wrapper')[0];
+  
+  // Distance from calltree to the top of page.
+  let os = box3.offsetTop;
+
+  // Distance of calltree from top of page - taking into
+  // account scrolling. 
+  let offset = box.getBoundingClientRect().top-120;
+
+  // This calculation is still raw and might not fit
+  // all screen sizes.
+  var scrollPos = 70+(os-offset)-50;
+  
+  // To stop the overview picture around half-way on the
+  // screen, we set a max offset.
+  let maxOffset = window.innerHeight*.46;
+  if(scrollPos<maxOffset) {
+    document.getElementById("right-side-overview-image").style.bottom = scrollPos;
+  }
+}, false);
 
 // Scrolls to a node if the "scrollToNode" parameters is given
 function scrollOnLoad() {
