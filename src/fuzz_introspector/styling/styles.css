@@ -941,3 +941,10 @@ button.dt-button:active:not(.disabled):hover:not(.disabled), button.dt-button.ac
 .mt-0 {
 	margin-top: 0px;
 }
+.text-link {
+	font-weight: 650;
+	color: #FCC200;
+}
+.text-link:hover {
+	cursor: pointer;
+}

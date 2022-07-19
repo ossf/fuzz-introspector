@@ -92,6 +92,17 @@ function scrollOnLoad() {
   }
 }
 
+// Scrolls to a node
+function scrollToNodeInCT(nodeId) {
+  var dataValue = "[data-calltree-idx='"+nodeId+"']";
+  var elementToScrollTo = document.querySelector(dataValue);
+  if(elementToScrollTo===null) {
+    return
+  }
+  elementToScrollTo.style.background = "#ffe08c";
+  elementToScrollTo.scrollIntoView({behavior: "smooth", block: "center"})
+}
+
 // Checks whether child is a descendant of parent.
 function isDescendant(parent, child) {
   var node = child.parentNode;

@@ -279,16 +279,13 @@ class Analysis(analysis.AnalysisInterface):
         )
         for node in fuzz_blockers:
             link_prefix = "0" * (5 - len(str(node.cov_ct_idx)))
-            node_link = "%s?scrollToNode=%s%s" % (
-                calltree_file_name,
-                link_prefix,
-                node.cov_ct_idx
-            )
+            node_id = "%s%s" % (link_prefix, node.cov_ct_idx)
             html_table_string += html_helpers.html_table_add_row([
                 str(node.cov_forward_reds),
                 str(node.cov_ct_idx),
                 node.cov_parent,
-                f"<a href={node_link}>call site</a>",
+                f"""<span class=\"text-link\"
+                 onclick=\"scrollToNodeInCT('{node_id}')\">call site</span>""",
                 node.cov_largest_blocked_func
             ])
         html_table_string += "</table>"
