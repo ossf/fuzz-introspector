@@ -124,8 +124,8 @@ class Analysis(analysis.AnalysisInterface):
                 next_node = nodes[i + 1]
                 if next_node.depth > node.depth:
                     calltree_html_string += f"""<div
-        class="calltree-line-wrapper open level-{int(node.depth)}
-        data-paddingleft="{indentation}" >"""
+        class="calltree-line-wrapper open level-{int(node.depth)}"
+         data-paddingleft="{indentation}" >"""
                 elif next_node.depth < node.depth:
                     depth_diff = int(node.depth - next_node.depth)
                     calltree_html_string += "</div>" * depth_diff
