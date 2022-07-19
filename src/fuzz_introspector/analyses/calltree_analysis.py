@@ -196,8 +196,6 @@ class Analysis(analysis.AnalysisInterface):
             html_end += f"var fuzz_blocker_idxs = {json.dumps(blocker_idxs)};"
             html_end += "</script>"
 
-        html_end += "<script src=\"prism.js\"></script>"
-        html_end += "<script src=\"clike.js\"></script>"
         html_end += "<script src=\"calltree.js\"></script>"
         complete_html_string += html_end
 
