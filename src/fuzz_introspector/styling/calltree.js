@@ -1,5 +1,5 @@
 var StdCFuncNames;
-StdCFuncNames = ["free", "abort", "malloc", "calloc", "exit", "memcmp", "strlen"]
+StdCFuncNames = ["free", "abort", "malloc", "calloc", "exit", "memcmp", "strlen"];
 
 
 $( document ).ready(function() {
@@ -134,8 +134,9 @@ function addFuzzBlockerLines() {
       coverageLines[i].append(infoBtn);
     }
 
-    // Create function list
+    // Get data for navbar buttons
     if(coverageLines[i].classList.contains("collapse-symbol")) {
+      // Get data for std c func names dropdown
       if(coverageLines[i].querySelector(".language-clike")===undefined) {
         continue
       }
@@ -144,6 +145,7 @@ function addFuzzBlockerLines() {
         funcList.push(funcName)
       }
     }
+
   }
   funcList.sort();
   return funcList;
@@ -333,22 +335,20 @@ function addNavbarClickEffects() {
   createStdCClickeffects();
 
   $("#expand-all-button").click(function(){
-    $(".calltree-line-wrapper").each(function( index ) {
-      if(!$(this).hasClass("open")) {
-        $(this).addClass("open");
-      }
-      $(".coverage-line-inner.expand-symbol").toggleClass("collapse-symbol expand-symbol");
+    Array.from(document.querySelectorAll('.calltree-line-wrapper:not(.open)')).forEach((el) => el.classList.add('open'));
+    Array.from(document.querySelectorAll('.coverage-line-inner.expand-symbol')).forEach(function(el) {
+      el.classList.remove('expand-symbol')
+      el.classList.add('collapse-symbol')
     });
   })
 
   $("#collapse-all-button").click(function(){
-    $(".calltree-line-wrapper").each(function( index ) {
-      if($(this).hasClass("open")) {
-        $(this).removeClass("open");
-      }
-      $(".coverage-line-inner.collapse-symbol").toggleClass("collapse-symbol expand-symbol");
+    Array.from(document.querySelectorAll('.calltree-line-wrapper.open')).forEach((el) => el.classList.remove('open'));
+    Array.from(document.querySelectorAll('.coverage-line-inner.collapse-symbol')).forEach(function(el) {
+      el.classList.remove('collapse-symbol')
+      el.classList.add('expand-symbol')
     });
-  })
+  });
 
   $(".fontsize-option").click(function(){
     var selectedFontSize=$(this).data("fontsize");
