@@ -89,14 +89,14 @@ class FuzzerProfile:
     ) -> str:
         """Resolves a link to a coverage report."""
         if self.target_lang == "c-cpp":
-            self._resolve_c_cpp_coverage_link(
+            return self._resolve_c_cpp_coverage_link(
                 cov_url,
                 source_file,
                 lineno,
                 function_name
             )
         elif self.target_lang == "python":
-            self._resolve_python_coverage_link(
+            return self._resolve_python_coverage_link(
                 cov_url,
                 source_file,
                 lineno,
