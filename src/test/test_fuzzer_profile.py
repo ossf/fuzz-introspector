@@ -19,7 +19,7 @@ import pytest
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../")
 
-from fuzz_introspector.datatypes import fuzzer_profile
+from fuzz_introspector.datatypes import fuzzer_profile  # noqa: E402
 
 
 @pytest.fixture
@@ -43,9 +43,9 @@ def test_coverage_url(tmpdir, sample_cfg1):
         f.write(sample_cfg1)
 
     fake_frontend_yaml = {
-        "Fuzzer filename" : "/src/wuffs/fuzz/c/fuzzlib/fuzzlib.c",
-        "All functions" : {
-            "Elements" : []
+        "Fuzzer filename": "/src/wuffs/fuzz/c/fuzzlib/fuzzlib.c",
+        "All functions": {
+            "Elements": []
         }
     }
 
