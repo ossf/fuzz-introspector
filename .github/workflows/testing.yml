@@ -1,0 +1,22 @@
+name: Unit tests
+
+on: [push, pull_request]
+
+jobs:
+  unittests:
+    runs-on: ubuntu-latest
+    name: Unit Tests
+    steps:
+      - name: Check out source repository
+        uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # v2.4.0
+      - name: Set up Python environment
+        uses: actions/setup-python@c4e89fac7e8767b327bbad6cb4d859eda999cf08 # v3.0.0
+        with:
+          python-version: "3.8"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Test unittests
+        run: |
+          pytest src/test/
