@@ -150,15 +150,16 @@ def check_project_html_sanity(html_report):
     with open(html_report, 'r') as html_file:
         for line in html_file:
             line_pos = line.find("<a href")
-            if line_pos != -1:
-                url_begin_pos = line.find('"', line_pos)
-                url_end_pos = line.find('"', url_begin_pos+1)
-                url = line[url_begin_pos+1:url_end_pos]
-                if url.startswith("http"):
-                    status = requests.head(url)
-                    if status.status_code != 200:
-                        print("Faulty URL: %s"%url)
-                        return False
+            if line_pos == -1:
+                continue
+            url_begin_pos = line.find('"', line_pos)
+            url_end_pos = line.find('"', url_begin_pos+1)
+            url = line[url_begin_pos+1:url_end_pos]
+            if url.startswith("http"):
+                status = requests.head(url)
+                if status.status_code != 200:
+                    print("Faulty URL: %s"%url)
+                    return False
     return True
 
 
