@@ -16,6 +16,7 @@ import os
 import json
 import sys
 import argparse
+import requests
 
 class ProjectCheckError(Exception):
     def __init__(self, message):
@@ -144,12 +145,31 @@ def check_specific_project(proj_name, build_log_file,coverage_log,summary_json):
     print("Check done")
 
 
+def check_project_html_sanity(html_report):
+    """Checks the sanity of URLs in the html file. Returns False if fails"""
+    with open(html_report, 'r') as html_file:
+        for line in html_file:
+            line_pos = line.find("<a href")
+            if line_pos == -1:
+                continue
+            url_begin_pos = line.find('"', line_pos)
+            url_end_pos = line.find('"', url_begin_pos+1)
+            url = line[url_begin_pos+1:url_end_pos]
+            if url.startswith("http"):
+                status = requests.head(url)
+                if status.status_code != 200:
+                    print("Faulty URL: %s"%url)
+                    return False
+    return True
+
+
 def check_project_dir(proj_dir):
     print(f"Checking {proj_dir}")
     build_log_file   = os.path.join(proj_dir, "build_introspector.log")
     coverage_log     = os.path.join(proj_dir, "get_coverage.log")
     summary_json     = os.path.join(proj_dir, "inspector-report", "summary.json")
     proj_name_file   = os.path.join(proj_dir, "project_name")
+    html_report      = os.path.join(proj_dir, "inspector-report", "fuzz_report.html")
 
     if not os.path.isfile(build_log_file):
         err_exit("No log file")
@@ -160,6 +180,11 @@ def check_project_dir(proj_dir):
     print(proj_name_file)
     if not os.path.isfile(proj_name_file):
         err_exit("No project name file")
+    if not os.path.isfile(html_report):
+        err_exit("No html report file")
+
+    if not check_project_html_sanity(html_report):
+        err_exit("Html sanity check failed")
 
     with open(proj_name_file, "r") as pf:
         proj_name = pf.read().replace("\n","")

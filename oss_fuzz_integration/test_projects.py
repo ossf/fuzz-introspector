@@ -85,7 +85,8 @@ def main_loop():
         "unrar",
         "tarantool",
         "fio",
-        "wuffs"
+        "wuffs",
+        "c-ares"
     ]
 
     build_results = []
