@@ -85,7 +85,7 @@ class Analysis(analysis.AnalysisInterface):
             ct_idx_str = self.create_str_node_ctx_idx(str(node.cov_ct_idx))
 
             # Only display [function] link if we have, otherwhise show no [function] text.
-            if node.dst_function_source_file.replace(" ", "") != "/":
+            if node.dst_function_source_file.replace(" ", "") != "":
                 func_href = f"""<a href="{link}">[function]</a>"""
             else:
                 func_href = ""

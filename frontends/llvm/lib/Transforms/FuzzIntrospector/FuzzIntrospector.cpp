@@ -531,7 +531,6 @@ std::string FuzzIntrospector::getFunctionFilename(Function *F) {
   StringRef Dir;
   StringRef Res;
 
-  int Found = 0;
   for (auto &I : instructions(*F)) {
     const llvm::DebugLoc &DebugInfo = I.getDebugLoc();
     if (DebugInfo) {
@@ -541,16 +540,16 @@ std::string FuzzIntrospector::getFunctionFilename(Function *F) {
       // errs() << "Line number: " << debugInfo.getLine() << "\n";
       Dir = Scope->getDirectory();
       Res = Scope->getFilename();
-      Found = 1;
       break;
     }
   }
 
   SmallString<256> *CurrentDir = new SmallString<256>();
-  if (Found)
+  if (Dir.size()) {
     CurrentDir->append(Dir);
-  CurrentDir->append("/");
-  if (Found)
+    CurrentDir->append("/");
+  }
+  if (Res.size())
     CurrentDir->append(Res);
 
   StringRef s4 = CurrentDir->str();
