@@ -224,7 +224,7 @@ class MergedProjectProfile:
         """
         all_strs = []
         for f in self.all_functions.values():
-            if f.function_source_file == "/":
+            if f.function_source_file == "":
                 continue
             if "/usr/include/" in f.function_source_file:
                 continue
