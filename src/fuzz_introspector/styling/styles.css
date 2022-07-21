@@ -74,6 +74,22 @@ table.dataTable tbody tr.even {
 }
 .section-wrapper.call-tree-section-wrapper {
 	padding-left: 40px;
+	position: relative;
+	flex: 4;
+}
+#side-overview-wrapper {
+	flex: 1;
+	padding-top: 28vh;
+}
+#side-overview-wrapper img {
+	transform: rotate(90deg);
+	width: 70vh;
+	position: sticky;
+	top: 40vh;
+
+}
+#calltree-wrapper {
+	display: flex;
 }
 .top-navbar-accordion {
 	position:  absolute;
@@ -103,6 +119,7 @@ table.dataTable tbody tr.even {
 	background:  #EBEDEE;
 	/*border-left: 1px solid #d9d9d9;*/
 	/*width: calc(100% - 20px);*/
+	overflow-x: hidden;
 }
 .content-section.calltree-content-section {
 	height: calc(100vh - 120px);
