@@ -66,6 +66,7 @@ class FuzzerProfile:
         except KeyError:
             raise DataLoaderError("Fuzzer filename not in loaded yaml")
         self._set_function_list(frontend_yaml)
+        self.update_functions_total_cyclomatic_comlexity()
 
     @property
     def target_lang(self):
@@ -303,6 +304,18 @@ class FuzzerProfile:
                 "file-target-count": file_target_count,
             }
         )
+
+    def update_functions_total_cyclomatic_comlexity(self) -> None:
+        """
+        Update the total cyclomatic complexity for all the functions in this fuzzer.
+        """
+        for fp in self.all_class_functions.values():
+            for reached_func_name in fp.functions_reached:
+                if reached_func_name not in self.all_class_functions:
+                    logger.error(f"Mising function in fuzzer profile: {reached_func_name}")
+                    continue
+                reached_func_obj = self.all_class_functions[reached_func_name]
+                fp.total_cyclomatic_complexity += reached_func_obj.cyclomatic_complexity
 
     def _set_all_reached_functions(self) -> None:
         """Sets self.functions_reached_by_fuzzer to all functions reached by
