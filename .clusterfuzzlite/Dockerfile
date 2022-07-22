@@ -1,4 +1,4 @@
-# Copyright 2022 Google LLC
+# Copyright 2022 Fuzz Introspector Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,11 +17,6 @@
 FROM gcr.io/oss-fuzz-base/base-builder-python
 RUN apt-get update && apt-get install -y make autoconf automake libtool
 
-# Switch this to local copy instead of clone.
-#RUN git clone --depth 1 https://github.com/ossf/fuzz-introspector fuzz-introspector
-COPY . fuzz-introspector
+COPY . $SRC/fuzz-introspector
 COPY .clusterfuzzlite/build.sh $SRC/build.sh
-#COPY src src
-
-WORKDIR fuzz-introspector
-#COPY build.sh $SRC/
+WORKDIR $SRC/fuzz-introspector
