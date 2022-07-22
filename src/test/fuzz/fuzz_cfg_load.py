@@ -20,6 +20,7 @@ import atheris
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../")
 
 from fuzz_introspector import cfg_load  # noqa: E402
+from fuzz_introspector import exceptions  # noqa: E402
 
 
 @atheris.instrument_func
@@ -32,7 +33,7 @@ def TestOneInput(data):
     # Read the file as a calltree
     try:
         cfg_load.data_file_read_calltree(cfg_file)
-    except UnicodeDecodeError:
+    except exceptions.FuzzIntrospectorError:
         pass
 
     if os.path.isfile(cfg_file):
