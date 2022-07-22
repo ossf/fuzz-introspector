@@ -18,6 +18,7 @@ jobs:
       uses: google/clusterfuzzlite/actions/build_fuzzers@v1
       with:
         sanitizer: ${{ matrix.sanitizer }}
+        language: python
         ##storage-repo: https://${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com/ossf/fuzz-introspector.git
         #storage-repo-branch-coverage: gh-pages  # Optional. Defaults to "gh-pages".
     - name: Run Fuzzers (${{ matrix.sanitizer }})
