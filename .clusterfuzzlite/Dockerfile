@@ -21,4 +21,4 @@ RUN apt-get update && apt-get install -y make autoconf automake libtool
 RUN git clone --depth 1 https://github.com/ossf/fuzz-introspector fuzz-introspector
 
 WORKDIR fuzz-introspector
-COPY build.sh $SRC/
+#COPY build.sh $SRC/
