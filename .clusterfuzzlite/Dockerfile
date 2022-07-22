@@ -20,6 +20,7 @@ RUN apt-get update && apt-get install -y make autoconf automake libtool
 # Switch this to local copy instead of clone.
 #RUN git clone --depth 1 https://github.com/ossf/fuzz-introspector fuzz-introspector
 COPY . fuzz-introspector
+COPY .clusterfuzzlite/build.sh $SRC/build.sh
 #COPY src src
 
 WORKDIR fuzz-introspector
