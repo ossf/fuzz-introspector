@@ -346,7 +346,7 @@ def overlay_calltree_with_coverage(
         n1.cov_largest_blocked_func = largest_blocked_name
 
     update_branch_complexities(proj_profile.all_functions, profile.coverage)
-    branch_blockers = detect_branch_level_blockers(profile, proj_profile.all_functions)
+    branch_blockers = detect_branch_level_blockers(proj_profile.all_functions, profile)
     logger.info(f"[+] found {len(branch_blockers)} branch blockers.")
     # TODO: use these results appropriately ...
     branch_blockers_list = []
