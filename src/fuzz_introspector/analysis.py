@@ -345,8 +345,8 @@ def overlay_calltree_with_coverage(
         n1.cov_forward_reds = forward_red
         n1.cov_largest_blocked_func = largest_blocked_name
 
-    update_branch_complexities(profile.all_class_functions, profile.coverage)
-    branch_blockers = detect_branch_level_blockers(profile)
+    update_branch_complexities(proj_profile.all_functions, profile.coverage)
+    branch_blockers = detect_branch_level_blockers(proj_profile.all_functions, profile)
     logger.info(f"[+] found {len(branch_blockers)} branch blockers.")
     # TODO: use these results appropriately ...
     branch_blockers_list = []
@@ -398,6 +398,7 @@ def update_branch_complexities(all_functions: Dict[str, function_profile.Functio
 
 
 def detect_branch_level_blockers(
+    functions_profile: Dict[str, function_profile.FunctionProfile],
     fuzz_profile: fuzzer_profile.FuzzerProfile
 ) -> List[FuzzBranchBlocker]:
     fuzz_blockers = []
@@ -407,7 +408,6 @@ def detect_branch_level_blockers(
                      "Skipping branch blocker detection.")
         return []
     coverage = fuzz_profile.coverage
-    functions_profile = fuzz_profile.all_class_functions
 
     for branch_string in coverage.branch_cov_map:
         blocked_side = None
