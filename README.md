@@ -10,9 +10,11 @@ Fuzz-introspector aims to improve fuzzing experience of a project by guiding on 
 - modify existing fuzzers to improve the quality of your harness.
 
 ## Documentation and samples
-- [Sample OSS-Fuzz reports:](https://oss-fuzz-introspector.storage.googleapis.com/index.html). OSS-Fuzz supports fuzz introspector and maintains a list of fuzz introspector reports for the OSS-Fuzz projects.
-- [Video demonstration:](https://www.youtube.com/watch?v=cheo-liJhuE)
+- [Sample OSS-Fuzz reports](https://oss-fuzz-introspector.storage.googleapis.com/index.html). OSS-Fuzz supports fuzz introspector and maintains a list of fuzz introspector reports for the OSS-Fuzz projects.
+- [Video demonstration](https://www.youtube.com/watch?v=cheo-liJhuE)
 - [List of Case studies](doc/CaseStudies.md)
+- [Screenshots](doc/ExampleOutput.md)
+- [Feature list](doc/Features.md)
 - [Feature list](doc/Features.md)
 - Try yourself:
   - [Use with OSS-Fuzz](oss_fuzz_integration#build-fuzz-introspector-with-oss-fuzz) (Recommended)
