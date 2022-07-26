@@ -29,7 +29,7 @@ from typing import (
 
 from fuzz_introspector import utils
 from fuzz_introspector import cfg_load
-from fuzz_introspector import cov_load
+from fuzz_introspector import code_coverage
 from fuzz_introspector import html_helpers
 from fuzz_introspector.datatypes import (
     project_profile,
@@ -368,7 +368,7 @@ def overlay_calltree_with_coverage(
 
 
 def update_branch_complexities(all_functions: Dict[str, function_profile.FunctionProfile],
-                               coverage: cov_load.CoverageProfile) -> None:
+                               coverage: code_coverage.CoverageProfile) -> None:
     """
     Traverse every branch profile and update the side complexities based on reached funcs
     complexity.

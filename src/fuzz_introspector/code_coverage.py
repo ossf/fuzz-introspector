@@ -158,7 +158,7 @@ class CoverageProfile:
         return len(self.covmap[fuzz_key]), len(lines_hit)
 
 
-def llvm_cov_load(
+def load_llvm_coverage(
     target_dir: str,
     target_name: Optional[str] = None
 ) -> CoverageProfile:
@@ -279,7 +279,7 @@ def llvm_cov_load(
     return cp
 
 
-def load_python_json_cov(
+def load_python_json_coverage(
     json_file: str,
     strip_pyinstaller_prefix: bool = True
 ):
