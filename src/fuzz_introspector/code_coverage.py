@@ -29,8 +29,7 @@ logger.setLevel(logging.INFO)
 
 
 class CoverageProfile:
-    """
-    Stores and handles a runtime coverage data.
+    """Stores and handles a runtime coverage data.
 
     :ivar Dict[str, List[Tuple[int, int]]] covmap:  Dictionary of string to
         list of tuples of ints. The tuples correspond to line number and
@@ -61,13 +60,6 @@ class CoverageProfile:
 
     def is_type_set(self) -> bool:
         return self._cov_type != ""
-
-    def get_all_hit_functions(self) -> List[str]:
-        # Hacky way to satisfy typing
-        all_keys: List[str] = []
-        for k in self.covmap.keys():
-            all_keys.append(k)
-        return all_keys
 
     def generic_check_hit(
         self,
