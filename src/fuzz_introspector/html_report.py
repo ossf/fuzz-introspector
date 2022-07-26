@@ -409,8 +409,8 @@ def create_conclusions(
     sentence = f"""Fuzzers reach { "%.5s%%"%(str(reached_percentage)) } of all functions. """
     conclusions.append(
         html_helpers.HTMLConclusion(
-            severity=int(reached_percentage*0.1),
-            title = sentence,
+            severity=int(reached_percentage * 0.1),
+            title=sentence,
             description=""
         )
     )
@@ -420,7 +420,7 @@ def create_conclusions(
     sentence = f"Fuzzers reach { percentage_str } of cyclomatic complexity. "
     conclusions.append(
         html_helpers.HTMLConclusion(
-            severity=int(reached_percentage*0.1),
+            severity=int(reached_percentage * 0.1),
             title=sentence,
             description=""
         )

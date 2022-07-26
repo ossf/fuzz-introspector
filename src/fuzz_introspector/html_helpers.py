@@ -24,9 +24,10 @@ from typing import (
 from fuzz_introspector import utils
 from fuzz_introspector.datatypes import fuzzer_profile
 
+
 class HTMLConclusion:
     """Represents high-level conclusions in HTML report
-       
+
     Attributes:
         severity (int): Importance of conclusion. 100 max, 0 lowest.
         title (str): One line description of conclusion.
