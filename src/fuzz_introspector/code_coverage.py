@@ -126,14 +126,14 @@ class CoverageProfile:
         return False
 
     def is_func_hit(self, funcname: str) -> bool:
+        """Returs whether a function is hit"""
         _, lines_hit = self.get_hit_summary(funcname)
         if lines_hit is not None and lines_hit > 0:
             return True
         return False
 
     def get_hit_details(self, funcname: str) -> List[Tuple[int, int]]:
-        """
-        Returns a list containiner tupls [line number, hit count]
+        """Returns a list containiner tuples [line number, hit count]
         of the function given as argument. If there is no coverage,
         i.e. the function is not in the covmap of the coverage profile,
         then an empty list is returned.
@@ -150,9 +150,11 @@ class CoverageProfile:
             return []
         return self.covmap[fuzz_key]
 
-    def get_hit_summary(self, funcname: str) -> Tuple[Optional[int], Optional[int]]:
-        """
-        returns the hit summary of a give function, in the form of
+    def get_hit_summary(
+        self,
+        funcname: str
+    ) -> Tuple[Optional[int], Optional[int]]:
+        """returns the hit summary of a give function, in the form of
         a tuple (total_function_lines, hit_lines)
         """
         fuzz_key = None
