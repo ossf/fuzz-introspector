@@ -28,10 +28,9 @@ from fuzz_introspector.datatypes import fuzzer_profile
 class HTMLConclusion:
     """Represents high-level conclusions in HTML report
 
-    Attributes:
-        severity (int): Importance of conclusion. 100 max, 0 lowest.
-        title (str): One line description of conclusion.
-        description (str): Extended description.
+    :ivar int severity: Importance of conclusion. 100 max, 0 lowest.
+    :ivar str title: One line description of conclusion.
+    :ivar str description: Extended description.
     """
     def __init__(self, severity, title, description):
         self.title = title

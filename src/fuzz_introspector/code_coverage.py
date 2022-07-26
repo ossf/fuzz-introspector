@@ -11,11 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""
-Module for loading coverage files and parsing them into something we can use in Python.
-
-At the moment only C/C++ is supported. Other languages coming up soon.
-"""
+"""Module for handling code coverage reports"""
 
 import logging
 
@@ -34,33 +30,37 @@ logger.setLevel(logging.INFO)
 
 class CoverageProfile:
     """
-    Class for storing information about a runtime coverage report
+    Stores and handles a runtime coverage data.
+
+    :ivar Dict[str, List[Tuple[int, int]]] covmap:  Dictionary of string to
+        list of tuples of ints. The tuples correspond to line number and
+        hitcount. The string can have multiple meanings depending on the
+        language being handled. For C/C++ it corresponds to functions,
+        and for Python it correspond to source code files.
+
+        If the key is file paths then `set_type` returns "file".
+
+    :ivar Dict[str, List[Tuple[int, int]]] file_map: Dictionary holding
+        mappings between source code files and line numbers and hitcounts.
+
+    :ivar Dict[str, Tuple[int, int]] branch_cov_map: Dictionary to collect
+        the branch coverage info in the form of current_func:line_number as
+        the key and true_hit and false_hit as a tuple value.
     """
     def __init__(self) -> None:
-        # Covmap is a dictionary of string to list of tuples of int.
-        # The tupls correspond to line number and hitcount in the
-        # source code.
         self.covmap: Dict[str, List[Tuple[int, int]]] = dict()
-        self.covreports: List[str] = list()
-
-        # File to cov map: {filename: [ (linenumber, hit), ... ]}
         self.file_map: Dict[str, List[Tuple[int, int]]] = dict()
-
-        # branch_cov_map is dictionary to collect the branch coverage info
-        # in the form of current_func:line_number as the key and true_hit and
-        # false_hit as a tuple value
         self.branch_cov_map: Dict[str, Tuple[int, int]] = dict()
-
-        self.cov_type = ""
+        self._cov_type = ""
 
     def set_type(self, cov_type: str) -> None:
-        self.cov_type = cov_type
+        self._cov_type = cov_type
 
     def get_type(self) -> str:
-        return self.cov_type
+        return self._cov_type
 
     def is_type_set(self) -> bool:
-        return self.cov_type != ""
+        return self._cov_type != ""
 
     def get_all_hit_functions(self) -> List[str]:
         # Hacky way to satisfy typing
@@ -201,7 +201,6 @@ def load_llvm_coverage(
 
         logger.info(f"Reading coverage report: {profile_file}")
         with open(profile_file, 'rb') as pf:
-            cp.covreports.append(profile_file)
             curr_func = None
             for raw_line in pf:
                 line = utils.safe_decode(raw_line)
@@ -319,7 +318,7 @@ def load_python_json_coverage(
 if __name__ == "__main__":
     logging.basicConfig()
     logger.info("Starting coverage loader")
-    cp = load_python_json_cov("total_coverage.json")
+    cp = load_python_json_coverage("total_coverage.json")
 
     logger.info("Coverage map keys")
     for fn in cp.file_map:
