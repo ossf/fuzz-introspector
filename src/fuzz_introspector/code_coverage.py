@@ -133,10 +133,17 @@ class CoverageProfile:
         return False
 
     def get_hit_details(self, funcname: str) -> List[Tuple[int, int]]:
-        """Returns a list containiner tuples [line number, hit count]
-        of the function given as argument. If there is no coverage,
-        i.e. the function is not in the covmap of the coverage profile,
-        then an empty list is returned.
+        """Returns details of code coverage for a given function.
+
+        This should only be used for coverage profiles that are non-file type.
+
+        :param funcname: Function name to lookup.
+        :type funcname: str
+
+        :rtype: List[Tuple[int, int]]
+        :returns: List of pairs where the first element is the source code
+            linenumber and the second element is the amount of times that line
+            was covered.
         """
         fuzz_key = None
         if funcname in self.covmap:
@@ -154,8 +161,17 @@ class CoverageProfile:
         self,
         funcname: str
     ) -> Tuple[Optional[int], Optional[int]]:
-        """returns the hit summary of a give function, in the form of
-        a tuple (total_function_lines, hit_lines)
+        """Returns the hit summary of a give function.
+
+        This should only be used for coverage profiles that are non-file type.
+
+        :param funcname: Function name to lookup.
+        :type funcname: str
+
+        :rtype: List[Tuple[Optional[int], Optional[int]]]
+        :returns: List of pairs where the first element is
+            the total amount of lines in a function and second element is the
+            amount of lines in the function that are hit.
         """
         fuzz_key = None
         if funcname in self.covmap:
