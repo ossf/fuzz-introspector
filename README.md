@@ -15,6 +15,7 @@ Fuzz-introspector aims to improve fuzzing experience of a project by guiding on 
 - [List of Case studies](doc/CaseStudies.md)
 - [Screenshots](doc/ExampleOutput.md)
 - [Feature list](doc/Features.md)
+- [Dev/API doc (work-in-progress)](https://fuzz-introspector.readthedocs.io/en/latest/)
 - Try yourself:
   - [Use with OSS-Fuzz](oss_fuzz_integration#build-fuzz-introspector-with-oss-fuzz) (Recommended)
   - [Use without OSS-Fuzz](doc/LocalBuild.md)
