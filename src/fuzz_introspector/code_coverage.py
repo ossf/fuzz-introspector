@@ -61,50 +61,68 @@ class CoverageProfile:
     def is_type_set(self) -> bool:
         return self._cov_type != ""
 
-    def generic_check_hit(
+    def is_file_lineno_hit(
         self,
-        key: str,
+        target_file: str,
         lineno: int,
         resolve_name: bool = False
     ) -> bool:
-        """Checks if a file is hit. This is a generic function that first checks
-        what type of coverage mapping this is.
-        """
-        logger.info(f"In generic hit -- {str(key)}")
-        if self.get_type() == "file":
-            logger.info("File type")
-            target_key = key
-            if resolve_name:
-                # Try to resolve the key. This is needed to e.g. normalise
-                # file names.
-                splits = key.split(".")
-                potentials = []
-                curr = ""
-                for s2 in splits:
-                    curr += s2
-                    potentials.append(curr + ".py")
-                    curr += "/"
-                logger.info(f"Potentials: {str(potentials)}")
-                for potential_key in self.file_map:
-                    logger.info(f"Scanning {str(potential_key)}")
-                    for p in potentials:
-                        if potential_key.endswith(p):
-                            found_key = potential_key
-                            break
-                logger.info(f"Found key: {str(found_key)}")
-                if found_key == "":
-                    logger.info("Could not find key")
-                    return False
-                target_key = found_key
+        """Checks if a given linenumber in a file is hit.
 
-            if target_key not in self.file_map:
-                logger.info("Target key is not in file_map")
+        :param target_file: file to inspect
+        :type target_file: str
+
+        :param lineno: line number in the file
+        :type lineno: int
+
+        :param resolve_name: whether to normalise name. This is only used
+            for Python code coverage where the filename being tracked is
+            extracted from a pyinstaller executable.
+        :type resolve_name: bool
+
+        :rtype: bool
+        :returns: `True` if lineno is covered in the given soruce file. `False`
+            otherwise.
+        """
+        logger.info(f"In generic hit -- {str(target_file)}")
+        if self.get_type() != "file":
+            logger.info("Failed to check hit")
+            return False
+
+        logger.info("File type")
+        target_key = target_file
+        # Resolve name if required. This is needed to normalise filenames.
+        if resolve_name:
+            splits = target_file.split(".")
+            potentials = []
+            curr = ""
+            for s2 in splits:
+                curr += s2
+                potentials.append(curr + ".py")
+                curr += "/"
+            logger.info(f"Potentials: {str(potentials)}")
+            for potential_key in self.file_map:
+                logger.info(f"Scanning {str(potential_key)}")
+                for p in potentials:
+                    if potential_key.endswith(p):
+                        found_key = potential_key
+                        break
+            logger.info(f"Found key: {str(found_key)}")
+            if found_key == "":
+                logger.info("Could not find key")
                 return False
-            for key_lineno in self.file_map[target_key]:
-                if key_lineno == lineno:
-                    logger.info("Success")
-                    return True
-        logger.info("Failed to check hit")
+            target_key = found_key
+
+        # Return False if file is not in file_map
+        if target_key not in self.file_map:
+            logger.info("Target key is not in file_map")
+            return False
+
+        # Return True if lineno is in the relevant filemap value.
+        if lineno in self.file_map[target_key]:
+            logger.info("Success")
+            return True
+
         return False
 
     def is_func_hit(self, funcname: str) -> bool:
