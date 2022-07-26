@@ -334,5 +334,5 @@ if __name__ == "__main__":
     for fn in cp.file_map:
         logger.info(fn)
     logger.info("Coverage loader end")
-    is_hit = cp.generic_check_hit("yaml.reader", 150, True)
+    is_hit = cp.is_file_lineno_hit("yaml.reader", 150, True)
     logger.info(f"Checking hit {is_hit}")

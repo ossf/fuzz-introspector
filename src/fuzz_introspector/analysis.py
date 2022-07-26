@@ -229,7 +229,7 @@ def overlay_calltree_with_coverage(
                 f"{node.cov_ct_idx} -- {node.src_linenumber}"
             )
             if profile.target_lang == "python":
-                ih = profile.coverage.generic_check_hit(
+                ih = profile.coverage.is_file_lineno_hit(
                     callstack_get_parent(node, callstack),
                     node.src_linenumber,
                     True
