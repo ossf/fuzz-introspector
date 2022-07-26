@@ -18,7 +18,12 @@ import logging
 import shutil
 import json
 import typing
+import bs4
+import random
+import string
+import matplotlib.pyplot as plt
 
+from matplotlib.patches import Rectangle
 from typing import (
     Any,
     Dict,
@@ -34,14 +39,6 @@ from fuzz_introspector import constants
 from fuzz_introspector import html_helpers
 from fuzz_introspector.datatypes import project_profile, fuzzer_profile
 
-# For pretty printing the html code:
-from bs4 import BeautifulSoup as bs
-
-import matplotlib.pyplot as plt
-from matplotlib.patches import Rectangle
-
-import random
-import string
 
 logger = logging.getLogger(name=__name__)
 
@@ -366,7 +363,7 @@ def create_covered_func_box(covered_funcs: str) -> str:
 def create_boxed_top_summary_info(
     tables: List[str],
     proj_profile: project_profile.MergedProjectProfile,
-    conclusions: List[Tuple[int, str]],
+    conclusions: List[html_helpers.HTMLConclusion],
     extract_conclusion: bool,
     display_coverage: bool = False
 ) -> str:
@@ -404,51 +401,36 @@ def create_boxed_top_summary_info(
 
 
 def create_conclusions(
-    conclusions: List[Tuple[int, str]],
+    conclusions: List[html_helpers.HTMLConclusion],
     reached_percentage: float,
     reached_complexity_percentage: float
 ) -> None:
     # Functions reachability
     sentence = f"""Fuzzers reach { "%.5s%%"%(str(reached_percentage)) } of all functions. """
-    if reached_percentage > 90.0:
-        warning = 10
-        sentence += "This is great."
-    elif reached_percentage > 75.0:
-        warning = 8
-        sentence += "This is good"
-    elif reached_percentage > 50.0:
-        warning = 6
-        sentence += "This is good, but there's room for improvement."
-    elif reached_percentage > 25.0:
-        warning = 4
-        sentence += "Improvements should be made"
-    else:
-        warning = 2
-        sentence += "Improvements need to be made"
-    conclusions.append((warning, sentence))
+    conclusions.append(
+        html_helpers.HTMLConclusion(
+            severity=int(reached_percentage * 0.1),
+            title=sentence,
+            description=""
+        )
+    )
 
     # Complexity reachability
     percentage_str = "%.5s%%" % str(reached_complexity_percentage)
     sentence = f"Fuzzers reach { percentage_str } of cyclomatic complexity. "
-    if reached_complexity_percentage > 90.0:
-        warning = 10
-        sentence += "This is great."
-    elif reached_complexity_percentage > 70.0:
-        warning = 8
-        sentence += "This is pretty nice."
-    elif reached_complexity_percentage > 50.0:
-        warning = 6
-        sentence += "This is okay."
-    else:
-        warning = 2
-        sentence += "Improvements could be made"
-    conclusions.append((warning, sentence))
+    conclusions.append(
+        html_helpers.HTMLConclusion(
+            severity=int(reached_percentage * 0.1),
+            title=sentence,
+            description=""
+        )
+    )
 
 
 def create_top_summary_info(
         tables: List[str],
         proj_profile: project_profile.MergedProjectProfile,
-        conclusions: List[Tuple[int, str]],
+        conclusions: List[html_helpers.HTMLConclusion],
         extract_conclusion: bool,
         display_coverage: bool = False) -> str:
     html_string = ""
@@ -497,7 +479,7 @@ def create_fuzzer_detailed_section(
     toc_list: List[Tuple[str, str, int]],
     tables: List[str],
     curr_tt_profile: int,
-    conclusions: List[Tuple[int, str]],
+    conclusions: List[html_helpers.HTMLConclusion],
     extract_conclusion: bool,
     fuzzer_table_data: Dict[str, Any]
 ) -> str:
@@ -645,11 +627,18 @@ def create_fuzzer_detailed_section(
     )
     if extract_conclusion:
         if cov_reach_proportion < 30.0:
-            conclusions.append((
-                2,
-                (f"Fuzzer { profile.identifier } is blocked: runtime coverage only "
-                 f"covers { str_percentage } of its reachable functions.")
-            ))
+            conclusions.append(
+                html_helpers.HTMLConclusion(
+                    2,
+                    f"Fuzzer { profile.identifier } is blocked:",
+                    (
+                        f"The runtime code coverage of { profile.identifier } "
+                        f"covers { str_percentage } of its statically rechable code. "
+                        f"This means there is some place that blocks the fuzzer "
+                        f"to continue exploring more code at run time. "
+                    )
+                )
+            )
 
     html_string += "<div style=\"display: flex; margin-bottom: 10px;\">"
     html_string += get_simple_box("Covered functions", str(total_hit_functions))
@@ -718,7 +707,7 @@ def get_simple_box(title: str, value: str) -> str:
       </div>"""
 
 
-def extract_highlevel_guidance(conclusions: List[Tuple[int, str]]) -> str:
+def extract_highlevel_guidance(conclusions: List[html_helpers.HTMLConclusion]) -> str:
     """
     Creates colorful boxes for the conlusions made throughout the analysis
     """
@@ -728,18 +717,18 @@ def extract_highlevel_guidance(conclusions: List[Tuple[int, str]]) -> str:
 
     # Sort conclusions to show highest level (positive conclusion) first
     conclusions = list(reversed(sorted(conclusions)))
-    for lvl, sentence in conclusions:
-        if lvl < 5:
+    for conclusion in conclusions:
+        if conclusion.severity < 5:
             conclusion_color = "red"
-        elif lvl < 8:
+        elif conclusion.severity < 8:
             conclusion_color = "yellow"
         else:
             conclusion_color = "green"
         html_string += f"""<div class="line-wrapper">
     <div class="high-level-conclusion { conclusion_color }-conclusion collapsed">
-    { sentence }
+    { conclusion.title }
         <div class="high-level-extended" style="background:transparent; overflow:hidden">
-            Description
+            { conclusion.description }
         </div>
     </div>
 </div>"""
@@ -761,7 +750,7 @@ def create_html_report(
     """
     tables: List[str] = list()
     toc_list: List[Tuple[str, str, int]] = list()
-    conclusions: List[Tuple[int, str]] = []
+    conclusions: List[html_helpers.HTMLConclusion] = []
 
     logger.info(" - Creating HTML report")
 
@@ -973,7 +962,7 @@ def create_html_report(
                      + html_footer)
 
     # Pretty print the html document
-    soup = bs(html_full_doc, "html.parser")
+    soup = bs4.BeautifulSoup(html_full_doc, "html.parser")
     prettyHTML = soup.prettify()
 
     # Remove existing html report

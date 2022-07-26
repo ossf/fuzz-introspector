@@ -25,6 +25,24 @@ from fuzz_introspector import utils
 from fuzz_introspector.datatypes import fuzzer_profile
 
 
+class HTMLConclusion:
+    """Represents high-level conclusions in HTML report
+
+    Attributes:
+        severity (int): Importance of conclusion. 100 max, 0 lowest.
+        title (str): One line description of conclusion.
+        description (str): Extended description.
+    """
+    def __init__(self, severity, title, description):
+        self.title = title
+        self.severity = severity
+        self.description = description
+
+    def __lt__(self, other):
+        """Implemented for sorting list of conclusions"""
+        return self.severity < other.severity
+
+
 def html_table_add_row(elems: List[Any]) -> str:
     html_str = "<tr>\n"
     for elem in elems:
