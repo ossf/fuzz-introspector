@@ -30,6 +30,7 @@ from typing import (
 from fuzz_introspector import utils
 from fuzz_introspector import cfg_load
 from fuzz_introspector import cov_load
+from fuzz_introspector import html_helpers
 from fuzz_introspector.datatypes import (
     project_profile,
     fuzzer_profile,
@@ -53,7 +54,7 @@ class AnalysisInterface(abc.ABC):
         profiles: List[fuzzer_profile.FuzzerProfile],
         basefolder: str,
         coverage_url: str,
-        conclusions: List[Tuple[int, str]]
+        conclusions: List[html_helpers.HTMLConclusion]
     ) -> str:
         """Entrypoint for analysis instance. This function can have side effects
         on many of the arguments passed to it.
@@ -79,7 +80,7 @@ class AnalysisInterface(abc.ABC):
         :param conclusions: List of high level conclusions to be shown in the final
                            report. Append to this list any conclusions that should
                            be shown at the top of the report page.
-        :type conclusions: List[Tuple[int, str]]
+        :type conclusions: List[html_helpers.HTMLConclusion]
 
         :rtype: str
         :returns:  A string that corresponds to HTML that can be embedded in the

@@ -45,7 +45,7 @@ class Analysis(analysis.AnalysisInterface):
         profiles: List[fuzzer_profile.FuzzerProfile],
         basefolder: str,
         coverage_url: str,
-        conclusions: List[Tuple[int, str]]
+        conclusions: List[html_helpers.HTMLConclusion]
     ) -> str:
         logger.info(f" - Running analysis {Analysis.get_name()}")
 

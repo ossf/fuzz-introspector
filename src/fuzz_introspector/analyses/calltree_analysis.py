@@ -52,7 +52,7 @@ class Analysis(analysis.AnalysisInterface):
         profiles: List[fuzzer_profile.FuzzerProfile],
         basefolder: str,
         coverage_url: str,
-        conclusions
+        conclusions: List[html_helpers.HTMLConclusion]
     ) -> str:
         """
         Creates the HTML of the calltree. Returns the HTML as a string.

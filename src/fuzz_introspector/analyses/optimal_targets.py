@@ -53,7 +53,7 @@ class Analysis(analysis.AnalysisInterface):
         profiles: List[fuzzer_profile.FuzzerProfile],
         basefolder: str,
         coverage_url: str,
-        conclusions: List[Tuple[int, str]],
+        conclusions: List[html_helpers.HTMLConclusion],
         should_synthetise: bool = False
     ) -> str:
         """
@@ -290,7 +290,7 @@ class Analysis(analysis.AnalysisInterface):
     def get_consequential_section(
         self,
         new_profile: project_profile.MergedProjectProfile,
-        conclusions: List[Tuple[int, str]],
+        conclusions: List[html_helpers.HTMLConclusion],
         tables: List[str],
         toc_list: List[Tuple[str, str, int]],
         coverage_url: str,
