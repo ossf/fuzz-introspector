@@ -11,11 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""
-Module for loading coverage files and parsing them into something we can use in Python.
-
-At the moment only C/C++ is supported. Other languages coming up soon.
-"""
+"""Module for handling code coverage reports"""
 
 import logging
 
@@ -33,100 +29,121 @@ logger.setLevel(logging.INFO)
 
 
 class CoverageProfile:
-    """
-    Class for storing information about a runtime coverage report
+    """Stores and handles a runtime coverage data.
+
+    :ivar Dict[str, List[Tuple[int, int]]] covmap:  Dictionary of string to
+        list of tuples of ints. The tuples correspond to line number and
+        hitcount. The string can have multiple meanings depending on the
+        language being handled. For C/C++ it corresponds to functions,
+        and for Python it correspond to source code files.
+
+        If the key is file paths then `set_type` returns "file".
+
+    :ivar Dict[str, List[Tuple[int, int]]] file_map: Dictionary holding
+        mappings between source code files and line numbers and hitcounts.
+
+    :ivar Dict[str, Tuple[int, int]] branch_cov_map: Dictionary to collect
+        the branch coverage info in the form of current_func:line_number as
+        the key and true_hit and false_hit as a tuple value.
     """
     def __init__(self) -> None:
-        # Covmap is a dictionary of string to list of tuples of int.
-        # The tupls correspond to line number and hitcount in the
-        # source code.
         self.covmap: Dict[str, List[Tuple[int, int]]] = dict()
-        self.covreports: List[str] = list()
-
-        # File to cov map: {filename: [ (linenumber, hit), ... ]}
         self.file_map: Dict[str, List[Tuple[int, int]]] = dict()
-
-        # branch_cov_map is dictionary to collect the branch coverage info
-        # in the form of current_func:line_number as the key and true_hit and
-        # false_hit as a tuple value
         self.branch_cov_map: Dict[str, Tuple[int, int]] = dict()
-
-        self.cov_type = ""
+        self._cov_type = ""
 
     def set_type(self, cov_type: str) -> None:
-        self.cov_type = cov_type
+        self._cov_type = cov_type
 
     def get_type(self) -> str:
-        return self.cov_type
+        return self._cov_type
 
     def is_type_set(self) -> bool:
-        return self.cov_type != ""
+        return self._cov_type != ""
 
-    def get_all_hit_functions(self) -> List[str]:
-        # Hacky way to satisfy typing
-        all_keys: List[str] = []
-        for k in self.covmap.keys():
-            all_keys.append(k)
-        return all_keys
-
-    def generic_check_hit(
+    def is_file_lineno_hit(
         self,
-        key: str,
+        target_file: str,
         lineno: int,
         resolve_name: bool = False
     ) -> bool:
-        """Checks if a file is hit. This is a generic function that first checks
-        what type of coverage mapping this is.
-        """
-        logger.info(f"In generic hit -- {str(key)}")
-        if self.get_type() == "file":
-            logger.info("File type")
-            target_key = key
-            if resolve_name:
-                # Try to resolve the key. This is needed to e.g. normalise
-                # file names.
-                splits = key.split(".")
-                potentials = []
-                curr = ""
-                for s2 in splits:
-                    curr += s2
-                    potentials.append(curr + ".py")
-                    curr += "/"
-                logger.info(f"Potentials: {str(potentials)}")
-                for potential_key in self.file_map:
-                    logger.info(f"Scanning {str(potential_key)}")
-                    for p in potentials:
-                        if potential_key.endswith(p):
-                            found_key = potential_key
-                            break
-                logger.info(f"Found key: {str(found_key)}")
-                if found_key == "":
-                    logger.info("Could not find key")
-                    return False
-                target_key = found_key
+        """Checks if a given linenumber in a file is hit.
 
-            if target_key not in self.file_map:
-                logger.info("Target key is not in file_map")
+        :param target_file: file to inspect
+        :type target_file: str
+
+        :param lineno: line number in the file
+        :type lineno: int
+
+        :param resolve_name: whether to normalise name. This is only used
+            for Python code coverage where the filename being tracked is
+            extracted from a pyinstaller executable.
+        :type resolve_name: bool
+
+        :rtype: bool
+        :returns: `True` if lineno is covered in the given soruce file. `False`
+            otherwise.
+        """
+        logger.info(f"In generic hit -- {str(target_file)}")
+        if self.get_type() != "file":
+            logger.info("Failed to check hit")
+            return False
+
+        logger.info("File type")
+        target_key = target_file
+        # Resolve name if required. This is needed to normalise filenames.
+        if resolve_name:
+            splits = target_file.split(".")
+            potentials = []
+            curr = ""
+            for s2 in splits:
+                curr += s2
+                potentials.append(curr + ".py")
+                curr += "/"
+            logger.info(f"Potentials: {str(potentials)}")
+            for potential_key in self.file_map:
+                logger.info(f"Scanning {str(potential_key)}")
+                for p in potentials:
+                    if potential_key.endswith(p):
+                        found_key = potential_key
+                        break
+            logger.info(f"Found key: {str(found_key)}")
+            if found_key == "":
+                logger.info("Could not find key")
                 return False
-            for key_lineno in self.file_map[target_key]:
-                if key_lineno == lineno:
-                    logger.info("Success")
-                    return True
-        logger.info("Failed to check hit")
+            target_key = found_key
+
+        # Return False if file is not in file_map
+        if target_key not in self.file_map:
+            logger.info("Target key is not in file_map")
+            return False
+
+        # Return True if lineno is in the relevant filemap value.
+        if lineno in self.file_map[target_key]:
+            logger.info("Success")
+            return True
+
         return False
 
     def is_func_hit(self, funcname: str) -> bool:
+        """Returs whether a function is hit"""
         _, lines_hit = self.get_hit_summary(funcname)
         if lines_hit is not None and lines_hit > 0:
             return True
         return False
 
     def get_hit_details(self, funcname: str) -> List[Tuple[int, int]]:
-        """
-        Returns a list containiner tupls [line number, hit count]
-        of the function given as argument. If there is no coverage,
-        i.e. the function is not in the covmap of the coverage profile,
-        then an empty list is returned.
+        """Returns details of code coverage for a given function.
+
+        This should only be used for coverage profiles that are non-file type.
+
+        :param funcname: Function name to lookup.
+        :type funcname: str
+
+        :rtype: List[Tuple[int, int]]
+        :returns: List of pairs where the first element is the source code
+            linenumber and the second element is the amount of times that line
+            was covered.
         """
         fuzz_key = None
         if funcname in self.covmap:
@@ -140,10 +157,21 @@ class CoverageProfile:
             return []
         return self.covmap[fuzz_key]
 
-    def get_hit_summary(self, funcname: str) -> Tuple[Optional[int], Optional[int]]:
-        """
-        returns the hit summary of a give function, in the form of
-        a tuple (total_function_lines, hit_lines)
+    def get_hit_summary(
+        self,
+        funcname: str
+    ) -> Tuple[Optional[int], Optional[int]]:
+        """Returns the hit summary of a give function.
+
+        This should only be used for coverage profiles that are non-file type.
+
+        :param funcname: Function name to lookup.
+        :type funcname: str
+
+        :rtype: List[Tuple[Optional[int], Optional[int]]]
+        :returns: List of pairs where the first element is
+            the total amount of lines in a function and second element is the
+            amount of lines in the function that are hit.
         """
         fuzz_key = None
         if funcname in self.covmap:
@@ -158,7 +186,7 @@ class CoverageProfile:
         return len(self.covmap[fuzz_key]), len(lines_hit)
 
 
-def llvm_cov_load(
+def load_llvm_coverage(
     target_dir: str,
     target_name: Optional[str] = None
 ) -> CoverageProfile:
@@ -201,7 +229,6 @@ def llvm_cov_load(
 
         logger.info(f"Reading coverage report: {profile_file}")
         with open(profile_file, 'rb') as pf:
-            cp.covreports.append(profile_file)
             curr_func = None
             for raw_line in pf:
                 line = utils.safe_decode(raw_line)
@@ -279,7 +306,7 @@ def llvm_cov_load(
     return cp
 
 
-def load_python_json_cov(
+def load_python_json_coverage(
     json_file: str,
     strip_pyinstaller_prefix: bool = True
 ):
@@ -319,11 +346,11 @@ def load_python_json_cov(
 if __name__ == "__main__":
     logging.basicConfig()
     logger.info("Starting coverage loader")
-    cp = load_python_json_cov("total_coverage.json")
+    cp = load_python_json_coverage("total_coverage.json")
 
     logger.info("Coverage map keys")
     for fn in cp.file_map:
         logger.info(fn)
     logger.info("Coverage loader end")
-    is_hit = cp.generic_check_hit("yaml.reader", 150, True)
+    is_hit = cp.is_file_lineno_hit("yaml.reader", 150, True)
     logger.info(f"Checking hit {is_hit}")

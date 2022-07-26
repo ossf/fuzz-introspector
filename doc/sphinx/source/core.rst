@@ -19,7 +19,7 @@ Core modules in the Fuzz Introspector package
    :members:
    :show-inheritance:
 
-.. automodule:: fuzz_introspector.cov_load
+.. automodule:: fuzz_introspector.code_coverage
    :members:
    :show-inheritance:
 
