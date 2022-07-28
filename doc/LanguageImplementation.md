@@ -368,3 +368,19 @@ function-level reasoning. When you integrate a new code coverage data source it'
 likely modifications is needed in the CoverageProfile class too.
 
 ### Integrate the language support into OSS-Fuzz
+Integrating with OSS-Fuzz is not a strict requirement. However, fhe focus point of
+Fuzz Introspector is supporting the projects on [OSS-Fuzz](https://github.com/google/oss-fuzz), and
+OSS-Fuzz has the benefit of providing a lot of infrastructure that is useful
+for Fuzz Introspector, such as handling the building of fuzzers, runtime coverage collection
+and similar.
+
+Fuzz Introspector is already integrated into OSS-Fuzz so the modifications needed may be minor. This
+is particularly the case for languages that are alrady integrated into OSS-Fuzz.
+
+We maintain a `.diff` file in [/fuzz-introspector/oss_fuzz_integration/oss-fuzz-pathches.diff](/fuzz-introspector/oss_fuzz_integration/oss-fuzz-pathches.diff). This
+`.diff` is used for development purposes, please add changes in here when testing your integration.
+
+Fuzz Introspector is treated as a sanitizer in OSS-Fuzz. The most important
+bit in OSS-Fuzz to update is [infra/base-images/base-builder/compile](https://github.com/google/oss-fuzz/blob/06efe97ba08011f039f2912dfc7d9c4a7a1f0b21/infra/base-images/base-builder/compile#L208-L241).
+As Fuzz Introspector is treated a sanitizer you can query `introspector` in
+the OSS-Fuzz repository for areas related to Fuzz Introspector.
