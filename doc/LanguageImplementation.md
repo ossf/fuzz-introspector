@@ -26,8 +26,20 @@ structure varies a lot from language to language.
 
 
 ## Details
-In the following we go into details with each of the data structures. We will
-use the following example throughout the documentation:
+In the following we go into details with each of the data structures.
+
+There is no single way to extract the details of these data structures. For example,
+in the current [C/C++ frontend](/frontends/llvm) the [calltree data structure](#calltree-data-structure) and
+[program-wide data file](#program-wide-data-file) are extracted by way of link
+time analysis with LLVM LTO analysing the LLVM intermediate representation. The
+[Python frontend](/frontends/python/) instead relies on analysing the Abstract
+Syntax Tree. One consequence of this is that some data items in the data structures
+may vary slightly in terms of their semantic meaning. For example, the C/C++
+frontend has a clear presentation of what a basic block is, while the Python frontend
+does not.
+
+### Example fuzzer
+We will use the following example throughout the documentation:
 ```c
 #include <stdio.h>
 #include <stdlib.h>
@@ -65,8 +77,34 @@ extern int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
     return retval;
 }
 ```
+
+
 ### Calltree data structure
 Represents the call tree of a given fuzzer.
+
+A simple format where each line, except fir and last line, represents a callsite.
+Each line is composed of four elements seperated by a space, and formally has
+the following format:
+```
+SPACING DST_FUNC SRC_FILE SRC_FILE_LINO
+```
+
+The *SPACING* and *DST_FUNC* is not separate by any space.
+
+*SPACING* is the calldepth of the given callsite. Two spaces will be interpreted as one calldepth.
+
+*DST_FUNC* is the name of the destination function of the callsites.
+
+*SRC_FILE* is the path to the source code file of the src of the callsite.
+
+*SRC_FILE_LINO* is the line number in the source code file of the src of the callsite.
+
+For example, the following line:
+```
+    readFile  /src/ossfuzzlib/utils.c 32
+```
+refers to a callsite inside the `utils.c` file that targets the function `readFile`.
+The function call corresponding to the callsite is placed on line 32 inside of `utils.c`.
 
 #### Example instance of calltree data structure
 ```
@@ -78,11 +116,59 @@ LLVMFuzzerTestOneInput /src/introspector_example.c linenumber=-1
 ```
 
 ### Program-wide data file
-Contains data about each function in the program. The **program** in this context
+Contains data about each function in the program. The *program* in this context
 refers to the executable that will be the fuzzer.
 
-#### Example of program-wide data file
+The yaml file has the following format:
 ```
+Fuzzer filename: string
+All functions:
+  Function list name: All functions
+  Elements:
+    - ...
+    - ...
+```
+The `Fuzzer filename` field speciies the name of the fuzzer. This is usually the file
+path.
+
+The `All functions.Elements` is the important part of the yaml file. This is a list
+of elements where each element represents a function in the program. Each element has
+the following format:
+```yaml
+functionName:          string                    # Name of the function
+functionSourceFile:    string                    # Source file where the function resides
+linkageType:           string                    # function linkage
+functionLinenumber:    int                       # Linenumber where the function starts
+functionDepth:         int                       # The calldepth of the function
+returnType:            string                    # The return type of the function
+argCount:              int                       # The number of arguments accepted by the function
+argTypes:              list of strings           # The types of the arguments of the function
+  - ...
+constantsTouched:      list of strings           # The value (bytes) of the constants handled by the function
+  - ...
+argNames:              list of strings           # The names of the arguments of the function
+  - ...
+BBCount:               int                       # The number of basic blocks of the function
+ICount:                int                       # The number of instructions in the function
+EdgeCount:             int                       # The number of branch edges in the function
+CyclomaticComplexity:  int                       # The cyclomatic complexity of the function
+functionsReached:      list of strings           # A list of all the functions statically reached by this function. This is the names of each function.
+  - ...
+functionUses:          int                       # The amount of functions that use (reach) this function.
+BranchProfiles:        list of branch profiles   # A list of conditional branch profiles used for branch block detection.
+  - Branch String:     string                    # source code path and line number of the branch.
+    Branch Sides:                                # A pair of data about the branch
+      TrueSide:        string                    # Source code path and line number of the True side of the branch condition.
+      TrueSideFuncs:   list of strings           # A list of function names, of all functions reachable by the True side of the branch.
+        - ...
+      FalseSide:       string                    # Source code path and line number of the False side of the branch condition.
+      FalseSideFuncs:  list of strings           # A list of function names, of all functions reachable by the False side of the branch.
+        - ...
+```
+
+#### Example of program-wide data file
+The following represents the program-wide data file for the example fuzzer.
+```yaml
 Fuzzer filename: '/src/introspector_example.c'
 All functions:
   Function list name: All functions
@@ -180,13 +266,13 @@ All functions:
 ```
 
 ### Runtime coverage data
-The [CoverageProfile](https://fuzz-introspector.readthedocs.io/en/latest/core.html#fuzz_introspector.code_coverage.CoverageProfile) class is
-used for handling code coverage logic.
+The runtime coverage data does not have a strict data structure in Fuzz Introspector. Rather,
+we use the [CoverageProfile](https://fuzz-introspector.readthedocs.io/en/latest/core.html#fuzz_introspector.code_coverage.CoverageProfile) class to
+handle logic associated with runtime coverage.
 
-The logic in this context
-is all handled in `src/fuzz_introspector/code_coverage.py`
 
 
 ## Integrating data structures into Fuzz Introspector workflow
+
 This section describes how to integrate the three data structures into the
 Fuzz Introspector workflow.
