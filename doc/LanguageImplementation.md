@@ -1,9 +1,11 @@
 # Language implementation
 This document describes the implementation details regarding implementing 
-support for a new language in Fuzz Introspector. In short, to do this a frontend
-is needed, which is a static analysis component, and a runtime coverage support
-is needed. The runtime coverage is not strictly needed, in that Fuzz Introspector
-can work without this.
+support for a new language in Fuzz Introspector.
+
+
+In short, to do this a frontend is needed, which is a static analysis component,
+and a runtime coverage support is needed. The runtime coverage is not strictly needed,
+in that Fuzz Introspector can work without this.
 
 
 ## Overview
@@ -20,7 +22,7 @@ are extracted using static analysis, which we call our [frontends](/frontends/).
 
 When a new language is integrated into Fuzz Introspector There may be
 need for adding frontend-specific logic in the core of Fuzz Introspector.
-This, which is often a consequence of the tools used to create the data 
+This is often a consequence of the tools used to create the data 
 structure varies a lot from language to language.
 
 
@@ -89,7 +91,7 @@ the following format:
 SPACING DST_FUNC SRC_FILE SRC_FILE_LINO
 ```
 
-The *SPACING* and *DST_FUNC* is not separate by any space.
+The *SPACING* and *DST_FUNC* is not separated by any space.
 
 *SPACING* is the calldepth of the given callsite. Two spaces will be interpreted as one calldepth.
 
@@ -274,5 +276,95 @@ handle logic associated with runtime coverage.
 
 ## Integrating data structures into Fuzz Introspector workflow
 
-This section describes how to integrate the three data structures into the
-Fuzz Introspector workflow.
+This section describes how to integrate a new language into the Fuzz Introspector
+workflow. 
+
+
+### Integrate frontend
+The extraction of [calltree data structure](#calltree-data-structure) and [program-wide data file](#program-wide-data-file)
+happens by way of static analysis and the logic around this is placed in [frontends/](/frontends/).
+
+To integrate a frontend simply add the logic in a folder within the [frontends/](/frontends/)
+directory.
+
+There are no requirements to in terms of how the actual implementation is done. The only requirement
+is that the static analysis must output the two data structures into files called `fuzzerLogFile-UID.data` and
+`fuzzerLogFile-UID.data.yaml` for each fuzzer it runs on. The UID should be a unique identifier and this
+identifier is used to match the .yaml files and calltree files in fuzz introspector.
+
+We use unique identifiers in this manner because it's versatile when fuzz introspector
+integrated into complex build systems, as `fuzzerLogFile-...`s may exits in many
+locations within a directory tree. This is because the build system may navigate
+folders and run frontend analyses at arbitrary locations.
+
+### Integrate code coverage collection
+Integrating code coverage collection is quite individual to each language. The tools we
+follow for extracting the code coverage logic is usually dictated by what [OSS-Fuzz](https://github.com/google/oss-fuzz)
+supports.
+
+To show the difference in code coverage between languages, this is a snipped of
+a code coverage report that Fuzz Introspector interprets in C/C++ runtimes:
+
+```
+fuzz_entry:
+   11|      1|int fuzz_entry(const uint8_t *data, size_t size) {
+   12|      1|  int ret;
+   13|      1|  if (size == 3) {
+  ------------------
+  |  Branch (13:6): [True: 0, False: 1]
+  ------------------
+   14|      0|          ret = target3(data);
+   15|      0|  }
+   16|      1|  else {
+```
+which is extracted by `llvm-cov`. In comparison, the code coverage data used by
+Fuzz Introspector for Python analysis is in the form of `json` data e.g.:
+```
+   },
+    "files": {
+        "/pythoncovmergedfiles/medio/medio/src/fuzz_desktop_entry.py": {
+            "executed_lines": [
+                8,
+                38,
+                39,
+                40,
+                43,
+                44,
+                45,
+                46,
+                47,
+                48,
+                54,
+                55,
+                56
+            ],
+            "summary": {
+                "covered_lines": 13,
+                "num_statements": 33,
+                "percent_covered": 39.39393939393939,
+                "percent_covered_display": "39",
+                "missing_lines": 20,
+                "excluded_lines": 0
+            },
+```
+
+In order to integrate the coverage we rely on the [code_coverage.py](/src/fuzz_introspector/code_coverage.py) module.
+To integrate coverage analysis for your language you need to integrate a loader function that interprets the
+coverage data and returns a [CoverageProfile](https://fuzz-introspector.readthedocs.io/en/latest/core.html#fuzz_introspector.code_coverage.CoverageProfile)
+
+Examples of these loader functions are: [load_llvm_coverage](https://fuzz-introspector.readthedocs.io/en/latest/core.html#fuzz_introspector.code_coverage.load_llvm_coverage) and
+[load_python_json_coverage](https://fuzz-introspector.readthedocs.io/en/latest/core.html#fuzz_introspector.code_coverage.load_python_json_coverage).
+
+The loader functions is used by [_load_coverage](https://github.com/ossf/fuzz-introspector/blob/011ea59202f73c35ef1ec22de664e3de5927a047/src/fuzz_introspector/datatypes/fuzzer_profile.py#L339)
+in the [FuzzerProfile](https://fuzz-introspector.readthedocs.io/en/latest/profiles.html#fuzz_introspector.datatypes.fuzzer_profile.FuzzerProfile) class.
+
+The [CoverageProfile](https://fuzz-introspector.readthedocs.io/en/latest/core.html#fuzz_introspector.code_coverage.CoverageProfile) is still being refined
+in order to expose a standard API. The problem is that the underlying coverage
+data can be quite different amongst languages. As in the above examples llvm-cov
+is based on functions whereas the Python coverage is based on source code files.
+To support this the CoverageProfile class can currently exposed coverage
+information in two ways, one based on source file reasoning and one based on
+function-level reasoning. When you integrate a new code coverage data source it's
+likely modifications is needed in the CoverageProfile class too.
+
+### Integrate the language support into OSS-Fuzz
