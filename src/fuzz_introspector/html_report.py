@@ -544,7 +544,7 @@ def create_fuzzer_detailed_section(
     for color in color_list:
         color_dictionary[color] = color_dictionary[color] + 1
     html_string += (
-        "<p>The distribution of callsites in terms of hit count is"
+        "<p>The distribution of callsites in terms of coloring is"
     )
 
     html_string += (
