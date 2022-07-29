@@ -496,13 +496,13 @@ def create_fuzzer_detailed_section(
     html_string += html_helpers.html_add_header_with_link(
         "Call tree", 3, toc_list, link=f"call_tree_{curr_tt_profile}")
     html_string += (
-        f"<p class='no-top-margin'>\n"
-        f"The following is the call tree with color coding for which "
-        f"functions are hit/not hit. This info is based on the coverage "
-        f"achieved of all fuzzers together and not just this specific "
-        f"fuzzer. We use the following coloring scheme where min/max is "
-        f"an interval [min:max) (max non-inclusive) to color the callsite "
-        f"based on how many times the callsite is covered at run time."
+        "<p class='no-top-margin'>\n"
+        "The following is the call tree with color coding for which "
+        "functions are hit/not hit. This info is based on the coverage "
+        "achieved of all fuzzers together and not just this specific "
+        "fuzzer. We use the following coloring scheme where min/max is "
+        "an interval [min:max) (max non-inclusive) to color the callsite "
+        "based on how many times the callsite is covered at run time."
     )
     html_string += (
         "<table><tr><th>Min</th>"
