@@ -550,7 +550,10 @@ def create_fuzzer_detailed_section(
     html_string += (
         "<table><tr>"
         "<th style=\"text-align: left;\">Color</th>"
-        "<th style=\"text-align: left;\">Callsite count</th></tr>"
+        "<th style=\"text-align: left;\">Callsite count</th>"
+        "<th style=\"text-align: left;\">Percentage</th>"
+        "</tr>"
+
     )
     for _min, _max, color, rgb_code in constants.COLOR_CONSTANTS:
         html_string += (
@@ -558,10 +561,19 @@ def create_fuzzer_detailed_section(
             f"text-shadow: -1px 0 black, 0 1px black, "
             f"1px 0 black, 0 -1px black;\"><b>{color}</b></td>"
         )
-        html_string += f"<td>{color_dictionary[color]}</td></tr>"
+        html_string += f"<td>{color_dictionary[color]}</td>"
+        if len(color_list) > 0:
+            f1 = float(color_dictionary[color])
+            f2 = float(len(color_list))
+            percentage_c = (f1 / f2) * 100.0
+        else:
+            percentage_c = 0.0
+        percentage_s = str(percentage_c)[0:4]
+        html_string += f"<td>{percentage_s}%</td>"
+        html_string += "</tr>"
 
     # Add a row with total amount of callsites
-    html_string += f"<tr><td>All colors</td><td>{len(color_list)}</td></tr>"
+    html_string += f"<tr><td>All colors</td><td>{len(color_list)}</td><td>100</td></tr>"
     html_string += "</table>"
     html_string += "</p>"
 
