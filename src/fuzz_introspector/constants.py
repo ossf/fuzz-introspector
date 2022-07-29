@@ -22,3 +22,19 @@ APP_EXIT_ERROR = 1
 APP_EXIT_SUCCESS = 0
 
 INPUT_BUG_FILE = "input_bugs.json"
+
+# Color constants used for call trees. Composed of tuples,
+# (min, max, color) where
+# min and max construct an interval [min: max) (max non-inclusive)
+# and this interval indicates how many times a callsite was hit. If a
+# callsite is hit X times and X falls in the given interval then it will
+# have the color of the tuple.
+# - color is the string
+# The hitcount is [min:max)
+COLOR_CONSTANTS = [
+    (0, 1, "red", "#ff0000"),
+    (1, 10, "gold", "#ffd700"),
+    (10, 30, "yellow", "#ffff00"),
+    (30, 50, "greenyellow", "#adff2f"),
+    (50, 1000000000000, "lawngreen", "#7cfc00")
+]
