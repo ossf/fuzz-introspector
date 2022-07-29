@@ -46,7 +46,7 @@ logger = logging.getLogger(name=__name__)
 def create_horisontal_calltree_image(
     image_name: str,
     profile: fuzzer_profile.FuzzerProfile
-) -> None:
+) -> List[str]:
     """
     Creates a horisontal image of the calltree. The height is fixed and
     each element on the x-axis shows a node in the calltree in the form
@@ -56,7 +56,8 @@ def create_horisontal_calltree_image(
     logger.info(f"Creating image {image_name}")
 
     if profile.function_call_depths is None:
-        return
+        return []
+
     # Extract color sequence
     color_list: List[str] = []
     for node in cfg_load.extract_all_callsites(profile.function_call_depths):
@@ -116,6 +117,7 @@ def create_horisontal_calltree_image(
     fig.tight_layout()
     fig.savefig(image_name, bbox_extra_artists=[xlabel])
     logger.info("- image saved")
+    return color_list
 
 
 def create_overview_table(
@@ -498,13 +500,26 @@ def create_fuzzer_detailed_section(
         f"The following is the call tree with color coding for which "
         f"functions are hit/not hit. This info is based on the coverage "
         f"achieved of all fuzzers together and not just this specific "
-        f"fuzzer."
-        f"</p>"
-        f"<p><ul>"
-        f"<li>Red: no hits</li>"
-        f"<li>Yellow: few hits</li>"
-        f"<li>Green: many hits</li>"
-        f"</ul></p>"
+        f"fuzzer. We use the following coloring scheme where min/max is "
+        f"an interval [min:max) (max non-inclusive) to color the callsite "
+        f"based on how many times the callsite is covered at run time."
+    )
+    html_string += (
+        "<table><tr><th>Min</th>"
+        "<th style=\"text-align: left;\">Max</th>"
+        "<th style=\"text-align: left;\">Color</th></tr>"
+    )
+    for _min, _max, color, rgb_code in constants.COLOR_CONSTANTS:
+        html_string += "<tr>"
+        html_string += f"<td style=\"text-align: left;\">{_min}</td><td>{_max}</td>"
+        html_string += (
+            f"<td style=\"color:{color}; "
+            f"text-shadow: -1px 0 black, 0 1px black, "
+            f"1px 0 black, 0 -1px black;\"><b>{color}</b></td>"
+        )
+        html_string += "</tr>"
+    html_string += "</table></p>"
+    html_string += (
         f"<p>"
         f"For further technical details on the call tree overview"
         f", please see the <a href=\"{constants.GIT_BRANCH_URL}/doc/"
@@ -517,8 +532,38 @@ def create_fuzzer_detailed_section(
         colormap_file_prefix = colormap_file_prefix.replace("/", "_")
     image_name = f"{colormap_file_prefix}_colormap.png"
 
-    create_horisontal_calltree_image(image_name, profile)
+    color_list = create_horisontal_calltree_image(image_name, profile)
     html_string += f"<img class=\"colormap\" src=\"{image_name}\">"
+    color_dictionary = {
+        "red": 0,
+        "gold": 0,
+        "yellow": 0,
+        "greenyellow": 0,
+        "lawngreen": 0
+    }
+    for color in color_list:
+        color_dictionary[color] = color_dictionary[color] + 1
+    html_string += (
+        "<p>The distribution of callsites in terms of hit count is"
+    )
+
+    html_string += (
+        "<table><tr>"
+        "<th style=\"text-align: left;\">Color</th>"
+        "<th style=\"text-align: left;\">Callsite count</th></tr>"
+    )
+    for _min, _max, color, rgb_code in constants.COLOR_CONSTANTS:
+        html_string += (
+            f"<tr><td style=\"color:{color}; "
+            f"text-shadow: -1px 0 black, 0 1px black, "
+            f"1px 0 black, 0 -1px black;\"><b>{color}</b></td>"
+        )
+        html_string += f"<td>{color_dictionary[color]}</td></tr>"
+
+    # Add a row with total amount of callsites
+    html_string += f"<tr><td>All colors</td><td>{len(color_list)}</td></tr>"
+    html_string += "</table>"
+    html_string += "</p>"
 
     # Full calltree
     html_string += html_helpers.html_add_header_with_link(

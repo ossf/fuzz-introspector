@@ -28,6 +28,7 @@ from typing import (
 )
 
 from fuzz_introspector import utils
+from fuzz_introspector import constants
 from fuzz_introspector import cfg_load
 from fuzz_introspector import code_coverage
 from fuzz_introspector import html_helpers
@@ -254,13 +255,7 @@ def overlay_calltree_with_coverage(
 
         # Map hitcount to color of target.
         def get_hit_count_color(hit_count: int) -> str:
-            color_schemes = [
-                (0, 1, "red"),
-                (1, 10, "gold"),
-                (10, 30, "yellow"),
-                (30, 50, "greenyellow"),
-                (50, 1000000000000, "lawngreen")]
-            for cmin, cmax, cname in color_schemes:
+            for cmin, cmax, cname, rgb in constants.COLOR_CONSTANTS:
                 if hit_count >= cmin and hit_count < cmax:
                     return cname
             return "red"
