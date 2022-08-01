@@ -297,7 +297,8 @@ class Analysis(analysis.AnalysisInterface):
     def create_branch_blocker_table(
         self,
         tables: List[str],
-        branch_blockers: List[analysis.FuzzBranchBlocker]
+        branch_blockers: List[analysis.FuzzBranchBlocker],
+        max_number_of_blockers: int
     ) -> Optional[str]:
         """
         Creates HTML string for table showing branch blockers.
@@ -325,7 +326,11 @@ class Analysis(analysis.AnalysisInterface):
             sort_by_column=0,
             sort_order="desc"
         )
+        num = 0
         for entry in branch_blockers:
+            if num >= max_number_of_blockers:
+                break
+            num += 1
             html_table_string += html_helpers.html_table_add_row([
                 str(entry.blocked_not_covered_complexity),
                 str(entry.blocked_reachable_complexity),

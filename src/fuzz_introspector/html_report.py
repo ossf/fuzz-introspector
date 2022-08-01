@@ -614,7 +614,8 @@ def create_fuzzer_detailed_section(
     # Populate branch blocker table
     html_branch_blocker_table = calltree_analysis.create_branch_blocker_table(
         tables,
-        profile.branch_blockers
+        profile.branch_blockers,
+        12
     )
 
     if html_branch_blocker_table is not None:

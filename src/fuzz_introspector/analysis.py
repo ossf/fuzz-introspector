@@ -453,7 +453,7 @@ def detect_branch_level_blockers(
             side_line_number = side_line.split(':')[1].split(',')[0]
 
         if blocked_side:
-            # Sanity check on line numbers: anomaly can happen because of debug info inacuracy
+            # Sanity check on line numbers: anomaly can happen because of debug info inaccuracy
             if int(line_number) > int(side_line_number):
                 logger.debug("Anomalous branch sides line nubmers: %s:%s -> %s" % (
                              source_file_path, line_number, side_line_number))
