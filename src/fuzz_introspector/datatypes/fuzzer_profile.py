@@ -53,6 +53,7 @@ class FuzzerProfile:
         self.file_targets: Dict[str, Set[str]] = dict()
         self.coverage: Optional[code_coverage.CoverageProfile] = None
         self.all_class_functions: Dict[str, function_profile.FunctionProfile] = dict()
+        self.branch_blockers: List[Any] = []
 
         self._target_lang = target_lang
         self.introspector_data_file = cfg_file

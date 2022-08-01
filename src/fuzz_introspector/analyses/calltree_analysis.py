@@ -293,3 +293,52 @@ class Analysis(analysis.AnalysisInterface):
         html_table_string += "</table>"
 
         return html_table_string
+
+    def create_branch_blocker_table(
+        self,
+        tables: List[str],
+        branch_blockers: List[analysis.FuzzBranchBlocker],
+        max_number_of_blockers: int
+    ) -> Optional[str]:
+        """
+        Creates HTML string for table showing branch blockers.
+        """
+        logger.info("Creating branch blocker table")
+
+        if len(branch_blockers) == 0:
+            return None
+
+        html_table_string = "<p class='no-top-margin'>The followings are " \
+                            "the branches where fuzzer fails to bypass.</p>"
+        tables.append(f"myTable{len(tables)}")
+        html_table_string += html_helpers.html_create_table_head(
+            tables[-1],
+            [
+                ("Blocked Complexity",
+                 "Cyclomatic Complexity that is not covered because of blockage."),
+                ("Reachable Complexity",
+                 "Cyclomatic Complexity that the blocked branch-side can reach."),
+                ("Function Name",
+                 "Function containing the blocked branch."),
+                ("Blocked Branch",
+                 ""),
+            ],
+            sort_by_column=0,
+            sort_order="desc"
+        )
+        num = 0
+        for entry in branch_blockers:
+            if num >= max_number_of_blockers:
+                break
+            num += 1
+            html_table_string += html_helpers.html_table_add_row([
+                str(entry.blocked_not_covered_complexity),
+                str(entry.blocked_reachable_complexity),
+                utils.demangle_cpp_func(entry.function_name),
+                f"""<a href="{entry.coverage_report_link}">
+                    {entry.source_file}:{entry.branch_line_number}
+                </a>"""
+            ])
+        html_table_string += "</table>"
+
+        return html_table_string

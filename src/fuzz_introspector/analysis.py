@@ -108,7 +108,7 @@ class BlockedSide(Enum):
 
 class FuzzBranchBlocker:
     def __init__(self, side, not_cov_comp, reach_comp, hitcount_diff, filename, b_line, s_line,
-                 fname) -> None:
+                 fname, link) -> None:
         self.blocked_side = side
         self.blocked_not_covered_complexity = not_cov_comp
         self.blocked_reachable_complexity = reach_comp
@@ -117,6 +117,7 @@ class FuzzBranchBlocker:
         self.branch_line_number = b_line
         self.blocked_side_line_numder = s_line
         self.function_name = fname
+        self.coverage_report_link = link
 
 
 def get_all_analyses() -> List[Type[AnalysisInterface]]:
@@ -342,11 +343,11 @@ def overlay_calltree_with_coverage(
         n1.cov_largest_blocked_func = largest_blocked_name
 
     update_branch_complexities(proj_profile.all_functions, profile.coverage)
-    branch_blockers = detect_branch_level_blockers(proj_profile.all_functions, profile)
-    logger.info(f"[+] found {len(branch_blockers)} branch blockers.")
-    # TODO: use these results appropriately ...
+    profile.branch_blockers = detect_branch_level_blockers(proj_profile.all_functions, profile,
+                                                           target_coverage_url)
+    logger.info(f"[+] found {len(profile.branch_blockers)} branch blockers.")
     branch_blockers_list = []
-    for br_blocker in branch_blockers[:10]:
+    for br_blocker in profile.branch_blockers[:10]:
         branch_blockers_list.append(
             {
                 'blocked_side': repr(br_blocker.blocked_side),
@@ -395,7 +396,8 @@ def update_branch_complexities(all_functions: Dict[str, function_profile.Functio
 
 def detect_branch_level_blockers(
     functions_profile: Dict[str, function_profile.FunctionProfile],
-    fuzz_profile: fuzzer_profile.FuzzerProfile
+    fuzz_profile: fuzzer_profile.FuzzerProfile,
+    target_coverage_url: str
 ) -> List[FuzzBranchBlocker]:
     fuzz_blockers = []
 
@@ -451,10 +453,21 @@ def detect_branch_level_blockers(
             side_line_number = side_line.split(':')[1].split(',')[0]
 
         if blocked_side:
+            # Sanity check on line numbers: anomaly can happen because of debug info inaccuracy
+            if int(line_number) > int(side_line_number):
+                logger.debug("Anomalous branch sides line nubmers: %s:%s -> %s" % (
+                             source_file_path, line_number, side_line_number))
+                continue
             hitcount_diff = abs(true_hitcount - false_hitcount)
+            link = fuzz_profile.resolve_coverage_link(
+                target_coverage_url,
+                source_file_path,
+                int(line_number),
+                function_name
+            )
             fuzz_blockers.append(FuzzBranchBlocker(blocked_side, blocked_not_covered_complexity,
                                  blocked_reachable_complexity, hitcount_diff, source_file_path,
-                                 line_number, side_line_number, function_name))
+                                 line_number, side_line_number, function_name, link))
 
     fuzz_blockers.sort(key=lambda x: [x.blocked_not_covered_complexity,
                                       x.blocked_reachable_complexity], reverse=True)

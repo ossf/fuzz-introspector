@@ -611,6 +611,22 @@ def create_fuzzer_detailed_section(
         )
         html_string += html_fuzz_blocker_table
 
+    # Populate branch blocker table
+    html_branch_blocker_table = calltree_analysis.create_branch_blocker_table(
+        tables,
+        profile.branch_blockers,
+        12
+    )
+
+    if html_branch_blocker_table is not None:
+        html_string += html_helpers.html_add_header_with_link(
+            "Branch Blockers",
+            3,
+            toc_list,
+            link=f"branch_blocker{curr_tt_profile}"
+        )
+        html_string += html_branch_blocker_table
+
     profile.write_stats_to_summary_file()
 
     # Table with all functions hit by this fuzzer
