@@ -173,7 +173,7 @@ def html_add_header_with_link(
     title_type: int,
     toc_list: List[Tuple[str, str, int]],
     link: Optional[str] = None,
-    special: Optional[bool] = None
+    special: Optional[bool] = False
 ) -> str:
     if link is None:
         link = header_title.replace(" ", "-")
