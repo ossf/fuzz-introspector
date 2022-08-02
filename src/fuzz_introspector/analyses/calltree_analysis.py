@@ -308,7 +308,7 @@ class Analysis(analysis.AnalysisInterface):
         if len(branch_blockers) == 0:
             return None
 
-        html_table_string = "<p class='no-top-margin'>The followings are " \
+        html_table_string = "<p class='no-top-margin'>[EXPERIMENTAL] The followings are " \
                             "the branches where fuzzer fails to bypass.</p>"
         tables.append(f"myTable{len(tables)}")
         html_table_string += html_helpers.html_create_table_head(

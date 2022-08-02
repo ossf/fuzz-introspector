@@ -172,14 +172,15 @@ def html_add_header_with_link(
     header_title: str,
     title_type: int,
     toc_list: List[Tuple[str, str, int]],
-    link: Optional[str] = None
+    link: Optional[str] = None,
+    special: Optional[bool] = False
 ) -> str:
     if link is None:
         link = header_title.replace(" ", "-")
     toc_list.append((header_title, link, title_type - 1))
 
     html_attributes = ""
-    if title_type == 1:
+    if title_type == 1 or special:
         html_attributes += " class=\"report-title\""
 
     html_string = f"<a id=\"{link}\">"
