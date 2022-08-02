@@ -619,13 +619,18 @@ def create_fuzzer_detailed_section(
     )
 
     if html_branch_blocker_table is not None:
+        html_string += "<div class=\"report-box\">"
         html_string += html_helpers.html_add_header_with_link(
-            "Branch Blockers",
+            "Branch Blockers [Click to view]",
             3,
             toc_list,
-            link=f"branch_blocker{curr_tt_profile}"
+            link=f"branch_blocker{curr_tt_profile}",
+            special=True
         )
+        html_string += "<div class=\"collapsible collapsed\">"
         html_string += html_branch_blocker_table
+        html_string += "</div>"
+        html_string += "</div>"
 
     profile.write_stats_to_summary_file()
 
