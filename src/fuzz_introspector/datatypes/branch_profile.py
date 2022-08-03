@@ -49,8 +49,8 @@ class BranchProfile:
         self.branch_pos = elem['Branch String'].split('/')[-1]
         self.branch_true_side_pos = elem['Branch Sides']['TrueSide']
         self.branch_false_side_pos = elem['Branch Sides']['FalseSide']
-        self.branch_true_side_funcs = self.load_func_names(elem['Branch Sides']['TrueSideFuncs'])
-        self.branch_false_side_funcs = self.load_func_names(elem['Branch Sides']['FalseSideFuncs'])
+        self.branch_true_side_funcs = utils.load_func_names(elem['Branch Sides']['TrueSideFuncs'])
+        self.branch_false_side_funcs = utils.load_func_names(elem['Branch Sides']['FalseSideFuncs'])
 
     def assign_from_coverage(self, true_count: str, false_count: str) -> None:
         self.branch_true_side_hitcount = int(true_count)
@@ -66,9 +66,3 @@ class BranchProfile:
               self.branch_true_side_not_covered_complexity,
               self.branch_false_side_not_covered_complexity,
               self.branch_true_side_hitcount, self.branch_true_side_hitcount)
-
-    def load_func_names(self, input_list: List[str]) -> List[str]:
-        loaded = []
-        for reached in input_list:
-            loaded.append(utils.demangle_cpp_func(reached))
-        return loaded

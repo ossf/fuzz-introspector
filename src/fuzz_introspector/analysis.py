@@ -413,9 +413,7 @@ def detect_branch_level_blockers(
 
         # Catch exceptions in case some of the string splitting fails
         try:
-            tmp_idx = branch_string.rfind(':')
-            function_name = branch_string[:tmp_idx]
-            rest_string = branch_string[tmp_idx + 1:]
+            function_name, rest_string = branch_string.rsplit(':', maxsplit=1)
             line_number, column_number = rest_string.split(',')
         except ValueError:
             logger.error(f"branch-profiling: error getting function name from {branch_string}")

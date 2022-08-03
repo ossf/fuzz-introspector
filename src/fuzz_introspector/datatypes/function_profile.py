@@ -45,7 +45,7 @@ class FunctionProfile:
         self.i_count = elem['ICount']
         self.edge_count = elem['EdgeCount']
         self.cyclomatic_complexity = elem['CyclomaticComplexity']
-        self.functions_reached = self.load_func_names(elem['functionsReached'])
+        self.functions_reached = utils.load_func_names(elem['functionsReached'])
         self.function_uses = elem['functionUses']
         self.function_depth = elem['functionDepth']
         self.constants_touched = elem['constantsTouched']
@@ -69,9 +69,3 @@ class FunctionProfile:
             bp_loaded[new_branch.branch_pos] = new_branch
 
         return bp_loaded
-
-    def load_func_names(self, input_list: List[str]) -> List[str]:
-        loaded = []
-        for reached in input_list:
-            loaded.append(utils.demangle_cpp_func(reached))
-        return loaded
