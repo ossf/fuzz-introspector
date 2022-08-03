@@ -66,7 +66,7 @@ class BranchProfile:
               self.branch_true_side_not_covered_complexity,
               self.branch_false_side_not_covered_complexity,
               self.branch_true_side_hitcount, self.branch_true_side_hitcount)
-    
+
     def load_func_names(self, input_list: List[str]) -> List[str]:
         loaded = []
         for reached in input_list:

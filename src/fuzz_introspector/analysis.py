@@ -415,7 +415,7 @@ def detect_branch_level_blockers(
         try:
             tmp_idx = branch_string.rfind(':')
             function_name = branch_string[:tmp_idx]
-            rest_string = branch_string[tmp_idx+1:]
+            rest_string = branch_string[tmp_idx + 1:]
             line_number, column_number = rest_string.split(',')
         except ValueError:
             logger.error(f"branch-profiling: error getting function name from {branch_string}")
@@ -434,7 +434,7 @@ def detect_branch_level_blockers(
         if llvm_branch_string not in llvm_branch_profile:
             # TODO: there are cases that the column number of the branch is not consistent between
             # llvm and coverage debug info. For now we skip those cases.
-            logger.debug(f"branch-profiling: failed to find branch profile for {llvm_branch_string}")
+            logger.debug(f"branch-profiling: failed to find branch profile {llvm_branch_string}")
             continue
 
         llvm_branch = llvm_branch_profile[llvm_branch_string]
