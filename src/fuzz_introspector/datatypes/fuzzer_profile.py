@@ -343,7 +343,7 @@ class FuzzerProfile:
         if self.target_lang == "c-cpp":
             self.coverage = code_coverage.load_llvm_coverage(
                 target_folder,
-                self._get_target_fuzzer_filename()
+                self.identifier
             )
         elif self.target_lang == "python":
             self.coverage = code_coverage.load_python_json_coverage(
@@ -355,7 +355,8 @@ class FuzzerProfile:
             )
 
     def _get_target_fuzzer_filename(self) -> str:
-        return self.fuzzer_source_file.split("/")[-1].replace(".cpp", "").replace(".c", "")
+        return (os.path.basename(self.fuzzer_source_file).replace(".cpp", "")
+                .replace(".cc", "").replace(".c", ""))
 
     def _set_file_targets(self) -> None:
         """Sets self.file_targets to be a dictionarty of string to string.
