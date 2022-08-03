@@ -21,6 +21,8 @@ from typing import (
     List,
 )
 
+from fuzz_introspector import utils
+
 logger = logging.getLogger(name=__name__)
 logger.setLevel(logging.INFO)
 
@@ -47,8 +49,8 @@ class BranchProfile:
         self.branch_pos = elem['Branch String'].split('/')[-1]
         self.branch_true_side_pos = elem['Branch Sides']['TrueSide']
         self.branch_false_side_pos = elem['Branch Sides']['FalseSide']
-        self.branch_true_side_funcs = elem['Branch Sides']['TrueSideFuncs']
-        self.branch_false_side_complexity = elem['Branch Sides']['FalseSideFuncs']
+        self.branch_true_side_funcs = utils.load_func_names(elem['Branch Sides']['TrueSideFuncs'])
+        self.branch_false_side_funcs = utils.load_func_names(elem['Branch Sides']['FalseSideFuncs'])
 
     def assign_from_coverage(self, true_count: str, false_count: str) -> None:
         self.branch_true_side_hitcount = int(true_count)

@@ -22,6 +22,7 @@ from typing import (
 )
 
 from fuzz_introspector.datatypes import branch_profile
+from fuzz_introspector import utils
 
 logger = logging.getLogger(name=__name__)
 logger.setLevel(logging.INFO)
@@ -32,7 +33,7 @@ class FunctionProfile:
     Class for storing information about a given Function
     """
     def __init__(self, elem: Dict[Any, Any]) -> None:
-        self.function_name = elem['functionName']
+        self.function_name = utils.demangle_cpp_func(elem['functionName'])
         self.function_source_file = elem['functionSourceFile']
         self.linkage_type = elem['linkageType']
         self.function_linenumber = elem['functionLinenumber']
@@ -44,7 +45,7 @@ class FunctionProfile:
         self.i_count = elem['ICount']
         self.edge_count = elem['EdgeCount']
         self.cyclomatic_complexity = elem['CyclomaticComplexity']
-        self.functions_reached = elem['functionsReached']
+        self.functions_reached = utils.load_func_names(elem['functionsReached'])
         self.function_uses = elem['functionUses']
         self.function_depth = elem['functionDepth']
         self.constants_touched = elem['constantsTouched']

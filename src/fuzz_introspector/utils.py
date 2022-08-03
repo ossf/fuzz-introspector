@@ -226,3 +226,14 @@ def get_target_coverage_url(
             return coverage_url
     else:  # (TODO) This is temporary for local runs.
         return coverage_url
+
+
+def load_func_names(input_list: List[str]) -> List[str]:
+    """
+    Takes a list of function names (typically from llvm profile)
+    and makes sure the output names are demangled.
+    """
+    loaded = []
+    for reached in input_list:
+        loaded.append(demangle_cpp_func(reached))
+    return loaded
