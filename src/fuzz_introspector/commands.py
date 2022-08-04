@@ -58,10 +58,6 @@ def run_analysis_on_dir(
     input_bugs = data_loader.try_load_input_bugs()
     logger.info(f"[+] Loaded {len(input_bugs)} bugs")
 
-    logger.info("[+] Accummulating profiles")
-    for profile in profiles:
-        profile.accummulate_profile(target_folder)
-
     logger.info("[+] Correlating executables to Fuzz introspector reports")
     correlation_dict = utils.data_file_read_yaml(correlation_file)
     if correlation_dict is not None and "pairings" in correlation_dict:
@@ -69,6 +65,10 @@ def run_analysis_on_dir(
             profile.correlate_executable_name(correlation_dict)
     else:
         logger.info("- Nothing to correlate")
+
+    logger.info("[+] Accummulating profiles")
+    for profile in profiles:
+        profile.accummulate_profile(target_folder)
 
     logger.info("[+] Creating project profile")
     proj_profile = project_profile.MergedProjectProfile(profiles)
