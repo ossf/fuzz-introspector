@@ -625,7 +625,7 @@ def create_fuzzer_detailed_section(
             3,
             toc_list,
             link=f"branch_blocker{curr_tt_profile}",
-            special=True
+            experimental=True
         )
         html_string += "<div class=\"collapsible collapsed\">"
         html_string += html_branch_blocker_table
