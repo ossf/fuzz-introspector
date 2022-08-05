@@ -18,12 +18,12 @@ import sys
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../")
 
-from fuzz_introspector.datatypes.branch_profile import BranchProfile
+from fuzz_introspector.datatypes import branch_profile
 
 
 def test_branch_profile_assign_from_yaml_elem():
     """Test branch profile initialization from yaml elem"""
-    bp = BranchProfile()
+    bp = branch_profile.BranchProfile()
 
     dummy_yaml_elem = {
         'Branch String': 'abc/def/ghi',
@@ -53,7 +53,7 @@ def test_branch_profile_assign_from_yaml_elem():
 
 def test_branch_profile_assign_from_coverage():
     """Test branch profile initialization from coverage count"""
-    bp = BranchProfile()
+    bp = branch_profile.BranchProfile()
 
     bp.assign_from_coverage('123', '456')
 
@@ -73,7 +73,7 @@ def test_branch_profile_assign_from_coverage():
 
 def test_branch_profile_double_assign():
     """Test branch profile initialization with both assign"""
-    bp = BranchProfile()
+    bp = branch_profile.BranchProfile()
 
     dummy_yaml_elem = {
         'Branch String': 'abcdefghi',
@@ -100,4 +100,3 @@ def test_branch_profile_double_assign():
     assert bp.branch_false_side_hitcount == 123
     assert bp.branch_true_side_funcs == ['jkl', 'mno', 'pqr']
     assert bp.branch_false_side_funcs == ['abc', 'def', 'ghi']
-
