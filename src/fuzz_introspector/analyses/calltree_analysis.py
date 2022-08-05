@@ -179,7 +179,7 @@ class Analysis(analysis.AnalysisInterface):
             profile,
             [],
             "",
-            fuzz_blockers = fuzz_blockers
+            fuzz_blockers=fuzz_blockers
         )
         if fuzz_blocker_table is not None:
             complete_html_string += "<div class=\"report-box\">"
