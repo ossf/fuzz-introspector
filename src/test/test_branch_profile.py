@@ -18,7 +18,7 @@ import sys
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../")
 
-from fuzz_introspector.datatypes import branch_profile # noqa: E402
+from fuzz_introspector.datatypes import branch_profile  # noqa: E402
 
 
 def test_branch_profile_assign_from_yaml_elem():
