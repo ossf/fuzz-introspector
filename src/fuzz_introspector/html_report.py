@@ -600,7 +600,8 @@ def create_fuzzer_detailed_section(
     html_fuzz_blocker_table = calltree_analysis.create_fuzz_blocker_table(
         profile,
         tables,
-        calltree_file_name
+        calltree_file_name,
+        file_link=calltree_file_name
     )
     if html_fuzz_blocker_table is not None:
         html_string += html_helpers.html_add_header_with_link(

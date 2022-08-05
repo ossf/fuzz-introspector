@@ -175,7 +175,12 @@ class Analysis(analysis.AnalysisInterface):
             max_blockers_to_extract=12
         )
 
-        fuzz_blocker_table = self.create_fuzz_blocker_table(profile, [], "", fuzz_blockers)
+        fuzz_blocker_table = self.create_fuzz_blocker_table(
+            profile,
+            [],
+            "",
+            fuzz_blockers=fuzz_blockers
+        )
         if fuzz_blocker_table is not None:
             complete_html_string += "<div class=\"report-box\">"
             complete_html_string += "<h1>Fuzz blockers</h1>"
@@ -241,7 +246,8 @@ class Analysis(analysis.AnalysisInterface):
         profile: fuzzer_profile.FuzzerProfile,
         tables: List[str],
         calltree_file_name: str,
-        fuzz_blockers: Optional[List[cfg_load.CalltreeCallsite]] = None
+        fuzz_blockers: Optional[List[cfg_load.CalltreeCallsite]] = None,
+        file_link: Optional[str] = None
     ) -> Optional[str]:
         """
         Creates HTML string for table showing fuzz blockers.
@@ -282,12 +288,23 @@ class Analysis(analysis.AnalysisInterface):
         for node in fuzz_blockers:
             link_prefix = "0" * (5 - len(str(node.cov_ct_idx)))
             node_id = "%s%s" % (link_prefix, node.cov_ct_idx)
+            if file_link is not None:
+                cs_link = (
+                    "<span class=\"text-link\">"
+                    f"<a href=\"{file_link}?scrollToNode={node_id}\">call site"
+                    "</a></span>"
+                )
+            else:
+                cs_link = (
+                    "<span class=\"text-link\" "
+                    f"onclick=\" scrollToNodeInCT('{node_id}')\">"
+                    "call site</span>"
+                )
             html_table_string += html_helpers.html_table_add_row([
                 str(node.cov_forward_reds),
                 str(node.cov_ct_idx),
                 node.cov_parent,
-                f"""<span class=\"text-link\"
-                 onclick=\"scrollToNodeInCT('{node_id}')\">call site</span>""",
+                cs_link,
                 node.cov_largest_blocked_func
             ])
         html_table_string += "</table>"
