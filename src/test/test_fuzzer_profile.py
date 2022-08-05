@@ -106,23 +106,23 @@ def test_reaches_file_with_refine_path(tmpdir, sample_cfg1):
 
 def generate_temp_elem(name, func):
     return {
-        "functionName":name,
-        "functionsReached":func,
-        "functionSourceFile":None,
-        "linkageType":None,
-        "functionLinenumber":None,
-        "returnType":None,
-        "argCount":None,
-        "argTypes":None,
-        "argNames":None,
-        "BBCount":None,
-        "ICount":None,
-        "EdgeCount":None,
-        "CyclomaticComplexity":None,
-        "functionUses":None,
-        "functionDepth":None,
-        "constantsTouched":None,
-        "BranchProfiles":[]
+        "functionName": name,
+        "functionsReached": func,
+        "functionSourceFile": None,
+        "linkageType": None,
+        "functionLinenumber": None,
+        "returnType": None,
+        "argCount": None,
+        "argTypes": None,
+        "argNames": None,
+        "BBCount": None,
+        "ICount": None,
+        "EdgeCount": None,
+        "CyclomaticComplexity": None,
+        "functionUses": None,
+        "functionDepth": None,
+        "constantsTouched": None,
+        "BranchProfiles": []
     }
 
 
