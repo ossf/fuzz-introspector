@@ -741,8 +741,8 @@ def create_fuzzer_detailed_section(
 
     if total_hit_functions > reachable_funcs:
         html_string += (
-            "<div class=\"high-level-conclusions-wrapper\">"
-            "<span class=\"high-level-conclusion red-conclusion\">"
+            "<div class=\"warning-box-wrapper\">"
+            "<span class=\"warning-box red-warning\">"
             "<b>Warning:</b> The number of covered functions are larger than the "
             "number of reachable functions. This means that there are more functions covered at "
             "runtime than are extracted using static analysis. This is likely a result "
