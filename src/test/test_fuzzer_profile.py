@@ -24,7 +24,7 @@ from fuzz_introspector.datatypes import fuzzer_profile  # noqa: E402
 @pytest.fixture
 def sample_cfg1():
     """Fixture for a sample (shortened paths) calltree"""
-    cfg_str = """Call treestd/../fuzzlib/fuzzlib.c
+    cfg_str = """Call tree
 LLVMFuzzerTestOneInput /src/wuffs/fuzz/c/fuzzlib/fuzzlib.c linenumber=-1
   llvmFuzzerTestOneInput /src/wuffs/fuzz/c/../fuzzlib/fuzzlib.c linenumber=93
     jenkins_hash_u32 /src/wuffs/fuzz/c/std/../fuzzlib/fuzzlib.c linenumber=67
