@@ -35,7 +35,7 @@ LLVMFuzzerTestOneInput /src/wuffs/fuzz/c/fuzzlib/fuzzlib.c linenumber=-1
     return cfg_str
 
 
-def base_cpp_profile(tmpdir, sample_cfg1):
+def base_cpp_profile(tmpdir, sample_cfg1, fake_yaml_func_elem):
     # Write the CFG
     cfg_path = os.path.join(tmpdir, "test_file.data")
     with open(cfg_path, "w") as f:
@@ -44,7 +44,7 @@ def base_cpp_profile(tmpdir, sample_cfg1):
     fake_frontend_yaml = {
         "Fuzzer filename": "/src/wuffs/fuzz/c/fuzzlib/fuzzlib.c",
         "All functions": {
-            "Elements": []
+            "Elements": fake_yaml_func_elem
         }
     }
 
@@ -59,7 +59,7 @@ def base_cpp_profile(tmpdir, sample_cfg1):
 
 def test_coverage_url(tmpdir, sample_cfg1):
     """Basic test for coverage URL"""
-    fp = base_cpp_profile(tmpdir, sample_cfg1)
+    fp = base_cpp_profile(tmpdir, sample_cfg1, [])
 
     cov_link = fp.resolve_coverage_link(
         "https://coverage-url.com/",
@@ -77,7 +77,7 @@ def test_coverage_url(tmpdir, sample_cfg1):
 
 def test_reaches_file(tmpdir, sample_cfg1):
     """Basic test for reaches file"""
-    fp = base_cpp_profile(tmpdir, sample_cfg1)
+    fp = base_cpp_profile(tmpdir, sample_cfg1, [])
     fp._set_file_targets()
 
     # Ensure set_file_target analysis has been done
@@ -90,7 +90,7 @@ def test_reaches_file(tmpdir, sample_cfg1):
 
 def test_reaches_file_with_refine_path(tmpdir, sample_cfg1):
     """test for reaches file with refine path"""
-    fp = base_cpp_profile(tmpdir, sample_cfg1)
+    fp = base_cpp_profile(tmpdir, sample_cfg1, [])
     fp._set_file_targets()
 
     # Ensure set_file_target analysis has been done
@@ -102,3 +102,53 @@ def test_reaches_file_with_refine_path(tmpdir, sample_cfg1):
     assert not fp.reaches_file('/src/wuffs/fuzz/c/fuzzlib/fuzzlib.c')
     assert fp.reaches_file('/src/wuffs/fuzz/...-snapshot.c')
     assert fp.reaches_file('/std/../fuzzlib/fuzzlib.c')
+
+
+def generate_temp_elem(name, func):
+    return {
+        "functionName": name,
+        "functionsReached": func,
+        "functionSourceFile": None,
+        "linkageType": None,
+        "functionLinenumber": None,
+        "returnType": None,
+        "argCount": None,
+        "argTypes": None,
+        "argNames": None,
+        "BBCount": None,
+        "ICount": None,
+        "EdgeCount": None,
+        "CyclomaticComplexity": None,
+        "functionUses": None,
+        "functionDepth": None,
+        "constantsTouched": None,
+        "BranchProfiles": []
+    }
+
+
+def test_reaches_func(tmpdir, sample_cfg1):
+    """test for reaches file with refine path"""
+    elem = [
+        generate_temp_elem(
+            "LLVMFuzzerTestOneInput",
+            ["abc", "def", "ghi"]
+        ),
+        generate_temp_elem(
+            "TestOneInput",
+            ["jkl", "mno", "pqr"]
+        ),
+        generate_temp_elem(
+            "Random",
+            ["stu", "vwx", "yz"]
+        )
+    ]
+
+    fp = base_cpp_profile(tmpdir, sample_cfg1, elem)
+    fp._set_all_reached_functions()
+
+    # Ensure set_all_reached_functions analysis has been done
+    assert len(fp.functions_reached_by_fuzzer) != 0
+
+    assert fp.reaches_func('abc')
+    assert not fp.reaches_func('stu')
+    assert not fp.reaches_func('mno')
