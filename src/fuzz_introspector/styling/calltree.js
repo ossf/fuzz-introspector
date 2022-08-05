@@ -69,12 +69,13 @@ $( document ).ready(function() {
     }, false);
   }
   
-  // if "scrollToNode" was passed to the URL, scroll:
-  scrollOnLoad();
-
   tabLineHover();
 
   addImageOverview();
+
+  // if "scrollToNode" was passed to the URL, scroll:
+  // This should be in the last bit to ensure all loading is done beforehand.
+  scrollOnLoad();
 });
 
 function addImageOverview() {
@@ -106,9 +107,8 @@ function scrollOnLoad() {
     if(elementToScrollTo===null) {
       return
     }
-    var offset = elementToScrollTo.getBoundingClientRect();
     elementToScrollTo.style.background = "#ffe08c";
-    document.querySelector(".calltree-content-section").scrollTop = offset.top-500;
+    elementToScrollTo.scrollIntoView({behavior: "smooth", block: "center"})
   }
 }
 
