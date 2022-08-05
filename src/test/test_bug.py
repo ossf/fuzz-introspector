@@ -18,12 +18,12 @@ import sys
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../")
 
-from fuzz_introspector.datatypes.bug import Bug
+from fuzz_introspector.datatypes import bug
 
 
 def test_bug_initialization():
     """Basic test for bug initialization"""
-    bug = Bug(
+    b = bug.Bug(
         "source_file",
         "source_line",
         "function_name",
@@ -33,9 +33,9 @@ def test_bug_initialization():
     )
 
     # Check initialization
-    assert bug.source_file == "source_file"
-    assert bug.source_line == "source_line"
-    assert bug.function_name == "function_name"
-    assert bug.fuzzer_name == "fuzzer_name"
-    assert bug.description == "description"
-    assert bug.bug_type == "bug_type"
+    assert b.source_file == "source_file"
+    assert b.source_line == "source_line"
+    assert b.function_name == "function_name"
+    assert b.fuzzer_name == "fuzzer_name"
+    assert b.description == "description"
+    assert b.bug_type == "bug_type"
