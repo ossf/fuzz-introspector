@@ -126,6 +126,10 @@ def create_pfc_button(
             target_name,
             profile.target_lang
         )
+        # get_target_coverage_url gives base folder. We must specify
+        # HTML file for it to work on gcloud as there is no automatic
+        # redirection.
+        target_coverage_url += "/report.html"
         html_string += f"""
             <a href="{target_coverage_url}">
                 <div class="pfc-list-item">
@@ -148,7 +152,7 @@ def html_get_table_of_contents(
                                  padding: 0 20px; margin-top: 30px">
                                 <div class="yellow-button-wrapper"
                                     style="position: relative; margin: 30px 0 5px 0">
-                                    <a href="{coverage_url}">
+                                    <a href="{coverage_url}/report.html">
                                         <div class="yellow-button">
                                             Project coverage
                                         </div>
