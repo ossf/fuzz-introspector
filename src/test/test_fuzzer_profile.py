@@ -21,11 +21,10 @@ sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../")
 
 from fuzz_introspector.datatypes import fuzzer_profile  # noqa: E402
 
-
 @pytest.fixture
 def sample_cfg1():
     """Fixture for a sample (shortened paths) calltree"""
-    cfg_str = """Call tree
+    cfg_str = """Call treestd/../fuzzlib/fuzzlib.c
 LLVMFuzzerTestOneInput /src/wuffs/fuzz/c/fuzzlib/fuzzlib.c linenumber=-1
   llvmFuzzerTestOneInput /src/wuffs/fuzz/c/../fuzzlib/fuzzlib.c linenumber=93
     jenkins_hash_u32 /src/wuffs/fuzz/c/std/../fuzzlib/fuzzlib.c linenumber=67
@@ -34,9 +33,7 @@ LLVMFuzzerTestOneInput /src/wuffs/fuzz/c/fuzzlib/fuzzlib.c linenumber=-1
     fuzz /src/wuffs/fuzz/c/std/bmp_fuzzer.c linenumber=74"""
     return cfg_str
 
-
-def test_coverage_url(tmpdir, sample_cfg1):
-    """Basic test for coverage URL"""
+def base_cpp_profile(tmpdir, sample_cfg1):
     # Write the CFG
     cfg_path = os.path.join(tmpdir, "test_file.data")
     with open(cfg_path, "w") as f:
@@ -55,6 +52,12 @@ def test_coverage_url(tmpdir, sample_cfg1):
         "c-cpp"
     )
 
+    return fp
+
+def test_coverage_url(tmpdir, sample_cfg1):
+    """Basic test for coverage URL"""
+    fp = base_cpp_profile(tmpdir, sample_cfg1)
+
     cov_link = fp.resolve_coverage_link(
         "https://coverage-url.com/",
         "fuzzlib/fuzzlib.c",
@@ -67,3 +70,30 @@ def test_coverage_url(tmpdir, sample_cfg1):
 
     # Ensure the coverage URL is correct
     assert "https://coverage-url.com/fuzzlib/fuzzlib.c.html#L13" == cov_link
+
+def test_reaches_file(tmpdir, sample_cfg1):
+    """Basic test for reaches file"""
+    fp = base_cpp_profile(tmpdir, sample_cfg1)
+    fp._set_file_targets()
+
+    #Ensure set_file_target analysis has been done
+    assert len(fp.file_targets) != 0
+
+    assert not fp.reaches_file('fuzzlib.c')
+    assert fp.reaches_file('/src/wuffs/fuzz/c/fuzzlib/fuzzlib.c')
+    assert fp.reaches_file('/src/wuffs/fuzz/...-snapshot.c') 
+
+def test_reaches_file_with_refine_path(tmpdir, sample_cfg1):
+    """test for reaches file with refine path"""
+    fp = base_cpp_profile(tmpdir, sample_cfg1)
+    fp._set_file_targets()
+
+    #Ensure set_file_target analysis has been done
+    assert len(fp.file_targets) != 0
+
+    fp.refine_paths('/src/wuffs/fuzz/c')
+
+    assert not fp.reaches_file('fuzzlib.c')
+    assert not fp.reaches_file('/src/wuffs/fuzz/c/fuzzlib/fuzzlib.c')
+    assert fp.reaches_file('/src/wuffs/fuzz/...-snapshot.c') 
+    assert fp.reaches_file('/std/../fuzzlib/fuzzlib.c')
