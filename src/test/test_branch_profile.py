@@ -31,8 +31,8 @@ def test_branch_profile_assign_from_yaml_elem():
         'Branch Sides': {
             'TrueSide': 'TrueSide',
             'FalseSide': 'FalseSide',
-            'TrueSideFuncs': ['abc','def','ghi'],
-            'FalseSideFuncs': ['jkl','mno','pqr']
+            'TrueSideFuncs': ['abc', 'def', 'ghi'],
+            'FalseSideFuncs': ['jkl', 'mno', 'pqr']
         }
     }
 
@@ -48,15 +48,15 @@ def test_branch_profile_assign_from_yaml_elem():
     assert bp.branch_false_side_not_covered_complexity == -1
     assert bp.branch_true_side_hitcount == -1
     assert bp.branch_false_side_hitcount == -1
-    assert bp.branch_true_side_funcs == ['abc','def','ghi']
-    assert bp.branch_false_side_funcs == ['jkl','mno','pqr']
+    assert bp.branch_true_side_funcs == ['abc', 'def', 'ghi']
+    assert bp.branch_false_side_funcs == ['jkl', 'mno', 'pqr']
 
 
 def test_branch_profile_assign_from_coverage():
     """Test branch profile initialization from coverage count"""
     bp = BranchProfile()
 
-    bp.assign_from_coverage('123','456')
+    bp.assign_from_coverage('123', '456')
 
     # Explicitly ensure branch profile is initialized correctly
     assert bp.branch_pos == ''
@@ -81,13 +81,13 @@ def test_branch_profile_double_assign():
         'Branch Sides': {
             'TrueSide': 'FalseSide',
             'FalseSide': 'TrueSide',
-            'TrueSideFuncs': ['jkl','mno','pqr'],
-            'FalseSideFuncs': ['abc','def','ghi']
+            'TrueSideFuncs': ['jkl', 'mno', 'pqr'],
+            'FalseSideFuncs': ['abc', 'def', 'ghi']
         }
     }
 
     bp.assign_from_yaml_elem(dummy_yaml_elem)
-    bp.assign_from_coverage('456','123')
+    bp.assign_from_coverage('456', '123')
 
     # Explicitly ensure branch profile is initialized correctly
     assert bp.branch_pos == 'abcdefghi'
@@ -99,6 +99,6 @@ def test_branch_profile_double_assign():
     assert bp.branch_false_side_not_covered_complexity == -1
     assert bp.branch_true_side_hitcount == 456
     assert bp.branch_false_side_hitcount == 123
-    assert bp.branch_true_side_funcs == ['jkl','mno','pqr']
-    assert bp.branch_false_side_funcs == ['abc','def','ghi']
+    assert bp.branch_true_side_funcs == ['jkl', 'mno', 'pqr']
+    assert bp.branch_false_side_funcs == ['abc', 'def', 'ghi']
 
