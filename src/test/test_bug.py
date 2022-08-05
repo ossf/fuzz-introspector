@@ -18,7 +18,7 @@ import sys
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../")
 
-from fuzz_introspector.datatypes import bug
+from fuzz_introspector.datatypes import bug # noqa: E402
 
 
 def test_bug_initialization():
