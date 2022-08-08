@@ -61,7 +61,7 @@ def test_run_analysis_on_dir():
     """Test links in HTML report generated for each YAML file"""
 
     # Retrieve test case list and config
-    report_dir = "TestReport"
+    report_dir = "data/TestReport"
     config_file = "%s/config.properties" % report_dir
 
     if not os.path.isdir(report_dir):
