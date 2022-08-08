@@ -455,9 +455,22 @@ def detect_branch_level_blockers(
         if blocked_side:
             # Sanity check on line numbers: anomaly can happen because of debug info inaccuracy
             if int(line_number) > int(side_line_number):
-                logger.debug("Anomalous branch sides line nubmers: %s:%s -> %s" % (
+                logger.debug("Branch-blocker: Anomalous branch sides line nubmers: %s:%s -> %s" % (
                              source_file_path, line_number, side_line_number))
                 continue
+
+            # Sanity check for fall through cases: checks if the branch side has coverage or not
+            if coverage.get_type() == "file":
+                if coverage.is_file_lineno_hit(source_file_path, int(side_line_number)):
+                    logger.debug("Branch-blocker: fall through branch side is not blocked: %s"
+                                 % (side_line))
+                    continue
+            else:
+                if coverage.is_func_lineno_hit(function_name, int(side_line_number)):
+                    logger.debug("Branch-blocker: fall through branch side is not blocked: %s"
+                                 % (side_line))
+                    continue
+
             hitcount_diff = abs(true_hitcount - false_hitcount)
             link = fuzz_profile.resolve_coverage_link(
                 target_coverage_url,
