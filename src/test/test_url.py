@@ -23,7 +23,7 @@ sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../")
 from fuzz_introspector import commands  # noqa: E402
 
 
-def is_valid_link(link):
+def is_valid_gcloud_link(link):
     # Skip same page linkage
     if link.startswith('#') or link.startswith('?'):
         return True
@@ -44,6 +44,13 @@ def is_valid_link(link):
 def extract_link_from_html(html):
     links = re.findall('href="([^\"]*)"', html)
     return links
+
+
+def test_regression_427():
+   """ Regression testing for Issue #427 """
+
+   assert not is_valid_gcloud_link("https://storage.googleapis.com/oss-fuzz-coverage/bluez/reports/20220807/linux")
+   assert is_valid_gcloud_link("https://storage.googleapis.com/oss-fuzz-coverage/bluez/reports/20220807/linux/report.html")
 
 
 def test_run_analysis_on_dir():
@@ -96,7 +103,7 @@ def test_run_analysis_on_dir():
         html_file.close()
 
         for link in extract_link_from_html(html):
-            assert is_valid_link(link)
+            assert is_valid_gcloud_link(link)
 
         # Loop and test on HTML result
 #        for file in os.scandir('.'):
