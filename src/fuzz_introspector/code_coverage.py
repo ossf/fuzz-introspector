@@ -235,7 +235,7 @@ def load_llvm_coverage(
                 found_name = target_name
 
     cp = CoverageProfile()
-    cp.set_type("file")
+    cp.set_type("function")
     for profile_file in coverage_reports:
         # If only coverage from a specific report should be used then filter
         # here. Otherwise, include coverage from all reports.
