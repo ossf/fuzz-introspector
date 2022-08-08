@@ -22,6 +22,7 @@ sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../")
 
 from fuzz_introspector import commands  # noqa: E402
 
+
 def is_valid_link(link):
     # Skip same page linkage
     if link.startswith('#') or link.startswith('?'):
@@ -50,7 +51,7 @@ def test_run_analysis_on_dir():
 
     # Retrieve test case list and config
     report_dir = "TestReport"
-    config_file = "%s/config.properties"%report_dir
+    config_file = "%s/config.properties" % report_dir
 
     if not os.path.isdir(report_dir):
         return
@@ -67,8 +68,8 @@ def test_run_analysis_on_dir():
             os.mkdir("./tmpdir")
         os.chdir("./tmpdir")
 
-        base_dir = "../%s/%s"%(report_dir, config.get(test_case,'base_dir'))
-        language = config.get(test_case,'language')
+        base_dir = "../%s/%s" % (report_dir, config.get(test_case, 'base_dir'))
+        language = config.get(test_case, 'language')
 
         if not os.path.isdir(base_dir):
             continue
