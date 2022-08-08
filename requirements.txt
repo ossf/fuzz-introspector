@@ -12,4 +12,3 @@ pytest
 sphinx
 sphinx_rtd_theme
 configparser
-re
