@@ -1,0 +1,5 @@
+Call tree
+fuzz_test.TestOneInput / -1
+  <builtin>.len fuzz_test 22
+  fuzz_lib.reachable_1 fuzz_test 23
+  fuzz_lib.reachable_2 fuzz_test 25
