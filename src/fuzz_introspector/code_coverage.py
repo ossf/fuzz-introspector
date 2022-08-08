@@ -185,6 +185,20 @@ class CoverageProfile:
         lines_hit = [ht for ln, ht in self.covmap[fuzz_key] if ht > 0]
         return len(self.covmap[fuzz_key]), len(lines_hit)
 
+    def is_func_lineno_hit(self, func_name: str, lineno: int) -> bool:
+        """
+        Checks if a given line number in a function is hit.
+        """
+        func_hit_details = self.get_hit_details(func_name)
+
+        for line_info in func_hit_details:
+            if lineno == line_info[0]:
+                if line_info[1] != 0:
+                    return True
+                else:
+                    return False
+        return False
+
 
 def load_llvm_coverage(
     target_dir: str,
@@ -221,6 +235,7 @@ def load_llvm_coverage(
                 found_name = target_name
 
     cp = CoverageProfile()
+    cp.set_type("function")
     for profile_file in coverage_reports:
         # If only coverage from a specific report should be used then filter
         # here. Otherwise, include coverage from all reports.
