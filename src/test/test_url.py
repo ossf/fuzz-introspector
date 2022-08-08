@@ -47,10 +47,14 @@ def extract_link_from_html(html):
 
 
 def test_regression_427():
-   """ Regression testing for Issue #427 """
+    """ Regression testing for Issue #427 """
 
-   assert not is_valid_gcloud_link("https://storage.googleapis.com/oss-fuzz-coverage/bluez/reports/20220807/linux")
-   assert is_valid_gcloud_link("https://storage.googleapis.com/oss-fuzz-coverage/bluez/reports/20220807/linux/report.html")
+    assert not is_valid_gcloud_link(
+        "https://storage.googleapis.com/oss-fuzz-coverage/bluez/reports/20220807/linux"
+    )
+    assert is_valid_gcloud_link(
+        "https://storage.googleapis.com/oss-fuzz-coverage/bluez/reports/20220807/linux/report.html"
+    )
 
 
 def test_run_analysis_on_dir():
