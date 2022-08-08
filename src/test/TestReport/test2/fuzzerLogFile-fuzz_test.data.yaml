@@ -1,0 +1,236 @@
+All functions:
+  Elements:
+  - BBCount: 1
+    BranchProfiles: []
+    CyclomaticComplexity: 3
+    EdgeCount: 2
+    ICount: 1
+    IfCount: 1
+    argCount: 0
+    argNames: []
+    argTypes: []
+    constantsTouched: []
+    functionDepth: 2
+    functionLinenumber: -1
+    functionName: fuzz_test
+    functionSourceFile: fuzz_test
+    functionUses: 0
+    functionsReached:
+    - fuzz_test.main
+    - atheris.instrument_func
+    - atheris.instrument_imports
+    - atheris.Setup
+    - atheris.Fuzz
+    linkageType: pythonLinkage
+    returnType: N/A
+  - BBCount: 0
+    BranchProfiles: []
+    CyclomaticComplexity: 3
+    EdgeCount: 1
+    ICount: 0
+    IfCount: 0
+    argCount: 0
+    argNames: []
+    argTypes: []
+    constantsTouched: []
+    functionDepth: 0
+    functionLinenumber: -1
+    functionName: atheris.instrument_imports
+    functionSourceFile: atheris
+    functionUses: 1
+    functionsReached: []
+    linkageType: pythonLinkage
+    returnType: N/A
+  - BBCount: 0
+    BranchProfiles: []
+    CyclomaticComplexity: 3
+    EdgeCount: 1
+    ICount: 0
+    IfCount: 0
+    argCount: 0
+    argNames: []
+    argTypes: []
+    constantsTouched: []
+    functionDepth: 0
+    functionLinenumber: -1
+    functionName: atheris.instrument_func
+    functionSourceFile: ''
+    functionUses: 1
+    functionsReached: []
+    linkageType: pythonLinkage
+    returnType: N/A
+  - BBCount: 1
+    BranchProfiles: []
+    CyclomaticComplexity: 3
+    EdgeCount: 2
+    ICount: 2
+    IfCount: 1
+    argCount: 1
+    argNames:
+    - data
+    argTypes:
+    - N/A
+    constantsTouched: []
+    functionDepth: 1
+    functionLinenumber: 21
+    functionName: fuzz_test.TestOneInput
+    functionSourceFile: fuzz_test
+    functionUses: 0
+    functionsReached:
+    - fuzz_lib.reachable_1
+    - <builtin>.len
+    - fuzz_lib.reachable_2
+    linkageType: pythonLinkage
+    returnType: N/A
+  - BBCount: 0
+    BranchProfiles: []
+    CyclomaticComplexity: 3
+    EdgeCount: 1
+    ICount: 0
+    IfCount: 0
+    argCount: 0
+    argNames: []
+    argTypes: []
+    constantsTouched: []
+    functionDepth: 0
+    functionLinenumber: -1
+    functionName: <builtin>.len
+    functionSourceFile: <builtin>
+    functionUses: 1
+    functionsReached: []
+    linkageType: pythonLinkage
+    returnType: N/A
+  - BBCount: 0
+    BranchProfiles: []
+    CyclomaticComplexity: 3
+    EdgeCount: 1
+    ICount: 0
+    IfCount: 0
+    argCount: 1
+    argNames:
+    - data
+    argTypes:
+    - N/A
+    constantsTouched: []
+    functionDepth: 0
+    functionLinenumber: 15
+    functionName: fuzz_lib.reachable_1
+    functionSourceFile: ''
+    functionUses: 1
+    functionsReached: []
+    linkageType: pythonLinkage
+    returnType: N/A
+  - BBCount: 0
+    BranchProfiles: []
+    CyclomaticComplexity: 3
+    EdgeCount: 1
+    ICount: 0
+    IfCount: 0
+    argCount: 1
+    argNames:
+    - data
+    argTypes:
+    - N/A
+    constantsTouched: []
+    functionDepth: 0
+    functionLinenumber: 18
+    functionName: fuzz_lib.reachable_2
+    functionSourceFile: ''
+    functionUses: 1
+    functionsReached: []
+    linkageType: pythonLinkage
+    returnType: N/A
+  - BBCount: 0
+    BranchProfiles: []
+    CyclomaticComplexity: 3
+    EdgeCount: 1
+    ICount: 2
+    IfCount: 0
+    argCount: 0
+    argNames: []
+    argTypes: []
+    constantsTouched: []
+    functionDepth: 1
+    functionLinenumber: 27
+    functionName: fuzz_test.main
+    functionSourceFile: fuzz_test
+    functionUses: 1
+    functionsReached:
+    - atheris.Setup
+    - atheris.Fuzz
+    linkageType: pythonLinkage
+    returnType: N/A
+  - BBCount: 0
+    BranchProfiles: []
+    CyclomaticComplexity: 3
+    EdgeCount: 1
+    ICount: 0
+    IfCount: 0
+    argCount: 0
+    argNames: []
+    argTypes: []
+    constantsTouched: []
+    functionDepth: 0
+    functionLinenumber: -1
+    functionName: atheris.Setup
+    functionSourceFile: atheris
+    functionUses: 2
+    functionsReached: []
+    linkageType: pythonLinkage
+    returnType: N/A
+  - BBCount: 0
+    BranchProfiles: []
+    CyclomaticComplexity: 3
+    EdgeCount: 1
+    ICount: 0
+    IfCount: 0
+    argCount: 0
+    argNames: []
+    argTypes: []
+    constantsTouched: []
+    functionDepth: 0
+    functionLinenumber: -1
+    functionName: atheris.Fuzz
+    functionSourceFile: atheris
+    functionUses: 2
+    functionsReached: []
+    linkageType: pythonLinkage
+    returnType: N/A
+  - BBCount: 0
+    BranchProfiles: []
+    CyclomaticComplexity: 3
+    EdgeCount: 1
+    ICount: 0
+    IfCount: 0
+    argCount: 0
+    argNames: []
+    argTypes: []
+    constantsTouched: []
+    functionDepth: 0
+    functionLinenumber: -1
+    functionName: fuzz_lib
+    functionSourceFile: fuzz_lib
+    functionUses: 0
+    functionsReached: []
+    linkageType: pythonLinkage
+    returnType: N/A
+  - BBCount: 0
+    BranchProfiles: []
+    CyclomaticComplexity: 3
+    EdgeCount: 1
+    ICount: 0
+    IfCount: 0
+    argCount: 0
+    argNames: []
+    argTypes: []
+    constantsTouched: []
+    functionDepth: 0
+    functionLinenumber: 21
+    functionName: fuzz_lib.unreachable_1
+    functionSourceFile: fuzz_lib
+    functionUses: 0
+    functionsReached: []
+    linkageType: pythonLinkage
+    returnType: N/A
+  Function list name: All functions
+Fuzzer filename: python/test3/fuzz_test.py
