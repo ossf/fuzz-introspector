@@ -19,4 +19,4 @@ jobs:
           pip install -r requirements.txt
       - name: Test unittests
         run: |
-          pytest src/test/
+          pytest -vv src/test/
