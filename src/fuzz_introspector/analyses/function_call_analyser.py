@@ -14,7 +14,7 @@
 """Analysis for function call coverage in the project"""
 
 import logging
-import os
+# import os
 
 from typing import (
     List,
