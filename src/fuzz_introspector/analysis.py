@@ -128,7 +128,8 @@ def get_all_analyses() -> List[Type[AnalysisInterface]]:
         optimal_targets,
         runtime_coverage_analysis,
         bug_digestor,
-        filepath_analyser
+        filepath_analyser,
+        function_call_analyser
     )
 
     analysis_array = [
@@ -137,7 +138,8 @@ def get_all_analyses() -> List[Type[AnalysisInterface]]:
         runtime_coverage_analysis.Analysis,
         driver_synthesizer.Analysis,
         bug_digestor.Analysis,
-        filepath_analyser.Analysis
+        filepath_analyser.Analysis,
+        function_call_analyser.Analysis
     ]
     return analysis_array
 
