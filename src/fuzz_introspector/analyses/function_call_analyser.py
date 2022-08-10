@@ -14,7 +14,6 @@
 """Analysis for function call coverage in the project"""
 
 import logging
-# import os
 
 from typing import (
     List,
@@ -24,7 +23,12 @@ from typing import (
 
 from fuzz_introspector import analysis
 from fuzz_introspector import html_helpers
-from fuzz_introspector.datatypes import project_profile, fuzzer_profile
+from fuzz_introspector import utils
+from fuzz_introspector.datatypes import (
+    project_profile,
+    fuzzer_profile,
+    function_profile
+)
 
 logger = logging.getLogger(name=__name__)
 
@@ -37,15 +41,14 @@ class Analysis(analysis.AnalysisInterface):
     def get_name():
         return "FunctionCallAnalyser"
 
-    def all_files_targeted(
+    def third_party_func_profile(
         self,
-        proj_profile: project_profile.MergedProjectProfile
-    ) -> Set[str]:
-        s1 = set()
-        for prof in proj_profile.profiles:
-            for func in prof.all_class_functions:
-                s1.add(prof.all_class_functions[func].function_source_file)
-        return s1
+        profile: project_profile.MergedProjectProfile
+    ) -> List[function_profile.FunctionProfile]:
+        target_list = [
+            fd for fd in profile.all_functions.values() if fd.function_source_file
+        ]
+        return target_list
 
     def analysis_func(
         self,
@@ -59,7 +62,8 @@ class Analysis(analysis.AnalysisInterface):
     ) -> str:
         logger.info(f" - Running analysis {Analysis.get_name()}")
 
-        # TODO: Add data retrieval logic
+        # Getting data
+        func_profile_list = self.third_party_func_profile(proj_profile)
 
         html_string = ""
         html_string += "<div class=\"report-box\">"
@@ -82,7 +86,36 @@ class Analysis(analysis.AnalysisInterface):
             toc_list
         )
 
-        # TODO: Add in table show a source files list and functions
+        # Third party function calls table
+        tables.append(f"myTable{len(tables)}")
+        html_string += html_helpers.html_create_table_head(
+            tables[-1],
+            [
+                ("Function name", ""),
+                ("Reached by Fuzzers",
+                 "The specific fuzzers that reach this function. "
+                 "Based on static analysis."),
+                ("Fuzzers runtime hit",
+                 "Indicates whether the function is hit at runtime by the given corpus. "
+                 "Based on dynamic analysis."),
+                ("Reached by functions",
+                 "The number of functions that reaches this function. "
+                 "Based on static analysis.")
+            ]
+        )
+
+        for fd in func_profile_list:
+            func_name = utils.demangle_cpp_func(fd.function_name)
+            hit = proj_profile.runtime_coverage.is_func_hit(fd.function_name)
+            reached = len(fd.incoming_references)
+            
+            html_string += html_helpers.html_table_add_row([
+                f"{func_name}",
+                f"{str(fd.hitcount)}",
+                f"{str(hit)}",
+                f"{str(reached)}"
+           ])
+        html_string += "</table>"
 
         html_string += "</div>"  # .collapsible
         html_string += "</div>"  # report-box
