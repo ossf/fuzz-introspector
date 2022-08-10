@@ -15,11 +15,7 @@
 
 import logging
 
-from typing import (
-    List,
-    Set,
-    Tuple
-)
+from typing import List
 
 from fuzz_introspector import analysis
 from fuzz_introspector import html_helpers
@@ -108,13 +104,13 @@ class Analysis(analysis.AnalysisInterface):
             func_name = utils.demangle_cpp_func(fd.function_name)
             hit = proj_profile.runtime_coverage.is_func_hit(fd.function_name)
             reached = len(fd.incoming_references)
-            
+
             html_string += html_helpers.html_table_add_row([
                 f"{func_name}",
                 f"{str(fd.hitcount)}",
                 f"{str(hit)}",
                 f"{str(reached)}"
-           ])
+            ])
         html_string += "</table>"
 
         html_string += "</div>"  # .collapsible
