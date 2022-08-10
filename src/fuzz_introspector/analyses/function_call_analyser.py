@@ -45,7 +45,7 @@ class Analysis(analysis.AnalysisInterface):
         profile: project_profile.MergedProjectProfile
     ) -> List[function_profile.FunctionProfile]:
         target_list = [
-            fd for fd in profile.all_functions.values() if fd.function_source_file
+            fd for fd in profile.all_functions.values() if not fd.function_source_file
         ]
         return target_list
 
