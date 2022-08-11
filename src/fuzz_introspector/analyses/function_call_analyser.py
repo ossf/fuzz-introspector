@@ -46,10 +46,10 @@ class Analysis(analysis.AnalysisInterface):
         self,
         profile: project_profile.MergedProjectProfile,
         callsites: List[cfg_load.CalltreeCallsite]
-    ) -> (
+    ) -> Tuple[
         List[function_profile.FunctionProfile],
         Dict[str, List[str]]
-    ):
+    ]:
         target_list = [
             fd for fd in profile.all_functions.values() if not fd.function_source_file
         ]
@@ -58,7 +58,7 @@ class Analysis(analysis.AnalysisInterface):
             func.function_name for func in target_list
         ]
 
-        callsite_dict = dict()
+        callsite_dict[str, List[str]] = dict()
 
         for callsite in callsites:
             func_name = callsite.dst_function_name
@@ -69,14 +69,14 @@ class Analysis(analysis.AnalysisInterface):
                     func_list = []
                 src_file = callsite.src_function_source_file
                 if not src_file:
-                    src_file = callsite.parent_calltree_callsite.dst_function_source_file
+                    parent = callsite.parent_calltree_callsite
+                    if not parent:
+                        src_file = parent.dst_function_source_file
                 func_list.append("%s:%s" % (
                     src_file,
                     callsite.src_linenumber
-                )) 
-                callsite_dict.update({
-                   func_name: func_list
-                })
+                ))
+                callsite_dict.update({func_name: func_list})
 
         return target_list, callsite_dict
 
@@ -96,7 +96,9 @@ class Analysis(analysis.AnalysisInterface):
         callsite_list = []
         for profile in profiles:
             callsite_list.extend(cfg_load.extract_all_callsites(profile.function_call_depths))
-        func_profile_list, called_func_dict = self.third_party_func_profile(proj_profile, callsite_list)
+        (func_profile_list, called_func_dict) = (
+            self.third_party_func_profile(proj_profile, callsite_list)
+        )
 
         html_string = ""
         html_string += "<div class=\"report-box\">"
