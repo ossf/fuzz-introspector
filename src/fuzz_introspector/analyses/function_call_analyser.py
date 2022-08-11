@@ -58,7 +58,7 @@ class Analysis(analysis.AnalysisInterface):
             func.function_name for func in target_list
         ]
 
-        callsite_dict[str, List[str]] = dict()
+        callsite_dict: Dict[str, List[str]] = dict()
 
         for callsite in callsites:
             func_name = callsite.dst_function_name
@@ -70,7 +70,7 @@ class Analysis(analysis.AnalysisInterface):
                 src_file = callsite.src_function_source_file
                 if not src_file:
                     parent = callsite.parent_calltree_callsite
-                    if not parent:
+                    if parent:
                         src_file = parent.dst_function_source_file
                 func_list.append("%s:%s" % (
                     src_file,
