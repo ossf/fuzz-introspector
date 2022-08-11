@@ -164,6 +164,7 @@ def get_coverage(project_name):
         "python3",
         "infra/helper.py",
         "coverage",
+        "--port ''",
         "--no-corpus-download",
         project_name
     ]
