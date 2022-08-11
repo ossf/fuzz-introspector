@@ -17,10 +17,12 @@ import logging
 
 from typing import (
     List,
-    Tuple
+    Tuple,
+    Dict
 )
 
 from fuzz_introspector import analysis
+from fuzz_introspector import cfg_load
 from fuzz_introspector import html_helpers
 from fuzz_introspector import utils
 from fuzz_introspector.datatypes import (
@@ -42,12 +44,41 @@ class Analysis(analysis.AnalysisInterface):
 
     def third_party_func_profile(
         self,
-        profile: project_profile.MergedProjectProfile
-    ) -> List[function_profile.FunctionProfile]:
+        profile: project_profile.MergedProjectProfile,
+        callsites: List[cfg_load.CalltreeCallsite]
+    ) -> (
+        List[function_profile.FunctionProfile],
+        Dict[str, List[str]]
+    ):
         target_list = [
             fd for fd in profile.all_functions.values() if not fd.function_source_file
         ]
-        return target_list
+
+        target_func_list = [
+            func.function_name for func in target_list
+        ]
+
+        callsite_dict = dict()
+
+        for callsite in callsites:
+            func_name = callsite.dst_function_name
+            if func_name in target_func_list:
+                if func_name in callsite_dict.keys():
+                    func_list = callsite_dict[func_name]
+                else:
+                    func_list = []
+                src_file = callsite.src_function_source_file
+                if not src_file:
+                    src_file = callsite.parent_calltree_callsite.dst_function_source_file
+                func_list.append("%s:%s" % (
+                    src_file,
+                    callsite.src_linenumber
+                )) 
+                callsite_dict.update({
+                   func_name: func_list
+                })
+
+        return target_list, callsite_dict
 
     def analysis_func(
         self,
@@ -62,7 +93,10 @@ class Analysis(analysis.AnalysisInterface):
         logger.info(f" - Running analysis {Analysis.get_name()}")
 
         # Getting data
-        func_profile_list = self.third_party_func_profile(proj_profile)
+        callsite_list = []
+        for profile in profiles:
+            callsite_list.extend(cfg_load.extract_all_callsites(profile.function_call_depths))
+        func_profile_list, called_func_dict = self.third_party_func_profile(proj_profile, callsite_list)
 
         html_string = ""
         html_string += "<div class=\"report-box\">"
@@ -98,7 +132,7 @@ class Analysis(analysis.AnalysisInterface):
                  "Indicates whether the function is hit at runtime by the given corpus. "
                  "Based on dynamic analysis."),
                 ("Reached by functions",
-                 "The number of functions that reaches this function. "
+                 "The functions that reaches this function. "
                  "Based on static analysis.")
             ]
         )
@@ -106,13 +140,15 @@ class Analysis(analysis.AnalysisInterface):
         for fd in func_profile_list:
             func_name = utils.demangle_cpp_func(fd.function_name)
             hit = proj_profile.runtime_coverage.is_func_hit(fd.function_name)
-            reached = len(fd.incoming_references)
-
+            if fd.function_name in called_func_dict.keys():
+                called_func = called_func_dict[fd.function_name]
+            else:
+                called_func = []
             html_string += html_helpers.html_table_add_row([
                 f"{func_name}",
-                f"{str(fd.hitcount)}",
+                f"{str(fd.reached_by_fuzzers)}",
                 f"{str(hit)}",
-                f"{str(reached)}"
+                f"{str(called_func)}"
             ])
         html_string += "</table>"
 
