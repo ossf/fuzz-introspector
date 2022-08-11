@@ -56,11 +56,15 @@ def get_fuzzers(project_name):
     execs = []
     for l in os.listdir("build/out/%s"%(project_name)):
         print("Checking %s"%(l))
+        if l in {'llvm-symbolizer', 'sanitizer_with_fuzzer.so'}:
+            continue
+        if l.startswith('jazzer_'):
+            continue
         complete_path = os.path.join("build/out/%s"%(project_name), l)
         executable = (os.path.isfile(complete_path) and os.access(complete_path, os.X_OK))
         if executable:
             execs.append(l)
-    print("Executable files: %s"%(str(execs)))
+    print("Fuzz targets: %s"%(str(execs)))
     return execs
 
 
