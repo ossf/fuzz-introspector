@@ -16,4 +16,4 @@
  ################################################################################ 
 
 # Build project and fuzzer (using current CFLAGS).
-$CC $CFLAGS -o "$OUT/fuzz" $LIB_FUZZING_ENGINE temp.c -I$SRC/
+$CC $CFLAGS -o "$OUT/fuzz" $LIB_FUZZING_ENGINE fuzz.c -I$SRC/
