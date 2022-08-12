@@ -42,6 +42,24 @@ class Analysis(analysis.AnalysisInterface):
     def get_name():
         return "FunctionCallAnalyser"
 
+    def get_source_file_recursively(self, callsite) -> str:
+        parent = callsite.parent_calltree_callsite
+        if parent:
+            src_file = parent.dst_function_source_file
+            if src_file:
+                return src_file
+            else:
+                return self.get_source_file_recursively(parent)
+        else:
+            return ""
+
+    def get_source_file(self, callsite) -> str:
+        src_file = callsite.src_function_source_file
+        if not src_file:
+            src_file = self.get_source_file_recursively(callsite)
+
+        return src_file
+
     def third_party_func_profile(
         self,
         profile: project_profile.MergedProjectProfile,
@@ -67,14 +85,10 @@ class Analysis(analysis.AnalysisInterface):
                     func_list = callsite_dict[func_name]
                 else:
                     func_list = []
-                src_file = callsite.src_function_source_file
-                if not src_file:
-                    parent = callsite.parent_calltree_callsite
-                    if parent:
-                        src_file = parent.dst_function_source_file
+                src_file = self.get_source_file(callsite)
                 func_list.append("%s:%s" % (
-                    src_file,
-                    callsite.src_linenumber
+                     src_file,
+                     callsite.src_linenumber
                 ))
                 callsite_dict.update({func_name: func_list})
 
@@ -143,15 +157,18 @@ class Analysis(analysis.AnalysisInterface):
             func_name = utils.demangle_cpp_func(fd.function_name)
             hit = proj_profile.runtime_coverage.is_func_hit(fd.function_name)
             if fd.function_name in called_func_dict.keys():
-                called_func = called_func_dict[fd.function_name]
+                called_func_list = called_func_dict[fd.function_name]
+                if len(called_func_list) == 0:
+                    called_func_list = [""]
             else:
-                called_func = []
-            html_string += html_helpers.html_table_add_row([
-                f"{func_name}",
-                f"{str(fd.reached_by_fuzzers)}",
-                f"{str(hit)}",
-                f"{str(called_func)}"
-            ])
+                called_func_list = [""]
+            for called_func in called_func_list:
+                html_string += html_helpers.html_table_add_row([
+                    f"{func_name}",
+                    f"{str(fd.reached_by_fuzzers)}",
+                    f"{str(hit)}",
+                    f"{called_func}"
+                ])
         html_string += "</table>"
 
         html_string += "</div>"  # .collapsible
