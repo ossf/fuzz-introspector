@@ -87,8 +87,8 @@ class Analysis(analysis.AnalysisInterface):
                     func_list = []
                 src_file = self.get_source_file(callsite)
                 func_list.append("%s:%s" % (
-                     src_file,
-                     callsite.src_linenumber
+                    src_file,
+                    callsite.src_linenumber
                 ))
                 callsite_dict.update({func_name: func_list})
 
