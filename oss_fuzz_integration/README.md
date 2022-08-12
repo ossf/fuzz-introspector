@@ -49,10 +49,7 @@ cd oss-fuzz
 ../run_both.sh htslib 20
 ```
 
-If all worked, then you should be able to start a webserver at port 8008 in ./corpus-0/inspector-report/
-Serving HTTP on 0.0.0.0 port 8008 (http://0.0.0.0:8008/) ...
-
-You can access the report by navigating to `https://localhost:8008/fuzz_report.html`
+You can access the report by navigating to `http://localhost:8008/fuzz_report.html`
 
 ### Build images completely from scratch
 This will build all images base images from scratch, and have all fuzz introspector
@@ -65,10 +62,8 @@ cd oss-fuzz
 ../run_both.sh htslib 30
 ...
 ```
-If all worked, then you should be able to start a webserver at port 8008 in ./corpus-0/inspector-report/
-Serving HTTP on 0.0.0.0 port 8008 (http://0.0.0.0:8008/) ...
 
-You can access the report by navigating to `https://localhost:8008/fuzz_report.html`
+You can access the report by navigating to `http://localhost:8008/fuzz_report.html`
 
 ## Options for run_both.sh
 You can run multiple fuzzers by passing `--jobs=X` at the end of the
