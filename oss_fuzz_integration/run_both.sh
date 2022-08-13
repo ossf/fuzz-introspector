@@ -33,7 +33,6 @@ cp -rf ./corpus-$LATEST_CORPUS_DIR/report/ ./corpus-$LATEST_CORPUS_DIR/inspector
 # We need to allow the following to fail because it will do so for Python projects
 cp -rf ./corpus-$LATEST_CORPUS_DIR/report_target/* ./corpus-$LATEST_CORPUS_DIR/inspector-report/covreport/ || true
 
-echo "If all worked, then you should be able to start a webserver at port $PORT in ./corpus-${LATEST_CORPUS_DIR}/inspector-report/"
+echo "The following command is about to be run to start a webserver: cd ./corpus-${LATEST_CORPUS_DIR}/inspector-report/ && python3 -m http.server $PORT"
 cd ./corpus-${LATEST_CORPUS_DIR}/inspector-report/
 python3 -m http.server "$PORT"
-echo "Use the following command to initialize a webserver in the directory: cd ./corpus-${LATEST_CORPUS_DIR}/inspector-report/ && python3 -m http.server $PORT"
