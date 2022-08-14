@@ -68,8 +68,8 @@ cd llvm-project/
 
 # Patch Clang to run fuzz introspector
 ../../sed_cmds.sh
-cp -rf ../../llvm/include/llvm/Transforms/FuzzIntrospector/ ./llvm/include/llvm/Transforms/FuzzIntrospector
-cp -rf ../../llvm/lib/Transforms/FuzzIntrospector ./llvm/lib/Transforms/FuzzIntrospector
+cp -rf ../../frontends/llvm/include/llvm/Transforms/FuzzIntrospector/ ./llvm/include/llvm/Transforms/FuzzIntrospector
+cp -rf ../../frontends/llvm/lib/Transforms/FuzzIntrospector ./llvm/lib/Transforms/FuzzIntrospector
 cd ../
 
 # Build LLVM and clang
@@ -96,11 +96,11 @@ cd tests/simple-example-0
 # Run compiler pass to generate *.data and *.data.yaml files
 mkdir work
 cd work
-FUZZ_INTROSPECTOR=1 ../../../build/llvm-build/bin/clang -fsanitize=fuzzer -flto -g ../fuzzer.c -o fuzzer
+FUZZ_INTROSPECTOR=1 ../../../build/llvm-build/bin/clang -fsanitize=fuzzer -fuse-ld=gold -flto -g ../fuzzer.c -o fuzzer
 
 # Run post-processing to analyse data files and generate HTML report
-python3 ../../../post-processing/main.py correlate --binaries_dir=.
-python3 ../../../post-processing/main.py report --target_dir=. --correlation_file=./exe_to_fuzz_introspector_logs.yaml
+python3 ../../../src/main.py correlate --binaries_dir=.
+python3 ../../../src/main.py report --target_dir=. --correlation_file=./exe_to_fuzz_introspector_logs.yaml
 
 # The post-processing will have generated various .html, .js, .css and .png fies,
 # and these are accessible in the current folder. Simply start a webserver and 
@@ -123,11 +123,11 @@ cd work
 ../build_cov.sh
 
 # Build fuzz-introspector normally
-FUZZ_INTROSPECTOR=1 ../../../build/llvm-build/bin/clang -fsanitize=fuzzer -flto -g ../fuzzer.c -o fuzzer
+FUZZ_INTROSPECTOR=1 ../../../build/llvm-build/bin/clang -fsanitize=fuzzer -fuse-ld=gold -flto -g ../fuzzer.c -o fuzzer
 
 # Run post-processing to analyse data files and generate HTML report
-python3 ../../../post-processing/main.py correlate --binaries_dir=.
-python3 ../../../post-processing/main.py report --target_dir=. --correlation_file=./exe_to_fuzz_introspector_logs.yaml
+python3 ../../../src/main.py correlate --binaries_dir=.
+python3 ../../../src/main.py report --target_dir=. --correlation_file=./exe_to_fuzz_introspector_logs.yaml
 
 # The post-processing will have generated various .html, .js, .css and .png fies,
 # and these are accessible in the current folder. Simply start a webserver and
