@@ -14,6 +14,8 @@
 #
 ################################################################################
 
+set -ex
+
 BASE=$PWD
 mkdir build
 cd build
@@ -42,8 +44,8 @@ python3 -m pip install psutil
 
 # Now copy over the LLVM code we have
 # This includes our inspector pass and the files included.
-cp -rf ${BASE}/llvm/include/llvm/Transforms/FuzzIntrospector/ ./llvm-project/llvm/include/llvm/Transforms/FuzzIntrospector
-cp -rf ${BASE}/llvm/lib/Transforms/FuzzIntrospector ./llvm-project/llvm/lib/Transforms/FuzzIntrospector
+cp -rf ${BASE}/frontends/llvm/include/llvm/Transforms/FuzzIntrospector/ ./llvm-project/llvm/include/llvm/Transforms/FuzzIntrospector
+cp -rf ${BASE}/frontends/llvm/lib/Transforms/FuzzIntrospector ./llvm-project/llvm/lib/Transforms/FuzzIntrospector
 
 # Build LLVM
 mkdir llvm-build
