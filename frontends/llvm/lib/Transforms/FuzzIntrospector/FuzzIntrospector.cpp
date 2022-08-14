@@ -88,6 +88,11 @@ typedef struct BranchProfileEntry {
   BranchSides BranchSidesInfo;
 } BranchProfileEntry;
 
+typedef struct bCSite {
+  std::string src;
+  StringRef dst;
+} CSite;
+
 typedef struct fuzzFuncWrapper {
   StringRef FunctionName;
   std::string FunctionSourceFile;
@@ -106,6 +111,7 @@ typedef struct fuzzFuncWrapper {
   int FunctionUses;
   std::vector<StringRef> FunctionsReached;
   std::vector<BranchProfileEntry> BranchProfiles;
+  std::vector<CSite> Callsites;
 } FuzzerFunctionWrapper;
 
 typedef struct FuzzerStringList {
@@ -160,6 +166,7 @@ template <> struct yaml::MappingTraits<FuzzerFunctionWrapper> {
     io.mapRequired("functionsReached", Func.FunctionsReached);
     io.mapRequired("functionUses", Func.FunctionUses);
     io.mapRequired("BranchProfiles", Func.BranchProfiles);
+    io.mapRequired("Callsites", Func.Callsites);
   }
 };
 LLVM_YAML_IS_SEQUENCE_VECTOR(FuzzerFunctionWrapper)
@@ -210,6 +217,14 @@ template <> struct yaml::MappingTraits<BranchProfileEntry> {
   }
 };
 LLVM_YAML_IS_SEQUENCE_VECTOR(BranchProfileEntry)
+
+template <> struct yaml::MappingTraits<CSite> {
+  static void mapping(IO &io, CSite &cs) {
+    io.mapRequired("Src", cs.src);
+    io.mapRequired("Dst", cs.dst);
+  }
+};
+LLVM_YAML_IS_SEQUENCE_VECTOR(CSite)
 
 // end of YAML mappings
 
@@ -1041,6 +1056,85 @@ FuzzerFunctionWrapper FuzzIntrospector::wrapFunction(Function *F) {
       if (BranchInst *BI = dyn_cast<BranchInst>(&I)) {
         FuncWrap.EdgeCount += BI->isConditional() ? 2 : 1;
       }
+
+
+      // Handle branch instructions. Log src information (source code location)
+      // and destination function name.
+      std::vector<Function *> FuncPoints;
+      Function *CallsiteDst = nullptr;
+      // Resolve the function destinations of this callsite.
+      if (isa<CallInst>(I) || isa<InvokeInst>(I)) {
+        if (CallInst *CDI = dyn_cast<CallInst>(&I)) {
+          CallsiteDst = value2Func(CDI->getCalledOperand());
+        } else if (InvokeInst *IDI = dyn_cast<InvokeInst>(&I)) {
+          CallsiteDst = value2Func(IDI->getCalledOperand());
+        }
+        if (CallsiteDst != nullptr) {
+          FuncPoints.push_back(CallsiteDst);
+        }
+
+        // Check for function pointers as arguments in a function call, e.g.
+        // to a function that take a function pointer for a callback function.
+        if (CallInst *CI = dyn_cast<CallInst>(&I)) {
+          for (int i = 0; i < CI->getNumOperands(); i++) {
+            Value *opnd = CI->getOperand(i);
+            Function *tmpf = value2Func(opnd);
+            if (tmpf != nullptr && tmpf != CallsiteDst) {
+              FuncPoints.push_back(tmpf);
+            }
+          }
+        }
+
+        // Edge resolution for calls based on VTable indices.
+        if (isa<CallInst>(I) && CallsiteDst == nullptr) {
+          CallsiteDst = extractVTableIndirectCall(F, I);
+          if (CallsiteDst != nullptr) {
+            FuncPoints.push_back(CallsiteDst);
+          }
+        }
+      }
+
+      for (auto CSElem : FuncPoints) {
+        // Check if this is a function to avoid before adding it.
+        if (shouldAvoidFunction(CSElem)) {
+          continue;
+        }
+
+        // Extract debug location. Similar logic is found in
+        // resolveOutgoingEdges and getInsnDebugInfo but with
+        // a few differences in comparison to each. TODO: see
+        // if the three places can be merged.
+        const llvm::DebugLoc &debugInfo = I.getDebugLoc();
+        if (debugInfo) {
+          std::string SrcInfo;
+          if (llvm::DebugLoc InlinedAtDL = debugInfo.getInlinedAt()) {
+            DILocation *DLoc = InlinedAtDL.get();
+
+            SrcInfo = DLoc->getFilename().str() +
+                      ":" +
+                      std::to_string(InlinedAtDL.getLine()) +
+                      "," +
+                      std::to_string(InlinedAtDL.getCol());
+          }
+          else {
+            DILocation *DLoc = debugInfo.get();
+            SrcInfo = DLoc->getFilename().str() +
+                      ":" +
+                      std::to_string(debugInfo.getLine()) +
+                      "," +
+                      std::to_string(debugInfo.getCol());
+          }
+
+          StringRef NormalisedDstName = removeDecSuffixFromName(CSElem->getName());
+          CSite cs;
+          cs.src = SrcInfo;
+          cs.dst = NormalisedDstName;
+          FuncWrap.Callsites.push_back(cs);
+        }
+      }
+
+      // Break if we dont want to extract constants, which is currently
+      // experimental.
       if (!getenv("FUZZINTRO_CONSTANTS")) {
         continue;
       }
