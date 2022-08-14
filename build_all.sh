@@ -15,44 +15,52 @@
 ################################################################################
 
 set -ex
-
 BASE=$PWD
-mkdir build
-cd build
-BUILD_BASE=$PWD
+BUILD_BASE=$BASE/build
 
-# Build  binutils
-git clone --depth 1 git://sourceware.org/git/binutils-gdb.git binutils
-mkdir build
-cd ./build
-../binutils/configure --enable-gold --enable-plugins --disable-werror
-make all-gold
-cd ${BUILD_BASE}
+if [ -d $BUILD_BASE ]; then
+  echo "Reusing set up (LLVM Source). Updating the LLVM plugin"
+  rm -rf $BUILD_BASE/llvm-project/llvm/include/llvm/Transforms/FuzzIntrospector
+  rm -rf $BUILD_BASE/llvm-project/llvm/lib/Transforms/FuzzIntrospector
+  cp -rf ${BASE}/frontends/llvm/include/llvm/Transforms/FuzzIntrospector/ $BUILD_BASE/llvm-project/llvm/include/llvm/Transforms/FuzzIntrospector
+  cp -rf ${BASE}/frontends/llvm/lib/Transforms/FuzzIntrospector $BUILD_BASE/llvm-project/llvm/lib/Transforms/FuzzIntrospector
 
-# Now build LLVM
-git clone https://github.com/llvm/llvm-project/
-cd llvm-project/
+  cd $BUILD_BASE/llvm-build
+  make -j3
+else
+  echo "Cloning and building binutild-gdb and LLVM from scratch."
+  mkdir $BUILD_BASE
 
-#git stash
-git checkout release/14.x
+  # Build  binutils
+  cd $BUILD_BASE
+  git clone --depth 1 git://sourceware.org/git/binutils-gdb.git binutils
+  mkdir build
+  cd ./build
+  ../binutils/configure --enable-gold --enable-plugins --disable-werror
+  make all-gold
 
-$BASE/sed_cmds.sh
-cd ${BUILD_BASE}
+  # Now build LLVM
+  cd ${BUILD_BASE}
+  git clone https://github.com/llvm/llvm-project/
+  cd llvm-project/
+  git checkout release/14.x
 
-# Required for multicore support
-python3 -m pip install psutil
+  echo "Applying diffs to insert Fuzz Introspector plugin in the LLVM pipeline"
+  $BASE/sed_cmds.sh
 
-# Now copy over the LLVM code we have
-# This includes our inspector pass and the files included.
-cp -rf ${BASE}/frontends/llvm/include/llvm/Transforms/FuzzIntrospector/ ./llvm-project/llvm/include/llvm/Transforms/FuzzIntrospector
-cp -rf ${BASE}/frontends/llvm/lib/Transforms/FuzzIntrospector ./llvm-project/llvm/lib/Transforms/FuzzIntrospector
+  # Now copy over the LLVM code we have
+  # This includes our inspector pass and the files included.
+  cp -rf ${BASE}/frontends/llvm/include/llvm/Transforms/FuzzIntrospector/ ${BUILD_BASE}/llvm-project/llvm/include/llvm/Transforms/FuzzIntrospector
+  cp -rf ${BASE}/frontends/llvm/lib/Transforms/FuzzIntrospector ${BUILD_BASE}/llvm-project/llvm/lib/Transforms/FuzzIntrospector
 
-# Build LLVM
-mkdir llvm-build
-cd llvm-build
-cmake -G "Unix Makefiles" -DLLVM_ENABLE_PROJECTS="clang;compiler-rt"  \
-      -DLLVM_BINUTILS_INCDIR=../binutils/include \
-      -DLLVM_TARGETS_TO_BUILD="X86" ../llvm-project/llvm/
-make llvm-headers
-make -j5
-make
+  # Build LLVM
+  cd ${BUILD_BASE}
+  mkdir llvm-build
+  cd llvm-build
+  cmake -G "Unix Makefiles" -DLLVM_ENABLE_PROJECTS="clang;compiler-rt"  \
+        -DLLVM_BINUTILS_INCDIR=../binutils/include \
+        -DLLVM_TARGETS_TO_BUILD="X86" ../llvm-project/llvm/
+  make llvm-headers
+  make -j5
+  make
+fi

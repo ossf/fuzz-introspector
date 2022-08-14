@@ -36,7 +36,7 @@ for PROJ in simple-example-0 simple-example-1 simple-example-2 simple-example-3 
   # Check post-processing
   mkdir web
   cd web
-  python3 ${ROOT}/../post-processing/main.py --target_dir=../ > log_post-processing.txt 2>&1
+  python3 ${ROOT}/../src/main.py report --target_dir=../ > log_post-processing.txt 2>&1
   retval=$?
   if [ $retval -ne 0 ]; then
     echo -e "${RED}[-] fail: post-processing${NC}"
