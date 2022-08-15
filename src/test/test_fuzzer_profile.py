@@ -122,7 +122,8 @@ def generate_temp_elem(name, func):
         "functionUses": None,
         "functionDepth": None,
         "constantsTouched": None,
-        "BranchProfiles": []
+        "BranchProfiles": [],
+        "Callsites": []
     }
 
 

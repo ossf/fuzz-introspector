@@ -77,7 +77,7 @@ class FunctionProfile:
         self,
         yaml_callsites: Any
     ) -> Dict[str, List[str]]:
-        cs_loaded = {}
+        cs_loaded: Dict[str, List[str]] = {}
         for callsite in yaml_callsites:
             if callsite['Dst'] not in cs_loaded.keys():
                 callsite_list = []
