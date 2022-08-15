@@ -176,7 +176,16 @@ class Analysis(analysis.AnalysisInterface):
         # Table with all function calls for each files
         html_string += "<div class=\"collapsible\">"
         html_string += (
-            "<p>Lorem ipsum dolor sit amet</p>"
+            "<p>"
+            "This section shows a list of 3rd party function calls and their relative coverage information. "
+            "By static analysis of the target project code, all of the 3rd party function call and their caller "
+            "information, including the source file and line number that initiate the call are captured. "
+            "The caller source code file and line number are shown in column 2 while column 1 is the function "
+            "name of the 3rd party function call. Each occurrent of the 3rd party function call will occuply "
+            "a separate row. Column 3 of each row indicate if the 3rd party call in the source file line is "
+            "unreachable. Column 4 lists all fuzzers that have covered that particular system call in "
+            "that specific location (source file and line) during their dynamic fuzzing."
+            "</p>"
         )
 
         html_string += html_helpers.html_add_header_with_link(
