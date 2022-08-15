@@ -42,23 +42,25 @@ class Analysis(analysis.AnalysisInterface):
     def get_name():
         return "FunctionCallAnalyser"
 
-    def get_source_file_recursively(self, callsite) -> str:
-        parent = callsite.parent_calltree_callsite
-        if parent:
-            src_file = parent.dst_function_source_file
-            if src_file:
-                return src_file
-            else:
-                return self.get_source_file_recursively(parent)
-        else:
-            return ""
-
     def get_source_file(self, callsite) -> str:
         src_file = callsite.src_function_source_file
         if not src_file:
-            src_file = self.get_source_file_recursively(callsite)
+            parent = callsite.parent_calltree_callsite
+            if parent:
+                src_file = parent.dst_function_source_file
+                src_file = src_file if src_file else ""
 
         return src_file
+
+    def get_parent_func_name(self, callsite) -> str:
+        func_file = callsite.src_function_source_file
+        if not func_file:
+            parent = callsite.parent_calltree_callsite
+            if parent:
+                func_file = parent.dst_function_name
+                func_file = func_file if func_file else ""
+
+        return func_file
 
     def add_callsite_record(
         self,
@@ -114,8 +116,10 @@ class Analysis(analysis.AnalysisInterface):
         for callsite in callsites:
             func_name = callsite.dst_function_name
             src_file = self.get_source_file(callsite)
-            src_file_with_line = "%s:%s" % (
+            parent_func = self.get_parent_func_name(callsite)
+            src_file_with_line = "%s#%s:%s" % (
                 src_file,
+                parent_func,
                 callsite.src_linenumber
             )
             self.add_callsite_record(
@@ -191,7 +195,7 @@ class Analysis(analysis.AnalysisInterface):
             "the 3rd party call in the source file line is "
             "unreachable. Column 4 lists all fuzzers that have "
             "covered that particular system call in "
-            "that specific location (source file and line)" 
+            "that specific location (source file and line)"
             "during their dynamic fuzzing."
             "</p>"
         )
@@ -209,9 +213,9 @@ class Analysis(analysis.AnalysisInterface):
             [
                 ("Function name", ""),
                 ("Source file",
-                 "Source file and line number of this function call. "
+                 "Source file, line number and parent function of this function call. "
                  "Based on static analysis."),
-                ("Unused code? ",
+                ("Reachable code? ",
                  "Is this code reachable by any functions? "
                  "Based on static analysis."),
                 ("Reached by Fuzzers",
@@ -230,7 +234,7 @@ class Analysis(analysis.AnalysisInterface):
             else:
                 called_func_list = [""]
             for called_func in called_func_list:
-                hit = "Yes" if (called_func not in reachable_func_list) else "No"
+                hit = "Yes" if (called_func in reachable_func_list) else "No"
 
                 fuzzer_hit = False
                 coverage = proj_profile.runtime_coverage

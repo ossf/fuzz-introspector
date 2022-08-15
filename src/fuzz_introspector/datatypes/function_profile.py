@@ -84,7 +84,11 @@ class FunctionProfile:
             else:
                 callsite_list = cs_loaded[callsite['Dst']]
 
-            callsite_list.append(callsite['Src'].split(',')[0])
+            callsite_src = callsite['Src'].split(',')[0].replace(
+                ':',
+                '#%s:' % self.function_name
+            )
+            callsite_list.append(callsite_src)
             cs_loaded.update({callsite['Dst']: callsite_list})
 
         return cs_loaded
