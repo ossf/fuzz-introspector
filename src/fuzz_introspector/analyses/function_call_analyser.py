@@ -60,14 +60,39 @@ class Analysis(analysis.AnalysisInterface):
 
         return src_file
 
+    def add_callsite_record(
+        self,
+        target_func_list: List[str],
+        func_name: str,
+        source_file_list: List[str],
+        callsites: Dict[str, List[str]]
+    ) -> List[str]:
+        exist_list = []
+        if func_name in target_func_list:
+            if func_name in callsites.keys():
+                func_list = callsites[func_name]
+            else:
+                func_list = []
+            for item in source_file_list:
+                if item not in func_list:
+                    func_list.append(item)
+                else:
+                    exist_list.append(item)
+            callsites.update({func_name: func_list})
+
+        return exist_list
+
     def third_party_func_profile(
         self,
         profile: project_profile.MergedProjectProfile,
-        callsites: List[cfg_load.CalltreeCallsite]
+        callsites: List[cfg_load.CalltreeCallsite],
+        function_list: List[function_profile.FunctionProfile]
     ) -> Tuple[
         List[function_profile.FunctionProfile],
-        Dict[str, List[str]]
+        Dict[str, List[str]],
+        List[str]
     ]:
+        # Build up target function list
         target_list = [
             fd for fd in profile.all_functions.values() if not fd.function_source_file
         ]
@@ -76,23 +101,45 @@ class Analysis(analysis.AnalysisInterface):
             func.function_name for func in target_list
         ]
 
+        # Add unreachable target functions
+        for function in function_list:
+            if function.function_name not in target_func_list:
+                if not function.function_source_file:
+                    target_list.append(function)
+                    target_func_list.append(function.function_name)
+
+        # Create list of call site for each funcitons
         callsite_dict: Dict[str, List[str]] = dict()
 
         for callsite in callsites:
             func_name = callsite.dst_function_name
-            if func_name in target_func_list:
-                if func_name in callsite_dict.keys():
-                    func_list = callsite_dict[func_name]
-                else:
-                    func_list = []
-                src_file = self.get_source_file(callsite)
-                func_list.append("%s:%s" % (
-                    src_file,
-                    callsite.src_linenumber
-                ))
-                callsite_dict.update({func_name: func_list})
+            src_file = self.get_source_file(callsite)
+            src_file_with_line = "%s:%s" % (
+                src_file,
+                callsite.src_linenumber
+            )
+            self.add_callsite_record(
+                target_func_list,
+                func_name,
+                [src_file_with_line],
+                callsite_dict
+            )
 
-        return target_list, callsite_dict
+        reachable_func_list = []
+
+        for function in function_list:
+            for func_name in function.callsite.keys():
+
+                reachable_func_list.extend(
+                    self.add_callsite_record(
+                        target_func_list,
+                        func_name,
+                        function.callsite[func_name],
+                        callsite_dict
+                    )
+                )
+
+        return target_list, callsite_dict, reachable_func_list
 
     def analysis_func(
         self,
@@ -108,10 +155,13 @@ class Analysis(analysis.AnalysisInterface):
 
         # Getting data
         callsite_list = []
+        function_list = []
         for profile in profiles:
             callsite_list.extend(cfg_load.extract_all_callsites(profile.function_call_depths))
-        (func_profile_list, called_func_dict) = (
-            self.third_party_func_profile(proj_profile, callsite_list)
+            for key in profile.all_class_functions.keys():
+                function_list.append(profile.all_class_functions[key])
+        (func_profile_list, called_func_dict, reachable_func_list) = (
+            self.third_party_func_profile(proj_profile, callsite_list, function_list)
         )
 
         html_string = ""
@@ -141,21 +191,21 @@ class Analysis(analysis.AnalysisInterface):
             tables[-1],
             [
                 ("Function name", ""),
-                ("Reached by Fuzzers",
-                 "The specific fuzzers that reach this function. "
+                ("Source file",
+                 "Source file and line number of this function call. "
                  "Based on static analysis."),
-                ("Fuzzers runtime hit",
-                 "Indicates whether the function is hit at runtime by the given corpus. "
-                 "Based on dynamic analysis."),
-                ("Reached by functions",
-                 "The functions that reaches this function. "
+                ("Unused code? ",
+                 "Is this code reachable by any functions? "
+                 "Based on static analysis."),
+                ("Reached by Fuzzers",
+                 "The specific fuzzers that reach this function call. "
                  "Based on static analysis.")
             ]
         )
 
         for fd in func_profile_list:
             func_name = utils.demangle_cpp_func(fd.function_name)
-            hit = proj_profile.runtime_coverage.is_func_hit(fd.function_name)
+
             if fd.function_name in called_func_dict.keys():
                 called_func_list = called_func_dict[fd.function_name]
                 if len(called_func_list) == 0:
@@ -163,11 +213,24 @@ class Analysis(analysis.AnalysisInterface):
             else:
                 called_func_list = [""]
             for called_func in called_func_list:
+                hit = "Yes" if (called_func not in reachable_func_list) else "No"
+
+                fuzzer_hit = False
+                coverage = proj_profile.runtime_coverage
+                for parent_func in fd.incoming_references:
+                    if coverage.is_func_lineno_hit(
+                        parent_func,
+                        int(called_func.split(":")[1])
+                    ):
+                        fuzzer_hit = True
+                        break
+                fuzzer = fd.reached_by_fuzzers if fuzzer_hit else [""]
+
                 html_string += html_helpers.html_table_add_row([
                     f"{func_name}",
-                    f"{str(fd.reached_by_fuzzers)}",
-                    f"{str(hit)}",
-                    f"{called_func}"
+                    f"{called_func}",
+                    f"{hit}",
+                    f"{str(fuzzer)}"
                 ])
         html_string += "</table>"
 

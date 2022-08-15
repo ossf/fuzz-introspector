@@ -58,6 +58,9 @@ class FunctionProfile:
         self.new_unreached_complexity: int = 0
         self.total_cyclomatic_complexity: int = 0
 
+        # Saving callsitecalltree for unreachable function
+        self.callsite = self.load_unreachable_function_callsite(elem['Callsites'])
+
     def load_func_branch_profiles(
         self,
         yaml_branch_profiles: Any
@@ -69,3 +72,19 @@ class FunctionProfile:
             bp_loaded[new_branch.branch_pos] = new_branch
 
         return bp_loaded
+
+    def load_unreachable_function_callsite(
+        self,
+        yaml_callsites: Any
+    ) -> Dict[str, List[str]]:
+        cs_loaded = {}
+        for callsite in yaml_callsites:
+            if callsite['Dst'] not in cs_loaded.keys():
+                callsite_list = []
+            else:
+                callsite_list = cs_loaded[callsite['Dst']]
+
+            callsite_list.append(callsite['Src'].split(',')[0])
+            cs_loaded.update({callsite['Dst']: callsite_list})
+
+        return cs_loaded
