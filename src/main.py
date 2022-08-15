@@ -105,16 +105,16 @@ def set_logging_level() -> None:
             logging.basicConfig(level=logging.INFO)
     else:
         logging.basicConfig(level=logging.INFO)
-    logger.info("Logging level set")
     logger.debug("Logging level set")
 
 
 def main() -> int:
-    logger.info("Running fuzz introspector post-processing")
     set_logging_level()
 
     parser = get_cmdline_parser()
     args = parser.parse_args()
+
+    logger.info("Running fuzz introspector post-processing")
     if args.command == 'report':
         return_code = commands.run_analysis_on_dir(
             args.target_dir,
