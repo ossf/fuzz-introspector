@@ -34,11 +34,7 @@ cd oss-fuzz
 
 This will download OSS-Fuzz, pulls introspector images and tag them accordingly.
 
-When you run above command, the OSS-Fuzz coverage run will start a webserver (like following logs) to
-serve coverage reports. You need to kill it using Ctrl-C to let the rest of
-script work correctly on your local machine. This is only the first time a HTTP
-server is started. The second time it will be the Fuzz Introspector report and
-when this shows you can navigate to `https://localhost:8008/fuzz_report.html`.
+You can access the report by navigating to `http://localhost:8008/fuzz_report.html`
 
 ### Build with OSS-Fuzz base clang image
 Following the above instructions, you can use the following command to perform
@@ -53,10 +49,7 @@ cd oss-fuzz
 ../run_both.sh htslib 20
 ```
 
-If all worked, then you should be able to start a webserver at port 8008 in ./corpus-0/inspector-report/
-Serving HTTP on 0.0.0.0 port 8008 (http://0.0.0.0:8008/) ...
-
-You can access the report by navigating to `https://localhost:8008/fuzz_report.html`
+You can access the report by navigating to `http://localhost:8008/fuzz_report.html`
 
 ### Build images completely from scratch
 This will build all images base images from scratch, and have all fuzz introspector
@@ -69,10 +62,8 @@ cd oss-fuzz
 ../run_both.sh htslib 30
 ...
 ```
-If all worked, then you should be able to start a webserver at port 8008 in ./corpus-0/inspector-report/
-Serving HTTP on 0.0.0.0 port 8008 (http://0.0.0.0:8008/) ...
 
-You can access the report by navigating to `https://localhost:8008/fuzz_report.html`
+You can access the report by navigating to `http://localhost:8008/fuzz_report.html`
 
 ## Options for run_both.sh
 You can run multiple fuzzers by passing `--jobs=X` at the end of the

@@ -159,13 +159,6 @@ index 1659ee94..fc5e682d 100755
  
    # Create an empty summary file for now
    echo "{}" >> $SUMMARY_FILE
-@@ -392,5 +399,5 @@ if [[ -n $HTTP_PORT ]]; then
-   # Serve the report locally.
-   echo "Serving the report on http://127.0.0.1:$HTTP_PORT/linux/index.html"
-   cd $REPORT_ROOT_DIR
--  python3 -m http.server $HTTP_PORT
-+  #python3 -m http.server $HTTP_PORT
- fi
 diff --git a/projects/pyyaml/build.sh b/projects/pyyaml/build.sh
 index 98f406ad..62485ae4 100644
 --- a/projects/pyyaml/build.sh

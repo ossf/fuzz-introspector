@@ -19,6 +19,8 @@
 SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
 PROJ=$1
+PORT=${FUZZ_INTROSPECTOR_PORT:-8008}
+
 # Pass all arguments to get_full_coverage.py
 python3 ${SCRIPT_DIR}/get_full_coverage.py $@
 python3 ./infra/helper.py build_fuzzers --sanitizer=introspector $PROJ
@@ -31,7 +33,6 @@ cp -rf ./corpus-$LATEST_CORPUS_DIR/report/ ./corpus-$LATEST_CORPUS_DIR/inspector
 # We need to allow the following to fail because it will do so for Python projects
 cp -rf ./corpus-$LATEST_CORPUS_DIR/report_target/* ./corpus-$LATEST_CORPUS_DIR/inspector-report/covreport/ || true
 
-echo "If all worked, then you should be able to start a webserver at port 8008 in ./corpus-${LATEST_CORPUS_DIR}/inspector-report/"
+echo "The following command is about to be run to start a webserver: cd ./corpus-${LATEST_CORPUS_DIR}/inspector-report/ && python3 -m http.server $PORT"
 cd ./corpus-${LATEST_CORPUS_DIR}/inspector-report/
-python3 -m http.server 8008
-echo "Use the following command to initialize a webserver in the directory: cd ./corpus-${LATEST_CORPUS_DIR}/inspector-report/ && python3 -m http.server 8008"
+python3 -m http.server "$PORT"
