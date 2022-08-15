@@ -53,7 +53,7 @@ def test_normalise_str(s1: str, should_change: bool):
                 "/src/project_name/dir1/file2.c",
                 "/src/project_name/dir2/README.md",
             ],
-            "/src/project_name/"
+            "/src/project_name"
         ),
         (
             [
