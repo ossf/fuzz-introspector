@@ -231,7 +231,7 @@ class MergedProjectProfile:
                 continue
             all_strs.append(os.path.dirname(f.function_source_file))
 
-        self.basefolder = utils.longest_common_prefix(all_strs)
+        self.basefolder = utils.longest_common_prefix(all_strs) + "/"
 
     def _get_total_unreached_function_count(self) -> int:
         unreached_function_count = 0
