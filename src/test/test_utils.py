@@ -1,4 +1,4 @@
-# Copyright 2022 Fuzz Introspector Authors
+\# Copyright 2022 Fuzz Introspector Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -60,7 +60,7 @@ def test_normalise_str(s1: str, should_change: bool):
                 "/src/project_name/file.c",
                 "/src/project_name/file.c",
             ],
-            "/src/project_name/"
+            "/src/project_name/file.c"
         )
     ]
 )
