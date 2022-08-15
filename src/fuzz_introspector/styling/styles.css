@@ -975,6 +975,7 @@ input[type=search] {
 }
 .per-fuzzer-coverage-dropdown.show {
 	display: block;
+	z-index: 10;
 }
 .per-fuzzer-coverage-button:hover {
 	cursor: pointer;
