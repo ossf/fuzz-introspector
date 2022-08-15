@@ -45,15 +45,22 @@ def test_normalise_str(s1: str, should_change: bool):
                 "the_prefix_b",
                 "the_prefix_c"
             ],
-            "the_prefix_"
+            ""
         ),
         (
             [
-                "/src/project_name/file1.c",
-                "/src/project_name/file2.c",
-                "/src/project_name/README.md",
+                "/src/project_name/dir1/file1.c",
+                "/src/project_name/dir1/file2.c",
+                "/src/project_name/dir2/README.md",
             ],
-            "/src/project_name/"
+            "/src/project_name"
+        ),
+        (
+            [
+                "/src/project_name/file.c",
+                "/src/project_name/file.c",
+            ],
+            "/src/project_name/file.c"
         )
     ]
 )

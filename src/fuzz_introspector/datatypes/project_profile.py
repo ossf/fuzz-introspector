@@ -13,6 +13,7 @@
 # limitations under the License.
 """Project profile"""
 
+import os
 import logging
 
 from typing import (
@@ -228,7 +229,7 @@ class MergedProjectProfile:
                 continue
             if "/usr/include/" in f.function_source_file:
                 continue
-            all_strs.append(f.function_source_file)
+            all_strs.append(os.path.dirname(f.function_source_file))
 
         self.basefolder = utils.longest_common_prefix(all_strs)
 
