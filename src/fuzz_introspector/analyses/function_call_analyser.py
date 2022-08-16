@@ -248,7 +248,7 @@ class Analysis(analysis.AnalysisInterface):
                 for parent_func in fd.incoming_references:
                     if coverage.is_func_lineno_hit(
                         parent_func,
-                        int(called_func.split(":")[1])
+                        int(called_location.split(":")[1])
                     ):
                         fuzzer_hit = True
                         break
