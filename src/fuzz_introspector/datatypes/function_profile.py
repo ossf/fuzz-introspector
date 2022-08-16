@@ -51,8 +51,8 @@ class FunctionProfile:
         self.constants_touched = elem['constantsTouched']
         self.branch_profiles = self.load_func_branch_profiles(elem['BranchProfiles'])
 
-        # Saving callsitecalltree for function
-        self.callsite = self.load_func_callsite(elem['Callsites'])
+        # Saving callsites for this function
+        self.callsite = self.load_func_callsites(elem['Callsites'])
 
         # These are set later.
         self.hitcount: int = 0
@@ -73,7 +73,7 @@ class FunctionProfile:
 
         return bp_loaded
 
-    def load_func_callsite(
+    def load_func_callsites(
         self,
         yaml_callsites: Any
     ) -> Dict[str, List[str]]:
