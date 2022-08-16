@@ -166,12 +166,12 @@ class Analysis(analysis.AnalysisInterface):
         Performs an analysis for all third party API call in the target project.
         Finds the set of third party API call in the project code and provide
         coverage information of each of their occurrent.
-        1) Displays each occurring of the third party function call and its location 
+        1) Displays each occurring of the third party function call and its location
            in terms of source file and line number
-        2) Shows if each of those third party function call location is statically 
+        2) Shows if each of those third party function call location is statically
            reachable
         3) Analyse the fuzzer report to determine if each of those third party function
-           call location is dynamically covered by any of the fuzzers, and also show the 
+           call location is dynamically covered by any of the fuzzers, and also show the
            name of the fuzzers that covered that line of code.
         """
         logger.info(f" - Running analysis {Analysis.get_name()}")
