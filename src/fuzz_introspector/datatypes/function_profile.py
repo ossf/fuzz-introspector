@@ -51,15 +51,15 @@ class FunctionProfile:
         self.constants_touched = elem['constantsTouched']
         self.branch_profiles = self.load_func_branch_profiles(elem['BranchProfiles'])
 
+        # Saving callsitecalltree for function
+        self.callsite = self.load_func_callsite(elem['Callsites'])
+
         # These are set later.
         self.hitcount: int = 0
         self.reached_by_fuzzers: List[str] = []
         self.incoming_references: List[str] = []
         self.new_unreached_complexity: int = 0
         self.total_cyclomatic_complexity: int = 0
-
-        # Saving callsitecalltree for unreachable function
-        self.callsite = self.load_unreachable_function_callsite(elem['Callsites'])
 
     def load_func_branch_profiles(
         self,
@@ -73,7 +73,7 @@ class FunctionProfile:
 
         return bp_loaded
 
-    def load_unreachable_function_callsite(
+    def load_func_callsite(
         self,
         yaml_callsites: Any
     ) -> Dict[str, List[str]]:

@@ -40,7 +40,7 @@ class Analysis(analysis.AnalysisInterface):
 
     @staticmethod
     def get_name():
-        return "FunctionCallAnalyser"
+        return "ThirdPartyAPICoverageAnalyser"
 
     def get_source_file(self, callsite) -> str:
         src_file = callsite.src_function_source_file
@@ -129,6 +129,7 @@ class Analysis(analysis.AnalysisInterface):
                 callsite_dict
             )
 
+        # Discover reachable func calls
         reachable_func_list = []
 
         for function in function_list:
@@ -218,24 +219,30 @@ class Analysis(analysis.AnalysisInterface):
                 ("Reachable code? ",
                  "Is this code reachable by any functions? "
                  "Based on static analysis."),
-                ("Reached by Fuzzers",
-                 "The specific fuzzers that reach this function call. "
-                 "Based on static analysis.")
+                ("Covered by Fuzzers",
+                 "The specific list of fuzzers that cover this function call. "
+                 "Based on dynamic analysis.")
             ]
         )
 
+        # Loop through each function call exists in this project
         for fd in func_profile_list:
             func_name = utils.demangle_cpp_func(fd.function_name)
 
+            # Retrieve called location as a list for this function
             if fd.function_name in called_func_dict.keys():
-                called_func_list = called_func_dict[fd.function_name]
-                if len(called_func_list) == 0:
-                    called_func_list = [""]
+                called_location_list = called_func_dict[fd.function_name]
+                if len(called_location_list) == 0:
+                    called_location_list = [""]
             else:
-                called_func_list = [""]
-            for called_func in called_func_list:
-                hit = "Yes" if (called_func in reachable_func_list) else "No"
+                called_location_list = [""]
 
+            # Loop through the list of calledlocation for this function
+            for called_location in called_location_list:
+                # Determine if the function call in this called location is reachable
+                hit = "Yes" if (called_location in reachable_func_list) else "No"
+
+                # Determine if this called location is covered by any fuzzers
                 fuzzer_hit = False
                 coverage = proj_profile.runtime_coverage
                 for parent_func in fd.incoming_references:
@@ -245,13 +252,13 @@ class Analysis(analysis.AnalysisInterface):
                     ):
                         fuzzer_hit = True
                         break
-                fuzzer = fd.reached_by_fuzzers if fuzzer_hit else [""]
+                list_of_fuzzer_covered = fd.reached_by_fuzzers if fuzzer_hit else [""]
 
                 html_string += html_helpers.html_table_add_row([
                     f"{func_name}",
-                    f"{called_func}",
+                    f"{called_location}",
                     f"{hit}",
-                    f"{str(fuzzer)}"
+                    f"{str(list_of_fuzzer_covered)}"
                 ])
         html_string += "</table>"
 
