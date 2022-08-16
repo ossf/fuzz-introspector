@@ -206,6 +206,7 @@ def convert_cg_to_introspector_data(cg_extended, fuzzer_filename):
         d['functionsReached'] = elem_dict['all_reachables']
         d['functionUses'] = elem_dict['all_uses']
         d['BranchProfiles'] = []
+        d['Callsites'] = []
 
         # Set the following based on ifCount. This should be refined to be more accurrate.
         d['BBCount'] = d['IfCount']
