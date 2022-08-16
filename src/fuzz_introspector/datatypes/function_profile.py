@@ -55,7 +55,7 @@ class FunctionProfile:
         try:
             self.callsite = self.load_func_callsites(elem['Callsites'])
         except Exception:
-            self.callsite = []
+            self.callsite = dict()
 
         # These are set later.
         self.hitcount: int = 0
