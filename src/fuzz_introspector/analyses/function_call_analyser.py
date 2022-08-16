@@ -1,4 +1,4 @@
-# Copyright 2022 Fuzz Introspector Authors
+# Copyright 2022 Fuzz Introspector Authorse
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -49,6 +49,10 @@ class Analysis(analysis.AnalysisInterface):
         return "ThirdPartyAPICoverageAnalyser"
 
     def get_source_file(self, callsite) -> str:
+        """
+        This function aims to dig up the callsitecalltree
+        of a function call and get its source file path.
+        """
         src_file = callsite.src_function_source_file
         if not src_file:
             parent = callsite.parent_calltree_callsite
@@ -59,8 +63,12 @@ class Analysis(analysis.AnalysisInterface):
         return src_file
 
     def get_parent_func_name(self, callsite) -> str:
-        func_file = callsite.src_function_source_file
-        if not func_file:
+         """
+         This function aims to dig up the callsitecalltree
+         of a function call and get its parent function name.
+         """
+         func_file = callsite.src_function_source_file
+         if not func_file:
             parent = callsite.parent_calltree_callsite
             if parent:
                 func_file = parent.dst_function_name
@@ -75,6 +83,12 @@ class Analysis(analysis.AnalysisInterface):
         source_file_list: List[str],
         callsites: Dict[str, List[str]]
     ) -> List[str]:
+        """
+        This function aims to add all third
+        party function call to its source
+        location and line number mapping
+        to a combined dictionary.
+        """
         exist_list = []
         if func_name in target_func_list:
             if func_name in callsites.keys():

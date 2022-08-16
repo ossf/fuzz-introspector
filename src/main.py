@@ -55,7 +55,7 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
             "FilePathAnalyser"
         ],
         help="""
-            Analyses to run. Available options: 
+            Analyses to run. Available options:
             OptimalTargets, FuzzEngineInput, ThirdPartyAPICoverageAnalyser
         """
     )
