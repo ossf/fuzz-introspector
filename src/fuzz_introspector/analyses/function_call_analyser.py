@@ -291,7 +291,7 @@ class Analysis(analysis.AnalysisInterface):
                 for parent_func in fd.incoming_references:
                     try:
                         lineno = int(called_location.split(":")[1])
-                    except:
+                    except ValueError:
                         continue
                     if coverage.is_func_lineno_hit(parent_func, lineno):
                         fuzzer_hit = True
