@@ -63,12 +63,12 @@ class Analysis(analysis.AnalysisInterface):
         return src_file
 
     def get_parent_func_name(self, callsite) -> str:
-         """
-         This function aims to dig up the callsitecalltree
-         of a function call and get its parent function name.
-         """
-         func_file = callsite.src_function_source_file
-         if not func_file:
+        """
+        This function aims to dig up the callsitecalltree
+        of a function call and get its parent function name.
+        """
+        func_file = callsite.src_function_source_file
+        if not func_file:
             parent = callsite.parent_calltree_callsite
             if parent:
                 func_file = parent.dst_function_name
