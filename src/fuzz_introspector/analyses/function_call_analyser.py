@@ -261,9 +261,10 @@ class Analysis(analysis.AnalysisInterface):
             "popen",
             "fdopen"
         ]
+        # Keeping memory unsafe sinks empty for now.
         memory_unsafe_sinks = [
-            "strcpy",
-            "memcpy",
+        #    "strcpy",
+        #    "memcpy",
         ]
         functions_of_interest = command_injection_sinks + memory_unsafe_sinks
         for fd in func_profile_list:
