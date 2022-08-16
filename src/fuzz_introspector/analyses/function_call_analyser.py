@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Analysis for function call coverage in the project"""
+"""Analysis plugin for introspection sinks of interest"""
 
 import logging
 
@@ -35,10 +35,9 @@ logger = logging.getLogger(name=__name__)
 
 
 class Analysis(analysis.AnalysisInterface):
-    """
-    This Analysis aims to analyse and generate html report content table to show all
-    occurence of third party function call within the target project and if those calls
-    are statically reached or dynamically covered.
+    """This Analysis aims to analyse and generate html report content table
+    to show all occurence of third party function call within the target
+    project and if those calls are statically reached or dynamically covered.
     """
 
     def __init__(self) -> None:
@@ -49,9 +48,8 @@ class Analysis(analysis.AnalysisInterface):
         return "ThirdPartyAPICoverageAnalyser"
 
     def get_source_file(self, callsite) -> str:
-        """
-        This function aims to dig up the callsitecalltree
-        of a function call and get its source file path.
+        """This function aims to dig up the callsitecalltree of a function
+        call and get its source file path.
         """
         src_file = callsite.src_function_source_file
         if not src_file:
@@ -63,9 +61,8 @@ class Analysis(analysis.AnalysisInterface):
         return src_file
 
     def get_parent_func_name(self, callsite) -> str:
-        """
-        This function aims to dig up the callsitecalltree
-        of a function call and get its parent function name.
+        """This function aims to dig up the callsitecalltree of a function
+        call and get its parent function name.
         """
         func_file = callsite.src_function_source_file
         if not func_file:
@@ -83,11 +80,8 @@ class Analysis(analysis.AnalysisInterface):
         source_file_list: List[str],
         callsites: Dict[str, List[str]]
     ) -> List[str]:
-        """
-        This function aims to add all third
-        party function call to its source
-        location and line number mapping
-        to a combined dictionary.
+        """This function aims to add all third party function call to its
+        source location and line number mapping to a combined dictionary.
         """
         exist_list = []
         if func_name in target_func_list:
@@ -244,11 +238,11 @@ class Analysis(analysis.AnalysisInterface):
         html_string += html_helpers.html_create_table_head(
             tables[-1],
             [
-                ("Function name", ""),
-                ("Source file",
+                ("Target sink", ""),
+                ("Callsite location",
                  "Source file, line number and parent function of this function call. "
                  "Based on static analysis."),
-                ("Reachable code? ",
+                ("Reached by fuzzer",
                  "Is this code reachable by any functions? "
                  "Based on static analysis."),
                 ("Covered by Fuzzers",
@@ -258,8 +252,26 @@ class Analysis(analysis.AnalysisInterface):
         )
 
         # Loop through each function call exists in this project
+        # Filer to only look for functions of interest
+        command_injection_sinks = [
+            "system",
+            "execve",
+            "execl",
+            "wordexp",
+            "popen",
+            "fdopen"
+        ]
+        # Keeping memory unsafe sinks empty for now.
+        # memory_unsafe_sinks = [
+        #     "strcpy",
+        #     "memcpy",
+        # ]
+        functions_of_interest = command_injection_sinks
         for fd in func_profile_list:
             func_name = utils.demangle_cpp_func(fd.function_name)
+
+            if func_name not in functions_of_interest:
+                continue
 
             # Retrieve called location as a list for this function
             if fd.function_name in called_func_dict.keys():
@@ -278,10 +290,11 @@ class Analysis(analysis.AnalysisInterface):
                 fuzzer_hit = False
                 coverage = proj_profile.runtime_coverage
                 for parent_func in fd.incoming_references:
-                    if coverage.is_func_lineno_hit(
-                        parent_func,
-                        int(called_location.split(":")[1])
-                    ):
+                    try:
+                        lineno = int(called_location.split(":")[1])
+                    except ValueError:
+                        continue
+                    if coverage.is_func_lineno_hit(parent_func, lineno):
                         fuzzer_hit = True
                         break
                 list_of_fuzzer_covered = fd.reached_by_fuzzers if fuzzer_hit else [""]
