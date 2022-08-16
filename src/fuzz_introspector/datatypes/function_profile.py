@@ -51,6 +51,9 @@ class FunctionProfile:
         self.constants_touched = elem['constantsTouched']
         self.branch_profiles = self.load_func_branch_profiles(elem['BranchProfiles'])
 
+        # Saving callsites for this function
+        self.callsite = self.load_func_callsites(elem['Callsites'])
+
         # These are set later.
         self.hitcount: int = 0
         self.reached_by_fuzzers: List[str] = []
@@ -69,3 +72,23 @@ class FunctionProfile:
             bp_loaded[new_branch.branch_pos] = new_branch
 
         return bp_loaded
+
+    def load_func_callsites(
+        self,
+        yaml_callsites: Any
+    ) -> Dict[str, List[str]]:
+        cs_loaded: Dict[str, List[str]] = {}
+        for callsite in yaml_callsites:
+            if callsite['Dst'] not in cs_loaded.keys():
+                callsite_list = []
+            else:
+                callsite_list = cs_loaded[callsite['Dst']]
+
+            callsite_src = callsite['Src'].split(',')[0].replace(
+                ':',
+                '#%s:' % self.function_name
+            )
+            callsite_list.append(callsite_src)
+            cs_loaded.update({callsite['Dst']: callsite_list})
+
+        return cs_loaded
