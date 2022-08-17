@@ -86,7 +86,8 @@ def main_loop():
         "tarantool",
         "fio",
         "wuffs",
-        "c-ares"
+        "c-ares",
+        "dbus-broker",
     ]
 
     build_results = []
