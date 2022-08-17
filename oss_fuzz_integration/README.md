@@ -94,7 +94,7 @@ directory:
 sudo docker system prune -a
 
 # Rebuild images using local set up
-./build_patched_oss_fuzz.sh
+./build_all_custom_images.sh
 
 # Test fuzz-introspector against various projects
 cd oss-fuzz
