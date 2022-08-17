@@ -132,7 +132,10 @@ class MergedProjectProfile:
                         # LLVMFuzzerTestOneInput. In this case we just gracefully
                         # continue and ignore issues.
                         if ln1 != ln2:
-                            logger.error("Line numbers are different in the same function")
+                            logger.info(
+                                f"Line numbers are different in the same function: "
+                                f"{func_name}:{ln1}:{ln2}, ignoring"
+                            )
                             continue
                         new_line_counts.append((ln1, max(ht1, ht2)))
                     self.runtime_coverage.covmap[func_name] = new_line_counts
