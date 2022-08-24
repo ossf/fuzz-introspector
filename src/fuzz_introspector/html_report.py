@@ -573,8 +573,6 @@ def create_fuzzer_detailed_section(
         else:
             interval = f"[{_min}:{_max-1}]"
         html_string += f"<td>{interval}</td>"
-
-        #html_string += f"<td>[{_min}:{_max-1}]</td>"
         html_string += f"<td>{color_dictionary[color]}</td>"
         if len(color_list) > 0:
             f1 = float(color_dictionary[color])
