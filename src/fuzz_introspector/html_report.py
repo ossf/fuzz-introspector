@@ -517,7 +517,7 @@ def create_fuzzer_detailed_section(
         "<p class='no-top-margin'>\n"
         "<div class=\"yellow-button-wrapper\" "
         "style=\"position: relative; margin: 30px 0 5px 0; max-width: 200px\">"
-        "<a href=\"{calltree_file_name}\">"
+        f"<a href=\"{calltree_file_name}\">"
         "<div class=\"yellow-button\">"
         "Full calltree"
         "</div>"
