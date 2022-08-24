@@ -21,6 +21,7 @@ import typing
 import bs4
 import random
 import string
+from datetime import datetime
 import matplotlib.pyplot as plt
 
 from matplotlib.patches import Rectangle
@@ -840,6 +841,10 @@ def create_html_report(
     # Start creation of core html
     html_body_start = '<div class="content-section">'
     html_overview = "<div class=\"report-box\">"
+    html_overview += "<b>Report generation date:</b>"
+    html_overview += datetime.today().strftime('%Y-%m-%d')
+    html_overview += "<br>"
+
     html_overview += html_helpers.html_add_header_with_link(
         f"Project overview: {report_name}",
         1,
