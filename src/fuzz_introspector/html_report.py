@@ -496,36 +496,39 @@ def create_fuzzer_detailed_section(
     # Calltree fixed-width image
     html_string += html_helpers.html_add_header_with_link(
         "Call tree", 3, toc_list, link=f"call_tree_{curr_tt_profile}")
+
+    from fuzz_introspector.analyses import calltree_analysis as cta
+    calltree_analysis = cta.Analysis()
+    calltree_file_name = calltree_analysis.create_calltree(profile)
+
+    html_string += f"""<p class='no-top-margin'>The calltree shows the
+    control flow of the fuzzer. This is overlaid with coverage information
+    to display how much of the potential code a fuzzer can reach is in fact
+    covered at runtime.
+    In the following there is a link to a detailed calltree visualisation
+    as well as a bitmap showing a high-level view of the calltree. For
+    further information about these topics please see the glossary for
+    <a href="{constants.GIT_BRANCH_URL}/doc/Glossary.md#full-calltree">
+    full calltree</a> and
+    <a href="{constants.GIT_BRANCH_URL}/doc/Glossary.md#call-tree-overview">
+    calltree overview</a>"""
+
     html_string += (
         "<p class='no-top-margin'>\n"
-        "The following is the call tree with color coding for which "
-        "functions are hit/not hit. This info is based on the coverage "
-        "achieved of all fuzzers together and not just this specific "
-        "fuzzer. We use the following coloring scheme where min/max is "
-        "an interval [min:max) (max non-inclusive) to color the callsite "
-        "based on how many times the callsite is covered at run time."
+        "<div class=\"yellow-button-wrapper\" "
+        "style=\"position: relative; margin: 30px 0 5px 0; max-width: 200px\">"
+        f"<a href=\"{calltree_file_name}\">"
+        "<div class=\"yellow-button\">"
+        "Full calltree"
+        "</div>"
+        "</a>"
+        "</div>"
+        "</p>"
     )
     html_string += (
-        "<table><tr><th>Min</th>"
-        "<th style=\"text-align: left;\">Max</th>"
-        "<th style=\"text-align: left;\">Color</th></tr>"
-    )
-    for _min, _max, color, rgb_code in constants.COLOR_CONSTANTS:
-        html_string += "<tr>"
-        html_string += f"<td style=\"text-align: left;\">{_min}</td><td>{_max}</td>"
-        html_string += (
-            f"<td style=\"color:{color}; "
-            f"text-shadow: -1px 0 black, 0 1px black, "
-            f"1px 0 black, 0 -1px black;\"><b>{color}</b></td>"
-        )
-        html_string += "</tr>"
-    html_string += "</table></p>"
-    html_string += (
-        f"<p>"
-        f"For further technical details on the call tree overview"
-        f", please see the <a href=\"{constants.GIT_BRANCH_URL}/doc/"
-        f"Glossary.md#call-tree-overview\">Glossary</a>."
-        f"</p>"
+        "<p class='no-top-margin'>"
+        "Call tree overview bitmap:"
+        "</p>"
     )
 
     colormap_file_prefix = profile.identifier
@@ -551,6 +554,7 @@ def create_fuzzer_detailed_section(
     html_string += (
         "<table><tr>"
         "<th style=\"text-align: left;\">Color</th>"
+        "<th style=\"text-align: left;\">Runtime hitcount</th>"
         "<th style=\"text-align: left;\">Callsite count</th>"
         "<th style=\"text-align: left;\">Percentage</th>"
         "</tr>"
@@ -562,6 +566,13 @@ def create_fuzzer_detailed_section(
             f"text-shadow: -1px 0 black, 0 1px black, "
             f"1px 0 black, 0 -1px black;\"><b>{color}</b></td>"
         )
+        if _max == 1:
+            interval = "0"
+        elif _max > 1000:
+            interval = f"{_min}+"
+        else:
+            interval = f"[{_min}:{_max-1}]"
+        html_string += f"<td>{interval}</td>"
         html_string += f"<td>{color_dictionary[color]}</td>"
         if len(color_list) > 0:
             f1 = float(color_dictionary[color])
@@ -577,25 +588,6 @@ def create_fuzzer_detailed_section(
     html_string += f"<tr><td>All colors</td><td>{len(color_list)}</td><td>100</td></tr>"
     html_string += "</table>"
     html_string += "</p>"
-
-    # Full calltree
-    html_string += html_helpers.html_add_header_with_link(
-        "Full call tree",
-        3,
-        [],
-        link=f"full_calltree_{curr_tt_profile}"
-    )
-
-    from fuzz_introspector.analyses import calltree_analysis as cta
-    calltree_analysis = cta.Analysis()
-    calltree_file_name = calltree_analysis.create_calltree(profile)
-
-    html_string += f"""<p class='no-top-margin'>The following link provides a visualisation
- of the full call tree overlaid with coverage information:
- <a href="{ calltree_file_name }">full call tree</a></p>"""
-    html_string += f"<p>For further technical details on how the call tree is generated, please " \
-                   f"see the <a href=\"{constants.GIT_BRANCH_URL}/doc/Glossary.md#full" \
-                   f"-calltree\">Glossary</a>.</p>"
 
     # Fuzz blocker table
     html_fuzz_blocker_table = calltree_analysis.create_fuzz_blocker_table(
