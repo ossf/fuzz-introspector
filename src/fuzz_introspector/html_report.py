@@ -705,7 +705,7 @@ def create_fuzzer_detailed_section(
                     f"Fuzzer { profile.identifier } is blocked:",
                     (
                         f"The runtime code coverage of { profile.identifier } "
-                        f"covers { str_percentage } of its statically rechable code. "
+                        f"covers { str_percentage } of its statically reachable code. "
                         f"This means there is some place that blocks the fuzzer "
                         f"to continue exploring more code at run time. "
                     )
