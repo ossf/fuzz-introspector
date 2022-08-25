@@ -51,6 +51,7 @@ class CoverageProfile:
         self.file_map: Dict[str, List[Tuple[int, int]]] = dict()
         self.branch_cov_map: Dict[str, Tuple[int, int]] = dict()
         self._cov_type = ""
+        self.coverage_files: List[str] = []
 
     def set_type(self, cov_type: str) -> None:
         self._cov_type = cov_type
@@ -242,6 +243,7 @@ def load_llvm_coverage(
         if found_name is not None and found_name not in profile_file:
             continue
 
+        cp.coverage_files.append(profile_file)
         logger.info(f"Reading coverage report: {profile_file}")
         with open(profile_file, 'rb') as pf:
             curr_func = None
