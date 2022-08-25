@@ -75,6 +75,8 @@ class Analysis(analysis.AnalysisInterface):
             ]
         )
         for profile in profiles:
+            if profile.coverage is None:
+                continue
             base_datafile = os.path.basename(profile.introspector_data_file)
             base_yamlfile = os.path.basename(profile.introspector_data_file + ".yaml")
             coverage_file_link_str = ""
@@ -82,9 +84,8 @@ class Analysis(analysis.AnalysisInterface):
                 cov_prof = profile.coverage.coverage_files[idx]
                 cov_prof = os.path.basename(cov_prof)
                 coverage_file_link_str += f"<a href=\"{cov_prof}\">{cov_prof}</a>"
-                if idx < len(profile.coverage.coverage_files)-1:
+                if idx < len(profile.coverage.coverage_files) - 1:
                     coverage_file_link_str += ","
-                
 
             html_string += html_helpers.html_table_add_row(
                 [

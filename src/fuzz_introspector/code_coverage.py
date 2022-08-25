@@ -51,7 +51,7 @@ class CoverageProfile:
         self.file_map: Dict[str, List[Tuple[int, int]]] = dict()
         self.branch_cov_map: Dict[str, Tuple[int, int]] = dict()
         self._cov_type = ""
-        self.coverage_files = []
+        self.coverage_files: List[str] = []
 
     def set_type(self, cov_type: str) -> None:
         self._cov_type = cov_type
