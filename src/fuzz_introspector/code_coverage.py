@@ -25,7 +25,6 @@ from typing import (
 from fuzz_introspector import utils
 
 logger = logging.getLogger(name=__name__)
-logger.setLevel(logging.INFO)
 
 
 class CoverageProfile:

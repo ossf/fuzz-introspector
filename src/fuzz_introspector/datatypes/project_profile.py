@@ -27,7 +27,6 @@ from fuzz_introspector import utils
 from fuzz_introspector.datatypes import function_profile, fuzzer_profile
 
 logger = logging.getLogger(name=__name__)
-logger.setLevel(logging.INFO)
 
 
 class MergedProjectProfile:

@@ -25,7 +25,6 @@ from fuzz_introspector.datatypes import branch_profile
 from fuzz_introspector import utils
 
 logger = logging.getLogger(name=__name__)
-logger.setLevel(logging.INFO)
 
 
 class FunctionProfile:

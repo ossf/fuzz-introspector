@@ -40,7 +40,6 @@ from fuzz_introspector.datatypes import (
 from fuzz_introspector.exceptions import AnalysisError
 
 logger = logging.getLogger(name=__name__)
-logger.setLevel(logging.INFO)
 
 
 class AnalysisInterface(abc.ABC):

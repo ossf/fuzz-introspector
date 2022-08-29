@@ -33,7 +33,6 @@ from fuzz_introspector.datatypes import function_profile
 from fuzz_introspector.exceptions import DataLoaderError
 
 logger = logging.getLogger(name=__name__)
-logger.setLevel(logging.INFO)
 
 
 class FuzzerProfile:
