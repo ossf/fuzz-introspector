@@ -253,6 +253,9 @@ def full_run(
     # - introspector
     # - project coverage
     # - per-fuzzer coverage
+    if os.path.isdir(os.path.join(latest_corpus_dir, "inspector-report")):
+        shutil.rmtree(os.path.join(latest_corpus_dir, "inspector-report"))
+
     shutil.copytree("./build/out/%s/inspector"%(project_name), os.path.join(latest_corpus_dir, "inspector-report"))
     shutil.copytree(os.path.join(latest_corpus_dir, "report"), os.path.join(latest_corpus_dir, "inspector-report", "covreport"))
 
