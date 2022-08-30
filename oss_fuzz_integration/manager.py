@@ -24,33 +24,25 @@ import shutil
 from typing import Optional
 
 
-def build_proj_with_default(project_name):
-    try:
-        subprocess.check_call(
-            "python3 infra/helper.py build_fuzzers --clean %s"%(project_name),
-            shell=True
-        )
-    except:
-        print("Building default failed")
-        exit(5)
+def build_project(
+    project_name,
+    sanitizer = None,
+    to_clean = False
+):
+    """Wrapper for building projects using OSS-Fuzz's helper.py"""
+    cmd = ["python3", "infra/helper.py", "build_fuzzers"]
+    if sanitizer is not None:
+        cmd.append("--sanitizer")
+        cmd.append(sanitizer)
+    if to_clean:
+        cmd.append("--clean")
+    cmd.append(project_name)
 
-
-def build_proj_with_coverage(project_name):
-    cmd = [
-        "python3",
-        "infra/helper.py",
-        "build_fuzzers",
-        "--sanitizer=coverage",
-        project_name
-    ]
     try:
-        subprocess.check_call(
-            " ".join(cmd),
-            shell=True
-        )
+        subprocess.check_call(" ".join(cmd), shell=True)
     except:
-        print("Building with coverage failed")
-        exit(5)
+        print("Building project failed")
+        exit(1)
 
 
 def get_fuzzers(project_name):
@@ -233,12 +225,47 @@ def complete_coverage_check(
     job_count: int,
     corpus_dir: Optional[str]
 ):
-    build_proj_with_default(project_name)
+    build_project(project_name, to_clean=True)
     run_all_fuzzers(project_name, fuzztime, job_count, corpus_dir)
-    build_proj_with_coverage(project_name)
+    build_project(project_name, sanitizer="coverage")
     percent = get_coverage(project_name, corpus_dir)
  
     return percent
+
+def full_run(
+    project_name: str,
+    fuzztime: int,
+    job_count: int,
+    corpus_dir: Optional[str],
+    port: int
+):
+    complete_coverage_check(project_name, fuzztime, job_count, corpus_dir)
+    
+    # Build sanitizers with introspector
+    build_project(project_name, sanitizer="introspector") 
+
+    # get the latest corpus
+    latest_corpus_dir = get_recent_corpus_dir()
+
+    # copy over inpsoector and coverage reports
+
+    # copy over reports:
+    # - introspector
+    # - project coverage
+    # - per-fuzzer coverage
+    shutil.copytree("./build/out/%s/inspector"%(project_name), os.path.join(latest_corpus_dir, "inspector-report"))
+    shutil.copytree(os.path.join(latest_corpus_dir, "report"), os.path.join(latest_corpus_dir, "inspector-report", "covreport"))
+
+    for target_coverage_dir in os.listdir(os.path.join(latest_corpus_dir, "report_target")):
+        shutil.copytree(
+            os.path.join(latest_corpus_dir, "report_target", target_coverage_dir),
+            os.path.join(latest_corpus_dir, "inspector-report", "covreport", target_coverage_dir)
+        )
+
+    # start webserver
+    cmd = "python3 -m http.server %d --directory %s"%(port, os.path.join(latest_corpus_dir, "inspector-report"))
+    print("The following command is about to be run to start a webserver: %s"%(cmd))
+    subprocess.check_call(cmd, shell=True)
 
 
 def get_single_cov(project, target, corpus_dir):
@@ -264,28 +291,62 @@ def get_single_cov(project, target, corpus_dir):
 
 def get_cmdline_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
-    parser.add_argument(
+
+    subparsers = parser.add_subparsers(dest="command")
+
+    coverage_parser = subparsers.add_parser("coverage")
+    coverage_parser.add_argument(
         "project",
         metavar="P",
         help="Name of project to run"
     )
-    parser.add_argument(
+    coverage_parser.add_argument(
         "fuzztime",
         metavar="T",
         help="Number of seconds to run fuzzers for",
         type=int
     )
-    parser.add_argument(
+    coverage_parser.add_argument(
         "--jobs",
         type=int,
         help="Number of jobs to run in parallel. Zero indicates max count (half CPU cores)",
         default=1
     )
-    parser.add_argument(
+    coverage_parser.add_argument(
         "--corpus-dir",
         type=str,
         help="directory with corpus for the project",
         default=None
+    )
+
+    full_parser = subparsers.add_parser("full")
+    full_parser.add_argument(
+        "project",
+        metavar="P",
+        help="Name of project to run"
+    )
+    full_parser.add_argument(
+        "fuzztime",
+        metavar="T",
+        help="Number of seconds to run fuzzers for",
+        type=int
+    )
+    full_parser.add_argument(
+        "--jobs",
+        type=int,
+        help="Number of jobs to run in parallel. Zero indicates max count (half CPU cores)",
+        default=1
+    )
+    full_parser.add_argument(
+        "--corpus-dir",
+        type=str,
+        help="directory with corpus for the project",
+        default=None
+    )
+    full_parser.add_argument(
+        "--port",
+        type=int,
+        default=8008
     )
     return parser
 
@@ -293,8 +354,12 @@ if __name__ == "__main__":
     parser = get_cmdline_parser()
     args = parser.parse_args()
 
-    print("Getting full coverage:")
-    print("  project = %s"%(args.project))
-    print("  fuzztime = %d"%(args.fuzztime))
-    print("  jobs = %d"%(args.jobs))
-    complete_coverage_check(args.project, args.fuzztime, args.jobs, args.corpus_dir)
+    if args.command == "coverage":
+        print("Getting full coverage:")
+        print("  project = %s"%(args.project))
+        print("  fuzztime = %d"%(args.fuzztime))
+        print("  jobs = %d"%(args.jobs))
+        complete_coverage_check(args.project, args.fuzztime, args.jobs, args.corpus_dir)
+    elif args.command == "full":
+        print("Running full")
+        full_run(args.project, args.fuzztime, args.jobs, args.corpus_dir, args.port)
