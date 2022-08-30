@@ -21,6 +21,7 @@ import sys
 import json
 import threading
 import shutil
+from typing import Optional
 
 
 def build_proj_with_default(project_name):
@@ -94,30 +95,44 @@ def get_recent_corpus_dir():
     return "corpus-%d"%(max_idx)
 
 
-def run_all_fuzzers(project_name, fuzztime, job_count):
+def run_all_fuzzers(project_name, fuzztime, job_count, corpus_dir):
     # First get all fuzzers names
     fuzzer_names = get_fuzzers(project_name)
 
-    corpus_dir = get_next_corpus_dir()
-    os.mkdir(corpus_dir)
+    user_provided_corpus = corpus_dir is not None
+
+    if corpus_dir is None:
+        corpus_dir = get_next_corpus_dir()
+    if not os.path.isdir(corpus_dir):
+        os.mkdir(corpus_dir)
+
     for f in fuzzer_names:
         print("Running %s"%(f))
         target_corpus = "./%s/%s"%(corpus_dir, f)
         target_crashes = "./%s/%s"%(corpus_dir, "crashes_%s"%(f))
-        os.mkdir(target_corpus)
-        os.mkdir(target_crashes)
+        if not os.path.isdir(target_corpus):
+            os.mkdir(target_corpus)
+        if not os.path.isdir(target_crashes):
+            os.mkdir(target_crashes)
 
         cmd = [
             "python3",
             "./infra/helper.py",
             "run_fuzzer",
             "--corpus-dir=%s"%(target_corpus),
+        ]
+        # We must set this to avoid triggering
+        # https://github.com/google/oss-fuzz/blob/05b2e6dd5e3c08a5d11fa7a46f3ed8f555ff9a7f/infra/base-images/base-runner/run_fuzzer#L29-L36
+        if user_provided_corpus:
+            cmd.append(f"-e=\"CORPUS_DIR=/tmp/{f}_corpus\"")
+        cmd += [
             "%s"%(project_name),
             "%s"%(f),
             "--",
             "-max_total_time=%d"%(fuzztime),
             "-detect_leaks=0"
         ]
+
 
         # If job count is non-standard, apply here
         if job_count != 1:
@@ -134,6 +149,7 @@ def run_all_fuzzers(project_name, fuzztime, job_count):
             cmd.append("-jobs=%d"%(job_count))
 
 
+        print("Runing command: %s"%(" ".join(cmd)))
         try:
             subprocess.check_call(" ".join(cmd), shell=True)
             print("Execution finished without exception")
@@ -146,9 +162,10 @@ def run_all_fuzzers(project_name, fuzztime, job_count):
                 shutil.move(l, target_crashes)
 
 
-def get_coverage(project_name):
+def get_coverage(project_name, corpus_dir):
     #1 Find all coverage reports
-    corpus_dir = get_recent_corpus_dir()
+    if corpus_dir is None:
+        corpus_dir = get_recent_corpus_dir()
 
     #2 Copy them into the right folder
     for f in os.listdir(corpus_dir):
@@ -178,6 +195,12 @@ def get_coverage(project_name):
 
 
     print("Copying report")
+    # Delete the existing coverage report
+    if os.path.isdir("./%s/report"%(corpus_dir)):
+        shutil.rmtree("./%s/report"%(corpus_dir))
+    if os.path.isdir("./%s/report_target"%(corpus_dir)):
+        shutil.rmtree("./%s/report_target"%(corpus_dir))
+
     shutil.copytree(
         "./build/out/%s/report"%(project_name),
         "./%s/report"%(corpus_dir)
@@ -204,17 +227,22 @@ def get_coverage(project_name):
     print("Finished")
 
 
-def complete_coverage_check(project_name: str, fuzztime: int, job_count: int):
+def complete_coverage_check(
+    project_name: str,
+    fuzztime: int,
+    job_count: int,
+    corpus_dir: Optional[str]
+):
     build_proj_with_default(project_name)
-    run_all_fuzzers(project_name, fuzztime, job_count)
+    run_all_fuzzers(project_name, fuzztime, job_count, corpus_dir)
     build_proj_with_coverage(project_name)
-    percent = get_coverage(project_name)
+    percent = get_coverage(project_name, corpus_dir)
  
     return percent
 
 
 def get_single_cov(project, target, corpus_dir):
-    print("BUilding single project")
+    print("Building single project")
     build_proj_with_coverage(project)
 
     cmd = [
@@ -253,6 +281,12 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
         help="Number of jobs to run in parallel. Zero indicates max count (half CPU cores)",
         default=1
     )
+    parser.add_argument(
+        "--corpus-dir",
+        type=str,
+        help="directory with corpus for the project",
+        default=None
+    )
     return parser
 
 if __name__ == "__main__":
@@ -263,4 +297,4 @@ if __name__ == "__main__":
     print("  project = %s"%(args.project))
     print("  fuzztime = %d"%(args.fuzztime))
     print("  jobs = %d"%(args.jobs))
-    complete_coverage_check(args.project, args.fuzztime, args.jobs)
+    complete_coverage_check(args.project, args.fuzztime, args.jobs, args.corpus_dir)
