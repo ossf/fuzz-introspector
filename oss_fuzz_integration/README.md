@@ -29,7 +29,7 @@ From within this directory, run the commands:
 
 # Test a project
 cd oss-fuzz
-../run_both.sh htslib 20
+python3 ../manager.py full htslib 20
 ```
 
 This will download OSS-Fuzz, pulls introspector images and tag them accordingly.
@@ -46,7 +46,7 @@ a complete run of the introspector, including with coverage analysis.
 
 # Test a project
 cd oss-fuzz
-../run_both.sh htslib 20
+python3 ../manager.py full htslib 20
 ```
 
 You can access the report by navigating to `http://localhost:8008/fuzz_report.html`
@@ -59,19 +59,11 @@ This will build all images base images from scratch, and have all fuzz introspec
 ./build_all_custom_images.sh
 
 cd oss-fuzz
-../run_both.sh htslib 30
+python3 ../manager.py full htslib 30
 ...
 ```
 
 You can access the report by navigating to `http://localhost:8008/fuzz_report.html`
-
-## Options for run_both.sh
-You can run multiple fuzzers by passing `--jobs=X` at the end of the
-argument list to `run_both.sh`. For example, to run `htslib` fuzzers
-for `30` sec each using 2 cores, use the command:
-`run_both.sh htslib 30 --jobs=2`
-
-If you add `--jobs=0` then half of the cores availabe will be used.
 
 # Testing before bumping OSS-Fuzz
 To prevent and catch regressions we use a testing framework that verifies
