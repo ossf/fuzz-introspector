@@ -232,7 +232,7 @@ def complete_coverage_check(
  
     return percent
 
-def full_run(
+def introspector_run(
     project_name: str,
     fuzztime: int,
     job_count: int,
@@ -322,31 +322,31 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
         default=None
     )
 
-    full_parser = subparsers.add_parser("full")
-    full_parser.add_argument(
+    introspector_parser = subparsers.add_parser("introspector")
+    introspector_parser.add_argument(
         "project",
         metavar="P",
         help="Name of project to run"
     )
-    full_parser.add_argument(
+    introspector_parser.add_argument(
         "fuzztime",
         metavar="T",
         help="Number of seconds to run fuzzers for",
         type=int
     )
-    full_parser.add_argument(
+    introspector_parser.add_argument(
         "--jobs",
         type=int,
         help="Number of jobs to run in parallel. Zero indicates max count (half CPU cores)",
         default=1
     )
-    full_parser.add_argument(
+    introspector_parser.add_argument(
         "--corpus-dir",
         type=str,
         help="directory with corpus for the project",
         default=None
     )
-    full_parser.add_argument(
+    introspector_parser.add_argument(
         "--port",
         type=int,
         default=8008
@@ -363,6 +363,6 @@ if __name__ == "__main__":
         print("  fuzztime = %d"%(args.fuzztime))
         print("  jobs = %d"%(args.jobs))
         complete_coverage_check(args.project, args.fuzztime, args.jobs, args.corpus_dir)
-    elif args.command == "full":
+    elif args.command == "introspector":
         print("Running full")
-        full_run(args.project, args.fuzztime, args.jobs, args.corpus_dir, args.port)
+        introspector_run(args.project, args.fuzztime, args.jobs, args.corpus_dir, args.port)
