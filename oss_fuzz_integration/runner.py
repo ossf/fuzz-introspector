@@ -363,6 +363,6 @@ if __name__ == "__main__":
         print("  fuzztime = %d"%(args.fuzztime))
         print("  jobs = %d"%(args.jobs))
         complete_coverage_check(args.project, args.fuzztime, args.jobs, args.corpus_dir)
-    elif args.command == "full":
+    elif args.command == "introspector":
         print("Running full")
         introspector_run(args.project, args.fuzztime, args.jobs, args.corpus_dir, args.port)
