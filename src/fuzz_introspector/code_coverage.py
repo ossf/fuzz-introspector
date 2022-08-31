@@ -237,11 +237,10 @@ def load_llvm_coverage(
     coverage_reports = list()
 
     # Only use coverage report for the target if there is one.
-    found_name: Optional[str] = None
     if target_name is not None:
         for cov_report in all_coverage_reports:
             cov_report_base = os.path.basename(cov_report)
-            if cov_report_base == target_name+".covreport":
+            if cov_report_base == target_name + ".covreport":
                 coverage_reports.append(cov_report)
 
     # If we found no target coverage report then use all reports.
