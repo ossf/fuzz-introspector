@@ -24,7 +24,7 @@ import project_checker
 SCRIPT_DIR = os.path.realpath(os.path.dirname(os.path.realpath(__file__)))
 
 OSS_FUZZ_HELPER = os.path.realpath(os.getcwd()) + "/infra/helper.py"
-COV_HELPER      = SCRIPT_DIR + "/get_full_coverage.py"
+COV_HELPER      = SCRIPT_DIR + "/runner.py"
 PROJ_CHECK      = SCRIPT_DIR + "/project-checker.py"
 
 # find next test dir
@@ -40,6 +40,7 @@ def run_full_cov(project):
     cmd = []
     cmd.append("python3")
     cmd.append(COV_HELPER)
+    cmd.append("coverage")
     cmd.append(project)
     cmd.append("10") # seconds to run
 
