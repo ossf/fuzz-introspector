@@ -13,6 +13,7 @@
 # limitations under the License.
 """Module for handling code coverage reports"""
 
+import os
 import logging
 
 from typing import (
@@ -96,6 +97,7 @@ class CoverageProfile:
             splits = target_file.split(".")
             potentials = []
             curr = ""
+            found_key = ""
             for s2 in splits:
                 curr += s2
                 potentials.append(curr + ".py")
@@ -224,24 +226,32 @@ def load_llvm_coverage(
     that given name then the function will find *all* coverage reports it can and
     use all of them.
     """
-    coverage_reports = utils.get_all_files_in_tree_with_regex(target_dir, ".*\.covreport$")
-    logger.info(f"Found {len(coverage_reports)} coverage reports")
 
-    # Check if there is a meaningful profile and if not, we need to use all.
-    found_name: Optional[str] = None
     if target_name is not None:
-        for cov_report in coverage_reports:
-            if target_name in cov_report:
-                found_name = target_name
+        logger.info(f"Loading LLVM coverage for target {target_name}")
+    else:
+        logger.info(f"Loading LLVM coverage for directory {target_dir}")
 
+    all_coverage_reports = utils.get_all_files_in_tree_with_regex(target_dir, ".*\.covreport$")
+    logger.info(f"Found {len(all_coverage_reports)} coverage reports")
+
+    coverage_reports = list()
+
+    # Only use coverage report for the target if there is one.
+    if target_name is not None:
+        for cov_report in all_coverage_reports:
+            cov_report_base = os.path.basename(cov_report)
+            if cov_report_base == target_name + ".covreport":
+                coverage_reports.append(cov_report)
+
+    # If we found no target coverage report then use all reports.
+    if len(coverage_reports) == 0:
+        coverage_reports = all_coverage_reports
+
+    logger.info(f"Using the following coverages {coverage_reports}")
     cp = CoverageProfile()
     cp.set_type("function")
     for profile_file in coverage_reports:
-        # If only coverage from a specific report should be used then filter
-        # here. Otherwise, include coverage from all reports.
-        if found_name is not None and found_name not in profile_file:
-            continue
-
         cp.coverage_files.append(profile_file)
         logger.info(f"Reading coverage report: {profile_file}")
         with open(profile_file, 'rb') as pf:
