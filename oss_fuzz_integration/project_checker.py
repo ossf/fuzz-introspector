@@ -155,7 +155,7 @@ def check_project_html_sanity(html_report):
             url_begin_pos = line.find('"', line_pos)
             url_end_pos = line.find('"', url_begin_pos+1)
             url = line[url_begin_pos+1:url_end_pos]
-            if url.startswith("http"):
+            if url.startswith("http://") or url.startswith("https://"):
                 status = requests.head(url)
                 if status.status_code != 200:
                     print("Faulty URL: %s"%url)
