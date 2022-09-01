@@ -97,6 +97,7 @@ class CoverageProfile:
             splits = target_file.split(".")
             potentials = []
             curr = ""
+            found_key = ""
             for s2 in splits:
                 curr += s2
                 potentials.append(curr + ".py")
