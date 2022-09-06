@@ -350,7 +350,7 @@ def overlay_calltree_with_coverage(
                                                            target_coverage_url)
     logger.info(f"[+] found {len(profile.branch_blockers)} branch blockers.")
     branch_blockers_list = []
-    for br_blocker in profile.branch_blockers[:10]:
+    for br_blocker in profile.branch_blockers:
         branch_blockers_list.append(
             {
                 'blocked_side': repr(br_blocker.blocked_side),
