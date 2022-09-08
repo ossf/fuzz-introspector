@@ -18,6 +18,7 @@ import logging
 import json
 
 from typing import (
+    Dict,
     List,
     Tuple,
     Optional,
@@ -148,6 +149,25 @@ class Analysis(analysis.AnalysisInterface):
         )
         return calltree_html_file
 
+    def collect_calltree_nodes(self, branch_blockers: List[analysis.FuzzBranchBlocker],
+                               func_call_depth: Optional[cfg_load.CalltreeCallsite]
+                               ) -> Dict[str, cfg_load.CalltreeCallsite]:
+        """Map blockers function name to the calltree nodes"""
+
+        all_callsites = cfg_load.extract_all_callsites(func_call_depth)
+        if len(all_callsites) == 0:
+            logger.error("Failed to extract callsites, "
+                         "the blocker table won't have correct links to calltree.")
+
+        function_name_node_map: Dict[str, cfg_load.CalltreeCallsite] = dict()
+        for blocker in branch_blockers:
+            func_name = blocker.function_name
+            for node in all_callsites:
+                if func_name == node.dst_function_name:
+                    function_name_node_map[func_name] = node
+                    break
+        return function_name_node_map
+
     def html_create_dedicated_calltree_file(
         self,
         calltree_html_string: str,
@@ -170,17 +190,28 @@ class Analysis(analysis.AnalysisInterface):
         complete_html_string += html_header
 
         # Display fuzz blocker at top of page
-        fuzz_blockers = self.get_fuzz_blockers(
-            profile,
-            max_blockers_to_extract=12
-        )
+        if profile.branch_blockers:
+            blockers_node_map = self.collect_calltree_nodes(profile.branch_blockers[:12],
+                                                            profile.function_call_depths)
+            fuzz_blocker_nodes = list(blockers_node_map.values())
+            fuzz_blocker_table = self.create_branch_blocker_table(
+                profile,
+                [],
+                "",
+                12
+            )
+        else:
+            fuzz_blocker_nodes = self.get_fuzz_blockers(
+                profile,
+                max_blockers_to_extract=12
+            )
 
-        fuzz_blocker_table = self.create_fuzz_blocker_table(
-            profile,
-            [],
-            "",
-            fuzz_blockers=fuzz_blockers
-        )
+            fuzz_blocker_table = self.create_fuzz_blocker_table(
+                profile,
+                [],
+                "",
+                fuzz_blockers=fuzz_blocker_nodes
+            )
         if fuzz_blocker_table is not None:
             complete_html_string += "<div class=\"report-box\">"
             complete_html_string += "<h1>Fuzz blockers</h1>"
@@ -195,7 +226,7 @@ class Analysis(analysis.AnalysisInterface):
         # HTML end
         html_end = '</div>'
         blocker_idxs = []
-        for node in fuzz_blockers:
+        for node in fuzz_blocker_nodes:
             blocker_idxs.append(self.create_str_node_ctx_idx(str(node.cov_ct_idx)))
 
         if len(blocker_idxs) > 0:
@@ -313,8 +344,9 @@ class Analysis(analysis.AnalysisInterface):
 
     def create_branch_blocker_table(
         self,
+        profile: fuzzer_profile.FuzzerProfile,
         tables: List[str],
-        branch_blockers: List[analysis.FuzzBranchBlocker],
+        file_link: str,
         max_number_of_blockers: int
     ) -> Optional[str]:
         """
@@ -322,10 +354,14 @@ class Analysis(analysis.AnalysisInterface):
         """
         logger.info("Creating branch blocker table")
 
+        branch_blockers = profile.branch_blockers[:max_number_of_blockers]
         if len(branch_blockers) == 0:
             return None
 
-        html_table_string = "<p class='no-top-margin'>[EXPERIMENTAL] The followings are " \
+        function_name_node_map = self.collect_calltree_nodes(branch_blockers,
+                                                             profile.function_call_depths)
+
+        html_table_string = "<p class='no-top-margin'>The followings are " \
                             "the branches where fuzzer fails to bypass.</p>"
         tables.append(f"myTable{len(tables)}")
         html_table_string += html_helpers.html_create_table_head(
@@ -337,21 +373,39 @@ class Analysis(analysis.AnalysisInterface):
                  "Cyclomatic Complexity that the blocked branch-side can reach."),
                 ("Function Name",
                  "Function containing the blocked branch."),
-                ("Blocked Branch",
-                 ""),
+                ("Function Callsite", "The blocking function callsite in the calltree"),
+                ("Blocked Branch", "The line of code correspoinding to the blocked branch"),
             ],
             sort_by_column=0,
             sort_order="desc"
         )
-        num = 0
         for entry in branch_blockers:
-            if num >= max_number_of_blockers:
-                break
-            num += 1
+            function_name = entry.function_name
+            if function_name in function_name_node_map:
+                calltree_idx = function_name_node_map[function_name].cov_ct_idx
+            else:
+                logger.error("The calltree index is not valid!")
+                calltree_idx = 0
+            link_prefix = "0" * (5 - len(str(calltree_idx)))
+            node_id = "%s%s" % (link_prefix, calltree_idx)
+            if file_link is not None:
+                cs_link = (
+                    "<span class=\"text-link\">"
+                    f"<a href=\"{file_link}?scrollToNode={node_id}\">call site"
+                    "</a></span>"
+                )
+            else:
+                cs_link = (
+                    "<span class=\"text-link\" "
+                    f"onclick=\" scrollToNodeInCT('{node_id}')\">"
+                    "call site</span>"
+                )
+
             html_table_string += html_helpers.html_table_add_row([
                 str(entry.blocked_not_covered_complexity),
                 str(entry.blocked_reachable_complexity),
                 utils.demangle_cpp_func(entry.function_name),
+                cs_link,
                 f"""<a href="{entry.coverage_report_link}">
                     {entry.source_file}:{entry.branch_line_number}
                 </a>"""
