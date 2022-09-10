@@ -151,22 +151,34 @@ class Analysis(analysis.AnalysisInterface):
 
     def collect_calltree_nodes(self, branch_blockers: List[analysis.FuzzBranchBlocker],
                                func_call_depth: Optional[cfg_load.CalltreeCallsite]
-                               ) -> Dict[str, cfg_load.CalltreeCallsite]:
-        """Map blockers function name to the calltree nodes"""
+                               ) -> Dict[analysis.FuzzBranchBlocker, cfg_load.CalltreeCallsite]:
+        """Map branch blockers to the calltree nodes"""
 
         all_callsites = cfg_load.extract_all_callsites(func_call_depth)
-        if len(all_callsites) == 0:
+        nodes_num = len(all_callsites)
+        if nodes_num == 0:
             logger.error("Failed to extract callsites, "
                          "the blocker table won't have correct links to calltree.")
 
-        function_name_node_map: Dict[str, cfg_load.CalltreeCallsite] = dict()
+        blocker_node_map: Dict[analysis.FuzzBranchBlocker, cfg_load.CalltreeCallsite] = dict()
         for blocker in branch_blockers:
             func_name = blocker.function_name
-            for node in all_callsites:
+            branch_linenumber = int(blocker.branch_line_number)
+            for idx, node in enumerate(all_callsites):
                 if func_name == node.dst_function_name:
-                    function_name_node_map[func_name] = node
+                    depth = node.depth + 1
+                    found_node = node
+                    # Try to adjust the blocker node in the callees of current func
+                    for i in range(idx + 1, nodes_num):
+                        new_node = all_callsites[i]
+                        if depth > new_node.depth:
+                            break  # Reached the caller of the node
+                        if depth == new_node.depth and branch_linenumber >= new_node.src_linenumber:
+                            found_node = new_node
+                    blocker_node_map[blocker] = found_node
                     break
-        return function_name_node_map
+
+        return blocker_node_map
 
     def html_create_dedicated_calltree_file(
         self,
@@ -358,8 +370,8 @@ class Analysis(analysis.AnalysisInterface):
         if len(branch_blockers) == 0:
             return None
 
-        function_name_node_map = self.collect_calltree_nodes(branch_blockers,
-                                                             profile.function_call_depths)
+        blockers_node_map = self.collect_calltree_nodes(branch_blockers,
+                                                        profile.function_call_depths)
 
         html_table_string = "<p class='no-top-margin'>The followings are " \
                             "the branches where fuzzer fails to bypass.</p>"
@@ -380,9 +392,8 @@ class Analysis(analysis.AnalysisInterface):
             sort_order="desc"
         )
         for entry in branch_blockers:
-            function_name = entry.function_name
-            if function_name in function_name_node_map:
-                calltree_idx = function_name_node_map[function_name].cov_ct_idx
+            if entry in blockers_node_map:
+                calltree_idx = blockers_node_map[entry].cov_ct_idx
             else:
                 logger.error("The calltree index is not valid!")
                 calltree_idx = 0
