@@ -143,14 +143,16 @@ function addFuzzBlockerLines() {
 
   var funcList;
   funcList = [];
+  var blocker_infos = JSON.parse(fuzz_blocker_infos);
   for(var i=0;i<coverageLines.length;i++) {
     // Add fuzz blocker line
     var thisDataIdx = coverageLines[i].getAttribute("data-calltree-idx");
-    if(thisDataIdx!==null && fuzz_blocker_idxs.includes(thisDataIdx)) {
+    if(thisDataIdx!==null && thisDataIdx in blocker_infos) {
       coverageLines[i].classList.add("with-fuzz-blocker-line");
-      let infoBtn = document.createElement("div");
+      let infoBtn = document.createElement("a");
       infoBtn.classList.add("fuzz-blocker-info-btn");
       infoBtn.innerText = "FUZZ BLOCKER";
+      infoBtn.href = blocker_infos[thisDataIdx];
       coverageLines[i].append(infoBtn);
     }
 

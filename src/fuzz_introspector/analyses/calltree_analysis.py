@@ -192,7 +192,7 @@ class Analysis(analysis.AnalysisInterface):
         the line it makes sense to have an easy wrapper for other HTML pages too.
         """
         complete_html_string = ""
-
+        blocker_infos = {}
         # HTML start
         html_header = html_helpers.html_get_header(
             calltree=True,
@@ -205,7 +205,11 @@ class Analysis(analysis.AnalysisInterface):
         if profile.branch_blockers:
             blockers_node_map = self.collect_calltree_nodes(profile.branch_blockers[:12],
                                                             profile.function_call_depths)
-            fuzz_blocker_nodes = list(blockers_node_map.values())
+            # Record the link to coverage report for the branch blocker.
+            for b_blocker, ct_node in blockers_node_map.items():
+                idx = self.create_str_node_ctx_idx(str(ct_node.cov_ct_idx))
+                blocker_infos[idx] = b_blocker.coverage_report_link
+
             fuzz_blocker_table = self.create_branch_blocker_table(
                 profile,
                 [],
@@ -224,6 +228,11 @@ class Analysis(analysis.AnalysisInterface):
                 "",
                 fuzz_blockers=fuzz_blocker_nodes
             )
+
+            for node in fuzz_blocker_nodes:
+                # The link to coverage report is not present in this type of blockers.
+                blocker_infos[self.create_str_node_ctx_idx(str(node.cov_ct_idx))] = ""
+
         if fuzz_blocker_table is not None:
             complete_html_string += "<div class=\"report-box\">"
             complete_html_string += "<h1>Fuzz blockers</h1>"
@@ -237,13 +246,13 @@ class Analysis(analysis.AnalysisInterface):
 
         # HTML end
         html_end = '</div>'
-        blocker_idxs = []
-        for node in fuzz_blocker_nodes:
-            blocker_idxs.append(self.create_str_node_ctx_idx(str(node.cov_ct_idx)))
+        # blocker_idxs = []
+        # for node in fuzz_blocker_nodes:
+        #     blocker_idxs.append(self.create_str_node_ctx_idx(str(node.cov_ct_idx)))
 
-        if len(blocker_idxs) > 0:
+        if len(blocker_infos) > 0:
             html_end = "<script>"
-            html_end += f"var fuzz_blocker_idxs = {json.dumps(blocker_idxs)};"
+            html_end += f'var fuzz_blocker_infos = \'{json.dumps(blocker_infos)}\';'
             html_end += "</script>"
 
         html_end += "<script src=\"calltree.js\"></script>"
