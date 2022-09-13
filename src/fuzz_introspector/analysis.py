@@ -470,7 +470,7 @@ def detect_branch_level_blockers(
             blocked_not_covered_com = llvm_branch.branch_true_side_not_covered_complexity
             side_line = llvm_branch.branch_true_side_pos
             side_line_number = side_line.split(':')[1].split(',')[0]
-            blocked_unique_funcs = (
+            blocked_unique_funcs = list(
                 llvm_branch.get_side_unique_reachable_funcnames(bp.BranchSide.TRUE))
         elif true_hitcount != 0 and false_hitcount == 0:
             blocked_side = bp.BranchSide.FALSE
@@ -481,7 +481,7 @@ def detect_branch_level_blockers(
             blocked_not_covered_com = llvm_branch.branch_false_side_not_covered_complexity
             side_line = llvm_branch.branch_false_side_pos
             side_line_number = side_line.split(':')[1].split(',')[0]
-            blocked_unique_funcs = (
+            blocked_unique_funcs = list(
                 llvm_branch.get_side_unique_reachable_funcnames(bp.BranchSide.FALSE))
 
         if blocked_side:
