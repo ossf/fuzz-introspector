@@ -589,13 +589,24 @@ def create_fuzzer_detailed_section(
     html_string += "</table>"
     html_string += "</p>"
 
-    # Fuzz blocker table
-    html_fuzz_blocker_table = calltree_analysis.create_fuzz_blocker_table(
-        profile,
-        tables,
-        calltree_file_name,
-        file_link=calltree_file_name
-    )
+    # Decide what kind of blockers to report: if branch blockers are not present,
+    # fall back to calltree-based blockers.
+    if profile.branch_blockers:
+        # Populate branch blocker table
+        html_fuzz_blocker_table = calltree_analysis.create_branch_blocker_table(
+            profile,
+            tables,
+            calltree_file_name,
+            12
+        )
+    else:
+        # Fuzz blocker table based on calltree
+        html_fuzz_blocker_table = calltree_analysis.create_fuzz_blocker_table(
+            profile,
+            tables,
+            calltree_file_name,
+            file_link=calltree_file_name
+        )
     if html_fuzz_blocker_table is not None:
         html_string += html_helpers.html_add_header_with_link(
             "Fuzz blockers",
@@ -605,29 +616,7 @@ def create_fuzzer_detailed_section(
         )
         html_string += html_fuzz_blocker_table
 
-    # Populate branch blocker table
-    html_branch_blocker_table = calltree_analysis.create_branch_blocker_table(
-        tables,
-        profile.branch_blockers,
-        12
-    )
-
-    if html_branch_blocker_table is not None:
-        html_string += "<div class=\"report-box\">"
-        html_string += html_helpers.html_add_header_with_link(
-            "Branch Blockers [Click to view]",
-            3,
-            toc_list,
-            link=f"branch_blocker{curr_tt_profile}",
-            experimental=True
-        )
-        html_string += "<div class=\"collapsible collapsed\">"
-        html_string += html_branch_blocker_table
-        html_string += "</div>"
-        html_string += "</div>"
-
     profile.write_stats_to_summary_file()
-
     # Table with all functions hit by this fuzzer
     html_string += html_helpers.html_add_header_with_link(
         "Runtime coverage analysis",
