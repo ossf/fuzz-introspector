@@ -44,6 +44,7 @@ BLOCKLISTED_COMPLEXITY_FUNCS = re.compile(r'^__sanitizer|^llvm\.')
 
 logger = logging.getLogger(name=__name__)
 
+
 class AnalysisInterface(abc.ABC):
     name: str
 
