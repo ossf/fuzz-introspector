@@ -17,6 +17,7 @@
 import abc
 import logging
 import os
+import re
 
 from enum import Enum
 
@@ -39,8 +40,9 @@ from fuzz_introspector.datatypes import (
 )
 from fuzz_introspector.exceptions import AnalysisError
 
-logger = logging.getLogger(name=__name__)
+BLOCKLISTED_COMPLEXITY_FUNCS = re.compile(r'^__sanitizer|^llvm\.')
 
+logger = logging.getLogger(name=__name__)
 
 class AnalysisInterface(abc.ABC):
     name: str
@@ -379,7 +381,7 @@ def update_branch_complexities(all_functions: Dict[str, function_profile.Functio
             branch.branch_false_side_not_covered_complexity = 0
             branch.branch_true_side_not_covered_complexity = 0
             for fn in branch.branch_false_side_funcs:
-                if fn not in all_functions:
+                if fn not in all_functions or BLOCKLISTED_COMPLEXITY_FUNCS.match(fn):
                     continue
                 branch.branch_false_side_reachable_complexity += (
                     all_functions[fn].total_cyclomatic_complexity)
@@ -388,7 +390,7 @@ def update_branch_complexities(all_functions: Dict[str, function_profile.Functio
                         all_functions[fn].total_cyclomatic_complexity)
 
             for fn in branch.branch_true_side_funcs:
-                if fn not in all_functions:
+                if fn not in all_functions or BLOCKLISTED_COMPLEXITY_FUNCS.match(fn):
                     continue
                 branch.branch_true_side_reachable_complexity += (
                     all_functions[fn].total_cyclomatic_complexity)
