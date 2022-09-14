@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import re
+
 GIT_REPO = "https://github.com/ossf/fuzz-introspector"
 GIT_BRANCH_URL = f"{GIT_REPO}/blob/main"
 
@@ -38,3 +40,5 @@ COLOR_CONSTANTS = [
     (30, 50, "greenyellow", "#adff2f"),
     (50, 1000000000000, "lawngreen", "#7cfc00")
 ]
+
+BLOCKLISTED_FUNCTION_NAMES = re.compile(r'^__sanitizer|^llvm\.')

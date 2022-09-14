@@ -17,9 +17,7 @@
 import abc
 import logging
 import os
-import re
 
-from enum import Enum
 
 from typing import (
     Dict,
@@ -36,11 +34,11 @@ from fuzz_introspector import html_helpers
 from fuzz_introspector.datatypes import (
     project_profile,
     fuzzer_profile,
-    function_profile
+    function_profile,
+    branch_profile as bp
 )
 from fuzz_introspector.exceptions import AnalysisError
 
-BLOCKLISTED_COMPLEXITY_FUNCS = re.compile(r'^__sanitizer|^llvm\.')
 
 logger = logging.getLogger(name=__name__)
 
@@ -103,15 +101,14 @@ def instantiate_analysis_interface(cls: Type[AnalysisInterface]):
     return cls()
 
 
-class BlockedSide(Enum):
-    TRUE = 1
-    FALSE = 2
-
-
 class FuzzBranchBlocker:
-    def __init__(self, side, not_cov_comp, reach_comp, hitcount_diff, filename, b_line, s_line,
-                 fname, link) -> None:
+    def __init__(self, side, unique_not_cov_comp, unique_reach_comp, unique_funcs,
+                 not_cov_comp, reach_comp, hitcount_diff, filename, b_line, s_line, fname,
+                 link) -> None:
         self.blocked_side = side
+        self.blocked_unique_not_covered_complexity = unique_not_cov_comp
+        self.blocked_unique_reachable_complexity = unique_reach_comp
+        self.blocked_unique_funcs = unique_funcs
         self.blocked_not_covered_complexity = not_cov_comp
         self.blocked_reachable_complexity = reach_comp
         self.sides_hitcount_diff = hitcount_diff
@@ -353,17 +350,20 @@ def overlay_calltree_with_coverage(
                                                            target_coverage_url)
     logger.info(f"[+] found {len(profile.branch_blockers)} branch blockers.")
     branch_blockers_list = []
-    for br_blocker in profile.branch_blockers:
+    for blk in profile.branch_blockers:
         branch_blockers_list.append(
             {
-                'blocked_side': repr(br_blocker.blocked_side),
-                'blocked_not_covered_complexity': br_blocker.blocked_not_covered_complexity,
-                'blocked_reachable_complexity': br_blocker.blocked_reachable_complexity,
-                'sides_hitcount_diff': br_blocker.sides_hitcount_diff,
-                'source_file': br_blocker.source_file,
-                'branch_line_number': br_blocker.branch_line_number,
-                'blocked_side_line_numder': br_blocker.blocked_side_line_numder,
-                'function_name': br_blocker.function_name
+                'blocked_side': repr(blk.blocked_side),
+                'blocked_unique_not_covered_complexity': blk.blocked_unique_not_covered_complexity,
+                'blocked_unique_reachable_complexity': blk.blocked_unique_reachable_complexity,
+                'blocked_unique_functions': blk.blocked_unique_funcs,
+                'blocked_not_covered_complexity': blk.blocked_not_covered_complexity,
+                'blocked_reachable_complexity': blk.blocked_reachable_complexity,
+                'sides_hitcount_diff': blk.sides_hitcount_diff,
+                'source_file': blk.source_file,
+                'branch_line_number': blk.branch_line_number,
+                'blocked_side_line_numder': blk.blocked_side_line_numder,
+                'function_name': blk.function_name
             }
         )
     utils.write_to_summary_file(profile.identifier, 'branch_blockers', branch_blockers_list)
@@ -377,27 +377,41 @@ def update_branch_complexities(all_functions: Dict[str, function_profile.Functio
     """
     for func_k, func in all_functions.items():
         for branch_k, branch in func.branch_profiles.items():
+            branch.branch_false_side_unique_not_covered_complexity = 0
+            branch.branch_false_side_unique_reachable_complexity = 0
+            branch.branch_true_side_unique_not_covered_complexity = 0
+            branch.branch_true_side_unique_reachable_complexity = 0
             branch.branch_false_side_reachable_complexity = 0
             branch.branch_true_side_reachable_complexity = 0
             branch.branch_false_side_not_covered_complexity = 0
             branch.branch_true_side_not_covered_complexity = 0
+            false_side_funcs = branch.get_side_unique_reachable_funcnames(bp.BranchSide.FALSE)
+            true_side_funcs = branch.get_side_unique_reachable_funcnames(bp.BranchSide.TRUE)
+            # Iterate over the list of funcs instead of set, because we want to account
+            # for the complexity of repeating functions.
             for fn in branch.branch_false_side_funcs:
-                if fn not in all_functions or BLOCKLISTED_COMPLEXITY_FUNCS.match(fn):
+                if fn not in all_functions:
                     continue
-                branch.branch_false_side_reachable_complexity += (
-                    all_functions[fn].total_cyclomatic_complexity)
+                new_comp = all_functions[fn].total_cyclomatic_complexity
+                branch.branch_false_side_reachable_complexity += new_comp
+                if fn in false_side_funcs:
+                    branch.branch_false_side_unique_reachable_complexity += new_comp
                 if coverage.is_func_hit(fn) is False:
-                    branch.branch_false_side_not_covered_complexity += (
-                        all_functions[fn].total_cyclomatic_complexity)
+                    branch.branch_false_side_not_covered_complexity += new_comp
+                    if fn in false_side_funcs:
+                        branch.branch_false_side_unique_not_covered_complexity += new_comp
 
             for fn in branch.branch_true_side_funcs:
-                if fn not in all_functions or BLOCKLISTED_COMPLEXITY_FUNCS.match(fn):
+                if fn not in all_functions:
                     continue
-                branch.branch_true_side_reachable_complexity += (
-                    all_functions[fn].total_cyclomatic_complexity)
+                new_comp = all_functions[fn].total_cyclomatic_complexity
+                branch.branch_true_side_reachable_complexity += new_comp
+                if fn in true_side_funcs:
+                    branch.branch_true_side_unique_reachable_complexity += new_comp
                 if coverage.is_func_hit(fn) is False:
-                    branch.branch_true_side_not_covered_complexity += (
-                        all_functions[fn].total_cyclomatic_complexity)
+                    branch.branch_true_side_not_covered_complexity += new_comp
+                    if fn in true_side_funcs:
+                        branch.branch_true_side_unique_not_covered_complexity += new_comp
 
 
 def detect_branch_level_blockers(
@@ -446,17 +460,27 @@ def detect_branch_level_blockers(
         # it may become interesting to report less-taken side: like
         # the side that is taken less than 20% of the times
         if true_hitcount == 0 and false_hitcount != 0:
-            blocked_side = BlockedSide.TRUE
-            blocked_reachable_complexity = llvm_branch.branch_true_side_reachable_complexity
-            blocked_not_covered_complexity = llvm_branch.branch_true_side_not_covered_complexity
+            blocked_side = bp.BranchSide.TRUE
+            blocked_unique_not_covered_com = (
+                llvm_branch.branch_true_side_unique_not_covered_complexity)
+            blocked_unique_reachable_com = llvm_branch.branch_true_side_unique_reachable_complexity
+            blocked_reachable_com = llvm_branch.branch_true_side_reachable_complexity
+            blocked_not_covered_com = llvm_branch.branch_true_side_not_covered_complexity
             side_line = llvm_branch.branch_true_side_pos
             side_line_number = side_line.split(':')[1].split(',')[0]
+            blocked_unique_funcs = list(
+                llvm_branch.get_side_unique_reachable_funcnames(blocked_side))
         elif true_hitcount != 0 and false_hitcount == 0:
-            blocked_side = BlockedSide.FALSE
-            blocked_reachable_complexity = llvm_branch.branch_false_side_reachable_complexity
-            blocked_not_covered_complexity = llvm_branch.branch_false_side_not_covered_complexity
+            blocked_side = bp.BranchSide.FALSE
+            blocked_unique_not_covered_com = (
+                llvm_branch.branch_false_side_unique_not_covered_complexity)
+            blocked_unique_reachable_com = llvm_branch.branch_false_side_unique_reachable_complexity
+            blocked_reachable_com = llvm_branch.branch_false_side_reachable_complexity
+            blocked_not_covered_com = llvm_branch.branch_false_side_not_covered_complexity
             side_line = llvm_branch.branch_false_side_pos
             side_line_number = side_line.split(':')[1].split(',')[0]
+            blocked_unique_funcs = list(
+                llvm_branch.get_side_unique_reachable_funcnames(blocked_side))
 
         if blocked_side:
             # Sanity check on line numbers: anomaly can happen because of debug info inaccuracy
@@ -484,10 +508,15 @@ def detect_branch_level_blockers(
                 int(line_number),
                 function_name
             )
-            fuzz_blockers.append(FuzzBranchBlocker(blocked_side, blocked_not_covered_complexity,
-                                 blocked_reachable_complexity, hitcount_diff, source_file_path,
-                                 line_number, side_line_number, function_name, link))
+            new_blk = FuzzBranchBlocker(blocked_side, blocked_unique_not_covered_com,
+                                        blocked_unique_reachable_com, blocked_unique_funcs,
+                                        blocked_not_covered_com, blocked_reachable_com,
+                                        hitcount_diff, source_file_path, line_number,
+                                        side_line_number, function_name, link)
+            fuzz_blockers.append(new_blk)
 
-    fuzz_blockers.sort(key=lambda x: [x.blocked_not_covered_complexity,
+    fuzz_blockers.sort(key=lambda x: [x.blocked_unique_not_covered_complexity,
+                                      x.blocked_unique_reachable_complexity,
+                                      x.blocked_not_covered_complexity,
                                       x.blocked_reachable_complexity], reverse=True)
     return fuzz_blockers

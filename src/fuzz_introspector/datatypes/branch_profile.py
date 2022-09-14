@@ -14,16 +14,22 @@
 """Branch profiler"""
 
 import logging
-
+from enum import Enum
 from typing import (
     Any,
     Dict,
     List,
+    Set,
 )
 
 from fuzz_introspector import utils
 
 logger = logging.getLogger(name=__name__)
+
+
+class BranchSide(Enum):
+    TRUE = 1
+    FALSE = 2
 
 
 class BranchProfile:
@@ -34,6 +40,10 @@ class BranchProfile:
         self.branch_pos = str()
         self.branch_true_side_pos = str()
         self.branch_false_side_pos = str()
+        self.branch_true_side_unique_not_covered_complexity = -1
+        self.branch_false_side_unique_not_covered_complexity = -1
+        self.branch_true_side_unique_reachable_complexity = -1
+        self.branch_false_side_unique_reachable_complexity = -1
         self.branch_true_side_reachable_complexity = -1
         self.branch_false_side_reachable_complexity = -1
         self.branch_true_side_not_covered_complexity = -1
@@ -54,6 +64,14 @@ class BranchProfile:
     def assign_from_coverage(self, true_count: str, false_count: str) -> None:
         self.branch_true_side_hitcount = int(true_count)
         self.branch_false_side_hitcount = int(false_count)
+
+    def get_side_unique_reachable_funcnames(self, branch_side: BranchSide) -> Set[str]:
+        """Returns the set of unique functions reachable from the specified branch side"""
+        true_side_funcs_set = set(self.branch_true_side_funcs)
+        false_side_funcs_set = set(self.branch_false_side_funcs)
+        if branch_side == BranchSide.TRUE:
+            return true_side_funcs_set.difference(false_side_funcs_set)
+        return false_side_funcs_set.difference(true_side_funcs_set)
 
     def dump(self) -> None:
         """

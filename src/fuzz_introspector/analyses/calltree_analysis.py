@@ -16,6 +16,8 @@
 import os
 import logging
 import json
+import random
+import string
 
 from typing import (
     Dict,
@@ -33,6 +35,8 @@ from fuzz_introspector.datatypes import project_profile, fuzzer_profile
 
 # For pretty printing the html code:
 from bs4 import BeautifulSoup as bs
+
+from fuzz_introspector.html_report import create_collapsible_element
 
 logger = logging.getLogger(name=__name__)
 
@@ -379,6 +383,9 @@ class Analysis(analysis.AnalysisInterface):
         if len(branch_blockers) == 0:
             return None
 
+        random_suffix = '_' + ''.join(
+            random.choices(string.ascii_lowercase + string.ascii_uppercase, k=7))
+
         blockers_node_map = self.collect_calltree_nodes(branch_blockers,
                                                         profile.function_call_depths)
 
@@ -388,9 +395,16 @@ class Analysis(analysis.AnalysisInterface):
         html_table_string += html_helpers.html_create_table_head(
             tables[-1],
             [
-                ("Blocked Complexity",
+                ("Unique non-covered Complexity",
+                 "Cyclomatic Complexity of not-yet-covered functions reachable "
+                 "by the blocked branch side."),
+                ("Unique Reachable Complexities",
+                 "Cyclomatic Complexity of the functions reachable by the blocked branch side."),
+                ("Unique Reachable Functions",
+                 "List of functions that only the blocked branch side can reach."),
+                ("All non-covered Complexity",
                  "Cyclomatic Complexity that is not covered because of blockage."),
-                ("Reachable Complexity",
+                ("All Reachable Complexity",
                  "Cyclomatic Complexity that the blocked branch-side can reach."),
                 ("Function Name",
                  "Function containing the blocked branch."),
@@ -420,8 +434,18 @@ class Analysis(analysis.AnalysisInterface):
                     f"onclick=\" scrollToNodeInCT('{node_id}')\">"
                     "call site</span>"
                 )
-
+            collapsible_id = entry.source_file + entry.blocked_side_line_numder + random_suffix
+            func_num = len(entry.blocked_unique_funcs)
+            if func_num > 0:
+                collapsible_string = create_collapsible_element(str(func_num),
+                                                                entry.blocked_unique_funcs,
+                                                                collapsible_id)
+            else:
+                collapsible_string = "None"
             html_table_string += html_helpers.html_table_add_row([
+                str(entry.blocked_unique_not_covered_complexity),
+                str(entry.blocked_unique_reachable_complexity),
+                collapsible_string,
                 str(entry.blocked_not_covered_complexity),
                 str(entry.blocked_reachable_complexity),
                 utils.demangle_cpp_func(entry.function_name),

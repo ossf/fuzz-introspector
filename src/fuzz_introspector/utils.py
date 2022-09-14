@@ -223,5 +223,7 @@ def load_func_names(input_list: List[str]) -> List[str]:
     """
     loaded = []
     for reached in input_list:
+        if constants.BLOCKLISTED_FUNCTION_NAMES.match(reached):
+            continue
         loaded.append(demangle_cpp_func(reached))
     return loaded
