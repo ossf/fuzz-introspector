@@ -17,7 +17,6 @@
 import abc
 import logging
 import os
-import re
 
 
 from typing import (
@@ -40,7 +39,6 @@ from fuzz_introspector.datatypes import (
 )
 from fuzz_introspector.exceptions import AnalysisError
 
-BLOCKLISTED_COMPLEXITY_FUNCS = re.compile(r'^__sanitizer|^llvm\.')
 
 logger = logging.getLogger(name=__name__)
 
@@ -392,7 +390,7 @@ def update_branch_complexities(all_functions: Dict[str, function_profile.Functio
             # Iterate over the list of funcs instead of set, because we want to account
             # for the complexity of repeating functions.
             for fn in branch.branch_false_side_funcs:
-                if fn not in all_functions or BLOCKLISTED_COMPLEXITY_FUNCS.match(fn):
+                if fn not in all_functions:
                     continue
                 new_comp = all_functions[fn].total_cyclomatic_complexity
                 branch.branch_false_side_reachable_complexity += new_comp
@@ -404,7 +402,7 @@ def update_branch_complexities(all_functions: Dict[str, function_profile.Functio
                         branch.branch_false_side_unique_not_covered_complexity += new_comp
 
             for fn in branch.branch_true_side_funcs:
-                if fn not in all_functions or BLOCKLISTED_COMPLEXITY_FUNCS.match(fn):
+                if fn not in all_functions:
                     continue
                 new_comp = all_functions[fn].total_cyclomatic_complexity
                 branch.branch_true_side_reachable_complexity += new_comp
