@@ -395,10 +395,14 @@ class Analysis(analysis.AnalysisInterface):
         html_table_string += html_helpers.html_create_table_head(
             tables[-1],
             [
-                ("Unique Blocked Complexity", "Cyclomatic Complexity of the not-yet-covered functions reachable by the blocked branch side."),
-                ("Unique Reachable Complexities", "Cyclomatic Complexity of the functions reachable by the blocked branch side."),
-                ("Unique Reachable Functions", "List of functions that only the blocked branch side can reach."),
-                ("All Blocked Complexity",
+                ("Unique non-covered Complexity",
+                 "Cyclomatic Complexity of not-yet-covered functions reachable "
+                 "by the blocked branch side."),
+                ("Unique Reachable Complexities",
+                 "Cyclomatic Complexity of the functions reachable by the blocked branch side."),
+                ("Unique Reachable Functions",
+                 "List of functions that only the blocked branch side can reach."),
+                ("All non-covered Complexity",
                  "Cyclomatic Complexity that is not covered because of blockage."),
                 ("All Reachable Complexity",
                  "Cyclomatic Complexity that the blocked branch-side can reach."),
@@ -433,7 +437,7 @@ class Analysis(analysis.AnalysisInterface):
             collapsible_id = entry.source_file + entry.blocked_side_line_numder + random_suffix
             func_num = len(entry.blocked_unique_funcs)
             if func_num > 0:
-                collapsible_string = create_collapsible_element(func_num, 
+                collapsible_string = create_collapsible_element(str(func_num),
                                                                 entry.blocked_unique_funcs,
                                                                 collapsible_id)
             else:
