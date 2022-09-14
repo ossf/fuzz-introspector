@@ -469,7 +469,7 @@ def detect_branch_level_blockers(
             side_line = llvm_branch.branch_true_side_pos
             side_line_number = side_line.split(':')[1].split(',')[0]
             blocked_unique_funcs = list(
-                llvm_branch.get_side_unique_reachable_funcnames(bp.BranchSide.TRUE))
+                llvm_branch.get_side_unique_reachable_funcnames(blocked_side))
         elif true_hitcount != 0 and false_hitcount == 0:
             blocked_side = bp.BranchSide.FALSE
             blocked_unique_not_covered_com = (
@@ -480,7 +480,7 @@ def detect_branch_level_blockers(
             side_line = llvm_branch.branch_false_side_pos
             side_line_number = side_line.split(':')[1].split(',')[0]
             blocked_unique_funcs = list(
-                llvm_branch.get_side_unique_reachable_funcnames(bp.BranchSide.FALSE))
+                llvm_branch.get_side_unique_reachable_funcnames(blocked_side))
 
         if blocked_side:
             # Sanity check on line numbers: anomaly can happen because of debug info inaccuracy

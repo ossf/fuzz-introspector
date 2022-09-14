@@ -41,4 +41,4 @@ COLOR_CONSTANTS = [
     (50, 1000000000000, "lawngreen", "#7cfc00")
 ]
 
-BLOCKLISTED_COMPLEXITY_FUNCS = re.compile(r'^__sanitizer|^llvm\.')
+BLOCKLISTED_FUNCTION_NAMES = re.compile(r'^__sanitizer|^llvm\.')
