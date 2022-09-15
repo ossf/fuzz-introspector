@@ -17,6 +17,7 @@ jobs:
     permissions:
       # Needed to upload the results to code-scanning dashboard.
       security-events: write
+      id-token: write
     
     steps:
       - name: "Checkout code"
