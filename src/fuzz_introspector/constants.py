@@ -41,4 +41,4 @@ COLOR_CONSTANTS = [
     (50, 1000000000000, "lawngreen", "#7cfc00")
 ]
 
-BLOCKLISTED_FUNCTION_NAMES = re.compile(r'^__sanitizer|^llvm\.|^__assert')
+BLOCKLISTED_FUNCTION_NAMES = re.compile(r'^__sanitizer|^llvm\.|^__assert|.*printf$')
