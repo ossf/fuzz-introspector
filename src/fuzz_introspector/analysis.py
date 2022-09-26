@@ -144,17 +144,20 @@ def get_all_analyses() -> List[Type[AnalysisInterface]]:
     ]
     return analysis_array
 
+
 def callstack_get_parent(
     n: cfg_load.CalltreeCallsite,
     c: Dict[int, str]
 ) -> str:
     return c[int(n.depth) - 1]
 
+
 def callstack_has_parent(
     n: cfg_load.CalltreeCallsite,
     c: Dict[int, str]
 ) -> bool:
     return int(n.depth) - 1 in c
+
 
 def callstack_set_curr_node(
     n: cfg_load.CalltreeCallsite,
@@ -172,6 +175,9 @@ def get_node_coverage_hitcount(
     is_first: bool
 ) -> int:
     """Extracts the runtime coverage hitcount of a node in the calltree"""
+    if profile.coverage is None:
+        return -1
+
     node_hitcount: int = 0
     if is_first:
         # The first node is always the entry of LLVMFuzzerTestOneInput
