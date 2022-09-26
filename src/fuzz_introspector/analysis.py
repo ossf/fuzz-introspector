@@ -180,18 +180,13 @@ def get_node_coverage_hitcount(
 
     node_hitcount: int = 0
     if is_first:
-        # The first node is always the entry of LLVMFuzzerTestOneInput
-        # LLVMFuzzerTestOneInput will never have a parent in the calltree. As such, we
-        # check here if the function has been hit, and if so, make it green. We avoid
-        # hardcoding LLVMFuzzerTestOneInput to be green because some fuzzers may not
-        # have a single seed, and in this specific case LLVMFuzzerTestOneInput
-        # will be red.
-        if demangled_name != "LLVMFuzzerTestOneInput" and "TestOneInput" not in demangled_name:
-            logger.info("Unexpected first node in the calltree.")
-            logger.info(f"Found: {demangled_name}")
+        # As this is the first node ensure it is indeed the entrypoint.
+        # The difference is this node has node "parent" or prior nodes.
+        if not profile.func_is_entrypoint(demangled_name):
             raise AnalysisError(
                 "First node in calltree seems to be non-fuzzer function"
             )
+
         coverage_data = profile.coverage.get_hit_details("LLVMFuzzerTestOneInput")
         if len(coverage_data) == 0:
             logger.error("There is no coverage data (not even all negative).")

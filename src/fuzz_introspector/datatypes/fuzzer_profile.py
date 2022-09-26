@@ -73,12 +73,30 @@ class FuzzerProfile:
         return self._target_lang
 
     @property
+    def entrypoint_function(self):
+        """The name of the fuzzer entrypoint"""
+        if self.target_lang == "c-cpp":
+            return "LLVMFuzzerTestOneInput"
+        if self.target_lang == "python":
+            # TODO: fix this to be actual logic that determines
+            # the entrypoint
+            return "TestOneInput"
+
+    @property
     def identifier(self):
         """Fuzzer identifier"""
         if self.binary_executable != "":
             return os.path.basename(self.binary_executable)
 
         return self.fuzzer_source_file
+
+    def func_is_entrypoint(self, demangled_func_name: str) -> bool:
+        if (
+            demangled_func_name != self.entrypoint_function
+            and self.entrypoint_function not in demangled_func_name
+        ):
+            return False
+        return True
 
     def resolve_coverage_link(
         self,
