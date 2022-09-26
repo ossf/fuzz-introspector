@@ -145,6 +145,138 @@ def get_all_analyses() -> List[Type[AnalysisInterface]]:
     return analysis_array
 
 
+def callstack_get_parent(
+    n: cfg_load.CalltreeCallsite,
+    c: Dict[int, str]
+) -> str:
+    return c[int(n.depth) - 1]
+
+
+def callstack_has_parent(
+    n: cfg_load.CalltreeCallsite,
+    c: Dict[int, str]
+) -> bool:
+    return int(n.depth) - 1 in c
+
+
+def callstack_set_curr_node(
+    n: cfg_load.CalltreeCallsite,
+    name: str,
+    c: Dict[int, str]
+) -> None:
+    c[int(n.depth)] = name
+
+
+def get_node_coverage_hitcount(
+    demangled_name: str,
+    callstack: Dict[int, str],
+    node: cfg_load.CalltreeCallsite,
+    profile: fuzzer_profile.FuzzerProfile,
+    is_first: bool
+) -> int:
+    """Extracts the runtime coverage hitcount of a node in the calltree"""
+    if profile.coverage is None:
+        return -1
+
+    node_hitcount: int = 0
+    if is_first:
+        # The first node is always the entry of LLVMFuzzerTestOneInput
+        # LLVMFuzzerTestOneInput will never have a parent in the calltree. As such, we
+        # check here if the function has been hit, and if so, make it green. We avoid
+        # hardcoding LLVMFuzzerTestOneInput to be green because some fuzzers may not
+        # have a single seed, and in this specific case LLVMFuzzerTestOneInput
+        # will be red.
+        if demangled_name != "LLVMFuzzerTestOneInput" and "TestOneInput" not in demangled_name:
+            logger.info("Unexpected first node in the calltree.")
+            logger.info(f"Found: {demangled_name}")
+            raise AnalysisError(
+                "First node in calltree seems to be non-fuzzer function"
+            )
+        coverage_data = profile.coverage.get_hit_details("LLVMFuzzerTestOneInput")
+        if len(coverage_data) == 0:
+            logger.error("There is no coverage data (not even all negative).")
+        node.cov_parent = "EP"
+
+        node_hitcount = 0
+        for (n_line_number, hit_count_cov) in coverage_data:
+            node_hitcount = max(hit_count_cov, node_hitcount)
+        is_first = False
+    elif callstack_has_parent(node, callstack):
+        # Find the parent function and check coverage of the node
+        logger.debug("Extracting data")
+        logger.debug(
+            f"Getting hit details {node.dst_function_name} -- "
+            f"{node.cov_ct_idx} -- {node.src_linenumber}"
+        )
+        if profile.target_lang == "python":
+            ih = profile.coverage.is_file_lineno_hit(
+                callstack_get_parent(node, callstack),
+                node.src_linenumber,
+                True
+            )
+            if ih:
+                node_hitcount = 200
+        else:
+            coverage_data = profile.coverage.get_hit_details(
+                callstack_get_parent(node, callstack)
+            )
+            for (n_line_number, hit_count_cov) in coverage_data:
+                logger.debug(f"  - iterating {n_line_number} : {hit_count_cov}")
+                if n_line_number == node.src_linenumber and hit_count_cov > 0:
+                    node_hitcount = hit_count_cov
+        node.cov_parent = callstack_get_parent(node, callstack)
+    else:
+        logger.error("A node should either be the first or it must have a parent")
+        raise AnalysisError(
+            "A node should either be the first or it must have a parent"
+        )
+    return node_hitcount
+
+
+def get_hit_count_color(hit_count: int) -> str:
+    """Map hitcount to color of target"""
+    for cmin, cmax, cname, rgb in constants.COLOR_CONSTANTS:
+        if hit_count >= cmin and hit_count < cmax:
+            return cname
+    return "red"
+
+
+def get_url_to_cov_report(profile, node, target_coverage_url):
+    """ Get URL to coverage report for the node. """
+    link = "#"
+    for fd_k, fd in profile.all_class_functions.items():
+        if fd.function_name == node.dst_function_name:
+            logger.debug("Found %s -- %s -- %d" % (
+                fd.function_name,
+                fd.function_source_file,
+                fd.function_linenumber
+            ))
+            link = profile.resolve_coverage_link(
+                target_coverage_url,
+                fd.function_source_file,
+                fd.function_linenumber,
+                fd.function_name
+            )
+            break
+    return link
+
+
+def get_parent_callsite_link(node, callstack, profile, target_coverage_url):
+    """Gets the coverage callsite link of a given node."""
+    callsite_link = "#"
+    if callstack_has_parent(node, callstack):
+        parent_fname = callstack_get_parent(node, callstack)
+        for fd_k, fd in profile.all_class_functions.items():
+            if utils.demangle_cpp_func(fd.function_name) == parent_fname:
+                callsite_link = profile.resolve_coverage_link(
+                    target_coverage_url,
+                    fd.function_source_file,
+                    node.src_linenumber,
+                    fd.function_name
+                )
+    return callsite_link
+
+
 def overlay_calltree_with_coverage(
         profile: fuzzer_profile.FuzzerProfile,
         proj_profile: project_profile.MergedProjectProfile,
@@ -158,25 +290,6 @@ def overlay_calltree_with_coverage(
 
     if profile.coverage is None:
         return
-
-    def callstack_get_parent(
-        n: cfg_load.CalltreeCallsite,
-        c: Dict[int, str]
-    ) -> str:
-        return c[int(n.depth) - 1]
-
-    def callstack_has_parent(
-        n: cfg_load.CalltreeCallsite,
-        c: Dict[int, str]
-    ) -> bool:
-        return int(n.depth) - 1 in c
-
-    def callstack_set_curr_node(
-        n: cfg_load.CalltreeCallsite,
-        name: str,
-        c: Dict[int, str]
-    ) -> None:
-        c[int(n.depth)] = name
 
     is_first = True
     ct_idx = 0
@@ -203,101 +316,23 @@ def overlay_calltree_with_coverage(
         logger.debug(f"Checking callsite: { demangled_name}")
 
         # Get hitcount for this node
-        node_hitcount: int = 0
-        if is_first:
-            # The first node is always the entry of LLVMFuzzerTestOneInput
-            # LLVMFuzzerTestOneInput will never have a parent in the calltree. As such, we
-            # check here if the function has been hit, and if so, make it green. We avoid
-            # hardcoding LLVMFuzzerTestOneInput to be green because some fuzzers may not
-            # have a single seed, and in this specific case LLVMFuzzerTestOneInput
-            # will be red.
-            if demangled_name != "LLVMFuzzerTestOneInput" and "TestOneInput" not in demangled_name:
-                logger.info("Unexpected first node in the calltree.")
-                logger.info(f"Found: {demangled_name}")
-                raise AnalysisError(
-                    "First node in calltree seems to be non-fuzzer function"
-                )
-            coverage_data = profile.coverage.get_hit_details("LLVMFuzzerTestOneInput")
-            if len(coverage_data) == 0:
-                logger.error("There is no coverage data (not even all negative).")
-            node.cov_parent = "EP"
+        node.cov_hitcount = get_node_coverage_hitcount(
+            demangled_name,
+            callstack,
+            node,
+            profile,
+            is_first
+        )
+        is_first = False
 
-            node_hitcount = 0
-            for (n_line_number, hit_count_cov) in coverage_data:
-                node_hitcount = max(hit_count_cov, node_hitcount)
-            is_first = False
-        elif callstack_has_parent(node, callstack):
-            # Find the parent function and check coverage of the node
-            logger.debug("Extracting data")
-            logger.debug(
-                f"Getting hit details {node.dst_function_name} -- "
-                f"{node.cov_ct_idx} -- {node.src_linenumber}"
-            )
-            if profile.target_lang == "python":
-                ih = profile.coverage.is_file_lineno_hit(
-                    callstack_get_parent(node, callstack),
-                    node.src_linenumber,
-                    True
-                )
-                if ih:
-                    node_hitcount = 200
-            else:
-                coverage_data = profile.coverage.get_hit_details(
-                    callstack_get_parent(node, callstack)
-                )
-                for (n_line_number, hit_count_cov) in coverage_data:
-                    logger.debug(f"  - iterating {n_line_number} : {hit_count_cov}")
-                    if n_line_number == node.src_linenumber and hit_count_cov > 0:
-                        node_hitcount = hit_count_cov
-            node.cov_parent = callstack_get_parent(node, callstack)
-        else:
-            logger.error("A node should either be the first or it must have a parent")
-            raise AnalysisError(
-                "A node should either be the first or it must have a parent"
-            )
-        node.cov_hitcount = node_hitcount
-
-        # Map hitcount to color of target.
-        def get_hit_count_color(hit_count: int) -> str:
-            for cmin, cmax, cname, rgb in constants.COLOR_CONSTANTS:
-                if hit_count >= cmin and hit_count < cmax:
-                    return cname
-            return "red"
-        color_to_be = get_hit_count_color(node.cov_hitcount)
-        node.cov_color = color_to_be
-
-        # Get URL to coverage report for the node.
-        link = "#"
-        for fd_k, fd in profile.all_class_functions.items():
-            if fd.function_name == node.dst_function_name:
-                logger.debug("Found %s -- %s -- %d" % (
-                    fd.function_name,
-                    fd.function_source_file,
-                    fd.function_linenumber
-                ))
-                link = profile.resolve_coverage_link(
-                    target_coverage_url,
-                    fd.function_source_file,
-                    fd.function_linenumber,
-                    fd.function_name
-                )
-                break
-        node.cov_link = link
-
-        # Find the parent
-        callsite_link = "#"
-        if callstack_has_parent(node, callstack):
-            parent_fname = callstack_get_parent(node, callstack)
-            for fd_k, fd in profile.all_class_functions.items():
-                if utils.demangle_cpp_func(fd.function_name) == parent_fname:
-                    callsite_link = profile.resolve_coverage_link(
-                        target_coverage_url,
-                        fd.function_source_file,
-                        node.src_linenumber,
-                        fd.function_name
-                    )
-
-        node.cov_callsite_link = callsite_link
+        node.cov_color = get_hit_count_color(node.cov_hitcount)
+        node.cov_link = get_url_to_cov_report(profile, node, target_coverage_url)
+        node.cov_callsite_link = get_parent_callsite_link(
+            node,
+            callstack,
+            profile,
+            target_coverage_url
+        )
 
     # Extract data about which nodes unlocks data
     all_callsites = cfg_load.extract_all_callsites(profile.function_call_depths)
