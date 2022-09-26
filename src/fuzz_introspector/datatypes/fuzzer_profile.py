@@ -92,8 +92,8 @@ class FuzzerProfile:
 
     def func_is_entrypoint(self, demangled_func_name: str) -> bool:
         if (
-            demangled_func_name != self.entrypoint_function and
-            self.entrypoint_function not in demangled_func_name
+            demangled_func_name != self.entrypoint_function
+            and self.entrypoint_function not in demangled_func_name
         ):
             return False
         return True
