@@ -232,6 +232,7 @@ def get_node_coverage_hitcount(
         )
     return node_hitcount
 
+
 def get_hit_count_color(hit_count: int) -> str:
     """Map hitcount to color of target"""
     for cmin, cmax, cname, rgb in constants.COLOR_CONSTANTS:
@@ -258,6 +259,7 @@ def get_url_to_cov_report(profile, node, target_coverage_url):
             )
             break
     return link
+
 
 def get_parent_callsite_link(node, callstack, profile, target_coverage_url):
     """Gets the coverage callsite link of a given node."""
@@ -288,7 +290,6 @@ def overlay_calltree_with_coverage(
 
     if profile.coverage is None:
         return
-
 
     is_first = True
     ct_idx = 0
