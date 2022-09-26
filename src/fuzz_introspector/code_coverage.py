@@ -125,6 +125,15 @@ class CoverageProfile:
             logger.info("Success")
             return True
 
+        # Check if "fuzz" is in the filename. This is a hack in python coverage
+        if "fuzz" in target_key:
+            logger.info("Checking adjustment")
+            # 11 in the below code reflects the size of the coverage stub added here:
+            # https://github.com/google/oss-fuzz/blob/360b484fa0f026c0dea44c62897519c6c99127cc/infra/base-images/base-builder/compile_python_fuzzer#L29-L40  # noqa: E501
+            if lineno + 11 in self.file_map[target_key]:
+                logger.info("Success with line number adjustment")
+                return True
+
         return False
 
     def is_func_hit(self, funcname: str) -> bool:
@@ -147,6 +156,7 @@ class CoverageProfile:
             linenumber and the second element is the amount of times that line
             was covered.
         """
+        logger.debug(f"Getting coverage of {funcname}")
         fuzz_key = None
         if funcname in self.covmap:
             fuzz_key = funcname

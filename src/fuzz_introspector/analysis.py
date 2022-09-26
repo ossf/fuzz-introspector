@@ -187,7 +187,7 @@ def get_node_coverage_hitcount(
                 "First node in calltree seems to be non-fuzzer function"
             )
 
-        coverage_data = profile.coverage.get_hit_details("LLVMFuzzerTestOneInput")
+        coverage_data = profile.coverage.get_hit_details(demangled_name)
         if len(coverage_data) == 0:
             logger.error("There is no coverage data (not even all negative).")
         node.cov_parent = "EP"
@@ -328,6 +328,15 @@ def overlay_calltree_with_coverage(
             profile,
             target_coverage_url
         )
+    # For python, do a hack where we check if any node is covered, and, if so,
+    # ensure the entrypoint is covered.
+    all_nodes = cfg_load.extract_all_callsites(profile.function_call_depths)
+    if len(all_nodes) > 0:
+        for node in cfg_load.extract_all_callsites(profile.function_call_depths)[1:]:
+            if node.cov_hitcount > 0:
+                all_nodes[0].cov_hitcount = 200
+                all_nodes[0].cov_color = get_hit_count_color(200)
+                break
 
     # Extract data about which nodes unlocks data
     all_callsites = cfg_load.extract_all_callsites(profile.function_call_depths)
