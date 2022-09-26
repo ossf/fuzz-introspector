@@ -332,11 +332,11 @@ def overlay_calltree_with_coverage(
     # ensure the entrypoint is covered.
     all_nodes = cfg_load.extract_all_callsites(profile.function_call_depths)
     if len(all_nodes) > 0:
-        has_hits = False
         for node in cfg_load.extract_all_callsites(profile.function_call_depths)[1:]:
             if node.cov_hitcount > 0:
                 all_nodes[0].cov_hitcount = 200
                 all_nodes[0].cov_color = get_hit_count_color(200)
+                break
 
     # Extract data about which nodes unlocks data
     all_callsites = cfg_load.extract_all_callsites(profile.function_call_depths)
