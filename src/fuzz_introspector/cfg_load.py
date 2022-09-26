@@ -117,17 +117,24 @@ def data_file_read_calltree(filename: str) -> Optional[CalltreeCallsite]:
                 # Parse the line
                 # Type: {spacing depth} {target filename} {line count}
                 if len(stripped_line) == 3:
+                    target_func = stripped_line[0]
                     filename = stripped_line[1]
                     linenumber = int(stripped_line[2].replace("linenumber=", ""))
                 else:
+                    target_func = stripped_line[0]
                     filename = ""
                     linenumber = 0
+
+                if "......" in filename or "......" in target_func:
+                    filename = filename.replace("......", "")
+                    target_func = target_func.replace("......", "")
+
                 space_count = len(line) - len(line.lstrip(' '))
                 depth = int(space_count / 2)
 
                 # Create a callsite nide
                 ctcs = CalltreeCallsite(
-                    stripped_line[0],
+                    target_func,
                     filename,
                     depth,
                     linenumber,
