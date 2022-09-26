@@ -129,7 +129,7 @@ class CoverageProfile:
         if "fuzz" in target_key:
             logger.info("Checking adjustment")
             # 11 in the below code reflects the size of the coverage stub added here:
-            # https://github.com/google/oss-fuzz/blob/360b484fa0f026c0dea44c62897519c6c99127cc/infra/base-images/base-builder/compile_python_fuzzer#L29-L40
+            # https://github.com/google/oss-fuzz/blob/360b484fa0f026c0dea44c62897519c6c99127cc/infra/base-images/base-builder/compile_python_fuzzer#L29-L40  # noqa: E501
             if lineno + 11 in self.file_map[target_key]:
                 logger.info("Success with line number adjustment")
                 return True
