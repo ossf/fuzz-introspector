@@ -31,6 +31,7 @@ from fuzz_introspector.analyses import optimal_targets
 
 logger = logging.getLogger(name=__name__)
 
+
 class DriverContents:
     def __init__(self):
         self.source_code: str = ""
