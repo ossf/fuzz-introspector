@@ -19,7 +19,6 @@ from typing import (
     Dict,
     List,
     Tuple,
-    TypedDict,
 )
 
 from fuzz_introspector import analysis
@@ -27,16 +26,17 @@ from fuzz_introspector import html_helpers
 from fuzz_introspector.datatypes import (
     project_profile,
     fuzzer_profile,
-    function_profile
+    function_profile,
 )
 from fuzz_introspector.analyses import optimal_targets
 
 logger = logging.getLogger(name=__name__)
 
-TargetCodesType = TypedDict('TargetCodesType', {
-    'source_code': str,
-    'target_fds': List[function_profile.FunctionProfile]
-})
+
+class DriverContents:
+    def __init__(self):
+        self.source_code: str = ""
+        self.target_fds: List[function_profile.FunctionProfile] = list()
 
 
 class Analysis(analysis.AnalysisInterface):
@@ -76,7 +76,7 @@ class Analysis(analysis.AnalysisInterface):
             )
             fuzz_targets = optimal_target_functions
 
-        target_codes: Dict[str, TargetCodesType] = dict()
+        target_codes: Dict[str, DriverContents] = dict()
 
         fuzzer_code = "#include \"ada_fuzz_header.h\"\n"
         fuzzer_code += "\n"
@@ -131,26 +131,24 @@ class Analysis(analysis.AnalysisInterface):
             code += ");\n"
             code += "\n"
             if tfd.function_source_file not in target_codes:
-                target_codes[tfd.function_source_file] = {
-                    'source_code': "",
-                    'target_fds': list()
-                }
-            target_codes[tfd.function_source_file]['source_code'] += code
-            target_codes[tfd.function_source_file]['target_fds'].append(tfd)
+                target_codes[tfd.function_source_file] = DriverContents()
+
+            target_codes[tfd.function_source_file].source_code += code
+            target_codes[tfd.function_source_file].target_fds.append(tfd)
 
             logger.info(". Done")
 
-        final_fuzzers: Dict[str, TargetCodesType] = dict()
+        final_fuzzers: Dict[str, DriverContents] = dict()
         for filename in target_codes:
             file_fuzzer_code = fuzzer_code
-            file_fuzzer_code += target_codes[filename]['source_code']
+            file_fuzzer_code += target_codes[filename].source_code
             file_fuzzer_code += "  af_safe_gb_cleanup();\n"
             file_fuzzer_code += "}\n"
 
-            final_fuzzers[filename] = {
-                'source_code': file_fuzzer_code,
-                'target_fds': target_codes[filename]['target_fds']
-            }
+            final_fuzzers[filename] = DriverContents()
+            final_fuzzers[filename].source_code = file_fuzzer_code
+            final_fuzzers[filename].target_fds = target_codes[filename].target_fds
+
         logger.info("Synthesizing drivers for the following optimal functions: { %s }" % (
             str([f.function_name for f in fuzz_targets])))
 
@@ -167,12 +165,12 @@ class Analysis(analysis.AnalysisInterface):
             )
             html_string += f"<b>Target file:</b>{filename}<br>"
             all_functions = ", ".join(
-                [f.function_name for f in final_fuzzers[filename]['target_fds']]
+                [f.function_name for f in final_fuzzers[filename].target_fds]
             )
             html_string += f"<b>Target functions:</b> {all_functions}"
             html_string += (
                 f"<pre><code class='language-clike'>"
-                f"{final_fuzzers[filename]['source_code']}"
+                f"{final_fuzzers[filename].source_code}"
                 f"</code></pre><br>"
             )
 
