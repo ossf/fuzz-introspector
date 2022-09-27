@@ -26,6 +26,7 @@ from fuzz_introspector import html_helpers
 from fuzz_introspector.datatypes import (
     project_profile,
     fuzzer_profile,
+    function_profile,
 )
 from fuzz_introspector.analyses import optimal_targets
 
@@ -35,7 +36,7 @@ logger = logging.getLogger(name=__name__)
 class DriverContents:
     def __init__(self):
         self.source_code: str = ""
-        self.target_fds: List[str] = list()
+        self.target_fds: List[function_profile.FunctionProfile] = list()
 
 
 class Analysis(analysis.AnalysisInterface):
