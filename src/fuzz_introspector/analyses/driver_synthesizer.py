@@ -164,12 +164,12 @@ class Analysis(analysis.AnalysisInterface):
             )
             html_string += f"<b>Target file:</b>{filename}<br>"
             all_functions = ", ".join(
-                [f.function_name for f in final_fuzzers[filename]['target_fds']]
+                [f.function_name for f in final_fuzzers[filename].target_fds]
             )
             html_string += f"<b>Target functions:</b> {all_functions}"
             html_string += (
                 f"<pre><code class='language-clike'>"
-                f"{final_fuzzers[filename]['source_code']}"
+                f"{final_fuzzers[filename].source_code}"
                 f"</code></pre><br>"
             )
 
