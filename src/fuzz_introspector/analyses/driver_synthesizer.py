@@ -19,7 +19,6 @@ from typing import (
     Dict,
     List,
     Tuple,
-    TypedDict,
 )
 
 from fuzz_introspector import analysis
