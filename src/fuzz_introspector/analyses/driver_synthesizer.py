@@ -146,7 +146,7 @@ class Analysis(analysis.AnalysisInterface):
             file_fuzzer_code += "}\n"
 
             final_fuzzers[filename] = DriverContents()
-            final_fuzzers[filename].source_code = file_fuzzer_code,
+            final_fuzzers[filename].source_code = file_fuzzer_code
             final_fuzzers[filename].target_fds = target_codes[filename].target_fds
 
         logger.info("Synthesizing drivers for the following optimal functions: { %s }" % (
