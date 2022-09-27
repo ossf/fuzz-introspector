@@ -26,7 +26,6 @@ from fuzz_introspector import html_helpers
 from fuzz_introspector.datatypes import (
     project_profile,
     fuzzer_profile,
-    function_profile
 )
 from fuzz_introspector.analyses import optimal_targets
 
