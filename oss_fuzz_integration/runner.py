@@ -291,9 +291,20 @@ def introspector_run(
     job_count: int,
     corpus_dir: Optional[str],
     port: int,
-    download_public_corpus: bool
+    download_public_corpus: bool,
+    collect_coverage: bool
 ):
-    complete_coverage_check(project_name, fuzztime, job_count, corpus_dir, download_public_corpus)
+    if collect_coverage:
+        complete_coverage_check(
+            project_name,
+            fuzztime,
+            job_count,
+            corpus_dir,
+            download_public_corpus
+        )
+    else:
+        build_project(project_name, to_clean=True)
+        setup_next_corpus_dir(project_name)
     
     # Build sanitizers with introspector
     build_project(project_name, sanitizer="introspector") 
@@ -311,13 +322,17 @@ def introspector_run(
         shutil.rmtree(os.path.join(latest_corpus_dir, "inspector-report"))
 
     shutil.copytree("./build/out/%s/inspector"%(project_name), os.path.join(latest_corpus_dir, "inspector-report"))
-    shutil.copytree(os.path.join(latest_corpus_dir, "report"), os.path.join(latest_corpus_dir, "inspector-report", "covreport"))
-
-    for target_coverage_dir in os.listdir(os.path.join(latest_corpus_dir, "report_target")):
+    if collect_coverage:
         shutil.copytree(
-            os.path.join(latest_corpus_dir, "report_target", target_coverage_dir),
-            os.path.join(latest_corpus_dir, "inspector-report", "covreport", target_coverage_dir)
+            os.path.join(latest_corpus_dir, "report"),
+            os.path.join(latest_corpus_dir, "inspector-report", "covreport")
         )
+
+        for target_coverage_dir in os.listdir(os.path.join(latest_corpus_dir, "report_target")):
+            shutil.copytree(
+                os.path.join(latest_corpus_dir, "report_target", target_coverage_dir),
+                os.path.join(latest_corpus_dir, "inspector-report", "covreport", target_coverage_dir)
+            )
 
     # start webserver
     cmd = "python3 -m http.server %d --directory %s"%(port, os.path.join(latest_corpus_dir, "inspector-report"))
@@ -417,6 +432,12 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
         help="if set, will download public corpus",
         default=False
     )
+    introspector_parser.add_argument(
+        "--no-coverage",
+        action="store_true",
+        help="Do not run coverage in this case",
+        default=False
+    )
 
     download_corpus_parser = subparsers.add_parser("download-corpus")
     download_corpus_parser.add_argument(
@@ -449,7 +470,8 @@ if __name__ == "__main__":
             args.jobs,
             args.corpus_dir,
             args.port,
-            args.download_public_corpus
+            args.download_public_corpus,
+            not args.no_coverage
         )
     elif args.command == "download-corpus":
         download_full_public_corpus(args.project)
