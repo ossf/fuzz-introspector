@@ -63,3 +63,24 @@ This way we were able to unblock the jsonnet fuzzer and increase the call tree c
 ![image4](https://user-images.githubusercontent.com/759062/165666703-c9ab3fde-4629-49db-bd2b-f2d6e4fc8b03.png)
 
 <p align="center">Figure 4: Fuzz target coverage for jsonnet after adding new targets</p>
+
+# [file](https://storage.googleapis.com/oss-fuzz-introspector/file/inspector-report/20220329/fuzz_report.html)
+Introspector report: [link](https://storage.googleapis.com/oss-fuzz-introspector/file/inspector-report/20220329/fuzz_report.html)
+
+[MWDB](https://github.com/CERT-Polska/mwdb-core) uses [file](https://github.com/file/file)
+on malware samples, which is [worrying](https://github.com/CERT-Polska/mwdb-core/issues/671) to say the least.
+
+After sending [a]( https://github.com/google/oss-fuzz/pull/8536)
+[couple of](https://github.com/google/oss-fuzz/pull/8535)
+[pull requests](https://github.com/google/oss-fuzz/pull/8533) to tackle the low-hanging fruits,
+the [Remaining optimal interesting
+functions](https://storage.googleapis.com/oss-fuzz-introspector/file/inspector-report/20220901/fuzz_report.html#Analyses-and-suggestions)
+section showed that an awful lot of functions in the `readelf.c` file weren't touched
+at all by the fuzzers.
+
+Looking at the [Fuzz blockers](https://storage.googleapis.com/oss-fuzz-introspector/file/inspector-report/20220901/fuzz_report.html#fuzz_blocker0),
+`file_tryelf` was likely the functions that should be called, and by checking out the
+[coverage of the relevant file](https://storage.googleapis.com/oss-fuzz-coverage/file/reports/20220901/linux/src/file/src/funcs.c.html#L421),
+the culprit was that `file` needs to be passed data via a proper file descriptor
+to exercise its elf-related codepath, and thus a file-based fuzzer was [promptly added](https://github.com/google/oss-fuzz/pull/8542),
+[bumping the coverage close to 90%]( https://storage.googleapis.com/oss-fuzz-introspector/file/inspector-report/20220930/fuzz_report.html ).
