@@ -73,7 +73,9 @@ def run_analysis_on_dir(
     logger.info("[+] Creating project profile")
     proj_profile = project_profile.MergedProjectProfile(profiles)
 
-    logger.info("[+] All coverage files %s"%(proj_profile.get_profiles_coverage_files()))
+    logger.info(
+        f"[+] All coverage files {proj_profile.get_profiles_coverage_files()}"
+    )
 
     logger.info("[+] Refining profiles")
     for profile in profiles:

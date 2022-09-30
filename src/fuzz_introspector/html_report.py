@@ -540,7 +540,6 @@ def create_fuzzer_detailed_section(
     color_list = create_horisontal_calltree_image(image_name, profile)
     html_string += f"<img class=\"colormap\" src=\"{image_name}\">"
 
-
     # At this point we want to ensure there is coverage in order to proceed.
     # If there is no code coverage then the remaining will be quite bloat
     # in that it's all dependent on code coverage. As such we exit early

@@ -60,7 +60,7 @@ class Analysis(analysis.AnalysisInterface):
 
         if not proj_profile.has_coverage_data():
             html_string += "<p>No runtime coverage data was found</p>"
-        else: # Some coverage was found
+        else:  # Some coverage was found
             functions_of_interest = self.get_low_cov_high_line_funcs(
                 profiles,
                 proj_profile,
