@@ -478,6 +478,7 @@ def create_top_summary_info(
 
 
 def create_fuzzer_detailed_section(
+    proj_profile: project_profile.MergedProjectProfile,
     profile: fuzzer_profile.FuzzerProfile,
     toc_list: List[Tuple[str, str, int]],
     tables: List[str],
@@ -538,6 +539,18 @@ def create_fuzzer_detailed_section(
 
     color_list = create_horisontal_calltree_image(image_name, profile)
     html_string += f"<img class=\"colormap\" src=\"{image_name}\">"
+
+    # At this point we want to ensure there is coverage in order to proceed.
+    # If there is no code coverage then the remaining will be quite bloat
+    # in that it's all dependent on code coverage. As such we exit early
+    # if there is none.
+    if not proj_profile.has_coverage_data():
+        html_string += (
+            "<p>The project has no code coverage. Will not display blockers "
+            "as blockers depend on code coverage.</p>"
+        )
+        return html_string
+
     color_dictionary = {
         "red": 0,
         "gold": 0,
@@ -707,6 +720,7 @@ def create_fuzzer_detailed_section(
         "Functions that are reachable but not covered",
         str(uncovered_reachable_funcs)
     )
+
     html_string += get_simple_box("Reachable functions", str(reachable_funcs))
     html_string += get_simple_box(
         "Percentage of reachable functions covered",
@@ -814,6 +828,21 @@ def create_html_report(
     conclusions: List[html_helpers.HTMLConclusion] = []
 
     logger.info(" - Creating HTML report")
+
+    if not proj_profile.has_coverage_data():
+        conclusions.append(
+            html_helpers.HTMLConclusion(
+                severity=0,
+                title="No coverage data was found",
+                description=(
+                    "No files with coverage data was found. This is either "
+                    "because an error occurred when compiling and running "
+                    "coverage runs, or because the introspector run was "
+                    "intentionally done without coverage collection. In order "
+                    "to get optimal results coverage data is needed."
+                )
+            )
+        )
 
     # Create html header, which will be used to assemble the doc at the
     # end of this function.
@@ -928,6 +957,7 @@ def create_html_report(
     html_report_core += "<div class=\"collapsible\">"
     for profile_idx in range(len(profiles)):
         html_report_core += create_fuzzer_detailed_section(
+            proj_profile,
             profiles[profile_idx],
             toc_list,
             tables,

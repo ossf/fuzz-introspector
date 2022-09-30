@@ -172,6 +172,17 @@ class MergedProjectProfile:
             unreached_percentage
         )
 
+    def get_profiles_coverage_files(self) -> List[str]:
+        all_coverage_files_used = list()
+        for profile in self.profiles:
+            if profile.coverage is None:
+                continue
+            all_coverage_files_used += profile.coverage.coverage_files
+        return all_coverage_files_used
+
+    def has_coverage_data(self) -> bool:
+        return len(self.get_profiles_coverage_files()) != 0
+
     def get_complexity_summaries(self) -> Tuple[int, int, int, float, float]:
         """Gets data points summarising cyclomatic complexity across the project,
         including total complexity, the amount of complexity that is statically

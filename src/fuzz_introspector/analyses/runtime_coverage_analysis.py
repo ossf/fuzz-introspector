@@ -49,13 +49,6 @@ class Analysis(analysis.AnalysisInterface):
     ) -> str:
         logger.info(f" - Running analysis {Analysis.get_name()}")
 
-        functions_of_interest = self.get_low_cov_high_line_funcs(
-            profiles,
-            proj_profile,
-            min_total_lines=30,
-            max_hit_proportion=55
-        )
-
         html_string = ""
         html_string += "<div class=\"report-box\">"
         html_string += html_helpers.html_add_header_with_link(
@@ -64,46 +57,58 @@ class Analysis(analysis.AnalysisInterface):
             toc_list
         )
         html_string += "<div class=\"collapsible\">"
-        html_string += "<p>This section shows analysis of runtime coverage data.</p> "
-        html_string += (
-            f"<p>For futher technical details on how this section is generated, please "
-            f"see the "
-            f"<a href=\"{constants.GIT_BRANCH_URL}/doc/Glossary.md#runtime"
-            f"-coverage-analysis\">Glossary</a>.</p>"
-        )
-        html_string += html_helpers.html_add_header_with_link(
-            "Complex functions with low coverage", 3, toc_list)
-        tables.append(f"myTable{len(tables)}")
-        html_string += html_helpers.html_create_table_head(
-            tables[-1],
-            [
-                ("Func name", ""),
-                ("Function total lines", ""),
-                ("Lines covered at runtime", ""),
-                ("percentage covered", ""),
-                ("Reached by fuzzers", "")
-            ]
-        )
 
-        for funcname in functions_of_interest:
-            logger.debug(f"Iterating the function {funcname}")
-            func_lines, hit_lines = proj_profile.runtime_coverage.get_hit_summary(funcname)
+        if not proj_profile.has_coverage_data():
+            html_string += "<p>No runtime coverage data was found</p>"
+        else:  # Some coverage was found
+            functions_of_interest = self.get_low_cov_high_line_funcs(
+                profiles,
+                proj_profile,
+                min_total_lines=30,
+                max_hit_proportion=55
+            )
 
-            if func_lines is None or hit_lines is None:
-                continue
+            html_string += "<p>This section shows analysis of runtime coverage data.</p> "
+            html_string += (
+                f"<p>For futher technical details on how this section is generated, please "
+                f"see the "
+                f"<a href=\"{constants.GIT_BRANCH_URL}/doc/Glossary.md#runtime"
+                f"-coverage-analysis\">Glossary</a>.</p>"
+            )
+            html_string += html_helpers.html_add_header_with_link(
+                "Complex functions with low coverage", 3, toc_list)
+            tables.append(f"myTable{len(tables)}")
+            html_string += html_helpers.html_create_table_head(
+                tables[-1],
+                [
+                    ("Func name", ""),
+                    ("Function total lines", ""),
+                    ("Lines covered at runtime", ""),
+                    ("percentage covered", ""),
+                    ("Reached by fuzzers", "")
+                ]
+            )
 
-            if funcname in proj_profile.all_functions:
-                reached_by = str(proj_profile.all_functions[funcname].reached_by_fuzzers)
-            else:
-                reached_by = ""
-            html_string += html_helpers.html_table_add_row([
-                utils.demangle_cpp_func(funcname),
-                func_lines,
-                hit_lines,
-                "%.5s%%" % (str((hit_lines / func_lines) * 100.0)),
-                reached_by
-            ])
-        html_string += "</table>"
+            for funcname in functions_of_interest:
+                logger.debug(f"Iterating the function {funcname}")
+                func_lines, hit_lines = proj_profile.runtime_coverage.get_hit_summary(funcname)
+
+                if func_lines is None or hit_lines is None:
+                    continue
+
+                if funcname in proj_profile.all_functions:
+                    reached_by = str(proj_profile.all_functions[funcname].reached_by_fuzzers)
+                else:
+                    reached_by = ""
+                html_string += html_helpers.html_table_add_row([
+                    utils.demangle_cpp_func(funcname),
+                    func_lines,
+                    hit_lines,
+                    "%.5s%%" % (str((hit_lines / func_lines) * 100.0)),
+                    reached_by
+                ])
+            html_string += "</table>"
+
         html_string += "</div>"  # .collapsible
         html_string += "</div>"  # report-box
 
