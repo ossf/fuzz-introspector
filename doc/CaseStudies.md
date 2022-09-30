@@ -75,7 +75,7 @@ After sending [a]( https://github.com/google/oss-fuzz/pull/8536)
 [pull requests](https://github.com/google/oss-fuzz/pull/8533) to tackle the low-hanging fruits,
 the [Remaining optimal interesting
 functions](https://storage.googleapis.com/oss-fuzz-introspector/file/inspector-report/20220901/fuzz_report.html#Analyses-and-suggestions)
-section showed that am awful lot of functions in the `readelf.c` file weren't touched
+section showed that an awful lot of functions in the `readelf.c` file weren't touched
 at all by the fuzzers.
 
 Looking at the [Fuzz blockers](https://storage.googleapis.com/oss-fuzz-introspector/file/inspector-report/20220901/fuzz_report.html#fuzz_blocker0),
