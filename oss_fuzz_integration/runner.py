@@ -24,6 +24,44 @@ import shutil
 from typing import Optional
 
 
+def download_public_corpus(
+    project_name,
+    fuzzer_name,
+    target_zip
+):
+    OSS_FUZZ_PUBLIC_CORPUS = "https://storage.googleapis.com/%s-backup.clusterfuzz-external.appspot.com/corpus/libFuzzer/%s_%s/public.zip"
+    download_url = OSS_FUZZ_PUBLIC_CORPUS % (project_name, project_name, fuzzer_name)
+
+    cmd = f"wget {download_url}"
+    if target_zip:
+        cmd += f" -O {target_zip}"
+
+    subprocess.check_call(cmd, shell=True)
+
+
+def download_full_public_corpus(project_name, target_corpus_dir: None):
+    # First build the project which we use to identify fuzzers
+    build_project(project_name, to_clean = True)
+
+    fuzzers = get_fuzzers(project_name)
+    for fuzzer in fuzzers:
+        download_public_corpus(project_name, fuzzer, f"corpus-{project_name}-{fuzzer}.zip")
+
+    if not target_corpus_dir:
+        target_corpus_dir = "mycorpus"
+
+    if not os.path.isdir(target_corpus_dir):
+        os.mkdir(target_corpus_dir)
+
+    for fuzzer in fuzzers:
+        target_fuzzer_dir = os.path.join(target_corpus_dir, fuzzer)
+        if not os.path.isdir(target_fuzzer_dir):
+            os.mkdir(target_fuzzer_dir)
+
+        target_zip = f"corpus-{project_name}-{fuzzer}.zip"
+        subprocess.check_call(f"unzip {target_zip} -d {target_fuzzer_dir}/", shell=True)
+
+
 def build_project(
     project_name,
     sanitizer = None,
@@ -219,13 +257,28 @@ def get_coverage(project_name, corpus_dir):
     print("Finished")
 
 
+def setup_next_corpus_dir(project_name):
+    fuzzer_names = get_fuzzers(project_name)
+    corpus_dir = get_next_corpus_dir()
+    if not os.path.isdir(corpus_dir):
+        os.mkdir(corpus_dir)
+
+    return corpus_dir
+
+
 def complete_coverage_check(
     project_name: str,
     fuzztime: int,
     job_count: int,
-    corpus_dir: Optional[str]
+    corpus_dir: Optional[str],
+    download_public_corpus: bool
 ):
     build_project(project_name, to_clean=True)
+
+    if download_public_corpus:
+        corpus_dir = setup_next_corpus_dir(project_name)
+        download_full_public_corpus(project_name, corpus_dir)
+
     run_all_fuzzers(project_name, fuzztime, job_count, corpus_dir)
     build_project(project_name, sanitizer="coverage")
     percent = get_coverage(project_name, corpus_dir)
@@ -237,9 +290,10 @@ def introspector_run(
     fuzztime: int,
     job_count: int,
     corpus_dir: Optional[str],
-    port: int
+    port: int,
+    download_public_corpus: bool
 ):
-    complete_coverage_check(project_name, fuzztime, job_count, corpus_dir)
+    complete_coverage_check(project_name, fuzztime, job_count, corpus_dir, download_public_corpus)
     
     # Build sanitizers with introspector
     build_project(project_name, sanitizer="introspector") 
@@ -321,6 +375,12 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
         help="directory with corpus for the project",
         default=None
     )
+    coverage_parser.add_argument(
+        "--download-public-corpus",
+        action="store_true",
+        help="if set, will download public corpus",
+        default=False
+    )
 
     introspector_parser = subparsers.add_parser("introspector")
     introspector_parser.add_argument(
@@ -351,6 +411,18 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
         type=int,
         default=8008
     )
+    introspector_parser.add_argument(
+        "--download-public-corpus",
+        action="store_true",
+        help="if set, will download public corpus",
+        default=False
+    )
+
+    download_corpus_parser = subparsers.add_parser("download-corpus")
+    download_corpus_parser.add_argument(
+        "project",
+        help="name of project"
+    )
     return parser
 
 if __name__ == "__main__":
@@ -362,7 +434,22 @@ if __name__ == "__main__":
         print("  project = %s"%(args.project))
         print("  fuzztime = %d"%(args.fuzztime))
         print("  jobs = %d"%(args.jobs))
-        complete_coverage_check(args.project, args.fuzztime, args.jobs, args.corpus_dir)
+        complete_coverage_check(
+            args.project,
+            args.fuzztime,
+            args.jobs,
+            args.corpus_dir,
+            args.download_public_corpus
+        )
     elif args.command == "introspector":
         print("Running full")
-        introspector_run(args.project, args.fuzztime, args.jobs, args.corpus_dir, args.port)
+        introspector_run(
+            args.project,
+            args.fuzztime,
+            args.jobs,
+            args.corpus_dir,
+            args.port,
+            args.download_public_corpus
+        )
+    elif args.command == "download-corpus":
+        download_full_public_corpus(args.project)
