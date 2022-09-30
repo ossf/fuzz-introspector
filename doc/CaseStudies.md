@@ -82,5 +82,5 @@ Looking at the [Fuzz blockers](https://storage.googleapis.com/oss-fuzz-introspec
 `file_tryelf` was likely the functions that should be called, and by checking out the
 [coverage of the relevant file](https://storage.googleapis.com/oss-fuzz-coverage/file/reports/20220901/linux/src/file/src/funcs.c.html#L421),
 the culprit was that `file` needs to be passed data via a proper file descriptor
-to exercise its elf-related codepath, and thus a file-based fuzzer was [prompty added](https://github.com/google/oss-fuzz/pull/8542),
+to exercise its elf-related codepath, and thus a file-based fuzzer was [promptly added](https://github.com/google/oss-fuzz/pull/8542),
 [bumping the coverage close to 90%]( https://storage.googleapis.com/oss-fuzz-introspector/file/inspector-report/20220930/fuzz_report.html ).
