@@ -334,7 +334,11 @@ def load_llvm_coverage(
                                     "M", "0000").replace(
                                         ".", ""))
                     except Exception:
-                        hit_times = 0
+                        # Avoid overcounting the code lines by skipping comments and empty lines.
+                        if " 0| " in line:
+                            hit_times = 0
+                        else:
+                            continue
                     # Add source code line and hitcount to coverage map of current function
                     logger.debug(f"reading coverage: {curr_func} "
                                  f"-- {line_number} -- {hit_times}")
