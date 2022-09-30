@@ -478,7 +478,7 @@ def create_top_summary_info(
 
 
 def create_fuzzer_detailed_section(
-    proj_profile,
+    proj_profile: project_profile.MergedProjectProfile,
     profile: fuzzer_profile.FuzzerProfile,
     toc_list: List[Tuple[str, str, int]],
     tables: List[str],
