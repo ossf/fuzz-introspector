@@ -366,7 +366,11 @@ def load_python_json_coverage(
 
     if len(coverage_reports) > 0:
         json_file = coverage_reports[0]
+    else:
+        logger.info("Found no coverage files")
+        return cp
 
+    cp.coverage_files.append(json_file)
     with open(json_file, "r") as f:
         data = json.load(f)
 
