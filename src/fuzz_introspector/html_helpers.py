@@ -168,7 +168,7 @@ def html_get_table_of_contents(
     if proj_profile.target_lang != "python":
         html_toc_string += f"{per_fuzzer_coverage_button}"
 
-    html_toc_string += f"""</div>
+    html_toc_string += """</div>
                             <div class="left-sidebar-content-box">\
                                 <h2 style="margin-top:0px">Table of contents</h2>"""
     for k, v, d in toc_list:
