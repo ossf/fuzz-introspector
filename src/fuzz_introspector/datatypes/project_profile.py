@@ -24,6 +24,7 @@ from typing import (
 
 from fuzz_introspector import code_coverage
 from fuzz_introspector import utils
+from fuzz_introspector import exceptions
 from fuzz_introspector.datatypes import function_profile, fuzzer_profile
 
 logger = logging.getLogger(name=__name__)
@@ -171,6 +172,18 @@ class MergedProjectProfile:
             reached_percentage,
             unreached_percentage
         )
+
+    @property
+    def target_lang(self):
+        """Language the fuzzers are written in"""
+        set_of_targets = set()
+        for profile in self.profiles:
+            set_of_targets.add(profile.target_lang)
+        if len(set_of_targets) > 1:
+            raise exceptions.AnalysisError(
+                "Project has fuzzers with multiple targets"
+            )
+        return set_of_targets.pop()
 
     def get_profiles_coverage_files(self) -> List[str]:
         all_coverage_files_used = list()

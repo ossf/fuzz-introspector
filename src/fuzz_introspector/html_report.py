@@ -1044,7 +1044,12 @@ def create_html_report(
     ###########################
     # Fix up table of contents.
     ###########################
-    html_toc_string = html_helpers.html_get_table_of_contents(toc_list, coverage_url, profiles)
+    html_toc_string = html_helpers.html_get_table_of_contents(
+        toc_list,
+        coverage_url,
+        profiles,
+        proj_profile
+    )
 
     # Assemble the final HTML report and write it to a file.
     html_full_doc = (html_header

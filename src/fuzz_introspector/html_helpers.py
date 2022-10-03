@@ -22,7 +22,7 @@ from typing import (
 )
 
 from fuzz_introspector import utils
-from fuzz_introspector.datatypes import fuzzer_profile
+from fuzz_introspector.datatypes import fuzzer_profile, project_profile
 
 
 class HTMLConclusion:
@@ -143,8 +143,14 @@ def create_pfc_button(
 def html_get_table_of_contents(
         toc_list: List[Tuple[str, str, int]],
         coverage_url: str,
-        profiles: List[fuzzer_profile.FuzzerProfile]) -> str:
+        profiles: List[fuzzer_profile.FuzzerProfile],
+        proj_profile: project_profile.MergedProjectProfile) -> str:
     per_fuzzer_coverage_button = create_pfc_button(profiles, coverage_url)
+
+    if proj_profile.target_lang == "python":
+        cov_index = "index.html"
+    else:
+        cov_index = "report.html"
     html_toc_string = ""
     html_toc_string += f"""<div class="left-sidebar">\
                             <div class="left-sidebar-content-box"
@@ -152,14 +158,17 @@ def html_get_table_of_contents(
                                  padding: 0 20px; margin-top: 30px">
                                 <div class="yellow-button-wrapper"
                                     style="position: relative; margin: 30px 0 5px 0">
-                                    <a href="{coverage_url}/report.html">
+                                    <a href="{coverage_url}/{cov_index}">
                                         <div class="yellow-button">
                                             Project coverage
                                         </div>
                                     </a>
                                 </div>
-                                {per_fuzzer_coverage_button}
-                            </div>
+                        """
+    if proj_profile.target_lang != "python":
+        html_toc_string += f"{per_fuzzer_coverage_button}"
+
+    html_toc_string += """</div>
                             <div class="left-sidebar-content-box">\
                                 <h2 style="margin-top:0px">Table of contents</h2>"""
     for k, v, d in toc_list:
