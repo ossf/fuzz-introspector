@@ -104,8 +104,11 @@ class FuzzerProfile:
                 return True
             else:
                 return False
+
         if self.target_lang == "python":
-            return self.entrypoint_function != None
+            return self.entrypoint_function is not None
+
+        return False
 
     def func_is_entrypoint(self, demangled_func_name: str) -> bool:
         if (
