@@ -57,13 +57,13 @@ def read_fuzzer_data_file_to_profile(
     if data_dict_yaml is None or not isinstance(data_dict_yaml, dict):
         return None
 
-    fuzzer_profile = fuzzer_profile.FuzzerProfile(cfg_file, data_dict_yaml, language)
+    profile = fuzzer_profile.FuzzerProfile(cfg_file, data_dict_yaml, language)
 
-    if not fuzzer_profile.has_entry_point():
+    if not profile.has_entry_point():
         logger.info("Found no entrypoints")
         return None
 
-    return fuzzer_profile
+    return profile
 
 
 def add_func_to_reached_and_clone(
