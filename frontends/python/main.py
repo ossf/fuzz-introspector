@@ -99,6 +99,7 @@ def run_fuzz_pass(
     cg.analyze()
     formatter = formats.Fuzz(cg)
     cg_extended = formatter.generate()
+    logger.info("The entrypoints: %s"%(cg_extended['entrypoints']))
 
     if should_debug():
         logger.info("Printing extended cg")
@@ -181,6 +182,11 @@ def convert_cg_to_introspector_data(cg_extended, fuzzer_filename):
     new_dict['All functions'] = dict()
     new_dict['All functions']['Function list name'] = "All functions"
     new_dict['All functions']['Elements'] = []
+
+    if "ep" in cg_extended:
+        new_dict['ep'] = dict()
+        new_dict['ep']['func_name'] = cg_extended['ep']['name']
+        new_dict['ep']['module'] = cg_extended['ep']['mod']
 
     # TODO: do the implementation necessary to carry these out.
     for elem in cg_extended['cg']:
