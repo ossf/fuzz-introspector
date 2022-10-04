@@ -181,6 +181,9 @@ def convert_cg_to_introspector_data(cg_extended, fuzzer_filename):
     new_dict['All functions'] = dict()
     new_dict['All functions']['Function list name'] = "All functions"
     new_dict['All functions']['Elements'] = []
+    new_dict['Function coverage'] = dict()
+    for elem in cg_extended['function_lines']:
+        new_dict['Function coverage'][elem] = list(cg_extended['function_lines'][elem])
 
     if "ep" in cg_extended:
         new_dict['ep'] = dict()
