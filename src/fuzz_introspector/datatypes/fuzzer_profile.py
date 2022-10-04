@@ -92,6 +92,9 @@ class FuzzerProfile:
         if self.binary_executable != "":
             return os.path.basename(self.binary_executable)
 
+        if self._target_lang == "python":
+            return os.path.basename(self.fuzzer_source_file).replace(".py", "")
+
         return self.fuzzer_source_file
 
     def func_is_entrypoint(self, demangled_func_name: str) -> bool:
