@@ -84,7 +84,6 @@ class FuzzerProfile:
         if self.target_lang == "c-cpp":
             return "LLVMFuzzerTestOneInput"
         if self.target_lang == "python":
-            logger.info("Returning: %s"%(self.entrypoint_fun))
             return self.entrypoint_fun
 
     @property
@@ -340,15 +339,12 @@ class FuzzerProfile:
 
         # Find Python entrypoint
         if self._target_lang == "python":
-            ep_key = "%s.%s"%(
-                self.entrypoint_mod,
-                self.entrypoint_fun
-            )
+            ep_key = f"{self.entrypoint_mod}.{self.entrypoint_fun}"
             reached = self.all_class_functions[ep_key].functions_reached
             self.functions_reached_by_fuzzer = reached
             return
 
-        raise exceptions.DataLoaderError("Can not identify entrypoint")
+        raise DataLoaderError("Can not identify entrypoint")
 
     def _set_all_unreached_functions(self) -> None:
         """Sets self.functions_unreached_by_fuzzer to all functions that are
