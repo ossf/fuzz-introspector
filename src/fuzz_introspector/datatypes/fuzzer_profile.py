@@ -65,6 +65,12 @@ class FuzzerProfile:
             self.fuzzer_source_file: str = frontend_yaml['Fuzzer filename']
         except KeyError:
             raise DataLoaderError("Fuzzer filename not in loaded yaml")
+
+        # Read entrypoint of fuzzer if this is a Python module
+        if target_lang == "python":
+            self.entrypoint_fun = frontend_yaml['ep']['func_name']
+            self.entrypoint_mod = frontend_yaml['ep']['module']
+
         self._set_function_list(frontend_yaml)
 
     @property
@@ -78,9 +84,7 @@ class FuzzerProfile:
         if self.target_lang == "c-cpp":
             return "LLVMFuzzerTestOneInput"
         if self.target_lang == "python":
-            # TODO: fix this to be actual logic that determines
-            # the entrypoint
-            return "TestOneInput"
+            return self.entrypoint_fun
 
     @property
     def identifier(self):
@@ -334,14 +338,13 @@ class FuzzerProfile:
             return
 
         # Find Python entrypoint
-        for func_name in self.all_class_functions:
-            if "TestOneInput" in func_name:
-                reached = self.all_class_functions[func_name].functions_reached
-                self.functions_reached_by_fuzzer = reached
-                return
+        if self._target_lang == "python":
+            ep_key = f"{self.entrypoint_mod}.{self.entrypoint_fun}"
+            reached = self.all_class_functions[ep_key].functions_reached
+            self.functions_reached_by_fuzzer = reached
+            return
 
-        # TODO: make fuzz-introspector exceptions
-        raise Exception
+        raise DataLoaderError("Can not identify entrypoint")
 
     def _set_all_unreached_functions(self) -> None:
         """Sets self.functions_unreached_by_fuzzer to all functions that are

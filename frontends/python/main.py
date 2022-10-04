@@ -182,6 +182,11 @@ def convert_cg_to_introspector_data(cg_extended, fuzzer_filename):
     new_dict['All functions']['Function list name'] = "All functions"
     new_dict['All functions']['Elements'] = []
 
+    if "ep" in cg_extended:
+        new_dict['ep'] = dict()
+        new_dict['ep']['func_name'] = cg_extended['ep']['name']
+        new_dict['ep']['module'] = cg_extended['ep']['mod']
+
     # TODO: do the implementation necessary to carry these out.
     for elem in cg_extended['cg']:
         elem_dict = cg_extended['cg'][elem]
