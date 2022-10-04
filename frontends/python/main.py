@@ -99,7 +99,6 @@ def run_fuzz_pass(
     cg.analyze()
     formatter = formats.Fuzz(cg)
     cg_extended = formatter.generate()
-    logger.info("The entrypoints: %s"%(cg_extended['entrypoints']))
 
     if should_debug():
         logger.info("Printing extended cg")
