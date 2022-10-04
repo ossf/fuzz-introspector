@@ -97,6 +97,19 @@ class FuzzerProfile:
 
         return self.fuzzer_source_file
 
+    def has_entry_point(self) -> bool:
+        """Returns whether an entrypoint is identified"""
+        if self.target_lang == "c-cpp":
+            if "LLVMFuzzerTestOneInput" in self.all_class_functions:
+                return True
+            else:
+                return False
+
+        if self.target_lang == "python":
+            return self.entrypoint_function is not None
+
+        return False
+
     def func_is_entrypoint(self, demangled_func_name: str) -> bool:
         if (
             demangled_func_name != self.entrypoint_function

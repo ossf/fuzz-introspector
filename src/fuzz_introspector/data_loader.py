@@ -57,20 +57,13 @@ def read_fuzzer_data_file_to_profile(
     if data_dict_yaml is None or not isinstance(data_dict_yaml, dict):
         return None
 
-    FP = fuzzer_profile.FuzzerProfile(cfg_file, data_dict_yaml, language)
+    profile = fuzzer_profile.FuzzerProfile(cfg_file, data_dict_yaml, language)
 
-    # Check we have a valid entrypoint
-    if "LLVMFuzzerTestOneInput" in FP.all_class_functions:
-        return FP
+    if not profile.has_entry_point():
+        logger.info("Found no entrypoints")
+        return None
 
-    # Check for python fuzzers. The following assumes the entrypoint
-    # currently has "TestOneInput" int its name
-    for name in FP.all_class_functions:
-        if "TestOneInput" in name:
-            return FP
-
-    logger.info("Found no fuzzer entrypoints")
-    return None
+    return profile
 
 
 def add_func_to_reached_and_clone(
