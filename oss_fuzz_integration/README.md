@@ -29,7 +29,7 @@ From within this directory, run the commands:
 
 # Test a project
 cd oss-fuzz
-python3 ../manager.py introspector htslib 20
+python3 ../runner.py introspector htslib 20
 ```
 
 This will download OSS-Fuzz, pulls introspector images and tag them accordingly.
@@ -46,7 +46,7 @@ a complete run of the introspector, including with coverage analysis.
 
 # Test a project
 cd oss-fuzz
-python3 ../manager.py introspector htslib 20
+python3 ../runner.py introspector htslib 20
 ```
 
 You can access the report by navigating to `http://localhost:8008/fuzz_report.html`
@@ -59,7 +59,7 @@ This will build all images base images from scratch, and have all fuzz introspec
 ./build_all_custom_images.sh
 
 cd oss-fuzz
-python3 ../manager.py introspector htslib 30
+python3 ../runner.py introspector htslib 30
 ...
 ```
 
