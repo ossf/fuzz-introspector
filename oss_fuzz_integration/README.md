@@ -29,7 +29,7 @@ From within this directory, run the commands:
 
 # Test a project
 cd oss-fuzz
-python3 ../manager.py introspector htslib 20
+python3 ../runner.py introspector htslib 20
 ```
 
 This will download OSS-Fuzz, pulls introspector images and tag them accordingly.
