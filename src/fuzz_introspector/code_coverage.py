@@ -52,6 +52,7 @@ class CoverageProfile:
         self.branch_cov_map: Dict[str, Tuple[int, int]] = dict()
         self._cov_type = ""
         self.coverage_files: List[str] = []
+        self.dual_file_map: Dict[str, Dict[str, List[int]]] = dict()
 
     def set_type(self, cov_type: str) -> None:
         self._cov_type = cov_type
@@ -168,6 +169,118 @@ class CoverageProfile:
         if fuzz_key is None or fuzz_key not in self.covmap:
             return []
         return self.covmap[fuzz_key]
+
+    def _python_ast_funcname_to_cov_file(
+        self,
+        function_name
+    ) -> Optional[str]:
+        function_name = function_name.replace("......", "")
+
+        target_file = function_name
+
+        # Resolve name if required. This is needed to normalise filenames.
+        logger.info("Resolving name")
+        splits = target_file.split(".")
+        potentials = []
+        curr = ""
+        found_key = ""
+        for s2 in splits:
+            curr += s2
+            potentials.append(curr + ".py")
+            curr += "/"
+        logger.info(f"Potentials: {str(potentials)}")
+        for potential_key in self.file_map:
+            logger.info(f"Scanning {str(potential_key)}")
+            for p in potentials:
+                if potential_key.endswith(p):
+                    found_key = potential_key
+                    break
+        logger.info(f"Found key: {str(found_key)}")
+        if found_key == "":
+            logger.info("Could not find key")
+            return None
+
+        target_key = found_key
+
+        return target_key
+
+    def correlate_python_functions_with_coverage(
+        self,
+        function_list,
+    ) -> None:
+
+        logger.info("Correlating")
+        # For each function identified in the ast identify the file
+        # where it resides in with respect to the filepaths from the
+        # coverage collection. Store this including the linumber
+        # of the function definition.
+        file_and_function_mappings: Dict[str, List[Tuple[str, int]]] = dict()
+        for func_key in function_list:
+            func = function_list[func_key]
+            function_name = func.function_name
+            function_line = func.function_linenumber
+
+            logger.debug(f"Correlated init: {function_name} ---- {function_line}")
+            cov_file = self._python_ast_funcname_to_cov_file(function_name)
+            if cov_file is None:
+                continue
+
+            # Return False if file is not in file_map
+            if cov_file not in self.file_map:
+                logger.debug("Target key is not in file_map")
+                continue
+
+            if cov_file not in file_and_function_mappings:
+                file_and_function_mappings[cov_file] = []
+
+            file_and_function_mappings[cov_file].append(
+                (function_name, function_line)
+            )
+
+        # Sort function and lines numbers for each coverage file.
+        # Store in function_internals.
+        logger.debug("Function intervals")
+        function_internals: Dict[str, List[Tuple[str, int, int]]] = dict()
+        for cov_file, function_specs in file_and_function_mappings.items():
+            sorted_func_specs = list(sorted(function_specs, key=lambda x: x[1]))
+
+            function_internals[cov_file] = []
+            for i in range(len(sorted_func_specs)):
+                fname, fstart = sorted_func_specs[i]
+                # Get next function lineno to identify boundary
+                if i < len(sorted_func_specs) - 1:
+                    fnext_name, fnext_start = sorted_func_specs[i + 1]
+                    function_internals[cov_file].append(
+                        (fname, fstart, fnext_start - 1)
+                    )
+                else:
+                    # Last function identified by end lineno being -1
+                    function_internals[cov_file].append((fname, fstart, -1))
+
+        # Map the source codes of each line with coverage information.
+        # Store the result in covmap to be compatible with other languages.
+        for filename in function_internals:
+            logger.debug(f"Filename: {filename}")
+            for fname, fstart, fend in function_internals[filename]:
+                logger.debug(f"--- {fname} ::: {fstart} ::: {fend}")
+                if fname not in self.covmap:
+                    self.covmap[fname] = []
+
+                # If we have the file in dual_file_map identify the
+                # executed vs non-executed lines and store in covmap.
+                if filename not in self.dual_file_map:
+                    continue
+
+                # Create the covmap
+                for exec_line in self.dual_file_map[filename]['executed_lines']:
+                    if exec_line > fstart and exec_line < fend:
+                        logger.debug(f"E: {exec_line}")
+                        self.covmap[fname].append((exec_line, 1000))
+                for non_exec_line in self.dual_file_map[filename]['missing_lines']:
+                    if non_exec_line > fstart and non_exec_line < fend:
+                        logger.debug(f"N: {non_exec_line}")
+                        self.covmap[fname].append((non_exec_line, 0))
+        return
 
     def get_hit_summary(
         self,
@@ -383,6 +496,9 @@ def load_python_json_coverage(
             prefixed_entry = prefixed_entry.replace("/medio", "")
             cov_entry = prefixed_entry
         cp.file_map[cov_entry] = data['files'][entry]['executed_lines']
+        cp.dual_file_map[cov_entry] = dict()
+        cp.dual_file_map[cov_entry]['executed_lines'] = data['files'][entry]['executed_lines']
+        cp.dual_file_map[cov_entry]['missing_lines'] = data['files'][entry]['missing_lines']
 
     return cp
 
