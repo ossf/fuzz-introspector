@@ -210,20 +210,24 @@ class CoverageProfile:
     ) -> None:
 
         logger.info("Correlating")
-        file_and_function_mappings = dict()
+        # For each function identified in the ast identify the file
+        # where it resides in with respect to the filepaths from the
+        # coverage collection. Store this including the linumber
+        # of the function definition.
+        file_and_function_mappings: Dict[str, List[Tuple[str, int]]] = dict()
         for func_key in function_list:
             func = function_list[func_key]
             function_name = func.function_name
             function_line = func.function_linenumber
 
-            logger.info(f"Correlated init: {function_name} ---- {function_line}")
+            logger.debug(f"Correlated init: {function_name} ---- {function_line}")
             target_key = self._python_ast_funcname_to_cov_file(function_name)
             if target_key is None:
                 continue
 
             # Return False if file is not in file_map
             if target_key not in self.file_map:
-                logger.info("Target key is not in file_map")
+                logger.debug("Target key is not in file_map")
                 continue
 
             if target_key not in file_and_function_mappings:
@@ -231,39 +235,42 @@ class CoverageProfile:
 
             file_and_function_mappings[target_key].append((function_name, function_line))
 
-        # Generate covmap
-        logger.info("Function intervals:")
+        # Identify the lines of code occupied by each function in each file.
+        logger.debug("Function intervals")
         function_internals = dict()
         for k in file_and_function_mappings:
             function_internals[k] = []
-            sorted_funcs = list(sorted(file_and_function_mappings[k], key=lambda x:x[1]))
+            sorted_funcs = list(sorted(file_and_function_mappings[k], key=lambda x: x[1]))
 
             for i in range(len(sorted_funcs)):
                 fname, fstart = sorted_funcs[i]
-                if i < len(sorted_funcs)-1:
-                    fnext_name, fnext_start = sorted_funcs[i+1]
-                    function_internals[k].append((fname, fstart, fnext_start-1))
+                if i < len(sorted_funcs) - 1:
+                    fnext_name, fnext_start = sorted_funcs[i + 1]
+                    function_internals[k].append((fname, fstart, fnext_start - 1))
                 else:
                     function_internals[k].append((fname, fstart, -1))
 
+        # Map the source codes of each line with coverage information.
+        # Store the result in covmap to be compatible with other languages.
         for filename in function_internals:
-            logger.info(f"Filename: {filename}")
+            logger.debug(f"Filename: {filename}")
             for fname, fstart, fend in function_internals[filename]:
-                logger.info(f"--- {fname} ::: {fstart} ::: {fend}")
+                logger.debug(f"--- {fname} ::: {fstart} ::: {fend}")
                 if fname not in self.covmap:
                     self.covmap[fname] = []
+                # If we have the file in dual_file_map identify the
+                # executed vs non-executed lines and store in covmap.
                 if filename in self.dual_file_map:
-                    logger.info("It's in dual file map")
                     for exec_line in self.dual_file_map[filename]['executed_lines']:
                         if exec_line > fstart and exec_line < fend:
-                            logger.info(f"E: {exec_line}")
+                            logger.debug(f"E: {exec_line}")
                             self.covmap[fname].append((exec_line, 1000))
                     for non_exec_line in self.dual_file_map[filename]['missing_lines']:
                         if non_exec_line > fstart and non_exec_line < fend:
-                            logger.info(f"N: {non_exec_line}")
+                            logger.debug(f"N: {non_exec_line}")
                             self.covmap[fname].append((non_exec_line, 0))
                 else:
-                    logger.info("It's not in dual file map")
+                    logger.debug("It's not in dual file map")
         return
 
     def get_hit_summary(

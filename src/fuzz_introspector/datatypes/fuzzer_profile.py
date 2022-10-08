@@ -372,7 +372,10 @@ class FuzzerProfile:
             self.coverage = code_coverage.load_python_json_coverage(
                 target_folder
             )
-            self.coverage.correlate_python_functions_with_coverage(self.all_class_functions)
+            if self.coverage is not None:
+                self.coverage.correlate_python_functions_with_coverage(
+                    self.all_class_functions
+                )
         else:
             raise DataLoaderError(
                 "The profile target has no coverage loading support"
