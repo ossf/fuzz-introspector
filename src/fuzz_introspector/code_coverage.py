@@ -52,7 +52,7 @@ class CoverageProfile:
         self.branch_cov_map: Dict[str, Tuple[int, int]] = dict()
         self._cov_type = ""
         self.coverage_files: List[str] = []
-        self.dual_file_map = dict()
+        self.dual_file_map: Dict[str:  Dict[str, List[int]]]= dict()
 
     def set_type(self, cov_type: str) -> None:
         self._cov_type = cov_type
@@ -237,7 +237,7 @@ class CoverageProfile:
 
         # Identify the lines of code occupied by each function in each file.
         logger.debug("Function intervals")
-        function_internals = dict()
+        function_internals: Dict[str, List[Tuple[str, int, int]]] = dict()
         for k in file_and_function_mappings:
             function_internals[k] = []
             sorted_funcs = list(sorted(file_and_function_mappings[k], key=lambda x: x[1]))
