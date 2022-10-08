@@ -52,7 +52,7 @@ class CoverageProfile:
         self.branch_cov_map: Dict[str, Tuple[int, int]] = dict()
         self._cov_type = ""
         self.coverage_files: List[str] = []
-        self.dual_file_map: Dict[str:  Dict[str, List[int]]]= dict()
+        self.dual_file_map: Dict[str, Dict[str, List[int]]] = dict()
 
     def set_type(self, cov_type: str) -> None:
         self._cov_type = cov_type
