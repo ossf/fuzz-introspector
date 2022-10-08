@@ -52,9 +52,7 @@ class CoverageProfile:
         self.branch_cov_map: Dict[str, Tuple[int, int]] = dict()
         self._cov_type = ""
         self.coverage_files: List[str] = []
-        self.file_and_function_mappings = dict()
         self.dual_file_map = dict()
-        self.target_lang = ""
 
     def set_type(self, cov_type: str) -> None:
         self._cov_type = cov_type
@@ -172,79 +170,78 @@ class CoverageProfile:
             return []
         return self.covmap[fuzz_key]
 
+    def _python_ast_funcname_to_cov_file(
+        self,
+        function_name
+    ) -> Optional[str]:
+        function_name = function_name.replace("......", "")
+
+        target_file = function_name
+
+        # Resolve name if required. This is needed to normalise filenames.
+        logger.info("Resolving name")
+        splits = target_file.split(".")
+        potentials = []
+        curr = ""
+        found_key = ""
+        for s2 in splits:
+            curr += s2
+            potentials.append(curr + ".py")
+            curr += "/"
+        logger.info(f"Potentials: {str(potentials)}")
+        for potential_key in self.file_map:
+            logger.info(f"Scanning {str(potential_key)}")
+            for p in potentials:
+                if potential_key.endswith(p):
+                    found_key = potential_key
+                    break
+        logger.info(f"Found key: {str(found_key)}")
+        if found_key == "":
+            logger.info("Could not find key")
+            return None
+
+        target_key = found_key
+
+        return target_key
+
     def correlate_python_functions_with_coverage(
         self,
         function_list,
     ) -> None:
 
         logger.info("Correlating")
+        file_and_function_mappings = dict()
         for func_key in function_list:
             func = function_list[func_key]
             function_name = func.function_name
             function_line = func.function_linenumber
 
-            function_name = function_name.replace("......", "")
-
             logger.info(f"Correlated init: {function_name} ---- {function_line}")
-            target_file = function_name
-
-            # Resolve name if required. This is needed to normalise filenames.
-            logger.info("Resolving name")
-            splits = target_file.split(".")
-            potentials = []
-            curr = ""
-            found_key = ""
-            for s2 in splits:
-                curr += s2
-                potentials.append(curr + ".py")
-                curr += "/"
-            logger.info(f"Potentials: {str(potentials)}")
-            for potential_key in self.file_map:
-                logger.info(f"Scanning {str(potential_key)}")
-                for p in potentials:
-                    if potential_key.endswith(p):
-                        found_key = potential_key
-                        break
-            logger.info(f"Found key: {str(found_key)}")
-            if found_key == "":
-                logger.info("Could not find key")
+            target_key = self._python_ast_funcname_to_cov_file(function_name)
+            if target_key is None:
                 continue
-
-            target_key = found_key
 
             # Return False if file is not in file_map
             if target_key not in self.file_map:
                 logger.info("Target key is not in file_map")
                 continue
 
-            if target_key not in self.file_and_function_mappings:
-                self.file_and_function_mappings[target_key] = []
+            if target_key not in file_and_function_mappings:
+                file_and_function_mappings[target_key] = []
 
-            self.file_and_function_mappings[target_key].append((function_name, function_line))
-
-        logger.info("self.file_and_function_mappings")
-        for k in self.file_and_function_mappings:
-            logger.info(f"Key: {k}")
-            for f,l in self.file_and_function_mappings[k]:
-                logger.info(f"--- {f} : {l}")
-
-        logger.info("Coverage entries:")
-        for cov_entry in self.dual_file_map:
-            logger.info(f"cov_entry: {cov_entry}")
-            logger.info(f"--- {self.dual_file_map[cov_entry]}")
+            file_and_function_mappings[target_key].append((function_name, function_line))
 
         # Generate covmap
         logger.info("Function intervals:")
         function_internals = dict()
-        for k in self.file_and_function_mappings:
+        for k in file_and_function_mappings:
             function_internals[k] = []
-            sorted_funcs = list(sorted(self.file_and_function_mappings[k], key=lambda x:x[1]))
+            sorted_funcs = list(sorted(file_and_function_mappings[k], key=lambda x:x[1]))
 
             for i in range(len(sorted_funcs)):
+                fname, fstart = sorted_funcs[i]
                 if i < len(sorted_funcs)-1:
-                    fname, fstart = sorted_funcs[i]
                     fnext_name, fnext_start = sorted_funcs[i+1]
-
                     function_internals[k].append((fname, fstart, fnext_start-1))
                 else:
                     function_internals[k].append((fname, fstart, -1))
@@ -487,7 +484,6 @@ def load_python_json_coverage(
         cp.dual_file_map[cov_entry]['executed_lines'] = data['files'][entry]['executed_lines']
         cp.dual_file_map[cov_entry]['missing_lines'] = data['files'][entry]['missing_lines']
 
-    cp.target_lang = "python"
     return cp
 
 
