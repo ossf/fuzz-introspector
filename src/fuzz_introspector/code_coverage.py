@@ -221,34 +221,41 @@ class CoverageProfile:
             function_line = func.function_linenumber
 
             logger.debug(f"Correlated init: {function_name} ---- {function_line}")
-            target_key = self._python_ast_funcname_to_cov_file(function_name)
-            if target_key is None:
+            cov_file = self._python_ast_funcname_to_cov_file(function_name)
+            if cov_file is None:
                 continue
 
             # Return False if file is not in file_map
-            if target_key not in self.file_map:
+            if cov_file not in self.file_map:
                 logger.debug("Target key is not in file_map")
                 continue
 
-            if target_key not in file_and_function_mappings:
-                file_and_function_mappings[target_key] = []
+            if cov_file not in file_and_function_mappings:
+                file_and_function_mappings[cov_file] = []
 
-            file_and_function_mappings[target_key].append((function_name, function_line))
+            file_and_function_mappings[cov_file].append(
+                (function_name, function_line)
+            )
 
-        # Identify the lines of code occupied by each function in each file.
+        # Sort function and lines numbers for each coverage file.
+        # Store in function_internals.
         logger.debug("Function intervals")
         function_internals: Dict[str, List[Tuple[str, int, int]]] = dict()
-        for k in file_and_function_mappings:
-            function_internals[k] = []
-            sorted_funcs = list(sorted(file_and_function_mappings[k], key=lambda x: x[1]))
+        for cov_file, function_specs in file_and_function_mappings.items():
+            sorted_func_specs = list(sorted(function_specs, key=lambda x: x[1]))
 
-            for i in range(len(sorted_funcs)):
-                fname, fstart = sorted_funcs[i]
-                if i < len(sorted_funcs) - 1:
-                    fnext_name, fnext_start = sorted_funcs[i + 1]
-                    function_internals[k].append((fname, fstart, fnext_start - 1))
+            function_internals[cov_file] = []
+            for i in range(len(sorted_func_specs)):
+                fname, fstart = sorted_func_specs[i]
+                # Get next function lineno to identify boundary
+                if i < len(sorted_func_specs) - 1:
+                    fnext_name, fnext_start = sorted_func_specs[i + 1]
+                    function_internals[cov_file].append(
+                        (fname, fstart, fnext_start - 1)
+                    )
                 else:
-                    function_internals[k].append((fname, fstart, -1))
+                    # Last function identified by end lineno being -1
+                    function_internals[cov_file].append((fname, fstart, -1))
 
         # Map the source codes of each line with coverage information.
         # Store the result in covmap to be compatible with other languages.
@@ -258,19 +265,21 @@ class CoverageProfile:
                 logger.debug(f"--- {fname} ::: {fstart} ::: {fend}")
                 if fname not in self.covmap:
                     self.covmap[fname] = []
+
                 # If we have the file in dual_file_map identify the
                 # executed vs non-executed lines and store in covmap.
-                if filename in self.dual_file_map:
-                    for exec_line in self.dual_file_map[filename]['executed_lines']:
-                        if exec_line > fstart and exec_line < fend:
-                            logger.debug(f"E: {exec_line}")
-                            self.covmap[fname].append((exec_line, 1000))
-                    for non_exec_line in self.dual_file_map[filename]['missing_lines']:
-                        if non_exec_line > fstart and non_exec_line < fend:
-                            logger.debug(f"N: {non_exec_line}")
-                            self.covmap[fname].append((non_exec_line, 0))
-                else:
-                    logger.debug("It's not in dual file map")
+                if filename not in self.dual_file_map:
+                    continue
+
+                # Create the covmap
+                for exec_line in self.dual_file_map[filename]['executed_lines']:
+                    if exec_line > fstart and exec_line < fend:
+                        logger.debug(f"E: {exec_line}")
+                        self.covmap[fname].append((exec_line, 1000))
+                for non_exec_line in self.dual_file_map[filename]['missing_lines']:
+                    if non_exec_line > fstart and non_exec_line < fend:
+                        logger.debug(f"N: {non_exec_line}")
+                        self.covmap[fname].append((non_exec_line, 0))
         return
 
     def get_hit_summary(
