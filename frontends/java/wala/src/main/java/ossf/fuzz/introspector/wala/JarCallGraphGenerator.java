@@ -35,6 +35,7 @@ import com.ibm.wala.ipa.callgraph.CGNode;
 import com.ibm.wala.ipa.callgraph.CallGraph;
 import com.ibm.wala.ipa.callgraph.CallGraphBuilder;
 import com.ibm.wala.ipa.callgraph.CallGraphBuilderCancelException;
+import com.ibm.wala.ipa.callgraph.CallGraphStats;
 import com.ibm.wala.ipa.callgraph.Entrypoint;
 import com.ibm.wala.ipa.callgraph.impl.DefaultEntrypoint;
 import com.ibm.wala.ipa.callgraph.impl.Util;
@@ -50,15 +51,18 @@ import com.ibm.wala.util.io.CommandLine;
 public class JarCallGraphGenerator {
 	public static void main(String[] args) throws IOException, ClassHierarchyException, IllegalArgumentException,
 	CallGraphBuilderCancelException {
+		// Handle basic parameter
 		Properties p = CommandLine.parse(args);
 		String jarFile = p.getProperty("jarFile");
 		String entryClass = p.getProperty("entryClass");
 		System.out.println("jarFile: " + FileSystems.getDefault().getPath(jarFile).toAbsolutePath());
 		System.out.println("entryClass: " + entryClass);
 
+		// Setup basic analysing scope
 		AnalysisScope scope = AnalysisScopeReader.instance.makeJavaBinaryAnalysisScope(jarFile, null);
 		IClassHierarchy ch = ClassHierarchyFactory.make(scope);
 
+		//TODO: Attempt to search for target method as entry point, still have some bugs to solve
 		List<Entrypoint> entryPoints = new ArrayList<>();
 		IClass ic = ch.lookupClass(
 				TypeReference.findOrCreate(ClassLoaderReference.Application,
@@ -70,14 +74,16 @@ public class JarCallGraphGenerator {
 				}
 			}
 		}
+		//End of TODO
 
+		// Build up Call Graph
 		AnalysisOptions opts = new AnalysisOptions(scope, Util.makeMainEntrypoints(ch));
 		System.out.println(opts.getAnalysisScope());
 		AnalysisCache cache = new AnalysisCacheImpl();
 		CallGraphBuilder<InstanceKey> builder = Util.makeZeroOneContainerCFABuilder(opts, cache, ch);
 		CallGraph cg = builder.makeCallGraph(opts, null);
-		//System.out.println(cg);
 
+		// Print call graph data for verification (or further processing)
 		CGNode root = cg.getFakeRootNode();
 		int nodeCount = cg.getNumberOfNodes();
 
@@ -103,5 +109,7 @@ public class JarCallGraphGenerator {
 				System.out.println("\n\n\n");
 			}
 		}
+
+		System.out.println(CallGraphStats.getStats(cg));
 	}
 }
