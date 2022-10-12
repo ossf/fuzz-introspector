@@ -17,7 +17,9 @@ Example of running: `java -jar javacg-0.1-SNAPSHOT-static.jar <TARGET_JAR_FILE>`
 Using IBM's WALA
 ------------------------------------------
 Depends on OpenJDK+JRE 11.0 or later
-Depends on IBM's WALA https://github.com/wala/WALA, which a build in bundle exist in maven and simple gradew build should work
+Depends on Maven 3.3 or later
+Depends on IBM's WALA https://github.com/wala/WALA, the maven build process will automatically
+download and pack the WALA jar libraries.
 
 The resulting call tree are shown in stdout.
 
