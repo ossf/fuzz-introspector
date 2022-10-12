@@ -21,5 +21,5 @@ Depends on IBM's WALA https://github.com/wala/WALA, which a build in bundle exis
 
 The resulting call tree are shown in stdout.
 
-Example of running: `./gradlew clean; ./gradlew run --args="-jarFile <jarFile1:...:javaFileN> -entryClass <Public Entry Class Name>"
+Example of running: `./run.sh <-j | --jarFile> <jarFile1:...:javaFileN> <-e | --entryclass> <Public Entry Class Name>`
 
