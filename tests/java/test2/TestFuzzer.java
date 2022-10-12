@@ -14,6 +14,7 @@
 ///////////////////////////////////////////////////////////////////////////
 
 import com.code_intelligence.jazzer.api.FuzzedDataProvider;
+import com.code_intelligence.jazzer.api.CannedFuzzedDataProvider;
 
 public class TestFuzzer {
 	private void function1() {
@@ -41,4 +42,8 @@ public class TestFuzzer {
 			TestFuzzer.function2();
 		}
 	}
+
+	public static void main(String[] args) {
+                TestFuzzer.fuzzerTestOneInput(new CannedFuzzedDataProvider("RANDOM"));
+        }
 }

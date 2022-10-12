@@ -37,5 +37,5 @@ if (project.hasProperty('mainClass')) {
     mainClassName = project.getProperty('mainClass')
 } else {
     // use a default
-    mainClassName = "com.ibm.wala.examples.drivers.JarCallGraphGenerator"
+    mainClassName = "ossf.fuzz.introspector.wala.JarCallGraphGenerator"
 }

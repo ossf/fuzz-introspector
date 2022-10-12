@@ -14,6 +14,7 @@
 ///////////////////////////////////////////////////////////////////////////
 
 import com.code_intelligence.jazzer.api.FuzzedDataProvider;
+import com.code_intelligence.jazzer.api.CannedFuzzedDataProvider;
 
 class FunctionTest {
 	protected void function1() {
@@ -35,7 +36,6 @@ class FunctionTest {
 }
 
 public class TestFuzzer {
-
 	public static void fuzzerTestOneInput(FuzzedDataProvider data) {
 		int choice = data.consumeInt(0,1);
 
@@ -46,4 +46,8 @@ public class TestFuzzer {
 			FunctionTest.function2();
 		}
 	}
+
+	public static void main(String[] args) {
+                TestFuzzer.fuzzerTestOneInput(new CannedFuzzedDataProvider("RANDOM"));
+        }
 }
