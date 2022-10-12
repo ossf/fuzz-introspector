@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# Process arguments
 JARFILE=
 ENTRYCLASS=
 
@@ -33,5 +34,13 @@ then
     exit 1
 fi
 
+# Prepare scope file
+cat > cg.scope << EOF
+Primordial,Java,stdlib,none
+Primordial,Java,jarFile,primordial.jar.model
+Application,Java,jarFile,$JARFILE
+EOF
+
+# Build and execute the call graph generator
 mvn clean package
 java -jar target/ossf.fuzz.introspector.wala-1.0.jar -jarFile $JARFILE -entryClass $ENTRYCLASS
