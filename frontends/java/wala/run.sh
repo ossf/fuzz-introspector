@@ -43,4 +43,4 @@ EOF
 
 # Build and execute the call graph generator
 mvn clean package
-java -jar target/ossf.fuzz.introspector.wala-1.0.jar -jarFile $JARFILE -entryClass $ENTRYCLASS
+java -Xmx6144M -jar target/ossf.fuzz.introspector.wala-1.0.jar -jarFile $JARFILE -entryClass $ENTRYCLASS
