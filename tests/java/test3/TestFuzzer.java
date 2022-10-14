@@ -14,23 +14,22 @@
 ///////////////////////////////////////////////////////////////////////////
 
 import com.code_intelligence.jazzer.api.FuzzedDataProvider;
-import com.code_intelligence.jazzer.api.CannedFuzzedDataProvider;
 
 class FunctionTest {
 	protected void function1() {
-		return;
+		System.out.println("F1");
 	}
 
 	protected static void function2() {
-		return;
+		System.out.println("F2");
 	}
 
 	protected void functionPublicDead() {
-		return;
+		System.out.println("PuD");
 	}
 
 	private void functionPrivateDead() {
-		return;
+		System.out.println("PrD");
 	}
 
 }
@@ -46,8 +45,4 @@ public class TestFuzzer {
 			FunctionTest.function2();
 		}
 	}
-
-	public static void main(String[] args) {
-                TestFuzzer.fuzzerTestOneInput(new CannedFuzzedDataProvider("RANDOM"));
-        }
 }

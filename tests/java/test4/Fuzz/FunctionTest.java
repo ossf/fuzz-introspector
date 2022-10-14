@@ -13,25 +13,23 @@
 // limitations under the License.
 ///////////////////////////////////////////////////////////////////////////
 
-package Function;
-
-import com.code_intelligence.jazzer.api.FuzzedDataProvider;
+package Fuzz;
 
 public class FunctionTest {
-	public void function1() {
-		return;
+	protected void function1() {
+		System.out.println("F1");
 	}
 
-	public static void function2() {
-		return;
+	protected static void function2() {
+		System.out.println("F2");
 	}
 
-	public void functionPublicDead() {
-		return;
+	protected void functionPublicDead() {
+		System.out.println("PuD");
 	}
 
 	private void functionPrivateDead() {
-		return;
+		System.out.println("PrD");
 	}
 
 }
