@@ -15,23 +15,21 @@
 
 package Function;
 
-import com.code_intelligence.jazzer.api.FuzzedDataProvider;
-
 public class FunctionTest {
 	public void function1() {
-		return;
+		System.out.println("F1");
 	}
 
 	public static void function2() {
-		return;
+		System.out.println("F2");
 	}
 
 	public void functionPublicDead() {
-		return;
+		System.out.println("PuD");
 	}
 
 	private void functionPrivateDead() {
-		return;
+		System.out.println("PrD");
 	}
 
 }
