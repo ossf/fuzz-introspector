@@ -113,7 +113,11 @@ function createTable(value) {
                       buttons:        [ {
                         extend: 'colvis',
                         text: "Columns"
-                        } ],
+                        },
+                        {
+                          extend: "pageLength",
+                          text: "Rows"
+                        }],
                       fixedColumns:   {
                           left: 2
                       }
