@@ -112,15 +112,32 @@ class CustomSenceTransformer extends SceneTransformer {
 			for (SootMethod m : c.getMethods()) {
 				numOfMethods++;
 				int methodEdges = 0;
-				Iterator<Edge> edges = callGraph.edgesOutOf(m);
-				System.out.println("Class #" + numOfClasses + " Method #" + 
+				Iterator<Edge> outEdges = callGraph.edgesOutOf(m);
+				Iterator<Edge> inEdges = callGraph.edgesInto(m);
+				System.out.println("Class #" + numOfClasses + " Method #" +
 						numOfMethods + ": " + m);
-				if (!edges.hasNext()) {
-					System.out.println("\t > No external calls");
+
+				if (!inEdges.hasNext()) {
+					System.out.println("\t > No calls to this method.");
 				}
 
-				for ( ; edges.hasNext(); methodEdges++) {
-					Edge edge = edges.next();
+				for ( ; inEdges.hasNext(); methodEdges++) {
+					Edge edge = inEdges.next();
+					SootMethod src = (SootMethod) edge.getSrc();
+					System.out.println("\t > called by " + src + " on Line " +
+							edge.srcStmt().getJavaSourceStartLineNumber());
+				}
+
+				System.out.println("\n\t Total: " + methodEdges + " internal calls.\n");
+
+				methodEdges = 0;
+
+				if (!outEdges.hasNext()) {
+					System.out.println("\t > No calls from this method.");
+				}
+
+				for ( ; outEdges.hasNext(); methodEdges++) {
+					Edge edge = outEdges.next();
 					SootMethod tgt = (SootMethod) edge.getTgt();
 					System.out.println("\t > calls " + tgt + " on Line " +
 							edge.srcStmt().getJavaSourceStartLineNumber());
