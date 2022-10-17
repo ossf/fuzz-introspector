@@ -23,7 +23,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import soot.MethodOrMethodContext;
 import soot.PackManager;
 import soot.Scene;
 import soot.SceneTransformer;
@@ -31,7 +30,7 @@ import soot.SootClass;
 import soot.SootMethod;
 import soot.Transform;
 import soot.jimple.toolkits.callgraph.CallGraph;
-import soot.jimple.toolkits.callgraph.Targets;
+import soot.jimple.toolkits.callgraph.Edge;
 import soot.options.Options;
 
 public class CallGraphGenerator {
@@ -99,18 +98,37 @@ class CustomSenceTransformer extends SceneTransformer {
 	@Override
 	protected void internalTransform(String phaseName, Map<String, String> options) {
 		int numOfEdges = 0;
+		int numOfClasses = 0;
+		int numOfMethods = 0;
 
 		CallGraph callGraph = Scene.v().getCallGraph();
+		System.out.println("--------------------------------------------------");
 		for(SootClass c : Scene.v().getApplicationClasses()) {
-			for(SootMethod m : c.getMethods()){
+			if (c.getName().startsWith("jdk")) {
+				continue;
+			}
+			numOfClasses++;
+			System.out.println("Class #" + numOfClasses + ": " + c.getName());
+			for (SootMethod m : c.getMethods()) {
+				numOfMethods++;
+				int methodEdges = 0;
 				Iterator<Edge> edges = callGraph.edgesOutOf(m);
-				for ( ; edges.hasNext(); numOfEdges++) {
+				System.out.println("Class #" + numOfClasses + " Method #" + 
+						numOfMethods + ": " + m);
+				if (!edges.hasNext()) {
+					System.out.println("\t > No external calls");
+				}
+
+				for ( ; edges.hasNext(); methodEdges++) {
 					Edge edge = edges.next();
 					SootMethod tgt = (SootMethod) edge.getTgt();
-					System.out.println(m + " calls " + tgt + " on Line " +
-						edge.srcStmt().getJavaSourceStartLineNumber());
+					System.out.println("\t > calls " + tgt + " on Line " +
+							edge.srcStmt().getJavaSourceStartLineNumber());
 				}
+				System.out.println("\n\t Total: " + methodEdges + " external calls.\n");
+				numOfEdges += methodEdges;
 			}
+			System.out.println("--------------------------------------------------");
 		}
 		System.out.println("Total Edges:" + numOfEdges);
 	}
