@@ -59,6 +59,7 @@ public class CallGraphGenerator {
 		Options.v().set_allow_phantom_refs(true);
 		Options.v().set_whole_program(true);
 		Options.v().set_app(true);
+		Options.v().set_keep_line_number(true);
 
 		// Load and set main class
 		Options.v().set_main_class(entryClass);
@@ -102,10 +103,12 @@ class CustomSenceTransformer extends SceneTransformer {
 		CallGraph callGraph = Scene.v().getCallGraph();
 		for(SootClass c : Scene.v().getApplicationClasses()) {
 			for(SootMethod m : c.getMethods()){
-				Iterator<MethodOrMethodContext> targets = new Targets(callGraph.edgesOutOf(m));
-				for ( ; targets.hasNext(); numOfEdges++) {
-					SootMethod tgt = (SootMethod) targets.next();
-					System.out.println(m + " may call " + tgt);
+				Iterator<Edge> edges = callGraph.edgesOutOf(m);
+				for ( ; edges.hasNext(); numOfEdges++) {
+					Edge edge = edges.next();
+					SootMethod tgt = (SootMethod) edge.getTgt();
+					System.out.println(m + " calls " + tgt + " on Line " +
+						edge.srcStmt().getJavaSourceStartLineNumber());
 				}
 			}
 		}
