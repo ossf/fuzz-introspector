@@ -238,10 +238,11 @@ def create_all_function_table(
         except Exception:
             hit_percentage = 0.0
 
-        func_cov_url = "%s%s.html#L%d" % (
+        func_cov_url = proj_profile.resolve_coverage_report_link(
             coverage_url,
             fd.function_source_file,
-            fd.function_linenumber
+            fd.function_linenumber,
+            fd.function_name
         )
 
         if proj_profile.runtime_coverage.is_func_hit(fd.function_name):
