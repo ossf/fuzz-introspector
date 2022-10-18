@@ -73,8 +73,7 @@ class Analysis(analysis.AnalysisInterface):
         func_href,
         callsite_link
     ):
-        span_row=f"""
-        <span class="coverage-line-inner" data-calltree-idx="{ct_idx_str}"
+        span_row = f"""<span class="coverage-line-inner" data-calltree-idx="{ct_idx_str}"
         data-paddingleft="{indentation}" style="padding-left: {indentation}">
             <span class="node-depth-wrapper">{node.depth}</span>
             <code class="language-clike">
@@ -99,7 +98,6 @@ class Analysis(analysis.AnalysisInterface):
         calltree_html_section_string = "<div class='call-tree-section-wrapper'>"
         nodes = cfg_load.extract_all_callsites(profile.function_call_depths)
 
-        balance = 0
         for i in range(len(nodes)):
             # All divs created in this loop must also be closed in this loop.
             node = nodes[i]
@@ -126,16 +124,14 @@ class Analysis(analysis.AnalysisInterface):
 
                 if previous_node.depth == node.depth:
                     calltree_html_section_string += "</div>"
-                    balance -= 1
                 elif previous_node.depth > node.depth:
-                    balance -= (int(previous_node.depth - node.depth) * 2 + 1)
-                    closing_divs = "</div>"*(int(previous_node.depth - node.depth) * 2) + "</div>"
-
                     # We need two close one coverage-line and one
                     # calltree-line-wrapper for each depth.
+                    divs_to_close = int(previous_node.depth - node.depth) * 2 + 1
+                    closing_divs = "</div>" * divs_to_close
+
                     calltree_html_section_string += closing_divs
 
-            logging.info("Iteration-%d: %d"%(i, balance))
 
             # Add div for line itself.
             calltree_html_section_string += f"<div class=\"{color_to_be}-background coverage-line\">"
@@ -147,7 +143,6 @@ class Analysis(analysis.AnalysisInterface):
                 func_href,
                 callsite_link
             )
-            balance += 1
 
             # If we are not at end
             if i < len(nodes) - 1:
@@ -159,7 +154,6 @@ class Analysis(analysis.AnalysisInterface):
                     calltree_html_section_string += f"""<div
         class="calltree-line-wrapper open level-{int(node.depth)}"
          data-paddingleft="{indentation}" >"""
-                    balance += 1
 
             # If we are at end, then we should close the remainding divs:
             # - the depth
@@ -171,12 +165,10 @@ class Analysis(analysis.AnalysisInterface):
                 # for the level we did not take.
                 if node.depth == 1:
                     calltree_html_section_string += "</div></div>"
-                    balance -= 2
                 elif node.depth > 1:
-                    calltree_html_section_string += "</div>"*int(node.depth - 1) * 2 + "</div></div>"
-                    balance -= int(node.depth - 1) * 2
-
-        logger.info("Final balance %d"%(balance))
+                    calltree_html_section_string += (
+                        "</div>"*int(node.depth - 1) * 2 + "</div></div>"
+                    )
 
         # Close the opening two divs
         calltree_html_section_string += "</div>"  # opening node
@@ -293,7 +285,8 @@ class Analysis(analysis.AnalysisInterface):
         complete_html_string += calltree_html_string
 
         # HTML end
-        html_end = '</div></div>' # close html header and content-section calltree-content-section
+        # close html header and content-section calltree-content-section
+        html_end = '</div></div>'
 
         if len(blocker_infos) > 0:
             html_end += "<script>"
