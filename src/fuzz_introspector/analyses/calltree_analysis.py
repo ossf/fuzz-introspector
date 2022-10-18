@@ -24,7 +24,6 @@ from typing import (
     List,
     Tuple,
     Optional,
-    Set,
 )
 
 from fuzz_introspector import analysis
@@ -65,24 +64,45 @@ class Analysis(analysis.AnalysisInterface):
         logger.info("Not implemented")
         return ""
 
+    def _get_span_row(
+        self,
+        ct_idx_str,
+        indentation,
+        node,
+        demangled_name,
+        func_href,
+        callsite_link
+    ):
+        span_row = f"""<span class="coverage-line-inner" data-calltree-idx="{ct_idx_str}"
+        data-paddingleft="{indentation}" style="padding-left: {indentation}">
+            <span class="node-depth-wrapper">{node.depth}</span>
+            <code class="language-clike">
+                {demangled_name}
+            </code>
+            <span class="coverage-line-filename">
+                {func_href}
+                <a href="{callsite_link}">
+                    [call site]
+                </a>
+                <span class="calltree-idx">{ct_idx_str}</span>
+            </span>
+        </span>"""
+        return span_row
+
     def create_calltree(self, profile: fuzzer_profile.FuzzerProfile) -> str:
         logger.info("In calltree")
         # Generate HTML for the calltree
         calltree_html_string = "<h1>Fuzzer calltree</h1>"
         calltree_html_string += "<div id=\"calltree-wrapper\">"
-        calltree_html_string += "<div class='call-tree-section-wrapper'>"
+
+        calltree_html_section_string = "<div class='call-tree-section-wrapper'>"
         nodes = cfg_load.extract_all_callsites(profile.function_call_depths)
+
         for i in range(len(nodes)):
+            # All divs created in this loop must also be closed in this loop.
             node = nodes[i]
 
             demangled_name = utils.demangle_cpp_func(node.dst_function_name)
-            # We may not want to show certain functions at times, e.g. libc functions
-            # in case it bloats the calltree
-            # libc_funcs = { "free" }
-            libc_funcs: Set[str] = set()
-            avoid = len([fn for fn in libc_funcs if fn in demangled_name]) > 0
-            if avoid:
-                continue
 
             # Prepare strings needed in the HTML
             color_to_be = node.cov_color
@@ -102,41 +122,71 @@ class Analysis(analysis.AnalysisInterface):
             if i > 0:
                 previous_node = nodes[i - 1]
                 if previous_node.depth == node.depth:
-                    calltree_html_string += "</div>"
-                depth_diff = previous_node.depth - node.depth
-                if depth_diff >= 1:
-                    closing_divs = "</div>"  # To close "calltree-line-wrapper"
-                    closing_divs = "</div>" * (int(depth_diff) + 1)
-                    calltree_html_string += closing_divs
+                    calltree_html_section_string += "</div>"
+                elif previous_node.depth > node.depth:
+                    # We need to close one coverage-line and one
+                    # calltree-line-wrapper for each depth, as well as the
+                    # row itself.
+                    divs_to_close = int(previous_node.depth - node.depth) * 2 + 1
+                    closing_divs = "</div>" * divs_to_close
 
-            calltree_html_string += f"""
-    <div class="{color_to_be}-background coverage-line">
-        <span class="coverage-line-inner" data-calltree-idx="{ct_idx_str}"
-        data-paddingleft="{indentation}" style="padding-left: {indentation}">
-            <span class="node-depth-wrapper">{node.depth}</span>
-            <code class="language-clike">
-                {demangled_name}
-            </code>
-            <span class="coverage-line-filename">
-                {func_href}
-                <a href="{callsite_link}">
-                    [call site2]
-                </a>
-                <span class="calltree-idx">{ct_idx_str}</span>
-            </span>
-        </span>
-        """
-            if i != len(nodes) - 1:
+                    calltree_html_section_string += closing_divs
+
+            # Add div for line itself.
+            calltree_html_section_string += (
+                f"<div class=\"{color_to_be}-background coverage-line\">"
+            )
+            calltree_html_section_string += self._get_span_row(
+                ct_idx_str,
+                indentation,
+                node,
+                demangled_name,
+                func_href,
+                callsite_link
+            )
+
+            # If we are not at end
+            if i < len(nodes) - 1:
                 next_node = nodes[i + 1]
+
+                # If depth is increasing then we should open a new div for folding
+                # the calltree.
                 if next_node.depth > node.depth:
-                    calltree_html_string += f"""<div
+                    calltree_html_section_string += f"""<div
         class="calltree-line-wrapper open level-{int(node.depth)}"
          data-paddingleft="{indentation}" >"""
-                elif next_node.depth < node.depth:
-                    depth_diff = int(node.depth - next_node.depth)
-                    calltree_html_string += "</div>" * depth_diff
 
-        calltree_html_string += "</div>"
+            # If we are at end, then we should close the remainding divs:
+            # - the depth
+            # - the current new node.
+            if i == len(nodes) - 1:
+                logger.info("At end")
+                # In terms of divs, we need to close one coverage-line and one
+                # calltree-line-wrapper for each depth. Minus one line-wrapper
+                # for the level we did not take.
+                if node.depth == 1:
+                    calltree_html_section_string += "</div></div>"
+                elif node.depth > 1:
+                    calltree_html_section_string += (
+                        "</div>" * int(node.depth - 1) * 2 + "</div></div>"
+                    )
+
+        # Close the opening two divs
+        calltree_html_section_string += "</div>"  # opening node
+        calltree_html_section_string += "</div>"  # call-tree-section-wrapper
+
+        # Side overview wrapper holds the vertical bitmap image. The actual
+        # visualisation happens in javascript rather than here.
+        calltree_html_section_string += "<div id=\"side-overview-wrapper\"></div>"
+
+        logger.info(
+            "calltree_html_section_string: <divs>: %d -- </divs>: %d" % (
+                calltree_html_section_string.count("<div"),
+                calltree_html_section_string.count("</div>")
+            )
+        )
+
+        calltree_html_string += calltree_html_section_string + "</div>"  # calltree-wrapper
         logger.info("Calltree created")
 
         # Write the HTML to a file called calltree_view_XX.html where XX is a counter.
@@ -243,19 +293,14 @@ class Analysis(analysis.AnalysisInterface):
             complete_html_string += fuzz_blocker_table
             complete_html_string += "</div>"
 
-        # Display calltree
         complete_html_string += calltree_html_string
-        complete_html_string += "</div></div></div></div></div>"
-        complete_html_string += "<div id=\"side-overview-wrapper\"></div>"
 
         # HTML end
-        html_end = '</div>'
-        # blocker_idxs = []
-        # for node in fuzz_blocker_nodes:
-        #     blocker_idxs.append(self.create_str_node_ctx_idx(str(node.cov_ct_idx)))
+        # close html header and content-section calltree-content-section
+        html_end = '</div></div>'
 
         if len(blocker_infos) > 0:
-            html_end = "<script>"
+            html_end += "<script>"
             html_end += f'var fuzz_blocker_infos = \'{json.dumps(blocker_infos)}\';'
             html_end += "</script>"
 
