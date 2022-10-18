@@ -238,38 +238,48 @@ def get_hit_count_color(hit_count: int) -> str:
 
 def get_url_to_cov_report(profile, node, target_coverage_url):
     """ Get URL to coverage report for the node. """
-    link = "#"
-    for fd_k, fd in profile.all_class_functions.items():
-        if fd.function_name == node.dst_function_name:
-            logger.debug("Found %s -- %s -- %d" % (
-                fd.function_name,
-                fd.function_source_file,
-                fd.function_linenumber
-            ))
-            link = profile.resolve_coverage_link(
-                target_coverage_url,
-                fd.function_source_file,
-                fd.function_linenumber,
-                fd.function_name
-            )
-            break
-    return link
+    dst_options = [
+        node.dst_function_name,
+        utils.demangle_cpp_func(node.dst_function_name)
+    ]
+    for dst in dst_options:
+        for fd_k, fd in profile.all_class_functions.items():
+            if (
+                fd.function_name == dst
+                or utils.normalise_str(fd.function_name) == utils.normalise_str(dst)
+            ):
+                return profile.resolve_coverage_link(
+                    target_coverage_url,
+                    fd.function_source_file,
+                    fd.function_linenumber,
+                    fd.function_name
+                )
+    return "#"
 
 
 def get_parent_callsite_link(node, callstack, profile, target_coverage_url):
     """Gets the coverage callsite link of a given node."""
-    callsite_link = "#"
     if callstack_has_parent(node, callstack):
         parent_fname = callstack_get_parent(node, callstack)
-        for fd_k, fd in profile.all_class_functions.items():
-            if utils.demangle_cpp_func(fd.function_name) == parent_fname:
-                callsite_link = profile.resolve_coverage_link(
-                    target_coverage_url,
-                    fd.function_source_file,
-                    node.src_linenumber,
-                    fd.function_name
-                )
-    return callsite_link
+        dst_options = [
+            parent_fname,
+            utils.demangle_cpp_func(parent_fname)
+        ]
+        for dst in dst_options:
+            for fd_k, fd in profile.all_class_functions.items():
+                if (
+                    fd.function_name == dst
+                    or utils.normalise_str(fd.function_name) == utils.normalise_str(dst)
+                ):
+                    callsite_link = profile.resolve_coverage_link(
+                        target_coverage_url,
+                        fd.function_source_file,
+                        node.src_linenumber,
+                        fd.function_name
+                    )
+                    return callsite_link
+
+    return "#"
 
 
 def overlay_calltree_with_coverage(
