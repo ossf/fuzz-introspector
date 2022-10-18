@@ -13,7 +13,6 @@
 // limitations under the License.
 ///////////////////////////////////////////////////////////////////////////
 
-
 package ossf.fuzz.introspector.soot;
 
 import java.io.File;
@@ -23,7 +22,13 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import soot.MethodOrMethodContext;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+
+import ossf.fuzz.introspector.soot.yaml.FunctionConfig;
+import ossf.fuzz.introspector.soot.yaml.FunctionElement;
+import ossf.fuzz.introspector.soot.yaml.FuzzerConfig;
 import soot.PackManager;
 import soot.Scene;
 import soot.SceneTransformer;
@@ -31,10 +36,11 @@ import soot.SootClass;
 import soot.SootMethod;
 import soot.Transform;
 import soot.jimple.toolkits.callgraph.CallGraph;
-import soot.jimple.toolkits.callgraph.Targets;
+import soot.jimple.toolkits.callgraph.Edge;
 import soot.options.Options;
 
-public class CallGraphGenerator {
+public class CallGraphGenerator
+ {
 	public static void main(String[] args) {
 		if (args.length != 2) {
 			System.err.println("No entryClass or entryMethod.");
@@ -59,6 +65,7 @@ public class CallGraphGenerator {
 		Options.v().set_allow_phantom_refs(true);
 		Options.v().set_whole_program(true);
 		Options.v().set_app(true);
+		Options.v().set_keep_line_number(true);
 
 		// Load and set main class
 		Options.v().set_main_class(entryClass);
@@ -85,6 +92,7 @@ class CustomSenceTransformer extends SceneTransformer {
 	public CustomSenceTransformer() {
 		excludeList = new LinkedList<String> ();
 
+		excludeList.add("jdk.");
 		excludeList.add("java.");
 		excludeList.add("javax.");
 		excludeList.add("sun.");
@@ -98,21 +106,101 @@ class CustomSenceTransformer extends SceneTransformer {
 	@Override
 	protected void internalTransform(String phaseName, Map<String, String> options) {
 		int numOfEdges = 0;
+		int numOfClasses = 0;
+		int numOfMethods = 0;
+		List<FuzzerConfig> classYaml = new ArrayList<FuzzerConfig>();
 
 		CallGraph callGraph = Scene.v().getCallGraph();
+		System.out.println("--------------------------------------------------");
 		for(SootClass c : Scene.v().getApplicationClasses()) {
-			for(SootMethod m : c.getMethods()){
-				Iterator<MethodOrMethodContext> targets = new Targets(callGraph.edgesOutOf(m));
-				for ( ; targets.hasNext(); numOfEdges++) {
-					SootMethod tgt = (SootMethod) targets.next();
-					System.out.println(m + " may call " + tgt);
-				}
+			if (c.getName().startsWith("jdk")) {
+				continue;
 			}
+
+			FuzzerConfig classConfig = new FuzzerConfig();
+			FunctionConfig methodConfig = new FunctionConfig();
+			classConfig.setFilename(c.getName());
+			methodConfig.setListName("All functions");
+
+			numOfClasses++;
+			System.out.println("Class #" + numOfClasses + ": " + c.getName());
+			for (SootMethod m : c.getMethods()) {
+				FunctionElement element= new FunctionElement();
+				element.setFunctionName(m.getName());
+				element.setFunctionSourceFile(c.getFilePath());
+				//element.setLinkageType("???");
+				element.setFunctionLinenumber(m.getJavaSourceStartLineNumber());
+				element.setReturnType(m.getReturnType().toString());
+				element.setArgCount(m.getParameterCount());
+				for (soot.Type type:m.getParameterTypes()) {
+					element.addArgType(type.toString());
+				}
+				//element.setConstantsTouched([]);
+				//element.setArgNames();
+				//element.setBBCount(0);
+				//element.setiCount(0);
+				//element.setCyclomaticComplexity(0);
+
+				numOfMethods++;
+				int methodEdges = 0;
+				Iterator<Edge> outEdges = callGraph.edgesOutOf(m);
+				Iterator<Edge> inEdges = callGraph.edgesInto(m);
+				System.out.println("Class #" + numOfClasses + " Method #" +
+						numOfMethods + ": " + m);
+
+				if (!inEdges.hasNext()) {
+					System.out.println("\t > No calls to this method.");
+				}
+
+				for ( ; inEdges.hasNext(); methodEdges++) {
+					Edge edge = inEdges.next();
+					SootMethod src = (SootMethod) edge.getSrc();
+					System.out.println("\t > called by " + src + " on Line " +
+							edge.srcStmt().getJavaSourceStartLineNumber());
+				}
+
+				System.out.println("\n\t Total: " + methodEdges + " internal calls.\n");
+
+				element.setFunctionUses(methodEdges);
+				methodEdges = 0;
+
+				if (!outEdges.hasNext()) {
+					System.out.println("\t > No calls from this method.");
+				}
+
+				for ( ; outEdges.hasNext(); methodEdges++) {
+					Edge edge = outEdges.next();
+					SootMethod tgt = (SootMethod) edge.getTgt();
+					System.out.println("\t > calls " + tgt + " on Line " +
+							edge.srcStmt().getJavaSourceStartLineNumber());
+					element.addFunctionReached(tgt.toString() + "; Line: " +
+							edge.srcStmt().getJavaSourceStartLineNumber());
+				}
+				System.out.println("\n\t Total: " + methodEdges + " external calls.\n");
+				numOfEdges += methodEdges;
+
+				element.setEdgeCount(methodEdges);
+				//element.setBranchProfiles(new BranchProfile());
+				methodConfig.addFunctionElement(element);
+			}
+			System.out.println("--------------------------------------------------");
+			classConfig.setFunctionConfig(methodConfig);
+			classYaml.add(classConfig);
 		}
 		System.out.println("Total Edges:" + numOfEdges);
+		System.out.println("--------------------------------------------------");
+		ObjectMapper om = new ObjectMapper(new YAMLFactory());
+		for(FuzzerConfig config:classYaml) {
+			try {
+				System.out.println(om.writeValueAsString(config) + "\n");
+			} catch (JsonProcessingException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 
 	public List<String> getExcludeList() {
 		return excludeList;
 	}
 }
+
