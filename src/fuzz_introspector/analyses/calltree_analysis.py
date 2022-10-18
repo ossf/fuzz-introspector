@@ -132,9 +132,10 @@ class Analysis(analysis.AnalysisInterface):
 
                     calltree_html_section_string += closing_divs
 
-
             # Add div for line itself.
-            calltree_html_section_string += f"<div class=\"{color_to_be}-background coverage-line\">"
+            calltree_html_section_string += (
+                f"<div class=\"{color_to_be}-background coverage-line\">"
+            )
             calltree_html_section_string += self._get_span_row(
                 ct_idx_str,
                 indentation,
@@ -158,7 +159,7 @@ class Analysis(analysis.AnalysisInterface):
             # If we are at end, then we should close the remainding divs:
             # - the depth
             # - the current new node.
-            if i == len(nodes) -1:
+            if i == len(nodes) - 1:
                 logger.info("At end")
                 # In terms of divs, we need to close one coverage-line and one
                 # calltree-line-wrapper for each depth. Minus one line-wrapper
@@ -167,7 +168,7 @@ class Analysis(analysis.AnalysisInterface):
                     calltree_html_section_string += "</div></div>"
                 elif node.depth > 1:
                     calltree_html_section_string += (
-                        "</div>"*int(node.depth - 1) * 2 + "</div></div>"
+                        "</div>" * int(node.depth - 1) * 2 + "</div></div>"
                     )
 
         # Close the opening two divs
