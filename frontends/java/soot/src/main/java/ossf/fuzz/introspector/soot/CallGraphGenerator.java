@@ -173,7 +173,7 @@ class CustomSenceTransformer extends SceneTransformer {
 					SootMethod tgt = (SootMethod) edge.getTgt();
 					System.out.println("\t > calls " + tgt + " on Line " +
 							edge.srcStmt().getJavaSourceStartLineNumber());
-					element.addFunctionReached(tgt.toString() + "; Line: " + 
+					element.addFunctionReached(tgt.toString() + "; Line: " +
 							edge.srcStmt().getJavaSourceStartLineNumber());
 				}
 				System.out.println("\n\t Total: " + methodEdges + " external calls.\n");
