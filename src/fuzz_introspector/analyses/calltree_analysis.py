@@ -180,8 +180,8 @@ class Analysis(analysis.AnalysisInterface):
         calltree_html_section_string += "<div id=\"side-overview-wrapper\"></div>"
 
         logger.info("calltree_html_section_string: <divs>: %d -- </divs>: %d" % (
-                calltree_html_section_string.count("<div"),
-                calltree_html_section_string.count("</div>")
+            calltree_html_section_string.count("<div"),
+            calltree_html_section_string.count("</div>")
             )
         )
 
