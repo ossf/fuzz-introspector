@@ -121,12 +121,12 @@ class Analysis(analysis.AnalysisInterface):
 
             if i > 0:
                 previous_node = nodes[i - 1]
-
                 if previous_node.depth == node.depth:
                     calltree_html_section_string += "</div>"
                 elif previous_node.depth > node.depth:
-                    # We need two close one coverage-line and one
-                    # calltree-line-wrapper for each depth.
+                    # We need to close one coverage-line and one
+                    # calltree-line-wrapper for each depth, as well as the
+                    # row itself.
                     divs_to_close = int(previous_node.depth - node.depth) * 2 + 1
                     closing_divs = "</div>" * divs_to_close
 
@@ -174,6 +174,8 @@ class Analysis(analysis.AnalysisInterface):
         # Close the opening two divs
         calltree_html_section_string += "</div>"  # opening node
         calltree_html_section_string += "</div>"  # call-tree-section-wrapper
+        # Side overview wrapper holds the vertical bitmap image. The actual
+        # visualisation happens in javascript rather than here.
         calltree_html_section_string += "<div id=\"side-overview-wrapper\"></div>"
         calltree_html_string += calltree_html_section_string + "</div>"  # calltree-wrapper
 
