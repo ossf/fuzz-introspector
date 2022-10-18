@@ -174,11 +174,18 @@ class Analysis(analysis.AnalysisInterface):
         # Close the opening two divs
         calltree_html_section_string += "</div>"  # opening node
         calltree_html_section_string += "</div>"  # call-tree-section-wrapper
+
         # Side overview wrapper holds the vertical bitmap image. The actual
         # visualisation happens in javascript rather than here.
         calltree_html_section_string += "<div id=\"side-overview-wrapper\"></div>"
-        calltree_html_string += calltree_html_section_string + "</div>"  # calltree-wrapper
 
+        logger.info("calltree_html_section_string: <divs>: %d -- </divs>: %d" % (
+                calltree_html_section_string.count("<div"),
+                calltree_html_section_string.count("</div>")
+            )
+        )
+
+        calltree_html_string += calltree_html_section_string + "</div>"  # calltree-wrapper
         logger.info("Calltree created")
 
         # Write the HTML to a file called calltree_view_XX.html where XX is a counter.
