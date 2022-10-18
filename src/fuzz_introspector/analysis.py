@@ -245,8 +245,8 @@ def get_url_to_cov_report(profile, node, target_coverage_url):
     for dst in dst_options:
         for fd_k, fd in profile.all_class_functions.items():
             if (
-                fd.function_name == dst or
-                utils.normalise_str(fd.function_name) == utils.normalise_str(dst)
+                fd.function_name == dst
+                or utils.normalise_str(fd.function_name) == utils.normalise_str(dst)
             ):
                 return profile.resolve_coverage_link(
                     target_coverage_url,
@@ -268,8 +268,8 @@ def get_parent_callsite_link(node, callstack, profile, target_coverage_url):
         for dst in dst_options:
             for fd_k, fd in profile.all_class_functions.items():
                 if (
-                    fd.function_name == dst or
-                    utils.normalise_str(fd.function_name) == utils.normalise_str(dst)
+                    fd.function_name == dst
+                    or utils.normalise_str(fd.function_name) == utils.normalise_str(dst)
                 ):
                     callsite_link = profile.resolve_coverage_link(
                         target_coverage_url,
