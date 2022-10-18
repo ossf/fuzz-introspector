@@ -13,7 +13,6 @@
 // limitations under the License.
 ///////////////////////////////////////////////////////////////////////////
 
-
 package ossf.fuzz.introspector.soot;
 
 import java.io.File;
@@ -23,6 +22,13 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+
+import ossf.fuzz.introspector.soot.yaml.FunctionConfig;
+import ossf.fuzz.introspector.soot.yaml.FunctionElement;
+import ossf.fuzz.introspector.soot.yaml.FuzzerConfig;
 import soot.PackManager;
 import soot.Scene;
 import soot.SceneTransformer;
@@ -33,7 +39,8 @@ import soot.jimple.toolkits.callgraph.CallGraph;
 import soot.jimple.toolkits.callgraph.Edge;
 import soot.options.Options;
 
-public class CallGraphGenerator {
+public class CallGraphGenerator
+ {
 	public static void main(String[] args) {
 		if (args.length != 2) {
 			System.err.println("No entryClass or entryMethod.");
@@ -85,6 +92,7 @@ class CustomSenceTransformer extends SceneTransformer {
 	public CustomSenceTransformer() {
 		excludeList = new LinkedList<String> ();
 
+		excludeList.add("jdk.");
 		excludeList.add("java.");
 		excludeList.add("javax.");
 		excludeList.add("sun.");
@@ -100,6 +108,7 @@ class CustomSenceTransformer extends SceneTransformer {
 		int numOfEdges = 0;
 		int numOfClasses = 0;
 		int numOfMethods = 0;
+		List<FuzzerConfig> classYaml = new ArrayList<FuzzerConfig>();
 
 		CallGraph callGraph = Scene.v().getCallGraph();
 		System.out.println("--------------------------------------------------");
@@ -107,9 +116,31 @@ class CustomSenceTransformer extends SceneTransformer {
 			if (c.getName().startsWith("jdk")) {
 				continue;
 			}
+
+			FuzzerConfig classConfig = new FuzzerConfig();
+			FunctionConfig methodConfig = new FunctionConfig();
+			classConfig.setFilename(c.getName());
+			methodConfig.setListName("All functions");
+
 			numOfClasses++;
 			System.out.println("Class #" + numOfClasses + ": " + c.getName());
 			for (SootMethod m : c.getMethods()) {
+				FunctionElement element= new FunctionElement();
+				element.setFunctionName(m.getName());
+				element.setFunctionSourceFile(c.getFilePath());
+				//element.setLinkageType("???");
+				element.setFunctionLinenumber(m.getJavaSourceStartLineNumber());
+				element.setReturnType(m.getReturnType().toString());
+				element.setArgCount(m.getParameterCount());
+				for (soot.Type type:m.getParameterTypes()) {
+					element.addArgType(type.toString());
+				}
+				//element.setConstantsTouched([]);
+				//element.setArgNames();
+				//element.setBBCount(0);
+				//element.setiCount(0);
+				//element.setCyclomaticComplexity(0);
+
 				numOfMethods++;
 				int methodEdges = 0;
 				Iterator<Edge> outEdges = callGraph.edgesOutOf(m);
@@ -130,6 +161,7 @@ class CustomSenceTransformer extends SceneTransformer {
 
 				System.out.println("\n\t Total: " + methodEdges + " internal calls.\n");
 
+				element.setFunctionUses(methodEdges);
 				methodEdges = 0;
 
 				if (!outEdges.hasNext()) {
@@ -141,16 +173,34 @@ class CustomSenceTransformer extends SceneTransformer {
 					SootMethod tgt = (SootMethod) edge.getTgt();
 					System.out.println("\t > calls " + tgt + " on Line " +
 							edge.srcStmt().getJavaSourceStartLineNumber());
+					element.addFunctionReached(tgt.toString() + "; Line: " + 
+							edge.srcStmt().getJavaSourceStartLineNumber());
 				}
 				System.out.println("\n\t Total: " + methodEdges + " external calls.\n");
 				numOfEdges += methodEdges;
+
+				element.setEdgeCount(methodEdges);
+				//element.setBranchProfiles(new BranchProfile());
+				methodConfig.addFunctionElement(element);
 			}
 			System.out.println("--------------------------------------------------");
+			classConfig.setFunctionConfig(methodConfig);
+			classYaml.add(classConfig);
 		}
 		System.out.println("Total Edges:" + numOfEdges);
+		System.out.println("--------------------------------------------------");
+		ObjectMapper om = new ObjectMapper(new YAMLFactory());
+		for(FuzzerConfig config:classYaml) {
+			try {
+				System.out.println(om.writeValueAsString(config) + "\n");
+			} catch (JsonProcessingException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 
 	public List<String> getExcludeList() {
 		return excludeList;
 	}
 }
+
