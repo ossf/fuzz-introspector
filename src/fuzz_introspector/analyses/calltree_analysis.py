@@ -24,7 +24,6 @@ from typing import (
     List,
     Tuple,
     Optional,
-    Set,
 )
 
 from fuzz_introspector import analysis
@@ -65,8 +64,15 @@ class Analysis(analysis.AnalysisInterface):
         logger.info("Not implemented")
         return ""
 
-    def _get_span_row(self, ct_idx_str, indentation, node, demangled_name, func_href, callsite_link):
-
+    def _get_span_row(
+        self,
+        ct_idx_str,
+        indentation,
+        node,
+        demangled_name,
+        func_href,
+        callsite_link
+    ):
         span_row=f"""
         <span class="coverage-line-inner" data-calltree-idx="{ct_idx_str}"
         data-paddingleft="{indentation}" style="padding-left: {indentation}">
@@ -122,12 +128,11 @@ class Analysis(analysis.AnalysisInterface):
                     calltree_html_section_string += "</div>"
                     balance -= 1
                 elif previous_node.depth > node.depth:
-                    logger.info("div-close 1")
+                    balance -= (int(previous_node.depth - node.depth) * 2 + 1)
+                    closing_divs = "</div>"*(int(previous_node.depth - node.depth) * 2) + "</div>"
 
-                    balance -= (int(previous_node.depth - node.depth)*2 + 1)
-                    closing_divs = "</div>"*(int(previous_node.depth - node.depth)*2) + "</div>"
-
-                    # We need two close one coverage-line and one calltree-line-wrapper for each depth.
+                    # We need two close one coverage-line and one
+                    # calltree-line-wrapper for each depth.
                     calltree_html_section_string += closing_divs
 
             logging.info("Iteration-%d: %d"%(i, balance))
@@ -168,16 +173,16 @@ class Analysis(analysis.AnalysisInterface):
                     calltree_html_section_string += "</div></div>"
                     balance -= 2
                 elif node.depth > 1:
-                    calltree_html_section_string += "</div>"*int(node.depth-1)*2 + "</div></div>"
-                    balance -= int(node.depth-1)*2
+                    calltree_html_section_string += "</div>"*int(node.depth - 1) * 2 + "</div></div>"
+                    balance -= int(node.depth - 1) * 2
 
         logger.info("Final balance %d"%(balance))
 
         # Close the opening two divs
-        calltree_html_section_string += "</div>" # opening node
-        calltree_html_section_string += "</div>" # call-tree-section-wrapper
+        calltree_html_section_string += "</div>"  # opening node
+        calltree_html_section_string += "</div>"  # call-tree-section-wrapper
         calltree_html_section_string += "<div id=\"side-overview-wrapper\"></div>"
-        calltree_html_string += calltree_html_section_string + "</div>" # calltree-wrapper
+        calltree_html_string += calltree_html_section_string + "</div>"  # calltree-wrapper
 
         logger.info("Calltree created")
 
@@ -285,26 +290,10 @@ class Analysis(analysis.AnalysisInterface):
             complete_html_string += fuzz_blocker_table
             complete_html_string += "</div>"
 
-        # Display calltree
-        logger.info("calltree [3]: <divs>: %d -- </divs>: %d" % (
-                calltree_html_string.count("<div"),
-                calltree_html_string.count("</div>")
-            )
-        )
         complete_html_string += calltree_html_string
-        #complete_html_string += "</div></div></div></div></div>"
-        logger.info("complete_html_string [2]: <divs>: %d -- </divs>: %d" % (
-                complete_html_string.count("<div"),
-                complete_html_string.count("</div>")
-            )
-        )
-        #complete_html_string += "</div></div>"
 
         # HTML end
         html_end = '</div></div>' # close html header and content-section calltree-content-section
-        # blocker_idxs = []
-        # for node in fuzz_blocker_nodes:
-        #     blocker_idxs.append(self.create_str_node_ctx_idx(str(node.cov_ct_idx)))
 
         if len(blocker_infos) > 0:
             html_end += "<script>"
@@ -315,12 +304,6 @@ class Analysis(analysis.AnalysisInterface):
         complete_html_string += html_end
 
         complete_html_string += "</body></html>"
-
-        logger.info("complete_html_string [1]: <divs>: %d -- </divs>: %d" % (
-                complete_html_string.count("<div"),
-                complete_html_string.count("</div>")
-            )
-        )
 
         # Beautify and write HTML
         soup = bs(complete_html_string, "html.parser")
