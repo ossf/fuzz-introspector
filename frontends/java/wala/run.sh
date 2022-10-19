@@ -10,7 +10,7 @@ while [[ $# -gt 0 ]]; do
       shift
       shift
       ;;
-    -e|--entryclass)
+    -c|--entryclass)
       ENTRYCLASS="$2"
       shift
       shift
@@ -29,7 +29,7 @@ then
 fi
 if [ -z $ENTRYCLASS ]
 then
-    echo "You need to specify entry class with -e <entry_class> or --entryclass <entry_class>."
+    echo "You need to specify entry class with -c <entry_class> or --entryclass <entry_class>."
     exit 1
 fi
 
