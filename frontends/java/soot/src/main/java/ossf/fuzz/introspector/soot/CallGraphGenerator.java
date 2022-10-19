@@ -15,8 +15,8 @@
 
 package ossf.fuzz.introspector.soot;
 
-import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -42,29 +42,32 @@ import soot.options.Options;
 public class CallGraphGenerator
  {
 	public static void main(String[] args) {
-		if (args.length != 2) {
-			System.err.println("No entryClass or entryMethod.");
+		if (args.length != 3) {
+			System.err.println("No jarFiles, entryClass or entryMethod.");
 			return;
 		}
-		String entryClass = args[0];
-		String entryMethod = args[1];
+		List<String> jarFiles = Arrays.asList(args[0].split(":"));
+		String entryClass = args[1];
+		String entryMethod = args[2];
 
-		// Set basic Java class path
-		String javapath = System.getProperty("java.class.path");
-		String jredir = System.getProperty("java.home")+"/lib/rt.jar";
-		String path = javapath+File.pathSeparator+jredir;
-		Scene.v().setSootClassPath(path);
+		if (jarFiles.size() < 1) {
+			System.err.println("Invalid jarFiles");
+		}
+
+		soot.G.reset();
 
 		// Add an custom analysis phase to Soot
 		CustomSenceTransformer custom = new CustomSenceTransformer();
 		PackManager.v().getPack("wjtp").add(new Transform("wjtp.custom", custom));
 
 		// Set basic settings for the call graph generation
+		Options.v().set_process_dir(jarFiles);
+		Options.v().set_prepend_classpath(true);
+		Options.v().set_src_prec(Options.src_prec_java);
 		Options.v().set_exclude(custom.getExcludeList());
 		Options.v().set_no_bodies_for_excluded(true);
 		Options.v().set_allow_phantom_refs(true);
 		Options.v().set_whole_program(true);
-		Options.v().set_app(true);
 		Options.v().set_keep_line_number(true);
 
 		// Load and set main class
@@ -162,6 +165,7 @@ class CustomSenceTransformer extends SceneTransformer {
 				System.out.println("\n\t Total: " + methodEdges + " internal calls.\n");
 
 				element.setFunctionUses(methodEdges);
+
 				methodEdges = 0;
 
 				if (!outEdges.hasNext()) {
@@ -173,8 +177,8 @@ class CustomSenceTransformer extends SceneTransformer {
 					SootMethod tgt = (SootMethod) edge.getTgt();
 					System.out.println("\t > calls " + tgt + " on Line " +
 							edge.srcStmt().getJavaSourceStartLineNumber());
-					element.addFunctionReached(tgt.toString() + "; Line: " +
-							edge.srcStmt().getJavaSourceStartLineNumber());
+					element.addFunctionReached(tgt.toString() + "; Line: " + 
+                            edge.srcStmt().getJavaSourceStartLineNumber());
 				}
 				System.out.println("\n\t Total: " + methodEdges + " external calls.\n");
 				numOfEdges += methodEdges;
@@ -203,4 +207,3 @@ class CustomSenceTransformer extends SceneTransformer {
 		return excludeList;
 	}
 }
-

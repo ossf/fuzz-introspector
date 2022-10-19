@@ -5,6 +5,11 @@ This is work in progress.
 Download and install java / maven in ubuntu
 -----------------------------------------
 `sudo apt-get install -y openjdk-8-jdk-headless maven`
+or 
+`sudo apt-get install -y openjdk-11-jdk-headless maven`
+depends on the application you want to run. 
+
+java-callgraph and soot approach could run with OpenJDK+JRE 8 or later, while WALA can only run with OpenJDK+JRE 11 or later.
 
 
 Prepare your java application for the static analysis
@@ -72,7 +77,7 @@ Example for execution using testcase test5:
 
 Using IBM's WALA
 ------------------------------------------
-Depends on OpenJDK+JRE 8 (will fail if using Java9 or later because of the switch of rt.jar to jmod)
+Depends on OpenJDK+JRE 11 or later
 
 Depends on Maven 3.3 or later
 
@@ -102,8 +107,7 @@ Example for execution using testcase test5:
 
 Using Soot
 ------------------------------------------
-Depends on OpenJDK+JRE 8 (will fail if using Java9 or later because of the switch of rt.jar to jmod)
-
+Depends on OpenJDK+JRE 8 or later 
 
 Depends on Maven 3.3 or later
 
