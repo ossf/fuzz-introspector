@@ -46,7 +46,7 @@ Depends on https://github.com/gousiosg/java-callgraph, which has compiled and pa
 
 To compile your own javacg-0.1-SNAPSHOT-static.jar, follows the steps below.
 
->```
+```
  git clone https://github.com/gousiosg/java-callgraph 
  cd java-callgraph
  mvn install
@@ -57,19 +57,19 @@ After compiling the java-callgraph, the needed javacg-0.1-SNAPSHOT-static.jar is
 The resulting call tree are shown in stdout.
 
 Command:
->```
+```
   cd frontends/java/java-callgraph
   java -jar javacg-0.1-SNAPSHOT-static.jar <TARGET_JAR_FILE>
 ```
 
 Example for execution using testcase test1:
->```
+```
   cd frontends/java/java-callgraph
   java -jar javacg-0.1-SNAPSHOT-static.jar path/to/fuzz-introspector/tests/java/test1/test1.jar
 ```
 
 Example for execution using testcase test5:
->```
+```
   cd frontends/java/java-callgraph
   java -jar javacg-0.1-SNAPSHOT-static.jar path/to/fuzz-introspector/tests/java/test5/test5.jar
 ```
@@ -88,19 +88,19 @@ The resulting call tree are shown in stdout.
 **Current limitation, the entryclass must contains the main method to build the callgraph.**
 
 Example of running: 
->```
+```
   cd frontends/java/wala
   ./run.sh <-j | --jarfile> <jarFile1:...:javaFileN> <-c | --entryclass> <Public Entry Class Name>
 ```
 
 Example for execution using testcase test1:
->```
+```
   cd frontends/java/wala
   ./run.sh --jarfile path/to/fuzz-introspector/tests/java/test1/test1.jar --entryclass TestFuzzer
 ```
 
 Example for execution using testcase test5:
->```
+```
   cd frontends/java/wala
   ./run.sh --jarfile path/to/fuzz-introspector/tests/java/test5/test5.jar --entryclass Fuzz.TestFuzzer`
 ```
@@ -117,19 +117,19 @@ The resulting call tree are shown in stdout.
 
 Example of running: 
 
->```
+```
   cd frontends/java/soot
   ./run.sh <-j | --jarfile> <jarFile1:...:javaFileN> <-c | --entryclass> <Public Entry Class Name> <-m | --entrymethod <Public Entry Method Name>
 ```
 
 Example for execution using testcase test1: 
->```
+```
   cd frontends/java/soot
   ./run.sh -j path/to/fuzz-introspector/tests/java/test1/test1.jar -c TestFuzzer -m fuzzerTestOneInput
 ```
 
 Example for execution using testcase test5: 
->```
+```
   cd frontends/java/soot
   ./run.sh -j path/to/fuzz-introspector/tests/java/test5/test5.jar -c Fuzz.TestFuzzer -m fuzzerTestOneInput
 ```
