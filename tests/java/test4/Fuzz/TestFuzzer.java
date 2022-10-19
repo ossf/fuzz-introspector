@@ -16,6 +16,7 @@
 package Fuzz;
 
 import com.code_intelligence.jazzer.api.FuzzedDataProvider;
+import com.code_intelligence.jazzer.api.CannedFuzzedDataProvider;
 
 public class TestFuzzer {
 	public static void fuzzerTestOneInput(FuzzedDataProvider data) {
@@ -28,4 +29,8 @@ public class TestFuzzer {
 			FunctionTest.function2();
 		}
 	}
+
+	public static void main(String[] args) {
+                TestFuzzer.fuzzerTestOneInput(new CannedFuzzedDataProvider("RANDOM"));
+        }
 }
