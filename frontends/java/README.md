@@ -29,13 +29,15 @@ Sample application for testing
 -----------------------------------------
 In fuzz-introspector/tests/java directory, there are 5 sample testcases. Each of them contains a sample java application and a build script.
 
-Just go into one of the testcases directories (test1 to test5) and execute the build script, it will automatically generate a jar file for testing.
+Just go into one of the testcases directories (test1 to test5) and execute the build script, it will automatically generate a jar file for testing in the same directory
+
+You could also run build all script at fuzz-introspector/tests/java directory and it will automatically build all the testcases and store all resulting jar in the test-jar directory.
 
 You could then use the generated file for the static analysis by specifying its full path or move it to the necessary locations.
 
 Example for compiling and packing jar file for testcase test1: `cd path/to/fuzz-introspector/tests/java/test1; ./build.sh`
 
-Example for compiling and packing jar file for testcase test5: `cd path/to/fuzz-introspector/tests/java/test5; ./build.sh`
+Example for compiling and packing jar file for all testcase: `cd path/to/fuzz-introspector/tests/java/; ./buildAll.sh`
 
 
 Using java-callgraph
