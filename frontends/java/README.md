@@ -7,6 +7,32 @@ Download and install java / maven in ubuntu
 sudo apt-get install -y openjdk-8-jdk-headless maven
 
 
+Prepare your java application for the static analysis
+-----------------------------------------
+You need to pack your java application (your compiled java bytecode in *.class to jar files in order to use the static analysis.
+
+After you have compiled your *.java source code into *.class bytecode. You could use the following commands to pack them into a jar file
+
+Command: `jar cvf <name of jar file> <all you class file>`
+
+The sample command below will generate an app.jar file which contains main.class sub1.class and sub.class
+
+Sample command: `jar cvf app.jar main.class sub1.class sub2.class`
+
+
+Sample application for testing
+-----------------------------------------
+In fuzz-introspector/tests/java directory, there are 5 sample testcases. Each of them contains a sample java application and a build script.
+
+Just go into one of the testcases directories (test1 to test5) and execute the build script, it will automatically generate a jar file for testing.
+
+You could then use the generated file for the static analysis by specifying its full path or move it to the necessary locations.
+
+Example for compiling and packing jar file for testcase test1: `cd path/to/fuzz-introspector/tests/java/test1; ./build.sh`
+
+Example for compiling and packing jar file for testcase test5: `cd path/to/fuzz-introspector/tests/java/test5; ./build.sh`
+
+
 Using java-callgraph
 -----------------------------------------
 Depends on OpenJDK+JRE 8 or later
@@ -17,7 +43,11 @@ It requires the target source code compiled and packed into jar file.
 
 The resulting call tree are shown in stdout.
 
-Example of running: `java -jar javacg-0.1-SNAPSHOT-static.jar <TARGET_JAR_FILE>`
+Command: `java -jar javacg-0.1-SNAPSHOT-static.jar <TARGET_JAR_FILE>`
+
+Example for execution using testcase test1: `java -jar javacg-0.1-SNAPSHOT-static.jar path/to/fuzz-introspector/tests/java/test1/test1.jar`
+
+Example for execution using testcase test5: `java -jar javacg-0.1-SNAPSHOT-static.jar path/to/fuzz-introspector/tests/java/test5/test5.jar`
 
 
 Using IBM's WALA
@@ -30,7 +60,13 @@ Depends on IBM's WALA https://github.com/wala/WALA, the maven build process will
 
 The resulting call tree are shown in stdout.
 
-Example of running: `./run.sh <-j | --jarFile> <jarFile1:...:javaFileN> <-e | --entryclass> <Public Entry Class Name>`
+**Current limitation, the entryclass must contains the main method to build the callgraph.**
+
+Example of running: `./run.sh <-j | --jarfile> <jarFile1:...:javaFileN> <-c | --entryclass> <Public Entry Class Name>`
+
+Example for execution using testcase test1: `./run.sh --jarfile path/to/fuzz-introspector/tests/java/test1/test1.jar --entryclass TestFuzzer`
+
+Example for execution using testcase test5: `./run.sh --jarfile path/to/fuzz-introspector/tests/java/test5/test5.jar --entryclass Fuzz.TestFuzzer`
 
 
 Using Soot
@@ -43,5 +79,161 @@ Depends on IBM's WALA https://github.com/soot-oss/soot, the maven build process 
 
 The resulting call tree are shown in stdout.
 
-Example of running: `./run.sh <-j | --jarFile> <jarFile1:...:javaFileN> <-c | --entryclass> <Public Entry Class Name> <-m | --entrymethod <Public Entry Method Name>`
+Example of running: `./run.sh <-j | --jarfile> <jarFile1:...:javaFileN> <-c | --entryclass> <Public Entry Class Name> <-m | --entrymethod <Public Entry Method Name>`
+
+Example for execution using testcase test1: `./run.sh -j path/to/fuzz-introspector/tests/java/test1/test1.jar -c TestFuzzer -m fuzzerTestOneInput`
+
+Example for execution using testcase test5: `./run.sh -j path/to/fuzz-introspector/tests/java/test5/test5.jar -c Fuzz.TestFuzzer -m fuzzerTestOneInput`
+
+
+Sample output for testcase test1
+------------------------------------------
+**java-callgraph**
+```
+C:TestFuzzer com.code_intelligence.jazzer.api.CannedFuzzedDataProvider
+C:TestFuzzer TestFuzzer
+C:TestFuzzer java.lang.Object
+C:TestFuzzer java.lang.System
+C:TestFuzzer java.io.PrintStream
+M:TestFuzzer:<init>() (O)java.lang.Object:<init>()
+M:TestFuzzer:fuzzerTestOneInput(com.code_intelligence.jazzer.api.FuzzedDataProvider) (M)java.io.PrintStream:println(java.lang.String)
+M:TestFuzzer:main(java.lang.String[]) (O)com.code_intelligence.jazzer.api.CannedFuzzedDataProvider:<init>(java.lang.String)
+M:TestFuzzer:main(java.lang.String[]) (S)TestFuzzer:fuzzerTestOneInput(com.code_intelligence.jazzer.api.FuzzedDataProvider)
+```
+
+**Wala**
+```
+Node: synthetic < Primordial, Lcom/ibm/wala/FakeRootClass, fakeRootMethod()V > Context: Everywhere
+ - invokestatic < Primordial, Lcom/ibm/wala/FakeRootClass, fakeWorldClinit()V >@0
+   -> Node: synthetic < Primordial, Lcom/ibm/wala/FakeRootClass, fakeWorldClinit()V > Context: Everywhere
+ - invokespecial < Primordial, Ljava/lang/Object, <init>()V >@4
+   -> Node: < Primordial, Ljava/lang/Object, <init>()V > Context: Everywhere
+ - invokestatic < Application, LTestFuzzer, main([Ljava/lang/String;)V >@5
+   -> Node: < Application, LTestFuzzer, main([Ljava/lang/String;)V > Context: Everywhere
+Node: synthetic < Primordial, Lcom/ibm/wala/FakeRootClass, fakeWorldClinit()V > Context: Everywhere
+ - invokestatic < Primordial, Ljava/lang/Object, <clinit>()V >@0
+   -> Node: < Primordial, Ljava/lang/Object, <clinit>()V > Context: Everywhere
+ - invokestatic < Primordial, Ljava/lang/String, <clinit>()V >@1
+   -> Node: < Primordial, Ljava/lang/String, <clinit>()V > Context: Everywhere
+Node: < Primordial, Ljava/lang/Object, <clinit>()V > Context: Everywhere
+ - invokestatic < Primordial, Ljava/lang/Object, registerNatives()V >@0
+   -> Node: < Primordial, Ljava/lang/Object, registerNatives()V > Context: Everywhere
+Node: < Primordial, Ljava/lang/Object, registerNatives()V > Context: Everywhere
+Node: < Primordial, Ljava/lang/String, <clinit>()V > Context: Everywhere
+ - invokespecial < Primordial, Ljava/lang/String$CaseInsensitiveComparator, <init>(Ljava/lang/String$1;)V >@12
+   -> Node: < Primordial, Ljava/lang/String$CaseInsensitiveComparator, <init>(Ljava/lang/String$1;)V > Context: Everywhere
+Node: < Primordial, Ljava/lang/String$CaseInsensitiveComparator, <init>(Ljava/lang/String$1;)V > Context: Everywhere
+ - invokespecial < Primordial, Ljava/lang/String$CaseInsensitiveComparator, <init>()V >@1
+   -> Node: < Primordial, Ljava/lang/String$CaseInsensitiveComparator, <init>()V > Context: Everywhere
+Node: < Primordial, Ljava/lang/String$CaseInsensitiveComparator, <init>()V > Context: Everywhere
+ - invokespecial < Primordial, Ljava/lang/Object, <init>()V >@1
+   -> Node: < Primordial, Ljava/lang/Object, <init>()V > Context: Everywhere
+Node: < Primordial, Ljava/lang/Object, <init>()V > Context: Everywhere
+Node: < Application, LTestFuzzer, main([Ljava/lang/String;)V > Context: Everywhere
+ - invokestatic < Application, LTestFuzzer, fuzzerTestOneInput(Lcom/code_intelligence/jazzer/api/FuzzedDataProvider;)V >@9
+   -> Node: < Application, LTestFuzzer, fuzzerTestOneInput(Lcom/code_intelligence/jazzer/api/FuzzedDataProvider;)V > Context: Everywhere
+Node: < Application, LTestFuzzer, fuzzerTestOneInput(Lcom/code_intelligence/jazzer/api/FuzzedDataProvider;)V > Context: Everywhere
+```
+
+**Soot**
+```
+SLF4J: No SLF4J providers were found.
+SLF4J: Defaulting to no-operation (NOP) logger implementation
+SLF4J: See https://www.slf4j.org/codes.html#noProviders for further details.
+--------------------------------------------------
+Class #1: TestFuzzer
+Class #1 Method #1: <TestFuzzer: void <init>()>
+	 > No calls to this method.
+
+	 Total: 0 internal calls.
+
+	 > No calls from this method.
+
+	 Total: 0 external calls.
+
+Class #1 Method #2: <TestFuzzer: void fuzzerTestOneInput(com.code_intelligence.jazzer.api.FuzzedDataProvider)>
+	 > No calls to this method.
+
+	 Total: 0 internal calls.
+
+	 > calls <java.lang.System: void <clinit>()> on Line 21
+	 > calls <java.io.PrintStream: void println(java.lang.String)> on Line 21
+	 > calls <java.lang.Object: void <clinit>()> on Line 21
+
+	 Total: 3 external calls.
+
+Class #1 Method #3: <TestFuzzer: void main(java.lang.String[])>
+	 > No calls to this method.
+
+	 Total: 0 internal calls.
+
+	 > No calls from this method.
+
+	 Total: 0 external calls.
+
+--------------------------------------------------
+Total Edges:3
+--------------------------------------------------
+---
+filename: "TestFuzzer"
+functionConfig:
+  listName: "All functions"
+  functionElements:
+  - functionName: "<init>"
+    functionSourceFile: "TestFuzzer"
+    linkageType: null
+    functionLinenumber: 18
+    functionDepth: null
+    returnType: "void"
+    argCount: 0
+    argTypes: []
+    constantsTouched: []
+    argNames: []
+    iCount: null
+    edgeCount: 0
+    functionReached: []
+    functionUses: 0
+    branchProfiles: null
+    bbcount: null
+    cyclomaticComplexity: null
+  - functionName: "fuzzerTestOneInput"
+    functionSourceFile: "TestFuzzer"
+    linkageType: null
+    functionLinenumber: 20
+    functionDepth: null
+    returnType: "void"
+    argCount: 1
+    argTypes:
+    - "com.code_intelligence.jazzer.api.FuzzedDataProvider"
+    constantsTouched: []
+    argNames: []
+    iCount: null
+    edgeCount: 3
+    functionReached:
+    - "<java.lang.System: void <clinit>()>; Line: 21"
+    - "<java.io.PrintStream: void println(java.lang.String)>; Line: 21"
+    - "<java.lang.Object: void <clinit>()>; Line: 21"
+    functionUses: 0
+    branchProfiles: null
+    bbcount: null
+    cyclomaticComplexity: null
+  - functionName: "main"
+    functionSourceFile: "TestFuzzer"
+    linkageType: null
+    functionLinenumber: 24
+    functionDepth: null
+    returnType: "void"
+    argCount: 1
+    argTypes:
+    - "java.lang.String[]"
+    constantsTouched: []
+    argNames: []
+    iCount: null
+    edgeCount: 0
+    functionReached: []
+    functionUses: 0
+    branchProfiles: null
+    bbcount: null
+    cyclomaticComplexity: null
+```
 
