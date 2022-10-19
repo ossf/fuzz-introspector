@@ -1,4 +1,4 @@
-k#!/bin/sh
+#!/bin/sh
 
 rm -f ./*.class
 rm -f ./*.jar
