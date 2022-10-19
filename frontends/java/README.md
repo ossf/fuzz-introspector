@@ -4,7 +4,7 @@ This is work in progress.
 
 Download and install java / maven in ubuntu
 -----------------------------------------
-sudo apt-get install -y openjdk-8-jdk-headless maven
+`sudo apt-get install -y openjdk-8-jdk-headless maven`
 
 
 Prepare your java application for the static analysis
@@ -39,20 +39,40 @@ Depends on OpenJDK+JRE 8 or later
 
 Depends on https://github.com/gousiosg/java-callgraph, which has compiled and packed as a jar file (javacg-0.1-SNAPSHOT-static.jar)
 
-It requires the target source code compiled and packed into jar file.
+To compile your own javacg-0.1-SNAPSHOT-static.jar, follows the steps below.
+
+>```
+ git clone https://github.com/gousiosg/java-callgraph 
+ cd java-callgraph
+ mvn install
+```
+
+After compiling the java-callgraph, the needed javacg-0.1-SNAPSHOT-static.jar is in the target directory.
 
 The resulting call tree are shown in stdout.
 
-Command: `java -jar javacg-0.1-SNAPSHOT-static.jar <TARGET_JAR_FILE>`
+Command:
+>```
+  cd frontends/java/java-callgraph
+  java -jar javacg-0.1-SNAPSHOT-static.jar <TARGET_JAR_FILE>
+```
 
-Example for execution using testcase test1: `java -jar javacg-0.1-SNAPSHOT-static.jar path/to/fuzz-introspector/tests/java/test1/test1.jar`
+Example for execution using testcase test1:
+>```
+  cd frontends/java/java-callgraph
+  java -jar javacg-0.1-SNAPSHOT-static.jar path/to/fuzz-introspector/tests/java/test1/test1.jar
+```
 
-Example for execution using testcase test5: `java -jar javacg-0.1-SNAPSHOT-static.jar path/to/fuzz-introspector/tests/java/test5/test5.jar`
+Example for execution using testcase test5:
+>```
+  cd frontends/java/java-callgraph
+  java -jar javacg-0.1-SNAPSHOT-static.jar path/to/fuzz-introspector/tests/java/test5/test5.jar
+```
 
 
 Using IBM's WALA
 ------------------------------------------
-Depends on OpenJDK+JRE 8 or later
+Depends on OpenJDK+JRE 8 (will fail if using Java9 or later because of the switch of rt.jar to jmod)
 
 Depends on Maven 3.3 or later
 
@@ -62,28 +82,53 @@ The resulting call tree are shown in stdout.
 
 **Current limitation, the entryclass must contains the main method to build the callgraph.**
 
-Example of running: `./run.sh <-j | --jarfile> <jarFile1:...:javaFileN> <-c | --entryclass> <Public Entry Class Name>`
+Example of running: 
+>```
+  cd frontends/java/wala
+  ./run.sh <-j | --jarfile> <jarFile1:...:javaFileN> <-c | --entryclass> <Public Entry Class Name>
+```
 
-Example for execution using testcase test1: `./run.sh --jarfile path/to/fuzz-introspector/tests/java/test1/test1.jar --entryclass TestFuzzer`
+Example for execution using testcase test1:
+>```
+  cd frontends/java/wala
+  ./run.sh --jarfile path/to/fuzz-introspector/tests/java/test1/test1.jar --entryclass TestFuzzer
+```
 
-Example for execution using testcase test5: `./run.sh --jarfile path/to/fuzz-introspector/tests/java/test5/test5.jar --entryclass Fuzz.TestFuzzer`
-
+Example for execution using testcase test5:
+>```
+  cd frontends/java/wala
+  ./run.sh --jarfile path/to/fuzz-introspector/tests/java/test5/test5.jar --entryclass Fuzz.TestFuzzer`
+```
 
 Using Soot
 ------------------------------------------
-Depends on OpenJDK+JRE 8 or later
+Depends on OpenJDK+JRE 8 (will fail if using Java9 or later because of the switch of rt.jar to jmod)
+
 
 Depends on Maven 3.3 or later
 
-Depends on IBM's WALA https://github.com/soot-oss/soot, the maven build process will automatically download and pack the Soot jar libraries.
+Depends on Soot https://github.com/soot-oss/soot, the maven build process will automatically download and pack the Soot jar libraries.
 
 The resulting call tree are shown in stdout.
 
-Example of running: `./run.sh <-j | --jarfile> <jarFile1:...:javaFileN> <-c | --entryclass> <Public Entry Class Name> <-m | --entrymethod <Public Entry Method Name>`
+Example of running: 
 
-Example for execution using testcase test1: `./run.sh -j path/to/fuzz-introspector/tests/java/test1/test1.jar -c TestFuzzer -m fuzzerTestOneInput`
+>```
+  cd frontends/java/soot
+  ./run.sh <-j | --jarfile> <jarFile1:...:javaFileN> <-c | --entryclass> <Public Entry Class Name> <-m | --entrymethod <Public Entry Method Name>
+```
 
-Example for execution using testcase test5: `./run.sh -j path/to/fuzz-introspector/tests/java/test5/test5.jar -c Fuzz.TestFuzzer -m fuzzerTestOneInput`
+Example for execution using testcase test1: 
+>```
+  cd frontends/java/soot
+  ./run.sh -j path/to/fuzz-introspector/tests/java/test1/test1.jar -c TestFuzzer -m fuzzerTestOneInput
+```
+
+Example for execution using testcase test5: 
+>```
+  cd frontends/java/soot
+  ./run.sh -j path/to/fuzz-introspector/tests/java/test5/test5.jar -c Fuzz.TestFuzzer -m fuzzerTestOneInput
+```
 
 
 Sample output for testcase test1
