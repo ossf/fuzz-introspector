@@ -137,9 +137,6 @@ Node: < Application, LTestFuzzer, fuzzerTestOneInput(Lcom/code_intelligence/jazz
 
 **Soot**
 ```
-SLF4J: No SLF4J providers were found.
-SLF4J: Defaulting to no-operation (NOP) logger implementation
-SLF4J: See https://www.slf4j.org/codes.html#noProviders for further details.
 --------------------------------------------------
 Class #1: TestFuzzer
 Class #1 Method #1: <TestFuzzer: void <init>()>
