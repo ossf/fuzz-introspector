@@ -46,4 +46,4 @@ fi
 
 # Build and execute the call graph generator
 mvn clean package
-java -Xmx6144M -cp "target/ossf.fuzz.introspector.soot-1.0.jar:$JARFILE" ossf.fuzz.introspector.soot.CallGraphGenerator $ENTRYCLASS $ENTRYMETHOD
+java -Xmx6144M -cp "target/ossf.fuzz.introspector.soot-1.0.jar" ossf.fuzz.introspector.soot.CallGraphGenerator $JARFILE $ENTRYCLASS $ENTRYMETHOD
