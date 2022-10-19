@@ -35,6 +35,8 @@ You could also run build all script at fuzz-introspector/tests/java directory an
 
 You could then use the generated file for the static analysis by specifying its full path or move it to the necessary locations.
 
+The compiling of all those testcases required the Jazzer-API library. The build script of each testcases will automatically pull version 0.12.0 of the jazzer-API.jar from their official release page. If you want to build your own jazzer jar file, please refer to their own documentation at https://github.com/CodeIntelligenceTesting/jazzer/blob/main/README.md#getting-jazzer
+
 Example for compiling and packing jar file for testcase test1: `cd path/to/fuzz-introspector/tests/java/test1; ./build.sh`
 
 Example for compiling and packing jar file for all testcase: `cd path/to/fuzz-introspector/tests/java/; ./buildAll.sh`
