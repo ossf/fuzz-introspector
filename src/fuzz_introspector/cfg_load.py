@@ -45,6 +45,8 @@ class CalltreeCallsite():
         self.parent_calltree_callsite: Optional[CalltreeCallsite] = parent_calltree_callsite
         self.depth = depth
 
+        self.test = 1
+
         self.src_function_source_file: Optional[str] = None
         self.src_function_name: Optional[str] = None
         self.children: List[CalltreeCallsite] = []
