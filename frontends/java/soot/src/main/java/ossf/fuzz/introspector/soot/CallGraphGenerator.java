@@ -17,10 +17,13 @@ package ossf.fuzz.introspector.soot;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -39,8 +42,7 @@ import soot.jimple.toolkits.callgraph.CallGraph;
 import soot.jimple.toolkits.callgraph.Edge;
 import soot.options.Options;
 
-public class CallGraphGenerator
- {
+public class CallGraphGenerator{
 	public static void main(String[] args) {
 		if (args.length != 3) {
 			System.err.println("No jarFiles, entryClass or entryMethod.");
@@ -57,7 +59,7 @@ public class CallGraphGenerator
 		soot.G.reset();
 
 		// Add an custom analysis phase to Soot
-		CustomSenceTransformer custom = new CustomSenceTransformer();
+		CustomSenceTransformer custom = new CustomSenceTransformer(entryClass, entryMethod);
 		PackManager.v().getPack("wjtp").add(new Transform("wjtp.custom", custom));
 
 		// Set basic settings for the call graph generation
@@ -91,8 +93,13 @@ public class CallGraphGenerator
 
 class CustomSenceTransformer extends SceneTransformer {
 	private List<String> excludeList;
+	private String entryClass;
+	private String entryMethod;
 
-	public CustomSenceTransformer() {
+	public CustomSenceTransformer(String entryClass, String entryMethod) {
+		this.entryClass = entryClass;
+		this.entryMethod = entryMethod;
+
 		excludeList = new LinkedList<String> ();
 
 		excludeList.add("jdk.");
@@ -108,13 +115,10 @@ class CustomSenceTransformer extends SceneTransformer {
 
 	@Override
 	protected void internalTransform(String phaseName, Map<String, String> options) {
-		int numOfEdges = 0;
-		int numOfClasses = 0;
-		int numOfMethods = 0;
+		Map<String, SootMethod> methodMap = new HashMap<String, SootMethod>();
 		List<FuzzerConfig> classYaml = new ArrayList<FuzzerConfig>();
 
 		CallGraph callGraph = Scene.v().getCallGraph();
-		System.out.println("--------------------------------------------------");
 		for(SootClass c : Scene.v().getApplicationClasses()) {
 			if (c.getName().startsWith("jdk")) {
 				continue;
@@ -125,8 +129,6 @@ class CustomSenceTransformer extends SceneTransformer {
 			classConfig.setFilename(c.getName());
 			methodConfig.setListName("All functions");
 
-			numOfClasses++;
-			System.out.println("Class #" + numOfClasses + ": " + c.getName());
 			for (SootMethod m : c.getMethods()) {
 				FunctionElement element= new FunctionElement();
 				element.setFunctionName(m.getName());
@@ -143,55 +145,33 @@ class CustomSenceTransformer extends SceneTransformer {
 				//element.setBBCount(0);
 				//element.setiCount(0);
 				//element.setCyclomaticComplexity(0);
-
-				numOfMethods++;
 				int methodEdges = 0;
 				Iterator<Edge> outEdges = callGraph.edgesOutOf(m);
 				Iterator<Edge> inEdges = callGraph.edgesInto(m);
-				System.out.println("Class #" + numOfClasses + " Method #" +
-						numOfMethods + ": " + m);
-
-				if (!inEdges.hasNext()) {
-					System.out.println("\t > No calls to this method.");
+				while (inEdges.hasNext()) {
+					methodEdges++;
+					inEdges.next();
 				}
-
-				for ( ; inEdges.hasNext(); methodEdges++) {
-					Edge edge = inEdges.next();
-					SootMethod src = (SootMethod) edge.getSrc();
-					System.out.println("\t > called by " + src + " on Line " +
-							edge.srcStmt().getJavaSourceStartLineNumber());
-				}
-
-				System.out.println("\n\t Total: " + methodEdges + " internal calls.\n");
-
 				element.setFunctionUses(methodEdges);
-
 				methodEdges = 0;
-
-				if (!outEdges.hasNext()) {
-					System.out.println("\t > No calls from this method.");
-				}
-
 				for ( ; outEdges.hasNext(); methodEdges++) {
 					Edge edge = outEdges.next();
 					SootMethod tgt = (SootMethod) edge.getTgt();
-					System.out.println("\t > calls " + tgt + " on Line " +
+					element.addFunctionReached(tgt.toString() + "; Line: " +
 							edge.srcStmt().getJavaSourceStartLineNumber());
-					element.addFunctionReached(tgt.toString() + "; Line: " + 
-                            edge.srcStmt().getJavaSourceStartLineNumber());
 				}
-				System.out.println("\n\t Total: " + methodEdges + " external calls.\n");
-				numOfEdges += methodEdges;
-
 				element.setEdgeCount(methodEdges);
 				//element.setBranchProfiles(new BranchProfile());
 				methodConfig.addFunctionElement(element);
+				if (c.getName().equals(this.entryClass) ||
+						element.getFunctionUses() > 0) {
+					methodMap.put(c.getName() + "#" + m.getName(), m);
+				}
 			}
-			System.out.println("--------------------------------------------------");
 			classConfig.setFunctionConfig(methodConfig);
 			classYaml.add(classConfig);
 		}
-		System.out.println("Total Edges:" + numOfEdges);
+		System.out.println(extractCallTree(callGraph, methodMap));
 		System.out.println("--------------------------------------------------");
 		ObjectMapper om = new ObjectMapper(new YAMLFactory());
 		for(FuzzerConfig config:classYaml) {
@@ -200,6 +180,40 @@ class CustomSenceTransformer extends SceneTransformer {
 			} catch (JsonProcessingException e) {
 				e.printStackTrace();
 			}
+		}
+	}
+
+	private String extractCallTree(CallGraph cg, Map<String, SootMethod> methodMap) {
+		StringBuffer callTree = new StringBuffer();
+
+		callTree.append("Call Tree\n");
+		callTree.append(extractSubTree(cg, this.entryClass + "#" + this.entryMethod, methodMap, 0, -1));
+
+
+		return callTree.toString();
+	}
+
+	private String extractSubTree(CallGraph cg, String index, Map<String, SootMethod> methodMap, Integer depth, Integer line) {
+		SootMethod m = methodMap.get(index);
+		String[] name = index.split("#");
+		if (m == null) {
+			return StringUtils.leftPad("", depth * 2) + name[1] + " " + name[0] + " linenumber=" + line + "\n";
+		} else {
+			StringBuffer callTree = new StringBuffer();
+			Iterator<Edge> outEdges = cg.edgesOutOf(m);
+
+			callTree.append(StringUtils.leftPad("", depth * 2));
+			callTree.append(name[1] + " " + name[0] + " linenumber=" + line + "\n");
+
+			while (outEdges.hasNext()) {
+				Edge edge = outEdges.next();
+				SootMethod tgt = (SootMethod) edge.getTgt();
+				callTree.append(extractSubTree(cg,
+						tgt.getDeclaringClass().getName() + "#" + tgt.getName(),
+						methodMap, depth + 1, edge.srcStmt().getJavaSourceStartLineNumber()));
+			}
+
+			return callTree.toString();
 		}
 	}
 
