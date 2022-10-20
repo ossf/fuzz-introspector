@@ -33,7 +33,7 @@ else
 
   # Build  binutils
   cd $BUILD_BASE
-  git clone --depth 1 git://sourceware.org/git/binutils-gdb.git binutils
+  git clone --depth 1 https://github.com/bminor/binutils-gdb binutils
   mkdir build
   cd ./build
   ../binutils/configure --enable-gold --enable-plugins --disable-werror
