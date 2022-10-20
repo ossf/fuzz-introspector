@@ -49,7 +49,7 @@ def extract_link_from_html(html):
 def test_regression_427():
     """ Regression testing for Issue #427 """
 
-    assert is_valid_gcloud_link(
+    assert not is_valid_gcloud_link(
         "https://storage.googleapis.com/oss-fuzz-coverage/bluez/reports/20220807/linux"
     )
     assert is_valid_gcloud_link(
