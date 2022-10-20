@@ -11,7 +11,8 @@
 #
 name: "CodeQL"
 permissions:
-  read-all
+  actions: read
+  contents: read
   security-events: write
 on:
   push:
