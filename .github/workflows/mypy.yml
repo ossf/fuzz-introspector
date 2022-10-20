@@ -1,7 +1,7 @@
 name: Mypy
 
 on: [push, pull_request]
-
+permissions: read-all
 jobs:
   build:
     runs-on: ubuntu-latest
