@@ -168,7 +168,7 @@ def create_overview_table(
 
 
 def create_all_function_table(
-        tables: int, #List[str],
+        tables: List[str],
         proj_profile: project_profile.MergedProjectProfile,
         coverage_url: str,
         basefolder: str,
