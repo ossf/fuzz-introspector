@@ -394,8 +394,12 @@ bool FuzzIntrospector::runOnModule(Module &M) {
     logPrintf(L1, "Fuzz introspector is not running\n");
     return false;
   }
-
   logPrintf(L1, "Fuzz introspector is running\n");
+
+  // Set log level if indicated.
+  if (getenv("FUZZ_INTROSPECTOR_LOG_LEVEL")) {
+    moduleLogLevel = atoi(getenv("FUZZ_INTROSPECTOR_LOG_LEVEL"));
+  }
 
   logPrintf(L1, "Running introspector on %s\n", M.getName());
   if (shouldRunIntrospector(M) == false) {
