@@ -103,13 +103,15 @@ public class CallGraphGenerator{
 
 class CustomSenceTransformer extends SceneTransformer {
 	private List<String> excludeList;
-	private String entryClass;
-	private String entryMethod;
 	private List<Block> visitedBlock;
+	private String entryClassStr;
+	private String entryMethodStr;
+	private SootMethod entryMethod;
 
-	public CustomSenceTransformer(String entryClass, String entryMethod) {
-		this.entryClass = entryClass;
-		this.entryMethod = entryMethod;
+	public CustomSenceTransformer(String entryClassStr, String entryMethodStr) {
+		this.entryClassStr = entryClassStr;
+		this.entryMethodStr = entryMethodStr;
+		this.entryMethod = null;
 
 		excludeList = new LinkedList<String> ();
 
@@ -126,7 +128,6 @@ class CustomSenceTransformer extends SceneTransformer {
 
 	@Override
 	protected void internalTransform(String phaseName, Map<String, String> options) {
-		Map<String, SootMethod> methodMap = new HashMap<String, SootMethod>();
 		List<FuzzerConfig> classYaml = new ArrayList<FuzzerConfig>();
 
 		// Extract Callgraph for the included Java Class
@@ -144,6 +145,11 @@ class CustomSenceTransformer extends SceneTransformer {
 
 			// Loop through each methods in the class
 			for (SootMethod m : c.getMethods()) {
+				if (m.getName().equals(this.entryMethodStr) &&
+						c.getName().equals(this.entryClassStr)) {
+					this.entryMethod = m;
+				}
+        
 				// Discover method related information
 				FunctionElement element= new FunctionElement();
 
@@ -156,6 +162,7 @@ class CustomSenceTransformer extends SceneTransformer {
 				element.setFunctionSourceFile(c.getFilePath());
 				element.setFunctionLinenumber(m.getJavaSourceStartLineNumber());
 				element.setReturnType(m.getReturnType().toString());
+				element.setFunctionDepth(calculateDepth(callGraph, m));
 				element.setArgCount(m.getParameterCount());
 				for (soot.Type type:m.getParameterTypes()) {
 					element.addArgType(type.toString());
@@ -247,9 +254,7 @@ class CustomSenceTransformer extends SceneTransformer {
 			classYaml.add(classConfig);
 		}
 		System.out.println("Call Tree");
-		System.out.println(extractCallTree(callGraph,
-				this.entryClass + "#" + this.entryMethod,
-				methodMap, 0, -1));
+		System.out.println(extractCallTree(callGraph, this.entryMethod, 0, -1));
 		System.out.println("--------------------------------------------------");
 		ObjectMapper om = new ObjectMapper(new YAMLFactory());
 		for(FuzzerConfig config:classYaml) {
@@ -261,29 +266,37 @@ class CustomSenceTransformer extends SceneTransformer {
 		}
 	}
 
-	// Recursively extract calltree from stored method relationship
-	private String extractCallTree(CallGraph cg, String index, Map<String, SootMethod> methodMap, Integer depth, Integer line) {
-		SootMethod m = methodMap.get(index);
-		String[] name = index.split("#");
-		if (m == null) {
-			return StringUtils.leftPad("", depth * 2) + name[1] + " " + name[0] + " linenumber=" + line + "\n";
-		} else {
-			StringBuffer callTree = new StringBuffer();
-			Iterator<Edge> outEdges = cg.edgesOutOf(m);
 
-			callTree.append(StringUtils.leftPad("", depth * 2));
-			callTree.append(name[1] + " " + name[0] + " linenumber=" + line + "\n");
+	private Integer calculateDepth(CallGraph cg, SootMethod method) {
+		int depth = 0;
 
-			while (outEdges.hasNext()) {
-				Edge edge = outEdges.next();
-				SootMethod tgt = (SootMethod) edge.getTgt();
-				callTree.append(extractCallTree(cg,
-						tgt.getDeclaringClass().getName() + "#" + tgt.getName(),
-						methodMap, depth + 1, edge.srcStmt().getJavaSourceStartLineNumber()));
-			}
-
-			return callTree.toString();
+		Iterator<Edge> outEdges = cg.edgesOutOf(method);
+		while (outEdges.hasNext()) {
+			SootMethod m = outEdges.next().tgt();
+			Integer newDepth = calculateDepth(cg, m) + 1;
+			depth = (newDepth > depth)? newDepth:depth;
 		}
+
+		return depth;
+	}
+
+	// Recursively extract calltree from stored method relationship
+	private String extractCallTree(CallGraph cg, SootMethod method, Integer depth, Integer line) {
+		StringBuilder callTree = new StringBuilder();
+		Iterator<Edge> outEdges = cg.edgesOutOf(method);
+
+		callTree.append(StringUtils.leftPad("", depth * 2));
+		callTree.append(method.getName() + " " + method.getDeclaringClass().getName() +
+				" linenumber=" + line + "\n");
+		while (outEdges.hasNext()) {
+			Edge edge = outEdges.next();
+			SootMethod tgt = edge.tgt();
+
+			callTree.append(extractCallTree(cg, tgt, depth + 1,(edge.srcStmt() == null)?
+					-1 : edge.srcStmt().getJavaSourceStartLineNumber()));
+		}
+
+		return callTree.toString();
 	}
 
 	private Integer calculateCyclomaticComplexity(List<Block> start, Integer complexity) {
@@ -342,3 +355,4 @@ class CustomSenceTransformer extends SceneTransformer {
 		return excludeList;
 	}
 }
+
