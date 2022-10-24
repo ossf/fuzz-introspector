@@ -35,13 +35,14 @@ public class FunctionElement {
 	private Integer CyclomaticComplexity;
 	private List<String> functionReached;
 	private Integer functionUses;
-	private BranchProfile branchProfiles;
+	private List<BranchProfile> branchProfiles;
 
 	public FunctionElement() {
 		this.argTypes = new ArrayList<String>();
 		this.constantsTouched = new ArrayList<String>();
 		this.argNames = new ArrayList<String>();
 		this.functionReached = new ArrayList<String>();
+		this.branchProfiles = new ArrayList<BranchProfile>();
 	}
 
 	public String getFunctionName() {
@@ -188,11 +189,15 @@ public class FunctionElement {
 		this.functionUses = functionUses;
 	}
 
-	public BranchProfile getBranchProfiles() {
+	public List<BranchProfile> getBranchProfiles() {
 		return branchProfiles;
 	}
 
-	public void setBranchProfiles(BranchProfile branchProfiles) {
+	public void addBranchProfile(BranchProfile branchProfile) {
+		this.branchProfiles.add(branchProfile);
+	}
+
+	public void setBranchProfiles(List<BranchProfile> branchProfiles) {
 		this.branchProfiles = branchProfiles;
 	}
 }

@@ -1,3 +1,4 @@
+
 // Copyright 2022 Fuzz Introspector Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -148,7 +149,7 @@ class CustomSenceTransformer extends SceneTransformer {
 						c.getName().equals(this.entryClassStr)) {
 					this.entryMethod = m;
 				}
-
+        
 				// Discover method related information
 				FunctionElement element= new FunctionElement();
 
@@ -240,6 +241,14 @@ class CustomSenceTransformer extends SceneTransformer {
 						blockGraph.getHeads(), 0));
 
 				methodConfig.addFunctionElement(element);
+
+				// Only methods in the entry class or method reachable
+				// from the entry method in the entry class are included
+				// in the call graph result.
+				if (c.getName().equals(this.entryClass) ||
+						element.getFunctionUses() > 0) {
+					methodMap.put(c.getName() + "#" + m.getName(), m);
+				}
 			}
 			classConfig.setFunctionConfig(methodConfig);
 			classYaml.add(classConfig);
@@ -256,6 +265,7 @@ class CustomSenceTransformer extends SceneTransformer {
 			}
 		}
 	}
+
 
 	private Integer calculateDepth(CallGraph cg, SootMethod method) {
 		int depth = 0;
