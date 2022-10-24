@@ -573,6 +573,9 @@ std::string FuzzIntrospector::getFunctionFilename(Function *F) {
 
   StringRef s4 = CurrentDir->str();
   std::string newstr = s4.str();
+
+  delete CurrentDir;
+
   return newstr;
 }
 
@@ -1238,6 +1241,10 @@ FuzzerFunctionWrapper FuzzIntrospector::wrapFunction(Function *F) {
   std::copy(FuncReaches.begin(), FuncReaches.end(),
             std::back_inserter(FuncWrap.FunctionsReached));
 
+  // Delete the nodes
+  for (auto cNode : Nodes) {
+    delete cNode;
+  }
   
   if (getenv("FI_BRANCH_PROFILE")) {
     FuncWrap.BranchProfiles = branchProfiler(F);
