@@ -277,7 +277,8 @@ struct FuzzIntrospector : public ModulePass {
   StringRef removeDecSuffixFromName(StringRef funcName);
   std::string getNextLogFile();
   bool shouldRunIntrospector(Module &M);
-  FuzzerFunctionList wrapAllFunctions(Module &M);
+
+//  FuzzerFunctionList wrapAllFunctions(Module &M);
   std::string getFunctionFilename(Function *F);
   int getFunctionLinenumber(Function *F);
   std::string resolveTypeName(Type *t);
@@ -450,15 +451,38 @@ void FuzzIntrospector::extractAllFunctionDetailsToYaml(std::string nextYamlName,
                                                        Module &M) {
   std::error_code EC;
   logPrintf(L1, "Logging next yaml tile to %s\n", nextYamlName.c_str());
+  logPrintf(L1, "Wrapping all functions\n");
 
-  auto YamlStream = std::make_unique<raw_fd_ostream>(
-      nextYamlName, EC, llvm::sys::fs::OpenFlags::OF_None);
-  yaml::Output YamlOut(*YamlStream);
+  for (auto &F : M) {
+    FuzzerFunctionList ListWrapper;
+    ListWrapper.ListName = "All functions";
 
-  FuzzerModuleIntrospection fmi(FuzzerCalltree.FileName, wrapAllFunctions(M));
-  YamlOut << fmi;
+    logPrintf(L3, "Wrapping function %s\n", F.getName().str().c_str());
+    if (shouldAvoidFunction(&F)) {
+      logPrintf(L3, "Skipping this function\n");
+      continue;
+    }
+    ListWrapper.Functions.push_back(wrapFunction(&F));
+
+    // Write the data
+    auto YamlStream = std::make_unique<raw_fd_ostream>(
+      nextYamlName, EC, llvm::sys::fs::OpenFlags::OF_Append);
+    yaml::Output YamlOut(*YamlStream);
+
+    FuzzerModuleIntrospection fmi(FuzzerCalltree.FileName, ListWrapper);
+
+    YamlOut << fmi;
+
+  }
+  logPrintf(L1, "Ended wrapping all functions\n");
+
+  //return ListWrapper;
+
+  //FuzzerModuleIntrospection fmi(FuzzerCalltree.FileName, wrapAllFunctions(M));
+  //YamlOut << fmi;
 }
 
+/*
 FuzzerFunctionList FuzzIntrospector::wrapAllFunctions(Module &M) {
   FuzzerFunctionList ListWrapper;
   ListWrapper.ListName = "All functions";
@@ -475,7 +499,7 @@ FuzzerFunctionList FuzzIntrospector::wrapAllFunctions(Module &M) {
 
   return ListWrapper;
 }
-
+*/
 std::string FuzzIntrospector::GenRandom(const int len) {
   static const char alphanum[] = "0123456789"
                                  "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
