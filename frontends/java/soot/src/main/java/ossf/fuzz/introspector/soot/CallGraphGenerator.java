@@ -257,33 +257,63 @@ class CustomSenceTransformer extends SceneTransformer {
 		}
 	}
 
+	// Shorthand for calculateDepth from Top
 	private Integer calculateDepth(CallGraph cg, SootMethod method) {
+		return calculateDepth(cg, method, new ArrayList<SootMethod>());
+	}
+
+	// Calculate method depth
+	private Integer calculateDepth(CallGraph cg, SootMethod method, List<SootMethod> handled) {
 		int depth = 0;
 
 		Iterator<Edge> outEdges = cg.edgesOutOf(method);
-		while (outEdges.hasNext()) {
-			SootMethod m = outEdges.next().tgt();
-			Integer newDepth = calculateDepth(cg, m) + 1;
-			depth = (newDepth > depth)? newDepth:depth;
+		if (!handled.contains(method)) {
+			handled.add(method);
+
+			while (outEdges.hasNext()) {
+				Edge edge = outEdges.next();
+				SootMethod tgt = edge.tgt();
+
+				if(tgt.equals(edge.src())) {
+					continue;
+				}
+
+				Integer newDepth = calculateDepth(cg, tgt, handled) + 1;
+				depth = (newDepth > depth)? newDepth:depth;
+			}
 		}
 
 		return depth;
 	}
 
-	// Recursively extract calltree from stored method relationship
+	// Shorthand for extractCallTree from top
 	private String extractCallTree(CallGraph cg, SootMethod method, Integer depth, Integer line) {
+		return extractCallTree(cg, method, depth, line, new ArrayList<SootMethod>());
+	}
+
+	// Recursively extract calltree from stored method relationship, ignoring loops
+	private String extractCallTree(CallGraph cg, SootMethod method, Integer depth, Integer line, List<SootMethod> handled) {
 		StringBuilder callTree = new StringBuilder();
 		Iterator<Edge> outEdges = cg.edgesOutOf(method);
 
 		callTree.append(StringUtils.leftPad("", depth * 2));
 		callTree.append(method.getName() + " " + method.getDeclaringClass().getName() +
 				" linenumber=" + line + "\n");
-		while (outEdges.hasNext()) {
-			Edge edge = outEdges.next();
-			SootMethod tgt = edge.tgt();
 
-			callTree.append(extractCallTree(cg, tgt, depth + 1,(edge.srcStmt() == null)?
-					-1 : edge.srcStmt().getJavaSourceStartLineNumber()));
+		if (!handled.contains(method)) {
+			handled.add(method);
+
+			while (outEdges.hasNext()) {
+				Edge edge = outEdges.next();
+				SootMethod tgt = edge.tgt();
+
+				if (tgt.equals(edge.src())) {
+					continue;
+				}
+
+				callTree.append(extractCallTree(cg, tgt, depth + 1,(edge.srcStmt() == null)?
+						-1 : edge.srcStmt().getJavaSourceStartLineNumber(), handled));
+			}
 		}
 
 		return callTree.toString();
