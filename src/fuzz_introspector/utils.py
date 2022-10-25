@@ -91,7 +91,6 @@ def data_file_read_yaml(filename: str) -> Optional[Dict[Any, Any]]:
     # Try loading multiple yaml files in the fuzz introspector format
     # We need this because we have different formats for each language.
     logger.info("Trying to load multiple file formats toget")
-    combined_dict = dict()
     with open(filename, 'r') as yaml_f:
         data = yaml_f.read()
     try:
