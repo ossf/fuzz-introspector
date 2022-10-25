@@ -247,11 +247,10 @@ class FuzzerProfile:
 
                 if elem in self.all_class_functions:
                     for func_reached2 in self.all_class_functions[elem].functions_reached:
-                        worklist.append((func_reached2, depth+1))
+                        worklist.append((func_reached2, depth + 1))
 
             self.all_class_functions[func].functions_reached = list(visited)
             self.all_class_functions[func].function_depth = max_depth
-
 
     def accummulate_profile(self, target_folder: str) -> None:
         """Triggers various analyses on the data of the fuzzer. This is used
