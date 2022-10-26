@@ -270,14 +270,15 @@ struct FuzzIntrospector : public ModulePass {
                               std::set<StringRef> *);
   void extractFuzzerReachabilityGraph(Module &M);
   int extractCalltree(Function *F, CalltreeNode *callTree,
-                      std::vector<CalltreeNode *> *allNodes);
+                      std::vector<CalltreeNode *> *allNodes, int toRecurse);
   void logCalltree(struct CalltreeNode *calltree, std::ofstream *, int Depth);
   FuzzerFunctionWrapper wrapFunction(Function *func);
   void extractAllFunctionDetailsToYaml(std::string nextYamlName, Module &M);
   StringRef removeDecSuffixFromName(StringRef funcName);
   std::string getNextLogFile();
   bool shouldRunIntrospector(Module &M);
-  FuzzerFunctionList wrapAllFunctions(Module &M);
+
+//  FuzzerFunctionList wrapAllFunctions(Module &M);
   std::string getFunctionFilename(Function *F);
   int getFunctionLinenumber(Function *F);
   std::string resolveTypeName(Type *t);
@@ -450,15 +451,38 @@ void FuzzIntrospector::extractAllFunctionDetailsToYaml(std::string nextYamlName,
                                                        Module &M) {
   std::error_code EC;
   logPrintf(L1, "Logging next yaml tile to %s\n", nextYamlName.c_str());
+  logPrintf(L1, "Wrapping all functions\n");
 
-  auto YamlStream = std::make_unique<raw_fd_ostream>(
-      nextYamlName, EC, llvm::sys::fs::OpenFlags::OF_None);
-  yaml::Output YamlOut(*YamlStream);
+  for (auto &F : M) {
+    FuzzerFunctionList ListWrapper;
+    ListWrapper.ListName = "All functions";
 
-  FuzzerModuleIntrospection fmi(FuzzerCalltree.FileName, wrapAllFunctions(M));
-  YamlOut << fmi;
+    logPrintf(L3, "Wrapping function %s\n", F.getName().str().c_str());
+    if (shouldAvoidFunction(&F)) {
+      logPrintf(L3, "Skipping this function\n");
+      continue;
+    }
+    ListWrapper.Functions.push_back(wrapFunction(&F));
+
+    // Write the data
+    auto YamlStream = std::make_unique<raw_fd_ostream>(
+      nextYamlName, EC, llvm::sys::fs::OpenFlags::OF_Append);
+    yaml::Output YamlOut(*YamlStream);
+
+    FuzzerModuleIntrospection fmi(FuzzerCalltree.FileName, ListWrapper);
+
+    YamlOut << fmi;
+
+  }
+  logPrintf(L1, "Ended wrapping all functions\n");
+
+  //return ListWrapper;
+
+  //FuzzerModuleIntrospection fmi(FuzzerCalltree.FileName, wrapAllFunctions(M));
+  //YamlOut << fmi;
 }
 
+/*
 FuzzerFunctionList FuzzIntrospector::wrapAllFunctions(Module &M) {
   FuzzerFunctionList ListWrapper;
   ListWrapper.ListName = "All functions";
@@ -475,7 +499,7 @@ FuzzerFunctionList FuzzIntrospector::wrapAllFunctions(Module &M) {
 
   return ListWrapper;
 }
-
+*/
 std::string FuzzIntrospector::GenRandom(const int len) {
   static const char alphanum[] = "0123456789"
                                  "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -950,7 +974,7 @@ bool FuzzIntrospector::shouldAvoidFunction(Function *Func) {
 // indirect calls.
 int FuzzIntrospector::extractCalltree(
     Function *F, CalltreeNode *Calltree,
-    std::vector<CalltreeNode *> *allNodesInTree) {
+    std::vector<CalltreeNode *> *allNodesInTree, int toRecurse) {
   std::vector<CalltreeNode *> OutgoingEdges;
   resolveOutgoingEdges(F, &OutgoingEdges);
 
@@ -964,9 +988,11 @@ int FuzzIntrospector::extractCalltree(
     if (Calltree != nullptr) {
       Calltree->Outgoings.push_back(OutEdge);
     }
-    int OutEdgeDepth =
-        1 + extractCalltree(OutEdge->CallsiteDst, OutEdge, allNodesInTree);
-    MaxDepthOfEdges = std::max(MaxDepthOfEdges, OutEdgeDepth);
+    if (toRecurse) {
+      int OutEdgeDepth =
+          1 + extractCalltree(OutEdge->CallsiteDst, OutEdge, allNodesInTree, toRecurse);
+      MaxDepthOfEdges = std::max(MaxDepthOfEdges, OutEdgeDepth);
+    }
   }
   return MaxDepthOfEdges;
 }
@@ -1236,7 +1262,7 @@ FuzzerFunctionWrapper FuzzIntrospector::wrapFunction(Function *F) {
   // Rather, we should cache a lot of the analysis we do in extractCalltree
   // because a top-level function would capture all the data we need for the
   // full program.
-  FuncWrap.FunctionDepth = extractCalltree(F, nullptr, &Nodes);
+  FuncWrap.FunctionDepth = extractCalltree(F, nullptr, &Nodes, 0);
   getFunctionsInAllNodes(&Nodes, &FuncReaches);
   std::copy(FuncReaches.begin(), FuncReaches.end(),
             std::back_inserter(FuncWrap.FunctionsReached));
@@ -1309,7 +1335,7 @@ void FuzzIntrospector::extractFuzzerReachabilityGraph(Module &M) {
   FuzzerCalltree.LineNumber = -1;
 
   std::vector<CalltreeNode *> Nodes;
-  extractCalltree(FuzzEntryFunc, &FuzzerCalltree, &Nodes);
+  extractCalltree(FuzzEntryFunc, &FuzzerCalltree, &Nodes, 1);
 
   // TODO: handle LLVMFuzzerInitialize as this function may also
   // reach target code, and should be considered another fuzzer entrypoint.

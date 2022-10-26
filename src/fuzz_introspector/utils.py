@@ -86,7 +86,35 @@ def data_file_read_yaml(filename: str) -> Optional[Dict[Any, Any]]:
             data_dict: Dict[Any, Any] = yaml.safe_load(stream)
             return data_dict
         except (yaml.YAMLError, UnicodeDecodeError):
-            return None
+            logger.info("Error loading yaml file")
+
+    # Try loading multiple yaml files in the fuzz introspector format
+    # We need this because we have different formats for each language.
+    logger.info("Trying to load multiple file formats toget")
+    with open(filename, 'r') as yaml_f:
+        data = yaml_f.read()
+    try:
+        docs = yaml.safe_load_all(data)
+    except (yaml.YAMLError, UnicodeDecodeError):
+        logger.info("Failed loading")
+        return None
+
+    content = dict()
+    for doc in docs:
+        if "Fuzzer filename" in doc and "Fuzzer filename" not in content:
+            content["Fuzzer filename"] = doc["Fuzzer filename"]
+        if "All functions" in doc:
+            if "All functions" not in content:
+                content['All functions'] = doc['All functions']
+            else:
+                content['All functions']['Elements'].append(
+                    doc['All functions']['Elements'][0]
+                )
+    if "Fuzzer filename" not in content:
+        return None
+    if "All functions" not in content:
+        return None
+    return content
 
 
 def demangle_cpp_func(funcname: str) -> str:

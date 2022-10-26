@@ -225,10 +225,38 @@ class FuzzerProfile:
 
         return self.fuzzer_source_file
 
+    def _propagate_functions_reached(self) -> None:
+        """Accummulates all functions reached by a given fuzzer. This is
+        achieved by iterating the outgoing edges of each function recursively
+        """
+        for func in self.all_class_functions:
+            worklist = []
+            max_depth = 0
+            for func_reached in self.all_class_functions[func].functions_reached:
+                worklist.append((func_reached, 0))
+            visited = set()
+
+            while len(worklist) > 0:
+                elem, depth = worklist.pop()
+                if depth > max_depth:
+                    max_depth = depth
+
+                if elem in visited:
+                    continue
+                visited.add(elem)
+
+                if elem in self.all_class_functions:
+                    for func_reached2 in self.all_class_functions[elem].functions_reached:
+                        worklist.append((func_reached2, depth + 1))
+
+            self.all_class_functions[func].functions_reached = list(visited)
+            self.all_class_functions[func].function_depth = max_depth
+
     def accummulate_profile(self, target_folder: str) -> None:
         """Triggers various analyses on the data of the fuzzer. This is used
         after a profile has been initialised to generate more interesting data.
         """
+        self._propagate_functions_reached()
         self._set_all_reached_functions()
         self._set_all_unreached_functions()
         self._load_coverage(target_folder)
