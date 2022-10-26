@@ -80,6 +80,7 @@ public class CallGraphGenerator{
 		Options.v().set_allow_phantom_refs(true);
 		Options.v().set_whole_program(true);
 		Options.v().set_keep_line_number(true);
+		Options.v().set_no_writeout_body_releasing(true);
 
 		// Load and set main class
 		Options.v().set_main_class(entryClass);
@@ -186,7 +187,13 @@ class CustomSenceTransformer extends SceneTransformer {
 				element.setEdgeCount(methodEdges);
 
 				// Identify blocks information
-				Body methodBody = m.retrieveActiveBody();
+				Body methodBody;
+				try {
+					methodBody = m.retrieveActiveBody();
+				} catch (RuntimeException e) {
+					System.err.println(e.getMessage() + ". Possibly source ommitted from dependencies.");
+					continue;
+				}
 				BlockGraph blockGraph = new BriefBlockGraph(methodBody);
 
 				element.setBBCount(blockGraph.size());
