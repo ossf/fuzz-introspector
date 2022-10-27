@@ -194,9 +194,9 @@ class CustomSenceTransformer extends SceneTransformer {
 
 				// Identify blocks information
 				Body methodBody;
-				if (m.hasActiveBody()) {
+				try{
 					methodBody = m.retrieveActiveBody();
-				} else {
+				} catch(RuntimeException e) {
 					System.err.println("Source code for " + m + " not found.");
 					continue;
 				}
