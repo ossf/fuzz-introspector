@@ -1,6 +1,6 @@
 #!/bin/sh
 
-rm -f ./*.class
+rm -f ./*/*.class
 rm -f ./*.jar
 rm -f ./jazzer*
 wget https://github.com/CodeIntelligenceTesting/jazzer/releases/download/v0.12.0/jazzer-linux-x86_64.tar.gz
