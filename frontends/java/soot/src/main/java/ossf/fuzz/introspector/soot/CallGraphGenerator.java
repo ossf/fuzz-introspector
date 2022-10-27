@@ -88,7 +88,13 @@ public class CallGraphGenerator{
 		c.setApplicationClass();
 
 		// Load and set custom entry point
-		SootMethod entryPoint = c.getMethodByName(entryMethod);
+		SootMethod entryPoint;
+		try {
+			entryPoint = c.getMethodByName(entryMethod);
+		} catch (RuntimeException e) {
+			System.out.println("Cannot find method: " + entryMethod + "from class: " + entryClass + ".");
+			return;
+		}
 		List<SootMethod> entryPoints = new ArrayList<SootMethod>();
 		entryPoints.add(entryPoint);
 		Scene.v().setEntryPoints(entryPoints);
