@@ -30,20 +30,26 @@ done
 
 if [ -z $JARFILE ]
 then
-    echo "You need to specify target with -j <jar_file> or --jarfile <jar_file>."
+    echo "You need to specify target with -j <jar_files> or --jarfile <jar_files>. Multiple jar file should be separated with colon ':'."
     exit 1
 fi
 if [ -z $ENTRYCLASS ]
 then
-    echo "You need to specify entry class with -c <entry_class> or --entryclass <entry_class>."
+    echo "You need to specify entry classes name with -c <entry_classes> or --entryclass <entry_classes>. Multiple entry class should be separated with colon ':'."
     exit 1
 fi
 if [ -z $ENTRYMETHOD ]
 then
-    echo "You need to specify entry class with -m <entry_method> or --entrymethod <entry_method>."
-    exit 1
+    echo "No entry method defined, using default entry method 'fuzzerTestOneInput'"
+    ENTRYMETHOD="fuzzerTestOneInput"
 fi
 
 # Build and execute the call graph generator
 mvn clean package
-java -Xmx6144M -cp "target/ossf.fuzz.introspector.soot-1.0.jar" ossf.fuzz.introspector.soot.CallGraphGenerator $JARFILE $ENTRYCLASS $ENTRYMETHOD
+
+# Loop through all entry class
+for CLASS in $(echo $ENTRYCLASS | tr ":" "\n")
+do
+    echo $CLASS
+    java -Xmx6144M -cp "target/ossf.fuzz.introspector.soot-1.0.jar" ossf.fuzz.introspector.soot.CallGraphGenerator $JARFILE $CLASS $ENTRYMETHOD > $CLASS.result
+done

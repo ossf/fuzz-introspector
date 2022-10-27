@@ -80,6 +80,7 @@ public class CallGraphGenerator{
 		Options.v().set_allow_phantom_refs(true);
 		Options.v().set_whole_program(true);
 		Options.v().set_keep_line_number(true);
+		Options.v().set_no_writeout_body_releasing(true);
 
 		// Load and set main class
 		Options.v().set_main_class(entryClass);
@@ -87,7 +88,13 @@ public class CallGraphGenerator{
 		c.setApplicationClass();
 
 		// Load and set custom entry point
-		SootMethod entryPoint = c.getMethodByName(entryMethod);
+		SootMethod entryPoint;
+		try {
+			entryPoint = c.getMethodByName(entryMethod);
+		} catch (RuntimeException e) {
+			System.out.println("Cannot find method: " + entryMethod + "from class: " + entryClass + ".");
+			return;
+		}
 		List<SootMethod> entryPoints = new ArrayList<SootMethod>();
 		entryPoints.add(entryPoint);
 		Scene.v().setEntryPoints(entryPoints);
@@ -186,7 +193,13 @@ class CustomSenceTransformer extends SceneTransformer {
 				element.setEdgeCount(methodEdges);
 
 				// Identify blocks information
-				Body methodBody = m.retrieveActiveBody();
+				Body methodBody;
+				try{
+					methodBody = m.retrieveActiveBody();
+				} catch(RuntimeException e) {
+					System.err.println("Source code for " + m + " not found.");
+					continue;
+				}
 				BlockGraph blockGraph = new BriefBlockGraph(methodBody);
 
 				element.setBBCount(blockGraph.size());
@@ -233,12 +246,6 @@ class CustomSenceTransformer extends SceneTransformer {
 					}
 				}
 				element.setiCount(iCount);
-
-				visitedBlock = new ArrayList<Block>();
-				visitedBlock.addAll(blockGraph.getTails());
-				element.setCyclomaticComplexity(calculateCyclomaticComplexity(
-						blockGraph.getHeads(), 0));
-
 				methodConfig.addFunctionElement(element);
 			}
 			classConfig.setFunctionConfig(methodConfig);
