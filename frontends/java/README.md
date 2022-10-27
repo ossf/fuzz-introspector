@@ -27,9 +27,9 @@ Sample command: `jar cvf app.jar main.class sub1.class sub2.class`
 
 Sample application for testing
 -----------------------------------------
-In fuzz-introspector/tests/java directory, there are 5 sample testcases. Each of them contains a sample java application and a build script.
+In fuzz-introspector/tests/java directory, there are 7 sample testcases. Each of them contains a sample java application and a build script.
 
-Just go into one of the testcases directories (test1 to test5) and execute the build script, it will automatically generate a jar file for testing in the same directory
+Just go into one of the testcases directories (test1 to test7) and execute the build script, it will automatically generate a jar file (2 jar files for test7) for testing in the same directory
 
 You could also run build all script at fuzz-introspector/tests/java directory and it will automatically build all the testcases and store all resulting jar in the test-jar directory.
 
@@ -117,25 +117,54 @@ Depends on Maven 3.3 or later
 
 Depends on Soot https://github.com/soot-oss/soot, the maven build process will automatically download and pack the Soot jar libraries.
 
-The resulting call tree are shown in stdout.
+The resulting call tree and extra parameter are stored in <ENTRY_CLASS>.result 
 
 Example of running: 
 
 ```
   cd frontends/java/soot
-  ./run.sh <-j | --jarfile> <jarFile1:...:javaFileN> <-c | --entryclass> <Public Entry Class Name> <-m | --entrymethod <Public Entry Method Name>
+  ./run.sh <-j | --jarfile> <jarFile1:...:javaFileN> <-c | --entryclass> <Public Entry Class Name 1:...:Public Entry Class Name N> [-m | --entrymethod <Public Entry Method Name>]
 ```
 
-Example for execution using testcase test1: 
+**__If --entrymethod is ommited, the default value 'fuzzerTestOneInput' will be used.__**
+**__Multiple jar file or entry class is allowed, values should be separated with ':'.__**
+**__Necessary jar library could be added to the --jarfile options__.**
+**__If there is multiple match of entry classes, only the first found will be handled.__**
+
+
+Example for execution using testcase test1:
 ```
-  cd frontends/java/soot
-  ./run.sh -j path/to/fuzz-introspector/tests/java/test1/test1.jar -c TestFuzzer -m fuzzerTestOneInput
+  cd path/to/fuzz-introspector/frontends/java/soot
+  ./run.sh -j path/to/fuzz-introspector/tests/java/test-jar/test1.jar -c TestFuzzer -m fuzzerTestOneInput
+  # To view result
+  cat TestFuzzer.result
 ```
 
 Example for execution using testcase test5: 
 ```
-  cd frontends/java/soot
-  ./run.sh -j path/to/fuzz-introspector/tests/java/test5/test5.jar -c Fuzz.TestFuzzer -m fuzzerTestOneInput
+  cd path/to/fuzz-introspector/frontends/java/soot
+  ./run.sh -j path/to/fuzz-introspector/tests/java/test-jar/test5.jar -c Fuzz.TestFuzzer -m fuzzerTestOneInput
+  # To view result
+  cat Fuzz.TestFuzzer.result
+```
+
+Example for execution using testcase test6 (with multiple entry classes in same jar file): 
+```
+  cd path/to/fuzz-introspector/frontends/java/soot
+  ./run.sh -j path/to/fuzz-introspector/tests/java/test-jar/test6.jar -c Fuzz.TestFuzzer:Fuzz.TestFuzzer2 -m fuzzerTestOneInput
+  # To view result
+  cat Fuzz.TestFuzzer.result
+  cat Fuzz.TestFuzzer2.result
+```
+
+Example for execution using testcase test7 (with multiple entry classes in multiple jar files): 
+```
+  cd path/to/fuzz-introspector/frontends/java/soot
+  ./run.sh -j path/to/fuzz-introspector/tests/java/test-jar/test7-1.jar:path/to/fuzz-introspector/tests/java/test-jar/test7-2.jar -c Fuzz.TestFuzzer:Fuzz2.TestFuzzer2 -m fuzzerTestOneInput
+  # To view result
+  cat Fuzz.TestFuzzer.result
+  cat Fuzz2.TestFuzzer2.result
+
 ```
 
 

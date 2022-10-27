@@ -50,5 +50,6 @@ mvn clean package
 # Loop through all entry class
 for CLASS in $(echo $ENTRYCLASS | tr ":" "\n")
 do
-    java -Xmx6144M -cp "target/ossf.fuzz.introspector.soot-1.0.jar" ossf.fuzz.introspector.soot.CallGraphGenerator $JARFILE $CLASS $ENTRYMETHOD > $class.result
+    echo $CLASS
+    java -Xmx6144M -cp "target/ossf.fuzz.introspector.soot-1.0.jar" ossf.fuzz.introspector.soot.CallGraphGenerator $JARFILE $CLASS $ENTRYMETHOD > $CLASS.result
 done
