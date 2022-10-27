@@ -188,10 +188,10 @@ class CustomSenceTransformer extends SceneTransformer {
 
 				// Identify blocks information
 				Body methodBody;
-				try {
+				if (m.hasActiveBody()) {
 					methodBody = m.retrieveActiveBody();
-				} catch (RuntimeException e) {
-					System.err.println(e.getMessage() + ". Possibly source ommitted from dependencies.");
+				} else {
+					System.err.println("Source code for " + m + " not found.");
 					continue;
 				}
 				BlockGraph blockGraph = new BriefBlockGraph(methodBody);
@@ -240,12 +240,6 @@ class CustomSenceTransformer extends SceneTransformer {
 					}
 				}
 				element.setiCount(iCount);
-
-				visitedBlock = new ArrayList<Block>();
-				visitedBlock.addAll(blockGraph.getTails());
-				element.setCyclomaticComplexity(calculateCyclomaticComplexity(
-						blockGraph.getHeads(), 0));
-
 				methodConfig.addFunctionElement(element);
 			}
 			classConfig.setFunctionConfig(methodConfig);
