@@ -228,5 +228,5 @@ index e4cfde02..52e42731 100755
 +sed -i 's/mvn/$MVN/g' run.sh
 +./run.sh -j $jarfile -c $class -m fuzzerTestOneInput
 +cd $OUT
-+cp fuzz-introspector/frontends/java/soot/*.txt ./
++cp fuzz-introspector/frontends/java/soot/*.result ./
 +rm -rf fuzz-introspector
