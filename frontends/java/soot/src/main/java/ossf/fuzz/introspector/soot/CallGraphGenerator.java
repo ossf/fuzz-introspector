@@ -194,9 +194,9 @@ class CustomSenceTransformer extends SceneTransformer {
 
 				// Identify blocks information
 				Body methodBody;
-				try{
+				try {
 					methodBody = m.retrieveActiveBody();
-				} catch(RuntimeException e) {
+				} catch(Exception e) {
 					System.err.println("Source code for " + m + " not found.");
 					continue;
 				}
@@ -246,6 +246,12 @@ class CustomSenceTransformer extends SceneTransformer {
 					}
 				}
 				element.setiCount(iCount);
+
+				visitedBlock = new ArrayList<Block>();
+				visitedBlock.addAll(blockGraph.getTails());
+				element.setCyclomaticComplexity(calculateCyclomaticComplexity(
+						blockGraph.getHeads(), 0));
+
 				methodConfig.addFunctionElement(element);
 			}
 			classConfig.setFunctionConfig(methodConfig);
@@ -302,6 +308,10 @@ class CustomSenceTransformer extends SceneTransformer {
 	private String extractCallTree(CallGraph cg, SootMethod method, Integer depth, Integer line, List<SootMethod> handled) {
 		StringBuilder callTree = new StringBuilder();
 		Iterator<Edge> outEdges = cg.edgesOutOf(method);
+
+		if (method.getName().endsWith("init>")) {
+			return "";
+		}
 
 		callTree.append(StringUtils.leftPad("", depth * 2));
 		callTree.append(method.getName() + " " + method.getDeclaringClass().getName() +
