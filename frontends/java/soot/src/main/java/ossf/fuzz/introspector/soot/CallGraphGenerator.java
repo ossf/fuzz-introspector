@@ -15,7 +15,6 @@
 
 package ossf.fuzz.introspector.soot;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -95,7 +94,7 @@ public class CallGraphGenerator{
 			System.out.println("Cannot find method: " + entryMethod + "from class: " + entryClass + ".");
 			return;
 		}
-		List<SootMethod> entryPoints = new ArrayList<SootMethod>();
+		List<SootMethod> entryPoints = new LinkedList<SootMethod>();
 		entryPoints.add(entryPoint);
 		Scene.v().setEntryPoints(entryPoints);
 
@@ -109,6 +108,7 @@ public class CallGraphGenerator{
 
 class CustomSenceTransformer extends SceneTransformer {
 	private List<String> excludeList;
+	private List<String> excludeMethodList;
 	private List<Block> visitedBlock;
 	private String entryClassStr;
 	private String entryMethodStr;
@@ -119,7 +119,7 @@ class CustomSenceTransformer extends SceneTransformer {
 		this.entryMethodStr = entryMethodStr;
 		this.entryMethod = null;
 
-		excludeList = new LinkedList<String> ();
+		excludeList = new LinkedList<String>();
 
 		excludeList.add("jdk.");
 		excludeList.add("java.");
@@ -130,11 +130,17 @@ class CustomSenceTransformer extends SceneTransformer {
 		excludeList.add("com.ibm.");
 		excludeList.add("com.apple.");
 		excludeList.add("apple.awt.");
+
+		excludeMethodList = new LinkedList<String>();
+
+		excludeMethodList.add("<init>");
+		excludeMethodList.add("<clinit>");
+		excludeMethodList.add("finalize");
 	}
 
 	@Override
 	protected void internalTransform(String phaseName, Map<String, String> options) {
-		List<FuzzerConfig> classYaml = new ArrayList<FuzzerConfig>();
+		List<FuzzerConfig> classYaml = new LinkedList<FuzzerConfig>();
 
 		// Extract Callgraph for the included Java Class
 		CallGraph callGraph = Scene.v().getCallGraph();
@@ -247,7 +253,7 @@ class CustomSenceTransformer extends SceneTransformer {
 				}
 				element.setiCount(iCount);
 
-				visitedBlock = new ArrayList<Block>();
+				visitedBlock = new LinkedList<Block>();
 				visitedBlock.addAll(blockGraph.getTails());
 				element.setCyclomaticComplexity(calculateCyclomaticComplexity(
 						blockGraph.getHeads(), 0));
@@ -272,7 +278,7 @@ class CustomSenceTransformer extends SceneTransformer {
 
 	// Shorthand for calculateDepth from Top
 	private Integer calculateDepth(CallGraph cg, SootMethod method) {
-		return calculateDepth(cg, method, new ArrayList<SootMethod>());
+		return calculateDepth(cg, method, new LinkedList<SootMethod>());
 	}
 
 	// Calculate method depth
@@ -301,7 +307,7 @@ class CustomSenceTransformer extends SceneTransformer {
 
 	// Shorthand for extractCallTree from top
 	private String extractCallTree(CallGraph cg, SootMethod method, Integer depth, Integer line) {
-		return extractCallTree(cg, method, depth, line, new ArrayList<SootMethod>());
+		return extractCallTree(cg, method, depth, line, new LinkedList<SootMethod>());
 	}
 
 	// Recursively extract calltree from stored method relationship, ignoring loops
@@ -309,7 +315,7 @@ class CustomSenceTransformer extends SceneTransformer {
 		StringBuilder callTree = new StringBuilder();
 		Iterator<Edge> outEdges = cg.edgesOutOf(method);
 
-		if (method.getName().endsWith("init>")) {
+		if (this.excludeMethodList.contains(method.getName())) {
 			return "";
 		}
 
@@ -375,7 +381,7 @@ class CustomSenceTransformer extends SceneTransformer {
 	}
 
 	private List<String> getFunctionCallInTargetLine(List<String> functionReached, Integer startLine, Integer endLine) {
-		List<String> targetFunctionList = new ArrayList<String>();
+		List<String> targetFunctionList = new LinkedList<String>();
 
 		for (String func: functionReached) {
 			String[] line = func.split(" Line: ");
