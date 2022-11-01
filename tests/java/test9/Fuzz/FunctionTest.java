@@ -17,10 +17,9 @@ package Fuzz;
 
 public class FunctionTest {
 	protected void function1() {
-		System.out.println("F1")
+		System.out.println("F1");
 		this.function2();
 	}
-
 
 	protected void function2() {
 		System.out.println("F2");
@@ -34,5 +33,4 @@ public class FunctionTest {
 	private void functionPrivateDead() {
 		System.out.println("PrD");
 	}
-
 }
