@@ -110,6 +110,7 @@ class CustomSenceTransformer extends SceneTransformer {
 	private List<String> excludeList;
 	private List<String> excludeMethodList;
 	private List<Block> visitedBlock;
+	private Map<String, String> edgeClassMap;
 	private String entryClassStr;
 	private String entryMethodStr;
 	private SootMethod entryMethod;
@@ -136,6 +137,8 @@ class CustomSenceTransformer extends SceneTransformer {
 		excludeMethodList.add("<init>");
 		excludeMethodList.add("<clinit>");
 		excludeMethodList.add("finalize");
+
+		edgeClassMap = new HashMap<String, String>();
 	}
 
 	@Override
@@ -313,19 +316,20 @@ class CustomSenceTransformer extends SceneTransformer {
 	// Recursively extract calltree from stored method relationship, ignoring loops
 	private String extractCallTree(CallGraph cg, SootMethod method, Integer depth, Integer line, List<SootMethod> handled) {
 		StringBuilder callTree = new StringBuilder();
-		Iterator<Edge> outEdges = this.sortEdgeWithLineNumber(cg.edgesOutOf(method));
 
 		if (this.excludeMethodList.contains(method.getName())) {
 			return "";
 		}
 
+		String className = this.edgeClassMap.get(method.getName() + ":" + line);
+		className = (className == null)? method.getDeclaringClass().getName():className;
 		callTree.append(StringUtils.leftPad("", depth * 2));
-		callTree.append(method.getName() + " " + method.getDeclaringClass().getName() +
-				" linenumber=" + line + "\n");
+		callTree.append(method.getName() + " " + className + " linenumber=" + line + "\n");
 
 		if (!handled.contains(method)) {
 			handled.add(method);
 
+			Iterator<Edge> outEdges = this.mergePolymorphism(this.sortEdgeByLineNumber(cg.edgesOutOf(method)));
 			while (outEdges.hasNext()) {
 				Edge edge = outEdges.next();
 				SootMethod tgt = edge.tgt();
@@ -394,7 +398,7 @@ class CustomSenceTransformer extends SceneTransformer {
 		return targetFunctionList;
 	}
 
-	private Iterator<Edge> sortEdgeWithLineNumber(Iterator<Edge> it) {
+	private Iterator<Edge> sortEdgeByLineNumber(Iterator<Edge> it) {
 		List<Edge> edgeList = new LinkedList<Edge>();
 
 		while(it.hasNext()) {
@@ -405,6 +409,26 @@ class CustomSenceTransformer extends SceneTransformer {
 			e1.srcStmt().getJavaSourceStartLineNumber() - e2.srcStmt().getJavaSourceStartLineNumber());
 
 		return edgeList.iterator();
+	}
+
+	private Iterator<Edge> mergePolymorphism(Iterator<Edge> it) {
+		List<Edge> edgeList = new LinkedList<Edge>();
+		this.edgeClassMap = new HashMap<String, String>();
+
+		while(it.hasNext()) {
+			Edge edge = it.next();
+			String matchStr = edge.tgt().getName() + ":" + edge.srcStmt().getJavaSourceStartLineNumber();
+
+			if (this.edgeClassMap.containsKey(matchStr)) {
+				this.edgeClassMap.put(matchStr,
+						this.edgeClassMap.get(matchStr) + ":" + edge.tgt().getDeclaringClass().getName());
+			} else {
+				edgeList.add(edge);
+				this.edgeClassMap.put(matchStr, edge.tgt().getDeclaringClass().getName());
+			}
+		}
+
+		return this.sortEdgeByLineNumber(edgeList.iterator());
 	}
 
 	public List<String> getExcludeList() {
