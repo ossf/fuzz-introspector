@@ -1,8 +1,8 @@
 diff --git a/infra/base-images/base-builder/Dockerfile b/infra/base-images/base-builder/Dockerfile
-index 883b4b78..ac8cee09 100644
+index aa954a17..64225b54 100644
 --- a/infra/base-images/base-builder/Dockerfile
 +++ b/infra/base-images/base-builder/Dockerfile
-@@ -150,5 +150,8 @@ COPY cargo compile compile_afl compile_libfuzzer compile_honggfuzz \
+@@ -160,5 +160,8 @@ COPY cargo compile compile_afl compile_libfuzzer compile_honggfuzz \
  COPY llvmsymbol.diff $SRC
  COPY detect_repo.py /opt/cifuzz/
  COPY bazel.bazelrc /root/.bazelrc
@@ -12,7 +12,7 @@ index 883b4b78..ac8cee09 100644
  
  CMD ["compile"]
 diff --git a/infra/base-images/base-builder/compile b/infra/base-images/base-builder/compile
-index 402c07a8..37f67166 100755
+index c7f4bab2..26bd49fd 100755
 --- a/infra/base-images/base-builder/compile
 +++ b/infra/base-images/base-builder/compile
 @@ -27,8 +27,8 @@ if [ "$FUZZING_LANGUAGE" = "jvm" ]; then
@@ -35,7 +35,7 @@ index 402c07a8..37f67166 100755
      echo "ERROR: Python projects can be fuzzed with AddressSanitizer or UndefinedBehaviorSanitizer or Coverage only."
      exit 1
    fi
-@@ -210,33 +210,46 @@ if [ "$SANITIZER" = "introspector" ]; then
+@@ -211,33 +211,46 @@ if [ "$SANITIZER" = "introspector" ]; then
    unset CFLAGS
    apt-get install -y libjpeg-dev zlib1g-dev
    pip3 install --upgrade setuptools
@@ -136,10 +136,10 @@ index e7c7f0a3..c2282bf6 100755
  if [[ $SANITIZER = *coverage* ]]; then
    cat <<EOF > coverage_wrapper.py
 diff --git a/infra/base-images/base-clang/Dockerfile b/infra/base-images/base-clang/Dockerfile
-index 343b4a50..75d81d27 100644
+index 944f6a0a..154a22f7 100644
 --- a/infra/base-images/base-clang/Dockerfile
 +++ b/infra/base-images/base-clang/Dockerfile
-@@ -44,6 +44,8 @@ RUN apt-get update && apt-get install -y git && \
+@@ -43,6 +43,8 @@ RUN apt-get update && apt-get install -y git && \
  COPY checkout_build_install_llvm.sh /root/
  # Keep all steps in the same script to decrease the number of intermediate
  # layes in docker file.
@@ -149,7 +149,7 @@ index 343b4a50..75d81d27 100644
  RUN rm /root/checkout_build_install_llvm.sh
  
 diff --git a/infra/base-images/base-runner/coverage b/infra/base-images/base-runner/coverage
-index 9452ab22..daa75641 100755
+index 02201076..e91774bd 100755
 --- a/infra/base-images/base-runner/coverage
 +++ b/infra/base-images/base-runner/coverage
 @@ -304,13 +304,20 @@ elif [[ $FUZZING_LANGUAGE == "python" ]]; then
@@ -173,6 +173,54 @@ index 9452ab22..daa75641 100755
  
    # Create an empty summary file for now
    echo "{}" >> $SUMMARY_FILE
+diff --git a/projects/jackson-databind/build.sh b/projects/jackson-databind/build.sh
+index b5ea5b01..fa0001ba 100755
+--- a/projects/jackson-databind/build.sh
++++ b/projects/jackson-databind/build.sh
+@@ -55,6 +55,9 @@ BUILD_CLASSPATH=$(echo $ALL_JARS | xargs printf -- "$OUT/%s:"):$JAZZER_API_PATH
+ # All .jar and .class files lie in the same directory as the fuzzer at runtime.
+ RUNTIME_CLASSPATH=$(echo $ALL_JARS | xargs printf -- "\$this_dir/%s:"):\$this_dir
+ 
++jarfile=
++class=
++
+ for fuzzer in $(find $SRC -name '*Fuzzer.java'); do
+   fuzzer_basename=$(basename -s .java $fuzzer)
+   javac -cp $BUILD_CLASSPATH $fuzzer
+@@ -68,6 +71,18 @@ for fuzzer in $(find $SRC -name '*Fuzzer.java'); do
+     cp $SRC/$fuzzer_basename\$MockFuzzDataInput.class $OUT/
+   fi
+ 
++    cd $OUT
++    jar cvf $fuzzer_basename.jar $fuzzer_basename*.class
++    if [ -z "$jarfile" ]
++    then
++           jarfile=$OUT/$fuzzer_basename.jar
++           class=$fuzzer_basename
++    else
++           jarfile=$jarfile:$OUT/$fuzzer_basename.jar
++           class=$class:$fuzzer_basename
++    fi
++    cd -
++
+   # Create an execution wrapper that executes Jazzer with the correct arguments.
+   echo "#!/bin/bash
+ # LLVMFuzzerTestOneInput for fuzzer detection.
+@@ -86,3 +101,14 @@ LD_LIBRARY_PATH=\"$JVM_LD_LIBRARY_PATH\":\$this_dir \
+ \$@" > $OUT/$fuzzer_basename
+   chmod u+x $OUT/$fuzzer_basename
+ done
++
++cd $OUT
++rm -rf fuzz-introspector
++git clone https://github.com/ossf/fuzz-introspector
++jarfile=$jarfile:$OUT/jackson-databind.jar:$OUT/jackson-core.jar:$OUT/jackson-annotations.jar
++cd fuzz-introspector/frontends/java/soot
++sed -i 's/mvn/$MVN/g' run.sh
++./run.sh -j $jarfile -c $class -m fuzzerTestOneInput
++cd $OUT
++cp fuzz-introspector/frontends/java/soot/*.result ./
++rm -rf fuzz-introspector
 diff --git a/projects/pyyaml/build.sh b/projects/pyyaml/build.sh
 index 98f406ad..62485ae4 100644
 --- a/projects/pyyaml/build.sh
@@ -188,45 +236,3 @@ index 98f406ad..62485ae4 100644
  python3 ./setup.py --without-libyaml install
  
  # Build fuzzers in $OUT.
-diff --git a/projects/jackson-databind/build.sh b/projects/jackson-databind/build.sh
-index e4cfde02..52e42731 100755
---- a/projects/jackson-databind/build.sh
-+++ b/projects/jackson-databind/build.sh
-@@ -55,6 +55,9 @@ BUILD_CLASSPATH=$(echo $ALL_JARS | xargs printf -- "$OUT/%s:"):$JAZZER_API_PATH
- # All .jar and .class files lie in the same directory as the fuzzer at runtime.
- RUNTIME_CLASSPATH=$(echo $ALL_JARS | xargs printf -- "\$this_dir/%s:"):\$this_dir
- 
-+jarfile=
-+class=
-+
- for fuzzer in $(find $SRC -name '*Fuzzer.java'); do
-   fuzzer_basename=$(basename -s .java $fuzzer)
-   javac -cp $BUILD_CLASSPATH $fuzzer
-@@ -87,5 +90,26 @@ LD_LIBRARY_PATH=\"$JVM_LD_LIBRARY_PATH\":\$this_dir \
-   chmod u+x $OUT/$fuzzer_basename
- 
- # Build up jar for fuzz-introspector
--jar cvf $OUT/$fuzzer_basename.jar $SRC/$fuzzer_basename*.class
-+cd $OUT
-+jar cvf $fuzzer_basename.jar $fuzzer_basename*.class
-+if [ -z "$jarfile" ]
-+then
-+       jarfile=$OUT/$fuzzer_basename.jar
-+       class=$fuzzer_basename
-+else
-+       jarfile=$jarfile:$OUT/$fuzzer_basename.jar
-+       class=$class:$fuzzer_basename
-+fi
-+cd -
- done
-+
-+cd $OUT
-+rm -rf fuzz-introspector
-+git clone https://github.com/ossf/fuzz-introspector
-+jarfile=$jarfile:$OUT/jackson-databind.jar:$OUT/jackson-core.jar:$OUT/jackson-annotations.jar
-+cd fuzz-introspector/frontends/java/soot
-+sed -i 's/mvn/$MVN/g' run.sh
-+./run.sh -j $jarfile -c $class -m fuzzerTestOneInput
-+cd $OUT
-+cp fuzz-introspector/frontends/java/soot/*.result ./
-+rm -rf fuzz-introspector
