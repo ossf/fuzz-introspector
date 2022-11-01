@@ -17,6 +17,15 @@ package Fuzz;
 
 public class Female extends Human {
 	protected String getName() {
-		return "Ms. " + name;
+		this.femaleStuff();
+		return this.getTitle() + name;
+	}
+
+	private String getTitle() {
+		return "Ms. ";
+	}
+
+	private void femaleStuff() {
+		System.out.println("Doing some female stuff");
 	}
 }
