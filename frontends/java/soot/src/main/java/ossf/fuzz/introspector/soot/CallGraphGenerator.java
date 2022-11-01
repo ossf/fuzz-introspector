@@ -321,10 +321,15 @@ class CustomSenceTransformer extends SceneTransformer {
 			return "";
 		}
 
-		String className = this.edgeClassMap.get(method.getName() + ":" + line);
-		className = (className == null)? method.getDeclaringClass().getName():className;
+		String className = this.edgeClassMap.getOrDefault(method.getName() + ":" + line, method.getDeclaringClass().getName());
 		callTree.append(StringUtils.leftPad("", depth * 2));
 		callTree.append(method.getName() + " " + className + " linenumber=" + line + "\n");
+
+		for (String excludeClassPrefix: this.excludeList) {
+			if (method.getDeclaringClass().getName().startsWith(excludeClassPrefix)) {
+				return callTree.toString();
+			}
+		}
 
 		if (!handled.contains(method)) {
 			handled.add(method);
@@ -418,6 +423,17 @@ class CustomSenceTransformer extends SceneTransformer {
 		while(it.hasNext()) {
 			Edge edge = it.next();
 			String matchStr = edge.tgt().getName() + ":" + edge.srcStmt().getJavaSourceStartLineNumber();
+
+			boolean skip = false;
+			for (String excludeClassPrefix: this.excludeList) {
+				if (matchStr.startsWith(excludeClassPrefix)) {
+					skip = true;
+					break;
+				}
+			}
+			if (skip) {
+				continue;
+			}
 
 			if (this.edgeClassMap.containsKey(matchStr)) {
 				this.edgeClassMap.put(matchStr,
