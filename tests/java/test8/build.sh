@@ -13,11 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-rm -f ./*.class
+rm -f ./Fuzz/*.class
 rm -f ./*.jar
 rm -f ./jazzer*
 wget https://github.com/CodeIntelligenceTesting/jazzer/releases/download/v0.12.0/jazzer-linux-x86_64.tar.gz
 tar -zxvf jazzer-linux-x86_64.tar.gz
-javac -cp jazzer_api_deploy.jar *.java
-jar cfv test3.jar *.class
+javac -cp jazzer_api_deploy.jar ./Fuzz/*.java
+jar cfv test8.jar ./Fuzz/*.class
 rm -rf ./jazzer*
