@@ -263,8 +263,8 @@ class CustomSenceTransformer extends SceneTransformer {
 			classConfig.setFunctionConfig(methodConfig);
 			classYaml.add(classConfig);
 		}
-		System.out.println("Call Tree");
-		System.out.println(extractCallTree(callGraph, this.entryMethod, 0, -1));
+		String callTree = extractCallTree(callGraph, this.entryMethod, 0, -1);
+		System.out.println(callTree);
 		System.out.println("--------------------------------------------------");
 		ObjectMapper om = new ObjectMapper(new YAMLFactory());
 		for(FuzzerConfig config:classYaml) {
@@ -307,13 +307,13 @@ class CustomSenceTransformer extends SceneTransformer {
 
 	// Shorthand for extractCallTree from top
 	private String extractCallTree(CallGraph cg, SootMethod method, Integer depth, Integer line) {
-		return extractCallTree(cg, method, depth, line, new LinkedList<SootMethod>());
+		return "Call Tree\n" + extractCallTree(cg, method, depth, line, new LinkedList<SootMethod>());
 	}
 
 	// Recursively extract calltree from stored method relationship, ignoring loops
 	private String extractCallTree(CallGraph cg, SootMethod method, Integer depth, Integer line, List<SootMethod> handled) {
 		StringBuilder callTree = new StringBuilder();
-		Iterator<Edge> outEdges = cg.edgesOutOf(method);
+		Iterator<Edge> outEdges = this.sortEdgeWithLineNumber(cg.edgesOutOf(method));
 
 		if (this.excludeMethodList.contains(method.getName())) {
 			return "";
@@ -392,6 +392,19 @@ class CustomSenceTransformer extends SceneTransformer {
 		}
 
 		return targetFunctionList;
+	}
+
+	private Iterator<Edge> sortEdgeWithLineNumber(Iterator<Edge> it) {
+		List<Edge> edgeList = new LinkedList<Edge>();
+
+		while(it.hasNext()) {
+			edgeList.add(it.next());
+		}
+
+		edgeList.sort((e1, e2) ->
+			e1.srcStmt().getJavaSourceStartLineNumber() - e2.srcStmt().getJavaSourceStartLineNumber());
+
+		return edgeList.iterator();
 	}
 
 	public List<String> getExcludeList() {
