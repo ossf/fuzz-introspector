@@ -63,7 +63,7 @@ class MergedProjectProfile:
         # add duplicates
         logger.info("Creating all_functions dictionary")
         excluded_functions = {
-            "sanitizer", "llvm"
+            "sanitizer", "llvm", "LLVMFuzzerTestOneInput"
         }
         for profile in profiles:
             for fd in profile.all_class_functions.values():

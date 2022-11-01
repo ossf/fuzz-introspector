@@ -44,7 +44,7 @@ class FunctionProfile:
         self.i_count = elem['ICount']
         self.edge_count = elem['EdgeCount']
         self.cyclomatic_complexity = elem['CyclomaticComplexity']
-        self.functions_reached = utils.load_func_names(elem['functionsReached'])
+        self.functions_reached = utils.load_func_names(elem['functionsReached'], False)
         self.function_uses = elem['functionUses']
         self.function_depth = elem['functionDepth']
         self.constants_touched = elem['constantsTouched']
