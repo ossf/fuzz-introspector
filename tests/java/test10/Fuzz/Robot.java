@@ -15,28 +15,8 @@
 
 package Fuzz;
 
-import com.code_intelligence.jazzer.api.FuzzedDataProvider;
-import com.code_intelligence.jazzer.api.CannedFuzzedDataProvider;
-
-public class TestFuzzer {
-	public static void fuzzerTestOneInput(FuzzedDataProvider data) {
-		int choice = data.consumeInt(1,4);
-		Human human;
-
-		if (choice == 1) {
-			human = new Male();
-		} else if (choice == 2) {
-			human = new Female();
-		} else if (choice == 3) {
-			human = new Robot();
-		} else if (choice == 4) {
-			human = new Android();
-		}
-
-		human.getName();
+public class Robot extends Human {
+	protected String getName() {
+		return name;
 	}
-
-	public static void main(String[] args) {
-                TestFuzzer.fuzzerTestOneInput(new CannedFuzzedDataProvider("RANDOM"));
-        }
 }
