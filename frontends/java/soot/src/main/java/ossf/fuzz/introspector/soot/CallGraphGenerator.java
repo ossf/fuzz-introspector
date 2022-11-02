@@ -50,10 +50,10 @@ import soot.toolkits.graph.Block;
 import soot.toolkits.graph.BlockGraph;
 import soot.toolkits.graph.BriefBlockGraph;
 
-public class CallGraphGenerator{
-	public static void main(String[] args) {
-		if (args.length != 3) {
-			System.err.println("No jarFiles, entryClass or entryMethod.");
+	public class CallGraphGenerator{
+		public static void main(String[] args) {
+			if (args.length != 3) {
+				System.err.println("No jarFiles, entryClass or entryMethod.");
 			return;
 		}
 		List<String> jarFiles = Arrays.asList(args[0].split(":"));
@@ -202,81 +202,81 @@ class CustomSenceTransformer extends SceneTransformer {
 				element.setEdgeCount(methodEdges);
 
 				// Identify blocks information
-				Body methodBody;
-				try {
-					methodBody = m.retrieveActiveBody();
-				} catch(Exception e) {
-					System.err.println("Source code for " + m + " not found.");
-					continue;
-				}
-				BlockGraph blockGraph = new BriefBlockGraph(methodBody);
-
-				element.setBBCount(blockGraph.size());
-				int iCount = 0;
-				for (Block block:blockGraph.getBlocks()) {
-					Iterator<Unit> blockIt = block.iterator();
-					while(blockIt.hasNext()) {
-						Unit unit = blockIt.next();
-						if (unit instanceof JIfStmt) {
-							// Handle branch profile
-							BranchProfile branchProfile = new BranchProfile();
-							BranchSide branchSide = new BranchSide();
-
-							Map<String, Integer> trueBlockLine =
-									getBlockStartEndLineWithLineNumber(blockGraph.getBlocks(), unit.getJavaSourceStartLineNumber() + 1);
-							Map<String, Integer> falseBlockLine =
-									getBlockStartEndLineWithLineNumber(blockGraph.getBlocks(),
-											((JIfStmt)unit).getUnitBoxes().get(0).getUnit().getJavaSourceStartLineNumber());
-
-							// True branch
-							if (!trueBlockLine.isEmpty()) {
-								Integer start = trueBlockLine.get("start");
-								Integer end = trueBlockLine.get("end");
-								branchSide.setTrueSides(c.getName() + ":" + start);
-								branchSide.setTrueSidesFuncs(getFunctionCallInTargetLine(
-										element.getFunctionReached(), start, end));
-
-							}
-
-							// False branch
-							if (!falseBlockLine.isEmpty()) {
-								Integer start = falseBlockLine.get("start");
-								Integer end = falseBlockLine.get("end");
-								branchSide.setFalseSides(c.getName() + ":" + (start - 1));
-								branchSide.setFalseSidesFuncs(getFunctionCallInTargetLine(
-										element.getFunctionReached(), start, end));
-							}
-
-							branchProfile.setBranchString(c.getName() + ":" + unit.getJavaSourceStartLineNumber());
-							branchProfile.setBranchSides(branchSide);
-							element.addBranchProfile(branchProfile);
-						}
-						iCount++;
+					Body methodBody;
+					try {
+						methodBody = m.retrieveActiveBody();
+					} catch(Exception e) {
+						System.err.println("Source code for " + m + " not found.");
+						continue;
 					}
-				}
-				element.setiCount(iCount);
+					BlockGraph blockGraph = new BriefBlockGraph(methodBody);
 
-				visitedBlock = new LinkedList<Block>();
-				visitedBlock.addAll(blockGraph.getTails());
-				element.setCyclomaticComplexity(calculateCyclomaticComplexity(
-						blockGraph.getHeads(), 0));
+					element.setBBCount(blockGraph.size());
+					int iCount = 0;
+					for (Block block:blockGraph.getBlocks()) {
+						Iterator<Unit> blockIt = block.iterator();
+						while(blockIt.hasNext()) {
+							Unit unit = blockIt.next();
+							if (unit instanceof JIfStmt) {
+								// Handle branch profile
+								BranchProfile branchProfile = new BranchProfile();
+								BranchSide branchSide = new BranchSide();
 
-				methodConfig.addFunctionElement(element);
+								Map<String, Integer> trueBlockLine =
+										getBlockStartEndLineWithLineNumber(blockGraph.getBlocks(), unit.getJavaSourceStartLineNumber() + 1);
+								Map<String, Integer> falseBlockLine =
+										getBlockStartEndLineWithLineNumber(blockGraph.getBlocks(),
+												((JIfStmt)unit).getUnitBoxes().get(0).getUnit().getJavaSourceStartLineNumber());
+
+								// True branch
+								if (!trueBlockLine.isEmpty()) {
+									Integer start = trueBlockLine.get("start");
+									Integer end = trueBlockLine.get("end");
+									branchSide.setTrueSides(c.getName() + ":" + start);
+									branchSide.setTrueSidesFuncs(getFunctionCallInTargetLine(
+											element.getFunctionReached(), start, end));
+
+								}
+
+								// False branch
+								if (!falseBlockLine.isEmpty()) {
+									Integer start = falseBlockLine.get("start");
+									Integer end = falseBlockLine.get("end");
+									branchSide.setFalseSides(c.getName() + ":" + (start - 1));
+									branchSide.setFalseSidesFuncs(getFunctionCallInTargetLine(
+											element.getFunctionReached(), start, end));
+								}
+
+								branchProfile.setBranchString(c.getName() + ":" + unit.getJavaSourceStartLineNumber());
+								branchProfile.setBranchSides(branchSide);
+								element.addBranchProfile(branchProfile);
+							}
+							iCount++;
+						}
+					}
+					element.setiCount(iCount);
+
+					visitedBlock = new LinkedList<Block>();
+					visitedBlock.addAll(blockGraph.getTails());
+					element.setCyclomaticComplexity(calculateCyclomaticComplexity(
+							blockGraph.getHeads(), 0));
+
+					methodConfig.addFunctionElement(element);
 			}
-			classConfig.setFunctionConfig(methodConfig);
-			classYaml.add(classConfig);
+				classConfig.setFunctionConfig(methodConfig);
+				classYaml.add(classConfig);
 		}
 		String callTree = extractCallTree(callGraph, this.entryMethod, 0, -1);
 		System.out.println(callTree);
-		System.out.println("--------------------------------------------------");
-		ObjectMapper om = new ObjectMapper(new YAMLFactory());
-		for(FuzzerConfig config:classYaml) {
-			try {
-				System.out.println(om.writeValueAsString(config) + "\n");
-			} catch (JsonProcessingException e) {
-				e.printStackTrace();
+			System.out.println("--------------------------------------------------");
+			ObjectMapper om = new ObjectMapper(new YAMLFactory());
+			for(FuzzerConfig config:classYaml) {
+				try {
+					System.out.println(om.writeValueAsString(config) + "\n");
+				} catch (JsonProcessingException e) {
+					e.printStackTrace();
+				}
 			}
-		}
 	}
 
 	// Shorthand for calculateDepth from Top
@@ -288,40 +288,54 @@ class CustomSenceTransformer extends SceneTransformer {
 	private Integer calculateDepth(CallGraph cg, SootMethod method, List<SootMethod> handled) {
 		int depth = 0;
 
-		Iterator<Edge> outEdges = cg.edgesOutOf(method);
-		if (!handled.contains(method)) {
-			handled.add(method);
+			Iterator<Edge> outEdges = cg.edgesOutOf(method);
+			if (!handled.contains(method)) {
+				handled.add(method);
 
-			while (outEdges.hasNext()) {
-				Edge edge = outEdges.next();
-				SootMethod tgt = edge.tgt();
+				while (outEdges.hasNext()) {
+					Edge edge = outEdges.next();
+					SootMethod tgt = edge.tgt();
 
-				if(tgt.equals(edge.src())) {
-					continue;
+					if(tgt.equals(edge.src())) {
+						continue;
+					}
+
+					Integer newDepth = calculateDepth(cg, tgt, handled) + 1;
+					depth = (newDepth > depth)? newDepth:depth;
 				}
-
-				Integer newDepth = calculateDepth(cg, tgt, handled) + 1;
-				depth = (newDepth > depth)? newDepth:depth;
 			}
-		}
 
 		return depth;
 	}
 
 	// Shorthand for extractCallTree from top
 	private String extractCallTree(CallGraph cg, SootMethod method, Integer depth, Integer line) {
-		return "Call Tree\n" + extractCallTree(cg, method, depth, line, new LinkedList<SootMethod>());
+		return "Call Tree\n" + extractCallTree(cg, method, depth, line, new LinkedList<SootMethod>(), null);
 	}
 
 	// Recursively extract calltree from stored method relationship, ignoring loops
-	private String extractCallTree(CallGraph cg, SootMethod method, Integer depth, Integer line, List<SootMethod> handled) {
+	private String extractCallTree(CallGraph cg, SootMethod method, Integer depth, Integer line, List<SootMethod> handled, String callerClass) {
 		StringBuilder callTree = new StringBuilder();
 
 		if (this.excludeMethodList.contains(method.getName())) {
 			return "";
 		}
 
-		String className = this.edgeClassMap.getOrDefault(method.getName() + ":" + line, method.getDeclaringClass().getName());
+		String className = "";
+		if (callerClass != null) {
+			className = this.edgeClassMap.getOrDefault(callerClass + ":" + method.getName() + ":" + line, "");
+			boolean merged = false;
+			for (String name:className.split(":")) {
+				if (name.equals(method.getDeclaringClass().getName())) {
+					merged = true;
+					break;
+				}
+			}
+			if (!merged) {
+				className = method.getDeclaringClass().getName();
+			}
+		}
+
 		callTree.append(StringUtils.leftPad("", depth * 2));
 		callTree.append(method.getName() + " " + className + " linenumber=" + line + "\n");
 
@@ -334,7 +348,7 @@ class CustomSenceTransformer extends SceneTransformer {
 		if (!handled.contains(method)) {
 			handled.add(method);
 
-			Iterator<Edge> outEdges = this.mergePolymorphism(this.sortEdgeByLineNumber(cg.edgesOutOf(method)));
+			Iterator<Edge> outEdges = this.mergePolymorphism(cg, cg.edgesOutOf(method));
 			while (outEdges.hasNext()) {
 				Edge edge = outEdges.next();
 				SootMethod tgt = edge.tgt();
@@ -344,7 +358,8 @@ class CustomSenceTransformer extends SceneTransformer {
 				}
 
 				callTree.append(extractCallTree(cg, tgt, depth + 1,(edge.srcStmt() == null)?
-						-1 : edge.srcStmt().getJavaSourceStartLineNumber(), handled));
+						-1 : edge.srcStmt().getJavaSourceStartLineNumber(), handled,
+						edge.src().getDeclaringClass().getName()));
 			}
 		}
 
@@ -352,14 +367,14 @@ class CustomSenceTransformer extends SceneTransformer {
 	}
 
 	private Integer calculateCyclomaticComplexity(List<Block> start, Integer complexity) {
-		for (Block block:start) {
-			if (visitedBlock.contains(block)) {
-				complexity += 1;
-			} else {
-				visitedBlock.add(block);
-				complexity = calculateCyclomaticComplexity(block.getSuccs(), complexity);
+			for (Block block:start) {
+				if (visitedBlock.contains(block)) {
+					complexity += 1;
+				} else {
+					visitedBlock.add(block);
+					complexity = calculateCyclomaticComplexity(block.getSuccs(), complexity);
+				}
 			}
-		}
 		return complexity;
 	}
 
@@ -367,24 +382,24 @@ class CustomSenceTransformer extends SceneTransformer {
 		Integer startLine;
 		Integer endLine;
 
-		for (Block block:blocks) {
-			Iterator<Unit> it = block.iterator();
-			startLine = -1;
-			endLine = -1;
-			while(it.hasNext()) {
-				Unit unit = it.next();
-				if (startLine == -1) {
-					startLine = unit.getJavaSourceStartLineNumber();
+			for (Block block:blocks) {
+				Iterator<Unit> it = block.iterator();
+				startLine = -1;
+				endLine = -1;
+				while(it.hasNext()) {
+					Unit unit = it.next();
+					if (startLine == -1) {
+						startLine = unit.getJavaSourceStartLineNumber();
+					}
+					endLine = unit.getJavaSourceStartLineNumber();
 				}
-				endLine = unit.getJavaSourceStartLineNumber();
+				if (lineNumber >= startLine && lineNumber <= endLine) {
+					Map<String, Integer> line = new HashMap<String, Integer>();
+					line.put("start", startLine);
+					line.put("end", endLine);
+					return line;
+				}
 			}
-			if (lineNumber >= startLine && lineNumber <= endLine) {
-				Map<String, Integer> line = new HashMap<String, Integer>();
-				line.put("start", startLine);
-				line.put("end", endLine);
-				return line;
-			}
-		}
 
 		return Collections.emptyMap();
 	}
@@ -392,13 +407,13 @@ class CustomSenceTransformer extends SceneTransformer {
 	private List<String> getFunctionCallInTargetLine(List<String> functionReached, Integer startLine, Integer endLine) {
 		List<String> targetFunctionList = new LinkedList<String>();
 
-		for (String func: functionReached) {
-			String[] line = func.split(" Line: ");
-			Integer lineNumber = Integer.parseInt(line[1]);
-			if (lineNumber >= startLine && lineNumber <= endLine) {
-				targetFunctionList.add(line[0]);
+			for (String func: functionReached) {
+				String[] line = func.split(" Line: ");
+				Integer lineNumber = Integer.parseInt(line[1]);
+				if (lineNumber >= startLine && lineNumber <= endLine) {
+					targetFunctionList.add(line[0]);
+				}
 			}
-		}
 
 		return targetFunctionList;
 	}
@@ -416,17 +431,21 @@ class CustomSenceTransformer extends SceneTransformer {
 		return edgeList.iterator();
 	}
 
-	private Iterator<Edge> mergePolymorphism(Iterator<Edge> it) {
+	private Iterator<Edge> mergePolymorphism(CallGraph cg, Iterator<Edge> it) {
 		List<Edge> edgeList = new LinkedList<Edge>();
-		this.edgeClassMap = new HashMap<String, String>();
+
+		it = this.sortEdgeByLineNumber(it);
 
 		while(it.hasNext()) {
 			Edge edge = it.next();
-			String matchStr = edge.tgt().getName() + ":" + edge.srcStmt().getJavaSourceStartLineNumber();
+			String className = edge.tgt().getDeclaringClass().getName();
+			String matchStr = edge.src().getDeclaringClass().getName() + ":" +
+					edge.tgt().getName() + ":" +
+					edge.srcStmt().getJavaSourceStartLineNumber();
 
 			boolean skip = false;
 			for (String excludeClassPrefix: this.excludeList) {
-				if (matchStr.startsWith(excludeClassPrefix)) {
+				if (className.startsWith(excludeClassPrefix)) {
 					skip = true;
 					break;
 				}
@@ -435,13 +454,24 @@ class CustomSenceTransformer extends SceneTransformer {
 				continue;
 			}
 
-			if (this.edgeClassMap.containsKey(matchStr)) {
-				this.edgeClassMap.put(matchStr,
-						this.edgeClassMap.get(matchStr) + ":" + edge.tgt().getDeclaringClass().getName());
+			if (cg.edgesOutOf(edge.tgt()).hasNext()) {
+				edgeList.add(edge);
+			} else if (this.edgeClassMap.containsKey(matchStr)) {
+				this.edgeClassMap.put(matchStr, this.edgeClassMap.get(matchStr) + ":" + className);
 			} else {
 				edgeList.add(edge);
-				this.edgeClassMap.put(matchStr, edge.tgt().getDeclaringClass().getName());
+				this.edgeClassMap.put(matchStr, className);
 			}
+		}
+
+		List<String> keySet = new LinkedList<String>();
+		for (String key:this.edgeClassMap.keySet()) {
+			if (!this.edgeClassMap.get(key).contains(":") ) {
+				keySet.add(key);
+			}
+		}
+		for (String key:keySet) {
+			this.edgeClassMap.remove(key);
 		}
 
 		return this.sortEdgeByLineNumber(edgeList.iterator());
