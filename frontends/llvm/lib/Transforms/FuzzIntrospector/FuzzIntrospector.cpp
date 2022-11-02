@@ -251,7 +251,6 @@ std::map<const Function *, size_t> FuncComplexityMap;
 struct FuzzIntrospector : public ModulePass {
   static char ID;
   FuzzIntrospector() : ModulePass(ID) {
-    errs() << "We are now in the FuzzIntrospector module pass\n";
     initializeFuzzIntrospectorPass(*PassRegistry::getPassRegistry());
   }
 
@@ -392,7 +391,6 @@ void FuzzIntrospector::makeDefaultConfig() {
 bool FuzzIntrospector::runOnModule(Module &M) {
   // Require that FUZZ_INTROSPECTOR environment variable is set
   if (!getenv("FUZZ_INTROSPECTOR")) {
-    logPrintf(L1, "Fuzz introspector is not running\n");
     return false;
   }
   logPrintf(L1, "Fuzz introspector is running\n");
