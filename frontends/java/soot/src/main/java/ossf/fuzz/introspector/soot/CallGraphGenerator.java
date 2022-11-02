@@ -53,13 +53,17 @@ import soot.toolkits.graph.BriefBlockGraph;
 
 	public class CallGraphGenerator{
 		public static void main(String[] args) {
-			if (args.length != 3) {
+			if (args.length < 3 || args.length > 4) {
 				System.err.println("No jarFiles, entryClass or entryMethod.");
 			return;
 		}
 		List<String> jarFiles = Arrays.asList(args[0].split(":"));
 		String entryClass = args[1];
 		String entryMethod = args[2];
+		String excludePrefix = "";
+		if (args.length == 4) {
+			excludePrefix = args[3];
+		}
 
 		if (jarFiles.size() < 1) {
 			System.err.println("Invalid jarFiles");
@@ -68,7 +72,7 @@ import soot.toolkits.graph.BriefBlockGraph;
 		soot.G.reset();
 
 		// Add an custom analysis phase to Soot
-		CustomSenceTransformer custom = new CustomSenceTransformer(entryClass, entryMethod);
+		CustomSenceTransformer custom = new CustomSenceTransformer(entryClass, entryMethod, excludePrefix);
 		PackManager.v().getPack("wjtp").add(new Transform("wjtp.custom", custom));
 
 		// Set basic settings for the call graph generation
@@ -116,22 +120,28 @@ class CustomSenceTransformer extends SceneTransformer {
 	private String entryMethodStr;
 	private SootMethod entryMethod;
 
-	public CustomSenceTransformer(String entryClassStr, String entryMethodStr) {
+	public CustomSenceTransformer(String entryClassStr, String entryMethodStr, String excludePrefix) {
 		this.entryClassStr = entryClassStr;
 		this.entryMethodStr = entryMethodStr;
 		this.entryMethod = null;
 
 		excludeList = new LinkedList<String>();
 
-		excludeList.add("jdk.");
-		excludeList.add("java.");
-		excludeList.add("javax.");
-		excludeList.add("sun.");
-		excludeList.add("sunw.");
-		excludeList.add("com.sun.");
-		excludeList.add("com.ibm.");
-		excludeList.add("com.apple.");
-		excludeList.add("apple.awt.");
+		for (String exclude:excludePrefix.split(":")) {
+			if (!exclude.equals("")) {
+				excludeList.add(exclude);
+			}
+		}
+	
+//		excludeList.add("jdk.");
+//		excludeList.add("java.");
+//		excludeList.add("javax.");
+//		excludeList.add("sun.");
+//		excludeList.add("sunw.");
+//		excludeList.add("com.sun.");
+//		excludeList.add("com.ibm.");
+//		excludeList.add("com.apple.");
+//		excludeList.add("apple.awt.");
 
 		excludeMethodList = new LinkedList<String>();
 
