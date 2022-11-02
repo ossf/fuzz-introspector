@@ -17,6 +17,7 @@ package ossf.fuzz.introspector.soot;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -144,14 +145,17 @@ class CustomSenceTransformer extends SceneTransformer {
 	@Override
 	protected void internalTransform(String phaseName, Map<String, String> options) {
 		List<FuzzerConfig> classYaml = new LinkedList<FuzzerConfig>();
+		Map<SootClass, List<SootMethod>> classMethodMap = new HashMap<SootClass, List<SootMethod>>();
 
 		// Extract Callgraph for the included Java Class
 		CallGraph callGraph = Scene.v().getCallGraph();
 		for(SootClass c : Scene.v().getApplicationClasses()) {
-			if (c.getName().startsWith("jdk")) {
-				continue;
+			if (!c.getName().startsWith("jdk")) {
+				classMethodMap.put(c, c.getMethods());
 			}
+		}
 
+		for (SootClass c : classMethodMap.keySet()) {
 			// Discover class related information
 			FuzzerConfig classConfig = new FuzzerConfig();
 			FunctionConfig methodConfig = new FunctionConfig();
@@ -159,7 +163,7 @@ class CustomSenceTransformer extends SceneTransformer {
 			methodConfig.setListName("All functions");
 
 			// Loop through each methods in the class
-			for (SootMethod m : c.getMethods()) {
+			for (SootMethod m : classMethodMap.get(c)) {
 				if (m.getName().equals(this.entryMethodStr) &&
 						c.getName().equals(this.entryClassStr)) {
 					this.entryMethod = m;
@@ -202,81 +206,81 @@ class CustomSenceTransformer extends SceneTransformer {
 				element.setEdgeCount(methodEdges);
 
 				// Identify blocks information
-					Body methodBody;
-					try {
-						methodBody = m.retrieveActiveBody();
-					} catch(Exception e) {
-						System.err.println("Source code for " + m + " not found.");
-						continue;
-					}
-					BlockGraph blockGraph = new BriefBlockGraph(methodBody);
+				Body methodBody;
+				try {
+					methodBody = m.retrieveActiveBody();
+				} catch(Exception e) {
+					System.err.println("Source code for " + m + " not found.");
+					continue;
+				}
+				BlockGraph blockGraph = new BriefBlockGraph(methodBody);
 
-					element.setBBCount(blockGraph.size());
-					int iCount = 0;
-					for (Block block:blockGraph.getBlocks()) {
-						Iterator<Unit> blockIt = block.iterator();
-						while(blockIt.hasNext()) {
-							Unit unit = blockIt.next();
-							if (unit instanceof JIfStmt) {
-								// Handle branch profile
-								BranchProfile branchProfile = new BranchProfile();
-								BranchSide branchSide = new BranchSide();
+				element.setBBCount(blockGraph.size());
+				int iCount = 0;
+				for (Block block:blockGraph.getBlocks()) {
+					Iterator<Unit> blockIt = block.iterator();
+					while(blockIt.hasNext()) {
+						Unit unit = blockIt.next();
+						if (unit instanceof JIfStmt) {
+							// Handle branch profile
+							BranchProfile branchProfile = new BranchProfile();
+							BranchSide branchSide = new BranchSide();
 
-								Map<String, Integer> trueBlockLine =
-										getBlockStartEndLineWithLineNumber(blockGraph.getBlocks(), unit.getJavaSourceStartLineNumber() + 1);
-								Map<String, Integer> falseBlockLine =
-										getBlockStartEndLineWithLineNumber(blockGraph.getBlocks(),
-												((JIfStmt)unit).getUnitBoxes().get(0).getUnit().getJavaSourceStartLineNumber());
+							Map<String, Integer> trueBlockLine =
+									getBlockStartEndLineWithLineNumber(blockGraph.getBlocks(), unit.getJavaSourceStartLineNumber() + 1);
+							Map<String, Integer> falseBlockLine =
+									getBlockStartEndLineWithLineNumber(blockGraph.getBlocks(),
+											((JIfStmt)unit).getUnitBoxes().get(0).getUnit().getJavaSourceStartLineNumber());
 
-								// True branch
-								if (!trueBlockLine.isEmpty()) {
-									Integer start = trueBlockLine.get("start");
-									Integer end = trueBlockLine.get("end");
-									branchSide.setTrueSides(c.getName() + ":" + start);
-									branchSide.setTrueSidesFuncs(getFunctionCallInTargetLine(
-											element.getFunctionReached(), start, end));
+							// True branch
+							if (!trueBlockLine.isEmpty()) {
+								Integer start = trueBlockLine.get("start");
+								Integer end = trueBlockLine.get("end");
+								branchSide.setTrueSides(c.getName() + ":" + start);
+								branchSide.setTrueSidesFuncs(getFunctionCallInTargetLine(
+										element.getFunctionReached(), start, end));
 
-								}
-
-								// False branch
-								if (!falseBlockLine.isEmpty()) {
-									Integer start = falseBlockLine.get("start");
-									Integer end = falseBlockLine.get("end");
-									branchSide.setFalseSides(c.getName() + ":" + (start - 1));
-									branchSide.setFalseSidesFuncs(getFunctionCallInTargetLine(
-											element.getFunctionReached(), start, end));
-								}
-
-								branchProfile.setBranchString(c.getName() + ":" + unit.getJavaSourceStartLineNumber());
-								branchProfile.setBranchSides(branchSide);
-								element.addBranchProfile(branchProfile);
 							}
-							iCount++;
+
+							// False branch
+							if (!falseBlockLine.isEmpty()) {
+								Integer start = falseBlockLine.get("start");
+								Integer end = falseBlockLine.get("end");
+								branchSide.setFalseSides(c.getName() + ":" + (start - 1));
+								branchSide.setFalseSidesFuncs(getFunctionCallInTargetLine(
+										element.getFunctionReached(), start, end));
+							}
+
+							branchProfile.setBranchString(c.getName() + ":" + unit.getJavaSourceStartLineNumber());
+							branchProfile.setBranchSides(branchSide);
+							element.addBranchProfile(branchProfile);
 						}
+						iCount++;
 					}
-					element.setiCount(iCount);
+				}
+				element.setiCount(iCount);
 
-					visitedBlock = new LinkedList<Block>();
-					visitedBlock.addAll(blockGraph.getTails());
-					element.setCyclomaticComplexity(calculateCyclomaticComplexity(
-							blockGraph.getHeads(), 0));
+				visitedBlock = new LinkedList<Block>();
+				visitedBlock.addAll(blockGraph.getTails());
+				element.setCyclomaticComplexity(calculateCyclomaticComplexity(
+						blockGraph.getHeads(), 0));
 
-					methodConfig.addFunctionElement(element);
+				methodConfig.addFunctionElement(element);
 			}
 				classConfig.setFunctionConfig(methodConfig);
 				classYaml.add(classConfig);
 		}
 		String callTree = extractCallTree(callGraph, this.entryMethod, 0, -1);
 		System.out.println(callTree);
-			System.out.println("--------------------------------------------------");
-			ObjectMapper om = new ObjectMapper(new YAMLFactory());
-			for(FuzzerConfig config:classYaml) {
-				try {
-					System.out.println(om.writeValueAsString(config) + "\n");
-				} catch (JsonProcessingException e) {
-					e.printStackTrace();
-				}
+		System.out.println("--------------------------------------------------");
+		ObjectMapper om = new ObjectMapper(new YAMLFactory());
+		for(FuzzerConfig config:classYaml) {
+			try {
+				System.out.println(om.writeValueAsString(config) + "\n");
+			} catch (JsonProcessingException e) {
+				e.printStackTrace();
 			}
+		}
 	}
 
 	// Shorthand for calculateDepth from Top
@@ -425,8 +429,13 @@ class CustomSenceTransformer extends SceneTransformer {
 			edgeList.add(it.next());
 		}
 
-		edgeList.sort((e1, e2) ->
-			e1.srcStmt().getJavaSourceStartLineNumber() - e2.srcStmt().getJavaSourceStartLineNumber());
+		Collections.sort(edgeList,new Comparator<Edge>(){
+			@Override
+            public int compare(Edge e1,Edge e2){
+				return e1.srcStmt().getJavaSourceStartLineNumber() -
+					e2.srcStmt().getJavaSourceStartLineNumber();
+            }
+		});
 
 		return edgeList.iterator();
 	}
