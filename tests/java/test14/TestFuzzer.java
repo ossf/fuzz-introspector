@@ -13,19 +13,15 @@
 // limitations under the License.
 ///////////////////////////////////////////////////////////////////////////
 
-import com.code_intelligence.jazzer.api.FuzzedDataProvider;
-
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
-
+import java.util.TreeSet;
 
 public class TestFuzzer {
-	public static void fuzzerTestOneInput(FuzzedDataProvider data) {
-		Collection<String> item = new LinkedList<String>();
-		Collection<String> item2 = new HashSet<String>();
-
+	public static void fuzzerTestOneInput(Collection<String> item, Collection<String> item2) {
 		item.add("A");
 		item.add("B");
 		item.add("C");
