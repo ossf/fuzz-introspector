@@ -29,7 +29,7 @@ public class TestFuzzer {
 			human = new Female();
 		} else if (choice == 3) {
 			human = new Robot();
-		} else if (choice == 4) {
+		} else {
 			human = new Android();
 		}
 
