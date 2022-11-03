@@ -1,8 +1,8 @@
 diff --git a/projects/angus-mail/build.sh b/projects/angus-mail/build.sh
-index be6119c3..b0bafe6f 100755
+index be6119c3..61cd42f6 100755
 --- a/projects/angus-mail/build.sh
 +++ b/projects/angus-mail/build.sh
-@@ -55,3 +55,36 @@ LD_LIBRARY_PATH=\"$JVM_LD_LIBRARY_PATH\":\$this_dir \
+@@ -55,3 +55,38 @@ LD_LIBRARY_PATH=\"$JVM_LD_LIBRARY_PATH\":\$this_dir \
  \$@" > $OUT/$fuzzer_basename
    chmod u+x $OUT/$fuzzer_basename
  done
@@ -28,7 +28,9 @@ index be6119c3..b0bafe6f 100755
 +# Add jar dependency
 +for jar in $ALL_JARS
 +do
-+  jarfile=$jarfile:$OUT/$jar
++  if [[ -f "$OUT/$jar" ]]; then
++    jarfile=$jarfile:$OUT/$jar
++  fi
 +done
 +
 +rm -rf fuzz-introspector
