@@ -15,22 +15,17 @@
 
 package Fuzz;
 
-public class FunctionTest {
-	protected void function1() {
-		System.out.println("F1");
-		this.function2();
+public class Male extends Human {
+	protected String getName() {
+		this.maleStuff();
+		return this.getTitle() + name;
 	}
 
-	protected void function2() {
-		System.out.println("F2");
-		this.function1();
+	private String getTitle() {
+		return "Mr. ";
 	}
 
-	protected void functionPublicDead() {
-		System.out.println("PuD");
-	}
-
-	private void functionPrivateDead() {
-		System.out.println("PrD");
+	private void maleStuff() {
+		System.out.println("Doing some male stuff");
 	}
 }

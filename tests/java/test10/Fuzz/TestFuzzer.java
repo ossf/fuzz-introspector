@@ -15,22 +15,28 @@
 
 package Fuzz;
 
-public class FunctionTest {
-	protected void function1() {
-		System.out.println("F1");
-		this.function2();
+import com.code_intelligence.jazzer.api.FuzzedDataProvider;
+import com.code_intelligence.jazzer.api.CannedFuzzedDataProvider;
+
+public class TestFuzzer {
+	public static void fuzzerTestOneInput(FuzzedDataProvider data) {
+		int choice = data.consumeInt(1,4);
+		Human human;
+
+		if (choice == 1) {
+			human = new Male();
+		} else if (choice == 2) {
+			human = new Female();
+		} else if (choice == 3) {
+			human = new Robot();
+		} else {
+			human = new Android();
+		}
+
+		human.getName();
 	}
 
-	protected void function2() {
-		System.out.println("F2");
-		this.function1();
-	}
-
-	protected void functionPublicDead() {
-		System.out.println("PuD");
-	}
-
-	private void functionPrivateDead() {
-		System.out.println("PrD");
-	}
+	public static void main(String[] args) {
+                TestFuzzer.fuzzerTestOneInput(new CannedFuzzedDataProvider("RANDOM"));
+        }
 }

@@ -1,4 +1,5 @@
 // Copyright 2022 Fuzz Introspector Authors
+// Copyright 2022 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,24 +14,23 @@
 // limitations under the License.
 ///////////////////////////////////////////////////////////////////////////
 
-package Fuzz;
+import com.code_intelligence.jazzer.api.FuzzedDataProvider;
 
-public class FunctionTest {
-	protected void function1() {
-		System.out.println("F1");
-		this.function2();
-	}
+import com.sun.mail.util.BASE64EncoderStream;
+import java.lang.NumberFormatException;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 
-	protected void function2() {
-		System.out.println("F2");
-		this.function1();
-	}
+public class TestFuzzer {
+  public static void fuzzerTestOneInput(FuzzedDataProvider data) {
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    BASE64EncoderStream b64es = new BASE64EncoderStream(baos, Integer.MAX_VALUE);
+    try{
+      b64es.write(data.consumeRemainingAsBytes());
+    }
+    catch(IOException e){
+      return;
+    }
 
-	protected void functionPublicDead() {
-		System.out.println("PuD");
-	}
-
-	private void functionPrivateDead() {
-		System.out.println("PrD");
-	}
+  }
 }

@@ -13,24 +13,31 @@
 // limitations under the License.
 ///////////////////////////////////////////////////////////////////////////
 
-package Fuzz;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.TreeSet;
 
-public class FunctionTest {
-	protected void function1() {
-		System.out.println("F1");
-		this.function2();
-	}
+public class TestFuzzer {
+	public static void fuzzerTestOneInput(Collection<String> item, Collection<String> item2) {
+		item.add("A");
+		item.add("B");
+		item.add("C");
 
-	protected void function2() {
-		System.out.println("F2");
-		this.function1();
-	}
+		item2.addAll(item);
 
-	protected void functionPublicDead() {
-		System.out.println("PuD");
-	}
+		System.out.println("item size: " + item.size());
+		System.out.println("item2 size: " + item2.size());
 
-	private void functionPrivateDead() {
-		System.out.println("PrD");
+		Iterator<String> it = item.iterator();
+		while(it.hasNext()) {
+			System.out.println(it.next());
+		}
+
+		if (!item2.equals(item)) {
+			item2.clear();
+		}
 	}
 }
