@@ -1,8 +1,8 @@
 diff --git a/projects/angus-mail/build.sh b/projects/angus-mail/build.sh
-index be6119c3..61cd42f6 100755
+index be6119c3..ccfa3565 100755
 --- a/projects/angus-mail/build.sh
 +++ b/projects/angus-mail/build.sh
-@@ -55,3 +55,38 @@ LD_LIBRARY_PATH=\"$JVM_LD_LIBRARY_PATH\":\$this_dir \
+@@ -55,3 +55,41 @@ LD_LIBRARY_PATH=\"$JVM_LD_LIBRARY_PATH\":\$this_dir \
  \$@" > $OUT/$fuzzer_basename
    chmod u+x $OUT/$fuzzer_basename
  done
@@ -14,7 +14,10 @@ index be6119c3..61cd42f6 100755
 +cd $OUT
 +for fuzzer in $(find $SRC -name '*Fuzzer.java'); do
 +  fuzzer_basename=$(basename -s .java $fuzzer)
-+  jar cvf $fuzzer_basename.jar $fuzzer_basename*.class
++  if [[ $(ls $fuzzer_basename*.class | wc -l) > 0 ]]
++  then
++    jar cvf $fuzzer_basename.jar $fuzzer_basename*.class
++  fi
 +  if [ -z "$jarfile" ]
 +  then
 +    jarfile=$OUT/$fuzzer_basename.jar
@@ -42,10 +45,10 @@ index be6119c3..61cd42f6 100755
 +cp fuzz-introspector/frontends/java/soot/*.result ./
 +rm -rf fuzz-introspector
 diff --git a/projects/antlr4-java/build.sh b/projects/antlr4-java/build.sh
-index dacf69d4..51954676 100755
+index dacf69d4..6dd36556 100755
 --- a/projects/antlr4-java/build.sh
 +++ b/projects/antlr4-java/build.sh
-@@ -55,3 +55,36 @@ LD_LIBRARY_PATH=\"$JVM_LD_LIBRARY_PATH\":\$this_dir \
+@@ -55,3 +55,41 @@ LD_LIBRARY_PATH=\"$JVM_LD_LIBRARY_PATH\":\$this_dir \
  \$@" > $OUT/$fuzzer_basename
    chmod u+x $OUT/$fuzzer_basename
  done
@@ -57,7 +60,10 @@ index dacf69d4..51954676 100755
 +cd $OUT
 +for fuzzer in $(find $SRC -name '*Fuzzer.java'); do
 +  fuzzer_basename=$(basename -s .java $fuzzer)
-+  jar cvf $fuzzer_basename.jar $fuzzer_basename*.class
++  if [[ $(ls $fuzzer_basename*.class | wc -l) > 0 ]]
++  then
++    jar cvf $fuzzer_basename.jar $fuzzer_basename*.class
++  fi
 +  if [ -z "$jarfile" ]
 +  then
 +    jarfile=$OUT/$fuzzer_basename.jar
@@ -71,7 +77,9 @@ index dacf69d4..51954676 100755
 +# Add jar dependency
 +for jar in $ALL_JARS
 +do
-+  jarfile=$jarfile:$OUT/$jar
++  if [[ -f "$OUT/$jar" ]]; then
++    jarfile=$jarfile:$OUT/$jar
++  fi
 +done
 +
 +rm -rf fuzz-introspector
@@ -83,10 +91,10 @@ index dacf69d4..51954676 100755
 +cp fuzz-introspector/frontends/java/soot/*.result ./
 +rm -rf fuzz-introspector
 diff --git a/projects/apache-commons-bcel/build.sh b/projects/apache-commons-bcel/build.sh
-index 43e44314..a8cc1e57 100644
+index 43e44314..ff526b2d 100644
 --- a/projects/apache-commons-bcel/build.sh
 +++ b/projects/apache-commons-bcel/build.sh
-@@ -78,3 +78,36 @@ LD_LIBRARY_PATH=\"$JVM_LD_LIBRARY_PATH\":\$this_dir \
+@@ -78,3 +78,41 @@ LD_LIBRARY_PATH=\"$JVM_LD_LIBRARY_PATH\":\$this_dir \
  \$@" > $OUT/${fuzzer_basename}
  	chmod u+x $OUT/${fuzzer_basename}
  done
@@ -98,7 +106,10 @@ index 43e44314..a8cc1e57 100644
 +cd $OUT
 +for fuzzer in $(find $SRC -name '*Fuzzer.java'); do
 +  fuzzer_basename=$(basename -s .java $fuzzer)
-+  jar cvf $fuzzer_basename.jar $fuzzer_basename*.class
++  if [[ $(ls $fuzzer_basename*.class | wc -l) > 0 ]]
++  then
++    jar cvf $fuzzer_basename.jar $fuzzer_basename*.class
++  fi
 +  if [ -z "$jarfile" ]
 +  then
 +    jarfile=$OUT/$fuzzer_basename.jar
@@ -112,7 +123,429 @@ index 43e44314..a8cc1e57 100644
 +# Add jar dependency
 +for jar in $ALL_JARS
 +do
-+  jarfile=$jarfile:$OUT/$jar
++  if [[ -f "$OUT/$jar" ]]; then
++    jarfile=$jarfile:$OUT/$jar
++  fi
++done
++
++rm -rf fuzz-introspector
++git clone https://github.com/ossf/fuzz-introspector
++cd fuzz-introspector/frontends/java/soot
++sed -i 's/mvn/$MVN/g' run.sh
++./run.sh -j $jarfile -c $class -m fuzzerTestOneInput
++cd $OUT
++cp fuzz-introspector/frontends/java/soot/*.result ./
++rm -rf fuzz-introspector
+diff --git a/projects/apache-commons-beanutils/build.sh b/projects/apache-commons-beanutils/build.sh
+index f62e80d9..d63120aa 100644
+--- a/projects/apache-commons-beanutils/build.sh
++++ b/projects/apache-commons-beanutils/build.sh
+@@ -78,3 +78,37 @@ LD_LIBRARY_PATH=\"$JVM_LD_LIBRARY_PATH\":\$this_dir \
+ \$@" > $OUT/${fuzzer_basename}
+   chmod u+x $OUT/${fuzzer_basename}
+ done
++
++cd $OUT
++for fuzzer in $(find $SRC -name '*Fuzzer.java'); do
++  fuzzer_basename=$(basename -s .java $fuzzer)
++  if [[ $(ls $fuzzer_basename*.class | wc -l) > 0 ]]
++  then
++    jar cvf $fuzzer_basename.jar $fuzzer_basename*.class
++  fi
++  if [ -z "$jarfile" ]
++  then
++    jarfile=$OUT/$fuzzer_basename.jar
++    class=$fuzzer_basename
++  else
++    jarfile=$jarfile:$OUT/$fuzzer_basename.jar
++    class=$class:$fuzzer_basename
++  fi
++done
++
++# Add jar dependency
++for jar in $ALL_JARS
++do
++  if [[ -f "$OUT/$jar" ]]; then
++    jarfile=$jarfile:$OUT/$jar
++  fi
++done
++
++rm -rf fuzz-introspector
++git clone https://github.com/ossf/fuzz-introspector
++cd fuzz-introspector/frontends/java/soot
++sed -i 's/mvn/$MVN/g' run.sh
++./run.sh -j $jarfile -c $class -m fuzzerTestOneInput
++cd $OUT
++cp fuzz-introspector/frontends/java/soot/*.result ./
++rm -rf fuzz-introspector
+diff --git a/projects/apache-commons-cli/build.sh b/projects/apache-commons-cli/build.sh
+index 2fe5fa66..4f1ba18f 100755
+--- a/projects/apache-commons-cli/build.sh
++++ b/projects/apache-commons-cli/build.sh
+@@ -53,3 +53,37 @@ LD_LIBRARY_PATH=\"$JVM_LD_LIBRARY_PATH\":\$this_dir \
+ \$@" > $OUT/$fuzzer_basename
+   chmod u+x $OUT/$fuzzer_basename
+ done
++
++cd $OUT
++for fuzzer in $(find $SRC -name '*Fuzzer.java'); do
++  fuzzer_basename=$(basename -s .java $fuzzer)
++  if [[ $(ls $fuzzer_basename*.class | wc -l) > 0 ]]
++  then
++    jar cvf $fuzzer_basename.jar $fuzzer_basename*.class
++  fi
++  if [ -z "$jarfile" ]
++  then
++    jarfile=$OUT/$fuzzer_basename.jar
++    class=$fuzzer_basename
++  else
++    jarfile=$jarfile:$OUT/$fuzzer_basename.jar
++    class=$class:$fuzzer_basename
++  fi
++done
++
++# Add jar dependency
++for jar in $ALL_JARS
++do
++  if [[ -f "$OUT/$jar" ]]; then
++    jarfile=$jarfile:$OUT/$jar
++  fi
++done
++
++rm -rf fuzz-introspector
++git clone https://github.com/ossf/fuzz-introspector
++cd fuzz-introspector/frontends/java/soot
++sed -i 's/mvn/$MVN/g' run.sh
++./run.sh -j $jarfile -c $class -m fuzzerTestOneInput
++cd $OUT
++cp fuzz-introspector/frontends/java/soot/*.result ./
++rm -rf fuzz-introspector
+diff --git a/projects/apache-commons-codec/build.sh b/projects/apache-commons-codec/build.sh
+index 1c943daf..17e69524 100755
+--- a/projects/apache-commons-codec/build.sh
++++ b/projects/apache-commons-codec/build.sh
+@@ -52,3 +52,37 @@ LD_LIBRARY_PATH=\"$JVM_LD_LIBRARY_PATH\":\$this_dir \
+ \$@" > $OUT/$fuzzer_basename
+   chmod u+x $OUT/$fuzzer_basename
+ done
++
++cd $OUT
++for fuzzer in $(find $SRC -name '*Fuzzer.java'); do
++  fuzzer_basename=$(basename -s .java $fuzzer)
++  if [[ $(ls $fuzzer_basename*.class | wc -l) > 0 ]]
++  then
++    jar cvf $fuzzer_basename.jar $fuzzer_basename*.class
++  fi
++  if [ -z "$jarfile" ]
++  then
++    jarfile=$OUT/$fuzzer_basename.jar
++    class=$fuzzer_basename
++  else
++    jarfile=$jarfile:$OUT/$fuzzer_basename.jar
++    class=$class:$fuzzer_basename
++  fi
++done
++
++# Add jar dependency
++for jar in $ALL_JARS
++do
++  if [[ -f "$OUT/$jar" ]]; then
++    jarfile=$jarfile:$OUT/$jar
++  fi
++done
++
++rm -rf fuzz-introspector
++git clone https://github.com/ossf/fuzz-introspector
++cd fuzz-introspector/frontends/java/soot
++sed -i 's/mvn/$MVN/g' run.sh
++./run.sh -j $jarfile -c $class -m fuzzerTestOneInput
++cd $OUT
++cp fuzz-introspector/frontends/java/soot/*.result ./
++rm -rf fuzz-introspector
+diff --git a/projects/apache-commons-collections/build.sh b/projects/apache-commons-collections/build.sh
+index 9d7239fc..274e9eb0 100644
+--- a/projects/apache-commons-collections/build.sh
++++ b/projects/apache-commons-collections/build.sh
+@@ -59,3 +59,37 @@ LD_LIBRARY_PATH=\"$JVM_LD_LIBRARY_PATH\":\$this_dir \
+ \$@" > $OUT/$fuzzer_basename
+   chmod u+x $OUT/$fuzzer_basename
+ done
++
++cd $OUT
++for fuzzer in $(find $SRC -name '*Fuzzer.java'); do
++  fuzzer_basename=$(basename -s .java $fuzzer)
++  if [[ $(ls $fuzzer_basename*.class | wc -l) > 0 ]]
++  then
++    jar cvf $fuzzer_basename.jar $fuzzer_basename*.class
++  fi
++  if [ -z "$jarfile" ]
++  then
++    jarfile=$OUT/$fuzzer_basename.jar
++    class=$fuzzer_basename
++  else
++    jarfile=$jarfile:$OUT/$fuzzer_basename.jar
++    class=$class:$fuzzer_basename
++  fi
++done
++
++# Add jar dependency
++for jar in $ALL_JARS
++do
++  if [[ -f "$OUT/$jar" ]]; then
++    jarfile=$jarfile:$OUT/$jar
++  fi
++done
++
++rm -rf fuzz-introspector
++git clone https://github.com/ossf/fuzz-introspector
++cd fuzz-introspector/frontends/java/soot
++sed -i 's/mvn/$MVN/g' run.sh
++./run.sh -j $jarfile -c $class -m fuzzerTestOneInput
++cd $OUT
++cp fuzz-introspector/frontends/java/soot/*.result ./
++rm -rf fuzz-introspector
+diff --git a/projects/apache-commons-configuration/build.sh b/projects/apache-commons-configuration/build.sh
+index 58153f5f..09435b2e 100755
+--- a/projects/apache-commons-configuration/build.sh
++++ b/projects/apache-commons-configuration/build.sh
+@@ -60,3 +60,37 @@ LD_LIBRARY_PATH=\"$JVM_LD_LIBRARY_PATH\":\$this_dir \
+     # Make the execution wrapper executable
+     chmod +x $OUT/$fuzzer_basename
+ done
++
++cd $OUT
++for fuzzer in $(find $SRC -name '*Fuzzer.java'); do
++  fuzzer_basename=$(basename -s .java $fuzzer)
++  if [[ $(ls $fuzzer_basename*.class | wc -l) > 0 ]]
++  then
++    jar cvf $fuzzer_basename.jar $fuzzer_basename*.class
++  fi
++  if [ -z "$jarfile" ]
++  then
++    jarfile=$OUT/$fuzzer_basename.jar
++    class=$fuzzer_basename
++  else
++    jarfile=$jarfile:$OUT/$fuzzer_basename.jar
++    class=$class:$fuzzer_basename
++  fi
++done
++
++# Add jar dependency
++for jar in $ALL_JARS
++do
++  if [[ -f "$OUT/$jar" ]]; then
++    jarfile=$jarfile:$OUT/$jar
++  fi
++done
++
++rm -rf fuzz-introspector
++git clone https://github.com/ossf/fuzz-introspector
++cd fuzz-introspector/frontends/java/soot
++sed -i 's/mvn/$MVN/g' run.sh
++./run.sh -j $jarfile -c $class -m fuzzerTestOneInput
++cd $OUT
++cp fuzz-introspector/frontends/java/soot/*.result ./
++rm -rf fuzz-introspector
+diff --git a/projects/apache-commons-io/build.sh b/projects/apache-commons-io/build.sh
+index e60ef093..964af654 100755
+--- a/projects/apache-commons-io/build.sh
++++ b/projects/apache-commons-io/build.sh
+@@ -54,3 +54,37 @@ LD_LIBRARY_PATH=\"$JVM_LD_LIBRARY_PATH\":\$this_dir \
+ \$@" > $OUT/$fuzzer_basename
+   chmod u+x $OUT/$fuzzer_basename
+ done
++
++cd $OUT
++for fuzzer in $(find $SRC -name '*Fuzzer.java'); do
++  fuzzer_basename=$(basename -s .java $fuzzer)
++  if [[ $(ls $fuzzer_basename*.class | wc -l) > 0 ]]
++  then
++    jar cvf $fuzzer_basename.jar $fuzzer_basename*.class
++  fi
++  if [ -z "$jarfile" ]
++  then
++    jarfile=$OUT/$fuzzer_basename.jar
++    class=$fuzzer_basename
++  else
++    jarfile=$jarfile:$OUT/$fuzzer_basename.jar
++    class=$class:$fuzzer_basename
++  fi
++done
++
++# Add jar dependency
++for jar in $ALL_JARS
++do
++  if [[ -f "$OUT/$jar" ]]; then
++    jarfile=$jarfile:$OUT/$jar
++  fi
++done
++
++rm -rf fuzz-introspector
++git clone https://github.com/ossf/fuzz-introspector
++cd fuzz-introspector/frontends/java/soot
++sed -i 's/mvn/$MVN/g' run.sh
++./run.sh -j $jarfile -c $class -m fuzzerTestOneInput
++cd $OUT
++cp fuzz-introspector/frontends/java/soot/*.result ./
++rm -rf fuzz-introspector
+diff --git a/projects/apache-commons-jxpath/build.sh b/projects/apache-commons-jxpath/build.sh
+index c33a0488..82561451 100644
+--- a/projects/apache-commons-jxpath/build.sh
++++ b/projects/apache-commons-jxpath/build.sh
+@@ -55,3 +55,37 @@ LD_LIBRARY_PATH=\"$JVM_LD_LIBRARY_PATH\":\$this_dir \
+ \$@" > $OUT/$fuzzer_basename
+   chmod u+x $OUT/$fuzzer_basename
+ done
++
++cd $OUT
++for fuzzer in $(find $SRC -name '*Fuzzer.java'); do
++  fuzzer_basename=$(basename -s .java $fuzzer)
++  if [[ $(ls $fuzzer_basename*.class | wc -l) > 0 ]]
++  then
++    jar cvf $fuzzer_basename.jar $fuzzer_basename*.class
++  fi
++  if [ -z "$jarfile" ]
++  then
++    jarfile=$OUT/$fuzzer_basename.jar
++    class=$fuzzer_basename
++  else
++    jarfile=$jarfile:$OUT/$fuzzer_basename.jar
++    class=$class:$fuzzer_basename
++  fi
++done
++
++# Add jar dependency
++for jar in $ALL_JARS
++do
++  if [[ -f "$OUT/$jar" ]]; then
++    jarfile=$jarfile:$OUT/$jar
++  fi
++done
++
++rm -rf fuzz-introspector
++git clone https://github.com/ossf/fuzz-introspector
++cd fuzz-introspector/frontends/java/soot
++sed -i 's/mvn/$MVN/g' run.sh
++./run.sh -j $jarfile -c $class -m fuzzerTestOneInput
++cd $OUT
++cp fuzz-introspector/frontends/java/soot/*.result ./
++rm -rf fuzz-introspector
+diff --git a/projects/apache-commons-lang/build.sh b/projects/apache-commons-lang/build.sh
+index 1d79aa98..77ba290f 100755
+--- a/projects/apache-commons-lang/build.sh
++++ b/projects/apache-commons-lang/build.sh
+@@ -55,3 +55,37 @@ LD_LIBRARY_PATH=\"$JVM_LD_LIBRARY_PATH\":\$this_dir \
+ \$@" > $OUT/$fuzzer_basename
+   chmod u+x $OUT/$fuzzer_basename
+ done
++
++cd $OUT
++for fuzzer in $(find $SRC -name '*Fuzzer.java'); do
++  fuzzer_basename=$(basename -s .java $fuzzer)
++  if [[ $(ls $fuzzer_basename*.class | wc -l) > 0 ]]
++  then
++    jar cvf $fuzzer_basename.jar $fuzzer_basename*.class
++  fi
++  if [ -z "$jarfile" ]
++  then
++    jarfile=$OUT/$fuzzer_basename.jar
++    class=$fuzzer_basename
++  else
++    jarfile=$jarfile:$OUT/$fuzzer_basename.jar
++    class=$class:$fuzzer_basename
++  fi
++done
++
++# Add jar dependency
++for jar in $ALL_JARS
++do
++  if [[ -f "$OUT/$jar" ]]; then
++    jarfile=$jarfile:$OUT/$jar
++  fi
++done
++
++rm -rf fuzz-introspector
++git clone https://github.com/ossf/fuzz-introspector
++cd fuzz-introspector/frontends/java/soot
++sed -i 's/mvn/$MVN/g' run.sh
++./run.sh -j $jarfile -c $class -m fuzzerTestOneInput
++cd $OUT
++cp fuzz-introspector/frontends/java/soot/*.result ./
++rm -rf fuzz-introspector
+diff --git a/projects/apache-commons-logging/build.sh b/projects/apache-commons-logging/build.sh
+index 44eb6216..42cc96af 100644
+--- a/projects/apache-commons-logging/build.sh
++++ b/projects/apache-commons-logging/build.sh
+@@ -67,3 +67,37 @@ LD_LIBRARY_PATH=\"$JVM_LD_LIBRARY_PATH\":\$this_dir \
+ \$@" > $OUT/$fuzzer_basename
+   chmod u+x $OUT/$fuzzer_basename
+ done
++
++cd $OUT
++for fuzzer in $(find $SRC -name '*Fuzzer.java'); do
++  fuzzer_basename=$(basename -s .java $fuzzer)
++  if [[ $(ls $fuzzer_basename*.class | wc -l) > 0 ]]
++  then
++    jar cvf $fuzzer_basename.jar $fuzzer_basename*.class
++  fi
++  if [ -z "$jarfile" ]
++  then
++    jarfile=$OUT/$fuzzer_basename.jar
++    class=$fuzzer_basename
++  else
++    jarfile=$jarfile:$OUT/$fuzzer_basename.jar
++    class=$class:$fuzzer_basename
++  fi
++done
++
++# Add jar dependency
++for jar in $ALL_JARS
++do
++  if [[ -f "$OUT/$jar" ]]; then
++    jarfile=$jarfile:$OUT/$jar
++  fi
++done
++
++rm -rf fuzz-introspector
++git clone https://github.com/ossf/fuzz-introspector
++cd fuzz-introspector/frontends/java/soot
++sed -i 's/mvn/$MVN/g' run.sh
++./run.sh -j $jarfile -c $class -m fuzzerTestOneInput
++cd $OUT
++cp fuzz-introspector/frontends/java/soot/*.result ./
++rm -rf fuzz-introspector
+diff --git a/projects/apache-commons/build.sh b/projects/apache-commons/build.sh
+index cf727898..77830fdc 100755
+--- a/projects/apache-commons/build.sh
++++ b/projects/apache-commons/build.sh
+@@ -75,3 +75,37 @@ LD_LIBRARY_PATH=\"$JVM_LD_LIBRARY_PATH\":\$this_dir \
+     chmod +x $OUT/$fuzzer_basename
+   done
+ done
++
++cd $OUT
++for fuzzer in $(find $SRC -name '*Fuzzer.java'); do
++  fuzzer_basename=$(basename -s .java $fuzzer)
++  if [[ $(ls $fuzzer_basename*.class | wc -l) > 0 ]]
++  then
++    jar cvf $fuzzer_basename.jar $fuzzer_basename*.class
++  fi
++  if [ -z "$jarfile" ]
++  then
++    jarfile=$OUT/$fuzzer_basename.jar
++    class=$fuzzer_basename
++  else
++    jarfile=$jarfile:$OUT/$fuzzer_basename.jar
++    class=$class:$fuzzer_basename
++  fi
++done
++
++# Add jar dependency
++for jar in $ALL_JARS
++do
++  if [[ -f "$OUT/$jar" ]]; then
++    jarfile=$jarfile:$OUT/$jar
++  fi
 +done
 +
 +rm -rf fuzz-introspector
