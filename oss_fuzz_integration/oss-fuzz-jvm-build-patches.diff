@@ -700,3 +700,543 @@ index cf727898..3af50f9b 100755
 +cd $OUT
 +cp fuzz-introspector/frontends/java/soot/*.result ./
 +rm -rf fuzz-introspector
+diff --git a/projects/apache-felix-dev/build.sh b/projects/apache-felix-dev/build.sh
+index 9f48f4a4..c32e90d2 100755
+--- a/projects/apache-felix-dev/build.sh
++++ b/projects/apache-felix-dev/build.sh
+@@ -52,3 +52,49 @@ LD_LIBRARY_PATH=\"$JVM_LD_LIBRARY_PATH\":\$this_dir \
+ \$@" > $OUT/$fuzzer_basename
+   chmod u+x $OUT/$fuzzer_basename
+ done
++
++# Packing for fuzz-introspector
++jarfile=
++class=
++
++for fuzzer in $(find $SRC -name '*Fuzzer.java'); do
++  stripped_path=$(echo ${fuzzer} | sed 's|^.*src/main/java/\(.*\).java$|\1|');
++  # the .java was stripped by sed
++  if (echo ${stripped_path} | grep ".java$"); then
++    fuzzer_classname=$(basename -s .java $fuzzer);
++  else
++    fuzzer_classname=$(echo ${stripped_path} | sed 's|/|.|g')
++  fi
++  fuzzer_basename=$(basename -s .java $fuzzer)
++
++  cd $OUT
++  if ls $fuzzer_basename*.class 1>/dev/null 2>&1
++  then
++    jar cvf $fuzzer_basename.jar $fuzzer_basename*.class
++    jarfile=$jarfile:$OUT/$fuzzer_basename.jar
++  fi
++  class=$class:$fuzzer_classname
++  cd -
++done
++
++# Add jar dependency
++for jar in $ALL_JARS
++do
++  if [[ -f "$OUT/$jar" ]]
++  then
++    jarfile=$jarfile:$OUT/$jar
++  fi
++done
++
++jarfile=${jarfile:1}
++class=${class:1}
++
++cd $OUT
++rm -rf fuzz-introspector
++git clone https://github.com/ossf/fuzz-introspector
++cd fuzz-introspector/frontends/java/soot
++sed -i 's/mvn/$MVN/g' run.sh
++./run.sh -j $jarfile -c $class -m fuzzerTestOneInput
++cd $OUT
++cp fuzz-introspector/frontends/java/soot/*.result ./
++rm -rf fuzz-introspector
+diff --git a/projects/archaius-core/build.sh b/projects/archaius-core/build.sh
+index 211a1420..a06c19ec 100755
+--- a/projects/archaius-core/build.sh
++++ b/projects/archaius-core/build.sh
+@@ -53,3 +53,49 @@ LD_LIBRARY_PATH=\"$JVM_LD_LIBRARY_PATH\":\$this_dir \
+ \$@" > $OUT/$fuzzer_basename
+   chmod u+x $OUT/$fuzzer_basename
+ done
++
++# Packing for fuzz-introspector
++jarfile=
++class=
++
++for fuzzer in $(find $SRC -name '*Fuzzer.java'); do
++  stripped_path=$(echo ${fuzzer} | sed 's|^.*src/main/java/\(.*\).java$|\1|');
++  # the .java was stripped by sed
++  if (echo ${stripped_path} | grep ".java$"); then
++    fuzzer_classname=$(basename -s .java $fuzzer);
++  else
++    fuzzer_classname=$(echo ${stripped_path} | sed 's|/|.|g')
++  fi
++  fuzzer_basename=$(basename -s .java $fuzzer)
++
++  cd $OUT
++  if ls $fuzzer_basename*.class 1>/dev/null 2>&1
++  then
++    jar cvf $fuzzer_basename.jar $fuzzer_basename*.class
++    jarfile=$jarfile:$OUT/$fuzzer_basename.jar
++  fi
++  class=$class:$fuzzer_classname
++  cd -
++done
++
++# Add jar dependency
++for jar in $ALL_JARS
++do
++  if [[ -f "$OUT/$jar" ]]
++  then
++    jarfile=$jarfile:$OUT/$jar
++  fi
++done
++
++jarfile=${jarfile:1}
++class=${class:1}
++
++cd $OUT
++rm -rf fuzz-introspector
++git clone https://github.com/ossf/fuzz-introspector
++cd fuzz-introspector/frontends/java/soot
++sed -i 's/mvn/$MVN/g' run.sh
++./run.sh -j $jarfile -c $class -m fuzzerTestOneInput
++cd $OUT
++cp fuzz-introspector/frontends/java/soot/*.result ./
++rm -rf fuzz-introspector
+diff --git a/projects/arrow-java/build.sh b/projects/arrow-java/build.sh
+index c75778be..dd13d4aa 100755
+--- a/projects/arrow-java/build.sh
++++ b/projects/arrow-java/build.sh
+@@ -57,3 +57,49 @@ LD_LIBRARY_PATH=\"$JVM_LD_LIBRARY_PATH\":\$this_dir \
+ \$@" > $OUT/$fuzzer_basename
+   chmod u+x $OUT/$fuzzer_basename
+ done
++
++# Packing for fuzz-introspector
++jarfile=
++class=
++
++for fuzzer in $(find $SRC -name '*Fuzzer.java'); do
++  stripped_path=$(echo ${fuzzer} | sed 's|^.*src/main/java/\(.*\).java$|\1|');
++  # the .java was stripped by sed
++  if (echo ${stripped_path} | grep ".java$"); then
++    fuzzer_classname=$(basename -s .java $fuzzer);
++  else
++    fuzzer_classname=$(echo ${stripped_path} | sed 's|/|.|g')
++  fi
++  fuzzer_basename=$(basename -s .java $fuzzer)
++
++  cd $OUT
++  if ls $fuzzer_basename*.class 1>/dev/null 2>&1
++  then
++    jar cvf $fuzzer_basename.jar $fuzzer_basename*.class
++    jarfile=$jarfile:$OUT/$fuzzer_basename.jar
++  fi
++  class=$class:$fuzzer_classname
++  cd -
++done
++
++# Add jar dependency
++for jar in $ALL_JARS
++do
++  if [[ -f "$OUT/$jar" ]]
++  then
++    jarfile=$jarfile:$OUT/$jar
++  fi
++done
++
++jarfile=${jarfile:1}
++class=${class:1}
++
++cd $OUT
++rm -rf fuzz-introspector
++git clone https://github.com/ossf/fuzz-introspector
++cd fuzz-introspector/frontends/java/soot
++sed -i 's/mvn/$MVN/g' run.sh
++./run.sh -j $jarfile -c $class -m fuzzerTestOneInput
++cd $OUT
++cp fuzz-introspector/frontends/java/soot/*.result ./
++rm -rf fuzz-introspector
+diff --git a/projects/aspectj/build.sh b/projects/aspectj/build.sh
+index d64721d0..7ae472e1 100644
+--- a/projects/aspectj/build.sh
++++ b/projects/aspectj/build.sh
+@@ -78,3 +78,49 @@ LD_LIBRARY_PATH=\"$JVM_LD_LIBRARY_PATH\":\$this_dir \
+ \$@" > $OUT/${fuzzer_basename}
+   chmod u+x $OUT/${fuzzer_basename}
+ done
++
++# Packing for fuzz-introspector
++jarfile=
++class=
++
++for fuzzer in $(find $SRC -name '*Fuzzer.java'); do
++  stripped_path=$(echo ${fuzzer} | sed 's|^.*src/main/java/\(.*\).java$|\1|');
++  # the .java was stripped by sed
++  if (echo ${stripped_path} | grep ".java$"); then
++    fuzzer_classname=$(basename -s .java $fuzzer);
++  else
++    fuzzer_classname=$(echo ${stripped_path} | sed 's|/|.|g')
++  fi
++  fuzzer_basename=$(basename -s .java $fuzzer)
++
++  cd $OUT
++  if ls $fuzzer_basename*.class 1>/dev/null 2>&1
++  then
++    jar cvf $fuzzer_basename.jar $fuzzer_basename*.class
++    jarfile=$jarfile:$OUT/$fuzzer_basename.jar
++  fi
++  class=$class:$fuzzer_classname
++  cd -
++done
++
++# Add jar dependency
++for jar in $ALL_JARS
++do
++  if [[ -f "$OUT/$jar" ]]
++  then
++    jarfile=$jarfile:$OUT/$jar
++  fi
++done
++
++jarfile=${jarfile:1}
++class=${class:1}
++
++cd $OUT
++rm -rf fuzz-introspector
++git clone https://github.com/ossf/fuzz-introspector
++cd fuzz-introspector/frontends/java/soot
++sed -i 's/mvn/$MVN/g' run.sh
++./run.sh -j $jarfile -c $class -m fuzzerTestOneInput
++cd $OUT
++cp fuzz-introspector/frontends/java/soot/*.result ./
++rm -rf fuzz-introspector
+diff --git a/projects/jackson-core/build.sh b/projects/jackson-core/build.sh
+index 7a2d0938..dc3ecc36 100644
+--- a/projects/jackson-core/build.sh
++++ b/projects/jackson-core/build.sh
+@@ -63,3 +63,49 @@ LD_LIBRARY_PATH=\"$JVM_LD_LIBRARY_PATH\":\$this_dir \
+ \$@" > $OUT/$fuzzer_basename
+   chmod +x $OUT/$fuzzer_basename
+ done
++
++# Packing for fuzz-introspector
++jarfile=
++class=
++
++for fuzzer in $(find $SRC -name '*Fuzzer.java'); do
++  stripped_path=$(echo ${fuzzer} | sed 's|^.*src/main/java/\(.*\).java$|\1|');
++  # the .java was stripped by sed
++  if (echo ${stripped_path} | grep ".java$"); then
++    fuzzer_classname=$(basename -s .java $fuzzer);
++  else
++    fuzzer_classname=$(echo ${stripped_path} | sed 's|/|.|g')
++  fi
++  fuzzer_basename=$(basename -s .java $fuzzer)
++
++  cd $OUT
++  if ls $fuzzer_basename*.class 1>/dev/null 2>&1
++  then
++    jar cvf $fuzzer_basename.jar $fuzzer_basename*.class
++    jarfile=$jarfile:$OUT/$fuzzer_basename.jar
++  fi
++  class=$class:$fuzzer_classname
++  cd -
++done
++
++# Add jar dependency
++for jar in $ALL_JARS
++do
++  if [[ -f "$OUT/$jar" ]]
++  then
++    jarfile=$jarfile:$OUT/$jar
++  fi
++done
++
++jarfile=${jarfile:1}
++class=${class:1}
++
++cd $OUT
++rm -rf fuzz-introspector
++git clone https://github.com/ossf/fuzz-introspector
++cd fuzz-introspector/frontends/java/soot
++sed -i 's/mvn/$MVN/g' run.sh
++./run.sh -j $jarfile -c $class -m fuzzerTestOneInput
++cd $OUT
++cp fuzz-introspector/frontends/java/soot/*.result ./
++rm -rf fuzz-introspector
+diff --git a/projects/jackson-databind/build.sh b/projects/jackson-databind/build.sh
+index b5ea5b01..da8dff2c 100755
+--- a/projects/jackson-databind/build.sh
++++ b/projects/jackson-databind/build.sh
+@@ -86,3 +86,49 @@ LD_LIBRARY_PATH=\"$JVM_LD_LIBRARY_PATH\":\$this_dir \
+ \$@" > $OUT/$fuzzer_basename
+   chmod u+x $OUT/$fuzzer_basename
+ done
++
++# Packing for fuzz-introspector
++jarfile=
++class=
++
++for fuzzer in $(find $SRC -name '*Fuzzer.java'); do
++  stripped_path=$(echo ${fuzzer} | sed 's|^.*src/main/java/\(.*\).java$|\1|');
++  # the .java was stripped by sed
++  if (echo ${stripped_path} | grep ".java$"); then
++    fuzzer_classname=$(basename -s .java $fuzzer);
++  else
++    fuzzer_classname=$(echo ${stripped_path} | sed 's|/|.|g')
++  fi
++  fuzzer_basename=$(basename -s .java $fuzzer)
++
++  cd $OUT
++  if ls $fuzzer_basename*.class 1>/dev/null 2>&1
++  then
++    jar cvf $fuzzer_basename.jar $fuzzer_basename*.class
++    jarfile=$jarfile:$OUT/$fuzzer_basename.jar
++  fi
++  class=$class:$fuzzer_classname
++  cd -
++done
++
++# Add jar dependency
++for jar in $ALL_JARS
++do
++  if [[ -f "$OUT/$jar" ]]
++  then
++    jarfile=$jarfile:$OUT/$jar
++  fi
++done
++
++jarfile=${jarfile:1}
++class=${class:1}
++
++cd $OUT
++rm -rf fuzz-introspector
++git clone https://github.com/ossf/fuzz-introspector
++cd fuzz-introspector/frontends/java/soot
++sed -i 's/mvn/$MVN/g' run.sh
++./run.sh -j $jarfile -c $class -m fuzzerTestOneInput
++cd $OUT
++cp fuzz-introspector/frontends/java/soot/*.result ./
++rm -rf fuzz-introspector
+diff --git a/projects/jackson-dataformat-xml/build.sh b/projects/jackson-dataformat-xml/build.sh
+index 398ff302..8bd7b023 100644
+--- a/projects/jackson-dataformat-xml/build.sh
++++ b/projects/jackson-dataformat-xml/build.sh
+@@ -55,3 +55,49 @@ LD_LIBRARY_PATH=\"$JVM_LD_LIBRARY_PATH\":\$this_dir \
+ \$@" > $OUT/$fuzzer_basename
+   chmod +x $OUT/$fuzzer_basename
+ done
++
++# Packing for fuzz-introspector
++jarfile=
++class=
++
++for fuzzer in $(find $SRC -name '*Fuzzer.java'); do
++  stripped_path=$(echo ${fuzzer} | sed 's|^.*src/main/java/\(.*\).java$|\1|');
++  # the .java was stripped by sed
++  if (echo ${stripped_path} | grep ".java$"); then
++    fuzzer_classname=$(basename -s .java $fuzzer);
++  else
++    fuzzer_classname=$(echo ${stripped_path} | sed 's|/|.|g')
++  fi
++  fuzzer_basename=$(basename -s .java $fuzzer)
++
++  cd $OUT
++  if ls $fuzzer_basename*.class 1>/dev/null 2>&1
++  then
++    jar cvf $fuzzer_basename.jar $fuzzer_basename*.class
++    jarfile=$jarfile:$OUT/$fuzzer_basename.jar
++  fi
++  class=$class:$fuzzer_classname
++  cd -
++done
++
++# Add jar dependency
++for jar in $ALL_JARS
++do
++  if [[ -f "$OUT/$jar" ]]
++  then
++    jarfile=$jarfile:$OUT/$jar
++  fi
++done
++
++jarfile=${jarfile:1}
++class=${class:1}
++
++cd $OUT
++rm -rf fuzz-introspector
++git clone https://github.com/ossf/fuzz-introspector
++cd fuzz-introspector/frontends/java/soot
++sed -i 's/mvn/$MVN/g' run.sh
++./run.sh -j $jarfile -c $class -m fuzzerTestOneInput
++cd $OUT
++cp fuzz-introspector/frontends/java/soot/*.result ./
++rm -rf fuzz-introspector
+diff --git a/projects/jackson-dataformats-binary/build.sh b/projects/jackson-dataformats-binary/build.sh
+index 5220eaed..ab2a3723 100644
+--- a/projects/jackson-dataformats-binary/build.sh
++++ b/projects/jackson-dataformats-binary/build.sh
+@@ -69,3 +69,49 @@ LD_LIBRARY_PATH=\"$JVM_LD_LIBRARY_PATH\":\$this_dir \
+ \$@" > $OUT/$fuzzer_basename
+   chmod +x $OUT/$fuzzer_basename
+ done
++
++# Packing for fuzz-introspector
++jarfile=
++class=
++
++for fuzzer in $(find $SRC -name '*Fuzzer.java'); do
++  stripped_path=$(echo ${fuzzer} | sed 's|^.*src/main/java/\(.*\).java$|\1|');
++  # the .java was stripped by sed
++  if (echo ${stripped_path} | grep ".java$"); then
++    fuzzer_classname=$(basename -s .java $fuzzer);
++  else
++    fuzzer_classname=$(echo ${stripped_path} | sed 's|/|.|g')
++  fi
++  fuzzer_basename=$(basename -s .java $fuzzer)
++
++  cd $OUT
++  if ls $fuzzer_basename*.class 1>/dev/null 2>&1
++  then
++    jar cvf $fuzzer_basename.jar $fuzzer_basename*.class
++    jarfile=$jarfile:$OUT/$fuzzer_basename.jar
++  fi
++  class=$class:$fuzzer_classname
++  cd -
++done
++
++# Add jar dependency
++for jar in $ALL_JARS
++do
++  if [[ -f "$OUT/$jar" ]]
++  then
++    jarfile=$jarfile:$OUT/$jar
++  fi
++done
++
++jarfile=${jarfile:1}
++class=${class:1}
++
++cd $OUT
++rm -rf fuzz-introspector
++git clone https://github.com/ossf/fuzz-introspector
++cd fuzz-introspector/frontends/java/soot
++sed -i 's/mvn/$MVN/g' run.sh
++./run.sh -j $jarfile -c $class -m fuzzerTestOneInput
++cd $OUT
++cp fuzz-introspector/frontends/java/soot/*.result ./
++rm -rf fuzz-introspector
+diff --git a/projects/jackson-dataformats-text/build.sh b/projects/jackson-dataformats-text/build.sh
+index 5c79ec73..17ace9c3 100644
+--- a/projects/jackson-dataformats-text/build.sh
++++ b/projects/jackson-dataformats-text/build.sh
+@@ -60,3 +60,49 @@ LD_LIBRARY_PATH=\"$JVM_LD_LIBRARY_PATH\":\$this_dir \
+ \$@" > $OUT/$fuzzer_basename
+   chmod +x $OUT/$fuzzer_basename
+ done
++
++# Packing for fuzz-introspector
++jarfile=
++class=
++
++for fuzzer in $(find $SRC -name '*Fuzzer.java'); do
++  stripped_path=$(echo ${fuzzer} | sed 's|^.*src/main/java/\(.*\).java$|\1|');
++  # the .java was stripped by sed
++  if (echo ${stripped_path} | grep ".java$"); then
++    fuzzer_classname=$(basename -s .java $fuzzer);
++  else
++    fuzzer_classname=$(echo ${stripped_path} | sed 's|/|.|g')
++  fi
++  fuzzer_basename=$(basename -s .java $fuzzer)
++
++  cd $OUT
++  if ls $fuzzer_basename*.class 1>/dev/null 2>&1
++  then
++    jar cvf $fuzzer_basename.jar $fuzzer_basename*.class
++    jarfile=$jarfile:$OUT/$fuzzer_basename.jar
++  fi
++  class=$class:$fuzzer_classname
++  cd -
++done
++
++# Add jar dependency
++for jar in $ALL_JARS
++do
++  if [[ -f "$OUT/$jar" ]]
++  then
++    jarfile=$jarfile:$OUT/$jar
++  fi
++done
++
++jarfile=${jarfile:1}
++class=${class:1}
++
++cd $OUT
++rm -rf fuzz-introspector
++git clone https://github.com/ossf/fuzz-introspector
++cd fuzz-introspector/frontends/java/soot
++sed -i 's/mvn/$MVN/g' run.sh
++./run.sh -j $jarfile -c $class -m fuzzerTestOneInput
++cd $OUT
++cp fuzz-introspector/frontends/java/soot/*.result ./
++rm -rf fuzz-introspector
+diff --git a/projects/jackson-modules-java8/build.sh b/projects/jackson-modules-java8/build.sh
+index b8ae42a6..119ba650 100755
+--- a/projects/jackson-modules-java8/build.sh
++++ b/projects/jackson-modules-java8/build.sh
+@@ -57,3 +57,49 @@ LD_LIBRARY_PATH=\"$JVM_LD_LIBRARY_PATH\":\$this_dir \
+ \$@" > $OUT/$fuzzer_basename
+   chmod u+x $OUT/$fuzzer_basename
+ done
++
++# Packing for fuzz-introspector
++jarfile=
++class=
++
++for fuzzer in $(find $SRC -name '*Fuzzer.java'); do
++  stripped_path=$(echo ${fuzzer} | sed 's|^.*src/main/java/\(.*\).java$|\1|');
++  # the .java was stripped by sed
++  if (echo ${stripped_path} | grep ".java$"); then
++    fuzzer_classname=$(basename -s .java $fuzzer);
++  else
++    fuzzer_classname=$(echo ${stripped_path} | sed 's|/|.|g')
++  fi
++  fuzzer_basename=$(basename -s .java $fuzzer)
++
++  cd $OUT
++  if ls $fuzzer_basename*.class 1>/dev/null 2>&1
++  then
++    jar cvf $fuzzer_basename.jar $fuzzer_basename*.class
++    jarfile=$jarfile:$OUT/$fuzzer_basename.jar
++  fi
++  class=$class:$fuzzer_classname
++  cd -
++done
++
++# Add jar dependency
++for jar in $ALL_JARS
++do
++  if [[ -f "$OUT/$jar" ]]
++  then
++    jarfile=$jarfile:$OUT/$jar
++  fi
++done
++
++jarfile=${jarfile:1}
++class=${class:1}
++
++cd $OUT
++rm -rf fuzz-introspector
++git clone https://github.com/ossf/fuzz-introspector
++cd fuzz-introspector/frontends/java/soot
++sed -i 's/mvn/$MVN/g' run.sh
++./run.sh -j $jarfile -c $class -m fuzzerTestOneInput
++cd $OUT
++cp fuzz-introspector/frontends/java/soot/*.result ./
++rm -rf fuzz-introspector
