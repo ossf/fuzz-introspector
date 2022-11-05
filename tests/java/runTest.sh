@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Copyright 2022 Fuzz Introspector Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,16 +12,27 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
+################################################################################
 
-rm -f ./*.class
-rm -f ./*.jar
-rm -f ./jazzer*
-wget https://repo1.maven.org/maven2/javassist/javassist/3.12.1.GA/javassist-3.12.1.GA.jar
-wget https://github.com/CodeIntelligenceTesting/jazzer/releases/download/v0.12.0/jazzer-linux-x86_64.tar.gz
-tar -zxvf jazzer-linux-x86_64.tar.gz
-javac -cp jazzer_api_deploy.jar:javassist-3.12.1.GA.jar ./*.java
-unzip -uo javassist-3.12.1.GA.jar
-jar cfv test12.jar ./*.class javassist
-rm -rf ./jazzer*
-rm -rf ./javassist*
-rm -rf ./META-INF
+# Ensure JDK 8.0 or later and Maven 3.3 or later is installed
+
+ROOT=$PWD
+rm -rf ./result
+mkdir result
+
+for i in {1..14}
+do
+  cd $ROOT/test$i
+  source .config
+  ./build.sh
+
+  # Extract data
+  cd $ROOT/../../frontends/java/soot
+  ./run.sh -j $jarfile -c $entryclass
+
+  for class in ${entryclass//:/ }
+  do
+    cp $class.result $ROOT/result/test$i-$class.result
+  done
+done
