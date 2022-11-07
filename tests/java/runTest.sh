@@ -37,6 +37,6 @@ do
   for class in ${entryclass//:/ }
   do
     cp fuzzerLogFile-$class.data $ROOT/result/test$i/
-    cp fuzzerLogFile-$class-*.data.yaml $ROOT/result/test$i/
+    cp fuzzerLogFile-$class.data.yaml $ROOT/result/test$i/
   done
 done
