@@ -156,7 +156,8 @@ def scan_executables_for_fuzz_introspector_logs(
             all_ascii_data = fp.read().decode('ascii', 'ignore')
 
         # Check if file contains fuzzerLogFile string
-        for found_str in text_pattern.findall(all_ascii_data):
+        for re_match in text_pattern.finditer(all_ascii_data):
+            found_str = re_match.group(0)
             if "fuzzerLogFile" not in found_str:
                 continue
             logger.info("Found match %s" % found_str)
@@ -164,6 +165,9 @@ def scan_executables_for_fuzz_introspector_logs(
                 'executable_path': executable_path,
                 'fuzzer_log_file': found_str
             })
+            # Break when a string is found to avoid scanning the whole binary.
+            break
+
     return executable_to_fuzz_reports
 
 
