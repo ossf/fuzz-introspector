@@ -18,6 +18,8 @@ package ossf.fuzz.introspector.soot.yaml;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class FunctionConfig {
 	private String listName;
 	private List<FunctionElement> functionElements;
@@ -26,6 +28,7 @@ public class FunctionConfig {
 		this.functionElements = new ArrayList<FunctionElement>();
 	}
 
+	@JsonProperty("Function list name")
 	public String getListName() {
 		return listName;
 	}
@@ -34,6 +37,7 @@ public class FunctionConfig {
 		this.listName = listName;
 	}
 
+	@JsonProperty("Elements")
 	public List<FunctionElement> getFunctionElements() {
 		return functionElements;
 	}

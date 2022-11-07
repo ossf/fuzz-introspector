@@ -15,10 +15,13 @@
 
 package ossf.fuzz.introspector.soot.yaml;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class BranchProfile {
 	private String branchString;
 	private BranchSide branchSides;
 
+	@JsonProperty("Branch String")
 	public String getBranchString() {
 		return branchString;
 	}
@@ -27,6 +30,7 @@ public class BranchProfile {
 		this.branchString = branchString;
 	}
 
+	@JsonProperty("Branch Sides")
 	public BranchSide getBranchSides() {
 		return branchSides;
 	}

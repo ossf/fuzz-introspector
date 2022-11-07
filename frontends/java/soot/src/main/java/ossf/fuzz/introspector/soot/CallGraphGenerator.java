@@ -213,7 +213,7 @@ class CustomSenceTransformer extends SceneTransformer {
 				for ( ; outEdges.hasNext(); methodEdges++) {
 					Edge edge = outEdges.next();
 					SootMethod tgt = (SootMethod) edge.getTgt();
-					element.addFunctionReached(tgt.toString() + "; Line: " +
+					element.addFunctionsReached(tgt.toString() + "; Line: " +
 							edge.srcStmt().getJavaSourceStartLineNumber());
 				}
 				element.setEdgeCount(methodEdges);
@@ -251,7 +251,7 @@ class CustomSenceTransformer extends SceneTransformer {
 								Integer end = trueBlockLine.get("end");
 								branchSide.setTrueSides(c.getName() + ":" + start);
 								branchSide.setTrueSidesFuncs(getFunctionCallInTargetLine(
-										element.getFunctionReached(), start, end));
+										element.getFunctionsReached(), start, end));
 
 							}
 
@@ -261,7 +261,7 @@ class CustomSenceTransformer extends SceneTransformer {
 								Integer end = falseBlockLine.get("end");
 								branchSide.setFalseSides(c.getName() + ":" + (start - 1));
 								branchSide.setFalseSidesFuncs(getFunctionCallInTargetLine(
-										element.getFunctionReached(), start, end));
+										element.getFunctionsReached(), start, end));
 							}
 
 							branchProfile.setBranchString(c.getName() + ":" + unit.getJavaSourceStartLineNumber());
@@ -290,13 +290,13 @@ class CustomSenceTransformer extends SceneTransformer {
 			fw.write(extractCallTree(callGraph, this.entryMethod, 0, -1));
 		    fw.close();
 		    ObjectMapper om = new ObjectMapper(new YAMLFactory());
+		    file = new File("fuzzerLogFile-" + this.entryClassStr + ".data.yaml");
+		    file.createNewFile();
+		    fw = new FileWriter(file);
 		    for(FuzzerConfig config:classYaml) {
-				file = new File("fuzzerLogFile-" + this.entryClassStr + "-" + config.getFilename() + ".data.yaml");
-				file.createNewFile();
-				fw = new FileWriter(file);
-				fw.write(FuzzerConfig.replaceKeyword(om.writeValueAsString(config)));
-			    fw.close();
+				fw.write(om.writeValueAsString(config));
 		    }
+		    fw.close();
 		} catch (JsonProcessingException e) {
 			System.err.println(e);
 		} catch (IOException e) {
@@ -391,7 +391,7 @@ class CustomSenceTransformer extends SceneTransformer {
 		return callTree.toString();
 	}
 
-		private Integer calculateCyclomaticComplexity(List<Block> start, Integer complexity) {
+	private Integer calculateCyclomaticComplexity(List<Block> start, Integer complexity) {
 			for (Block block:start) {
 				if (visitedBlock.contains(block)) {
 					complexity += 1;
@@ -429,10 +429,10 @@ class CustomSenceTransformer extends SceneTransformer {
 		return Collections.emptyMap();
 	}
 
-	private List<String> getFunctionCallInTargetLine(List<String> functionReached, Integer startLine, Integer endLine) {
+	private List<String> getFunctionCallInTargetLine(List<String> functionsReached, Integer startLine, Integer endLine) {
 		List<String> targetFunctionList = new LinkedList<String>();
 
-			for (String func: functionReached) {
+			for (String func: functionsReached) {
 				String[] line = func.split(" Line: ");
 				Integer lineNumber = Integer.parseInt(line[1]);
 				if (lineNumber >= startLine && lineNumber <= endLine) {
