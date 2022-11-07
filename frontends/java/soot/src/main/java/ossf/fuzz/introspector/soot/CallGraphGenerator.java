@@ -359,6 +359,8 @@ class CustomSenceTransformer extends SceneTransformer {
 			if (!merged) {
 				className = method.getDeclaringClass().getName();
 			}
+		} else {
+			className = method.getDeclaringClass().getName();
 		}
 
 		callTree.append(StringUtils.leftPad("", depth * 2));
