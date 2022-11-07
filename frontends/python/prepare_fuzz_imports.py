@@ -38,13 +38,13 @@ class FuzzerVisitor(ast.NodeVisitor):
         print("In with")
         print(node.body)
         for elem in node.body:
-            print("Iterating %s"%(elem))
+            print("Iterating %s" % (elem))
             self.visit(elem)
 
     def visit_Import(self, node):
         print("Import")
         for alias in node.names:
-            print("- %s"%(alias.name))
+            print("- %s" % (alias.name))
             self.fuzzer_imports.append(alias.name)
 
     def visit_ImportFrom(self, node):
@@ -58,14 +58,14 @@ class FuzzerVisitor(ast.NodeVisitor):
 
     def visit_Call(self, node):
         if len(self.current_scope) == 0:
-            scope="global"
+            scope = "global"
         else:
-            scope=self.current_scope[-1]
-        print("Inside of call instruction -- %s"%(scope))
+            scope = self.current_scope[-1]
+        print("Inside of call instruction -- %s" % (scope))
         if isinstance(node.func, ast.Name):
-            print("- [N] %s"%(node.func.id))
+            print("- [N] %s" % (node.func.id))
         if isinstance(node.func, ast.Attribute):
-            print("%s"%(node.func))
+            print("%s" % (node.func))
             lhs = ""
             lhs_obj = node.func
             while isinstance(lhs_obj, ast.Attribute):
@@ -76,11 +76,9 @@ class FuzzerVisitor(ast.NodeVisitor):
                     break
 
             lhs = lhs_obj.id + lhs
-            #print("- [A] %s.%s"%(lhs_obj.id, node.func.attr))
-            print(" [C] %s"%(lhs))
+            print(" [C] %s" % (lhs))
 
             # Check if we have atheris.Setup
-            #if node.func.value.id is "atheris" and node.func.attr is "Setup":
             if lhs == "atheris.Setup":
                 print("We have the set up function")
                 # Identify the second argument to the function
@@ -90,11 +88,11 @@ class FuzzerVisitor(ast.NodeVisitor):
                     self.fuzzer_entrypoint = arg.id
 
                 for arg in node.args:
-                    print("- arg: %s"%(arg))
+                    print("- arg: %s" % (arg))
 
 
     def visit_FunctionDef(self, node):
-        print("Function definition: %s"%(node.name))
+        print("Function definition: %s" % (node.name))
         self.current_scope.append(node.name)
         self.generic_visit(node)
         self.current_scope = self.current_scope[:-1]
@@ -111,10 +109,10 @@ class FuzzerVisitor(ast.NodeVisitor):
             ep = "Found none"
         else:
             ep = self.fuzzer_entrypoint
-        print("- Fuzzer entrypoint: %s"%(ep))
+        print("- Fuzzer entrypoint: %s" % (ep))
         print("- Fuzzer imports:")
         for _import in self.fuzzer_imports:
-            print("  - %s"%(_import))
+            print("  - %s" % (_import))
             # Let's try and see if these are searchable
             try:
                 specs = importlib.util.find_spec(_import)
@@ -124,7 +122,7 @@ class FuzzerVisitor(ast.NodeVisitor):
                     avoid = ['atheris', 'sys', 'os']
                     if _import not in avoid:
                         for elem in specs.submodule_search_locations:
-                            print("Checking --- %s"%(elem))
+                            print("Checking --- %s" % (elem))
                             if ("/usr/local/lib/" in elem or "/usr/lib/" in elem) and "site-packages" not in elem:
                                 # skip packages that are builtin packacges
                                 continue
@@ -134,7 +132,7 @@ class FuzzerVisitor(ast.NodeVisitor):
                 pass
         print("Iterating")
         for pkg in self.fuzzer_packages:
-            print("package: %s"%(pkg))
+            print("package: %s" % (pkg))
 
 def get_package_paths(filename):
     with open(filename, "r") as f:
@@ -158,10 +156,10 @@ if __name__ == "__main__":
     fuzz_packages = get_package_paths(filename)
     print("After main")
     for fpkg in fuzz_packages:
-        print("- %s"%(fpkg))
+        print("- %s" % (fpkg))
     with open("tmp-packages.txt", "w") as pkgf:
         for fpkg in fuzz_packages:
-            print("- %s"%(fpkg))
+            print("- %s" % (fpkg))
             pkgf.write(fpkg)
             pkgf.write("\n")
 
@@ -169,5 +167,12 @@ if __name__ == "__main__":
         if not os.path.isdir("/src/pyintro-pack-deps"):
             os.mkdir("/src/pyintro-pack-deps")
         for pkg in fuzz_packages:
-            if os.path.isdir(pkg) and not os.path.isdir("/src/pyintro-pack-deps/%s"%(os.path.basename(pkg))):
-                shutil.copytree(pkg, "/src/pyintro-pack-deps/%s"%(os.path.basename(pkg)))
+            if ( os.path.isdir(pkg)
+                and not os.path.isdir(
+                    "/src/pyintro-pack-deps/%s"%(os.path.basename(pkg)
+                )
+            ):
+                shutil.copytree(
+                    pkg,
+                    "/src/pyintro-pack-deps/%s" % (os.path.basename(pkg))
+                )
