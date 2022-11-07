@@ -34,4 +34,13 @@ public class FuzzerConfig {
 	public void setFunctionConfig(FunctionConfig functionConfig) {
 		this.functionConfig = functionConfig;
 	}
+
+	public static String replaceKeyword(String jsonString) {
+		jsonString.replace("filename:", "Fuzzer filename:");
+		jsonString.replace("functionConfig:", "All functions:");
+		jsonString.replace("listName: \"All functions\"", "Function list name: All functions");
+		jsonString.replace("functionElements:", "Elements:");
+
+		return jsonString;
+	}
 }
