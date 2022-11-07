@@ -335,7 +335,7 @@ class CustomSenceTransformer extends SceneTransformer {
 
 	// Shorthand for extractCallTree from top
 	private String extractCallTree(CallGraph cg, SootMethod method, Integer depth, Integer line) {
-		return "Call Tree\n" + extractCallTree(cg, method, depth, line, new LinkedList<SootMethod>(), null);
+		return "Call tree\n" + extractCallTree(cg, method, depth, line, new LinkedList<SootMethod>(), null);
 	}
 
 	// Recursively extract calltree from stored method relationship, ignoring loops
