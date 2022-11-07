@@ -340,18 +340,9 @@ def main() -> int:
     parser = get_cmdline_parser()
 
     args = parser.parse_args()
-    #potential_packages = []
-    #with open("tmp-packages.txt", "r") as tmpf:
-    #    for line in tmpf:
-    #        potential_packages.append(line.replace("\n", ""))
-
-    #if len(potential_packages) >= 1:
-    #    package = potential_packages[0] + "/"
-    #print("Using the package: %s -----"%(package))
-    #print("Using the package2: %s -----"%(args.package))
     exit_code = run_fuzz_pass(
         args.fuzzer,
-        "/src/pyintro-pack-deps/", #package,
+        "/src/pyintro-pack-deps/",
         args.sources,
         args.scan
     )
