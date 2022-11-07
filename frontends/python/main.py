@@ -75,17 +75,18 @@ def run_fuzz_pass(
             logger.error("No package. Exiting early now as the results will not be good")
             package = ""
 
-    # Check if we should scan
+    # If indicated, scan package directory recursively to identify .py files.
     scanned_sources = []
     if scan:
-        package_abs_path = os.path.abspath(package)
-        for potential_script in os.listdir(package_abs_path):
-            if not potential_script.endswith(".py"):
-                continue
-            full_path = os.path.join(package_abs_path, potential_script)
-            if os.path.basename(full_path) == os.path.basename(fuzzer):
-                continue
-            scanned_sources.append(full_path)
+        for root, dirs, files in os.walk(package):
+            for filename in files:
+                fpath = os.path.join(root, filename)
+                if not fpath.endswith(".py"):
+                    continue
+                if filename == os.path.basename(fuzzer):
+                    continue
+                abs_filepath = os.path.abspath(os.path.join(root, filename))
+                scanned_sources.append(abs_filepath)
 
     logger.info(
         f"Running analysis with arguments: {{fuzzer: {fuzzer}, package: {package} }}"
