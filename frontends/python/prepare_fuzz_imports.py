@@ -100,7 +100,7 @@ class FuzzerVisitor(ast.NodeVisitor):
         self.visit(self.ast_content)
 
     def print_specifics(self):
-        print("#"*50)
+        print("#" * 50)
         print("Fuzzer specification")
         if self.fuzzer_entrypoint is None:
             ep = "Found none"
