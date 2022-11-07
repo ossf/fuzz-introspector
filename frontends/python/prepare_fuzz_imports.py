@@ -169,5 +169,5 @@ if __name__ == "__main__":
         if not os.path.isdir("/src/pyintro-pack-deps"):
             os.mkdir("/src/pyintro-pack-deps")
         for pkg in fuzz_packages:
-            if os.path.isdir(pkg):
+            if os.path.isdir(pkg) and not os.path.isdir("/src/pyintro-pack-deps/%s"%(os.path.basename(pkg))):
                 shutil.copytree(pkg, "/src/pyintro-pack-deps/%s"%(os.path.basename(pkg)))

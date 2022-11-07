@@ -18,8 +18,6 @@ import json
 import logging
 import argparse
 
-import read_ast
-
 from typing import List
 
 from pycg.pycg import CallGraphGenerator
@@ -342,7 +340,6 @@ def main() -> int:
     parser = get_cmdline_parser()
 
     args = parser.parse_args()
-    #pkgs = read_ast.get_package_paths(args.fuzzer)
     #potential_packages = []
     #with open("tmp-packages.txt", "r") as tmpf:
     #    for line in tmpf:
