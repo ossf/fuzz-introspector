@@ -338,10 +338,11 @@ def main() -> int:
     logging.basicConfig(level=logging.INFO)
     logger.info("Starting analysis")
     parser = get_cmdline_parser()
+
     args = parser.parse_args()
     exit_code = run_fuzz_pass(
         args.fuzzer,
-        args.package,
+        "/src/pyintro-pack-deps/",
         args.sources,
         args.scan
     )

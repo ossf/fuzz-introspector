@@ -12,22 +12,33 @@ index aa954a17..c033e1c4 100644
 +COPY frontends /fuzz-introspector/frontends
  
  CMD ["compile"]
-diff --git a/infra/base-images/base-builder/compile b/infra/base-images/base-builder/compile
-index 3039f0ab..61dea7ff 100755
---- a/infra/base-images/base-builder/compile
-+++ b/infra/base-images/base-builder/compile
-@@ -211,7 +211,8 @@ if [ "$SANITIZER" = "introspector" ]; then
-   unset CFLAGS
-   apt-get install -y libjpeg-dev zlib1g-dev
-   pip3 install --upgrade setuptools
--  pip3 install cxxfilt pyyaml beautifulsoup4 lxml soupsieve matplotlib
-+  pip3 install cxxfilt pyyaml beautifulsoup4 lxml soupsieve
-+  pip3 install --prefer-binary matplotlib
-   mkdir -p $SRC/inspector
+diff --git a/infra/base-images/base-builder/compile_python_fuzzer b/infra/base-images/base-builder/compile_python_fuzzer
+index 58752298..3fbd5585 100755
+--- a/infra/base-images/base-builder/compile_python_fuzzer
++++ b/infra/base-images/base-builder/compile_python_fuzzer
+@@ -25,6 +25,10 @@ PYFUZZ_WORKPATH=$SRC/pyfuzzworkdir/
+ FUZZ_WORKPATH=$PYFUZZ_WORKPATH/$fuzzer_basename
  
-   find $SRC/ -name "fuzzerLogFile-*.data" -exec cp {} $SRC/inspector/ \;
+ if [[ $SANITIZER = *introspector* ]]; then
++    # Extract the package using the environment of the fuzzer.
++    # This is because we need to know where the packages are.
++    python3 /fuzz-introspector/frontends/python/prepare_fuzz_imports.py $fuzzer_path isossfuzz
++
+     # We must ensure python3.9, this is because we use certain
+     # AST logic from there.
+     # The below should probably be refined
+@@ -39,8 +43,8 @@ if [[ $SANITIZER = *introspector* ]]; then
+     ARGS="--fuzzer $fuzzer_path"
+     if [ -n "${PYFUZZPACKAGE-}" ]; then
+       ARGS="$ARGS --package=${PYFUZZPACKAGE}"
+-      ARGS="$ARGS --scan"
+     fi
++    ARGS="$ARGS --scan"
+     python /fuzz-introspector/frontends/python/main.py $ARGS
+     ls -la ./
+     exit 0
 diff --git a/infra/base-images/base-clang/Dockerfile b/infra/base-images/base-clang/Dockerfile
-index 848c03d4..a0ab96bf 100644
+index 964a10a0..1c3d686d 100644
 --- a/infra/base-images/base-clang/Dockerfile
 +++ b/infra/base-images/base-clang/Dockerfile
 @@ -45,6 +45,8 @@ RUN apt-get update && apt-get install -y git && \
@@ -61,6 +72,81 @@ index bc034e19..929e3499 100755
  
  # Copy the binaries needed for code coverage and crash symbolization.
  COPY --from=base-clang /usr/local/bin/llvm-cov \
+diff --git a/projects/glom/build.sh b/projects/glom/build.sh
+index 506f13bf..95f3540d 100644
+--- a/projects/glom/build.sh
++++ b/projects/glom/build.sh
+@@ -15,9 +15,6 @@
+ #
+ ################################################################################
+ 
+-# For fuzz-introspector
+-export PYFUZZPACKAGE=$PWD/glom/
+-
+ pip3 install .
+ 
+ # Build fuzzers in $OUT.
+diff --git a/projects/glom/fuzz_glom.py b/projects/glom/fuzz_glom.py
+index 04b2e550..ed29575e 100644
+--- a/projects/glom/fuzz_glom.py
++++ b/projects/glom/fuzz_glom.py
+@@ -17,7 +17,7 @@ import atheris
+ import sys
+ 
+ with atheris.instrument_imports():
+-  from glom import *
++  import glom
+   import json
+ 
+ 
+@@ -26,8 +26,8 @@ def TestOneInput(data):
+ 
+   val = {'d': {'e': ['f']}}
+   try:
+-    core.glom(val, fdp.ConsumeString(30))
+-  except core.PathAccessError:
++    glom.core.glom(val, fdp.ConsumeString(30))
++  except glom.core.PathAccessError:
+     pass
+ 
+   # Create a random dictionary. In this case if any
+@@ -42,8 +42,8 @@ def TestOneInput(data):
+ 
+   # Use random dict as input to glom
+   try:
+-    core.glom(data, fdp.ConsumeString(30))
+-  except core.PathAccessError:
++    glom.core.glom(data, fdp.ConsumeString(30))
++  except glom.core.PathAccessError:
+     pass
+ 
+ 
+diff --git a/projects/idna/build.sh b/projects/idna/build.sh
+index 3932a04c..1974eb7e 100755
+--- a/projects/idna/build.sh
++++ b/projects/idna/build.sh
+@@ -15,9 +15,6 @@
+ #
+ ################################################################################
+ 
+-# For fuzz-introspector
+-export PYFUZZPACKAGE=$PWD/
+-
+ pip3 install .
+ for fuzzer in $(find $SRC -name 'fuzz_*.py'); do
+   compile_python_fuzzer $fuzzer
+diff --git a/projects/idna/fuzz_encode_decode.py b/projects/idna/fuzz_encode_decode.py
+index ccce7dc1..cab15a81 100644
+--- a/projects/idna/fuzz_encode_decode.py
++++ b/projects/idna/fuzz_encode_decode.py
+@@ -19,7 +19,6 @@ import atheris
+ 
+ import idna
+ 
+-
+ def TestOneInput(data):
+     """Fuzz encode and decode"""
+     fdp = atheris.FuzzedDataProvider(data)
 diff --git a/projects/jackson-databind/build.sh b/projects/jackson-databind/build.sh
 index b5ea5b01..fa0001ba 100755
 --- a/projects/jackson-databind/build.sh
@@ -109,3 +195,44 @@ index b5ea5b01..fa0001ba 100755
 +cd $OUT
 +cp fuzz-introspector/frontends/java/soot/*.result ./
 +rm -rf fuzz-introspector
+diff --git a/projects/jsmin/fuzz_minimize.py b/projects/jsmin/fuzz_minimize.py
+index 7375c000..6dfc1560 100644
+--- a/projects/jsmin/fuzz_minimize.py
++++ b/projects/jsmin/fuzz_minimize.py
+@@ -15,7 +15,7 @@
+ 
+ import atheris
+ import sys
+-from jsmin import jsmin
++import jsmin
+ 
+ 
+ def TestOneInput(data):
+@@ -24,7 +24,7 @@ def TestOneInput(data):
+ 
+     with open('myfile.js') as js_file:
+         try:
+-            minified = jsmin(js_file.read())
++            minified = jsmin.jsmin(js_file.read())
+         except UnicodeDecodeError:
+             pass
+ 
+diff --git a/projects/pyyaml/build.sh b/projects/pyyaml/build.sh
+index 7fe41721..8ffc39cf 100644
+--- a/projects/pyyaml/build.sh
++++ b/projects/pyyaml/build.sh
+@@ -14,12 +14,9 @@
+ # limitations under the License.
+ #
+ ################################################################################
+-cd pyyaml
+-
+-# For fuzz-introspector
+-export PYFUZZPACKAGE=$PWD/lib/
+ 
+-python3 ./setup.py --without-libyaml install
++cd pyyaml
++pip3 install .
+ 
+ # Build fuzzers in $OUT.
+ for fuzzer in $(find $SRC -name 'fuzz_*.py'); do
