@@ -12,22 +12,33 @@ index aa954a17..c033e1c4 100644
 +COPY frontends /fuzz-introspector/frontends
  
  CMD ["compile"]
-diff --git a/infra/base-images/base-builder/compile b/infra/base-images/base-builder/compile
-index 3039f0ab..61dea7ff 100755
---- a/infra/base-images/base-builder/compile
-+++ b/infra/base-images/base-builder/compile
-@@ -211,7 +211,8 @@ if [ "$SANITIZER" = "introspector" ]; then
-   unset CFLAGS
-   apt-get install -y libjpeg-dev zlib1g-dev
-   pip3 install --upgrade setuptools
--  pip3 install cxxfilt pyyaml beautifulsoup4 lxml soupsieve matplotlib
-+  pip3 install cxxfilt pyyaml beautifulsoup4 lxml soupsieve
-+  pip3 install --prefer-binary matplotlib
-   mkdir -p $SRC/inspector
+diff --git a/infra/base-images/base-builder/compile_python_fuzzer b/infra/base-images/base-builder/compile_python_fuzzer
+index 58752298..04b4f52c 100755
+--- a/infra/base-images/base-builder/compile_python_fuzzer
++++ b/infra/base-images/base-builder/compile_python_fuzzer
+@@ -25,6 +25,10 @@ PYFUZZ_WORKPATH=$SRC/pyfuzzworkdir/
+ FUZZ_WORKPATH=$PYFUZZ_WORKPATH/$fuzzer_basename
  
-   find $SRC/ -name "fuzzerLogFile-*.data" -exec cp {} $SRC/inspector/ \;
+ if [[ $SANITIZER = *introspector* ]]; then
++    # Extract the package using the environment of the fuzzer.
++    # This is because we need to know where the packages are.
++    python3 /fuzz-introspector/frontends/python/read_ast.py $fuzzer_path isossfuzz
++
+     # We must ensure python3.9, this is because we use certain
+     # AST logic from there.
+     # The below should probably be refined
+@@ -39,8 +43,8 @@ if [[ $SANITIZER = *introspector* ]]; then
+     ARGS="--fuzzer $fuzzer_path"
+     if [ -n "${PYFUZZPACKAGE-}" ]; then
+       ARGS="$ARGS --package=${PYFUZZPACKAGE}"
+-      ARGS="$ARGS --scan"
+     fi
++    ARGS="$ARGS --scan"
+     python /fuzz-introspector/frontends/python/main.py $ARGS
+     ls -la ./
+     exit 0
 diff --git a/infra/base-images/base-clang/Dockerfile b/infra/base-images/base-clang/Dockerfile
-index 848c03d4..a0ab96bf 100644
+index 964a10a0..1c3d686d 100644
 --- a/infra/base-images/base-clang/Dockerfile
 +++ b/infra/base-images/base-clang/Dockerfile
 @@ -45,6 +45,8 @@ RUN apt-get update && apt-get install -y git && \
@@ -61,6 +72,118 @@ index bc034e19..929e3499 100755
  
  # Copy the binaries needed for code coverage and crash symbolization.
  COPY --from=base-clang /usr/local/bin/llvm-cov \
+diff --git a/infra/base-images/base-runner/coverage b/infra/base-images/base-runner/coverage
+index e91774bd..f41783cd 100755
+--- a/infra/base-images/base-runner/coverage
++++ b/infra/base-images/base-runner/coverage
+@@ -1,4 +1,4 @@
+-#!/bin/bash -u
++#!/bin/bash -ux
+ # Copyright 2018 Google Inc.
+ #
+ # Licensed under the Apache License, Version 2.0 (the "License");
+@@ -217,15 +217,23 @@ function generate_html {
+   mkdir -p "$output_dir/$PLATFORM"
+ 
+   local llvm_cov_args="-instr-profile=$profdata $objects $LLVM_COV_COMMON_ARGS"
++  echo "============================================================== 1"
++  ls -la $output_dir
+   llvm-cov show -format=html -output-dir=$output_dir -Xdemangler rcfilt $llvm_cov_args
++  echo "============================================================== 2"
++  ls -la $output_dir
+ 
+   # Export coverage summary in JSON format.
+   local summary_file=$output_dir/$PLATFORM/summary.json
+ 
+   llvm-cov export -summary-only $llvm_cov_args > $summary_file
++  echo "============================================================== 3"
++  ls -la $output_dir
+ 
+   coverage_helper -v post_process -src-root-dir=/ -summary-file=$summary_file \
+       -output-dir=$output_dir $PATH_EQUIVALENCE_ARGS
++  echo "============================================================== 4"
++  ls -la $output_dir
+ }
+ 
+ export SYSGOPATH=$GOPATH
+diff --git a/projects/glom/build.sh b/projects/glom/build.sh
+index 506f13bf..bccb651a 100644
+--- a/projects/glom/build.sh
++++ b/projects/glom/build.sh
+@@ -16,7 +16,9 @@
+ ################################################################################
+ 
+ # For fuzz-introspector
+-export PYFUZZPACKAGE=$PWD/glom/
++#export PYFUZZPACKAGE=$PWD/glom/
++#export PYFUZZPACKAGE=/usr/local/lib/python3.8/site-packages/glom/
++#                      /usr/local/lib/python3.8/site-packages/glom/
+ 
+ pip3 install .
+ 
+diff --git a/projects/glom/fuzz_glom.py b/projects/glom/fuzz_glom.py
+index 04b2e550..b9c682d0 100644
+--- a/projects/glom/fuzz_glom.py
++++ b/projects/glom/fuzz_glom.py
+@@ -17,7 +17,8 @@ import atheris
+ import sys
+ 
+ with atheris.instrument_imports():
+-  from glom import *
++  #from glom import *
++  import glom
+   import json
+ 
+ 
+@@ -26,8 +27,8 @@ def TestOneInput(data):
+ 
+   val = {'d': {'e': ['f']}}
+   try:
+-    core.glom(val, fdp.ConsumeString(30))
+-  except core.PathAccessError:
++    glom.core.glom(val, fdp.ConsumeString(30))
++  except glom.core.PathAccessError:
+     pass
+ 
+   # Create a random dictionary. In this case if any
+@@ -42,8 +43,8 @@ def TestOneInput(data):
+ 
+   # Use random dict as input to glom
+   try:
+-    core.glom(data, fdp.ConsumeString(30))
+-  except core.PathAccessError:
++    glom.core.glom(data, fdp.ConsumeString(30))
++  except glom.core.PathAccessError:
+     pass
+ 
+ 
+diff --git a/projects/idna/build.sh b/projects/idna/build.sh
+index 3932a04c..1974eb7e 100755
+--- a/projects/idna/build.sh
++++ b/projects/idna/build.sh
+@@ -15,9 +15,6 @@
+ #
+ ################################################################################
+ 
+-# For fuzz-introspector
+-export PYFUZZPACKAGE=$PWD/
+-
+ pip3 install .
+ for fuzzer in $(find $SRC -name 'fuzz_*.py'); do
+   compile_python_fuzzer $fuzzer
+diff --git a/projects/idna/fuzz_encode_decode.py b/projects/idna/fuzz_encode_decode.py
+index ccce7dc1..64f245c0 100644
+--- a/projects/idna/fuzz_encode_decode.py
++++ b/projects/idna/fuzz_encode_decode.py
+@@ -18,7 +18,7 @@ import sys
+ import atheris
+ 
+ import idna
+-
++#from idna import *
+ 
+ def TestOneInput(data):
+     """Fuzz encode and decode"""
 diff --git a/projects/jackson-databind/build.sh b/projects/jackson-databind/build.sh
 index b5ea5b01..fa0001ba 100755
 --- a/projects/jackson-databind/build.sh
@@ -109,3 +232,26 @@ index b5ea5b01..fa0001ba 100755
 +cd $OUT
 +cp fuzz-introspector/frontends/java/soot/*.result ./
 +rm -rf fuzz-introspector
+diff --git a/projects/jsmin/fuzz_minimize.py b/projects/jsmin/fuzz_minimize.py
+index 7375c000..748946d7 100644
+--- a/projects/jsmin/fuzz_minimize.py
++++ b/projects/jsmin/fuzz_minimize.py
+@@ -15,7 +15,8 @@
+ 
+ import atheris
+ import sys
+-from jsmin import jsmin
++#from jsmin import jsmin
++import jsmin
+ 
+ 
+ def TestOneInput(data):
+@@ -24,7 +25,7 @@ def TestOneInput(data):
+ 
+     with open('myfile.js') as js_file:
+         try:
+-            minified = jsmin(js_file.read())
++            minified = jsmin.jsmin(js_file.read())
+         except UnicodeDecodeError:
+             pass
+ 
