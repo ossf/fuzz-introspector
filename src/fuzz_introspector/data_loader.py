@@ -155,7 +155,7 @@ def load_all_profiles(
     all_threads = []
     for data_file in data_files:
         x = threading.Thread(
-            _load_profile,
+            target = _load_profile,
             args=(data_file, language, thread_safe_queue)
         )
         x.start()
