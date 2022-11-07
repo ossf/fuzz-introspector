@@ -36,7 +36,7 @@ do
 
   for class in ${entryclass//:/ }
   do
-    cp fuzzerLogFile-$class.data $ROOT/result/test$i/
-    cp fuzzerLogFile-$class.data.yaml $ROOT/result/test$i/
+    mv fuzzerLogFile-$class.data $ROOT/result/test$i/fuzzerLogFile-$class.data
+    mv fuzzerLogFile-$class.data.yaml $ROOT/result/test$i/fuzzerLogFile-$class.data.yaml
   done
 done
