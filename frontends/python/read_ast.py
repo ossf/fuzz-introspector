@@ -15,6 +15,7 @@
 import ast
 import os
 import sys
+import shutil
 import importlib.util
 
 
@@ -150,6 +151,10 @@ def get_package_paths(filename):
 
 if __name__ == "__main__":
     filename = sys.argv[1]
+    if len(sys.argv) > 2:
+        is_oss_fuzz=True
+    else:
+        is_oss_fuzz=False
     fuzz_packages = get_package_paths(filename)
     print("After main")
     for fpkg in fuzz_packages:
@@ -159,3 +164,10 @@ if __name__ == "__main__":
             print("- %s"%(fpkg))
             pkgf.write(fpkg)
             pkgf.write("\n")
+
+    if is_oss_fuzz:
+        if not os.path.isdir("/src/pyintro-pack-deps"):
+            os.mkdir("/src/pyintro-pack-deps")
+        for pkg in fuzz_packages:
+            if os.path.isdir(pkg):
+                shutil.copytree(pkg, "/src/pyintro-pack-deps/%s"%(os.path.basename(pkg)))
