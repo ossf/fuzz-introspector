@@ -90,16 +90,13 @@ class FuzzerVisitor(ast.NodeVisitor):
                 for arg in node.args:
                     print("- arg: %s" % (arg))
 
-
     def visit_FunctionDef(self, node):
         print("Function definition: %s" % (node.name))
         self.current_scope.append(node.name)
         self.generic_visit(node)
         self.current_scope = self.current_scope[:-1]
-        
 
     def analyze(self):
-        #print(ast.dump(self.ast_content, indent=4))
         self.visit(self.ast_content)
 
     def print_specifics(self):
@@ -123,22 +120,24 @@ class FuzzerVisitor(ast.NodeVisitor):
                     if _import not in avoid:
                         for elem in specs.submodule_search_locations:
                             print("Checking --- %s" % (elem))
-                            if ("/usr/local/lib/" in elem or "/usr/lib/" in elem) and "site-packages" not in elem:
+                            if (
+                                ("/usr/local/lib/" in elem or "/usr/lib/" in elem)
+                                and "site-packages" not in elem
+                            ):
                                 # skip packages that are builtin packacges
                                 continue
-                            print("Adding --- %s"%(elem))
+                            print("Adding --- %s" % (elem))
                             self.fuzzer_packages.append(elem)
-            except:
+            except:  # noqa: E722
                 pass
         print("Iterating")
         for pkg in self.fuzzer_packages:
             print("package: %s" % (pkg))
 
+
 def get_package_paths(filename):
     with open(filename, "r") as f:
         content = f.read()
-
-    #print(ast.dump(ast.parse(content), indent=4))
 
     print("Fuzzer visitor")
     fuzz_visitor = FuzzerVisitor(ast.parse(content))
@@ -147,12 +146,13 @@ def get_package_paths(filename):
 
     return fuzz_visitor.fuzzer_packages
 
+
 if __name__ == "__main__":
     filename = sys.argv[1]
     if len(sys.argv) > 2:
-        is_oss_fuzz=True
+        is_oss_fuzz = True
     else:
-        is_oss_fuzz=False
+        is_oss_fuzz = False
     fuzz_packages = get_package_paths(filename)
     print("After main")
     for fpkg in fuzz_packages:
@@ -167,12 +167,6 @@ if __name__ == "__main__":
         if not os.path.isdir("/src/pyintro-pack-deps"):
             os.mkdir("/src/pyintro-pack-deps")
         for pkg in fuzz_packages:
-            if (os.path.isdir(pkg)
-                and not os.path.isdir(
-                    "/src/pyintro-pack-deps/%s" % (os.path.basename(pkg))
-                )
-            ):
-                shutil.copytree(
-                    pkg,
-                    "/src/pyintro-pack-deps/%s" % (os.path.basename(pkg))
-                )
+            dst_dir = "/src/pyintro-pack-deps/%s" % (os.path.basename(pkg))
+            if os.path.isdir(pkg) and not os.path.isdir(dst_dir):
+                shutil.copytree(pkg, dst_dir)
