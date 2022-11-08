@@ -110,14 +110,20 @@ class FuzzerVisitor(ast.NodeVisitor):
         print("- Fuzzer imports:")
         for _import in self.fuzzer_imports:
             print("  - %s" % (_import))
+            if _import.count(".") > 1:
+                _import = _import.split(".")[0]
+                print("Refining import to %s" % (_import))
+
             # Let's try and see if these are searchable
-            try:
-                specs = importlib.util.find_spec(_import)
-                if specs is not None:
-                    print("Spec:")
-                    print(specs)
-                    avoid = ['atheris', 'sys', 'os']
-                    if _import not in avoid:
+            specs = importlib.util.find_spec(_import)
+            if specs is not None:
+                print("Spec:")
+                print(specs)
+                avoid = ['atheris', 'sys', 'os']
+                print("Hello")
+                if _import not in avoid:
+                    print("hello to")
+                    if specs.submodule_search_locations:
                         for elem in specs.submodule_search_locations:
                             print("Checking --- %s" % (elem))
                             if (
@@ -125,11 +131,12 @@ class FuzzerVisitor(ast.NodeVisitor):
                                 and "site-packages" not in elem
                             ):
                                 # skip packages that are builtin packacges
+                                # Check if we can refine
+                                if elem.count(".") > 1:
+                                    print("Has such a count")
                                 continue
                             print("Adding --- %s" % (elem))
                             self.fuzzer_packages.append(elem)
-            except:  # noqa: E722
-                pass
         print("Iterating")
         for pkg in self.fuzzer_packages:
             print("package: %s" % (pkg))

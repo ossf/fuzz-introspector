@@ -79,7 +79,15 @@ def run_fuzz_pass(
     scanned_sources = []
     if scan:
         for root, dirs, files in os.walk(package):
+            # avoid test directories. We're not interested in exploring this code.
+            to_include = True
+            for rdir in os.path.split(root):
+                if rdir == "test" or rdir == "tests":
+                    to_include = False
+            if not to_include:
+                continue
             for filename in files:
+                logger.debug("Iterating %s ---- %s" % (root, filename))
                 fpath = os.path.join(root, filename)
                 if not fpath.endswith(".py"):
                     continue
@@ -91,10 +99,14 @@ def run_fuzz_pass(
     logger.info(
         f"Running analysis with arguments: {{fuzzer: {fuzzer}, package: {package} }}"
     )
+    sources_to_analyze = [fuzzer] + sources + scanned_sources
+    logger.info("Sources to analyze:")
+    for srz in sources_to_analyze:
+        logger.info("- %s" % (srz))
     cg = CallGraphGenerator(
         [fuzzer] + sources + scanned_sources,
         package,
-        -1,
+        1000,
         CALL_GRAPH_OP
     )
     cg.analyze()
