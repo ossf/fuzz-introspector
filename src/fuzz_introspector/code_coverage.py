@@ -105,7 +105,7 @@ class CoverageProfile:
                 curr += "/"
             logger.info(f"Potentials: {str(potentials)}")
             for potential_key in self.file_map:
-                #logger.info(f"Scanning {str(potential_key)}")
+                logger.debug(f"Scanning {str(potential_key)}")
                 for p in potentials:
                     if potential_key.endswith(p):
                         found_key = potential_key
