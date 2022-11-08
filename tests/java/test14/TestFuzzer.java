@@ -13,31 +13,27 @@
 // limitations under the License.
 ///////////////////////////////////////////////////////////////////////////
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.TreeSet;
 
 public class TestFuzzer {
-	public static void fuzzerTestOneInput(Collection<String> item, Collection<String> item2) {
-		item.add("A");
-		item.add("B");
-		item.add("C");
+  public static void fuzzerTestOneInput(Collection<String> item, Collection<String> item2) {
+    item.add("A");
+    item.add("B");
+    item.add("C");
 
-		item2.addAll(item);
+    item2.addAll(item);
 
-		System.out.println("item size: " + item.size());
-		System.out.println("item2 size: " + item2.size());
+    System.out.println("item size: " + item.size());
+    System.out.println("item2 size: " + item2.size());
 
-		Iterator<String> it = item.iterator();
-		while(it.hasNext()) {
-			System.out.println(it.next());
-		}
+    Iterator<String> it = item.iterator();
+    while (it.hasNext()) {
+      System.out.println(it.next());
+    }
 
-		if (!item2.equals(item)) {
-			item2.clear();
-		}
-	}
+    if (!item2.equals(item)) {
+      item2.clear();
+    }
+  }
 }

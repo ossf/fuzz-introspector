@@ -16,22 +16,22 @@
 package Fuzz;
 
 import Function.FunctionTest;
-import com.code_intelligence.jazzer.api.FuzzedDataProvider;
 import com.code_intelligence.jazzer.api.CannedFuzzedDataProvider;
+import com.code_intelligence.jazzer.api.FuzzedDataProvider;
 
 public class TestFuzzer {
-	public static void fuzzerTestOneInput(FuzzedDataProvider data) {
-		int choice = data.consumeInt(0,1);
+  public static void fuzzerTestOneInput(FuzzedDataProvider data) {
+    int choice = data.consumeInt(0, 1);
 
-		if (choice == 0) {
-			FunctionTest ft = new FunctionTest();
-			ft.function1();
-		} else {
-			FunctionTest.function2();
-		}
-	}
+    if (choice == 0) {
+      FunctionTest ft = new FunctionTest();
+      ft.function1();
+    } else {
+      FunctionTest.function2();
+    }
+  }
 
-	public static void main(String[] args) {
-                TestFuzzer.fuzzerTestOneInput(new CannedFuzzedDataProvider("RANDOM"));
-        }
+  public static void main(String[] args) {
+    TestFuzzer.fuzzerTestOneInput(new CannedFuzzedDataProvider("RANDOM"));
+  }
 }

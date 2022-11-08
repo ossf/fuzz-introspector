@@ -16,7 +16,7 @@
 package Fuzz;
 
 public abstract class Human {
-	protected String name = "Someone";
+  protected String name = "Someone";
 
-	protected abstract String getName();
+  protected abstract String getName();
 }

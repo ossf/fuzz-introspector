@@ -16,21 +16,21 @@
 package Fuzz;
 
 public class FunctionTest {
-	protected void function1() {
-		System.out.println("F1");
-		this.function2();
-	}
+  protected void function1() {
+    System.out.println("F1");
+    this.function2();
+  }
 
-	protected void function2() {
-		System.out.println("F2");
-		this.function1();
-	}
+  protected void function2() {
+    System.out.println("F2");
+    this.function1();
+  }
 
-	protected void functionPublicDead() {
-		System.out.println("PuD");
-	}
+  protected void functionPublicDead() {
+    System.out.println("PuD");
+  }
 
-	private void functionPrivateDead() {
-		System.out.println("PrD");
-	}
+  private void functionPrivateDead() {
+    System.out.println("PrD");
+  }
 }

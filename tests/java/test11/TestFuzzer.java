@@ -15,41 +15,36 @@
 ///////////////////////////////////////////////////////////////////////////
 
 import com.code_intelligence.jazzer.api.FuzzedDataProvider;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.lang.RuntimeException;
-
+import javassist.CannotCompileException;
 import javassist.ClassPool;
 import javassist.CtClass;
-import javassist.CannotCompileException;
 import javassist.NotFoundException;
-import java.lang.NullPointerException;
-
 
 public class TestFuzzer {
-    public static void fuzzerTestOneInput(FuzzedDataProvider data) {
-        ClassPool pool = ClassPool.getDefault();
-        CtClass cc = null;
+  public static void fuzzerTestOneInput(FuzzedDataProvider data) {
+    ClassPool pool = ClassPool.getDefault();
+    CtClass cc = null;
 
-        try {
-            cc = pool.makeClass(new ByteArrayInputStream(data.consumeRemainingAsBytes()));
-        } catch (IOException | RuntimeException e) {
-        }
-
-        try {
-            cc.getSuperclass();
-            cc.getNestedClasses();
-            cc.getClassFile();
-            cc.getInterfaces();
-            cc.getDeclaringClass();
-            cc.getComponentType();
-        } catch (NotFoundException | NullPointerException e) {
-        }
-
-        try {
-            cc.toBytecode();
-        } catch (IOException | NullPointerException | CannotCompileException e) {
-        }
+    try {
+      cc = pool.makeClass(new ByteArrayInputStream(data.consumeRemainingAsBytes()));
+    } catch (IOException | RuntimeException e) {
     }
+
+    try {
+      cc.getSuperclass();
+      cc.getNestedClasses();
+      cc.getClassFile();
+      cc.getInterfaces();
+      cc.getDeclaringClass();
+      cc.getComponentType();
+    } catch (NotFoundException | NullPointerException e) {
+    }
+
+    try {
+      cc.toBytecode();
+    } catch (IOException | NullPointerException | CannotCompileException e) {
+    }
+  }
 }

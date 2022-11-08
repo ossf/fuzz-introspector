@@ -15,24 +15,24 @@
 
 package Fuzz;
 
-import com.code_intelligence.jazzer.api.FuzzedDataProvider;
 import com.code_intelligence.jazzer.api.CannedFuzzedDataProvider;
+import com.code_intelligence.jazzer.api.FuzzedDataProvider;
 
 public class TestFuzzer {
-	public static void fuzzerTestOneInput(FuzzedDataProvider data) {
-		int count = data.consumeInt(1,10);
-		FunctionTest ft = new FunctionTest();
+  public static void fuzzerTestOneInput(FuzzedDataProvider data) {
+    int count = data.consumeInt(1, 10);
+    FunctionTest ft = new FunctionTest();
 
-		for (int i=0; i<count; i++) {
-			if (i%2 == 0) {
-				ft.function1();
-			} else {
-				ft.function2();
-			}
-		}
-	}
+    for (int i = 0; i < count; i++) {
+      if (i % 2 == 0) {
+        ft.function1();
+      } else {
+        ft.function2();
+      }
+    }
+  }
 
-	public static void main(String[] args) {
-                TestFuzzer.fuzzerTestOneInput(new CannedFuzzedDataProvider("RANDOM"));
-        }
+  public static void main(String[] args) {
+    TestFuzzer.fuzzerTestOneInput(new CannedFuzzedDataProvider("RANDOM"));
+  }
 }

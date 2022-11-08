@@ -15,38 +15,37 @@
 
 package ossf.fuzz.introspector.soot.yaml;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 public class FunctionConfig {
-	private String listName;
-	private List<FunctionElement> functionElements;
+  private String listName;
+  private List<FunctionElement> functionElements;
 
-	public FunctionConfig() {
-		this.functionElements = new ArrayList<FunctionElement>();
-	}
+  public FunctionConfig() {
+    this.functionElements = new ArrayList<FunctionElement>();
+  }
 
-	@JsonProperty("Function list name")
-	public String getListName() {
-		return listName;
-	}
+  @JsonProperty("Function list name")
+  public String getListName() {
+    return listName;
+  }
 
-	public void setListName(String listName) {
-		this.listName = listName;
-	}
+  public void setListName(String listName) {
+    this.listName = listName;
+  }
 
-	@JsonProperty("Elements")
-	public List<FunctionElement> getFunctionElements() {
-		return functionElements;
-	}
+  @JsonProperty("Elements")
+  public List<FunctionElement> getFunctionElements() {
+    return functionElements;
+  }
 
-	public void addFunctionElement(FunctionElement functionElement) {
-		this.functionElements.add(functionElement);
-	}
+  public void addFunctionElement(FunctionElement functionElement) {
+    this.functionElements.add(functionElement);
+  }
 
-	public void setFunctionElements(List<FunctionElement> functionElements) {
-		this.functionElements = functionElements;
-	}
+  public void setFunctionElements(List<FunctionElement> functionElements) {
+    this.functionElements = functionElements;
+  }
 }

@@ -18,24 +18,24 @@ package ossf.fuzz.introspector.soot.yaml;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class BranchProfile {
-	private String branchString;
-	private BranchSide branchSides;
+  private String branchString;
+  private BranchSide branchSides;
 
-	@JsonProperty("Branch String")
-	public String getBranchString() {
-		return branchString;
-	}
+  @JsonProperty("Branch String")
+  public String getBranchString() {
+    return branchString;
+  }
 
-	public void setBranchString(String branchString) {
-		this.branchString = branchString;
-	}
+  public void setBranchString(String branchString) {
+    this.branchString = branchString;
+  }
 
-	@JsonProperty("Branch Sides")
-	public BranchSide getBranchSides() {
-		return branchSides;
-	}
+  @JsonProperty("Branch Sides")
+  public BranchSide getBranchSides() {
+    return branchSides;
+  }
 
-	public void setBranchSides(BranchSide branchSides) {
-		this.branchSides = branchSides;
-	}
+  public void setBranchSides(BranchSide branchSides) {
+    this.branchSides = branchSides;
+  }
 }
