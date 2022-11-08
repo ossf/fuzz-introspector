@@ -12,6 +12,16 @@ depends on the application you want to run.
 java-callgraph and soot approach could run with OpenJDK+JRE 8 or later, while WALA can only run with OpenJDK+JRE 11 or later.
 
 
+Java Code Formatting Standard
+-----------------------------------------
+Google Java Format is being adopted to Fuzz-Introspector repository. Every new commit of java file will be checked and verified that it follows the formatting standard.
+
+Official guidelines for the required formatting can be found in [https://google.github.io/styleguide/javaguide.html](https://google.github.io/styleguide/javaguide.html)
+
+You can use the official tools locally to check and fix your coding to make it follows the standing. See the link [https://github.com/google/google-java-format](https://github.com/google/google-java-format) for downloading, installing and applying the tools locally.
+
+If your commited code fail to pass the CI checking, a diff of suggested changes are provided and you could use either `git apply` or the official `google-java-format-diff.py` tool. Remember to double check the correctness of the diff before applying to your code.
+
 Prepare your java application for the static analysis
 -----------------------------------------
 You need to pack your java application (your compiled java bytecode in *.class to jar files in order to use the static analysis.
