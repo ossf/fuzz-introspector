@@ -84,3 +84,26 @@ Looking at the [Fuzz blockers](https://storage.googleapis.com/oss-fuzz-introspec
 the culprit was that `file` needs to be passed data via a proper file descriptor
 to exercise its elf-related codepath, and thus a file-based fuzzer was [promptly added](https://github.com/google/oss-fuzz/pull/8542),
 [bumping the coverage close to 90%]( https://storage.googleapis.com/oss-fuzz-introspector/file/inspector-report/20220930/fuzz_report.html ).
+
+# [bzip2](https://storage.googleapis.com/oss-fuzz-introspector/bzip2/inspector-report/20221103/fuzz_report.html)
+
+Introspector report: [link](https://storage.googleapis.com/oss-fuzz-introspector/bzip2/inspector-report/20221016/fuzz_report.html)
+
+[Bzip2's fuzz drivers hit 60%](https://storage.googleapis.com/oss-fuzz-introspector/bzip2/inspector-report/20221016/fuzz_report.html) of the functions of the project by calling the compression and decompression functions with 2 fuzz drivers. The [calltrees of bzip2_compress_target](https://storage.googleapis.com/oss-fuzz-introspector/bzip2/inspector-report/20221015/calltree_view_0.html) and [bzip2_decompress_target](https://storage.googleapis.com/oss-fuzz-introspector/bzip2/inspector-report/20221015/calltree_view_1.html) do not show any significant fuzz blockers. 
+
+The file handling code is not being addressed, as seen in the [Project functions  overview](https://storage.googleapis.com/oss-fuzz-introspector/bzip2/inspector-report/20221015/fuzz_report.html#Project-functions-overview) and by the suggestions in the remaining optimal interesting functions.
+
+![functions](https://user-images.githubusercontent.com/5808510/196543962-b65e4197-6f74-4d2c-b6f9-e12d3a9be034.png)
+
+Based on these hints, a [single new file-based fuzzer](https://github.com/google/oss-fuzz/pull/8790) was added to hit [these recommended functions.](https://github.com/libarchive/bzip2/blob/master/bzlib.c)  The resulting fuzzer creates a temporary file, calls BZ2_bzdopen, then BZ2_bzwrite, followed by BZ2_bzread to read what was just written, then BZ2_bzclose, hitting all of the optimal interesting functions.
+
+![calltree](https://user-images.githubusercontent.com/5808510/196543332-4c0554ac-43e9-4c16-8452-df79524608a8.png)
+
+The addition of this fuzz driver increases the [project's statically reachable  coverage to 80%.](https://storage.googleapis.com/oss-fuzz-introspector/bzip2/inspector-report/20221019/fuzz_report.html)  This new report shows no recommended optimal interesting functions remain, however the [Project Functions overview](https://storage.googleapis.com/oss-fuzz-introspector/bzip2/inspector-report/20221019/fuzz_report.html#Project-functions-overview) when sorted by functions not reached by fuzz drivers shows that a number of file handling functions are still being skipped. 
+
+Examining all of these missed functions show that two optimizations remain.    Calling functions higher in the control flow graph will result in greater coverage.  An example of this is substituting BZ2_bzReadOpen with BZ2_bzopen.
+
+The other observation is that there are filename and FD versions of the file handling code.  [The fuzzer is split into two separate drivers](https://github.com/google/oss-fuzz/pull/8858) to handle these 2 variations, with a few extra references to additional functions such as BZ2_bzReadGetUnused.
+
+BZIP2 now has [100% of all functions statically reachable](https://storage.googleapis.com/oss-fuzz-introspector/bzip2/inspector-report/20221103/fuzz_report.html) by the fuzz drivers.
+
