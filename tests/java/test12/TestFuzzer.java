@@ -15,23 +15,19 @@
 ///////////////////////////////////////////////////////////////////////////
 
 import com.code_intelligence.jazzer.api.FuzzedDataProvider;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.lang.RuntimeException;
-
 import javassist.ClassPool;
 import javassist.CtClass;
 
-
 public class TestFuzzer {
-    public static void fuzzerTestOneInput(FuzzedDataProvider data) {
-        ClassPool pool = ClassPool.getDefault();
-        CtClass cc = null;
+  public static void fuzzerTestOneInput(FuzzedDataProvider data) {
+    ClassPool pool = ClassPool.getDefault();
+    CtClass cc = null;
 
-        try {
-            cc = pool.makeClass(new ByteArrayInputStream(data.consumeRemainingAsBytes()));
-        } catch (IOException | RuntimeException e) {
-        }
+    try {
+      cc = pool.makeClass(new ByteArrayInputStream(data.consumeRemainingAsBytes()));
+    } catch (IOException | RuntimeException e) {
     }
+  }
 }

@@ -16,7 +16,7 @@
 package Fuzz;
 
 public class Robot extends Human {
-	protected String getName() {
-		return name;
-	}
+  protected String getName() {
+    return name;
+  }
 }

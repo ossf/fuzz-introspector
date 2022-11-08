@@ -15,63 +15,62 @@
 
 package ossf.fuzz.introspector.soot.yaml;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 public class BranchSide {
-	private String trueSides;
-	private List<String> trueSidesFuncs;
-	private String falseSides;
-	private List<String> falseSidesFuncs;
+  private String trueSides;
+  private List<String> trueSidesFuncs;
+  private String falseSides;
+  private List<String> falseSidesFuncs;
 
-	public BranchSide() {
-		this.trueSidesFuncs = new ArrayList<String>();
-		this.falseSidesFuncs = new ArrayList<String>();
-	}
+  public BranchSide() {
+    this.trueSidesFuncs = new ArrayList<String>();
+    this.falseSidesFuncs = new ArrayList<String>();
+  }
 
-	@JsonProperty("TrueSide")
-	public String getTrueSides() {
-		return trueSides;
-	}
+  @JsonProperty("TrueSide")
+  public String getTrueSides() {
+    return trueSides;
+  }
 
-	public void setTrueSides(String trueSides) {
-		this.trueSides = trueSides;	
-	}
+  public void setTrueSides(String trueSides) {
+    this.trueSides = trueSides;
+  }
 
-	@JsonProperty("TrueSideFuncs")
-	public List<String> getTrueSidesFuncs() {
-		return trueSidesFuncs;
-	}
+  @JsonProperty("TrueSideFuncs")
+  public List<String> getTrueSidesFuncs() {
+    return trueSidesFuncs;
+  }
 
-	public void addTrueSidesFuncs(String trueSidesFunc) {
-		this.trueSidesFuncs.add(trueSidesFunc);
-	}
+  public void addTrueSidesFuncs(String trueSidesFunc) {
+    this.trueSidesFuncs.add(trueSidesFunc);
+  }
 
-	public void setTrueSidesFuncs(List<String> trueSidesFuncs) {
-		this.trueSidesFuncs = trueSidesFuncs;
-	}
+  public void setTrueSidesFuncs(List<String> trueSidesFuncs) {
+    this.trueSidesFuncs = trueSidesFuncs;
+  }
 
-	@JsonProperty("FalseSide")
-	public String getFalseSides() {
-		return falseSides;
-	}
+  @JsonProperty("FalseSide")
+  public String getFalseSides() {
+    return falseSides;
+  }
 
-	public void setFalseSides(String falseSides) {
-		this.falseSides = falseSides;
-	}
+  public void setFalseSides(String falseSides) {
+    this.falseSides = falseSides;
+  }
 
-	@JsonProperty("FalseSideFuncs")
-	public List<String> getFalseSidesFuncs() {
-		return falseSidesFuncs;
-	}
+  @JsonProperty("FalseSideFuncs")
+  public List<String> getFalseSidesFuncs() {
+    return falseSidesFuncs;
+  }
 
-	public void addFalseSidesFuncs(String falseSidesFunc) {
-		this.falseSidesFuncs.add(falseSidesFunc);
-	}
+  public void addFalseSidesFuncs(String falseSidesFunc) {
+    this.falseSidesFuncs.add(falseSidesFunc);
+  }
 
-	public void setFalseSidesFuncs(List<String> falseSidesFuncs) {
-		this.falseSidesFuncs = falseSidesFuncs;
-	}
+  public void setFalseSidesFuncs(List<String> falseSidesFuncs) {
+    this.falseSidesFuncs = falseSidesFuncs;
+  }
 }

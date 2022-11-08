@@ -18,24 +18,24 @@ package ossf.fuzz.introspector.soot.yaml;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class FuzzerConfig {
-	private String filename;
-	private FunctionConfig functionConfig;
+  private String filename;
+  private FunctionConfig functionConfig;
 
-	@JsonProperty("Fuzzer filename")
-	public String getFilename() {
-		return filename;
-	}
+  @JsonProperty("Fuzzer filename")
+  public String getFilename() {
+    return filename;
+  }
 
-	public void setFilename(String filename) {
-		this.filename = filename;
-	}
+  public void setFilename(String filename) {
+    this.filename = filename;
+  }
 
-	@JsonProperty("All functions")
-	public FunctionConfig getFunctionConfig() {
-		return functionConfig;
-	}
+  @JsonProperty("All functions")
+  public FunctionConfig getFunctionConfig() {
+    return functionConfig;
+  }
 
-	public void setFunctionConfig(FunctionConfig functionConfig) {
-		this.functionConfig = functionConfig;
-	}
+  public void setFunctionConfig(FunctionConfig functionConfig) {
+    this.functionConfig = functionConfig;
+  }
 }

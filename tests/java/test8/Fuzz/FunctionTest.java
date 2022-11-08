@@ -16,26 +16,25 @@
 package Fuzz;
 
 public class FunctionTest {
-	protected void function1() {
-		System.out.println("F1");
-	}
+  protected void function1() {
+    System.out.println("F1");
+  }
 
-	protected void functionRecursion(int count) {
-		if (count > 0) {
-			System.out.println("In: " + count);
-			this.functionRecursion(count-1);
-			System.out.println("Out: " + count);
-		} else {
-			System.out.println("Deepest");
-		}
-	}
+  protected void functionRecursion(int count) {
+    if (count > 0) {
+      System.out.println("In: " + count);
+      this.functionRecursion(count - 1);
+      System.out.println("Out: " + count);
+    } else {
+      System.out.println("Deepest");
+    }
+  }
 
-	protected void functionPublicDead() {
-		System.out.println("PuD");
-	}
+  protected void functionPublicDead() {
+    System.out.println("PuD");
+  }
 
-	private void functionPrivateDead() {
-		System.out.println("PrD");
-	}
-
+  private void functionPrivateDead() {
+    System.out.println("PrD");
+  }
 }

@@ -15,13 +15,6 @@
 
 package ossf.fuzz.introspector.wala;
 
-import java.io.IOException;
-import java.nio.file.FileSystems;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Properties;
-
 import com.ibm.wala.classLoader.CallSiteReference;
 import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.classLoader.IMethod;
@@ -46,62 +39,72 @@ import com.ibm.wala.ssa.ISSABasicBlock;
 import com.ibm.wala.types.ClassLoaderReference;
 import com.ibm.wala.types.TypeReference;
 import com.ibm.wala.util.io.CommandLine;
+import java.io.IOException;
+import java.nio.file.FileSystems;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Properties;
 
 public class JarCallGraphGenerator {
-	public static void main(String[] args) throws IOException, ClassHierarchyException, IllegalArgumentException,
-	CallGraphBuilderCancelException {
-		Properties p = CommandLine.parse(args);
-		String jarFile = p.getProperty("jarFile");
-		String entryClass = p.getProperty("entryClass");
-		System.out.println("jarFile: " + FileSystems.getDefault().getPath(jarFile).toAbsolutePath());
-		System.out.println("entryClass: " + entryClass);
+  public static void main(String[] args)
+      throws IOException, ClassHierarchyException, IllegalArgumentException,
+          CallGraphBuilderCancelException {
+    Properties p = CommandLine.parse(args);
+    String jarFile = p.getProperty("jarFile");
+    String entryClass = p.getProperty("entryClass");
+    System.out.println("jarFile: " + FileSystems.getDefault().getPath(jarFile).toAbsolutePath());
+    System.out.println("entryClass: " + entryClass);
 
-		AnalysisScope scope = AnalysisScopeReader.instance.makeJavaBinaryAnalysisScope(jarFile, null);
-		IClassHierarchy ch = ClassHierarchyFactory.make(scope);
+    AnalysisScope scope = AnalysisScopeReader.instance.makeJavaBinaryAnalysisScope(jarFile, null);
+    IClassHierarchy ch = ClassHierarchyFactory.make(scope);
 
-		List<Entrypoint> entryPoints = new ArrayList<>();
-		IClass ic = ch.lookupClass(
-				TypeReference.findOrCreate(ClassLoaderReference.Application,
-						StringStuff.deployment2CanonicalTypeString(entryClass)));
-		if (ic != null) {
-			for (IMethod m : ic.getDeclaredMethods()) {
-				if (m.getSelector().getName().toString().equals("fuzzerTestOneInput")) {
-					entryPoints.add(new DefaultEntrypoint(m, ch));
-				}
-			}
-		}
+    List<Entrypoint> entryPoints = new ArrayList<>();
+    IClass ic =
+        ch.lookupClass(
+            TypeReference.findOrCreate(
+                ClassLoaderReference.Application,
+                StringStuff.deployment2CanonicalTypeString(entryClass)));
+    if (ic != null) {
+      for (IMethod m : ic.getDeclaredMethods()) {
+        if (m.getSelector().getName().toString().equals("fuzzerTestOneInput")) {
+          entryPoints.add(new DefaultEntrypoint(m, ch));
+        }
+      }
+    }
 
-		AnalysisOptions opts = new AnalysisOptions(scope, Util.makeMainEntrypoints(ch));
-		System.out.println(opts.getAnalysisScope());
-		AnalysisCache cache = new AnalysisCacheImpl();
-		CallGraphBuilder<InstanceKey> builder = Util.makeZeroOneContainerCFABuilder(opts, cache, ch);
-		CallGraph cg = builder.makeCallGraph(opts, null);
-		//System.out.println(cg);
+    AnalysisOptions opts = new AnalysisOptions(scope, Util.makeMainEntrypoints(ch));
+    System.out.println(opts.getAnalysisScope());
+    AnalysisCache cache = new AnalysisCacheImpl();
+    CallGraphBuilder<InstanceKey> builder = Util.makeZeroOneContainerCFABuilder(opts, cache, ch);
+    CallGraph cg = builder.makeCallGraph(opts, null);
+    // System.out.println(cg);
 
-		CGNode root = cg.getFakeRootNode();
-		int nodeCount = cg.getNumberOfNodes();
+    CGNode root = cg.getFakeRootNode();
+    int nodeCount = cg.getNumberOfNodes();
 
-		System.out.println("Root Node: " + root);
-		System.out.println("Total node count: " + nodeCount);
-		for (int i=0; i<nodeCount; i++) {
-			CGNode baseNode = cg.getNode(i);
-			IMethod method = baseNode.getMethod();
-			System.out.println("Base Node #" + i + ": " + baseNode);
-			System.out.println("->Context: " + baseNode.getContext());
-			System.out.println("->Method: " + method.getSignature() + ":" + method.getLineNumber(0) + "\n");
-			Iterator<CallSiteReference> it = baseNode.iterateCallSites();
-			while(it.hasNext()) {
-				System.out.println(it.next());
-			}
-			System.out.println("\n");
+    System.out.println("Root Node: " + root);
+    System.out.println("Total node count: " + nodeCount);
+    for (int i = 0; i < nodeCount; i++) {
+      CGNode baseNode = cg.getNode(i);
+      IMethod method = baseNode.getMethod();
+      System.out.println("Base Node #" + i + ": " + baseNode);
+      System.out.println("->Context: " + baseNode.getContext());
+      System.out.println(
+          "->Method: " + method.getSignature() + ":" + method.getLineNumber(0) + "\n");
+      Iterator<CallSiteReference> it = baseNode.iterateCallSites();
+      while (it.hasNext()) {
+        System.out.println(it.next());
+      }
+      System.out.println("\n");
 
-			if (baseNode.getIR() != null) {
-				Iterator<ISSABasicBlock> it2 = baseNode.getIR().getBlocks() ;
-				while(it2.hasNext()) {
-					System.out.println(it2.next());
-				}
-				System.out.println("\n\n\n");
-			}
-		}
-	}
+      if (baseNode.getIR() != null) {
+        Iterator<ISSABasicBlock> it2 = baseNode.getIR().getBlocks();
+        while (it2.hasNext()) {
+          System.out.println(it2.next());
+        }
+        System.out.println("\n\n\n");
+      }
+    }
+  }
 }

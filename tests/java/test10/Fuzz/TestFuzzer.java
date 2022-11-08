@@ -15,28 +15,28 @@
 
 package Fuzz;
 
-import com.code_intelligence.jazzer.api.FuzzedDataProvider;
 import com.code_intelligence.jazzer.api.CannedFuzzedDataProvider;
+import com.code_intelligence.jazzer.api.FuzzedDataProvider;
 
 public class TestFuzzer {
-	public static void fuzzerTestOneInput(FuzzedDataProvider data) {
-		int choice = data.consumeInt(1,4);
-		Human human;
+  public static void fuzzerTestOneInput(FuzzedDataProvider data) {
+    int choice = data.consumeInt(1, 4);
+    Human human;
 
-		if (choice == 1) {
-			human = new Male();
-		} else if (choice == 2) {
-			human = new Female();
-		} else if (choice == 3) {
-			human = new Robot();
-		} else {
-			human = new Android();
-		}
+    if (choice == 1) {
+      human = new Male();
+    } else if (choice == 2) {
+      human = new Female();
+    } else if (choice == 3) {
+      human = new Robot();
+    } else {
+      human = new Android();
+    }
 
-		human.getName();
-	}
+    human.getName();
+  }
 
-	public static void main(String[] args) {
-                TestFuzzer.fuzzerTestOneInput(new CannedFuzzedDataProvider("RANDOM"));
-        }
+  public static void main(String[] args) {
+    TestFuzzer.fuzzerTestOneInput(new CannedFuzzedDataProvider("RANDOM"));
+  }
 }

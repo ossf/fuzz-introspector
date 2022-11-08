@@ -15,9 +15,7 @@
 ///////////////////////////////////////////////////////////////////////////
 
 import com.code_intelligence.jazzer.api.FuzzedDataProvider;
-
 import com.sun.mail.util.BASE64EncoderStream;
-import java.lang.NumberFormatException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
@@ -25,12 +23,10 @@ public class TestFuzzer {
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     BASE64EncoderStream b64es = new BASE64EncoderStream(baos, Integer.MAX_VALUE);
-    try{
+    try {
       b64es.write(data.consumeRemainingAsBytes());
-    }
-    catch(IOException e){
+    } catch (IOException e) {
       return;
     }
-
   }
 }

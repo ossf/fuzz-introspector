@@ -13,37 +13,37 @@
 // limitations under the License.
 ///////////////////////////////////////////////////////////////////////////
 
-import com.code_intelligence.jazzer.api.FuzzedDataProvider;
 import com.code_intelligence.jazzer.api.CannedFuzzedDataProvider;
+import com.code_intelligence.jazzer.api.FuzzedDataProvider;
 
 public class TestFuzzer {
-	private void function1() {
-		System.out.println("F1");
-	}
+  private void function1() {
+    System.out.println("F1");
+  }
 
-	private static void function2() {
-		System.out.println("F2");
-	}
+  private static void function2() {
+    System.out.println("F2");
+  }
 
-	void functionPublicDead() {
-		System.out.println("PuD");
-	}
+  void functionPublicDead() {
+    System.out.println("PuD");
+  }
 
-	private void functionPrivateDead() {
-		System.out.println("PrD");
-	}
+  private void functionPrivateDead() {
+    System.out.println("PrD");
+  }
 
-	public static void fuzzerTestOneInput(FuzzedDataProvider data) {
-		int choice = data.consumeInt(0,1);
-		if (choice == 0) {
-			TestFuzzer tf = new TestFuzzer();
-			tf.function1();
-		} else {
-			TestFuzzer.function2();
-		}
-	}
+  public static void fuzzerTestOneInput(FuzzedDataProvider data) {
+    int choice = data.consumeInt(0, 1);
+    if (choice == 0) {
+      TestFuzzer tf = new TestFuzzer();
+      tf.function1();
+    } else {
+      TestFuzzer.function2();
+    }
+  }
 
-	public static void main(String[] args) {
-                TestFuzzer.fuzzerTestOneInput(new CannedFuzzedDataProvider("RANDOM"));
-        }
+  public static void main(String[] args) {
+    TestFuzzer.fuzzerTestOneInput(new CannedFuzzedDataProvider("RANDOM"));
+  }
 }

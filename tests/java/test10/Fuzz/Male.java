@@ -16,16 +16,16 @@
 package Fuzz;
 
 public class Male extends Human {
-	protected String getName() {
-		this.maleStuff();
-		return this.getTitle() + name;
-	}
+  protected String getName() {
+    this.maleStuff();
+    return this.getTitle() + name;
+  }
 
-	private String getTitle() {
-		return "Mr. ";
-	}
+  private String getTitle() {
+    return "Mr. ";
+  }
 
-	private void maleStuff() {
-		System.out.println("Doing some male stuff");
-	}
+  private void maleStuff() {
+    System.out.println("Doing some male stuff");
+  }
 }
