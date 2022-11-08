@@ -17,6 +17,8 @@ import os
 import copy
 import json
 import logging
+import threading
+import queue
 
 from typing import (
     Any,
@@ -130,20 +132,41 @@ def add_func_to_reached_and_clone(
     return merged_profile
 
 
+def _load_profile(data_file: str, language: str, profiles: queue.Queue):
+    """Internal function used for multithreaded profile loading"""
+    profile = read_fuzzer_data_file_to_profile(data_file, language)
+    if profile is not None:
+        profiles.put(profile)
+
+
 def load_all_profiles(
     target_folder: str,
     language: str
 ) -> List[fuzzer_profile.FuzzerProfile]:
+    """Loads all profiles in target_folder in a multi-threaded manner"""
     profiles = []
     data_files = utils.get_all_files_in_tree_with_regex(
         target_folder,
         "fuzzerLogFile.*\.data$"
     )
     logger.info(f" - found {len(data_files)} profiles to load")
+    thread_safe_queue: queue.Queue = queue.Queue()
+
+    all_threads = []
     for data_file in data_files:
-        profile = read_fuzzer_data_file_to_profile(data_file, language)
-        if profile is not None:
-            profiles.append(profile)
+        x = threading.Thread(
+            target=_load_profile,
+            args=(data_file, language, thread_safe_queue)
+        )
+        x.start()
+        all_threads.append(x)
+
+    for thread in all_threads:
+        thread.join()
+
+    while not thread_safe_queue.empty():
+        profiles.append(thread_safe_queue.get())
+
     return profiles
 
 
