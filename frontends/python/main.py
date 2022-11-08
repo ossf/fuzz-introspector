@@ -87,7 +87,7 @@ def run_fuzz_pass(
             if not to_include:
                 continue
             for filename in files:
-                logger.debug("Iterating %s ---- %s"%(root, filename))
+                logger.debug("Iterating %s ---- %s" % (root, filename))
                 fpath = os.path.join(root, filename)
                 if not fpath.endswith(".py"):
                     continue
@@ -102,7 +102,7 @@ def run_fuzz_pass(
     sources_to_analyze = [fuzzer] + sources + scanned_sources
     logger.info("Sources to analyze:")
     for srz in sources_to_analyze:
-        logger.info("- %s"%(srz))
+        logger.info("- %s" % (srz))
     cg = CallGraphGenerator(
         [fuzzer] + sources + scanned_sources,
         package,

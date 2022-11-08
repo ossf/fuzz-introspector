@@ -112,9 +112,9 @@ class FuzzerVisitor(ast.NodeVisitor):
             print("  - %s" % (_import))
             if _import.count(".") > 1:
                 _import = _import.split(".")[0]
-                print("Refining import to %s"%(_import))
+                print("Refining import to %s" % (_import))
+
             # Let's try and see if these are searchable
-            #try:
             specs = importlib.util.find_spec(_import)
             if specs is not None:
                 print("Spec:")
