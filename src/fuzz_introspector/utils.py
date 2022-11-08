@@ -66,7 +66,6 @@ def get_all_files_in_tree_with_regex(basedir: str, regex_str: str) -> List[str]:
     for root, dirs, files in os.walk(basedir):
         for f in files:
             if r.match(f):
-                logger.info("f: %s -- matches regex: %s" % (f, regex_str))
                 data_files.append(os.path.join(root, f))
     return data_files
 
@@ -172,7 +171,7 @@ def scan_executables_for_fuzz_introspector_logs(
 
 
 def approximate_python_coverage_files(src1: str, src2: str) -> bool:
-    logger.info(f"Approximating {src1} to {src2}")
+    logger.debug(f"Approximating {src1} to {src2}")
     # Remove prefixed .....
     src1 = src1.lstrip(".")
 
@@ -197,10 +196,10 @@ def approximate_python_coverage_files(src1: str, src2: str) -> bool:
             break
 
     if target is not None:
-        logger.info(f"Found target {target}")
+        logger.debug(f"Found target {target}")
         return True
     else:
-        logger.info("Found no target")
+        logger.debug("Found no target")
         return False
 
 
