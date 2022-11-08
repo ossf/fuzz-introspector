@@ -18,6 +18,8 @@ package ossf.fuzz.introspector.soot.yaml;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class FunctionElement {
 	private String functionName;
 	private String functionSourceFile;
@@ -33,7 +35,7 @@ public class FunctionElement {
 	private Integer iCount;
 	private Integer edgeCount;
 	private Integer CyclomaticComplexity;
-	private List<String> functionReached;
+	private List<String> functionsReached;
 	private Integer functionUses;
 	private List<BranchProfile> branchProfiles;
 
@@ -41,7 +43,7 @@ public class FunctionElement {
 		this.argTypes = new ArrayList<String>();
 		this.constantsTouched = new ArrayList<String>();
 		this.argNames = new ArrayList<String>();
-		this.functionReached = new ArrayList<String>();
+		this.functionsReached = new ArrayList<String>();
 		this.branchProfiles = new ArrayList<BranchProfile>();
 	}
 
@@ -137,6 +139,7 @@ public class FunctionElement {
 		this.argNames = argNames;
 	}
 
+	@JsonProperty("BBCount")
 	public Integer getBBCount() {
 		return BBCount;
 	}
@@ -145,6 +148,7 @@ public class FunctionElement {
 		BBCount = bBCount;
 	}
 
+	@JsonProperty("ICount")
 	public Integer getiCount() {
 		return iCount;
 	}
@@ -153,6 +157,7 @@ public class FunctionElement {
 		this.iCount = iCount;
 	}
 
+	@JsonProperty("EdgeCount")
 	public Integer getEdgeCount() {
 		return edgeCount;
 	}
@@ -161,6 +166,7 @@ public class FunctionElement {
 		this.edgeCount = edgeCount;
 	}
 
+	@JsonProperty("CyclomaticComplexity")
 	public Integer getCyclomaticComplexity() {
 		return CyclomaticComplexity;
 	}
@@ -169,16 +175,16 @@ public class FunctionElement {
 		CyclomaticComplexity = cyclomaticComplexity;
 	}
 
-	public List<String> getFunctionReached() {
-		return functionReached;
+	public List<String> getFunctionsReached() {
+		return functionsReached;
 	}
 
-	public void addFunctionReached(String functionReached) {
-		this.functionReached.add(functionReached);
+	public void addFunctionsReached(String functionsReached) {
+		this.functionsReached.add(functionsReached);
 	}
 
-	public void setFunctionReached(List<String> functionReached) {
-		this.functionReached = functionReached;
+	public void setFunctionsReached(List<String> functionsReached) {
+		this.functionsReached = functionsReached;
 	}
 
 	public Integer getFunctionUses() {
@@ -189,6 +195,7 @@ public class FunctionElement {
 		this.functionUses = functionUses;
 	}
 
+	@JsonProperty("BranchProfiles")
 	public List<BranchProfile> getBranchProfiles() {
 		return branchProfiles;
 	}

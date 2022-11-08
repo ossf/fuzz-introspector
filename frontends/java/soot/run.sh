@@ -69,5 +69,5 @@ mvn clean package
 for CLASS in $(echo $ENTRYCLASS | tr ":" "\n")
 do
     echo $CLASS
-    java -Xmx6144M -cp "target/ossf.fuzz.introspector.soot-1.0.jar" ossf.fuzz.introspector.soot.CallGraphGenerator $JARFILE $CLASS $ENTRYMETHOD $EXCLUDEPREFIX > $CLASS.result
+    java -Xmx6144M -cp "target/ossf.fuzz.introspector.soot-1.0.jar" ossf.fuzz.introspector.soot.CallGraphGenerator $JARFILE $CLASS $ENTRYMETHOD $EXCLUDEPREFIX
 done

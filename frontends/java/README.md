@@ -137,7 +137,8 @@ Example for execution using testcase test1:
   cd path/to/fuzz-introspector/frontends/java/soot
   ./run.sh -j path/to/fuzz-introspector/tests/java/test-jar/test1.jar -c TestFuzzer -m fuzzerTestOneInput
   # To view result
-  cat TestFuzzer.result
+  cat fuzzerLogFile-TestFuzzer.data
+  cat fuzzerLogFile-TestFuzzer-*.data.yaml
 ```
 
 Example for execution using testcase test5: 
@@ -145,7 +146,8 @@ Example for execution using testcase test5:
   cd path/to/fuzz-introspector/frontends/java/soot
   ./run.sh -j path/to/fuzz-introspector/tests/java/test-jar/test5.jar -c Fuzz.TestFuzzer -m fuzzerTestOneInput
   # To view result
-  cat Fuzz.TestFuzzer.result
+  cat fuzzerLogFile-Fuzz.TestFuzzer.data
+  cat fuzzerLogFile-Fuzz.TestFuzzer-*.data.yaml
 ```
 
 Example for execution using testcase test6 (with multiple entry classes in same jar file): 
@@ -153,8 +155,10 @@ Example for execution using testcase test6 (with multiple entry classes in same 
   cd path/to/fuzz-introspector/frontends/java/soot
   ./run.sh -j path/to/fuzz-introspector/tests/java/test-jar/test6.jar -c Fuzz.TestFuzzer:Fuzz.TestFuzzer2 -m fuzzerTestOneInput
   # To view result
-  cat Fuzz.TestFuzzer.result
-  cat Fuzz.TestFuzzer2.result
+  cat fuzzerLogFile-Fuzz.TestFuzzer.data
+  cat fuzzerLogFile-Fuzz.TestFuzzer-*.data.yaml
+  cat fuzzerLogFile-Fuzz.TestFuzzer2.data
+  cat fuzzerLogFile-Fuzz.TestFuzzer2-*.data.yaml
 ```
 
 Example for execution using testcase test7 (with multiple entry classes in multiple jar files): 
@@ -162,9 +166,10 @@ Example for execution using testcase test7 (with multiple entry classes in multi
   cd path/to/fuzz-introspector/frontends/java/soot
   ./run.sh -j path/to/fuzz-introspector/tests/java/test-jar/test7-1.jar:path/to/fuzz-introspector/tests/java/test-jar/test7-2.jar -c Fuzz.TestFuzzer:Fuzz2.TestFuzzer2 -m fuzzerTestOneInput
   # To view result
-  cat Fuzz.TestFuzzer.result
-  cat Fuzz2.TestFuzzer2.result
-
+  cat fuzzerLogFile-Fuzz.TestFuzzer.data
+  cat fuzzerLogFile-Fuzz.TestFuzzer-*.data.yaml
+  cat fuzzerLogFile-Fuzz2.TestFuzzer2.data
+  cat fuzzerLogFile-Fuzz2.TestFuzzer2-*.data.yaml
 ```
 
 
@@ -218,101 +223,12 @@ Node: < Application, LTestFuzzer, fuzzerTestOneInput(Lcom/code_intelligence/jazz
 ```
 
 **Soot**
+fuzzerLogFile-XXX.data
 ```
---------------------------------------------------
-Class #1: TestFuzzer
-Class #1 Method #1: <TestFuzzer: void <init>()>
-	 > No calls to this method.
-
-	 Total: 0 internal calls.
-
-	 > No calls from this method.
-
-	 Total: 0 external calls.
-
-Class #1 Method #2: <TestFuzzer: void fuzzerTestOneInput(com.code_intelligence.jazzer.api.FuzzedDataProvider)>
-	 > No calls to this method.
-
-	 Total: 0 internal calls.
-
-	 > calls <java.lang.System: void <clinit>()> on Line 21
-	 > calls <java.io.PrintStream: void println(java.lang.String)> on Line 21
-	 > calls <java.lang.Object: void <clinit>()> on Line 21
-
-	 Total: 3 external calls.
-
-Class #1 Method #3: <TestFuzzer: void main(java.lang.String[])>
-	 > No calls to this method.
-
-	 Total: 0 internal calls.
-
-	 > No calls from this method.
-
-	 Total: 0 external calls.
-
---------------------------------------------------
-Total Edges:3
---------------------------------------------------
----
-filename: "TestFuzzer"
-functionConfig:
-  listName: "All functions"
-  functionElements:
-  - functionName: "<init>"
-    functionSourceFile: "TestFuzzer"
-    linkageType: null
-    functionLinenumber: 18
-    functionDepth: null
-    returnType: "void"
-    argCount: 0
-    argTypes: []
-    constantsTouched: []
-    argNames: []
-    iCount: null
-    edgeCount: 0
-    functionReached: []
-    functionUses: 0
-    branchProfiles: null
-    bbcount: null
-    cyclomaticComplexity: null
-  - functionName: "fuzzerTestOneInput"
-    functionSourceFile: "TestFuzzer"
-    linkageType: null
-    functionLinenumber: 20
-    functionDepth: null
-    returnType: "void"
-    argCount: 1
-    argTypes:
-    - "com.code_intelligence.jazzer.api.FuzzedDataProvider"
-    constantsTouched: []
-    argNames: []
-    iCount: null
-    edgeCount: 3
-    functionReached:
-    - "<java.lang.System: void <clinit>()>; Line: 21"
-    - "<java.io.PrintStream: void println(java.lang.String)>; Line: 21"
-    - "<java.lang.Object: void <clinit>()>; Line: 21"
-    functionUses: 0
-    branchProfiles: null
-    bbcount: null
-    cyclomaticComplexity: null
-  - functionName: "main"
-    functionSourceFile: "TestFuzzer"
-    linkageType: null
-    functionLinenumber: 24
-    functionDepth: null
-    returnType: "void"
-    argCount: 1
-    argTypes:
-    - "java.lang.String[]"
-    constantsTouched: []
-    argNames: []
-    iCount: null
-    edgeCount: 0
-    functionReached: []
-    functionUses: 0
-    branchProfiles: null
-    bbcount: null
-    cyclomaticComplexity: null
+Call Tree
+fuzzerTestOneInput linenumber=-1
+ println java.io.PrintStream linenumber=21
 ```
-
+fuzzerLogFile-XXX-YYY.data.yaml
+```
+```

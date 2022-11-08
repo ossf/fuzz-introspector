@@ -15,10 +15,13 @@
 
 package ossf.fuzz.introspector.soot.yaml;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class FuzzerConfig {
 	private String filename;
 	private FunctionConfig functionConfig;
 
+	@JsonProperty("Fuzzer filename")
 	public String getFilename() {
 		return filename;
 	}
@@ -27,6 +30,7 @@ public class FuzzerConfig {
 		this.filename = filename;
 	}
 
+	@JsonProperty("All functions")
 	public FunctionConfig getFunctionConfig() {
 		return functionConfig;
 	}

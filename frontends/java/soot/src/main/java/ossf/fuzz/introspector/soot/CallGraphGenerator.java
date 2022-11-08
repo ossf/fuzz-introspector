@@ -15,6 +15,9 @@
 
 package ossf.fuzz.introspector.soot;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -132,7 +135,7 @@ class CustomSenceTransformer extends SceneTransformer {
 				excludeList.add(exclude);
 			}
 		}
-	
+
 //		excludeList.add("jdk.");
 //		excludeList.add("java.");
 //		excludeList.add("javax.");
@@ -210,7 +213,7 @@ class CustomSenceTransformer extends SceneTransformer {
 				for ( ; outEdges.hasNext(); methodEdges++) {
 					Edge edge = outEdges.next();
 					SootMethod tgt = (SootMethod) edge.getTgt();
-					element.addFunctionReached(tgt.toString() + "; Line: " +
+					element.addFunctionsReached(tgt.toString() + "; Line: " +
 							edge.srcStmt().getJavaSourceStartLineNumber());
 				}
 				element.setEdgeCount(methodEdges);
@@ -248,7 +251,7 @@ class CustomSenceTransformer extends SceneTransformer {
 								Integer end = trueBlockLine.get("end");
 								branchSide.setTrueSides(c.getName() + ":" + start);
 								branchSide.setTrueSidesFuncs(getFunctionCallInTargetLine(
-										element.getFunctionReached(), start, end));
+										element.getFunctionsReached(), start, end));
 
 							}
 
@@ -258,7 +261,7 @@ class CustomSenceTransformer extends SceneTransformer {
 								Integer end = falseBlockLine.get("end");
 								branchSide.setFalseSides(c.getName() + ":" + (start - 1));
 								branchSide.setFalseSidesFuncs(getFunctionCallInTargetLine(
-										element.getFunctionReached(), start, end));
+										element.getFunctionsReached(), start, end));
 							}
 
 							branchProfile.setBranchString(c.getName() + ":" + unit.getJavaSourceStartLineNumber());
@@ -280,16 +283,24 @@ class CustomSenceTransformer extends SceneTransformer {
 				classConfig.setFunctionConfig(methodConfig);
 				classYaml.add(classConfig);
 		}
-		String callTree = extractCallTree(callGraph, this.entryMethod, 0, -1);
-		System.out.println(callTree);
-		System.out.println("--------------------------------------------------");
-		ObjectMapper om = new ObjectMapper(new YAMLFactory());
-		for(FuzzerConfig config:classYaml) {
-			try {
-				System.out.println(om.writeValueAsString(config) + "\n");
-			} catch (JsonProcessingException e) {
-				e.printStackTrace();
-			}
+		try {
+			File file = new File("fuzzerLogFile-" + this.entryClassStr + ".data");
+			file.createNewFile();
+			FileWriter fw = new FileWriter(file);
+			fw.write(extractCallTree(callGraph, this.entryMethod, 0, -1));
+		    fw.close();
+		    ObjectMapper om = new ObjectMapper(new YAMLFactory());
+		    file = new File("fuzzerLogFile-" + this.entryClassStr + ".data.yaml");
+		    file.createNewFile();
+		    fw = new FileWriter(file);
+		    for(FuzzerConfig config:classYaml) {
+				fw.write(om.writeValueAsString(config));
+		    }
+		    fw.close();
+		} catch (JsonProcessingException e) {
+			System.err.println(e);
+		} catch (IOException e) {
+			System.err.println(e);
 		}
 	}
 
@@ -324,7 +335,7 @@ class CustomSenceTransformer extends SceneTransformer {
 
 	// Shorthand for extractCallTree from top
 	private String extractCallTree(CallGraph cg, SootMethod method, Integer depth, Integer line) {
-		return "Call Tree\n" + extractCallTree(cg, method, depth, line, new LinkedList<SootMethod>(), null);
+		return "Call tree\n" + extractCallTree(cg, method, depth, line, new LinkedList<SootMethod>(), null);
 	}
 
 	// Recursively extract calltree from stored method relationship, ignoring loops
@@ -348,6 +359,8 @@ class CustomSenceTransformer extends SceneTransformer {
 			if (!merged) {
 				className = method.getDeclaringClass().getName();
 			}
+		} else {
+			className = method.getDeclaringClass().getName();
 		}
 
 		callTree.append(StringUtils.leftPad("", depth * 2));
@@ -361,8 +374,8 @@ class CustomSenceTransformer extends SceneTransformer {
 
 		if (!handled.contains(method)) {
 			handled.add(method);
-
 			Iterator<Edge> outEdges = this.mergePolymorphism(cg, cg.edgesOutOf(method));
+
 			while (outEdges.hasNext()) {
 				Edge edge = outEdges.next();
 				SootMethod tgt = edge.tgt();
@@ -418,10 +431,10 @@ class CustomSenceTransformer extends SceneTransformer {
 		return Collections.emptyMap();
 	}
 
-	private List<String> getFunctionCallInTargetLine(List<String> functionReached, Integer startLine, Integer endLine) {
+	private List<String> getFunctionCallInTargetLine(List<String> functionsReached, Integer startLine, Integer endLine) {
 		List<String> targetFunctionList = new LinkedList<String>();
 
-			for (String func: functionReached) {
+			for (String func: functionsReached) {
 				String[] line = func.split(" Line: ");
 				Integer lineNumber = Integer.parseInt(line[1]);
 				if (lineNumber >= startLine && lineNumber <= endLine) {

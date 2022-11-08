@@ -31,8 +31,12 @@ do
   cd $ROOT/../../frontends/java/soot
   ./run.sh -j $jarfile -c $entryclass
 
+  rm -rf $ROOT/result/test$i
+  mkdir $ROOT/result/test$i
+
   for class in ${entryclass//:/ }
   do
-    cp $class.result $ROOT/result/test$i-$class.result
+    mv fuzzerLogFile-$class.data $ROOT/result/test$i/fuzzerLogFile-$class.data
+    mv fuzzerLogFile-$class.data.yaml $ROOT/result/test$i/fuzzerLogFile-$class.data.yaml
   done
 done

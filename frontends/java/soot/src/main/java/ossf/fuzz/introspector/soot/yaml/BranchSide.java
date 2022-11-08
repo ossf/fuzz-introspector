@@ -18,6 +18,8 @@ package ossf.fuzz.introspector.soot.yaml;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class BranchSide {
 	private String trueSides;
 	private List<String> trueSidesFuncs;
@@ -29,14 +31,16 @@ public class BranchSide {
 		this.falseSidesFuncs = new ArrayList<String>();
 	}
 
+	@JsonProperty("TrueSide")
 	public String getTrueSides() {
 		return trueSides;
 	}
 
 	public void setTrueSides(String trueSides) {
-		this.trueSides = trueSides;
+		this.trueSides = trueSides;	
 	}
 
+	@JsonProperty("TrueSideFuncs")
 	public List<String> getTrueSidesFuncs() {
 		return trueSidesFuncs;
 	}
@@ -49,6 +53,7 @@ public class BranchSide {
 		this.trueSidesFuncs = trueSidesFuncs;
 	}
 
+	@JsonProperty("FalseSide")
 	public String getFalseSides() {
 		return falseSides;
 	}
@@ -57,6 +62,7 @@ public class BranchSide {
 		this.falseSides = falseSides;
 	}
 
+	@JsonProperty("FalseSideFuncs")
 	public List<String> getFalseSidesFuncs() {
 		return falseSidesFuncs;
 	}
