@@ -105,7 +105,7 @@ class CoverageProfile:
                 curr += "/"
             logger.info(f"Potentials: {str(potentials)}")
             for potential_key in self.file_map:
-                logger.info(f"Scanning {str(potential_key)}")
+                logger.debug(f"Scanning {str(potential_key)}")
                 for p in potentials:
                     if potential_key.endswith(p):
                         found_key = potential_key
@@ -179,7 +179,7 @@ class CoverageProfile:
         target_file = function_name
 
         # Resolve name if required. This is needed to normalise filenames.
-        logger.info("Resolving name")
+        logger.debug("Resolving name")
         splits = target_file.split(".")
         potentials = []
         curr = ""
@@ -188,16 +188,16 @@ class CoverageProfile:
             curr += s2
             potentials.append(curr + ".py")
             curr += "/"
-        logger.info(f"Potentials: {str(potentials)}")
+        logger.debug(f"Potentials: {str(potentials)}")
         for potential_key in self.file_map:
-            logger.info(f"Scanning {str(potential_key)}")
+            logger.debug(f"Scanning {str(potential_key)}")
             for p in potentials:
                 if potential_key.endswith(p):
                     found_key = potential_key
                     break
-        logger.info(f"Found key: {str(found_key)}")
+        logger.debug(f"Found key: {str(found_key)}")
         if found_key == "":
-            logger.info("Could not find key")
+            logger.debug("Could not find key")
             return None
 
         target_key = found_key
