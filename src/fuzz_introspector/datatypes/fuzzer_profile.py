@@ -505,7 +505,7 @@ class FuzzerProfile:
         # need this mapping in order to create links from the data extracted
         # during AST analysis, as there we only have the source code.
         html_summaries = utils.get_all_files_in_tree_with_regex(".", ".*html_status.json$")
-        logger.info(str(html_summaries))
+        logger.debug(str(html_summaries))
         if len(html_summaries) > 0:
             html_idx = html_summaries[0]
             with open(html_idx, "r") as jf:
