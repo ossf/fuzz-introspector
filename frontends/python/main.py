@@ -339,9 +339,9 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
         nargs="+"
     )
     parser.add_argument(
-        "--scan",
+        "--no-scan",
         default=False,
-        help="Set if package should be scanned for sources",
+        help="Set if package should not be scanned for sources",
         action="store_true"
     )
     return parser
@@ -353,11 +353,12 @@ def main() -> int:
     parser = get_cmdline_parser()
 
     args = parser.parse_args()
+    scan_package_for_sources = not args.no_scan
     exit_code = run_fuzz_pass(
         args.fuzzer,
         "/src/pyintro-pack-deps/",
         args.sources,
-        args.scan
+        scan_package_for_sources
     )
     logger.info(f"Done running pass. Exit code: {exit_code}")
 
