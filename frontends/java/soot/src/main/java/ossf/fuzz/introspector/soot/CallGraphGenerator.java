@@ -175,6 +175,10 @@ class CustomSenceTransformer extends SceneTransformer {
 
       // Loop through each methods in the class
       for (SootMethod m : classMethodMap.get(c)) {
+        if (this.excludeMethodList.contains(m.getName())) {
+       	  continue;
+        }
+
         if (m.getName().equals(this.entryMethodStr) && c.getName().equals(this.entryClassStr)) {
           this.entryMethod = m;
         }
@@ -282,8 +286,10 @@ class CustomSenceTransformer extends SceneTransformer {
 
         methodConfig.addFunctionElement(element);
       }
-      classConfig.setFunctionConfig(methodConfig);
-      classYaml.add(classConfig);
+      if (methodConfig.getFunctionElements().size() > 0) {
+        classConfig.setFunctionConfig(methodConfig);
+        classYaml.add(classConfig);
+      }
     }
     try {
       File file = new File("fuzzerLogFile-" + this.entryClassStr + ".data");
