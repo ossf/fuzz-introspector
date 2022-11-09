@@ -340,7 +340,7 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--scan",
-        default=False,
+        default=True,
         help="Set if package should be scanned for sources",
         action="store_true"
     )
