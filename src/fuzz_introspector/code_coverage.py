@@ -91,7 +91,7 @@ class CoverageProfile:
             logger.info("Failed to check hit")
             return False
 
-        logger.info("File type")
+        logger.debug("File type")
         target_key = target_file
         # Resolve name if required. This is needed to normalise filenames.
         if resolve_name:
@@ -103,36 +103,36 @@ class CoverageProfile:
                 curr += s2
                 potentials.append(curr + ".py")
                 curr += "/"
-            logger.info(f"Potentials: {str(potentials)}")
+            logger.debug(f"Potentials: {str(potentials)}")
             for potential_key in self.file_map:
                 logger.debug(f"Scanning {str(potential_key)}")
                 for p in potentials:
                     if potential_key.endswith(p):
                         found_key = potential_key
                         break
-            logger.info(f"Found key: {str(found_key)}")
+            logger.debug(f"Found key: {str(found_key)}")
             if found_key == "":
-                logger.info("Could not find key")
+                logger.debug("Could not find key")
                 return False
             target_key = found_key
 
         # Return False if file is not in file_map
         if target_key not in self.file_map:
-            logger.info("Target key is not in file_map")
+            logger.debug("Target key is not in file_map")
             return False
 
         # Return True if lineno is in the relevant filemap value.
         if lineno in self.file_map[target_key]:
-            logger.info("Success")
+            logger.debug("Success")
             return True
 
         # Check if "fuzz" is in the filename. This is a hack in python coverage
         if "fuzz" in target_key:
-            logger.info("Checking adjustment")
+            logger.debug("Checking adjustment")
             # 11 in the below code reflects the size of the coverage stub added here:
             # https://github.com/google/oss-fuzz/blob/360b484fa0f026c0dea44c62897519c6c99127cc/infra/base-images/base-builder/compile_python_fuzzer#L29-L40  # noqa: E501
             if lineno + 11 in self.file_map[target_key]:
-                logger.info("Success with line number adjustment")
+                logger.debug("Success with line number adjustment")
                 return True
 
         return False
