@@ -15,7 +15,6 @@
 
 package ossf.fuzz.introspector.soot;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import java.io.File;
@@ -134,16 +133,6 @@ class CustomSenceTransformer extends SceneTransformer {
       }
     }
 
-    //		excludeList.add("jdk.");
-    //		excludeList.add("java.");
-    //		excludeList.add("javax.");
-    //		excludeList.add("sun.");
-    //		excludeList.add("sunw.");
-    //		excludeList.add("com.sun.");
-    //		excludeList.add("com.ibm.");
-    //		excludeList.add("com.apple.");
-    //		excludeList.add("apple.awt.");
-
     excludeMethodList = new LinkedList<String>();
 
     excludeMethodList.add("<init>");
@@ -176,7 +165,7 @@ class CustomSenceTransformer extends SceneTransformer {
       // Loop through each methods in the class
       for (SootMethod m : classMethodMap.get(c)) {
         if (this.excludeMethodList.contains(m.getName())) {
-       	  continue;
+          continue;
         }
 
         if (m.getName().equals(this.entryMethodStr) && c.getName().equals(this.entryClassStr)) {
@@ -305,8 +294,6 @@ class CustomSenceTransformer extends SceneTransformer {
         fw.write(om.writeValueAsString(config));
       }
       fw.close();
-    } catch (JsonProcessingException e) {
-      System.err.println(e);
     } catch (IOException e) {
       System.err.println(e);
     }
