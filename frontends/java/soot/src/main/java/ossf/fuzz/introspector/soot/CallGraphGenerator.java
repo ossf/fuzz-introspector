@@ -203,6 +203,10 @@ class CustomSenceTransformer extends SceneTransformer {
         for (; outEdges.hasNext(); methodEdges++) {
           Edge edge = outEdges.next();
           SootMethod tgt = (SootMethod) edge.getTgt();
+          if (this.excludeMethodList.contains(m.getName())) {
+            methodEdges--;
+            continue;
+          }
           element.addFunctionsReached(
               tgt.toString() + "; Line: " + edge.srcStmt().getJavaSourceStartLineNumber());
         }
