@@ -353,14 +353,12 @@ def main() -> int:
     parser = get_cmdline_parser()
 
     args = parser.parse_args()
-
-    scan_packge_for_sources = not args.no_scan
-
+    scan_package_for_sources = not args.no_scan
     exit_code = run_fuzz_pass(
         args.fuzzer,
         "/src/pyintro-pack-deps/",
         args.sources,
-        scan_packge_for_sources
+        scan_package_for_sources
     )
     logger.info(f"Done running pass. Exit code: {exit_code}")
 
