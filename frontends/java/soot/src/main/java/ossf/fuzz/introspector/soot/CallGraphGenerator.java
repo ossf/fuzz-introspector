@@ -15,7 +15,6 @@
 
 package ossf.fuzz.introspector.soot;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import java.io.File;
@@ -134,16 +133,6 @@ class CustomSenceTransformer extends SceneTransformer {
       }
     }
 
-    //		excludeList.add("jdk.");
-    //		excludeList.add("java.");
-    //		excludeList.add("javax.");
-    //		excludeList.add("sun.");
-    //		excludeList.add("sunw.");
-    //		excludeList.add("com.sun.");
-    //		excludeList.add("com.ibm.");
-    //		excludeList.add("com.apple.");
-    //		excludeList.add("apple.awt.");
-
     excludeMethodList = new LinkedList<String>();
 
     excludeMethodList.add("<init>");
@@ -175,6 +164,10 @@ class CustomSenceTransformer extends SceneTransformer {
 
       // Loop through each methods in the class
       for (SootMethod m : classMethodMap.get(c)) {
+        if (this.excludeMethodList.contains(m.getName())) {
+          continue;
+        }
+
         if (m.getName().equals(this.entryMethodStr) && c.getName().equals(this.entryClassStr)) {
           this.entryMethod = m;
         }
@@ -210,6 +203,10 @@ class CustomSenceTransformer extends SceneTransformer {
         for (; outEdges.hasNext(); methodEdges++) {
           Edge edge = outEdges.next();
           SootMethod tgt = (SootMethod) edge.getTgt();
+          if (this.excludeMethodList.contains(m.getName())) {
+            methodEdges--;
+            continue;
+          }
           element.addFunctionsReached(
               tgt.toString() + "; Line: " + edge.srcStmt().getJavaSourceStartLineNumber());
         }
@@ -282,8 +279,10 @@ class CustomSenceTransformer extends SceneTransformer {
 
         methodConfig.addFunctionElement(element);
       }
-      classConfig.setFunctionConfig(methodConfig);
-      classYaml.add(classConfig);
+      if (methodConfig.getFunctionElements().size() > 0) {
+        classConfig.setFunctionConfig(methodConfig);
+        classYaml.add(classConfig);
+      }
     }
     try {
       File file = new File("fuzzerLogFile-" + this.entryClassStr + ".data");
@@ -299,8 +298,6 @@ class CustomSenceTransformer extends SceneTransformer {
         fw.write(om.writeValueAsString(config));
       }
       fw.close();
-    } catch (JsonProcessingException e) {
-      System.err.println(e);
     } catch (IOException e) {
       System.err.println(e);
     }
