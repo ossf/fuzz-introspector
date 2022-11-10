@@ -109,10 +109,10 @@ class Analysis(analysis.AnalysisInterface):
 
         for fn in profile.functions_reached_by_fuzzer:
             try:
-               fp = profile.all_class_functions[fn]
+                fp = profile.all_class_functions[fn]
             except Exception as e:
-               logger.debug(e)
-               continue;
+                logger.debug(e)
+                continue
             for const in fp.constants_touched:
                 dictionary_content += f"k{kn}=\"{const}\"\n"
                 kn += 1

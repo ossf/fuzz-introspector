@@ -472,7 +472,8 @@ class FuzzerProfile:
             try:
                 fd = self.all_class_functions[func]
                 total_basic_blocks += fd.bb_count
-            except:
+            except Exception as e:
+                logger.debug(e)
                 pass
         self.total_basic_blocks = total_basic_blocks
 
@@ -485,7 +486,8 @@ class FuzzerProfile:
             try:
                 fd = self.all_class_functions[func]
                 self.total_cyclomatic_complexity += fd.cyclomatic_complexity
-            except:
+            except Exception as e:
+                logger.debug(e)
                 pass
 
     def _set_function_list(self, frontend_yaml: Dict[Any, Any]) -> None:
