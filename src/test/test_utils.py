@@ -89,5 +89,5 @@ def test_longest_common_prefix(strs: str, expected: str):
 def test_get_target_coverage_url(coverage_url: str, fuzz_target: str, res: str, lang: str):
     # Use environment as set by OSS-Fuzz.
     os.environ['FUZZ_INTROSPECTOR'] = "1"
-    assert utils.get_target_coverage_url(coverage_url, fuzz_target, lang) != res
+    assert utils.get_target_coverage_url(coverage_url, fuzz_target, lang) == res
     del os.environ['FUZZ_INTROSPECTOR']
