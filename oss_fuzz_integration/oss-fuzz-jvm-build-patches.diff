@@ -892,7 +892,7 @@ diff --git a/projects/aspectj/build.sh b/projects/aspectj/build.sh
 index d64721d0..d675b367 100644
 --- a/projects/aspectj/build.sh
 +++ b/projects/aspectj/build.sh
-@@ -78,3 +78,51 @@ LD_LIBRARY_PATH=\"$JVM_LD_LIBRARY_PATH\":\$this_dir \
+@@ -78,3 +78,50 @@ LD_LIBRARY_PATH=\"$JVM_LD_LIBRARY_PATH\":\$this_dir \
  \$@" > $OUT/${fuzzer_basename}
    chmod u+x $OUT/${fuzzer_basename}
  done
@@ -943,7 +943,6 @@ index d64721d0..d675b367 100644
 +cp fuzz-introspector/frontends/java/soot/*.data ./
 +cp fuzz-introspector/frontends/java/soot/*.data.yaml ./
 +rm -rf fuzz-introspector
-+
 diff --git a/projects/jackson-core/build.sh b/projects/jackson-core/build.sh
 index 7a2d0938..9a2a5270 100644
 --- a/projects/jackson-core/build.sh
