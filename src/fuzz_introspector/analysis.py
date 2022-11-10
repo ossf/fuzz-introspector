@@ -224,7 +224,7 @@ def get_node_coverage_hitcount(
             if ih:
                 node_hitcount = 200
         elif profile.target_lang == "jvm":
-            #TODO Handle for jvm added later
+            # TODO Handle for jvm added later
             coverage_data = profile.coverage.get_hit_details(
                 callstack_get_parent(node, callstack)
             )

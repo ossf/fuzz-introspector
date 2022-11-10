@@ -242,10 +242,10 @@ def get_target_coverage_url(
                 "reports", "reports-by-target"
             ).replace("/linux", f"/{target_name}/linux")
         elif target_lang == "python":
-            #TODO ADD python coverage link
+            # TODO ADD python coverage link
             return coverage_url
         elif target_lang == "jvm":
-            #TODO Add jvm coverage link
+            # TODO Add jvm coverage link
             return coverage_url
     # (TODO) This is temporary for local runs.
     return coverage_url

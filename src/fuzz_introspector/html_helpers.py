@@ -152,9 +152,7 @@ def html_get_table_of_contents(
     elif proj_profile.target_lang == "python":
         cov_index = "index.html"
     elif proj_profile.target_lang == "jvm":
-        #TODO Change to correct coverage link
-        cov_index = "report.html"
-    else:
+        # TODO Change to correct coverage link
         cov_index = "report.html"
 
     html_toc_string = ""

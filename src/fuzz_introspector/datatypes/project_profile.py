@@ -195,7 +195,7 @@ class MergedProjectProfile:
                 func_name
             )
         elif self.target_lang == "jvm":
-            #TODO Add coverage details for jvm
+            # TODO Add coverage details for jvm
             pass
         return "%s%s.html#L%d" % (
             coverage_url,
