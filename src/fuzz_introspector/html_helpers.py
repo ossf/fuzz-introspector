@@ -147,10 +147,16 @@ def html_get_table_of_contents(
         proj_profile: project_profile.MergedProjectProfile) -> str:
     per_fuzzer_coverage_button = create_pfc_button(profiles, coverage_url)
 
-    if proj_profile.target_lang == "python":
+    if proj_profile.target_lang == "c-cpp":
+        cov_index = "report.html"
+    elif proj_profile.target_lang == "python":
         cov_index = "index.html"
+    elif proj_profile.target_lang == "jvm":
+        #TODO Change to correct coverage link
+        cov_index = "report.html"
     else:
         cov_index = "report.html"
+
     html_toc_string = ""
     html_toc_string += f"""<div class="left-sidebar">\
                             <div class="left-sidebar-content-box"
