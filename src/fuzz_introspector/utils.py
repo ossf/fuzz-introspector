@@ -106,8 +106,8 @@ def data_file_read_yaml(filename: str) -> Optional[Dict[Any, Any]]:
             if "All functions" not in content:
                 content['All functions'] = doc['All functions']
             else:
-                content['All functions']['Elements'].append(
-                    doc['All functions']['Elements'][0]
+                content['All functions']['Elements'].extend(
+                    doc['All functions']['Elements']
                 )
     if "Fuzzer filename" not in content:
         return None

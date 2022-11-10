@@ -62,7 +62,8 @@ def create_horisontal_calltree_image(
     # Extract color sequence
     color_list: List[str] = []
     for node in cfg_load.extract_all_callsites(profile.function_call_depths):
-        color_list.append(node.cov_color)
+        if (node.cov_color != ""):
+            color_list.append(node.cov_color)
     logger.info(f"- extracted the callsites ({len(color_list)} nodes)")
 
     # Show one read rectangle if the list is empty. An alternative is
