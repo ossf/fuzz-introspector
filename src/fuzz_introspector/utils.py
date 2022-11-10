@@ -240,7 +240,7 @@ def get_target_coverage_url(
         if target_lang == "c-cpp":
             return coverage_url.replace(
                 "reports", "reports-by-target"
-            ).replace("/linux/", f"/{target_name}/linux/")
+            ).replace("/linux", f"/{target_name}/linux")
         else:
             return coverage_url
     else:  # (TODO) This is temporary for local runs.
