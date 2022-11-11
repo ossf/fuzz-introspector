@@ -180,19 +180,28 @@ class MergedProjectProfile:
         lineno,
         func_name
     ):
-        if self.target_lang == "python":
+
+        if self.target_lang == "c-cpp":
+            return "%s%s.html#L%d" % (
+                coverage_url,
+                function_source_file,
+                lineno
+            )
+        elif self.target_lang == "python":
             return self.profiles[0].resolve_coverage_link(
                 coverage_url,
                 function_source_file,
                 lineno,
                 func_name
             )
-        else:
-            return "%s%s.html#L%d" % (
-                coverage_url,
-                function_source_file,
-                lineno
-            )
+        elif self.target_lang == "jvm":
+            # TODO Add coverage details for jvm
+            pass
+        return "%s%s.html#L%d" % (
+            coverage_url,
+            function_source_file,
+            lineno
+        )
 
     @property
     def target_lang(self):

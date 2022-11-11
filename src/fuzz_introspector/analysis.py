@@ -182,10 +182,13 @@ def get_node_coverage_hitcount(
     if is_first:
         # As this is the first node ensure it is indeed the entrypoint.
         # The difference is this node has node "parent" or prior nodes.
-        if not profile.func_is_entrypoint(demangled_name):
-            raise AnalysisError(
-                "First node in calltree seems to be non-fuzzer function"
-            )
+
+        # Arthur: Not true anymore for cpp or jvm with multiple yaml file
+        # TODO Relaxing this constraint temporary, fixed later
+        # if not profile.func_is_entrypoint(demangled_name):
+        #     raise AnalysisError(
+        #         "First node in calltree seems to be non-fuzzer function"
+        #     )
 
         coverage_data = profile.coverage.get_hit_details(demangled_name)
         if len(coverage_data) == 0:
@@ -203,7 +206,16 @@ def get_node_coverage_hitcount(
             f"Getting hit details {node.dst_function_name} -- "
             f"{node.cov_ct_idx} -- {node.src_linenumber}"
         )
-        if profile.target_lang == "python":
+
+        if profile.target_lang == "c-cpp":
+            coverage_data = profile.coverage.get_hit_details(
+                callstack_get_parent(node, callstack)
+            )
+            for (n_line_number, hit_count_cov) in coverage_data:
+                logger.debug(f"  - iterating {n_line_number} : {hit_count_cov}")
+                if n_line_number == node.src_linenumber and hit_count_cov > 0:
+                    node_hitcount = hit_count_cov
+        elif profile.target_lang == "python":
             ih = profile.coverage.is_file_lineno_hit(
                 callstack_get_parent(node, callstack),
                 node.src_linenumber,
@@ -211,7 +223,8 @@ def get_node_coverage_hitcount(
             )
             if ih:
                 node_hitcount = 200
-        else:
+        elif profile.target_lang == "jvm":
+            # TODO Handle for jvm added later
             coverage_data = profile.coverage.get_hit_details(
                 callstack_get_parent(node, callstack)
             )

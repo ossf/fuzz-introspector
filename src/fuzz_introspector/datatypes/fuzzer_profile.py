@@ -58,7 +58,7 @@ class FuzzerProfile:
         self.introspector_data_file = cfg_file
 
         # Load calltree file
-        self.function_call_depths = cfg_load.data_file_read_calltree(cfg_file)
+        self.function_call_depths = cfg_load.data_file_read_calltree(cfg_file, target_lang)
 
         # Read yaml data (as dictionary) from frontend
         try:
@@ -83,17 +83,23 @@ class FuzzerProfile:
         """The name of the fuzzer entrypoint"""
         if self.target_lang == "c-cpp":
             return "LLVMFuzzerTestOneInput"
-        if self.target_lang == "python":
+        elif self.target_lang == "python":
             return self.entrypoint_fun
+        elif self.target_lang == "jvm":
+            return "fuzzerTestOneInput"
 
     @property
     def identifier(self):
         """Fuzzer identifier"""
-        if self.binary_executable != "":
-            return os.path.basename(self.binary_executable)
+        if self._target_lang == "c-cpp":
+            if self.binary_executable != "":
+                return os.path.basename(self.binary_executable)
 
-        if self._target_lang == "python":
+        elif self._target_lang == "python":
             return os.path.basename(self.fuzzer_source_file).replace(".py", "")
+
+        elif self._target_lang == "jvm":
+            logger.info("TODO Handle jvm fuzzer source file")
 
         return self.fuzzer_source_file
 
@@ -102,11 +108,13 @@ class FuzzerProfile:
         if self.target_lang == "c-cpp":
             if "LLVMFuzzerTestOneInput" in self.all_class_functions:
                 return True
-            else:
-                return False
 
-        if self.target_lang == "python":
+        elif self.target_lang == "python":
             return self.entrypoint_function is not None
+
+        elif self.target_lang == "jvm":
+            if "fuzzerTestOneInput" in self.all_class_functions:
+                return True
 
         return False
 
@@ -140,6 +148,8 @@ class FuzzerProfile:
                 lineno,
                 function_name
             )
+        elif self.target_lang == "jvm":
+            logger.info("TODO: No coverage report for JVM yet")
         else:
             logger.info("Could not find any html_status.json file")
         return "#"
@@ -375,18 +385,28 @@ class FuzzerProfile:
         the fuzzer. This is based on identifying all functions reached by the
         fuzzer entrypoint function, e.g. LLVMFuzzerTestOneInput in C/C++.
         """
-        if "LLVMFuzzerTestOneInput" in self.all_class_functions:
-            self.functions_reached_by_fuzzer = (
-                self.all_class_functions["LLVMFuzzerTestOneInput"].functions_reached
-            )
-            return
+        # Find C/CPP entry point
+        if self._target_lang == "c-cpp":
+            if "LLVMFuzzerTestOneInput" in self.all_class_functions:
+                self.functions_reached_by_fuzzer = (
+                    self.all_class_functions["LLVMFuzzerTestOneInput"].functions_reached
+                )
+                return
 
         # Find Python entrypoint
-        if self._target_lang == "python":
+        elif self._target_lang == "python":
             ep_key = f"{self.entrypoint_mod}.{self.entrypoint_fun}"
             reached = self.all_class_functions[ep_key].functions_reached
             self.functions_reached_by_fuzzer = reached
             return
+
+        # Find JVM entrypoint
+        elif self._target_lang == "jvm":
+            if "fuzzerTestOneInput" in self.all_class_functions:
+                self.functions_reached_by_fuzzer = (
+                    self.all_class_functions["fuzzerTestOneInput"].functions_reached
+                )
+                return
 
         raise DataLoaderError("Can not identify entrypoint")
 
@@ -417,6 +437,8 @@ class FuzzerProfile:
                 self.coverage.correlate_python_functions_with_coverage(
                     self.all_class_functions
                 )
+        elif self.target_lang == "jvm":
+            logger.info("TODO Add coverage loading support for jvm")
         else:
             raise DataLoaderError(
                 "The profile target has no coverage loading support"
@@ -447,8 +469,12 @@ class FuzzerProfile:
         """
         total_basic_blocks = 0
         for func in self.functions_reached_by_fuzzer:
-            fd = self.all_class_functions[func]
-            total_basic_blocks += fd.bb_count
+            try:
+                fd = self.all_class_functions[func]
+                total_basic_blocks += fd.bb_count
+            except Exception as e:
+                logger.debug(e)
+                pass
         self.total_basic_blocks = total_basic_blocks
 
     def _set_total_cyclomatic_complexity(self) -> None:
@@ -457,8 +483,12 @@ class FuzzerProfile:
         """
         self.total_cyclomatic_complexity = 0
         for func in self.functions_reached_by_fuzzer:
-            fd = self.all_class_functions[func]
-            self.total_cyclomatic_complexity += fd.cyclomatic_complexity
+            try:
+                fd = self.all_class_functions[func]
+                self.total_cyclomatic_complexity += fd.cyclomatic_complexity
+            except Exception as e:
+                logger.debug(e)
+                pass
 
     def _set_function_list(self, frontend_yaml: Dict[Any, Any]) -> None:
         """Read all function field from yaml data dictionary into

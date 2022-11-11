@@ -106,8 +106,8 @@ def data_file_read_yaml(filename: str) -> Optional[Dict[Any, Any]]:
             if "All functions" not in content:
                 content['All functions'] = doc['All functions']
             else:
-                content['All functions']['Elements'].append(
-                    doc['All functions']['Elements'][0]
+                content['All functions']['Elements'].extend(
+                    doc['All functions']['Elements']
                 )
     if "Fuzzer filename" not in content:
         return None
@@ -241,10 +241,14 @@ def get_target_coverage_url(
             return coverage_url.replace(
                 "reports", "reports-by-target"
             ).replace("/linux", f"/{target_name}/linux")
-        else:
+        elif target_lang == "python":
+            # TODO ADD python coverage link
             return coverage_url
-    else:  # (TODO) This is temporary for local runs.
-        return coverage_url
+        elif target_lang == "jvm":
+            # TODO Add jvm coverage link
+            return coverage_url
+    # (TODO) This is temporary for local runs.
+    return coverage_url
 
 
 def load_func_names(

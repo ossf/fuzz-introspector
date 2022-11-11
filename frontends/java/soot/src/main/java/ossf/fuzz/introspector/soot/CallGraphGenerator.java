@@ -144,8 +144,9 @@ class CustomSenceTransformer extends SceneTransformer {
 
   @Override
   protected void internalTransform(String phaseName, Map<String, String> options) {
-    List<FuzzerConfig> classYaml = new LinkedList<FuzzerConfig>();
     Map<SootClass, List<SootMethod>> classMethodMap = new HashMap<SootClass, List<SootMethod>>();
+    FunctionConfig methodList = new FunctionConfig();
+    methodList.setListName("All functions");
 
     // Extract Callgraph for the included Java Class
     CallGraph callGraph = Scene.v().getCallGraph();
@@ -156,12 +157,6 @@ class CustomSenceTransformer extends SceneTransformer {
     }
 
     for (SootClass c : classMethodMap.keySet()) {
-      // Discover class related information
-      FuzzerConfig classConfig = new FuzzerConfig();
-      FunctionConfig methodConfig = new FunctionConfig();
-      classConfig.setFilename(c.getName());
-      methodConfig.setListName("All functions");
-
       // Loop through each methods in the class
       for (SootMethod m : classMethodMap.get(c)) {
         if (this.excludeMethodList.contains(m.getName())) {
@@ -217,6 +212,7 @@ class CustomSenceTransformer extends SceneTransformer {
         try {
           methodBody = m.retrieveActiveBody();
         } catch (Exception e) {
+          methodList.addFunctionElement(element);
           System.err.println("Source code for " + m + " not found.");
           continue;
         }
@@ -277,14 +273,15 @@ class CustomSenceTransformer extends SceneTransformer {
         visitedBlock.addAll(blockGraph.getTails());
         element.setCyclomaticComplexity(calculateCyclomaticComplexity(blockGraph.getHeads(), 0));
 
-        methodConfig.addFunctionElement(element);
-      }
-      if (methodConfig.getFunctionElements().size() > 0) {
-        classConfig.setFunctionConfig(methodConfig);
-        classYaml.add(classConfig);
+        methodList.addFunctionElement(element);
       }
     }
     try {
+      if (methodList.getFunctionElements().size() == 0) {
+        throw new RuntimeException(
+            "No method in analysing scope, consider relaxing the exclude constraint.");
+      }
+
       File file = new File("fuzzerLogFile-" + this.entryClassStr + ".data");
       file.createNewFile();
       FileWriter fw = new FileWriter(file);
@@ -294,9 +291,10 @@ class CustomSenceTransformer extends SceneTransformer {
       file = new File("fuzzerLogFile-" + this.entryClassStr + ".data.yaml");
       file.createNewFile();
       fw = new FileWriter(file);
-      for (FuzzerConfig config : classYaml) {
-        fw.write(om.writeValueAsString(config));
-      }
+      FuzzerConfig config = new FuzzerConfig();
+      config.setFilename(this.entryClassStr);
+      config.setFunctionConfig(methodList);
+      fw.write(om.writeValueAsString(config));
       fw.close();
     } catch (IOException e) {
       System.err.println(e);
@@ -373,10 +371,17 @@ class CustomSenceTransformer extends SceneTransformer {
     callTree.append(StringUtils.leftPad("", depth * 2));
     callTree.append(method.getName() + " " + className + " linenumber=" + line + "\n");
 
+    boolean ignore = true;
     for (String excludeClassPrefix : this.excludeList) {
-      if (method.getDeclaringClass().getName().startsWith(excludeClassPrefix)) {
-        return callTree.toString();
+      for (String cl : className.split(":")) {
+        if (!cl.startsWith(excludeClassPrefix)) {
+          ignore = false;
+          break;
+        }
       }
+    }
+    if (ignore) {
+      return callTree.toString();
     }
 
     if (!handled.contains(method)) {
@@ -493,17 +498,6 @@ class CustomSenceTransformer extends SceneTransformer {
               + edge.tgt().getName()
               + ":"
               + edge.srcStmt().getJavaSourceStartLineNumber();
-
-      boolean skip = false;
-      for (String excludeClassPrefix : this.excludeList) {
-        if (className.startsWith(excludeClassPrefix)) {
-          skip = true;
-          break;
-        }
-      }
-      if (skip) {
-        continue;
-      }
 
       if (cg.edgesOutOf(edge.tgt()).hasNext()) {
         edgeList.add(edge);

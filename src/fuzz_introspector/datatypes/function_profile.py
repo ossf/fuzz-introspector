@@ -50,6 +50,11 @@ class FunctionProfile:
         self.constants_touched = elem['constantsTouched']
         self.branch_profiles = self.load_func_branch_profiles(elem['BranchProfiles'])
 
+        # Temporary handle for unreadable library method (JVM)
+        # (jar missing or purposely ignored)
+        if not self.cyclomatic_complexity:
+            self.cyclomatic_complexity = 0
+
         # Saving callsites for this function
         try:
             self.callsite = self.load_func_callsites(elem['Callsites'])

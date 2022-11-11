@@ -61,6 +61,11 @@ then
     echo "No entry method defined, using default entry method 'fuzzerTestOneInput'"
     ENTRYMETHOD="fuzzerTestOneInput"
 fi
+if [ -z $EXCLUDEPREFIX ]
+then
+    echo "No exclude prefix list  defined, using default exclude prefix list"
+    EXCLUDEPREFIX="jdk.:java.:javax.:sun.:sunw.:com.sun.:com.ibm.:com.apple.:apple.awt."
+fi
 
 # Build and execute the call graph generator
 mvn clean package
