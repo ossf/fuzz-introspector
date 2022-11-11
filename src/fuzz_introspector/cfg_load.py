@@ -90,7 +90,10 @@ def print_ctcs_tree(ctcs: CalltreeCallsite) -> None:
         print_ctcs_tree(c)
 
 
-def data_file_read_calltree(filename: str, target_lang: str = "c-cpp") -> Optional[CalltreeCallsite]:
+def data_file_read_calltree(
+    filename: str,
+    target_lang: str = "c-cpp"
+) -> Optional[CalltreeCallsite]:
     """
     Extracts the calltree of a fuzzer from a .data file.
     This is for C/C++ files

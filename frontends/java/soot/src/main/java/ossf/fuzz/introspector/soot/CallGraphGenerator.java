@@ -147,7 +147,7 @@ class CustomSenceTransformer extends SceneTransformer {
     Map<SootClass, List<SootMethod>> classMethodMap = new HashMap<SootClass, List<SootMethod>>();
     FunctionConfig methodList = new FunctionConfig();
     methodList.setListName("All functions");
-    
+
     // Extract Callgraph for the included Java Class
     CallGraph callGraph = Scene.v().getCallGraph();
     for (SootClass c : Scene.v().getApplicationClasses()) {
@@ -278,9 +278,10 @@ class CustomSenceTransformer extends SceneTransformer {
     }
     try {
       if (methodList.getFunctionElements().size() == 0) {
-        throw new RuntimeException("No method in analysing scope, consider relaxing the exclude constraint.");
+        throw new RuntimeException(
+            "No method in analysing scope, consider relaxing the exclude constraint.");
       }
-    	
+
       File file = new File("fuzzerLogFile-" + this.entryClassStr + ".data");
       file.createNewFile();
       FileWriter fw = new FileWriter(file);
