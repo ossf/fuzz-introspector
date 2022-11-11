@@ -371,10 +371,17 @@ class CustomSenceTransformer extends SceneTransformer {
     callTree.append(StringUtils.leftPad("", depth * 2));
     callTree.append(method.getName() + " " + className + " linenumber=" + line + "\n");
 
+    boolean ignore = true;
     for (String excludeClassPrefix : this.excludeList) {
-      if (method.getDeclaringClass().getName().startsWith(excludeClassPrefix)) {
-        return callTree.toString();
+      for (String cl : className.split(":")) {
+        if (!cl.startsWith(excludeClassPrefix)) {
+          ignore = false;
+          break;
+        }
       }
+    }
+    if (ignore) {
+      return callTree.toString();
     }
 
     if (!handled.contains(method)) {
@@ -491,17 +498,6 @@ class CustomSenceTransformer extends SceneTransformer {
               + edge.tgt().getName()
               + ":"
               + edge.srcStmt().getJavaSourceStartLineNumber();
-
-      boolean skip = false;
-      for (String excludeClassPrefix : this.excludeList) {
-        if (className.startsWith(excludeClassPrefix)) {
-          skip = true;
-          break;
-        }
-      }
-      if (skip) {
-        continue;
-      }
 
       if (cg.edgesOutOf(edge.tgt()).hasNext()) {
         edgeList.add(edge);
