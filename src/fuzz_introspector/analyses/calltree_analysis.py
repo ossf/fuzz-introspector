@@ -102,7 +102,11 @@ class Analysis(analysis.AnalysisInterface):
             # All divs created in this loop must also be closed in this loop.
             node = nodes[i]
 
-            demangled_name = utils.demangle_cpp_func(node.dst_function_name)
+            if (profile.target_lang == "jvm"):
+                demangled_name = "[%s].%s" % (
+                    node.dst_function_source_file, node.dst_function_name)
+            else:
+                demangled_name = utils.demangle_cpp_func(node.dst_function_name)
 
             # Prepare strings needed in the HTML
             color_to_be = node.cov_color

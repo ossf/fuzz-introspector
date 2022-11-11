@@ -58,7 +58,7 @@ class FuzzerProfile:
         self.introspector_data_file = cfg_file
 
         # Load calltree file
-        self.function_call_depths = cfg_load.data_file_read_calltree(cfg_file, target_lang)
+        self.function_call_depths = cfg_load.data_file_read_calltree(cfg_file)
 
         # Read yaml data (as dictionary) from frontend
         try:
