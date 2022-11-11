@@ -116,7 +116,7 @@ def data_file_read_calltree(filename: str) -> Optional[CalltreeCallsite]:
                 # Parse the line
                 # Type: {spacing depth} {target filename} {line count}
                 if len(stripped_line) == 3:
-                    target_func = stripped_line[0]
+                    target_func = "[%s].%s"%(stripped_line[1],stripped_line[0])
                     filename = stripped_line[1]
                     linenumber = int(stripped_line[2].replace("linenumber=", ""))
                 else:
