@@ -217,6 +217,7 @@ class CustomSenceTransformer extends SceneTransformer {
         try {
           methodBody = m.retrieveActiveBody();
         } catch (Exception e) {
+          methodConfig.addFunctionElement(element);
           System.err.println("Source code for " + m + " not found.");
           continue;
         }
