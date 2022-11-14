@@ -61,6 +61,7 @@ class FuzzerVisitor(ast.NodeVisitor):
             scope = "global"
         else:
             scope = self.current_scope[-1]
+        print("call instruction: %s" % (ast.dump(node)))
         print("Inside of call instruction -- %s" % (scope))
         if isinstance(node.func, ast.Name):
             print("- [N] %s" % (node.func.id))
@@ -74,8 +75,11 @@ class FuzzerVisitor(ast.NodeVisitor):
                 lhs_obj = tmp
                 if isinstance(tmp, ast.Name):
                     break
-
-            lhs = lhs_obj.id + lhs
+                if isinstance(lhs_obj, ast.Call):
+                    self.visit_Call(lhs_obj)
+                    lhs_obj = None
+            if lhs_obj is not None:
+                lhs = lhs_obj.id + lhs
             print(" [C] %s" % (lhs))
 
             # Check if we have atheris.Setup
