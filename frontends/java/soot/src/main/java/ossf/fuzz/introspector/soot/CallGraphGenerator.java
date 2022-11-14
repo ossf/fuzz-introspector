@@ -24,10 +24,12 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import ossf.fuzz.introspector.soot.yaml.BranchProfile;
 import ossf.fuzz.introspector.soot.yaml.BranchSide;
@@ -115,7 +117,7 @@ class CustomSenceTransformer extends SceneTransformer {
   private List<String> excludeList;
   private List<String> excludeMethodList;
   private List<Block> visitedBlock;
-  private Map<String, String> edgeClassMap;
+  private Map<String, Set<String>> edgeClassMap;
   private String entryClassStr;
   private String entryMethodStr;
   private SootMethod entryMethod;
@@ -139,7 +141,7 @@ class CustomSenceTransformer extends SceneTransformer {
     excludeMethodList.add("<clinit>");
     excludeMethodList.add("finalize");
 
-    edgeClassMap = new HashMap<String, String>();
+    edgeClassMap = new HashMap<String, Set<String>>();
   }
 
   @Override
@@ -212,7 +214,10 @@ class CustomSenceTransformer extends SceneTransformer {
         try {
           methodBody = m.retrieveActiveBody();
         } catch (Exception e) {
-          methodList.addFunctionElement(element);
+          element.setBBCount(0);
+          element.setiCount(0);
+          element.setCyclomaticComplexity(0);
+          // methodList.addFunctionElement(element);
           System.err.println("Source code for " + m + " not found.");
           continue;
         }
@@ -352,8 +357,10 @@ class CustomSenceTransformer extends SceneTransformer {
 
     String className = "";
     if (callerClass != null) {
-      className =
-          this.edgeClassMap.getOrDefault(callerClass + ":" + method.getName() + ":" + line, "");
+      Set<String> classNameSet =
+          this.edgeClassMap.getOrDefault(
+              callerClass + ":" + method.getName() + ":" + line, Collections.emptySet());
+      className = this.mergeClassName(classNameSet);
       boolean merged = false;
       for (String name : className.split(":")) {
         if (name.equals(method.getDeclaringClass().getName())) {
@@ -371,16 +378,17 @@ class CustomSenceTransformer extends SceneTransformer {
     callTree.append(StringUtils.leftPad("", depth * 2));
     callTree.append(method.getName() + " " + className + " linenumber=" + line + "\n");
 
-    boolean ignore = true;
-    for (String excludeClassPrefix : this.excludeList) {
-      for (String cl : className.split(":")) {
-        if (!cl.startsWith(excludeClassPrefix)) {
-          ignore = false;
-          break;
+    boolean excluded = false;
+    checkExclusionLoop:
+    for (String cl : className.split(":")) {
+      for (String prefix : this.excludeList) {
+        if (cl.startsWith(prefix)) {
+          excluded = true;
+          break checkExclusionLoop;
         }
       }
     }
-    if (ignore) {
+    if (excluded) {
       return callTree.toString();
     }
 
@@ -499,19 +507,32 @@ class CustomSenceTransformer extends SceneTransformer {
               + ":"
               + edge.srcStmt().getJavaSourceStartLineNumber();
 
-      if (cg.edgesOutOf(edge.tgt()).hasNext()) {
+      boolean excluded = false;
+      for (String prefix : this.excludeList) {
+        if (!edge.tgt().getName().startsWith(prefix)) {
+          excluded = true;
+          break;
+        }
+      }
+
+      if (!excluded && cg.edgesOutOf(edge.tgt()).hasNext()) {
         edgeList.add(edge);
-      } else if (this.edgeClassMap.containsKey(matchStr)) {
-        this.edgeClassMap.put(matchStr, this.edgeClassMap.get(matchStr) + ":" + className);
       } else {
-        edgeList.add(edge);
-        this.edgeClassMap.put(matchStr, className);
+        Set<String> classNameSet;
+        if (this.edgeClassMap.containsKey(matchStr)) {
+          classNameSet = this.edgeClassMap.get(matchStr);
+        } else {
+          classNameSet = new HashSet<String>();
+          edgeList.add(edge);
+        }
+        classNameSet.add(className);
+        this.edgeClassMap.put(matchStr, classNameSet);
       }
     }
 
     List<String> keySet = new LinkedList<String>();
     for (String key : this.edgeClassMap.keySet()) {
-      if (!this.edgeClassMap.get(key).contains(":")) {
+      if (this.edgeClassMap.get(key).size() <= 1) {
         keySet.add(key);
       }
     }
@@ -520,6 +541,19 @@ class CustomSenceTransformer extends SceneTransformer {
     }
 
     return this.sortEdgeByLineNumber(edgeList.iterator());
+  }
+
+  private String mergeClassName(Set<String> classNameSet) {
+    StringBuilder mergedClassName = new StringBuilder();
+
+    for (String className : classNameSet) {
+      if (mergedClassName.length() > 0) {
+        mergedClassName.append(":");
+      }
+      mergedClassName.append(className);
+    }
+
+    return mergedClassName.toString();
   }
 
   public List<String> getExcludeList() {
