@@ -100,7 +100,7 @@ class FuzzerProfile:
 
         elif self._target_lang == "jvm":
             # TODO Handle jvm fuzzer source file
-            logger.info("TODO Handle jvm fuzzer source file")
+            pass
 
         return self.fuzzer_source_file
 
@@ -151,7 +151,7 @@ class FuzzerProfile:
             )
         elif self.target_lang == "jvm":
             # TODO Add coverage report for JVM
-            logger.info("TODO: No coverage report for JVM yet")
+            pass
         else:
             logger.info("Could not find any html_status.json file")
         return "#"
@@ -441,7 +441,6 @@ class FuzzerProfile:
                 )
         elif self.target_lang == "jvm":
             # TODO Add JVM coverage loading support
-            logger.info("TODO Add coverage loading support for jvm")
             self.coverage = code_coverage.load_llvm_coverage(
                 target_folder,
                 self.identifier
