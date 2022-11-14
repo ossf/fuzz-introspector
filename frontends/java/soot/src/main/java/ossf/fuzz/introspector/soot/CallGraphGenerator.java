@@ -177,7 +177,7 @@ class CustomSenceTransformer extends SceneTransformer {
         // element.setConstantsTouched([]);
         // element.setArgNames();
 
-        element.setFunctionName(m.getName());
+        element.setFunctionName(m.getSubSignature().split(" ")[1]);
         element.setFunctionSourceFile(c.getFilePath());
         element.setFunctionLinenumber(m.getJavaSourceStartLineNumber());
         element.setReturnType(m.getReturnType().toString());
@@ -200,12 +200,12 @@ class CustomSenceTransformer extends SceneTransformer {
         for (; outEdges.hasNext(); methodEdges++) {
           Edge edge = outEdges.next();
           SootMethod tgt = (SootMethod) edge.getTgt();
-          if (this.excludeMethodList.contains(m.getName())) {
+          if (this.excludeMethodList.contains(tgt.getName())) {
             methodEdges--;
             continue;
           }
           element.addFunctionsReached(
-              tgt.toString() + "; Line: " + edge.srcStmt().getJavaSourceStartLineNumber());
+                  tgt.getSubSignature().split(" ")[1] + "; Line: " + edge.srcStmt().getJavaSourceStartLineNumber());
         }
         element.setEdgeCount(methodEdges);
 
@@ -375,7 +375,8 @@ class CustomSenceTransformer extends SceneTransformer {
     }
 
     callTree.append(StringUtils.leftPad("", depth * 2));
-    callTree.append(method.getName() + " " + className + " linenumber=" + line + "\n");
+    callTree.append(
+            method.getSubSignature().split(" ")[1] + " " + className + " linenumber=" + line + "\n");
 
     boolean excluded = false;
     checkExclusionLoop:
