@@ -171,6 +171,7 @@ class CustomSenceTransformer extends SceneTransformer {
 
         // Discover method related information
         FunctionElement element = new FunctionElement();
+        Map<String, Integer> functionLineMap = new HashMap<String, Integer>();
 
         // Unable to retrieve from Soot
         // element.setLinkageType("???");
@@ -204,8 +205,9 @@ class CustomSenceTransformer extends SceneTransformer {
             methodEdges--;
             continue;
           }
-          element.addFunctionsReached(
-                  tgt.getSubSignature().split(" ")[1] + "; Line: " + edge.srcStmt().getJavaSourceStartLineNumber());
+          element.addFunctionsReached(tgt.getSubSignature().split(" ")[1]);
+          functionLineMap.put(
+              tgt.getSubSignature().split(" ")[1], edge.srcStmt().getJavaSourceStartLineNumber());
         }
         element.setEdgeCount(methodEdges);
 
@@ -252,7 +254,7 @@ class CustomSenceTransformer extends SceneTransformer {
                 Integer end = trueBlockLine.get("end");
                 branchSide.setTrueSides(c.getName() + ":" + start);
                 branchSide.setTrueSidesFuncs(
-                    getFunctionCallInTargetLine(element.getFunctionsReached(), start, end));
+                    getFunctionCallInTargetLine(functionLineMap, start, end));
               }
 
               // False branch
@@ -261,7 +263,7 @@ class CustomSenceTransformer extends SceneTransformer {
                 Integer end = falseBlockLine.get("end");
                 branchSide.setFalseSides(c.getName() + ":" + (start - 1));
                 branchSide.setFalseSidesFuncs(
-                    getFunctionCallInTargetLine(element.getFunctionsReached(), start, end));
+                    getFunctionCallInTargetLine(functionLineMap, start, end));
               }
 
               branchProfile.setBranchString(
@@ -357,7 +359,8 @@ class CustomSenceTransformer extends SceneTransformer {
 
     String className = "";
     if (callerClass != null) {
-      Set<String> classNameSet = this.edgeClassMap.getOrDefault(
+      Set<String> classNameSet =
+          this.edgeClassMap.getOrDefault(
               callerClass + ":" + method.getName() + ":" + line, Collections.emptySet());
       className = this.mergeClassName(classNameSet);
       boolean merged = false;
@@ -376,7 +379,7 @@ class CustomSenceTransformer extends SceneTransformer {
 
     callTree.append(StringUtils.leftPad("", depth * 2));
     callTree.append(
-            method.getSubSignature().split(" ")[1] + " " + className + " linenumber=" + line + "\n");
+        method.getSubSignature().split(" ")[1] + " " + className + " linenumber=" + line + "\n");
 
     boolean excluded = false;
     checkExclusionLoop:
@@ -458,14 +461,13 @@ class CustomSenceTransformer extends SceneTransformer {
   }
 
   private List<String> getFunctionCallInTargetLine(
-      List<String> functionsReached, Integer startLine, Integer endLine) {
+      Map<String, Integer> functionLineMap, Integer startLine, Integer endLine) {
     List<String> targetFunctionList = new LinkedList<String>();
 
-    for (String func : functionsReached) {
-      String[] line = func.split(" Line: ");
-      Integer lineNumber = Integer.parseInt(line[1]);
+    for (String key : functionLineMap.keySet()) {
+      Integer lineNumber = functionLineMap.get(key);
       if (lineNumber >= startLine && lineNumber <= endLine) {
-        targetFunctionList.add(line[0]);
+        targetFunctionList.add(key);
       }
     }
 
