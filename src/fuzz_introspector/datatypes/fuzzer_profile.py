@@ -438,6 +438,11 @@ class FuzzerProfile:
                     self.all_class_functions
                 )
         elif self.target_lang == "jvm":
+            self.coverage = code_coverage.load_llvm_coverage(
+                target_folder,
+                self.identifier
+            )
+
             logger.info("TODO Add coverage loading support for jvm")
         else:
             raise DataLoaderError(
