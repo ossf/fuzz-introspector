@@ -217,7 +217,7 @@ class CustomSenceTransformer extends SceneTransformer {
           element.setBBCount(0);
           element.setiCount(0);
           element.setCyclomaticComplexity(0);
-          // methodList.addFunctionElement(element);
+          methodList.addFunctionElement(element);
           System.err.println("Source code for " + m + " not found.");
           continue;
         }
@@ -357,8 +357,7 @@ class CustomSenceTransformer extends SceneTransformer {
 
     String className = "";
     if (callerClass != null) {
-      Set<String> classNameSet =
-          this.edgeClassMap.getOrDefault(
+      Set<String> classNameSet = this.edgeClassMap.getOrDefault(
               callerClass + ":" + method.getName() + ":" + line, Collections.emptySet());
       className = this.mergeClassName(classNameSet);
       boolean merged = false;
