@@ -58,7 +58,7 @@ class FuzzerProfile:
         self.introspector_data_file = cfg_file
 
         # Load calltree file
-        self.function_call_depths = cfg_load.data_file_read_calltree(cfg_file, target_lang)
+        self.function_call_depths = cfg_load.data_file_read_calltree(cfg_file)
 
         # Read yaml data (as dictionary) from frontend
         try:
@@ -99,6 +99,7 @@ class FuzzerProfile:
             return os.path.basename(self.fuzzer_source_file).replace(".py", "")
 
         elif self._target_lang == "jvm":
+            # TODO Handle jvm fuzzer source file
             logger.info("TODO Handle jvm fuzzer source file")
 
         return self.fuzzer_source_file
@@ -149,6 +150,7 @@ class FuzzerProfile:
                 function_name
             )
         elif self.target_lang == "jvm":
+            # TODO Add coverage report for JVM
             logger.info("TODO: No coverage report for JVM yet")
         else:
             logger.info("Could not find any html_status.json file")
@@ -438,7 +440,12 @@ class FuzzerProfile:
                     self.all_class_functions
                 )
         elif self.target_lang == "jvm":
+            # TODO Add JVM coverage loading support
             logger.info("TODO Add coverage loading support for jvm")
+            self.coverage = code_coverage.load_llvm_coverage(
+                target_folder,
+                self.identifier
+            )
         else:
             raise DataLoaderError(
                 "The profile target has no coverage loading support"
