@@ -24,12 +24,12 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.HashSet;
 import org.apache.commons.lang3.StringUtils;
 import ossf.fuzz.introspector.soot.yaml.BranchProfile;
 import ossf.fuzz.introspector.soot.yaml.BranchSide;
@@ -217,7 +217,7 @@ class CustomSenceTransformer extends SceneTransformer {
           element.setBBCount(0);
           element.setiCount(0);
           element.setCyclomaticComplexity(0);
-          //methodList.addFunctionElement(element);
+          // methodList.addFunctionElement(element);
           System.err.println("Source code for " + m + " not found.");
           continue;
         }
@@ -235,7 +235,7 @@ class CustomSenceTransformer extends SceneTransformer {
               BranchSide branchSide = new BranchSide();
 
               Map<String, Integer> trueBlockLine =
-                  getBlockStartEndLineWithLineNumber(	
+                  getBlockStartEndLineWithLineNumber(
                       blockGraph.getBlocks(), unit.getJavaSourceStartLineNumber() + 1);
               Map<String, Integer> falseBlockLine =
                   getBlockStartEndLineWithLineNumber(
@@ -358,7 +358,8 @@ class CustomSenceTransformer extends SceneTransformer {
     String className = "";
     if (callerClass != null) {
       Set<String> classNameSet =
-    	      this.edgeClassMap.getOrDefault(callerClass + ":" + method.getName() + ":" + line, Collections.emptySet());
+          this.edgeClassMap.getOrDefault(
+              callerClass + ":" + method.getName() + ":" + line, Collections.emptySet());
       className = this.mergeClassName(classNameSet);
       boolean merged = false;
       for (String name : className.split(":")) {
@@ -520,10 +521,10 @@ class CustomSenceTransformer extends SceneTransformer {
         Set<String> classNameSet;
         if (this.edgeClassMap.containsKey(matchStr)) {
           classNameSet = this.edgeClassMap.get(matchStr);
-    	} else {
-    	  classNameSet = new HashSet<String>();
+        } else {
+          classNameSet = new HashSet<String>();
           edgeList.add(edge);
-    	}
+        }
         classNameSet.add(className);
         this.edgeClassMap.put(matchStr, classNameSet);
       }
