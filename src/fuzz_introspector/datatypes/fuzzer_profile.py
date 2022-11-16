@@ -568,5 +568,12 @@ class FuzzerProfile:
         function_name: str
     ) -> str:
         """Resolves link to HTML coverage report for JVM targets"""
-        # TODO Add in cg to coverage report link for JVM
-        return "#"
+        # Handle source class for jvm
+        if ("." in source_file):
+            # Source file has package, change all . to path separator
+            source_file = source_file.replace(".", os.sep)
+        else:
+            # Source fil has no package, add in default package
+            source_file = os.path.join("default", source_file)
+
+        return cov_url + os.sep + source_file + ".html#L" + str(lineno)
