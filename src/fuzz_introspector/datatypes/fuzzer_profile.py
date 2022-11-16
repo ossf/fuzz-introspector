@@ -86,7 +86,9 @@ class FuzzerProfile:
         elif self.target_lang == "python":
             return self.entrypoint_fun
         elif self.target_lang == "jvm":
-            return "fuzzerTestOneInput"
+            return "fuzzerTestOneInput(com.code_intelligence.jazzer.api.FuzzedDataProvider)"
+        else:
+            return None
 
     @property
     def identifier(self):
@@ -100,22 +102,20 @@ class FuzzerProfile:
 
         elif self._target_lang == "jvm":
             # TODO Handle jvm fuzzer source file
-            logger.info("TODO Handle jvm fuzzer source file")
+            pass
 
         return self.fuzzer_source_file
 
     def has_entry_point(self) -> bool:
         """Returns whether an entrypoint is identified"""
         if self.target_lang == "c-cpp":
-            if "LLVMFuzzerTestOneInput" in self.all_class_functions:
-                return True
+            return self.entrypoint_function in self.all_class_functions
 
         elif self.target_lang == "python":
             return self.entrypoint_function is not None
 
         elif self.target_lang == "jvm":
-            if "fuzzerTestOneInput" in self.all_class_functions:
-                return True
+            return self.entrypoint_function in self.all_class_functions
 
         return False
 
@@ -151,7 +151,7 @@ class FuzzerProfile:
             )
         elif self.target_lang == "jvm":
             # TODO Add coverage report for JVM
-            logger.info("TODO: No coverage report for JVM yet")
+            pass
         else:
             logger.info("Could not find any html_status.json file")
         return "#"
@@ -389,9 +389,9 @@ class FuzzerProfile:
         """
         # Find C/CPP entry point
         if self._target_lang == "c-cpp":
-            if "LLVMFuzzerTestOneInput" in self.all_class_functions:
+            if self.entrypoint_function in self.all_class_functions:
                 self.functions_reached_by_fuzzer = (
-                    self.all_class_functions["LLVMFuzzerTestOneInput"].functions_reached
+                    self.all_class_functions[self.entrypoint_function].functions_reached
                 )
                 return
 
@@ -404,9 +404,9 @@ class FuzzerProfile:
 
         # Find JVM entrypoint
         elif self._target_lang == "jvm":
-            if "fuzzerTestOneInput" in self.all_class_functions:
+            if self.entrypoint_function in self.all_class_functions:
                 self.functions_reached_by_fuzzer = (
-                    self.all_class_functions["fuzzerTestOneInput"].functions_reached
+                    self.all_class_functions[self.entrypoint_function].functions_reached
                 )
                 return
 
@@ -441,7 +441,6 @@ class FuzzerProfile:
                 )
         elif self.target_lang == "jvm":
             # TODO Add JVM coverage loading support
-            logger.info("TODO Add coverage loading support for jvm")
             self.coverage = code_coverage.load_llvm_coverage(
                 target_folder,
                 self.identifier

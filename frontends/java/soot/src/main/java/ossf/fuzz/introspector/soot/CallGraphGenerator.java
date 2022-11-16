@@ -171,13 +171,14 @@ class CustomSenceTransformer extends SceneTransformer {
 
         // Discover method related information
         FunctionElement element = new FunctionElement();
+        Map<String, Integer> functionLineMap = new HashMap<String, Integer>();
 
         // Unable to retrieve from Soot
         // element.setLinkageType("???");
         // element.setConstantsTouched([]);
         // element.setArgNames();
 
-        element.setFunctionName(m.getName());
+        element.setFunctionName(m.getSubSignature().split(" ")[1]);
         element.setFunctionSourceFile(c.getFilePath());
         element.setFunctionLinenumber(m.getJavaSourceStartLineNumber());
         element.setReturnType(m.getReturnType().toString());
@@ -200,12 +201,13 @@ class CustomSenceTransformer extends SceneTransformer {
         for (; outEdges.hasNext(); methodEdges++) {
           Edge edge = outEdges.next();
           SootMethod tgt = (SootMethod) edge.getTgt();
-          if (this.excludeMethodList.contains(m.getName())) {
+          if (this.excludeMethodList.contains(tgt.getName())) {
             methodEdges--;
             continue;
           }
-          element.addFunctionsReached(
-              tgt.toString() + "; Line: " + edge.srcStmt().getJavaSourceStartLineNumber());
+          element.addFunctionsReached(tgt.getSubSignature().split(" ")[1]);
+          functionLineMap.put(
+              tgt.getSubSignature().split(" ")[1], edge.srcStmt().getJavaSourceStartLineNumber());
         }
         element.setEdgeCount(methodEdges);
 
@@ -217,7 +219,7 @@ class CustomSenceTransformer extends SceneTransformer {
           element.setBBCount(0);
           element.setiCount(0);
           element.setCyclomaticComplexity(0);
-          // methodList.addFunctionElement(element);
+          methodList.addFunctionElement(element);
           System.err.println("Source code for " + m + " not found.");
           continue;
         }
@@ -252,7 +254,7 @@ class CustomSenceTransformer extends SceneTransformer {
                 Integer end = trueBlockLine.get("end");
                 branchSide.setTrueSides(c.getName() + ":" + start);
                 branchSide.setTrueSidesFuncs(
-                    getFunctionCallInTargetLine(element.getFunctionsReached(), start, end));
+                    getFunctionCallInTargetLine(functionLineMap, start, end));
               }
 
               // False branch
@@ -261,7 +263,7 @@ class CustomSenceTransformer extends SceneTransformer {
                 Integer end = falseBlockLine.get("end");
                 branchSide.setFalseSides(c.getName() + ":" + (start - 1));
                 branchSide.setFalseSidesFuncs(
-                    getFunctionCallInTargetLine(element.getFunctionsReached(), start, end));
+                    getFunctionCallInTargetLine(functionLineMap, start, end));
               }
 
               branchProfile.setBranchString(
@@ -376,7 +378,8 @@ class CustomSenceTransformer extends SceneTransformer {
     }
 
     callTree.append(StringUtils.leftPad("", depth * 2));
-    callTree.append(method.getName() + " " + className + " linenumber=" + line + "\n");
+    callTree.append(
+        method.getSubSignature().split(" ")[1] + " " + className + " linenumber=" + line + "\n");
 
     boolean excluded = false;
     checkExclusionLoop:
@@ -458,14 +461,13 @@ class CustomSenceTransformer extends SceneTransformer {
   }
 
   private List<String> getFunctionCallInTargetLine(
-      List<String> functionsReached, Integer startLine, Integer endLine) {
+      Map<String, Integer> functionLineMap, Integer startLine, Integer endLine) {
     List<String> targetFunctionList = new LinkedList<String>();
 
-    for (String func : functionsReached) {
-      String[] line = func.split(" Line: ");
-      Integer lineNumber = Integer.parseInt(line[1]);
+    for (String key : functionLineMap.keySet()) {
+      Integer lineNumber = functionLineMap.get(key);
       if (lineNumber >= startLine && lineNumber <= endLine) {
-        targetFunctionList.add(line[0]);
+        targetFunctionList.add(key);
       }
     }
 
