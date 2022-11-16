@@ -502,6 +502,7 @@ def load_python_json_coverage(
 
     return cp
 
+
 def load_jvm_coverage(
     target_dir: str,
     target_name: Optional[str] = None
