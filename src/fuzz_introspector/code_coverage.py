@@ -502,6 +502,31 @@ def load_python_json_coverage(
 
     return cp
 
+def load_jvm_coverage(
+    target_dir: str,
+    target_name: Optional[str] = None
+) -> CoverageProfile:
+    """
+    Scans a directory to read one or more coverage reports, and returns a CoverageProfile
+    Parses output from "llvm-cov show", e.g.
+        llvm-cov show -instr-profile=$profdata_file -object=$target \
+          -line-coverage-gt=0 $shared_libraries $LLVM_COV_COMMON_ARGS > \
+          ${FUZZER_STATS_DIR}/$target.covreport
+    This is used to parse JVM coverage.
+    The function supports loading multiple and individual coverage reports.
+    This is needed because finding coverage on a per-fuzzer basis requires
+    correlating binary files to a specific introspection profile from compile time.
+    However, files could be moved around, renamed, and so on.
+    As such, this function accepts an arugment "target_name" which is used to
+    target specific coverage profiles. However, if no coverage profile matches
+    that given name then the function will find *all* coverage reports it can and
+    use all of them.
+    """
+
+    cp = CoverageProfile()
+
+    return cp
+
 
 if __name__ == "__main__":
     logging.basicConfig()
