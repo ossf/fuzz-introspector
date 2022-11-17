@@ -32,7 +32,7 @@ Fuzz-introspector already excludes several functions by default, including many
 standard C++ library functions.
 
 ## Limitations
-The configuration file will only apply to data that in the Fuzz-introspector HTML
+The configuration file will only apply to data that is in the Fuzz-introspector HTML
 reports. In particular, this means:
 - The code coverage reports will still show all the files that in the coverage report which
   was used as input to Fuzz-introspector. In order to exclude certain files from the
