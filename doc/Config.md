@@ -30,3 +30,11 @@ and also all files that have `libxml2` in the file path.
 
 Fuzz-introspector already excludes several functions by default, including many
 standard C++ library functions.
+
+## Limitations
+The configuration file will only apply to data that is in the Fuzz-introspector HTML
+reports. In particular, this means:
+- The code coverage reports linked to by Fuzz-introspector will still show all the
+  files that are in the coverage report which was used as input to Fuzz-introspector.
+  In order to exclude certain files from the code coverage reports, it's needed to
+  avoid instrumenting these files entirely.
