@@ -119,7 +119,10 @@ class FuzzerVisitor(ast.NodeVisitor):
                 print("Refining import to %s" % (_import))
 
             # Let's try and see if these are searchable
-            specs = importlib.util.find_spec(_import)
+            try:
+                specs = importlib.util.find_spec(_import)
+            except ModuleNotFoundError:
+                continue
             if specs is not None:
                 print("Spec:")
                 print(specs)
