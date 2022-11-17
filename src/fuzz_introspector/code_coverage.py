@@ -507,24 +507,38 @@ def load_jvm_coverage(
     target_dir: str,
     target_name: Optional[str] = None
 ) -> CoverageProfile:
-    """
-    Scans a directory to read one or more coverage reports, and returns a CoverageProfile
-    Parses output from "llvm-cov show", e.g.
-        llvm-cov show -instr-profile=$profdata_file -object=$target \
-          -line-coverage-gt=0 $shared_libraries $LLVM_COV_COMMON_ARGS > \
-          ${FUZZER_STATS_DIR}/$target.covreport
-    This is used to parse JVM coverage.
-    The function supports loading multiple and individual coverage reports.
-    This is needed because finding coverage on a per-fuzzer basis requires
-    correlating binary files to a specific introspection profile from compile time.
-    However, files could be moved around, renamed, and so on.
-    As such, this function accepts an arugment "target_name" which is used to
-    target specific coverage profiles. However, if no coverage profile matches
-    that given name then the function will find *all* coverage reports it can and
-    use all of them.
-    """
-
+    import xml.etree.ElementTree as ET
     cp = CoverageProfile()
+    cp.set_type("file")
+
+    coverage_reports = utils.get_all_files_in_tree_with_regex(target_dir, "jacoco.xml")
+    logger.info(f"FOUND XML COVERAGE FILES: {str(coverage_reports)}")
+
+    if len(coverage_reports) > 0:
+        xml_file = coverage_reports[0]
+    else:
+        logger.info("Found no coverage files")
+        return cp
+
+    cp.coverage_files.append(xml_file)
+    xml_tree = ET.parse(xml_file)
+    root = xml_tree.getroot()
+
+    for package in root.findall('package'):
+        for cl in package.findall('sourcefile'):
+            cov_entry = cl.attrib['name'].replace(".java", "")
+            executed_lines = []
+            missing_lines = []
+            for line in cl.findall('line'):
+                if line.attrib['ci'] > "0":
+                    executed_lines.append(line.attrib['nr'])
+                else:
+                    missing_lines.append(line.attrib['nr'])
+
+            cp.file_map[cov_entry] = executed_lines
+            cp.dual_file_map[cov_entry] = dict()
+            cp.dual_file_map[cov_entry]['executed_lines'] = executed_lines
+            cp.dual_file_map[cov_entry]['missing_lines'] = missing_lines
 
     return cp
 
