@@ -273,11 +273,11 @@ class CoverageProfile:
 
                 # Create the covmap
                 for exec_line in self.dual_file_map[filename]['executed_lines']:
-                    if exec_line > fstart and exec_line < fend:
+                    if exec_line > fstart and (exec_line < fend or fend == -1):
                         logger.debug(f"E: {exec_line}")
                         self.covmap[fname].append((exec_line, 1000))
                 for non_exec_line in self.dual_file_map[filename]['missing_lines']:
-                    if non_exec_line > fstart and non_exec_line < fend:
+                    if non_exec_line > fstart and (non_exec_line < fend or fend == -1):
                         logger.debug(f"N: {non_exec_line}")
                         self.covmap[fname].append((non_exec_line, 0))
         return
