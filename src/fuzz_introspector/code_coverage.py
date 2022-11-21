@@ -355,7 +355,6 @@ class CoverageProfile:
 
         return
 
-
     def get_hit_summary(
         self,
         funcname: str
@@ -603,15 +602,15 @@ def load_jvm_coverage(
             cov_entry = cl.attrib['name']
             if package.attrib['name']:
                 cov_entry = "%s/%s" % (package.attrib['name'], cov_entry)
-            cov_entry = cov_entry.replace("/",".")
+            cov_entry = cov_entry.replace("/", ".")
             cov_entry = cov_entry.replace(".java", "")
             executed_lines = []
             missing_lines = []
             for line in cl.findall('line'):
                 if line.attrib['ci'] > "0":
-                    executed_lines.append(int(line.attrib['nr']))
+                    executed_lines.append((int(line.attrib['nr']), 1000))
                 else:
-                    missing_lines.append(int(line.attrib['nr']))
+                    missing_lines.append((int(line.attrib['nr']), 0))
 
             cp.file_map[cov_entry] = executed_lines
             cp.dual_file_map[cov_entry] = dict()
