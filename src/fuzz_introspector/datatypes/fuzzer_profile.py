@@ -368,9 +368,11 @@ class FuzzerProfile:
             total_func_lines, hit_lines = self.coverage.get_hit_summary(funcname)
             if total_func_lines is None or hit_lines is None:
                 return None, None, None
-
-            hit_percentage = (hit_lines / total_func_lines) * 100.0
-            return total_func_lines, hit_lines, hit_percentage
+            if total_func_lines == 0:
+                return 0, 0, 0
+            else:
+                hit_percentage = (hit_lines / total_func_lines) * 100.0
+                return total_func_lines, hit_lines, hit_percentage
         except Exception:
             return None, None, None
 
