@@ -264,6 +264,7 @@ class CoverageProfile:
             logger.debug(f"Filename: {filename}")
             for fname, fstart, fend in function_internals[filename]:
                 logger.debug(f"--- {fname} ::: {fstart} ::: {fend}")
+
                 if fname not in self.covmap:
                     self.covmap[fname] = []
 
@@ -290,12 +291,10 @@ class CoverageProfile:
         logger.debug("Correlating JVM")
 
         file_and_function_mappings: Dict[str, List[Tuple[str, int]]] = dict()
-        for func_key in function_list:
-            func = function_list[func_key]
+        for (func_key, func) in function_list.items():
             function_name = func.function_name
             function_line = func.function_linenumber
             class_name = func.function_source_file
-
             logger.debug(f"Correlated init: {class_name} ---- {function_name} ---- {function_line}")
 
             if class_name not in self.file_map:
@@ -318,6 +317,7 @@ class CoverageProfile:
             function_internals[cov_file] = []
             for i in range(len(sorted_func_specs)):
                 fname, fstart = sorted_func_specs[i]
+
                 # Get next function lineno to identify boundary
                 if i < len(sorted_func_specs) - 1:
                     fnext_name, fnext_start = sorted_func_specs[i + 1]
@@ -345,12 +345,12 @@ class CoverageProfile:
 
                 # Create the covmap
                 for exec_line in self.dual_file_map[filename]['executed_lines']:
-                    if int(exec_line) > fstart and int(exec_line) < fend:
-                        logger.info(f"E: {exec_line}")
+                    if (exec_line > fstart) and (exec_line < fend or fend == -1):
+                        logger.debug(f"E: {exec_line}")
                         self.covmap[fname].append((exec_line, 1000))
                 for non_exec_line in self.dual_file_map[filename]['missing_lines']:
-                    if int(non_exec_line) > fstart and int(non_exec_line) < fend:
-                        logger.info(f"N: {non_exec_line}")
+                    if (non_exec_line > fstart) and (non_exec_line < fend or fend == -1):
+                        logger.debug(f"N: {non_exec_line}")
                         self.covmap[fname].append((non_exec_line, 0))
 
         return
@@ -600,16 +600,18 @@ def load_jvm_coverage(
 
     for package in root.findall('package'):
         for cl in package.findall('sourcefile'):
-            cov_entry = "%s/%s" % (package.attrib['name'],cl.attrib['name'])
+            cov_entry = cl.attrib['name']
+            if package.attrib['name']:
+                cov_entry = "%s/%s" % (package.attrib['name'], cov_entry)
             cov_entry = cov_entry.replace("/",".")
             cov_entry = cov_entry.replace(".java", "")
             executed_lines = []
             missing_lines = []
             for line in cl.findall('line'):
                 if line.attrib['ci'] > "0":
-                    executed_lines.append(line.attrib['nr'])
+                    executed_lines.append(int(line.attrib['nr']))
                 else:
-                    missing_lines.append(line.attrib['nr'])
+                    missing_lines.append(int(line.attrib['nr']))
 
             cp.file_map[cov_entry] = executed_lines
             cp.dual_file_map[cov_entry] = dict()
