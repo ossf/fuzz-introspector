@@ -606,16 +606,20 @@ def load_jvm_coverage(
             cov_entry = cov_entry.replace(".java", "")
             executed_lines = []
             missing_lines = []
+            d_executed_lines = []
+            d_missing_lines = []
             for line in cl.findall('line'):
                 if line.attrib['ci'] > "0":
                     executed_lines.append((int(line.attrib['nr']), 1000))
+                    d_executed_lines.append(int(line.attrib['nr']))
                 else:
                     missing_lines.append((int(line.attrib['nr']), 0))
+                    d_missing_lines.append(int(line.attrib['nr']))
 
             cp.file_map[cov_entry] = executed_lines
             cp.dual_file_map[cov_entry] = dict()
-            cp.dual_file_map[cov_entry]['executed_lines'] = executed_lines
-            cp.dual_file_map[cov_entry]['missing_lines'] = missing_lines
+            cp.dual_file_map[cov_entry]['executed_lines'] = d_executed_lines
+            cp.dual_file_map[cov_entry]['missing_lines'] = d_missing_lines
 
     return cp
 

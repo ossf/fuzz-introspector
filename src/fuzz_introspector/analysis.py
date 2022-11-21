@@ -185,7 +185,7 @@ def get_node_coverage_hitcount(
 
         if not profile.func_is_entrypoint(demangled_name):
             raise AnalysisError(
-                 "First node in calltree seems to be non-fuzzer function"
+                 "First node in calltree is non-fuzzer function"
             )
         coverage_data = profile.coverage.get_hit_details(demangled_name)
 
