@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import os
+import re
 import sys
 import signal
 import argparse
@@ -81,6 +82,44 @@ def build_project(
     except:
         print("Building project failed")
         exit(1)
+
+
+def patch_jvm_build(project_build_path):
+    # Patch build.sh to include fuzz-introspector logic for JVM project
+    if os.path.exists(project_build_path):
+        content = ''
+        with open('jvm.patch') as file_handle:
+            content = file_handle.read()
+        with open(project_build_path, 'a+') as file_handle:
+            file_handle.write('\n')
+            file_handle.write(content)
+
+
+def has_append(project_build_path):
+    # Check if JVM build patch has been applied
+    if os.path.exists(project_build_path):
+        with open(project_build_path) as file_handle:
+            content = file_handle.read()
+            for line in content.splitlines():
+                match = re.compile(r'# Packing for fuzz-introspector').match(line)
+                if match:
+                    return True
+    return False
+
+
+def get_project_lang(project_name):
+    # Check project.yaml for project langauge
+    project_yaml_path = './projects/%s/project.yaml' % project_name
+    if os.path.exists(project_yaml_path):
+        with open(project_yaml_path) as file_handle:
+            content = file_handle.read()
+            for line in content.splitlines():
+                match = re.compile(r'\s*language\s*:\s*([^\s]+)').match(line)
+                if match:
+                    return match.group(1)
+
+    # Cannot locate project language, return default value
+    return 'c++'
 
 
 def get_fuzzers(project_name):
@@ -247,7 +286,7 @@ def get_coverage(project_name, corpus_dir):
                 if "totals" in dd:
                     if "lines" in dd['totals']:
                         print("lines: %s"%(dd['totals']['lines']['percent']))
-                        lines_percent = dd['totals']['lines']['percent']        
+                        lines_percent = dd['totals']['lines']['percent']
                         print("lines_percent: %s"%(lines_percent))
                         return lines_percent
     except:
@@ -273,6 +312,14 @@ def complete_coverage_check(
     corpus_dir: Optional[str],
     download_public_corpus: bool
 ):
+    # Check if it is JVM Project
+    if get_project_lang(project_name) == 'jvm':
+        project_build_path = './projects/%s/build.sh' % project_name
+        # Check if fuzz-introspector patch already appended
+        if not has_append(project_build_path):
+            # Apply jvm build patch to include fuzz-introspector logic
+            patch_jvm_build(project_build_path)
+
     build_project(project_name, to_clean=True)
 
     if download_public_corpus:
@@ -282,8 +329,9 @@ def complete_coverage_check(
     run_all_fuzzers(project_name, fuzztime, job_count, corpus_dir)
     build_project(project_name, sanitizer="coverage")
     percent = get_coverage(project_name, corpus_dir)
- 
+
     return percent
+
 
 def introspector_run(
     project_name: str,
@@ -305,7 +353,7 @@ def introspector_run(
     else:
         build_project(project_name, to_clean=True)
         setup_next_corpus_dir(project_name)
-    
+
     # Build sanitizers with introspector
     build_project(project_name, sanitizer="introspector") 
 
