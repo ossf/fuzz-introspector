@@ -329,7 +329,7 @@ class CoverageProfile:
             )
 
         # Sort and retrieve line range of all functions
-        function_internals = self.retrieve_func_line(file_and_function_mappings)
+        function_internals = self._retrieve_func_line(file_and_function_mappings)
 
         # Map the source codes of each line with coverage information.
         # Store the result in covmap to be compatible with other languages.
@@ -562,7 +562,7 @@ def load_jvm_coverage(
     target_dir: str,
     target_name: Optional[str] = None
 ) -> CoverageProfile:
-   """Find and load jacoco.xml, a jvm xml coverage report file
+    """Find and load jacoco.xml, a jvm xml coverage report file
 
     The xml file is generated from Jacoco plugin. The specific dtd of the xml can
     be found in the following link:
