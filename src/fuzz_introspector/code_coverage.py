@@ -168,6 +168,7 @@ class CoverageProfile:
 
         if fuzz_key is None or fuzz_key not in self.covmap:
             return []
+
         return self.covmap[fuzz_key]
 
     def _python_ast_funcname_to_cov_file(
@@ -204,6 +205,62 @@ class CoverageProfile:
 
         return target_key
 
+    def _retrieve_func_line(
+        self,
+        file_and_function_mappings,
+    ) -> Dict[str, List[Tuple[str, int, int]]]:
+        # Sort function and lines numbers for each coverage file.
+        # Store in function_internals.
+        logger.debug("Geting function start and end line")
+        function_internals: Dict[str, List[Tuple[str, int, int]]] = dict()
+        for cov_file, function_specs in file_and_function_mappings.items():
+            # Sort by line number
+            sorted_func_specs = list(sorted(function_specs, key=lambda x: x[1]))
+
+            function_internals[cov_file] = []
+            for i in range(len(sorted_func_specs)):
+                fname, fstart = sorted_func_specs[i]
+
+                # Get next function lineno to identify boundary
+                if i < len(sorted_func_specs) - 1:
+                    fnext_name, fnext_start = sorted_func_specs[i + 1]
+                    function_internals[cov_file].append(
+                        (fname, fstart, fnext_start - 1)
+                    )
+                else:
+                    # Last function identified by end lineno being -1
+                    function_internals[cov_file].append((fname, fstart, -1))
+
+        return function_internals
+
+    def _map_func_covmap(
+        self,
+        function_internals,
+    ) -> None:
+        for filename in function_internals:
+            logger.debug(f"Filename: {filename}")
+            for fname, fstart, fend in function_internals[filename]:
+                logger.debug(f"--- {fname} ::: {fstart} ::: {fend}")
+
+                if fname not in self.covmap:
+                    # Fail safe
+                    self.covmap[fname] = []
+
+                # If we have the file in dual_file_map identify the
+                # executed vs non-executed lines and store in covmap.
+                if filename not in self.dual_file_map:
+                    continue
+
+                # Create the covmap
+                for exec_line in self.dual_file_map[filename]['executed_lines']:
+                    if (exec_line > fstart) and (exec_line < fend or fend == -1):
+                        logger.debug(f"E: {exec_line}")
+                        self.covmap[fname].append((exec_line, 1000))
+                for non_exec_line in self.dual_file_map[filename]['missing_lines']:
+                    if (non_exec_line > fstart) and (non_exec_line < fend or fend == -1):
+                        logger.debug(f"N: {non_exec_line}")
+                        self.covmap[fname].append((non_exec_line, 0))
+
     def correlate_python_functions_with_coverage(
         self,
         function_list,
@@ -237,49 +294,46 @@ class CoverageProfile:
                 (function_name, function_line)
             )
 
-        # Sort function and lines numbers for each coverage file.
-        # Store in function_internals.
-        logger.debug("Function intervals")
-        function_internals: Dict[str, List[Tuple[str, int, int]]] = dict()
-        for cov_file, function_specs in file_and_function_mappings.items():
-            sorted_func_specs = list(sorted(function_specs, key=lambda x: x[1]))
-
-            function_internals[cov_file] = []
-            for i in range(len(sorted_func_specs)):
-                fname, fstart = sorted_func_specs[i]
-                # Get next function lineno to identify boundary
-                if i < len(sorted_func_specs) - 1:
-                    fnext_name, fnext_start = sorted_func_specs[i + 1]
-                    function_internals[cov_file].append(
-                        (fname, fstart, fnext_start - 1)
-                    )
-                else:
-                    # Last function identified by end lineno being -1
-                    function_internals[cov_file].append((fname, fstart, -1))
+        # Sort and retrieve line range of all functions
+        function_internals = self._retrieve_func_line(file_and_function_mappings)
 
         # Map the source codes of each line with coverage information.
         # Store the result in covmap to be compatible with other languages.
-        for filename in function_internals:
-            logger.debug(f"Filename: {filename}")
-            for fname, fstart, fend in function_internals[filename]:
-                logger.debug(f"--- {fname} ::: {fstart} ::: {fend}")
-                if fname not in self.covmap:
-                    self.covmap[fname] = []
+        self._map_func_covmap(function_internals)
 
-                # If we have the file in dual_file_map identify the
-                # executed vs non-executed lines and store in covmap.
-                if filename not in self.dual_file_map:
-                    continue
+        return
 
-                # Create the covmap
-                for exec_line in self.dual_file_map[filename]['executed_lines']:
-                    if exec_line > fstart and (exec_line < fend or fend == -1):
-                        logger.debug(f"E: {exec_line}")
-                        self.covmap[fname].append((exec_line, 1000))
-                for non_exec_line in self.dual_file_map[filename]['missing_lines']:
-                    if non_exec_line > fstart and (non_exec_line < fend or fend == -1):
-                        logger.debug(f"N: {non_exec_line}")
-                        self.covmap[fname].append((non_exec_line, 0))
+    def correlate_jvm_method_with_coverage(
+        self,
+        function_list,
+    ) -> None:
+        logger.debug("Correlating JVM")
+
+        file_and_function_mappings: Dict[str, List[Tuple[str, int]]] = dict()
+        for (func_key, func) in function_list.items():
+            function_name = func.function_name
+            function_line = func.function_linenumber
+            class_name = func.function_source_file
+            logger.debug(f"Correlated init: {class_name} ---- {function_name} ---- {function_line}")
+
+            if class_name not in self.file_map:
+                logger.debug("Fail to find matching class")
+                continue
+
+            if class_name not in file_and_function_mappings:
+                file_and_function_mappings[class_name] = []
+
+            file_and_function_mappings[class_name].append(
+                (function_name, function_line)
+            )
+
+        # Sort and retrieve line range of all functions
+        function_internals = self._retrieve_func_line(file_and_function_mappings)
+
+        # Map the source codes of each line with coverage information.
+        # Store the result in covmap to be compatible with other languages.
+        self._map_func_covmap(function_internals)
+
         return
 
     def get_hit_summary(
@@ -499,6 +553,62 @@ def load_python_json_coverage(
         cp.dual_file_map[cov_entry] = dict()
         cp.dual_file_map[cov_entry]['executed_lines'] = data['files'][entry]['executed_lines']
         cp.dual_file_map[cov_entry]['missing_lines'] = data['files'][entry]['missing_lines']
+
+    return cp
+
+
+def load_jvm_coverage(
+    target_dir: str,
+    target_name: Optional[str] = None
+) -> CoverageProfile:
+    """Find and load jacoco.xml, a jvm xml coverage report file
+
+    The xml file is generated from Jacoco plugin. The specific dtd of the xml can
+    be found in the following link:
+    - https://www.jacoco.org/jacoco/trunk/coverage/report.dtd
+
+    Return a CoverageProfile
+    """
+    import xml.etree.ElementTree as ET
+    cp = CoverageProfile()
+    cp.set_type("file")
+
+    coverage_reports = utils.get_all_files_in_tree_with_regex(target_dir, "jacoco.xml")
+    logger.info(f"FOUND XML COVERAGE FILES: {str(coverage_reports)}")
+
+    if len(coverage_reports) > 0:
+        xml_file = coverage_reports[0]
+    else:
+        logger.info("Found no coverage files")
+        return cp
+
+    cp.coverage_files.append(xml_file)
+    xml_tree = ET.parse(xml_file)
+    root = xml_tree.getroot()
+
+    for package in root.findall('package'):
+        for cl in package.findall('sourcefile'):
+            cov_entry = cl.attrib['name']
+            if package.attrib['name']:
+                cov_entry = "%s/%s" % (package.attrib['name'], cov_entry)
+            cov_entry = cov_entry.replace("/", ".")
+            cov_entry = cov_entry.replace(".java", "")
+            executed_lines = []
+            missing_lines = []
+            d_executed_lines = []
+            d_missing_lines = []
+            for line in cl.findall('line'):
+                if line.attrib['ci'] > "0":
+                    executed_lines.append((int(line.attrib['nr']), 1000))
+                    d_executed_lines.append(int(line.attrib['nr']))
+                else:
+                    missing_lines.append((int(line.attrib['nr']), 0))
+                    d_missing_lines.append(int(line.attrib['nr']))
+
+            cp.file_map[cov_entry] = executed_lines
+            cp.dual_file_map[cov_entry] = dict()
+            cp.dual_file_map[cov_entry]['executed_lines'] = d_executed_lines
+            cp.dual_file_map[cov_entry]['missing_lines'] = d_missing_lines
 
     return cp
 

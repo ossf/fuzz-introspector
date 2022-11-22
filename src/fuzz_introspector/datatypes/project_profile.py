@@ -87,7 +87,10 @@ class MergedProjectProfile:
 
             for reached_func_name in fp_obj.functions_reached:
                 if reached_func_name not in self.all_functions:
-                    logger.error(f"Mismatched function name: {reached_func_name}")
+                    if profile.target_lang == "jvm":
+                        logger.debug(f"{reached_func_name} not provided within classpath")
+                    else:
+                        logger.error(f"Mismatched function name: {reached_func_name}")
                     continue
                 reached_func_obj = self.all_functions[reached_func_name]
                 reached_func_obj.incoming_references.append(fp_obj.function_name)
@@ -181,13 +184,7 @@ class MergedProjectProfile:
         func_name
     ):
 
-        if self.target_lang == "c-cpp":
-            return "%s%s.html#L%d" % (
-                coverage_url,
-                function_source_file,
-                lineno
-            )
-        elif self.target_lang == "python":
+        if self.target_lang == "python":
             return self.profiles[0].resolve_coverage_link(
                 coverage_url,
                 function_source_file,
@@ -195,13 +192,18 @@ class MergedProjectProfile:
                 func_name
             )
         elif self.target_lang == "jvm":
-            # TODO Add coverage details for jvm
-            pass
-        return "%s%s.html#L%d" % (
-            coverage_url,
-            function_source_file,
-            lineno
-        )
+            return self.profiles[0].resolve_coverage_link(
+                coverage_url,
+                function_source_file,
+                lineno,
+                func_name
+            )
+        else:
+            return "%s%s.html#L%d" % (
+                coverage_url,
+                function_source_file,
+                lineno
+            )
 
     @property
     def target_lang(self):

@@ -183,14 +183,12 @@ def get_node_coverage_hitcount(
         # As this is the first node ensure it is indeed the entrypoint.
         # The difference is this node has node "parent" or prior nodes.
 
-        # Arthur: Not true anymore for cpp or jvm with multiple yaml file
-        # TODO Relaxing this constraint temporary, fixed later
-        # if not profile.func_is_entrypoint(demangled_name):
-        #     raise AnalysisError(
-        #         "First node in calltree seems to be non-fuzzer function"
-        #     )
-
+        if not profile.func_is_entrypoint(demangled_name):
+            raise AnalysisError(
+                "First node in calltree is non-fuzzer function"
+            )
         coverage_data = profile.coverage.get_hit_details(demangled_name)
+
         if len(coverage_data) == 0:
             logger.error("There is no coverage data (not even all negative).")
         node.cov_parent = "EP"
@@ -224,7 +222,6 @@ def get_node_coverage_hitcount(
             if ih:
                 node_hitcount = 200
         elif profile.target_lang == "jvm":
-            # TODO Handle for jvm added later
             coverage_data = profile.coverage.get_hit_details(
                 callstack_get_parent(node, callstack)
             )
@@ -238,6 +235,7 @@ def get_node_coverage_hitcount(
         raise AnalysisError(
             "A node should either be the first or it must have a parent"
         )
+
     return node_hitcount
 
 

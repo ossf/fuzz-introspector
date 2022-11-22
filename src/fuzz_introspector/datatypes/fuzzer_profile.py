@@ -101,8 +101,8 @@ class FuzzerProfile:
             return os.path.basename(self.fuzzer_source_file).replace(".py", "")
 
         elif self._target_lang == "jvm":
-            # TODO Handle jvm fuzzer source file
-            pass
+            # Class name is used for jvm identifier
+            return os.path.basename(self.fuzzer_source_file)
 
         return self.fuzzer_source_file
 
@@ -150,8 +150,12 @@ class FuzzerProfile:
                 function_name
             )
         elif self.target_lang == "jvm":
-            # TODO Add coverage report for JVM
-            pass
+            return self._resolve_jvm_coverage_link(
+                cov_url,
+                source_file,
+                lineno,
+                function_name
+            )
         else:
             logger.info("Could not find any html_status.json file")
         return "#"
@@ -364,9 +368,11 @@ class FuzzerProfile:
             total_func_lines, hit_lines = self.coverage.get_hit_summary(funcname)
             if total_func_lines is None or hit_lines is None:
                 return None, None, None
-
-            hit_percentage = (hit_lines / total_func_lines) * 100.0
-            return total_func_lines, hit_lines, hit_percentage
+            if total_func_lines == 0:
+                return 0, 0, 0
+            else:
+                hit_percentage = (hit_lines / total_func_lines) * 100.0
+                return total_func_lines, hit_lines, hit_percentage
         except Exception:
             return None, None, None
 
@@ -440,11 +446,14 @@ class FuzzerProfile:
                     self.all_class_functions
                 )
         elif self.target_lang == "jvm":
-            # TODO Add JVM coverage loading support
-            self.coverage = code_coverage.load_llvm_coverage(
+            self.coverage = code_coverage.load_jvm_coverage(
                 target_folder,
                 self.identifier
             )
+            if self.coverage is not None:
+                self.coverage.correlate_jvm_method_with_coverage(
+                    self.all_class_functions
+                )
         else:
             raise DataLoaderError(
                 "The profile target has no coverage loading support"
@@ -556,3 +565,21 @@ class FuzzerProfile:
         else:
             logger.info("Could not find any html_status.json file")
         return "#"
+
+    def _resolve_jvm_coverage_link(
+        self,
+        cov_url: str,
+        source_file: str,
+        lineno: int,
+        function_name: str
+    ) -> str:
+        """Resolves link to HTML coverage report for JVM targets"""
+        # Handle source class for jvm
+        if ("." in source_file):
+            # Source file has package, change all . to path separator
+            source_file = source_file.replace(".", os.sep)
+        else:
+            # Source fil has no package, add in default package
+            source_file = os.path.join("default", source_file)
+
+        return cov_url + os.sep + source_file + ".html#L" + str(lineno)
