@@ -29,8 +29,15 @@ def download_public_corpus(
     fuzzer_name,
     target_zip
 ):
-    OSS_FUZZ_PUBLIC_CORPUS = "https://storage.googleapis.com/%s-backup.clusterfuzz-external.appspot.com/corpus/libFuzzer/%s_%s/public.zip"
-    download_url = OSS_FUZZ_PUBLIC_CORPUS % (project_name, project_name, fuzzer_name)
+    OSS_FUZZ_PUBLIC_CORPUS = "https://storage.googleapis.com/%s-backup.clusterfuzz-external.appspot.com/corpus/libFuzzer/%s/public.zip"
+
+    # There is a special case where the names of projects aren't added to links to public
+    # corpora if the names of fuzz targets already start with their project's name + "_":
+    # https://github.com/google/oss-fuzz/blob/7797279c274d10197d62841dc43834238fd483a1/infra/cifuzz/clusterfuzz_deployment.py#L295-L298
+    if fuzzer_name.startswith(f"{project_name}_"):
+        download_url = OSS_FUZZ_PUBLIC_CORPUS % (project_name, fuzzer_name)
+    else:
+        download_url = OSS_FUZZ_PUBLIC_CORPUS % (project_name, f"{project_name}_{fuzzer_name}")
 
     cmd = f"wget {download_url}"
     if target_zip:
