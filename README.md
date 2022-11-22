@@ -13,6 +13,9 @@ Fuzz-introspector aims to improve fuzzing experience of a project by guiding on 
 
 ## Documentation and samples
 - [Sample OSS-Fuzz reports](https://oss-fuzz-introspector.storage.googleapis.com/index.html). [OSS-Fuzz](https://github.com/google/oss-fuzz) supports Fuzz Introspector and maintains a list of reports.
+  - Sample C project report: [htslib](https://storage.googleapis.com/oss-fuzz-introspector/htslib/inspector-report/20221122/fuzz_report.html)
+  - Sample C++ project report: [leveldb](https://storage.googleapis.com/oss-fuzz-introspector/leveldb/inspector-report/20221122/fuzz_report.html)
+  - Sample Python project report: [idna](https://storage.googleapis.com/oss-fuzz-introspector/idna/inspector-report/20221122/fuzz_report.html)
 - [Video demonstration](https://www.youtube.com/watch?v=cheo-liJhuE)
 - [List of Case studies](doc/CaseStudies.md)
 - [Screenshots](doc/ExampleOutput.md)
