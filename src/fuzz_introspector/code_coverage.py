@@ -261,7 +261,6 @@ class CoverageProfile:
                         logger.debug(f"N: {non_exec_line}")
                         self.covmap[fname].append((non_exec_line, 0))
 
-
     def correlate_python_functions_with_coverage(
         self,
         function_list,
