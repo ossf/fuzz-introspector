@@ -296,7 +296,7 @@ class CoverageProfile:
             )
 
         # Sort and retrieve line range of all functions
-        function_internals = self.retrieve_func_line(file_and_function_mappings)
+        function_internals = self._retrieve_func_line(file_and_function_mappings)
 
         # Map the source codes of each line with coverage information.
         # Store the result in covmap to be compatible with other languages.
