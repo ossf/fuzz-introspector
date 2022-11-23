@@ -70,8 +70,11 @@ Example of running:
 ```
 
 **__If --entrymethod is ommited, the default value 'fuzzerTestOneInput' will be used.__**
+
 **__Multiple jar files, entry classes and exclude prfixes are allowed, values should be separated with ':'.__**
+
 **__Necessary jar library could be added to the --jarfile options__.**
+
 **__If there is multiple match of entry classes, only the first found will be handled.__**
 
 
