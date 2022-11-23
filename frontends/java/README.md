@@ -37,9 +37,9 @@ Sample command: `jar cvf app.jar main.class sub1.class sub2.class`
 
 Sample application for testing
 -----------------------------------------
-In fuzz-introspector/tests/java directory, there are 7 sample testcases. Each of them contains a sample java application and a build script.
+In fuzz-introspector/tests/java directory, there are 14 sample testcases. Each of them contains a sample java application and a build script.
 
-Just go into one of the testcases directories (test1 to test7) and execute the build script, it will automatically generate a jar file (2 jar files for test7) for testing in the same directory
+Just go into one of the testcases directories (test1 to test14) and execute the build script, it will automatically generate one or more jar files for testing in the same directory
 
 You could also run build all script at fuzz-introspector/tests/java directory and it will automatically build all the testcases and store all resulting jar in the test-jar directory.
 
@@ -51,73 +51,6 @@ Example for compiling and packing jar file for testcase test1: `cd path/to/fuzz-
 
 Example for compiling and packing jar file for all testcase: `cd path/to/fuzz-introspector/tests/java/; ./buildAll.sh`
 
-
-Using java-callgraph
------------------------------------------
-Depends on OpenJDK+JRE 8 or later
-
-Depends on https://github.com/gousiosg/java-callgraph, which has compiled and packed as a jar file (javacg-0.1-SNAPSHOT-static.jar)
-
-To compile your own javacg-0.1-SNAPSHOT-static.jar, follows the steps below.
-
-```
- git clone https://github.com/gousiosg/java-callgraph 
- cd java-callgraph
- mvn install
-```
-
-After compiling the java-callgraph, the needed javacg-0.1-SNAPSHOT-static.jar is in the target directory.
-
-The resulting call tree are shown in stdout.
-
-Command:
-```
-  cd frontends/java/java-callgraph
-  java -jar javacg-0.1-SNAPSHOT-static.jar <TARGET_JAR_FILE>
-```
-
-Example for execution using testcase test1:
-```
-  cd frontends/java/java-callgraph
-  java -jar javacg-0.1-SNAPSHOT-static.jar path/to/fuzz-introspector/tests/java/test1/test1.jar
-```
-
-Example for execution using testcase test5:
-```
-  cd frontends/java/java-callgraph
-  java -jar javacg-0.1-SNAPSHOT-static.jar path/to/fuzz-introspector/tests/java/test5/test5.jar
-```
-
-
-Using IBM's WALA
-------------------------------------------
-Depends on OpenJDK+JRE 11 or later
-
-Depends on Maven 3.3 or later
-
-Depends on IBM's WALA https://github.com/wala/WALA, the maven build process will automatically download and pack the WALA jar libraries.
-
-The resulting call tree are shown in stdout.
-
-**Current limitation, the entryclass must contains the main method to build the callgraph.**
-
-Example of running: 
-```
-  cd frontends/java/wala
-  ./run.sh <-j | --jarfile> <jarFile1:...:javaFileN> <-c | --entryclass> <Public Entry Class Name>
-```
-
-Example for execution using testcase test1:
-```
-  cd frontends/java/wala
-  ./run.sh --jarfile path/to/fuzz-introspector/tests/java/test1/test1.jar --entryclass TestFuzzer
-```
-
-Example for execution using testcase test5:
-```
-  cd frontends/java/wala
-  ./run.sh --jarfile path/to/fuzz-introspector/tests/java/test5/test5.jar --entryclass Fuzz.TestFuzzer`
-```
 
 Using Soot
 ------------------------------------------
@@ -133,12 +66,15 @@ Example of running:
 
 ```
   cd frontends/java/soot
-  ./run.sh <-j | --jarfile> <jarFile1:...:javaFileN> <-c | --entryclass> <Public Entry Class Name 1:...:Public Entry Class Name N> [-m | --entrymethod <Public Entry Method Name>]
+  ./run.sh <-j | --jarfile> <jarFile1:...:javaFileN> <-c | --entryclass> <Public Entry Class Name 1:...:Public Entry Class Name N> [-m | --entrymethod <Public Entry Method Name>] [-e | --excludeprefix <Excluded package prefix>]
 ```
 
 **__If --entrymethod is ommited, the default value 'fuzzerTestOneInput' will be used.__**
-**__Multiple jar file or entry class is allowed, values should be separated with ':'.__**
+
+**__Multiple jar files, entry classes and exclude prfixes are allowed, values should be separated with ':'.__**
+
 **__Necessary jar library could be added to the --jarfile options__.**
+
 **__If there is multiple match of entry classes, only the first found will be handled.__**
 
 
@@ -182,63 +118,13 @@ Example for execution using testcase test7 (with multiple entry classes in multi
   cat fuzzerLogFile-Fuzz2.TestFuzzer2-*.data.yaml
 ```
 
-
-Sample output for testcase test1
-------------------------------------------
-**java-callgraph**
+Two output files provided for each Fuzzer Class
 ```
-C:TestFuzzer com.code_intelligence.jazzer.api.CannedFuzzedDataProvider
-C:TestFuzzer TestFuzzer
-C:TestFuzzer java.lang.Object
-C:TestFuzzer java.lang.System
-C:TestFuzzer java.io.PrintStream
-M:TestFuzzer:<init>() (O)java.lang.Object:<init>()
-M:TestFuzzer:fuzzerTestOneInput(com.code_intelligence.jazzer.api.FuzzedDataProvider) (M)java.io.PrintStream:println(java.lang.String)
-M:TestFuzzer:main(java.lang.String[]) (O)com.code_intelligence.jazzer.api.CannedFuzzedDataProvider:<init>(java.lang.String)
-M:TestFuzzer:main(java.lang.String[]) (S)TestFuzzer:fuzzerTestOneInput(com.code_intelligence.jazzer.api.FuzzedDataProvider)
+  fuzzerLogFile-<Fuzzer Class>.data
+  fuzzerLogFile-<Fuzzer Class>.data.yaml
 ```
 
-**Wala**
-```
-Node: synthetic < Primordial, Lcom/ibm/wala/FakeRootClass, fakeRootMethod()V > Context: Everywhere
- - invokestatic < Primordial, Lcom/ibm/wala/FakeRootClass, fakeWorldClinit()V >@0
-   -> Node: synthetic < Primordial, Lcom/ibm/wala/FakeRootClass, fakeWorldClinit()V > Context: Everywhere
- - invokespecial < Primordial, Ljava/lang/Object, <init>()V >@4
-   -> Node: < Primordial, Ljava/lang/Object, <init>()V > Context: Everywhere
- - invokestatic < Application, LTestFuzzer, main([Ljava/lang/String;)V >@5
-   -> Node: < Application, LTestFuzzer, main([Ljava/lang/String;)V > Context: Everywhere
-Node: synthetic < Primordial, Lcom/ibm/wala/FakeRootClass, fakeWorldClinit()V > Context: Everywhere
- - invokestatic < Primordial, Ljava/lang/Object, <clinit>()V >@0
-   -> Node: < Primordial, Ljava/lang/Object, <clinit>()V > Context: Everywhere
- - invokestatic < Primordial, Ljava/lang/String, <clinit>()V >@1
-   -> Node: < Primordial, Ljava/lang/String, <clinit>()V > Context: Everywhere
-Node: < Primordial, Ljava/lang/Object, <clinit>()V > Context: Everywhere
- - invokestatic < Primordial, Ljava/lang/Object, registerNatives()V >@0
-   -> Node: < Primordial, Ljava/lang/Object, registerNatives()V > Context: Everywhere
-Node: < Primordial, Ljava/lang/Object, registerNatives()V > Context: Everywhere
-Node: < Primordial, Ljava/lang/String, <clinit>()V > Context: Everywhere
- - invokespecial < Primordial, Ljava/lang/String$CaseInsensitiveComparator, <init>(Ljava/lang/String$1;)V >@12
-   -> Node: < Primordial, Ljava/lang/String$CaseInsensitiveComparator, <init>(Ljava/lang/String$1;)V > Context: Everywhere
-Node: < Primordial, Ljava/lang/String$CaseInsensitiveComparator, <init>(Ljava/lang/String$1;)V > Context: Everywhere
- - invokespecial < Primordial, Ljava/lang/String$CaseInsensitiveComparator, <init>()V >@1
-   -> Node: < Primordial, Ljava/lang/String$CaseInsensitiveComparator, <init>()V > Context: Everywhere
-Node: < Primordial, Ljava/lang/String$CaseInsensitiveComparator, <init>()V > Context: Everywhere
- - invokespecial < Primordial, Ljava/lang/Object, <init>()V >@1
-   -> Node: < Primordial, Ljava/lang/Object, <init>()V > Context: Everywhere
-Node: < Primordial, Ljava/lang/Object, <init>()V > Context: Everywhere
-Node: < Application, LTestFuzzer, main([Ljava/lang/String;)V > Context: Everywhere
- - invokestatic < Application, LTestFuzzer, fuzzerTestOneInput(Lcom/code_intelligence/jazzer/api/FuzzedDataProvider;)V >@9
-   -> Node: < Application, LTestFuzzer, fuzzerTestOneInput(Lcom/code_intelligence/jazzer/api/FuzzedDataProvider;)V > Context: Everywhere
-Node: < Application, LTestFuzzer, fuzzerTestOneInput(Lcom/code_intelligence/jazzer/api/FuzzedDataProvider;)V > Context: Everywhere
-```
+_fuzzerFile-<Fuzzer Class>.data_ stores the call graph generation, following the format mentioned in [https://github.com/ossf/fuzz-introspector/blob/main/doc/LanguageImplementation.md#calltree-data-structure](https://github.com/ossf/fuzz-introspector/blob/main/doc/LanguageImplementation.md#calltree-data-structure)
 
-**Soot**
-fuzzerLogFile-XXX.data
-```
-Call Tree
-fuzzerTestOneInput linenumber=-1
- println java.io.PrintStream linenumber=21
-```
-fuzzerLogFile-XXX-YYY.data.yaml
-```
-```
+_fuzzerFile-<Fuzzer Class>.data.yaml_ stores other program-wide data, following the format mentioend in [https://github.com/ossf/fuzz-introspector/blob/main/doc/LanguageImplementation.md#program-wide-data-file](https://github.com/ossf/fuzz-introspector/blob/main/doc/LanguageImplementation.md#program-wide-data-file)
+
