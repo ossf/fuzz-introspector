@@ -36,14 +36,12 @@ class=${class:1}
 
 cd $OUT
 rm -rf fuzz-introspector
-git clone https://github.com/arthurscchan/fuzz-introspector
-# Require change to "cd fuzz-introspector/frontends/java"
-cd fuzz-introspector/frontends/java/soot
+git clone https://github.com/ossf/fuzz-introspector
+
+cd fuzz-introspector/frontends/java/
 sed -i 's/mvn/$MVN/g' run.sh
 ./run.sh -j $jarfile -c $class -m fuzzerTestOneInput
 cd $OUT
-# Require change to "cp fuzz-introspector/frontends/java/*.data ./"
-cp fuzz-introspector/frontends/java/soot/*.data ./
-# Require change to "cp fuzz-introspector/frontends/java/*.data.yaml ./"
-cp fuzz-introspector/frontends/java/soot/*.data.yaml ./
+cp fuzz-introspector/frontends/java/*.data ./
+cp fuzz-introspector/frontends/java/*.data.yaml ./
 rm -rf fuzz-introspector

@@ -26,6 +26,7 @@ import requests
 import zipfile
 from typing import Optional
 
+THIS_DIR=os.path.dirname(os.path.abspath(__file__))
 
 def download_public_corpus(
     project_name,
@@ -121,7 +122,7 @@ def patch_jvm_build(project_build_path):
     # Patch build.sh to include fuzz-introspector logic for JVM project
     if os.path.exists(project_build_path):
         content = ''
-        with open('jvm.patch') as file_handle:
+        with open(os.path.join(THIS_DIR, 'jvm.patch')) as file_handle:
             content = file_handle.read()
         with open(project_build_path, 'a+') as file_handle:
             file_handle.write('\n')
