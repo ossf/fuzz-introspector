@@ -28,7 +28,7 @@ do
   ./build.sh
 
   # Extract data
-  cd $ROOT/../../frontends/java/soot
+  cd $ROOT/../../frontends/java
   ./run.sh -j $jarfile -c $entryclass
 
   rm -rf $ROOT/result/test$i
