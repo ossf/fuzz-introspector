@@ -430,15 +430,15 @@ def introspector_run(
             os.path.join(curr_dir, "build", "out", project_name)
         )
 
-        # Clean fuzz-introspector
-        if os.path.isdir(os.path.join(curr_dir, "fuzz-introspector-main")):
-            shutil.rmtree(os.path.join(curr_dir, "fuzz-introspector-main"))
-
         generate_html_report(
             introspector_main_path,
             target_project_path,
             latest_corpus_dir
         )
+
+        # Clean fuzz-introspector
+        if os.path.isdir(os.path.join(curr_dir, "fuzz-introspector-main")):
+            shutil.rmtree(os.path.join(curr_dir, "fuzz-introspector-main"))
 
         server_directory = os.path.abspath(latest_corpus_dir)
     else:
