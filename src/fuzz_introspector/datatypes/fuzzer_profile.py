@@ -577,9 +577,9 @@ class FuzzerProfile:
         # Handle source class for jvm
         if ("." in source_file):
             # Source file has package, change all . to path separator
-            source_file = source_file.replace(".", os.sep)
+            source_file = os.sep.join(source_file.rsplit(".", 1))
         else:
             # Source fil has no package, add in default package
             source_file = os.path.join("default", source_file)
 
-        return cov_url + os.sep + source_file + ".html#L" + str(lineno)
+        return cov_url + os.sep + source_file + ".java.html#L" + str(lineno)
