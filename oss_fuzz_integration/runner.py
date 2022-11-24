@@ -124,6 +124,8 @@ def patch_jvm_build(project_build_path):
         content = ''
         with open(os.path.join(THIS_DIR, 'jvm.patch')) as file_handle:
             content = file_handle.read()
+        if "SET_FUZZINTRO_JVM" in content:
+            return
         with open(project_build_path, 'a+') as file_handle:
             file_handle.write('\n')
             file_handle.write(content)
@@ -438,7 +440,7 @@ def introspector_run(
 
     curr_dir = os.path.abspath(".")
 
-    if get_project_lang(project_name) == 'jvm':
+    if get_project_lang(project_name) == 'jvm-old':
         # For JVM project, execute fuzz-introspector manually
 
 
