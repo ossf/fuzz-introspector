@@ -73,30 +73,6 @@ def download_full_public_corpus(project_name, target_corpus_dir: None):
         subprocess.check_call(f"unzip {target_zip} -d {target_fuzzer_dir}/", shell=True)
 
 
-def prepare_introspector(curr_dir):
-    # Download and introspector and return its main.py path
-    try:
-        if os.path.isdir(os.path.join(curr_dir, "fuzz-introspector-main")):
-            shutil.rmtree(os.path.join(curr_dir, "fuzz-introspector-main"))
-
-        URL = "https://github.com/ossf/fuzz-introspector/archive/refs/heads/main.zip"
-        response = requests.get(URL)
-        with open("introspector.zip", "wb") as file_handle:
-            file_handle.write(response.content)
-
-        with zipfile.ZipFile("introspector.zip", "r") as file_handle:
-            file_handle.extractall(".")
-
-        os.remove("introspector.zip")
-
-        return os.path.abspath(
-            os.path.join(curr_dir, "fuzz-introspector-main", "src", "main.py")
-        )
-    except:
-        print("Introspector fail.")
-        exit(1)
-
-
 def build_project(
     project_name,
     sanitizer = None,
@@ -345,39 +321,6 @@ def get_coverage(project_name, corpus_dir):
     print("Finished")
 
 
-def generate_html_report(
-    introspector_main_path,
-    target_project_path,
-    corpus_dir
-):
-    # Switch to corpus directory
-    curr_dir = os.getcwd()
-    os.chdir(corpus_dir)
-
-    # Execute introspector to generate html report
-    cmd = [
-        "python3",
-        introspector_main_path,
-        "report",
-        "--target_dir",
-        target_project_path,
-        "--language",
-        "jvm",
-        "--coverage_url",
-        "/report/linux"
-    ]
-    try:
-        subprocess.check_call(
-            " ".join(cmd),
-            shell=True
-        )
-    except:
-        print("Could not generate html reports")
-    finally:
-        # Switch back to working dir
-        os.chdir(curr_dir)
-
-
 def setup_next_corpus_dir(project_name):
     fuzzer_names = get_fuzzers(project_name)
     corpus_dir = get_next_corpus_dir()
@@ -438,64 +381,37 @@ def introspector_run(
 
     curr_dir = os.path.abspath(".")
 
-    if get_project_lang(project_name) == 'jvm':
-        # For JVM project, execute fuzz-introspector manually
+    # Build sanitizers with introspector
+    build_project(project_name, sanitizer="introspector")
 
+    # get the latest corpus
+    latest_corpus_dir = get_recent_corpus_dir()
 
-        # Prepare fuzz-introspector
-        introspector_main_path = prepare_introspector(curr_dir)
+    # copy over inpsoector and coverage reports
 
-        # get the latest corpus
-        latest_corpus_dir = get_recent_corpus_dir()
+    # copy over reports:
+    # - introspector
+    # - project coverage
+    # - per-fuzzer coverage
+    if os.path.isdir(os.path.join(latest_corpus_dir, "inspector-report")):
+        shutil.rmtree(os.path.join(latest_corpus_dir, "inspector-report"))
 
-        # get target project path
-        target_project_path = os.path.abspath(
-            os.path.join(curr_dir, "build", "out", project_name)
-        )
-
-        generate_html_report(
-            introspector_main_path,
-            target_project_path,
-            latest_corpus_dir
-        )
-
-        # Clean fuzz-introspector
-        if os.path.isdir(os.path.join(curr_dir, "fuzz-introspector-main")):
-            shutil.rmtree(os.path.join(curr_dir, "fuzz-introspector-main"))
-
-        server_directory = os.path.abspath(latest_corpus_dir)
-    else:
-        # Build sanitizers with introspector
-        build_project(project_name, sanitizer="introspector")
-
-        # get the latest corpus
-        latest_corpus_dir = get_recent_corpus_dir()
-
-        # copy over inpsoector and coverage reports
-
-        # copy over reports:
-        # - introspector
-        # - project coverage
-        # - per-fuzzer coverage
-        if os.path.isdir(os.path.join(latest_corpus_dir, "inspector-report")):
-            shutil.rmtree(os.path.join(latest_corpus_dir, "inspector-report"))
-
+    shutil.copytree(
+        os.path.join(curr_dir, "build", "out", project_name, "inspector"),
+        os.path.join(latest_corpus_dir, "inspector-report")
+    )
+    if collect_coverage:
         shutil.copytree(
-            os.path.join(curr_dir, "build", "out", project_name, "inspector"),
-            os.path.join(latest_corpus_dir, "inspector-report")
+            os.path.join(latest_corpus_dir, "report"),
+            os.path.join(latest_corpus_dir, "inspector-report", "covreport")
         )
-        if collect_coverage:
-            shutil.copytree(
-                os.path.join(latest_corpus_dir, "report"),
-                os.path.join(latest_corpus_dir, "inspector-report", "covreport")
-            )
 
-            for target_coverage_dir in os.listdir(os.path.join(latest_corpus_dir, "report_target")):
-                shutil.copytree(
-                    os.path.join(latest_corpus_dir, "report_target", target_coverage_dir),
-                    os.path.join(latest_corpus_dir, "inspector-report", "covreport", target_coverage_dir)
-                )
-        server_directory = os.path.join(latest_corpus_dir, "inspector-report")
+        for target_coverage_dir in os.listdir(os.path.join(latest_corpus_dir, "report_target")):
+            shutil.copytree(
+                os.path.join(latest_corpus_dir, "report_target", target_coverage_dir),
+                os.path.join(latest_corpus_dir, "inspector-report", "covreport", target_coverage_dir)
+            )
+    server_directory = os.path.join(latest_corpus_dir, "inspector-report")
 
     # start webserver
     cmd = "python3 -m http.server %d --directory %s" % (port, server_directory)
