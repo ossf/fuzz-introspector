@@ -26,6 +26,7 @@ import requests
 import zipfile
 from typing import Optional
 
+THIS_DIR=os.path.dirname(os.path.abspath(__file__))
 
 def download_public_corpus(
     project_name,
@@ -121,7 +122,7 @@ def patch_jvm_build(project_build_path):
     # Patch build.sh to include fuzz-introspector logic for JVM project
     if os.path.exists(project_build_path):
         content = ''
-        with open('jvm.patch') as file_handle:
+        with open(os.path.join(THIS_DIR, 'jvm.patch')) as file_handle:
             content = file_handle.read()
         with open(project_build_path, 'a+') as file_handle:
             file_handle.write('\n')
@@ -165,8 +166,23 @@ def get_fuzzers(project_name):
             continue
         complete_path = os.path.join("build/out/%s"%(project_name), l)
         executable = (os.path.isfile(complete_path) and os.access(complete_path, os.X_OK))
+
         if executable:
             execs.append(l)
+            continue
+
+        # For jvm, os.X_OK won't be true. Instead, we do another heuristic,
+        # which is checking for the precense of a .class file for a fuzzer
+        # and whether LLVMFuzzerTestOneInput is in a given potential wrapper
+        # script.
+        potential_class_file = complete_path + ".class"
+        if os.path.isfile(potential_class_file):
+            # Check if "LLVMFuzzerTestOneInput" is in the original
+            with open(complete_path, 'r') as fuzzer_script:
+                content = fuzzer_script.read()
+                if "LLVMFuzzerTestOneInput" in content:
+                    execs.append(l)
+
     print("Fuzz targets: %s"%(str(execs)))
     return execs
 
@@ -209,7 +225,7 @@ def run_all_fuzzers(project_name, fuzztime, job_count, corpus_dir):
         os.mkdir(corpus_dir)
 
     for f in fuzzer_names:
-        print("Running %s"%(f))
+        print("Running fuzzer %s"%(f))
         target_corpus = "./%s/%s"%(corpus_dir, f)
         target_crashes = "./%s/%s"%(corpus_dir, "crashes_%s"%(f))
         if not os.path.isdir(target_corpus):
@@ -251,7 +267,7 @@ def run_all_fuzzers(project_name, fuzztime, job_count, corpus_dir):
             cmd.append("-jobs=%d"%(job_count))
 
 
-        print("Runing command: %s"%(" ".join(cmd)))
+        print("Running fuzzing command: %s"%(" ".join(cmd)))
         try:
             subprocess.check_call(" ".join(cmd), shell=True)
             print("Execution finished without exception")

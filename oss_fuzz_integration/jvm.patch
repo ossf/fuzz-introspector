@@ -1,49 +1,51 @@
-# Packing for fuzz-introspector
-jarfile=
-class=
+if [[ ${SET_FUZZINTRO_JVM:-"unset"} == "unset" ]];
+then
+  # Packing for fuzz-introspector
+  jarfile=
+  class=
 
-for fuzzer in $(find $SRC -name '*Fuzzer.java'); do
-  stripped_path=$(echo ${fuzzer} | sed 's|^.*src/main/java/\(.*\).java$|\1|');
-  # the .java was stripped by sed
-  if (echo ${stripped_path} | grep ".java$"); then
-    fuzzer_classname=$(basename -s .java $fuzzer);
-  else
-    fuzzer_classname=$(echo ${stripped_path} | sed 's|/|.|g')
-  fi
-  fuzzer_basename=$(basename -s .java $fuzzer)
+  for fuzzer in $(find $SRC -name '*Fuzzer.java'); do
+    stripped_path=$(echo ${fuzzer} | sed 's|^.*src/main/java/\(.*\).java$|\1|');
+    # the .java was stripped by sed
+    if (echo ${stripped_path} | grep ".java$"); then
+      fuzzer_classname=$(basename -s .java $fuzzer);
+    else
+      fuzzer_classname=$(echo ${stripped_path} | sed 's|/|.|g')
+    fi
+    fuzzer_basename=$(basename -s .java $fuzzer)
+
+    cd $OUT
+    if ls $fuzzer_basename*.class 1>/dev/null 2>&1
+    then
+      jar cvf $fuzzer_basename.jar $fuzzer_basename*.class
+      jarfile=$jarfile:$OUT/$fuzzer_basename.jar
+    fi
+    class=$class:$fuzzer_classname
+    cd -
+  done
+
+  # Add jar dependency
+  for jar in $ALL_JARS
+  do
+    if [[ -f "$OUT/$jar" ]]
+    then
+      jarfile=$jarfile:$OUT/$jar
+    fi
+  done
+
+  jarfile=${jarfile:1}
+  class=${class:1}
 
   cd $OUT
-  if ls $fuzzer_basename*.class 1>/dev/null 2>&1
-  then
-    jar cvf $fuzzer_basename.jar $fuzzer_basename*.class
-    jarfile=$jarfile:$OUT/$fuzzer_basename.jar
-  fi
-  class=$class:$fuzzer_classname
-  cd -
-done
+  rm -rf fuzz-introspector
+  git clone https://github.com/ossf/fuzz-introspector
 
-# Add jar dependency
-for jar in $ALL_JARS
-do
-  if [[ -f "$OUT/$jar" ]]
-  then
-    jarfile=$jarfile:$OUT/$jar
-  fi
-done
-
-jarfile=${jarfile:1}
-class=${class:1}
-
-cd $OUT
-rm -rf fuzz-introspector
-git clone https://github.com/arthurscchan/fuzz-introspector
-# Require change to "cd fuzz-introspector/frontends/java"
-cd fuzz-introspector/frontends/java/soot
-sed -i 's/mvn/$MVN/g' run.sh
-./run.sh -j $jarfile -c $class -m fuzzerTestOneInput
-cd $OUT
-# Require change to "cp fuzz-introspector/frontends/java/*.data ./"
-cp fuzz-introspector/frontends/java/soot/*.data ./
-# Require change to "cp fuzz-introspector/frontends/java/*.data.yaml ./"
-cp fuzz-introspector/frontends/java/soot/*.data.yaml ./
-rm -rf fuzz-introspector
+  cd fuzz-introspector/frontends/java/
+  sed -i 's/mvn/$MVN/g' run.sh
+  ./run.sh -j $jarfile -c $class -m fuzzerTestOneInput
+  cd $OUT
+  cp fuzz-introspector/frontends/java/*.data ./
+  cp fuzz-introspector/frontends/java/*.data.yaml ./
+  rm -rf fuzz-introspector
+  export SET_FUZZINTRO_JVM="SET"
+fi
