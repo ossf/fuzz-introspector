@@ -1,4 +1,4 @@
-if [[ ${SET_FUZZINTRO_JVM:-"unset"} == "unset" ]];
+if [[ ${SANITIZER} == "introspector" && ${SET_FUZZINTRO_JVM:-"unset"} == "unset" ]];
 then
   # Packing for fuzz-introspector
   jarfile=
@@ -44,8 +44,9 @@ then
   sed -i 's/mvn/$MVN/g' run.sh
   ./run.sh -j $jarfile -c $class -m fuzzerTestOneInput
   cd $OUT
-  cp fuzz-introspector/frontends/java/*.data ./
-  cp fuzz-introspector/frontends/java/*.data.yaml ./
+  mkdir -p $SRC/my-fi-data
+  cp fuzz-introspector/frontends/java/*.data $SRC/my-fi-data/
+  cp fuzz-introspector/frontends/java/*.data.yaml $SRC/my-fi-data/
   rm -rf fuzz-introspector
   export SET_FUZZINTRO_JVM="SET"
 fi
