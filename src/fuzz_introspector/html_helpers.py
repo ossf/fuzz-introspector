@@ -129,7 +129,13 @@ def create_pfc_button(
         # get_target_coverage_url gives base folder. We must specify
         # HTML file for it to work on gcloud as there is no automatic
         # redirection.
-        target_coverage_url += "/report.html"
+        if profile.target_lang == "c-cpp":
+            target_coverage_url += "/report.html"
+        elif profile.target_lang == "python":
+            target_coverage_url += "/index.html"
+        elif profile.target_lang == "jvm":
+            target_coverage_url += "/index.html"
+
         html_string += f"""
             <a href="{target_coverage_url}">
                 <div class="pfc-list-item">
@@ -152,8 +158,7 @@ def html_get_table_of_contents(
     elif proj_profile.target_lang == "python":
         cov_index = "index.html"
     elif proj_profile.target_lang == "jvm":
-        # TODO Change to correct coverage link
-        cov_index = "report.html"
+        cov_index = "index.html"
 
     html_toc_string = ""
     html_toc_string += f"""<div class="left-sidebar">\
