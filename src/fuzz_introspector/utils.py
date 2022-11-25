@@ -19,6 +19,7 @@ import json
 import os
 import re
 import yaml
+import lxml.http
 
 from typing import (
     Any,
@@ -268,3 +269,42 @@ def load_func_names(
             continue
         loaded.append(demangle_cpp_func(reached))
     return loaded
+
+def patch_jvm_source_html(
+    base_dir: str
+) -> None:
+    """
+    Jacoco HTML report showing the source coverage does not have
+    labels for each source code line. This patch aims to add labels
+    to all non-statement lines to allow better pointer from the
+    call tree to non-statement lines, including function signature.
+    """
+
+    # Search for all source code files in the base directory and patch them
+    for root, _, files = os.walk(os.path.abspath(base_dir))
+        for file in files:
+            if file.endswith(".java.html"):
+                out_lines = []
+
+                # Read file line by line
+                with open(os.path.join(root, file), "r+") as f:
+                    lines = f.readlines()
+
+                # Loop through each lines of the html and add labels
+                # Last line is ignored
+                for index in range(len(lines) - 1):
+                    line = lines[index].replace("\n","")
+                    if index == 0:
+                        # Special handle for first line
+                        prefix = line[:line.rfind(">")+1]
+                        content = line[line.rfind(">")+1:]
+                        line = "%s<div id='L1'>%s</div>" % (prefix, content)
+                    elif (not line.startswith('<span class="nc"')):
+                        # Handle line with no label
+                        line = "<div id='L%d'>%s</div>" % (index + 1, line)
+                out_lines.append(line)
+
+                # Write file line by line
+                with open(os.path.join(root, file), "w+") as f:
+                    for line in out_lines:
+                        f.write("%s\n" % line)
