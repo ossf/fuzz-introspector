@@ -269,6 +269,7 @@ def load_func_names(
         loaded.append(demangle_cpp_func(reached))
     return loaded
 
+
 def patch_jvm_source_html(
     base_dir: str
 ) -> None:
@@ -294,12 +295,12 @@ def patch_jvm_source_html(
                 # Loop through each lines of the html and add labels
                 # Last line is ignored
                 for index in range(len(lines) - 1):
-                    logger.debug(f"Handling line {index+1} of {os.path.join(root, file)}")
-                    line = lines[index].replace("\n","")
+                    logger.debug(f"Handling line {index + 1} of {os.path.join(root, file)}")
+                    line = lines[index].replace("\n", "")
                     if index == 0:
                         # Special handle for first line
-                        prefix = line[:line.rfind(">")+1]
-                        content = line[line.rfind(">")+1:]
+                        prefix = line[:line.rfind(">") + 1]
+                        content = line[line.rfind(">") + 1:]
                         line = '%s<div id="L1" style="display: inline">%s</div>' % (prefix, content)
                     elif (not line.startswith('<span class="')):
                         # Handle line with no label
