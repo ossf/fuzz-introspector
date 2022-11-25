@@ -19,7 +19,6 @@ import json
 import os
 import re
 import yaml
-import lxml.http
 
 from typing import (
     Any,
@@ -281,30 +280,33 @@ def patch_jvm_source_html(
     """
 
     # Search for all source code files in the base directory and patch them
-    for root, _, files = os.walk(os.path.abspath(base_dir))
+    logger.info("Patching html for JVM source html report")
+    for root, _, files in os.walk(os.path.abspath(base_dir)):
         for file in files:
             if file.endswith(".java.html"):
+                logger.debug(f"Handling {os.path.join(root, file)}")
                 out_lines = []
 
                 # Read file line by line
-                with open(os.path.join(root, file), "r+") as f:
+                with open(os.path.join(root, file), "r") as f:
                     lines = f.readlines()
 
                 # Loop through each lines of the html and add labels
                 # Last line is ignored
                 for index in range(len(lines) - 1):
+                    logger.debug(f"Handling line {index+1} of {os.path.join(root, file)}")
                     line = lines[index].replace("\n","")
                     if index == 0:
                         # Special handle for first line
                         prefix = line[:line.rfind(">")+1]
                         content = line[line.rfind(">")+1:]
-                        line = "%s<div id='L1'>%s</div>" % (prefix, content)
-                    elif (not line.startswith('<span class="nc"')):
+                        line = '%s<div id="L1" style="display: inline">%s</div>' % (prefix, content)
+                    elif (not line.startswith('<span class="')):
                         # Handle line with no label
-                        line = "<div id='L%d'>%s</div>" % (index + 1, line)
-                out_lines.append(line)
+                        line = '<div id="L%d" style="display: inline">%s</div>' % (index + 1, line)
+                    out_lines.append(line)
 
                 # Write file line by line
                 with open(os.path.join(root, file), "w+") as f:
-                    for line in out_lines:
-                        f.write("%s\n" % line)
+                    f.write("\n".join(out_lines))
+    logger.info("Finish patching JVM source html report")
