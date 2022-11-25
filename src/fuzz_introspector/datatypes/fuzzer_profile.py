@@ -454,6 +454,9 @@ class FuzzerProfile:
                 self.coverage.correlate_jvm_method_with_coverage(
                     self.all_class_functions
                 )
+
+            # Patch jvm source coverage report
+            utils.patch_jvm_source_html(os.path.abspath(target_folder))
         else:
             raise DataLoaderError(
                 "The profile target has no coverage loading support"

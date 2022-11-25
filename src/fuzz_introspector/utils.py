@@ -268,3 +268,46 @@ def load_func_names(
             continue
         loaded.append(demangle_cpp_func(reached))
     return loaded
+
+
+def patch_jvm_source_html(
+    base_dir: str
+) -> None:
+    """
+    Jacoco HTML report showing the source coverage does not have
+    labels for each source code line. This patch aims to add labels
+    to all non-statement lines to allow better pointer from the
+    call tree to non-statement lines, including function signature.
+    """
+
+    # Search for all source code files in the base directory and patch them
+    logger.info("Patching html for JVM source html report")
+    for root, _, files in os.walk(os.path.abspath(base_dir)):
+        for file in files:
+            if file.endswith(".java.html"):
+                logger.debug(f"Handling {os.path.join(root, file)}")
+                out_lines = []
+
+                # Read file line by line
+                with open(os.path.join(root, file), "r") as f:
+                    lines = f.readlines()
+
+                # Loop through each lines of the html and add labels
+                # Last line is ignored
+                for index in range(len(lines) - 1):
+                    logger.debug(f"Handling line {index + 1} of {os.path.join(root, file)}")
+                    line = lines[index].replace("\n", "")
+                    if index == 0:
+                        # Special handle for first line
+                        prefix = line[:line.rfind(">") + 1]
+                        content = line[line.rfind(">") + 1:]
+                        line = '%s<div id="L1" style="display: inline">%s</div>' % (prefix, content)
+                    elif (not line.startswith('<span class="')):
+                        # Handle line with no label
+                        line = '<div id="L%d" style="display: inline">%s</div>' % (index + 1, line)
+                    out_lines.append(line)
+
+                # Write file line by line
+                with open(os.path.join(root, file), "w+") as f:
+                    f.write("\n".join(out_lines))
+    logger.info("Finish patching JVM source html report")
