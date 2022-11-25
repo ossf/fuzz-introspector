@@ -129,11 +129,11 @@ def create_pfc_button(
         # get_target_coverage_url gives base folder. We must specify
         # HTML file for it to work on gcloud as there is no automatic
         # redirection.
-        if proj_profile.target_lang == "c-cpp":
+        if profile.target_lang == "c-cpp":
             target_coverage_url += "/report.html"
-        elif proj_profile.target_lang == "python":
+        elif profile.target_lang == "python":
             target_coverage_url += "/index.html"
-        elif proj_profile.target_lang == "jvm":
+        elif profile.target_lang == "jvm":
             target_coverage_url += "/index.html"
 
         html_string += f"""
