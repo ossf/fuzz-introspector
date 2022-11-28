@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # Copyright 2021 Fuzz Introspector Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -60,7 +59,7 @@ def download_full_public_corpus(project_name, target_corpus_dir: None):
         download_public_corpus(project_name, fuzzer, f"corpus-{project_name}-{fuzzer}.zip")
 
     if not target_corpus_dir:
-        target_corpus_dir = f"{project_name}-corpus"
+        target_corpus_dir = "mycorpus"
 
     if not os.path.isdir(target_corpus_dir):
         os.mkdir(target_corpus_dir)
@@ -156,25 +155,29 @@ def patch_jvm_source_dead_link(server_directory, prefix):
     source report format and those links will be dead. This patch aim
     to check all those link and disable them if the link is dead.
     """
-    # Patch dead link in fuzz_report.html (stored in all_functions.js / analysis_1.js)
+    # Patch dead link in fuzz_report.html (stored in js files)
     print("Start patching dead link in fuzz_report.html")
 
-    files = ["all_functions.js", "analysis_1.js"]
-    for file in files:
-        # Read js file
-        with open(os.path.join(server_directory, file)) as f:
-            report = f.read()
+    for root, _, files in os.walk(os.path.abspath(server_directory)):
+        for file in files:
+            if file.endswith(".js"):
 
-        # Replace dead link with '#'
-        links = re.findall(r'href=[\'"]?([^\'" >]+)', report)
-        links.extend(re.findall(r'[\'"]func_url[\'"]:\ [\'"]?([^\'" >]+)', report))
-        for link in links:
-            if link.startswith(prefix) and not os.path.exists(link[1:].split("#")[0]):
-                report = report.replace(link, "#")
+                # Read js file
+                with open(os.path.join(root, file)) as f:
+                    report = f.read()
 
-        # Write result back to js file
-        with open(os.path.join(server_directory, file), "w+") as f:
-            f.write(report)
+                # Replace dead link with '#'
+                links = re.findall(r'href=[\'"]?([^\'" >]+)', report)
+                links.extend(re.findall(r'[\'"]func_url[\'"]:\ [\'"]?([^\'" >]+)', report))
+                for link in links:
+                    if link.startswith(prefix) and not os.path.exists(
+                        os.path.join(server_directory, link[1:].split("#")[0])
+                    ):
+                        report = report.replace(link, "#")
+
+                # Write result back to js file
+                with open(os.path.join(root, file), "w+") as f:
+                    f.write(report)
 
     print("Finish patching dead link in fuzz_Report.html")
 
@@ -617,12 +620,6 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
         "project",
         help="name of project"
     )
-    download_corpus_parser.add_argument(
-        "--corpus-dir",
-        type=str,
-        help="directory with corpus for the project",
-        default=None
-    )
     return parser
 
 if __name__ == "__main__":
@@ -655,4 +652,4 @@ if __name__ == "__main__":
             not args.no_coverage
         )
     elif args.command == "download-corpus":
-        download_full_public_corpus(args.project, args.corpus_dir)
+        download_full_public_corpus(args.project)
