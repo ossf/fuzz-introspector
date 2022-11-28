@@ -144,6 +144,34 @@ def patch_jvm_source_report(server_directory):
     print("Finish patching JVM source html report")
 
 
+def patch_jvm_source_dead_link(server_directory):
+    """
+    Jacoco HTML report relies on the original project to provide the
+    necessary source code file. If source code file for some libraries
+    or dependencies are missing, they will not be possible to shown in
+    source report format and those links will be dead. This patch aim
+    to check all those link and disable them if the link is dead.
+    """
+    # Patch dead link in fuzz_report.html
+    print("Start patching dead link in fuzz_report.html")
+
+    # Read fuzz_report.html
+    with open(os.path.join(server_directory, "fuzz_report.html")) as f:
+        report = f.read()
+
+    # Replace dead link with '#'
+    links = re.findall(r'href=[\'"]?([^\'" >]+)', report
+    for link in links:
+        if not os.path.exists(link.split("#")[0]):
+            report.replace(link, "#")
+
+    # Write result back to fuzz_report.html
+    with open(os.path.join(server_directory, "fuzz_report.html"), "w+") as f:
+        f.write(report)
+
+    print("Finish patching dead link in fuzz_Report.html")
+
+
 def has_append(project_build_path):
     # Check if JVM build patch has been applied
     if os.path.exists(project_build_path):
@@ -455,6 +483,7 @@ def introspector_run(
     # Patch all jacoco source html report for JVM project
     if get_project_lang(project_name) == 'jvm':
         patch_jvm_source_report(server_directory)
+        patch_jvm_source_dead_link(server_directory)
 
     # start webserver
     cmd = "python3 -m http.server %d --directory %s" % (port, server_directory)
