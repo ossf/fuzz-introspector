@@ -14,7 +14,6 @@
 """Fuzzer profile"""
 
 import os
-import json
 import logging
 
 from typing import (

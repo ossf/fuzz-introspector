@@ -259,7 +259,7 @@ class Analysis(analysis.AnalysisInterface):
             ]
         )
         for fd in optimal_target_functions:
-            func_cov_url = utils.resolve_coverage_link (
+            func_cov_url = utils.resolve_coverage_link(
                 coverage_url,
                 fd.function_source_file,
                 fd.function_linenumber,
