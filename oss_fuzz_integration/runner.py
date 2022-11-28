@@ -152,22 +152,25 @@ def patch_jvm_source_dead_link(server_directory, prefix):
     source report format and those links will be dead. This patch aim
     to check all those link and disable them if the link is dead.
     """
-    # Patch dead link in fuzz_report.html (stored in all_functions.js)
+    # Patch dead link in fuzz_report.html (stored in all_functions.js / analysis_1.js)
     print("Start patching dead link in fuzz_report.html")
 
-    # Read all_functions.js
-    with open(os.path.join(server_directory, "all_functions.js")) as f:
-        report = f.read()
+    files = ["all_functions.js", "analysis_1.js"]
+    for file in files:
+        # Read js file
+        with open(os.path.join(server_directory, file)) as f:
+            report = f.read()
 
-    # Replace dead link with '#'
-    links = re.findall(r'href=[\'"]?([^\'" >]+)', report)
-    for link in links:
-        if link.startswith(prefix) and not os.path.exists(link[1:].split("#")[0]):
-            report.replace(link, "#")
+        # Replace dead link with '#'
+        links = re.findall(r'href=[\'"]?([^\'" >]+)', report)
+        links.extend(re.findall(r'[\'"]func_url[\'"]:\ [\'"]?([^\'" >]+)', report))
+        for link in links:
+            if link.startswith(prefix) and not os.path.exists(link[1:].split("#")[0]):
+                report = report.replace(link, "#")
 
-    # Write result back to all_functions.js
-    with open(os.path.join(server_directory, "all_functions.js"), "w+") as f:
-        f.write(report)
+        # Write result back to js file
+        with open(os.path.join(server_directory, file), "w+") as f:
+            f.write(report)
 
     print("Finish patching dead link in fuzz_Report.html")
 
