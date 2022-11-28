@@ -579,10 +579,13 @@ class FuzzerProfile:
         """Resolves link to HTML coverage report for JVM targets"""
         # Handle source class for jvm
         if ("." in source_file):
-            # Source file has package, change all . to path separator
+            # Source file has package, change package.class to package/class
             source_file = os.sep.join(source_file.rsplit(".", 1))
         else:
-            # Source fil has no package, add in default package
+            # Source file has no package, add in default package
             source_file = os.path.join("default", source_file)
+
+        # Handle subclass definition in the same source file
+        source_file = source_file.split("$")[0]
 
         return cov_url + os.sep + source_file + ".java.html#L" + str(lineno)
