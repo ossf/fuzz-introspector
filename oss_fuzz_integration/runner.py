@@ -105,6 +105,45 @@ def patch_jvm_build(project_build_path):
             file_handle.write(content)
 
 
+def patch_jvm_source_report(server_directory):
+    """
+    Jacoco HTML report showing the source coverage does not have
+    labels for each source code line. This patch aims to add labels
+    to all non-statement lines to allow better pointer from the
+    call tree to non-statement lines, including function signature.
+    """
+    # Search for all source code files in the base directory and patch them
+    print("Patching html for JVM source html report")
+    for root, _, files in os.walk(os.path.abspath(server_directory)):
+        for file in files:
+            if file.endswith(".java.html"):
+                print(f"Patching {os.path.join(root, file)}")
+                out_lines = []
+
+                # Read file line by line
+                with open(os.path.join(root, file), "r") as f:
+                    lines = f.readlines()
+
+                # Loop through each lines of the html and add labels
+                # Last line is ignored
+                for index in range(len(lines) - 1):
+                    line = lines[index].replace("\n", "")
+                    if index == 0:
+                        # Special handle for first line
+                        prefix = line[:line.rfind(">") + 1]
+                        content = line[line.rfind(">") + 1:]
+                        line = '%s<div id="L1" style="display: inline">%s</div>' % (prefix, content)
+                    elif (not line.startswith('<span class="')):
+                        # Handle line with no label
+                        line = '<div id="L%d" style="display: inline">%s</div>' % (index + 1, line)
+                    out_lines.append(line)
+
+                # Write file line by line
+                with open(os.path.join(root, file), "w+") as f:
+                    f.write("\n".join(out_lines))
+    print("Finish patching JVM source html report")
+
+
 def has_append(project_build_path):
     # Check if JVM build patch has been applied
     if os.path.exists(project_build_path):
@@ -412,6 +451,10 @@ def introspector_run(
                 os.path.join(latest_corpus_dir, "inspector-report", "covreport", target_coverage_dir)
             )
     server_directory = os.path.join(latest_corpus_dir, "inspector-report")
+
+    # Patch all jacoco source html report for JVM project
+    if get_project_lang(project_name) == 'jvm':
+        patch_jvm_source_report(server_directory)
 
     # start webserver
     cmd = "python3 -m http.server %d --directory %s" % (port, server_directory)
