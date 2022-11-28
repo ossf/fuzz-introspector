@@ -75,6 +75,7 @@ def download_full_public_corpus(project_name, target_corpus_dir: None):
 
 def build_project(
     project_name,
+    source_dir = None,
     sanitizer = None,
     to_clean = False
 ):
@@ -86,6 +87,8 @@ def build_project(
     if to_clean:
         cmd.append("--clean")
     cmd.append(project_name)
+    if source_dir is not None:
+        cmd.append(source_dir)
 
     try:
         subprocess.check_call(" ".join(cmd), shell=True)
@@ -402,6 +405,7 @@ def setup_next_corpus_dir(project_name):
 
 def complete_coverage_check(
     project_name: str,
+    source_dir: Optional[str],
     fuzztime: int,
     job_count: int,
     corpus_dir: Optional[str],
@@ -415,14 +419,14 @@ def complete_coverage_check(
             # Apply jvm build patch to include fuzz-introspector logic
             patch_jvm_build(project_build_path)
 
-    build_project(project_name, to_clean=True)
+    build_project(project_name, source_dir, to_clean=True)
 
     if download_public_corpus:
         corpus_dir = setup_next_corpus_dir(project_name)
         download_full_public_corpus(project_name, corpus_dir)
 
     run_all_fuzzers(project_name, fuzztime, job_count, corpus_dir)
-    build_project(project_name, sanitizer="coverage")
+    build_project(project_name, source_dir, sanitizer="coverage")
     percent = get_coverage(project_name, corpus_dir)
 
     return percent
@@ -430,6 +434,7 @@ def complete_coverage_check(
 
 def introspector_run(
     project_name: str,
+    source_dir: Optional[str],
     fuzztime: int,
     job_count: int,
     corpus_dir: Optional[str],
@@ -440,19 +445,20 @@ def introspector_run(
     if collect_coverage:
         complete_coverage_check(
             project_name,
+            source_dir,
             fuzztime,
             job_count,
             corpus_dir,
             download_public_corpus
         )
     else:
-        build_project(project_name, to_clean=True)
+        build_project(project_name, source_dir, to_clean=True)
         setup_next_corpus_dir(project_name)
 
     curr_dir = os.path.abspath(".")
 
     # Build sanitizers with introspector
-    build_project(project_name, sanitizer="introspector")
+    build_project(project_name, source_dir, sanitizer="introspector")
 
     # get the latest corpus
     latest_corpus_dir = get_recent_corpus_dir()
@@ -550,6 +556,12 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
         help="if set, will download public corpus",
         default=False
     )
+    coverage_parser.add_argument(
+        "--source-dir",
+        type=str,
+        help="path to source",
+        default=None
+    )
 
     introspector_parser = subparsers.add_parser("introspector")
     introspector_parser.add_argument(
@@ -592,6 +604,12 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
         help="Do not run coverage in this case",
         default=False
     )
+    introspector_parser.add_argument(
+        "--source-dir",
+        type=str,
+        help="path to source",
+        default=None
+    )
 
     download_corpus_parser = subparsers.add_parser("download-corpus")
     download_corpus_parser.add_argument(
@@ -611,6 +629,7 @@ if __name__ == "__main__":
         print("  jobs = %d"%(args.jobs))
         complete_coverage_check(
             args.project,
+            args.source_dir,
             args.fuzztime,
             args.jobs,
             args.corpus_dir,
@@ -620,6 +639,7 @@ if __name__ == "__main__":
         print("Running full")
         introspector_run(
             args.project,
+            args.source_dir,
             args.fuzztime,
             args.jobs,
             args.corpus_dir,
