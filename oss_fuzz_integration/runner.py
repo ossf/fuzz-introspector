@@ -59,7 +59,7 @@ def download_full_public_corpus(project_name, target_corpus_dir: None):
         download_public_corpus(project_name, fuzzer, f"corpus-{project_name}-{fuzzer}.zip")
 
     if not target_corpus_dir:
-        target_corpus_dir = "mycorpus"
+        target_corpus_dir = f"{project_name}-corpus"
 
     if not os.path.isdir(target_corpus_dir):
         os.mkdir(target_corpus_dir)
@@ -616,6 +616,12 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
         "project",
         help="name of project"
     )
+    download_corpus_parser.add_argument(
+        "--corpus-dir",
+        type=str,
+        help="directory with corpus for the project",
+        default=None
+    )
     return parser
 
 if __name__ == "__main__":
@@ -648,4 +654,4 @@ if __name__ == "__main__":
             not args.no_coverage
         )
     elif args.command == "download-corpus":
-        download_full_public_corpus(args.project)
+        download_full_public_corpus(args.project, args.corpus_dir)
