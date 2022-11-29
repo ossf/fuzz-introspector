@@ -1,11 +1,11 @@
-name: JVM-Frontends-Unit-Test
+name: JUnit-Frontends
 
 on: pull_request
 permissions: read-all
 jobs:
   build:
     runs-on: ubuntu-latest
-    name: JVM-Frontends-Unit-Test
+    name: JUnit-Frontends
     steps:
     - name: Checkout
       uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # v3.1.0
@@ -14,7 +14,6 @@ jobs:
       with:
         distribution: 'zulu'
         java-version: '11'
-      run: cd frontends/java
     - name: Test Maven Build
       run: cd frontends/java && mvn --batch-mode -DskipTests clean package
     - name: Unit Test (defer fail report)
