@@ -15,9 +15,10 @@
 
 import os
 import sys
+import atheris
 import pytest
 
-sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../")
+sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../")
 
 from fuzz_introspector import cfg_load  # noqa: E402
 from fuzz_introspector import exceptions  # noqa: E402
@@ -47,7 +48,6 @@ def test_TestOneInput(data):
 
 
 def main():
-    import atheris
     atheris.instrument_all()
     atheris.Setup(
         sys.argv,
