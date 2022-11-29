@@ -1,6 +1,6 @@
 package ossf.fuzz.introspector.soot;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals​;
+import static org.junit.jupiter.api.Assertions.assertArrayEquls;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
