@@ -330,7 +330,7 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--package",
         help="Package containing the code to be analyzed",
-        default=None
+        default="/src/pyintro-pack-deps/",
     )
     parser.add_argument(
         "--sources",
@@ -356,7 +356,7 @@ def main() -> int:
     scan_package_for_sources = not args.no_scan
     exit_code = run_fuzz_pass(
         args.fuzzer,
-        "/src/pyintro-pack-deps/",
+        args.package,
         args.sources,
         scan_package_for_sources
     )
