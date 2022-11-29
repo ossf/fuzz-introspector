@@ -68,7 +68,7 @@ then
 fi
 
 # Build and execute the call graph generator
-mvn clean package
+mvn clean package -Dmaven.test.skip
 
 # Loop through all entry class
 for CLASS in $(echo $ENTRYCLASS | tr ":" "\n")
