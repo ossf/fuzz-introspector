@@ -16,6 +16,7 @@
 import os
 import sys
 import atheris
+import pytest
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../")
 
@@ -23,8 +24,14 @@ from fuzz_introspector import cfg_load  # noqa: E402
 from fuzz_introspector import exceptions  # noqa: E402
 
 
-@atheris.instrument_func
-def TestOneInput(data):
+@pytest.mark.parametrize(
+    "data",
+    [
+        b"random_data",
+        b"more random data"
+    ]
+)
+def test_TestOneInput(data):
     """Fuzz cfg_load.data_file_read_calltree"""
     cfg_file = "test_file.data"
     with open(cfg_file, "wb") as f:
@@ -42,7 +49,11 @@ def TestOneInput(data):
 
 def main():
     atheris.instrument_all()
-    atheris.Setup(sys.argv, TestOneInput, enable_python_coverage=True)
+    atheris.Setup(
+        sys.argv,
+        test_TestOneInput,
+        enable_python_coverage=True
+    )
     atheris.Fuzz()
 
 

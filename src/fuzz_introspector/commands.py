@@ -42,7 +42,8 @@ def run_analysis_on_dir(
     correlation_file: str,
     enable_all_analyses: bool,
     report_name: str,
-    language: str
+    language: str,
+    parallelise: bool = True
 ) -> int:
     if enable_all_analyses:
         for analysis_interface in analysis.get_all_analyses():
@@ -50,7 +51,7 @@ def run_analysis_on_dir(
                 analyses_to_run.append(analysis_interface.get_name())
 
     logger.info("[+] Loading profiles")
-    profiles = data_loader.load_all_profiles(target_folder, language)
+    profiles = data_loader.load_all_profiles(target_folder, language, parallelise)
     if len(profiles) == 0:
         logger.info("Found no profiles. Exiting")
         return constants.APP_EXIT_ERROR

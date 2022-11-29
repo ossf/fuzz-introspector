@@ -17,14 +17,21 @@ import os
 import sys
 import shutil
 import atheris
+import pytest
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../")
 
 from fuzz_introspector import commands, exceptions  # noqa: E402
 
 
-@atheris.instrument_func
-def TestOneInput(data):
+@pytest.mark.parametrize(
+    "data",
+    [
+        b"random_data",
+        b"more random data"
+    ]
+)
+def test_TestOneInput(data: bytes):
     fdp = atheris.FuzzedDataProvider(data)
 
     report_dir = "tmpreport"
@@ -55,7 +62,8 @@ def TestOneInput(data):
             correlation_file,
             False,
             "report name",
-            "c-cpp"
+            "c-cpp",
+            False
         )
     except exceptions.FuzzIntrospectorError:
         pass
@@ -65,7 +73,7 @@ def TestOneInput(data):
 
 def main():
     atheris.instrument_all()
-    atheris.Setup(sys.argv, TestOneInput, enable_python_coverage=True)
+    atheris.Setup(sys.argv, test_TestOneInput, enable_python_coverage=True)
     atheris.Fuzz()
 
 
