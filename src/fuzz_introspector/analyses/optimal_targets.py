@@ -85,7 +85,8 @@ class Analysis(analysis.AnalysisInterface):
             optimal_target_functions,
             toc_list,
             tables,
-            coverage_url
+            coverage_url,
+            profiles[0].target_lang
         )
 
         # Create section for how the state of the project will be if
@@ -224,7 +225,8 @@ class Analysis(analysis.AnalysisInterface):
         optimal_target_functions: List[function_profile.FunctionProfile],
         toc_list: List[Tuple[str, str, int]],
         tables: List[str],
-        coverage_url: str
+        coverage_url: str,
+        target_lang: str = 'c-cpp'
     ) -> str:
         # Table with details about optimal target functions
         html_string = html_helpers.html_add_header_with_link(
@@ -257,10 +259,12 @@ class Analysis(analysis.AnalysisInterface):
             ]
         )
         for fd in optimal_target_functions:
-            func_cov_url = "%s%s.html#L%d" % (
+            func_cov_url = utils.resolve_coverage_link(
                 coverage_url,
                 fd.function_source_file,
-                fd.function_linenumber
+                fd.function_linenumber,
+                fd.function_name,
+                target_lang
             )
             html_func_row = (
                 f"<a href=\"{ func_cov_url }\"><code class='language-clike'>"
