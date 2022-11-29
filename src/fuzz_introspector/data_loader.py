@@ -157,8 +157,8 @@ def load_all_profiles(
         "fuzzerLogFile.*\.data$"
     )
     logger.info(f" - found {len(data_files)} profiles to load")
+    thread_safe_queue: queue.Queue = queue.Queue()
     if parallelise:
-        thread_safe_queue: queue.Queue = queue.Queue()
         all_threads = []
         for data_file in data_files:
             x = threading.Thread(
@@ -172,13 +172,11 @@ def load_all_profiles(
             thread.join()
 
     else:
-        thread_safe_queue: queue.Queue = queue.Queue()
         for data_file in data_files:
             _load_profile(data_file, language, thread_safe_queue)
 
     while not thread_safe_queue.empty():
         profiles.append(thread_safe_queue.get())
-
 
     return profiles
 

@@ -80,7 +80,6 @@ def data_file_read_yaml(filename: str) -> Optional[Dict[Any, Any]]:
     if not os.path.isfile(filename):
         return None
 
-
     try:
         with open(filename, 'r') as stream:
             data_dict: Dict[Any, Any] = yaml.safe_load(stream)
