@@ -44,20 +44,17 @@ def download_public_corpus(
     else:
         download_url = OSS_FUZZ_PUBLIC_CORPUS % (project_name, f"{project_name}_{fuzzer_name}")
 
-    cmd = f"wget {download_url}"
-    if target_zip:
-        cmd += f" -O {target_zip}"
+    cmd = f"wget {download_url} -O {target_zip}"
+    if subprocess.run(cmd, shell=True).returncode != 0:
+        subprocess.run(f"rm -f {target_zip}", shell=True)
+        return False
 
-    subprocess.check_call(cmd, shell=True)
+    return True
 
 
 def download_full_public_corpus(project_name, target_corpus_dir: None):
     # First build the project which we use to identify fuzzers
     build_project(project_name, to_clean = True)
-
-    fuzzers = get_fuzzers(project_name)
-    for fuzzer in fuzzers:
-        download_public_corpus(project_name, fuzzer, f"corpus-{project_name}-{fuzzer}.zip")
 
     if not target_corpus_dir:
         target_corpus_dir = f"{project_name}-corpus"
@@ -65,7 +62,12 @@ def download_full_public_corpus(project_name, target_corpus_dir: None):
     if not os.path.isdir(target_corpus_dir):
         os.mkdir(target_corpus_dir)
 
+    fuzzers = get_fuzzers(project_name)
     for fuzzer in fuzzers:
+        if not download_public_corpus(project_name, fuzzer, f"corpus-{project_name}-{fuzzer}.zip"):
+            print(f"Failed to download corpus for f{fuzzer}, ignoring")
+            continue
+
         target_fuzzer_dir = os.path.join(target_corpus_dir, fuzzer)
         if not os.path.isdir(target_fuzzer_dir):
             os.mkdir(target_fuzzer_dir)
