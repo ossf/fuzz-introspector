@@ -135,12 +135,12 @@ class FuzzerProfile:
     ) -> str:
         """Resolves a link to a coverage report."""
         return utils.resolve_coverage_link(
-                cov_url,
-                source_file,
-                lineno,
-                function_name,
-                self.target_lang
-            )
+            cov_url,
+            source_file,
+            lineno,
+            function_name,
+            self.target_lang
+        )
 
     def refine_paths(self, basefolder: str) -> None:
         """Iterate over source files in the calltree and file_targets and remove
