@@ -16,13 +16,5 @@ jobs:
         java-version: '11'
     - name: Test Maven Build
       run: cd frontends/java && mvn --batch-mode -DskipTests clean package
-    - name: Unit Test (defer fail report)
-      run: cd frontends/java && mvn --batch-mode -Dmaven.test.failure.ignore=true test
-    - name: Report unit test result
-      uses: dorny/test-reporter@v1
-      if: always()
-      with:
-        name: Maven Build / Unit Test
-        path: frontends/java/target/surefire-reports/*.xml
-        reporter: java-junit
-        fail-on-error: true
+    - name: Unit Test
+      run: cd frontends/java && mvn --batch-mode test
