@@ -1,0 +1,20 @@
+name: JUnit-Frontends
+
+on: pull_request
+permissions: read-all
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: JUnit-Frontends
+    steps:
+    - name: Checkout
+      uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # v3.1.0
+    - name: Set up OpenJDK 11
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'zulu'
+        java-version: '11'
+    - name: Test Maven Build
+      run: cd frontends/java && mvn --batch-mode -DskipTests clean package
+    - name: Unit Test
+      run: cd frontends/java && mvn --batch-mode test
