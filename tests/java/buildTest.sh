@@ -19,8 +19,8 @@ then
     echo "Please provide a test case folder."
 fi
 
-mkdir -p $base_dir/test-jar
 base_dir=$(dirname "$0")
+mkdir -p $base_dir/test-jar
 cd $base_dir/$1
 ./build.sh
 cd ..
