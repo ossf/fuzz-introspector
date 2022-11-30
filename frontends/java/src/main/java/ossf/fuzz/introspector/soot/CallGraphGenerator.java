@@ -486,11 +486,14 @@ class CustomSenceTransformer extends SceneTransformer {
         new Comparator<Edge>() {
           @Override
           public int compare(Edge e1, Edge e2) {
-        	int line = e1.srcStmt().getJavaSourceStartLineNumber()
-                - e2.srcStmt().getJavaSourceStartLineNumber();
+            int line =
+                e1.srcStmt().getJavaSourceStartLineNumber()
+                    - e2.srcStmt().getJavaSourceStartLineNumber();
             if (line == 0) {
-              return e1.tgt().getDeclaringClass().getName().compareTo(
-                e2.tgt().getDeclaringClass().getName());
+              return e1.tgt()
+                  .getDeclaringClass()
+                  .getName()
+                  .compareTo(e2.tgt().getDeclaringClass().getName());
             } else {
               return line;
             }
