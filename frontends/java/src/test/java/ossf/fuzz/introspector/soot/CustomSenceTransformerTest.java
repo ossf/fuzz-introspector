@@ -5,11 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.google.common.io.Files;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.util.Properties;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Test;
@@ -26,7 +24,7 @@ public class CustomSenceTransformerTest {
     CustomSenceTransformer custom = new CustomSenceTransformer("", "", "");
     assertTrue(custom instanceof SceneTransformer);
     assertTrue(custom instanceof CustomSenceTransformer);
-    assertEquals(custom.getExcludeList().size(), 0);
+    assertEquals(0, custom.getExcludeList().size());
   }
 
   @Test
@@ -34,7 +32,7 @@ public class CustomSenceTransformerTest {
     CustomSenceTransformer custom = new CustomSenceTransformer("", "", "abc:def:ghi");
     assertEquals(custom.getExcludeList().size(), 3);
     Object[] expected = {"abc", "def", "ghi"};
-    assertArrayEquals(custom.getExcludeList().toArray(), expected);
+    assertArrayEquals(expected, custom.getExcludeList().toArray());
   }
 
   @Test
@@ -43,7 +41,7 @@ public class CustomSenceTransformerTest {
     File jarDir = new File(baseDir, "test-jar");
     int i;
 
-    for (i = 1; i <= 14; i++) {
+    for (i = 1; i <= 10; i++) {
       System.out.println("Testing test case " + i);
 
       Properties config = new Properties();
@@ -72,18 +70,9 @@ public class CustomSenceTransformerTest {
         File sampleFile = new File(sampleDir, fileName);
         File actualFile = new File(fileName);
 
-        if (i != 11 && i != 12) {
-          assertEquals(
-              FileUtils.readFileToString(sampleFile, "utf-8"),
-              FileUtils.readFileToString(actualFile, "utf-8"));
-        } else {
-          int j;
-          for (j = 0; j < 5; j++) {
-            assertEquals(
-                Files.readLines(sampleFile, Charset.defaultCharset()).get(j),
-                Files.readLines(actualFile, Charset.defaultCharset()).get(j));
-          }
-        }
+        assertEquals(
+            FileUtils.readFileToString(sampleFile, "utf-8"),
+            FileUtils.readFileToString(actualFile, "utf-8"));
       }
 
       System.out.println("Finish testing test case " + i);
