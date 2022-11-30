@@ -65,21 +65,24 @@ public class CustomSenceTransformerTest {
       String excludePrefix = "jdk.:java.:javax.:sun.:sunw.:com.sun.:com.ibm.:com.apple.:apple.awt.";
 
       for (String entryClass : entryClasses.split(":")) {
-      String[] args = {jarfile, entryClass, entryMethod, excludePrefix};
-      CallGraphGenerator.main(args);
+        String[] args = {jarfile, entryClass, entryMethod, excludePrefix};
+        CallGraphGenerator.main(args);
 
-      String fileName = "fuzzerLogFile-" + entryClass + ".data";
+        String fileName = "fuzzerLogFile-" + entryClass + ".data";
         File sampleFile = new File(sampleDir, fileName);
         File actualFile = new File(fileName);
 
-        if (i <= 9) {
+        if (i != 11 && i != 12) {
           assertEquals(
               FileUtils.readFileToString(sampleFile, "utf-8"),
               FileUtils.readFileToString(actualFile, "utf-8"));
         } else {
-          assertEquals(
-              Files.readLines(sampleFile, Charset.defaultCharset()).get(0),
-              Files.readLines(actualFile, Charset.defaultCharset()).get(0));
+          int j;
+          for (j = 0; j < 5; j++) {
+            assertEquals(
+                Files.readLines(sampleFile, Charset.defaultCharset()).get(j),
+                Files.readLines(actualFile, Charset.defaultCharset()).get(j));
+          }
         }
       }
 
