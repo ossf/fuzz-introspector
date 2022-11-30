@@ -21,7 +21,7 @@ ROOT=$PWD
 rm -rf ./result
 mkdir result
 
-for i in {1..14}
+for i in {1..10}
 do
   cd $ROOT/test$i
   source .config
