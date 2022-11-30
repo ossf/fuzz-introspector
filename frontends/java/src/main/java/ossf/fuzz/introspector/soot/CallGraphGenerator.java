@@ -220,7 +220,7 @@ class CustomSenceTransformer extends SceneTransformer {
           element.setiCount(0);
           element.setCyclomaticComplexity(0);
           methodList.addFunctionElement(element);
-          System.err.println("Source code for " + m + " not found.");
+          // System.err.println("Source code for " + m + " not found.");
           continue;
         }
         BlockGraph blockGraph = new BriefBlockGraph(methodBody);
@@ -486,8 +486,17 @@ class CustomSenceTransformer extends SceneTransformer {
         new Comparator<Edge>() {
           @Override
           public int compare(Edge e1, Edge e2) {
-            return e1.srcStmt().getJavaSourceStartLineNumber()
-                - e2.srcStmt().getJavaSourceStartLineNumber();
+            int line =
+                e1.srcStmt().getJavaSourceStartLineNumber()
+                    - e2.srcStmt().getJavaSourceStartLineNumber();
+            if (line == 0) {
+              return e1.tgt()
+                  .getDeclaringClass()
+                  .getName()
+                  .compareTo(e2.tgt().getDeclaringClass().getName());
+            } else {
+              return line;
+            }
           }
         });
 
@@ -509,15 +518,7 @@ class CustomSenceTransformer extends SceneTransformer {
               + ":"
               + edge.srcStmt().getJavaSourceStartLineNumber();
 
-      boolean excluded = false;
-      for (String prefix : this.excludeList) {
-        if (!edge.tgt().getName().startsWith(prefix)) {
-          excluded = true;
-          break;
-        }
-      }
-
-      if (!excluded && cg.edgesOutOf(edge.tgt()).hasNext()) {
+      if (cg.edgesOutOf(edge.tgt()).hasNext()) {
         edgeList.add(edge);
       } else {
         Set<String> classNameSet;
@@ -548,7 +549,10 @@ class CustomSenceTransformer extends SceneTransformer {
   private String mergeClassName(Set<String> classNameSet) {
     StringBuilder mergedClassName = new StringBuilder();
 
-    for (String className : classNameSet) {
+    List<String> classNameList = new LinkedList<String>(classNameSet);
+    Collections.sort(classNameList);
+
+    for (String className : classNameList) {
       if (mergedClassName.length() > 0) {
         mergedClassName.append(":");
       }
