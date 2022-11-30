@@ -1,0 +1,6 @@
+Call tree
+fuzzerTestOneInput(com.code_intelligence.jazzer.api.FuzzedDataProvider) Fuzz2.TestFuzzer2 linenumber=-1
+  function1() Function.FunctionTest linenumber=28
+    println(java.lang.String) java.io.PrintStream linenumber=20
+  function2() Function.FunctionTest linenumber=30
+    println(java.lang.String) java.io.PrintStream linenumber=24

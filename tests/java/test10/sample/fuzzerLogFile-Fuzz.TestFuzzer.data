@@ -1,0 +1,11 @@
+Call tree
+fuzzerTestOneInput(com.code_intelligence.jazzer.api.FuzzedDataProvider) Fuzz.TestFuzzer linenumber=-1
+  getName() Fuzz.Android:Fuzz.Robot linenumber=36
+  getName() Fuzz.Female linenumber=36
+    femaleStuff() Fuzz.Female linenumber=20
+      println(java.lang.String) java.io.PrintStream linenumber=29
+    getTitle() Fuzz.Female linenumber=21
+  getName() Fuzz.Male linenumber=36
+    maleStuff() Fuzz.Male linenumber=20
+      println(java.lang.String) java.io.PrintStream linenumber=29
+    getTitle() Fuzz.Male linenumber=21
