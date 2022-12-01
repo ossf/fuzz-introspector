@@ -189,8 +189,7 @@ def has_append(project_build_path):
         with open(project_build_path) as file_handle:
             content = file_handle.read()
             for line in content.splitlines():
-                match = re.compile(r'# Packing for fuzz-introspector').match(line)
-                if match:
+                if 'export SET_FUZZINTRO_JVM="SET"' in line:
                     return True
     return False
 
