@@ -173,7 +173,7 @@ def patch_jvm_source_dead_link(server_directory, prefix):
                 links = re.findall(r'href=[\'"]?([^\'" >]+)', report)
                 links.extend(re.findall(r'[\'"]func_url[\'"]:\ [\'"]?([^\'" >]+)', report))
                 for link in [link for link in links if link.startswith(prefix)]:
-                    if os.path.exists(os.path.join(server_directory, link[1:].split("#")[0])):
+                    if not os.path.exists(os.path.join(server_directory, link[1:].split("#")[0])):
                         report = report.replace(link, "#")
 
                 # Write result back to js file
