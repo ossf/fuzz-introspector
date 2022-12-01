@@ -206,9 +206,12 @@ class CustomSenceTransformer extends SceneTransformer {
           Set<String> classNameSet =
               this.edgeClassMap.getOrDefault(
                   callerClass
-                  + ":"
-                  + tgt.getName() + ":"
-                  + ((edge.srcStmt() == null) ? -1 : edge.srcStmt().getJavaSourceStartLineNumber()),
+                      + ":"
+                      + tgt.getName()
+                      + ":"
+                      + ((edge.srcStmt() == null)
+                          ? -1
+                          : edge.srcStmt().getJavaSourceStartLineNumber()),
                   Collections.emptySet());
           className = this.mergeClassName(classNameSet);
           boolean merged = false;
@@ -221,7 +224,7 @@ class CustomSenceTransformer extends SceneTransformer {
           if (!merged) {
             className = tgt.getDeclaringClass().getName();
           }
-		  element.addFunctionsReached("[" + className + "]." + tgt.getSubSignature().split(" ")[1]);
+          element.addFunctionsReached("[" + className + "]." + tgt.getSubSignature().split(" ")[1]);
           functionLineMap.put(
               tgt.getSubSignature().split(" ")[1], edge.srcStmt().getJavaSourceStartLineNumber());
         }
