@@ -163,7 +163,7 @@ def patch_jvm_source_dead_link(server_directory, prefix):
 
     for root, _, files in os.walk(os.path.abspath(server_directory)):
         for file in files:
-            if file.endswith(".js") or file.endswith(".html"):
+            if file.endswith(".js") or file.endswith("fuzz_report.html"):
 
                 # Read js file
                 with open(os.path.join(root, file)) as f:
