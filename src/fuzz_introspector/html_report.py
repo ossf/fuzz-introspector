@@ -666,7 +666,8 @@ def create_fuzzer_detailed_section(
              hit_percentage) = profile.get_cov_metrics(funcname)
 
             if hit_percentage is not None:
-                total_hit_functions += (1 if (hit_lines and hit_lines > 0) else 0)
+                if (hit_lines and hit_lines > 0):
+                    total_hit_functions += 1
                 fuzzer_table_data[table_name].append({
                     "Function name": funcname,
                     "source code lines": total_func_lines,
