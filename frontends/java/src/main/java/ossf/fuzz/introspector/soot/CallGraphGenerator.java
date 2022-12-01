@@ -165,20 +165,16 @@ class CustomSenceTransformer extends SceneTransformer {
           continue;
         }
 
-        if (m.getName().equals(this.entryMethodStr) && c.getName().equals(this.entryClassStr)) {
-          this.entryMethod = m;
-        }
-
         // Discover method related information
         FunctionElement element = new FunctionElement();
         Map<String, Integer> functionLineMap = new HashMap<String, Integer>();
 
-        // Unable to retrieve from Soot
-        // element.setLinkageType("???");
-        // element.setConstantsTouched([]);
-        // element.setArgNames();
-
-        element.setFunctionName(m.getSubSignature().split(" ")[1]);
+        if (m.getName().equals(this.entryMethodStr) && c.getName().equals(this.entryClassStr)) {
+          this.entryMethod = m;
+          element.setFunctionName(m.getSubSignature().split(" ")[1]);
+        } else {
+          element.setFunctionName("[" + c.getFilePath() + "]." + m.getSubSignature().split(" ")[1]);
+        }
         element.setFunctionSourceFile(c.getFilePath());
         element.setFunctionLinenumber(m.getJavaSourceStartLineNumber());
         element.setReturnType(m.getReturnType().toString());
@@ -190,7 +186,7 @@ class CustomSenceTransformer extends SceneTransformer {
 
         // Identify in / out edges of each method.
         int methodEdges = 0;
-        Iterator<Edge> outEdges = callGraph.edgesOutOf(m);
+        Iterator<Edge> outEdges = this.mergePolymorphism(callGraph, callGraph.edgesOutOf(m));
         Iterator<Edge> inEdges = callGraph.edgesInto(m);
         while (inEdges.hasNext()) {
           methodEdges++;
@@ -200,12 +196,35 @@ class CustomSenceTransformer extends SceneTransformer {
         methodEdges = 0;
         for (; outEdges.hasNext(); methodEdges++) {
           Edge edge = outEdges.next();
-          SootMethod tgt = (SootMethod) edge.getTgt();
+          SootMethod tgt = edge.tgt();
           if (this.excludeMethodList.contains(tgt.getName())) {
             methodEdges--;
             continue;
           }
-          element.addFunctionsReached(tgt.getSubSignature().split(" ")[1]);
+          String callerClass = edge.src().getDeclaringClass().getName();
+          String className = "";
+          Set<String> classNameSet =
+              this.edgeClassMap.getOrDefault(
+                  callerClass
+                      + ":"
+                      + tgt.getName()
+                      + ":"
+                      + ((edge.srcStmt() == null)
+                          ? -1
+                          : edge.srcStmt().getJavaSourceStartLineNumber()),
+                  Collections.emptySet());
+          className = this.mergeClassName(classNameSet);
+          boolean merged = false;
+          for (String name : className.split(":")) {
+            if (name.equals(tgt.getDeclaringClass().getName())) {
+              merged = true;
+              break;
+            }
+          }
+          if (!merged) {
+            className = tgt.getDeclaringClass().getName();
+          }
+          element.addFunctionsReached("[" + className + "]." + tgt.getSubSignature().split(" ")[1]);
           functionLineMap.put(
               tgt.getSubSignature().split(" ")[1], edge.srcStmt().getJavaSourceStartLineNumber());
         }
