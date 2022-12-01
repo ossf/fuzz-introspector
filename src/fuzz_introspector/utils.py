@@ -84,8 +84,8 @@ def data_file_read_yaml(filename: str) -> Optional[Dict[Any, Any]]:
         with open(filename, 'r') as stream:
             data_dict: Dict[Any, Any] = yaml.safe_load(stream)
             return data_dict
-    except (yaml.YAMLError, UnicodeDecodeError):
-        logger.info("Error loading yaml file")
+    except yaml.YAMLError as e:
+        logger.info("Error loading yaml file: " + str(e))
 
     # Try loading multiple yaml files in the fuzz introspector format
     # We need this because we have different formats for each language.
@@ -94,8 +94,8 @@ def data_file_read_yaml(filename: str) -> Optional[Dict[Any, Any]]:
         with open(filename, 'r') as yaml_f:
             data = yaml_f.read()
             docs = yaml.safe_load_all(data)
-    except (yaml.YAMLError, UnicodeDecodeError):
-        logger.info("Failed loading")
+    except yaml.YAMLError as e:
+        logger.info("Failed loading YAML: " + str(e))
         return None
 
     content = dict()
@@ -112,7 +112,8 @@ def data_file_read_yaml(filename: str) -> Optional[Dict[Any, Any]]:
                     content['All functions']['Elements'].extend(
                         doc['All functions']['Elements']
                     )
-    except yaml.YAMLError:
+    except yaml.YAMLError as e:
+        logger.info("Failed loading YAML: " + str(e))        
         return None
     if "Fuzzer filename" not in content:
         return None
