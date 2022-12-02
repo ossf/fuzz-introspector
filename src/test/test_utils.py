@@ -91,3 +91,154 @@ def test_get_target_coverage_url(coverage_url: str, fuzz_target: str, res: str, 
     os.environ['FUZZ_INTROSPECTOR'] = "1"
     assert utils.get_target_coverage_url(coverage_url, fuzz_target, lang) == res
     del os.environ['FUZZ_INTROSPECTOR']
+
+
+@pytest.mark.parametrize(
+    ('cov_url', 'source_file', 'lineno', 'function_name', 'target_lang', 'temp_file', 'expect'),
+    [
+        (
+            'https://coverage-url.com/',
+            'fuzzlib/fuzzlib.c',
+            '13',
+            'name',
+            'c-cpp',
+            None,
+            'https://coverage-url.com/fuzzlib/fuzzlib.c.html#L13'
+        ),
+        (
+            'https://coverage-url.com/',
+            'Class',
+            '13',
+            'name',
+            'python',
+            None,
+            '#'
+        ),
+        (
+            'https://coverage-url.com/',
+            'Class',
+            '13',
+            'name',
+            'python',
+            '''{
+                 "format":2,
+                 "version":"6.5.0",
+                 "globals":"Test",
+                 "files":{
+                     "Test":{
+                         "hash":"Test",
+                         "index":{
+                             "relative_filename":"/src/fuzz_parse.py"
+                         }
+                     }
+                 }
+            }''',
+            '#'
+        ),
+        (
+            'https://coverage-url.com/',
+            'Class',
+            '13',
+            'fuzz_parse',
+            'python',
+            '''{
+                 "format":2,
+                 "version":"6.5.0",
+                 "globals":"Test",
+                 "files":{
+                     "Test":{
+                         "hash":"Test",
+                         "index":{
+                             "relative_filename":"/src/fuzz_parse.py"
+                         }
+                     }
+                 }
+            }''',
+            'https://coverage-url.com/Test.html#t13'
+        ),
+        (
+            'https://coverage-url.com/',
+            'Class',
+            '13',
+            'abc.def.fuzz_parse',
+            'python',
+            '''{
+                 "format":2,
+                 "version":"6.5.0",
+                 "globals":"Test",
+                 "files":{
+                     "Test":{
+                         "hash":"Test",
+                         "index":{
+                             "relative_filename":"/src/abc/def.py"
+                         }
+                     }
+                 }
+            }''',
+            'https://coverage-url.com/Test.html#t13'
+        ),
+        (
+            'https://coverage-url.com/',
+            'Class',
+            '13',
+            'name',
+            'jvm',
+            None,
+            'https://coverage-url.com/default/Class.java.html#L13'
+        ),
+        (
+            'https://coverage-url.com/',
+            'Package.Class$Subclass',
+            '13',
+            'name',
+            'jvm',
+            None,
+            'https://coverage-url.com/Package/Class.java.html#L13'
+        ),
+        (
+            'https://coverage-url.com/',
+            'Test.Package.Class',
+            '13',
+            'name',
+            'jvm',
+            None,
+            'https://coverage-url.com/Test.Package/Class.java.html#L13'
+        ),
+        (
+            'https://coverage-url.com/',
+            'fuzzlib/fuzzlib.c',
+            '13',
+            'name',
+            'abcde',
+            None,
+            '#'
+        )
+    ]
+)
+def test_resolve_coverage_link(
+    cov_url: str,
+    source_file: str,
+    lineno: int,
+    function_name: str,
+    target_lang: str,
+    temp_file: str,
+    expect: str
+):
+    """Basic test of coverage URL for all lang"""
+    if (temp_file is not None):
+        # Create temp html_status.json for python coverage link
+        with open('temp_html_status.json', 'w+') as f:
+            f.write(temp_file)
+
+    actual = utils.resolve_coverage_link(
+        cov_url,
+        source_file,
+        lineno,
+        function_name,
+        target_lang
+    )
+    assert expect == actual
+
+    if (temp_file is not None):
+        # Remove temp html_status.json file
+        os.remove('temp_html_status.json')
