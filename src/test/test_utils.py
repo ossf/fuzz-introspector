@@ -154,7 +154,7 @@ def test_get_target_coverage_url(coverage_url: str, fuzz_target: str, res: str, 
                      }
                  }
             }''',
-            'https://coverage-url.com//Test.html#t13'
+            'https://coverage-url.com/Test.html#t13'
         ),
         (
             'https://coverage-url.com/',
@@ -175,7 +175,7 @@ def test_get_target_coverage_url(coverage_url: str, fuzz_target: str, res: str, 
                      }
                  }
             }''',
-            'https://coverage-url.com//Test.html#t13'
+            'https://coverage-url.com/Test.html#t13'
         ),
         (
             'https://coverage-url.com/',
@@ -184,7 +184,7 @@ def test_get_target_coverage_url(coverage_url: str, fuzz_target: str, res: str, 
             'name',
             'jvm',
             None,
-            'https://coverage-url.com//default/Class.java.html#L13'
+            'https://coverage-url.com/default/Class.java.html#L13'
         ),
         (
             'https://coverage-url.com/',
@@ -193,7 +193,7 @@ def test_get_target_coverage_url(coverage_url: str, fuzz_target: str, res: str, 
             'name',
             'jvm',
             None,
-            'https://coverage-url.com//Package/Class.java.html#L13'
+            'https://coverage-url.com/Package/Class.java.html#L13'
         ),
         (
             'https://coverage-url.com/',
@@ -202,7 +202,7 @@ def test_get_target_coverage_url(coverage_url: str, fuzz_target: str, res: str, 
             'name',
             'jvm',
             None,
-            'https://coverage-url.com//Test.Package/Class.java.html#L13'
+            'https://coverage-url.com/Test.Package/Class.java.html#L13'
         ),
         (
             'https://coverage-url.com/',
