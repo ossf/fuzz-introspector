@@ -74,9 +74,8 @@ class BranchProfile:
         """
         For debugging purposes, may be removed later.
         """
-        print(self.branch_pos, self.branch_true_side_pos, self.branch_false_side_pos,
-              self.branch_true_side_reachable_complexity,
-              self.branch_false_side_reachable_complexity,
-              self.branch_true_side_not_covered_complexity,
-              self.branch_false_side_not_covered_complexity,
-              self.branch_true_side_hitcount, self.branch_true_side_hitcount)
+
+        print(self.branch_pos)
+        for side in self.sides:
+            print(side.pos, side.unique_reachable_complexity, side.unique_not_covered_complexity,
+                  side.reachable_complexity, side.not_covered_complexity, len(side.funcs))
