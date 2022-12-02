@@ -92,6 +92,7 @@ def test_get_target_coverage_url(coverage_url: str, fuzz_target: str, res: str, 
     assert utils.get_target_coverage_url(coverage_url, fuzz_target, lang) == res
     del os.environ['FUZZ_INTROSPECTOR']
 
+
 @pytest.mark.parametrize(
     ('cov_url', 'source_file', 'lineno', 'function_name', 'target_lang', 'temp_file', 'expect'),
     [
@@ -241,4 +242,3 @@ def test_resolve_coverage_link(
     if (temp_file is not None):
         # Remove temp html_status.json file
         os.remove('temp_html_status.json')
-
