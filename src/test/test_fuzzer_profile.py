@@ -57,24 +57,6 @@ def base_cpp_profile(tmpdir, sample_cfg1, fake_yaml_func_elem):
     return fp
 
 
-def test_coverage_url(tmpdir, sample_cfg1):
-    """Basic test for coverage URL"""
-    fp = base_cpp_profile(tmpdir, sample_cfg1, [])
-
-    cov_link = fp.resolve_coverage_link(
-        "https://coverage-url.com/",
-        "fuzzlib/fuzzlib.c",
-        13,
-        "function_name"
-    )
-
-    # Explicitly ensure the coverage URL is set
-    assert cov_link != "#"
-
-    # Ensure the coverage URL is correct
-    assert "https://coverage-url.com/fuzzlib/fuzzlib.c.html#L13" == cov_link
-
-
 def test_reaches_file(tmpdir, sample_cfg1):
     """Basic test for reaches file"""
     fp = base_cpp_profile(tmpdir, sample_cfg1, [])
