@@ -443,16 +443,6 @@ def update_branch_complexities(all_functions: Dict[str, function_profile.Functio
                 branch.sides[side_idx].reachable_complexity = 0
                 branch.sides[side_idx].not_covered_complexity = 0
                 side_unique_funcs = branch.get_side_unique_reachable_funcnames(side_idx)
-            # branch.branch_false_side_unique_not_covered_complexity = 0
-            # branch.branch_false_side_unique_reachable_complexity = 0
-            # branch.branch_true_side_unique_not_covered_complexity = 0
-            # branch.branch_true_side_unique_reachable_complexity = 0
-            # branch.branch_false_side_reachable_complexity = 0
-            # branch.branch_true_side_reachable_complexity = 0
-            # branch.branch_false_side_not_covered_complexity = 0
-            # branch.branch_true_side_not_covered_complexity = 0
-            # false_side_funcs = branch.get_side_unique_reachable_funcnames(bp.BranchSide.FALSE)
-            # true_side_funcs = branch.get_side_unique_reachable_funcnames(bp.BranchSide.TRUE)
 
                 # Iterate over the list of funcs instead of set, because we want to account
                 # for the complexity of repeating functions.
