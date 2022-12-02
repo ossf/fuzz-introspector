@@ -23,6 +23,8 @@ sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../")
 
 from fuzz_introspector import commands, exceptions  # noqa: E402
 
+lang_list = ["c-cpp", "python", "jvm"]
+
 
 @pytest.mark.parametrize(
     "data",
@@ -52,6 +54,8 @@ def test_TestOneInput(data: bytes):
     with open(report_yaml_file, "wb") as f:
         f.write(fdp.ConsumeBytes(fdp.ConsumeIntInRange(1, 50000)))
 
+    lang_choice = fdp.ConsumeIntInRange(0, len(lang_list) - 1)
+
     analyses_to_run = []
 
     try:
@@ -62,7 +66,7 @@ def test_TestOneInput(data: bytes):
             correlation_file,
             False,
             "report name",
-            "c-cpp",
+            lang_list[lang_choice],
             False
         )
     except exceptions.FuzzIntrospectorError:
