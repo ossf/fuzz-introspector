@@ -1413,7 +1413,7 @@ std::vector<BranchProfileEntry> FuzzIntrospector::branchProfiler(Function *F) {
           continue;
         auto Side1Line = std::stoi(DbgExtracts.second);
 
-        // Invariant: side line numbers are acending
+        // Invariant: side line numbers are ascending.
         std::string TmpString;
         std::vector<StringRef> *TmpFuncs;
         if (Side0Line > Side1Line) {
