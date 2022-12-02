@@ -76,16 +76,14 @@ using yaml::MappingTraits;
 using yaml::Output;
 
 // Typedefs used by the introspector pass
-typedef struct BranchSides {
-  std::string TrueSideString;
-  std::vector<StringRef> TrueSideFuncs;
-  std::string FalseSideString;
-  std::vector<StringRef> FalseSideFuncs;
-} BranchSides;
+typedef struct BranchSide {
+  std::string BranchSideString;
+  std::vector<StringRef> BranchSideFuncs;
+} BranchSide;
 
 typedef struct BranchProfileEntry {
   std::string BranchString;
-  BranchSides BranchSidesInfo;
+  std::vector<BranchSide> BranchSides;
 } BranchProfileEntry;
 
 typedef struct bCSite {
@@ -201,19 +199,18 @@ template <> struct yaml::MappingTraits<BranchSidesComplexity> {
   }
 };
 
-template <> struct yaml::MappingTraits<BranchSides> {
-  static void mapping(IO &io, BranchSides &branchSides) {
-    io.mapRequired("TrueSide", branchSides.TrueSideString);
-    io.mapRequired("TrueSideFuncs", branchSides.TrueSideFuncs);
-    io.mapRequired("FalseSide", branchSides.FalseSideString);
-    io.mapRequired("FalseSideFuncs", branchSides.FalseSideFuncs);
+template <> struct yaml::MappingTraits<BranchSide> {
+  static void mapping(IO &io, BranchSide &branchSide) {
+    io.mapRequired("BranchSide", branchSide.BranchSideString);
+    io.mapRequired("BranchSideFuncs", branchSide.BranchSideFuncs);
   }
 };
+LLVM_YAML_IS_SEQUENCE_VECTOR(BranchSide)
 
 template <> struct yaml::MappingTraits<BranchProfileEntry> {
   static void mapping(IO &io, BranchProfileEntry &bpe) {
     io.mapRequired("Branch String", bpe.BranchString);
-    io.mapRequired("Branch Sides", bpe.BranchSidesInfo);
+    io.mapRequired("Branch Sides", bpe.BranchSides);
   }
 };
 LLVM_YAML_IS_SEQUENCE_VECTOR(BranchProfileEntry)
@@ -1416,26 +1413,23 @@ std::vector<BranchProfileEntry> FuzzIntrospector::branchProfiler(Function *F) {
           continue;
         auto Side1Line = std::stoi(DbgExtracts.second);
 
-        // Decide on the sides based on line number distance
-        std::string TrueSideString, FalseSideString;
-        std::vector<StringRef> *TrueSideFuncs, *FalseSideFuncs;
+        // Invariant: side line numbers are ascending.
+        std::string TmpString;
+        std::vector<StringRef> *TmpFuncs;
         if (Side0Line > Side1Line) {
-          TrueSideString = Side1String;
-          TrueSideFuncs = &ReachableFuncs1;
-          FalseSideString = Side0String;
-          FalseSideFuncs = &ReachableFuncs0;
-        } else {
-          TrueSideString = Side0String;
-          TrueSideFuncs = &ReachableFuncs0;
-          FalseSideString = Side1String;
-          FalseSideFuncs = &ReachableFuncs1;
+          TmpString = Side1String;
+          TmpFuncs = &ReachableFuncs1;
+          Side1String = Side0String;
+          ReachableFuncs1 = ReachableFuncs0;
+          Side0String = TmpString;
+          ReachableFuncs0 = *TmpFuncs;
         }
 
         // BranchSidesComplexity Entry_val(TrueSideString, *TrueSideFuncs,
         //                                 FalseSideString, *FalseSideFuncs);
-        BranchSides BranchSidesVal = {TrueSideString, *TrueSideFuncs,
-                                      FalseSideString, *FalseSideFuncs};
-        BranchProfileEntry Entry = {BRstring, BranchSidesVal};
+        BranchSide BranchSide0Val = {Side0String, ReachableFuncs0};
+        BranchSide BranchSide1Val = {Side1String, ReachableFuncs1};
+        BranchProfileEntry Entry = {BRstring, {BranchSide0Val, BranchSide1Val}};
         FuncBranchProfile.push_back(Entry);
       }
     }

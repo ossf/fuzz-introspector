@@ -14,7 +14,6 @@
 """Branch profiler"""
 
 import logging
-from enum import Enum
 from typing import (
     Any,
     Dict,
@@ -27,9 +26,16 @@ from fuzz_introspector import utils
 logger = logging.getLogger(name=__name__)
 
 
-class BranchSide(Enum):
-    TRUE = 1
-    FALSE = 2
+class BranchSide:
+    """Class for representing a branch side."""
+    def __init__(self) -> None:
+        self.pos = str()
+        self.unique_not_covered_complexity = -1
+        self.unique_reachable_complexity = -1
+        self.reachable_complexity = -1
+        self.not_covered_complexity = -1
+        self.hitcount = -1
+        self.funcs: List[str] = []
 
 
 class BranchProfile:
@@ -38,48 +44,38 @@ class BranchProfile:
     """
     def __init__(self) -> None:
         self.branch_pos = str()
-        self.branch_true_side_pos = str()
-        self.branch_false_side_pos = str()
-        self.branch_true_side_unique_not_covered_complexity = -1
-        self.branch_false_side_unique_not_covered_complexity = -1
-        self.branch_true_side_unique_reachable_complexity = -1
-        self.branch_false_side_unique_reachable_complexity = -1
-        self.branch_true_side_reachable_complexity = -1
-        self.branch_false_side_reachable_complexity = -1
-        self.branch_true_side_not_covered_complexity = -1
-        self.branch_false_side_not_covered_complexity = -1
-        self.branch_true_side_hitcount = -1
-        self.branch_false_side_hitcount = -1
-        self.branch_true_side_funcs: List[str] = []
-        self.branch_false_side_funcs: List[str] = []
+        self.sides: List[BranchSide] = []
 
     def assign_from_yaml_elem(self, elem: Dict[Any, Any]) -> None:
         # This skips the path, as it may cause incosistancy vs coverage file names path
         self.branch_pos = elem['Branch String'].split('/')[-1]
-        self.branch_true_side_pos = elem['Branch Sides']['TrueSide']
-        self.branch_false_side_pos = elem['Branch Sides']['FalseSide']
-        self.branch_true_side_funcs = utils.load_func_names(elem['Branch Sides']['TrueSideFuncs'])
-        self.branch_false_side_funcs = utils.load_func_names(elem['Branch Sides']['FalseSideFuncs'])
+        for br_side_elem in elem['Branch Sides']:
+            bs = BranchSide()
+            bs.pos = br_side_elem['BranchSide']
+            bs.funcs = utils.load_func_names(br_side_elem['BranchSideFuncs'])
+            self.sides.append(bs)
 
-    def assign_from_coverage(self, true_count: str, false_count: str) -> None:
-        self.branch_true_side_hitcount = int(true_count)
-        self.branch_false_side_hitcount = int(false_count)
+    def assign_from_coverage(self, counts: List[str]) -> None:
+        assert len(counts) <= len(self.sides)
+        for idx, count in enumerate(counts):
+            self.sides[idx].hitcount = int(count)
 
-    def get_side_unique_reachable_funcnames(self, branch_side: BranchSide) -> Set[str]:
+    def get_side_unique_reachable_funcnames(self, branch_side_idx: int) -> Set[str]:
         """Returns the set of unique functions reachable from the specified branch side"""
-        true_side_funcs_set = set(self.branch_true_side_funcs)
-        false_side_funcs_set = set(self.branch_false_side_funcs)
-        if branch_side == BranchSide.TRUE:
-            return true_side_funcs_set.difference(false_side_funcs_set)
-        return false_side_funcs_set.difference(true_side_funcs_set)
+        all_other_sides_funcs = set()
+        for idx in range(len(self.sides)):
+            if idx == branch_side_idx:
+                continue
+            all_other_sides_funcs.update(self.sides[idx].funcs)
+        wanted_side_funcs = set(self.sides[branch_side_idx].funcs)
+        return wanted_side_funcs.difference(all_other_sides_funcs)
 
     def dump(self) -> None:
         """
         For debugging purposes, may be removed later.
         """
-        print(self.branch_pos, self.branch_true_side_pos, self.branch_false_side_pos,
-              self.branch_true_side_reachable_complexity,
-              self.branch_false_side_reachable_complexity,
-              self.branch_true_side_not_covered_complexity,
-              self.branch_false_side_not_covered_complexity,
-              self.branch_true_side_hitcount, self.branch_true_side_hitcount)
+
+        print(self.branch_pos)
+        for side in self.sides:
+            print(side.pos, side.unique_reachable_complexity, side.unique_not_covered_complexity,
+                  side.reachable_complexity, side.not_covered_complexity, len(side.funcs))

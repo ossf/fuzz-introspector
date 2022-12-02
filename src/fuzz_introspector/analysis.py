@@ -35,7 +35,6 @@ from fuzz_introspector.datatypes import (
     project_profile,
     fuzzer_profile,
     function_profile,
-    branch_profile as bp
 )
 from fuzz_introspector.exceptions import AnalysisError
 
@@ -437,41 +436,27 @@ def update_branch_complexities(all_functions: Dict[str, function_profile.Functio
     """
     for func_k, func in all_functions.items():
         for branch_k, branch in func.branch_profiles.items():
-            branch.branch_false_side_unique_not_covered_complexity = 0
-            branch.branch_false_side_unique_reachable_complexity = 0
-            branch.branch_true_side_unique_not_covered_complexity = 0
-            branch.branch_true_side_unique_reachable_complexity = 0
-            branch.branch_false_side_reachable_complexity = 0
-            branch.branch_true_side_reachable_complexity = 0
-            branch.branch_false_side_not_covered_complexity = 0
-            branch.branch_true_side_not_covered_complexity = 0
-            false_side_funcs = branch.get_side_unique_reachable_funcnames(bp.BranchSide.FALSE)
-            true_side_funcs = branch.get_side_unique_reachable_funcnames(bp.BranchSide.TRUE)
-            # Iterate over the list of funcs instead of set, because we want to account
-            # for the complexity of repeating functions.
-            for fn in branch.branch_false_side_funcs:
-                if fn not in all_functions:
-                    continue
-                new_comp = all_functions[fn].total_cyclomatic_complexity
-                branch.branch_false_side_reachable_complexity += new_comp
-                if fn in false_side_funcs:
-                    branch.branch_false_side_unique_reachable_complexity += new_comp
-                if coverage.is_func_hit(fn) is False:
-                    branch.branch_false_side_not_covered_complexity += new_comp
-                    if fn in false_side_funcs:
-                        branch.branch_false_side_unique_not_covered_complexity += new_comp
+            sides_number = len(branch.sides)
+            for side_idx in range(sides_number):
+                branch.sides[side_idx].unique_not_covered_complexity = 0
+                branch.sides[side_idx].unique_reachable_complexity = 0
+                branch.sides[side_idx].reachable_complexity = 0
+                branch.sides[side_idx].not_covered_complexity = 0
+                side_unique_funcs = branch.get_side_unique_reachable_funcnames(side_idx)
 
-            for fn in branch.branch_true_side_funcs:
-                if fn not in all_functions:
-                    continue
-                new_comp = all_functions[fn].total_cyclomatic_complexity
-                branch.branch_true_side_reachable_complexity += new_comp
-                if fn in true_side_funcs:
-                    branch.branch_true_side_unique_reachable_complexity += new_comp
-                if coverage.is_func_hit(fn) is False:
-                    branch.branch_true_side_not_covered_complexity += new_comp
-                    if fn in true_side_funcs:
-                        branch.branch_true_side_unique_not_covered_complexity += new_comp
+                # Iterate over the list of funcs instead of set, because we want to account
+                # for the complexity of repeating functions.
+                for fn in branch.sides[side_idx].funcs:
+                    if fn not in all_functions:
+                        continue
+                    new_comp = all_functions[fn].total_cyclomatic_complexity
+                    branch.sides[side_idx].reachable_complexity += new_comp
+                    if fn in side_unique_funcs:
+                        branch.sides[side_idx].unique_reachable_complexity += new_comp
+                    if coverage.is_func_hit(fn) is False:
+                        branch.sides[side_idx].not_covered_complexity += new_comp
+                        if fn in side_unique_funcs:
+                            branch.sides[side_idx].unique_not_covered_complexity += new_comp
 
 
 def detect_branch_level_blockers(
@@ -489,7 +474,7 @@ def detect_branch_level_blockers(
 
     for branch_string in coverage.branch_cov_map:
         blocked_side = None
-        true_hitcount, false_hitcount = coverage.branch_cov_map[branch_string]
+        sides_hitcount = coverage.branch_cov_map[branch_string]
 
         # Catch exceptions in case some of the string splitting fails
         try:
@@ -519,30 +504,31 @@ def detect_branch_level_blockers(
         # For now this checks for not-taken branch sides, instead
         # it may become interesting to report less-taken side: like
         # the side that is taken less than 20% of the times
-        if true_hitcount == 0 and false_hitcount != 0:
-            blocked_side = bp.BranchSide.TRUE
-            blocked_unique_not_covered_com = (
-                llvm_branch.branch_true_side_unique_not_covered_complexity)
-            blocked_unique_reachable_com = llvm_branch.branch_true_side_unique_reachable_complexity
-            blocked_reachable_com = llvm_branch.branch_true_side_reachable_complexity
-            blocked_not_covered_com = llvm_branch.branch_true_side_not_covered_complexity
-            side_line = llvm_branch.branch_true_side_pos
-            side_line_number = side_line.split(':')[1].split(',')[0]
-            blocked_unique_funcs = list(
-                llvm_branch.get_side_unique_reachable_funcnames(blocked_side))
-        elif true_hitcount != 0 and false_hitcount == 0:
-            blocked_side = bp.BranchSide.FALSE
-            blocked_unique_not_covered_com = (
-                llvm_branch.branch_false_side_unique_not_covered_complexity)
-            blocked_unique_reachable_com = llvm_branch.branch_false_side_unique_reachable_complexity
-            blocked_reachable_com = llvm_branch.branch_false_side_reachable_complexity
-            blocked_not_covered_com = llvm_branch.branch_false_side_not_covered_complexity
-            side_line = llvm_branch.branch_false_side_pos
-            side_line_number = side_line.split(':')[1].split(',')[0]
-            blocked_unique_funcs = list(
-                llvm_branch.get_side_unique_reachable_funcnames(blocked_side))
+        taken_sides = []
+        not_taken_sides = []
+        for idx, sh in enumerate(sides_hitcount):
+            if sh == 0:
+                not_taken_sides.append(idx)
+            else:
+                taken_sides.append(idx)
 
-        if blocked_side:
+        if len(taken_sides) == 0 or len(not_taken_sides) == 0:
+            continue
+
+        # We have some sides taken and some not taken sides => there are blockers.
+        for blocked_idx in not_taken_sides:
+            blocked_side = blocked_idx
+            blocked_unique_not_covered_com = (
+                llvm_branch.sides[blocked_idx].unique_not_covered_complexity)
+            blocked_unique_reachable_com = (
+                llvm_branch.sides[blocked_idx].unique_reachable_complexity)
+            blocked_reachable_com = llvm_branch.sides[blocked_idx].reachable_complexity
+            blocked_not_covered_com = llvm_branch.sides[blocked_idx].not_covered_complexity
+            side_line = llvm_branch.sides[blocked_idx].pos
+            side_line_number = side_line.split(':')[1].split(',')[0]
+            blocked_unique_funcs = list(
+                llvm_branch.get_side_unique_reachable_funcnames(blocked_idx))
+
             # Sanity check on line numbers: anomaly can happen because of debug info inaccuracy
             if int(line_number) > int(side_line_number):
                 logger.debug("Branch-blocker: Anomalous branch sides line nubmers: %s:%s -> %s" % (
@@ -561,7 +547,7 @@ def detect_branch_level_blockers(
                                  % (side_line))
                     continue
 
-            hitcount_diff = abs(true_hitcount - false_hitcount)
+            hitcount_diff = max(sides_hitcount)
             link = fuzz_profile.resolve_coverage_link(
                 target_coverage_url,
                 source_file_path,
