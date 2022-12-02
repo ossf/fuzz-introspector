@@ -286,8 +286,9 @@ def resolve_coverage_link(
     target_lang: str
 ) -> str:
     """Resolves link to HTML coverage report"""
+    result = "#"
     if (target_lang == "c-cpp"):
-        return cov_url + source_file + ".html#L" + str(lineno)
+        result = source_file + ".html#L" + str(lineno)
     elif (target_lang == "python"):
         """Resolves link to HTML coverage report for Python targets"""
         # Temporarily for debugging purposes. TODO: David remove this later
@@ -307,10 +308,9 @@ def resolve_coverage_link(
                     data['files'][fl]['index']['relative_filename'],
                 )
                 if found_target:
-                    return cov_url + "/" + fl + ".html" + "#t" + str(lineno)
+                    result = fl + ".html" + "#t" + str(lineno)
         else:
             logger.info("Could not find any html_status.json file")
-        return "#"
     elif (target_lang == "jvm"):
         """Resolves link to HTML coverage report for JVM targets"""
         # Handle source class for jvm
@@ -324,7 +324,11 @@ def resolve_coverage_link(
         # Handle subclass definition in the same source file
         source_file = source_file.split("$")[0]
 
-        return cov_url + os.sep + source_file + ".java.html#L" + str(lineno)
+        result = source_file + ".java.html#L" + str(lineno)
     else:
         logger.info("Unsupported language for coverage link resolve")
-        return "#"
+
+    if result != "#":
+        result = cov_url.rstrip("/") + "/" + result.lstrip("/")
+
+    return result
