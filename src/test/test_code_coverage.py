@@ -16,12 +16,12 @@
 import os
 import sys
 import pytest
-from typing import Dict
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../")
 
 from fuzz_introspector import code_coverage  # noqa: E402
 from fuzz_introspector.datatypes import function_profile  # noqa: E402
+
 
 @pytest.fixture
 def sample_jvm_coverage_xml():
@@ -37,13 +37,13 @@ def sample_jvm_coverage_xml():
         <counter type="COMPLEXITY" missed="1" covered="0"/>
         <counter type="METHOD" missed="1" covered="0"/>
       </method>
-      <method name="fuzzerTestOneInput" desc="(Lcom/code_intelligence/jazzer/api/FuzzedDataProvider;)V" line="26">
+      <method name="fuzzerTestOneInput" desc="(LFuzzedDataProvider;)V" line="26">
         <counter type="INSTRUCTION" missed="2" covered="16"/>
         <counter type="LINE" missed="2" covered="5"/>
         <counter type="COMPLEXITY" missed="0" covered="1"/>
         <counter type="METHOD" missed="0" covered="1"/>
       </method>
-x    </class>
+    </class>
     <sourcefile name="BASE64EncoderStreamFuzzer.java">
       <line nr="23" mi="3" ci="0" mb="0" cb="0"/>
       <line nr="25" mi="0" ci="3" mb="0" cb="0"/>
@@ -98,7 +98,7 @@ def test_jvm_coverage(tmpdir, sample_jvm_coverage_xml):
     cp = code_coverage.load_jvm_coverage(tmpdir)
 
     # Assure coverage profile has been correctly retrieved
-    assert cp != None
+    assert cp is not None
 
     # Ensure getting the correct coverage file
     assert len(cp.coverage_files) == 1
@@ -129,7 +129,7 @@ def test_jvm_coverage_correlation(tmpdir, sample_jvm_coverage_xml):
     cp = code_coverage.load_jvm_coverage(tmpdir)
 
     # Assure coverage profile has been correctly retrieved
-    assert cp != None
+    assert cp is not None
 
     # Generate test function list
     function_list = dict()
