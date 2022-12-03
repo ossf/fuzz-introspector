@@ -35,10 +35,6 @@ def retrieve_tag_content(elem):
     return content
 
 
-def prepare_test_project(testcase):
-    os.system(f"{test_base_dir}/runTest.sh {testcase}")
-
-
 @pytest.mark.parametrize(
     "testcase",
     [
@@ -55,8 +51,6 @@ def prepare_test_project(testcase):
     ]
 )
 def test_full_jvm_report_generation(tmpdir, testcase):
-    prepare_test_project(testcase)
-
     report_dir = os.path.join(test_base_dir, "result", testcase)
 
     config_path = os.path.join(test_base_dir, testcase, ".config")
@@ -101,6 +95,7 @@ def test_full_jvm_report_generation(tmpdir, testcase):
     check_essential_files(files, class_name)
     check_calltree_view(files, class_name, report_dir)
     check_analysis_js(report_dir, reached_method, unreached_method)
+
 
 def check_essential_files(files, class_name):
     """Check if important report files has been generated"""
