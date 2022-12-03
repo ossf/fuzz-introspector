@@ -475,6 +475,8 @@ def detect_branch_level_blockers(
     for branch_string in coverage.branch_cov_map:
         blocked_side = None
         sides_hitcount = coverage.branch_cov_map[branch_string]
+        if len(sides_hitcount) > 2:
+            print("SPECIAL: switch statement") # TODO
 
         # Catch exceptions in case some of the string splitting fails
         try:
