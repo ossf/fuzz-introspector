@@ -24,7 +24,8 @@ sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../")
 
 from fuzz_introspector import commands, exceptions  # noqa: E402
 
-test_base_dir = os.path.abspath("tests/java")
+base_dir = os.path.abspath(".")
+test_base_dir = os.path.join(base_dir, "tests/java")
 coverage_link = "random_url"
 
 
@@ -95,6 +96,8 @@ def test_full_jvm_report_generation(tmpdir, testcase):
     check_essential_files(files, class_name)
     check_calltree_view(files, class_name, report_dir)
     check_analysis_js(report_dir, reached_method, unreached_method)
+
+    os.chdir(base_dir)
 
 
 def check_essential_files(files, class_name):
