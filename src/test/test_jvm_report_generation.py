@@ -15,6 +15,7 @@
 
 import os
 import sys
+import json
 import pytest
 import configparser
 import lxml.html
@@ -63,45 +64,46 @@ def test_full_jvm_report_generation(tmpdir, testcase):
     with open(config_path) as f:
         config.read_string('[test]\n' + f.read())
     class_name = config.get('test', 'entryclass').split(':')
+    reached_method = config.get('test', 'reached').split(':')
+    unreached_method = config.get('test', 'unreached').split(':')
 
     os.chdir(report_dir)
 
     # Ensure testcase report exists
     if not os.path.isdir(report_dir):
-        assert 1 == 2
         return
 
-    # Loop through all callgraph / data files
-    for file in [f for f in os.listdir(report_dir) if f.endswith(".data")]:
-        # Store path of essential file
-        report_cfg_file = os.path.join(report_dir, file)
-        report_yaml_file = os.path.join(report_dir, f"{file}.yaml")
+    # Run analysis and main logic
+    analyses_to_run = [
+        "OptimalTargets",
+        "RuntimeCoverageAnalysis",
+        "FuzzEngineInputAnalysis",
+        "FilePathAnalyser",
+        "MetadataAnalysis"
+    ]
 
-        analyses_to_run = [
-            "OptimalTargets",
-            "RuntimeCoverageAnalysis",
-            "FuzzEngineInputAnalysis",
-            "FilePathAnalyser",
-            "MetadataAnalysis"
-        ]
-
-        try:
-            commands.run_analysis_on_dir(
-                report_dir,
-                coverage_link,
-                analyses_to_run,
-                "",
-                False,
-                "random_name",
-                "jvm"
-            )
-        except exceptions.FuzzIntrospectorError:
-            pass
+    try:
+        commands.run_analysis_on_dir(
+            report_dir,
+            coverage_link,
+            analyses_to_run,
+            "",
+            False,
+            "random_name",
+            "jvm"
+        )
+    except exceptions.FuzzIntrospectorError:
+        pass
 
     # Checking starts here
     files = os.listdir(report_dir)
 
-    # First check if important report files has been generated
+    check_essential_files(files, class_name)
+    check_calltree_view(files, class_name, report_dir)
+    check_analysis_js(report_dir, reached_method, unreached_method)
+
+def check_essential_files(files, class_name):
+    """Check if important report files has been generated"""
     expected_files = [
         'all_functions.js',
         'analysis_1.js',
@@ -120,7 +122,9 @@ def test_full_jvm_report_generation(tmpdir, testcase):
     for file in expected_files:
         assert file in files
 
-    # Check all calltree_view_*.html
+
+def check_calltree_view(files, class_name, report_dir):
+    """Check all calltree_view_*.html"""
     for file in [f for f in files if f.startswith('calltree_view_')]:
         with open(os.path.join(report_dir, file)) as f:
             html = lxml.html.document_fromstring(f.read())
@@ -185,3 +189,21 @@ def test_full_jvm_report_generation(tmpdir, testcase):
             assert actual_link == "#"
         else:
             assert actual_link == f'{coverage_link}/{parent_class}.java.html#L{expected_lineno}'
+
+
+def check_analysis_js(report_dir, expected_reached_method, expected_unreached_method):
+    """Check the content of the generated analysis_1.js with reachable and unreachable functions"""
+    with open(os.path.join(report_dir, 'analysis_1.js')) as f:
+        json_list = json.loads(f.read()[22:])
+
+    actual_reached_method = []
+    actual_unreached_method = []
+    for func in json_list:
+        count = int(func['Reached by Fuzzers'].split(' ')[0])
+        name = func["Func name"].split('\n')[1].lstrip(' ')
+        if count == 0:
+            actual_unreached_method.append(name)
+        else:
+            actual_reached_method.append(name)
+    assert actual_reached_method.sort() == expected_reached_method.sort()
+    assert actual_unreached_method.sort() == expected_unreached_method.sort()
