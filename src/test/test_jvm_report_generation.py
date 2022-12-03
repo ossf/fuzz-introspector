@@ -15,7 +15,6 @@
 
 import os
 import sys
-import shutil
 import pytest
 import configparser
 import lxml.html
@@ -25,6 +24,7 @@ sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../")
 from fuzz_introspector import commands, exceptions  # noqa: E402
 
 test_base_dir = os.path.abspath("tests/java")
+coverage_link = "random_url"
 
 
 def retrieve_tag_content(elem):
@@ -33,8 +33,10 @@ def retrieve_tag_content(elem):
     content = content.lstrip(' ').rstrip(' ')
     return content
 
+
 def prepare_test_project(testcase):
-   os.system(f"{test_base_dir}/runTest.sh {testcase}")
+    os.system(f"{test_base_dir}/runTest.sh {testcase}")
+
 
 @pytest.mark.parametrize(
     "testcase",
@@ -86,13 +88,13 @@ def test_full_jvm_report_generation(tmpdir, testcase):
         try:
             commands.run_analysis_on_dir(
                 report_dir,
-                "random_url",
+                coverage_link,
                 analyses_to_run,
                 "",
                 False,
                 "random_name",
                 "jvm"
-        )
+            )
         except exceptions.FuzzIntrospectorError:
             pass
 
@@ -128,10 +130,58 @@ def test_full_jvm_report_generation(tmpdir, testcase):
         actual_class = actual_class.split(' ')[2]
         assert actual_class in class_name
 
+        # Check calltree element line
+        elements = html.find_class('coverage-line-inner')
+        with open(os.path.join(report_dir, f'fuzzerLogFile-{actual_class}.data')) as f:
+            expected_lines = f.readlines()
+        assert len(elements) == len(expected_lines) - 1
+
         # Check first line of call tree
-        for elem in html.find_class('coverage-line-inner'):
-            depth = retrieve_tag_content(elem.find_class('node-depth-wrapper')[0])
-            if depth == "0":
-                actual_line = retrieve_tag_content(elem.find_class('language-clike')[0])
-        assert actual_line == f"[{actual_class}]."+\
+        first_line = elements[0]
+        depth = int(retrieve_tag_content(first_line.find_class('node-depth-wrapper')[0]))
+        assert depth == 0
+
+        actual_line = retrieve_tag_content(first_line.find_class('language-clike')[0])
+        assert actual_line == f"[{actual_class}]." + \
             "fuzzerTestOneInput(com.code_intelligence.jazzer.api.FuzzedDataProvider)"
+
+        # Check last line of call tree
+        last_line = elements[len(elements) - 1]
+        expected_last_line = expected_lines[len(expected_lines) - 1]
+        expected_depth = (len(expected_last_line) - len(expected_last_line.lstrip(' '))) / 2
+        actual_depth = int(retrieve_tag_content(last_line.find_class('node-depth-wrapper')[0]))
+        assert actual_depth == expected_depth
+
+        actual_line = retrieve_tag_content(last_line.find_class('language-clike')[0])
+        expected_line_split = expected_last_line.split(' ')
+        assert actual_line == f"[{expected_line_split[-2]}].{expected_line_split[-3]}"
+
+        # Check call site link for the last line
+        parent_class = ""
+        for element in reversed(elements):
+            element_depth = int(retrieve_tag_content(element.find_class('node-depth-wrapper')[0]))
+            if (element_depth == actual_depth - 1):
+                for link_element in element.find_class('coverage-line-filename')[0].getchildren():
+                    if retrieve_tag_content(link_element) == '[function]':
+                        parent_class = link_element.get('href')
+                        break
+                if parent_class != "#":
+                    parent_lines = retrieve_tag_content(element.find_class('language-clike')[0])
+                    parent_class = parent_lines[1:].split(']')[0]
+                    if "." not in parent_class:
+                        parent_class = f'default/{parent_class}'
+                    else:
+                        parent_class = os.sep.join(parent_class.rsplit(".", 1))
+                    parent_class = parent_class.split('$')[0]
+                break
+
+        actual_link = ""
+        for link_element in last_line.find_class('coverage-line-filename')[0].getchildren():
+            if retrieve_tag_content(link_element) == '[call site]':
+                actual_link = link_element.get('href')
+                break
+        expected_lineno = expected_line_split[-1].split('=')[1].rstrip('\n')
+        if parent_class == "#":
+            assert actual_link == "#"
+        else:
+            assert actual_link == f'{coverage_link}/{parent_class}.java.html#L{expected_lineno}'
