@@ -16,10 +16,16 @@
 package ossf.fuzz.introspector.soot.yaml;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.ArrayList;
+import java.util.List;
 
 public class BranchProfile {
   private String branchString;
-  private BranchSide branchSides;
+  private List<BranchSide> branchSides;
+
+  public BranchProfile() {
+    this.branchSides = new ArrayList<BranchSide>();
+  }
 
   @JsonProperty("Branch String")
   public String getBranchString() {
@@ -31,11 +37,15 @@ public class BranchProfile {
   }
 
   @JsonProperty("Branch Sides")
-  public BranchSide getBranchSides() {
+  public List<BranchSide> getBranchSides() {
     return branchSides;
   }
 
-  public void setBranchSides(BranchSide branchSides) {
+  public void addBranchSides(BranchSide branchSide) {
+    this.branchSides.add(branchSide);
+  }
+
+  public void setBranchSides(List<BranchSide> branchSides) {
     this.branchSides = branchSides;
   }
 }

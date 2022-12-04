@@ -253,7 +253,6 @@ class CustomSenceTransformer extends SceneTransformer {
             if (unit instanceof JIfStmt) {
               // Handle branch profile
               BranchProfile branchProfile = new BranchProfile();
-              BranchSide branchSide = new BranchSide();
 
               Map<String, Integer> trueBlockLine =
                   getBlockStartEndLineWithLineNumber(
@@ -271,23 +270,26 @@ class CustomSenceTransformer extends SceneTransformer {
               if (!trueBlockLine.isEmpty()) {
                 Integer start = trueBlockLine.get("start");
                 Integer end = trueBlockLine.get("end");
-                branchSide.setTrueSides(c.getName() + ":" + start);
-                branchSide.setTrueSidesFuncs(
+                BranchSide branchSide = new BranchSide();
+                branchSide.setBranchSideStr(c.getName() + ":" + start);
+                branchSide.setBranchSideFuncs(
                     getFunctionCallInTargetLine(functionLineMap, start, end));
+                branchProfile.addBranchSides(branchSide);
               }
 
               // False branch
               if (!falseBlockLine.isEmpty()) {
                 Integer start = falseBlockLine.get("start");
                 Integer end = falseBlockLine.get("end");
-                branchSide.setFalseSides(c.getName() + ":" + (start - 1));
-                branchSide.setFalseSidesFuncs(
+                BranchSide branchSide = new BranchSide();
+                branchSide.setBranchSideStr(c.getName() + ":" + (start - 1));
+                branchSide.setBranchSideFuncs(
                     getFunctionCallInTargetLine(functionLineMap, start, end));
+                branchProfile.addBranchSides(branchSide);
               }
 
               branchProfile.setBranchString(
                   c.getName() + ":" + unit.getJavaSourceStartLineNumber());
-              branchProfile.setBranchSides(branchSide);
               element.addBranchProfile(branchProfile);
             }
             iCount++;

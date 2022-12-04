@@ -20,57 +20,32 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class BranchSide {
-  private String trueSides;
-  private List<String> trueSidesFuncs;
-  private String falseSides;
-  private List<String> falseSidesFuncs;
+  private String branchSideStr;
+  private List<String> branchSidesFuncs;
 
   public BranchSide() {
-    this.trueSidesFuncs = new ArrayList<String>();
-    this.falseSidesFuncs = new ArrayList<String>();
+    this.branchSidesFuncs = new ArrayList<String>();
   }
 
-  @JsonProperty("TrueSide")
-  public String getTrueSides() {
-    return trueSides;
+  @JsonProperty("BranchSide")
+  public String getBranchSideStr() {
+    return branchSideStr;
   }
 
-  public void setTrueSides(String trueSides) {
-    this.trueSides = trueSides;
+  public void setBranchSideStr(String branchSideStr) {
+    this.branchSideStr = branchSideStr;
   }
 
-  @JsonProperty("TrueSideFuncs")
-  public List<String> getTrueSidesFuncs() {
-    return trueSidesFuncs;
+  @JsonProperty("BranchSideFuncs")
+  public List<String> getBranchSideFuncs() {
+    return branchSidesFuncs;
   }
 
-  public void addTrueSidesFuncs(String trueSidesFunc) {
-    this.trueSidesFuncs.add(trueSidesFunc);
+  public void addBranchSideFuncs(String branchSidesFunc) {
+    this.branchSidesFuncs.add(branchSidesFunc);
   }
 
-  public void setTrueSidesFuncs(List<String> trueSidesFuncs) {
-    this.trueSidesFuncs = trueSidesFuncs;
-  }
-
-  @JsonProperty("FalseSide")
-  public String getFalseSides() {
-    return falseSides;
-  }
-
-  public void setFalseSides(String falseSides) {
-    this.falseSides = falseSides;
-  }
-
-  @JsonProperty("FalseSideFuncs")
-  public List<String> getFalseSidesFuncs() {
-    return falseSidesFuncs;
-  }
-
-  public void addFalseSidesFuncs(String falseSidesFunc) {
-    this.falseSidesFuncs.add(falseSidesFunc);
-  }
-
-  public void setFalseSidesFuncs(List<String> falseSidesFuncs) {
-    this.falseSidesFuncs = falseSidesFuncs;
+  public void setBranchSideFuncs(List<String> branchSidesFuncs) {
+    this.branchSidesFuncs = branchSidesFuncs;
   }
 }
