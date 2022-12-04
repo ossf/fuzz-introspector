@@ -17,6 +17,7 @@ import os
 import sys
 import json
 import pytest
+import shutil
 import configparser
 import lxml.html
 
@@ -52,7 +53,7 @@ def retrieve_tag_content(elem):
     ]
 )
 def test_full_jvm_report_generation(tmpdir, testcase):
-    report_dir = os.path.join(test_base_dir, "result", testcase)
+    result_dir = os.path.join(test_base_dir, "result", testcase)
 
     config_path = os.path.join(test_base_dir, testcase, ".config")
     config = configparser.ConfigParser()
@@ -62,11 +63,9 @@ def test_full_jvm_report_generation(tmpdir, testcase):
     reached_method = config.get('test', 'reached').split(':')
     unreached_method = config.get('test', 'unreached').split(':')
 
-    os.chdir(report_dir)
-
-    # Ensure testcase report exists
-    if not os.path.isdir(report_dir):
-        return
+    for file in os.listdir(result_dir):
+        shutil.copy(os.path.join(result_dir, file), tmpdir)
+    os.chdir(tmpdir)
 
     # Run analysis and main logic
     analyses_to_run = [
@@ -78,7 +77,7 @@ def test_full_jvm_report_generation(tmpdir, testcase):
     ]
 
     commands.run_analysis_on_dir(
-        report_dir,
+        tmpdir,
         coverage_link,
         analyses_to_run,
         "",
@@ -88,11 +87,11 @@ def test_full_jvm_report_generation(tmpdir, testcase):
     )
 
     # Checking starts here
-    files = os.listdir(report_dir)
+    files = os.listdir(tmpdir)
 
     check_essential_files(files, class_name)
-    check_calltree_view(files, class_name, report_dir)
-    check_analysis_js(report_dir, reached_method, unreached_method)
+    check_calltree_view(files, class_name, tmpdir)
+    check_analysis_js(tmpdir, reached_method, unreached_method)
 
     os.chdir(base_dir)
 
