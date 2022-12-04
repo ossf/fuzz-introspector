@@ -23,7 +23,7 @@ import lxml.html
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../")
 
-from fuzz_introspector import commands, exceptions  # noqa: E402
+from fuzz_introspector import commands, constants  # noqa: E402
 
 base_dir = os.path.abspath(".")
 test_base_dir = os.path.join(base_dir, "tests/java")
@@ -76,7 +76,7 @@ def test_full_jvm_report_generation(tmpdir, testcase):
         "MetadataAnalysis"
     ]
 
-    commands.run_analysis_on_dir(
+    assert commands.run_analysis_on_dir(
         tmpdir,
         coverage_link,
         analyses_to_run,
@@ -84,7 +84,7 @@ def test_full_jvm_report_generation(tmpdir, testcase):
         False,
         "random_name",
         "jvm"
-    )
+    ) == constants.APP_EXIT_SUCCESS
 
     # Checking starts here
     files = os.listdir(tmpdir)
