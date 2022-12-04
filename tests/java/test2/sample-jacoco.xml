@@ -1,0 +1,95 @@
+<!DOCTYPE report PUBLIC "-//JACOCO//DTD Report 1.1//EN" "report.dtd">
+<report name="JaCoCo Coverage Report">
+  <sessioninfo id="e262b021f35c-83b48ad" start="1670191702659" dump="1670191703190"/>
+  <package name="">
+    <class name="TestFuzzer" sourcefilename="TestFuzzer.java">
+      <method name="&lt;init&gt;" desc="()V" line="19">
+        <counter type="INSTRUCTION" missed="3" covered="0"/>
+        <counter type="LINE" missed="1" covered="0"/>
+        <counter type="COMPLEXITY" missed="1" covered="0"/>
+        <counter type="METHOD" missed="1" covered="0"/>
+      </method>
+      <method name="function1" desc="()V" line="21">
+        <counter type="INSTRUCTION" missed="4" covered="0"/>
+        <counter type="LINE" missed="2" covered="0"/>
+        <counter type="COMPLEXITY" missed="1" covered="0"/>
+        <counter type="METHOD" missed="1" covered="0"/>
+      </method>
+      <method name="function2" desc="()V" line="25">
+        <counter type="INSTRUCTION" missed="4" covered="0"/>
+        <counter type="LINE" missed="2" covered="0"/>
+        <counter type="COMPLEXITY" missed="1" covered="0"/>
+        <counter type="METHOD" missed="1" covered="0"/>
+      </method>
+      <method name="functionPublicDead" desc="()V" line="29">
+        <counter type="INSTRUCTION" missed="4" covered="0"/>
+        <counter type="LINE" missed="2" covered="0"/>
+        <counter type="COMPLEXITY" missed="1" covered="0"/>
+        <counter type="METHOD" missed="1" covered="0"/>
+      </method>
+      <method name="functionPrivateDead" desc="()V" line="33">
+        <counter type="INSTRUCTION" missed="4" covered="0"/>
+        <counter type="LINE" missed="2" covered="0"/>
+        <counter type="COMPLEXITY" missed="1" covered="0"/>
+        <counter type="METHOD" missed="1" covered="0"/>
+      </method>
+      <method name="fuzzerTestOneInput" desc="(Lcom/code_intelligence/jazzer/api/FuzzedDataProvider;)V" line="37">
+        <counter type="INSTRUCTION" missed="16" covered="0"/>
+        <counter type="BRANCH" missed="2" covered="0"/>
+        <counter type="LINE" missed="7" covered="0"/>
+        <counter type="COMPLEXITY" missed="2" covered="0"/>
+        <counter type="METHOD" missed="1" covered="0"/>
+      </method>
+      <method name="main" desc="([Ljava/lang/String;)V" line="47">
+        <counter type="INSTRUCTION" missed="6" covered="0"/>
+        <counter type="LINE" missed="2" covered="0"/>
+        <counter type="COMPLEXITY" missed="1" covered="0"/>
+        <counter type="METHOD" missed="1" covered="0"/>
+      </method>
+      <counter type="INSTRUCTION" missed="41" covered="0"/>
+      <counter type="BRANCH" missed="2" covered="0"/>
+      <counter type="LINE" missed="18" covered="0"/>
+      <counter type="COMPLEXITY" missed="8" covered="0"/>
+      <counter type="METHOD" missed="7" covered="0"/>
+      <counter type="CLASS" missed="1" covered="0"/>
+    </class>
+    <sourcefile name="TestFuzzer.java">
+      <line nr="19" mi="3" ci="0" mb="0" cb="0"/>
+      <line nr="21" mi="3" ci="0" mb="0" cb="0"/>
+      <line nr="22" mi="1" ci="0" mb="0" cb="0"/>
+      <line nr="25" mi="3" ci="0" mb="0" cb="0"/>
+      <line nr="26" mi="1" ci="0" mb="0" cb="0"/>
+      <line nr="29" mi="3" ci="0" mb="0" cb="0"/>
+      <line nr="30" mi="1" ci="0" mb="0" cb="0"/>
+      <line nr="33" mi="3" ci="0" mb="0" cb="0"/>
+      <line nr="34" mi="1" ci="0" mb="0" cb="0"/>
+      <line nr="37" mi="5" ci="0" mb="0" cb="0"/>
+      <line nr="38" mi="2" ci="0" mb="2" cb="0"/>
+      <line nr="39" mi="4" ci="0" mb="0" cb="0"/>
+      <line nr="40" mi="2" ci="0" mb="0" cb="0"/>
+      <line nr="41" mi="1" ci="0" mb="0" cb="0"/>
+      <line nr="42" mi="1" ci="0" mb="0" cb="0"/>
+      <line nr="44" mi="1" ci="0" mb="0" cb="0"/>
+      <line nr="47" mi="5" ci="0" mb="0" cb="0"/>
+      <line nr="48" mi="1" ci="0" mb="0" cb="0"/>
+      <counter type="INSTRUCTION" missed="41" covered="0"/>
+      <counter type="BRANCH" missed="2" covered="0"/>
+      <counter type="LINE" missed="18" covered="0"/>
+      <counter type="COMPLEXITY" missed="8" covered="0"/>
+      <counter type="METHOD" missed="7" covered="0"/>
+      <counter type="CLASS" missed="1" covered="0"/>
+    </sourcefile>
+    <counter type="INSTRUCTION" missed="41" covered="0"/>
+    <counter type="BRANCH" missed="2" covered="0"/>
+    <counter type="LINE" missed="18" covered="0"/>
+    <counter type="COMPLEXITY" missed="8" covered="0"/>
+    <counter type="METHOD" missed="7" covered="0"/>
+    <counter type="CLASS" missed="1" covered="0"/>
+  </package>
+  <counter type="INSTRUCTION" missed="41" covered="0"/>
+  <counter type="BRANCH" missed="2" covered="0"/>
+  <counter type="LINE" missed="18" covered="0"/>
+  <counter type="COMPLEXITY" missed="8" covered="0"/>
+  <counter type="METHOD" missed="7" covered="0"/>
+  <counter type="CLASS" missed="1" covered="0"/>
+</report>
