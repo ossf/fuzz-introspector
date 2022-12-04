@@ -60,8 +60,10 @@ def test_full_jvm_report_generation(tmpdir, testcase):
     with open(config_path) as f:
         config.read_string('[test]\n' + f.read())
     class_name = config.get('test', 'entryclass').split(':')
-    reached_method = config.get('test', 'reached').split(':')
-    unreached_method = config.get('test', 'unreached').split(':')
+    optimal_reached = config.get('test', 'optimalreached').split(':')
+    optimal_unreached = config.get('test', 'optimalunreached').split(':')
+    reached = config.get('test', 'reached').split(':')
+    unreached = config.get('test', 'unreached').split(':')
 
     for file in os.listdir(result_dir):
         shutil.copy(os.path.join(result_dir, file), tmpdir)
@@ -91,21 +93,19 @@ def test_full_jvm_report_generation(tmpdir, testcase):
 
     check_essential_files(files, class_name)
     check_calltree_view(files, class_name, tmpdir)
-    check_analysis_js(tmpdir, reached_method, unreached_method)
+    check_function_list(tmpdir, optimal_reached, optimal_unreached, True)
+    check_function_list(tmpdir, reached, unreached, False)
 
     os.chdir(base_dir)
 
 
 def check_essential_files(files, class_name):
-    """Check if important report files has been generated"""
+    """Check if important report files has been generated
+       Ignoring all the styling js and css files"""
     expected_files = [
         'all_functions.js',
         'analysis_1.js',
-        'calltree.js',
-        'clike.js',
-        'custom.js',
         'fuzzer_table_data.js',
-        'prism.js',
         'fuzz_report.html'
     ]
     for name in class_name:
@@ -185,10 +185,13 @@ def check_calltree_view(files, class_name, report_dir):
             assert actual_link == f'{coverage_link}/{parent_class}.java.html#L{expected_lineno}'
 
 
-def check_analysis_js(report_dir, expected_reached_method, expected_unreached_method):
-    """Check the content of the generated analysis_1.js with reachable and unreachable functions"""
+def check_function_list(report_dir, expected_reached_method, expected_unreached_method, is_optimal):
+    """Check the content of the generated function list in all_function.js
+       or analysis_1.js with reachable and unreachable functions. They have
+       almost the same structure, only analysis_1.js contains a optimal
+       subset of functions as a result of an analysis."""
     with open(os.path.join(report_dir, 'analysis_1.js')) as f:
-        json_list = json.loads(f.read()[22:])
+        json_list = json.loads(f.read()[(22 if is_optimal else 31):])
 
     actual_reached_method = []
     actual_unreached_method = []
