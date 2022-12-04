@@ -77,18 +77,15 @@ def test_full_jvm_report_generation(tmpdir, testcase):
         "MetadataAnalysis"
     ]
 
-    try:
-        commands.run_analysis_on_dir(
-            report_dir,
-            coverage_link,
-            analyses_to_run,
-            "",
-            False,
-            "random_name",
-            "jvm"
-        )
-    except exceptions.FuzzIntrospectorError:
-        pass
+    commands.run_analysis_on_dir(
+        report_dir,
+        coverage_link,
+        analyses_to_run,
+        "",
+        False,
+        "random_name",
+        "jvm"
+    )
 
     # Checking starts here
     files = os.listdir(report_dir)

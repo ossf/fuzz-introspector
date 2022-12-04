@@ -22,7 +22,7 @@ jobs:
           cd tests/java && ./runTest.sh
       - name: Test unittests and generate coverage report
         run: |
-          coverage run -m pytest -vv -s src/test/
+          coverage run -m pytest -vv src/test/
       - name: Display and clean up unittests coverage report
         run: |
           coverage report -m
