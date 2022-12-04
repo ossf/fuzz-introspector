@@ -93,8 +93,8 @@ def test_full_jvm_report_generation(tmpdir, testcase):
 
     check_essential_files(files, class_name)
     check_calltree_view(files, class_name, tmpdir)
-    check_function_list(tmpdir, optimal_reached, optimal_unreached, True)
-    check_function_list(tmpdir, reached, unreached, False)
+    check_function_list(tmpdir, optimal_reached, optimal_unreached, 'analysis_1.js')
+    check_function_list(tmpdir, reached, unreached, 'all_functions.js')
 
     os.chdir(base_dir)
 
@@ -185,13 +185,13 @@ def check_calltree_view(files, class_name, report_dir):
             assert actual_link == f'{coverage_link}/{parent_class}.java.html#L{expected_lineno}'
 
 
-def check_function_list(report_dir, expected_reached_method, expected_unreached_method, is_optimal):
+def check_function_list(report_dir, expected_reached_method, expected_unreached_method, file):
     """Check the content of the generated function list in all_function.js
        or analysis_1.js with reachable and unreachable functions. They have
        almost the same structure, only analysis_1.js contains a optimal
        subset of functions as a result of an analysis."""
-    with open(os.path.join(report_dir, 'analysis_1.js')) as f:
-        json_list = json.loads(f.read()[(22 if is_optimal else 31):])
+    with open(os.path.join(report_dir, file)) as f:
+        json_list = json.loads("".join(f.read().split('=')[1:]))
 
     actual_reached_method = []
     actual_unreached_method = []
