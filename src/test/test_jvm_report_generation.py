@@ -31,6 +31,12 @@ coverage_link = "random_url"
 project_name = "random_name"
 
 
+def safe_split(string, sep):
+    if string == "":
+        return []
+    else:
+        return string.split(sep)
+
 def retrieve_tag_content(elem):
     content = elem.text
     content = content.replace('\n', '')
@@ -74,10 +80,10 @@ def test_full_jvm_report_generation(tmpdir, testcase):
     with open(config_path) as f:
         config.read_string('[test]\n' + f.read())
     class_name = config.get('test', 'entryclass').split(':')
-    optimal_reached = config.get('test', 'optimalreached').split(':')
-    optimal_unreached = config.get('test', 'optimalunreached').split(':')
-    reached = config.get('test', 'reached').split(':')
-    unreached = config.get('test', 'unreached').split(':')
+    optimal_reached = safe_split(config.get('test', 'optimalreached'), ":")
+    optimal_unreached = safe_split(config.get('test', 'optimalunreached'), ":")
+    reached = safe_split(config.get('test', 'reached'), ":")
+    unreached = safe_split(config.get('test', 'unreached'), ":")
     files_reached = process_mapping(config.get('test', 'filereached'))
     files_covered = process_mapping(config.get('test', 'filecovered'))
 
@@ -118,7 +124,7 @@ def test_full_jvm_report_generation(tmpdir, testcase):
     check_calltree_view(tmpdir, files, class_name)
     check_function_list(tmpdir, optimal_reached, optimal_unreached, 'analysis_1.js')
     check_function_list(tmpdir, reached, unreached, 'all_functions.js')
-    check_fuzz_report(tmpdir, class_name, files_reached, files_covered)
+    check_fuzz_report(tmpdir, class_name, files_reached, files_covered, reached, unreached)
 
     os.chdir(base_dir)
 
@@ -230,7 +236,7 @@ def check_function_list(report_dir, expected_reached_method, expected_unreached_
     assert actual_unreached_method.sort() == expected_unreached_method.sort()
 
 
-def check_fuzz_report(report_dir, class_name, files_reached, files_covered):
+def check_fuzz_report(report_dir, class_name, files_reached, files_covered, func_reached, func_unreached):
     """Check main fuzz_report.html"""
     with open(os.path.join(report_dir, 'fuzz_report.html')) as f:
         html = lxml.html.document_fromstring(f.read())
@@ -253,6 +259,16 @@ def check_fuzz_report(report_dir, class_name, files_reached, files_covered):
         actual_name_link = item.getchildren()[0].get('href')
         assert actual_name.split(' ')[1] in class_name
         assert actual_name_link.split('-')[1] in class_name
+
+    # Check static coverage
+    item_list = html.find_class('report-box mt-0')
+    for item in item_list:
+        if retrieve_tag_content(item.getchildren()[0]) == "Functions statically reachable by fuzzers":
+            count_str = retrieve_tag_content(item.getchildren()[2])
+            actual_reached_count = int(count_str.split("/")[0])
+            actual_total_count = int(count_str.split("/")[1])
+            assert len(func_reached) == actual_reached_count
+            assert (len(func_reached) + len(func_unreached)) == actual_total_count
 
     # Check files in report
     item = html.find_class('report-box')[11].find_class('cell-border compact stripe')[0]
