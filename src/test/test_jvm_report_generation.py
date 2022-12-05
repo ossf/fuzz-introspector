@@ -37,6 +37,7 @@ def safe_split(string, sep):
     else:
         return string.split(sep)
 
+
 def retrieve_tag_content(elem):
     content = elem.text
     content = content.replace('\n', '')
@@ -236,7 +237,14 @@ def check_function_list(report_dir, expected_reached_method, expected_unreached_
     assert actual_unreached_method.sort() == expected_unreached_method.sort()
 
 
-def check_fuzz_report(report_dir, class_name, files_reached, files_covered, func_reached, func_unreached):
+def check_fuzz_report(
+    report_dir,
+    class_name,
+    files_reached,
+    files_covered,
+    func_reached,
+    func_unreached
+):
     """Check main fuzz_report.html"""
     with open(os.path.join(report_dir, 'fuzz_report.html')) as f:
         html = lxml.html.document_fromstring(f.read())
@@ -263,7 +271,7 @@ def check_fuzz_report(report_dir, class_name, files_reached, files_covered, func
     # Check static coverage
     item_list = html.find_class('report-box mt-0')
     for item in item_list:
-        if retrieve_tag_content(item.getchildren()[0]) == "Functions statically reachable by fuzzers":
+        if retrieve_tag_content(item.getchildren()[0]).startswith("Functions"):
             count_str = retrieve_tag_content(item.getchildren()[2])
             actual_reached_count = int(count_str.split("/")[0])
             actual_total_count = int(count_str.split("/")[1])
