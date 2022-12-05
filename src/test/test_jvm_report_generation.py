@@ -28,6 +28,7 @@ from fuzz_introspector import commands, constants  # noqa: E402
 base_dir = os.path.abspath(".")
 test_base_dir = os.path.join(base_dir, "tests/java")
 coverage_link = "random_url"
+project_name = "random_name"
 
 
 def retrieve_tag_content(elem):
@@ -35,6 +36,19 @@ def retrieve_tag_content(elem):
     content = content.replace('\n', '')
     content = content.lstrip(' ').rstrip(' ')
     return content
+
+
+def process_mapping(map_str):
+    result = dict()
+    for item in map_str.split(';'):
+        split = item.split(':')
+        result_list = []
+        if split[1] != "[]":
+            for value in split[1].strip('[]').split(','):
+                result_list.append(value)
+        result[split[0]] = result_list
+
+    return result
 
 
 @pytest.mark.parametrize(
@@ -64,9 +78,18 @@ def test_full_jvm_report_generation(tmpdir, testcase):
     optimal_unreached = config.get('test', 'optimalunreached').split(':')
     reached = config.get('test', 'reached').split(':')
     unreached = config.get('test', 'unreached').split(':')
+    files_reached = process_mapping(config.get('test', 'filereached'))
+    files_covered = process_mapping(config.get('test', 'filecovered'))
 
     for file in os.listdir(result_dir):
         shutil.copy(os.path.join(result_dir, file), tmpdir)
+
+    os.mkdir(os.path.join(tmpdir, coverage_link))
+    shutil.copy(
+        os.path.join(test_base_dir, testcase, "sample-jacoco.xml"),
+        os.path.join(tmpdir, coverage_link)
+    )
+
     os.chdir(tmpdir)
 
     # Run analysis and main logic
@@ -84,7 +107,7 @@ def test_full_jvm_report_generation(tmpdir, testcase):
         analyses_to_run,
         "",
         False,
-        "random_name",
+        project_name,
         "jvm"
     ) == constants.APP_EXIT_SUCCESS
 
@@ -92,9 +115,10 @@ def test_full_jvm_report_generation(tmpdir, testcase):
     files = os.listdir(tmpdir)
 
     check_essential_files(files, class_name)
-    check_calltree_view(files, class_name, tmpdir)
+    check_calltree_view(tmpdir, files, class_name)
     check_function_list(tmpdir, optimal_reached, optimal_unreached, 'analysis_1.js')
     check_function_list(tmpdir, reached, unreached, 'all_functions.js')
+    check_fuzz_report(tmpdir, class_name, files_reached, files_covered)
 
     os.chdir(base_dir)
 
@@ -117,7 +141,7 @@ def check_essential_files(files, class_name):
         assert file in files
 
 
-def check_calltree_view(files, class_name, report_dir):
+def check_calltree_view(report_dir, files, class_name):
     """Check all calltree_view_*.html"""
     for file in [f for f in files if f.startswith('calltree_view_')]:
         with open(os.path.join(report_dir, file)) as f:
@@ -204,3 +228,57 @@ def check_function_list(report_dir, expected_reached_method, expected_unreached_
             actual_reached_method.append(name)
     assert actual_reached_method.sort() == expected_reached_method.sort()
     assert actual_unreached_method.sort() == expected_unreached_method.sort()
+
+def check_fuzz_report(report_dir, class_name, files_reached, files_covered):
+    """Check main fuzz_report.html"""
+    with open(os.path.join(report_dir, 'fuzz_report.html')) as f:
+        html = lxml.html.document_fromstring(f.read())
+
+    # Check fuzzer class name
+    for item in html.find_class('pfc-list-item'):
+        actual_class = retrieve_tag_content(item)
+    assert actual_class in class_name
+
+    # Check project name
+    item = html.find_class('left-sidebar-content-box')[1].getchildren()[1]
+    actual_project_name = retrieve_tag_content(item.getchildren()[0])
+    assert actual_project_name == f'Project overview: {project_name}'
+
+    # Check fuzzer name
+    counter = 7
+    for i in range(len(class_name)):
+        item = html.find_class('left-sidebar-content-box')[1].getchildren()[counter + i * 2]
+        actual_name = retrieve_tag_content(item.getchildren()[0])
+        actual_name_link = item.getchildren()[0].get('href')
+        assert actual_name.split(' ')[1] in class_name
+        assert actual_name_link.split('-')[1] in class_name
+
+    # Check files in report
+    item = html.find_class('report-box')[11].find_class('cell-border compact stripe')[0]
+    tbody = item.getchildren()[1]
+    for tr in tbody.getchildren():
+        td_list = tr.getchildren()
+        actual_file = retrieve_tag_content(td_list[0])
+        actual_reached = [item for item in retrieve_tag_content(td_list[1]).strip('[]').split(', ')]
+        actual_covered = [item for item in retrieve_tag_content(td_list[2]).strip('[]').split(', ')]
+        assert actual_file in files_reached
+        assert actual_file in files_covered
+        assert files_reached[actual_file].sort() == actual_reached.sort()
+        assert files_covered[actual_file].sort() == actual_covered.sort()
+
+
+    # Check metadata
+    item = html.find_class('report-box')[12].find_class('cell-border compact stripe')[0]
+    tbody = item.getchildren()[1]
+    for tr in tbody.getchildren():
+        td_list = tr.getchildren()
+        fuzzer = retrieve_tag_content(td_list[0])
+        fuzzer_data = retrieve_tag_content(td_list[1].getchildren()[0])
+        fuzzer_data_link = td_list[1].getchildren()[0].get('href')
+        fuzzer_yaml = retrieve_tag_content(td_list[2].getchildren()[0])
+        fuzzer_yaml_link = td_list[2].getchildren()[0].get('href')
+        assert fuzzer in class_name
+        assert fuzzer_data == f'fuzzerLogFile-{fuzzer}.data'
+        assert fuzzer_data == fuzzer_data_link
+        assert fuzzer_yaml == f'fuzzerLogFile-{fuzzer}.data.yaml'
+        assert fuzzer_yaml == fuzzer_yaml_link
