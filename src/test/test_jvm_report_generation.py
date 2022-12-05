@@ -229,6 +229,7 @@ def check_function_list(report_dir, expected_reached_method, expected_unreached_
     assert actual_reached_method.sort() == expected_reached_method.sort()
     assert actual_unreached_method.sort() == expected_unreached_method.sort()
 
+
 def check_fuzz_report(report_dir, class_name, files_reached, files_covered):
     """Check main fuzz_report.html"""
     with open(os.path.join(report_dir, 'fuzz_report.html')) as f:
@@ -265,7 +266,6 @@ def check_fuzz_report(report_dir, class_name, files_reached, files_covered):
         assert actual_file in files_covered
         assert files_reached[actual_file].sort() == actual_reached.sort()
         assert files_covered[actual_file].sort() == actual_covered.sort()
-
 
     # Check metadata
     item = html.find_class('report-box')[12].find_class('cell-border compact stripe')[0]
