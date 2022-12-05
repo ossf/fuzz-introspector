@@ -17,13 +17,12 @@
 
 # Ensure JDK 8.0 or later and Maven 3.3 or later is installed
 
-ROOT=$PWD
-rm -rf ./result
-mkdir result
+ROOT=$(cd $(dirname "$0") && pwd)
 
-for i in {1..10}
-do
-  cd $ROOT/test$i
+if [[ "$#" == 1 ]]
+then
+  # Run single testcases
+  cd $ROOT/$1
   source .config
   ./build.sh
 
@@ -31,12 +30,18 @@ do
   cd $ROOT/../../frontends/java
   ./run.sh -j $jarfile -c $entryclass
 
-  rm -rf $ROOT/result/test$i
-  mkdir $ROOT/result/test$i
+  rm -rf $ROOT/result/$1
+  mkdir -p $ROOT/result/$1
 
   for class in ${entryclass//:/ }
   do
-    mv fuzzerLogFile-$class.data $ROOT/result/test$i/fuzzerLogFile-$class.data
-    mv fuzzerLogFile-$class.data.yaml $ROOT/result/test$i/fuzzerLogFile-$class.data.yaml
+    mv fuzzerLogFile-$class.data $ROOT/result/$1/fuzzerLogFile-$class.data
+    mv fuzzerLogFile-$class.data.yaml $ROOT/result/$1/fuzzerLogFile-$class.data.yaml
   done
-done
+else
+  # Run all test cases
+  for i in {1..10}
+  do
+    $ROOT/runTest.sh test$i
+  done
+fi
