@@ -94,7 +94,7 @@ def test_full_jvm_report_generation(tmpdir, testcase):
     os.mkdir(os.path.join(tmpdir, coverage_link))
     shutil.copy(
         os.path.join(test_base_dir, testcase, "sample-jacoco.xml"),
-        os.path.join(tmpdir, coverage_link)
+        os.path.join(tmpdir, coverage_link, "jacoco.xml")
     )
 
     os.chdir(tmpdir)
@@ -117,6 +117,10 @@ def test_full_jvm_report_generation(tmpdir, testcase):
         project_name,
         "jvm"
     ) == constants.APP_EXIT_SUCCESS
+
+    for files in os.listdir(tmpdir):
+        if files != coverage_link:
+            shutil.copy(os.path.join(tmpdir, files), result_dir)
 
     # Checking starts here
     files = os.listdir(tmpdir)
@@ -260,10 +264,12 @@ def check_fuzz_report(
     assert actual_project_name == f'Project overview: {project_name}'
 
     # Check fuzzer name
-    counter = 7
-    for i in range(len(class_name)):
-        item = html.find_class('left-sidebar-content-box')[1].getchildren()[counter + i * 2]
+    for item in html.find_class('left-sidebar-content-box')[1].getchildren():
+        if len(item.getchildren()) != 1:
+            continue
         actual_name = retrieve_tag_content(item.getchildren()[0])
+        if not actual_name.startswith('Fuzzer:'):
+            continue
         actual_name_link = item.getchildren()[0].get('href')
         assert actual_name.split(' ')[1] in class_name
         assert actual_name_link.split('-')[1] in class_name
@@ -279,7 +285,7 @@ def check_fuzz_report(
             assert (len(func_reached) + len(func_unreached)) == actual_total_count
 
     # Check files in report
-    item = html.find_class('report-box')[11].find_class('cell-border compact stripe')[0]
+    item = html.find_class('report-box')[-2].find_class('cell-border compact stripe')[0]
     tbody = item.getchildren()[1]
     for tr in tbody.getchildren():
         td_list = tr.getchildren()
@@ -292,7 +298,7 @@ def check_fuzz_report(
         assert files_covered[actual_file].sort() == actual_covered.sort()
 
     # Check metadata
-    item = html.find_class('report-box')[12].find_class('cell-border compact stripe')[0]
+    item = html.find_class('report-box')[-1].find_class('cell-border compact stripe')[0]
     tbody = item.getchildren()[1]
     for tr in tbody.getchildren():
         td_list = tr.getchildren()
