@@ -1,0 +1,63 @@
+<!DOCTYPE report PUBLIC "-//JACOCO//DTD Report 1.1//EN" "report.dtd">
+<report name="JaCoCo Coverage Report">
+  <sessioninfo id="94e997e23ed6-81038719" start="1670189218176" dump="1670189218680"/>
+  <package name="">
+    <class name="TestFuzzer" sourcefilename="TestFuzzer.java">
+      <method name="&lt;init&gt;" desc="()V" line="37">
+        <counter type="INSTRUCTION" missed="3" covered="0"/>
+        <counter type="LINE" missed="1" covered="0"/>
+        <counter type="COMPLEXITY" missed="1" covered="0"/>
+        <counter type="METHOD" missed="1" covered="0"/>
+      </method>
+      <method name="fuzzerTestOneInput" desc="(Lcom/code_intelligence/jazzer/api/FuzzedDataProvider;)V" line="39">
+        <counter type="INSTRUCTION" missed="16" covered="0"/>
+        <counter type="BRANCH" missed="2" covered="0"/>
+        <counter type="LINE" missed="7" covered="0"/>
+        <counter type="COMPLEXITY" missed="2" covered="0"/>
+        <counter type="METHOD" missed="1" covered="0"/>
+      </method>
+      <method name="main" desc="([Ljava/lang/String;)V" line="50">
+        <counter type="INSTRUCTION" missed="6" covered="0"/>
+        <counter type="LINE" missed="2" covered="0"/>
+        <counter type="COMPLEXITY" missed="1" covered="0"/>
+        <counter type="METHOD" missed="1" covered="0"/>
+      </method>
+      <counter type="INSTRUCTION" missed="25" covered="0"/>
+      <counter type="BRANCH" missed="2" covered="0"/>
+      <counter type="LINE" missed="10" covered="0"/>
+      <counter type="COMPLEXITY" missed="4" covered="0"/>
+      <counter type="METHOD" missed="3" covered="0"/>
+      <counter type="CLASS" missed="1" covered="0"/>
+    </class>
+    <sourcefile name="TestFuzzer.java">
+      <line nr="37" mi="3" ci="0" mb="0" cb="0"/>
+      <line nr="39" mi="5" ci="0" mb="0" cb="0"/>
+      <line nr="41" mi="2" ci="0" mb="2" cb="0"/>
+      <line nr="42" mi="4" ci="0" mb="0" cb="0"/>
+      <line nr="43" mi="2" ci="0" mb="0" cb="0"/>
+      <line nr="44" mi="1" ci="0" mb="0" cb="0"/>
+      <line nr="45" mi="1" ci="0" mb="0" cb="0"/>
+      <line nr="47" mi="1" ci="0" mb="0" cb="0"/>
+      <line nr="50" mi="5" ci="0" mb="0" cb="0"/>
+      <line nr="51" mi="1" ci="0" mb="0" cb="0"/>
+      <counter type="INSTRUCTION" missed="25" covered="0"/>
+      <counter type="BRANCH" missed="2" covered="0"/>
+      <counter type="LINE" missed="10" covered="0"/>
+      <counter type="COMPLEXITY" missed="4" covered="0"/>
+      <counter type="METHOD" missed="3" covered="0"/>
+      <counter type="CLASS" missed="1" covered="0"/>
+    </sourcefile>
+    <counter type="INSTRUCTION" missed="25" covered="0"/>
+    <counter type="BRANCH" missed="2" covered="0"/>
+    <counter type="LINE" missed="10" covered="0"/>
+    <counter type="COMPLEXITY" missed="4" covered="0"/>
+    <counter type="METHOD" missed="3" covered="0"/>
+    <counter type="CLASS" missed="1" covered="0"/>
+  </package>
+  <counter type="INSTRUCTION" missed="25" covered="0"/>
+  <counter type="BRANCH" missed="2" covered="0"/>
+  <counter type="LINE" missed="10" covered="0"/>
+  <counter type="COMPLEXITY" missed="4" covered="0"/>
+  <counter type="METHOD" missed="3" covered="0"/>
+  <counter type="CLASS" missed="1" covered="0"/>
+</report>

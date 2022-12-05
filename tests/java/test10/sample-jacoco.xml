@@ -1,0 +1,232 @@
+<!DOCTYPE report PUBLIC "-//JACOCO//DTD Report 1.1//EN" "report.dtd">
+<report name="JaCoCo Coverage Report">
+  <sessioninfo id="7cfc14c02175-779af111" start="1670192674538" dump="1670192675044"/>
+  <package name="Fuzz">
+    <class name="Fuzz/Human" sourcefilename="Human.java">
+      <method name="&lt;init&gt;" desc="()V" line="17">
+        <counter type="INSTRUCTION" missed="6" covered="0"/>
+        <counter type="LINE" missed="2" covered="0"/>
+        <counter type="COMPLEXITY" missed="1" covered="0"/>
+        <counter type="METHOD" missed="1" covered="0"/>
+      </method>
+      <counter type="INSTRUCTION" missed="6" covered="0"/>
+      <counter type="LINE" missed="2" covered="0"/>
+      <counter type="COMPLEXITY" missed="1" covered="0"/>
+      <counter type="METHOD" missed="1" covered="0"/>
+      <counter type="CLASS" missed="1" covered="0"/>
+    </class>
+    <class name="Fuzz/Male" sourcefilename="Male.java">
+      <method name="&lt;init&gt;" desc="()V" line="17">
+        <counter type="INSTRUCTION" missed="3" covered="0"/>
+        <counter type="LINE" missed="1" covered="0"/>
+        <counter type="COMPLEXITY" missed="1" covered="0"/>
+        <counter type="METHOD" missed="1" covered="0"/>
+      </method>
+      <method name="getName" desc="()Ljava/lang/String;" line="19">
+        <counter type="INSTRUCTION" missed="8" covered="0"/>
+        <counter type="LINE" missed="2" covered="0"/>
+        <counter type="COMPLEXITY" missed="1" covered="0"/>
+        <counter type="METHOD" missed="1" covered="0"/>
+      </method>
+      <method name="getTitle" desc="()Ljava/lang/String;" line="24">
+        <counter type="INSTRUCTION" missed="2" covered="0"/>
+        <counter type="LINE" missed="1" covered="0"/>
+        <counter type="COMPLEXITY" missed="1" covered="0"/>
+        <counter type="METHOD" missed="1" covered="0"/>
+      </method>
+      <method name="maleStuff" desc="()V" line="28">
+        <counter type="INSTRUCTION" missed="4" covered="0"/>
+        <counter type="LINE" missed="2" covered="0"/>
+        <counter type="COMPLEXITY" missed="1" covered="0"/>
+        <counter type="METHOD" missed="1" covered="0"/>
+      </method>
+      <counter type="INSTRUCTION" missed="17" covered="0"/>
+      <counter type="LINE" missed="6" covered="0"/>
+      <counter type="COMPLEXITY" missed="4" covered="0"/>
+      <counter type="METHOD" missed="4" covered="0"/>
+      <counter type="CLASS" missed="1" covered="0"/>
+    </class>
+    <class name="Fuzz/Female" sourcefilename="Female.java">
+      <method name="&lt;init&gt;" desc="()V" line="17">
+        <counter type="INSTRUCTION" missed="3" covered="0"/>
+        <counter type="LINE" missed="1" covered="0"/>
+        <counter type="COMPLEXITY" missed="1" covered="0"/>
+        <counter type="METHOD" missed="1" covered="0"/>
+      </method>
+      <method name="getName" desc="()Ljava/lang/String;" line="19">
+        <counter type="INSTRUCTION" missed="8" covered="0"/>
+        <counter type="LINE" missed="2" covered="0"/>
+        <counter type="COMPLEXITY" missed="1" covered="0"/>
+        <counter type="METHOD" missed="1" covered="0"/>
+      </method>
+      <method name="getTitle" desc="()Ljava/lang/String;" line="24">
+        <counter type="INSTRUCTION" missed="2" covered="0"/>
+        <counter type="LINE" missed="1" covered="0"/>
+        <counter type="COMPLEXITY" missed="1" covered="0"/>
+        <counter type="METHOD" missed="1" covered="0"/>
+      </method>
+      <method name="femaleStuff" desc="()V" line="28">
+        <counter type="INSTRUCTION" missed="4" covered="0"/>
+        <counter type="LINE" missed="2" covered="0"/>
+        <counter type="COMPLEXITY" missed="1" covered="0"/>
+        <counter type="METHOD" missed="1" covered="0"/>
+      </method>
+      <counter type="INSTRUCTION" missed="17" covered="0"/>
+      <counter type="LINE" missed="6" covered="0"/>
+      <counter type="COMPLEXITY" missed="4" covered="0"/>
+      <counter type="METHOD" missed="4" covered="0"/>
+      <counter type="CLASS" missed="1" covered="0"/>
+    </class>
+    <class name="Fuzz/Robot" sourcefilename="Robot.java">
+      <method name="&lt;init&gt;" desc="()V" line="17">
+        <counter type="INSTRUCTION" missed="3" covered="0"/>
+        <counter type="LINE" missed="1" covered="0"/>
+        <counter type="COMPLEXITY" missed="1" covered="0"/>
+        <counter type="METHOD" missed="1" covered="0"/>
+      </method>
+      <method name="getName" desc="()Ljava/lang/String;" line="19">
+        <counter type="INSTRUCTION" missed="3" covered="0"/>
+        <counter type="LINE" missed="1" covered="0"/>
+        <counter type="COMPLEXITY" missed="1" covered="0"/>
+        <counter type="METHOD" missed="1" covered="0"/>
+      </method>
+      <counter type="INSTRUCTION" missed="6" covered="0"/>
+      <counter type="LINE" missed="2" covered="0"/>
+      <counter type="COMPLEXITY" missed="2" covered="0"/>
+      <counter type="METHOD" missed="2" covered="0"/>
+      <counter type="CLASS" missed="1" covered="0"/>
+    </class>
+    <class name="Fuzz/TestFuzzer" sourcefilename="TestFuzzer.java">
+      <method name="&lt;init&gt;" desc="()V" line="20">
+        <counter type="INSTRUCTION" missed="3" covered="0"/>
+        <counter type="LINE" missed="1" covered="0"/>
+        <counter type="COMPLEXITY" missed="1" covered="0"/>
+        <counter type="METHOD" missed="1" covered="0"/>
+      </method>
+      <method name="fuzzerTestOneInput" desc="(Lcom/code_intelligence/jazzer/api/FuzzedDataProvider;)V" line="22">
+        <counter type="INSTRUCTION" missed="37" covered="0"/>
+        <counter type="BRANCH" missed="6" covered="0"/>
+        <counter type="LINE" missed="10" covered="0"/>
+        <counter type="COMPLEXITY" missed="4" covered="0"/>
+        <counter type="METHOD" missed="1" covered="0"/>
+      </method>
+      <method name="main" desc="([Ljava/lang/String;)V" line="39">
+        <counter type="INSTRUCTION" missed="6" covered="0"/>
+        <counter type="LINE" missed="2" covered="0"/>
+        <counter type="COMPLEXITY" missed="1" covered="0"/>
+        <counter type="METHOD" missed="1" covered="0"/>
+      </method>
+      <counter type="INSTRUCTION" missed="46" covered="0"/>
+      <counter type="BRANCH" missed="6" covered="0"/>
+      <counter type="LINE" missed="13" covered="0"/>
+      <counter type="COMPLEXITY" missed="6" covered="0"/>
+      <counter type="METHOD" missed="3" covered="0"/>
+      <counter type="CLASS" missed="1" covered="0"/>
+    </class>
+    <class name="Fuzz/Android" sourcefilename="Android.java">
+      <method name="&lt;init&gt;" desc="()V" line="17">
+        <counter type="INSTRUCTION" missed="3" covered="0"/>
+        <counter type="LINE" missed="1" covered="0"/>
+        <counter type="COMPLEXITY" missed="1" covered="0"/>
+        <counter type="METHOD" missed="1" covered="0"/>
+      </method>
+      <method name="getName" desc="()Ljava/lang/String;" line="19">
+        <counter type="INSTRUCTION" missed="3" covered="0"/>
+        <counter type="LINE" missed="1" covered="0"/>
+        <counter type="COMPLEXITY" missed="1" covered="0"/>
+        <counter type="METHOD" missed="1" covered="0"/>
+      </method>
+      <counter type="INSTRUCTION" missed="6" covered="0"/>
+      <counter type="LINE" missed="2" covered="0"/>
+      <counter type="COMPLEXITY" missed="2" covered="0"/>
+      <counter type="METHOD" missed="2" covered="0"/>
+      <counter type="CLASS" missed="1" covered="0"/>
+    </class>
+    <sourcefile name="Male.java">
+      <line nr="17" mi="3" ci="0" mb="0" cb="0"/>
+      <line nr="19" mi="2" ci="0" mb="0" cb="0"/>
+      <line nr="20" mi="6" ci="0" mb="0" cb="0"/>
+      <line nr="24" mi="2" ci="0" mb="0" cb="0"/>
+      <line nr="28" mi="3" ci="0" mb="0" cb="0"/>
+      <line nr="29" mi="1" ci="0" mb="0" cb="0"/>
+      <counter type="INSTRUCTION" missed="17" covered="0"/>
+      <counter type="LINE" missed="6" covered="0"/>
+      <counter type="COMPLEXITY" missed="4" covered="0"/>
+      <counter type="METHOD" missed="4" covered="0"/>
+      <counter type="CLASS" missed="1" covered="0"/>
+    </sourcefile>
+    <sourcefile name="Human.java">
+      <line nr="17" mi="2" ci="0" mb="0" cb="0"/>
+      <line nr="18" mi="4" ci="0" mb="0" cb="0"/>
+      <counter type="INSTRUCTION" missed="6" covered="0"/>
+      <counter type="LINE" missed="2" covered="0"/>
+      <counter type="COMPLEXITY" missed="1" covered="0"/>
+      <counter type="METHOD" missed="1" covered="0"/>
+      <counter type="CLASS" missed="1" covered="0"/>
+    </sourcefile>
+    <sourcefile name="Android.java">
+      <line nr="17" mi="3" ci="0" mb="0" cb="0"/>
+      <line nr="19" mi="3" ci="0" mb="0" cb="0"/>
+      <counter type="INSTRUCTION" missed="6" covered="0"/>
+      <counter type="LINE" missed="2" covered="0"/>
+      <counter type="COMPLEXITY" missed="2" covered="0"/>
+      <counter type="METHOD" missed="2" covered="0"/>
+      <counter type="CLASS" missed="1" covered="0"/>
+    </sourcefile>
+    <sourcefile name="Robot.java">
+      <line nr="17" mi="3" ci="0" mb="0" cb="0"/>
+      <line nr="19" mi="3" ci="0" mb="0" cb="0"/>
+      <counter type="INSTRUCTION" missed="6" covered="0"/>
+      <counter type="LINE" missed="2" covered="0"/>
+      <counter type="COMPLEXITY" missed="2" covered="0"/>
+      <counter type="METHOD" missed="2" covered="0"/>
+      <counter type="CLASS" missed="1" covered="0"/>
+    </sourcefile>
+    <sourcefile name="Female.java">
+      <line nr="17" mi="3" ci="0" mb="0" cb="0"/>
+      <line nr="19" mi="2" ci="0" mb="0" cb="0"/>
+      <line nr="20" mi="6" ci="0" mb="0" cb="0"/>
+      <line nr="24" mi="2" ci="0" mb="0" cb="0"/>
+      <line nr="28" mi="3" ci="0" mb="0" cb="0"/>
+      <line nr="29" mi="1" ci="0" mb="0" cb="0"/>
+      <counter type="INSTRUCTION" missed="17" covered="0"/>
+      <counter type="LINE" missed="6" covered="0"/>
+      <counter type="COMPLEXITY" missed="4" covered="0"/>
+      <counter type="METHOD" missed="4" covered="0"/>
+      <counter type="CLASS" missed="1" covered="0"/>
+    </sourcefile>
+    <sourcefile name="TestFuzzer.java">
+      <line nr="20" mi="3" ci="0" mb="0" cb="0"/>
+      <line nr="22" mi="5" ci="0" mb="0" cb="0"/>
+      <line nr="25" mi="3" ci="0" mb="2" cb="0"/>
+      <line nr="26" mi="5" ci="0" mb="0" cb="0"/>
+      <line nr="27" mi="3" ci="0" mb="2" cb="0"/>
+      <line nr="28" mi="5" ci="0" mb="0" cb="0"/>
+      <line nr="29" mi="3" ci="0" mb="2" cb="0"/>
+      <line nr="30" mi="5" ci="0" mb="0" cb="0"/>
+      <line nr="32" mi="4" ci="0" mb="0" cb="0"/>
+      <line nr="35" mi="3" ci="0" mb="0" cb="0"/>
+      <line nr="36" mi="1" ci="0" mb="0" cb="0"/>
+      <line nr="39" mi="5" ci="0" mb="0" cb="0"/>
+      <line nr="40" mi="1" ci="0" mb="0" cb="0"/>
+      <counter type="INSTRUCTION" missed="46" covered="0"/>
+      <counter type="BRANCH" missed="6" covered="0"/>
+      <counter type="LINE" missed="13" covered="0"/>
+      <counter type="COMPLEXITY" missed="6" covered="0"/>
+      <counter type="METHOD" missed="3" covered="0"/>
+      <counter type="CLASS" missed="1" covered="0"/>
+    </sourcefile>
+    <counter type="INSTRUCTION" missed="98" covered="0"/>
+    <counter type="BRANCH" missed="6" covered="0"/>
+    <counter type="LINE" missed="31" covered="0"/>
+    <counter type="COMPLEXITY" missed="19" covered="0"/>
+    <counter type="METHOD" missed="16" covered="0"/>
+    <counter type="CLASS" missed="6" covered="0"/>
+  </package>
+  <counter type="INSTRUCTION" missed="98" covered="0"/>
+  <counter type="BRANCH" missed="6" covered="0"/>
+  <counter type="LINE" missed="31" covered="0"/>
+  <counter type="COMPLEXITY" missed="19" covered="0"/>
+  <counter type="METHOD" missed="16" covered="0"/>
+  <counter type="CLASS" missed="6" covered="0"/>
+</report>
