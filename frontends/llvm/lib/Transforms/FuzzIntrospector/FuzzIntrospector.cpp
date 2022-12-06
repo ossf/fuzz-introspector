@@ -1432,6 +1432,45 @@ std::vector<BranchProfileEntry> FuzzIntrospector::branchProfiler(Function *F) {
         BranchProfileEntry Entry = {BRstring, {BranchSide0Val, BranchSide1Val}};
         FuncBranchProfile.push_back(Entry);
       }
+      // Check for switch statements.
+      // IR syntax: switch <intty> <value>, label <defaultdest> [ <intty> <val>, label <dest> ... ]
+      // Default dest is operand(1).
+      auto SI = dyn_cast<SwitchInst>(TI);
+      if (SI) {
+        auto SILoc = SI->getDebugLoc();
+        std::pair<std::string, std::string> DbgExtracts;
+        DbgExtracts = getInsnDebugInfo((Instruction *)SI);
+        std::string BRstring = DbgExtracts.first;
+        std::vector<std::pair<BasicBlock *, int>> Dest_pairs;
+        std::map<BasicBlock *, std::string> DestStringsMap;
+
+        for (unsigned i = 0, NSucc = SI->getNumSuccessors(); i < NSucc; ++i) {
+          // This should take care of default dest as well.
+          auto Dest = SI->getSuccessor(i);
+          DbgExtracts = getBBDebugInfo(Dest, SILoc);
+          std::string DestString = DbgExtracts.first;
+          if (DestString.length() == 0)
+            continue;   // No debug info.
+          DestStringsMap[Dest] = DestString;
+          auto DestLine = std::stoi(DbgExtracts.second);
+
+          Dest_pairs.push_back(make_pair(Dest, DestLine));
+        }
+        // Sort destinations based on line number.
+        std::sort(Dest_pairs.begin(), Dest_pairs.end(),
+                  [](const pair<BasicBlock *, int> &a, const pair<BasicBlock *, int> &b)
+                  { return a.second < b.second; });
+
+        std::vector<BranchSide> SwitchBranchSides;
+        for (auto &pr : Dest_pairs) {
+          auto CurrDest = pr.first;
+          auto CurrFuncs = findReachableFuncs(CurrDest);
+          auto CurrDestString = DestStringsMap[CurrDest];
+          SwitchBranchSides.push_back({CurrDestString, CurrFuncs});
+        }
+        BranchProfileEntry Entry = {BRstring, SwitchBranchSides};
+        FuncBranchProfile.push_back(Entry);        
+      }
     }
 
   // } // End of loop over M

@@ -15,15 +15,21 @@
 
 import os
 import logging
+import re
 
 from typing import (
     Dict,
     List,
+    Set,
     Optional,
     Tuple,
 )
 
 from fuzz_introspector import utils
+
+COVERAGE_SWITCH_REGEX = re.compile(r'.*\|.*switch.*\(.*\)')
+COVERAGE_CASE_REGEX = re.compile(r'.*\|.*case.*:')
+COVERAGE_BRANCH_REGEX = re.compile(r'.*\|.*Branch.*\(.*:.*\):')
 
 logger = logging.getLogger(name=__name__)
 
@@ -44,12 +50,12 @@ class CoverageProfile:
 
     :ivar Dict[str, Tuple[int, int]] branch_cov_map: Dictionary to collect
         the branch coverage info in the form of current_func:line_number as
-        the key and true_hit and false_hit as a tuple value.
+        the key and list of hitcounts as value.
     """
     def __init__(self) -> None:
         self.covmap: Dict[str, List[Tuple[int, int]]] = dict()
         self.file_map: Dict[str, List[Tuple[int, int]]] = dict()
-        self.branch_cov_map: Dict[str, Tuple[int, int]] = dict()
+        self.branch_cov_map: Dict[str, List[int]] = dict()
         self._cov_type = ""
         self.coverage_files: List[str] = []
         self.dual_file_map: Dict[str, Dict[str, List[int]]] = dict()
@@ -433,6 +439,9 @@ def load_llvm_coverage(
         logger.info(f"Reading coverage report: {profile_file}")
         with open(profile_file, 'rb') as pf:
             curr_func = None
+            switch_string = str()
+            switch_line_number = None
+            case_line_numbers: Set[int] = set()
             for raw_line in pf:
                 line = utils.safe_decode(raw_line)
                 if line is None:
@@ -453,9 +462,33 @@ def load_llvm_coverage(
                         curr_func = line.replace(" ", "").replace(":", "")
                     curr_func = utils.demangle_cpp_func(curr_func)
                     cp.covmap[curr_func] = list()
+                    switch_string = ''
+                    switch_line_number = None
+                # Special treatment for switch statement coverage:
+                # The line for switch MAY get one Branch entry; We use it for collecting
+                # overall hitcout of statement.
+                # Each `case` gets its own Branch entry for coverage. The important part
+                # is true_hit because that means if a `case` is taken or not.
+                if curr_func and COVERAGE_SWITCH_REGEX.match(line):
+                    line_segs = line.split("|")
+                    try:
+                        switch_line_number = int(line_segs[0])
+                    except Exception:
+                        continue
+
+                    try:
+                        # Calculate the column of the switch keyword.
+                        column_number = line_segs[2].find('switch') + 1
+                    except Exception:
+                        continue
+                    case_line_numbers = set()   # To keep track of switch cases.
+                    # This string may be updated if there is Branch pattern for this line.
+                    switch_string = f'{curr_func}:{switch_line_number},{column_number}'
+                    logger.debug(f'Seen switch in coverage: {switch_string}')
+
                 # This parses Branch cov info in the form of:
                 #  |  Branch (81:7): [True: 1.2k, False: 0]
-                if curr_func and "Branch (" in line:
+                if curr_func and COVERAGE_BRANCH_REGEX.match(line):
                     try:
                         line_number = int(line.split('(')[1].split(':')[0])
                     except Exception:
@@ -479,8 +512,26 @@ def load_llvm_coverage(
                                     ".", ""))
                     except Exception:
                         continue
-                    branch_string = f'{curr_func}:{line_number},{column_number}'
-                    cp.branch_cov_map[branch_string] = (true_hit, false_hit)
+
+                    if switch_line_number and line_number == switch_line_number:
+                        # This Branch pattern belongs to switch line.
+                        # Note that the column number is inacurrate as it belongs to
+                        # the variable inside pranthesis. Should not use it for switch_string.
+                        cp.branch_cov_map[switch_string] = [true_hit, false_hit]
+                    elif line_number in case_line_numbers:
+                        # This Branch pattern belongs to a `case`.
+                        try:
+                            # This collects for `case` taken side.
+                            cp.branch_cov_map[switch_string].append(true_hit)
+                        except Exception:
+                            # Taking care of anomalies where the coverage report has no
+                            # Branch pattern for switch line.
+                            logger.debug(f'The switch had no Branch pattern {switch_string}')
+                            cp.branch_cov_map[switch_string] = [true_hit, false_hit, true_hit]
+                    else:
+                        # This Branch pattern belongs to a conditional branch.
+                        branch_string = f'{curr_func}:{line_number},{column_number}'
+                        cp.branch_cov_map[branch_string] = [true_hit, false_hit]
                 # Parse lines that signal specific line of code. These lines only
                 # offer after the function names parsed above.
                 # Example line:
@@ -491,6 +542,12 @@ def load_llvm_coverage(
                         line_number = int(line.split("|")[0])
                     except Exception:
                         continue
+
+                    if COVERAGE_CASE_REGEX.match(line):
+                        if switch_string:
+                            case_line_numbers.add(line_number)
+                        else:
+                            logger.info(f'found case outside a switch?! \n{line}')
 
                     # Extract hit count
                     # Write out numbers e.g. 1.2k into 1200 and 5.99M to 5990000

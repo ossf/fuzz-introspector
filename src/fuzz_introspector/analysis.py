@@ -474,7 +474,14 @@ def detect_branch_level_blockers(
 
     for branch_string in coverage.branch_cov_map:
         blocked_side = None
+        branch_hitcount = -1
         sides_hitcount = coverage.branch_cov_map[branch_string]
+        if len(sides_hitcount) > 2:
+            logger.debug(f'SPECIAL: switch statement {branch_string} {sides_hitcount}')
+            # The first two elements are associated with the switch statement
+            # line coverage. Here to update sides_hitcount and set branch_hitcount.
+            branch_hitcount = max(sides_hitcount[:2])
+            sides_hitcount = sides_hitcount[2:]
 
         # Catch exceptions in case some of the string splitting fails
         try:
@@ -547,7 +554,7 @@ def detect_branch_level_blockers(
                                  % (side_line))
                     continue
 
-            hitcount_diff = max(sides_hitcount)
+            hitcount_diff = max(sides_hitcount + [branch_hitcount])
             link = fuzz_profile.resolve_coverage_link(
                 target_coverage_url,
                 source_file_path,

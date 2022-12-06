@@ -1,0 +1,261 @@
+BZ2_bzCompress:
+  408|  4.68k|{
+  409|  4.68k|   Bool progress;
+  410|  4.68k|   EState* s;
+  411|  4.68k|   if (strm == NULL) return BZ_PARAM_ERROR;
+  ------------------
+  |  |   39|      0|#define BZ_PARAM_ERROR       (-2)
+  ------------------
+  |  Branch (411:8): [True: 0, False: 4.68k]
+  ------------------
+  412|  4.68k|   s = strm->state;
+  413|  4.68k|   if (s == NULL) return BZ_PARAM_ERROR;
+  ------------------
+  |  |   39|      0|#define BZ_PARAM_ERROR       (-2)
+  ------------------
+  |  Branch (413:8): [True: 0, False: 4.68k]
+  ------------------
+  414|  4.68k|   if (s->strm != strm) return BZ_PARAM_ERROR;
+  ------------------
+  |  |   39|      0|#define BZ_PARAM_ERROR       (-2)
+  ------------------
+  |  Branch (414:8): [True: 0, False: 4.68k]
+  ------------------
+  415|       |
+  416|  9.36k|   preswitch:
+  417|  9.36k|   switch (s->mode) {
+  ------------------
+  |  Branch (417:12): [True: 0, False: 9.36k]
+  ------------------
+  418|       |
+  419|      0|      case BZ_M_IDLE:
+  ------------------
+  |  |  178|      0|#define BZ_M_IDLE      1
+  ------------------
+  |  Branch (419:7): [True: 0, False: 9.36k]
+  ------------------
+  420|      0|         return BZ_SEQUENCE_ERROR;
+  ------------------
+  |  |   38|      0|#define BZ_SEQUENCE_ERROR    (-1)
+  ------------------
+  421|       |
+  422|  4.68k|      case BZ_M_RUNNING:
+  ------------------
+  |  |  179|  4.68k|#define BZ_M_RUNNING   2
+  ------------------
+  |  Branch (422:7): [True: 4.68k, False: 4.68k]
+  ------------------
+  423|  4.68k|         if (action == BZ_RUN) {
+  ------------------
+  |  |   29|  4.68k|#define BZ_RUN               0
+  ------------------
+  |  Branch (423:14): [True: 0, False: 4.68k]
+  ------------------
+  424|      0|            progress = handle_compress ( strm );
+  425|      0|            return progress ? BZ_RUN_OK : BZ_PARAM_ERROR;
+  ------------------
+  |  |   34|      0|#define BZ_RUN_OK            1
+  ------------------
+                          return progress ? BZ_RUN_OK : BZ_PARAM_ERROR;
+  ------------------
+  |  |   39|      0|#define BZ_PARAM_ERROR       (-2)
+  ------------------
+  |  Branch (425:20): [True: 0, False: 0]
+  ------------------
+  426|      0|         } 
+  427|  4.68k|         else
+  428|  4.68k|	 if (action == BZ_FLUSH) {
+  ------------------
+  |  |   30|  4.68k|#define BZ_FLUSH             1
+  ------------------
+  |  Branch (428:7): [True: 0, False: 4.68k]
+  ------------------
+  429|      0|            s->avail_in_expect = strm->avail_in;
+  430|      0|            s->mode = BZ_M_FLUSHING;
+  ------------------
+  |  |  180|      0|#define BZ_M_FLUSHING  3
+  ------------------
+  431|      0|            goto preswitch;
+  432|      0|         }
+  433|  4.68k|         else
+  434|  4.68k|         if (action == BZ_FINISH) {
+  ------------------
+  |  |   31|  4.68k|#define BZ_FINISH            2
+  ------------------
+  |  Branch (434:14): [True: 4.68k, False: 0]
+  ------------------
+  435|  4.68k|            s->avail_in_expect = strm->avail_in;
+  436|  4.68k|            s->mode = BZ_M_FINISHING;
+  ------------------
+  |  |  181|  4.68k|#define BZ_M_FINISHING 4
+  ------------------
+  437|  4.68k|            goto preswitch;
+  438|  4.68k|         }
+  439|      0|         else 
+  440|      0|            return BZ_PARAM_ERROR;
+  ------------------
+  |  |   39|      0|#define BZ_PARAM_ERROR       (-2)
+  ------------------
+  441|       |
+  442|      0|      case BZ_M_FLUSHING:
+  ------------------
+  |  |  180|      0|#define BZ_M_FLUSHING  3
+  ------------------
+  |  Branch (442:7): [True: 0, False: 9.36k]
+  ------------------
+  443|      0|         if (action != BZ_FLUSH) return BZ_SEQUENCE_ERROR;
+  ------------------
+  |  |   30|      0|#define BZ_FLUSH             1
+  ------------------
+                       if (action != BZ_FLUSH) return BZ_SEQUENCE_ERROR;
+  ------------------
+  |  |   38|      0|#define BZ_SEQUENCE_ERROR    (-1)
+  ------------------
+  |  Branch (443:14): [True: 0, False: 0]
+  ------------------
+  444|      0|         if (s->avail_in_expect != s->strm->avail_in) 
+  ------------------
+  |  Branch (444:14): [True: 0, False: 0]
+  ------------------
+  445|      0|            return BZ_SEQUENCE_ERROR;
+  ------------------
+  |  |   38|      0|#define BZ_SEQUENCE_ERROR    (-1)
+  ------------------
+  446|      0|         progress = handle_compress ( strm );
+  447|      0|         if (s->avail_in_expect > 0 || !isempty_RL(s) ||
+  ------------------
+  |  Branch (447:14): [True: 0, False: 0]
+  |  Branch (447:40): [True: 0, False: 0]
+  ------------------
+  448|      0|             s->state_out_pos < s->numZ) return BZ_FLUSH_OK;
+  ------------------
+  |  |   35|      0|#define BZ_FLUSH_OK          2
+  ------------------
+  |  Branch (448:14): [True: 0, False: 0]
+  ------------------
+  449|      0|         s->mode = BZ_M_RUNNING;
+  ------------------
+  |  |  179|      0|#define BZ_M_RUNNING   2
+  ------------------
+  450|      0|         return BZ_RUN_OK;
+  ------------------
+  |  |   34|      0|#define BZ_RUN_OK            1
+  ------------------
+  451|       |
+  452|  4.68k|      case BZ_M_FINISHING:
+  ------------------
+  |  |  181|  4.68k|#define BZ_M_FINISHING 4
+  ------------------
+  |  Branch (452:7): [True: 4.68k, False: 4.68k]
+  ------------------
+  453|  4.68k|         if (action != BZ_FINISH) return BZ_SEQUENCE_ERROR;
+  ------------------
+  |  |   31|  4.68k|#define BZ_FINISH            2
+  ------------------
+                       if (action != BZ_FINISH) return BZ_SEQUENCE_ERROR;
+  ------------------
+  |  |   38|      0|#define BZ_SEQUENCE_ERROR    (-1)
+  ------------------
+  |  Branch (453:14): [True: 0, False: 4.68k]
+  ------------------
+  454|  4.68k|         if (s->avail_in_expect != s->strm->avail_in) 
+  ------------------
+  |  Branch (454:14): [True: 0, False: 4.68k]
+  ------------------
+  455|      0|            return BZ_SEQUENCE_ERROR;
+  ------------------
+  |  |   38|      0|#define BZ_SEQUENCE_ERROR    (-1)
+  ------------------
+  456|  4.68k|         progress = handle_compress ( strm );
+  457|  4.68k|         if (!progress) return BZ_SEQUENCE_ERROR;
+  ------------------
+  |  |   38|      0|#define BZ_SEQUENCE_ERROR    (-1)
+  ------------------
+  |  Branch (457:14): [True: 0, False: 4.68k]
+  ------------------
+  458|  4.68k|         if (s->avail_in_expect > 0 || !isempty_RL(s) ||
+  ------------------
+  |  Branch (458:14): [True: 0, False: 4.68k]
+  |  Branch (458:40): [True: 0, False: 4.68k]
+  ------------------
+  459|  4.68k|             s->state_out_pos < s->numZ) return BZ_FINISH_OK;
+  ------------------
+  |  |   36|      0|#define BZ_FINISH_OK         3
+  ------------------
+  |  Branch (459:14): [True: 0, False: 4.68k]
+  ------------------
+  460|  4.68k|         s->mode = BZ_M_IDLE;
+  ------------------
+  |  |  178|  4.68k|#define BZ_M_IDLE      1
+  ------------------
+  461|  4.68k|         return BZ_STREAM_END;
+  ------------------
+  |  |   37|  4.68k|#define BZ_STREAM_END        4
+  ------------------
+  462|  9.36k|   }
+  463|      0|   return BZ_OK; /*--not reached--*/
+  ------------------
+  |  |   33|      0|#define BZ_OK                0
+  ------------------
+  464|  9.36k|}
+bzlib.c:add_pair_to_block:
+  217|  36.0M|{
+  218|  36.0M|   Int32 i;
+  219|  36.0M|   UChar ch = (UChar)(s->state_in_ch);
+  220|   180M|   for (i = 0; i < s->state_in_len; i++) {
+  ------------------
+  |  Branch (220:16): [True: 144M, False: 36.0M]
+  ------------------
+  221|   144M|      BZ_UPDATE_CRC( s->blockCRC, ch );
+  ------------------
+  |  |  167|   144M|#define BZ_UPDATE_CRC(crcVar,cha)              \
+  |  |  168|   144M|{                                              \
+  |  |  169|   144M|   crcVar = (crcVar << 8) ^                    \
+  |  |  170|   144M|            BZ2_crc32Table[(crcVar >> 24) ^    \
+  |  |  171|   144M|                           ((UChar)cha)];      \
+  |  |  172|   144M|}
+  ------------------
+  222|   144M|   }
+  223|  36.0M|   s->inUse[s->state_in_ch] = True;
+  ------------------
+  |  |   49|  36.0M|#define True  ((Bool)1)
+  ------------------
+  224|  36.0M|   switch (s->state_in_len) {
+  225|  3.26k|      case 1:
+  ------------------
+  |  Branch (225:7): [True: 3.26k, False: 36.0M]
+  ------------------
+  226|  3.26k|         s->block[s->nblock] = (UChar)ch; s->nblock++;
+  227|  3.26k|         break;
+  228|  3.51M|      case 2:
+  ------------------
+  |  Branch (228:7): [True: 3.51M, False: 32.5M]
+  ------------------
+  229|  3.51M|         s->block[s->nblock] = (UChar)ch; s->nblock++;
+  230|  3.51M|         s->block[s->nblock] = (UChar)ch; s->nblock++;
+  231|  3.51M|         break;
+  232|  1.57M|      case 3:
+  ------------------
+  |  Branch (232:7): [True: 1.57M, False: 34.5M]
+  ------------------
+  233|  1.57M|         s->block[s->nblock] = (UChar)ch; s->nblock++;
+  234|  1.57M|         s->block[s->nblock] = (UChar)ch; s->nblock++;
+  235|  1.57M|         s->block[s->nblock] = (UChar)ch; s->nblock++;
+  236|  1.57M|         break;
+  237|  31.0M|      default:
+  ------------------
+  |  Branch (237:7): [True: 31.0M, False: 5.09M]
+  ------------------
+  238|  31.0M|         s->inUse[s->state_in_len-4] = True;
+  ------------------
+  |  |   49|  31.0M|#define True  ((Bool)1)
+  ------------------
+  239|  31.0M|         s->block[s->nblock] = (UChar)ch; s->nblock++;
+  240|  31.0M|         s->block[s->nblock] = (UChar)ch; s->nblock++;
+  241|  31.0M|         s->block[s->nblock] = (UChar)ch; s->nblock++;
+  242|  31.0M|         s->block[s->nblock] = (UChar)ch; s->nblock++;
+  243|  31.0M|         s->block[s->nblock] = ((UChar)(s->state_in_len-4));
+  244|  31.0M|         s->nblock++;
+  245|  31.0M|         break;
+  246|  36.0M|   }
+  247|  36.0M|}
