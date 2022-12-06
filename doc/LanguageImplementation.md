@@ -173,11 +173,11 @@ functionUses:          int                       # The amount of functions that 
 BranchProfiles:        list of branch profiles   # A list of conditional branch profiles used for branch block detection.
   - Branch String:     string                    # source code path and line number of the branch.
     Branch Sides:                                # A pair of data about the branch
-      TrueSide:        string                    # Source code path and line number of the True side of the branch condition.
-      TrueSideFuncs:   list of strings           # A list of function names, of all functions reachable by the True side of the branch.
+    - BranchSide:      string                    # Source code path and line number of the branch condition.
+      BranchSideFuncs: list of strings           # A list of function names, of all functions reachable by the branch.
         - ...
-      FalseSide:       string                    # Source code path and line number of the False side of the branch condition.
-      FalseSideFuncs:  list of strings           # A list of function names, of all functions reachable by the False side of the branch.
+    - BranchSide:      string                    # Source code path and line number of the branch condition.
+      BranchSideFuncs  list of strings           # A list of function names, of all functions reachable by the branch.
         - ...
 ```
 
