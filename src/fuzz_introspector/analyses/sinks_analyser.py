@@ -21,10 +21,12 @@ from typing import (
     Dict
 )
 
-from fuzz_introspector import analysis
-from fuzz_introspector import cfg_load
-from fuzz_introspector import html_helpers
-from fuzz_introspector import utils
+from fuzz_introspector import (
+    analysis,
+    cfg_load,
+    html_helpers
+)
+
 from fuzz_introspector.datatypes import (
     project_profile,
     fuzzer_profile,
@@ -34,7 +36,6 @@ from fuzz_introspector.datatypes import (
 logger = logging.getLogger(name=__name__)
 
 # Common sink functions / methods for different language implementation
-
 SINK_FUNCTION = {
     'c-cpp': [
         ('', 'system'),
@@ -121,25 +122,7 @@ class Analysis(analysis.AnalysisInterface):
     def get_name():
         return "SinkCoverageAnalyser"
 
-    def retrieve_function_callsite_list(
-        profiles: List[fuzzer_profile.FuzzerProfile]
-    ) -> (List[CalltreeCallsite], List[function_profile.FunctionProfile]):
-        """
-        Retrieve and return list of call sites and functions
-        from all fuzzers profile for further processing
-        """
-        callsite_list = []
-        function_list = []
-
-        for profile in profiles:
-            if profile.function_call_depths is not None:
-                callsite_list.extend(cfg_load.extract_all_callsites(profile.function_call_depths))
-            for (key, function) in profile.all_class_functions.items():
-                function_list.append(function)
-
-        return (callsite_list, function_list)
-
-       def get_source_file(self, callsite) -> str:
+    def _get_source_file(self, callsite) -> str:
         """This function aims to dig up the callsitecalltree of a function
         call and get its source file path.
         """
@@ -152,7 +135,7 @@ class Analysis(analysis.AnalysisInterface):
 
         return src_file
 
-    def get_parent_func_name(self, callsite) -> str:
+    def _get_parent_func_name(self, callsite) -> str:
         """This function aims to dig up the callsitecalltree of a function
         call and get its parent function name.
         """
@@ -165,90 +148,91 @@ class Analysis(analysis.AnalysisInterface):
 
         return func_file
 
-    def add_callsite_record(
+    def retrieve_data_list(
         self,
-        target_func_list: List[str],
-        func_name: str,
-        source_file_list: List[str],
-        callsites: Dict[str, List[str]]
-    ) -> List[str]:
-        """This function aims to add all third party function call to its
-        source location and line number mapping to a combined dictionary.
+        proj_profile: project_profile.MergedProjectProfile,
+        profiles: List[fuzzer_profile.FuzzerProfile]
+    ) -> (List[cfg_load.CalltreeCallsite], List[function_profile.FunctionProfile]):
         """
-        exist_list = []
-        if func_name in target_func_list:
-            if func_name in callsites.keys():
-                func_list = callsites[func_name]
-            else:
-                func_list = []
-            for item in source_file_list:
-                if item not in func_list:
-                    func_list.append(item)
-                else:
-                    exist_list.append(item)
-            callsites.update({func_name: func_list})
+        Retrieve and return full list of call sites and functions
+        from all fuzzers profile for this project
+        """
+        callsite_list = []
+        function_list = []
+        function_name_list = []
 
-        return exist_list
+        for (key, function) in proj_profile.all_functions.items():
+            if key not in function_name_list.append:
+                function_list.append(function)
+                function_name_list.append(function.function_name)
 
-    def third_party_func_profile(
+        for profile in profiles:
+            if profile.function_call_depths is not None:
+                callsite_list.extend(cfg_load.extract_all_callsites(profile.function_call_depths))
+            for (key, function) in profile.all_class_functions.items():
+                if key not in function_name_list.append:
+                    function_list.append(function)
+                    function_name_list.append(function.function_name)
+
+        return (callsite_list, function_list)
+
+    def map_function_callsite(
         self,
-        profile: project_profile.MergedProjectProfile,
-        callsites: List[cfg_load.CalltreeCallsite],
-        function_list: List[function_profile.FunctionProfile]
-    ) -> Tuple[
-        List[function_profile.FunctionProfile],
-        Dict[str, List[str]],
-        List[str]
-    ]:
-        # Build up target function list
-        target_list = [
-            fd for fd in profile.all_functions.values() if not fd.function_source_file
-        ]
-
-        target_func_list = [
-            func.function_name for func in target_list
-        ]
-
-        # Add unreachable target functions
-        for function in function_list:
-            if function.function_name not in target_func_list:
-                if not function.function_source_file:
-                    target_list.append(function)
-                    target_func_list.append(function.function_name)
-
-        # Create list of call site for each funcitons
+        functions: List[function_profile.FunctionProfile],
+        callsites: List[cfg_load.CalltreeCallsite]
+    ) -> Dict[str, List[str]]:
+        """
+        This function aims to dig up the callsite for each functions
+        and store the mapped source location and line number list as
+        a formatted string list.
+        """
         callsite_dict: Dict[str, List[str]] = dict()
 
+        # Initialize callsite_dict with target function names
+        for function in functions:
+            callsite_dict[function.function_name] = []
+
+        # Map callsite for all target functions
         for callsite in callsites:
             func_name = callsite.dst_function_name
-            src_file = self.get_source_file(callsite)
-            parent_func = self.get_parent_func_name(callsite)
-            src_file_with_line = "%s#%s:%s" % (
-                src_file,
-                parent_func,
-                callsite.src_linenumber
-            )
-            self.add_callsite_record(
-                target_func_list,
-                func_name,
-                [src_file_with_line],
-                callsite_dict
-            )
-
-        # Discover reachable func calls
-        reachable_func_list = []
-
-        for function in function_list:
-            for func_name in function.callsite.keys():
-
-                reachable_func_list.extend(
-                    self.add_callsite_record(
-                        target_func_list,
-                        func_name,
-                        function.callsite[func_name],
-                        callsite_dict
+            if func_name in callsite_dict.keys():
+                callsite_dict[func_name].append(
+                    "%s#%s:%s" % (
+                        self._get_source_file(callsite),
+                        self._get_parent_func_name(callsite),
+                        callsite.src_linenumber
                     )
                 )
+
+        # Sort and make unique for callsites of each function
+        for (key, value) in callsite_dict.items():
+            callsite_dict[key] = list(set(value))
+
+        return callsite_dict
+
+    def retrieve_reachable_functions(
+        self,
+        functions: List[function_profile.FunctionProfile],
+        function_callsites: Dict[str, List[str]]
+    ) -> List[str]:
+        """
+        This function aims to dig up the source of all reachable
+        functions and store the fromatted string of its source
+        location and line number in the list.
+        """
+        function_list = []
+
+        # Loop and find if matched callsite string for the function does exists
+        for function in functions:
+            for (func_name, callsite_str) in function.callsite.items():
+                if callsite_str in function_callsites[func_name]:
+                    function_list.append(callsite_str)
+
+        # Sort and make unique for the reachable function list
+        function_list = list(set(function_list))
+
+        return function_list
+
     def analysis_func(
         self,
         toc_list: List[Tuple[str, str, int]],
@@ -276,11 +260,16 @@ class Analysis(analysis.AnalysisInterface):
         """
         logger.info(f" - Running analysis {Analysis.get_name()}")
 
-        # Get function callsite list for all fuzzer's profiles
-        callsite_list, function_list = self.retrieve_function_callsite_list(profiles)
+        # Get full function /  callsite list for all fuzzer's profiles
+        callsite_list, function_list = self.retrieve_data_list(proj_profile, profiles)
 
-        (func_profile_list, called_func_dict, reachable_func_list) = (
-            self.third_party_func_profile(proj_profile, callsite_list, function_list)
+        # Map callsites to each function
+        function_callsite_dict = self.map_function_callsite(function_list, callsite_list)
+
+        # Discover reachable function calls
+        reachable_function_list = self.retrieve_reachable_functions(
+            function_list,
+            function_callsite_dict
         )
 
         html_string = ""
@@ -316,7 +305,7 @@ class Analysis(analysis.AnalysisInterface):
         html_string += html_helpers.html_add_header_with_link(
             "Function in each files in report",
             2,
-            toc_ "list
+            toc_list
         )
 
         # Third party function calls table
@@ -337,44 +326,44 @@ class Analysis(analysis.AnalysisInterface):
             ]
         )
 
-        for fd in func_profile_list:
-            func_name = utils.demangle_cpp_func(fd.function_name)
-
-            if func_name not in functions_of_interest:
-                continue
-
-            # Retrieve called location as a list for this function
-            if fd.function_name in called_func_dict.keys():
-                called_location_list = called_func_dict[fd.function_name]
-                if len(called_location_list) == 0:
-                    called_location_list = [""]
-            else:
-                called_location_list = [""]
-
-            # Loop through the list of calledlocation for this function
-            for called_location in called_location_list:
-                # Determine if the function call in this called location is reachable
-                hit = "Yes" if (called_location in reachable_func_list) else "No"
-
-                # Determine if this called location is covered by any fuzzers
-                fuzzer_hit = False
-                coverage = proj_profile.runtime_coverage
-                for parent_func in fd.incoming_references:
-                    try:
-                        lineno = int(called_location.split(":")[1])
-                    except ValueError:
-                        continue
-                    if coverage.is_func_lineno_hit(parent_func, lineno):
-                        fuzzer_hit = True
-                        break
-                list_of_fuzzer_covered = fd.reached_by_fuzzers if fuzzer_hit else [""]
-
-                html_string += html_helpers.html_table_add_row([
-                    f"{func_name}",
-                    f"{called_location}",
-                    f"{hit}",
-                    f"{str(list_of_fuzzer_covered)}"
-                ])
+#        for fd in func_profile_list:
+#            func_name = utils.demangle_cpp_func(fd.function_name)
+#
+#            if func_name not in functions_of_interest:
+#                continue
+#
+#            # Retrieve called location as a list for this function
+#            if fd.function_name in called_func_dict.keys():
+#                called_location_list = called_func_dict[fd.function_name]
+#                if len(called_location_list) == 0:
+#                    called_location_list = [""]
+#            else:
+#                called_location_list = [""]
+#
+#            # Loop through the list of calledlocation for this function
+#            for called_location in called_location_list:
+#                # Determine if the function call in this called location is reachable
+#                hit = "Yes" if (called_location in reachable_func_list) else "No"
+#
+#                # Determine if this called location is covered by any fuzzers
+#                fuzzer_hit = False
+#                coverage = proj_profile.runtime_coverage
+#                for parent_func in fd.incoming_references:
+#                    try:
+#                        lineno = int(called_location.split(":")[1])
+#                    except ValueError:
+#                        continue
+#                    if coverage.is_func_lineno_hit(parent_func, lineno):
+#                        fuzzer_hit = True
+#                        break
+#                list_of_fuzzer_covered = fd.reached_by_fuzzers if fuzzer_hit else [""]#
+#
+#                html_string += html_helpers.html_table_add_row([
+#                    f"{func_name}",
+#                    f"{called_location}",
+#                    f"{hit}",
+#                    f"{str(list_of_fuzzer_covered)}"
+#                ])
         html_string += "</table>"
 
         html_string += "</div>"  # .collapsible
