@@ -22,6 +22,9 @@ from typing import (
 )
 
 from fuzz_introspector import analysis
+from fuzz_introspector import cfg_load
+from fuzz_introspector import html_helpers
+from fuzz_introspector import utils
 from fuzz_introspector.datatypes import (
     project_profile,
     fuzzer_profile,
@@ -36,7 +39,10 @@ SINK_FUNCTION = {
     'c-cpp': [
         ('', 'system'),
         ('', 'execl'),
-        ('', 'execve')
+        ('', 'execve'),
+        ('', 'wordexp'),
+        ('', 'popen'),
+        ('', 'fdopen')
     ],
     'python': [
         ('', 'exec'),
@@ -115,6 +121,134 @@ class Analysis(analysis.AnalysisInterface):
     def get_name():
         return "SinkCoverageAnalyser"
 
+    def retrieve_function_callsite_list(
+        profiles: List[fuzzer_profile.FuzzerProfile]
+    ) -> (List[CalltreeCallsite], List[function_profile.FunctionProfile]):
+        """
+        Retrieve and return list of call sites and functions
+        from all fuzzers profile for further processing
+        """
+        callsite_list = []
+        function_list = []
+
+        for profile in profiles:
+            if profile.function_call_depths is not None:
+                callsite_list.extend(cfg_load.extract_all_callsites(profile.function_call_depths))
+            for (key, function) in profile.all_class_functions.items():
+                function_list.append(function)
+
+        return (callsite_list, function_list)
+
+       def get_source_file(self, callsite) -> str:
+        """This function aims to dig up the callsitecalltree of a function
+        call and get its source file path.
+        """
+        src_file = callsite.src_function_source_file
+        if not src_file:
+            parent = callsite.parent_calltree_callsite
+            if parent:
+                src_file = parent.dst_function_source_file
+                src_file = src_file if src_file else ""
+
+        return src_file
+
+    def get_parent_func_name(self, callsite) -> str:
+        """This function aims to dig up the callsitecalltree of a function
+        call and get its parent function name.
+        """
+        func_file = callsite.src_function_source_file
+        if not func_file:
+            parent = callsite.parent_calltree_callsite
+            if parent:
+                func_file = parent.dst_function_name
+                func_file = func_file if func_file else ""
+
+        return func_file
+
+    def add_callsite_record(
+        self,
+        target_func_list: List[str],
+        func_name: str,
+        source_file_list: List[str],
+        callsites: Dict[str, List[str]]
+    ) -> List[str]:
+        """This function aims to add all third party function call to its
+        source location and line number mapping to a combined dictionary.
+        """
+        exist_list = []
+        if func_name in target_func_list:
+            if func_name in callsites.keys():
+                func_list = callsites[func_name]
+            else:
+                func_list = []
+            for item in source_file_list:
+                if item not in func_list:
+                    func_list.append(item)
+                else:
+                    exist_list.append(item)
+            callsites.update({func_name: func_list})
+
+        return exist_list
+
+    def third_party_func_profile(
+        self,
+        profile: project_profile.MergedProjectProfile,
+        callsites: List[cfg_load.CalltreeCallsite],
+        function_list: List[function_profile.FunctionProfile]
+    ) -> Tuple[
+        List[function_profile.FunctionProfile],
+        Dict[str, List[str]],
+        List[str]
+    ]:
+        # Build up target function list
+        target_list = [
+            fd for fd in profile.all_functions.values() if not fd.function_source_file
+        ]
+
+        target_func_list = [
+            func.function_name for func in target_list
+        ]
+
+        # Add unreachable target functions
+        for function in function_list:
+            if function.function_name not in target_func_list:
+                if not function.function_source_file:
+                    target_list.append(function)
+                    target_func_list.append(function.function_name)
+
+        # Create list of call site for each funcitons
+        callsite_dict: Dict[str, List[str]] = dict()
+
+        for callsite in callsites:
+            func_name = callsite.dst_function_name
+            src_file = self.get_source_file(callsite)
+            parent_func = self.get_parent_func_name(callsite)
+            src_file_with_line = "%s#%s:%s" % (
+                src_file,
+                parent_func,
+                callsite.src_linenumber
+            )
+            self.add_callsite_record(
+                target_func_list,
+                func_name,
+                [src_file_with_line],
+                callsite_dict
+            )
+
+        # Discover reachable func calls
+        reachable_func_list = []
+
+        for function in function_list:
+            for func_name in function.callsite.keys():
+
+                reachable_func_list.extend(
+                    self.add_callsite_record(
+                        target_func_list,
+                        func_name,
+                        function.callsite[func_name],
+                        callsite_dict
+                    )
+                )
     def analysis_func(
         self,
         toc_list: List[Tuple[str, str, int]],
@@ -142,42 +276,109 @@ class Analysis(analysis.AnalysisInterface):
         """
         logger.info(f" - Running analysis {Analysis.get_name()}")
 
+        # Get function callsite list for all fuzzer's profiles
+        callsite_list, function_list = self.retrieve_function_callsite_list(profiles)
+
+        (func_profile_list, called_func_dict, reachable_func_list) = (
+            self.third_party_func_profile(proj_profile, callsite_list, function_list)
+        )
+
         html_string = ""
+        html_string += "<div class=\"report-box\">"
+
         html_string += html_helpers.html_add_header_with_link(
-            "Sink funcions / methods analysis", 2, toc_list)
-
-        sink_list = self.retrieve_sinks_functions(
-            proj_profile.all_functions,
-            profiles[0].target_lang
+            "Function call coverage",
+            1,
+            toc_list
         )
 
-        # Create sinks analysis section
-        html_string += self.get_sink_func_section(
-            sink_list,
-            toc_list,
-            tables,
-            coverage_url,
-            profiles[0].target_lang
+        # Table with all function calls for each files
+        html_string += "<div class=\"collapsible\">"
+        html_string += (
+            "<p>"
+            "This section shows a chosen list of functions / methods "
+            "calls and their relative coverage information. By static "
+            "analysis of the target project code, all of these function "
+            "call and their caller information, including the source file "
+            "or class and line number that initiate the call are captured. "
+            "The caller source code file or class and the line number are "
+            "shown in column 2 while column 1 is the function name of that "
+            "selected functions or methods call. Each occurrent of the target "
+            "function call will occuply a separate row. Column 3 of each row "
+            "indicate if the target function calls is statically unreachable."
+            "Column 4 lists all fuzzers (or no fuzzers at all) that have "
+            "covered that particular system call in  dynamic fuzzing. Those "
+            "functions with low to  no reachability and dynamic hit count indicate "
+            "missed fuzzing logic to fuzz and track for possible code injection sinks."
+            "</p>"
         )
 
-        logger.info(f" - Completed analysis {Analysis.get_name()}")
+        html_string += html_helpers.html_add_header_with_link(
+            "Function in each files in report",
+            2,
+            toc_ "list
+        )
+
+        # Third party function calls table
+        tables.append(f"myTable{len(tables)}")
+        html_string += html_helpers.html_create_table_head(
+            tables[-1],
+            [
+                ("Target sink", ""),
+                ("Callsite location",
+                 "Source file, line number and parent function of this function call. "
+                 "Based on static analysis."),
+                ("Reached by fuzzer",
+                 "Is this code reachable by any functions? "
+                 "Based on static analysis."),
+                ("Covered by Fuzzers",
+                 "The specific list of fuzzers that cover this function call. "
+                 "Based on dynamic analysis.")
+            ]
+        )
+
+        for fd in func_profile_list:
+            func_name = utils.demangle_cpp_func(fd.function_name)
+
+            if func_name not in functions_of_interest:
+                continue
+
+            # Retrieve called location as a list for this function
+            if fd.function_name in called_func_dict.keys():
+                called_location_list = called_func_dict[fd.function_name]
+                if len(called_location_list) == 0:
+                    called_location_list = [""]
+            else:
+                called_location_list = [""]
+
+            # Loop through the list of calledlocation for this function
+            for called_location in called_location_list:
+                # Determine if the function call in this called location is reachable
+                hit = "Yes" if (called_location in reachable_func_list) else "No"
+
+                # Determine if this called location is covered by any fuzzers
+                fuzzer_hit = False
+                coverage = proj_profile.runtime_coverage
+                for parent_func in fd.incoming_references:
+                    try:
+                        lineno = int(called_location.split(":")[1])
+                    except ValueError:
+                        continue
+                    if coverage.is_func_lineno_hit(parent_func, lineno):
+                        fuzzer_hit = True
+                        break
+                list_of_fuzzer_covered = fd.reached_by_fuzzers if fuzzer_hit else [""]
+
+                html_string += html_helpers.html_table_add_row([
+                    f"{func_name}",
+                    f"{called_location}",
+                    f"{hit}",
+                    f"{str(list_of_fuzzer_covered)}"
+                ])
+        html_string += "</table>"
+
         html_string += "</div>"  # .collapsible
+        html_string += "</div>"  # report-box
+
+        logger.info(f" - Finish running analysis {Analysis.get_name()}")
         return html_string
-
-    def retrieve_sinks_functions(
-       self,
-       function_list: Dict[str, function_profile.FunctionProfile],
-       target_lang: str = 'c-cpp'
-   ) -> List[function_profile.FunctionProfile]:
-        return []
-
-    def get_sink_func_section(
-        self,
-        sink_function: List[function_profile.FunctionProfile],
-        toc_list: List[Tuple[str, str, int]],
-        tables: List[str],
-        coverage_url: str,
-        target_lang: str = 'c-cpp'
-    ) -> str:
-        return ""
-
