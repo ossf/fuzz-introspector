@@ -260,7 +260,7 @@ class Analysis(analysis.AnalysisInterface):
                     package, func_name = func_name.rsprit('.', 1)
                 else:
                     package = 'default'
-            else
+            else:
                 continue
 
             # Add the function profile to the result list if it matches one of the target
