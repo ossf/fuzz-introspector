@@ -233,6 +233,42 @@ class Analysis(analysis.AnalysisInterface):
 
         return function_list
 
+    def filter_function_list(
+        self,
+        functions: List[function_profile.FunctionProfile],
+        target_lang: str
+    ) -> List[function_profile.FunctionProfile]:
+        """
+        This function aim to filter out target list of functions
+        which are considered as sinks for separate langauge which
+        is the major analysing target for this SinkAnalyser.
+        """
+        function_list = []
+
+        # Loop through the all function list for a project
+        for fd in functions:
+            # Separate handling for different target language
+            if target_lang == "c-cpp":
+                func_name = utils.demangle_cpp_func(fd.function_name)
+                package = ''
+            elif target_lang == "python":
+                func_name = fd.function_name
+                package = fd.function_source_file
+            elif target_lang == "jvm":
+                func_name = fd.function_name.split('(')[0]
+                if "." in func_name:
+                    package, func_name = func_name.rsprit('.', 1)
+                else:
+                    package = 'default'
+            else
+                continue
+
+            # Add the function profile to the result list if it matches one of the target
+            if (package, func_name) in SINK_FUNCTION[target_lang]:
+                function_list.append(fd)
+
+        return function_list
+
     def analysis_func(
         self,
         toc_list: List[Tuple[str, str, int]],
@@ -326,48 +362,32 @@ class Analysis(analysis.AnalysisInterface):
             ]
         )
 
-#        for fd in func_profile_list:
-#            func_name = utils.demangle_cpp_func(fd.function_name)
-#
-#            if func_name not in functions_of_interest:
-#                continue
-#
-#            # Retrieve called location as a list for this function
-#            if fd.function_name in called_func_dict.keys():
-#                called_location_list = called_func_dict[fd.function_name]
-#                if len(called_location_list) == 0:
-#                    called_location_list = [""]
-#            else:
-#                called_location_list = [""]
-#
-#            # Loop through the list of calledlocation for this function
-#            for called_location in called_location_list:
-#                # Determine if the function call in this called location is reachable
-#                hit = "Yes" if (called_location in reachable_func_list) else "No"
-#
-#                # Determine if this called location is covered by any fuzzers
-#                fuzzer_hit = False
-#                coverage = proj_profile.runtime_coverage
-#                for parent_func in fd.incoming_references:
-#                    try:
-#                        lineno = int(called_location.split(":")[1])
-#                    except ValueError:
-#                        continue
-#                    if coverage.is_func_lineno_hit(parent_func, lineno):
-#                        fuzzer_hit = True
-#                        break
-#                list_of_fuzzer_covered = fd.reached_by_fuzzers if fuzzer_hit else [""]#
-#
-#                html_string += html_helpers.html_table_add_row([
-#                    f"{func_name}",
-#                    f"{called_location}",
-#                    f"{hit}",
-#                    f"{str(list_of_fuzzer_covered)}"
-#                ])
+        for fd in filter_function_list(function_list, profiles[0].target_lang):
+            # Loop through the list of calledlocation for this function
+            for called_location in function_callsite_dict[fd.function]:
+                # Determine if this called location is covered by any fuzzers
+                fuzzer_hit = False
+                coverage = proj_profile.runtime_coverage
+                for parent_func in fd.incoming_references:
+                    try:
+                        lineno = int(called_location.split(":")[1])
+                    except ValueError:
+                        continue
+                    if coverage.is_func_lineno_hit(parent_func, lineno):
+                        fuzzer_hit = True
+                        break
+                list_of_fuzzer_covered = fd.reached_by_fuzzers if fuzzer_hit else [""]
+
+                html_string += html_helpers.html_table_add_row([
+                    f"{func_name}",
+                    f"{called_location}",
+                    f"{called_location in reachable_function_list}",
+                    f"{str(list_of_fuzzer_covered)}"
+                ])
         html_string += "</table>"
 
         html_string += "</div>"  # .collapsible
         html_string += "</div>"  # report-box
 
         logger.info(f" - Finish running analysis {Analysis.get_name()}")
-        return html_string
+        return html_stri
