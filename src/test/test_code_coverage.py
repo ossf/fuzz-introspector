@@ -72,21 +72,23 @@ def test_load_llvm_coverage():
     assert len(cov_profile.coverage_files) == 1
     assert len(cov_profile.dual_file_map) == 0
 
-    assert cov_profile.covmap['BZ2_bzCompress'][0] == (408, 46800)
-    assert cov_profile.covmap['BZ2_bzCompress'][7] == (416, 93600)
+    assert cov_profile.covmap['BZ2_bzCompress'][0] == (408, 4680)
+    assert cov_profile.covmap['BZ2_bzCompress'][7] == (416, 9360)
     assert cov_profile.covmap['BZ2_bzCompress'][10] == (420, 0)
-    assert cov_profile.covmap['add_pair_to_block'][0] == (217, 3600000)
-    assert cov_profile.covmap['add_pair_to_block'][4] == (221, 1440000)
+    assert cov_profile.covmap['add_pair_to_block'][0] == (217, 36000000)
+    assert cov_profile.covmap['add_pair_to_block'][4] == (221, 144000000)
     assert cov_profile.covmap['add_pair_to_block'][11] == (228, 3510000)
+    assert cov_profile.covmap['fromtext_md'][1] == (21, 38)
+    assert cov_profile.covmap['fromtext_md'][-2] == (40, 13)
 
-    assert cov_profile.branch_cov_map['BZ2_bzCompress:411,8'] == [0, 46800]
-    assert cov_profile.branch_cov_map['BZ2_bzCompress:414,8'] == [0, 46800]
-    assert cov_profile.branch_cov_map['BZ2_bzCompress:417,4'] == [0, 93600, 0, 46800, 0, 46800]
+    assert cov_profile.branch_cov_map['BZ2_bzCompress:411,8'] == [0, 4680]
+    assert cov_profile.branch_cov_map['BZ2_bzCompress:414,8'] == [0, 4680]
+    assert cov_profile.branch_cov_map['BZ2_bzCompress:417,4'] == [0, 9360, 0, 4680, 0, 4680]
     assert cov_profile.branch_cov_map['BZ2_bzCompress:425,20'] == [0, 0]
     assert cov_profile.branch_cov_map['BZ2_bzCompress:443,14'] == [0, 0]
-    assert cov_profile.branch_cov_map['add_pair_to_block:220,16'] == [1440000, 3600000]
+    assert cov_profile.branch_cov_map['add_pair_to_block:220,16'] == [144000000, 36000000]
     assert cov_profile.branch_cov_map['add_pair_to_block:224,4'] == (
-        [32600, 3600000, 32600, 3510000, 1570000])
+        [3260, 36000000, 3260, 3510000, 1570000])
 
 
 def write_coverage_file(tmpdir, coverage_file):

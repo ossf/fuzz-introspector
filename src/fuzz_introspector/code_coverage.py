@@ -385,6 +385,32 @@ class CoverageProfile:
         return False
 
 
+def extract_hitcount(input: str) -> int:
+    """
+    Extract the count from coverage format hitcount: 4.68k or 5.2M.
+    The caller has to check for error returns before using the value.
+    """
+    input = input.strip()
+    if len(input) == 0:
+        return -1
+    unit = input[-1]
+    if not unit.isalpha():
+        try:
+            return int(input)
+        except Exception:
+            return -1
+
+    if unit not in ['k', 'M']:
+        logger.error(f'Unexpected coverage count unit: {unit}')
+        return -1
+    num = float(input[:-1])
+    if unit == 'k':
+        num *= 1000
+    elif unit == 'M':
+        num *= 1000000
+    return int(num)
+
+
 def load_llvm_coverage(
     target_dir: str,
     target_name: Optional[str] = None
@@ -499,17 +525,15 @@ def load_llvm_coverage(
                         continue
 
                     try:
-                        true_hit = int(line.split('True:')[1].split(',')[0].replace(
-                            "k", "00").replace(
-                                "M", "0000").replace(
-                                    ".", ""))
+                        true_hit = extract_hitcount(line.split('True:')[1].split(',')[0])
+                        if true_hit == -1:
+                            continue
                     except Exception:
                         continue
                     try:
-                        false_hit = int(line.split('False:')[1].replace("]", "").replace(
-                            "k", "00").replace(
-                                "M", "0000").replace(
-                                    ".", ""))
+                        false_hit = extract_hitcount(line.split('False:')[1].replace("]", ""))
+                        if false_hit == -1:
+                            continue
                     except Exception:
                         continue
 
@@ -552,11 +576,9 @@ def load_llvm_coverage(
                     # Extract hit count
                     # Write out numbers e.g. 1.2k into 1200 and 5.99M to 5990000
                     try:
-                        hit_times = int(
-                            line.split("|")[1].replace(
-                                "k", "00").replace(
-                                    "M", "0000").replace(
-                                        ".", ""))
+                        hit_times = extract_hitcount(line.split("|")[1])
+                        if hit_times == -1:
+                            continue
                     except Exception:
                         # Avoid overcounting the code lines by skipping comments and empty lines.
                         if " 0| " in line:
