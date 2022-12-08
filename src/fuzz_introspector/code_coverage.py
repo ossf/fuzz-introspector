@@ -391,10 +391,14 @@ def extract_hitcount(input: str) -> int:
     The caller has to check for error returns before using the value.
     """
     input = input.strip()
-    if len(input) == 1:
-        return int(input)
+    if len(input) == 0:
+        return -1
     unit = input[-1]
-    if not unit.isalpha() or unit not in ['k', 'M']:
+    if not unit.isalpha():
+        try: return int(input)
+        except: return -1
+    
+    if unit not in ['k', 'M']:
         logger.error(f'Unexpected coverage count unit: {unit}')
         return -1
     num = float(input[:-1])
