@@ -395,9 +395,11 @@ def extract_hitcount(input: str) -> int:
         return -1
     unit = input[-1]
     if not unit.isalpha():
-        try: return int(input)
-        except: return -1
-    
+        try:
+            return int(input)
+        except Exception:
+            return -1
+
     if unit not in ['k', 'M']:
         logger.error(f'Unexpected coverage count unit: {unit}')
         return -1
