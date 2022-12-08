@@ -21,6 +21,7 @@ from typing import (
     Tuple,
 )
 
+import os
 from fuzz_introspector import utils
 from fuzz_introspector.datatypes import fuzzer_profile, project_profile
 
@@ -52,8 +53,24 @@ def html_table_add_row(elems: List[Any]) -> str:
 
 def html_get_header(calltree: bool = False,
                     title: str = "Fuzz introspector") -> str:
-    header = """<html>
+    gtag_tracking = ""
+    try:
+        gtag = os.environ['G_ANALYTICS_TAG']
+        gtag_tracking += f"""<!-- Google tag (gtag.js) -->
+                <script async src="https://www.googletagmanager.com/gtag/js?id={gtag}"></script>
+                <script>
+                  window.dataLayer = window.dataLayer || [];
+                  function gtag(){{dataLayer.push(arguments);}}
+                  gtag('js', new Date());
+
+                  gtag('config', '{gtag}');
+                </script>\n"""
+    except KeyError:
+        gtag_tracking = ""
+
+    header = f"""<html>
     <head>
+        {gtag_tracking}
         <link
             rel='stylesheet'
             href='prism.css'>
