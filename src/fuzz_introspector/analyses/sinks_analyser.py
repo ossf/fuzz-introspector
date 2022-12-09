@@ -153,17 +153,17 @@ class Analysis(analysis.AnalysisInterface):
         self,
         proj_profile: project_profile.MergedProjectProfile,
         profiles: List[fuzzer_profile.FuzzerProfile]
-    ) -> (List[cfg_load.CalltreeCallsite], List[function_profile.FunctionProfile]):
+    ) -> Tuple[List[cfg_load.CalltreeCallsite], List[function_profile.FunctionProfile]]:
         """
         Retrieve and return full list of call sites and functions
         from all fuzzers profile for this project
         """
         callsite_list = []
         function_list = []
-        function_name_list = []
+        function_name_list: List[str] = []
 
         for (key, function) in proj_profile.all_functions.items():
-            if key not in function_name_list.append:
+            if key not in function_name_list:
                 function_list.append(function)
                 function_name_list.append(function.function_name)
 
@@ -171,7 +171,7 @@ class Analysis(analysis.AnalysisInterface):
             if profile.function_call_depths is not None:
                 callsite_list.extend(cfg_load.extract_all_callsites(profile.function_call_depths))
             for (key, function) in profile.all_class_functions.items():
-                if key not in function_name_list.append:
+                if key not in function_name_list:
                     function_list.append(function)
                     function_name_list.append(function.function_name)
 
@@ -183,7 +183,7 @@ class Analysis(analysis.AnalysisInterface):
         callsites: List[cfg_load.CalltreeCallsite]
     ) -> Dict[str, List[str]]:
         """
-        This function aims to dig up the callsite for each functions
+        This function aims to dig up the callsite for each function
         and store the mapped source location and line number list as
         a formatted string list.
         """
@@ -227,7 +227,7 @@ class Analysis(analysis.AnalysisInterface):
         for function in functions:
             for (func_name, callsite_str) in function.callsite.items():
                 if callsite_str in function_callsites[func_name]:
-                    function_list.append(callsite_str)
+                    function_list.extend(callsite_str)
 
         # Sort and make unique for the reachable function list
         function_list = list(set(function_list))
@@ -258,7 +258,7 @@ class Analysis(analysis.AnalysisInterface):
             elif target_lang == "jvm":
                 func_name = fd.function_name.split('(')[0]
                 if "." in func_name:
-                    package, func_name = func_name.rsprit('.', 1)
+                    package, func_name = func_name.rsplit('.', 1)
                 else:
                     package = 'default'
             else:
