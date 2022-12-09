@@ -103,7 +103,7 @@ class Analysis(analysis.AnalysisInterface):
             node = nodes[i]
 
             if (profile.target_lang == "jvm"):
-                demangled_name = "[%s].%s" % (
+                demangled_name = utils.demangle_jvm_func(
                     node.dst_function_source_file, node.dst_function_name)
             else:
                 demangled_name = utils.demangle_cpp_func(node.dst_function_name)
