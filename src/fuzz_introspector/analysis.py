@@ -128,7 +128,8 @@ def get_all_analyses() -> List[Type[AnalysisInterface]]:
         bug_digestor,
         filepath_analyser,
         function_call_analyser,
-        metadata
+        metadata,
+        sinks_analyser
     )
 
     analysis_array = [
@@ -139,7 +140,8 @@ def get_all_analyses() -> List[Type[AnalysisInterface]]:
         bug_digestor.Analysis,
         filepath_analyser.Analysis,
         function_call_analyser.Analysis,
-        metadata.Analysis
+        metadata.Analysis,
+        sinks_analyser.Analysis
     ]
     return analysis_array
 
