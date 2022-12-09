@@ -87,54 +87,6 @@ index bc034e19..929e3499 100755
  
  # Copy the binaries needed for code coverage and crash symbolization.
  COPY --from=base-clang /usr/local/bin/llvm-cov \
-diff --git a/projects/jackson-databind/build.sh b/projects/jackson-databind/build.sh
-index 7dd6f09b..b304a3c4 100755
---- a/projects/jackson-databind/build.sh
-+++ b/projects/jackson-databind/build.sh
-@@ -55,6 +55,9 @@ BUILD_CLASSPATH=$(echo $ALL_JARS | xargs printf -- "$OUT/%s:"):$JAZZER_API_PATH
- # All .jar and .class files lie in the same directory as the fuzzer at runtime.
- RUNTIME_CLASSPATH=$(echo $ALL_JARS | xargs printf -- "\$this_dir/%s:"):\$this_dir
- 
-+jarfile=
-+class=
-+
- for fuzzer in $(find $SRC -name '*Fuzzer.java'); do
-   fuzzer_basename=$(basename -s .java $fuzzer)
-   javac -cp $BUILD_CLASSPATH $fuzzer
-@@ -68,6 +71,18 @@ for fuzzer in $(find $SRC -name '*Fuzzer.java'); do
-     cp $SRC/$fuzzer_basename\$MockFuzzDataInput.class $OUT/
-   fi
- 
-+    cd $OUT
-+    jar cvf $fuzzer_basename.jar $fuzzer_basename*.class
-+    if [ -z "$jarfile" ]
-+    then
-+           jarfile=$OUT/$fuzzer_basename.jar
-+           class=$fuzzer_basename
-+    else
-+           jarfile=$jarfile:$OUT/$fuzzer_basename.jar
-+           class=$class:$fuzzer_basename
-+    fi
-+    cd -
-+
-   # Create an execution wrapper that executes Jazzer with the correct arguments.
-   echo "#!/bin/bash
- # LLVMFuzzerTestOneInput for fuzzer detection.
-@@ -86,3 +101,14 @@ LD_LIBRARY_PATH=\"$JVM_LD_LIBRARY_PATH\":\$this_dir \
- \$@" > $OUT/$fuzzer_basename
-   chmod u+x $OUT/$fuzzer_basename
- done
-+
-+cd $OUT
-+rm -rf fuzz-introspector
-+git clone https://github.com/ossf/fuzz-introspector
-+jarfile=$jarfile:$OUT/jackson-databind.jar:$OUT/jackson-core.jar:$OUT/jackson-annotations.jar
-+cd fuzz-introspector/frontends/java/soot
-+sed -i 's/mvn/$MVN/g' run.sh
-+./run.sh -j $jarfile -c $class -m fuzzerTestOneInput
-+cd $OUT
-+cp fuzz-introspector/frontends/java/soot/*.result ./
-+rm -rf fuzz-introspector
 diff --git a/projects/javassist/build.sh b/projects/javassist/build.sh
 index b4890d06..5c5e7fc7 100644
 --- a/projects/javassist/build.sh
