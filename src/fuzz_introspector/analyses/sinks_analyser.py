@@ -24,7 +24,8 @@ from typing import (
 from fuzz_introspector import (
     analysis,
     cfg_load,
-    html_helpers
+    html_helpers,
+    utils
 )
 
 from fuzz_introspector.datatypes import (
@@ -362,9 +363,9 @@ class Analysis(analysis.AnalysisInterface):
             ]
         )
 
-        for fd in filter_function_list(function_list, profiles[0].target_lang):
+        for fd in self.filter_function_list(function_list, profiles[0].target_lang):
             # Loop through the list of calledlocation for this function
-            for called_location in function_callsite_dict[fd.function]:
+            for called_location in function_callsite_dict[fd.function_name]:
                 # Determine if this called location is covered by any fuzzers
                 fuzzer_hit = False
                 coverage = proj_profile.runtime_coverage
@@ -379,7 +380,7 @@ class Analysis(analysis.AnalysisInterface):
                 list_of_fuzzer_covered = fd.reached_by_fuzzers if fuzzer_hit else [""]
 
                 html_string += html_helpers.html_table_add_row([
-                    f"{func_name}",
+                    f"{fd.function_name}",
                     f"{called_location}",
                     f"{called_location in reachable_function_list}",
                     f"{str(list_of_fuzzer_covered)}"
@@ -390,4 +391,4 @@ class Analysis(analysis.AnalysisInterface):
         html_string += "</div>"  # report-box
 
         logger.info(f" - Finish running analysis {Analysis.get_name()}")
-        return html_stri
+        return html_string
