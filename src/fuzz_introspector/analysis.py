@@ -272,16 +272,14 @@ def get_parent_callsite_link(node, callstack, profile, target_coverage_url):
     """Gets the coverage callsite link of a given node."""
     if callstack_has_parent(node, callstack):
         parent_fname = callstack_get_parent(node, callstack)
-        parent_source = node.parent_calltree_callsite.dst_function_source_file
         dst_options = [
             parent_fname,
-            utils.demangle_cpp_func(parent_fname),
-            utils.demangle_jvm_func(parent_source, parent_fname)
+            utils.demangle_cpp_func(parent_fname)
         ]
         for dst in dst_options:
             for fd_k, fd in profile.all_class_functions.items():
                 if (
-                    fd.function_name == dst
+                    utils.demangle_jvm_func(fd.function_source_file, fd.function_name) == dst
                     or utils.normalise_str(fd.function_name) == utils.normalise_str(dst)
                 ):
                     callsite_link = profile.resolve_coverage_link(
