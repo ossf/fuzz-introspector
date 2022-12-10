@@ -132,6 +132,10 @@ def demangle_cpp_func(funcname: str) -> str:
         return funcname
 
 
+def demangle_jvm_func(package: str, funcname: str) -> str:
+    return "[%s].%s" % (package, funcname)
+
+
 def scan_executables_for_fuzz_introspector_logs(
     exec_dir: str
 ) -> List[Dict[str, str]]:
