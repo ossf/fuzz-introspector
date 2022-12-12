@@ -421,7 +421,8 @@ def complete_coverage_check(
         # Check if fuzz-introspector patch already appended
         if not has_append(project_build_path):
             # Apply jvm build patch to include fuzz-introspector logic
-            patch_jvm_build(project_build_path)
+            #patch_jvm_build(project_build_path)
+            print("tmp")
 
     build_project(project_name, source_dir, to_clean=True)
 
