@@ -24,6 +24,7 @@ from typing import (
 
 from fuzz_introspector import (
     analysis,
+    code_coverage,
     cfg_load,
     html_helpers,
     utils
@@ -248,7 +249,7 @@ class Analysis(analysis.AnalysisInterface):
         function_list = []
 
         # Loop through the all function list for a project
-        forfd in functions:
+        for fd in functions:
             # Separate handling for different target language
             if target_lang == "c-cpp":
                 func_name = utils.demangle_cpp_func(fd.function_name)
@@ -274,7 +275,10 @@ class Analysis(analysis.AnalysisInterface):
     def _retrieve_content_rows(
         self,
         functions: List[function_profile.FunctionProfile],
-        target_lang: str
+        target_lang: str,
+        func_callsites: Dict[str, List[str]],
+        coverage: code_coverage.CoverageProfile(),
+        reachable_function_list: List[str]
     ) -> Tuple[str, str]:
         """
         This method aims to retrieve the table content for this analyser
@@ -283,14 +287,13 @@ class Analysis(analysis.AnalysisInterface):
         coverage that could be readable by external analyser.
         """
         html_string = ""
-        json_list = List[]
+        json_list = []
 
-        for fd in self._filter_function_list(function_list, profiles[0].target_lang):
+        for fd in self._filter_function_list(functions, target_lang):
             # Loop through the list of calledlocation for this function
             for called_location in function_callsite_dict[fd.function_name]:
                 # Determine if this called location is covered by any fuzzers
                 fuzzer_hit = False
-                coverage = proj_profile.runtime_coverage
                 for parent_func in fd.incoming_references:
                     try:
                         lineno = int(called_location.split(":")[1])
@@ -359,7 +362,13 @@ class Analysis(analysis.AnalysisInterface):
         )
 
         # Retrieve table content rows
-        html_rows, json_string = _retrieve_content_rows(function_list, profiles[0].target_lang)
+        html_rows, json_string = self._retrieve_content_rows(
+            function_list,
+            profiles[0].target_lang,
+            function_callsite_dict,
+            proj_profile.runtime_coverage,
+            reachable_function_list
+       )
 
         # Check if html string or json string is needed
         if return_json_string:

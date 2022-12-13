@@ -12,9 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Module for creating HTML reports"""
+"""Module for creating JSON reports for sink coverage"""
 import os
 import logging
+
+from typing import List
 
 from fuzz_introspector import analysis
 from fuzz_introspector.datatypes import project_profile, fuzzer_profile
@@ -29,7 +31,7 @@ def create_json_report(
     coverage_url: str
 ) -> None:
     """
-    generate specific json report for saving the injection sinks
+    Generate specific json report for saving the injection sinks
     coverage for the fuzzing project. This method will output a json file
     which store all those reachable and coverage information for
     existing sink methods / functions in the fuzzing project.
@@ -38,11 +40,11 @@ def create_json_report(
     logger.info(" - Creating JSON report for sink coverage")
     if not proj_profile.has_coverage_data():
         logger.error(
-                    "No files with coverage data was found. This is either "
-                    "because an error occurred when compiling and running "
-                    "coverage runs, or because the introspector run was "
-                    "intentionally done without coverage collection. In order "
-                    "to get optimal results coverage data is needed."
+            "No files with coverage data was found. This is either "
+            "because an error occurred when compiling and running "
+            "coverage runs, or because the introspector run was "
+            "intentionally done without coverage collection. In order "
+            "to get optimal results coverage data is needed."
         )
 
     logger.info(" - Handling sink coverage analyses")
@@ -70,4 +72,3 @@ def create_json_report(
     # Write the json string to file
     with open(report_name, "a+") as file:
         file.write(result_str)
-
