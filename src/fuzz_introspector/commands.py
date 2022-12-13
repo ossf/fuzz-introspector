@@ -44,7 +44,7 @@ def run_analysis_on_dir(
     enable_all_analyses: bool,
     report_name: str,
     language: str,
-    sink_coverage_report: bool,
+    sink_coverage_report: bool = False,
     parallelise: bool = True
 ) -> int:
     if enable_all_analyses:
@@ -113,11 +113,12 @@ def run_analysis_on_dir(
         report_name
     )
 
-    logger.info("[+] Creating JSON report for injection sink coveage")
-    json_report.create_json_report(
-        profiles,
-        proj_profile,
-        coverage_url
-    )
+    if sink_coverage_rport:
+        logger.info("[+] Creating JSON report for injection sink coveage")
+        json_report.create_json_report(
+            profiles,
+            proj_profile,
+            coverage_url
+        )
 
     return constants.APP_EXIT_SUCCESS
