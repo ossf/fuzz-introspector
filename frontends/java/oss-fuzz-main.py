@@ -11,12 +11,18 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Main entrypoint for OSS-Fuzz."""
+"""Main entrypoint for OSS-Fuzz.
+
+This script will handle most of what is needed to run the frontend within
+the OSS-Fuzz environment. The steps taken are:
+1) Building the necessary .jar file for the frontend code.
+2) Find all fuzz targets in /out/.
+3) Find all .jar files needed for the analysis.
+4) Run the frontend analysis on all fuzz targets and the relevant jar files.
+"""
 
 import os
-import sys
 import subprocess
-import shutil
 
 FI_JVM_BASE="/fuzz-introspector/frontends/java"
 PLUGIN_PATH="target/ossf.fuzz.introspector.soot-1.0.jar"
@@ -84,6 +90,9 @@ def get_all_jar_files(path):
 
 
 def run_introspector_frontend(target_class, jar_set):
+  """Call into the frontend for analysing java targets. The output of this
+  is a set of *.data and *.data.yaml files in the current directory.
+  """
   print("Running introspector frontend on %s :: %s" % (target_class, jar_set))
   jarfile_str = ":".join(jar_set)
   cmd = [
@@ -122,7 +131,5 @@ if __name__ == "__main__":
   currdir = os.getcwd()
   mydir = os.path.dirname(os.path.abspath(__file__))
   os.chdir(mydir)
-
   run_analysis("/out/")
-
   os.chdir(currdir)
