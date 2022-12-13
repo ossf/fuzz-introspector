@@ -54,6 +54,7 @@ import soot.toolkits.graph.BriefBlockGraph;
 
 public class CallGraphGenerator {
   public static void main(String[] args) {
+    System.out.println("[Callgraph] Running callgraph plugin");
     if (args.length < 3 || args.length > 4) {
       System.err.println("No jarFiles, entryClass or entryMethod.");
       return;
@@ -69,6 +70,8 @@ public class CallGraphGenerator {
     if (jarFiles.size() < 1) {
       System.err.println("Invalid jarFiles");
     }
+
+    System.out.println("[Callgraph] Jar files used for analysis: " + jarFiles);
 
     soot.G.reset();
 
@@ -150,20 +153,29 @@ class CustomSenceTransformer extends SceneTransformer {
     FunctionConfig methodList = new FunctionConfig();
     methodList.setListName("All functions");
 
+    System.out.println("[Callgraph] Internal transform init");
     // Extract Callgraph for the included Java Class
+    System.out.println("[Callgraph] Determining classes to use for analysis.");
     CallGraph callGraph = Scene.v().getCallGraph();
     for (SootClass c : Scene.v().getApplicationClasses()) {
       if (!c.getName().startsWith("jdk")) {
+        System.out.println("[Callgraph] [USE] class: " + c.getName());
         classMethodMap.put(c, c.getMethods());
+      } else {
+        System.out.println("[Callgraph] [SKIP] class: " + c.getName());
       }
     }
+    System.out.println("[Callgraph] Finished going through classes");
 
     for (SootClass c : classMethodMap.keySet()) {
+      System.out.println("Inspecting class: " + c.getName());
       // Loop through each methods in the class
       for (SootMethod m : classMethodMap.get(c)) {
         if (this.excludeMethodList.contains(m.getName())) {
+          System.out.println("[Callgraph] Skipping method: " + m.getName());
           continue;
         }
+        System.out.println("[Callgraph] Analysing method: " + m.getName());
 
         // Discover method related information
         FunctionElement element = new FunctionElement();
