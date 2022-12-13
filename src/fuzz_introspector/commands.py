@@ -21,6 +21,7 @@ from fuzz_introspector import analysis
 from fuzz_introspector import constants
 from fuzz_introspector import data_loader
 from fuzz_introspector import html_report
+from fuzz_introspector import json_report
 from fuzz_introspector import utils
 from fuzz_introspector.datatypes import project_profile
 
@@ -43,6 +44,7 @@ def run_analysis_on_dir(
     enable_all_analyses: bool,
     report_name: str,
     language: str,
+    sink_coverage_report: bool,
     parallelise: bool = True
 ) -> int:
     if enable_all_analyses:
@@ -98,6 +100,9 @@ def run_analysis_on_dir(
 
     logger.info(f"Analyses to run: {str(analyses_to_run)}")
 
+    if sink_coverage_report:
+        analyses_to_run.append("SinkCoverageAnalyser")
+
     logger.info("[+] Creating HTML report")
     html_report.create_html_report(
         profiles,
@@ -107,4 +112,13 @@ def run_analysis_on_dir(
         proj_profile.basefolder,
         report_name
     )
+
+    logger.info("[+] Creating JSON report for injection sink coveage")
+    json_report.create_json_report(
+        profiles,
+        proj_profile,
+        coverage_url,
+        proj_profile.basefolder
+    )
+
     return constants.APP_EXIT_SUCCESS

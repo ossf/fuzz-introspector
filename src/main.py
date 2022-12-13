@@ -84,6 +84,12 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
         default="c-cpp",
         help="Language of project"
     )
+    report_parser.add_argument(
+        "--sink-coverage-report",
+        type='store_true',
+        default=True,
+        help="Generate separate sink coverage JSON report"
+    )
 
     # Command for correlating binary files to fuzzerLog files
     correlate_parser = subparsers.add_parser(
@@ -127,7 +133,8 @@ def main() -> int:
             args.correlation_file,
             args.enable_all_analyses,
             args.name,
-            args.language
+            args.language,
+            args.sink_coverage_report
         )
         logger.info("Ending fuzz introspector report generation")
     elif args.command == 'correlate':
