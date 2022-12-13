@@ -277,7 +277,7 @@ class Analysis(analysis.AnalysisInterface):
         functions: List[function_profile.FunctionProfile],
         target_lang: str,
         func_callsites: Dict[str, List[str]],
-        coverage: code_coverage.CoverageProfile(),
+        coverage: code_coverage.CoverageProfile,
         reachable_function_list: List[str]
     ) -> Tuple[str, str]:
         """
@@ -291,7 +291,7 @@ class Analysis(analysis.AnalysisInterface):
 
         for fd in self._filter_function_list(functions, target_lang):
             # Loop through the list of calledlocation for this function
-            for called_location in function_callsite_dict[fd.function_name]:
+            for called_location in func_callsites[fd.function_name]:
                 # Determine if this called location is covered by any fuzzers
                 fuzzer_hit = False
                 for parent_func in fd.incoming_references:
@@ -311,7 +311,7 @@ class Analysis(analysis.AnalysisInterface):
                     f"{str(list_of_fuzzer_covered)}"
                 ])
 
-                json_dict = dict()
+                json_dict = dict[str, Any]
                 json_dict['func_name'] = fd.function_name
                 json_dict['call_loc'] = called_location
                 json_dict['static_reach'] = f"{called_location in reachable_function_list}"

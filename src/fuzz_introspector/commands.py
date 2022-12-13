@@ -117,8 +117,7 @@ def run_analysis_on_dir(
     json_report.create_json_report(
         profiles,
         proj_profile,
-        coverage_url,
-        proj_profile.basefolder
+        coverage_url
     )
 
     return constants.APP_EXIT_SUCCESS
