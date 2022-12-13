@@ -86,7 +86,7 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
     )
     report_parser.add_argument(
         "--sink-coverage-report",
-        type='store_true',
+        action='store_true',
         default=True,
         help="Generate separate sink coverage JSON report"
     )

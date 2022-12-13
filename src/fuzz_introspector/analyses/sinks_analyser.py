@@ -17,6 +17,7 @@ import json
 import logging
 
 from typing import (
+    Any,
     List,
     Tuple,
     Dict
@@ -311,7 +312,7 @@ class Analysis(analysis.AnalysisInterface):
                     f"{str(list_of_fuzzer_covered)}"
                 ])
 
-                json_dict = dict[str, Any]
+                json_dict: Dict[str, Any] = {}
                 json_dict['func_name'] = fd.function_name
                 json_dict['call_loc'] = called_location
                 json_dict['static_reach'] = f"{called_location in reachable_function_list}"
@@ -368,7 +369,7 @@ class Analysis(analysis.AnalysisInterface):
             function_callsite_dict,
             proj_profile.runtime_coverage,
             reachable_function_list
-       )
+        )
 
         # Check if html string or json string is needed
         if return_json_string:

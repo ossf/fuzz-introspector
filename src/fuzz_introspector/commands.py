@@ -113,7 +113,7 @@ def run_analysis_on_dir(
         report_name
     )
 
-    if sink_coverage_rport:
+    if sink_coverage_report:
         logger.info("[+] Creating JSON report for injection sink coveage")
         json_report.create_json_report(
             profiles,
