@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Main entrypoint for OSS-Fuzz."""
 
 import os
 import sys
@@ -111,8 +112,6 @@ def run_analysis(path):
   targets = find_fuzz_targets(path)
   jar_files = get_all_jar_files(path)
 
-  #targets, jar_files = find_fuzz_targets(path)
-  #for (classfile, wrapper_script, jar_file) in targets:
   for target in targets:
     run_introspector_frontend(target, jar_files)
   os.chdir(currwd)
