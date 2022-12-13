@@ -40,61 +40,46 @@ def build_jvm_frontend():
 
 
 def find_fuzz_targets(path):
+  """Finds the relevant fuzz targets in `path`
+  A fuzz target is identified by a file {fuzzername} containing the string
+  "LLVMFuzzerTestOneInput" and a corresponding {fuzzername}.class file.
+
+  For each fuzz target, if there is no {fuzzername}.jar then it is created.
+  """
   print("Finding fuzz targets in %s" % path)
   jar_files = set()
   targets = list()
   for classfile in os.listdir(path):
-    csp = classfile#os.path.join(path, classfile)
     print("Checking target %s" % classfile)
-    if classfile.endswith(".class"):
-      # We must have:
-      # - An executable (wrapper script)
-      # - An .class path (fuzzer class)
-      # - A .jar file
-      wrapper_script = classfile.replace(".class", "")
-      jar_file = classfile.replace(".class", ".jar")
-          
-      # Check if wrapper script exsts and whether it has the right tag
-      #wsp = os.path.join(path, wrapper_script)
-      wsp=wrapper_script
-      if not os.path.isfile(wsp):
-        print("B1")
+    if not classfile.endswith(".class"):
+      continue
+
+    # Check if wrapper script exists and whether it has the right tag.
+    wrapper_script = classfile.replace(".class", "")
+    if not os.path.isfile(wrapper_script):
+      continue
+    with open(wrapper_script) as wrapper_script_fd:
+      if 'LLVMFuzzerTestOneInput' not in wrapper_script_fd.read():
         continue
 
-      with open(wsp) as wrapper_script_fd:
-        if 'LLVMFuzzerTestOneInput' not in wrapper_script_fd.read():
-          print("B2")
-          continue
+    # Create relevant .jar file if it is not there.
+    jar_file = classfile.replace(".class", ".jar")
+    if not os.path.exists(jar_file):
+      subprocess.check_call("jar cvf %s %s" % (jar_file, classfile), shell=True)
 
-      # Avoid if the corresponding .jar file is not there.
-      #jfp = os.path.join(path, jar_file)
-      jfp = jar_file
-      if not os.path.exists(jfp):
-        subprocess.check_call("jar cvf %s %s" % (jfp, classfile), shell=True)
-        print("B3")
-        #continue
-        #jfp=""
+    targets.append(classfile)
+  return targets
 
-      targets.append((csp, wsp, jfp))
-      if jfp != "":
-        jar_files.add(jar_file)
-
+def get_all_jar_files(path):
+  """Gets all jar files of interest in path"""
+  jar_files = set()
   for jarfile in os.listdir(path):
     if not jarfile.endswith(".jar"):
       continue
     if "jazzer" in jarfile:
       continue
-
     jar_files.add(jarfile)
-
-  jar_files_new = set()
-  for jf in jar_files:
-    if "/out/" not in jf:
-      jf = "/out/" + jf
-    jar_files_new.add(jf)
-
-  jar_files = jar_files_new
-  return targets, jar_files
+  return jar_files
 
 
 def run_introspector_frontend(target_class, jar_set):
@@ -123,10 +108,13 @@ def run_analysis(path):
   currwd = os.getcwd()
   os.chdir(path)
 
-  targets, jar_files = find_fuzz_targets(path)
-  for (classfile, wrapper_script, jar_file) in targets:
-    run_introspector_frontend(classfile, jar_files)
+  targets = find_fuzz_targets(path)
+  jar_files = get_all_jar_files(path)
 
+  #targets, jar_files = find_fuzz_targets(path)
+  #for (classfile, wrapper_script, jar_file) in targets:
+  for target in targets:
+    run_introspector_frontend(target, jar_files)
   os.chdir(currwd)
 
 if __name__ == "__main__":
