@@ -124,13 +124,17 @@ class Analysis(analysis.AnalysisInterface):
     def __init__(self) -> None:
         pass
 
-    @staticmethod
-    def get_name():
-        return name
+    @classmethod
+    def get_name(cls):
+        return cls.name
 
-    @staticmethod
-    def get_json_string_result():
-        return json_string_result
+    @classmethod
+    def get_json_string_result(cls):
+        return cls.json_string_result
+
+    @classmethod
+    def set_json_string_result(cls, json_string):
+        cls.json_string_result = json_string
 
     def _get_source_file(self, callsite) -> str:
         """This function aims to dig up the callsitecalltree of a function
@@ -368,13 +372,15 @@ class Analysis(analysis.AnalysisInterface):
         )
 
         # Retrieve table content rows
-        html_rows, json_string_result = self._retrieve_content_rows(
+        html_rows, json_row = self._retrieve_content_rows(
             function_list,
             profiles[0].target_lang,
             function_callsite_dict,
             proj_profile.runtime_coverage,
             reachable_function_list
         )
+
+        Analysis.set_json_string_result(json_row)
 
         html_string = ""
         html_string += "<div class=\"report-box\">"

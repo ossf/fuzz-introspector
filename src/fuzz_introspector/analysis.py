@@ -89,15 +89,21 @@ class AnalysisInterface(abc.ABC):
         """
         pass
 
-    @staticmethod
+    @classmethod
     @abc.abstractmethod
-    def get_name():
+    def get_name(cls):
         """Return name of analysis"""
         pass
 
-    @staticmethod
+    @classmethod
     @abc.abstractmethod
-    def get_json_string_result():
+    def get_json_string_result(cls):
+        """Return json_string_result"""
+        pass
+
+    @classmethod
+    @abc.abstractmethod
+    def set_json_string_result(cls, string):
         """Return json_string_result"""
         pass
 

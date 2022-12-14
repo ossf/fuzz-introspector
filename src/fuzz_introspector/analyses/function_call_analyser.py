@@ -45,13 +45,17 @@ class Analysis(analysis.AnalysisInterface):
     def __init__(self) -> None:
         pass
 
-    @staticmethod
-    def get_name():
-        return name
+    @classmethod
+    def get_name(cls):
+        return cls.name
 
-    @staticmethod
-    def get_json_string_result():
-        return json_string_result
+    @classmethod
+    def get_json_string_result(cls):
+        return cls.json_string_result
+
+    @classmethod
+    def set_json_string_result(cls, json_string):
+        cls.json_string_result = json_string
 
     def get_source_file(self, callsite) -> str:
         """This function aims to dig up the callsitecalltree of a function
