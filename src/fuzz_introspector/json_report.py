@@ -42,10 +42,7 @@ def _retrieve_json_section(
     analysis_array = analysis.get_all_analyses()
     for analysis_interface in analysis_array:
         if analysis_interface.get_name() == analyser_name:
-            analysis_instance = analysis.instantiate_analysis_interface(
-                analysis_interface
-            )
-            return analysis_instance.get_json_string_result()
+            return analysis_interface.get_json_string_result()
     return json.dumps([])
 
 
