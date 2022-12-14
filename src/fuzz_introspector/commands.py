@@ -44,7 +44,7 @@ def run_analysis_on_dir(
     enable_all_analyses: bool,
     report_name: str,
     language: str,
-    sink_coverage_report: bool = False,
+    analyses_with_json: List[str],
     parallelise: bool = True
 ) -> int:
     if enable_all_analyses:
@@ -99,10 +99,6 @@ def run_analysis_on_dir(
         )
 
     logger.info(f"Analyses to run: {str(analyses_to_run)}")
-
-    if sink_coverage_report:
-        analyses_to_run.append("SinkCoverageAnalyser")
-
     logger.info("[+] Creating HTML report")
     html_report.create_html_report(
         profiles,
@@ -113,11 +109,13 @@ def run_analysis_on_dir(
         report_name
     )
 
-    if sink_coverage_report:
-        logger.info("[+] Creating JSON report for injection sink coveage")
+    logger.info(f"Analyses with json output: {str(analyses_to_run)}")
+    if len(analyses_with_json) > 0:
+        logger.info("[+] Creating JSON report")
         json_report.create_json_report(
             profiles,
             proj_profile,
+            analyses_with_json,
             coverage_url
         )
 
