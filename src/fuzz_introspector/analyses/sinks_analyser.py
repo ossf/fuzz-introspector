@@ -118,13 +118,19 @@ class Analysis(analysis.AnalysisInterface):
     covered those sensitive sink fnctions / method in aid to discover possible
     code / command injection through though fuzzing on sink functions / methods..
     """
+    name: str = "SinkCoverageAnalyser"
+    json_string_result: str = "[]"
 
     def __init__(self) -> None:
         pass
 
     @staticmethod
     def get_name():
-        return "SinkCoverageAnalyser"
+        return name
+
+    @staticmethod
+    def get_json_string_result():
+        return json_string_result
 
     def _get_source_file(self, callsite) -> str:
         """This function aims to dig up the callsitecalltree of a function
@@ -329,8 +335,7 @@ class Analysis(analysis.AnalysisInterface):
         profiles: List[fuzzer_profile.FuzzerProfile],
         basefolder: str,
         coverage_url: str,
-        conclusions: List[html_helpers.HTMLConclusion],
-        json_report: bool = False
+        conclusions: List[html_helpers.HTMLConclusion]
     ) -> str:
         """
         Show all used sensitive sink functions / methods in the project and display
@@ -363,17 +368,13 @@ class Analysis(analysis.AnalysisInterface):
         )
 
         # Retrieve table content rows
-        html_rows, json_string = self._retrieve_content_rows(
+        html_rows, json_string_result = self._retrieve_content_rows(
             function_list,
             profiles[0].target_lang,
             function_callsite_dict,
             proj_profile.runtime_coverage,
             reachable_function_list
         )
-
-        # Check if html string or json string is needed
-        if json_report:
-            return json_string
 
         html_string = ""
         html_string += "<div class=\"report-box\">"

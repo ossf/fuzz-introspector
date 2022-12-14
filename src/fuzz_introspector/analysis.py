@@ -43,7 +43,8 @@ logger = logging.getLogger(name=__name__)
 
 
 class AnalysisInterface(abc.ABC):
-    name: str
+    name: str = ""
+    json_string_result: str = ""
 
     @abc.abstractmethod
     def analysis_func(
@@ -54,8 +55,7 @@ class AnalysisInterface(abc.ABC):
         profiles: List[fuzzer_profile.FuzzerProfile],
         basefolder: str,
         coverage_url: str,
-        conclusions: List[html_helpers.HTMLConclusion],
-        json_report: bool
+        conclusions: List[html_helpers.HTMLConclusion]
     ) -> str:
         """Entrypoint for analysis instance. This function can have side effects
         on many of the arguments passed to it.
@@ -83,15 +83,9 @@ class AnalysisInterface(abc.ABC):
                            be shown at the top of the report page.
         :type conclusions: List[html_helpers.HTMLConclusion]
 
-        :param json_report: A bool value to declare if the ouput is json string for
-                            the json report (True) or html string for html
-                            report (False)
-        :type json_report: bool
-
         :rtype: str
         :returns:  A string that corresponds to HTML that can be embedded in the
-                   html report or the JSON Object that can be embedded into json
-                   report, determine by the json_report parameter.
+                   html report.
         """
         pass
 
@@ -99,6 +93,12 @@ class AnalysisInterface(abc.ABC):
     @abc.abstractmethod
     def get_name():
         """Return name of analysis"""
+        pass
+
+    @staticmethod
+    @abc.abstractmethod
+    def get_json_string_result():
+        """Return json_string_result"""
         pass
 
 

@@ -30,12 +30,19 @@ logger = logging.getLogger(name=__name__)
 
 
 class Analysis(analysis.AnalysisInterface):
+    name: str = "RuntimeCoverageAnalysis"
+    json_string_result: str = "[]"
+
     def __init__(self) -> None:
         pass
 
     @staticmethod
     def get_name():
-        return "RuntimeCoverageAnalysis"
+        return name
+
+    @staticmethod
+    def get_json_string_result():
+        return json_string_result
 
     def analysis_func(
         self,
@@ -45,8 +52,7 @@ class Analysis(analysis.AnalysisInterface):
         profiles: List[fuzzer_profile.FuzzerProfile],
         basefolder: str,
         coverage_url: str,
-        conclusions: List[html_helpers.HTMLConclusion],
-        json_report: bool = False
+        conclusions: List[html_helpers.HTMLConclusion]
     ) -> str:
         logger.info(f" - Running analysis {Analysis.get_name()}")
 
@@ -115,8 +121,6 @@ class Analysis(analysis.AnalysisInterface):
 
         logger.info(f" - Completed analysis {Analysis.get_name()}")
 
-        if json_report:
-            return "[]"
         return html_string
 
     def get_low_cov_high_line_funcs(

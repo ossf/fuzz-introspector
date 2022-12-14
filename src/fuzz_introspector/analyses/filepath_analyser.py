@@ -30,12 +30,19 @@ logger = logging.getLogger(name=__name__)
 
 
 class Analysis(analysis.AnalysisInterface):
+    name: str = "FilePathAnalyser"
+    json_string_result: str = "[]"
+
     def __init__(self) -> None:
         pass
 
     @staticmethod
     def get_name():
-        return "FilePathAnalyser"
+        return name
+
+    @staticmethod
+    def get_json_string_result():
+        return json_string_result
 
     def all_files_targeted(
         self,
@@ -55,8 +62,7 @@ class Analysis(analysis.AnalysisInterface):
         profiles: List[fuzzer_profile.FuzzerProfile],
         basefolder: str,
         coverage_url: str,
-        conclusions: List[html_helpers.HTMLConclusion],
-        json_report: bool = False
+        conclusions: List[html_helpers.HTMLConclusion]
     ) -> str:
         logger.info(f" - Running analysis {Analysis.get_name()}")
 
@@ -146,6 +152,4 @@ class Analysis(analysis.AnalysisInterface):
         html_string += "</div>"  # .collapsible
         html_string += "</div>"  # report-box
 
-        if json_report:
-            return "[]"
         return html_string

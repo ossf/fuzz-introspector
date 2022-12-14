@@ -33,12 +33,19 @@ class Analysis(analysis.AnalysisInterface):
     and fuzzer focus functions in libFuzzer. The analysis outputs this either
     in .json format or as HTML string that can be embedded in the HTML report.
     """
+    name: str = "BugDigestorAnalysis"
+    json_string_result: str = "[]"
+
     def __init__(self) -> None:
         self.display_html = False
 
     @staticmethod
     def get_name():
-        return "BugDigestorAnalysis"
+        return name
+
+    @staticmethod
+    def get_json_string_result():
+        return json_string_result
 
     def analysis_func(
         self,
@@ -48,8 +55,7 @@ class Analysis(analysis.AnalysisInterface):
         profiles: List[fuzzer_profile.FuzzerProfile],
         basefolder: str,
         coverage_url: str,
-        conclusions: List[html_helpers.HTMLConclusion],
-        json_report: bool = False
+        conclusions: List[html_helpers.HTMLConclusion]
     ) -> str:
         """Digests and creates HTML about bugs found by the fuzzers."""
         logger.info(f" - Running analysis {Analysis.get_name()}")
@@ -93,8 +99,5 @@ class Analysis(analysis.AnalysisInterface):
         html_string += "</table>"
         html_string += "</div>"  # .collapsible
         html_string += "</div>"  # report-box
-
-        if json_report:
-            return "[]"
 
         return html_string

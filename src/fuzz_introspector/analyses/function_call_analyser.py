@@ -39,13 +39,19 @@ class Analysis(analysis.AnalysisInterface):
     to show all occurence of third party function call within the target
     project and if those calls are statically reached or dynamically covered.
     """
+    name: str = "ThirdPartyAPICoverageAnalyser"
+    json_string_result: str = "[]"
 
     def __init__(self) -> None:
         pass
 
     @staticmethod
     def get_name():
-        return "ThirdPartyAPICoverageAnalyser"
+        return name
+
+    @staticmethod
+    def get_json_string_result():
+        return json_string_result
 
     def get_source_file(self, callsite) -> str:
         """This function aims to dig up the callsitecalltree of a function
@@ -168,8 +174,7 @@ class Analysis(analysis.AnalysisInterface):
         profiles: List[fuzzer_profile.FuzzerProfile],
         basefolder: str,
         coverage_url: str,
-        conclusions: List[html_helpers.HTMLConclusion],
-        json_report: bool = False
+        conclusions: List[html_helpers.HTMLConclusion]
     ) -> str:
         """
         Performs an analysis for all third party API call in the target project.
@@ -311,6 +316,4 @@ class Analysis(analysis.AnalysisInterface):
         html_string += "</div>"  # .collapsible
         html_string += "</div>"  # report-box
 
-        if json_report:
-            return "[]"
         return html_string

@@ -41,12 +41,19 @@ logger = logging.getLogger(name=__name__)
 
 
 class Analysis(analysis.AnalysisInterface):
+    name: str = "FuzzCalltreeAnalysis"
+    json_string_result: str = "[]"
+
     def __init__(self) -> None:
         logger.info("Creating FuzzCalltreeAnalysis")
 
     @staticmethod
     def get_name():
-        return "FuzzCalltreeAnalysis"
+        return name
+
+    @staticmethod
+    def get_json_string_result():
+        return json_string_result
 
     def analysis_func(
         self,
@@ -56,16 +63,13 @@ class Analysis(analysis.AnalysisInterface):
         profiles: List[fuzzer_profile.FuzzerProfile],
         basefolder: str,
         coverage_url: str,
-        conclusions: List[html_helpers.HTMLConclusion],
-        json_report: bool = False
+        conclusions: List[html_helpers.HTMLConclusion]
     ) -> str:
         """
         Creates the HTML of the calltree. Returns the HTML as a string.
         """
         logger.info("Not implemented")
 
-        if json_report:
-            return "[]"
         return ""
 
     def _get_span_row(
