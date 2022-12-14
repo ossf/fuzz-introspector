@@ -44,7 +44,7 @@ def run_analysis_on_dir(
     enable_all_analyses: bool,
     report_name: str,
     language: str,
-    analyses_with_json: List[str] = [],
+    output_json: List[str] = [],
     parallelise: bool = True
 ) -> int:
     if enable_all_analyses:
@@ -104,18 +104,19 @@ def run_analysis_on_dir(
         profiles,
         proj_profile,
         analyses_to_run,
+        output_json,
         coverage_url,
         proj_profile.basefolder,
         report_name
     )
 
     logger.info(f"Analyses with json output: {str(analyses_to_run)}")
-    if len(analyses_with_json) > 0:
+    if len(output_json) > 0:
         logger.info("[+] Creating JSON report")
         json_report.create_json_report(
             profiles,
             proj_profile,
-            analyses_with_json,
+            output_json,
             coverage_url
         )
 

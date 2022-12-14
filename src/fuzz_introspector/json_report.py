@@ -11,8 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-"""Module for creating JSON reports for sink coverage"""
+"""Module for creating JSON reports"""
 import os
 import json
 import logging
@@ -28,6 +27,7 @@ from fuzz_introspector.datatypes import project_profile, fuzzer_profile
 
 
 logger = logging.getLogger(name=__name__)
+JSON_REPORT_FILE = 'fuzz-introspector.json'
 
 
 def _retrieve_json_section(
@@ -46,23 +46,14 @@ def _retrieve_json_section(
             analysis_instance = analysis.instantiate_analysis_interface(
                 analysis_interface
             )
-            return analysis_instance.analysis_func(
-                None,
-                None,
-                proj_profile,
-                profiles,
-                None,
-                coverage_url,
-                None,
-                True
-            )
+            return analysis_instance.get_json_result_string
     return json.dumps([])
 
 
 def create_json_report(
     profiles: List[fuzzer_profile.FuzzerProfile],
     proj_profile: project_profile.MergedProjectProfile,
-    analyses_with_json: List[str],
+    output_json: List[str],
     coverage_url: str
 ) -> None:
     """
@@ -83,7 +74,7 @@ def create_json_report(
         )
 
     result_dict: Dict[str, Dict[str, Any]] = {'report': {}}
-    for analyses in analyses_with_json:
+    for analyses in output_json:
         logger.info(f" - Handling {analyses}")
         result_str = _retrieve_json_section(
             profiles,
@@ -95,9 +86,9 @@ def create_json_report(
 
     result_str = json.dumps(result_dict)
     logger.info("Finish handling sections that need json output")
+
     # Write the json string to file
-    report_name = "fuzz-introspector.json"
-    if os.path.isfile(report_name):
-        os.remove(report_name)
-    with open(report_name, "a+") as file:
+    if os.path.isfile(JSON_REPORT_FILE):
+        os.remove(JSON_REPORT_FILE)
+    with open(JSON_REPORT_FILE, "a+") as file:
         file.write(result_str)

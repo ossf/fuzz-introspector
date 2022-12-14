@@ -85,12 +85,12 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
         help="Language of project"
     )
     report_parser.add_argument(
-        "--analyses-with-json",
+        "--output-json",
         nargs="+",
         default=[
             "SinkCoverageAnalyser"
         ],
-        help="Analysis to run and requires separate json report output"
+        help="State which analysis requires separate json report output"
     )
 
     # Command for correlating binary files to fuzzerLog files
@@ -136,7 +136,7 @@ def main() -> int:
             args.enable_all_analyses,
             args.name,
             args.language,
-            args.analyses_with_json
+            args.output_json
         )
         logger.info("Ending fuzz introspector report generation")
     elif args.command == 'correlate':
