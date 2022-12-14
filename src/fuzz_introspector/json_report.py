@@ -22,12 +22,11 @@ from typing import (
     Dict
 )
 
-from fuzz_introspector import analysis
+from fuzz_introspector import analysis, constants
 from fuzz_introspector.datatypes import project_profile, fuzzer_profile
 
 
 logger = logging.getLogger(name=__name__)
-JSON_REPORT_FILE = 'fuzz-introspector.json'
 
 
 def _retrieve_json_section(
@@ -88,7 +87,8 @@ def create_json_report(
     logger.info("Finish handling sections that need json output")
 
     # Write the json string to file
-    if os.path.isfile(JSON_REPORT_FILE):
-        os.remove(JSON_REPORT_FILE)
-    with open(JSON_REPORT_FILE, "a+") as file:
+    report_file = constants.JSON_REPORT_FILE
+    if os.path.isfile(report_file):
+        os.remove(report_file)
+    with open(report_file, "a+") as file:
         file.write(result_str)
