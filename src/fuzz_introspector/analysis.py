@@ -559,8 +559,11 @@ def detect_branch_level_blockers(
 
                 # Sanity check on line numbers: anomaly can happen because of debug info inaccuracy
                 if int(line_number) > int(side_line_number):
-                    logger.debug("Branch-blocker: Anomalous branch sides line nubmers: %s:%s -> %s" % (
-                                 source_file_path, line_number, side_line_number))
+                    logger.debug(
+                        "Branch-blocker: Anomalous branch sides line nubmers: %s:%s -> %s" % (
+                            source_file_path, line_number, side_line_number
+                        )
+                    )
                     continue
 
                 # Sanity check for fall through cases: checks if the branch side has coverage or not
