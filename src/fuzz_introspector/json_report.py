@@ -45,7 +45,7 @@ def _retrieve_json_section(
             analysis_instance = analysis.instantiate_analysis_interface(
                 analysis_interface
             )
-            return analysis_instance.get_json_result_string
+            return analysis_instance.get_json_string_result()
     return json.dumps([])
 
 
