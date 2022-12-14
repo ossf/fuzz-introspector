@@ -597,8 +597,6 @@ def detect_branch_level_blockers(
                 logger.debug("Branch-blocker: exception occurred in iteration of not-taken-sides")
                 continue
 
-
-
     fuzz_blockers.sort(key=lambda x: [x.blocked_unique_not_covered_complexity,
                                       x.blocked_unique_reachable_complexity,
                                       x.blocked_not_covered_complexity,
