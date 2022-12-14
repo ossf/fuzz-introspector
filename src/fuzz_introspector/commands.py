@@ -44,7 +44,7 @@ def run_analysis_on_dir(
     enable_all_analyses: bool,
     report_name: str,
     language: str,
-    analyses_with_json: List[str],
+    analyses_with_json: List[str] = [],
     parallelise: bool = True
 ) -> int:
     if enable_all_analyses:
