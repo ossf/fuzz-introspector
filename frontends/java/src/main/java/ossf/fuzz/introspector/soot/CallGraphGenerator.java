@@ -84,6 +84,7 @@ public class CallGraphGenerator {
     Options.v().set_process_dir(jarFiles);
     Options.v().set_prepend_classpath(true);
     Options.v().set_src_prec(Options.src_prec_java);
+    Options.v().set_include_all(true);
     Options.v().set_exclude(custom.getExcludeList());
     Options.v().set_no_bodies_for_excluded(true);
     Options.v().set_allow_phantom_refs(true);
@@ -109,6 +110,7 @@ public class CallGraphGenerator {
     Scene.v().setEntryPoints(entryPoints);
 
     // Load all related classes
+    Scene.v().loadBasicClasses();
     Scene.v().loadNecessaryClasses();
 
     // Start the generation
