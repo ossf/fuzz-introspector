@@ -51,7 +51,8 @@ class Analysis(analysis.AnalysisInterface):
         profiles: List[fuzzer_profile.FuzzerProfile],
         basefolder: str,
         coverage_url: str,
-        conclusions: List[html_helpers.HTMLConclusion]
+        conclusions: List[html_helpers.HTMLConclusion],
+        json_report: bool = False
     ) -> str:
         logger.info(f" - Running analysis {Analysis.get_name()}")
 
@@ -98,6 +99,8 @@ class Analysis(analysis.AnalysisInterface):
         if not self.display_html:
             html_string = ""
 
+        if json_report:
+            return "[]"
         return html_string
 
     def get_dictionary(self, profile: fuzzer_profile.FuzzerProfile) -> str:

@@ -54,7 +54,8 @@ class AnalysisInterface(abc.ABC):
         profiles: List[fuzzer_profile.FuzzerProfile],
         basefolder: str,
         coverage_url: str,
-        conclusions: List[html_helpers.HTMLConclusion]
+        conclusions: List[html_helpers.HTMLConclusion],
+        json_report: bool
     ) -> str:
         """Entrypoint for analysis instance. This function can have side effects
         on many of the arguments passed to it.
@@ -82,9 +83,15 @@ class AnalysisInterface(abc.ABC):
                            be shown at the top of the report page.
         :type conclusions: List[html_helpers.HTMLConclusion]
 
+        :param json_report: A bool value to declare if the ouput is json string for
+                            the json report (True) or html string for html
+                            report (False)
+        :type json_report: bool
+
         :rtype: str
         :returns:  A string that corresponds to HTML that can be embedded in the
-                   report.
+                   html report or the JSON Object that can be embedded into json
+                   report, determine by the json_report parameter.
         """
         pass
 

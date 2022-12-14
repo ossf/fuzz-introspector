@@ -330,7 +330,7 @@ class Analysis(analysis.AnalysisInterface):
         basefolder: str,
         coverage_url: str,
         conclusions: List[html_helpers.HTMLConclusion],
-        return_json_string: bool = False
+        json_report: bool = False
     ) -> str:
         """
         Show all used sensitive sink functions / methods in the project and display
@@ -372,7 +372,7 @@ class Analysis(analysis.AnalysisInterface):
         )
 
         # Check if html string or json string is needed
-        if return_json_string:
+        if json_report:
             return json_string
 
         html_string = ""

@@ -48,7 +48,8 @@ class Analysis(analysis.AnalysisInterface):
         profiles: List[fuzzer_profile.FuzzerProfile],
         basefolder: str,
         coverage_url: str,
-        conclusions: List[html_helpers.HTMLConclusion]
+        conclusions: List[html_helpers.HTMLConclusion],
+        json_report: bool = False
     ) -> str:
         """Digests and creates HTML about bugs found by the fuzzers."""
         logger.info(f" - Running analysis {Analysis.get_name()}")
@@ -92,4 +93,8 @@ class Analysis(analysis.AnalysisInterface):
         html_string += "</table>"
         html_string += "</div>"  # .collapsible
         html_string += "</div>"  # report-box
+
+        if json_report:
+            return "[]"
+
         return html_string

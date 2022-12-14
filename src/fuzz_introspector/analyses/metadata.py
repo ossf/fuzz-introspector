@@ -47,7 +47,8 @@ class Analysis(analysis.AnalysisInterface):
         profiles: List[fuzzer_profile.FuzzerProfile],
         basefolder: str,
         coverage_url: str,
-        conclusions: List[html_helpers.HTMLConclusion]
+        conclusions: List[html_helpers.HTMLConclusion],
+        json_report: bool = False
     ) -> str:
         logger.info(f" - Running analysis {Analysis.get_name()}")
 
@@ -103,4 +104,6 @@ class Analysis(analysis.AnalysisInterface):
 
         logger.info(f" - Completed analysis {Analysis.get_name()}")
 
+        if json_report:
+            return "[]"
         return html_string

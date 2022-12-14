@@ -56,6 +56,7 @@ class Analysis(analysis.AnalysisInterface):
         basefolder: str,
         coverage_url: str,
         conclusions: List[html_helpers.HTMLConclusion],
+        json_report: bool = False,
         fuzz_targets=None
     ) -> str:
         logger.info(f" - Running analysis {Analysis.get_name()}")
@@ -177,4 +178,7 @@ class Analysis(analysis.AnalysisInterface):
         html_string += "</div>"  # .collapsible
         html_string += "</div>"  # report-box
         logger.info(f" - Completed analysis {Analysis.get_name()}")
+
+        if json_report:
+            return "[]"
         return html_string

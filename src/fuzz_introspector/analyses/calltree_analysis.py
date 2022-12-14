@@ -56,12 +56,16 @@ class Analysis(analysis.AnalysisInterface):
         profiles: List[fuzzer_profile.FuzzerProfile],
         basefolder: str,
         coverage_url: str,
-        conclusions: List[html_helpers.HTMLConclusion]
+        conclusions: List[html_helpers.HTMLConclusion],
+        json_report: bool = False
     ) -> str:
         """
         Creates the HTML of the calltree. Returns the HTML as a string.
         """
         logger.info("Not implemented")
+
+        if json_report:
+            return "[]"
         return ""
 
     def _get_span_row(

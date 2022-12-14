@@ -168,7 +168,8 @@ class Analysis(analysis.AnalysisInterface):
         profiles: List[fuzzer_profile.FuzzerProfile],
         basefolder: str,
         coverage_url: str,
-        conclusions: List[html_helpers.HTMLConclusion]
+        conclusions: List[html_helpers.HTMLConclusion],
+        json_report: bool = False
     ) -> str:
         """
         Performs an analysis for all third party API call in the target project.
@@ -309,4 +310,7 @@ class Analysis(analysis.AnalysisInterface):
 
         html_string += "</div>"  # .collapsible
         html_string += "</div>"  # report-box
+
+        if json_report:
+            return "[]"
         return html_string
