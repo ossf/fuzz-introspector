@@ -100,17 +100,6 @@ def build_project(
         exit(1)
 
 
-def patch_jvm_build(project_build_path):
-    # Patch build.sh to include fuzz-introspector logic for JVM project
-    if os.path.exists(project_build_path):
-        content = ''
-        with open(os.path.join(THIS_DIR, 'jvm.patch')) as file_handle:
-            content = file_handle.read()
-        with open(project_build_path, 'a+') as file_handle:
-            file_handle.write('\n')
-            file_handle.write(content)
-
-
 def patch_jvm_source_report(server_directory):
     """
     Jacoco HTML report showing the source coverage does not have
@@ -415,15 +404,6 @@ def complete_coverage_check(
     corpus_dir: Optional[str],
     download_public_corpus: bool
 ):
-    # Check if it is JVM Project
-    if get_project_lang(project_name) == 'jvm':
-        project_build_path = './projects/%s/build.sh' % project_name
-        # Check if fuzz-introspector patch already appended
-        if not has_append(project_build_path):
-            # Apply jvm build patch to include fuzz-introspector logic
-            #patch_jvm_build(project_build_path)
-            print("tmp")
-
     build_project(project_name, source_dir, to_clean=True)
 
     if download_public_corpus:
