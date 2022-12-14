@@ -38,12 +38,23 @@ logger = logging.getLogger(name=__name__)
 
 
 class Analysis(analysis.AnalysisInterface):
+    name: str = "OptimalTargets"
+    json_string_result: str = "[]"
+
     def __init__(self) -> None:
         pass
 
-    @staticmethod
-    def get_name():
-        return "OptimalTargets"
+    @classmethod
+    def get_name(cls):
+        return cls.name
+
+    @classmethod
+    def get_json_string_result(cls):
+        return cls.json_string_result
+
+    @classmethod
+    def set_json_string_result(cls, json_string):
+        cls.json_string_result = json_string
 
     def analysis_func(
         self,
@@ -102,6 +113,7 @@ class Analysis(analysis.AnalysisInterface):
 
         logger.info(f" - Completed analysis {Analysis.get_name()}")
         html_string += "</div>"  # .collapsible
+
         return html_string
 
     def qualifies_as_optimal_target(self, fd: function_profile.FunctionProfile) -> bool:

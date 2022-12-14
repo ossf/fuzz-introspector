@@ -13,9 +13,11 @@
 # limitations under the License.
 """Analysis plugin for introspection sinks of interest"""
 
+import json
 import logging
 
 from typing import (
+    Any,
     List,
     Tuple,
     Dict
@@ -23,6 +25,7 @@ from typing import (
 
 from fuzz_introspector import (
     analysis,
+    code_coverage,
     cfg_load,
     html_helpers,
     utils
@@ -115,13 +118,23 @@ class Analysis(analysis.AnalysisInterface):
     covered those sensitive sink fnctions / method in aid to discover possible
     code / command injection through though fuzzing on sink functions / methods..
     """
+    name: str = "SinkCoverageAnalyser"
+    json_string_result: str = "[]"
 
     def __init__(self) -> None:
         pass
 
-    @staticmethod
-    def get_name():
-        return "SinkCoverageAnalyser"
+    @classmethod
+    def get_name(cls):
+        return cls.name
+
+    @classmethod
+    def get_json_string_result(cls):
+        return cls.json_string_result
+
+    @classmethod
+    def set_json_string_result(cls, json_string):
+        cls.json_string_result = json_string
 
     def _get_source_file(self, callsite) -> str:
         """This function aims to dig up the callsitecalltree of a function
@@ -149,7 +162,7 @@ class Analysis(analysis.AnalysisInterface):
 
         return func_file
 
-    def retrieve_data_list(
+    def _retrieve_data_list(
         self,
         proj_profile: project_profile.MergedProjectProfile,
         profiles: List[fuzzer_profile.FuzzerProfile]
@@ -177,7 +190,7 @@ class Analysis(analysis.AnalysisInterface):
 
         return (callsite_list, function_list)
 
-    def map_function_callsite(
+    def _map_function_callsite(
         self,
         functions: List[function_profile.FunctionProfile],
         callsites: List[cfg_load.CalltreeCallsite]
@@ -211,7 +224,7 @@ class Analysis(analysis.AnalysisInterface):
 
         return callsite_dict
 
-    def retrieve_reachable_functions(
+    def _retrieve_reachable_functions(
         self,
         functions: List[function_profile.FunctionProfile],
         function_callsites: Dict[str, List[str]]
@@ -234,7 +247,7 @@ class Analysis(analysis.AnalysisInterface):
 
         return function_list
 
-    def filter_function_list(
+    def _filter_function_list(
         self,
         functions: List[function_profile.FunctionProfile],
         target_lang: str
@@ -270,6 +283,54 @@ class Analysis(analysis.AnalysisInterface):
 
         return function_list
 
+    def _retrieve_content_rows(
+        self,
+        functions: List[function_profile.FunctionProfile],
+        target_lang: str,
+        func_callsites: Dict[str, List[str]],
+        coverage: code_coverage.CoverageProfile,
+        reachable_function_list: List[str]
+    ) -> Tuple[str, str]:
+        """
+        This method aims to retrieve the table content for this analyser
+        in two formats. One in normal html table rows string and the other
+        is a json string for generating separate json report for sink
+        coverage that could be readable by external analyser.
+        """
+        html_string = ""
+        json_list = []
+
+        for fd in self._filter_function_list(functions, target_lang):
+            # Loop through the list of calledlocation for this function
+            for called_location in func_callsites[fd.function_name]:
+                # Determine if this called location is covered by any fuzzers
+                fuzzer_hit = False
+                for parent_func in fd.incoming_references:
+                    try:
+                        lineno = int(called_location.split(":")[1])
+                    except ValueError:
+                        continue
+                    if coverage.is_func_lineno_hit(parent_func, lineno):
+                        fuzzer_hit = True
+                        break
+                list_of_fuzzer_covered = fd.reached_by_fuzzers if fuzzer_hit else [""]
+
+                html_string += html_helpers.html_table_add_row([
+                    f"{fd.function_name}",
+                    f"{called_location}",
+                    f"{called_location in reachable_function_list}",
+                    f"{str(list_of_fuzzer_covered)}"
+                ])
+
+                json_dict: Dict[str, Any] = {}
+                json_dict['func_name'] = fd.function_name
+                json_dict['call_loc'] = called_location
+                json_dict['static_reach'] = f"{called_location in reachable_function_list}"
+                json_dict['fuzzer_reach'] = list_of_fuzzer_covered
+                json_list.append(json_dict)
+
+        return (html_string, json.dumps(json_list))
+
     def analysis_func(
         self,
         toc_list: List[Tuple[str, str, int]],
@@ -294,20 +355,32 @@ class Analysis(analysis.AnalysisInterface):
            sink functions / methods has been dynamically coveed by any of the fuzzers
         5) Provide additional entry point to increase the chance of dynamically covering
            those sink functions / methods.
+        Remark: json report will be generated instead of html report if tables is None
         """
         logger.info(f" - Running analysis {Analysis.get_name()}")
 
         # Get full function /  callsite list for all fuzzer's profiles
-        callsite_list, function_list = self.retrieve_data_list(proj_profile, profiles)
+        callsite_list, function_list = self._retrieve_data_list(proj_profile, profiles)
 
         # Map callsites to each function
-        function_callsite_dict = self.map_function_callsite(function_list, callsite_list)
+        function_callsite_dict = self._map_function_callsite(function_list, callsite_list)
 
         # Discover reachable function calls
-        reachable_function_list = self.retrieve_reachable_functions(
+        reachable_function_list = self._retrieve_reachable_functions(
             function_list,
             function_callsite_dict
         )
+
+        # Retrieve table content rows
+        html_rows, json_row = self._retrieve_content_rows(
+            function_list,
+            profiles[0].target_lang,
+            function_callsite_dict,
+            proj_profile.runtime_coverage,
+            reachable_function_list
+        )
+
+        Analysis.set_json_string_result(json_row)
 
         html_string = ""
         html_string += "<div class=\"report-box\">"
@@ -363,28 +436,8 @@ class Analysis(analysis.AnalysisInterface):
             ]
         )
 
-        for fd in self.filter_function_list(function_list, profiles[0].target_lang):
-            # Loop through the list of calledlocation for this function
-            for called_location in function_callsite_dict[fd.function_name]:
-                # Determine if this called location is covered by any fuzzers
-                fuzzer_hit = False
-                coverage = proj_profile.runtime_coverage
-                for parent_func in fd.incoming_references:
-                    try:
-                        lineno = int(called_location.split(":")[1])
-                    except ValueError:
-                        continue
-                    if coverage.is_func_lineno_hit(parent_func, lineno):
-                        fuzzer_hit = True
-                        break
-                list_of_fuzzer_covered = fd.reached_by_fuzzers if fuzzer_hit else [""]
+        html_string += html_rows
 
-                html_string += html_helpers.html_table_add_row([
-                    f"{fd.function_name}",
-                    f"{called_location}",
-                    f"{called_location in reachable_function_list}",
-                    f"{str(list_of_fuzzer_covered)}"
-                ])
         html_string += "</table>"
 
         html_string += "</div>"  # .collapsible

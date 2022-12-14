@@ -818,6 +818,7 @@ def create_html_report(
     profiles: List[fuzzer_profile.FuzzerProfile],
     proj_profile: project_profile.MergedProjectProfile,
     analyses_to_run: List[str],
+    output_json: List[str],
     coverage_url: str,
     basefolder: str,
     report_name: str
@@ -984,13 +985,18 @@ def create_html_report(
     )
     html_report_core += "<div class=\"collapsible\">"
 
+    # Combine and distinguish analyser requires output in html or both (html and json)
+    combined_analyses = analyses_to_run
+    for analyses in output_json:
+        if analyses not in analyses_to_run:
+            combined_analyses.append(analyses)
     analysis_array = analysis.get_all_analyses()
     for analysis_interface in analysis_array:
-        if analysis_interface.get_name() in analyses_to_run:
+        if analysis_interface.get_name() in combined_analyses:
             analysis_instance = analysis.instantiate_analysis_interface(
                 analysis_interface
             )
-            html_report_core += analysis_instance.analysis_func(
+            html_string = analysis_instance.analysis_func(
                 toc_list,
                 tables,
                 proj_profile,
@@ -999,6 +1005,8 @@ def create_html_report(
                 coverage_url,
                 conclusions
             )
+            if analysis_interface.get_name() in analyses_to_run:
+                html_report_core += html_string
     html_report_core += "</div>"  # .collapsible
     html_report_core += "</div>"  # report box
 

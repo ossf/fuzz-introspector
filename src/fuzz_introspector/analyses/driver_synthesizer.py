@@ -40,12 +40,23 @@ class DriverContents:
 
 
 class Analysis(analysis.AnalysisInterface):
+    name: str = "FuzzDriverSynthesizerAnalysis"
+    json_string_result: str = "[]"
+
     def __init__(self) -> None:
         pass
 
-    @staticmethod
-    def get_name():
-        return "FuzzDriverSynthesizerAnalysis"
+    @classmethod
+    def get_name(cls):
+        return cls.name
+
+    @classmethod
+    def get_json_string_result(cls):
+        return cls.json_string_result
+
+    @classmethod
+    def set_json_string_result(cls, json_string):
+        cls.json_string_result = json_string
 
     def analysis_func(
         self,
@@ -177,4 +188,5 @@ class Analysis(analysis.AnalysisInterface):
         html_string += "</div>"  # .collapsible
         html_string += "</div>"  # report-box
         logger.info(f" - Completed analysis {Analysis.get_name()}")
+
         return html_string

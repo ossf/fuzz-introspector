@@ -39,13 +39,23 @@ class Analysis(analysis.AnalysisInterface):
     to show all occurence of third party function call within the target
     project and if those calls are statically reached or dynamically covered.
     """
+    name: str = "ThirdPartyAPICoverageAnalyser"
+    json_string_result: str = "[]"
 
     def __init__(self) -> None:
         pass
 
-    @staticmethod
-    def get_name():
-        return "ThirdPartyAPICoverageAnalyser"
+    @classmethod
+    def get_name(cls):
+        return cls.name
+
+    @classmethod
+    def get_json_string_result(cls):
+        return cls.json_string_result
+
+    @classmethod
+    def set_json_string_result(cls, json_string):
+        cls.json_string_result = json_string
 
     def get_source_file(self, callsite) -> str:
         """This function aims to dig up the callsitecalltree of a function
@@ -309,4 +319,5 @@ class Analysis(analysis.AnalysisInterface):
 
         html_string += "</div>"  # .collapsible
         html_string += "</div>"  # report-box
+
         return html_string

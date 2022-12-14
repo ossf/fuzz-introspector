@@ -41,12 +41,23 @@ logger = logging.getLogger(name=__name__)
 
 
 class Analysis(analysis.AnalysisInterface):
+    name: str = "FuzzCalltreeAnalysis"
+    json_string_result: str = "[]"
+
     def __init__(self) -> None:
         logger.info("Creating FuzzCalltreeAnalysis")
 
-    @staticmethod
-    def get_name():
-        return "FuzzCalltreeAnalysis"
+    @classmethod
+    def get_name(cls):
+        return cls.name
+
+    @classmethod
+    def get_json_string_result(cls):
+        return cls.json_string_result
+
+    @classmethod
+    def set_json_string_result(cls, json_string):
+        cls.json_string_result = json_string
 
     def analysis_func(
         self,
@@ -62,6 +73,7 @@ class Analysis(analysis.AnalysisInterface):
         Creates the HTML of the calltree. Returns the HTML as a string.
         """
         logger.info("Not implemented")
+
         return ""
 
     def _get_span_row(

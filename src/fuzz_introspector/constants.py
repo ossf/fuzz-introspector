@@ -25,6 +25,8 @@ APP_EXIT_SUCCESS = 0
 
 INPUT_BUG_FILE = "input_bugs.json"
 
+JSON_REPORT_FILE = "fuzz-introspector.json"
+
 # Color constants used for call trees. Composed of tuples,
 # (min, max, color) where
 # min and max construct an interval [min: max) (max non-inclusive)

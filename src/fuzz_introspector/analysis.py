@@ -43,7 +43,8 @@ logger = logging.getLogger(name=__name__)
 
 
 class AnalysisInterface(abc.ABC):
-    name: str
+    name: str = ""
+    json_string_result: str = ""
 
     @abc.abstractmethod
     def analysis_func(
@@ -84,14 +85,26 @@ class AnalysisInterface(abc.ABC):
 
         :rtype: str
         :returns:  A string that corresponds to HTML that can be embedded in the
-                   report.
+                   html report.
         """
         pass
 
-    @staticmethod
+    @classmethod
     @abc.abstractmethod
-    def get_name():
+    def get_name(cls):
         """Return name of analysis"""
+        pass
+
+    @classmethod
+    @abc.abstractmethod
+    def get_json_string_result(cls):
+        """Return json_string_result"""
+        pass
+
+    @classmethod
+    @abc.abstractmethod
+    def set_json_string_result(cls, string):
+        """Return json_string_result"""
         pass
 
 
