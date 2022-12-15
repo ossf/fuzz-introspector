@@ -15,4 +15,4 @@ jobs:
         java-version: '11'
     - name: JVM-Test
       run: |
-        cd tests/java && ./buildAll.sh && ./runTest.sh
+        cd tests/java && ./buildAll.sh && ./runTest.sh 1 && ./runTest.sh 2
