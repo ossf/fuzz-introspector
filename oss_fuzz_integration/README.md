@@ -1,16 +1,10 @@
 # OSS-Fuzz integration
 
-The easiest way to test the introspector is to integrate it with OSS-Fuzz
-and use the OSS-Fuzz infrastructure to help with fuzzing tasks. To do this
-we have patches and scripts to automate this process. 
-
-Notice that these scripts will pull a new version of your OSS-Fuzz Docker
-images, so remember to re-`pull` images when you switch between fuzz-introspector-images and original
-oss-fuzz images. The reason we have to use specific images is we need to make
-a small patch to Clang due to the following issue: https://reviews.llvm.org/D77704
-
-In order to use the OSS-Fuzz integration you must have Docker installer, as this
-is a requirement for OSS-Fuzz itself.
+The easiest way to test the introspector is to do it by way of OSS-Fuzz.
+OSS-Fuzz supports fuzz introspector and the Docker images used by OSS-Fuzz
+has fuzz introspector in them. Here, we provide wrapper scripts around
+OSS-Fuzz to make the process of working with OSS-Fuzz easier, and also hold
+scripts for making development based on testing with OSS-Fuzz easier.
 
 ## Build Fuzz Introspector with OSS-Fuzz
 There are several options for building with OSS-Fuzz. These options are
@@ -21,24 +15,24 @@ purposes.
 2) For testing development in `/src/fuzz_introspector` you should [build with OSS-Fuzz base clang image](#build-with-oss-fuzz-base-clang-image).
 3) For testing development in the frontends (LLVM/Python Ast analyser) you should [build images completely from scratch](#build-images-completely-from-scratch).
 
-### Build with existing OSS-Fuzz purposes
+### Build with existing OSS-Fuzz images
 From within this directory, run the commands:
 ```
-# Pull the most recent OSS-Fuzz Fuzz Introspector images
-./build_oss_fuzz_pulls.sh
+# Simply clone the most recent OSS-Fuzz version
+git clone https://github.com/google/oss-fuzz
 
 # Test a project
 cd oss-fuzz
 python3 ../runner.py introspector htslib 20
 ```
 
-This will download OSS-Fuzz, pulls introspector images and tag them accordingly.
-
 You can access the report by navigating to `http://localhost:8008/fuzz_report.html`
 
 ### Build with OSS-Fuzz base clang image
-Following the above instructions, you can use the following command to perform
-a complete run of the introspector, including with coverage analysis.
+Pull the latest base-clang image from OSS-Fuzz and otherwise build the other OSS-Fuzz
+images from scratch in order to pull in a custom version of fuzz introspector. This will
+copy the code from the root of the fuzz introspector folder into the oss-fuzz images,
+which is convenient for testing modification in e.g. `src/fuzz-introspector`.
 
 ```
 # Pull the most recent OSS-Fuzz Fuzz Introspector images
