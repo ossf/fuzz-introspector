@@ -20,6 +20,7 @@ import os
 from typing import (
     List,
     Tuple,
+    Dict
 )
 
 from fuzz_introspector import analysis
@@ -115,6 +116,7 @@ class Analysis(analysis.AnalysisInterface):
         """Extracts a fuzzer dictionary"""
         kn = 0
         dictionary_content = ""
+        dictionary: Dict[str, str] = {}
         if profile.functions_reached_by_fuzzer is None:
             return ""
 
@@ -126,7 +128,9 @@ class Analysis(analysis.AnalysisInterface):
                 continue
             for const in fp.constants_touched:
                 dictionary_content += f"k{kn}=\"{const}\"\n"
+                dictionary[f"k{kn}"] = const
                 kn += 1
+        Analysis.set_json_string_result(json.dumps(dictionary))
         return dictionary_content
 
     def get_dictionary_section(
