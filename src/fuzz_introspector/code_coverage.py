@@ -26,6 +26,7 @@ from typing import (
 )
 
 from fuzz_introspector import utils
+from fuzz_introspector import exceptions
 
 COVERAGE_SWITCH_REGEX = re.compile(r'.*\|.*\sswitch.*\(.*\)')
 COVERAGE_CASE_REGEX = re.compile(r'.*\|.*\scase.*:')
@@ -664,8 +665,11 @@ def load_jvm_coverage(
         return cp
 
     cp.coverage_files.append(xml_file)
-    xml_tree = ET.parse(xml_file)
-    root = xml_tree.getroot()
+    try:
+        xml_tree = ET.parse(xml_file)
+        root = xml_tree.getroot()
+    except Exception:
+        raise exceptions.DataLoaderError("Error %s as xml file" % (xml_file))
 
     for package in root.findall('package'):
         for cl in package.findall('sourcefile'):
