@@ -1,0 +1,36 @@
+header:
+  parent-security-yaml: 'https://github.com/ossf/fuzz-introspector/blob/main/SECURITY-INSIGHTS.yml'
+  expiration-date: '2023-12-10T13:37:00.000Z'
+  last-updated: '2022-12-11'
+  last-reviewed: '2022-12-11'
+  commit-hash: 'adb22f1ecac38eaac5c68f0520d722d948093515'
+  project-url: 'https://github.com/ossf/fuzz-introspector'
+  schema-version: '1.0.0'
+  project-release: '1.0.0'
+  license: 'https://github.com/ossf/fuzz-introspector/blob/main/LICENSE'
+project-lifecycle:
+  stage: 'active'
+  bug-fixes-only: False
+  core-maintainers:
+  - 'https://github.com/DavidKorczynski'
+  - 'https://github.com/arthurscchan'
+contribution-policy:
+  accepts-pull-requests: True
+  accepts-bot-pull-requests: True
+  code-of-conduct: 'https://github.com/ossf/fuzz-introspector/blob/main/CODE_OF_CONDUCT.md'
+distribution-points:
+- package-url: 'https://github.com/ossf/fuzz-introspector'
+security-artifacts:
+  threat-model:
+    threat-model-created: False
+security-contacts:
+- type: 'email'
+  value: 'missing@email.com'
+vulnerability-reporting:
+  accepts-vulnerability-reports: True
+  email-contact: 'missing@email.com'
+  security-policy: 'https://missing'
+dependencies:
+  third-party-packages: True
+  dependencies-lists:
+  - 'https://github.com/ossf/fuzz-introspector/blob/main/requirements.txt'
