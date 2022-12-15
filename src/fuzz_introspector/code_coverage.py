@@ -27,9 +27,9 @@ from typing import (
 
 from fuzz_introspector import utils
 
-COVERAGE_SWITCH_REGEX = re.compile(r'.*\|.*switch.*\(.*\)')
-COVERAGE_CASE_REGEX = re.compile(r'.*\|.*case.*:')
-COVERAGE_BRANCH_REGEX = re.compile(r'.*\|.*Branch.*\(.*:.*\):')
+COVERAGE_SWITCH_REGEX = re.compile(r'.*\|.*\sswitch.*\(.*\)')
+COVERAGE_CASE_REGEX = re.compile(r'.*\|.*\scase.*:')
+COVERAGE_BRANCH_REGEX = re.compile(r'.*\|.*\sBranch.*\(.*:.*\):')
 
 logger = logging.getLogger(name=__name__)
 
