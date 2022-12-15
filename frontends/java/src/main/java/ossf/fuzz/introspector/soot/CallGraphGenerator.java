@@ -353,11 +353,11 @@ class CustomSenceTransformer extends SceneTransformer {
 
   // Include empty profile with name for excluded standard libraries
   private void handleExcludedMethod(CallGraph cg, String cName, String mName, SootMethod m) {
-    for (String name : className.split(":")) {
+    for (String name : cName.split(":")) {
       for (String prefix : this.excludeList) {
         if (name.startsWith(prefix)) {
           FunctionElement element = new FunctionElement();
-          element.setFunctionName("[" + name + "]." + methodName);
+          element.setFunctionName("[" + name + "]." + mName);
           element.setFunctionSourceFile(name);
           element.setFunctionLinenumber(m.getJavaSourceStartLineNumber());
           element.setReturnType(m.getReturnType().toString());
@@ -366,13 +366,14 @@ class CustomSenceTransformer extends SceneTransformer {
           for (soot.Type type : m.getParameterTypes()) {
             element.addArgType(type.toString());
           }
-          Iterator<Edge> inEdges = callGraph.edgesInto(m);
+          Iterator<Edge> inEdges = cg.edgesInto(m);
+          Integer counter = 0;
           while (inEdges.hasNext()) {
-            methodEdges++;
+            counter++;
             inEdges.next();
           }
-          element.setFunctionUses(methodEdges);
-          element.setEdgeCount(-1);
+          element.setFunctionUses(counter);
+          element.setEdgeCount(0);
           element.setBBCount(0);
           element.setiCount(0);
           element.setCyclomaticComplexity(0);
@@ -472,7 +473,7 @@ class CustomSenceTransformer extends SceneTransformer {
       }
     }
     if (excluded) {
-      this.handleExcludedMethod(className, methodName, method, depth);
+      this.handleExcludedMethod(cg, className, methodName, method);
       return callTree.toString();
     }
 
