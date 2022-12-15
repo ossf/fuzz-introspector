@@ -118,10 +118,6 @@ def test_full_jvm_report_generation(tmpdir, testcase):
         "jvm"
     ) == constants.APP_EXIT_SUCCESS
 
-    for files in os.listdir(tmpdir):
-        if files != coverage_link:
-            shutil.copy(os.path.join(tmpdir, files), result_dir)
-
     # Checking starts here
     files = os.listdir(tmpdir)
 
