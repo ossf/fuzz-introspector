@@ -19,8 +19,7 @@ import logging
 from typing import (
     Any,
     List,
-    Dict,
-    Type
+    Dict
 )
 
 from fuzz_introspector import analysis, constants
@@ -39,7 +38,7 @@ def _retrieve_json_section(
     specific analyser
     """
     if analyser_name in [item.get_name() for item in analysis.get_all_analyses()]:
-       return analysis_instance.get_json_string_result()
+        return analysis_instance.get_json_string_result()
     return json.dumps([])
 
 
