@@ -80,6 +80,7 @@ def test_load_llvm_coverage():
     assert cov_profile.covmap['add_pair_to_block'][11] == (228, 3510000)
     assert cov_profile.covmap['fromtext_md'][1] == (21, 38)
     assert cov_profile.covmap['fromtext_md'][-2] == (40, 13)
+    assert cov_profile.covmap['fallbackQSort3'][1] == (136, 1620000000)
 
     assert cov_profile.branch_cov_map['BZ2_bzCompress:411,8'] == [0, 4680]
     assert cov_profile.branch_cov_map['BZ2_bzCompress:414,8'] == [0, 4680]
