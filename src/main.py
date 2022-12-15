@@ -88,7 +88,8 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
         "--output-json",
         nargs="+",
         default=[
-            "SinkCoverageAnalyser"
+            "SinkCoverageAnalyser",
+            "FuzzEngineInputAnalysis"
         ],
         help="State which analysis requires separate json report output"
     )
