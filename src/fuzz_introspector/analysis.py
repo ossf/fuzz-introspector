@@ -594,7 +594,9 @@ def detect_branch_level_blockers(
             except Exception:
                 # Temporary fix for https://github.com/google/oss-fuzz/issues/9209
                 # This should be refined and made more precise.
-                logger.debug("Branch-blocker: exception occurred in iteration of not-taken-sides")
+                logger.debug("Branch-blocker: exception occurred in iteration of not-taken-sides.")
+                logger.debug("llvm_branch.sides: %s" % str(llvm_branch.sides))
+                logger.debug("blocked_idx: %s" % str(blocked_idx))
                 continue
 
     fuzz_blockers.sort(key=lambda x: [x.blocked_unique_not_covered_complexity,
