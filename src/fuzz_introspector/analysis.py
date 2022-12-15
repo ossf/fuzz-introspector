@@ -544,49 +544,60 @@ def detect_branch_level_blockers(
 
         # We have some sides taken and some not taken sides => there are blockers.
         for blocked_idx in not_taken_sides:
-            blocked_side = blocked_idx
-            blocked_unique_not_covered_com = (
-                llvm_branch.sides[blocked_idx].unique_not_covered_complexity)
-            blocked_unique_reachable_com = (
-                llvm_branch.sides[blocked_idx].unique_reachable_complexity)
-            blocked_reachable_com = llvm_branch.sides[blocked_idx].reachable_complexity
-            blocked_not_covered_com = llvm_branch.sides[blocked_idx].not_covered_complexity
-            side_line = llvm_branch.sides[blocked_idx].pos
-            side_line_number = side_line.split(':')[1].split(',')[0]
-            blocked_unique_funcs = list(
-                llvm_branch.get_side_unique_reachable_funcnames(blocked_idx))
+            try:
+                blocked_side = blocked_idx
+                blocked_unique_not_covered_com = (
+                    llvm_branch.sides[blocked_idx].unique_not_covered_complexity)
+                blocked_unique_reachable_com = (
+                    llvm_branch.sides[blocked_idx].unique_reachable_complexity)
+                blocked_reachable_com = llvm_branch.sides[blocked_idx].reachable_complexity
+                blocked_not_covered_com = llvm_branch.sides[blocked_idx].not_covered_complexity
+                side_line = llvm_branch.sides[blocked_idx].pos
+                side_line_number = side_line.split(':')[1].split(',')[0]
+                blocked_unique_funcs = list(
+                    llvm_branch.get_side_unique_reachable_funcnames(blocked_idx))
 
-            # Sanity check on line numbers: anomaly can happen because of debug info inaccuracy
-            if int(line_number) > int(side_line_number):
-                logger.debug("Branch-blocker: Anomalous branch sides line nubmers: %s:%s -> %s" % (
-                             source_file_path, line_number, side_line_number))
+                # Sanity check on line numbers: anomaly can happen because of debug info inaccuracy
+                if int(line_number) > int(side_line_number):
+                    logger.debug(
+                        "Branch-blocker: Anomalous branch sides line nubmers: %s:%s -> %s" % (
+                            source_file_path, line_number, side_line_number
+                        )
+                    )
+                    continue
+
+                # Sanity check for fall through cases: checks if the branch side has coverage or not
+                if coverage.get_type() == "file":
+                    if coverage.is_file_lineno_hit(source_file_path, int(side_line_number)):
+                        logger.debug("Branch-blocker: fall through branch side is not blocked: %s"
+                                     % (side_line))
+                        continue
+                else:
+                    if coverage.is_func_lineno_hit(function_name, int(side_line_number)):
+                        logger.debug("Branch-blocker: fall through branch side is not blocked: %s"
+                                     % (side_line))
+                        continue
+
+                hitcount_diff = max(sides_hitcount + [branch_hitcount])
+                link = fuzz_profile.resolve_coverage_link(
+                    target_coverage_url,
+                    source_file_path,
+                    int(line_number),
+                    function_name
+                )
+                new_blk = FuzzBranchBlocker(blocked_side, blocked_unique_not_covered_com,
+                                            blocked_unique_reachable_com, blocked_unique_funcs,
+                                            blocked_not_covered_com, blocked_reachable_com,
+                                            hitcount_diff, source_file_path, line_number,
+                                            side_line_number, function_name, link)
+                fuzz_blockers.append(new_blk)
+            except Exception:
+                # Temporary fix for https://github.com/google/oss-fuzz/issues/9209
+                # This should be refined and made more precise.
+                logger.debug("Branch-blocker: exception occurred in iteration of not-taken-sides.")
+                logger.debug("llvm_branch.sides: %s" % str(llvm_branch.sides))
+                logger.debug("blocked_idx: %s" % str(blocked_idx))
                 continue
-
-            # Sanity check for fall through cases: checks if the branch side has coverage or not
-            if coverage.get_type() == "file":
-                if coverage.is_file_lineno_hit(source_file_path, int(side_line_number)):
-                    logger.debug("Branch-blocker: fall through branch side is not blocked: %s"
-                                 % (side_line))
-                    continue
-            else:
-                if coverage.is_func_lineno_hit(function_name, int(side_line_number)):
-                    logger.debug("Branch-blocker: fall through branch side is not blocked: %s"
-                                 % (side_line))
-                    continue
-
-            hitcount_diff = max(sides_hitcount + [branch_hitcount])
-            link = fuzz_profile.resolve_coverage_link(
-                target_coverage_url,
-                source_file_path,
-                int(line_number),
-                function_name
-            )
-            new_blk = FuzzBranchBlocker(blocked_side, blocked_unique_not_covered_com,
-                                        blocked_unique_reachable_com, blocked_unique_funcs,
-                                        blocked_not_covered_com, blocked_reachable_com,
-                                        hitcount_diff, source_file_path, line_number,
-                                        side_line_number, function_name, link)
-            fuzz_blockers.append(new_blk)
 
     fuzz_blockers.sort(key=lambda x: [x.blocked_unique_not_covered_complexity,
                                       x.blocked_unique_reachable_complexity,
