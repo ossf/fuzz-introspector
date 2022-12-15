@@ -337,3 +337,36 @@ rdata.c:fromtext_md:
   ------------------
    40|     13|	return (ISC_R_SUCCESS);
    41|     21|}
+blocksort.c:fallbackQSort3:
+{
+  135|   201M|      while (1) {
+  ------------------
+  |  Branch (135:14): [Folded - Ignored]
+  ------------------
+  136|  1.62G|         while (1) {
+  ------------------
+  |  Branch (136:17): [Folded - Ignored]
+  ------------------
+  137|  1.62G|            if (unLo > unHi) break;
+  ------------------
+  |  Branch (137:17): [True: 11.4M, False: 1.61G]
+  ------------------
+  138|  1.61G|            n = (Int32)eclass[fmap[unLo]] - (Int32)med;
+  139|  1.61G|            if (n == 0) { 
+  ------------------
+  |  Branch (139:17): [True: 790M, False: 820M]
+  ------------------
+  140|   790M|               fswap(fmap[unLo], fmap[ltLo]); 
+  ------------------
+  |  |   64|   790M|   { Int32 zztmp = zz1; zz1 = zz2; zz2 = zztmp; }
+  ------------------
+  141|   790M|               ltLo++; unLo++; 
+  142|   790M|               continue; 
+  143|   820M|            };
+  144|   820M|            if (n > 0) break;
+  ------------------
+  |  Branch (144:17): [True: 190M, False: 630M]
+  ------------------
+  145|   630M|            unLo++;
+  146|   630M|         }  
+}

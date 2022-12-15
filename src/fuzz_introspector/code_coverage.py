@@ -400,14 +400,16 @@ def extract_hitcount(input: str) -> int:
         except Exception:
             return -1
 
-    if unit not in ['k', 'M']:
-        logger.error(f'Unexpected coverage count unit: {unit}')
+    if unit not in ['k', 'M', 'G']:
+        logger.error(f'Unexpected coverage count unit: {unit} as in {input}')
         return -1
     num = float(input[:-1])
     if unit == 'k':
         num *= 1000
     elif unit == 'M':
         num *= 1000000
+    elif unit == 'G':
+        num *= 1000000000
     return int(num)
 
 
