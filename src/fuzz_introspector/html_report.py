@@ -822,10 +822,13 @@ def create_html_report(
     coverage_url: str,
     basefolder: str,
     report_name: str
-) -> None:
+) -> Dict[str, analysis.AnalysisInterface]:
     """
     Logs a complete report. This is the current main place for looking at
     data produced by fuzz introspector.
+    This method will return a dict contains analyser name to instance
+    mapping that requires separate json report generation to avoid
+    reruning those analysing process.
     """
     tables: List[str] = list()
     toc_list: List[Tuple[str, str, int]] = list()
@@ -987,12 +990,14 @@ def create_html_report(
 
     # Combine and distinguish analyser requires output in html or both (html and json)
     combined_analyses = analyses_to_run
+    analyser_instance_dict: Dict[str, analysis.AnalysisInterface] = {}
     for analyses in output_json:
         if analyses not in analyses_to_run:
             combined_analyses.append(analyses)
     analysis_array = analysis.get_all_analyses()
     for analysis_interface in analysis_array:
-        if analysis_interface.get_name() in combined_analyses:
+        analysis_name = analysis_interface.get_name()
+        if analysis_name in combined_analyses:
             analysis_instance = analysis.instantiate_analysis_interface(
                 analysis_interface
             )
@@ -1005,8 +1010,10 @@ def create_html_report(
                 coverage_url,
                 conclusions
             )
-            if analysis_interface.get_name() in analyses_to_run:
+            if analysis_name in analyses_to_run:
                 html_report_core += html_string
+            if analysis_name in output_json:
+                analyser_instance_dict[analysis_name] = analysis_instance
     html_report_core += "</div>"  # .collapsible
     html_report_core += "</div>"  # report box
 
@@ -1110,3 +1117,6 @@ def create_html_report(
     style_dir = os.path.join(basedir, "styling")
     for s in ["clike.js", "prism.css", "prism.js", "styles.css", "custom.js", "calltree.js"]:
         shutil.copy(os.path.join(style_dir, s), s)
+
+    # Return analysis instance that requires json report
+    return analyser_instance_dict

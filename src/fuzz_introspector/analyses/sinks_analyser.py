@@ -119,22 +119,19 @@ class Analysis(analysis.AnalysisInterface):
     code / command injection through though fuzzing on sink functions / methods..
     """
     name: str = "SinkCoverageAnalyser"
-    json_string_result: str = "[]"
 
     def __init__(self) -> None:
-        pass
+        self.json_string_result = "[]"
 
     @classmethod
     def get_name(cls):
         return cls.name
 
-    @classmethod
-    def get_json_string_result(cls):
-        return cls.json_string_result
+    def get_json_string_result(self):
+        return self.json_string_result
 
-    @classmethod
-    def set_json_string_result(cls, json_string):
-        cls.json_string_result = json_string
+    def set_json_string_result(self, json_string):
+        self.json_string_result = json_string
 
     def _get_source_file(self, callsite) -> str:
         """This function aims to dig up the callsitecalltree of a function
@@ -380,7 +377,7 @@ class Analysis(analysis.AnalysisInterface):
             reachable_function_list
         )
 
-        Analysis.set_json_string_result(json_row)
+        self.set_json_string_result(json_row)
 
         html_string = ""
         html_string += "<div class=\"report-box\">"

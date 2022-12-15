@@ -100,7 +100,7 @@ def run_analysis_on_dir(
 
     logger.info(f"Analyses to run: {str(analyses_to_run)}")
     logger.info("[+] Creating HTML report")
-    html_report.create_html_report(
+    analyser_instance_dict = html_report.create_html_report(
         profiles,
         proj_profile,
         analyses_to_run,
@@ -110,13 +110,13 @@ def run_analysis_on_dir(
         report_name
     )
 
-    logger.info(f"Analyses with json output: {str(analyses_to_run)}")
-    if len(output_json) > 0:
+    logger.info(f"Analyses with json output: {str(analyser_instance_dict.keys())}")
+    if len(analyser_instance_dict.keys()) > 0:
         logger.info("[+] Creating JSON report")
         json_report.create_json_report(
             profiles,
             proj_profile,
-            output_json,
+            analyser_instance_dict,
             coverage_url
         )
 
