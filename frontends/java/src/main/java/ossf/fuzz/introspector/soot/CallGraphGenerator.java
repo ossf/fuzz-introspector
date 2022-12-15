@@ -194,7 +194,7 @@ class CustomSenceTransformer extends SceneTransformer {
         element.setFunctionSourceFile(c.getFilePath());
         element.setFunctionLinenumber(m.getJavaSourceStartLineNumber());
         element.setReturnType(m.getReturnType().toString());
-        element.setFunctionDepth(calculateDepth(callGraph, m));
+        element.setFunctionDepth(0);
         element.setArgCount(m.getParameterCount());
         for (soot.Type type : m.getParameterTypes()) {
           element.addArgType(type.toString());
@@ -326,11 +326,17 @@ class CustomSenceTransformer extends SceneTransformer {
             "No method in analysing scope, consider relaxing the exclude constraint.");
       }
 
+      // Extract call tree and write to .data
       File file = new File("fuzzerLogFile-" + this.entryClassStr + ".data");
       file.createNewFile();
       FileWriter fw = new FileWriter(file);
       fw.write(extractCallTree(callGraph, this.entryMethod, 0, -1));
       fw.close();
+
+      // Calculate function depth
+      this.calculateDepth();
+
+      // Extract other info and write to .data.yaml
       ObjectMapper om = new ObjectMapper(new YAMLFactory());
       file = new File("fuzzerLogFile-" + this.entryClassStr + ".data.yaml");
       file.createNewFile();
@@ -346,21 +352,26 @@ class CustomSenceTransformer extends SceneTransformer {
   }
 
   // Include empty profile with name for excluded standard libraries
-  private void handleExcludedMethod(String className, String methodName, SootMethod m, int depth) {
+  private void handleExcludedMethod(CallGraph cg, String cName, String mName, SootMethod m) {
     for (String name : className.split(":")) {
       for (String prefix : this.excludeList) {
         if (name.startsWith(prefix)) {
           FunctionElement element = new FunctionElement();
           element.setFunctionName("[" + name + "]." + methodName);
           element.setFunctionSourceFile(name);
-          element.setFunctionLinenumber(-1);
+          element.setFunctionLinenumber(m.getJavaSourceStartLineNumber());
           element.setReturnType(m.getReturnType().toString());
-          element.setFunctionDepth(depth);
+          element.setFunctionDepth(0);
           element.setArgCount(m.getParameterCount());
           for (soot.Type type : m.getParameterTypes()) {
             element.addArgType(type.toString());
           }
-          element.setFunctionUses(-1);
+          Iterator<Edge> inEdges = callGraph.edgesInto(m);
+          while (inEdges.hasNext()) {
+            methodEdges++;
+            inEdges.next();
+          }
+          element.setFunctionUses(methodEdges);
           element.setEdgeCount(-1);
           element.setBBCount(0);
           element.setiCount(0);
@@ -371,30 +382,36 @@ class CustomSenceTransformer extends SceneTransformer {
     }
   }
 
+  private FunctionElement searchElement(String functionName) {
+    for (FunctionElement element : methodList.getFunctionElements()) {
+      if (element.getFunctionName().equals(functionName)) {
+        return element;
+      }
+    }
+    return null;
+  }
+
   // Shorthand for calculateDepth from Top
-  private Integer calculateDepth(CallGraph cg, SootMethod method) {
-    return calculateDepth(cg, method, new LinkedList<SootMethod>());
+  private void calculateDepth() {
+    for (FunctionElement element : methodList.getFunctionElements()) {
+        element.setFunctionDepth(this.calculateDepth(element));
+    }
   }
 
   // Calculate method depth
-  private Integer calculateDepth(CallGraph cg, SootMethod method, List<SootMethod> handled) {
-    int depth = 0;
+  private Integer calculateDepth(FunctionElement element) {
+    Integer depth = element.getFunctionDepth();
 
-    Iterator<Edge> outEdges = cg.edgesOutOf(method);
-    if (!handled.contains(method)) {
-      handled.add(method);
+    if (depth > 0) {
+        return depth;
+    }
 
-      while (outEdges.hasNext()) {
-        Edge edge = outEdges.next();
-        SootMethod tgt = edge.tgt();
-
-        if (tgt.equals(edge.src())) {
-          continue;
+    for (String reachedName : element.getFunctionsReached()) {
+        FunctionElement reachedElement = this.searchElement(reachedName);
+        if (reachedElement != null) {
+          Integer newDepth = this.calculateDepth(reachedElement) + 1;
+          depth = (newDepth > depth) ? newDepth : depth;
         }
-
-        Integer newDepth = calculateDepth(cg, tgt, handled) + 1;
-        depth = (newDepth > depth) ? newDepth : depth;
-      }
     }
 
     return depth;
