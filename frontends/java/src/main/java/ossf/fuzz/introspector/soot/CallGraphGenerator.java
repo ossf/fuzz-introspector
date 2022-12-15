@@ -395,7 +395,7 @@ class CustomSenceTransformer extends SceneTransformer {
   // Shorthand for calculateDepth from Top
   private void calculateDepth() {
     for (FunctionElement element : methodList.getFunctionElements()) {
-        element.setFunctionDepth(this.calculateDepth(element));
+      element.setFunctionDepth(this.calculateDepth(element));
     }
   }
 
@@ -404,15 +404,15 @@ class CustomSenceTransformer extends SceneTransformer {
     Integer depth = element.getFunctionDepth();
 
     if (depth > 0) {
-        return depth;
+      return depth;
     }
 
     for (String reachedName : element.getFunctionsReached()) {
-        FunctionElement reachedElement = this.searchElement(reachedName);
-        if (reachedElement != null) {
-          Integer newDepth = this.calculateDepth(reachedElement) + 1;
-          depth = (newDepth > depth) ? newDepth : depth;
-        }
+      FunctionElement reachedElement = this.searchElement(reachedName);
+      if (reachedElement != null) {
+        Integer newDepth = this.calculateDepth(reachedElement) + 1;
+        depth = (newDepth > depth) ? newDepth : depth;
+      }
     }
 
     return depth;
