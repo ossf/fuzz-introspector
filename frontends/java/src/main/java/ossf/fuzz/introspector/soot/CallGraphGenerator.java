@@ -126,6 +126,7 @@ class CustomSenceTransformer extends SceneTransformer {
   private String entryClassStr;
   private String entryMethodStr;
   private SootMethod entryMethod;
+  private FunctionConfig methodList;
 
   public CustomSenceTransformer(String entryClassStr, String entryMethodStr, String excludePrefix) {
     this.entryClassStr = entryClassStr;
@@ -147,12 +148,13 @@ class CustomSenceTransformer extends SceneTransformer {
     excludeMethodList.add("finalize");
 
     edgeClassMap = new HashMap<String, Set<String>>();
+
+    methodList = new FunctionConfig();
   }
 
   @Override
   protected void internalTransform(String phaseName, Map<String, String> options) {
     Map<SootClass, List<SootMethod>> classMethodMap = new HashMap<SootClass, List<SootMethod>>();
-    FunctionConfig methodList = new FunctionConfig();
     methodList.setListName("All functions");
 
     System.out.println("[Callgraph] Internal transform init");
@@ -343,6 +345,32 @@ class CustomSenceTransformer extends SceneTransformer {
     }
   }
 
+  // Include empty profile with name for excluded standard libraries
+  private void handleExcludedMethod(String className, String methodName, SootMethod m, int depth) {
+    for (String name : className.split(":")) {
+      for (String prefix : this.excludeList) {
+        if (name.startsWith(prefix)) {
+          FunctionElement element = new FunctionElement();
+          element.setFunctionName("[" + name + "]." + methodName);
+          element.setFunctionSourceFile(name);
+          element.setFunctionLinenumber(-1);
+          element.setReturnType(m.getReturnType().toString());
+          element.setFunctionDepth(depth);
+          element.setArgCount(m.getParameterCount());
+          for (soot.Type type : m.getParameterTypes()) {
+            element.addArgType(type.toString());
+          }
+          element.setFunctionUses(-1);
+          element.setEdgeCount(-1);
+          element.setBBCount(0);
+          element.setiCount(0);
+          element.setCyclomaticComplexity(0);
+          methodList.addFunctionElement(element);
+        }
+      }
+    }
+  }
+
   // Shorthand for calculateDepth from Top
   private Integer calculateDepth(CallGraph cg, SootMethod method) {
     return calculateDepth(cg, method, new LinkedList<SootMethod>());
@@ -412,9 +440,9 @@ class CustomSenceTransformer extends SceneTransformer {
       className = method.getDeclaringClass().getName();
     }
 
+    String methodName = method.getSubSignature().split(" ")[1];
     callTree.append(StringUtils.leftPad("", depth * 2));
-    callTree.append(
-        method.getSubSignature().split(" ")[1] + " " + className + " linenumber=" + line + "\n");
+    callTree.append(methodName + " " + className + " linenumber=" + line + "\n");
 
     boolean excluded = false;
     checkExclusionLoop:
@@ -427,6 +455,7 @@ class CustomSenceTransformer extends SceneTransformer {
       }
     }
     if (excluded) {
+      this.handleExcludedMethod(className, methodName, method, depth);
       return callTree.toString();
     }
 
