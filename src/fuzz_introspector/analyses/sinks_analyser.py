@@ -205,7 +205,7 @@ class Analysis(analysis.AnalysisInterface):
 
         # Map callsite for all target functions
         for callsite in callsites:
-            func_name = callsite.dst_function_name
+            func_name = f"[{callsite.dst_function_source_file}].{callsite.dst_function_name}"
             if func_name in callsite_dict.keys():
                 callsite_dict[func_name].append(
                     "%s#%s:%s" % (
@@ -269,6 +269,7 @@ class Analysis(analysis.AnalysisInterface):
                 func_name = fd.function_name.split('(')[0]
                 if "." in func_name:
                     package, func_name = func_name.rsplit('.', 1)
+                    package = package[1:][:-1]
                 else:
                     package = 'default'
             else:
