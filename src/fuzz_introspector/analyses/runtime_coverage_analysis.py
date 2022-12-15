@@ -31,22 +31,19 @@ logger = logging.getLogger(name=__name__)
 
 class Analysis(analysis.AnalysisInterface):
     name: str = "RuntimeCoverageAnalysis"
-    json_string_result: str = "[]"
 
     def __init__(self) -> None:
-        pass
+        self.json_string_result = "[]"
 
     @classmethod
     def get_name(cls):
         return cls.name
 
-    @classmethod
-    def get_json_string_result(cls):
-        return cls.json_string_result
+    def get_json_string_result(self):
+        return self.json_string_result
 
-    @classmethod
-    def set_json_string_result(cls, json_string):
-        cls.json_string_result = json_string
+    def set_json_string_result(self, json_string):
+        self.json_string_result = json_string
 
     def analysis_func(
         self,
