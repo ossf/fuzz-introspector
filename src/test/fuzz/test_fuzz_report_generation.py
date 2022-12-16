@@ -22,7 +22,6 @@ import pytest
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../")
 
 # Import certain modules here to avoid instrumenting them
-import yaml  # noqa
 import cxxfilt  # noqa
 import soupsieve  # noqa
 import bs4  # noqa
