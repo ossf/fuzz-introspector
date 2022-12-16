@@ -126,6 +126,7 @@ class CustomSenceTransformer extends SceneTransformer {
   private String entryClassStr;
   private String entryMethodStr;
   private SootMethod entryMethod;
+  private FunctionConfig methodList;
 
   public CustomSenceTransformer(String entryClassStr, String entryMethodStr, String excludePrefix) {
     this.entryClassStr = entryClassStr;
@@ -147,12 +148,13 @@ class CustomSenceTransformer extends SceneTransformer {
     excludeMethodList.add("finalize");
 
     edgeClassMap = new HashMap<String, Set<String>>();
+
+    methodList = new FunctionConfig();
   }
 
   @Override
   protected void internalTransform(String phaseName, Map<String, String> options) {
     Map<SootClass, List<SootMethod>> classMethodMap = new HashMap<SootClass, List<SootMethod>>();
-    FunctionConfig methodList = new FunctionConfig();
     methodList.setListName("All functions");
 
     System.out.println("[Callgraph] Internal transform init");
@@ -192,7 +194,7 @@ class CustomSenceTransformer extends SceneTransformer {
         element.setFunctionSourceFile(c.getFilePath());
         element.setFunctionLinenumber(m.getJavaSourceStartLineNumber());
         element.setReturnType(m.getReturnType().toString());
-        element.setFunctionDepth(calculateDepth(callGraph, m));
+        element.setFunctionDepth(0);
         element.setArgCount(m.getParameterCount());
         for (soot.Type type : m.getParameterTypes()) {
           element.addArgType(type.toString());
@@ -324,11 +326,17 @@ class CustomSenceTransformer extends SceneTransformer {
             "No method in analysing scope, consider relaxing the exclude constraint.");
       }
 
+      // Extract call tree and write to .data
       File file = new File("fuzzerLogFile-" + this.entryClassStr + ".data");
       file.createNewFile();
       FileWriter fw = new FileWriter(file);
       fw.write(extractCallTree(callGraph, this.entryMethod, 0, -1));
       fw.close();
+
+      // Calculate function depth
+      this.calculateDepth();
+
+      // Extract other info and write to .data.yaml
       ObjectMapper om = new ObjectMapper(new YAMLFactory());
       file = new File("fuzzerLogFile-" + this.entryClassStr + ".data.yaml");
       file.createNewFile();
@@ -343,28 +351,66 @@ class CustomSenceTransformer extends SceneTransformer {
     }
   }
 
+  // Include empty profile with name for excluded standard libraries
+  private void handleExcludedMethod(CallGraph cg, String cName, String mName, SootMethod m) {
+    for (String name : cName.split(":")) {
+      for (String prefix : this.excludeList) {
+        if (name.startsWith(prefix)) {
+          FunctionElement element = new FunctionElement();
+          element.setFunctionName("[" + name + "]." + mName);
+          element.setFunctionSourceFile(name);
+          element.setFunctionLinenumber(m.getJavaSourceStartLineNumber());
+          element.setReturnType(m.getReturnType().toString());
+          element.setFunctionDepth(0);
+          element.setArgCount(m.getParameterCount());
+          for (soot.Type type : m.getParameterTypes()) {
+            element.addArgType(type.toString());
+          }
+          Iterator<Edge> inEdges = cg.edgesInto(m);
+          Integer counter = 0;
+          while (inEdges.hasNext()) {
+            counter++;
+            inEdges.next();
+          }
+          element.setFunctionUses(counter);
+          element.setEdgeCount(0);
+          element.setBBCount(0);
+          element.setiCount(0);
+          element.setCyclomaticComplexity(0);
+          methodList.addFunctionElement(element);
+        }
+      }
+    }
+  }
+
+  private FunctionElement searchElement(String functionName) {
+    for (FunctionElement element : methodList.getFunctionElements()) {
+      if (element.getFunctionName().equals(functionName)) {
+        return element;
+      }
+    }
+    return null;
+  }
+
   // Shorthand for calculateDepth from Top
-  private Integer calculateDepth(CallGraph cg, SootMethod method) {
-    return calculateDepth(cg, method, new LinkedList<SootMethod>());
+  private void calculateDepth() {
+    for (FunctionElement element : methodList.getFunctionElements()) {
+      element.setFunctionDepth(this.calculateDepth(element));
+    }
   }
 
   // Calculate method depth
-  private Integer calculateDepth(CallGraph cg, SootMethod method, List<SootMethod> handled) {
-    int depth = 0;
+  private Integer calculateDepth(FunctionElement element) {
+    Integer depth = element.getFunctionDepth();
 
-    Iterator<Edge> outEdges = cg.edgesOutOf(method);
-    if (!handled.contains(method)) {
-      handled.add(method);
+    if (depth > 0) {
+      return depth;
+    }
 
-      while (outEdges.hasNext()) {
-        Edge edge = outEdges.next();
-        SootMethod tgt = edge.tgt();
-
-        if (tgt.equals(edge.src())) {
-          continue;
-        }
-
-        Integer newDepth = calculateDepth(cg, tgt, handled) + 1;
+    for (String reachedName : element.getFunctionsReached()) {
+      FunctionElement reachedElement = this.searchElement(reachedName);
+      if (reachedElement != null) {
+        Integer newDepth = this.calculateDepth(reachedElement) + 1;
         depth = (newDepth > depth) ? newDepth : depth;
       }
     }
@@ -412,9 +458,9 @@ class CustomSenceTransformer extends SceneTransformer {
       className = method.getDeclaringClass().getName();
     }
 
+    String methodName = method.getSubSignature().split(" ")[1];
     callTree.append(StringUtils.leftPad("", depth * 2));
-    callTree.append(
-        method.getSubSignature().split(" ")[1] + " " + className + " linenumber=" + line + "\n");
+    callTree.append(methodName + " " + className + " linenumber=" + line + "\n");
 
     boolean excluded = false;
     checkExclusionLoop:
@@ -427,6 +473,7 @@ class CustomSenceTransformer extends SceneTransformer {
       }
     }
     if (excluded) {
+      this.handleExcludedMethod(cg, className, methodName, method);
       return callTree.toString();
     }
 
