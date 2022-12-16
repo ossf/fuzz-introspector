@@ -187,10 +187,9 @@ class CustomSenceTransformer extends SceneTransformer {
 
         if (m.getName().equals(this.entryMethodStr) && c.getName().equals(this.entryClassStr)) {
           this.entryMethod = m;
-          element.setFunctionName(m.getSubSignature().split(" ")[1]);
-        } else {
-          element.setFunctionName("[" + c.getFilePath() + "]." + m.getSubSignature().split(" ")[1]);
         }
+
+        element.setFunctionName("[" + c.getFilePath() + "]." + m.getSubSignature().split(" ")[1]);
         element.setFunctionSourceFile(c.getFilePath());
         element.setFunctionLinenumber(m.getJavaSourceStartLineNumber());
         element.setReturnType(m.getReturnType().toString());
