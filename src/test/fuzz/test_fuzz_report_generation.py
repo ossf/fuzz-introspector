@@ -87,8 +87,10 @@ def is_this_a_reproducer_run(argvs):
             bname = os.path.basename(arg)
 
             # Assume a seed file does not have fuzz in its basename
-            if "fuzz" not in bname:
+            if "tmp" in bname:
                 return True
+        if "print_final_stats=1" in arg:
+            return True
     return False
 
 
