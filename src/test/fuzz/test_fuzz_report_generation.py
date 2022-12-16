@@ -33,6 +33,7 @@ lang_list = ["c-cpp", "python", "jvm"]
         b"more random data"
     ]
 )
+@atheris.instrument_func
 def test_TestOneInput(data: bytes):
     fdp = atheris.FuzzedDataProvider(data)
 
