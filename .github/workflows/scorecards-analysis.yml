@@ -4,7 +4,7 @@ on:
   branch_protection_rule:
   schedule:
     - cron: '31 23 * * 4'
-  push:
+  pull_request:
     branches: [ main ]
 
 # Declare default permissions as read only.

@@ -30,29 +30,22 @@ logger = logging.getLogger(name=__name__)
 
 
 def _retrieve_json_section(
-    profiles: List[fuzzer_profile.FuzzerProfile],
-    proj_profile: project_profile.MergedProjectProfile,
     analyser_name: str,
-    coverage_url: str
+    analysis_instance: analysis.AnalysisInterface
 ) -> str:
     """
     Generate json string for saving the result of a
     specific analyser
     """
-    analysis_array = analysis.get_all_analyses()
-    for analysis_interface in analysis_array:
-        if analysis_interface.get_name() == analyser_name:
-            analysis_instance = analysis.instantiate_analysis_interface(
-                analysis_interface
-            )
-            return analysis_instance.get_json_string_result()
+    if analyser_name in [item.get_name() for item in analysis.get_all_analyses()]:
+        return analysis_instance.get_json_string_result()
     return json.dumps([])
 
 
 def create_json_report(
     profiles: List[fuzzer_profile.FuzzerProfile],
     proj_profile: project_profile.MergedProjectProfile,
-    output_json: List[str],
+    analyser_instance_dict: Dict[str, analysis.AnalysisInterface],
     coverage_url: str
 ) -> None:
     """
@@ -73,15 +66,13 @@ def create_json_report(
         )
 
     result_dict: Dict[str, Dict[str, Any]] = {'report': {}}
-    for analyses in output_json:
-        logger.info(f" - Handling {analyses}")
+    for analyses_name in analyser_instance_dict.keys():
+        logger.info(f" - Handling {analyses_name}")
         result_str = _retrieve_json_section(
-            profiles,
-            proj_profile,
-            analyses,
-            coverage_url
+            analyses_name,
+            analyser_instance_dict[analyses_name]
         )
-        result_dict['report'][analyses] = json.loads(result_str)
+        result_dict['report'][analyses_name] = json.loads(result_str)
 
     result_str = json.dumps(result_dict)
     logger.info("Finish handling sections that need json output")

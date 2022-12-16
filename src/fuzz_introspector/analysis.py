@@ -95,15 +95,13 @@ class AnalysisInterface(abc.ABC):
         """Return name of analysis"""
         pass
 
-    @classmethod
     @abc.abstractmethod
-    def get_json_string_result(cls):
+    def get_json_string_result(self):
         """Return json_string_result"""
         pass
 
-    @classmethod
     @abc.abstractmethod
-    def set_json_string_result(cls, string):
+    def set_json_string_result(self, string):
         """Return json_string_result"""
         pass
 

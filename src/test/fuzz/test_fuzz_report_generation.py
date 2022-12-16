@@ -60,14 +60,15 @@ def test_TestOneInput(data: bytes):
 
     try:
         commands.run_analysis_on_dir(
-            report_dir,
-            "random_coverage_url",
-            analyses_to_run,
-            correlation_file,
-            False,
-            "report name",
-            lang_list[lang_choice],
-            False
+            target_folder=report_dir,
+            coverage_url="random_coverage_url",
+            analyses_to_run=analyses_to_run,
+            correlation_file=correlation_file,
+            enable_all_analyses=False,
+            report_name="report name",
+            language=lang_list[lang_choice],
+            output_json=[],
+            parallelise=False
         )
     except exceptions.FuzzIntrospectorError:
         pass
