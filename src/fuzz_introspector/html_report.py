@@ -22,9 +22,7 @@ import bs4
 import random
 import string
 from datetime import datetime
-import matplotlib.pyplot as plt
 
-from matplotlib.patches import Rectangle
 from typing import (
     Any,
     Dict,
@@ -53,6 +51,15 @@ def create_horisontal_calltree_image(
     each element on the x-axis shows a node in the calltree in the form
     of a rectangle. The rectangle is red if not visited and green if visited.
     """
+    try:
+        import matplotlib.pyplot as plt
+        from matplotlib.patches import Rectangle
+    except ModuleNotFoundError:
+        # It's useful to avoid this in CIFuzz because building the fuzzers with
+        # matplotlib costs a lot of time (10 minutes) in the CI, which we prefer
+        # to avoid.
+        logger.info("Could not import matplotlib. No bitmaps are created")
+        return []
 
     logger.info(f"Creating image {image_name}")
 
