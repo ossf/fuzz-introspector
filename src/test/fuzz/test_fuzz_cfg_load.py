@@ -31,9 +31,10 @@ from fuzz_introspector import exceptions  # noqa: E402
         b"more random data"
     ]
 )
+@atheris.instrument_func
 def test_TestOneInput(data):
     """Fuzz cfg_load.data_file_read_calltree"""
-    cfg_file = "test_file.data"
+    cfg_file = "/tmp/test_file.data"
     with open(cfg_file, "wb") as f:
         f.write(data)
 
@@ -47,8 +48,24 @@ def test_TestOneInput(data):
         os.remove(cfg_file)
 
 
+def is_this_a_reproducer_run(argvs):
+    """Hack to check if the argvs command shows this is a reproducer run
+    This is to bypass https://github.com/google/oss-fuzz/issues/9222 for now
+    """
+    for arg in argvs:
+        if os.path.isfile(arg):
+            bname = os.path.basename(arg)
+
+            # Assume a seed file does not have fuzz in its basename
+            if "fuzz" not in bname:
+                return True
+    return False
+
+
 def main():
-    atheris.instrument_all()
+    if not is_this_a_reproducer_run(sys.argv):
+        atheris.instrument_all()
+
     atheris.Setup(
         sys.argv,
         test_TestOneInput,

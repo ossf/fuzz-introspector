@@ -33,12 +33,13 @@ lang_list = ["c-cpp", "python", "jvm"]
         b"more random data"
     ]
 )
+@atheris.instrument_func
 def test_TestOneInput(data: bytes):
     fdp = atheris.FuzzedDataProvider(data)
 
-    report_dir = "tmpreport"
+    report_dir = "/tmp/fuzzreport"
     if not os.path.isdir(report_dir):
-        os.mkdir(report_dir)
+        os.makedirs(report_dir)
 
     correlation_file = os.path.join(report_dir, "correlation_file.txt")
     with open(correlation_file, "wb") as f:
@@ -76,8 +77,27 @@ def test_TestOneInput(data: bytes):
     shutil.rmtree(report_dir)
 
 
+def is_this_a_reproducer_run(argvs):
+    """Hack to check if the argvs command shows this is a reproducer run
+
+    This is to bypass https://github.com/google/oss-fuzz/issues/9222 for now
+    """
+    for arg in argvs:
+        if os.path.isfile(arg):
+            bname = os.path.basename(arg)
+
+            # Assume a seed file does not have fuzz in its basename
+            if "tmp" in bname:
+                return True
+        if "print_final_stats=1" in arg:
+            return True
+    return False
+
+
 def main():
-    atheris.instrument_all()
+    if not is_this_a_reproducer_run(sys.argv):
+        atheris.instrument_all()
+
     atheris.Setup(sys.argv, test_TestOneInput, enable_python_coverage=True)
     atheris.Fuzz()
 
