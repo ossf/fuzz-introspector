@@ -21,8 +21,14 @@ import pytest
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../")
 
-#with atheris.instrument_imports():
-from fuzz_introspector import commands, exceptions  # noqa: E402
+# Import certain modules here to avoid instrumenting them
+import yaml
+import cxxfilt
+import soupsieve
+import bs4
+
+with atheris.instrument_imports():
+    from fuzz_introspector import commands, exceptions  # noqa: E402
 
 lang_list = ["c-cpp", "python", "jvm"]
 
