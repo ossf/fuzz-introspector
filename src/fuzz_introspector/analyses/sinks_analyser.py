@@ -221,29 +221,6 @@ class Analysis(analysis.AnalysisInterface):
 
         return callsite_dict
 
-    def _retrieve_reachable_functions(
-        self,
-        functions: List[function_profile.FunctionProfile],
-        function_callsites: Dict[str, List[str]]
-    ) -> List[str]:
-        """
-        This function aims to dig up the source of all reachable
-        functions and store the fromatted string of its source
-        location and line number in the list.
-        """
-        function_list = []
-
-        # Loop and find if matched callsite string for the function does exists
-        for function in functions:
-            for (func_name, callsite_str) in function.callsite.items():
-                if callsite_str in function_callsites[func_name]:
-                    function_list.extend(callsite_str)
-
-        # Sort and make unique for the reachable function list
-        function_list = list(set(function_list))
-
-        return function_list
-
     def _filter_function_list(
         self,
         functions: List[function_profile.FunctionProfile],
@@ -286,8 +263,7 @@ class Analysis(analysis.AnalysisInterface):
         functions: List[function_profile.FunctionProfile],
         target_lang: str,
         func_callsites: Dict[str, List[str]],
-        coverage: code_coverage.CoverageProfile,
-        reachable_function_list: List[str]
+        coverage: code_coverage.CoverageProfile
     ) -> Tuple[str, str]:
         """
         This method aims to retrieve the table content for this analyser
@@ -316,15 +292,15 @@ class Analysis(analysis.AnalysisInterface):
                 html_string += html_helpers.html_table_add_row([
                     f"{fd.function_name}",
                     f"{called_location}",
-                    f"{called_location in reachable_function_list}",
+                    f"{str(fd.reached_by_fuzzers)}]",
                     f"{str(list_of_fuzzer_covered)}"
                 ])
 
                 json_dict: Dict[str, Any] = {}
                 json_dict['func_name'] = fd.function_name
                 json_dict['call_loc'] = called_location
-                json_dict['static_reach'] = f"{called_location in reachable_function_list}"
-                json_dict['fuzzer_reach'] = list_of_fuzzer_covered
+                json_dict['static_reach'] = fd.reached_by_fuzzers
+                json_dict['dynamic_reach'] = list_of_fuzzer_covered
                 json_list.append(json_dict)
 
         return (html_string, json.dumps(json_list))
@@ -363,19 +339,12 @@ class Analysis(analysis.AnalysisInterface):
         # Map callsites to each function
         function_callsite_dict = self._map_function_callsite(function_list, callsite_list)
 
-        # Discover reachable function calls
-        reachable_function_list = self._retrieve_reachable_functions(
-            function_list,
-            function_callsite_dict
-        )
-
         # Retrieve table content rows
         html_rows, json_row = self._retrieve_content_rows(
             function_list,
             profiles[0].target_lang,
             function_callsite_dict,
-            proj_profile.runtime_coverage,
-            reachable_function_list
+            proj_profile.runtime_coverage
         )
 
         self.set_json_string_result(json_row)
@@ -425,10 +394,10 @@ class Analysis(analysis.AnalysisInterface):
                 ("Callsite location",
                  "Source file, line number and parent function of this function call. "
                  "Based on static analysis."),
-                ("Reached by fuzzer",
+                ("Reached by fuzzer statically",
                  "Is this code reachable by any functions? "
                  "Based on static analysis."),
-                ("Covered by Fuzzers",
+                ("Covered by Fuzzers on runtime",
                  "The specific list of fuzzers that cover this function call. "
                  "Based on dynamic analysis.")
             ]
