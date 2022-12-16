@@ -82,8 +82,12 @@ def is_this_a_reproducer_run(argvs):
     This is to bypass https://github.com/google/oss-fuzz/issues/9222 for now
     """
     for arg in argvs:
-        if "fuzz" not in arg and os.path.isfile(arg):
-            return True
+        if os.path.isfile(arg):
+            bname = os.path.basename(arg)
+
+            # Assume a seed file does not have fuzz in its basename
+            if "fuzz" not in bname:
+                return True
     return False
 
 
