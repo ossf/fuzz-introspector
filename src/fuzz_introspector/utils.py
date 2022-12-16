@@ -85,6 +85,8 @@ def data_file_read_yaml(filename: str) -> Optional[Dict[Any, Any]]:
             data_dict: Dict[Any, Any] = yaml.safe_load(stream)
             return data_dict
     except Exception:
+        # YAML library does not completely wrap exceptions, so unless
+        # we catch all exceptions here we might end up in a crashing state.
         # This likely fails as the LLVM frontend now is putting multiple docs in
         # same yaml file. See commit 737ba72.
         pass
@@ -97,6 +99,8 @@ def data_file_read_yaml(filename: str) -> Optional[Dict[Any, Any]]:
             data = yaml_f.read()
             docs = yaml.safe_load_all(data)
     except Exception as e:
+        # YAML library does not completely wrap exceptions, so unless
+        # we catch all exceptions here we might end up in a crashing state.
         logger.info("Failed loading YAML: " + str(e))
         return None
 
@@ -115,6 +119,8 @@ def data_file_read_yaml(filename: str) -> Optional[Dict[Any, Any]]:
                         doc['All functions']['Elements']
                     )
     except Exception as e:
+        # YAML library does not completely wrap exceptions, so unless
+        # we catch all exceptions here we might end up in a crashing state.
         logger.info("Failed loading YAML: " + str(e))
         return None
 
