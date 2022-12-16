@@ -140,9 +140,12 @@ def add_func_to_reached_and_clone(
 
 def _load_profile(data_file: str, language: str, profiles: queue.Queue):
     """Internal function used for multithreaded profile loading"""
-    profile = read_fuzzer_data_file_to_profile(data_file, language)
-    if profile is not None:
-        profiles.put(profile)
+    try:
+        profile = read_fuzzer_data_file_to_profile(data_file, language)
+        if profile is not None:
+            profiles.put(profile)
+    except UnicodeDecodeError:
+        raise DataLoaderError("Yaml file is broken with Unicode issues")
 
 
 def load_all_profiles(
