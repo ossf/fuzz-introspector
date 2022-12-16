@@ -21,8 +21,7 @@ import pytest
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../")
 
-with atheris.instrument_imports():
-    from fuzz_introspector import commands, exceptions  # noqa: E402
+from fuzz_introspector import commands, exceptions  # noqa: E402
 
 lang_list = ["c-cpp", "python", "jvm"]
 
@@ -94,8 +93,8 @@ def is_this_a_reproducer_run(argvs):
 
 
 def main():
-    #if not is_this_a_reproducer_run(sys.argv):
-    #    atheris.instrument_all()
+    if not is_this_a_reproducer_run(sys.argv):
+        atheris.instrument_all()
 
     atheris.Setup(sys.argv, test_TestOneInput, enable_python_coverage=True)
     atheris.Fuzz()
