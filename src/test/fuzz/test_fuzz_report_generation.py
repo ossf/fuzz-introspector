@@ -92,8 +92,8 @@ def is_this_a_reproducer_run(argvs):
 
 
 def main():
-    if not is_this_a_reproducer_run(sys.argv):
-        atheris.instrument_all()
+    #if not is_this_a_reproducer_run(sys.argv):
+    #    atheris.instrument_all()
 
     atheris.Setup(sys.argv, test_TestOneInput, enable_python_coverage=True)
     atheris.Fuzz()
