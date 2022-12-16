@@ -76,8 +76,20 @@ def test_TestOneInput(data: bytes):
     shutil.rmtree(report_dir)
 
 
+def is_this_a_reproducer_run(argvs):
+    """Hack to check if the argvs command shows this is a reproducer run
+
+    This is to bypass https://github.com/google/oss-fuzz/issues/9222 for now
+    """
+    for arg in argvs:
+        if "fuzz" not in arg and os.path.isfile(arg):
+            return True
+    return False
+
 def main():
-    atheris.instrument_all()
+    if not is_this_a_reproducer_run(sys.argv):
+        atheris.instrument_all()
+
     atheris.Setup(sys.argv, test_TestOneInput, enable_python_coverage=True)
     atheris.Fuzz()
 
