@@ -85,7 +85,9 @@ class FuzzerProfile:
         elif self.target_lang == "python":
             return self.entrypoint_fun
         elif self.target_lang == "jvm":
-            return "fuzzerTestOneInput(com.code_intelligence.jazzer.api.FuzzedDataProvider)"
+            cname = self.fuzzer_source_file
+            arg = 'com.code_intelligence.jazzer.api.FuzzedDataProvider'
+            return f"[{cname}].fuzzerTestOneInput({arg})"
         else:
             return None
 
@@ -381,6 +383,7 @@ class FuzzerProfile:
                 self.functions_reached_by_fuzzer = (
                     self.all_class_functions[self.entrypoint_function].functions_reached
                 )
+                self.functions_reached_by_fuzzer.append(self.entrypoint_function)
                 return
 
         # Find Python entrypoint
@@ -388,6 +391,7 @@ class FuzzerProfile:
             ep_key = f"{self.entrypoint_mod}.{self.entrypoint_fun}"
             reached = self.all_class_functions[ep_key].functions_reached
             self.functions_reached_by_fuzzer = reached
+            self.functions_reached_by_fuzzer.append(self.entrypoint_function)
             return
 
         # Find JVM entrypoint
@@ -396,6 +400,7 @@ class FuzzerProfile:
                 self.functions_reached_by_fuzzer = (
                     self.all_class_functions[self.entrypoint_function].functions_reached
                 )
+                self.functions_reached_by_fuzzer.append(self.entrypoint_function)
                 return
 
         raise DataLoaderError("Can not identify entrypoint")
