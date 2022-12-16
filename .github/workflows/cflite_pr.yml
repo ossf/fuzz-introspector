@@ -30,7 +30,7 @@ jobs:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         fuzz-seconds: 300
         mode: 'code-change'
-        report-unreproducible-crashes: true
+        report-unreproducible-crashes: false
         sanitizer: ${{ matrix.sanitizer }}
         #storage-repo: https://${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com/ossf/fuzz-introspector.git
         #storage-repo-branch: main
