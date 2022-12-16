@@ -86,6 +86,7 @@ def is_this_a_reproducer_run(argvs):
             return True
     return False
 
+
 def main():
     if not is_this_a_reproducer_run(sys.argv):
         atheris.instrument_all()
