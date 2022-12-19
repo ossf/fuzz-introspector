@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'frontends/java/**'
+      - '.github/workflows/google-java.yml'
 jobs:
   formatting:
     runs-on: ubuntu-latest
