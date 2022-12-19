@@ -70,7 +70,8 @@ def process_mapping(map_str):
         # "test7",
         # "test8",
         # "test9",
-        # "test10"
+        # "test10",
+        "test11"
     ]
 )
 def test_full_jvm_report_generation(tmpdir, testcase):
