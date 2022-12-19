@@ -45,12 +45,21 @@ def run_full_cov(project):
     cmd.append("10") # seconds to run
 
     covlog = open("get_coverage.log", "wb")
-    subprocess.check_call(
-        " ".join(cmd),
-        stdout=covlog,
-        stderr=covlog,
-        shell=True
-    )
+    try:
+        subprocess.check_call(
+            " ".join(cmd),
+            stdout=covlog,
+            stderr=covlog,
+            shell=True
+        )
+    except subprocess.CalledProcessError:
+        print("Failed to extract coverage for %s" % project)
+        covlog.close()
+        if os.path.isfile(covlog):
+            os.remove(covlog)
+        return False
+    covlog.close()
+    return True
 
 
 def run_fuzz_introspector(project):
@@ -97,7 +106,9 @@ def main_loop():
         print("Testing %s"%(project))
 
         # Building and running
-        run_full_cov(project)
+        if not run_full_cov(project):
+            continue
+
         latest_corp = "corpus-" + str(get_latest_dir("corpus-"))
 
         shutil.move("get_coverage.log", latest_corp + "/get_coverage.log")
