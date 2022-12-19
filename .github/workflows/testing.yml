@@ -25,7 +25,7 @@ jobs:
           pip install -r requirements.txt
       - name: Prepare test case files
         run: |
-          cd tests/java && ./runTest.sh test3 && ./runTest.sh test4
+          cd tests/java && ./runTest.sh test3 && ./runTest.sh test4 && ./runTest.sh test11
       - name: Test unittests and generate coverage report
         run: |
           coverage run -m pytest -vv src/test/
