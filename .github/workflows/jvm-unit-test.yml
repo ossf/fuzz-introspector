@@ -1,6 +1,9 @@
 name: JUnit-Frontends
 
-on: pull_request
+on:
+  pull_request:
+    paths:
+      - 'frontends/**'
 permissions: read-all
 jobs:
   build:
