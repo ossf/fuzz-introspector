@@ -104,7 +104,7 @@ def run_introspector_frontend(target_class, jar_set):
       jarfile_str,
       target_class.replace(".class", ""),
       "fuzzerTestOneInput", # entrymethod
-      "jdk.:java.:javax.:sun.:sunw.:com.sun.:com.ibm.:com.apple.:apple.awt." # exclude prefix
+      ";jdk.:java.:javax.:sun.:sunw.:com.sun.:com.ibm.:com.apple.:apple.awt." # include prefix ; exclude prefix
   ]
 
   print("Running command: [%s]" % " ".join(cmd))
