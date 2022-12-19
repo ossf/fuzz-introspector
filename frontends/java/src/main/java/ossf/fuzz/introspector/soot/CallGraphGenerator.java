@@ -132,10 +132,7 @@ class CustomSenceTransformer extends SceneTransformer {
   private FunctionConfig methodList;
 
   public CustomSenceTransformer(
-    String entryClassStr,
-    String entryMethodStr,
-    String includePrefix,
-    String excludePrefix) {
+      String entryClassStr, String entryMethodStr, String includePrefix, String excludePrefix) {
     this.entryClassStr = entryClassStr;
     this.entryMethodStr = entryMethodStr;
     this.entryMethod = null;
@@ -657,6 +654,10 @@ class CustomSenceTransformer extends SceneTransformer {
     }
 
     return mergedClassName.toString();
+  }
+
+  public List<String> getIncludeList() {
+    return includeList;
   }
 
   public List<String> getExcludeList() {
