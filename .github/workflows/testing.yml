@@ -1,6 +1,12 @@
 name: Unit tests
 
-on: pull_request
+on:
+  pull_request:
+    paths:
+      - 'frontends/**'
+      - 'src/**'
+      - 'test/**'
+      - '.github/workflows/testing.yml'
 permissions: read-all
 jobs:
   unittests:

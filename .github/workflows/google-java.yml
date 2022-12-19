@@ -1,6 +1,10 @@
 name: Java Format
 permissions: read-all
-on: pull_request
+on:
+  pull_request:
+    paths:
+      - 'frontends/java/**'
+      - '.github/workflows/google-java.yml'
 jobs:
   formatting:
     runs-on: ubuntu-latest
