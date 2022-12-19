@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'frontends/**'
+      - '.github/workflows/jvm-unit-test.yml'
 permissions: read-all
 jobs:
   build:

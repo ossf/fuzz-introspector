@@ -21,6 +21,7 @@ on:
     paths:
       - 'src/**'
       - 'frontends/**'
+      - '.github/workflows/codeql.yml'
   schedule:
     - cron: '35 17 * * 5'
 

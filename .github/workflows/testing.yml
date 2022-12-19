@@ -6,6 +6,7 @@ on:
       - 'frontends/**'
       - 'src/**'
       - 'test/**'
+      - '.github/workflows/testing.yml'
 permissions: read-all
 jobs:
   unittests:

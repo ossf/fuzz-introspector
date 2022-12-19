@@ -6,6 +6,7 @@ on:
       - 'src/**'
       - 'frontends/python/**'
       - 'oss_fuzz_integration/**'
+      - '.github/workflows/mypy.yml'
 permissions: read-all
 jobs:
   build:
