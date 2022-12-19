@@ -7,8 +7,7 @@ cp src/test/fuzz/*.py .
 hidden_imports="--hidden-import=yaml \
                --hidden-import=cxxfilt \
                --hidden-import=json \
-               --hidden-import=bs4 \
-               --hidden-import=matplotlib"
+               --hidden-import=bs4"
 #fuzzers="test_fuzz_cfg_load.py test_fuzz_report_generation.py"
 #fuzzers="test_fuzz_report_generation.py test_fuzz_report_generation.py"
 #for fuzzer in $fuzzers; do

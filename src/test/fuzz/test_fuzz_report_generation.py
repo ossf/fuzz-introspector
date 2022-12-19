@@ -21,7 +21,13 @@ import pytest
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../")
 
-from fuzz_introspector import commands, exceptions  # noqa: E402
+# Import certain modules here to avoid instrumenting them
+import cxxfilt  # noqa
+import soupsieve  # noqa
+import bs4  # noqa
+
+with atheris.instrument_imports():
+    from fuzz_introspector import commands, exceptions  # noqa: E402
 
 lang_list = ["c-cpp", "python", "jvm"]
 
@@ -77,27 +83,7 @@ def test_TestOneInput(data: bytes):
     shutil.rmtree(report_dir)
 
 
-def is_this_a_reproducer_run(argvs):
-    """Hack to check if the argvs command shows this is a reproducer run
-
-    This is to bypass https://github.com/google/oss-fuzz/issues/9222 for now
-    """
-    for arg in argvs:
-        if os.path.isfile(arg):
-            bname = os.path.basename(arg)
-
-            # Assume a seed file does not have fuzz in its basename
-            if "tmp" in bname:
-                return True
-        if "print_final_stats=1" in arg:
-            return True
-    return False
-
-
 def main():
-    if not is_this_a_reproducer_run(sys.argv):
-        atheris.instrument_all()
-
     atheris.Setup(sys.argv, test_TestOneInput, enable_python_coverage=True)
     atheris.Fuzz()
 
