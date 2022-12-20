@@ -272,17 +272,17 @@ class Analysis(analysis.AnalysisInterface):
         """
         html_string = ""
         json_list = []
+        json_dict: Dict[str, Any] = {}
 
         for fd in self._filter_function_list(functions, target_lang):
             # Loop through the list of calledlocation for this function
             if len(func_callsites[fd.function_name]) == 0:
                 html_string += html_helpers.html_table_add_row([
                     f"{fd.function_name}",
-                    f"Not in call tree",
+                    "Not in call tree",
                     f"{str(fd.reached_by_fuzzers)}]"
                 ])
 
-                json_dict: Dict[str, Any] = {}
                 json_dict['func_name'] = fd.function_name
                 json_dict['call_loc'] = "Not in call tree"
                 json_dict['fuzzer_reach'] = fd.reached_by_fuzzers
@@ -297,7 +297,6 @@ class Analysis(analysis.AnalysisInterface):
                     f"{str(fd.reached_by_fuzzers)}]"
                 ])
 
-                json_dict: Dict[str, Any] = {}
                 json_dict['func_name'] = fd.function_name
                 json_dict['call_loc'] = called_location
                 json_dict['fuzzer_reach'] = fd.reached_by_fuzzers
