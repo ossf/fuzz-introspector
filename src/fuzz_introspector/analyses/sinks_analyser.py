@@ -255,7 +255,6 @@ class Analysis(analysis.AnalysisInterface):
             # Add the function profile to the result list if it matches one of the target
             if (package, func_name) in SINK_FUNCTION[target_lang]:
                 function_list.append(fd)
-
         return function_list
 
     def _retrieve_content_rows(
@@ -273,34 +272,34 @@ class Analysis(analysis.AnalysisInterface):
         """
         html_string = ""
         json_list = []
+        json_dict: Dict[str, Any] = {}
 
         for fd in self._filter_function_list(functions, target_lang):
             # Loop through the list of calledlocation for this function
-            for called_location in func_callsites[fd.function_name]:
-                # Determine if this called location is covered by any fuzzers
-                fuzzer_hit = False
-                for parent_func in fd.incoming_references:
-                    try:
-                        lineno = int(called_location.split(":")[1])
-                    except ValueError:
-                        continue
-                    if coverage.is_func_lineno_hit(parent_func, lineno):
-                        fuzzer_hit = True
-                        break
-                list_of_fuzzer_covered = fd.reached_by_fuzzers if fuzzer_hit else [""]
+            if len(func_callsites[fd.function_name]) == 0:
+                html_string += html_helpers.html_table_add_row([
+                    f"{fd.function_name}",
+                    "Not in call tree",
+                    f"{str(fd.reached_by_fuzzers)}]"
+                ])
 
+                json_dict['func_name'] = fd.function_name
+                json_dict['call_loc'] = "Not in call tree"
+                json_dict['fuzzer_reach'] = fd.reached_by_fuzzers
+                json_list.append(json_dict)
+
+                continue
+
+            for called_location in func_callsites[fd.function_name]:
                 html_string += html_helpers.html_table_add_row([
                     f"{fd.function_name}",
                     f"{called_location}",
-                    f"{str(fd.reached_by_fuzzers)}]",
-                    f"{str(list_of_fuzzer_covered)}"
+                    f"{str(fd.reached_by_fuzzers)}]"
                 ])
 
-                json_dict: Dict[str, Any] = {}
                 json_dict['func_name'] = fd.function_name
                 json_dict['call_loc'] = called_location
-                json_dict['static_reach'] = fd.reached_by_fuzzers
-                json_dict['dynamic_reach'] = list_of_fuzzer_covered
+                json_dict['fuzzer_reach'] = fd.reached_by_fuzzers
                 json_list.append(json_dict)
 
         return (html_string, json.dumps(json_list))
@@ -394,12 +393,9 @@ class Analysis(analysis.AnalysisInterface):
                 ("Callsite location",
                  "Source file, line number and parent function of this function call. "
                  "Based on static analysis."),
-                ("Reached by fuzzer statically",
+                ("Reached by fuzzer",
                  "Is this code reachable by any functions? "
-                 "Based on static analysis."),
-                ("Covered by Fuzzers on runtime",
-                 "The specific list of fuzzers that cover this function call. "
-                 "Based on dynamic analysis.")
+                 "Based on static analysis.")
             ]
         )
 
