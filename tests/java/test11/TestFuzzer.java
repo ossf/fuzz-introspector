@@ -16,9 +16,6 @@
 import com.code_intelligence.jazzer.api.CannedFuzzedDataProvider;
 import com.code_intelligence.jazzer.api.FuzzedDataProvider;
 
-import java.lang.Runtime;
-import java.lang.System;
-
 class FunctionTest {
   protected void functionSafe() {
     System.out.println("Safe");
@@ -28,7 +25,8 @@ class FunctionTest {
     System.out.println("Sink");
     try {
       Runtime.getRuntime().exec("ls -la");
-    } catch (Exception e) {}
+    } catch (Exception e) {
+    }
   }
 
   protected void functionSafeDead() {
@@ -39,7 +37,8 @@ class FunctionTest {
     System.out.println("SinkDead");
     try {
       System.load("/etc/hosts");
-    } catch (Exception e) {}
+    } catch (Exception e) {
+    }
   }
 }
 
