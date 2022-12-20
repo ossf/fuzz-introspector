@@ -39,6 +39,11 @@ while [[ $# -gt 0 ]]; do
       shift
       shift
       ;;
+    -i|--includeprefix)
+      INCLUDEPREFIX="$2"
+      shift
+      shift
+      ;;
     *)
       echo "Unknown option $1"
       exit 1
@@ -63,8 +68,13 @@ then
 fi
 if [ -z $EXCLUDEPREFIX ]
 then
-    echo "No exclude prefix list  defined, using default exclude prefix list"
+    echo "No exclude prefix list defined, using default exclude prefix list"
     EXCLUDEPREFIX="jdk.:java.:javax.:sun.:sunw.:com.sun.:com.ibm.:com.apple.:apple.awt."
+fi
+if [ -z $INCLUDEPREFIX ]
+then
+    echo "No include prefix list defined, using empty include prefix list"
+    INCLUDEPREFIX=
 fi
 
 # Build and execute the call graph generator
@@ -74,5 +84,5 @@ mvn clean package -Dmaven.test.skip
 for CLASS in $(echo $ENTRYCLASS | tr ":" "\n")
 do
     echo $CLASS
-    java -Xmx6144M -cp "target/ossf.fuzz.introspector.soot-1.0.jar" ossf.fuzz.introspector.soot.CallGraphGenerator $JARFILE $CLASS $ENTRYMETHOD $EXCLUDEPREFIX
+    java -Xmx6144M -cp "target/ossf.fuzz.introspector.soot-1.0.jar" ossf.fuzz.introspector.soot.CallGraphGenerator $JARFILE $CLASS $ENTRYMETHOD "$INCLUDEPREFIX;$EXCLUDEPREFIX"
 done

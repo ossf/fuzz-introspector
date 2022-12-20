@@ -62,9 +62,11 @@ public class CallGraphGenerator {
     List<String> jarFiles = Arrays.asList(args[0].split(":"));
     String entryClass = args[1];
     String entryMethod = args[2];
+    String includePrefix = "";
     String excludePrefix = "";
     if (args.length == 4) {
-      excludePrefix = args[3];
+      includePrefix = args[3].split(";")[0];
+      excludePrefix = args[3].split(";")[1];
     }
 
     if (jarFiles.size() < 1) {
@@ -77,14 +79,14 @@ public class CallGraphGenerator {
 
     // Add an custom analysis phase to Soot
     CustomSenceTransformer custom =
-        new CustomSenceTransformer(entryClass, entryMethod, excludePrefix);
+        new CustomSenceTransformer(entryClass, entryMethod, includePrefix, excludePrefix);
     PackManager.v().getPack("wjtp").add(new Transform("wjtp.custom", custom));
 
     // Set basic settings for the call graph generation
     Options.v().set_process_dir(jarFiles);
     Options.v().set_prepend_classpath(true);
     Options.v().set_src_prec(Options.src_prec_java);
-    Options.v().set_include_all(true);
+    Options.v().set_include(custom.getIncludeList());
     Options.v().set_exclude(custom.getExcludeList());
     Options.v().set_no_bodies_for_excluded(true);
     Options.v().set_allow_phantom_refs(true);
@@ -119,6 +121,7 @@ public class CallGraphGenerator {
 }
 
 class CustomSenceTransformer extends SceneTransformer {
+  private List<String> includeList;
   private List<String> excludeList;
   private List<String> excludeMethodList;
   private List<Block> visitedBlock;
@@ -128,13 +131,20 @@ class CustomSenceTransformer extends SceneTransformer {
   private SootMethod entryMethod;
   private FunctionConfig methodList;
 
-  public CustomSenceTransformer(String entryClassStr, String entryMethodStr, String excludePrefix) {
+  public CustomSenceTransformer(
+      String entryClassStr, String entryMethodStr, String includePrefix, String excludePrefix) {
     this.entryClassStr = entryClassStr;
     this.entryMethodStr = entryMethodStr;
     this.entryMethod = null;
 
+    includeList = new LinkedList<String>();
     excludeList = new LinkedList<String>();
 
+    for (String include : includePrefix.split(":")) {
+      if (!include.equals("")) {
+        includeList.add(include);
+      }
+    }
     for (String exclude : excludePrefix.split(":")) {
       if (!exclude.equals("")) {
         excludeList.add(exclude);
@@ -394,22 +404,24 @@ class CustomSenceTransformer extends SceneTransformer {
   // Shorthand for calculateDepth from Top
   private void calculateDepth() {
     for (FunctionElement element : methodList.getFunctionElements()) {
-      element.setFunctionDepth(this.calculateDepth(element));
+      element.setFunctionDepth(this.calculateDepth(element, new HashSet<FunctionElement>()));
     }
   }
 
   // Calculate method depth
-  private Integer calculateDepth(FunctionElement element) {
+  private Integer calculateDepth(FunctionElement element, Set<FunctionElement> handled) {
     Integer depth = element.getFunctionDepth();
 
-    if (depth > 0) {
+    if ((depth > 0) || (handled.contains(element))) {
       return depth;
     }
+
+    handled.add(element);
 
     for (String reachedName : element.getFunctionsReached()) {
       FunctionElement reachedElement = this.searchElement(reachedName);
       if (reachedElement != null) {
-        Integer newDepth = this.calculateDepth(reachedElement) + 1;
+        Integer newDepth = this.calculateDepth(reachedElement, handled) + 1;
         depth = (newDepth > depth) ? newDepth : depth;
       }
     }
@@ -641,6 +653,10 @@ class CustomSenceTransformer extends SceneTransformer {
     }
 
     return mergedClassName.toString();
+  }
+
+  public List<String> getIncludeList() {
+    return includeList;
   }
 
   public List<String> getExcludeList() {
