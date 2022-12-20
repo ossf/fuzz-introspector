@@ -127,7 +127,7 @@ def check_project_unrar(summary_dict):
     # Success
     return
 
-def check_specific_project(proj_name, build_log_file,coverage_log,summary_json):
+def check_specific_project(proj_name, build_log_file, coverage_log, summary_json):
     print(f"Checking {proj_name}")
     name_to_check_mapping = {
         "htslib":  check_project_htslib,
@@ -143,6 +143,31 @@ def check_specific_project(proj_name, build_log_file,coverage_log,summary_json):
     data = json.load(open(summary_json))
     name_to_check_mapping[proj_name](data)
     print("Check done")
+
+
+def list_sink_functions(proj_name, analyser_json):
+    """List sink functions from analyser json report for project"""
+    print(f"Listing sink functions for {proj_name}:\n")
+
+    with open(analyser_json, 'r') as file:
+        data = json.loads(file.read())
+
+    if "SinkCoverageAnalyser" in data['report'].keys():
+        for item in data['report']['SinkCoverageAnalyser']:
+             print(f"{item}\n")
+    else:
+        err_exit("Sink Analyser not running correctly")
+
+
+def check_json_sanity(json_file):
+    """Checks the sanity of a json file"""
+    with open(json_file, 'r') as json_file:
+        json_str = json_file.read()
+    try:
+        json.loads(json_str)
+    except ValueError as e:
+        return False
+    return True
 
 
 def check_project_html_sanity(html_report):
@@ -170,6 +195,7 @@ def check_project_dir(proj_dir):
     summary_json     = os.path.join(proj_dir, "inspector-report", "summary.json")
     proj_name_file   = os.path.join(proj_dir, "project_name")
     html_report      = os.path.join(proj_dir, "inspector-report", "fuzz_report.html")
+    analyser_json    = os.path.join(proj_dir, "inspector-report", "fuzz-introspector.json")
 
     if not os.path.isfile(build_log_file):
         err_exit("No log file")
@@ -177,12 +203,20 @@ def check_project_dir(proj_dir):
         err_exit("No coverage log")
     if not os.path.isfile(summary_json):
         err_exit("No summary file")
+
     print(proj_name_file)
+
     if not os.path.isfile(proj_name_file):
         err_exit("No project name file")
     if not os.path.isfile(html_report):
         err_exit("No html report file")
+    if not os.path.isfile(analyser_json):
+        err_exit("No analyser json report file")
 
+    if not check_json_sanity(summary_json):
+        err_exit("Summary json report sanity check failed")
+    if not check_json_sanity(analyser_json):
+        err_exit("Analyser json report sanity check failed")
     if not check_project_html_sanity(html_report):
         err_exit("Html sanity check failed")
 
@@ -196,6 +230,9 @@ def check_project_dir(proj_dir):
         coverage_log,
         summary_json
     )
+
+    # List sinks function for projects
+    list_sink_functions(proj_name, analyser_json)
 
 
 def check_test_directory(test_directory):

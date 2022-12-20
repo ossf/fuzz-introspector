@@ -98,6 +98,7 @@ def main_loop():
         "wuffs",
         "c-ares",
         "dbus-broker",
+        "javassist"
     ]
 
     build_results = []
@@ -109,18 +110,22 @@ def main_loop():
         if not run_full_cov(project):
             continue
 
+        print("Start building %s" % (project))
+
         latest_corp = "corpus-" + str(get_latest_dir("corpus-"))
 
         shutil.move("get_coverage.log", latest_corp + "/get_coverage.log")
         with open(os.path.join(latest_corp, "project_name"), "w") as pn:
             pn.write(project+"\n")
-            
+
         fuzz_intro_success = run_fuzz_introspector(project)
         build_results.append((project, fuzz_intro_success))
         shutil.move(
             "build_introspector.log",
             latest_corp + "/build_introspector.log"
         )
+
+        print("Finish building %s" % (project))
 
         if fuzz_intro_success:
             # Copy fuzz-introspector related files over
@@ -140,9 +145,13 @@ def main_loop():
                     os.path.join(latest_corp, "inspector-report/covreport/", d)
                 )
 
+        print("Moving result file for %s" % (project))
+
         # Copy the entire corpus-X directory into the test directory
         target_dir = os.path.join(testdir, latest_corp)
         shutil.copytree(latest_corp, target_dir)
+
+        print("Checking %s" % (project))
 
         # Check project checker
         try:
