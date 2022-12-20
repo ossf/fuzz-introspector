@@ -84,5 +84,5 @@ mvn clean package -Dmaven.test.skip
 for CLASS in $(echo $ENTRYCLASS | tr ":" "\n")
 do
     echo $CLASS
-    java -Xmx6144M -cp "target/ossf.fuzz.introspector.soot-1.0.jar" ossf.fuzz.introspector.soot.CallGraphGenerator $JARFILE $CLASS $ENTRYMETHOD "$INCLUDEPREFIX;$EXCLUDEPREFIX"
+    java -Xmx6144M -cp "target/ossf.fuzz.introspector.soot-1.0.jar" ossf.fuzz.introspector.soot.CallGraphGenerator $JARFILE $CLASS $ENTRYMETHOD "$INCLUDEPREFIX===$EXCLUDEPREFIX"
 done

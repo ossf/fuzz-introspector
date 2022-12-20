@@ -65,8 +65,8 @@ public class CallGraphGenerator {
     String includePrefix = "";
     String excludePrefix = "";
     if (args.length == 4) {
-      includePrefix = args[3].split(";")[0];
-      excludePrefix = args[3].split(";")[1];
+      includePrefix = args[3].split("===")[0];
+      excludePrefix = args[3].split("===")[1];
     }
 
     if (jarFiles.size() < 1) {
