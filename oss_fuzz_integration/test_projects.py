@@ -93,8 +93,9 @@ def main_loop():
     print("Test directory: %s"%(testdir))
     os.mkdir(testdir)
 
+    dir_path = os.path.dirname(os.path.realpath(__file__))
     config = configparser.ConfigParser()
-    config.read("./.config")
+    config.read(os.path.join(dir_path, ".config"))
 
     build_results = []
     project_check_results = []
