@@ -16,8 +16,10 @@
 
 import os
 import sys
+import json
 import shutil
 import subprocess
+import configparser
 
 import project_checker
 
@@ -55,8 +57,11 @@ def run_full_cov(project):
     except subprocess.CalledProcessError:
         print("Failed to extract coverage for %s" % project)
         covlog.close()
-        if os.path.isfile(covlog):
-            os.remove(covlog)
+        try:
+            if os.path.isfile(covlog):
+                os.remove(covlog)
+        except TypeError:
+            pass
         return False
     covlog.close()
     return True
@@ -88,22 +93,12 @@ def main_loop():
     print("Test directory: %s"%(testdir))
     os.mkdir(testdir)
 
-    projects_to_test = [
-        "leveldb",
-        "htslib",
-        "jsoncpp",
-        "unrar",
-        "tarantool",
-        "fio",
-        "wuffs",
-        "c-ares",
-        "dbus-broker",
-        "javassist"
-    ]
+    config = configparser.ConfigParser()
+    config.read("./.config")
 
     build_results = []
     project_check_results = []
-    for project in projects_to_test:
+    for project in json.loads(config.get("Fuzz-Introspector","projects")):
         print("Testing %s"%(project))
 
         # Building and running
