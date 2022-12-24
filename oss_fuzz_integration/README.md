@@ -1,36 +1,52 @@
 # OSS-Fuzz integration
 
-The easiest way to test the introspector is to do it by way of OSS-Fuzz.
+The easiest way to use or test the introspector is to do it by way of OSS-Fuzz.
 OSS-Fuzz supports fuzz introspector and the Docker images used by OSS-Fuzz
-has fuzz introspector in them. Here, we provide wrapper scripts around
-OSS-Fuzz to make the process of working with OSS-Fuzz easier, and also hold
-scripts for making development based on testing with OSS-Fuzz easier.
+have fuzz introspector in them. 
+In this directory you can find wrapper scripts to make development and testing with Fuzz Introspector easier via using OSS-Fuzz images.
 
 ## Build Fuzz Introspector with OSS-Fuzz
 There are several options for building with OSS-Fuzz. These options are
 provided to support different types of workflow, e.g. development and testing
 purposes.
 
-1) For trying out Fuzz Introspector you should [build with existing OSS-Fuzz purposes](#build-with-existing-oss-fuzz-purposes).
+1) For trying out Fuzz Introspector you should [build the fuzz targets with existing OSS-Fuzz images](#build-with-existing-oss-fuzz-images).
 2) For testing development in `/src/fuzz_introspector` you should [build with OSS-Fuzz base clang image](#build-with-oss-fuzz-base-clang-image).
-3) For testing development in the frontends (LLVM/Python Ast analyser) you should [build images completely from scratch](#build-images-completely-from-scratch).
+3) For testing development in the frontends (LLVM/Python AST analyser) you should [build images completely from scratch](#build-images-completely-from-scratch).
 
 ### Build with existing OSS-Fuzz images
-From within this directory, run the commands:
+If you want to try Fuzz Introspector on some projects from OSS-Fuzz, follow these steps:
 ```
-# Simply clone the most recent OSS-Fuzz version
+# (Optional) Clone the most recent OSS-Fuzz version
 git clone https://github.com/google/oss-fuzz
-
-# Test a project
 cd oss-fuzz
-python3 ../runner.py introspector htslib 20
+
+# Test a project -- From the top directory of OSS-Fuzz
+python3 infra/helper.py introspector PROJECT_NAME
 ```
 
-You can access the report by navigating to `http://localhost:8008/fuzz_report.html`
+The above command builds the project using OSS-Fuzz images for coverage and introspector. To access the reports, follow the instruction at your screen where it says:
+```
+To browse the report, run: `python3 -m http.server 8008 --directory /path/to/reports`and navigate to localhost:8008/fuzz_report.html in your browser
+```
 
+You also can try the following different variations of introspector build for OSS-Fuzz:
+
+```
+# To download the latest public corpus for project PROJECT_NAME and use that when collecting coverage
+python3 infra/helper.py introspector --public-corpora PROJECT_NAME
+
+# To run the fuzzers for SEC seconds for corpus collection
+python3 infra/helper.py introspector --seconds=SEC PROJECT_NAME
+
+# To run introspector using the LOCAL_PATH as source code folder (for testing modifications to fuzz targets)
+python3 infra/helper.py introspector PROJECT_NAME LOCAL_PATH 
+```
+
+If you are making modifications to Fuzz Introspector, then keep reading the next sections.
 ### Build with OSS-Fuzz base clang image
-Pull the latest base-clang image from OSS-Fuzz and otherwise build the other OSS-Fuzz
-images from scratch in order to pull in a custom version of fuzz introspector. This will
+To test your new developments in the Fuzz Introspector post-processing (in `/src/fuzz_introspector`), you need to pull the latest base-clang image from OSS-Fuzz and otherwise build the other OSS-Fuzz
+images from scratch. This will
 copy the code from the root of the fuzz introspector folder into the oss-fuzz images,
 which is convenient for testing modification in e.g. `src/fuzz-introspector`.
 
@@ -46,7 +62,8 @@ python3 ../runner.py introspector htslib 20
 You can access the report by navigating to `http://localhost:8008/fuzz_report.html`
 
 ### Build images completely from scratch
-This will build all images base images from scratch, and have all fuzz introspector
+If you have made changes in language frontend component of Fuzz Introspector (in `/frontends`), you need to build all images.
+The following commands will build all images from scratch, and have all fuzz introspector
  diffs. This is used when developing the frontends, e.g. the LLVM pass.
 ```
 # Build all base images from scratch
