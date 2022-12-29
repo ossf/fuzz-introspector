@@ -1,4 +1,3 @@
-from fuzz_introspector.analyses import calltree_analysis
 from fuzz_introspector.analyses import bug_digestor
 from fuzz_introspector.analyses import driver_synthesizer
 from fuzz_introspector.analyses import engine_input
