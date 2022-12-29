@@ -119,7 +119,7 @@ SINK_FUNCTION = {
 }
 
 
-class Analysis(analysis.AnalysisInterface):
+class SinkCoverageAnalyser(analysis.AnalysisInterface):
     """This Analysis aims to analyse and generate html report content table
     to show all occurence of possible sink functions / methods existed in the
     target project and if those functions / methods are statically reached or
@@ -341,7 +341,7 @@ class Analysis(analysis.AnalysisInterface):
            those sink functions / methods.
         Remark: json report will be generated instead of html report if tables is None
         """
-        logger.info(f" - Running analysis {Analysis.get_name()}")
+        logger.info(f" - Running analysis {self.get_name()}")
 
         # Get full function /  callsite list for all fuzzer's profiles
         callsite_list, function_list = self._retrieve_data_list(proj_profile, profiles)
@@ -417,5 +417,5 @@ class Analysis(analysis.AnalysisInterface):
         html_string += "</div>"  # .collapsible
         html_string += "</div>"  # report-box
 
-        logger.info(f" - Finish running analysis {Analysis.get_name()}")
+        logger.info(f" - Finish running analysis {self.get_name()}")
         return html_string

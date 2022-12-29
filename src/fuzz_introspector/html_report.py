@@ -508,7 +508,7 @@ def create_fuzzer_detailed_section(
         "Call tree", 3, toc_list, link=f"call_tree_{curr_tt_profile}")
 
     from fuzz_introspector.analyses import calltree_analysis as cta
-    calltree_analysis = cta.Analysis()
+    calltree_analysis = cta.FuzzCalltreeAnalysis()
     calltree_file_name = calltree_analysis.create_calltree(profile)
 
     html_string += f"""<p class='no-top-margin'>The calltree shows the
