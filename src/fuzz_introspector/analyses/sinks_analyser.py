@@ -209,10 +209,11 @@ class Analysis(analysis.AnalysisInterface):
         and avoid missing or double package name existed in
         the final function name comparison.
         """
-        if not callsite.dst_function_name.startswith("["):
-            return f"[{callsite.dst_function_source_file}].{callsite.dst_function_name}"
+        func_name = f"{callsite.dst_function_name}"
+        if func_name.startswith("["):
+            return func_name
         else:
-            retutn callsite.dst_function_name
+            return f"[{callsite.dst_function_source_file}].{func_name}"
 
     def _map_function_callsite(
         self,
