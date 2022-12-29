@@ -11,14 +11,14 @@ from fuzz_introspector.analyses import sinks_analyser
 
 # Ordering here is important as top analysis will be shown first in the report
 all_analyses = [
-  bug_digestor.BugDigestor,
-  calltree_analysis.FuzzCalltreeAnalysis,
-  driver_synthesizer.DriverSynthesizer,
-  engine_input.EngineInput,
-  filepath_analyser.FilePathAnalysis,
-  function_call_analyser.ThirdPartyAPICoverageAnalyser,
-  metadata.MetadataAnalysis,
-  optimal_targets.OptimalTargets,
-  runtime_coverage_analysis.RuntimeCoverageAnalysis,
-  sinks_analyser.SinkCoverageAnalyser
+    bug_digestor.BugDigestor,
+    calltree_analysis.FuzzCalltreeAnalysis,
+    driver_synthesizer.DriverSynthesizer,
+    engine_input.EngineInput,
+    filepath_analyser.FilePathAnalysis,
+    function_call_analyser.ThirdPartyAPICoverageAnalyser,
+    metadata.MetadataAnalysis,
+    optimal_targets.OptimalTargets,
+    runtime_coverage_analysis.RuntimeCoverageAnalysis,
+    sinks_analyser.SinkCoverageAnalyser
 ]
