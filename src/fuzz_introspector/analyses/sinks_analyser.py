@@ -145,7 +145,8 @@ class Analysis(analysis.AnalysisInterface):
         self.json_string_result = json_string
 
     def _get_source_file(self, callsite) -> str:
-        """This function aims to dig up the callsitecalltree of a function
+        """
+        Dig up the callsitecalltree of a function
         call and get its source file path.
         """
         src_file = callsite.src_function_source_file
@@ -158,7 +159,8 @@ class Analysis(analysis.AnalysisInterface):
         return src_file
 
     def _get_parent_func_name(self, callsite) -> str:
-        """This function aims to dig up the callsitecalltree of a function
+        """
+        Dig up the callsitecalltree of a function
         call and get its parent function name.
         """
         func_file = callsite.src_function_source_file
@@ -200,16 +202,16 @@ class Analysis(analysis.AnalysisInterface):
 
     def _handle_function_name(
         self,
-        callsites: cfg_load.CalltreeCallsite
+        callsite: cfg_load.CalltreeCallsite
     ) -> str:
         """
-        This functions aims to handle the function name
+        Handling function name and package name combo
         and avoid missing or double package name existed in
         the final function name comparison.
         """
         if not callsite.dst_function_name.startswith("["):
             return f"[{callsite.dst_function_source_file}].{callsite.dst_function_name}"
-        else
+        else:
             retutn callsite.dst_function_name
 
     def _map_function_callsite(
@@ -218,9 +220,9 @@ class Analysis(analysis.AnalysisInterface):
         callsites: List[cfg_load.CalltreeCallsite]
     ) -> Dict[str, List[str]]:
         """
-        This function aims to dig up the callsite for each function
-        and store the mapped source location and line number list as
-        a formatted string list.
+        Dig up the callsite for each function and store
+        the mapped source location and line number list
+        as a formatted string list.
         """
         callsite_dict: Dict[str, List[str]] = dict()
 
@@ -252,9 +254,9 @@ class Analysis(analysis.AnalysisInterface):
         target_lang: str
     ) -> List[function_profile.FunctionProfile]:
         """
-        This function aim to filter out target list of functions
-        which are considered as sinks for separate langauge which
-        is the major analysing target for this SinkAnalyser.
+        Filter out target list of functions which are considered
+        as sinks for separate langauge which is the major
+        analysing target for this SinkAnalyser.
         """
         function_list = []
 
@@ -290,10 +292,10 @@ class Analysis(analysis.AnalysisInterface):
         coverage: code_coverage.CoverageProfile
     ) -> Tuple[str, str]:
         """
-        This method aims to retrieve the table content for this analyser
-        in two formats. One in normal html table rows string and the other
-        is a json string for generating separate json report for sink
-        coverage that could be readable by external analyser.
+        Retrieve the content for this analyser in two formats. One in
+        normal html table rows string and the other is in json string
+        for generating separate json report for sink coverage that
+        could be readable by external analyser.
         """
         html_string = ""
         json_list = []
