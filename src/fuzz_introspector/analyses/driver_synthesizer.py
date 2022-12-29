@@ -39,7 +39,7 @@ class DriverContents:
         self.target_fds: List[function_profile.FunctionProfile] = list()
 
 
-class Analysis(analysis.AnalysisInterface):
+class DriverSynthesizer(analysis.AnalysisInterface):
     name: str = "FuzzDriverSynthesizerAnalysis"
 
     def __init__(self) -> None:
@@ -66,7 +66,7 @@ class Analysis(analysis.AnalysisInterface):
         conclusions: List[html_helpers.HTMLConclusion],
         fuzz_targets=None
     ) -> str:
-        logger.info(f" - Running analysis {Analysis.get_name()}")
+        logger.info(f" - Running analysis {self.get_name()}")
         html_string = ""
         html_string += "<div class=\"report-box\">"
         html_string += html_helpers.html_add_header_with_link(
@@ -77,7 +77,7 @@ class Analysis(analysis.AnalysisInterface):
         html_string += "<div class=\"collapsible\">"
 
         if fuzz_targets is None or len(fuzz_targets) == 0:
-            A1 = optimal_targets.Analysis()
+            A1 = optimal_targets.OptimalTargets()
 
             _, optimal_target_functions = A1.iteratively_get_optimal_targets(
                 proj_profile
@@ -184,6 +184,6 @@ class Analysis(analysis.AnalysisInterface):
 
         html_string += "</div>"  # .collapsible
         html_string += "</div>"  # report-box
-        logger.info(f" - Completed analysis {Analysis.get_name()}")
+        logger.info(f" - Completed analysis {self.get_name()}")
 
         return html_string

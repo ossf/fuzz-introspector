@@ -28,7 +28,7 @@ from fuzz_introspector.datatypes import project_profile, fuzzer_profile
 logger = logging.getLogger(name=__name__)
 
 
-class Analysis(analysis.AnalysisInterface):
+class BugDigestor(analysis.AnalysisInterface):
     """Analysis for creating input consumed by a fuzzer, e.g. a dictionary
     and fuzzer focus functions in libFuzzer. The analysis outputs this either
     in .json format or as HTML string that can be embedded in the HTML report.
@@ -60,7 +60,7 @@ class Analysis(analysis.AnalysisInterface):
         conclusions: List[html_helpers.HTMLConclusion]
     ) -> str:
         """Digests and creates HTML about bugs found by the fuzzers."""
-        logger.info(f" - Running analysis {Analysis.get_name()}")
+        logger.info(f" - Running analysis {self.get_name()}")
         input_bugs = data_loader.try_load_input_bugs()
         if len(input_bugs) == 0:
             return ""

@@ -36,7 +36,7 @@ from fuzz_introspector.datatypes import (
 logger = logging.getLogger(name=__name__)
 
 
-class Analysis(analysis.AnalysisInterface):
+class EngineInput(analysis.AnalysisInterface):
     name: str = "FuzzEngineInputAnalysis"
 
     def __init__(self) -> None:
@@ -63,7 +63,7 @@ class Analysis(analysis.AnalysisInterface):
         coverage_url: str,
         conclusions: List[html_helpers.HTMLConclusion]
     ) -> str:
-        logger.info(f" - Running analysis {Analysis.get_name()}")
+        logger.info(f" - Running analysis {self.get_name()}")
 
         if not self.display_html:
             toc_list = []
@@ -104,7 +104,7 @@ class Analysis(analysis.AnalysisInterface):
         html_string += "</div>"  # .collapsible
         html_string += "</div>"  # report-box
 
-        logger.info(f" - Completed analysis {Analysis.get_name()}")
+        logger.info(f" - Completed analysis {self.get_name()}")
         if not self.display_html:
             html_string = ""
 
@@ -164,7 +164,7 @@ class Analysis(analysis.AnalysisInterface):
             toc_list
         )
 
-        calltree_analysis = cta.Analysis()
+        calltree_analysis = cta.FuzzCalltreeAnalysis()
         fuzz_blockers = calltree_analysis.get_fuzz_blockers(
             profile,
             max_blockers_to_extract=10

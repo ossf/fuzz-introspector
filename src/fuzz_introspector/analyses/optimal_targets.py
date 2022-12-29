@@ -37,7 +37,7 @@ from fuzz_introspector.datatypes import (
 logger = logging.getLogger(name=__name__)
 
 
-class Analysis(analysis.AnalysisInterface):
+class OptimalTargets(analysis.AnalysisInterface):
     name: str = "OptimalTargets"
 
     def __init__(self) -> None:
@@ -79,7 +79,7 @@ class Analysis(analysis.AnalysisInterface):
         rather than substitute it.
         """
 
-        logger.info(f" - Running analysis {Analysis.get_name()}")
+        logger.info(f" - Running analysis {self.get_name()}")
 
         html_string = ""
         html_string += html_helpers.html_add_header_with_link(
@@ -108,7 +108,7 @@ class Analysis(analysis.AnalysisInterface):
             basefolder
         )
 
-        logger.info(f" - Completed analysis {Analysis.get_name()}")
+        logger.info(f" - Completed analysis {self.get_name()}")
         html_string += "</div>"  # .collapsible
 
         return html_string
