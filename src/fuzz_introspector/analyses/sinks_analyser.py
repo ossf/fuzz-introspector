@@ -205,9 +205,8 @@ class Analysis(analysis.AnalysisInterface):
         callsite: cfg_load.CalltreeCallsite
     ) -> str:
         """
-        Handling function name and package name combo
-        and avoid missing or double package name existed in
-        the final function name comparison.
+        Add package name to uniquly identify functions
+        in different package.
         """
         func_name = f"{callsite.dst_function_name}"
         if func_name.startswith("["):
