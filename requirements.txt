@@ -9,7 +9,7 @@ pep8
 mypy
 psutil
 pytest
-sphinx
+sphinx==6.0.0
 sphinx_rtd_theme
 configparser
 coverage
