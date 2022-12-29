@@ -198,6 +198,20 @@ class Analysis(analysis.AnalysisInterface):
 
         return (callsite_list, function_list)
 
+    def _handle_function_name(
+        self,
+        callsites: cfg_load.CalltreeCallsite
+    ) -> str:
+        """
+        This functions aims to handle the function name
+        and avoid missing or double package name existed in
+        the final function name comparison.
+        """
+        if not callsite.dst_function_name.startswith("["):
+            return f"[{callsite.dst_function_source_file}].{callsite.dst_function_name}"
+        else
+            retutn callsite.dst_function_name
+
     def _map_function_callsite(
         self,
         functions: List[function_profile.FunctionProfile],
@@ -216,7 +230,7 @@ class Analysis(analysis.AnalysisInterface):
 
         # Map callsite for all target functions
         for callsite in callsites:
-            func_name = f"[{callsite.dst_function_source_file}].{callsite.dst_function_name}"
+            func_name = self._handle_function_name(callsite)
             if func_name in callsite_dict.keys():
                 callsite_dict[func_name].append(
                     "%s#%s:%s" % (
