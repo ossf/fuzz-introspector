@@ -54,8 +54,8 @@ SINK_FUNCTION = {
         ('', 'fdopen')
     ],
     'python': [
-        ('', 'exec'),
-        ('', 'eval'),
+        ('<builtin>', 'exec'),
+        ('<builtin>', 'eval'),
         ('subprocess', 'call'),
         ('subprocess', 'run'),
         ('subprocess', 'Popen'),
@@ -269,6 +269,8 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
             elif target_lang == "python":
                 func_name = fd.function_name
                 package = fd.function_source_file
+                if func_name.startswith("<builtin>."):
+                    package, func_name = func_name.split(".", 1)
             elif target_lang == "jvm":
                 func_name = fd.function_name.split('(')[0]
                 if "." in func_name:
