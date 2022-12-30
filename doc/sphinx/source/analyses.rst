@@ -1,34 +1,47 @@
 Fuzz Introspector analyses
-==========================
+--------------------------
 
-Represents the main data types in Fuzz Introspector. These are
-relevant when developing analysis plugins as they expose the
-data from Fuzz Introspector.
+Fuzz Introspector is architected to support plugin-style development
+of analysis tooling. This makes it possible to construct tooling that
+uses Fuzz Introspector's core functionality and extends it for specific
+applications.
 
-.. automodule:: fuzz_introspector.analyses.bug_digestor
-   :members:
-   :show-inheritance:
+This page contains details about the current analysis plugins.
 
-.. automodule:: fuzz_introspector.analyses.driver_synthesizer
-   :members:
-   :show-inheritance:
+All plugins are located in `src/fuzz-introspector/analyses <https://github.com/ossf/fuzz-introspector/tree/main/src/fuzz_introspector/analyses>`_
 
-.. automodule:: fuzz_introspector.analyses.calltree_analysis
-   :members:
-   :show-inheritance:
-
-.. automodule:: fuzz_introspector.analyses.engine_input
-   :members:
-   :show-inheritance:
-
-.. automodule:: fuzz_introspector.analyses.filepath_analyser
-   :members:
-   :show-inheritance:
-
+Optimal targets
+===============
 .. automodule:: fuzz_introspector.analyses.optimal_targets
    :members:
    :show-inheritance:
 
+Runtime coverage analysis
+=========================
 .. automodule:: fuzz_introspector.analyses.runtime_coverage_analysis
+   :members:
+   :show-inheritance:
+
+Calltree analysis
+=================
+.. automodule:: fuzz_introspector.analyses.calltree_analysis
+   :members:
+   :show-inheritance:
+
+Driver synthesizer
+==================
+.. automodule:: fuzz_introspector.analyses.driver_synthesizer
+   :members:
+   :show-inheritance:
+
+Filepath analyser
+=================
+.. automodule:: fuzz_introspector.analyses.filepath_analyser
+   :members:
+   :show-inheritance:
+
+Engine input
+============
+.. automodule:: fuzz_introspector.analyses.engine_input
    :members:
    :show-inheritance:
