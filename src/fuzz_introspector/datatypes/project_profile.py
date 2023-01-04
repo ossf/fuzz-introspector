@@ -267,14 +267,13 @@ class MergedProjectProfile:
          reached_complexity_percentage,
          unreached_complexity_percentage) = self.get_complexity_summaries()
 
-        json_report.add_fuzzer_key_value_to_report(
-            "MergedProjectProfile",
+        json_report.add_project_key_value_to_report(
             "stats",
             {
                 "total-complexity": total_complexity,
                 "complexity-reached": complexity_reached,
                 "complexity-unreached": complexity_unreached,
-                "reached-complexity-percentage": complexity_unreached,
+                "reached-complexity-percentage": reached_complexity_percentage,
                 "unreached-complexity-percentage": unreached_complexity_percentage
             }
         )
