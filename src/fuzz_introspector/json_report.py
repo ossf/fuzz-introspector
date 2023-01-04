@@ -87,8 +87,28 @@ def add_fuzzer_key_value_to_report(
     """
     contents = _get_summary_dict()
 
+    # Update the report accordingly
     if fuzzer_name not in contents:
         contents[fuzzer_name] = dict()
     contents[fuzzer_name][key] = value
+
+    _overwrite_report_with_dict(contents)
+
+
+def add_project_key_value_to_report(
+    key: str,
+    value: Any
+) -> None:
+    """Add the key/value pair to the json report under the project key.
+
+    Will overwrite the existing key/value pair if the key already exists in
+    the report.
+    """
+    contents = _get_summary_dict()
+
+    # Update the report accordingly
+    if constants.JSON_REPORT_KEY_PROJECT not in contents:
+        contents[constants.JSON_REPORT_KEY_PROJECT] = dict()
+    contents[constants.JSON_REPORT_KEY_PROJECT][key] = value
 
     _overwrite_report_with_dict(contents)
