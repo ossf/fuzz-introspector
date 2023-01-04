@@ -16,8 +16,9 @@
 ################################################################################
 set -x
 echo "pep8"
-pep8 --first ./post-processing/
+pep8 --first ./src/
 echo "flake8"
-flake8 --ignore=W503,W605 --max-line-length=100 ./post-processing/
+flake8 --ignore=W503,W605 --max-line-length=100 ./src/
 echo "mypy"
-mypy -p post-processing
+cd src
+mypy --ignore-missing-imports -m main
