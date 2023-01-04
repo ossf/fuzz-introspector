@@ -18,68 +18,42 @@ import logging
 
 from typing import (
     Any,
-    List,
     Dict
 )
 
-from fuzz_introspector import analysis, constants
-from fuzz_introspector.datatypes import project_profile, fuzzer_profile
+from fuzz_introspector import constants
 
 
 logger = logging.getLogger(name=__name__)
 
 
-def _retrieve_json_section(
-    analyser_name: str,
-    analysis_instance: analysis.AnalysisInterface
-) -> str:
+def add_dict_to_json_report(dict_to_add: Dict[Any, Any]) -> None:
+    """Adds the contents of a dictionary to the contents the json report.
+    This is an expensive operation in that it will load the json report
+    to merge the contents.
     """
-    Generate json string for saving the result of a
-    specific analyser
-    """
-    if analyser_name in [item.get_name() for item in analysis.get_all_analyses()]:
-        return analysis_instance.get_json_string_result()
-    return json.dumps([])
+    logger.info("Adding contents to summary")
+    if not os.path.isfile(constants.SUMMARY_FILE):
+        existing_contents = dict()
+    else:
+        with open(constants.SUMMARY_FILE, "r") as report_fd:
+            existing_contents = json.load(report_fd)
+
+    # Update the contents
+    existing_contents.update(dict_to_add)
+
+    # Write back the json file
+    with open(constants.SUMMARY_FILE, 'w') as report_fd:
+        json.dump(existing_contents, report_fd)
 
 
-def create_json_report(
-    profiles: List[fuzzer_profile.FuzzerProfile],
-    proj_profile: project_profile.MergedProjectProfile,
-    analyser_instance_dict: Dict[str, analysis.AnalysisInterface],
-    coverage_url: str
+def add_analysis_dict_to_json_report(
+    analysis_name: str,
+    dict_to_add: Dict[Any, Any]
 ) -> None:
-    """
-    Generate json report for the fuzz-introspector execution session.
-    This method is also extendable in the future to act in more
-    results from other sessions to be included in the json format
-    of the output.
-    """
+    """Wraps dictionary into an appropriate format"""
+    add_dict_to_json_report({'analyses': {analysis_name: dict_to_add}})
 
-    logger.info(" - Creating JSON report for fuzz-introspetcor")
-    if not proj_profile.has_coverage_data():
-        logger.error(
-            "No files with coverage data was found. This is either "
-            "because an error occurred when compiling and running "
-            "coverage runs, or because the introspector run was "
-            "intentionally done without coverage collection. In order "
-            "to get optimal results coverage data is needed."
-        )
 
-    result_dict: Dict[str, Dict[str, Any]] = {'report': {}}
-    for analyses_name in analyser_instance_dict.keys():
-        logger.info(f" - Handling {analyses_name}")
-        result_str = _retrieve_json_section(
-            analyses_name,
-            analyser_instance_dict[analyses_name]
-        )
-        result_dict['report'][analyses_name] = json.loads(result_str)
-
-    result_str = json.dumps(result_dict)
-    logger.info("Finish handling sections that need json output")
-
-    # Write the json string to file
-    report_file = constants.JSON_REPORT_FILE
-    if os.path.isfile(report_file):
-        os.remove(report_file)
-    with open(report_file, "a+") as file:
-        file.write(result_str)
+def add_analysis_json_str_as_dict_to_report(analysis_name: str, json_str: str) -> None:
+    add_analysis_dict_to_json_report(analysis_name, json.loads(json_str))

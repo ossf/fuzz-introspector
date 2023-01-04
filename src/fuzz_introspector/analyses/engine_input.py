@@ -23,10 +23,13 @@ from typing import (
     Dict
 )
 
-from fuzz_introspector import analysis
-from fuzz_introspector import constants
-from fuzz_introspector import html_helpers
-from fuzz_introspector import utils
+from fuzz_introspector import (
+    analysis,
+    constants,
+    html_helpers,
+    json_report,
+    utils
+)
 from fuzz_introspector.analyses import calltree_analysis as cta
 from fuzz_introspector.datatypes import (
     project_profile,
@@ -129,6 +132,10 @@ class EngineInput(analysis.AnalysisInterface):
                 dictionary[f"k{kn}"] = const
                 kn += 1
         self.set_json_string_result(json.dumps(dictionary))
+        json_report.add_analysis_json_str_as_dict_to_report(
+            self.get_name(),
+            self.get_json_string_result()
+        )
         return dictionary_content
 
     def get_dictionary_section(

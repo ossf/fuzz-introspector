@@ -28,6 +28,7 @@ from fuzz_introspector import (
     code_coverage,
     cfg_load,
     html_helpers,
+    json_report,
     utils
 )
 
@@ -376,6 +377,10 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
         )
 
         self.set_json_string_result(json_row)
+        json_report.add_analysis_json_str_as_dict_to_report(
+            self.get_name(),
+            self.get_json_string_result()
+        )
 
         html_string = ""
         html_string += "<div class=\"report-box\">"

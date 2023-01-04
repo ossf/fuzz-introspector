@@ -829,7 +829,7 @@ def create_html_report(
     coverage_url: str,
     basefolder: str,
     report_name: str
-) -> Dict[str, analysis.AnalysisInterface]:
+) -> None:
     """
     Logs a complete report. This is the current main place for looking at
     data produced by fuzz introspector.
@@ -997,7 +997,6 @@ def create_html_report(
 
     # Combine and distinguish analyser requires output in html or both (html and json)
     combined_analyses = analyses_to_run
-    analyser_instance_dict: Dict[str, analysis.AnalysisInterface] = {}
     for analyses in output_json:
         if analyses not in analyses_to_run:
             combined_analyses.append(analyses)
@@ -1019,8 +1018,6 @@ def create_html_report(
             )
             if analysis_name in analyses_to_run:
                 html_report_core += html_string
-            if analysis_name in output_json:
-                analyser_instance_dict[analysis_name] = analysis_instance
     html_report_core += "</div>"  # .collapsible
     html_report_core += "</div>"  # report box
 
@@ -1124,6 +1121,3 @@ def create_html_report(
     style_dir = os.path.join(basedir, "styling")
     for s in ["clike.js", "prism.css", "prism.js", "styles.css", "custom.js", "calltree.js"]:
         shutil.copy(os.path.join(style_dir, s), s)
-
-    # Return analysis instance that requires json report
-    return analyser_instance_dict
