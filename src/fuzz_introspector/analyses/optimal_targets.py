@@ -330,7 +330,7 @@ class OptimalTargets(analysis.AnalysisInterface):
                        "functions in the project will be:</p>"
         table_id = "all_functions_overview_table"
         tables.append(table_id)
-        all_function_table, all_functions_json = html_report.create_all_function_table(
+        all_function_table, all_functions_json, _ = html_report.create_all_function_table(
             tables, new_profile, coverage_url, basefolder, table_id)
         html_string += all_function_table
         html_string += "</div>"  # close report-box
