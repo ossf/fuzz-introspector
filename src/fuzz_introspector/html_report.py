@@ -31,11 +31,15 @@ from typing import (
     Tuple,
 )
 
-from fuzz_introspector import analysis
-from fuzz_introspector import utils
-from fuzz_introspector import cfg_load
-from fuzz_introspector import constants
-from fuzz_introspector import html_helpers
+from fuzz_introspector import (
+    analysis,
+    cfg_load,
+    constants,
+    html_helpers,
+    json_report,
+    utils
+)
+
 from fuzz_introspector.datatypes import project_profile, fuzzer_profile
 
 
@@ -700,7 +704,7 @@ def create_fuzzer_detailed_section(
         logger.info("reachable funcs is 0")
         cov_reach_proportion = 0.0
     str_percentage = "%.5s%%" % str(cov_reach_proportion)
-    utils.write_to_summary_file(
+    json_report.add_fuzzer_key_value_to_report(
         profile.identifier,
         "coverage-blocker-stats",
         {

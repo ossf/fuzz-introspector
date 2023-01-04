@@ -25,9 +25,12 @@ from typing import (
     Tuple,
 )
 
-from fuzz_introspector import cfg_load
-from fuzz_introspector import code_coverage
-from fuzz_introspector import utils
+from fuzz_introspector import (
+    cfg_load,
+    code_coverage,
+    json_report,
+    utils
+)
 from fuzz_introspector.datatypes import function_profile
 from fuzz_introspector.exceptions import DataLoaderError
 
@@ -362,7 +365,7 @@ class FuzzerProfile:
 
     def write_stats_to_summary_file(self) -> None:
         file_target_count = len(self.file_targets) if self.file_targets is not None else 0
-        utils.write_to_summary_file(
+        json_report.add_fuzzer_key_value_to_report(
             self.identifier,
             "stats",
             {

@@ -226,27 +226,6 @@ def approximate_python_coverage_files(src1: str, src2: str) -> bool:
         return False
 
 
-def write_to_summary_file(fuzzer: str, key: str, value: Any) -> None:
-    """Writes a key value pair to summary file, for a given fuzzer
-    key. If the fuzzer does not exist as top key in the summary file
-    then it is created"""
-
-    if not os.path.isfile(constants.SUMMARY_FILE):
-        json_data = dict()
-    else:
-        json_fd = open(constants.SUMMARY_FILE)
-        json_data = json.load(json_fd)
-        json_fd.close()
-
-    if fuzzer not in json_data:
-        json_data[fuzzer] = dict()
-
-    json_data[fuzzer][key] = value
-
-    with open(constants.SUMMARY_FILE, 'w') as json_file:
-        json.dump(json_data, json_file)
-
-
 def get_target_coverage_url(
     coverage_url: str,
     target_name: str,
