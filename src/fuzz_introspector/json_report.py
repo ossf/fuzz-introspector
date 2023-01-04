@@ -18,18 +18,16 @@ import logging
 
 from typing import (
     Any,
-    List,
     Dict
 )
 
-from fuzz_introspector import analysis, constants
-from fuzz_introspector.datatypes import project_profile, fuzzer_profile
+from fuzz_introspector import constants
 
 
 logger = logging.getLogger(name=__name__)
 
 
-def add_dict_to_json_report(dict_to_add) -> None:
+def add_dict_to_json_report(dict_to_add: Dict[Any, Any]) -> None:
     """Adds the contents of a dictionary to the contents the json report.
     This is an expensive operation in that it will load the json report
     to merge the contents.
@@ -49,10 +47,13 @@ def add_dict_to_json_report(dict_to_add) -> None:
         json.dump(existing_contents, report_fd)
 
 
-def add_analysis_dict_to_json_report(analysis_name, dict_to_add) -> None:
+def add_analysis_dict_to_json_report(
+    analysis_name: str,
+    dict_to_add: Dict[Any, Any]
+) -> None:
     """Wraps dictionary into an appropriate format"""
     add_dict_to_json_report({'analyses': {analysis_name: dict_to_add}})
 
 
-def add_json_str_as_dict_to_report(analysis_name, json_str) -> None:
+def add_analysis_json_str_as_dict_to_report(analysis_name: str, json_str: str) -> None:
     add_analysis_dict_to_json_report(analysis_name, json.loads(json_str))

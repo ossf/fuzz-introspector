@@ -377,7 +377,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
         )
 
         self.set_json_string_result(json_row)
-        json_report.add_json_str_as_dict_to_report(
+        json_report.add_analysis_json_str_as_dict_to_report(
             self.get_name(),
             self.get_json_string_result()
         )
