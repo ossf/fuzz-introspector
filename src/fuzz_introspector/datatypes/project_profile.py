@@ -22,9 +22,12 @@ from typing import (
     Tuple,
 )
 
-from fuzz_introspector import code_coverage
-from fuzz_introspector import utils
-from fuzz_introspector import exceptions
+from fuzz_introspector import (
+    code_coverage,
+    exceptions,
+    json_report,
+    utils
+)
 from fuzz_introspector.datatypes import function_profile, fuzzer_profile
 
 logger = logging.getLogger(name=__name__)
@@ -264,7 +267,7 @@ class MergedProjectProfile:
          reached_complexity_percentage,
          unreached_complexity_percentage) = self.get_complexity_summaries()
 
-        utils.write_to_summary_file(
+        json_report.add_fuzzer_key_value_to_report(
             "MergedProjectProfile",
             "stats",
             {
