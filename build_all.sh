@@ -54,7 +54,7 @@ else
   git checkout release/14.x
 
   echo "Applying diffs to insert Fuzz Introspector plugin in the LLVM pipeline"
-  $BASE/sed_cmds.sh
+  $BASE/frontends/llvm/patch-llvm.sh
 
   # Now copy over the LLVM code we have
   # This includes our inspector pass and the files included.

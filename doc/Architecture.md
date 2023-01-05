@@ -78,7 +78,7 @@ PassBuilder::buildLTODefaultPipeline(OptimizationLevel Level,
   MPM.addPass(FuzzIntrospectorPass());
 ```
 i.e. we only add `MPM.addPass(FuzzIntrospectorPass());` to the LTO pass builder pipeline. All
-of the LLVM patches are given in [sed_cmds.sh](/sed_cmds.sh)
+of the LLVM patches are given in [patch-llvm.sh](/frontends/llvm/patch-llvm.sh)
 
 ### Output of LLVM plugin
 The output of the LLVM pass is composed of two files for each fuzzer executable

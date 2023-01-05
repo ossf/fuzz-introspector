@@ -67,7 +67,7 @@ git clone https://github.com/llvm/llvm-project/
 cd llvm-project/
 
 # Patch Clang to run fuzz introspector
-../../sed_cmds.sh
+../../frontends/llvm/patch-llvm.sh
 cp -rf ../../frontends/llvm/include/llvm/Transforms/FuzzIntrospector/ ./llvm/include/llvm/Transforms/FuzzIntrospector
 cp -rf ../../frontends/llvm/lib/Transforms/FuzzIntrospector ./llvm/lib/Transforms/FuzzIntrospector
 cd ../
