@@ -285,6 +285,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
             # Add the function profile to the result list if it matches one of the target
             if (package, func_name) in SINK_FUNCTION[target_lang]:
                 function_list.append(fd)
+
         return function_list
 
     def _retrieve_content_rows(
@@ -302,9 +303,9 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
         """
         html_string = ""
         json_list = []
-        json_dict: Dict[str, Any] = {}
 
         for fd in self._filter_function_list(functions, target_lang):
+            json_dict: Dict[str, Any] = {}
             # Loop through the list of calledlocation for this function
             if len(func_callsites[fd.function_name]) == 0:
                 html_string += html_helpers.html_table_add_row([
