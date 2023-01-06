@@ -21,7 +21,6 @@ from fuzz_introspector import analysis
 from fuzz_introspector import constants
 from fuzz_introspector import data_loader
 from fuzz_introspector import html_report
-from fuzz_introspector import json_report
 from fuzz_introspector import utils
 from fuzz_introspector.datatypes import project_profile
 
@@ -100,7 +99,7 @@ def run_analysis_on_dir(
 
     logger.info(f"Analyses to run: {str(analyses_to_run)}")
     logger.info("[+] Creating HTML report")
-    analyser_instance_dict = html_report.create_html_report(
+    html_report.create_html_report(
         profiles,
         proj_profile,
         analyses_to_run,
@@ -109,15 +108,5 @@ def run_analysis_on_dir(
         proj_profile.basefolder,
         report_name
     )
-
-    logger.info(f"Analyses with json output: {str(analyser_instance_dict.keys())}")
-    if len(analyser_instance_dict.keys()) > 0:
-        logger.info("[+] Creating JSON report")
-        json_report.create_json_report(
-            profiles,
-            proj_profile,
-            analyser_instance_dict,
-            coverage_url
-        )
 
     return constants.APP_EXIT_SUCCESS

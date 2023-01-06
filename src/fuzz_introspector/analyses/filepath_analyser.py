@@ -29,7 +29,7 @@ from fuzz_introspector.datatypes import project_profile, fuzzer_profile
 logger = logging.getLogger(name=__name__)
 
 
-class Analysis(analysis.AnalysisInterface):
+class FilePathAnalysis(analysis.AnalysisInterface):
     name: str = "FilePathAnalyser"
 
     def __init__(self) -> None:
@@ -65,7 +65,7 @@ class Analysis(analysis.AnalysisInterface):
         coverage_url: str,
         conclusions: List[html_helpers.HTMLConclusion]
     ) -> str:
-        logger.info(f" - Running analysis {Analysis.get_name()}")
+        logger.info(f" - Running analysis {self.get_name()}")
 
         all_proj_files = self.all_files_targeted(proj_profile)
         all_proj_dirs = set()

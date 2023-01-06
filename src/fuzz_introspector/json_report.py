@@ -18,68 +18,97 @@ import logging
 
 from typing import (
     Any,
-    List,
     Dict
 )
 
-from fuzz_introspector import analysis, constants
-from fuzz_introspector.datatypes import project_profile, fuzzer_profile
+from fuzz_introspector import constants
 
 
 logger = logging.getLogger(name=__name__)
 
 
-def _retrieve_json_section(
-    analyser_name: str,
-    analysis_instance: analysis.AnalysisInterface
-) -> str:
-    """
-    Generate json string for saving the result of a
-    specific analyser
-    """
-    if analyser_name in [item.get_name() for item in analysis.get_all_analyses()]:
-        return analysis_instance.get_json_string_result()
-    return json.dumps([])
+def _get_summary_dict() -> Dict[Any, Any]:
+    """Returns the current json report on disk as a dictionary."""
+    if not os.path.isfile(constants.SUMMARY_FILE):
+        existing_contents = dict()
+    else:
+        with open(constants.SUMMARY_FILE, "r") as report_fd:
+            existing_contents = json.load(report_fd)
+
+    return existing_contents
 
 
-def create_json_report(
-    profiles: List[fuzzer_profile.FuzzerProfile],
-    proj_profile: project_profile.MergedProjectProfile,
-    analyser_instance_dict: Dict[str, analysis.AnalysisInterface],
-    coverage_url: str
+def _overwrite_report_with_dict(new_dict: Dict[Any, Any]) -> None:
+    """Writes `new_dict` as contents to the report on disk. Will overwrite any
+    contents of the existing report.
+    """
+    # Write back the json file
+    with open(constants.SUMMARY_FILE, 'w') as report_fd:
+        json.dump(dict(new_dict), report_fd)
+
+
+def add_analysis_dict_to_json_report(
+    analysis_name: str,
+    dict_to_add: Dict[Any, Any]
 ) -> None:
+    """Wraps dictionary into an appropriate format
+
+    Will overwrite the existing key/value pair for the analysis if it already
+    exists as an analysis in the report.
     """
-    Generate json report for the fuzz-introspector execution session.
-    This method is also extendable in the future to act in more
-    results from other sessions to be included in the json format
-    of the output.
+    contents = _get_summary_dict()
+    if 'analyses' not in contents:
+        contents['analyses'] = dict()
+    contents['analyses'][analysis_name] = dict_to_add
+
+    _overwrite_report_with_dict(contents)
+
+
+def add_analysis_json_str_as_dict_to_report(
+    analysis_name: str,
+    json_str: str
+) -> None:
+    """Converts a json string to a dictionary and add it to the report.
+
+    Will overwrite the existing key/value pair for the analysis if it already
+    exists as an analysis in the report."""
+    add_analysis_dict_to_json_report(analysis_name, json.loads(json_str))
+
+
+def add_fuzzer_key_value_to_report(
+    fuzzer_name: str,
+    key: str,
+    value: Any
+) -> None:
+    """Add the key/value pair to the json report under the fuzzer key.
+
+    Will overwrite the existing key/value pair under the fuzzer if it already
+    exists in the report.
     """
+    contents = _get_summary_dict()
 
-    logger.info(" - Creating JSON report for fuzz-introspetcor")
-    if not proj_profile.has_coverage_data():
-        logger.error(
-            "No files with coverage data was found. This is either "
-            "because an error occurred when compiling and running "
-            "coverage runs, or because the introspector run was "
-            "intentionally done without coverage collection. In order "
-            "to get optimal results coverage data is needed."
-        )
+    # Update the report accordingly
+    if fuzzer_name not in contents:
+        contents[fuzzer_name] = dict()
+    contents[fuzzer_name][key] = value
 
-    result_dict: Dict[str, Dict[str, Any]] = {'report': {}}
-    for analyses_name in analyser_instance_dict.keys():
-        logger.info(f" - Handling {analyses_name}")
-        result_str = _retrieve_json_section(
-            analyses_name,
-            analyser_instance_dict[analyses_name]
-        )
-        result_dict['report'][analyses_name] = json.loads(result_str)
+    _overwrite_report_with_dict(contents)
 
-    result_str = json.dumps(result_dict)
-    logger.info("Finish handling sections that need json output")
 
-    # Write the json string to file
-    report_file = constants.JSON_REPORT_FILE
-    if os.path.isfile(report_file):
-        os.remove(report_file)
-    with open(report_file, "a+") as file:
-        file.write(result_str)
+def add_project_key_value_to_report(
+    key: str,
+    value: Any
+) -> None:
+    """Add the key/value pair to the json report under the project key.
+
+    Will overwrite the existing key/value pair if the key already exists in
+    the report.
+    """
+    contents = _get_summary_dict()
+
+    # Update the report accordingly
+    if constants.JSON_REPORT_KEY_PROJECT not in contents:
+        contents[constants.JSON_REPORT_KEY_PROJECT] = dict()
+    contents[constants.JSON_REPORT_KEY_PROJECT][key] = value
+
+    _overwrite_report_with_dict(contents)

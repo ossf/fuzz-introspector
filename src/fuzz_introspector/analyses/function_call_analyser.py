@@ -34,7 +34,7 @@ from fuzz_introspector.datatypes import (
 logger = logging.getLogger(name=__name__)
 
 
-class Analysis(analysis.AnalysisInterface):
+class ThirdPartyAPICoverageAnalyser(analysis.AnalysisInterface):
     """This Analysis aims to analyse and generate html report content table
     to show all occurence of third party function call within the target
     project and if those calls are statically reached or dynamically covered.
@@ -189,7 +189,7 @@ class Analysis(analysis.AnalysisInterface):
            call location is dynamically covered by any of the fuzzers, and also show the
            name of the fuzzers that covered that line of code.
         """
-        logger.info(f" - Running analysis {Analysis.get_name()}")
+        logger.info(f" - Running analysis {self.get_name()}")
 
         # Getting data
         callsite_list = []

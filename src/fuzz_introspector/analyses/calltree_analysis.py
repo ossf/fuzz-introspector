@@ -40,7 +40,7 @@ from fuzz_introspector.html_report import create_collapsible_element
 logger = logging.getLogger(name=__name__)
 
 
-class Analysis(analysis.AnalysisInterface):
+class FuzzCalltreeAnalysis(analysis.AnalysisInterface):
     name: str = "FuzzCalltreeAnalysis"
 
     def __init__(self) -> None:

@@ -26,11 +26,15 @@ from typing import (
     Type,
 )
 
-from fuzz_introspector import utils
-from fuzz_introspector import constants
-from fuzz_introspector import cfg_load
-from fuzz_introspector import code_coverage
-from fuzz_introspector import html_helpers
+from fuzz_introspector import (
+    cfg_load,
+    code_coverage,
+    constants,
+    html_helpers,
+    json_report,
+    utils
+)
+
 from fuzz_introspector.datatypes import (
     project_profile,
     fuzzer_profile,
@@ -130,31 +134,8 @@ class FuzzBranchBlocker:
 
 
 def get_all_analyses() -> List[Type[AnalysisInterface]]:
-    # Ordering here is important as top analysis will be shown first in the report
-    from fuzz_introspector.analyses import (
-        driver_synthesizer,
-        engine_input,
-        optimal_targets,
-        runtime_coverage_analysis,
-        bug_digestor,
-        filepath_analyser,
-        function_call_analyser,
-        metadata,
-        sinks_analyser
-    )
-
-    analysis_array = [
-        optimal_targets.Analysis,
-        engine_input.Analysis,
-        runtime_coverage_analysis.Analysis,
-        driver_synthesizer.Analysis,
-        bug_digestor.Analysis,
-        filepath_analyser.Analysis,
-        function_call_analyser.Analysis,
-        metadata.Analysis,
-        sinks_analyser.Analysis
-    ]
-    return analysis_array
+    from fuzz_introspector import analyses
+    return analyses.all_analyses
 
 
 def callstack_get_parent(
@@ -443,7 +424,11 @@ def overlay_calltree_with_coverage(
                 'function_name': blk.function_name
             }
         )
-    utils.write_to_summary_file(profile.identifier, 'branch_blockers', branch_blockers_list)
+    json_report.add_fuzzer_key_value_to_report(
+        profile.identifier,
+        'branch_blockers',
+        branch_blockers_list
+    )
 
 
 def update_branch_complexities(all_functions: Dict[str, function_profile.FunctionProfile],

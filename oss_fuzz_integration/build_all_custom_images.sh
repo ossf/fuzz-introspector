@@ -35,7 +35,6 @@ rm -rf ./oss-fuzz/infra/base-images/base-clang/fuzz-introspector/
 mkdir ./oss-fuzz/infra/base-images/base-clang/fuzz-introspector/
 
 cp -rf ../frontends ./oss-fuzz/infra/base-images/base-clang/fuzz-introspector/frontends
-cp ../sed_cmds.sh ./oss-fuzz/infra/base-images/base-clang/fuzz-introspector/sed_cmds.sh
 cp -rf ../src ./oss-fuzz/infra/base-images/base-clang/fuzz-introspector/src
 cp -rf ../src ./oss-fuzz/infra/base-images/base-builder/src
 

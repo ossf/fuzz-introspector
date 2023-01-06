@@ -34,6 +34,14 @@ else
   # Build  binutils
   cd $BUILD_BASE
   git clone --depth 1 https://github.com/bminor/binutils-gdb binutils
+
+  # Remove some directories we don't need
+  cd binutils
+  rm -rf ./gcc
+  rm -rf ./gdb
+  cd ../
+
+  # Build gold
   mkdir build
   cd ./build
   ../binutils/configure --enable-gold --enable-plugins --disable-werror
@@ -46,7 +54,7 @@ else
   git checkout release/14.x
 
   echo "Applying diffs to insert Fuzz Introspector plugin in the LLVM pipeline"
-  $BASE/sed_cmds.sh
+  $BASE/frontends/llvm/patch-llvm.sh
 
   # Now copy over the LLVM code we have
   # This includes our inspector pass and the files included.

@@ -28,6 +28,7 @@ from fuzz_introspector import (
     code_coverage,
     cfg_load,
     html_helpers,
+    json_report,
     utils
 )
 
@@ -44,14 +45,18 @@ SINK_FUNCTION = {
     'c-cpp': [
         ('', 'system'),
         ('', 'execl'),
+        ('', 'execlp'),
+        ('', 'execle'),
+        ('', 'execv'),
+        ('', 'execvp'),
         ('', 'execve'),
         ('', 'wordexp'),
         ('', 'popen'),
         ('', 'fdopen')
     ],
     'python': [
-        ('', 'exec'),
-        ('', 'eval'),
+        ('<builtin>', 'exec'),
+        ('<builtin>', 'eval'),
         ('subprocess', 'call'),
         ('subprocess', 'run'),
         ('subprocess', 'Popen'),
@@ -60,8 +65,15 @@ SINK_FUNCTION = {
         ('os', 'popen'),
         ('os', 'spawnlpe'),
         ('os', 'spawnve'),
+        ('os', 'exec'),
         ('os', 'execl'),
+        ('os', 'execle'),
+        ('os', 'execlp'),
+        ('os', 'execlpe'),
+        ('os', 'execv'),
         ('os', 'execve'),
+        ('os', 'execvp'),
+        ('os', 'execlpe'),
         ('asyncio', 'create_subprocess_shell'),
         ('asyncio', 'create_subprocess_exec'),
         ('asyncio', 'run'),
@@ -108,7 +120,7 @@ SINK_FUNCTION = {
 }
 
 
-class Analysis(analysis.AnalysisInterface):
+class SinkCoverageAnalyser(analysis.AnalysisInterface):
     """This Analysis aims to analyse and generate html report content table
     to show all occurence of possible sink functions / methods existed in the
     target project and if those functions / methods are statically reached or
@@ -134,7 +146,8 @@ class Analysis(analysis.AnalysisInterface):
         self.json_string_result = json_string
 
     def _get_source_file(self, callsite) -> str:
-        """This function aims to dig up the callsitecalltree of a function
+        """
+        Dig up the callsitecalltree of a function
         call and get its source file path.
         """
         src_file = callsite.src_function_source_file
@@ -147,7 +160,8 @@ class Analysis(analysis.AnalysisInterface):
         return src_file
 
     def _get_parent_func_name(self, callsite) -> str:
-        """This function aims to dig up the callsitecalltree of a function
+        """
+        Dig up the callsitecalltree of a function
         call and get its parent function name.
         """
         func_file = callsite.src_function_source_file
@@ -187,15 +201,29 @@ class Analysis(analysis.AnalysisInterface):
 
         return (callsite_list, function_list)
 
+    def _handle_function_name(
+        self,
+        callsite: cfg_load.CalltreeCallsite
+    ) -> str:
+        """
+        Add package name to uniquly identify functions
+        in different package.
+        """
+        func_name = f"{callsite.dst_function_name}"
+        if func_name.startswith("["):
+            return func_name
+        else:
+            return f"[{callsite.dst_function_source_file}].{func_name}"
+
     def _map_function_callsite(
         self,
         functions: List[function_profile.FunctionProfile],
         callsites: List[cfg_load.CalltreeCallsite]
     ) -> Dict[str, List[str]]:
         """
-        This function aims to dig up the callsite for each function
-        and store the mapped source location and line number list as
-        a formatted string list.
+        Dig up the callsite for each function and store
+        the mapped source location and line number list
+        as a formatted string list.
         """
         callsite_dict: Dict[str, List[str]] = dict()
 
@@ -205,7 +233,7 @@ class Analysis(analysis.AnalysisInterface):
 
         # Map callsite for all target functions
         for callsite in callsites:
-            func_name = f"[{callsite.dst_function_source_file}].{callsite.dst_function_name}"
+            func_name = self._handle_function_name(callsite)
             if func_name in callsite_dict.keys():
                 callsite_dict[func_name].append(
                     "%s#%s:%s" % (
@@ -227,9 +255,9 @@ class Analysis(analysis.AnalysisInterface):
         target_lang: str
     ) -> List[function_profile.FunctionProfile]:
         """
-        This function aim to filter out target list of functions
-        which are considered as sinks for separate langauge which
-        is the major analysing target for this SinkAnalyser.
+        Filter out target list of functions which are considered
+        as sinks for separate langauge which is the major
+        analysing target for this SinkAnalyser.
         """
         function_list = []
 
@@ -242,6 +270,8 @@ class Analysis(analysis.AnalysisInterface):
             elif target_lang == "python":
                 func_name = fd.function_name
                 package = fd.function_source_file
+                if func_name.startswith("<builtin>."):
+                    package, func_name = func_name.split(".", 1)
             elif target_lang == "jvm":
                 func_name = fd.function_name.split('(')[0]
                 if "." in func_name:
@@ -255,7 +285,6 @@ class Analysis(analysis.AnalysisInterface):
             # Add the function profile to the result list if it matches one of the target
             if (package, func_name) in SINK_FUNCTION[target_lang]:
                 function_list.append(fd)
-
         return function_list
 
     def _retrieve_content_rows(
@@ -266,41 +295,41 @@ class Analysis(analysis.AnalysisInterface):
         coverage: code_coverage.CoverageProfile
     ) -> Tuple[str, str]:
         """
-        This method aims to retrieve the table content for this analyser
-        in two formats. One in normal html table rows string and the other
-        is a json string for generating separate json report for sink
-        coverage that could be readable by external analyser.
+        Retrieve the content for this analyser in two formats. One in
+        normal html table rows string and the other is in json string
+        for generating separate json report for sink coverage that
+        could be readable by external analyser.
         """
         html_string = ""
         json_list = []
+        json_dict: Dict[str, Any] = {}
 
         for fd in self._filter_function_list(functions, target_lang):
             # Loop through the list of calledlocation for this function
-            for called_location in func_callsites[fd.function_name]:
-                # Determine if this called location is covered by any fuzzers
-                fuzzer_hit = False
-                for parent_func in fd.incoming_references:
-                    try:
-                        lineno = int(called_location.split(":")[1])
-                    except ValueError:
-                        continue
-                    if coverage.is_func_lineno_hit(parent_func, lineno):
-                        fuzzer_hit = True
-                        break
-                list_of_fuzzer_covered = fd.reached_by_fuzzers if fuzzer_hit else [""]
+            if len(func_callsites[fd.function_name]) == 0:
+                html_string += html_helpers.html_table_add_row([
+                    f"{fd.function_name}",
+                    "Not in call tree",
+                    f"{str(fd.reached_by_fuzzers)}]"
+                ])
 
+                json_dict['func_name'] = fd.function_name
+                json_dict['call_loc'] = "Not in call tree"
+                json_dict['fuzzer_reach'] = fd.reached_by_fuzzers
+                json_list.append(json_dict)
+
+                continue
+
+            for called_location in func_callsites[fd.function_name]:
                 html_string += html_helpers.html_table_add_row([
                     f"{fd.function_name}",
                     f"{called_location}",
-                    f"{str(fd.reached_by_fuzzers)}]",
-                    f"{str(list_of_fuzzer_covered)}"
+                    f"{str(fd.reached_by_fuzzers)}]"
                 ])
 
-                json_dict: Dict[str, Any] = {}
                 json_dict['func_name'] = fd.function_name
                 json_dict['call_loc'] = called_location
-                json_dict['static_reach'] = fd.reached_by_fuzzers
-                json_dict['dynamic_reach'] = list_of_fuzzer_covered
+                json_dict['fuzzer_reach'] = fd.reached_by_fuzzers
                 json_list.append(json_dict)
 
         return (html_string, json.dumps(json_list))
@@ -331,7 +360,7 @@ class Analysis(analysis.AnalysisInterface):
            those sink functions / methods.
         Remark: json report will be generated instead of html report if tables is None
         """
-        logger.info(f" - Running analysis {Analysis.get_name()}")
+        logger.info(f" - Running analysis {self.get_name()}")
 
         # Get full function /  callsite list for all fuzzer's profiles
         callsite_list, function_list = self._retrieve_data_list(proj_profile, profiles)
@@ -348,6 +377,10 @@ class Analysis(analysis.AnalysisInterface):
         )
 
         self.set_json_string_result(json_row)
+        json_report.add_analysis_json_str_as_dict_to_report(
+            self.get_name(),
+            self.get_json_string_result()
+        )
 
         html_string = ""
         html_string += "<div class=\"report-box\">"
@@ -394,12 +427,9 @@ class Analysis(analysis.AnalysisInterface):
                 ("Callsite location",
                  "Source file, line number and parent function of this function call. "
                  "Based on static analysis."),
-                ("Reached by fuzzer statically",
+                ("Reached by fuzzer",
                  "Is this code reachable by any functions? "
-                 "Based on static analysis."),
-                ("Covered by Fuzzers on runtime",
-                 "The specific list of fuzzers that cover this function call. "
-                 "Based on dynamic analysis.")
+                 "Based on static analysis.")
             ]
         )
 
@@ -410,5 +440,5 @@ class Analysis(analysis.AnalysisInterface):
         html_string += "</div>"  # .collapsible
         html_string += "</div>"  # report-box
 
-        logger.info(f" - Finish running analysis {Analysis.get_name()}")
+        logger.info(f" - Finish running analysis {self.get_name()}")
         return html_string

@@ -31,11 +31,15 @@ from typing import (
     Tuple,
 )
 
-from fuzz_introspector import analysis
-from fuzz_introspector import utils
-from fuzz_introspector import cfg_load
-from fuzz_introspector import constants
-from fuzz_introspector import html_helpers
+from fuzz_introspector import (
+    analysis,
+    cfg_load,
+    constants,
+    html_helpers,
+    json_report,
+    utils
+)
+
 from fuzz_introspector.datatypes import project_profile, fuzzer_profile
 
 
@@ -181,7 +185,7 @@ def create_all_function_table(
         coverage_url: str,
         basefolder: str,
         table_id: Optional[str] = None
-) -> Tuple[str, List[typing.Dict[str, Any]]]:
+) -> Tuple[str, List[typing.Dict[str, Any]], List[typing.Dict[str, Any]]]:
     """Table for all functions in the project. Contains many details about each
         function"""
     random_suffix = '_' + ''.join(
@@ -231,7 +235,8 @@ def create_all_function_table(
     # an array in development to replace html generation in python.
     # this will be stored as a json object and will be used to populate
     # the table in the frontend
-    table_rows = []
+    table_rows_json_html = []
+    table_rows_json_report = []
 
     for fd_k, fd in proj_profile.all_functions.items():
         demangled_func_name = utils.demangle_cpp_func(fd.function_name)
@@ -282,7 +287,7 @@ def create_all_function_table(
         else:
             args_row = "0"
 
-        table_rows.append({
+        table_rows_json_html.append({
             "Func name": func_name_row,
             "func_url": func_cov_url,
             "Functions filename": fd.function_source_file,
@@ -300,8 +305,26 @@ def create_all_function_table(
             "Accumulated cyclomatic complexity": fd.total_cyclomatic_complexity,
             "Undiscovered complexity": fd.new_unreached_complexity
         })
+        table_rows_json_report.append({
+            "Func name": demangled_func_name,
+            "func_url": func_cov_url,
+            "Functions filename": fd.function_source_file,
+            "Args": str(fd.arg_types),
+            "Function call depth": fd.function_depth,
+            "Reached by Fuzzers": reached_by_fuzzers_row,
+            "collapsible_id": collapsible_id,
+            "Fuzzers runtime hit": func_hit_at_runtime_row,
+            "Func lines hit %": "%.5s" % (str(hit_percentage)) + "%",
+            "I Count": fd.i_count,
+            "BB Count": fd.bb_count,
+            "Cyclomatic complexity": fd.cyclomatic_complexity,
+            "Functions reached": len(fd.functions_reached),
+            "Reached by functions": len(fd.incoming_references),
+            "Accumulated cyclomatic complexity": fd.total_cyclomatic_complexity,
+            "Undiscovered complexity": fd.new_unreached_complexity
+        })
     html_string += ("</table>\n")
-    return html_string, table_rows
+    return html_string, table_rows_json_html, table_rows_json_report
 
 
 def create_collapsible_element(
@@ -508,7 +531,7 @@ def create_fuzzer_detailed_section(
         "Call tree", 3, toc_list, link=f"call_tree_{curr_tt_profile}")
 
     from fuzz_introspector.analyses import calltree_analysis as cta
-    calltree_analysis = cta.Analysis()
+    calltree_analysis = cta.FuzzCalltreeAnalysis()
     calltree_file_name = calltree_analysis.create_calltree(profile)
 
     html_string += f"""<p class='no-top-margin'>The calltree shows the
@@ -700,7 +723,7 @@ def create_fuzzer_detailed_section(
         logger.info("reachable funcs is 0")
         cov_reach_proportion = 0.0
     str_percentage = "%.5s%%" % str(cov_reach_proportion)
-    utils.write_to_summary_file(
+    json_report.add_fuzzer_key_value_to_report(
         profile.identifier,
         "coverage-blocker-stats",
         {
@@ -829,7 +852,7 @@ def create_html_report(
     coverage_url: str,
     basefolder: str,
     report_name: str
-) -> Dict[str, analysis.AnalysisInterface]:
+) -> None:
     """
     Logs a complete report. This is the current main place for looking at
     data produced by fuzz introspector.
@@ -955,11 +978,19 @@ def create_html_report(
 
     table_id = "fuzzers_overview_table"
     tables.append(table_id)
-    all_function_table, all_functions_json = create_all_function_table(
+    (all_function_table,
+     all_functions_json_html,
+     all_functions_json_report) = create_all_function_table(
         tables, proj_profile, coverage_url, basefolder, table_id)
     html_report_core += all_function_table
     html_report_core += "</div>"  # .collapsible
     html_report_core += "</div>"  # report box
+
+    # Dump all functions in json report
+    json_report.add_project_key_value_to_report(
+        "all-functions",
+        all_functions_json_report
+    )
 
     #############################################
     # Section with details about each fuzzer, including calltree.
@@ -997,7 +1028,6 @@ def create_html_report(
 
     # Combine and distinguish analyser requires output in html or both (html and json)
     combined_analyses = analyses_to_run
-    analyser_instance_dict: Dict[str, analysis.AnalysisInterface] = {}
     for analyses in output_json:
         if analyses not in analyses_to_run:
             combined_analyses.append(analyses)
@@ -1019,8 +1049,6 @@ def create_html_report(
             )
             if analysis_name in analyses_to_run:
                 html_report_core += html_string
-            if analysis_name in output_json:
-                analyser_instance_dict[analysis_name] = analysis_instance
     html_report_core += "</div>"  # .collapsible
     html_report_core += "</div>"  # report box
 
@@ -1107,7 +1135,7 @@ def create_html_report(
     # Write all functions to the .js file
     with open(report_name, "a+") as all_funcs_json_file:
         all_funcs_json_file.write("var all_functions_table_data = ")
-        all_funcs_json_file.write(json.dumps(all_functions_json))
+        all_funcs_json_file.write(json.dumps(all_functions_json_html))
 
     # Remove existing fuzzer table data .js file
     js_file = "fuzzer_table_data.js"
@@ -1124,6 +1152,3 @@ def create_html_report(
     style_dir = os.path.join(basedir, "styling")
     for s in ["clike.js", "prism.css", "prism.js", "styles.css", "custom.js", "calltree.js"]:
         shutil.copy(os.path.join(style_dir, s), s)
-
-    # Return analysis instance that requires json report
-    return analyser_instance_dict

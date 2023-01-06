@@ -29,7 +29,7 @@ from fuzz_introspector.datatypes import project_profile, fuzzer_profile
 logger = logging.getLogger(name=__name__)
 
 
-class Analysis(analysis.AnalysisInterface):
+class RuntimeCoverageAnalysis(analysis.AnalysisInterface):
     name: str = "RuntimeCoverageAnalysis"
 
     def __init__(self) -> None:
@@ -55,7 +55,7 @@ class Analysis(analysis.AnalysisInterface):
         coverage_url: str,
         conclusions: List[html_helpers.HTMLConclusion]
     ) -> str:
-        logger.info(f" - Running analysis {Analysis.get_name()}")
+        logger.info(f" - Running analysis {self.get_name()}")
 
         html_string = ""
         html_string += "<div class=\"report-box\">"
@@ -120,7 +120,7 @@ class Analysis(analysis.AnalysisInterface):
         html_string += "</div>"  # .collapsible
         html_string += "</div>"  # report-box
 
-        logger.info(f" - Completed analysis {Analysis.get_name()}")
+        logger.info(f" - Completed analysis {self.get_name()}")
 
         return html_string
 
