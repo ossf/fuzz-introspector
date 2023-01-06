@@ -111,7 +111,7 @@ SINK_FUNCTION = {
         ('java.lang.ProcessBuilder', 'directory'),
         ('java.lang.ProcessBuilder', 'inheritIO'),
         ('java.lang.ProcessBuilder', 'command'),
-        ('java.lang.ProcessBuilder', 'edirectError'),
+        ('java.lang.ProcessBuilder', 'redirectError'),
         ('java.lang.ProcessBuilder', 'redirectErrorStream'),
         ('java.lang.ProcessBuilder', 'redirectInput'),
         ('java.lang.ProcessBuilder', 'redirectOutput'),
@@ -285,6 +285,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
             # Add the function profile to the result list if it matches one of the target
             if (package, func_name) in SINK_FUNCTION[target_lang]:
                 function_list.append(fd)
+
         return function_list
 
     def _retrieve_content_rows(
@@ -302,18 +303,20 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
         """
         html_string = ""
         json_list = []
-        json_dict: Dict[str, Any] = {}
 
         for fd in self._filter_function_list(functions, target_lang):
+            json_dict: Dict[str, Any] = {}
             # Loop through the list of calledlocation for this function
             if len(func_callsites[fd.function_name]) == 0:
                 html_string += html_helpers.html_table_add_row([
                     f"{fd.function_name}",
+                    f"{fd.function_source_file}:{fd.function_linenumber}",
                     "Not in call tree",
                     f"{str(fd.reached_by_fuzzers)}]"
                 ])
 
                 json_dict['func_name'] = fd.function_name
+                json_dict['func_src'] = f"{fd.function_source_file}:{fd.function_linenumber}"
                 json_dict['call_loc'] = "Not in call tree"
                 json_dict['fuzzer_reach'] = fd.reached_by_fuzzers
                 json_list.append(json_dict)
@@ -323,11 +326,13 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
             for called_location in func_callsites[fd.function_name]:
                 html_string += html_helpers.html_table_add_row([
                     f"{fd.function_name}",
+                    f"{fd.function_source_file}:{fd.function_linenumber}",
                     f"{called_location}",
                     f"{str(fd.reached_by_fuzzers)}]"
                 ])
 
                 json_dict['func_name'] = fd.function_name
+                json_dict['func_src'] = f"{fd.function_source_file}:{fd.function_linenumber}"
                 json_dict['call_loc'] = called_location
                 json_dict['fuzzer_reach'] = fd.reached_by_fuzzers
                 json_list.append(json_dict)
@@ -424,6 +429,8 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
             tables[-1],
             [
                 ("Target sink", ""),
+                ("Sink source location",
+                 "Source file and line number information for the sink function"),
                 ("Callsite location",
                  "Source file, line number and parent function of this function call. "
                  "Based on static analysis."),
