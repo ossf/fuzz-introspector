@@ -17,5 +17,6 @@ eventually helps in developing better fuzzers.
   :maxdepth: 1
 
   getting-started/index
+  user-guides/index
   oss-fuzz/index
   development/index
