@@ -142,7 +142,45 @@ This is option 2.
 Python
 ......
 
-Guide to installing Python
+The Python frontend uses the Abstract Syntax Tree to generate the data needed
+by Fuzz Introspector. This is in contrast to the LLVM and Java frontends, which
+both relies on compiled code. The benefit of this is that it is lighter from
+a user perspective, however, the disadvantage is that there is less information
+in the AST than in the compiled code.
+
+The easiest way to getting started with Fuzz Introspector for Python is to
+build one of the testcases bundled in the Fuzz Introspector repository. We do
+this using the following steps starting from the root of the Fuzz Introspector
+repository:
+
+.. code-block:: bash
+
+   # Ensure that the Python frontend is in the PYTHONPATH
+   cd frontends/python/PyCG
+   export PYTHONPATH=$PWD
+   cd ../../../
+
+   # Build one of the Python examples
+   cd tests/python/test4
+   mkdir work
+   cd work
+
+   # Run the frontend on the code to extract data about the software package
+   python3 ../../../../frontends/python/main.py \
+       --fuzzer $PWD/../fuzz_test.py \
+       --package=$PWD/../
+   cd ..
+
+   # Analyse the extract data and generate an HTML report
+   mkdir web
+   cd web
+   python3 ../../../../src/main.py report \
+     --target_dir=$PWD/../work \
+     --language=python
+
+   # Launch srver to view the generated HTML report
+   python3 -m http.server 8008
+
 
 .. _java:
 
