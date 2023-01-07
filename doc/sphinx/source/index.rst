@@ -6,7 +6,12 @@
 Welcome to Fuzz Introspector's documentation!
 =============================================
 
-Fuzz introspector is a tool to help fuzzer developers to get an understanding of their fuzzer’s performance and identify any potential blockers. Fuzz introspector aggregates the fuzzers’ functional data like coverage, hit frequency, entry points, etc to give the developer a birds eye view of their fuzzer. This helps with identifying fuzz bottlenecks and blockers and eventually helps in developing better fuzzers.
+Fuzz introspector is a tool to help fuzzer developers to get an understanding
+of their fuzzer’s performance and identify any potential blockers. Fuzz
+Introspector aggregates the fuzzers’ functional data like coverage, hit
+frequency, entry points, etc to give the developer a birds eye view of their
+fuzzer. This helps with identifying fuzz bottlenecks and blockers and
+eventually helps in developing better fuzzers.
 
 .. toctree::
   :maxdepth: 1
