@@ -51,7 +51,7 @@ You can then launch a simple web server following the description:
 
 
 Generate Fuzz Introspector report with latest public corpus
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-----------------------------------------------------------
 
 Runtime code coverage is a central theme in Fuzz Introspector. It helps us
 understand the actual code executed by our fuzzers, and is a core part of
@@ -63,8 +63,7 @@ corpus to generate an almost-up-to-date understanding of how much of the code
 OSS-Fuzz has analysed.
 
 To use the latest corpus, we just need to `--public-corpora` to the
-`introspector` command. The following example shows how to do this in a
-similar fashion to the example above:
+`introspector` command. The following example shows how to do this:
 
 .. code-block:: bash
 
