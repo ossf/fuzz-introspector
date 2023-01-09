@@ -1,11 +1,18 @@
 User guides
 ===========
 
-A set of user guides.
+In this section we present various guides on how to use Fuzz Introspector. The
+guides are rooted in real-world examples. The guides are meant for a reference
+on how to use Fuzz Introspector to improve your fuzzing set up, but it can also
+be used as a general reference on various approaches to fuzzing software.
 
-We are going to rely on OSS-Fuzz when going through these guides. This is
-because the OSS-Fuzz interface to Fuzz Introspector is straightforward to
-install and set up. For details on this, please see
+Many of the guides will be using OSS-Fuzz projects as a reference example and
+we will use the OSS-Fuzz infrastructure to carry out many examples.
+
+This is for two reasons. First, OSS-Fuzz has a myriad of important open source
+projects that already use Fuzz Introspector, which provides a great data set.
+Second, OSS-Fuzz has implemented an interface to Fuzz Introspector that is
+straightforward to install and set up. For details on this, please see
 :ref:`Running introspector on an OSS-Fuzz project`.
 
 
@@ -94,10 +101,11 @@ search functionality of the table to find our code, which gives us:
 The rest of the columns are important too, however, they do not reveal much
 to us with respect to how `well` the function is fuzzed. Rather they tell us
 parts about the function e.g. is it a complex function and how much code it
-reaches, so we will not go in-depth with these columns at this moment.
+reaches, so we will not go in-depth with these columns at this moment. Instead
+we conclude that the a larger fraction of the function is fuzzed
+(``74.15%``) and it is being analysed by a single fuzzer.
 
-Instead we conclude that the a larger fraction of the function is fuzzed
-(``74.15%``) and it is being analysed by a single fuzzer. The next step is to
+The next step is to
 assess what code of the function is being fuzzed. To asssess this we use the
 URL provided by the name of the function to get direct access to the code
 coverage report affiliated with this Fuzz Introspector report. So, we click the
@@ -118,3 +126,8 @@ and
 
 .. image:: /user-guides/images/libdwarf-missing-cov-3.png
    :alt: Missing code coverage
+
+We can now conclude that the code is well-fuzzed in general as the coverage is
+high. We can extend the fuzzing by having more than one fuzzer target the code,
+for new fuzzers a good idea is to try and trigger the function in a different
+way than the existin fuzzer with the goal of analysing the uncovered code.
