@@ -128,7 +128,6 @@ This is option 2.
     # navigate to the report in your local browser (localhost:8008):
     python3 -m http.server 8008
 
-.. _python:
 
 Python
 ......
@@ -172,8 +171,6 @@ repository:
    # Launch srver to view the generated HTML report
    python3 -m http.server 8008
 
-
-.. _java:
 
 Java
 ....
