@@ -65,9 +65,9 @@ Identify how well a specific function is fuzzed
    **Why is it relevant to identify function-specific info?**
 
    The assumption when looking for function-specific information is that you
-   have paritular interest in a given function. The reasons you could have this
-   is e.g. the function have particular criticality with respect to the threat
-   model of the code, the code of the function is particular volatile and
+   have particular interest in a given function. The reasons you could have this
+   is e.g. the function has particular criticality with respect to the threat
+   model of the code, the code of the function is particularly volatile and
    changes often so it's important to ensure fuzzing continues to analyse
    all corners of the function, or something third.
 
@@ -82,7 +82,7 @@ available `libdwarf OSS-Fuzz report <https://storage.googleapis.com/oss-fuzz-int
 We will use the table available in the `project functions overview <https://storage.googleapis.com/oss-fuzz-introspector/libdwarf/inspector-report/20230109/fuzz_report.html#Project-functions-overview>`_ section.
 
 This table gives us information about each function in the project and also
-provides relevant link to the code coverage report if available. We use the
+provides a relevant link to the code coverage report if available. We use the
 search functionality of the table to find our code, which gives us:
 
 
@@ -102,11 +102,11 @@ The rest of the columns are important too, however, they do not reveal much
 to us with respect to how `well` the function is fuzzed. Rather they tell us
 parts about the function e.g. is it a complex function and how much code it
 reaches, so we will not go in-depth with these columns at this moment. Instead
-we conclude that the a larger fraction of the function is fuzzed
+we conclude that a larger fraction of the function is fuzzed
 (``74.15%``) and it is being analysed by a single fuzzer.
 
 The next step is to
-assess what code of the function is being fuzzed. To asssess this we use the
+assess what code of the function is being fuzzed. To assess this we use the
 URL provided by the name of the function to get direct access to the code
 coverage report affiliated with this Fuzz Introspector report. So, we click the
 URL of the function name in the table, which takes us to the
@@ -130,4 +130,4 @@ and
 We can now conclude that the code is well-fuzzed in general as the coverage is
 high. We can extend the fuzzing by having more than one fuzzer target the code,
 for new fuzzers a good idea is to try and trigger the function in a different
-way than the existin fuzzer with the goal of analysing the uncovered code.
+way than the existing fuzzer with the goal of analysing the uncovered code.
