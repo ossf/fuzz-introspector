@@ -311,7 +311,7 @@ def create_all_function_table(
             "Functions filename": fd.function_source_file,
             "Args": str(fd.arg_types),
             "Function call depth": fd.function_depth,
-            "Reached by Fuzzers": reached_by_fuzzers_row,
+            "Reached by Fuzzers": fd.reached_by_fuzzers,
             "collapsible_id": collapsible_id,
             "Fuzzers runtime hit": func_hit_at_runtime_row,
             "Func lines hit %": "%.5s" % (str(hit_percentage)) + "%",
