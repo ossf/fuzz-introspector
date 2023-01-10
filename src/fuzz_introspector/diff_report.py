@@ -82,6 +82,9 @@ def _compare_coverage_of_all_functions(first_report, second_report):
 
     report2_smaller_cov = []
     report2_larger_cov = []
+
+    report1_reached_only = []
+    report2_reached_only = []
     for func1 in all_funcs1:
         # Find the relevant func in func2
         func2 = None
@@ -108,6 +111,15 @@ def _compare_coverage_of_all_functions(first_report, second_report):
             )
             report2_smaller_cov.append(msg)
 
+        func1_reachability = func1['Reached by Fuzzers']
+        func2_reachability = func2['Reached by Fuzzers']
+
+        if len(func1_reachability) != 0 and len(func2_reachability) == 0:
+            report1_reached_only.append(func1['Func name'])
+        if len(func1_reachability) == 0 and len(func2_reachability) != 0:
+            report2_reached_only.append(func1['Func name'])
+
+    print("\n## Code coverge comparison")
     print("The following functions report 2 has decreased code coverage:")
     for msg in report2_smaller_cov:
         print(msg)
@@ -116,6 +128,26 @@ def _compare_coverage_of_all_functions(first_report, second_report):
     print("The following functions report 2 has increased code coverage:")
     for msg in report2_larger_cov:
         print(msg)
+
+    print("\n## Reachability comparison")
+
+    if len(report1_reached_only) == 0 and len(report2_reached_only) == 0:
+        print("The reachability in the reports is similar")
+    else:
+        print("The following functions are only reachable in report 1:")
+        if len(report1_reached_only) > 0:
+            for func_name in report1_reached_only:
+                print(func_name)
+        else:
+            print("- All functions reachable in report 1 are reachable in report 2")
+
+        print("")
+        print("The following functions are only reachable in report 2:")
+        if len(report2_reached_only) > 0:
+            for func_name in report2_reached_only:
+                print(func_name)
+        else:
+            print("- All functions reachable in report 2 are reachable in report 1")
 
 
 def _compare_report_dictionaries(first_report, second_report):
