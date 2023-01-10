@@ -27,6 +27,7 @@ from fuzz_introspector.datatypes import project_profile
 
 logger = logging.getLogger(name=__name__)
 
+
 def diff_two_reports(report1: str, report2: str) -> int:
     diff_report.diff_two_reports(report1, report2)
     return constants.APP_EXIT_SUCCESS

@@ -20,6 +20,7 @@ from fuzz_introspector import (
     exceptions
 )
 
+
 def diff_two_reports(report_first_path, report_second_path):
     """Diffs two fuzz introspector json reports.
 
@@ -61,16 +62,16 @@ def _compare_numericals(num1, num2, title="", to_print=True) -> int:
       1 if num1 > num2
     """
     if num1 < num2:
-        msg = "Report 2 has a larger %s than report 1"%(title)
+        msg = "Report 2 has a larger %s than report 1" % (title)
         ret_val = -1
     if num1 == num2:
-        msg = "Report 2 has similar %s to report 1"%(title)
+        msg = "Report 2 has similar %s to report 1" % (title)
         ret_val = 0
     if num1 > num2:
-        msg = "Report 2 has less %s than report 1"%(title)
+        msg = "Report 2 has less %s than report 1" % (title)
         ret_val = 1
     if to_print:
-        print("%s - {report 1: %s / report 2: %s})"%(msg, str(num1), str(num2)))
+        print("%s - {report 1: %s / report 2: %s})" % (msg, str(num1), str(num2)))
 
     return ret_val
 
@@ -93,14 +94,14 @@ def _compare_coverage_of_all_functions(first_report, second_report):
 
         cmp = _compare_numericals(func1_cov, func2_cov, to_print=False)
         if cmp == -1:
-            msg = "Report 2 has more coverage {%6s vs %6s} for %s"% (
+            msg = "Report 2 has more coverage {%6s vs %6s} for %s" % (
                 func1_cov,
                 func2_cov,
                 func2['Func name'],
             )
             report2_larger_cov.append(msg)
         if cmp == 1:
-            msg = "Report 2 has less coverage {%6s vs %6s} for %s"% (
+            msg = "Report 2 has less coverage {%6s vs %6s} for %s" % (
                 func1_cov,
                 func2_cov,
                 func2['Func name'],
@@ -115,6 +116,7 @@ def _compare_coverage_of_all_functions(first_report, second_report):
     print("The following functions report 2 has increased code coverage:")
     for msg in report2_larger_cov:
         print(msg)
+
 
 def _compare_report_dictionaries(first_report, second_report):
     first_merged_profile = first_report['MergedProjectProfile']

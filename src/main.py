@@ -107,7 +107,7 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
     )
 
     # Command for diffing two Fuzz Introspector reports
-    diff_parser  = subparsers.add_parser(
+    diff_parser = subparsers.add_parser(
         'diff',
         help='Diff two reports to identify improvements/regressions'
     )
