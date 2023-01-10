@@ -76,7 +76,7 @@ def _compare_numericals(num1, num2, title="", to_print=True) -> int:
     return ret_val
 
 
-def _compare_coverage_of_all_functions(first_report, second_report):
+def _compare_summary_of_all_functions(first_report, second_report):
     all_funcs1 = first_report['MergedProjectProfile']['all-functions']
     all_funcs2 = second_report['MergedProjectProfile']['all-functions']
 
@@ -160,8 +160,8 @@ def _compare_report_dictionaries(first_report, second_report):
         'Total complexity'
     )
 
-    # Difference in code coverage
-    _compare_coverage_of_all_functions(
+    # Summary of difference between all functions
+    _compare_summary_of_all_functions(
         first_report,
         second_report
     )
