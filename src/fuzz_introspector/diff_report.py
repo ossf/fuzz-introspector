@@ -92,8 +92,8 @@ def _compare_summary_of_all_functions(first_report, second_report):
             if func1['Func name'] == tmp_func2['Func name']:
                 func2 = tmp_func2
 
-        func1_cov = func1['Func lines hit %']
-        func2_cov = func2['Func lines hit %']
+        func1_cov = float(func1['Func lines hit %'].replace("%",""))
+        func2_cov = float(func2['Func lines hit %'].replace("%",""))
 
         cmp = _compare_numericals(func1_cov, func2_cov, to_print=False)
         if cmp == -1:
