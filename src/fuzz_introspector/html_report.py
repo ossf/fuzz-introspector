@@ -424,10 +424,14 @@ def create_boxed_top_summary_info(
     graph2_percentage = str(round(reached_complexity_percentage, 2))
     graph2_numbers = f"{complexity_reached}/{int(total_complexity)}"
     html_string += create_percentage_graph(graph2_title, graph2_percentage, graph2_numbers)
+
     if display_coverage:
-        logger.info("Displaying coverage in summary")
         covered_funcs = proj_profile.get_all_runtime_covered_functions()
-        html_string += create_covered_func_box(str(len(covered_funcs)))
+        graph3_title = "Runtime code coverage of functions"
+        cov_percentage = round(len(covered_funcs) / total_functions, 2) * 100.0
+        graph3_percentage = str(cov_percentage)
+        graph3_numbers = f"{len(covered_funcs)} / {total_functions}"
+        html_string += create_percentage_graph(graph3_title, graph3_percentage, graph3_numbers)
 
     # Add conclusion
     if extract_conclusion:
