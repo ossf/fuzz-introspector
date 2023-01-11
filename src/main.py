@@ -106,6 +106,24 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
         help="Directory with binaries to scan for Fuzz introspector tags"
     )
 
+    # Command for diffing two Fuzz Introspector reports
+    diff_parser = subparsers.add_parser(
+        'diff',
+        help='Diff two reports to identify improvements/regressions'
+    )
+    diff_parser.add_argument(
+        '--report1',
+        type=str,
+        required=True,
+        help='Path to the first report'
+    )
+    diff_parser.add_argument(
+        '--report2',
+        type=str,
+        required=True,
+        help='Path to the second report'
+    )
+
     return parser
 
 
@@ -142,6 +160,8 @@ def main() -> int:
         logger.info("Ending fuzz introspector report generation")
     elif args.command == 'correlate':
         return_code = commands.correlate_binaries_to_logs(args.binaries_dir)
+    elif args.command == 'diff':
+        return_code = commands.diff_two_reports(args.report1, args.report2)
     else:
         return_code = constants.APP_EXIT_ERROR
     logger.info("Ending fuzz introspector post-processing")

@@ -20,11 +20,17 @@ from typing import List
 from fuzz_introspector import analysis
 from fuzz_introspector import constants
 from fuzz_introspector import data_loader
+from fuzz_introspector import diff_report
 from fuzz_introspector import html_report
 from fuzz_introspector import utils
 from fuzz_introspector.datatypes import project_profile
 
 logger = logging.getLogger(name=__name__)
+
+
+def diff_two_reports(report1: str, report2: str) -> int:
+    diff_report.diff_two_reports(report1, report2)
+    return constants.APP_EXIT_SUCCESS
 
 
 def correlate_binaries_to_logs(binaries_dir: str) -> int:
