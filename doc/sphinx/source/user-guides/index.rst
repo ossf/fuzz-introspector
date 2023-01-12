@@ -84,7 +84,7 @@ from our stating point:
    In this sense, the fuzzer targets the majority of the code. However,
    the project has significantly lower runtime code coverage than it has static
    reachability. This is an indication there may be something at runtime that
-   stops the fuzzer from exploring signifant parts of the code.
+   stops the fuzzer from exploring significant parts of the code.
 2. **Is there room for improving the fuzzing set up?** Yes, and likely the improvement
    needed is increased code coverage as the fuzzer will have a lot of the logic
    for reaching most of the code.
@@ -97,12 +97,12 @@ identify where we can do these improvements.
 
 From our work so far, one of the observations we have is that runtime code
 coverage is significantly lower then statically reachable code. This means
-that some of the code that the fuzzer should be able to execute is actully
+that some of the code that the fuzzer should be able to execute is actually
 not being executed: there will be code coverage gaps in the statically
 extracted callgraph of the fuzzer. To explore this idea further, we navigate
 to the section "Fuzzer details" -> "Fuzzer: hts_open_fuzzer" -> "Call graph".
 This section has a shortcut in the table of contents on the left-hand side.
-Here, we see the following overview of the callgraph overlayed with code
+Here, we see the following overview of the callgraph overlaid with code
 coverage:
 
 .. figure:: /user-guides/images/htslib-userguide-calltree-overview.png
@@ -144,7 +144,7 @@ and doing that on the nodes just below the fuzz blocker gives:
 After collapsing the element we can observe the uncovered node has a large
 subtree in the callgraph, namely it contains the nodes [1932 : 3317].
 
-At this stage we have a good understand of where an inefficiency exists. The
+At this stage we have a good understanding of where inefficiency exists. The
 next step is to map this understanding onto the actual code of htslib, such
 that we can look at the code in order to understand how to overcome this
 inefficiency. To do this, we go back to the Fuzz Blocker table and observe the
