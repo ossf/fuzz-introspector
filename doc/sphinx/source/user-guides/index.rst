@@ -100,7 +100,7 @@ coverage is significantly lower then statically reachable code. This means
 that some of the code that the fuzzer should be able to execute is actually
 not being executed: there will be code coverage gaps in the statically
 extracted callgraph of the fuzzer. To explore this idea further, we navigate
-to the section "Fuzzer details" -> "Fuzzer: hts_open_fuzzer" -> "Call graph".
+to the section *Fuzzer details* -> *Fuzzer: hts_open_fuzzer* -> *Call graph*.
 This section has a shortcut in the table of contents on the left-hand side.
 Here, we see the following overview of the callgraph overlaid with code
 coverage:
@@ -158,14 +158,14 @@ destination of the link gives us:
    :alt: Blocker in code
 
 Looking at the code, without much knowledge about htslib itself, we can see
-the `if (fd->mode == 'w'` fails in each fuzz run and this causes the fuzzer
+the ``if (fd->mode == 'w'`` fails in each fuzz run and this causes the fuzzer
 not to explore the underlying code. We can also observe the
-`cram_flush_container_mt` function call from inside the conditional statement
+``cram_flush_container_mt`` function call from inside the conditional statement
 corresponds to the node in the callgraph that we collapsed, meaning that this
 is the exact function call we want to trigger in order to increase the code
-coverage of our fuzzer. It is fair to assume that the `fd->mode` corresponds
+coverage of our fuzzer. It is fair to assume that the ``fd->mode`` corresponds
 to some mode that a given file description is opened with. Based on the report,
-we can conclude that this is likely always `!= 'w'` for each fuzz run, and this
+we can conclude that this is likely always ``!= 'w'`` for each fuzz run, and this
 is what we have to overcome.
 
 Looking at the source code of the fuzzer, which we can do by way of the code
@@ -175,15 +175,14 @@ we can see the following lines of code:
 .. figure:: /user-guides/images/htslib-fuzzer-sourcecode.png
    :alt: Blocker in code
 
-The code opens a file using the mode `rb`. A reasonable assumption at this point
-is this may be related to check `== w` failing.
+The code opens a file using the mode ``rb``. A reasonable assumption at this point
+is this may be related to check ``== w`` failing.
 
-At this point, we will stop our initial study, as we have enough analysis for a
-quick skim of the status of the htslib fuzzing. We can come up with an initial
-answer to the original question ** what are the areas that seem most intuitive to improve?**:
+At this point, we will stop our initial study as we have enough analysis for
+coming up with an answer to the original question **what are the areas that seem most intuitive to improve?**:
 The most intuitive approach at this point is to try and modify the fuzzer such
-that it opens files in `w` mode, as it seems like the current state is limited
-to `rb`, and the effect of this is that a large part of the control-flow graph
+that it opens files in ``w`` mode, as it seems like the current state is limited
+to ``rb``, and the effect of this is that a large part of the control-flow graph
 is uncovered.
 
 Find the most complex function in the target code
