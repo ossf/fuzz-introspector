@@ -406,14 +406,14 @@ class FuzzCalltreeAnalysis(analysis.AnalysisInterface):
             if file_link is not None:
                 cs_link = (
                     "<span class=\"text-link\">"
-                    f"<a href=\"{file_link}?scrollToNode={node_id}\">call site"
+                    f"<a href=\"{file_link}?scrollToNode={node_id}\">call site: {node_id}"
                     "</a></span>"
                 )
             else:
                 cs_link = (
                     "<span class=\"text-link\" "
                     f"onclick=\" scrollToNodeInCT('{node_id}')\">"
-                    "call site</span>"
+                    "call site: {node_id}</span>"
                 )
             html_table_string += html_helpers.html_table_add_row([
                 str(node.cov_forward_reds),
@@ -484,14 +484,14 @@ class FuzzCalltreeAnalysis(analysis.AnalysisInterface):
             if file_link is not None:
                 cs_link = (
                     "<span class=\"text-link\">"
-                    f"<a href=\"{file_link}?scrollToNode={node_id}\">call site"
+                    f"<a href=\"{file_link}?scrollToNode={node_id}\">call site: {node_id}"
                     "</a></span>"
                 )
             else:
                 cs_link = (
                     "<span class=\"text-link\" "
                     f"onclick=\" scrollToNodeInCT('{node_id}')\">"
-                    "call site</span>"
+                    f"call site: {node_id}</span>"
                 )
             collapsible_id = entry.source_file + entry.blocked_side_line_numder + random_suffix
             func_num = len(entry.blocked_unique_funcs)
