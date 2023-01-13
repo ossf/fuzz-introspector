@@ -20,8 +20,8 @@ straightforward to install and set up. For details on this, please see
    :maxdepth: 3
    
 
-Getting a quick overview of the status of a projects
-----------------------------------------------------
+Getting a quick overview of the status of a project
+---------------------------------------------------
 
 .. note::
   This user guide presents how a quick assessment can be done of the fuzzing
