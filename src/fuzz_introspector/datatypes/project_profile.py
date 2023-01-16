@@ -262,14 +262,15 @@ class MergedProjectProfile:
 
     def get_function_callpaths(
         self,
-        target_function: function_profile.FunctionProfile
+        target_function: function_profile.FunctionProfile,
+        max_count: int
     ) -> List[List[function_profile.FunctionProfile]]:
         """
         Recrusively resolve the incoming reference of a function
         profile and build up lists of function callpaths to reach
         the target function.
         """
-        if len(target_function.incoming_references):
+        if len(target_function.incoming_references) == 0 or max_count > 10:
             # Outtest function
             return [[]]
 
@@ -277,7 +278,7 @@ class MergedProjectProfile:
         for func_name in target_function.incoming_references:
             if func_name in self.all_functions.keys():
                 fd = self.all_functions[func_name]
-                inner_list = self.get_function_callpaths(fd)
+                inner_list = self.get_function_callpaths(fd, max_count + 1)
                 for list in inner_list:
                     list.append(fd)
                     result_list.append(list)

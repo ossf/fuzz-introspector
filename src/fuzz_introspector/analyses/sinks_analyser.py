@@ -320,7 +320,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
 
         for fd in self._filter_function_list(functions, target_lang):
             json_dict: Dict[str, Any] = {}
-            callpath_list = proj_profile.get_function_callpaths(fd)
+            callpath_list = proj_profile.get_function_callpaths(fd, 0)
             callpath_str = self._print_callpath_list(callpath_list)
             # Loop through the list of calledlocation for this function
             if len(func_callsites[fd.function_name]) == 0:
