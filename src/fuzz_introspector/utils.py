@@ -28,6 +28,8 @@ from typing import (
 )
 
 from fuzz_introspector import constants
+from fuzz_introspector.datatypes import function_profile
+
 
 logger = logging.getLogger(name=__name__)
 
@@ -281,12 +283,12 @@ def build_function_callpath(
     profile and build up lists of function callpaths to reach
     the target function.
     """
-    if len(target_function.income_reference):
-        #Outtest function
+    if len(target_function.incoming_references):
+        # Outtest function
         return [[]]
 
     result_list: List[List[function_profile.FunctionProfile]] = []
-    for func_name in target_function.income_reference:
+    for func_name in target_function.incoming_references:
         if func_name in all_functions.keys():
             fd = all_functions[func_name]
             inner_list = build_function_callpath(all_functions, fd)

@@ -290,7 +290,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
 
     def _print_callpath_list(
         self,
-        callpath_list : List[List[function_profile.FunctionProfile]]
+        callpath_list: List[List[function_profile.FunctionProfile]]
     ) -> List[str]:
         """
         Pretty print the callpath list
@@ -304,7 +304,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
     def _retrieve_content_rows(
         self,
         functions: List[function_profile.FunctionProfile],
-        all_functions: List[function_profile.FunctionProfile],
+        all_functions: Dict[str, function_profile.FunctionProfile],
         target_lang: str,
         func_callsites: Dict[str, List[str]],
         coverage: code_coverage.CoverageProfile
@@ -328,8 +328,8 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
                     f"{fd.function_name}",
                     f"{fd.function_source_file}:{fd.function_linenumber}",
                     "Not in call tree",
-                    f"{str(fd.reached_by_fuzzers)}]",
-                    f"{str(callpath_str))"
+                    f"{str(fd.reached_by_fuzzers)}",
+                    f"{str(callpath_str)}"
                 ])
 
                 json_dict['func_name'] = fd.function_name
@@ -346,8 +346,8 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
                     f"{fd.function_name}",
                     f"{fd.function_source_file}:{fd.function_linenumber}",
                     f"{called_location}",
-                    f"{str(fd.reached_by_fuzzers)}]"
-                    f"{str(callpath_str))"
+                    f"{str(fd.reached_by_fuzzers)}"
+                    f"{str(callpath_str)}"
                 ])
 
                 json_dict['func_name'] = fd.function_name
