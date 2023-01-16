@@ -28,7 +28,6 @@ from typing import (
 )
 
 from fuzz_introspector import constants
-from fuzz_introspector.datatypes import function_profile
 
 
 logger = logging.getLogger(name=__name__)
@@ -272,30 +271,6 @@ def load_func_names(
             continue
         loaded.append(demangle_cpp_func(reached))
     return loaded
-
-
-def build_function_callpath(
-    all_functions: Dict[str, function_profile.FunctionProfile],
-    target_function: function_profile.FunctionProfile
-) -> List[List[function_profile.FunctionProfile]]:
-    """
-    Recrusively resolve the incoming reference of a function
-    profile and build up lists of function callpaths to reach
-    the target function.
-    """
-    if len(target_function.incoming_references):
-        # Outtest function
-        return [[]]
-
-    result_list: List[List[function_profile.FunctionProfile]] = []
-    for func_name in target_function.incoming_references:
-        if func_name in all_functions.keys():
-            fd = all_functions[func_name]
-            inner_list = build_function_callpath(all_functions, fd)
-            for list in inner_list:
-                list.append(fd)
-                result_list.append(list)
-    return result_list
 
 
 def resolve_coverage_link(

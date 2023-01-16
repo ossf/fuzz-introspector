@@ -304,7 +304,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
     def _retrieve_content_rows(
         self,
         functions: List[function_profile.FunctionProfile],
-        all_functions: Dict[str, function_profile.FunctionProfile],
+        proj_profile: project_profile.MergedProjectProfile,
         target_lang: str,
         func_callsites: Dict[str, List[str]],
         coverage: code_coverage.CoverageProfile
@@ -320,7 +320,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
 
         for fd in self._filter_function_list(functions, target_lang):
             json_dict: Dict[str, Any] = {}
-            callpath_list = utils.build_function_callpath(all_functions, fd)
+            callpath_list = proj_profile.get_function_callpaths(fd)
             callpath_str = self._print_callpath_list(callpath_list)
             # Loop through the list of calledlocation for this function
             if len(func_callsites[fd.function_name]) == 0:
@@ -396,7 +396,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
         # Retrieve table content rows
         html_rows, json_row = self._retrieve_content_rows(
             function_list,
-            proj_profile.all_functions,
+            proj_profile,
             profiles[0].target_lang,
             function_callsite_dict,
             proj_profile.runtime_coverage
