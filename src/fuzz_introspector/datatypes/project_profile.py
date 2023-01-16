@@ -283,7 +283,6 @@ class MergedProjectProfile:
                     result_list.append(list)
         return result_list
 
-
     def write_stats_to_summary_file(self) -> None:
         (total_complexity,
          complexity_reached,
