@@ -147,6 +147,18 @@ def main_loop():
         target_dir = os.path.join(testdir, latest_corp)
         shutil.copytree(latest_corp, target_dir)
 
+        # Copy the all_functions.js and summary.json into the emperical test set for jvm project
+        try:
+            shutil.copy(
+                os.path.join(target_dir, "inspector-report/all_functions.js"),
+                os.path.join("/home/arthur/codetest/retrieve_result/all_functions/", project)
+            )
+            shutil.copy(
+                os.path.join(target_dir, "inspector-report/summary.json"),
+                os.path.join("/home/arthur/codetest/retrieve_result/fs-json/", project)
+            )
+        except:
+             continue
         print("Checking %s" % (project))
 
         # Check project checker
