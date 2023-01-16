@@ -270,7 +270,7 @@ class MergedProjectProfile:
         profile and build up lists of function callpaths to reach
         the target function.
         """
-        if len(target_function.incoming_references) == 0 or max_count > 10:
+        if len(target_function.incoming_references) == 0 or max_count > 100:
             # Outtest function
             return [[]]
 
@@ -282,6 +282,9 @@ class MergedProjectProfile:
                 for list in inner_list:
                     list.append(fd)
                     result_list.append(list)
+                # Temp fix to bypass recrusion limit
+                break
+                # End of temp fix
         return result_list
 
     def write_stats_to_summary_file(self) -> None:

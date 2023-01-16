@@ -296,9 +296,15 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
         Pretty print the callpath list
         """
         result_list = []
-        for item in callpath_list:
-            callpath = str(item).replace(",", "->")
-            result_list.append(callpath)
+        callpath_str = ""
+        for callpath in callpath_list:
+            for item in callpath:
+               if callpath_str:
+                   callpath_str = f"{callpath_str} -> {item.function_name}"
+               else:
+                   callpath_str = f"{item.function_name}"
+            callpath_str = f"{callpath_str}"
+            result_list.append(callpath_str)
         return result_list
 
     def _retrieve_content_rows(
