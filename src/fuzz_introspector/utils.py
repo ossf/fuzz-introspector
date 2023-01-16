@@ -272,6 +272,30 @@ def load_func_names(
     return loaded
 
 
+def build_function_callpath(
+    all_functions: Dict[str, function_profile.FunctionProfile],
+    target_function: function_profile.FunctionProfile
+) -> List[List[function_profile.FunctionProfile]]:
+    """
+    Recrusively resolve the incoming reference of a function
+    profile and build up lists of function callpaths to reach
+    the target function.
+    """
+    if len(target_function.income_reference):
+        #Outtest function
+        return [[]]
+
+    result_list: List[List[function_profile.FunctionProfile]] = []
+    for func_name in target_function.income_reference:
+        if func_name in all_functions.keys():
+            fd = all_functions[func_name]
+            inner_list = build_function_callpath(all_functions, fd)
+            for list in inner_list:
+                list.append(fd)
+                result_list.append(list)
+    return result_list
+
+
 def resolve_coverage_link(
     cov_url: str,
     source_file: str,
