@@ -299,10 +299,10 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
         callpath_str = ""
         for callpath in callpath_list:
             for item in callpath:
-               if callpath_str:
-                   callpath_str = f"{callpath_str} -> {item.function_name}"
-               else:
-                   callpath_str = f"{item.function_name}"
+                if callpath_str:
+                    callpath_str = f"{callpath_str} -> {item.function_name}"
+                else:
+                    callpath_str = f"{item.function_name}"
             callpath_str = f"{callpath_str}"
             result_list.append(callpath_str)
         return result_list
@@ -326,8 +326,9 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
 
         for fd in self._filter_function_list(functions, target_lang):
             json_dict: Dict[str, Any] = {}
-            callpath_list = proj_profile.get_function_callpaths(fd, 0)
+            callpath_list = proj_profile.get_function_callpaths(fd)
             callpath_str = self._print_callpath_list(callpath_list)
+
             # Loop through the list of calledlocation for this function
             if len(func_callsites[fd.function_name]) == 0:
                 html_string += html_helpers.html_table_add_row([

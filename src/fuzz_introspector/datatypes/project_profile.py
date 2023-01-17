@@ -263,14 +263,14 @@ class MergedProjectProfile:
     def get_function_callpaths(
         self,
         target_function: function_profile.FunctionProfile,
-        max_count: int
+        handled_function: List[function_profile.FunctionProfile] = []
     ) -> List[List[function_profile.FunctionProfile]]:
         """
-        Recrusively resolve the incoming reference of a function
+        Recursively resolve the incoming reference of a function
         profile and build up lists of function callpaths to reach
         the target function.
         """
-        if len(target_function.incoming_references) == 0 or max_count > 100:
+        if len(target_function.incoming_references) == 0:
             # Outtest function
             return [[]]
 
@@ -278,13 +278,15 @@ class MergedProjectProfile:
         for func_name in target_function.incoming_references:
             if func_name in self.all_functions.keys():
                 fd = self.all_functions[func_name]
-                inner_list = self.get_function_callpaths(fd, max_count + 1)
+                if fd in handled_function:
+                    continue
+
+                # Handle new function profile
+                handled_function.append(fd)
+                inner_list = self.get_function_callpaths(fd, handled_function)
                 for list in inner_list:
                     list.append(fd)
                     result_list.append(list)
-                # Temp fix to bypass recrusion limit
-                break
-                # End of temp fix
         return result_list
 
     def write_stats_to_summary_file(self) -> None:
