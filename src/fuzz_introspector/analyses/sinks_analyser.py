@@ -65,7 +65,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
         config.read(os.path.join(os.path.dirname(os.path.realpath(__file__)), '.sink_function'))
 
         for lang in SUPPORTED_LANG:
-            self.sink_function[lang] = eval(config.get(lang, 'SINK_FUNCTION').replace('\n',''))
+            self.sink_function[lang] = eval(config.get(lang, 'SINK_FUNCTION').replace('\n', ''))
 
     @classmethod
     def get_name(cls):
@@ -191,7 +191,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
         as sinks for separate langauge which is the major
         analysing target for this SinkAnalyser.
         """
-        function_list = []
+        function_list: List[function_profile.FunctionProfile] = []
 
         # Fail safe for non-supported language
         if target_lang not in SUPPORTED_LANG:
