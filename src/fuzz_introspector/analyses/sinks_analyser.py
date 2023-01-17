@@ -15,6 +15,7 @@
 
 import json
 import logging
+import configparser
 
 from typing import (
     Any,
@@ -40,84 +41,7 @@ from fuzz_introspector.datatypes import (
 
 logger = logging.getLogger(name=__name__)
 
-# Common sink functions / methods for different language implementation
-SINK_FUNCTION = {
-    'c-cpp': [
-        ('', 'system'),
-        ('', 'execl'),
-        ('', 'execlp'),
-        ('', 'execle'),
-        ('', 'execv'),
-        ('', 'execvp'),
-        ('', 'execve'),
-        ('', 'wordexp'),
-        ('', 'popen'),
-        ('', 'fdopen')
-    ],
-    'python': [
-        ('<builtin>', 'exec'),
-        ('<builtin>', 'eval'),
-        ('subprocess', 'call'),
-        ('subprocess', 'run'),
-        ('subprocess', 'Popen'),
-        ('subprocess', 'check_output'),
-        ('os', 'system'),
-        ('os', 'popen'),
-        ('os', 'spawnlpe'),
-        ('os', 'spawnve'),
-        ('os', 'exec'),
-        ('os', 'execl'),
-        ('os', 'execle'),
-        ('os', 'execlp'),
-        ('os', 'execlpe'),
-        ('os', 'execv'),
-        ('os', 'execve'),
-        ('os', 'execvp'),
-        ('os', 'execlpe'),
-        ('asyncio', 'create_subprocess_shell'),
-        ('asyncio', 'create_subprocess_exec'),
-        ('asyncio', 'run'),
-        ('asyncio', 'sleep'),
-        ('logging.config', 'listen'),
-        ('code.InteractiveInterpreter', 'runsource'),
-        ('code.InteractiveInterpreter', 'runcode'),
-        ('code.InteractiveInterpreter', 'write'),
-        ('code.InteractiveConsole', 'push'),
-        ('code.InteractiveConsole', 'interact'),
-        ('code.InteractiveConsole', 'raw_input'),
-        ('code', 'interact'),
-        ('code', 'compile_command')
-    ],
-    'jvm': [
-        ('java.lang.Runtime', 'exec'),
-        ('javax.xml.xpath.XPath', 'compile'),
-        ('javax.xml.xpath.XPath', 'evaluate'),
-        ('java.lang.Thread', 'sleep'),
-        ('java.lang.Thread', 'run'),
-        ('java.lang.Runnable', 'run'),
-        ('java.util.concurrent.Executor', 'execute'),
-        ('java.util.concurrent.Callable', 'call'),
-        ('java.lang.System', 'console'),
-        ('java.lang.System', 'load'),
-        ('java.lang.System', 'loadLibrary'),
-        ('java.lang.System', 'apLibraryName'),
-        ('java.lang.System', 'runFinalization'),
-        ('java.lang.System', 'setErr'),
-        ('java.lang.System', 'setIn'),
-        ('java.lang.System', 'setOut'),
-        ('java.lang.System', 'setProperties'),
-        ('java.lang.System', 'setProperty'),
-        ('java.lang.System', 'setSecurityManager'),
-        ('java.lang.ProcessBuilder', 'directory'),
-        ('java.lang.ProcessBuilder', 'inheritIO'),
-        ('java.lang.ProcessBuilder', 'command'),
-        ('java.lang.ProcessBuilder', 'redirectError'),
-        ('java.lang.ProcessBuilder', 'redirectErrorStream'),
-        ('java.lang.ProcessBuilder', 'redirectInput'),
-        ('java.lang.ProcessBuilder', 'redirectOutput'),
-        ('java.lang.ProcessBuilder', 'start')
-    ]
-}
+SUPPORTED_LANG = ['c-cpp', 'python', 'jvm']
 
 
 class SinkCoverageAnalyser(analysis.AnalysisInterface):
@@ -134,6 +58,13 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
 
     def __init__(self) -> None:
         self.json_string_result = "[]"
+        self.sink_function = dict()
+
+        config = configparser.ConfigParser()
+        config.read('.sink_function')
+
+        for lang in SUPPORTED_LANG:
+            self.sink_function[lang] = eval(config.get(lang, 'SINK_FUNCTION').replace('\n',''))
 
     @classmethod
     def get_name(cls):
@@ -261,6 +192,10 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
         """
         function_list = []
 
+        # Fail safe for non-supported language
+        if target_lang not in SUPPORTED_LANG:
+            return function_list
+
         # Loop through the all function list for a project
         for fd in functions:
             # Separate handling for different target language
@@ -283,7 +218,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
                 continue
 
             # Add the function profile to the result list if it matches one of the target
-            if (package, func_name) in SINK_FUNCTION[target_lang]:
+            if (package, func_name) in self.sink_function[target_lang]:
                 function_list.append(fd)
 
         return function_list
