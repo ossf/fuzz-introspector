@@ -288,6 +288,27 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
 
         return function_list
 
+    def _retrieve_fuzzer_hitcount(
+        self,
+        functions function_profile.FunctionProfile,
+        coverage: code_coverage.CoverageProfile
+    ) -> int:
+        """
+        Analyse the project coverage and calculate the hit
+        count for target function. This information also shows
+        if the target function is covered by a specific fuzzers
+        during runtime.
+        """
+        count = 0
+        for parent_func in fd.incoming_references:
+            try:
+                lineno = int(self.function_linenumber)
+            except ValueError:
+                continue
+            if coverage.is_func_lineno_hit(parent_func, lineno):
+                count++
+        return count
+
     def _retrieve_content_rows(
         self,
         functions: List[function_profile.FunctionProfile],
