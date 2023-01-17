@@ -45,11 +45,16 @@ class FunctionProfile:
         self.edge_count = elem['EdgeCount']
         self.cyclomatic_complexity = elem['CyclomaticComplexity']
         self.functions_reached = utils.load_func_names(elem['functionsReached'], False)
-        self.functions_called = utils.load_func_names(elem['functionsReached'], False)
         self.function_uses = elem['functionUses']
         self.function_depth = elem['functionDepth']
         self.constants_touched = elem['constantsTouched']
         self.branch_profiles = self.load_func_branch_profiles(elem['BranchProfiles'])
+
+        # Duplication of functions_reached to keep the original set of call tree
+        # relationship for further processing and analysis. This could avoid lost
+        # of callpath tree information when functions_Reached is further propogated
+        # by later operations.
+        self.functions_called = utils.load_func_names(elem['functionsReached'], False)
 
         # Temporary handle for unreadable library method (JVM)
         # (jar missing or purposely ignored)
