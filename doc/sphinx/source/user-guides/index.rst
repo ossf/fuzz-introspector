@@ -19,10 +19,6 @@ Second, OSS-Fuzz has implemented an interface to Fuzz Introspector that is
 straightforward to install and set up. For details on this, please see
 :ref:`Running introspector on an OSS-Fuzz project`.
 
-
-Guides
-~~~~~~
-
 .. toctree::                                                                    
    :maxdepth: 3
 
