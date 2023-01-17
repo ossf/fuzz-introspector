@@ -50,6 +50,12 @@ class FunctionProfile:
         self.constants_touched = elem['constantsTouched']
         self.branch_profiles = self.load_func_branch_profiles(elem['BranchProfiles'])
 
+        # Duplication of functions_reached to keep the original sets
+        # of call trees for further processing and analysis. This
+        # could avoid loss of call tree information when functions_reached
+        # is further propagated by later operations.
+        self.functions_called = utils.load_func_names(elem['functionsReached'], False)
+
         # Temporary handle for unreadable library method (JVM)
         # (jar missing or purposely ignored)
         if not self.cyclomatic_complexity:
