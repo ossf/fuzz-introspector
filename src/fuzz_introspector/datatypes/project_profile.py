@@ -263,7 +263,7 @@ class MergedProjectProfile:
     def get_function_callpaths(
         self,
         target_function: function_profile.FunctionProfile,
-        handled_functions: List[function_profile.FunctionProfile] = [],
+        handled_functions: List[function_profile.FunctionProfile],
     ) -> List[List[function_profile.FunctionProfile]]:
         """
         Recursively resolve the incoming reference of a function
@@ -271,7 +271,7 @@ class MergedProjectProfile:
         of the incoming functions to the target function.
         """
         if len(target_function.incoming_references) == 0:
-            # Outtest function
+            # Outtermost function
             return [[]]
 
         result_list = []
