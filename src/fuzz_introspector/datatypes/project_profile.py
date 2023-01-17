@@ -260,6 +260,35 @@ class MergedProjectProfile:
             unreached_complexity_percentage
         )
 
+    def get_function_callpaths(
+        self,
+        target_function: function_profile.FunctionProfile,
+        handled_functions: List[function_profile.FunctionProfile],
+    ) -> List[List[function_profile.FunctionProfile]]:
+        """
+        Recursively resolve the incoming reference of a function
+        profile and build up lists of function callpaths from each
+        of the incoming functions to the target function.
+        """
+        if len(target_function.incoming_references) == 0:
+            # Outtermost function
+            return [[]]
+
+        result_list = []
+        for func_name in target_function.incoming_references:
+            if func_name in self.all_functions.keys():
+                fd = self.all_functions[func_name]
+                if fd in handled_functions:
+                    continue
+
+                if target_function.function_name in fd.functions_called:
+                    handled_functions.append(fd)
+                    inner_list = self.get_function_callpaths(fd, handled_functions)
+                    for list in inner_list:
+                        list.append(fd)
+                        result_list.append(list)
+        return result_list
+
     def write_stats_to_summary_file(self) -> None:
         (total_complexity,
          complexity_reached,
