@@ -13,6 +13,7 @@
 # limitations under the License.
 """Analysis plugin for introspection sinks of interest"""
 
+import os
 import json
 import logging
 import configparser
@@ -61,7 +62,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
         self.sink_function = dict()
 
         config = configparser.ConfigParser()
-        config.read('.sink_function')
+        config.read(os.path.join(os.path.dirname(os.path.realpath(__file__)), '.sink_function'))
 
         for lang in SUPPORTED_LANG:
             self.sink_function[lang] = eval(config.get(lang, 'SINK_FUNCTION').replace('\n',''))
