@@ -296,14 +296,14 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
         Pretty print the callpath list
         """
         result_list = []
-        callpath_str = ""
         for callpath in callpath_list:
+            callpath_str = ""
             for item in callpath:
                 if callpath_str:
                     callpath_str = f"{callpath_str} -> {item.function_name}"
                 else:
                     callpath_str = f"{item.function_name}"
-            callpath_str = f"{callpath_str}"
+            callpath_str = f"[{callpath_str}]"
             result_list.append(callpath_str)
         return result_list
 
