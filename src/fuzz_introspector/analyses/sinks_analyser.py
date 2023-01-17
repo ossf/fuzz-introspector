@@ -290,7 +290,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
 
     def _retrieve_fuzzer_hitcount(
         self,
-        functions function_profile.FunctionProfile,
+        functions: function_profile.FunctionProfile,
         coverage: code_coverage.CoverageProfile
     ) -> int:
         """
