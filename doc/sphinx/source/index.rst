@@ -6,17 +6,37 @@
 Welcome to Fuzz Introspector's documentation!
 =============================================
 
-Fuzz introspector is a tool to help fuzzer developers to get an understanding
-of their fuzzer’s performance and identify any potential blockers. Fuzz
-Introspector aggregates the fuzzers’ functional data like coverage, hit
-frequency, entry points, etc to give the developer a birds eye view of their
-fuzzer. This helps with identifying fuzz bottlenecks and blockers and
-eventually helps in developing better fuzzers.
+The documentation is divided into the following sections:
+
+-  :ref:`Installation instructions`: Describes how to install Fuzz Introspector locally.
+-  :ref:`User guides`: Guides on how to solve fuzzing issues using Fuzz Introspector. These can be used to get around Fuzz Introspector as a tool and also as references for how to approach fuzzing in various ways.
+-  :ref:`OSS-Fuzz guides`: Instructions on how to use Fuzz Introspector to analyse projects integrated into `OSS-Fuzz <https://github.com/google/oss-fuzz>`_
+-  :ref:`Development guide`: Code-level documentation. Looking to extend Fuzz Introspector or contribute? This is the place.
+
 
 .. toctree::
-  :maxdepth: 1
+   :maxdepth: 2
+   :caption: Installation
 
-  getting-started/index
-  user-guides/index
-  oss-fuzz/index
-  development/index
+   installation-instructions/index
+
+
+.. toctree::
+   :maxdepth: 2
+   :caption: User guides
+
+   user-guides/index
+
+
+.. toctree::
+   :maxdepth: 2
+   :caption: OSS-Fuzz guides
+
+   oss-fuzz/index
+
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Development
+
+   development/index

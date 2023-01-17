@@ -1,7 +1,7 @@
 ..
 
-Getting started
-===============
+Installation instructions
+=========================
 
 This guide will walk you through the default installation of Fuzz Introspector.
 After this guide you will have run Fuzz Introspector on a simple example and
