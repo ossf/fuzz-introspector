@@ -260,6 +260,25 @@ class MergedProjectProfile:
             unreached_complexity_percentage
         )
 
+    def get_direct_parent_list(
+        self,
+        target_fucntion: function_profile.FunctionProfile
+    ) -> List[function_profile.FunctionProfile]:
+        """
+        Search through list of parent functions of the
+        target function and return a subset of functions
+        in list which is the immediate parent function
+        calling the target function.
+        """
+        result_list = []
+        for func_name in target_function.incoming_references:
+            if func_name in self.all_functions.keys():
+                fd = self.all_functions[func_name]
+                if target_function.function_name in fd.funcions_called:
+                    result_list.append(fd)
+
+        return result_list
+
     def get_function_callpaths(
         self,
         target_function: function_profile.FunctionProfile,

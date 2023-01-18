@@ -314,6 +314,9 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
         """
         Transform list of string to html table
         """
+        if len(path_list) == 0:
+            return "N/A"
+
         html = "<table>"
         count = 0
         for path in path_list:
@@ -343,6 +346,10 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
             json_dict: Dict[str, Any] = {}
             callpath_list = proj_profile.get_function_callpaths(fd, [])
             callpath_str = self._print_callpath_list(callpath_list)
+            parent_list = proj_profile.get_direct_parent_list(fd)
+
+            if len(fd.reached_by_fuzzers) > 0:
+                callpath_str = []
 
             # Loop through the list of calledlocation for this function
             if len(func_callsites[fd.function_name]) == 0:
@@ -351,6 +358,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
                     f"{fd.function_source_file}:{fd.function_linenumber}",
                     "Not in call tree",
                     f"{str(fd.reached_by_fuzzers)}",
+                    f"{str(parent_list)}",
                     self._path_list_to_table_html(callpath_str)
                 ])
 
@@ -358,6 +366,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
                 json_dict['func_src'] = f"{fd.function_source_file}:{fd.function_linenumber}"
                 json_dict['call_loc'] = "Not in call tree"
                 json_dict['fuzzer_reach'] = fd.reached_by_fuzzers
+                json_dict['parent_func'] = parent_list
                 json_dict['callpaths'] = callpath_str
                 json_list.append(json_dict)
 
@@ -369,6 +378,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
                     f"{fd.function_source_file}:{fd.function_linenumber}",
                     f"{called_location}",
                     f"{str(fd.reached_by_fuzzers)}",
+                    f"{str(parent_list)}"
                     self._path_list_to_table_html(callpath_str)
                 ])
 
@@ -376,6 +386,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
                 json_dict['func_src'] = f"{fd.function_source_file}:{fd.function_linenumber}"
                 json_dict['call_loc'] = called_location
                 json_dict['fuzzer_reach'] = fd.reached_by_fuzzers
+                json_dict['parent_func'] = parent_list
                 json_dict['callpaths'] = callpath_str
                 json_list.append(json_dict)
 
@@ -473,15 +484,17 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
             [
                 ("Target sink", ""),
                 ("Sink source location",
-                 "Source file and line number information for the sink function"),
+                 "Source file and line number information for the sink function."),
                 ("Callsite location",
                  "Source file, line number and parent function of this function call. "
                  "Based on static analysis."),
                 ("Reached by fuzzer",
-                 "Is this code reachable by any functions? "
+                 "Is this code reachable by any fuzzer functions? "
                  "Based on static analysis."),
+                ("Parent Function",
+                 "List of parent function directly calling this sink function.")
                 ("Function call path",
-                 "All call path of the project calling to this sink function")
+                 "All call path of the project calling to this sink function.")
             ]
         )
 
