@@ -2,10 +2,10 @@ Focus analysis by controlling instrumentation
 ---------------------------------------------
 
 This guide will go over how to focus analysis on specific code. This is used to
-ensure the data that Fuzz Introspector handles is relevant and avoid of bloating
+ensure the data that Fuzz Introspector handles is relevant to avoid bloating
 the report with e.g. data about third-party dependencies.
 
-The way both bug-sanitizers e.g. ASAN, code coverage visualiation and Fuzz
+The way both bug-sanitizers e.g. ASAN, code coverage visualization and Fuzz
 Intropector work involves doing various efforts at compile time. We can focus
 our analysis by only applying the logic on specific files. For example:
 
@@ -95,13 +95,13 @@ and do the exact same steps as above. As such, we do the following steps:
 At this stage we have two different introspector reports: ``introspector-report-1``
 which holds the project with ``libxml`` included in the analysis, and ``introspector-report-2``
 which holds the project with ``libxml`` excluded from the analysis. We will
-now start two webservers and so we can observe the differences in the reports.
+now start two web servers and so we can observe the differences in the reports.
 
-The differences between the report are visible. For example,
+The differences between the reports are visible. For example,
 the total number of functions and cyclomatic complexity changes between the
 two instances of the project. This is shown by the following two figures.
 
-``libarchive`` overview stats with ``libxml`` included in analysis:
+``libarchive`` overview stats with ``libxml`` included in the analysis:
 
 .. figure:: /user-guides/images/libarchive-with-lxml-overview.png
    :width: 800px
@@ -109,7 +109,7 @@ two instances of the project. This is shown by the following two figures.
 
 |
 
-``libarchive`` overview stats with ``libxml`` excluded in analysis:
+``libarchive`` overview stats with ``libxml`` excluded in the analysis:
 
 .. figure:: /user-guides/images/libarchive-without-lxml-overview.png
    :width: 800px
@@ -120,10 +120,9 @@ two instances of the project. This is shown by the following two figures.
 
 The difference is also visible elsewhere, for example the project functions
 overview table.
-The following figure shows ``libarchive`` function overview with ``libxml`` included in analysis.
-Notice the
-search box queries for ``libxml`` to display the number of ``libxml`` functions,
-totalling to 2607 entries:
+The following figure shows ``libarchive`` function overview with ``libxml``
+included in the analysis. Notice the search box queries for ``libxml`` to
+display the number of ``libxml`` functions, totalling to 2607 entries:
 
 
 .. figure:: /user-guides/images/libarchive-with-lxml-func-overview.png
