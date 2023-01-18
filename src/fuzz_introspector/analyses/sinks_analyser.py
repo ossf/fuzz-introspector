@@ -422,7 +422,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
                 blocker_list = self._determine_branch_blocker(
                     fd,
                     all_blockers,
-                    prof_profile.all_functions
+                    proj_profile.all_functions
                 )
                 blocker = self._print_blocker_list(blocker_list)
             else:
