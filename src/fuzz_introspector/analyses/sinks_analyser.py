@@ -398,7 +398,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
                     f"{fd.function_source_file}:{fd.function_linenumber}",
                     "Not in call tree",
                     f"{str(fd.reached_by_fuzzers)}",
-                    f"{str(callpath_str)}"
+                    f"{str(callpath_str)}",
                     "0",
                     "N/A"
                 ])
@@ -433,8 +433,8 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
                     f"{fd.function_name}",
                     f"{fd.function_source_file}:{fd.function_linenumber}",
                     f"{called_location}",
-                    f"{str(fd.reached_by_fuzzers)}"
-                    f"{str(callpath_str)}"
+                    f"{str(fd.reached_by_fuzzers)}",
+                    f"{str(callpath_str)}",
                     f"{fuzzer_cover_count}",
                     f"{blocker}"
                 ])
