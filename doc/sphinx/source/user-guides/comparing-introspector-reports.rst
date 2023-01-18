@@ -7,7 +7,7 @@ Fuzz Introspector produces, and holds a lot of the data Fuzz Introspector
 generates in json format.
 
 The ``diff`` command simply takes two ``summary.json`` files as arguments, and
-will highlight important differences e.g. coverage and reachability, between
+will highlight important differences, e.g. coverage and reachability, between
 the reports.
 
 This user guide will show how to use the ``diff`` command to compare two fuzzing reports.
@@ -68,7 +68,7 @@ using a different amount of seconds for the fuzzers.
 
 At this point we have two ``.json`` files with data from two Fuzz Introspector
 runs. The difference between the Fuzz Introspector runs is that one is based
-off a corpus generated over 10 seconds and the other is based off a corpus
+on a corpus generated over 10 seconds and the other is based on a corpus
 generated over 300 seconds.
 
 We can now compare the two runs using the Fuzz Introspector ``diff`` command:
@@ -129,14 +129,14 @@ We can now compare the two runs using the Fuzz Introspector ``diff`` command:
    ...
 
 The output of the ``diff`` command shows us the difference achieved, namely,
-that for a larger amounts of functions the second report (with the longer run)
+that for larger amounts of functions the second report (with the longer run)
 has more code coverage.
 
 
 Example of reachability differences
 -----------------------------------
 
-In the context of reachability we need more efforts than simply running the
+In the context of reachability we need more effort than simply running the
 same project twice with a different number of seconds (as done in
 :ref:`Example of runtime coverage improvements`). In order to display
 reachability differences, we need to change the actual code, as the reachability
@@ -147,7 +147,7 @@ integration. We will first run it with a limited version of the setup, and then
 run it with the full version of the setup.
 
 First, comment out the lines at https://github.com/google/oss-fuzz/blob/a8cb9370f0dddf33111b1a7ce6d715633d5400df/projects/libarchive/libarchive_fuzzer.cc#L39-L73
-Then, we build the introspecto report using a 1 second runtime:
+Then, we build the introspector report using a 1 second runtime:
 
 .. code-block:: bash
 
