@@ -34,6 +34,14 @@ and included in the Fuzz Introspector analysis, and then doing a run with only
 it. This example is based on the following PR that was made to perform this
 exact change in https://github.com/google/oss-fuzz/pull/9007.
 
+.. note::
+
+   OSS-Fuzz sets environment variables when running ``build.sh``, which causes
+   the necessary instrumentation to be applied during build. These environment
+   variables are not set when the Docker image builds, i.e. building code in
+   the ``Dockerfile`` in an OSS-Fuzz project means no instrumentation will be
+   applied.
+
 To show the difference between instrumenting/not instrumenting ``libxml`` we
 will first run a Fuzz Introspector run of the OSS-Fuzz set up of ``libarchive``
 with the build instructions for ``libxml`` inside of the ``build.sh`` file. This
@@ -89,4 +97,45 @@ which holds the project with ``libxml`` included in the analysis, and ``introspe
 which holds the project with ``libxml`` excluded from the analysis. We will
 now start two webservers and so we can observe the differences in the reports.
 
-The differences between the report are, for example:
+The differences between the report are visible. For example,
+the total number of functions and cyclomatic complexity changes between the
+two instances of the project. This is shown by the following two figures.
+
+``libarchive`` overview stats with ``libxml`` included in analysis:
+
+.. figure:: /user-guides/images/libarchive-with-lxml-overview.png
+   :width: 800px
+   :alt: libarchive overview with libxml
+
+|
+
+``libarchive`` overview stats with ``libxml`` excluded in analysis:
+
+.. figure:: /user-guides/images/libarchive-without-lxml-overview.png
+   :width: 800px
+   :alt: libarchive overview without libxml
+
+|
+
+
+The difference is also visible elsewhere, for example the project functions
+overview table.
+The following figure shows ``libarchive`` function overview with ``libxml`` included in analysis.
+Notice the
+search box queries for ``libxml`` to display the number of ``libxml`` functions,
+totalling to 2607 entries:
+
+
+.. figure:: /user-guides/images/libarchive-with-lxml-func-overview.png
+   :width: 800px
+   :alt: libarchive function overview with libxml
+
+|
+
+``libarchive`` function overview stats without ``libxml`` included in analysis.
+Notice the same query as above is in the search box, but there are no entries
+that matches the query:
+
+.. figure:: /user-guides/images/libarchive-without-lxml-func-overview.png
+   :width: 800px
+   :alt: libarchive function overview without libxml
