@@ -307,6 +307,21 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
             result_list.append(callpath_str)
         return result_list
 
+    def _path_list_to_table_html(
+        self,
+        path_list: List[str]
+    ) -> str:
+        """
+        Transform list of string to html table
+        """
+        html = "<table>"
+        count = 0
+        for path in path_list:
+            count += 1
+            html += f"<tr><td>Path {count}</td><td>{path}</td></tr>"
+        html += "</table>"
+        return html
+
     def _retrieve_content_rows(
         self,
         functions: List[function_profile.FunctionProfile],
@@ -336,7 +351,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
                     f"{fd.function_source_file}:{fd.function_linenumber}",
                     "Not in call tree",
                     f"{str(fd.reached_by_fuzzers)}",
-                    f"{str(callpath_str)}"
+                    self._path_list_to_table_html(callpath_str)
                 ])
 
                 json_dict['func_name'] = fd.function_name
@@ -353,8 +368,8 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
                     f"{fd.function_name}",
                     f"{fd.function_source_file}:{fd.function_linenumber}",
                     f"{called_location}",
-                    f"{str(fd.reached_by_fuzzers)}"
-                    f"{str(callpath_str)}"
+                    f"{str(fd.reached_by_fuzzers)}",
+                    self._path_list_to_table_html(callpath_str)
                 ])
 
                 json_dict['func_name'] = fd.function_name
