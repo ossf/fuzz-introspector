@@ -9,7 +9,7 @@ Welcome to Fuzz Introspector's documentation!
 The documentation is divided into the following sections:
 
 -  :ref:`Installation instructions`: Describes how to install Fuzz Introspector locally.
--  :ref:`User guides`: Guides on how to solve fuzzing issues using Fuzz Introspector. These can be used to get around Fuzz Introspector as a tool and also as references for how to approach fuzzing in various ways.
+-  :ref:`User guides`: Guides on how to solve fuzzing issues using Fuzz Introspector.
 -  :ref:`OSS-Fuzz guides`: Instructions on how to use Fuzz Introspector to analyse projects integrated into `OSS-Fuzz <https://github.com/google/oss-fuzz>`_
 -  :ref:`Development guide`: Code-level documentation. Looking to extend Fuzz Introspector or contribute? This is the place.
 
