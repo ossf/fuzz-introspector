@@ -325,7 +325,6 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
             # and discover possible branch blockers
             for blocker in blockers:
                 if func_name in functions.keys() and func_name in blocker.blocked_unique_funcs:
-                    fd = functions[func_name]
                     result_list.append(blocker)
         return result_list
 
