@@ -274,7 +274,7 @@ class MergedProjectProfile:
         for func_name in target_function.incoming_references:
             if func_name in self.all_functions.keys():
                 fd = self.all_functions[func_name]
-                if target_function.function_name in fd.funcions_called:
+                if target_function.function_name in fd.functions_called:
                     result_list.append(fd)
 
         return result_list

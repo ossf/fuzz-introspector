@@ -492,7 +492,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
                  "Is this code reachable by any fuzzer functions? "
                  "Based on static analysis."),
                 ("Parent Function",
-                 "List of parent function directly calling this sink function.")
+                 "List of parent function directly calling this sink function."),
                 ("Function call path",
                  "All call path of the project calling to this sink function.")
             ]
