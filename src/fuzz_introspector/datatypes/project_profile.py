@@ -262,7 +262,7 @@ class MergedProjectProfile:
 
     def get_direct_parent_list(
         self,
-        target_fucntion: function_profile.FunctionProfile
+        target_function: function_profile.FunctionProfile
     ) -> List[function_profile.FunctionProfile]:
         """
         Search through list of parent functions of the

@@ -378,7 +378,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
                     f"{fd.function_source_file}:{fd.function_linenumber}",
                     f"{called_location}",
                     f"{str(fd.reached_by_fuzzers)}",
-                    f"{str(parent_list)}"
+                    f"{str(parent_list)}",
                     self._path_list_to_table_html(callpath_str)
                 ])
 
