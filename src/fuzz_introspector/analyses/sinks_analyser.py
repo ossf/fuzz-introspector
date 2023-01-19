@@ -291,6 +291,54 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
 
         return function_list
 
+    def _retrieve_fuzzer_hitcount(
+        self,
+        function: function_profile.FunctionProfile,
+        coverage: code_coverage.CoverageProfile
+    ) -> int:
+        """
+        Analyse the project coverage and calculate the hit
+        count for target function. This information also shows
+        if the target function is covered by a specific fuzzer
+        during runtime.
+        """
+        count = 0
+        for parent_func in function.incoming_references:
+            try:
+                lineno = int(function.function_linenumber)
+            except ValueError:
+                continue
+            if coverage.is_func_lineno_hit(parent_func, lineno):
+                count += 1
+        return count
+
+    def _determine_branch_blocker(
+        self,
+        callpath_list: List[List[function_profile.FunctionProfile]],
+        proj_profile: project_profile.MergedProjectProfile
+    ) -> List[function_profile.FunctionProfile]:
+        """
+        Determine the branch blocker list that affect the runtime
+        coverage of the target function.
+        """
+        result_list = []
+        for callpath in callpath_list:
+            # Loop through all possible callpath to determine blocking function
+            parent_fd = None
+            for callpath_fd in callpath:
+                if parent_fd:
+                    if not proj_profile.runtime_coverage.is_func_hit(callpath_fd.function_name):
+                        # if this function is not hit, the parent function is a blocker
+                        break
+                parent_fd = callpath_fd
+
+            # Fail safe for blocker at the start of the list
+            if not parent_fd:
+                parent_fd = callpath[0]
+
+            result_list.append(parent_fd)
+        return result_list
+
     def _generate_callpath_page(
         self,
         callpath: List[function_profile.FunctionProfile]
@@ -391,6 +439,32 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
 
         return html
 
+    def _print_blocker_list(
+        self,
+        blocker_list: List[function_profile.FunctionProfile]
+    ) -> str:
+        """
+        Print blocker information in html
+        """
+        if len(blocker_list) == 0:
+            return "N/A"
+
+        html = "<table><thead>"
+        html += "<th bgcolor='#282A36'>Blocker function</th>"
+        html += "<th bgcolor='#282A36'>Arguments type</th>"
+        html += "<th bgcolor='#282A36'>Return type</th>"
+        html += "<th bgcolor='#282A36'>Constants touched</th>"
+        html += "</thead><tbody>"
+        for blocker in blocker_list:
+            html += f"<tr><td>{blocker.function_name}<br/>"
+            html += f"in {blocker.function_source_file}:{blocker.function_linenumber}"
+            html += "</td>"
+            html += f"<td>{str(blocker.arg_types)}</td>"
+            html += f"<td>{str(blocker.return_type)}</td>"
+            html += f"<td>{str(blocker.constants_touched)}</td></tr>"
+        html += "</tbody></table>"
+        return html
+
     def _retrieve_content_rows(
         self,
         functions: List[function_profile.FunctionProfile],
@@ -415,37 +489,63 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
             callpath_dict = utils.group_path_list_by_target(callpath_list)
             callpath_name_dict = utils.group_path_list_by_target(callpath_name_list)
 
+            fuzzer_cover_count = self._retrieve_fuzzer_hitcount(fd, coverage)
+            if fuzzer_cover_count == 0:
+                blocker_list = self._determine_branch_blocker(
+                    callpath_list,
+                    proj_profile
+                )
+                blocker = self._print_blocker_list(blocker_list)
+            else:
+                blocker = "N/A"
+
             # Loop through the list of calledlocation for this function
             if len(func_callsites[fd.function_name]) == 0:
-                html_string += html_helpers.html_table_add_row([
+                row = html_helpers.html_table_add_row([
                     f"{fd.function_name}",
                     "Not in call tree",
                     f"{str(fd.reached_by_fuzzers)}",
-                    self._handle_callpath_dict(callpath_dict)
+                    self._handle_callpath_dict(callpath_dict),
+                    f"{fuzzer_cover_count}",
+                    f"{blocker}"
                 ])
+
+                row_split = row.rsplit('<td><table>', 1)
+                row = f'{row_split[0]}<td style="max-width: 600px"><table>{row_split[1]}'
+                html_string += row
 
                 json_dict['func_name'] = fd.function_name
                 json_dict['call_loc'] = "Not in call tree"
                 json_dict['fuzzer_reach'] = fd.reached_by_fuzzers
                 json_dict['parent_func'] = parent_name_list
                 json_dict['callpaths'] = callpath_name_dict
+                json_dict['fuzzer_cover'] = f"{fuzzer_cover_count}"
+                json_dict['blocker'] = blocker
                 json_list.append(json_dict)
 
                 continue
 
             for called_location in func_callsites[fd.function_name]:
-                html_string += html_helpers.html_table_add_row([
+                row = html_helpers.html_table_add_row([
                     f"{fd.function_name}",
                     f"{called_location}",
                     f"{str(fd.reached_by_fuzzers)}",
-                    self._handle_callpath_dict(callpath_dict)
+                    self._handle_callpath_dict(callpath_dict),
+                    f"{fuzzer_cover_count}",
+                    f"{blocker}"
                 ])
+
+                row_split = row.rsplit('<td><table>', 1)
+                row = f'{row_split[0]}<td style="max-width: 600px"><table>{row_split[1]}'
+                html_string += row
 
                 json_dict['func_name'] = fd.function_name
                 json_dict['call_loc'] = called_location
                 json_dict['fuzzer_reach'] = fd.reached_by_fuzzers
                 json_dict['parent_func'] = parent_name_list
                 json_dict['callpaths'] = callpath_name_dict
+                json_dict['fuzzer_cover'] = f"{fuzzer_cover_count}"
+                json_dict['blocker'] = blocker
                 json_list.append(json_dict)
 
         return (html_string, json.dumps(json_list))
@@ -549,7 +649,12 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
                  "Based on static analysis."),
                 ("Function call path",
                  "All call path of the project calling to each sink function. "
-                 "Group by functions directly calling the sink function.")
+                 "Group by functions directly calling the sink function."),
+                ("Covered by fuzzer",
+                 "Number of fuzzers covering this sink function during runtime."),
+                ("Possible branch blockers",
+                 "Determine which branch blockers avoid fuzzers to cover the"
+                 "sink function during runtime")
             ]
         )
 
