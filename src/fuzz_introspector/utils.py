@@ -335,7 +335,7 @@ def group_path_list_by_target(
     Group path list items by path target which is
     the last itme of each list.
     """
-    result_dict = {}
+    result_dict: Dict[Any, List[Any]] = {}
     for item in list:
         if item[-1] in result_dict.keys():
             item_list = result_dict[item[-1]]
