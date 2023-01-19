@@ -374,12 +374,19 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
             html += f"in {parent_func.function_source_file}:{parent_func.function_linenumber}"
             html += f"</td><td>"
             count = 0
+
+            # Sort callpath by its depth, assuming shallowest depth is
+            # the function call closest to the target function
+            callpath_list.sort(key=len)
+
             for callpath in callpath_list:
                 count += 1
                 self.index += 1
                 callpath_link = self._generate_callpath_page(callpath)
-                html += f"<a href='{callpath_link}'>Path {count}</a><br/>"
+                if count <= 20:
+                    html += f"<a href='{callpath_link}'>Path {count}</a><br/>"
             html += f"</td></tr>"
+
         html += "</tbody></table>"
 
         return html
