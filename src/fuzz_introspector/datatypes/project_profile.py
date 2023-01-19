@@ -260,11 +260,32 @@ class MergedProjectProfile:
             unreached_complexity_percentage
         )
 
+    def get_direct_parent_list(
+        self,
+        target_function: function_profile.FunctionProfile
+    ) -> Tuple[List[function_profile.FunctionProfile], List[str]]:
+        """
+        Search through list of parent functions of the
+        target function and return a subset of functions
+        in list which is the immediate parent function
+        calling the target function.
+        """
+        result_list = []
+        result_name_list = []
+        for func_name in target_function.incoming_references:
+            if func_name in self.all_functions.keys():
+                fd = self.all_functions[func_name]
+                if target_function.function_name in fd.functions_called:
+                    result_list.append(fd)
+                    result_name_list.append(func_name)
+
+        return (result_list, result_name_list)
+
     def get_function_callpaths(
         self,
         target_function: function_profile.FunctionProfile,
         handled_functions: List[function_profile.FunctionProfile],
-    ) -> List[List[function_profile.FunctionProfile]]:
+    ) -> Tuple[List[List[function_profile.FunctionProfile]], List[List[str]]]:
         """
         Recursively resolve the incoming reference of a function
         profile and build up lists of function callpaths from each
@@ -272,9 +293,10 @@ class MergedProjectProfile:
         """
         if len(target_function.incoming_references) == 0:
             # Outtermost function
-            return [[]]
+            return ([[]], [[]])
 
         result_list = []
+        result_name_list = []
         for func_name in target_function.incoming_references:
             if func_name in self.all_functions.keys():
                 fd = self.all_functions[func_name]
@@ -283,11 +305,14 @@ class MergedProjectProfile:
 
                 if target_function.function_name in fd.functions_called:
                     handled_functions.append(fd)
-                    inner_list = self.get_function_callpaths(fd, handled_functions)
+                    inner_list, inner_name_list = self.get_function_callpaths(fd, handled_functions)
                     for list in inner_list:
                         list.append(fd)
                         result_list.append(list)
-        return result_list
+                    for name_list in inner_name_list:
+                        name_list.append(fd.function_name)
+                        result_name_list.append(name_list)
+        return (result_list, result_name_list)
 
     def write_stats_to_summary_file(self) -> None:
         (total_complexity,

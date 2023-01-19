@@ -16,6 +16,8 @@
 import json
 import logging
 
+from bs4 import BeautifulSoup as bs
+
 from typing import (
     Any,
     List,
@@ -134,6 +136,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
 
     def __init__(self) -> None:
         self.json_string_result = "[]"
+        self.index = 0
 
     @classmethod
     def get_name(cls):
@@ -288,24 +291,105 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
 
         return function_list
 
-    def _print_callpath_list(
+    def _generate_callpath_page(
         self,
-        callpath_list: List[List[function_profile.FunctionProfile]]
-    ) -> List[str]:
+        callpath: List[function_profile.FunctionProfile]
+    ) -> str:
         """
-        Pretty print the callpath list
+        Generate a standalone html page to display
+        the given callpath, also providing function
+        call location information.
         """
-        result_list = []
-        for callpath in callpath_list:
-            callpath_str = ""
-            for item in callpath:
-                if callpath_str:
-                    callpath_str = f"{callpath_str} -> {item.function_name}"
-                else:
-                    callpath_str = f"{item.function_name}"
-            callpath_str = f"[{callpath_str}]"
-            result_list.append(callpath_str)
-        return result_list
+        filename = f"sink_function_callpath_{self.index}.html"
+
+        depth_count = 0
+        section = "<h1>Sink Function Callpath</h1>"
+        section += "<div id=\"calltree-wrapper\">"
+        section += "<div class='call-tree-section-wrapper'>"
+        for fd in callpath:
+            indentation = "%dpx" % (int(depth_count) * 16 + 100)
+
+            section += "<div class='red-background coverage-line'>"
+            section += f"""<span class="coverage-line-inner" data-calltree-idx="{depth_count:05}"
+                data-paddingleft="{indentation}" style="padding-left: {indentation}">
+                <span class="node-depth-wrapper">{depth_count}</span>
+                    <code class="language-clike">
+                        {fd.function_name}
+                    </code>
+                    <span class="coverage-line-filename">
+                        in {fd.function_source_file}:{fd.function_linenumber}
+                        <span class="calltree-idx">
+                            {depth_count:05}
+                        </span>
+                    </span>
+                </span>"""
+            section += f"""<div class="calltree-line-wrapper open level-{depth_count}
+                data-paddingleft="{indentation}">"""
+
+            depth_count += 1
+
+        # Ending all opened <div>
+        if depth_count == 1:
+            section += "</div></div>"
+        else:
+            section += (
+                "</div>" * int(depth_count - 1) * 2 + "</div></div>"
+            )
+
+        section += "</div></div></div>"
+
+        html = html_helpers.html_get_header(calltree=True, title="Fuzz introspector")
+        html += '<div class="content-section calltree-content-section">'
+        html += f"{section}</div></div>"
+        html += '<script src="calltree.js"></script></body></html>'
+
+        soup = bs(html, "html.parser")
+        pretty_html = soup.prettify()
+        with open(filename, "w+") as f:
+            f.write(pretty_html)
+
+        return filename
+
+    def _handle_callpath_dict(
+        self,
+        callpath_dict: Dict[
+            function_profile.FunctionProfile,
+            List[List[function_profile.FunctionProfile]]
+        ],
+    ) -> str:
+        """
+        Pretty print index of callpath and generate
+        also generate separate html page for displaying
+        callpath and add the links to the index.
+        """
+        html = "<table><thead>"
+        html += "<th bgcolor='#282A36'>Parent functions</th>"
+        html += "<th bgcolor='#282A36'>Callpaths</th>"
+        html += "</thead><tbody>"
+
+        for parent_func in callpath_dict.keys():
+            callpath_list = callpath_dict[parent_func]
+            html += "<tr><td>"
+            html += f"{parent_func.function_name}<br/>"
+            html += f"in {parent_func.function_source_file}:{parent_func.function_linenumber}"
+            html += "</td><td>"
+            count = 0
+
+            # Sort callpath by its depth, assuming shallowest depth is
+            # the function call closest to the target function
+            callpath_list.sort(key=len)
+
+            for callpath in callpath_list:
+                count += 1
+                self.index += 1
+                callpath_link = self._generate_callpath_page(callpath)
+                if count <= 20:
+                    html += f"<a href='{callpath_link}'>Path {count}</a><br/>"
+            html += "</td></tr>"
+
+        html += "</tbody></table>"
+
+        return html
 
     def _retrieve_content_rows(
         self,
@@ -326,24 +410,25 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
 
         for fd in self._filter_function_list(functions, target_lang):
             json_dict: Dict[str, Any] = {}
-            callpath_list = proj_profile.get_function_callpaths(fd, [])
-            callpath_str = self._print_callpath_list(callpath_list)
+            parent_list, parent_name_list = proj_profile.get_direct_parent_list(fd)
+            callpath_list, callpath_name_list = proj_profile.get_function_callpaths(fd, [])
+            callpath_dict = utils.group_path_list_by_target(callpath_list)
+            callpath_name_dict = utils.group_path_list_by_target(callpath_name_list)
 
             # Loop through the list of calledlocation for this function
             if len(func_callsites[fd.function_name]) == 0:
                 html_string += html_helpers.html_table_add_row([
                     f"{fd.function_name}",
-                    f"{fd.function_source_file}:{fd.function_linenumber}",
                     "Not in call tree",
                     f"{str(fd.reached_by_fuzzers)}",
-                    f"{str(callpath_str)}"
+                    self._handle_callpath_dict(callpath_dict)
                 ])
 
                 json_dict['func_name'] = fd.function_name
-                json_dict['func_src'] = f"{fd.function_source_file}:{fd.function_linenumber}"
                 json_dict['call_loc'] = "Not in call tree"
                 json_dict['fuzzer_reach'] = fd.reached_by_fuzzers
-                json_dict['callpaths'] = callpath_str
+                json_dict['parent_func'] = parent_name_list
+                json_dict['callpaths'] = callpath_name_dict
                 json_list.append(json_dict)
 
                 continue
@@ -351,17 +436,16 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
             for called_location in func_callsites[fd.function_name]:
                 html_string += html_helpers.html_table_add_row([
                     f"{fd.function_name}",
-                    f"{fd.function_source_file}:{fd.function_linenumber}",
                     f"{called_location}",
-                    f"{str(fd.reached_by_fuzzers)}"
-                    f"{str(callpath_str)}"
+                    f"{str(fd.reached_by_fuzzers)}",
+                    self._handle_callpath_dict(callpath_dict)
                 ])
 
                 json_dict['func_name'] = fd.function_name
-                json_dict['func_src'] = f"{fd.function_source_file}:{fd.function_linenumber}"
                 json_dict['call_loc'] = called_location
                 json_dict['fuzzer_reach'] = fd.reached_by_fuzzers
-                json_dict['callpaths'] = callpath_str
+                json_dict['parent_func'] = parent_name_list
+                json_dict['callpaths'] = callpath_name_dict
                 json_list.append(json_dict)
 
         return (html_string, json.dumps(json_list))
@@ -457,16 +541,15 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
             tables[-1],
             [
                 ("Target sink", ""),
-                ("Sink source location",
-                 "Source file and line number information for the sink function"),
                 ("Callsite location",
-                 "Source file, line number and parent function of this function call. "
+                 "Source file, line number and parent function of sink function call. "
                  "Based on static analysis."),
                 ("Reached by fuzzer",
-                 "Is this code reachable by any functions? "
+                 "Is this code reachable by any fuzzer functions? "
                  "Based on static analysis."),
                 ("Function call path",
-                 "All call path of the project calling to this sink function")
+                 "All call path of the project calling to each sink function. "
+                 "Group by functions directly calling the sink function.")
             ]
         )
 
