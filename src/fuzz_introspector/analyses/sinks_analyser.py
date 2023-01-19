@@ -338,7 +338,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
 
         section += "</div></div></div>"
 
-        html = html_helpers.html_get_header(calltree=True, title=f"Fuzz introspector")
+        html = html_helpers.html_get_header(calltree=True, title="Fuzz introspector")
         html += '<div class="content-section calltree-content-section">'
         html += f"{section}</div></div>"
         html += '<script src="calltree.js"></script></body></html>'
@@ -369,10 +369,10 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
 
         for parent_func in callpath_dict.keys():
             callpath_list = callpath_dict[parent_func]
-            html += f"<tr><td>"
+            html += "<tr><td>"
             html += f"{parent_func.function_name}<br/>"
             html += f"in {parent_func.function_source_file}:{parent_func.function_linenumber}"
-            html += f"</td><td>"
+            html += "</td><td>"
             count = 0
 
             # Sort callpath by its depth, assuming shallowest depth is
@@ -385,7 +385,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
                 callpath_link = self._generate_callpath_page(callpath)
                 if count <= 20:
                     html += f"<a href='{callpath_link}'>Path {count}</a><br/>"
-            html += f"</td></tr>"
+            html += "</td></tr>"
 
         html += "</tbody></table>"
 
@@ -419,14 +419,12 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
             if len(func_callsites[fd.function_name]) == 0:
                 html_string += html_helpers.html_table_add_row([
                     f"{fd.function_name}",
-                    f"{fd.function_source_file}:{fd.function_linenumber}",
                     "Not in call tree",
                     f"{str(fd.reached_by_fuzzers)}",
                     self._handle_callpath_dict(callpath_dict)
                 ])
 
                 json_dict['func_name'] = fd.function_name
-                json_dict['func_src'] = f"{fd.function_source_file}:{fd.function_linenumber}"
                 json_dict['call_loc'] = "Not in call tree"
                 json_dict['fuzzer_reach'] = fd.reached_by_fuzzers
                 json_dict['parent_func'] = parent_name_list
@@ -438,14 +436,12 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
             for called_location in func_callsites[fd.function_name]:
                 html_string += html_helpers.html_table_add_row([
                     f"{fd.function_name}",
-                    f"{fd.function_source_file}:{fd.function_linenumber}",
                     f"{called_location}",
                     f"{str(fd.reached_by_fuzzers)}",
                     self._handle_callpath_dict(callpath_dict)
                 ])
 
                 json_dict['func_name'] = fd.function_name
-                json_dict['func_src'] = f"{fd.function_source_file}:{fd.function_linenumber}"
                 json_dict['call_loc'] = called_location
                 json_dict['fuzzer_reach'] = fd.reached_by_fuzzers
                 json_dict['parent_func'] = parent_name_list
@@ -545,8 +541,6 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
             tables[-1],
             [
                 ("Target sink", ""),
-                ("Sink source location",
-                 "Source file and line number information for the sink function."),
                 ("Callsite location",
                  "Source file, line number and parent function of sink function call. "
                  "Based on static analysis."),

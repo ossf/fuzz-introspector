@@ -309,9 +309,9 @@ class MergedProjectProfile:
                     for list in inner_list:
                         list.append(fd)
                         result_list.append(list)
-                    for list in inner_name_list:
-                        list.append(fd.function_name)
-                        result_name_list.append(list)
+                    for name_list in inner_name_list:
+                        name_list.append(fd.function_name)
+                        result_name_list.append(name_list)
         return (result_list, result_name_list)
 
     def write_stats_to_summary_file(self) -> None:
