@@ -311,21 +311,29 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
 
     def _determine_branch_blocker(
         self,
-        target_function: function_profile.FunctionProfile,
-        blockers: List[analysis.FuzzBranchBlocker],
-        functions: Dict[str, function_profile.FunctionProfile]
-    ) -> List[analysis.FuzzBranchBlocker]:
+        callpath_list: List[List[function_profile.FunctionProfile]],
+        proj_profile: project_profile.MergedProjectProfile
+    ) -> List[function_profile.FunctionProfile]:
         """
         Determine the branch blocker list that affect the runtime
         coverage of the target function.
         """
         result_list = []
-        for func_name in target_function.incoming_references:
-            # Loop through all parent functions calling to the target function
-            # and discover possible branch blockers
-            for blocker in blockers:
-                if func_name in functions.keys() and func_name in blocker.blocked_unique_funcs:
-                    result_list.append(blocker)
+        for callpath in callpath_list:
+            # Loop through all possible callpath to determine blocking function
+            parent_fd = None
+            for callpath_fd in callpath:
+                if parent_fd:
+                    if not proj_profile.runtime_coverage.is_func_hit(callpath_fd.function_name):
+                        # if this function is not hit, the parent function is a blocker
+                        break
+                parent_fd = callpath_fd
+
+            # Fail safe for blocker at the start of the list
+            if not parent_fd:
+                parent_fd = callpath[0]
+
+            result_list.append(parent_fd)
         return result_list
 
     def _print_callpath_list(
@@ -349,7 +357,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
 
     def _print_blocker_list(
         self,
-        blocker_list: List[analysis.FuzzBranchBlocker]
+        blocker_list: List[function_profile.FunctionProfile]
     ) -> str:
         """
         Print blocker information in html
@@ -357,14 +365,19 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
         if len(blocker_list) == 0:
             return "N/A"
 
-        html = "<table><thead><td>Function Name</td><td>Blocked Branch</td></thead><tbody>"
+        html = "<table><thead>"
+        html += "<th bgcolor='#282A36'>Blocker function</th>"
+        html += "<th bgcolor='#282A36'>Arguments type</th>"
+        html += "<th bgcolor='#282A36'>Return type</th>"
+        html += "<th bgcolor='#282A36'>Constants touched</th>"
+        html += "</thead><tbody>"
         for blocker in blocker_list:
-            html += f"<tr><td>{blocker.function_name}</td>"
-            html += f"""
-                <a href="{blocker.coverage_report_link}">
-                {blocker.source_file}:{blocker.branch_line_number}
-                </a>
-            """
+            html += f"<tr><td>{blocker.function_name}<br/>"
+            html += f"in {blocker.function_source_file}:{blocker.function_linenumber}"
+            html += "</td>"
+            html += f"<td>{str(blocker.arg_types)}</td>"
+            html += f"<td>{str(blocker.return_type)}</td>"
+            html += f"<td>{str(blocker.constants_touched)}</td></tr>"
         html += "</tbody></table>"
         return html
 
@@ -390,6 +403,16 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
             callpath_list = proj_profile.get_function_callpaths(fd, [])
             callpath_str = self._print_callpath_list(callpath_list)
 
+            fuzzer_cover_count = self._retrieve_fuzzer_hitcount(fd, coverage)
+            if fuzzer_cover_count == 0:
+                blocker_list = self._determine_branch_blocker(
+                    callpath_list,
+                    proj_profile
+                )
+                blocker = self._print_blocker_list(blocker_list)
+            else:
+                blocker = "N/A"
+
             # Loop through the list of calledlocation for this function
             if len(func_callsites[fd.function_name]) == 0:
                 html_string += html_helpers.html_table_add_row([
@@ -398,8 +421,8 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
                     "Not in call tree",
                     f"{str(fd.reached_by_fuzzers)}",
                     f"{str(callpath_str)}",
-                    "0",
-                    "N/A"
+                    f"{fuzzer_cover_count}",
+                    f"{blocker}"
                 ])
 
                 json_dict['func_name'] = fd.function_name
@@ -407,25 +430,11 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
                 json_dict['call_loc'] = "Not in call tree"
                 json_dict['fuzzer_reach'] = fd.reached_by_fuzzers
                 json_dict['callpaths'] = callpath_str
-                json_dict['fuzzer_cover'] = "0"
-                json_dict['blocker'] = "N/A"
+                json_dict['fuzzer_cover'] = f"{fuzzer_cover_count}"
+                json_dict['blocker'] = blocker
                 json_list.append(json_dict)
 
                 continue
-
-            fuzzer_cover_count = self._retrieve_fuzzer_hitcount(fd, coverage)
-            if fuzzer_cover_count < len(fd.reached_by_fuzzers):
-                all_blockers = []
-                for profile in proj_profile.profiles:
-                    all_blockers.extend(profile.branch_blockers)
-                blocker_list = self._determine_branch_blocker(
-                    fd,
-                    all_blockers,
-                    proj_profile.all_functions
-                )
-                blocker = self._print_blocker_list(blocker_list)
-            else:
-                blocker = "N/A"
 
             for called_location in func_callsites[fd.function_name]:
                 html_string += html_helpers.html_table_add_row([
