@@ -501,7 +501,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
 
             # Loop through the list of calledlocation for this function
             if len(func_callsites[fd.function_name]) == 0:
-                html_string += html_helpers.html_table_add_row([
+                row = html_helpers.html_table_add_row([
                     f"{fd.function_name}",
                     "Not in call tree",
                     f"{str(fd.reached_by_fuzzers)}",
@@ -509,6 +509,10 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
                     f"{fuzzer_cover_count}",
                     f"{blocker}"
                 ])
+
+                row_split = row.rsplit('<td><table>', 1)
+                row = f'{row_split[0]}<td style="max-width: 600px"><table>{row_split[1]}'
+                html_string += row
 
                 json_dict['func_name'] = fd.function_name
                 json_dict['call_loc'] = "Not in call tree"
@@ -522,7 +526,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
                 continue
 
             for called_location in func_callsites[fd.function_name]:
-                html_string += html_helpers.html_table_add_row([
+                row = html_helpers.html_table_add_row([
                     f"{fd.function_name}",
                     f"{called_location}",
                     f"{str(fd.reached_by_fuzzers)}",
@@ -530,6 +534,10 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
                     f"{fuzzer_cover_count}",
                     f"{blocker}"
                 ])
+
+                row_split = row.rsplit('<td><table>', 1)
+                row = f'{row_split[0]}<td style="max-width: 600px"><table>{row_split[1]}'
+                html_string += row
 
                 json_dict['func_name'] = fd.function_name
                 json_dict['call_loc'] = called_location
