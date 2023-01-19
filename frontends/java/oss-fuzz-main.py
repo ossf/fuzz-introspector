@@ -131,5 +131,5 @@ if __name__ == "__main__":
   currdir = os.getcwd()
   mydir = os.path.dirname(os.path.abspath(__file__))
   os.chdir(mydir)
-  run_analysis("/out/")
+  run_analysis(os.environ['OUT'])
   os.chdir(currdir)
