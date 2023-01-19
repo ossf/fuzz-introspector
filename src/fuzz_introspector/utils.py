@@ -326,3 +326,23 @@ def resolve_coverage_link(
         result = cov_url.rstrip("/") + "/" + result.lstrip("/")
 
     return result
+
+
+def group_path_list_by_target(
+    list: List[List[Any]]
+) -> Dict[Any, List[Any]]:
+    """
+    Group path list items by path target which is
+    the last itme of each list.
+    """
+    result_dict: Dict[Any, List[Any]] = {}
+    for item in list:
+        if item[-1] in result_dict.keys():
+            item_list = result_dict[item[-1]]
+        else:
+            item_list = []
+
+        item_list.append(item)
+        result_dict[item[-1]] = item_list
+
+    return result_dict
