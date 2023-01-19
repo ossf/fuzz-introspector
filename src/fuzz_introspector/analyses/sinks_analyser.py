@@ -54,7 +54,6 @@ SINK_FUNCTION = {
         ('', 'execve'),
         ('', 'wordexp'),
         ('', 'popen'),
-        ('', 'fdopen')
     ],
     'python': [
         ('<builtin>', 'exec'),
@@ -94,7 +93,6 @@ SINK_FUNCTION = {
         ('java.lang.Runtime', 'exec'),
         ('javax.xml.xpath.XPath', 'compile'),
         ('javax.xml.xpath.XPath', 'evaluate'),
-        ('java.lang.Thread', 'sleep'),
         ('java.lang.Thread', 'run'),
         ('java.lang.Runnable', 'run'),
         ('java.util.concurrent.Executor', 'execute'),
@@ -136,6 +134,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
 
     def __init__(self) -> None:
         self.json_string_result = "[]"
+        self.display_html = False
         self.index = 0
 
     @classmethod
@@ -501,18 +500,19 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
 
             # Loop through the list of calledlocation for this function
             if len(func_callsites[fd.function_name]) == 0:
-                row = html_helpers.html_table_add_row([
-                    f"{fd.function_name}",
-                    "Not in call tree",
-                    f"{str(fd.reached_by_fuzzers)}",
-                    self._handle_callpath_dict(callpath_dict),
-                    f"{fuzzer_cover_count}",
-                    f"{blocker}"
-                ])
+                if self.display_html:
+                    row = html_helpers.html_table_add_row([
+                        f"{fd.function_name}",
+                        "Not in call tree",
+                        f"{str(fd.reached_by_fuzzers)}",
+                        self._handle_callpath_dict(callpath_dict),
+                        f"{fuzzer_cover_count}",
+                        f"{blocker}"
+                    ])
 
-                row_split = row.rsplit('<td><table>', 1)
-                row = f'{row_split[0]}<td style="max-width: 600px"><table>{row_split[1]}'
-                html_string += row
+                    row_split = row.rsplit('<td><table>', 1)
+                    row = f'{row_split[0]}<td style="max-width: 600px"><table>{row_split[1]}'
+                    html_string += row
 
                 json_dict['func_name'] = fd.function_name
                 json_dict['call_loc'] = "Not in call tree"
@@ -526,18 +526,19 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
                 continue
 
             for called_location in func_callsites[fd.function_name]:
-                row = html_helpers.html_table_add_row([
-                    f"{fd.function_name}",
-                    f"{called_location}",
-                    f"{str(fd.reached_by_fuzzers)}",
-                    self._handle_callpath_dict(callpath_dict),
-                    f"{fuzzer_cover_count}",
-                    f"{blocker}"
-                ])
+                if self.display_html:
+                    row = html_helpers.html_table_add_row([
+                        f"{fd.function_name}",
+                        f"{called_location}",
+                        f"{str(fd.reached_by_fuzzers)}",
+                        self._handle_callpath_dict(callpath_dict),
+                        f"{fuzzer_cover_count}",
+                        f"{blocker}"
+                    ])
 
-                row_split = row.rsplit('<td><table>', 1)
-                row = f'{row_split[0]}<td style="max-width: 600px"><table>{row_split[1]}'
-                html_string += row
+                    row_split = row.rsplit('<td><table>', 1)
+                    row = f'{row_split[0]}<td style="max-width: 600px"><table>{row_split[1]}'
+                    html_string += row
 
                 json_dict['func_name'] = fd.function_name
                 json_dict['call_loc'] = called_location
@@ -599,6 +600,10 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
             self.get_json_string_result()
         )
 
+        # If no html, this is our job done
+        if not self.display_html:
+            return ""
+
         html_string = ""
         html_string += "<div class=\"report-box\">"
 
@@ -659,9 +664,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
         )
 
         html_string += html_rows
-
         html_string += "</table>"
-
         html_string += "</div>"  # .collapsible
         html_string += "</div>"  # report-box
 
