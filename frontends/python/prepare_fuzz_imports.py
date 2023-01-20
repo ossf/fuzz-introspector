@@ -123,6 +123,8 @@ class FuzzerVisitor(ast.NodeVisitor):
                 specs = importlib.util.find_spec(_import)
             except ModuleNotFoundError:
                 continue
+            except ImportError:
+                continue
             if specs is not None:
                 print("Spec:")
                 print(specs)
