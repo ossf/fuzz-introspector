@@ -52,7 +52,50 @@ The next steps is to understand the blockers further.
 Inspect blockers at the calltree page
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Fuzz Introspector can tell us more about the blockers.
+Fuzz Introspector can tell us more about the blockers. One way of doing this
+is inspecting the dedicated calltree page. There is a dedicated calltree page
+per fuzzer and is accessible by the yellow button `Full calltree`:
+
+.. figure:: /user-guides/images/calltree-button.png
+   :width: 800px
+   :alt: Yellow calltree button
+
+The page this takes us to in the above example is `here <https://storage.googleapis.com/oss-fuzz-introspector/htslib/inspector-report/20230124/calltree_view_0.html>`_
+Following this button we get to the dedicated calltree page. At the top of this
+page there is a table with blockers. We will ignore this for now, and get to it
+in the section. Below the fuzz blocker table, there is a seciton which holds
+the calltree in a vertical manner with coloring corresponding to the runtime
+code coverage:
+
+.. figure:: /user-guides/images/htslib-calltree-in-page.png
+   :width: 800px
+   :alt: Calltree page
+
+The values on the left-hand side correspond to the values on the X-axis in the
+bitmap overview above. As such, we can scroll to around node 1100 where we
+estimated that a blocker exists:
+
+.. figure:: /user-guides/images/htslib-calltree-highlight-node.png
+   :width: 800px
+   :alt: Node index 1100
+
+The calltree shows us that node 1088 is the beginning of a long sequence of
+red nodes. We can follow the link in the `call tree` link, which gives
+us the exact location where the callsite to ``bgzf_close`` is:
+
+.. figure:: /user-guides/images/htslib-source-code-of-blocker.png
+   :width: 800px
+   :alt: Blocker source code
+
+At this point, we have the exact location in the source code that blocks
+a significant piece of code to not be executed by the fuzzer. At this stage,
+we can proceed with studying hte reason why this condition is not being
+triggered.
+
+A natural next step is to inspect the other places where we identified
+potential blockers visually. For each of those places we can follow a
+similar pattern to identify the exact locations in code where code coverage
+changes from green to red.
 
 
 Inspect branch-level fuzz blockers
