@@ -12,6 +12,10 @@ Fuzz-introspector aims to improve fuzzing experience of a project by guiding on 
 - modify existing fuzzers to improve the quality of your harness.
 
 ## Documentation and samples
+The Fuzz Introspector documentation is available here: https://fuzz-introspector.readthedocs.io This documentation includes user guides, OSS-Fuzz instructions, tutorials, development docs and more.
+
+We have older additional docs below, although these are being phased out:
+
 - [Sample OSS-Fuzz reports](https://oss-fuzz-introspector.storage.googleapis.com/index.html). [OSS-Fuzz](https://github.com/google/oss-fuzz) supports Fuzz Introspector and maintains a list of reports.
   - Sample C project report: [htslib](https://storage.googleapis.com/oss-fuzz-introspector/htslib/inspector-report/20221122/fuzz_report.html)
   - Sample C++ project report: [leveldb](https://storage.googleapis.com/oss-fuzz-introspector/leveldb/inspector-report/20221122/fuzz_report.html)
@@ -20,7 +24,6 @@ Fuzz-introspector aims to improve fuzzing experience of a project by guiding on 
 - [List of Case studies](doc/CaseStudies.md)
 - [Screenshots](doc/ExampleOutput.md)
 - [Feature list](doc/Features.md)
-- [Dev/API doc (work-in-progress)](https://fuzz-introspector.readthedocs.io/en/latest/)
 - Try yourself:
   - [Use with OSS-Fuzz](oss_fuzz_integration#build-fuzz-introspector-with-oss-fuzz) (Recommended)
   - [Use without OSS-Fuzz](doc/LocalBuild.md)
