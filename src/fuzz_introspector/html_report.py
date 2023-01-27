@@ -488,7 +488,7 @@ def create_top_summary_info(
 
     # Display reachability information
     html_string += "<div style=\"display: flex; max-width: 50%\">"
-    graph1_title = "Functions statically reachable by fuzzers"
+    graph1_title = "Functions statically rechable by fuzzers"
     graph1_percentage = str(round(reached_percentage, 2))
     graph1_numbers = f"{reached_func_count}/{total_functions}"
     html_string += create_percentage_graph(graph1_title, graph1_percentage, graph1_numbers)
