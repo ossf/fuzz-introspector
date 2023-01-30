@@ -331,6 +331,9 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
                         break
                 parent_fd = callpath_fd
 
+            # Fail safe for empty callpath
+            if len(callpath) == 0:
+                continue
             # Fail safe for blocker at the start of the list
             if not parent_fd:
                 parent_fd = callpath[0]

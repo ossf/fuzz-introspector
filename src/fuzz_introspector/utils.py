@@ -337,6 +337,8 @@ def group_path_list_by_target(
     """
     result_dict: Dict[Any, List[Any]] = {}
     for item in list:
+        if len(item) == 0:
+            continue
         if item[-1] in result_dict.keys():
             item_list = result_dict[item[-1]]
         else:
