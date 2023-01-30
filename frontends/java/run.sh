@@ -74,7 +74,7 @@ fi
 if [ -z $INCLUDEPREFIX ]
 then
     echo "No include prefix list defined, using empty include prefix list"
-    INCLUDEPREFIX=
+    INCLUDEPREFIX="java.lang.Runtime:javax.xml.xpath.XPath:java.lang.Thread:java.lang.Runnable:java.util.concurrent.Executor:java.util.concurrent.Callable:java.lang.System:java.lang.ProcessBuilder"
 fi
 
 # Build and execute the call graph generator
