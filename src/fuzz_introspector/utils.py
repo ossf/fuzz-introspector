@@ -354,4 +354,6 @@ def check_coverage_link_existence(
     link: str
 ) -> bool:
     link = link.split("#")[0]
+    if link.startswith("/"):
+        link = link[1:]
     return os.path.exists(link) and os.path.isfile(link)

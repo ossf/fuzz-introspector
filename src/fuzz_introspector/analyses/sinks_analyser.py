@@ -320,24 +320,17 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
         """
         Retrieve source code link for the given function if existed.
         """
-        for profile in proj_profile.profiles:
-            base_url = utils.get_target_coverage_url(
-                proj_profile.coverage_url,
-                profile.identifier,
-                profile.target_lang
-            )
+        link = proj_profile.resolve_coverage_report_link(
+            proj_profile.coverage_url,
+            function.function_source_file,
+            function.function_linenumber,
+            function.function_name,
+        )
 
-            link = profile.resolve_coverage_link(
-                base_url,
-                function.function_source_file,
-                function.function_linenumber,
-                function.function_name,
-            )
-
-            if utils.check_coverage_link_existence(link):
-                return link
-
-        return "#"
+        if utils.check_coverage_link_existence(link):
+            return link
+        else:
+            return "#"
 
     def _determine_branch_blocker(
         self,
@@ -372,7 +365,8 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
 
     def _generate_callpath_page(
         self,
-        callpath: List[function_profile.FunctionProfile]
+        callpath: List[function_profile.FunctionProfile],
+        proj_profile: project_profile.MergedProjectProfile
     ) -> str:
         """
         Generate a standalone html page to display
@@ -396,7 +390,9 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
                         {fd.function_name}
                     </code>
                     <span class="coverage-line-filename">
-                        in {fd.function_source_file}:{fd.function_linenumber}
+                        in <a href="{self._retrieve_function_link(fd, proj_profile)}">
+                            {fd.function_source_file}:{fd.function_linenumber}
+                        </a>
                         <span class="calltree-idx">
                             {depth_count:05}
                         </span>
@@ -451,8 +447,9 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
             func_link = self._retrieve_function_link(parent_func, proj_profile)
             callpath_list = callpath_dict[parent_func]
             html += "<tr><td>"
-            html += f"<a href='{func_link}'>{parent_func.function_name}</a><br/>"
-            html += f"in {parent_func.function_source_file}:{parent_func.function_linenumber}"
+            html += f"{parent_func.function_name}<br/>"
+            html += f"in <a href='{func_link}'>"
+            html += f"{parent_func.function_source_file}:{parent_func.function_linenumber}</a>"
             html += "</td><td>"
             count = 0
 
@@ -463,7 +460,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
             for callpath in callpath_list:
                 count += 1
                 self.index += 1
-                callpath_link = self._generate_callpath_page(callpath)
+                callpath_link = self._generate_callpath_page(callpath, proj_profile)
                 if count <= 20:
                     html += f"<a href='{callpath_link}'>Path {count}</a><br/>"
             html += "</td></tr>"
@@ -491,8 +488,9 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
         html += "</thead><tbody>"
         for blocker in blocker_list:
             link = self._retrieve_function_link(blocker, proj_profile)
-            html += f"<tr><td><a href='{link}'>{blocker.function_name}</a><br/>"
-            html += f"in {blocker.function_source_file}:{blocker.function_linenumber}"
+            html += f"<tr><td>{blocker.function_name}<br/>"
+            html += f"in <a href='{link}'>"
+            html += f"{blocker.function_source_file}:{blocker.function_linenumber}</a>"
             html += "</td>"
             html += f"<td>{str(blocker.arg_types)}</td>"
             html += f"<td>{str(blocker.return_type)}</td>"
@@ -600,7 +598,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
         """
         Show all used sensitive sink functions / methods in the project and display
         if any fuzzers statically or dynamically reached them. If not, display closest
-        entry point to reach them.
+        entry point to reach them
         1) Loop through the all function list of the project and see if any of the sink
            functions exists.
         2) Shows if each of those third party function call location is statically
@@ -658,15 +656,15 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
             "analysis of the target project code, all of these function "
             "call and their caller information, including the source file "
             "or class and line number that initiate the call are captured. "
-            "The caller source code file or class and the line number are "
-            "shown in column 2 while column 1 is the function name of that "
-            "selected functions or methods call. Each occurrent of the target "
-            "function call will occuply a separate row. Column 3 of each row "
-            "indicate if the target function calls is statically unreachable."
-            "Column 4 lists all fuzzers (or no fuzzers at all) that have "
-            "covered that particular system call in  dynamic fuzzing. Those "
-            "functions with low to  no reachability and dynamic hit count indicate "
-            "missed fuzzing logic to fuzz and track for possible code injection sinks."
+            "Column 1 is the function name of that selected functions or "
+            "methods. Column 2 of each row indicate if the target function "
+            "covered by any fuzzer calltree information. Column 3 lists all "
+            "fuzzers (or no fuzzers at all) that have coered that particular "
+            "function call dynamically. Column 4 shows list of parent function "
+            "for the specific function call, while column 5 shows possible blocker "
+            "functions that make the fuzzers fail to reach the specific functions. "
+            "Both column 4 and 5 will only show information if none of the fuzzers "
+            "cover the target function calls."
             "</p>"
         )
 
@@ -684,7 +682,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
                 ("Target sink", ""),
                 ("Callsite location",
                  "Source file, line number and parent function of sink function call. "
-                 "Based on static analysis."),
+                 "Based on static analysis and provided by .data calltree."),
                 ("Reached by fuzzer",
                  "Is this code reachable by any fuzzer functions? "
                  "Based on static analysis."),
@@ -695,7 +693,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
                  "Number of fuzzers covering this sink function during runtime."),
                 ("Possible branch blockers",
                  "Determine which branch blockers avoid fuzzers to cover the"
-                 "sink function during runtime")
+                 "sink function during runtime and its information")
             ]
         )
 
