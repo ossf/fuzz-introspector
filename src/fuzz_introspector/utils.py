@@ -348,3 +348,12 @@ def group_path_list_by_target(
         result_dict[item[-1]] = item_list
 
     return result_dict
+
+
+def check_coverage_link_existence(
+    link: str
+) -> bool:
+    link = link.split("#")[0]
+    if link.startswith("/"):
+        link = link[1:]
+    return os.path.exists(link) and os.path.isfile(link)
