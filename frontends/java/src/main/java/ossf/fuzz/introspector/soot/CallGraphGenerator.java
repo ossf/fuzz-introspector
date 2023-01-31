@@ -112,8 +112,8 @@ public class CallGraphGenerator {
     Scene.v().setEntryPoints(entryPoints);
 
     // Load all related classes
-    Scene.v().loadBasicClasses();
     Scene.v().loadNecessaryClasses();
+    Scene.v().loadDynamicClasses();
 
     // Start the generation
     PackManager.v().runPacks();
@@ -171,8 +171,27 @@ class CustomSenceTransformer extends SceneTransformer {
     // Extract Callgraph for the included Java Class
     System.out.println("[Callgraph] Determining classes to use for analysis.");
     CallGraph callGraph = Scene.v().getCallGraph();
-    for (SootClass c : Scene.v().getApplicationClasses()) {
-      if (!c.getName().startsWith("jdk")) {
+    for (SootClass c : Scene.v().getClasses()) {
+      boolean isInclude = false;
+      boolean isIgnore = false;
+      String cname = c.getName();
+
+      for (String prefix : includeList) {
+        if (cname.startsWith(prefix)) {
+          isInclude = true;
+          break;
+        }
+      }
+      if (!isInclude) {
+        for (String prefix : excludeList) {
+          if (cname.startsWith(prefix)) {
+            isIgnore = true;
+            break;
+          }
+        }
+      }
+
+      if (!isIgnore) {
         System.out.println("[Callgraph] [USE] class: " + c.getName());
         classMethodMap.put(c, c.getMethods());
       } else {
