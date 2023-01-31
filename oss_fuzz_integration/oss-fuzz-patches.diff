@@ -25,19 +25,6 @@ index 6cc06bee..1e4a2496 100644
  RUN /root/checkout_build_install_llvm.sh
  RUN rm /root/checkout_build_install_llvm.sh
  
-diff --git a/infra/base-images/base-clang/checkout_build_install_llvm.sh b/infra/base-images/base-clang/checkout_build_install_llvm.sh
-index 2b403cfd..65f0ea55 100755
---- a/infra/base-images/base-clang/checkout_build_install_llvm.sh
-+++ b/infra/base-images/base-clang/checkout_build_install_llvm.sh
-@@ -129,7 +129,7 @@ cp -rf /fuzz-introspector/frontends/llvm/lib/Transforms/FuzzIntrospector ./llvm/
- 
- # LLVM currently does not support dynamically loading LTO passes. Thus, we
- # hardcode it into Clang instead. Ref: https://reviews.llvm.org/D77704
--/fuzz-introspector/sed_cmds.sh
-+/fuzz-introspector/frontends/llvm/patch-llvm.sh
- cd $OLD_WORKING_DIR
- 
- mkdir -p $WORK/llvm-stage2 $WORK/llvm-stage1
 diff --git a/infra/base-images/base-runner/Dockerfile b/infra/base-images/base-runner/Dockerfile
 index bc034e19..929e3499 100755
 --- a/infra/base-images/base-runner/Dockerfile
