@@ -47,6 +47,7 @@ class MergedProjectProfile:
         self.all_functions: Dict[str, function_profile.FunctionProfile] = dict()
         self.unreached_functions = set()
         self.functions_reached = set()
+        self.coverage_url = "#"
 
         logger.info(f"Creating merged profile of {len(self.profiles)} profiles")
         # Populate functions reached

@@ -81,6 +81,9 @@ def run_analysis_on_dir(
     logger.info("[+] Creating project profile")
     proj_profile = project_profile.MergedProjectProfile(profiles)
 
+    logger.info(f"[+] Storing coverage url: {coverage_url}")
+    proj_profile.coverage_url = coverage_url
+
     logger.info(
         f"[+] All coverage files {proj_profile.get_profiles_coverage_files()}"
     )
@@ -99,7 +102,7 @@ def run_analysis_on_dir(
         analysis.overlay_calltree_with_coverage(
             profile,
             proj_profile,
-            coverage_url,
+            proj_profile.coverage_url,
             proj_profile.basefolder
         )
 
@@ -110,7 +113,7 @@ def run_analysis_on_dir(
         proj_profile,
         analyses_to_run,
         output_json,
-        coverage_url,
+        proj_profile.coverage_url,
         proj_profile.basefolder,
         report_name
     )
