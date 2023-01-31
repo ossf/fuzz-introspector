@@ -13,7 +13,7 @@
 # limitations under the License.
 #!/bin/sh
 
-python3 retrieve_project_links.py
+python3 retrieve_project_link.py
 
 mkdir -p ./all_functions
 mkdir -p ./summary_json

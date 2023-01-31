@@ -67,7 +67,7 @@ with open("func_result.csv", "w") as f:
         for item in function_map[key]:
             f.write(f"{key},{item}\n")
 
-with open("sink_analyser_result", "w") as f:
+with open("sink_analyser_result.csv", "w") as f:
     f.write("Project,Sink Functions\n")
     for key in function_map.keys():
         for item in function_map[key]:

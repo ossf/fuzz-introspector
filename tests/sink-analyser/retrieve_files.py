@@ -35,4 +35,4 @@ for proj in link_map.keys():
             f.write(all_functions)
         if summary_json:
             with open(f"summary_json/{proj}", "w") as f:
-                f.write(fs_json)
+                f.write(summary_json)
