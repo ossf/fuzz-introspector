@@ -11,21 +11,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#!/usr/bin/python3
+#!/bin/sh
 
-import requests
-import lxml.html
-import json
+python3 retrieve_project_links.py
 
-data = requests.get('https://oss-fuzz-introspector.storage.googleapis.com/index.html').text
-html = lxml.html.fromstring(data)
+mkdir -p ./all_functions
+mkdir -p ./summary_json
 
-link_map = dict()
-for li in html.getchildren()[1].getchildren()[2]:
-    link_item = li.getchildren()[0]
-    proj = link_item.text.replace('\n', '').lstrip(' ').rstrip(' ')
-    link = link_item.get('href').rsplit('/', 1)[0]
-    link_map[proj] = link
+rm -rf all_functions/*
+rm -rf summary_json/*
 
-with open(".proj_link", "w") as f:
-    f.write(json.dumps(link_map))
+python3 retrieve_files.py
+python3 check_files.py
+
+rm .proj_link

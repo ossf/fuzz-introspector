@@ -17,3 +17,6 @@ This directory has config file for each language. Each file contains the list of
 
 [check_files.py]
 According to the project list in the proj/<lang> folder, analyse its all_functions.js and summary.json file and generate enuemrative testing result.
+
+[run.sh]
+A wrapper script to run all the above python script at once for c / c++ / python.
