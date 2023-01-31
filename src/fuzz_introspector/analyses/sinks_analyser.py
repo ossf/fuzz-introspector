@@ -134,7 +134,8 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
 
     def __init__(self) -> None:
         self.json_string_result = "[]"
-        self.display_html = False
+#        self.display_html = False
+        self.display_html = True
         self.index = 0
 
     @classmethod
@@ -311,6 +312,33 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
                 count += 1
         return count
 
+    def _retrieve_function_link(
+        self,
+        function: function_profile.FunctionProfile,
+        proj_profile: project_profile.MergedProjectProfile
+    ) -> str:
+        """
+        Retrieve source code link for the given function if existed.
+        """
+        for profile in proj_profile.profiles:
+            base_url = utils.get_target_coverage_url(
+                proj_profile.coverage_url,
+                profile.identifier,
+                profile.target_lang
+            )
+
+            link = profile.resolve_coverage_link(
+                base_url,
+                function.function_source_file,
+                function.function_linenumber,
+                function.function_name,
+            )
+
+            if utils.check_coverage_link_existence(link):
+                return link
+
+        return "#"
+
     def _determine_branch_blocker(
         self,
         callpath_list: List[List[function_profile.FunctionProfile]],
@@ -322,6 +350,10 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
         """
         result_list = []
         for callpath in callpath_list:
+            # Fail safe for empty callpath
+            if len(callpath) == 0:
+                continue
+
             # Loop through all possible callpath to determine blocking function
             parent_fd = None
             for callpath_fd in callpath:
@@ -331,9 +363,6 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
                         break
                 parent_fd = callpath_fd
 
-            # Fail safe for empty callpath
-            if len(callpath) == 0:
-                continue
             # Fail safe for blocker at the start of the list
             if not parent_fd:
                 parent_fd = callpath[0]
@@ -406,6 +435,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
             function_profile.FunctionProfile,
             List[List[function_profile.FunctionProfile]]
         ],
+        proj_profile: project_profile.MergedProjectProfile
     ) -> str:
         """
         Pretty print index of callpath and generate
@@ -418,9 +448,10 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
         html += "</thead><tbody>"
 
         for parent_func in callpath_dict.keys():
+            func_link = self._retrieve_function_link(parent_func, proj_profile)
             callpath_list = callpath_dict[parent_func]
             html += "<tr><td>"
-            html += f"{parent_func.function_name}<br/>"
+            html += f"<a href='{func_link}'>{parent_func.function_name}</a><br/>"
             html += f"in {parent_func.function_source_file}:{parent_func.function_linenumber}"
             html += "</td><td>"
             count = 0
@@ -443,7 +474,8 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
 
     def _print_blocker_list(
         self,
-        blocker_list: List[function_profile.FunctionProfile]
+        blocker_list: List[function_profile.FunctionProfile],
+        proj_profile: project_profile.MergedProjectProfile
     ) -> str:
         """
         Print blocker information in html
@@ -458,7 +490,8 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
         html += "<th bgcolor='#282A36'>Constants touched</th>"
         html += "</thead><tbody>"
         for blocker in blocker_list:
-            html += f"<tr><td>{blocker.function_name}<br/>"
+            link = self._retrieve_function_link(blocker, proj_profile)
+            html += f"<tr><td><a href='{link}'>{blocker.function_name}</a><br/>"
             html += f"in {blocker.function_source_file}:{blocker.function_linenumber}"
             html += "</td>"
             html += f"<td>{str(blocker.arg_types)}</td>"
@@ -497,7 +530,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
                     callpath_list,
                     proj_profile
                 )
-                blocker = self._print_blocker_list(blocker_list)
+                blocker = self._print_blocker_list(blocker_list, proj_profile)
             else:
                 blocker = "N/A"
 
@@ -506,9 +539,9 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
                 if self.display_html:
                     row = html_helpers.html_table_add_row([
                         f"{fd.function_name}",
-                        "Not in call tree",
+                        "Not in fuzzer provided call tree",
                         f"{str(fd.reached_by_fuzzers)}",
-                        self._handle_callpath_dict(callpath_dict),
+                        self._handle_callpath_dict(callpath_dict, proj_profile),
                         f"{fuzzer_cover_count}",
                         f"{blocker}"
                     ])
@@ -518,7 +551,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
                     html_string += row
 
                 json_dict['func_name'] = fd.function_name
-                json_dict['call_loc'] = "Not in call tree"
+                json_dict['call_loc'] = "Not in fuzzer provided call tree"
                 json_dict['fuzzer_reach'] = fd.reached_by_fuzzers
                 json_dict['parent_func'] = parent_name_list
                 json_dict['callpaths'] = callpath_name_dict
@@ -534,7 +567,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
                         f"{fd.function_name}",
                         f"{called_location}",
                         f"{str(fd.reached_by_fuzzers)}",
-                        self._handle_callpath_dict(callpath_dict),
+                        self._handle_callpath_dict(callpath_dict, proj_profile),
                         f"{fuzzer_cover_count}",
                         f"{blocker}"
                     ])
