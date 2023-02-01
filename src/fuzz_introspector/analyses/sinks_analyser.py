@@ -356,9 +356,6 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
                         break
                 parent_fd = callpath_fd
 
-            # Fail safe for empty callpath
-            if len(callpath) == 0:
-                continue
             # Fail safe for blocker at the start of the list
             if not parent_fd:
                 parent_fd = callpath[0]
@@ -441,6 +438,9 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
         also generate separate html page for displaying
         callpath and add the links to the index.
         """
+        if len(callpath_dict.keys()) == 0:
+            return "N/A"
+
         html = "<table><thead>"
         html += "<th bgcolor='#282A36'>Parent functions</th>"
         html += "<th bgcolor='#282A36'>Callpaths</th>"
@@ -449,7 +449,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
         for parent_func in callpath_dict.keys():
             func_link = self._retrieve_function_link(parent_func, proj_profile)
             callpath_list = callpath_dict[parent_func]
-            html += "<tr><td>"
+            html += "<tr><td style='max-width: 150px'>"
             html += f"{parent_func.function_name}<br/>"
             html += f"in <a href='{func_link}'>"
             html += f"{parent_func.function_source_file}:{parent_func.function_linenumber}</a>"
@@ -484,20 +484,20 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
             return "N/A"
 
         html = "<table><thead>"
-        html += "<th bgcolor='#282A36'>Blocker function</th>"
+        html += "<th bgcolor='#282A36' >Blocker function</th>"
         html += "<th bgcolor='#282A36'>Arguments type</th>"
         html += "<th bgcolor='#282A36'>Return type</th>"
         html += "<th bgcolor='#282A36'>Constants touched</th>"
         html += "</thead><tbody>"
         for blocker in blocker_list:
             link = self._retrieve_function_link(blocker, proj_profile)
-            html += f"<tr><td>{blocker.function_name}<br/>"
+            html += f"<tr><td style='max-width: 150px'>{blocker.function_name}<br/>"
             html += f"in <a href='{link}'>"
             html += f"{blocker.function_source_file}:{blocker.function_linenumber}</a>"
             html += "</td>"
-            html += f"<td>{str(blocker.arg_types)}</td>"
-            html += f"<td>{str(blocker.return_type)}</td>"
-            html += f"<td>{str(blocker.constants_touched)}</td></tr>"
+            html += f"<td style='max-width: 150px'>{str(blocker.arg_types)}</td>"
+            html += f"<td style='max-width: 150px'>{str(blocker.return_type)}</td>"
+            html += f"<td style='max-width: 150px'>{str(blocker.constants_touched)}</td></tr>"
         html += "</tbody></table>"
         return html
 
@@ -547,9 +547,10 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
                         f"{blocker}"
                     ])
 
-                    row_split = row.rsplit('<td><table>', 1)
-                    row = f'{row_split[0]}<td style="max-width: 600px"><table>{row_split[1]}'
-                    html_string += row
+                    if blocker != "N/A":
+                        row_split = row.rsplit('<td><table>', 1)
+                        row = f'{row_split[0]}<td style="max-width: 600px"><table>{row_split[1]}'
+                        html_string += row
 
                 json_dict['func_name'] = fd.function_name
                 json_dict['call_loc'] = "Not in fuzzer provided call tree"
@@ -573,9 +574,10 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
                         f"{blocker}"
                     ])
 
-                    row_split = row.rsplit('<td><table>', 1)
-                    row = f'{row_split[0]}<td style="max-width: 600px"><table>{row_split[1]}'
-                    html_string += row
+                    if blocker != "N/A":
+                        row_split = row.rsplit('<td><table>', 1)
+                        row = f'{row_split[0]}<td style="max-width: 600px"><table>{row_split[1]}'
+                        html_string += row
 
                 json_dict['func_name'] = fd.function_name
                 json_dict['call_loc'] = called_location

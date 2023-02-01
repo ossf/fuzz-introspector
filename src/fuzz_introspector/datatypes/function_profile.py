@@ -64,6 +64,12 @@ class FunctionProfile:
         # Saving callsites for this function
         try:
             self.callsite = self.load_func_callsites(elem['Callsites'])
+            # Add missed function called for this function
+            for func_name in self.callsite.keys():
+                if func_name not in self.functions_called:
+                    self.functions_called.append(func_name)
+                if func_name not in self.functions_reached:
+                    self.functions_reached.append(func_name)
         except Exception:
             self.callsite = dict()
 
