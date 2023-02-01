@@ -315,22 +315,28 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
     def _retrieve_function_link(
         self,
         function: function_profile.FunctionProfile,
-        proj_profile: project_profile.MergedProjectProfile
-    ) -> str:
+        proj_profile: project_profile.MergedProjectProfile,
+        target_name: str = None
+    ) -> Tuple[str, int]:
         """
         Retrieve source code link for the given function if existed.
         """
+        linenumber = function.function_linenumber
+
+        if target_name and target_name in function.callsite.keys():
+            linenumber = int(function.callsite[target_name][0].split(':')[1])
+
         link = proj_profile.resolve_coverage_report_link(
             proj_profile.coverage_url,
             function.function_source_file,
-            function.function_linenumber,
+            linenumber,
             function.function_name,
         )
 
         if utils.check_coverage_link_existence(link):
-            return link
+            return (link, linenumber)
         else:
-            return "#"
+            return ("#", linenumber)
 
     def _determine_branch_blocker(
         self,
@@ -381,6 +387,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
         section += "<div class='call-tree-section-wrapper'>"
         for fd in callpath:
             indentation = "%dpx" % (int(depth_count) * 16 + 100)
+            link, line = self._retrieve_function_link(fd, proj_profile)
 
             section += "<div class='red-background coverage-line'>"
             section += f"""<span class="coverage-line-inner" data-calltree-idx="{depth_count:05}"
@@ -390,8 +397,8 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
                         {fd.function_name}
                     </code>
                     <span class="coverage-line-filename">
-                        in <a href="{self._retrieve_function_link(fd, proj_profile)}">
-                            {fd.function_source_file}:{fd.function_linenumber}
+                        in <a href="{link}">
+                            {fd.function_source_file}:{line}
                         </a>
                         <span class="calltree-idx">
                             {depth_count:05}
@@ -431,7 +438,8 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
             function_profile.FunctionProfile,
             List[List[function_profile.FunctionProfile]]
         ],
-        proj_profile: project_profile.MergedProjectProfile
+        proj_profile: project_profile.MergedProjectProfile,
+        target_name: str
     ) -> str:
         """
         Pretty print index of callpath and generate
@@ -447,12 +455,12 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
         html += "</thead><tbody>"
 
         for parent_func in callpath_dict.keys():
-            func_link = self._retrieve_function_link(parent_func, proj_profile)
+            func_link, line = self._retrieve_function_link(parent_func, proj_profile, target_name)
             callpath_list = callpath_dict[parent_func]
             html += "<tr><td style='max-width: 150px'>"
             html += f"{parent_func.function_name}<br/>"
             html += f"in <a href='{func_link}'>"
-            html += f"{parent_func.function_source_file}:{parent_func.function_linenumber}</a>"
+            html += f"{parent_func.function_source_file}:{line}</a>"
             html += "</td><td>"
             count = 0
 
@@ -490,10 +498,10 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
         html += "<th bgcolor='#282A36'>Constants touched</th>"
         html += "</thead><tbody>"
         for blocker in blocker_list:
-            link = self._retrieve_function_link(blocker, proj_profile)
+            link, line = self._retrieve_function_link(blocker, proj_profile)
             html += f"<tr><td style='max-width: 150px'>{blocker.function_name}<br/>"
             html += f"in <a href='{link}'>"
-            html += f"{blocker.function_source_file}:{blocker.function_linenumber}</a>"
+            html += f"{blocker.function_source_file}:{line}</a>"
             html += "</td>"
             html += f"<td style='max-width: 150px'>{str(blocker.arg_types)}</td>"
             html += f"<td style='max-width: 150px'>{str(blocker.return_type)}</td>"
@@ -542,7 +550,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
                         f"{fd.function_name}",
                         "Not in fuzzer provided call tree",
                         f"{str(fd.reached_by_fuzzers)}",
-                        self._handle_callpath_dict(callpath_dict, proj_profile),
+                        self._handle_callpath_dict(callpath_dict, proj_profile, fd.function_name),
                         f"{fuzzer_cover_count}",
                         f"{blocker}"
                     ])
@@ -569,7 +577,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
                         f"{fd.function_name}",
                         f"{called_location}",
                         f"{str(fd.reached_by_fuzzers)}",
-                        self._handle_callpath_dict(callpath_dict, proj_profile),
+                        self._handle_callpath_dict(callpath_dict, proj_profile, fd.function_name),
                         f"{fuzzer_cover_count}",
                         f"{blocker}"
                     ])
