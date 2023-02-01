@@ -40,9 +40,9 @@ for lang in lang_list:
             list = []
             for func in func_list:
                 func_name = func["Func name"].split("\n")[1].lstrip(" ").rstrip(" ")
-                func_name = func_name.rsplit(".", 1)[-1]
                 if lang == "jvm":
                     func_name = func_name.split("(", 1)[0]
+                func_name = func_name.rsplit(".", 1)[-1]
                 if func_name in SINK_LIST:
                     list.append(func_name)
             function_map[proj] = list
