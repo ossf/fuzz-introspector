@@ -16,8 +16,6 @@
 package ossf.fuzz.introspector.soot.yaml;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.ArrayList;
-import java.util.List;
 
 public class Callsite {
   private String source;
