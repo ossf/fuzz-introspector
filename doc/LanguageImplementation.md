@@ -171,7 +171,7 @@ functionsReached:      list of strings           # A list of all the functions s
   - ...
 functionUses:          int                       # The amount of functions that use (reach) this function.
 BranchProfiles:        list of branch profiles   # A list of conditional branch profiles used for branch block detection.
-  - Branch String:     string                    # source code path and line number of the branch.
+  - Branch String:     string                    # Source code path and line number of the branch.
     Branch Sides:                                # A pair of data about the branch
     - BranchSide:      string                    # Source code path and line number of the branch condition.
       BranchSideFuncs: list of strings           # A list of function names, of all functions reachable by the branch.
@@ -179,6 +179,12 @@ BranchProfiles:        list of branch profiles   # A list of conditional branch 
     - BranchSide:      string                    # Source code path and line number of the branch condition.
       BranchSideFuncs  list of strings           # A list of function names, of all functions reachable by the branch.
         - ...
+Callsites:             list of call site         # A list of callsites of functions invoked by this function.
+  - Src:               string                    # Source code path and line number of this function invocation.
+    Dst:               string                    # Name of the function being invoked.
+  - Src:               string                    # Source code path and line number of this function invocation.
+    Dst:               string                    # Name of the function being invoked.
+  - ...
 ```
 
 #### Example of program-wide data file
@@ -223,6 +229,19 @@ All functions:
               - fuzz_entry
               - free
               - free
+      Callsites:
+        - Src: /src/introspector_example.c:27,1
+          Dst: malloc
+        - Src: /src/introspector_example.c:28,1
+          Dst: malloc
+        - Src: /src/introspector_example.c:29,1
+          Dst: llvm.memcpy.p0i8.p0i8.i64
+        - Src: /src/introspector_example.c:30,1
+          Dst: fuzz_entry
+        - Src: /src/introspector_example.c:31,1
+          Dst: free
+        - Src: /src/introspector_example.c:33,1
+          Dst: free
     - functionName:    fuzz_entry
       functionSourceFile: '/src/introspector_example.c'
       linkageType:     InternalLinkage
@@ -252,6 +271,9 @@ All functions:
               - target3
             FalseSide:       'introspector_example.c:17,7'
             FalseSideFuncs:  []
+      Callsites:
+        - Src: /src/introspector_example.c:15,1
+          Dst: target3
     - functionName:    target3
       functionSourceFile: '/src/introspector_example.c'
       linkageType:     InternalLinkage
@@ -277,6 +299,7 @@ All functions:
             TrueSideFuncs:   []
             FalseSide:       'introspector_example.c:8,2'
             FalseSideFuncs:  []
+      Callsites: []
 ...
 ```
 
