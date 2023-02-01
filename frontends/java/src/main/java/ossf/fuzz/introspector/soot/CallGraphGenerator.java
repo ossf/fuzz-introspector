@@ -648,10 +648,9 @@ class CustomSenceTransformer extends SceneTransformer {
   }
 
   /**
-   * The method retrieves the invocation body of a statement if existed. 
-   * Then it determines the information of the method invoked and stores 
-   * them in the result to record the callsite information of the invoked
-   * method in its parent method.
+   * The method retrieves the invocation body of a statement if existed. Then it determines the
+   * information of the method invoked and stores them in the result to record the callsite
+   * information of the invoked method in its parent method.
    *
    * @param stmt the statement to handle
    * @param sourceFilePath the file path for the parent method
