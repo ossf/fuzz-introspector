@@ -33,6 +33,7 @@ import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import ossf.fuzz.introspector.soot.yaml.BranchProfile;
 import ossf.fuzz.introspector.soot.yaml.BranchSide;
+import ossf.fuzz.introspector.soot.yaml.Callsite;
 import ossf.fuzz.introspector.soot.yaml.FunctionConfig;
 import ossf.fuzz.introspector.soot.yaml.FunctionElement;
 import ossf.fuzz.introspector.soot.yaml.FuzzerConfig;
@@ -44,6 +45,8 @@ import soot.SootClass;
 import soot.SootMethod;
 import soot.Transform;
 import soot.Unit;
+import soot.jimple.Stmt;
+import soot.jimple.InvokeExpr;
 import soot.jimple.internal.JIfStmt;
 import soot.jimple.toolkits.callgraph.CallGraph;
 import soot.jimple.toolkits.callgraph.Edge;
@@ -296,9 +299,15 @@ class CustomSenceTransformer extends SceneTransformer {
           while (blockIt.hasNext()) {
             // Looping statement from all blocks from this specific method.
             Unit unit = blockIt.next();
-            if (unit instanceof JIfStmt) {
-              element.addBranchProfile(
-                  handleIfBranch(blockGraph.getBlocks(), unit, c.getName(), functionLineMap));
+            if (unit instanceof Stmt) {
+              Callsite callsite = handleStatement((Stmt) unit, c.getFilePath());
+              if (callsite != null) {
+                element.addCallsite(callsite);
+              }
+              if (unit instanceof JIfStmt) {
+                element.addBranchProfile(
+                  handleIfStatement(blockGraph.getBlocks(), unit, c.getName(), functionLineMap));
+              }
             }
             iCount++;
           }
@@ -637,40 +646,56 @@ class CustomSenceTransformer extends SceneTransformer {
 
     return mergedClassName.toString();
   }
-
-  private BranchProfile handleIfBranch(
+  
+  private Callsite handleStatement(Stmt stmt, String sourceFilePath) {
+    // Handle statements of a method
+    if ((stmt.containsInvokeExpr()) && (sourceFilePath != null)) {
+      InvokeExpr expr = stmt.getInvokeExpr();
+      Callsite callsite = new Callsite();
+      SootMethod target = expr.getMethod();
+      if (!this.excludeMethodList.contains(target.getName())) {
+        callsite.setSource(sourceFilePath + ":" + stmt.getJavaSourceStartLineNumber() + ",1");
+        callsite.setMethodName("[" + target.getDeclaringClass() + "]." + target.getName());
+        return callsite;
+      }
+    }
+    
+    return null;
+  }
+  
+  private BranchProfile handleIfStatement(
       List<Block> blocks, Unit unit, String cname, Map<String, Integer> functionLineMap) {
     // Handle if branch
     BranchProfile branchProfile = new BranchProfile();
-
+    
     Integer trueBlockLineNumber = unit.getJavaSourceStartLineNumber() + 1;
-    Integer falseBlockLineNumber =
-        ((JIfStmt) unit).getUnitBoxes().get(0).getUnit().getJavaSourceStartLineNumber();
-
-    Map<String, Integer> trueBlockLine =
-        getBlockStartEndLineWithLineNumber(blocks, trueBlockLineNumber);
+    Integer falseBlockLineNumber = 
+      ((JIfStmt) unit).getUnitBoxes().get(0).getUnit().getJavaSourceStartLineNumber();
+    
+    Map<String, Integer> trueBlockLine = 
+      getBlockStartEndLineWithLineNumber(blocks, trueBlockLineNumber);
     Map<String, Integer> falseBlockLine =
-        getBlockStartEndLineWithLineNumber(blocks, falseBlockLineNumber);
+      getBlockStartEndLineWithLineNumber(blocks, falseBlockLineNumber);
 
     // True branch
     if (!trueBlockLine.isEmpty()) {
       Integer start = falseBlockLine.get("start");
       branchProfile.addBranchSides(
-          processBranch(trueBlockLine, cname + ":" + start, functionLineMap));
+        processBranch(trueBlockLine, cname + ":" + start, functionLineMap));
     }
 
     // False branch
     if (!falseBlockLine.isEmpty()) {
       Integer start = falseBlockLine.get("start");
       branchProfile.addBranchSides(
-          processBranch(falseBlockLine, cname + ":" + (start - 1), functionLineMap));
+        processBranch(falseBlockLine, cname + ":" + (start - 1), functionLineMap));
     }
-
+    
     branchProfile.setBranchString(cname + ":" + unit.getJavaSourceStartLineNumber());
-
+    
     return branchProfile;
   }
-
+  
   private BranchSide processBranch(
       Map<String, Integer> blockLine, String cname, Map<String, Integer> functionLineMap) {
     BranchSide branchSide = new BranchSide();
