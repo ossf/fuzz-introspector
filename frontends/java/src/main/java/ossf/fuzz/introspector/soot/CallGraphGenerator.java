@@ -300,7 +300,7 @@ class CustomSenceTransformer extends SceneTransformer {
             // Looping statement from all blocks from this specific method.
             Unit unit = blockIt.next();
             if (unit instanceof Stmt) {
-              Callsite callsite = handleStatement((Stmt) unit, c.getFilePath());
+              Callsite callsite = handleMethodInvocationInStatement((Stmt) unit, c.getFilePath());
               if (callsite != null) {
                 element.addCallsite(callsite);
               }
@@ -647,7 +647,17 @@ class CustomSenceTransformer extends SceneTransformer {
     return mergedClassName.toString();
   }
 
-  private Callsite handleStatement(Stmt stmt, String sourceFilePath) {
+  /**
+   * The method retrieves the invocation body of a statement if existed. 
+   * Then it determines the information of the method invoked and stores 
+   * them in the result to record the callsite information of the invoked
+   * method in its parent method.
+   *
+   * @param stmt the statement to handle
+   * @param sourceFilePath the file path for the parent method
+   * @return the callsite object to store in the output yaml file
+   */
+  private Callsite handleMethodInvocationInStatement(Stmt stmt, String sourceFilePath) {
     // Handle statements of a method
     if ((stmt.containsInvokeExpr()) && (sourceFilePath != null)) {
       InvokeExpr expr = stmt.getInvokeExpr();
