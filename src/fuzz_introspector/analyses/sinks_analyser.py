@@ -316,7 +316,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
         self,
         function: function_profile.FunctionProfile,
         proj_profile: project_profile.MergedProjectProfile,
-        target_name: str = None
+        target_name: str = ""
     ) -> Tuple[str, int]:
         """
         Retrieve source code link for the given function if existed.
