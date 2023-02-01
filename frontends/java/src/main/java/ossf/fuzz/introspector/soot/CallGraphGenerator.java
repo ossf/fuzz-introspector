@@ -45,8 +45,8 @@ import soot.SootClass;
 import soot.SootMethod;
 import soot.Transform;
 import soot.Unit;
-import soot.jimple.Stmt;
 import soot.jimple.InvokeExpr;
+import soot.jimple.Stmt;
 import soot.jimple.internal.JIfStmt;
 import soot.jimple.toolkits.callgraph.CallGraph;
 import soot.jimple.toolkits.callgraph.Edge;
@@ -306,7 +306,7 @@ class CustomSenceTransformer extends SceneTransformer {
               }
               if (unit instanceof JIfStmt) {
                 element.addBranchProfile(
-                  handleIfStatement(blockGraph.getBlocks(), unit, c.getName(), functionLineMap));
+                    handleIfStatement(blockGraph.getBlocks(), unit, c.getName(), functionLineMap));
               }
             }
             iCount++;
@@ -646,17 +646,16 @@ class CustomSenceTransformer extends SceneTransformer {
 
     return mergedClassName.toString();
   }
-  
+
   /**
-    * The method retrieve the invocation body of a statement if existed.
-	* Then it determine the information of the method invoked and store
-	* them in the result to record the callsite information of the invoked 
-	* method in its parent method.
-    *
-    * @param  stmt           the statement to handle
-    * @param  sourceFilePath the file path for the parent method
-    * @return                the callsite object to store in the output yaml file
-    */
+   * The method retrieve the invocation body of a statement if existed. Then it determine the
+   * information of the method invoked and store them in the result to record the callsite
+   * information of the invoked method in its parent method.
+   *
+   * @param stmt the statement to handle
+   * @param sourceFilePath the file path for the parent method
+   * @return the callsite object to store in the output yaml file
+   */
   private Callsite handleMethodInvocationInStatement(Stmt stmt, String sourceFilePath) {
     // Handle statements of a method
     if ((stmt.containsInvokeExpr()) && (sourceFilePath != null)) {
@@ -669,43 +668,43 @@ class CustomSenceTransformer extends SceneTransformer {
         return callsite;
       }
     }
-    
+
     return null;
   }
-  
+
   private BranchProfile handleIfStatement(
       List<Block> blocks, Unit unit, String cname, Map<String, Integer> functionLineMap) {
     // Handle if branch
     BranchProfile branchProfile = new BranchProfile();
-    
+
     Integer trueBlockLineNumber = unit.getJavaSourceStartLineNumber() + 1;
-    Integer falseBlockLineNumber = 
-      ((JIfStmt) unit).getUnitBoxes().get(0).getUnit().getJavaSourceStartLineNumber();
-    
-    Map<String, Integer> trueBlockLine = 
-      getBlockStartEndLineWithLineNumber(blocks, trueBlockLineNumber);
+    Integer falseBlockLineNumber =
+        ((JIfStmt) unit).getUnitBoxes().get(0).getUnit().getJavaSourceStartLineNumber();
+
+    Map<String, Integer> trueBlockLine =
+        getBlockStartEndLineWithLineNumber(blocks, trueBlockLineNumber);
     Map<String, Integer> falseBlockLine =
-      getBlockStartEndLineWithLineNumber(blocks, falseBlockLineNumber);
+        getBlockStartEndLineWithLineNumber(blocks, falseBlockLineNumber);
 
     // True branch
     if (!trueBlockLine.isEmpty()) {
       Integer start = falseBlockLine.get("start");
       branchProfile.addBranchSides(
-        processBranch(trueBlockLine, cname + ":" + start, functionLineMap));
+          processBranch(trueBlockLine, cname + ":" + start, functionLineMap));
     }
 
     // False branch
     if (!falseBlockLine.isEmpty()) {
       Integer start = falseBlockLine.get("start");
       branchProfile.addBranchSides(
-        processBranch(falseBlockLine, cname + ":" + (start - 1), functionLineMap));
+          processBranch(falseBlockLine, cname + ":" + (start - 1), functionLineMap));
     }
-    
+
     branchProfile.setBranchString(cname + ":" + unit.getJavaSourceStartLineNumber());
-    
+
     return branchProfile;
   }
-  
+
   private BranchSide processBranch(
       Map<String, Integer> blockLine, String cname, Map<String, Integer> functionLineMap) {
     BranchSide branchSide = new BranchSide();
