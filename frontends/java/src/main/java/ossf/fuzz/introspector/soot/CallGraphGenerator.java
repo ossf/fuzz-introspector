@@ -298,7 +298,7 @@ class CustomSenceTransformer extends SceneTransformer {
             Unit unit = blockIt.next();
             if (unit instanceof JIfStmt) {
               element.addBranchProfile(
-                handleIfBranch(blockGraph.getBlocks(), unit, c.getName(), functionLineMap));
+                  handleIfBranch(blockGraph.getBlocks(), unit, c.getName(), functionLineMap));
             }
             iCount++;
           }
@@ -637,40 +637,40 @@ class CustomSenceTransformer extends SceneTransformer {
 
     return mergedClassName.toString();
   }
-  
+
   private BranchProfile handleIfBranch(
       List<Block> blocks, Unit unit, String cname, Map<String, Integer> functionLineMap) {
     // Handle if branch
     BranchProfile branchProfile = new BranchProfile();
-    
+
     Integer trueBlockLineNumber = unit.getJavaSourceStartLineNumber() + 1;
-    Integer falseBlockLineNumber = 
-      ((JIfStmt) unit).getUnitBoxes().get(0).getUnit().getJavaSourceStartLineNumber();
-    
-    Map<String, Integer> trueBlockLine = 
-      getBlockStartEndLineWithLineNumber(blocks, trueBlockLineNumber);
+    Integer falseBlockLineNumber =
+        ((JIfStmt) unit).getUnitBoxes().get(0).getUnit().getJavaSourceStartLineNumber();
+
+    Map<String, Integer> trueBlockLine =
+        getBlockStartEndLineWithLineNumber(blocks, trueBlockLineNumber);
     Map<String, Integer> falseBlockLine =
-      getBlockStartEndLineWithLineNumber(blocks, falseBlockLineNumber);
+        getBlockStartEndLineWithLineNumber(blocks, falseBlockLineNumber);
 
     // True branch
     if (!trueBlockLine.isEmpty()) {
       Integer start = falseBlockLine.get("start");
       branchProfile.addBranchSides(
-        processBranch(trueBlockLine, cname + ":" + start, functionLineMap));
+          processBranch(trueBlockLine, cname + ":" + start, functionLineMap));
     }
 
     // False branch
     if (!falseBlockLine.isEmpty()) {
       Integer start = falseBlockLine.get("start");
       branchProfile.addBranchSides(
-        processBranch(falseBlockLine, cname + ":" + (start - 1), functionLineMap));
+          processBranch(falseBlockLine, cname + ":" + (start - 1), functionLineMap));
     }
-    
+
     branchProfile.setBranchString(cname + ":" + unit.getJavaSourceStartLineNumber());
-    
+
     return branchProfile;
   }
-  
+
   private BranchSide processBranch(
       Map<String, Integer> blockLine, String cname, Map<String, Integer> functionLineMap) {
     BranchSide branchSide = new BranchSide();
