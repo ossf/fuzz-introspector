@@ -37,6 +37,7 @@ public class FunctionElement {
   private List<String> functionsReached;
   private Integer functionUses;
   private List<BranchProfile> branchProfiles;
+  private List<Callsite> callsites;
 
   public FunctionElement() {
     this.argTypes = new ArrayList<String>();
@@ -44,6 +45,7 @@ public class FunctionElement {
     this.argNames = new ArrayList<String>();
     this.functionsReached = new ArrayList<String>();
     this.branchProfiles = new ArrayList<BranchProfile>();
+    this.callsites = new ArrayList<Callsite>();
   }
 
   public String getFunctionName() {
@@ -205,5 +207,18 @@ public class FunctionElement {
 
   public void setBranchProfiles(List<BranchProfile> branchProfiles) {
     this.branchProfiles = branchProfiles;
+  }
+
+  @JsonProperty("Callsites")
+  public List<Callsite> getCallsites() {
+    return callsites;
+  }
+
+  public void addCallsite(Callsite callsite) {
+    this.callsites.add(callsite);
+  }
+
+  public void setCallsites(List<Callsite> callsites) {
+    this.callsites = callsites;
   }
 }
