@@ -100,7 +100,7 @@ SINK_FUNCTION = {
         ('java.lang.System', 'console'),
         ('java.lang.System', 'load'),
         ('java.lang.System', 'loadLibrary'),
-        ('java.lang.System', 'apLibraryName'),
+        ('java.lang.System', 'mapLibraryName'),
         ('java.lang.System', 'runFinalization'),
         ('java.lang.System', 'setErr'),
         ('java.lang.System', 'setIn'),
