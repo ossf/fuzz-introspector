@@ -22,17 +22,38 @@ lang_list = ["jvm"]
 function_map = dict()
 fs_json_map = dict()
 
-EMPTY_FS_JSON = '{"report": {"FuzzEngineInputAnalysis": {}, "SinkCoverageAnalyser": []}}'
 SINK_LIST = ['system','execl','execlp','execle','execv','execvp','execve','wordexp',
-             'popen','fdopen','exec','eval','call','run','Popen','check_output',
+             'popen','fdopen','exec','eval','call','Popen','check_output',
              'spawnlpe','spawnve','execlpe','execlpe','create_subprocess_shell',
-             'create_subprocess_exec','run','sleep','listen','runsource','runcode',
-             'write','push','interact','raw_input','interact','compile_command',
-             'compile','evaluate','execute','console','load','loadLibrary',
-             'apLibraryName','runFinalization','setErr','setIn','setOut',
-             'setProperties','setProperty','setSecurityManager','directory',
-             'inheritIO','command','redirectError','redirectErrorStream','redirectInput',
-             'redirectOutput','start'
+             'create_subprocess_exec','run','listen','runsource','runcode',
+             'write','push','interact','raw_input','compile_command'
+]
+SINK_LIST_JVM = ['[java.lang.Runtime].exec',
+                 '[javax.xml.xpath.XPath].compile',
+                 '[javax.xml.xpath.XPath].evaluate',
+                 '[java.lang.Thread].run',
+                 '[java.lang.Runnable].run',
+                 '[java.util.concurrent.Executor].execute',
+                 '[java.util.concurrent.Callable].call',
+                 '[java.lang.System].console',
+                 '[java.lang.System].load',
+                 '[java.lang.System].loadLibrary',
+                 '[java.lang.System].mapLibraryName',
+                 '[java.lang.System].runFinalization',
+                 '[java.lang.System].setErr',
+                 '[java.lang.System].setIn',
+                 '[java.lang.System].setOut',
+                 '[java.lang.System].setProperties',
+                 '[java.lang.System].setProperty',
+                 '[java.lang.System].setSecurityManager',
+                 '[java.lang.ProcessBuilder].directory',
+                 '[java.lang.ProcessBuilder].inheritIO',
+                 '[java.lang.ProcessBuilder].command',
+                 '[java.lang.ProcessBuilder].redirectError',
+                 '[java.lang.ProcessBuilder].redirectErrorStream',
+                 '[java.lang.ProcessBuilder].redirectInput',
+                 '[java.lang.ProcessBuilder].redirectOutput',
+                 '[java.lang.ProcessBuilder].start'
 ]
 
 for lang in lang_list:
@@ -47,8 +68,10 @@ for lang in lang_list:
             for func in func_list:
                 func_name = func["Func name"].split("\n")[1].lstrip(" ").rstrip(" ")
                 if lang == "jvm":
-                    func_name = func_name.split("(", 1)[0]
-                func_name = func_name.rsplit(".", 1)[-1]
+                    item_list = SINK_LIST_JVM
+                else:
+                    func_name = func_name.rsplit(".", 1)[-1]
+                    item_list = SINK_LIST
                 if func_name in SINK_LIST:
                     l.append(func_name)
             function_map[proj] = list(set(l))
@@ -56,16 +79,15 @@ for lang in lang_list:
         if proj and os.path.exists(f"summary_json/{proj}"):
             with open(f"summary_json/{proj}") as f:
                 fs_str = f.read()
-            if fs_str != EMPTY_FS_JSON:
-                l = []
-                try:
-                    map = json.loads(fs_str)
-                except:
-                    continue
-                if "analyses" in map.keys():
-                    for item in map['analyses']['SinkCoverageAnalyser']:
-                        l.append(item['func_name'])
-                fs_json_map[proj] = list(set(l))
+            l = []
+            try:
+                map = json.loads(fs_str)
+            except:
+                continue
+            if "analyses" in map.keys():
+                for item in map['analyses']['SinkCoverageAnalyser']:
+                    l.append(item['func_name'])
+            fs_json_map[proj] = list(set(l))
 
 with open("func_result.csv", "w") as f:
     f.write("Project,Sink Functions\n")
