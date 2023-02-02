@@ -21,9 +21,9 @@ data = requests.get('https://oss-fuzz-introspector.storage.googleapis.com/index.
 html = lxml.html.fromstring(data)
 
 link_map = dict()
-for li in html.getchildren()[1].getchildren()[2]:
-    link_item = li.getchildren()[0]
-    proj = link_item.text.replace('\n', '').lstrip(' ').rstrip(' ')
+for tr in html.find_class("table-wrapper")[0].getchildren()[0].getchildren()[1]:
+    link_item = tr.getchildren()[0].getchildren()[0]
+    proj = link_item.text.lstrip(' ').rstrip(' ')
     link = link_item.get('href').rsplit('/', 1)[0]
     link_map[proj] = link
 

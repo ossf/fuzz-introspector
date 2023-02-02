@@ -16,8 +16,8 @@
 import os
 import json
 
-lang_list = ["c", "cpp", "python"]
-#lang_list = ["jvm"]
+#lang_list = ["c", "cpp", "python"]
+lang_list = ["jvm"]
 
 function_map = dict()
 fs_json_map = dict()
@@ -27,7 +27,13 @@ SINK_LIST = ['system','execl','execlp','execle','execv','execvp','execve','worde
              'popen','fdopen','exec','eval','call','run','Popen','check_output',
              'spawnlpe','spawnve','execlpe','execlpe','create_subprocess_shell',
              'create_subprocess_exec','run','sleep','listen','runsource','runcode',
-             'write','push','interact','raw_input','interact','compile_command']
+             'write','push','interact','raw_input','interact','compile_command',
+             'compile','evaluate','execute','console','load','loadLibrary',
+             'apLibraryName','runFinalization','setErr','setIn','setOut',
+             'setProperties','setProperty','setSecurityManager','directory',
+             'inheritIO','command','redirectError','redirectErrorStream','redirectInput',
+             'redirectOutput','start'
+]
 
 for lang in lang_list:
     with open(f"proj/{lang}") as f:
@@ -37,29 +43,29 @@ for lang in lang_list:
         if proj and os.path.exists(f"all_functions/{proj}"):
             with open(f"all_functions/{proj}") as f:
                 func_list = json.loads(f.read().split("=", 1)[1])
-            list = []
+            l = []
             for func in func_list:
                 func_name = func["Func name"].split("\n")[1].lstrip(" ").rstrip(" ")
                 if lang == "jvm":
                     func_name = func_name.split("(", 1)[0]
                 func_name = func_name.rsplit(".", 1)[-1]
                 if func_name in SINK_LIST:
-                    list.append(func_name)
-            function_map[proj] = list
+                    l.append(func_name)
+            function_map[proj] = list(set(l))
 
         if proj and os.path.exists(f"summary_json/{proj}"):
             with open(f"summary_json/{proj}") as f:
                 fs_str = f.read()
             if fs_str != EMPTY_FS_JSON:
-                list = []
+                l = []
                 try:
                     map = json.loads(fs_str)
                 except:
                     continue
                 if "analyses" in map.keys():
                     for item in map['analyses']['SinkCoverageAnalyser']:
-                        list.append(item['func_name'])
-                fs_json_map[proj] = list
+                        l.append(item['func_name'])
+                fs_json_map[proj] = list(set(l))
 
 with open("func_result.csv", "w") as f:
     f.write("Project,Sink Functions\n")
@@ -69,6 +75,6 @@ with open("func_result.csv", "w") as f:
 
 with open("sink_analyser_result.csv", "w") as f:
     f.write("Project,Sink Functions\n")
-    for key in function_map.keys():
-        for item in function_map[key]:
+    for key in fs_json_map.keys():
+        for item in fs_json_map[key]:
             f.write(f"{key},{item}\n")
