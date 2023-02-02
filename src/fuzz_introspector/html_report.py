@@ -1120,7 +1120,10 @@ def create_html_report(
 
     # Pretty print the html document
     soup = bs4.BeautifulSoup(html_full_doc, "html.parser")
-    prettyHTML = soup.prettify()
+    try:
+        prettyHTML = soup.prettify()
+    except RecursionError:
+        prettyHTML = html_full_doc
 
     # Remove existing html report
     report_name = "fuzz_report.html"
