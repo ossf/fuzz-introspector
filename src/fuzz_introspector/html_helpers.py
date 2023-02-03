@@ -22,6 +22,8 @@ from typing import (
 )
 
 import os
+from enum import Enum
+
 from fuzz_introspector import utils
 from fuzz_introspector.datatypes import fuzzer_profile, project_profile
 
