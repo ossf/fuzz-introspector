@@ -25,6 +25,13 @@ import os
 from fuzz_introspector import utils
 from fuzz_introspector.datatypes import fuzzer_profile, project_profile
 
+class HTML_HEADING(Enum):
+    H1 = 1
+    H2 = 2
+    H3 = 3
+    H4 = 4
+    H5 = 5
+    H6 = 6
 
 class HTMLConclusion:
     """Represents high-level conclusions in HTML report

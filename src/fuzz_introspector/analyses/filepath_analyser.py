@@ -68,7 +68,8 @@ class FilePathAnalysis(analysis.AnalysisInterface):
 
         # Table with all files
         html_string += html_helpers.html_add_header_with_link(
-            "Files and Directories in report", 1, toc_list)
+            "Files and Directories in report", html_helpers.HTML_HEADING.H1,
+            toc_list)
         html_string += "<div class=\"collapsible\">"
         html_string += (
             "<p>This section shows which files and directories are considered "
@@ -83,7 +84,7 @@ class FilePathAnalysis(analysis.AnalysisInterface):
             "Config.md#code-exclusion-from-the-report\">link</a></p>")
 
         html_string += html_helpers.html_add_header_with_link(
-            "Files in report", 2, toc_list)
+            "Files in report", html_helpers.HTML_HEADING.H2, toc_list)
         tables.append(f"myTable{len(tables)}")
         html_string += html_helpers.html_create_table_head(
             tables[-1], [("Source file", ""), ("Reached by", ""),
@@ -109,7 +110,7 @@ class FilePathAnalysis(analysis.AnalysisInterface):
 
         # Table with all directories
         html_string += html_helpers.html_add_header_with_link(
-            "Directories in report", 2, toc_list)
+            "Directories in report", html_helpers.HTML_HEADING.H2, toc_list)
         tables.append(f"myTable{len(tables)}")
         html_string += html_helpers.html_create_table_head(
             tables[-1], [
