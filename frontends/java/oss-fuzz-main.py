@@ -22,6 +22,7 @@ the OSS-Fuzz environment. The steps taken are:
 """
 
 import os
+import shutil
 import subprocess
 
 FI_JVM_BASE="/fuzz-introspector/frontends/java"
@@ -56,25 +57,39 @@ def find_fuzz_targets(path):
   print("Finding fuzz targets in %s" % path)
   jar_files = set()
   targets = list()
-  for classfile in os.listdir(path):
+  for wrapper_script in os.listdir(path):
     print("Checking target %s" % classfile)
-    if not classfile.endswith(".class"):
-      continue
-
     # Check if wrapper script exists and whether it has the right tag.
-    wrapper_script = classfile.replace(".class", "")
     if not os.path.isfile(wrapper_script):
       continue
     with open(wrapper_script) as wrapper_script_fd:
       if 'LLVMFuzzerTestOneInput' not in wrapper_script_fd.read():
         continue
 
+    classfile = "%s.class" % wrapper_script
+    jar_file = "%s.jar" % wrapper_script
+
     # Create relevant .jar file if it is not there.
-    jar_file = classfile.replace(".class", ".jar")
     if not os.path.exists(jar_file):
       subprocess.check_call("jar cvf %s %s" % (jar_file, classfile), shell=True)
 
+    # Handle classname with package
+    temp_dir = './temp-jar'
+    os.mkdir(temp_dir)
+    os.chdir(temp_dir)
+
+    subprocess.check_call("jar xvf ../%s " % jar_file, shell=True)
+    for (root, _, files) in os.walk('.', topdown=True):
+      for file in files:
+        if file.endswith(classfile):
+           classfile = os.path.join(root, file)
+           classfile = classfile[2:-6].replace("/", ".")
+
+    os.chdir("..")
+    shutil.rmtree(tmp_dir)
+
     targets.append(classfile)
+
   return targets
 
 def get_all_jar_files(path):
@@ -102,7 +117,7 @@ def run_introspector_frontend(target_class, jar_set):
       FI_JVM_BASE + "/" + PLUGIN_PATH,
       CGRAPH_STR,
       jarfile_str,
-      target_class.replace(".class", ""),
+      target_class,
       "fuzzerTestOneInput", # entrymethod
       "===jdk.:java.:javax.:sun.:sunw.:com.sun.:com.ibm.:com.apple.:apple.awt." # include prefix === exclude prefix
   ]
