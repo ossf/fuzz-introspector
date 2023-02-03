@@ -76,7 +76,7 @@ def find_fuzz_targets(path):
     # Extract jar file for package name discovery.
     temp_dir = os.path.join(path, 'temp-jar')
     os.mkdir(temp_dir)
-    subprocess.check_call("cd %s && jar xvf %s/%s" % (temp_dir, path, jar_file), shell=True)
+    subprocess.check_call("jar xvf %s/%s" % (path, jar_file), shell=True, cwd=temp-dir)
 
     # Walk through directories for the unzipped jar file
     # to discover package folder of class files. Java class
