@@ -1,11 +1,11 @@
-name: flake8 Lint
+name: Lint and format
 
 on: pull_request
 permissions: read-all
 jobs:
-  flake8-lint:
+  codestyle:
     runs-on: ubuntu-latest
-    name: Lint
+    name: Codestyle
     steps:
       - name: Check out source repository
         uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # v2.4.0
@@ -25,10 +25,10 @@ jobs:
           ignore: "W503,W605"
           max-line-length: "100"
           path: "frontends/python/"
-      - name: Install deps
+      - name: Install yapf
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-      - name: code formatting
+      - name: yapf code formatting
         run: |
           yapf -d -r ./src/fuzz_introspector/analyses/driver_synthesizer.py
