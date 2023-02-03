@@ -28,11 +28,8 @@ from fuzz_introspector import data_loader
 from fuzz_introspector import html_report
 from fuzz_introspector import html_helpers
 from fuzz_introspector import utils
-from fuzz_introspector.datatypes import (
-    project_profile,
-    fuzzer_profile,
-    function_profile
-)
+from fuzz_introspector.datatypes import (project_profile, fuzzer_profile,
+                                         function_profile)
 
 logger = logging.getLogger(name=__name__)
 
@@ -53,17 +50,15 @@ class OptimalTargets(analysis.AnalysisInterface):
     def set_json_string_result(self, json_string):
         self.json_string_result = json_string
 
-    def analysis_func(
-        self,
-        toc_list: List[Tuple[str, str, int]],
-        tables: List[str],
-        proj_profile: project_profile.MergedProjectProfile,
-        profiles: List[fuzzer_profile.FuzzerProfile],
-        basefolder: str,
-        coverage_url: str,
-        conclusions: List[html_helpers.HTMLConclusion],
-        should_synthetise: bool = False
-    ) -> str:
+    def analysis_func(self,
+                      toc_list: List[Tuple[str, str, int]],
+                      tables: List[str],
+                      proj_profile: project_profile.MergedProjectProfile,
+                      profiles: List[fuzzer_profile.FuzzerProfile],
+                      basefolder: str,
+                      coverage_url: str,
+                      conclusions: List[html_helpers.HTMLConclusion],
+                      should_synthetise: bool = False) -> str:
         """
         Performs an analysis based on optimal target selection.
         Finds a set of optimal functions based on complexity reach and:
@@ -87,33 +82,24 @@ class OptimalTargets(analysis.AnalysisInterface):
 
         # Create optimal target section
         new_profile, optimal_target_functions = self.iteratively_get_optimal_targets(
-            proj_profile
-        )
+            proj_profile)
         html_string += self.get_optimal_target_section(
-            optimal_target_functions,
-            toc_list,
-            tables,
-            coverage_url,
-            profiles[0].target_lang
-        )
+            optimal_target_functions, toc_list, tables, coverage_url,
+            profiles[0].target_lang)
 
         # Create section for how the state of the project will be if
         # the optimal target functions are hit.
-        html_string += self.get_consequential_section(
-            new_profile,
-            conclusions,
-            tables,
-            toc_list,
-            coverage_url,
-            basefolder
-        )
+        html_string += self.get_consequential_section(new_profile, conclusions,
+                                                      tables, toc_list,
+                                                      coverage_url, basefolder)
 
         logger.info(f" - Completed analysis {self.get_name()}")
         html_string += "</div>"  # .collapsible
 
         return html_string
 
-    def qualifies_as_optimal_target(self, fd: function_profile.FunctionProfile) -> bool:
+    def qualifies_as_optimal_target(
+            self, fd: function_profile.FunctionProfile) -> bool:
         """
         Hard conditions for whether a target qualifies as a potential
         optimal target. These are minimum conditions, i.e. the analysis
@@ -145,8 +131,7 @@ class OptimalTargets(analysis.AnalysisInterface):
         return True
 
     def analysis_get_optimal_targets(
-        self,
-        merged_profile: project_profile.MergedProjectProfile
+        self, merged_profile: project_profile.MergedProjectProfile
     ) -> List[function_profile.FunctionProfile]:
         """
         Finds the top reachable functions with minimum overlap.
@@ -164,12 +149,9 @@ class OptimalTargets(analysis.AnalysisInterface):
         return target_fds
 
     def iteratively_get_optimal_targets(
-        self,
-        merged_profile: project_profile.MergedProjectProfile
-    ) -> Tuple[
-        project_profile.MergedProjectProfile,
-        List[function_profile.FunctionProfile]
-    ]:
+        self, merged_profile: project_profile.MergedProjectProfile
+    ) -> Tuple[project_profile.MergedProjectProfile,
+               List[function_profile.FunctionProfile]]:
         '''
         Function for synthesizing fuzz targets. The way this one works is by finding
         optimal targets that don't overlap too much with each other. The fuzz targets
@@ -200,13 +182,12 @@ class OptimalTargets(analysis.AnalysisInterface):
         while len(optimal_functions_targeted) < drivers_to_create:
             logger.info("  - sorting by unreached complexity. ")
             sorted_by_undiscovered_complexity = list(
-                sorted(
-                    target_fds,
-                    key=lambda x: int(x.new_unreached_complexity),
-                    reverse=True
-                )
+                sorted(target_fds,
+                       key=lambda x: int(x.new_unreached_complexity),
+                       reverse=True))
+            logger.info(
+                f". Done - length of the list: {len(sorted_by_undiscovered_complexity)}"
             )
-            logger.info(f". Done - length of the list: {len(sorted_by_undiscovered_complexity)}")
             if len(sorted_by_undiscovered_complexity) == 0:
                 break
 
@@ -215,34 +196,30 @@ class OptimalTargets(analysis.AnalysisInterface):
             optimal_functions_targeted.append(optimal_func)
 
             new_merged_profile = data_loader.add_func_to_reached_and_clone(
-                new_merged_profile,
-                optimal_func
-            )
+                new_merged_profile, optimal_func)
 
             # Update the optimal targets. We only need to do this
             # if more drivers need to be created.
             if len(optimal_functions_targeted) < drivers_to_create:
-                target_fds = self.analysis_get_optimal_targets(new_merged_profile)
+                target_fds = self.analysis_get_optimal_targets(
+                    new_merged_profile)
 
-        logger.info("Found the following optimal functions: { %s }" % (
-            str([f.function_name for f in optimal_functions_targeted])))
+        logger.info("Found the following optimal functions: { %s }" %
+                    (str([f.function_name
+                          for f in optimal_functions_targeted])))
 
         return new_merged_profile, optimal_functions_targeted
 
-    def get_optimal_target_section(
-        self,
-        optimal_target_functions: List[function_profile.FunctionProfile],
-        toc_list: List[Tuple[str, str, int]],
-        tables: List[str],
-        coverage_url: str,
-        target_lang: str = 'c-cpp'
-    ) -> str:
+    def get_optimal_target_section(self,
+                                   optimal_target_functions: List[
+                                       function_profile.FunctionProfile],
+                                   toc_list: List[Tuple[str, str, int]],
+                                   tables: List[str],
+                                   coverage_url: str,
+                                   target_lang: str = 'c-cpp') -> str:
         # Table with details about optimal target functions
         html_string = html_helpers.html_add_header_with_link(
-            "Remaining optimal interesting functions",
-            3,
-            toc_list
-        )
+            "Remaining optimal interesting functions", 3, toc_list)
         html_string += "<p> The following table shows a list of functions that "   \
                        "are optimal targets. Optimal targets are identified by "   \
                        "finding the functions that in combination, yield a high " \
@@ -250,77 +227,47 @@ class OptimalTargets(analysis.AnalysisInterface):
         table_id = "remaining_optimal_interesting_functions"
         tables.append(table_id)
         html_string += html_helpers.html_create_table_head(
-            table_id,
-            [
-                ("Func name", ""),
-                ("Functions filename", ""),
-                ("Arg count", ""),
-                ("Args", ""),
-                ("Function depth", ""),
-                ("hitcount", ""),
-                ("instr count", ""),
-                ("bb count", ""),
-                ("cyclomatic complexity", ""),
-                ("Reachable functions", ""),
-                ("Incoming references", ""),
-                ("total cyclomatic complexity", ""),
-                ("Unreached complexity", "")
-            ]
-        )
+            table_id, [("Func name", ""), ("Functions filename", ""),
+                       ("Arg count", ""), ("Args", ""), ("Function depth", ""),
+                       ("hitcount", ""), ("instr count", ""), ("bb count", ""),
+                       ("cyclomatic complexity", ""),
+                       ("Reachable functions", ""),
+                       ("Incoming references", ""),
+                       ("total cyclomatic complexity", ""),
+                       ("Unreached complexity", "")])
         for fd in optimal_target_functions:
-            func_cov_url = utils.resolve_coverage_link(
-                coverage_url,
-                fd.function_source_file,
-                fd.function_linenumber,
-                fd.function_name,
-                target_lang
-            )
+            func_cov_url = utils.resolve_coverage_link(coverage_url,
+                                                       fd.function_source_file,
+                                                       fd.function_linenumber,
+                                                       fd.function_name,
+                                                       target_lang)
             html_func_row = (
                 f"<a href=\"{ func_cov_url }\"><code class='language-clike'>"
                 f"{utils.demangle_cpp_func(fd.function_name)}"
-                f"</code></a>"
-            )
-            html_string += html_helpers.html_table_add_row(
-                [
-                    html_func_row,
-                    fd.function_source_file,
-                    fd.arg_count,
-                    fd.arg_types,
-                    fd.function_depth,
-                    fd.hitcount,
-                    fd.i_count,
-                    fd.bb_count,
-                    fd.cyclomatic_complexity,
-                    len(fd.functions_reached),
-                    len(fd.incoming_references),
-                    fd.total_cyclomatic_complexity,
-                    fd.new_unreached_complexity
-                ]
-            )
+                f"</code></a>")
+            html_string += html_helpers.html_table_add_row([
+                html_func_row, fd.function_source_file, fd.arg_count,
+                fd.arg_types, fd.function_depth, fd.hitcount, fd.i_count,
+                fd.bb_count, fd.cyclomatic_complexity,
+                len(fd.functions_reached),
+                len(fd.incoming_references), fd.total_cyclomatic_complexity,
+                fd.new_unreached_complexity
+            ])
         html_string += ("</table>\n")
         return html_string
 
     def get_consequential_section(
-        self,
-        new_profile: project_profile.MergedProjectProfile,
-        conclusions: List[html_helpers.HTMLConclusion],
-        tables: List[str],
-        toc_list: List[Tuple[str, str, int]],
-        coverage_url: str,
-        basefolder: str
-    ) -> str:
+            self, new_profile: project_profile.MergedProjectProfile,
+            conclusions: List[html_helpers.HTMLConclusion], tables: List[str],
+            toc_list: List[Tuple[str, str, int]], coverage_url: str,
+            basefolder: str) -> str:
         """Create section showing state of project if optimal targets are hit"""
         html_string = (
             "<p>Implementing fuzzers that target the above functions "
-            "will improve reachability such that it becomes:</p>"
-        )
+            "will improve reachability such that it becomes:</p>")
         tables.append(f"myTable{len(tables)}")
         html_string += html_report.create_top_summary_info(
-            tables,
-            new_profile,
-            conclusions,
-            False
-        )
+            tables, new_profile, conclusions, False)
 
         # Table with details about all functions in the project in case the
         # suggested fuzzers are implemented.
