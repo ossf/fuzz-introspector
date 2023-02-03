@@ -4,6 +4,7 @@ lxml==4.9.1
 matplotlib==3.3.4
 PyYAML==6.0
 soupsieve==2.2.1
+yapf==0.32.0
 flake8
 pep8
 mypy
