@@ -218,7 +218,7 @@ def html_get_table_of_contents(
 
 def html_add_header_with_link(
     header_title: str,
-    title_type: int,
+    title_type: HTML_HEADING,
     toc_list: List[Tuple[str, str, int]],
     link: Optional[str] = None,
     experimental: Optional[bool] = False
