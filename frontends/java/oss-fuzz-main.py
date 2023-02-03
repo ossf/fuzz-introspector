@@ -73,19 +73,26 @@ def find_fuzz_targets(path):
     if not os.path.exists(jar_file):
       subprocess.check_call("jar cvf %s %s" % (jar_file, classfile), shell=True)
 
-    # Handle classname with package
-    temp_dir = './temp-jar'
+    # Extract jar file for package name discovery.
+    temp_dir = os.path.join(path, 'temp-jar')
     os.mkdir(temp_dir)
-    os.chdir(temp_dir)
+    subprocess.check_call("cd %s && jar xvf %s/%s" % (temp_dir, path, jar_file), shell=True)
 
-    subprocess.check_call("jar xvf ../%s " % jar_file, shell=True)
-    for (root, _, files) in os.walk('.', topdown=True):
+    # Walk through directories for the unzipped jar file
+    # to discover package folder of class files. Java class
+    # in jar file will store in subdirectories following its
+    # package name.
+    for (root, _, files) in os.walk(temp_dir, topdown=True):
       for file in files:
         if file.endswith(classfile):
+           # Target classfile found, remove .class and
+           # temp_dir path, keep the remaining path as
+           # as package name by replacing "/" to "."
            classfile = os.path.join(root, file)
-           classfile = classfile[2:-6].replace("/", ".")
+           classfile = classfile.replace("%s/" % temp_dir, "")
+           classfile = classfile.replace(".class", "")
+           classfile = classfile.replace("/", ".")
 
-    os.chdir("..")
     shutil.rmtree(tmp_dir)
 
     targets.append(classfile)
