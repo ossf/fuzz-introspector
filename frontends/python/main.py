@@ -113,6 +113,18 @@ def run_fuzz_pass(
     formatter = formats.Fuzz(cg)
     cg_extended = formatter.generate()
 
+    # Extract the class list
+    classes = formatter.cg_generator.class_manager.get_classes()
+    class_list = []
+    for cls in classes:
+        class_list.append(cls)
+
+    # Extract information about inheritance in classes.
+    inheritance = formatter.cg_generator.class_manager.inheritance
+    inh_dict = dict()
+    for inh_class in inheritance:
+        inh_dict[inh_class] = list(inheritance[inh_class])
+
     if should_debug():
         logger.info("Printing extended cg")
         print(json.dumps(cg_extended, sort_keys=False, indent=4))
@@ -127,6 +139,8 @@ def run_fuzz_pass(
     fuzzer_name, translated_cg, calltree = res
 
     # Dump the data we collected
+    translated_cg['All classes'] = class_list
+    translated_cg['Inheritance'] = inh_dict
     dump_fuzz_logic(fuzzer_name, translated_cg, calltree)
     return 0
 
@@ -224,6 +238,7 @@ def convert_cg_to_introspector_data(cg_extended, fuzzer_filename):
         d['argTypes'] = elem_dict['meta']['argTypes'] if 'argTypes' in elem_dict['meta'] else []
         d['ICount'] = elem_dict['meta']['exprCount'] if 'exprCount' in elem_dict['meta'] else 0
         d['IfCount'] = elem_dict['meta']['ifCount'] if 'ifCount' in elem_dict['meta'] else 0
+        d['raised'] = list(elem_dict['meta']['raises']) if 'raises' in elem_dict['meta'] else []
         d['functionsReached'] = elem_dict['all_reachables']
         d['functionUses'] = elem_dict['all_uses']
         d['BranchProfiles'] = []
