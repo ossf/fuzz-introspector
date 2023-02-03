@@ -69,11 +69,11 @@ fi
 if [ -z $EXCLUDEPREFIX ]
 then
     echo "No exclude prefix list defined, using default exclude prefix list"
-    EXCLUDEPREFIX="jdk.:java.:javax.:sun.:sunw.:com.sun.:com.ibm.:com.apple.:apple.awt."
+    EXCLUDEPREFIX="jdk.:java.:javax.:sun.:sunw.:com.sun.:com.ibm.:com.apple.:apple.awt.:com.code_intelligence.jazzer."
 fi
 if [ -z $INCLUDEPREFIX ]
 then
-    echo "No include prefix list defined, using empty include prefix list"
+    echo "No include prefix list defined, using default include prefix list"
     INCLUDEPREFIX="java.lang.Runtime:javax.xml.xpath.XPath:java.lang.Thread:java.lang.Runnable:java.util.concurrent.Executor:java.util.concurrent.Callable:java.lang.System:java.lang.ProcessBuilder"
 fi
 

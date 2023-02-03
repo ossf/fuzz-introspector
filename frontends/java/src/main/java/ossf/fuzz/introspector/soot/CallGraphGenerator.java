@@ -45,15 +45,27 @@ import soot.SootClass;
 import soot.SootMethod;
 import soot.Transform;
 import soot.Unit;
+import soot.Value;
+import soot.ValueBox;
+import soot.jimple.AndExpr;
+import soot.jimple.GotoStmt;
+import soot.jimple.IfStmt;
 import soot.jimple.InvokeExpr;
+import soot.jimple.LookupSwitchStmt;
+import soot.jimple.ThrowStmt;
+import soot.jimple.OrExpr;
+import soot.jimple.ReturnStmt;
+import soot.jimple.ReturnVoidStmt;
 import soot.jimple.Stmt;
-import soot.jimple.internal.JIfStmt;
+import soot.jimple.toolkits.annotation.logic.LoopFinder;
 import soot.jimple.toolkits.callgraph.CallGraph;
 import soot.jimple.toolkits.callgraph.Edge;
 import soot.options.Options;
 import soot.toolkits.graph.Block;
 import soot.toolkits.graph.BlockGraph;
 import soot.toolkits.graph.BriefBlockGraph;
+import soot.toolkits.graph.BriefUnitGraph;
+import soot.toolkits.graph.UnitGraph;
 
 public class CallGraphGenerator {
   public static void main(String[] args) {
@@ -127,7 +139,6 @@ class CustomSenceTransformer extends SceneTransformer {
   private List<String> includeList;
   private List<String> excludeList;
   private List<String> excludeMethodList;
-  private List<Block> visitedBlock;
   private Map<String, Set<String>> edgeClassMap;
   private String entryClassStr;
   private String entryMethodStr;
@@ -174,9 +185,11 @@ class CustomSenceTransformer extends SceneTransformer {
     // Extract Callgraph for the included Java Class
     System.out.println("[Callgraph] Determining classes to use for analysis.");
     CallGraph callGraph = Scene.v().getCallGraph();
-    for (SootClass c : Scene.v().getClasses()) {
+    Iterator<SootClass> classIterator = Scene.v().getClasses().snapshotIterator();
+    while (classIterator.hasNext()) {
       boolean isInclude = false;
       boolean isIgnore = false;
+      SootClass c = classIterator.next();
       String cname = c.getName();
 
       for (String prefix : includeList) {
@@ -196,7 +209,9 @@ class CustomSenceTransformer extends SceneTransformer {
 
       if (!isIgnore) {
         System.out.println("[Callgraph] [USE] class: " + c.getName());
-        classMethodMap.put(c, c.getMethods());
+        List<SootMethod> methodList = new LinkedList<SootMethod>();
+        methodList.addAll(c.getMethods());
+        classMethodMap.put(c, methodList);
       } else {
         System.out.println("[Callgraph] [SKIP] class: " + c.getName());
       }
@@ -304,7 +319,7 @@ class CustomSenceTransformer extends SceneTransformer {
               if (callsite != null) {
                 element.addCallsite(callsite);
               }
-              if (unit instanceof JIfStmt) {
+              if (unit instanceof IfStmt) {
                 element.addBranchProfile(
                     handleIfStatement(blockGraph.getBlocks(), unit, c.getName(), functionLineMap));
               }
@@ -314,9 +329,9 @@ class CustomSenceTransformer extends SceneTransformer {
         }
         element.setiCount(iCount);
 
-        visitedBlock = new LinkedList<Block>();
-        visitedBlock.addAll(blockGraph.getTails());
-        element.setCyclomaticComplexity(calculateCyclomaticComplexity(blockGraph.getHeads(), 0));
+        // Calculate method cyclomatic complexity from method unit graph
+        UnitGraph unitGraph = new BriefUnitGraph(methodBody);
+        element.setCyclomaticComplexity(calculateCyclomaticComplexity(unitGraph));
 
         methodList.addFunctionElement(element);
       }
@@ -328,6 +343,7 @@ class CustomSenceTransformer extends SceneTransformer {
       }
 
       // Extract call tree and write to .data
+      System.out.println("[Callgraph] Writing fuzzerLogFile-" + this.entryClassStr + ".data");
       File file = new File("fuzzerLogFile-" + this.entryClassStr + ".data");
       file.createNewFile();
       FileWriter fw = new FileWriter(file);
@@ -338,6 +354,7 @@ class CustomSenceTransformer extends SceneTransformer {
       this.calculateDepth();
 
       // Extract other info and write to .data.yaml
+      System.out.println("[Callgraph] Writing fuzzerLogFile-" + this.entryClassStr + ".data.yaml");
       ObjectMapper om = new ObjectMapper(new YAMLFactory());
       file = new File("fuzzerLogFile-" + this.entryClassStr + ".data.yaml");
       file.createNewFile();
@@ -506,15 +523,49 @@ class CustomSenceTransformer extends SceneTransformer {
     return callTree.toString();
   }
 
-  private Integer calculateCyclomaticComplexity(List<Block> start, Integer complexity) {
-    for (Block block : start) {
-      if (visitedBlock.contains(block)) {
-        complexity += 1;
-      } else {
-        visitedBlock.add(block);
-        complexity = calculateCyclomaticComplexity(block.getSuccs(), complexity);
+  private Integer calculateCyclomaticComplexity(UnitGraph unitGraph) {
+    Integer complexity = 1;
+
+    Iterator<Unit> it = unitGraph.iterator();
+    if (it.hasNext()) {
+      Unit unit = it.next();
+
+      if(unit instanceof IfStmt || unit instanceof GotoStmt || unit instanceof ThrowStmt) {
+        complexity++;
+      } else if (it.hasNext() && (unit instanceof ReturnStmt || unit instanceof ReturnVoidStmt)) {
+        complexity++;
+      } else if (unit instanceof LookupSwitchStmt) {
+        complexity += ((LookupSwitchStmt)unit).getTargetCount();
+      }
+
+      for (ValueBox box : unit.getUseAndDefBoxes()) {
+        Value value = box.getValue();
+        if (value instanceof AndExpr || value instanceof OrExpr) {
+          complexity++;
+        }
       }
     }
+
+    complexity += (new LoopFinder().getLoops(unitGraph)).size();
+
+    return complexity;
+  }
+
+  private Integer calculateConditionComplexity(Value value, Integer complexity) {
+    List<ValueBox> boxList = value.getUseBoxes();
+
+    if (boxList.size() == 0) {
+      if (value instanceof AndExpr || value instanceof OrExpr) {
+        return 1;
+      } else {
+        return 0;
+      }
+    }
+
+    for (ValueBox box : boxList) {
+      complexity += this.calculateConditionComplexity(box.getValue(), complexity);
+    }
+
     return complexity;
   }
 
@@ -679,7 +730,7 @@ class CustomSenceTransformer extends SceneTransformer {
 
     Integer trueBlockLineNumber = unit.getJavaSourceStartLineNumber() + 1;
     Integer falseBlockLineNumber =
-        ((JIfStmt) unit).getUnitBoxes().get(0).getUnit().getJavaSourceStartLineNumber();
+        ((IfStmt) unit).getUnitBoxes().get(0).getUnit().getJavaSourceStartLineNumber();
 
     Map<String, Integer> trueBlockLine =
         getBlockStartEndLineWithLineNumber(blocks, trueBlockLineNumber);
