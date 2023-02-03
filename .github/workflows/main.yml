@@ -22,7 +22,7 @@ jobs:
       - name: flake8 Lint python frontend
         uses: py-actions/flake8@2014ef764424fd7699d615323c17836092bec9b9 # v2
         with:
-          ignore: "W503,W605"
+          ignore: "W503,W504,W605"
           max-line-length: "100"
           path: "frontends/python/"
       - name: Install yapf
