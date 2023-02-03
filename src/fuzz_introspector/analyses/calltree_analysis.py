@@ -131,8 +131,8 @@ class FuzzCalltreeAnalysis(analysis.AnalysisInterface):
                     # We need to close one coverage-line and one
                     # calltree-line-wrapper for each depth, as well as the
                     # row itself.
-                    divs_to_close = int(previous_node.depth -
-                                        node.depth) * 2 + 1
+                    node_difference = int(previous_node.depth - node.depth)
+                    divs_to_close = node_difference * 2 + 1
                     closing_divs = "</div>" * divs_to_close
 
                     calltree_html_section_string += closing_divs
@@ -408,7 +408,8 @@ class FuzzCalltreeAnalysis(analysis.AnalysisInterface):
         html_table_string = "<p class='no-top-margin'>The followings are " \
                             "the branches where fuzzer fails to bypass.</p>"
         tables.append(f"myTable{len(tables)}")
-        html_table_string += html_helpers.html_create_table_head(tables[-1], [
+
+        branch_table_rows = [
             ("Unique non-covered Complexity",
              "Cyclomatic Complexity of not-yet-covered functions reachable "
              "by the blocked branch side."),
@@ -426,11 +427,9 @@ class FuzzCalltreeAnalysis(analysis.AnalysisInterface):
              "The blocking function callsite in the calltree"),
             ("Blocked Branch",
              "The line of code correspoinding to the blocked branch"),
-        ],
-                                                                 sort_by_column
-                                                                 =0,
-                                                                 sort_order=
-                                                                 "desc")
+        ]
+        html_table_string += html_helpers.html_create_table_head(
+            tables[-1], branch_table_rows, sort_by_column=0, sort_order="desc")
         for entry in branch_blockers:
             if entry in blockers_node_map:
                 calltree_idx = blockers_node_map[entry].cov_ct_idx
