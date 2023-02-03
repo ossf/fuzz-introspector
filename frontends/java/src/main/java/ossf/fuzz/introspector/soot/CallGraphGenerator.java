@@ -52,11 +52,11 @@ import soot.jimple.GotoStmt;
 import soot.jimple.IfStmt;
 import soot.jimple.InvokeExpr;
 import soot.jimple.LookupSwitchStmt;
-import soot.jimple.ThrowStmt;
 import soot.jimple.OrExpr;
 import soot.jimple.ReturnStmt;
 import soot.jimple.ReturnVoidStmt;
 import soot.jimple.Stmt;
+import soot.jimple.ThrowStmt;
 import soot.jimple.toolkits.annotation.logic.LoopFinder;
 import soot.jimple.toolkits.callgraph.CallGraph;
 import soot.jimple.toolkits.callgraph.Edge;
@@ -96,7 +96,8 @@ public class CallGraphGenerator {
 
     // Add an custom analysis phase to Soot
     CustomSenceTransformer custom =
-        new CustomSenceTransformer(entryClass, entryMethod, includePrefix, excludePrefix, sinkMethod);
+        new CustomSenceTransformer(
+            entryClass, entryMethod, includePrefix, excludePrefix, sinkMethod);
     PackManager.v().getPack("wjtp").add(new Transform("wjtp.custom", custom));
 
     // Set basic settings for the call graph generation
@@ -149,10 +150,10 @@ class CustomSenceTransformer extends SceneTransformer {
   private FunctionConfig methodList;
 
   public CustomSenceTransformer(
-      String entryClassStr, 
-      String entryMethodStr, 
-      String includePrefix, 
-      String excludePrefix, 
+      String entryClassStr,
+      String entryMethodStr,
+      String includePrefix,
+      String excludePrefix,
       String sinkMethod) {
     this.entryClassStr = entryClassStr;
     this.entryMethodStr = entryMethodStr;
@@ -187,8 +188,8 @@ class CustomSenceTransformer extends SceneTransformer {
       if (!sink.equals("")) {
         String className = sink.split("].")[0].substring(1);
         String methodName = sink.split("].")[1];
-        Set<String> set = new HashSet<String>(
-            this.sinkMethodMap.getOrDefault(className, new HashSet<String>()));
+        Set<String> set =
+            new HashSet<String>(this.sinkMethodMap.getOrDefault(className, new HashSet<String>()));
         set.add(methodName);
         sinkMethodMap.put(className, set);
       }
@@ -235,7 +236,7 @@ class CustomSenceTransformer extends SceneTransformer {
         List<SootMethod> methodList = new LinkedList<SootMethod>();
         methodList.addAll(c.getMethods());
 
-        if(isSink) {
+        if (isSink) {
           List<SootMethod> sinkList = new LinkedList<SootMethod>();
           for (SootMethod m : methodList) {
             if (sinkMethodMap.get(cname).contains(m.getName())) {
@@ -247,7 +248,7 @@ class CustomSenceTransformer extends SceneTransformer {
           classMethodMap.put(c, methodList);
         }
       } else {
-          System.out.println("[Callgraph] [SKIP] class: " + cname);
+        System.out.println("[Callgraph] [SKIP] class: " + cname);
       }
     }
     System.out.println("[Callgraph] Finished going through classes");
@@ -301,16 +302,17 @@ class CustomSenceTransformer extends SceneTransformer {
           }
           String callerClass = edge.src().getDeclaringClass().getName();
           String className = "";
-          Set<String> classNameSet = new HashSet<String>(
-              this.edgeClassMap.getOrDefault(
-                  callerClass
-                      + ":"
-                      + tgt.getName()
-                      + ":"
-                      + ((edge.srcStmt() == null)
-                          ? -1
-                          : edge.srcStmt().getJavaSourceStartLineNumber()),
-                  Collections.emptySet()));
+          Set<String> classNameSet =
+              new HashSet<String>(
+                  this.edgeClassMap.getOrDefault(
+                      callerClass
+                          + ":"
+                          + tgt.getName()
+                          + ":"
+                          + ((edge.srcStmt() == null)
+                              ? -1
+                              : edge.srcStmt().getJavaSourceStartLineNumber()),
+                      Collections.emptySet()));
           className = this.mergeClassName(classNameSet);
           boolean merged = false;
           for (String name : className.split(":")) {
@@ -387,7 +389,7 @@ class CustomSenceTransformer extends SceneTransformer {
       fw.close();
 
       // Calculate function depth
-      //this.calculateDepth();
+      // this.calculateDepth();
 
       // Extract other info and write to .data.yaml
       System.out.println("Generating fuzzerLogFile-" + this.entryClassStr + ".data.yaml");
@@ -496,9 +498,10 @@ class CustomSenceTransformer extends SceneTransformer {
 
     String className = "";
     if (callerClass != null) {
-      Set<String> classNameSet = new HashSet<String>(
-          this.edgeClassMap.getOrDefault(
-              callerClass + ":" + method.getName() + ":" + line, Collections.emptySet()));
+      Set<String> classNameSet =
+          new HashSet<String>(
+              this.edgeClassMap.getOrDefault(
+                  callerClass + ":" + method.getName() + ":" + line, Collections.emptySet()));
       className = this.mergeClassName(classNameSet);
       boolean merged = false;
       for (String name : className.split(":")) {
@@ -574,12 +577,12 @@ class CustomSenceTransformer extends SceneTransformer {
     if (it.hasNext()) {
       Unit unit = it.next();
 
-      if(unit instanceof IfStmt || unit instanceof GotoStmt || unit instanceof ThrowStmt) {
+      if (unit instanceof IfStmt || unit instanceof GotoStmt || unit instanceof ThrowStmt) {
         complexity++;
       } else if (it.hasNext() && (unit instanceof ReturnStmt || unit instanceof ReturnVoidStmt)) {
         complexity++;
       } else if (unit instanceof LookupSwitchStmt) {
-        complexity += ((LookupSwitchStmt)unit).getTargetCount();
+        complexity += ((LookupSwitchStmt) unit).getTargetCount();
       }
 
       for (ValueBox box : unit.getUseAndDefBoxes()) {
