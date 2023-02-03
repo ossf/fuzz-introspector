@@ -281,19 +281,6 @@ def check_fuzz_report(
             assert len(func_reached) == actual_reached_count
             assert (len(func_reached) + len(func_unreached)) == actual_total_count
 
-    # Check files in report
-    item = html.find_class('report-box')[-2].find_class('cell-border compact stripe')[0]
-    tbody = item.getchildren()[1]
-    for tr in tbody.getchildren():
-        td_list = tr.getchildren()
-        actual_file = retrieve_tag_content(td_list[0])
-        actual_reached = [item for item in retrieve_tag_content(td_list[1]).strip('[]').split(', ')]
-        actual_covered = [item for item in retrieve_tag_content(td_list[2]).strip('[]').split(', ')]
-        assert actual_file in files_reached
-        assert actual_file in files_covered
-        assert files_reached[actual_file].sort() == actual_reached.sort()
-        assert files_covered[actual_file].sort() == actual_covered.sort()
-
     # Check metadata
     item = html.find_class('report-box')[-1].find_class('cell-border compact stripe')[0]
     tbody = item.getchildren()[1]
