@@ -17,19 +17,10 @@ import json
 import logging
 import os
 
-from typing import (
-    List,
-    Tuple,
-    Dict
-)
+from typing import (List, Tuple, Dict)
 
-from fuzz_introspector import (
-    analysis,
-    constants,
-    html_helpers,
-    json_report,
-    utils
-)
+from fuzz_introspector import (analysis, constants, html_helpers, json_report,
+                               utils)
 from fuzz_introspector.analyses import calltree_analysis as cta
 from fuzz_introspector.datatypes import (
     project_profile,
@@ -56,16 +47,12 @@ class EngineInput(analysis.AnalysisInterface):
     def set_json_string_result(self, json_string):
         self.json_string_result = json_string
 
-    def analysis_func(
-        self,
-        toc_list: List[Tuple[str, str, int]],
-        tables: List[str],
-        project_profile: project_profile.MergedProjectProfile,
-        profiles: List[fuzzer_profile.FuzzerProfile],
-        basefolder: str,
-        coverage_url: str,
-        conclusions: List[html_helpers.HTMLConclusion]
-    ) -> str:
+    def analysis_func(self, toc_list: List[Tuple[str, str,
+                                                 int]], tables: List[str],
+                      project_profile: project_profile.MergedProjectProfile,
+                      profiles: List[fuzzer_profile.FuzzerProfile],
+                      basefolder: str, coverage_url: str,
+                      conclusions: List[html_helpers.HTMLConclusion]) -> str:
         logger.info(f" - Running analysis {self.get_name()}")
 
         if not self.display_html:
@@ -74,28 +61,21 @@ class EngineInput(analysis.AnalysisInterface):
         html_string = ""
         html_string += "<div class=\"report-box\">"
         html_string += html_helpers.html_add_header_with_link(
-            "Fuzz engine guidance",
-            1,
-            toc_list
-        )
+            "Fuzz engine guidance", 1, toc_list)
         html_string += "<div class=\"collapsible\">"
         html_string += "<p>This sections provides heuristics that can be used as input " \
                        "to a fuzz engine when running a given fuzz target. The current " \
                        "focus is on providing input that is usable by libFuzzer.</p>"
 
         for profile_idx in range(len(profiles)):
-            logger.info(f"Generating input for {profiles[profile_idx].identifier}")
+            logger.info(
+                f"Generating input for {profiles[profile_idx].identifier}")
             html_string += html_helpers.html_add_header_with_link(
-                profiles[profile_idx].fuzzer_source_file,
-                2,
-                toc_list
-            )
+                profiles[profile_idx].fuzzer_source_file, 2, toc_list)
 
             # Create dictionary section
-            html_string += self.get_dictionary_section(
-                profiles[profile_idx],
-                toc_list
-            )
+            html_string += self.get_dictionary_section(profiles[profile_idx],
+                                                       toc_list)
 
             html_string += "<br>"
 
@@ -133,26 +113,18 @@ class EngineInput(analysis.AnalysisInterface):
                 kn += 1
         self.set_json_string_result(json.dumps(dictionary))
         json_report.add_analysis_json_str_as_dict_to_report(
-            self.get_name(),
-            self.get_json_string_result()
-        )
+            self.get_name(), self.get_json_string_result())
         return dictionary_content
 
-    def get_dictionary_section(
-        self,
-        profile: fuzzer_profile.FuzzerProfile,
-        toc_list: List[Tuple[str, str, int]]
-    ) -> str:
+    def get_dictionary_section(self, profile: fuzzer_profile.FuzzerProfile,
+                               toc_list: List[Tuple[str, str, int]]) -> str:
         """
         Returns a HTML string with dictionary content, and adds the section
         link to the toc_list.
         """
 
         html_string = html_helpers.html_add_header_with_link(
-            "Dictionary",
-            3,
-            toc_list
-        )
+            "Dictionary", 3, toc_list)
         html_string += "<p>Use this with the libFuzzer -dict=DICT.file flag</p>"
         html_string += "<pre><code class='language-clike'>"
         html_string += self.get_dictionary(profile)
@@ -160,22 +132,15 @@ class EngineInput(analysis.AnalysisInterface):
         return html_string
 
     def get_fuzzer_focus_function_section(
-        self,
-        profile: fuzzer_profile.FuzzerProfile,
-        toc_list: List[Tuple[str, str, int]]
-    ) -> str:
+            self, profile: fuzzer_profile.FuzzerProfile,
+            toc_list: List[Tuple[str, str, int]]) -> str:
         """Returns HTML string with fuzzer focus function"""
         html_string = html_helpers.html_add_header_with_link(
-            "Fuzzer function priority",
-            3,
-            toc_list
-        )
+            "Fuzzer function priority", 3, toc_list)
 
         calltree_analysis = cta.FuzzCalltreeAnalysis()
         fuzz_blockers = calltree_analysis.get_fuzz_blockers(
-            profile,
-            max_blockers_to_extract=10
-        )
+            profile, max_blockers_to_extract=10)
 
         if len(fuzz_blockers) == 0:
             logger.info("Found no fuzz blockers and thus no focus function")
@@ -187,37 +152,26 @@ class EngineInput(analysis.AnalysisInterface):
         for fuzz_blocker in fuzz_blockers:
             ffname = fuzz_blocker.src_function_name
             if ffname is not None and ffname not in focus_functions:
-                focus_functions.append(
-                    utils.demangle_cpp_func(ffname)
-                )
-                logger.info(f"Found focus function: {fuzz_blocker.src_function_name}")
+                focus_functions.append(utils.demangle_cpp_func(ffname))
+                logger.info(
+                    f"Found focus function: {fuzz_blocker.src_function_name}")
 
         if len(focus_functions) == 0:
             return ""
 
-        self.add_to_json_file(
-            constants.ENGINE_INPUT_FILE,
-            profile.identifier,
-            "focus-functions",
-            focus_functions
-        )
+        self.add_to_json_file(constants.ENGINE_INPUT_FILE, profile.identifier,
+                              "focus-functions", focus_functions)
 
         html_string += (
             f"<p>Use one of these functions as input to libfuzzer with flag: "
             f"-focus_function name </p>"
             f"<pre><code class='language-clike'>"
             f"-focus_function={focus_functions}"
-            f"</code></pre><br>"
-        )
+            f"</code></pre><br>")
         return html_string
 
-    def add_to_json_file(
-        self,
-        json_file_path: str,
-        fuzzer_name: str,
-        key: str,
-        val: List[str]
-    ) -> None:
+    def add_to_json_file(self, json_file_path: str, fuzzer_name: str, key: str,
+                         val: List[str]) -> None:
         # Create file if it does not exist
         if not os.path.isfile(json_file_path):
             json_data = dict()

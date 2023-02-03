@@ -16,11 +16,7 @@
 import logging
 import os
 
-from typing import (
-    List,
-    Set,
-    Tuple
-)
+from typing import (List, Set, Tuple)
 
 from fuzz_introspector import analysis
 from fuzz_introspector import html_helpers
@@ -46,25 +42,20 @@ class FilePathAnalysis(analysis.AnalysisInterface):
         self.json_string_result = json_string
 
     def all_files_targeted(
-        self,
-        proj_profile: project_profile.MergedProjectProfile
-    ) -> Set[str]:
+            self,
+            proj_profile: project_profile.MergedProjectProfile) -> Set[str]:
         s1 = set()
         for prof in proj_profile.profiles:
             for func in prof.all_class_functions:
                 s1.add(prof.all_class_functions[func].function_source_file)
         return s1
 
-    def analysis_func(
-        self,
-        toc_list: List[Tuple[str, str, int]],
-        tables: List[str],
-        proj_profile: project_profile.MergedProjectProfile,
-        profiles: List[fuzzer_profile.FuzzerProfile],
-        basefolder: str,
-        coverage_url: str,
-        conclusions: List[html_helpers.HTMLConclusion]
-    ) -> str:
+    def analysis_func(self, toc_list: List[Tuple[str, str,
+                                                 int]], tables: List[str],
+                      proj_profile: project_profile.MergedProjectProfile,
+                      profiles: List[fuzzer_profile.FuzzerProfile],
+                      basefolder: str, coverage_url: str,
+                      conclusions: List[html_helpers.HTMLConclusion]) -> str:
         logger.info(f" - Running analysis {self.get_name()}")
 
         all_proj_files = self.all_files_targeted(proj_profile)
@@ -77,10 +68,7 @@ class FilePathAnalysis(analysis.AnalysisInterface):
 
         # Table with all files
         html_string += html_helpers.html_add_header_with_link(
-            "Files and Directories in report",
-            1,
-            toc_list
-        )
+            "Files and Directories in report", 1, toc_list)
         html_string += "<div class=\"collapsible\">"
         html_string += (
             "<p>This section shows which files and directories are considered "
@@ -92,23 +80,14 @@ class FilePathAnalysis(analysis.AnalysisInterface):
             "configuration file that can exclude data from the report. See "
             "the following link for more information on how to create a config file: "
             "<a href=\"https://github.com/ossf/fuzz-introspector/blob/main/doc/"
-            "Config.md#code-exclusion-from-the-report\">link</a></p>"
-        )
+            "Config.md#code-exclusion-from-the-report\">link</a></p>")
 
         html_string += html_helpers.html_add_header_with_link(
-            "Files in report",
-            2,
-            toc_list
-        )
+            "Files in report", 2, toc_list)
         tables.append(f"myTable{len(tables)}")
         html_string += html_helpers.html_create_table_head(
-            tables[-1],
-            [
-                ("Source file", ""),
-                ("Reached by", ""),
-                ("Covered by", "")
-            ]
-        )
+            tables[-1], [("Source file", ""), ("Reached by", ""),
+                         ("Covered by", "")])
         for fnm in all_proj_files:
             profiles_that_hit = []
             for profile in profiles:
@@ -118,34 +97,24 @@ class FilePathAnalysis(analysis.AnalysisInterface):
             profiles_that_cover = []
             for profile in profiles:
                 is_file_covered = profile.is_file_covered(
-                    fnm,
-                    proj_profile.basefolder
-                )
+                    fnm, proj_profile.basefolder)
                 if is_file_covered:
                     profiles_that_cover.append(profile.identifier)
 
-            html_string += html_helpers.html_table_add_row(
-                [
-                    f"{fnm}",
-                    f"{str(profiles_that_hit)}",
-                    f"{str(profiles_that_cover)}"
-                ]
-            )
+            html_string += html_helpers.html_table_add_row([
+                f"{fnm}", f"{str(profiles_that_hit)}",
+                f"{str(profiles_that_cover)}"
+            ])
         html_string += "</table>"
 
         # Table with all directories
         html_string += html_helpers.html_add_header_with_link(
-            "Directories in report",
-            2,
-            toc_list
-        )
+            "Directories in report", 2, toc_list)
         tables.append(f"myTable{len(tables)}")
         html_string += html_helpers.html_create_table_head(
-            tables[-1],
-            [
+            tables[-1], [
                 ("Directory", ""),
-            ]
-        )
+            ])
         for dr in all_proj_dirs:
             html_string += html_helpers.html_table_add_row([f"{dr}"])
         html_string += "</table>"

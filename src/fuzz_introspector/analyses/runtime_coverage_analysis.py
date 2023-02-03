@@ -45,25 +45,18 @@ class RuntimeCoverageAnalysis(analysis.AnalysisInterface):
     def set_json_string_result(self, json_string):
         self.json_string_result = json_string
 
-    def analysis_func(
-        self,
-        toc_list: List[Tuple[str, str, int]],
-        tables: List[str],
-        proj_profile: project_profile.MergedProjectProfile,
-        profiles: List[fuzzer_profile.FuzzerProfile],
-        basefolder: str,
-        coverage_url: str,
-        conclusions: List[html_helpers.HTMLConclusion]
-    ) -> str:
+    def analysis_func(self, toc_list: List[Tuple[str, str,
+                                                 int]], tables: List[str],
+                      proj_profile: project_profile.MergedProjectProfile,
+                      profiles: List[fuzzer_profile.FuzzerProfile],
+                      basefolder: str, coverage_url: str,
+                      conclusions: List[html_helpers.HTMLConclusion]) -> str:
         logger.info(f" - Running analysis {self.get_name()}")
 
         html_string = ""
         html_string += "<div class=\"report-box\">"
         html_string += html_helpers.html_add_header_with_link(
-            "Runtime coverage analysis",
-            1,
-            toc_list
-        )
+            "Runtime coverage analysis", 1, toc_list)
         html_string += "<div class=\"collapsible\">"
 
         if not proj_profile.has_coverage_data():
@@ -73,45 +66,38 @@ class RuntimeCoverageAnalysis(analysis.AnalysisInterface):
                 profiles,
                 proj_profile,
                 min_total_lines=30,
-                max_hit_proportion=55
-            )
+                max_hit_proportion=55)
 
             html_string += "<p>This section shows analysis of runtime coverage data.</p> "
             html_string += (
                 f"<p>For futher technical details on how this section is generated, please "
                 f"see the "
                 f"<a href=\"{constants.GIT_BRANCH_URL}/doc/Glossary.md#runtime"
-                f"-coverage-analysis\">Glossary</a>.</p>"
-            )
+                f"-coverage-analysis\">Glossary</a>.</p>")
             html_string += html_helpers.html_add_header_with_link(
                 "Complex functions with low coverage", 3, toc_list)
             tables.append(f"myTable{len(tables)}")
             html_string += html_helpers.html_create_table_head(
-                tables[-1],
-                [
-                    ("Func name", ""),
-                    ("Function total lines", ""),
-                    ("Lines covered at runtime", ""),
-                    ("percentage covered", ""),
-                    ("Reached by fuzzers", "")
-                ]
-            )
+                tables[-1], [("Func name", ""), ("Function total lines", ""),
+                             ("Lines covered at runtime", ""),
+                             ("percentage covered", ""),
+                             ("Reached by fuzzers", "")])
 
             for funcname in functions_of_interest:
                 logger.debug(f"Iterating the function {funcname}")
-                func_lines, hit_lines = proj_profile.runtime_coverage.get_hit_summary(funcname)
+                func_lines, hit_lines = proj_profile.runtime_coverage.get_hit_summary(
+                    funcname)
 
                 if func_lines is None or hit_lines is None:
                     continue
 
                 if funcname in proj_profile.all_functions:
-                    reached_by = str(proj_profile.all_functions[funcname].reached_by_fuzzers)
+                    reached_by = str(proj_profile.all_functions[funcname].
+                                     reached_by_fuzzers)
                 else:
                     reached_by = ""
                 html_string += html_helpers.html_table_add_row([
-                    utils.demangle_cpp_func(funcname),
-                    func_lines,
-                    hit_lines,
+                    utils.demangle_cpp_func(funcname), func_lines, hit_lines,
                     "%.5s%%" % (str((hit_lines / func_lines) * 100.0)),
                     reached_by
                 ])
@@ -125,12 +111,9 @@ class RuntimeCoverageAnalysis(analysis.AnalysisInterface):
         return html_string
 
     def get_low_cov_high_line_funcs(
-        self,
-        profiles: List[fuzzer_profile.FuzzerProfile],
-        merged_profile: project_profile.MergedProjectProfile,
-        min_total_lines: int,
-        max_hit_proportion: int
-    ) -> List[str]:
+            self, profiles: List[fuzzer_profile.FuzzerProfile],
+            merged_profile: project_profile.MergedProjectProfile,
+            min_total_lines: int, max_hit_proportion: int) -> List[str]:
         """
         Identifies the functions that have high line count in source code
         but only a fraction of the lines are hit at runtime.
@@ -143,16 +126,16 @@ class RuntimeCoverageAnalysis(analysis.AnalysisInterface):
         for funcname in merged_profile.runtime_coverage.covmap.keys():
             logger.debug(f"Going through {funcname}")
 
-            total_lines, hit_lines = merged_profile.runtime_coverage.get_hit_summary(funcname)
-            logger.debug(f"Total lines: {total_lines} -- hit_lines: {hit_lines}")
+            total_lines, hit_lines = merged_profile.runtime_coverage.get_hit_summary(
+                funcname)
+            logger.debug(
+                f"Total lines: {total_lines} -- hit_lines: {hit_lines}")
             if total_lines is None or hit_lines is None or total_lines == 0:
                 continue
 
             hit_proportion = (hit_lines / total_lines) * 100.0
             logger.debug(f"hit proportion {hit_proportion}")
-            if (
-                total_lines > min_total_lines
-                and hit_proportion < max_hit_proportion
-            ):
+            if (total_lines > min_total_lines
+                    and hit_proportion < max_hit_proportion):
                 functions_of_interest.append(funcname)
         return functions_of_interest

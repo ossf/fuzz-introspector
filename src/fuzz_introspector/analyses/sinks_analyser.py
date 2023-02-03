@@ -18,27 +18,13 @@ import logging
 
 from bs4 import BeautifulSoup as bs
 
-from typing import (
-    Any,
-    List,
-    Tuple,
-    Dict
-)
+from typing import (Any, List, Tuple, Dict)
 
-from fuzz_introspector import (
-    analysis,
-    code_coverage,
-    cfg_load,
-    html_helpers,
-    json_report,
-    utils
-)
+from fuzz_introspector import (analysis, code_coverage, cfg_load, html_helpers,
+                               json_report, utils)
 
-from fuzz_introspector.datatypes import (
-    project_profile,
-    fuzzer_profile,
-    function_profile
-)
+from fuzz_introspector.datatypes import (project_profile, fuzzer_profile,
+                                         function_profile)
 
 logger = logging.getLogger(name=__name__)
 
@@ -55,68 +41,46 @@ SINK_FUNCTION = {
         ('', 'wordexp'),
         ('', 'popen'),
     ],
-    'python': [
-        ('<builtin>', 'exec'),
-        ('<builtin>', 'eval'),
-        ('subprocess', 'call'),
-        ('subprocess', 'run'),
-        ('subprocess', 'Popen'),
-        ('subprocess', 'check_output'),
-        ('os', 'system'),
-        ('os', 'popen'),
-        ('os', 'spawnlpe'),
-        ('os', 'spawnve'),
-        ('os', 'exec'),
-        ('os', 'execl'),
-        ('os', 'execle'),
-        ('os', 'execlp'),
-        ('os', 'execlpe'),
-        ('os', 'execv'),
-        ('os', 'execve'),
-        ('os', 'execvp'),
-        ('os', 'execlpe'),
-        ('asyncio', 'create_subprocess_shell'),
-        ('asyncio', 'create_subprocess_exec'),
-        ('asyncio', 'run'),
-        ('asyncio', 'sleep'),
-        ('logging.config', 'listen'),
-        ('code.InteractiveInterpreter', 'runsource'),
-        ('code.InteractiveInterpreter', 'runcode'),
-        ('code.InteractiveInterpreter', 'write'),
-        ('code.InteractiveConsole', 'push'),
-        ('code.InteractiveConsole', 'interact'),
-        ('code.InteractiveConsole', 'raw_input'),
-        ('code', 'interact'),
-        ('code', 'compile_command')
-    ],
-    'jvm': [
-        ('java.lang.Runtime', 'exec'),
-        ('javax.xml.xpath.XPath', 'compile'),
-        ('javax.xml.xpath.XPath', 'evaluate'),
-        ('java.lang.Thread', 'run'),
-        ('java.lang.Runnable', 'run'),
-        ('java.util.concurrent.Executor', 'execute'),
-        ('java.util.concurrent.Callable', 'call'),
-        ('java.lang.System', 'console'),
-        ('java.lang.System', 'load'),
-        ('java.lang.System', 'loadLibrary'),
-        ('java.lang.System', 'mapLibraryName'),
-        ('java.lang.System', 'runFinalization'),
-        ('java.lang.System', 'setErr'),
-        ('java.lang.System', 'setIn'),
-        ('java.lang.System', 'setOut'),
-        ('java.lang.System', 'setProperties'),
-        ('java.lang.System', 'setProperty'),
-        ('java.lang.System', 'setSecurityManager'),
-        ('java.lang.ProcessBuilder', 'directory'),
-        ('java.lang.ProcessBuilder', 'inheritIO'),
-        ('java.lang.ProcessBuilder', 'command'),
-        ('java.lang.ProcessBuilder', 'redirectError'),
-        ('java.lang.ProcessBuilder', 'redirectErrorStream'),
-        ('java.lang.ProcessBuilder', 'redirectInput'),
-        ('java.lang.ProcessBuilder', 'redirectOutput'),
-        ('java.lang.ProcessBuilder', 'start')
-    ]
+    'python': [('<builtin>', 'exec'), ('<builtin>', 'eval'),
+               ('subprocess', 'call'), ('subprocess', 'run'),
+               ('subprocess', 'Popen'), ('subprocess', 'check_output'),
+               ('os', 'system'), ('os', 'popen'), ('os', 'spawnlpe'),
+               ('os', 'spawnve'), ('os', 'exec'), ('os', 'execl'),
+               ('os', 'execle'), ('os', 'execlp'), ('os', 'execlpe'),
+               ('os', 'execv'), ('os', 'execve'), ('os', 'execvp'),
+               ('os', 'execlpe'), ('asyncio', 'create_subprocess_shell'),
+               ('asyncio', 'create_subprocess_exec'), ('asyncio', 'run'),
+               ('asyncio', 'sleep'), ('logging.config', 'listen'),
+               ('code.InteractiveInterpreter', 'runsource'),
+               ('code.InteractiveInterpreter', 'runcode'),
+               ('code.InteractiveInterpreter', 'write'),
+               ('code.InteractiveConsole', 'push'),
+               ('code.InteractiveConsole', 'interact'),
+               ('code.InteractiveConsole', 'raw_input'), ('code', 'interact'),
+               ('code', 'compile_command')],
+    'jvm': [('java.lang.Runtime', 'exec'),
+            ('javax.xml.xpath.XPath', 'compile'),
+            ('javax.xml.xpath.XPath', 'evaluate'), ('java.lang.Thread', 'run'),
+            ('java.lang.Runnable', 'run'),
+            ('java.util.concurrent.Executor', 'execute'),
+            ('java.util.concurrent.Callable', 'call'),
+            ('java.lang.System', 'console'), ('java.lang.System', 'load'),
+            ('java.lang.System', 'loadLibrary'),
+            ('java.lang.System', 'mapLibraryName'),
+            ('java.lang.System', 'runFinalization'),
+            ('java.lang.System', 'setErr'), ('java.lang.System', 'setIn'),
+            ('java.lang.System', 'setOut'),
+            ('java.lang.System', 'setProperties'),
+            ('java.lang.System', 'setProperty'),
+            ('java.lang.System', 'setSecurityManager'),
+            ('java.lang.ProcessBuilder', 'directory'),
+            ('java.lang.ProcessBuilder', 'inheritIO'),
+            ('java.lang.ProcessBuilder', 'command'),
+            ('java.lang.ProcessBuilder', 'redirectError'),
+            ('java.lang.ProcessBuilder', 'redirectErrorStream'),
+            ('java.lang.ProcessBuilder', 'redirectInput'),
+            ('java.lang.ProcessBuilder', 'redirectOutput'),
+            ('java.lang.ProcessBuilder', 'start')]
 }
 
 
@@ -134,7 +98,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
 
     def __init__(self) -> None:
         self.json_string_result = "[]"
-#        self.display_html = False
+        #        self.display_html = False
         self.display_html = True
         self.index = 0
 
@@ -177,10 +141,10 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
         return func_file
 
     def _retrieve_data_list(
-        self,
-        proj_profile: project_profile.MergedProjectProfile,
+        self, proj_profile: project_profile.MergedProjectProfile,
         profiles: List[fuzzer_profile.FuzzerProfile]
-    ) -> Tuple[List[cfg_load.CalltreeCallsite], List[function_profile.FunctionProfile]]:
+    ) -> Tuple[List[cfg_load.CalltreeCallsite],
+               List[function_profile.FunctionProfile]]:
         """
         Retrieve and return full list of call sites and functions
         from all fuzzers profile for this project
@@ -196,7 +160,9 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
 
         for profile in profiles:
             if profile.function_call_depths is not None:
-                callsite_list.extend(cfg_load.extract_all_callsites(profile.function_call_depths))
+                callsite_list.extend(
+                    cfg_load.extract_all_callsites(
+                        profile.function_call_depths))
             for (key, function) in profile.all_class_functions.items():
                 if key not in function_name_list:
                     function_list.append(function)
@@ -204,10 +170,8 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
 
         return (callsite_list, function_list)
 
-    def _handle_function_name(
-        self,
-        callsite: cfg_load.CalltreeCallsite
-    ) -> str:
+    def _handle_function_name(self,
+                              callsite: cfg_load.CalltreeCallsite) -> str:
         """
         Add package name to uniquly identify functions
         in different package.
@@ -219,9 +183,8 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
             return f"[{callsite.dst_function_source_file}].{func_name}"
 
     def _map_function_callsite(
-        self,
-        functions: List[function_profile.FunctionProfile],
-        callsites: List[cfg_load.CalltreeCallsite]
+            self, functions: List[function_profile.FunctionProfile],
+            callsites: List[cfg_load.CalltreeCallsite]
     ) -> Dict[str, List[str]]:
         """
         Dig up the callsite for each function and store
@@ -239,12 +202,9 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
             func_name = self._handle_function_name(callsite)
             if func_name in callsite_dict.keys():
                 callsite_dict[func_name].append(
-                    "%s#%s:%s" % (
-                        self._get_source_file(callsite),
-                        self._get_parent_func_name(callsite),
-                        callsite.src_linenumber
-                    )
-                )
+                    "%s#%s:%s" % (self._get_source_file(callsite),
+                                  self._get_parent_func_name(callsite),
+                                  callsite.src_linenumber))
 
         # Sort and make unique for callsites of each function
         for (key, value) in callsite_dict.items():
@@ -253,10 +213,8 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
         return callsite_dict
 
     def _filter_function_list(
-        self,
-        functions: List[function_profile.FunctionProfile],
-        target_lang: str
-    ) -> List[function_profile.FunctionProfile]:
+            self, functions: List[function_profile.FunctionProfile],
+            target_lang: str) -> List[function_profile.FunctionProfile]:
         """
         Filter out target list of functions which are considered
         as sinks for separate langauge which is the major
@@ -292,10 +250,8 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
         return function_list
 
     def _retrieve_fuzzer_hitcount(
-        self,
-        function: function_profile.FunctionProfile,
-        coverage: code_coverage.CoverageProfile
-    ) -> int:
+            self, function: function_profile.FunctionProfile,
+            coverage: code_coverage.CoverageProfile) -> int:
         """
         Analyse the project coverage and calculate the hit
         count for target function. This information also shows
@@ -313,11 +269,10 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
         return count
 
     def _retrieve_function_link(
-        self,
-        function: function_profile.FunctionProfile,
-        proj_profile: project_profile.MergedProjectProfile,
-        target_name: str = ""
-    ) -> Tuple[str, int]:
+            self,
+            function: function_profile.FunctionProfile,
+            proj_profile: project_profile.MergedProjectProfile,
+            target_name: str = "") -> Tuple[str, int]:
         """
         Retrieve source code link for the given function if existed.
         """
@@ -339,8 +294,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
             return ("#", linenumber)
 
     def _determine_branch_blocker(
-        self,
-        callpath_list: List[List[function_profile.FunctionProfile]],
+        self, callpath_list: List[List[function_profile.FunctionProfile]],
         proj_profile: project_profile.MergedProjectProfile
     ) -> List[function_profile.FunctionProfile]:
         """
@@ -357,7 +311,8 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
             parent_fd = None
             for callpath_fd in callpath:
                 if parent_fd:
-                    if not proj_profile.runtime_coverage.is_func_hit(callpath_fd.function_name):
+                    if not proj_profile.runtime_coverage.is_func_hit(
+                            callpath_fd.function_name):
                         # if this function is not hit, the parent function is a blocker
                         break
                 parent_fd = callpath_fd
@@ -370,10 +325,8 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
         return result_list
 
     def _generate_callpath_page(
-        self,
-        callpath: List[function_profile.FunctionProfile],
-        proj_profile: project_profile.MergedProjectProfile
-    ) -> str:
+            self, callpath: List[function_profile.FunctionProfile],
+            proj_profile: project_profile.MergedProjectProfile) -> str:
         """
         Generate a standalone html page to display
         the given callpath, also providing function
@@ -414,13 +367,12 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
         if depth_count == 1:
             section += "</div></div>"
         else:
-            section += (
-                "</div>" * int(depth_count - 1) * 2 + "</div></div>"
-            )
+            section += ("</div>" * int(depth_count - 1) * 2 + "</div></div>")
 
         section += "</div></div></div>"
 
-        html = html_helpers.html_get_header(calltree=True, title="Fuzz introspector")
+        html = html_helpers.html_get_header(calltree=True,
+                                            title="Fuzz introspector")
         html += '<div class="content-section calltree-content-section">'
         html += f"{section}</div></div>"
         html += '<script src="calltree.js"></script></body></html>'
@@ -433,14 +385,11 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
         return filename
 
     def _handle_callpath_dict(
-        self,
-        callpath_dict: Dict[
-            function_profile.FunctionProfile,
-            List[List[function_profile.FunctionProfile]]
-        ],
-        proj_profile: project_profile.MergedProjectProfile,
-        target_name: str
-    ) -> str:
+            self,
+            callpath_dict: Dict[function_profile.FunctionProfile,
+                                List[List[function_profile.FunctionProfile]]],
+            proj_profile: project_profile.MergedProjectProfile,
+            target_name: str) -> str:
         """
         Pretty print index of callpath and generate
         also generate separate html page for displaying
@@ -455,7 +404,8 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
         html += "</thead><tbody>"
 
         for parent_func in callpath_dict.keys():
-            func_link, line = self._retrieve_function_link(parent_func, proj_profile, target_name)
+            func_link, line = self._retrieve_function_link(
+                parent_func, proj_profile, target_name)
             callpath_list = callpath_dict[parent_func]
             html += "<tr><td style='max-width: 150px'>"
             html += f"{parent_func.function_name}<br/>"
@@ -471,7 +421,8 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
             for callpath in callpath_list:
                 count += 1
                 self.index += 1
-                callpath_link = self._generate_callpath_page(callpath, proj_profile)
+                callpath_link = self._generate_callpath_page(
+                    callpath, proj_profile)
                 if count <= 20:
                     html += f"<a href='{callpath_link}'>Path {count}</a><br/>"
             html += "</td></tr>"
@@ -481,10 +432,8 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
         return html
 
     def _print_blocker_list(
-        self,
-        blocker_list: List[function_profile.FunctionProfile],
-        proj_profile: project_profile.MergedProjectProfile
-    ) -> str:
+            self, blocker_list: List[function_profile.FunctionProfile],
+            proj_profile: project_profile.MergedProjectProfile) -> str:
         """
         Print blocker information in html
         """
@@ -510,13 +459,10 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
         return html
 
     def _retrieve_content_rows(
-        self,
-        functions: List[function_profile.FunctionProfile],
-        proj_profile: project_profile.MergedProjectProfile,
-        target_lang: str,
-        func_callsites: Dict[str, List[str]],
-        coverage: code_coverage.CoverageProfile
-    ) -> Tuple[str, str]:
+            self, functions: List[function_profile.FunctionProfile],
+            proj_profile: project_profile.MergedProjectProfile,
+            target_lang: str, func_callsites: Dict[str, List[str]],
+            coverage: code_coverage.CoverageProfile) -> Tuple[str, str]:
         """
         Retrieve the content for this analyser in two formats. One in
         normal html table rows string and the other is in json string
@@ -528,17 +474,18 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
 
         for fd in self._filter_function_list(functions, target_lang):
             json_dict: Dict[str, Any] = {}
-            parent_list, parent_name_list = proj_profile.get_direct_parent_list(fd)
-            callpath_list, callpath_name_list = proj_profile.get_function_callpaths(fd, [])
+            parent_list, parent_name_list = proj_profile.get_direct_parent_list(
+                fd)
+            callpath_list, callpath_name_list = proj_profile.get_function_callpaths(
+                fd, [])
             callpath_dict = utils.group_path_list_by_target(callpath_list)
-            callpath_name_dict = utils.group_path_list_by_target(callpath_name_list)
+            callpath_name_dict = utils.group_path_list_by_target(
+                callpath_name_list)
 
             fuzzer_cover_count = self._retrieve_fuzzer_hitcount(fd, coverage)
             if fuzzer_cover_count == 0:
                 blocker_list = self._determine_branch_blocker(
-                    callpath_list,
-                    proj_profile
-                )
+                    callpath_list, proj_profile)
                 blocker = self._print_blocker_list(blocker_list, proj_profile)
             else:
                 blocker = "N/A"
@@ -550,9 +497,9 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
                         f"{fd.function_name}",
                         "Not in fuzzer provided call tree",
                         f"{str(fd.reached_by_fuzzers)}",
-                        self._handle_callpath_dict(callpath_dict, proj_profile, fd.function_name),
-                        f"{fuzzer_cover_count}",
-                        f"{blocker}"
+                        self._handle_callpath_dict(callpath_dict, proj_profile,
+                                                   fd.function_name),
+                        f"{fuzzer_cover_count}", f"{blocker}"
                     ])
 
                     if blocker != "N/A":
@@ -574,12 +521,11 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
             for called_location in func_callsites[fd.function_name]:
                 if self.display_html:
                     row = html_helpers.html_table_add_row([
-                        f"{fd.function_name}",
-                        f"{called_location}",
+                        f"{fd.function_name}", f"{called_location}",
                         f"{str(fd.reached_by_fuzzers)}",
-                        self._handle_callpath_dict(callpath_dict, proj_profile, fd.function_name),
-                        f"{fuzzer_cover_count}",
-                        f"{blocker}"
+                        self._handle_callpath_dict(callpath_dict, proj_profile,
+                                                   fd.function_name),
+                        f"{fuzzer_cover_count}", f"{blocker}"
                     ])
 
                     if blocker != "N/A":
@@ -598,16 +544,12 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
 
         return (html_string, json.dumps(json_list))
 
-    def analysis_func(
-        self,
-        toc_list: List[Tuple[str, str, int]],
-        tables: List[str],
-        proj_profile: project_profile.MergedProjectProfile,
-        profiles: List[fuzzer_profile.FuzzerProfile],
-        basefolder: str,
-        coverage_url: str,
-        conclusions: List[html_helpers.HTMLConclusion]
-    ) -> str:
+    def analysis_func(self, toc_list: List[Tuple[str, str,
+                                                 int]], tables: List[str],
+                      proj_profile: project_profile.MergedProjectProfile,
+                      profiles: List[fuzzer_profile.FuzzerProfile],
+                      basefolder: str, coverage_url: str,
+                      conclusions: List[html_helpers.HTMLConclusion]) -> str:
         """
         Show all used sensitive sink functions / methods in the project and display
         if any fuzzers statically or dynamically reached them. If not, display closest
@@ -627,25 +569,21 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
         logger.info(f" - Running analysis {self.get_name()}")
 
         # Get full function /  callsite list for all fuzzer's profiles
-        callsite_list, function_list = self._retrieve_data_list(proj_profile, profiles)
+        callsite_list, function_list = self._retrieve_data_list(
+            proj_profile, profiles)
 
         # Map callsites to each function
-        function_callsite_dict = self._map_function_callsite(function_list, callsite_list)
+        function_callsite_dict = self._map_function_callsite(
+            function_list, callsite_list)
 
         # Retrieve table content rows
         html_rows, json_row = self._retrieve_content_rows(
-            function_list,
-            proj_profile,
-            profiles[0].target_lang,
-            function_callsite_dict,
-            proj_profile.runtime_coverage
-        )
+            function_list, proj_profile, profiles[0].target_lang,
+            function_callsite_dict, proj_profile.runtime_coverage)
 
         self.set_json_string_result(json_row)
         json_report.add_analysis_json_str_as_dict_to_report(
-            self.get_name(),
-            self.get_json_string_result()
-        )
+            self.get_name(), self.get_json_string_result())
 
         # If no html, this is our job done
         if not self.display_html:
@@ -655,10 +593,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
         html_string += "<div class=\"report-box\">"
 
         html_string += html_helpers.html_add_header_with_link(
-            "Function call coverage",
-            1,
-            toc_list
-        )
+            "Function call coverage", 1, toc_list)
 
         # Table with all function calls for each files
         html_string += "<div class=\"collapsible\">"
@@ -678,37 +613,30 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
             "functions that make the fuzzers fail to reach the specific functions. "
             "Both column 4 and 5 will only show information if none of the fuzzers "
             "cover the target function calls."
-            "</p>"
-        )
+            "</p>")
 
         html_string += html_helpers.html_add_header_with_link(
-            "Function in each files in report",
-            2,
-            toc_list
-        )
+            "Function in each files in report", 2, toc_list)
 
         # Third party function calls table
         tables.append(f"myTable{len(tables)}")
         html_string += html_helpers.html_create_table_head(
             tables[-1],
-            [
-                ("Target sink", ""),
-                ("Callsite location",
-                 "Source file, line number and parent function of sink function call. "
-                 "Based on static analysis and provided by .data calltree."),
-                ("Reached by fuzzer",
-                 "Is this code reachable by any fuzzer functions? "
-                 "Based on static analysis."),
-                ("Function call path",
-                 "All call path of the project calling to each sink function. "
-                 "Group by functions directly calling the sink function."),
-                ("Covered by fuzzer",
-                 "Number of fuzzers covering this sink function during runtime."),
-                ("Possible branch blockers",
-                 "Determine which branch blockers avoid fuzzers to cover the"
-                 "sink function during runtime and its information")
-            ]
-        )
+            [("Target sink", ""),
+             ("Callsite location",
+              "Source file, line number and parent function of sink function call. "
+              "Based on static analysis and provided by .data calltree."),
+             ("Reached by fuzzer",
+              "Is this code reachable by any fuzzer functions? "
+              "Based on static analysis."),
+             ("Function call path",
+              "All call path of the project calling to each sink function. "
+              "Group by functions directly calling the sink function."),
+             ("Covered by fuzzer",
+              "Number of fuzzers covering this sink function during runtime."),
+             ("Possible branch blockers",
+              "Determine which branch blockers avoid fuzzers to cover the"
+              "sink function during runtime and its information")])
 
         html_string += html_rows
         html_string += "</table>"

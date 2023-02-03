@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Analysis for synthesizing fuzz drivers"""
+"""Analysis for synthesizing fuzz drivers."""
 
 import logging
 
@@ -34,6 +34,7 @@ logger = logging.getLogger(name=__name__)
 
 
 class DriverContents:
+
     def __init__(self):
         self.source_code: str = ""
         self.target_fds: List[function_profile.FunctionProfile] = list()
@@ -55,33 +56,27 @@ class DriverSynthesizer(analysis.AnalysisInterface):
     def set_json_string_result(self, json_string):
         self.json_string_result = json_string
 
-    def analysis_func(
-        self,
-        toc_list: List[Tuple[str, str, int]],
-        tables: List[str],
-        proj_profile: project_profile.MergedProjectProfile,
-        profiles: List[fuzzer_profile.FuzzerProfile],
-        basefolder: str,
-        coverage_url: str,
-        conclusions: List[html_helpers.HTMLConclusion],
-        fuzz_targets=None
-    ) -> str:
+    def analysis_func(self,
+                      toc_list: List[Tuple[str, str, int]],
+                      tables: List[str],
+                      proj_profile: project_profile.MergedProjectProfile,
+                      profiles: List[fuzzer_profile.FuzzerProfile],
+                      basefolder: str,
+                      coverage_url: str,
+                      conclusions: List[html_helpers.HTMLConclusion],
+                      fuzz_targets=None) -> str:
         logger.info(f" - Running analysis {self.get_name()}")
         html_string = ""
         html_string += "<div class=\"report-box\">"
         html_string += html_helpers.html_add_header_with_link(
-            "Fuzz driver synthesis",
-            1,
-            toc_list
-        )
+            "Fuzz driver synthesis", 1, toc_list)
         html_string += "<div class=\"collapsible\">"
 
         if fuzz_targets is None or len(fuzz_targets) == 0:
             A1 = optimal_targets.OptimalTargets()
 
             _, optimal_target_functions = A1.iteratively_get_optimal_targets(
-                proj_profile
-            )
+                proj_profile)
             fuzz_targets = optimal_target_functions
 
         target_codes: Dict[str, DriverContents] = dict()
@@ -118,8 +113,7 @@ class DriverSynthesizer(analysis.AnalysisInterface):
                     var_idx += 1
                 elif "struct" in arg_type and "*" in arg_type and "**" not in arg_type:
                     code_var_decl += "  %s new_var%d = calloc(sizeof(%s), 1);\n" % (
-                        arg_type.replace(".", " "),
-                        var_idx,
+                        arg_type.replace(".", " "), var_idx,
                         arg_type.replace(".", " ").replace("*", ""))
                     var_order.append("new_var%d" % var_idx)
                     var_idx += 1
@@ -155,32 +149,29 @@ class DriverSynthesizer(analysis.AnalysisInterface):
 
             final_fuzzers[filename] = DriverContents()
             final_fuzzers[filename].source_code = file_fuzzer_code
-            final_fuzzers[filename].target_fds = target_codes[filename].target_fds
+            final_fuzzers[filename].target_fds = target_codes[
+                filename].target_fds
 
-        logger.info("Synthesizing drivers for the following optimal functions: { %s }" % (
-            str([f.function_name for f in fuzz_targets])))
+        logger.info(
+            "Synthesizing drivers for the following optimal functions: { %s }"
+            % (str([f.function_name for f in fuzz_targets])))
 
         # Create the necessary HTML code for displaying the fuzz drivers
-        html_string += html_helpers.html_add_header_with_link("New fuzzers", 3, toc_list)
+        html_string += html_helpers.html_add_header_with_link(
+            "New fuzzers", 3, toc_list)
         html_string += "<p>The below fuzzers are templates and suggestions for how " \
                        "to target the set of optimal functions above</p>"
 
         for filename in final_fuzzers:
             html_string += html_helpers.html_add_header_with_link(
-                str(filename.split("/")[-1]),
-                4,
-                toc_list
-            )
+                str(filename.split("/")[-1]), 4, toc_list)
             html_string += f"<b>Target file:</b>{filename}<br>"
             all_functions = ", ".join(
-                [f.function_name for f in final_fuzzers[filename].target_fds]
-            )
+                [f.function_name for f in final_fuzzers[filename].target_fds])
             html_string += f"<b>Target functions:</b> {all_functions}"
-            html_string += (
-                f"<pre><code class='language-clike'>"
-                f"{final_fuzzers[filename].source_code}"
-                f"</code></pre><br>"
-            )
+            html_string += (f"<pre><code class='language-clike'>"
+                            f"{final_fuzzers[filename].source_code}"
+                            f"</code></pre><br>")
 
         html_string += "</div>"  # .collapsible
         html_string += "</div>"  # report-box

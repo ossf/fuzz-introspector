@@ -49,16 +49,12 @@ class BugDigestor(analysis.AnalysisInterface):
     def set_json_string_result(self, json_string):
         self.json_string_result = json_string
 
-    def analysis_func(
-        self,
-        toc_list: List[Tuple[str, str, int]],
-        tables: List[str],
-        proj_profile: project_profile.MergedProjectProfile,
-        profiles: List[fuzzer_profile.FuzzerProfile],
-        basefolder: str,
-        coverage_url: str,
-        conclusions: List[html_helpers.HTMLConclusion]
-    ) -> str:
+    def analysis_func(self, toc_list: List[Tuple[str, str,
+                                                 int]], tables: List[str],
+                      proj_profile: project_profile.MergedProjectProfile,
+                      profiles: List[fuzzer_profile.FuzzerProfile],
+                      basefolder: str, coverage_url: str,
+                      conclusions: List[html_helpers.HTMLConclusion]) -> str:
         """Digests and creates HTML about bugs found by the fuzzers."""
         logger.info(f" - Running analysis {self.get_name()}")
         input_bugs = data_loader.try_load_input_bugs()
@@ -68,36 +64,24 @@ class BugDigestor(analysis.AnalysisInterface):
         html_string = ""
         html_string += "<div class=\"report-box\">"
         html_string += html_helpers.html_add_header_with_link(
-            "Bug detector analysis",
-            1,
-            toc_list
-        )
+            "Bug detector analysis", 1, toc_list)
         html_string += "<div class=\"collapsible\">"
 
         html_string += (
             "<p>This section provices analysis that matches bugs "
             "found by fuzzers with data about the rest of the analysis. "
             "This section is still in development and should be considered "
-            "beta at most.</p>"
-        )
+            "beta at most.</p>")
 
         # Create table header
         tables.append(f"myTable{len(tables)}")
         html_string += html_helpers.html_create_table_head(
-            tables[-1],
-            [
-                ("Bug type", "The type of bug."),
-                ("Function", "The function in which the bug occurs")
-            ]
-        )
+            tables[-1], [("Bug type", "The type of bug."),
+                         ("Function", "The function in which the bug occurs")])
         for bug in input_bugs:
             logger.info("Adding row in input bugs table")
             html_string += html_helpers.html_table_add_row(
-                [
-                    bug.bug_type,
-                    bug.function_name
-                ]
-            )
+                [bug.bug_type, bug.function_name])
         html_string += "</table>"
         html_string += "</div>"  # .collapsible
         html_string += "</div>"  # report-box
