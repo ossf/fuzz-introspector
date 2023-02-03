@@ -73,8 +73,8 @@ class MetadataAnalysis(analysis.AnalysisInterface):
             if profile.coverage is None:
                 continue
             base_datafile = os.path.basename(profile.introspector_data_file)
-            base_yamlfile = os.path.basename(profile.introspector_data_file +
-                                             ".yaml")
+            full_yaml_path = profile.introspector_data_file + ".yaml"
+            base_yamlfile = os.path.basename(full_yaml_path)
             coverage_file_link_str = ""
             for idx in range(len(profile.coverage.coverage_files)):
                 cov_prof = profile.coverage.coverage_files[idx]
