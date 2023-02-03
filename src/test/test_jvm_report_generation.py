@@ -211,6 +211,10 @@ def check_calltree_view(report_dir, files, class_name):
                 actual_link = link_element.get('href')
                 break
         expected_lineno = expected_line_split[-1].split('=')[1].rstrip('\n')
+        if parent_class == "#":
+            assert actual_link == "#"
+        else:
+            assert actual_link == f'{coverage_link}/{parent_class}.java.html#L{expected_lineno}'
 
 
 def check_function_list(report_dir, expected_reached_method, expected_unreached_method, file):
