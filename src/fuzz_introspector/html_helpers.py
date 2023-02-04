@@ -36,6 +36,30 @@ class HTML_HEADING(Enum):
     H5 = 5
     H6 = 6
 
+class HTML_TOC_ENTRY:
+    """Entry in the table of contents"""
+
+    def __init__(
+        self,
+        entry_title: str,
+        href_link: str,
+        heading_type: HTML_HEADING
+    ):
+        self.entry_title = entry_title
+        self.href_link = href_link
+        self.heading_type = heading_type
+
+
+class HtmlTableOfContents:
+    """Helper class for representing a table of content"""
+
+    def __init__(self):
+        self.entries: List[HTML_TOC_ENTRY] = []
+
+    def add_entry(self, entry_title, href_link, heading_type):
+        toc_entry = HTML_TOC_ENTRY(entry_title, href_link, heading_type)
+        self.entries.append(toc_entry)
+
 
 class HTMLConclusion:
     """Represents high-level conclusions in HTML report
@@ -175,7 +199,7 @@ def create_pfc_button(
 
 
 def html_get_table_of_contents(
-        toc_list: List[Tuple[str, str, int]],
+        table_of_contents: HtmlTableOfContents,
         coverage_url: str,
         profiles: List[fuzzer_profile.FuzzerProfile],
         proj_profile: project_profile.MergedProjectProfile) -> str:
@@ -208,10 +232,14 @@ def html_get_table_of_contents(
     html_toc_string += """</div>
                             <div class="left-sidebar-content-box">\
                                 <h2 style="margin-top:0px">Table of contents</h2>"""
-    for k, v, d in toc_list:
-        indentation = d * 16
+    #for k, v, d in toc_list:
+    for toc_entry in table_of_contents.entries:
+        indentation = (toc_entry.heading_type.value - 1) * 16
         html_toc_string += "<div style='margin-left: %spx'>" % indentation
-        html_toc_string += "    <a href=\"#%s\">%s</a>\n" % (v, k)
+        html_toc_string += "    <a href=\"#%s\">%s</a>\n" % (
+            toc_entry.href_link,
+            toc_entry.entry_title
+        )
         html_toc_string += "</div>\n"
     html_toc_string += '    </div>\
                         </div>'
@@ -221,7 +249,8 @@ def html_get_table_of_contents(
 def html_add_header_with_link(
     header_title: str,
     title_type: HTML_HEADING,
-    toc_list: List[Tuple[str, str, int]],
+    #toc_list: List[Tuple[str, str, int]],
+    table_of_contents: HtmlTableOfContents,
     link: Optional[str] = None,
     experimental: Optional[bool] = False
 ) -> str:
@@ -229,7 +258,8 @@ def html_add_header_with_link(
         link = header_title.replace(" ", "-")
 
     if not experimental:
-        toc_list.append((header_title, link, title_type.value - 1))
+        table_of_contents.add_entry(header_title, link, title_type)
+        #toc_list.append((header_title, link, title_type.value - 1))
 
     html_attributes = ""
     if title_type == HTML_HEADING.H1 or experimental:
