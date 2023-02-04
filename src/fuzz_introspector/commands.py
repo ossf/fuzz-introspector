@@ -41,24 +41,23 @@ def correlate_binaries_to_logs(binaries_dir: str) -> int:
     return constants.APP_EXIT_SUCCESS
 
 
-def run_analysis_on_dir(
-    target_folder: str,
-    coverage_url: str,
-    analyses_to_run: List[str],
-    correlation_file: str,
-    enable_all_analyses: bool,
-    report_name: str,
-    language: str,
-    output_json: List[str] = [],
-    parallelise: bool = True
-) -> int:
+def run_analysis_on_dir(target_folder: str,
+                        coverage_url: str,
+                        analyses_to_run: List[str],
+                        correlation_file: str,
+                        enable_all_analyses: bool,
+                        report_name: str,
+                        language: str,
+                        output_json: List[str] = [],
+                        parallelise: bool = True) -> int:
     if enable_all_analyses:
         for analysis_interface in analysis.get_all_analyses():
             if analysis_interface.get_name() not in analyses_to_run:
                 analyses_to_run.append(analysis_interface.get_name())
 
     logger.info("[+] Loading profiles")
-    profiles = data_loader.load_all_profiles(target_folder, language, parallelise)
+    profiles = data_loader.load_all_profiles(target_folder, language,
+                                             parallelise)
     if len(profiles) == 0:
         logger.info("Found no profiles. Exiting")
         return constants.APP_EXIT_ERROR
@@ -85,8 +84,7 @@ def run_analysis_on_dir(
     proj_profile.coverage_url = coverage_url
 
     logger.info(
-        f"[+] All coverage files {proj_profile.get_profiles_coverage_files()}"
-    )
+        f"[+] All coverage files {proj_profile.get_profiles_coverage_files()}")
 
     logger.info("[+] Refining profiles")
     for profile in profiles:
@@ -99,23 +97,14 @@ def run_analysis_on_dir(
 
     # Overlay coverage in each profile
     for profile in profiles:
-        analysis.overlay_calltree_with_coverage(
-            profile,
-            proj_profile,
-            proj_profile.coverage_url,
-            proj_profile.basefolder
-        )
+        analysis.overlay_calltree_with_coverage(profile, proj_profile,
+                                                proj_profile.coverage_url,
+                                                proj_profile.basefolder)
 
     logger.info(f"Analyses to run: {str(analyses_to_run)}")
     logger.info("[+] Creating HTML report")
-    html_report.create_html_report(
-        profiles,
-        proj_profile,
-        analyses_to_run,
-        output_json,
-        proj_profile.coverage_url,
-        proj_profile.basefolder,
-        report_name
-    )
+    html_report.create_html_report(profiles, proj_profile, analyses_to_run,
+                                   output_json, proj_profile.coverage_url,
+                                   proj_profile.basefolder, report_name)
 
     return constants.APP_EXIT_SUCCESS

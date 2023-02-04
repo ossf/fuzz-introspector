@@ -31,4 +31,4 @@ jobs:
           pip install -r requirements.txt
       - name: yapf code formatting
         run: |
-          yapf -d -r ./src/fuzz_introspector/analyses/
+          yapf -d -r ./src/fuzz_introspector/
