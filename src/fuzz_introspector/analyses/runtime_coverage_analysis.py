@@ -16,8 +16,7 @@
 import logging
 
 from typing import (
-    List,
-)
+    List, )
 
 from fuzz_introspector import analysis
 from fuzz_introspector import constants
