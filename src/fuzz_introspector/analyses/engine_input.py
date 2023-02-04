@@ -47,7 +47,9 @@ class EngineInput(analysis.AnalysisInterface):
     def set_json_string_result(self, json_string):
         self.json_string_result = json_string
 
-    def analysis_func(self, table_of_contents: html_helpers.HtmlTableOfContents, tables: List[str],
+    def analysis_func(self,
+                      table_of_contents: html_helpers.HtmlTableOfContents,
+                      tables: List[str],
                       project_profile: project_profile.MergedProjectProfile,
                       profiles: List[fuzzer_profile.FuzzerProfile],
                       basefolder: str, coverage_url: str,
@@ -61,9 +63,9 @@ class EngineInput(analysis.AnalysisInterface):
 
         html_string = ""
         html_string += "<div class=\"report-box\">"
-        if display_html:
         html_string += html_helpers.html_add_header_with_link(
-            "Fuzz engine guidance", html_helpers.HTML_HEADING.H1, table_of_contents)
+            "Fuzz engine guidance", html_helpers.HTML_HEADING.H1,
+            table_of_contents)
         html_string += "<div class=\"collapsible\">"
         html_string += "<p>This sections provides heuristics that can be used as input " \
                        "to a fuzz engine when running a given fuzz target. The current " \
@@ -119,8 +121,9 @@ class EngineInput(analysis.AnalysisInterface):
             self.get_name(), self.get_json_string_result())
         return dictionary_content
 
-    def get_dictionary_section(self, profile: fuzzer_profile.FuzzerProfile,
-                               table_of_contents: html_helpers.HtmlTableOfContents) -> str:
+    def get_dictionary_section(
+            self, profile: fuzzer_profile.FuzzerProfile,
+            table_of_contents: html_helpers.HtmlTableOfContents) -> str:
         """
         Returns a HTML string with dictionary content, and adds the section
         link to the table_of_contents.
@@ -139,7 +142,8 @@ class EngineInput(analysis.AnalysisInterface):
             table_of_contents: html_helpers.HtmlTableOfContents) -> str:
         """Returns HTML string with fuzzer focus function"""
         html_string = html_helpers.html_add_header_with_link(
-            "Fuzzer function priority", html_helpers.HTML_HEADING.H3, table_of_contents)
+            "Fuzzer function priority", html_helpers.HTML_HEADING.H3,
+            table_of_contents)
 
         calltree_analysis = cta.FuzzCalltreeAnalysis()
         fuzz_blockers = calltree_analysis.get_fuzz_blockers(

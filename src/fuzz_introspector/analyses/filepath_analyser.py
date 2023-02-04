@@ -50,7 +50,9 @@ class FilePathAnalysis(analysis.AnalysisInterface):
                 s1.add(prof.all_class_functions[func].function_source_file)
         return s1
 
-    def analysis_func(self, table_of_contents: html_helpers.HtmlTableOfContents, tables: List[str],
+    def analysis_func(self,
+                      table_of_contents: html_helpers.HtmlTableOfContents,
+                      tables: List[str],
                       proj_profile: project_profile.MergedProjectProfile,
                       profiles: List[fuzzer_profile.FuzzerProfile],
                       basefolder: str, coverage_url: str,
@@ -109,7 +111,8 @@ class FilePathAnalysis(analysis.AnalysisInterface):
 
         # Table with all directories
         html_string += html_helpers.html_add_header_with_link(
-            "Directories in report", html_helpers.HTML_HEADING.H2, table_of_contents)
+            "Directories in report", html_helpers.HTML_HEADING.H2,
+            table_of_contents)
         tables.append(f"myTable{len(tables)}")
         html_string += html_helpers.html_create_table_head(
             tables[-1], [

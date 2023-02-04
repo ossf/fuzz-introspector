@@ -69,7 +69,8 @@ class DriverSynthesizer(analysis.AnalysisInterface):
         html_string = ""
         html_string += "<div class=\"report-box\">"
         html_string += html_helpers.html_add_header_with_link(
-            "Fuzz driver synthesis", html_helpers.HTML_HEADING.H1, table_of_contents)
+            "Fuzz driver synthesis", html_helpers.HTML_HEADING.H1,
+            table_of_contents)
         html_string += "<div class=\"collapsible\">"
 
         if fuzz_targets is None or len(fuzz_targets) == 0:

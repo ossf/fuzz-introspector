@@ -544,7 +544,8 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
 
         return (html_string, json.dumps(json_list))
 
-    def analysis_func(self, table_of_contents: html_helpers.HtmlTableOfContents,
+    def analysis_func(self,
+                      table_of_contents: html_helpers.HtmlTableOfContents,
                       tables: List[str],
                       proj_profile: project_profile.MergedProjectProfile,
                       profiles: List[fuzzer_profile.FuzzerProfile],
@@ -593,7 +594,8 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
         html_string += "<div class=\"report-box\">"
 
         html_string += html_helpers.html_add_header_with_link(
-            "Function call coverage", html_helpers.HTML_HEADING.H1, table_of_contents)
+            "Function call coverage", html_helpers.HTML_HEADING.H1,
+            table_of_contents)
 
         # Table with all function calls for each files
         html_string += "<div class=\"collapsible\">"
