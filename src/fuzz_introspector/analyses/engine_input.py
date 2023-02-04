@@ -17,7 +17,7 @@ import json
 import logging
 import os
 
-from typing import (List, Tuple, Dict)
+from typing import (List, Dict)
 
 from fuzz_introspector import (analysis, constants, html_helpers, json_report,
                                utils)

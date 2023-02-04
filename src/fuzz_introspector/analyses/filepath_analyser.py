@@ -16,7 +16,7 @@
 import logging
 import os
 
-from typing import (List, Set, Tuple)
+from typing import (List, Set)
 
 from fuzz_introspector import analysis
 from fuzz_introspector import html_helpers

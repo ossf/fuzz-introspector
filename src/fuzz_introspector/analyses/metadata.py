@@ -18,7 +18,6 @@ import logging
 
 from typing import (
     List,
-    Tuple,
 )
 
 from fuzz_introspector import analysis
