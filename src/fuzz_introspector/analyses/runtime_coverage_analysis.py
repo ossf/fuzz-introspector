@@ -56,7 +56,8 @@ class RuntimeCoverageAnalysis(analysis.AnalysisInterface):
         html_string = ""
         html_string += "<div class=\"report-box\">"
         html_string += html_helpers.html_add_header_with_link(
-            "Runtime coverage analysis", 1, toc_list)
+            "Runtime coverage analysis", html_helpers.HTML_HEADING.H1,
+            toc_list)
         html_string += "<div class=\"collapsible\">"
 
         if not proj_profile.has_coverage_data():
@@ -75,7 +76,8 @@ class RuntimeCoverageAnalysis(analysis.AnalysisInterface):
                 f"<a href=\"{constants.GIT_BRANCH_URL}/doc/Glossary.md#runtime"
                 f"-coverage-analysis\">Glossary</a>.</p>")
             html_string += html_helpers.html_add_header_with_link(
-                "Complex functions with low coverage", 3, toc_list)
+                "Complex functions with low coverage",
+                html_helpers.HTML_HEADING.H3, toc_list)
             tables.append(f"myTable{len(tables)}")
             html_string += html_helpers.html_create_table_head(
                 tables[-1], [("Func name", ""), ("Function total lines", ""),

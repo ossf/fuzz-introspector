@@ -526,13 +526,13 @@ def create_fuzzer_detailed_section(
     html_string = ""
     html_string += html_helpers.html_add_header_with_link(
         f"Fuzzer: {profile.identifier}",
-        2,
+        html_helpers.HTML_HEADING.H2,
         toc_list
     )
 
     # Calltree fixed-width image
     html_string += html_helpers.html_add_header_with_link(
-        "Call tree", 3, toc_list, link=f"call_tree_{curr_tt_profile}")
+        "Call tree", html_helpers.HTML_HEADING.H3, toc_list, link=f"call_tree_{curr_tt_profile}")
 
     from fuzz_introspector.analyses import calltree_analysis as cta
     calltree_analysis = cta.FuzzCalltreeAnalysis()
@@ -659,7 +659,7 @@ def create_fuzzer_detailed_section(
     if html_fuzz_blocker_table is not None:
         html_string += html_helpers.html_add_header_with_link(
             "Fuzz blockers",
-            3,
+            html_helpers.HTML_HEADING.H3,
             toc_list,
             link=f"fuzz_blocker{curr_tt_profile}"
         )
@@ -669,7 +669,7 @@ def create_fuzzer_detailed_section(
     # Table with all functions hit by this fuzzer
     html_string += html_helpers.html_add_header_with_link(
         "Runtime coverage analysis",
-        3,
+        html_helpers.HTML_HEADING.H3,
         toc_list,
         link=f"functions_cov_hit_{curr_tt_profile}"
     )
@@ -792,7 +792,11 @@ def create_fuzzer_detailed_section(
 
     # Table showing which files this fuzzer hits.
     html_string += html_helpers.html_add_header_with_link(
-        "Files reached", 3, toc_list, link=f"files_hit_{curr_tt_profile}")
+        "Files reached",
+        html_helpers.HTML_HEADING.H3,
+        toc_list,
+        link=f"files_hit_{curr_tt_profile}"
+    )
     tables.append(f"myTable{len(tables)}")
     html_string += html_helpers.html_create_table_head(
         tables[-1],
@@ -898,7 +902,7 @@ def create_html_report(
 
     html_overview += html_helpers.html_add_header_with_link(
         f"Project overview: {report_name}",
-        1,
+        html_helpers.HTML_HEADING.H1,
         toc_list,
         link="Project-overview"
     )
@@ -914,7 +918,7 @@ def create_html_report(
     #############################################
     html_report_top = html_helpers.html_add_header_with_link(
         "High level conclusions",
-        2,
+        html_helpers.HTML_HEADING.H2,
         toc_list
     )
 
@@ -924,7 +928,7 @@ def create_html_report(
     logger.info(" - Creating reachability overview table")
     html_report_core = html_helpers.html_add_header_with_link(
         "Reachability and coverage overview",
-        2,
+        html_helpers.HTML_HEADING.H2,
         toc_list
     )
     tables.append(f"myTable{len(tables)}")
@@ -952,7 +956,7 @@ def create_html_report(
     html_report_core += "<div class=\"report-box\">"
     html_report_core += html_helpers.html_add_header_with_link(
         "Fuzzers overview",
-        1,
+        html_helpers.HTML_HEADING.H1,
         toc_list
     )
     html_report_core += "<div class=\"collapsible\">"
@@ -969,7 +973,7 @@ def create_html_report(
     logger.info(" - Creating table with information about all functions in target")
     html_report_core += "<div class=\"report-box\">"
     html_report_core += html_helpers.html_add_header_with_link(
-        "Project functions overview", 1, toc_list)
+        "Project functions overview", html_helpers.HTML_HEADING.H1, toc_list)
     html_report_core += "<div class=\"collapsible\">"
     html_report_core += "<p> The following table shows data about each function in the project. " \
                         "The functions included in this table correspond to all functions " \
@@ -1002,7 +1006,8 @@ def create_html_report(
     logger.info(" - Creating section with details about each fuzzer")
     fuzzer_table_data: Dict[str, Any] = dict()
     html_report_core += "<div class=\"report-box\">"
-    html_report_core += html_helpers.html_add_header_with_link("Fuzzer details", 1, toc_list)
+    html_report_core += html_helpers.html_add_header_with_link(
+        "Fuzzer details", html_helpers.HTML_HEADING.H1, toc_list)
     html_report_core += "<div class=\"collapsible\">"
     for profile_idx in range(len(profiles)):
         html_report_core += create_fuzzer_detailed_section(
@@ -1025,7 +1030,7 @@ def create_html_report(
     html_report_core += "<div class=\"report-box\">"
     html_report_core += html_helpers.html_add_header_with_link(
         "Analyses and suggestions",
-        1,
+        html_helpers.HTML_HEADING.H1,
         toc_list
     )
     html_report_core += "<div class=\"collapsible\">"

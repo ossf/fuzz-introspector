@@ -61,7 +61,7 @@ class EngineInput(analysis.AnalysisInterface):
         html_string = ""
         html_string += "<div class=\"report-box\">"
         html_string += html_helpers.html_add_header_with_link(
-            "Fuzz engine guidance", 1, toc_list)
+            "Fuzz engine guidance", html_helpers.HTML_HEADING.H1, toc_list)
         html_string += "<div class=\"collapsible\">"
         html_string += "<p>This sections provides heuristics that can be used as input " \
                        "to a fuzz engine when running a given fuzz target. The current " \
@@ -71,7 +71,8 @@ class EngineInput(analysis.AnalysisInterface):
             logger.info(
                 f"Generating input for {profiles[profile_idx].identifier}")
             html_string += html_helpers.html_add_header_with_link(
-                profiles[profile_idx].fuzzer_source_file, 2, toc_list)
+                profiles[profile_idx].fuzzer_source_file,
+                html_helpers.HTML_HEADING.H2, toc_list)
 
             # Create dictionary section
             html_string += self.get_dictionary_section(profiles[profile_idx],
@@ -124,7 +125,7 @@ class EngineInput(analysis.AnalysisInterface):
         """
 
         html_string = html_helpers.html_add_header_with_link(
-            "Dictionary", 3, toc_list)
+            "Dictionary", html_helpers.HTML_HEADING.H3, toc_list)
         html_string += "<p>Use this with the libFuzzer -dict=DICT.file flag</p>"
         html_string += "<pre><code class='language-clike'>"
         html_string += self.get_dictionary(profile)
@@ -136,7 +137,7 @@ class EngineInput(analysis.AnalysisInterface):
             toc_list: List[Tuple[str, str, int]]) -> str:
         """Returns HTML string with fuzzer focus function"""
         html_string = html_helpers.html_add_header_with_link(
-            "Fuzzer function priority", 3, toc_list)
+            "Fuzzer function priority", html_helpers.HTML_HEADING.H3, toc_list)
 
         calltree_analysis = cta.FuzzCalltreeAnalysis()
         fuzz_blockers = calltree_analysis.get_fuzz_blockers(

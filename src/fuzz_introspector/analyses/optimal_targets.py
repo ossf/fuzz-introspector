@@ -78,7 +78,7 @@ class OptimalTargets(analysis.AnalysisInterface):
 
         html_string = ""
         html_string += html_helpers.html_add_header_with_link(
-            "Optimal target analysis", 2, toc_list)
+            "Optimal target analysis", html_helpers.HTML_HEADING.H2, toc_list)
 
         # Create optimal target section
         new_profile, optimal_target_functions = self.iteratively_get_optimal_targets(
@@ -219,7 +219,8 @@ class OptimalTargets(analysis.AnalysisInterface):
                                    target_lang: str = 'c-cpp') -> str:
         # Table with details about optimal target functions
         html_string = html_helpers.html_add_header_with_link(
-            "Remaining optimal interesting functions", 3, toc_list)
+            "Remaining optimal interesting functions",
+            html_helpers.HTML_HEADING.H3, toc_list)
         html_string += "<p> The following table shows a list of functions that "   \
                        "are optimal targets. Optimal targets are identified by "   \
                        "finding the functions that in combination, yield a high " \
@@ -272,7 +273,7 @@ class OptimalTargets(analysis.AnalysisInterface):
         # Table with details about all functions in the project in case the
         # suggested fuzzers are implemented.
         html_string += html_helpers.html_add_header_with_link(
-            "All functions overview", 4, toc_list)
+            "All functions overview", html_helpers.HTML_HEADING.H4, toc_list)
         html_string += "<p> If you implement fuzzers for these functions, the status of all " \
                        "functions in the project will be:</p>"
         table_id = "all_functions_overview_table"

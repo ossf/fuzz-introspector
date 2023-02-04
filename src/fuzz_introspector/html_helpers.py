@@ -22,8 +22,19 @@ from typing import (
 )
 
 import os
+from enum import Enum
+
 from fuzz_introspector import utils
 from fuzz_introspector.datatypes import fuzzer_profile, project_profile
+
+
+class HTML_HEADING(Enum):
+    H1 = 1
+    H2 = 2
+    H3 = 3
+    H4 = 4
+    H5 = 5
+    H6 = 6
 
 
 class HTMLConclusion:
@@ -209,7 +220,7 @@ def html_get_table_of_contents(
 
 def html_add_header_with_link(
     header_title: str,
-    title_type: int,
+    title_type: HTML_HEADING,
     toc_list: List[Tuple[str, str, int]],
     link: Optional[str] = None,
     experimental: Optional[bool] = False
@@ -218,14 +229,14 @@ def html_add_header_with_link(
         link = header_title.replace(" ", "-")
 
     if not experimental:
-        toc_list.append((header_title, link, title_type - 1))
+        toc_list.append((header_title, link, title_type.value - 1))
 
     html_attributes = ""
-    if title_type == 1 or experimental:
+    if title_type == HTML_HEADING.H1 or experimental:
         html_attributes += " class=\"report-title\""
 
     html_string = f"<a id=\"{link}\">"
-    html_string += f"<h{title_type} {html_attributes}>{header_title}</h{title_type}>\n"
+    html_string += f"<h{title_type.value} {html_attributes}>{header_title}</h{title_type.value}>\n"
     return html_string
 
 

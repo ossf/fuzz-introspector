@@ -64,7 +64,7 @@ class BugDigestor(analysis.AnalysisInterface):
         html_string = ""
         html_string += "<div class=\"report-box\">"
         html_string += html_helpers.html_add_header_with_link(
-            "Bug detector analysis", 1, toc_list)
+            "Bug detector analysis", html_helpers.HTML_HEADING.H1, toc_list)
         html_string += "<div class=\"collapsible\">"
 
         html_string += (

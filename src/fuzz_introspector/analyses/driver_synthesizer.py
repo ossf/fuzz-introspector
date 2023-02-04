@@ -69,7 +69,7 @@ class DriverSynthesizer(analysis.AnalysisInterface):
         html_string = ""
         html_string += "<div class=\"report-box\">"
         html_string += html_helpers.html_add_header_with_link(
-            "Fuzz driver synthesis", 1, toc_list)
+            "Fuzz driver synthesis", html_helpers.HTML_HEADING.H1, toc_list)
         html_string += "<div class=\"collapsible\">"
 
         if fuzz_targets is None or len(fuzz_targets) == 0:
@@ -158,13 +158,14 @@ class DriverSynthesizer(analysis.AnalysisInterface):
 
         # Create the necessary HTML code for displaying the fuzz drivers
         html_string += html_helpers.html_add_header_with_link(
-            "New fuzzers", 3, toc_list)
+            "New fuzzers", html_helpers.HTML_HEADING.H3, toc_list)
         html_string += "<p>The below fuzzers are templates and suggestions for how " \
                        "to target the set of optimal functions above</p>"
 
         for filename in final_fuzzers:
             html_string += html_helpers.html_add_header_with_link(
-                str(filename.split("/")[-1]), 4, toc_list)
+                str(filename.split("/")[-1]), html_helpers.HTML_HEADING.H4,
+                toc_list)
             html_string += f"<b>Target file:</b>{filename}<br>"
             all_functions = ", ".join(
                 [f.function_name for f in final_fuzzers[filename].target_fds])

@@ -176,7 +176,7 @@ class ThirdPartyAPICoverageAnalyser(analysis.AnalysisInterface):
         html_string += "<div class=\"report-box\">"
 
         html_string += html_helpers.html_add_header_with_link(
-            "Function call coverage", 1, toc_list)
+            "Function call coverage", html_helpers.HTML_HEADING.H1, toc_list)
 
         # Table with all function calls for each files
         html_string += "<div class=\"collapsible\">"
@@ -200,7 +200,8 @@ class ThirdPartyAPICoverageAnalyser(analysis.AnalysisInterface):
                         "</p>")
 
         html_string += html_helpers.html_add_header_with_link(
-            "Function in each files in report", 2, toc_list)
+            "Function in each files in report", html_helpers.HTML_HEADING.H2,
+            toc_list)
 
         # Third party function calls table
         tables.append(f"myTable{len(tables)}")
