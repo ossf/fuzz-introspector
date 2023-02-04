@@ -532,7 +532,11 @@ def create_fuzzer_detailed_section(
 
     # Calltree fixed-width image
     html_string += html_helpers.html_add_header_with_link(
-        "Call tree", html_helpers.HTML_HEADING.H3, table_of_contents, link=f"call_tree_{curr_tt_profile}")
+        "Call tree",
+        html_helpers.HTML_HEADING.H3,
+        table_of_contents,
+        link=f"call_tree_{curr_tt_profile}"
+    )
 
     from fuzz_introspector.analyses import calltree_analysis as cta
     calltree_analysis = cta.FuzzCalltreeAnalysis()
