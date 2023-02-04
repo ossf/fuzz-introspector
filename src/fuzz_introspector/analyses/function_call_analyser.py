@@ -140,8 +140,9 @@ class ThirdPartyAPICoverageAnalyser(analysis.AnalysisInterface):
 
         return target_list, callsite_dict, reachable_func_list
 
-    def analysis_func(self, toc_list: List[Tuple[str, str,
-                                                 int]], tables: List[str],
+    def analysis_func(self,
+                      table_of_contents: html_helpers.HtmlTableOfContents,
+                      tables: List[str],
                       proj_profile: project_profile.MergedProjectProfile,
                       profiles: List[fuzzer_profile.FuzzerProfile],
                       basefolder: str, coverage_url: str,
@@ -176,7 +177,8 @@ class ThirdPartyAPICoverageAnalyser(analysis.AnalysisInterface):
         html_string += "<div class=\"report-box\">"
 
         html_string += html_helpers.html_add_header_with_link(
-            "Function call coverage", html_helpers.HTML_HEADING.H1, toc_list)
+            "Function call coverage", html_helpers.HTML_HEADING.H1,
+            table_of_contents)
 
         # Table with all function calls for each files
         html_string += "<div class=\"collapsible\">"
@@ -201,7 +203,7 @@ class ThirdPartyAPICoverageAnalyser(analysis.AnalysisInterface):
 
         html_string += html_helpers.html_add_header_with_link(
             "Function in each files in report", html_helpers.HTML_HEADING.H2,
-            toc_list)
+            table_of_contents)
 
         # Third party function calls table
         tables.append(f"myTable{len(tables)}")

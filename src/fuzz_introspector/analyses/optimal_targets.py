@@ -51,7 +51,7 @@ class OptimalTargets(analysis.AnalysisInterface):
         self.json_string_result = json_string
 
     def analysis_func(self,
-                      toc_list: List[Tuple[str, str, int]],
+                      table_of_contents: html_helpers.HtmlTableOfContents,
                       tables: List[str],
                       proj_profile: project_profile.MergedProjectProfile,
                       profiles: List[fuzzer_profile.FuzzerProfile],
@@ -78,19 +78,21 @@ class OptimalTargets(analysis.AnalysisInterface):
 
         html_string = ""
         html_string += html_helpers.html_add_header_with_link(
-            "Optimal target analysis", html_helpers.HTML_HEADING.H2, toc_list)
+            "Optimal target analysis", html_helpers.HTML_HEADING.H2,
+            table_of_contents)
 
         # Create optimal target section
         new_profile, optimal_target_functions = self.iteratively_get_optimal_targets(
             proj_profile)
         html_string += self.get_optimal_target_section(
-            optimal_target_functions, toc_list, tables, coverage_url,
+            optimal_target_functions, table_of_contents, tables, coverage_url,
             profiles[0].target_lang)
 
         # Create section for how the state of the project will be if
         # the optimal target functions are hit.
         html_string += self.get_consequential_section(new_profile, conclusions,
-                                                      tables, toc_list,
+                                                      tables,
+                                                      table_of_contents,
                                                       coverage_url, basefolder)
 
         logger.info(f" - Completed analysis {self.get_name()}")
@@ -210,17 +212,17 @@ class OptimalTargets(analysis.AnalysisInterface):
 
         return new_merged_profile, optimal_functions_targeted
 
-    def get_optimal_target_section(self,
-                                   optimal_target_functions: List[
-                                       function_profile.FunctionProfile],
-                                   toc_list: List[Tuple[str, str, int]],
-                                   tables: List[str],
-                                   coverage_url: str,
-                                   target_lang: str = 'c-cpp') -> str:
+    def get_optimal_target_section(
+            self,
+            optimal_target_functions: List[function_profile.FunctionProfile],
+            table_of_contents: html_helpers.HtmlTableOfContents,
+            tables: List[str],
+            coverage_url: str,
+            target_lang: str = 'c-cpp') -> str:
         # Table with details about optimal target functions
         html_string = html_helpers.html_add_header_with_link(
             "Remaining optimal interesting functions",
-            html_helpers.HTML_HEADING.H3, toc_list)
+            html_helpers.HTML_HEADING.H3, table_of_contents)
         html_string += "<p> The following table shows a list of functions that "   \
                        "are optimal targets. Optimal targets are identified by "   \
                        "finding the functions that in combination, yield a high " \
@@ -260,8 +262,8 @@ class OptimalTargets(analysis.AnalysisInterface):
     def get_consequential_section(
             self, new_profile: project_profile.MergedProjectProfile,
             conclusions: List[html_helpers.HTMLConclusion], tables: List[str],
-            toc_list: List[Tuple[str, str, int]], coverage_url: str,
-            basefolder: str) -> str:
+            table_of_contents: html_helpers.HtmlTableOfContents,
+            coverage_url: str, basefolder: str) -> str:
         """Create section showing state of project if optimal targets are hit"""
         html_string = (
             "<p>Implementing fuzzers that target the above functions "
@@ -273,7 +275,8 @@ class OptimalTargets(analysis.AnalysisInterface):
         # Table with details about all functions in the project in case the
         # suggested fuzzers are implemented.
         html_string += html_helpers.html_add_header_with_link(
-            "All functions overview", html_helpers.HTML_HEADING.H4, toc_list)
+            "All functions overview", html_helpers.HTML_HEADING.H4,
+            table_of_contents)
         html_string += "<p> If you implement fuzzers for these functions, the status of all " \
                        "functions in the project will be:</p>"
         table_id = "all_functions_overview_table"

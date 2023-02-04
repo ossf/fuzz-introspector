@@ -16,9 +16,7 @@
 import logging
 
 from typing import (
-    List,
-    Tuple,
-)
+    List, )
 
 from fuzz_introspector import analysis
 from fuzz_introspector import data_loader
@@ -49,8 +47,9 @@ class BugDigestor(analysis.AnalysisInterface):
     def set_json_string_result(self, json_string):
         self.json_string_result = json_string
 
-    def analysis_func(self, toc_list: List[Tuple[str, str,
-                                                 int]], tables: List[str],
+    def analysis_func(self,
+                      table_of_contents: html_helpers.HtmlTableOfContents,
+                      tables: List[str],
                       proj_profile: project_profile.MergedProjectProfile,
                       profiles: List[fuzzer_profile.FuzzerProfile],
                       basefolder: str, coverage_url: str,
@@ -64,7 +63,8 @@ class BugDigestor(analysis.AnalysisInterface):
         html_string = ""
         html_string += "<div class=\"report-box\">"
         html_string += html_helpers.html_add_header_with_link(
-            "Bug detector analysis", html_helpers.HTML_HEADING.H1, toc_list)
+            "Bug detector analysis", html_helpers.HTML_HEADING.H1,
+            table_of_contents)
         html_string += "<div class=\"collapsible\">"
 
         html_string += (

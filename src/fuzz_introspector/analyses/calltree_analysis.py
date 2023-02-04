@@ -22,7 +22,6 @@ import string
 from typing import (
     Dict,
     List,
-    Tuple,
     Optional,
 )
 
@@ -57,8 +56,9 @@ class FuzzCalltreeAnalysis(analysis.AnalysisInterface):
     def set_json_string_result(self, json_string):
         self.json_string_result = json_string
 
-    def analysis_func(self, toc_list: List[Tuple[str, str,
-                                                 int]], tables: List[str],
+    def analysis_func(self,
+                      table_of_contents: html_helpers.HtmlTableOfContents,
+                      tables: List[str],
                       proj_profile: project_profile.MergedProjectProfile,
                       profiles: List[fuzzer_profile.FuzzerProfile],
                       basefolder: str, coverage_url: str,

@@ -22,7 +22,6 @@ import os
 from typing import (
     Dict,
     List,
-    Tuple,
     Type,
 )
 
@@ -53,7 +52,7 @@ class AnalysisInterface(abc.ABC):
     @abc.abstractmethod
     def analysis_func(
         self,
-        toc_list: List[Tuple[str, str, int]],
+        table_of_contents: html_helpers.HtmlTableOfContents,
         tables: List[str],
         proj_profile: project_profile.MergedProjectProfile,
         profiles: List[fuzzer_profile.FuzzerProfile],
@@ -64,8 +63,8 @@ class AnalysisInterface(abc.ABC):
         """Entrypoint for analysis instance. This function can have side effects
         on many of the arguments passed to it.
 
-        :param toc_list: table of content list for adding sections to HTML report.
-        :type toc_list: List[Tuple[str, str, int]]
+        :param table_of_contents: table of content list for adding sections to HTML report.
+        :type table_of_contents: html_helpers.HtmlTableOfContents
 
         :param tables: list of table ids to be styled in the report.
         :type tables: List[str]

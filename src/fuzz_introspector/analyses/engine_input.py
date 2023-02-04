@@ -17,7 +17,7 @@ import json
 import logging
 import os
 
-from typing import (List, Tuple, Dict)
+from typing import (List, Dict)
 
 from fuzz_introspector import (analysis, constants, html_helpers, json_report,
                                utils)
@@ -47,8 +47,9 @@ class EngineInput(analysis.AnalysisInterface):
     def set_json_string_result(self, json_string):
         self.json_string_result = json_string
 
-    def analysis_func(self, toc_list: List[Tuple[str, str,
-                                                 int]], tables: List[str],
+    def analysis_func(self,
+                      table_of_contents: html_helpers.HtmlTableOfContents,
+                      tables: List[str],
                       project_profile: project_profile.MergedProjectProfile,
                       profiles: List[fuzzer_profile.FuzzerProfile],
                       basefolder: str, coverage_url: str,
@@ -56,12 +57,15 @@ class EngineInput(analysis.AnalysisInterface):
         logger.info(f" - Running analysis {self.get_name()}")
 
         if not self.display_html:
-            toc_list = []
+            # Overwrite the table of contents variable, to avoid displaying
+            # the html in the resulting report.
+            table_of_contents = html_helpers.HtmlTableOfContents()
 
         html_string = ""
         html_string += "<div class=\"report-box\">"
         html_string += html_helpers.html_add_header_with_link(
-            "Fuzz engine guidance", html_helpers.HTML_HEADING.H1, toc_list)
+            "Fuzz engine guidance", html_helpers.HTML_HEADING.H1,
+            table_of_contents)
         html_string += "<div class=\"collapsible\">"
         html_string += "<p>This sections provides heuristics that can be used as input " \
                        "to a fuzz engine when running a given fuzz target. The current " \
@@ -72,18 +76,18 @@ class EngineInput(analysis.AnalysisInterface):
                 f"Generating input for {profiles[profile_idx].identifier}")
             html_string += html_helpers.html_add_header_with_link(
                 profiles[profile_idx].fuzzer_source_file,
-                html_helpers.HTML_HEADING.H2, toc_list)
+                html_helpers.HTML_HEADING.H2, table_of_contents)
 
             # Create dictionary section
             html_string += self.get_dictionary_section(profiles[profile_idx],
-                                                       toc_list)
+                                                       table_of_contents)
 
             html_string += "<br>"
 
             # Create focus function section
             html_string += self.get_fuzzer_focus_function_section(
                 profiles[profile_idx],
-                toc_list,
+                table_of_contents,
             )
         html_string += "</div>"  # .collapsible
         html_string += "</div>"  # report-box
@@ -117,15 +121,16 @@ class EngineInput(analysis.AnalysisInterface):
             self.get_name(), self.get_json_string_result())
         return dictionary_content
 
-    def get_dictionary_section(self, profile: fuzzer_profile.FuzzerProfile,
-                               toc_list: List[Tuple[str, str, int]]) -> str:
+    def get_dictionary_section(
+            self, profile: fuzzer_profile.FuzzerProfile,
+            table_of_contents: html_helpers.HtmlTableOfContents) -> str:
         """
         Returns a HTML string with dictionary content, and adds the section
-        link to the toc_list.
+        link to the table_of_contents.
         """
 
         html_string = html_helpers.html_add_header_with_link(
-            "Dictionary", html_helpers.HTML_HEADING.H3, toc_list)
+            "Dictionary", html_helpers.HTML_HEADING.H3, table_of_contents)
         html_string += "<p>Use this with the libFuzzer -dict=DICT.file flag</p>"
         html_string += "<pre><code class='language-clike'>"
         html_string += self.get_dictionary(profile)
@@ -134,10 +139,11 @@ class EngineInput(analysis.AnalysisInterface):
 
     def get_fuzzer_focus_function_section(
             self, profile: fuzzer_profile.FuzzerProfile,
-            toc_list: List[Tuple[str, str, int]]) -> str:
+            table_of_contents: html_helpers.HtmlTableOfContents) -> str:
         """Returns HTML string with fuzzer focus function"""
         html_string = html_helpers.html_add_header_with_link(
-            "Fuzzer function priority", html_helpers.HTML_HEADING.H3, toc_list)
+            "Fuzzer function priority", html_helpers.HTML_HEADING.H3,
+            table_of_contents)
 
         calltree_analysis = cta.FuzzCalltreeAnalysis()
         fuzz_blockers = calltree_analysis.get_fuzz_blockers(

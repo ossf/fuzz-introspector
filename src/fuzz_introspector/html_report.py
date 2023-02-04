@@ -516,7 +516,7 @@ def create_top_summary_info(
 def create_fuzzer_detailed_section(
     proj_profile: project_profile.MergedProjectProfile,
     profile: fuzzer_profile.FuzzerProfile,
-    toc_list: List[Tuple[str, str, int]],
+    table_of_contents: html_helpers.HtmlTableOfContents,
     tables: List[str],
     curr_tt_profile: int,
     conclusions: List[html_helpers.HTMLConclusion],
@@ -527,12 +527,16 @@ def create_fuzzer_detailed_section(
     html_string += html_helpers.html_add_header_with_link(
         f"Fuzzer: {profile.identifier}",
         html_helpers.HTML_HEADING.H2,
-        toc_list
+        table_of_contents
     )
 
     # Calltree fixed-width image
     html_string += html_helpers.html_add_header_with_link(
-        "Call tree", html_helpers.HTML_HEADING.H3, toc_list, link=f"call_tree_{curr_tt_profile}")
+        "Call tree",
+        html_helpers.HTML_HEADING.H3,
+        table_of_contents,
+        link=f"call_tree_{curr_tt_profile}"
+    )
 
     from fuzz_introspector.analyses import calltree_analysis as cta
     calltree_analysis = cta.FuzzCalltreeAnalysis()
@@ -660,7 +664,7 @@ def create_fuzzer_detailed_section(
         html_string += html_helpers.html_add_header_with_link(
             "Fuzz blockers",
             html_helpers.HTML_HEADING.H3,
-            toc_list,
+            table_of_contents,
             link=f"fuzz_blocker{curr_tt_profile}"
         )
         html_string += html_fuzz_blocker_table
@@ -670,7 +674,7 @@ def create_fuzzer_detailed_section(
     html_string += html_helpers.html_add_header_with_link(
         "Runtime coverage analysis",
         html_helpers.HTML_HEADING.H3,
-        toc_list,
+        table_of_contents,
         link=f"functions_cov_hit_{curr_tt_profile}"
     )
     table_name = f"myTable{len(tables)}"
@@ -794,7 +798,7 @@ def create_fuzzer_detailed_section(
     html_string += html_helpers.html_add_header_with_link(
         "Files reached",
         html_helpers.HTML_HEADING.H3,
-        toc_list,
+        table_of_contents,
         link=f"files_hit_{curr_tt_profile}"
     )
     tables.append(f"myTable{len(tables)}")
@@ -869,7 +873,7 @@ def create_html_report(
     reruning those analysing process.
     """
     tables: List[str] = list()
-    toc_list: List[Tuple[str, str, int]] = list()
+    table_of_contents: html_helpers.HtmlTableOfContents = html_helpers.HtmlTableOfContents()
     conclusions: List[html_helpers.HTMLConclusion] = []
 
     logger.info(" - Creating HTML report")
@@ -903,7 +907,7 @@ def create_html_report(
     html_overview += html_helpers.html_add_header_with_link(
         f"Project overview: {report_name}",
         html_helpers.HTML_HEADING.H1,
-        toc_list,
+        table_of_contents,
         link="Project-overview"
     )
     proj_profile.write_stats_to_summary_file()
@@ -911,7 +915,7 @@ def create_html_report(
 
     # Project overview
     # html_overview += html_helpers.html_add_header_with_link(
-    #   "Project information", 2, toc_list)
+    #   "Project information", 2, table_of_contents)
 
     #############################################
     # Section with high level suggestions
@@ -919,7 +923,7 @@ def create_html_report(
     html_report_top = html_helpers.html_add_header_with_link(
         "High level conclusions",
         html_helpers.HTML_HEADING.H2,
-        toc_list
+        table_of_contents
     )
 
     #############################################
@@ -929,7 +933,7 @@ def create_html_report(
     html_report_core = html_helpers.html_add_header_with_link(
         "Reachability and coverage overview",
         html_helpers.HTML_HEADING.H2,
-        toc_list
+        table_of_contents
     )
     tables.append(f"myTable{len(tables)}")
     html_report_core += "<div style=\"display: flex; max-width: 800px\">"
@@ -957,7 +961,7 @@ def create_html_report(
     html_report_core += html_helpers.html_add_header_with_link(
         "Fuzzers overview",
         html_helpers.HTML_HEADING.H1,
-        toc_list
+        table_of_contents
     )
     html_report_core += "<div class=\"collapsible\">"
     tables.append(f"myTable{len(tables)}")
@@ -973,7 +977,7 @@ def create_html_report(
     logger.info(" - Creating table with information about all functions in target")
     html_report_core += "<div class=\"report-box\">"
     html_report_core += html_helpers.html_add_header_with_link(
-        "Project functions overview", html_helpers.HTML_HEADING.H1, toc_list)
+        "Project functions overview", html_helpers.HTML_HEADING.H1, table_of_contents)
     html_report_core += "<div class=\"collapsible\">"
     html_report_core += "<p> The following table shows data about each function in the project. " \
                         "The functions included in this table correspond to all functions " \
@@ -1007,13 +1011,13 @@ def create_html_report(
     fuzzer_table_data: Dict[str, Any] = dict()
     html_report_core += "<div class=\"report-box\">"
     html_report_core += html_helpers.html_add_header_with_link(
-        "Fuzzer details", html_helpers.HTML_HEADING.H1, toc_list)
+        "Fuzzer details", html_helpers.HTML_HEADING.H1, table_of_contents)
     html_report_core += "<div class=\"collapsible\">"
     for profile_idx in range(len(profiles)):
         html_report_core += create_fuzzer_detailed_section(
             proj_profile,
             profiles[profile_idx],
-            toc_list,
+            table_of_contents,
             tables,
             profile_idx,
             conclusions,
@@ -1031,7 +1035,7 @@ def create_html_report(
     html_report_core += html_helpers.html_add_header_with_link(
         "Analyses and suggestions",
         html_helpers.HTML_HEADING.H1,
-        toc_list
+        table_of_contents
     )
     html_report_core += "<div class=\"collapsible\">"
 
@@ -1048,7 +1052,7 @@ def create_html_report(
                 analysis_interface
             )
             html_string = analysis_instance.analysis_func(
-                toc_list,
+                table_of_contents,
                 tables,
                 proj_profile,
                 profiles,
@@ -1107,7 +1111,7 @@ def create_html_report(
     # Fix up table of contents.
     ###########################
     html_toc_string = html_helpers.html_get_table_of_contents(
-        toc_list,
+        table_of_contents,
         coverage_url,
         profiles,
         proj_profile

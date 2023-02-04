@@ -16,7 +16,7 @@
 import logging
 import os
 
-from typing import (List, Set, Tuple)
+from typing import (List, Set)
 
 from fuzz_introspector import analysis
 from fuzz_introspector import html_helpers
@@ -50,8 +50,9 @@ class FilePathAnalysis(analysis.AnalysisInterface):
                 s1.add(prof.all_class_functions[func].function_source_file)
         return s1
 
-    def analysis_func(self, toc_list: List[Tuple[str, str,
-                                                 int]], tables: List[str],
+    def analysis_func(self,
+                      table_of_contents: html_helpers.HtmlTableOfContents,
+                      tables: List[str],
                       proj_profile: project_profile.MergedProjectProfile,
                       profiles: List[fuzzer_profile.FuzzerProfile],
                       basefolder: str, coverage_url: str,
@@ -69,7 +70,7 @@ class FilePathAnalysis(analysis.AnalysisInterface):
         # Table with all files
         html_string += html_helpers.html_add_header_with_link(
             "Files and Directories in report", html_helpers.HTML_HEADING.H1,
-            toc_list)
+            table_of_contents)
         html_string += "<div class=\"collapsible\">"
         html_string += (
             "<p>This section shows which files and directories are considered "
@@ -84,7 +85,7 @@ class FilePathAnalysis(analysis.AnalysisInterface):
             "Config.md#code-exclusion-from-the-report\">link</a></p>")
 
         html_string += html_helpers.html_add_header_with_link(
-            "Files in report", html_helpers.HTML_HEADING.H2, toc_list)
+            "Files in report", html_helpers.HTML_HEADING.H2, table_of_contents)
         tables.append(f"myTable{len(tables)}")
         html_string += html_helpers.html_create_table_head(
             tables[-1], [("Source file", ""), ("Reached by", ""),
@@ -110,7 +111,8 @@ class FilePathAnalysis(analysis.AnalysisInterface):
 
         # Table with all directories
         html_string += html_helpers.html_add_header_with_link(
-            "Directories in report", html_helpers.HTML_HEADING.H2, toc_list)
+            "Directories in report", html_helpers.HTML_HEADING.H2,
+            table_of_contents)
         tables.append(f"myTable{len(tables)}")
         html_string += html_helpers.html_create_table_head(
             tables[-1], [

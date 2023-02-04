@@ -16,9 +16,7 @@
 import logging
 
 from typing import (
-    List,
-    Tuple,
-)
+    List, )
 
 from fuzz_introspector import analysis
 from fuzz_introspector import constants
@@ -45,8 +43,9 @@ class RuntimeCoverageAnalysis(analysis.AnalysisInterface):
     def set_json_string_result(self, json_string):
         self.json_string_result = json_string
 
-    def analysis_func(self, toc_list: List[Tuple[str, str,
-                                                 int]], tables: List[str],
+    def analysis_func(self,
+                      table_of_contents: html_helpers.HtmlTableOfContents,
+                      tables: List[str],
                       proj_profile: project_profile.MergedProjectProfile,
                       profiles: List[fuzzer_profile.FuzzerProfile],
                       basefolder: str, coverage_url: str,
@@ -57,7 +56,7 @@ class RuntimeCoverageAnalysis(analysis.AnalysisInterface):
         html_string += "<div class=\"report-box\">"
         html_string += html_helpers.html_add_header_with_link(
             "Runtime coverage analysis", html_helpers.HTML_HEADING.H1,
-            toc_list)
+            table_of_contents)
         html_string += "<div class=\"collapsible\">"
 
         if not proj_profile.has_coverage_data():
@@ -77,7 +76,7 @@ class RuntimeCoverageAnalysis(analysis.AnalysisInterface):
                 f"-coverage-analysis\">Glossary</a>.</p>")
             html_string += html_helpers.html_add_header_with_link(
                 "Complex functions with low coverage",
-                html_helpers.HTML_HEADING.H3, toc_list)
+                html_helpers.HTML_HEADING.H3, table_of_contents)
             tables.append(f"myTable{len(tables)}")
             html_string += html_helpers.html_create_table_head(
                 tables[-1], [("Func name", ""), ("Function total lines", ""),
