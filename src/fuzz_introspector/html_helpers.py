@@ -232,11 +232,11 @@ def html_add_header_with_link(
         toc_list.append((header_title, link, title_type.value - 1))
 
     html_attributes = ""
-    if title_type == 1 or experimental:
+    if title_type == HTML_HEADING.H1 or experimental:
         html_attributes += " class=\"report-title\""
 
     html_string = f"<a id=\"{link}\">"
-    html_string += f"<h{title_type} {html_attributes}>{header_title}</h{title_type}>\n"
+    html_string += f"<h{title_type.value} {html_attributes}>{header_title}</h{title_type.value}>\n"
     return html_string
 
 
