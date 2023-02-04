@@ -560,10 +560,12 @@ def detect_branch_level_blockers(
                 link)
             fuzz_blockers.append(new_blk)
 
-    fuzz_blockers.sort(key=lambda x: [
-        x.blocked_unique_not_covered_complexity, x.
-        blocked_unique_reachable_complexity, x.blocked_not_covered_complexity,
-        x.blocked_reachable_complexity
-    ],
-                       reverse=True)
+    fuzz_blockers.sort(
+        reverse=True,
+        key=lambda x: [
+            x.blocked_unique_not_covered_complexity, x.
+            blocked_unique_reachable_complexity, x.
+            blocked_not_covered_complexity, x.blocked_reachable_complexity
+        ])
+
     return fuzz_blockers
