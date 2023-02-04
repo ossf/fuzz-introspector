@@ -58,7 +58,7 @@ class MetadataAnalysis(analysis.AnalysisInterface):
         html_string = ""
         html_string += "<div class=\"report-box\">"
         html_string += html_helpers.html_add_header_with_link(
-            "Metadata section", 1, toc_list)
+            "Metadata section", html_helpers.HTML_HEADING.H1, toc_list)
         html_string += "<div class=\"collapsible\">"
         html_string += """<p>This sections shows the raw data that is used
         to produce this report. This is mainly used for further processing

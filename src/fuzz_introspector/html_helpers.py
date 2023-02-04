@@ -229,7 +229,7 @@ def html_add_header_with_link(
         link = header_title.replace(" ", "-")
 
     if not experimental:
-        toc_list.append((header_title, link, title_type - 1))
+        toc_list.append((header_title, link, title_type.value - 1))
 
     html_attributes = ""
     if title_type == 1 or experimental:
