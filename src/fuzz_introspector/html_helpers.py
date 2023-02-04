@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Module for creating HTML reports"""
 
 from typing import (
@@ -40,12 +39,8 @@ class HTML_HEADING(Enum):
 class HTML_TOC_ENTRY:
     """Entry in the table of contents"""
 
-    def __init__(
-        self,
-        entry_title: str,
-        href_link: str,
-        heading_type: HTML_HEADING
-    ):
+    def __init__(self, entry_title: str, href_link: str,
+                 heading_type: HTML_HEADING):
         self.entry_title = entry_title
         self.href_link = href_link
         self.heading_type = heading_type
@@ -69,6 +64,7 @@ class HTMLConclusion:
     :ivar str title: One line description of conclusion.
     :ivar str description: Extended description.
     """
+
     def __init__(self, severity, title, description):
         self.title = title
         self.severity = severity
@@ -160,9 +156,8 @@ def html_get_navbar(title: str) -> str:
     return navbar
 
 
-def create_pfc_button(
-        profiles: List[fuzzer_profile.FuzzerProfile],
-        coverage_url: str) -> str:
+def create_pfc_button(profiles: List[fuzzer_profile.FuzzerProfile],
+                      coverage_url: str) -> str:
     html_string = ""
     html_string += """
                     <div class="yellow-button-wrapper"
@@ -175,10 +170,7 @@ def create_pfc_button(
     for profile in profiles:
         target_name = profile.identifier
         target_coverage_url = utils.get_target_coverage_url(
-            coverage_url,
-            target_name,
-            profile.target_lang
-        )
+            coverage_url, target_name, profile.target_lang)
         # get_target_coverage_url gives base folder. We must specify
         # HTML file for it to work on gcloud as there is no automatic
         # redirection.
@@ -200,8 +192,7 @@ def create_pfc_button(
 
 
 def html_get_table_of_contents(
-        table_of_contents: HtmlTableOfContents,
-        coverage_url: str,
+        table_of_contents: HtmlTableOfContents, coverage_url: str,
         profiles: List[fuzzer_profile.FuzzerProfile],
         proj_profile: project_profile.MergedProjectProfile) -> str:
     per_fuzzer_coverage_button = create_pfc_button(profiles, coverage_url)
@@ -238,22 +229,19 @@ def html_get_table_of_contents(
         indentation = (toc_entry.heading_type.value - 1) * 16
         html_toc_string += "<div style='margin-left: %spx'>" % indentation
         html_toc_string += "    <a href=\"#%s\">%s</a>\n" % (
-            toc_entry.href_link,
-            toc_entry.entry_title
-        )
+            toc_entry.href_link, toc_entry.entry_title)
         html_toc_string += "</div>\n"
     html_toc_string += '    </div>\
                         </div>'
+
     return html_toc_string
 
 
-def html_add_header_with_link(
-    header_title: str,
-    title_type: HTML_HEADING,
-    table_of_contents: HtmlTableOfContents,
-    link: Optional[str] = None,
-    experimental: Optional[bool] = False
-) -> str:
+def html_add_header_with_link(header_title: str,
+                              title_type: HTML_HEADING,
+                              table_of_contents: HtmlTableOfContents,
+                              link: Optional[str] = None,
+                              experimental: Optional[bool] = False) -> str:
     if link is None:
         link = header_title.replace(" ", "-")
 
@@ -271,13 +259,14 @@ def html_add_header_with_link(
     return html_string
 
 
-def html_create_table_head(
-        table_head: str,
-        items: List[Tuple[str, str]],
-        sort_by_column: int = 0,
-        sort_order: str = "asc") -> str:
-    html_str = (f"<table id='{table_head}' class='cell-border compact stripe' "
-                f"data-sort-by-column='{sort_by_column}' data-sort-order='{sort_order}'>")
+def html_create_table_head(table_head: str,
+                           items: List[Tuple[str, str]],
+                           sort_by_column: int = 0,
+                           sort_order: str = "asc") -> str:
+    html_str = (
+        f"<table id='{table_head}' class='cell-border compact stripe' "
+        f"data-sort-by-column='{sort_by_column}' data-sort-order='{sort_order}'>"
+    )
     html_str += "<thead><tr>\n"
     for column_title, column_description in items:
         if column_description == "":

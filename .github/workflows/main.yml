@@ -16,13 +16,13 @@ jobs:
       - name: flake8 Lint post process
         uses: py-actions/flake8@2014ef764424fd7699d615323c17836092bec9b9 # v2
         with:
-          ignore: "W503,W605"
+          ignore: "E125,W503,W504,W605"
           max-line-length: "100"
           path: "src/"
       - name: flake8 Lint python frontend
         uses: py-actions/flake8@2014ef764424fd7699d615323c17836092bec9b9 # v2
         with:
-          ignore: "W503,W504,W605"
+          ignore: "E125,W503,W504,W605"
           max-line-length: "100"
           path: "frontends/python/"
       - name: Install yapf
@@ -31,4 +31,4 @@ jobs:
           pip install -r requirements.txt
       - name: yapf code formatting
         run: |
-          yapf -d -r ./src/fuzz_introspector/analyses/
+          yapf -d -r ./src/fuzz_introspector/

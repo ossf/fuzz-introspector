@@ -41,7 +41,8 @@ def longest_common_prefix(strs: List[str]) -> str:
 
 
 def normalise_str(s1: str) -> str:
-    return s1.replace("\t", "").replace("\r", "").replace("\n", "").replace(" ", "")
+    return s1.replace("\t", "").replace("\r", "").replace("\n",
+                                                          "").replace(" ", "")
 
 
 def safe_decode(data) -> Optional[str]:
@@ -56,7 +57,8 @@ def safe_decode(data) -> Optional[str]:
     return None
 
 
-def get_all_files_in_tree_with_regex(basedir: str, regex_str: str) -> List[str]:
+def get_all_files_in_tree_with_regex(basedir: str,
+                                     regex_str: str) -> List[str]:
     """
     Returns a list of paths such that each path is to a file with
     the provided suffix. Walks the entire tree of basedir.
@@ -116,8 +118,7 @@ def data_file_read_yaml(filename: str) -> Optional[Dict[Any, Any]]:
                     content['All functions'] = doc['All functions']
                 else:
                     content['All functions']['Elements'].extend(
-                        doc['All functions']['Elements']
-                    )
+                        doc['All functions']['Elements'])
     except Exception as e:
         # YAML library does not completely wrap exceptions, so unless
         # we catch all exceptions here we might end up in a crashing state.
@@ -148,8 +149,7 @@ def demangle_jvm_func(package: str, funcname: str) -> str:
 
 
 def scan_executables_for_fuzz_introspector_logs(
-    exec_dir: str
-) -> List[Dict[str, str]]:
+        exec_dir: str) -> List[Dict[str, str]]:
     """Finds all executables containing fuzzerLogFile string
 
     Args:
@@ -226,11 +226,8 @@ def approximate_python_coverage_files(src1: str, src2: str) -> bool:
         return False
 
 
-def get_target_coverage_url(
-    coverage_url: str,
-    target_name: str,
-    target_lang: str
-) -> str:
+def get_target_coverage_url(coverage_url: str, target_name: str,
+                            target_lang: str) -> str:
     """
     This function changes overall coverage URL to per-target coverage URL. Like:
         https://storage.googleapis.com/oss-fuzz-coverage/<project>/reports/<report-date>/linux
@@ -240,9 +237,9 @@ def get_target_coverage_url(
     logger.info(f"Extracting coverage for {coverage_url} -- {target_name}")
     if os.environ.get('FUZZ_INTROSPECTOR'):
         if target_lang == "c-cpp":
-            return coverage_url.replace(
-                "reports", "reports-by-target"
-            ).replace("/linux", f"/{target_name}/linux")
+            return coverage_url.replace("reports",
+                                        "reports-by-target").replace(
+                                            "/linux", f"/{target_name}/linux")
         elif target_lang == "python":
             # TODO ADD python coverage link
             return coverage_url
@@ -253,32 +250,23 @@ def get_target_coverage_url(
     return coverage_url
 
 
-def load_func_names(
-    input_list: List[str],
-    check_for_blocking: bool = True
-) -> List[str]:
+def load_func_names(input_list: List[str],
+                    check_for_blocking: bool = True) -> List[str]:
     """
     Takes a list of function names (typically from llvm profile)
     and makes sure the output names are demangled.
     """
     loaded = []
     for reached in input_list:
-        if (
-            check_for_blocking
-            and constants.BLOCKLISTED_FUNCTION_NAMES.match(reached)
-        ):
+        if (check_for_blocking
+                and constants.BLOCKLISTED_FUNCTION_NAMES.match(reached)):
             continue
         loaded.append(demangle_cpp_func(reached))
     return loaded
 
 
-def resolve_coverage_link(
-    cov_url: str,
-    source_file: str,
-    lineno: int,
-    function_name: str,
-    target_lang: str
-) -> str:
+def resolve_coverage_link(cov_url: str, source_file: str, lineno: int,
+                          function_name: str, target_lang: str) -> str:
     """Resolves link to HTML coverage report"""
     result = "#"
     if (target_lang == "c-cpp"):
@@ -290,7 +278,8 @@ def resolve_coverage_link(
         # coverate utility and contains mappings from source to html file. We
         # need this mapping in order to create links from the data extracted
         # during AST analysis, as there we only have the source code.
-        html_summaries = get_all_files_in_tree_with_regex(".", ".*html_status.json$")
+        html_summaries = get_all_files_in_tree_with_regex(
+            ".", ".*html_status.json$")
         logger.debug(str(html_summaries))
         if len(html_summaries) > 0:
             html_idx = html_summaries[0]
@@ -328,9 +317,7 @@ def resolve_coverage_link(
     return result
 
 
-def group_path_list_by_target(
-    list: List[List[Any]]
-) -> Dict[Any, List[Any]]:
+def group_path_list_by_target(list: List[List[Any]]) -> Dict[Any, List[Any]]:
     """
     Group path list items by path target which is
     the last itme of each list.
@@ -350,9 +337,7 @@ def group_path_list_by_target(
     return result_dict
 
 
-def check_coverage_link_existence(
-    link: str
-) -> bool:
+def check_coverage_link_existence(link: str) -> bool:
     link = link.split("#")[0]
     if link.startswith("/"):
         link = link[1:]

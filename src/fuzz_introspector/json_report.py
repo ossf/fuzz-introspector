@@ -16,13 +16,9 @@ import os
 import json
 import logging
 
-from typing import (
-    Any,
-    Dict
-)
+from typing import (Any, Dict)
 
 from fuzz_introspector import constants
-
 
 logger = logging.getLogger(name=__name__)
 
@@ -47,10 +43,8 @@ def _overwrite_report_with_dict(new_dict: Dict[Any, Any]) -> None:
         json.dump(dict(new_dict), report_fd)
 
 
-def add_analysis_dict_to_json_report(
-    analysis_name: str,
-    dict_to_add: Dict[Any, Any]
-) -> None:
+def add_analysis_dict_to_json_report(analysis_name: str,
+                                     dict_to_add: Dict[Any, Any]) -> None:
     """Wraps dictionary into an appropriate format
 
     Will overwrite the existing key/value pair for the analysis if it already
@@ -64,10 +58,8 @@ def add_analysis_dict_to_json_report(
     _overwrite_report_with_dict(contents)
 
 
-def add_analysis_json_str_as_dict_to_report(
-    analysis_name: str,
-    json_str: str
-) -> None:
+def add_analysis_json_str_as_dict_to_report(analysis_name: str,
+                                            json_str: str) -> None:
     """Converts a json string to a dictionary and add it to the report.
 
     Will overwrite the existing key/value pair for the analysis if it already
@@ -75,11 +67,8 @@ def add_analysis_json_str_as_dict_to_report(
     add_analysis_dict_to_json_report(analysis_name, json.loads(json_str))
 
 
-def add_fuzzer_key_value_to_report(
-    fuzzer_name: str,
-    key: str,
-    value: Any
-) -> None:
+def add_fuzzer_key_value_to_report(fuzzer_name: str, key: str,
+                                   value: Any) -> None:
     """Add the key/value pair to the json report under the fuzzer key.
 
     Will overwrite the existing key/value pair under the fuzzer if it already
@@ -95,10 +84,7 @@ def add_fuzzer_key_value_to_report(
     _overwrite_report_with_dict(contents)
 
 
-def add_project_key_value_to_report(
-    key: str,
-    value: Any
-) -> None:
+def add_project_key_value_to_report(key: str, value: Any) -> None:
     """Add the key/value pair to the json report under the project key.
 
     Will overwrite the existing key/value pair if the key already exists in

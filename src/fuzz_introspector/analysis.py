@@ -11,13 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Performs analysis on the profiles output from fuzz introspector LLVM pass"""
 
 import abc
 import logging
 import os
-
 
 from typing import (
     Dict,
@@ -25,14 +23,8 @@ from typing import (
     Type,
 )
 
-from fuzz_introspector import (
-    cfg_load,
-    code_coverage,
-    constants,
-    html_helpers,
-    json_report,
-    utils
-)
+from fuzz_introspector import (cfg_load, code_coverage, constants,
+                               html_helpers, json_report, utils)
 
 from fuzz_introspector.datatypes import (
     project_profile,
@@ -40,7 +32,6 @@ from fuzz_introspector.datatypes import (
     function_profile,
 )
 from fuzz_introspector.exceptions import AnalysisError
-
 
 logger = logging.getLogger(name=__name__)
 
@@ -50,16 +41,13 @@ class AnalysisInterface(abc.ABC):
     json_string_result: str = ""
 
     @abc.abstractmethod
-    def analysis_func(
-        self,
-        table_of_contents: html_helpers.HtmlTableOfContents,
-        tables: List[str],
-        proj_profile: project_profile.MergedProjectProfile,
-        profiles: List[fuzzer_profile.FuzzerProfile],
-        basefolder: str,
-        coverage_url: str,
-        conclusions: List[html_helpers.HTMLConclusion]
-    ) -> str:
+    def analysis_func(self,
+                      table_of_contents: html_helpers.HtmlTableOfContents,
+                      tables: List[str],
+                      proj_profile: project_profile.MergedProjectProfile,
+                      profiles: List[fuzzer_profile.FuzzerProfile],
+                      basefolder: str, coverage_url: str,
+                      conclusions: List[html_helpers.HTMLConclusion]) -> str:
         """Entrypoint for analysis instance. This function can have side effects
         on many of the arguments passed to it.
 
@@ -115,9 +103,10 @@ def instantiate_analysis_interface(cls: Type[AnalysisInterface]):
 
 
 class FuzzBranchBlocker:
-    def __init__(self, side, unique_not_cov_comp, unique_reach_comp, unique_funcs,
-                 not_cov_comp, reach_comp, hitcount_diff, filename, b_line, s_line, fname,
-                 link) -> None:
+
+    def __init__(self, side, unique_not_cov_comp, unique_reach_comp,
+                 unique_funcs, not_cov_comp, reach_comp, hitcount_diff,
+                 filename, b_line, s_line, fname, link) -> None:
         self.blocked_side = side
         self.blocked_unique_not_covered_complexity = unique_not_cov_comp
         self.blocked_unique_reachable_complexity = unique_reach_comp
@@ -137,35 +126,25 @@ def get_all_analyses() -> List[Type[AnalysisInterface]]:
     return analyses.all_analyses
 
 
-def callstack_get_parent(
-    n: cfg_load.CalltreeCallsite,
-    c: Dict[int, str]
-) -> str:
+def callstack_get_parent(n: cfg_load.CalltreeCallsite, c: Dict[int,
+                                                               str]) -> str:
     return c[int(n.depth) - 1]
 
 
-def callstack_has_parent(
-    n: cfg_load.CalltreeCallsite,
-    c: Dict[int, str]
-) -> bool:
+def callstack_has_parent(n: cfg_load.CalltreeCallsite, c: Dict[int,
+                                                               str]) -> bool:
     return int(n.depth) - 1 in c
 
 
-def callstack_set_curr_node(
-    n: cfg_load.CalltreeCallsite,
-    name: str,
-    c: Dict[int, str]
-) -> None:
+def callstack_set_curr_node(n: cfg_load.CalltreeCallsite, name: str,
+                            c: Dict[int, str]) -> None:
     c[int(n.depth)] = name
 
 
-def get_node_coverage_hitcount(
-    demangled_name: str,
-    callstack: Dict[int, str],
-    node: cfg_load.CalltreeCallsite,
-    profile: fuzzer_profile.FuzzerProfile,
-    is_first: bool
-) -> int:
+def get_node_coverage_hitcount(demangled_name: str, callstack: Dict[int, str],
+                               node: cfg_load.CalltreeCallsite,
+                               profile: fuzzer_profile.FuzzerProfile,
+                               is_first: bool) -> int:
     """Extracts the runtime coverage hitcount of a node in the calltree"""
     if profile.coverage is None:
         return -1
@@ -177,8 +156,7 @@ def get_node_coverage_hitcount(
 
         if not profile.func_is_entrypoint(demangled_name):
             raise AnalysisError(
-                "First node in calltree is non-fuzzer function"
-            )
+                "First node in calltree is non-fuzzer function")
         coverage_data = profile.coverage.get_hit_details(demangled_name)
 
         if len(coverage_data) == 0:
@@ -192,41 +170,37 @@ def get_node_coverage_hitcount(
     elif callstack_has_parent(node, callstack):
         # Find the parent function and check coverage of the node
         logger.debug("Extracting data")
-        logger.debug(
-            f"Getting hit details {node.dst_function_name} -- "
-            f"{node.cov_ct_idx} -- {node.src_linenumber}"
-        )
+        logger.debug(f"Getting hit details {node.dst_function_name} -- "
+                     f"{node.cov_ct_idx} -- {node.src_linenumber}")
 
         if profile.target_lang == "c-cpp":
             coverage_data = profile.coverage.get_hit_details(
-                callstack_get_parent(node, callstack)
-            )
+                callstack_get_parent(node, callstack))
             for (n_line_number, hit_count_cov) in coverage_data:
-                logger.debug(f"  - iterating {n_line_number} : {hit_count_cov}")
+                logger.debug(
+                    f"  - iterating {n_line_number} : {hit_count_cov}")
                 if n_line_number == node.src_linenumber and hit_count_cov > 0:
                     node_hitcount = hit_count_cov
         elif profile.target_lang == "python":
             ih = profile.coverage.is_file_lineno_hit(
-                callstack_get_parent(node, callstack),
-                node.src_linenumber,
-                True
-            )
+                callstack_get_parent(node, callstack), node.src_linenumber,
+                True)
             if ih:
                 node_hitcount = 200
         elif profile.target_lang == "jvm":
             coverage_data = profile.coverage.get_hit_details(
-                callstack_get_parent(node, callstack)
-            )
+                callstack_get_parent(node, callstack))
             for (n_line_number, hit_count_cov) in coverage_data:
-                logger.debug(f"  - iterating {n_line_number} : {hit_count_cov}")
+                logger.debug(
+                    f"  - iterating {n_line_number} : {hit_count_cov}")
                 if n_line_number == node.src_linenumber and hit_count_cov > 0:
                     node_hitcount = hit_count_cov
         node.cov_parent = callstack_get_parent(node, callstack)
     else:
-        logger.error("A node should either be the first or it must have a parent")
+        logger.error(
+            "A node should either be the first or it must have a parent")
         raise AnalysisError(
-            "A node should either be the first or it must have a parent"
-        )
+            "A node should either be the first or it must have a parent")
 
     return node_hitcount
 
@@ -244,20 +218,17 @@ def get_url_to_cov_report(profile, node, target_coverage_url):
     dst_options = [
         node.dst_function_name,
         utils.demangle_cpp_func(node.dst_function_name),
-        utils.demangle_jvm_func(node.dst_function_source_file, node.dst_function_name)
+        utils.demangle_jvm_func(node.dst_function_source_file,
+                                node.dst_function_name)
     ]
     for dst in dst_options:
         for fd_k, fd in profile.all_class_functions.items():
-            if (
-                fd.function_name == dst
-                or utils.normalise_str(fd.function_name) == utils.normalise_str(dst)
-            ):
-                return profile.resolve_coverage_link(
-                    target_coverage_url,
-                    fd.function_source_file,
-                    fd.function_linenumber,
-                    fd.function_name
-                )
+            if (fd.function_name == dst or utils.normalise_str(
+                    fd.function_name) == utils.normalise_str(dst)):
+                return profile.resolve_coverage_link(target_coverage_url,
+                                                     fd.function_source_file,
+                                                     fd.function_linenumber,
+                                                     fd.function_name)
     return "#"
 
 
@@ -265,22 +236,16 @@ def get_parent_callsite_link(node, callstack, profile, target_coverage_url):
     """Gets the coverage callsite link of a given node."""
     if callstack_has_parent(node, callstack):
         parent_fname = callstack_get_parent(node, callstack)
-        dst_options = [
-            parent_fname,
-            utils.demangle_cpp_func(parent_fname)
-        ]
+        dst_options = [parent_fname, utils.demangle_cpp_func(parent_fname)]
         for dst in dst_options:
             for fd_k, fd in profile.all_class_functions.items():
-                if (
-                    utils.demangle_jvm_func(fd.function_source_file, fd.function_name) == dst
-                    or utils.normalise_str(fd.function_name) == utils.normalise_str(dst)
-                ):
+                if (utils.demangle_jvm_func(fd.function_source_file,
+                                            fd.function_name) == dst
+                        or utils.normalise_str(
+                            fd.function_name) == utils.normalise_str(dst)):
                     callsite_link = profile.resolve_coverage_link(
-                        target_coverage_url,
-                        fd.function_source_file,
-                        node.src_linenumber,
-                        fd.function_name
-                    )
+                        target_coverage_url, fd.function_source_file,
+                        node.src_linenumber, fd.function_name)
                     return callsite_link
 
     return "#"
@@ -288,8 +253,7 @@ def get_parent_callsite_link(node, callstack, profile, target_coverage_url):
 
 def overlay_calltree_with_coverage(
         profile: fuzzer_profile.FuzzerProfile,
-        proj_profile: project_profile.MergedProjectProfile,
-        coverage_url: str,
+        proj_profile: project_profile.MergedProjectProfile, coverage_url: str,
         basefolder: str) -> None:
     # We use the callstack to keep track of all function parents. We need this
     # when looking up if a callsite was hit or not. This is because the coverage
@@ -307,10 +271,7 @@ def overlay_calltree_with_coverage(
 
     target_name = profile.identifier
     target_coverage_url = utils.get_target_coverage_url(
-        coverage_url,
-        target_name,
-        profile.target_lang
-    )
+        coverage_url, target_name, profile.target_lang)
     logger.info(f"Using coverage url: {target_coverage_url}")
 
     for node in cfg_load.extract_all_callsites(profile.function_call_depths):
@@ -329,35 +290,30 @@ def overlay_calltree_with_coverage(
         logger.debug(f"Checking callsite: { demangled_name}")
 
         # Get hitcount for this node
-        node.cov_hitcount = get_node_coverage_hitcount(
-            demangled_name,
-            callstack,
-            node,
-            profile,
-            is_first
-        )
+        node.cov_hitcount = get_node_coverage_hitcount(demangled_name,
+                                                       callstack, node,
+                                                       profile, is_first)
         is_first = False
 
         node.cov_color = get_hit_count_color(node.cov_hitcount)
-        node.cov_link = get_url_to_cov_report(profile, node, target_coverage_url)
+        node.cov_link = get_url_to_cov_report(profile, node,
+                                              target_coverage_url)
         node.cov_callsite_link = get_parent_callsite_link(
-            node,
-            callstack,
-            profile,
-            target_coverage_url
-        )
+            node, callstack, profile, target_coverage_url)
     # For python, do a hack where we check if any node is covered, and, if so,
     # ensure the entrypoint is covered.
     all_nodes = cfg_load.extract_all_callsites(profile.function_call_depths)
     if len(all_nodes) > 0:
-        for node in cfg_load.extract_all_callsites(profile.function_call_depths)[1:]:
+        for node in cfg_load.extract_all_callsites(
+                profile.function_call_depths)[1:]:
             if node.cov_hitcount > 0:
                 all_nodes[0].cov_hitcount = 200
                 all_nodes[0].cov_color = get_hit_count_color(200)
                 break
 
     # Extract data about which nodes unlocks data
-    all_callsites = cfg_load.extract_all_callsites(profile.function_call_depths)
+    all_callsites = cfg_load.extract_all_callsites(
+        profile.function_call_depths)
     prev_end = -1
     for idx1 in range(len(all_callsites)):
         n1 = all_callsites[idx1]
@@ -365,7 +321,7 @@ def overlay_calltree_with_coverage(
         if idx1 > 0:
             prev = all_callsites[idx1 - 1]
         if n1.cov_hitcount == 0 and (
-                (prev is not None and prev.depth <= n1.depth) or idx1 < prev_end):
+            (prev is not None and prev.depth <= n1.depth) or idx1 < prev_end):
             n1.cov_forward_reds = 0
             n1.cov_largest_blocked_func = "none"
             continue
@@ -387,10 +343,10 @@ def overlay_calltree_with_coverage(
                 break
 
             for fd_k, fd in proj_profile.all_functions.items():
-                if (
-                    utils.demangle_cpp_func(fd.function_name) == n2.dst_function_name
-                    and fd.total_cyclomatic_complexity > largest_blocked_count
-                ):
+                if (utils.demangle_cpp_func(
+                        fd.function_name) == n2.dst_function_name
+                        and fd.total_cyclomatic_complexity >
+                        largest_blocked_count):
                     largest_blocked_count = fd.total_cyclomatic_complexity
                     largest_blocked_name = n2.dst_function_name
                     break
@@ -403,35 +359,43 @@ def overlay_calltree_with_coverage(
         n1.cov_largest_blocked_func = largest_blocked_name
 
     update_branch_complexities(proj_profile.all_functions, profile.coverage)
-    profile.branch_blockers = detect_branch_level_blockers(proj_profile.all_functions, profile,
-                                                           target_coverage_url)
+    profile.branch_blockers = detect_branch_level_blockers(
+        proj_profile.all_functions, profile, target_coverage_url)
     logger.info(f"[+] found {len(profile.branch_blockers)} branch blockers.")
     branch_blockers_list = []
     for blk in profile.branch_blockers:
-        branch_blockers_list.append(
-            {
-                'blocked_side': repr(blk.blocked_side),
-                'blocked_unique_not_covered_complexity': blk.blocked_unique_not_covered_complexity,
-                'blocked_unique_reachable_complexity': blk.blocked_unique_reachable_complexity,
-                'blocked_unique_functions': blk.blocked_unique_funcs,
-                'blocked_not_covered_complexity': blk.blocked_not_covered_complexity,
-                'blocked_reachable_complexity': blk.blocked_reachable_complexity,
-                'sides_hitcount_diff': blk.sides_hitcount_diff,
-                'source_file': blk.source_file,
-                'branch_line_number': blk.branch_line_number,
-                'blocked_side_line_numder': blk.blocked_side_line_numder,
-                'function_name': blk.function_name
-            }
-        )
-    json_report.add_fuzzer_key_value_to_report(
-        profile.identifier,
-        'branch_blockers',
-        branch_blockers_list
-    )
+        branch_blockers_list.append({
+            'blocked_side':
+            repr(blk.blocked_side),
+            'blocked_unique_not_covered_complexity':
+            blk.blocked_unique_not_covered_complexity,
+            'blocked_unique_reachable_complexity':
+            blk.blocked_unique_reachable_complexity,
+            'blocked_unique_functions':
+            blk.blocked_unique_funcs,
+            'blocked_not_covered_complexity':
+            blk.blocked_not_covered_complexity,
+            'blocked_reachable_complexity':
+            blk.blocked_reachable_complexity,
+            'sides_hitcount_diff':
+            blk.sides_hitcount_diff,
+            'source_file':
+            blk.source_file,
+            'branch_line_number':
+            blk.branch_line_number,
+            'blocked_side_line_numder':
+            blk.blocked_side_line_numder,
+            'function_name':
+            blk.function_name
+        })
+    json_report.add_fuzzer_key_value_to_report(profile.identifier,
+                                               'branch_blockers',
+                                               branch_blockers_list)
 
 
-def update_branch_complexities(all_functions: Dict[str, function_profile.FunctionProfile],
-                               coverage: code_coverage.CoverageProfile) -> None:
+def update_branch_complexities(
+        all_functions: Dict[str, function_profile.FunctionProfile],
+        coverage: code_coverage.CoverageProfile) -> None:
     """
     Traverse every branch profile and update the side complexities based on reached funcs
     complexity.
@@ -444,7 +408,8 @@ def update_branch_complexities(all_functions: Dict[str, function_profile.Functio
                 branch.sides[side_idx].unique_reachable_complexity = 0
                 branch.sides[side_idx].reachable_complexity = 0
                 branch.sides[side_idx].not_covered_complexity = 0
-                side_unique_funcs = branch.get_side_unique_reachable_funcnames(side_idx)
+                side_unique_funcs = branch.get_side_unique_reachable_funcnames(
+                    side_idx)
 
                 # Iterate over the list of funcs instead of set, because we want to account
                 # for the complexity of repeating functions.
@@ -454,23 +419,26 @@ def update_branch_complexities(all_functions: Dict[str, function_profile.Functio
                     new_comp = all_functions[fn].total_cyclomatic_complexity
                     branch.sides[side_idx].reachable_complexity += new_comp
                     if fn in side_unique_funcs:
-                        branch.sides[side_idx].unique_reachable_complexity += new_comp
+                        branch.sides[
+                            side_idx].unique_reachable_complexity += new_comp
                     if coverage.is_func_hit(fn) is False:
-                        branch.sides[side_idx].not_covered_complexity += new_comp
+                        branch.sides[
+                            side_idx].not_covered_complexity += new_comp
                         if fn in side_unique_funcs:
-                            branch.sides[side_idx].unique_not_covered_complexity += new_comp
+                            branch.sides[
+                                side_idx].unique_not_covered_complexity += new_comp
 
 
 def detect_branch_level_blockers(
-    functions_profile: Dict[str, function_profile.FunctionProfile],
-    fuzz_profile: fuzzer_profile.FuzzerProfile,
-    target_coverage_url: str
-) -> List[FuzzBranchBlocker]:
+        functions_profile: Dict[str, function_profile.FunctionProfile],
+        fuzz_profile: fuzzer_profile.FuzzerProfile,
+        target_coverage_url: str) -> List[FuzzBranchBlocker]:
     fuzz_blockers = []
 
     if fuzz_profile.coverage is None:
-        logger.error(f"No coverage for fuzzer {fuzz_profile.binary_executable}."
-                     "Skipping branch blocker detection.")
+        logger.error(
+            f"No coverage for fuzzer {fuzz_profile.binary_executable}."
+            "Skipping branch blocker detection.")
         return []
     coverage = fuzz_profile.coverage
 
@@ -479,7 +447,8 @@ def detect_branch_level_blockers(
         branch_hitcount = -1
         sides_hitcount = coverage.branch_cov_map[branch_string]
         if len(sides_hitcount) > 2:
-            logger.debug(f'SPECIAL: switch statement {branch_string} {sides_hitcount}')
+            logger.debug(
+                f'SPECIAL: switch statement {branch_string} {sides_hitcount}')
             # The first two elements are associated with the switch statement
             # line coverage. Here to update sides_hitcount and set branch_hitcount.
             branch_hitcount = max(sides_hitcount[:2])
@@ -490,15 +459,20 @@ def detect_branch_level_blockers(
             function_name, rest_string = branch_string.rsplit(':', maxsplit=1)
             line_number, column_number = rest_string.split(',')
         except ValueError:
-            logger.error(f"branch-profiling: error getting function name from {branch_string}")
+            logger.error(
+                f"branch-profiling: error getting function name from {branch_string}"
+            )
             continue
 
         if function_name not in functions_profile:
-            logger.error(f"branch-profiling: func name not in functions_profile {function_name}")
+            logger.error(
+                f"branch-profiling: func name not in functions_profile {function_name}"
+            )
             continue
 
         llvm_branch_profile = functions_profile[function_name].branch_profiles
-        source_file_path = functions_profile[function_name].function_source_file
+        source_file_path = functions_profile[
+            function_name].function_source_file
         # Just extract the file name and skip the path
         source_file_name = os.path.basename(source_file_path)
         llvm_branch_string = f'{source_file_name}:{line_number},{column_number}'
@@ -506,7 +480,9 @@ def detect_branch_level_blockers(
         if llvm_branch_string not in llvm_branch_profile:
             # TODO: there are cases that the column number of the branch is not consistent between
             # llvm and coverage debug info. For now we skip those cases.
-            logger.debug(f"branch-profiling: failed to find branch profile {llvm_branch_string}")
+            logger.debug(
+                f"branch-profiling: failed to find branch profile {llvm_branch_string}"
+            )
             continue
 
         llvm_branch = llvm_branch_profile[llvm_branch_string]
@@ -526,8 +502,9 @@ def detect_branch_level_blockers(
 
         # Sanity checks for capturing any potential inconsistancy between coverage and LLVM.
         if len(sides_hitcount) != len(llvm_branch.sides):
-            logger.debug("Branch-blocker: inconsistent data found between COV vs LLVM:\n%s %s" %
-                         (llvm_branch_string, branch_string))
+            logger.debug(
+                "Branch-blocker: inconsistent data found between COV vs LLVM:\n%s %s"
+                % (llvm_branch_string, branch_string))
             logger.debug("llvm_branch.sides: %s" % str(llvm_branch.sides))
             logger.debug("blocked_idx: %s" % sides_hitcount)
             continue
@@ -538,8 +515,10 @@ def detect_branch_level_blockers(
                 llvm_branch.sides[blocked_idx].unique_not_covered_complexity)
             blocked_unique_reachable_com = (
                 llvm_branch.sides[blocked_idx].unique_reachable_complexity)
-            blocked_reachable_com = llvm_branch.sides[blocked_idx].reachable_complexity
-            blocked_not_covered_com = llvm_branch.sides[blocked_idx].not_covered_complexity
+            blocked_reachable_com = llvm_branch.sides[
+                blocked_idx].reachable_complexity
+            blocked_not_covered_com = llvm_branch.sides[
+                blocked_idx].not_covered_complexity
             side_line = llvm_branch.sides[blocked_idx].pos
             side_line_number = side_line.split(':')[1].split(',')[0]
             blocked_unique_funcs = list(
@@ -548,40 +527,45 @@ def detect_branch_level_blockers(
             # Sanity check on line numbers: anomaly can happen because of debug info inaccuracy
             if int(line_number) > int(side_line_number):
                 logger.debug(
-                    "Branch-blocker: Anomalous branch sides line nubmers: %s:%s -> %s" % (
-                        source_file_path, line_number, side_line_number
-                    )
-                )
+                    "Branch-blocker: Anomalous branch sides line nubmers: %s:%s -> %s"
+                    % (source_file_path, line_number, side_line_number))
                 continue
 
             # Sanity check for fall through cases: checks if the branch side has coverage or not
             if coverage.get_type() == "file":
-                if coverage.is_file_lineno_hit(source_file_path, int(side_line_number)):
-                    logger.debug("Branch-blocker: fall through branch side is not blocked: %s"
-                                 % (side_line))
+                if coverage.is_file_lineno_hit(source_file_path,
+                                               int(side_line_number)):
+                    logger.debug(
+                        "Branch-blocker: fall through branch side is not blocked: %s"
+                        % (side_line))
                     continue
             else:
-                if coverage.is_func_lineno_hit(function_name, int(side_line_number)):
-                    logger.debug("Branch-blocker: fall through branch side is not blocked: %s"
-                                 % (side_line))
+                if coverage.is_func_lineno_hit(function_name,
+                                               int(side_line_number)):
+                    logger.debug(
+                        "Branch-blocker: fall through branch side is not blocked: %s"
+                        % (side_line))
                     continue
 
             hitcount_diff = max(sides_hitcount + [branch_hitcount])
-            link = fuzz_profile.resolve_coverage_link(
-                target_coverage_url,
-                source_file_path,
-                int(line_number),
-                function_name
-            )
-            new_blk = FuzzBranchBlocker(blocked_side, blocked_unique_not_covered_com,
-                                        blocked_unique_reachable_com, blocked_unique_funcs,
-                                        blocked_not_covered_com, blocked_reachable_com,
-                                        hitcount_diff, source_file_path, line_number,
-                                        side_line_number, function_name, link)
+            link = fuzz_profile.resolve_coverage_link(target_coverage_url,
+                                                      source_file_path,
+                                                      int(line_number),
+                                                      function_name)
+            new_blk = FuzzBranchBlocker(
+                blocked_side, blocked_unique_not_covered_com,
+                blocked_unique_reachable_com, blocked_unique_funcs,
+                blocked_not_covered_com, blocked_reachable_com, hitcount_diff,
+                source_file_path, line_number, side_line_number, function_name,
+                link)
             fuzz_blockers.append(new_blk)
 
-    fuzz_blockers.sort(key=lambda x: [x.blocked_unique_not_covered_complexity,
-                                      x.blocked_unique_reachable_complexity,
-                                      x.blocked_not_covered_complexity,
-                                      x.blocked_reachable_complexity], reverse=True)
+    fuzz_blockers.sort(
+        reverse=True,
+        key=lambda x: [
+            x.blocked_unique_not_covered_complexity, x.
+            blocked_unique_reachable_complexity, x.
+            blocked_not_covered_complexity, x.blocked_reachable_complexity
+        ])
+
     return fuzz_blockers

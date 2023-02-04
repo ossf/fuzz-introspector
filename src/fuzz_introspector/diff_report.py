@@ -16,9 +16,7 @@
 import os
 import json
 
-from fuzz_introspector import (
-    exceptions
-)
+from fuzz_introspector import (exceptions)
 
 
 def diff_two_reports(report_first_path, report_second_path):
@@ -71,7 +69,8 @@ def _compare_numericals(num1, num2, title="", to_print=True) -> int:
         msg = "Report 2 has less %s than report 1" % (title)
         ret_val = 1
     if to_print:
-        print("%s - {report 1: %s / report 2: %s})" % (msg, str(num1), str(num2)))
+        print("%s - {report 1: %s / report 2: %s})" %
+              (msg, str(num1), str(num2)))
 
     return ret_val
 
@@ -139,7 +138,9 @@ def _compare_summary_of_all_functions(first_report, second_report):
             for func_name in report1_reached_only:
                 print(func_name)
         else:
-            print("- All functions reachable in report 1 are reachable in report 2")
+            print(
+                "- All functions reachable in report 1 are reachable in report 2"
+            )
 
         print("")
         print("The following functions are only reachable in report 2:")
@@ -147,21 +148,18 @@ def _compare_summary_of_all_functions(first_report, second_report):
             for func_name in report2_reached_only:
                 print(func_name)
         else:
-            print("- All functions reachable in report 2 are reachable in report 1")
+            print(
+                "- All functions reachable in report 2 are reachable in report 1"
+            )
 
 
 def _compare_report_dictionaries(first_report, second_report):
     first_merged_profile = first_report['MergedProjectProfile']
     second_merged_profile = second_report['MergedProjectProfile']
 
-    _compare_numericals(
-        first_merged_profile['stats']['total-complexity'],
-        second_merged_profile['stats']['total-complexity'],
-        'Total complexity'
-    )
+    _compare_numericals(first_merged_profile['stats']['total-complexity'],
+                        second_merged_profile['stats']['total-complexity'],
+                        'Total complexity')
 
     # Summary of difference between all functions
-    _compare_summary_of_all_functions(
-        first_report,
-        second_report
-    )
+    _compare_summary_of_all_functions(first_report, second_report)

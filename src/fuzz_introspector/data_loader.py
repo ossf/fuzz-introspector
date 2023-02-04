@@ -29,22 +29,16 @@ from typing import (
 
 from fuzz_introspector import constants
 from fuzz_introspector import utils
-from fuzz_introspector.datatypes import (
-    project_profile,
-    fuzzer_profile,
-    function_profile,
-    branch_profile,
-    bug
-)
+from fuzz_introspector.datatypes import (project_profile, fuzzer_profile,
+                                         function_profile, branch_profile, bug)
 from fuzz_introspector.exceptions import DataLoaderError
 
 logger = logging.getLogger(name=__name__)
 
 
 def read_fuzzer_data_file_to_profile(
-    cfg_file: str,
-    language: str
-) -> Optional[fuzzer_profile.FuzzerProfile]:
+        cfg_file: str,
+        language: str) -> Optional[fuzzer_profile.FuzzerProfile]:
     """
     For a given .data file (CFG) read the corresponding .yaml file
     This is a bit odd way of doing it and should probably be improved.
@@ -103,7 +97,8 @@ def add_func_to_reached_and_clone(
         f = merged_profile.all_functions[func_name]
         f.hitcount += 1
 
-        f.reached_by_fuzzers.append(utils.demangle_cpp_func(func_to_add.function_name))
+        f.reached_by_fuzzers.append(
+            utils.demangle_cpp_func(func_to_add.function_name))
 
     # Recompute all analysis that is based on hitcounts in all functions as hitcount has
     # changed for elements in the dictionary.
@@ -114,9 +109,11 @@ def add_func_to_reached_and_clone(
         for reached_func_name in f_profile.functions_reached:
             if reached_func_name not in merged_profile.all_functions:
                 if merged_profile_old.profiles[0].target_lang == "jvm":
-                    logger.debug(f"{reached_func_name} not provided within classpath")
+                    logger.debug(
+                        f"{reached_func_name} not provided within classpath")
                 else:
-                    logger.error(f"Mismatched function name: {reached_func_name}")
+                    logger.error(
+                        f"Mismatched function name: {reached_func_name}")
                 continue
             f_reached = merged_profile.all_functions[reached_func_name]
             cc += f_reached.cyclomatic_complexity
@@ -131,9 +128,7 @@ def add_func_to_reached_and_clone(
 
     if merged_profile.all_functions[func_to_add.function_name].hitcount == 0:
         logger.info("Error. Hitcount did not get set for some reason. Exiting")
-        raise DataLoaderError(
-            "Hitcount did not get set for some reason"
-        )
+        raise DataLoaderError("Hitcount did not get set for some reason")
 
     return merged_profile
 
@@ -146,25 +141,20 @@ def _load_profile(data_file: str, language: str, profiles: queue.Queue):
 
 
 def load_all_profiles(
-    target_folder: str,
-    language: str,
-    parallelise: bool = True
-) -> List[fuzzer_profile.FuzzerProfile]:
+        target_folder: str,
+        language: str,
+        parallelise: bool = True) -> List[fuzzer_profile.FuzzerProfile]:
     """Loads all profiles in target_folder in a multi-threaded manner"""
     profiles = []
     data_files = utils.get_all_files_in_tree_with_regex(
-        target_folder,
-        "fuzzerLogFile.*\.data$"
-    )
+        target_folder, "fuzzerLogFile.*\.data$")
     logger.info(f" - found {len(data_files)} profiles to load")
     thread_safe_queue: queue.Queue = queue.Queue()
     if parallelise:
         all_threads = []
         for data_file in data_files:
-            x = threading.Thread(
-                target=_load_profile,
-                args=(data_file, language, thread_safe_queue)
-            )
+            x = threading.Thread(target=_load_profile,
+                                 args=(data_file, language, thread_safe_queue))
             x.start()
             all_threads.append(x)
 
@@ -205,14 +195,9 @@ def load_input_bugs(bug_file: str) -> List[bug.Bug]:
 
     for bug_dict in data["bugs"]:
         try:
-            ib = bug.Bug(
-                bug_dict['source_file'],
-                bug_dict['source_line'],
-                bug_dict['function_name'],
-                bug_dict['fuzzer_name'],
-                bug_dict['description'],
-                bug_dict['bug_type']
-            )
+            ib = bug.Bug(bug_dict['source_file'], bug_dict['source_line'],
+                         bug_dict['function_name'], bug_dict['fuzzer_name'],
+                         bug_dict['description'], bug_dict['bug_type'])
             input_bugs.append(ib)
         except Exception:
             continue
@@ -220,7 +205,8 @@ def load_input_bugs(bug_file: str) -> List[bug.Bug]:
     return input_bugs
 
 
-def read_branch_data_file_to_profile(filename: str, bp_dict: Dict[Any, Any]) -> None:
+def read_branch_data_file_to_profile(filename: str,
+                                     bp_dict: Dict[Any, Any]) -> None:
     """
     Loads branch profiles from LLVM pass output yaml file.
     """
@@ -239,13 +225,10 @@ def read_branch_data_file_to_profile(filename: str, bp_dict: Dict[Any, Any]) -> 
 
 
 def load_all_branch_profiles(
-    target_folder: str
-) -> Dict[str, branch_profile.BranchProfile]:
+        target_folder: str) -> Dict[str, branch_profile.BranchProfile]:
     all_branch_profiles: Dict[str, branch_profile.BranchProfile] = dict()
     data_files = utils.get_all_files_in_tree_with_regex(
-        target_folder,
-        ".*branchProfile\.yaml$"
-    )
+        target_folder, ".*branchProfile\.yaml$")
     logger.info(f" - found {len(data_files)} branchProfiles to load")
     for data_file in data_files:
         read_branch_data_file_to_profile(data_file, all_branch_profiles)

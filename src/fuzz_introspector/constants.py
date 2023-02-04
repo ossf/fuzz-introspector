@@ -34,12 +34,10 @@ JSON_REPORT_KEY_PROJECT = 'MergedProjectProfile'
 # have the color of the tuple.
 # - color is the string
 # The hitcount is [min:max)
-COLOR_CONSTANTS = [
-    (0, 1, "red", "#ff0000"),
-    (1, 10, "gold", "#ffd700"),
-    (10, 30, "yellow", "#ffff00"),
-    (30, 50, "greenyellow", "#adff2f"),
-    (50, 1000000000000, "lawngreen", "#7cfc00")
-]
+COLOR_CONSTANTS = [(0, 1, "red", "#ff0000"), (1, 10, "gold", "#ffd700"),
+                   (10, 30, "yellow", "#ffff00"),
+                   (30, 50, "greenyellow", "#adff2f"),
+                   (50, 1000000000000, "lawngreen", "#7cfc00")]
 
-BLOCKLISTED_FUNCTION_NAMES = re.compile(r'^__sanitizer|^llvm\.|^__assert|.*printf$')
+BLOCKLISTED_FUNCTION_NAMES = re.compile(
+    r'^__sanitizer|^llvm\.|^__assert|.*printf$')

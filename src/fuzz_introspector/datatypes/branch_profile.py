@@ -28,6 +28,7 @@ logger = logging.getLogger(name=__name__)
 
 class BranchSide:
     """Class for representing a branch side."""
+
     def __init__(self) -> None:
         self.pos = str()
         self.unique_not_covered_complexity = -1
@@ -42,6 +43,7 @@ class BranchProfile:
     """
     Class for storing information about conditional branches collected by LLVM pass.
     """
+
     def __init__(self) -> None:
         self.branch_pos = str()
         self.sides: List[BranchSide] = []
@@ -60,7 +62,8 @@ class BranchProfile:
         for idx, count in enumerate(counts):
             self.sides[idx].hitcount = int(count)
 
-    def get_side_unique_reachable_funcnames(self, branch_side_idx: int) -> Set[str]:
+    def get_side_unique_reachable_funcnames(self,
+                                            branch_side_idx: int) -> Set[str]:
         """Returns the set of unique functions reachable from the specified branch side"""
         all_other_sides_funcs = set()
         for idx in range(len(self.sides)):
@@ -77,5 +80,7 @@ class BranchProfile:
 
         print(self.branch_pos)
         for side in self.sides:
-            print(side.pos, side.unique_reachable_complexity, side.unique_not_covered_complexity,
-                  side.reachable_complexity, side.not_covered_complexity, len(side.funcs))
+            print(side.pos, side.unique_reachable_complexity,
+                  side.unique_not_covered_complexity,
+                  side.reachable_complexity, side.not_covered_complexity,
+                  len(side.funcs))
