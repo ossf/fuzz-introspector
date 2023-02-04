@@ -36,6 +36,7 @@ class HTML_HEADING(Enum):
     H5 = 5
     H6 = 6
 
+
 class HTML_TOC_ENTRY:
     """Entry in the table of contents"""
 
@@ -232,7 +233,7 @@ def html_get_table_of_contents(
     html_toc_string += """</div>
                             <div class="left-sidebar-content-box">\
                                 <h2 style="margin-top:0px">Table of contents</h2>"""
-    #for k, v, d in toc_list:
+
     for toc_entry in table_of_contents.entries:
         indentation = (toc_entry.heading_type.value - 1) * 16
         html_toc_string += "<div style='margin-left: %spx'>" % indentation
@@ -249,7 +250,6 @@ def html_get_table_of_contents(
 def html_add_header_with_link(
     header_title: str,
     title_type: HTML_HEADING,
-    #toc_list: List[Tuple[str, str, int]],
     table_of_contents: HtmlTableOfContents,
     link: Optional[str] = None,
     experimental: Optional[bool] = False
@@ -259,14 +259,15 @@ def html_add_header_with_link(
 
     if not experimental:
         table_of_contents.add_entry(header_title, link, title_type)
-        #toc_list.append((header_title, link, title_type.value - 1))
 
     html_attributes = ""
     if title_type == HTML_HEADING.H1 or experimental:
         html_attributes += " class=\"report-title\""
 
     html_string = f"<a id=\"{link}\">"
-    html_string += f"<h{title_type.value} {html_attributes}>{header_title}</h{title_type.value}>\n"
+    html_string += (
+        f"<h{title_type.value} {html_attributes}>{header_title}</h{title_type.value}>\n"
+    )
     return html_string
 
 
