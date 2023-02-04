@@ -164,7 +164,8 @@ class DriverSynthesizer(analysis.AnalysisInterface):
 
         for filename in final_fuzzers:
             html_string += html_helpers.html_add_header_with_link(
-                str(filename.split("/")[-1]), html_helpers.HTML_HEADING.H4, toc_list)
+                str(filename.split("/")[-1]), html_helpers.HTML_HEADING.H4,
+                toc_list)
             html_string += f"<b>Target file:</b>{filename}<br>"
             all_functions = ", ".join(
                 [f.function_name for f in final_fuzzers[filename].target_fds])

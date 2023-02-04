@@ -792,7 +792,11 @@ def create_fuzzer_detailed_section(
 
     # Table showing which files this fuzzer hits.
     html_string += html_helpers.html_add_header_with_link(
-        "Files reached", html_helpers.HTML_HEADING.H3, toc_list, link=f"files_hit_{curr_tt_profile}")
+        "Files reached",
+        html_helpers.HTML_HEADING.H3,
+        toc_list,
+        link=f"files_hit_{curr_tt_profile}"
+    )
     tables.append(f"myTable{len(tables)}")
     html_string += html_helpers.html_create_table_head(
         tables[-1],
@@ -1002,7 +1006,8 @@ def create_html_report(
     logger.info(" - Creating section with details about each fuzzer")
     fuzzer_table_data: Dict[str, Any] = dict()
     html_report_core += "<div class=\"report-box\">"
-    html_report_core += html_helpers.html_add_header_with_link("Fuzzer details", html_helpers.HTML_HEADING.H1, toc_list)
+    html_report_core += html_helpers.html_add_header_with_link(
+        "Fuzzer details", html_helpers.HTML_HEADING.H1, toc_list)
     html_report_core += "<div class=\"collapsible\">"
     for profile_idx in range(len(profiles)):
         html_report_core += create_fuzzer_detailed_section(

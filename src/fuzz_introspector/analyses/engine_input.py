@@ -71,7 +71,8 @@ class EngineInput(analysis.AnalysisInterface):
             logger.info(
                 f"Generating input for {profiles[profile_idx].identifier}")
             html_string += html_helpers.html_add_header_with_link(
-                profiles[profile_idx].fuzzer_source_file, html_helpers.HTML_HEADING.H2, toc_list)
+                profiles[profile_idx].fuzzer_source_file,
+                html_helpers.HTML_HEADING.H2, toc_list)
 
             # Create dictionary section
             html_string += self.get_dictionary_section(profiles[profile_idx],

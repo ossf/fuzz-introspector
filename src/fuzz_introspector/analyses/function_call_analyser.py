@@ -200,7 +200,8 @@ class ThirdPartyAPICoverageAnalyser(analysis.AnalysisInterface):
                         "</p>")
 
         html_string += html_helpers.html_add_header_with_link(
-            "Function in each files in report", html_helpers.HTML_HEADING.H2, toc_list)
+            "Function in each files in report", html_helpers.HTML_HEADING.H2,
+            toc_list)
 
         # Third party function calls table
         tables.append(f"myTable{len(tables)}")

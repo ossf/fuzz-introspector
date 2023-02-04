@@ -219,7 +219,8 @@ class OptimalTargets(analysis.AnalysisInterface):
                                    target_lang: str = 'c-cpp') -> str:
         # Table with details about optimal target functions
         html_string = html_helpers.html_add_header_with_link(
-            "Remaining optimal interesting functions", html_helpers.HTML_HEADING.H3, toc_list)
+            "Remaining optimal interesting functions",
+            html_helpers.HTML_HEADING.H3, toc_list)
         html_string += "<p> The following table shows a list of functions that "   \
                        "are optimal targets. Optimal targets are identified by "   \
                        "finding the functions that in combination, yield a high " \
