@@ -22,12 +22,7 @@ from typing import (
     Tuple,
 )
 
-from fuzz_introspector import (
-    code_coverage,
-    exceptions,
-    json_report,
-    utils
-)
+from fuzz_introspector import (code_coverage, exceptions, json_report, utils)
 from fuzz_introspector.datatypes import function_profile, fuzzer_profile
 
 logger = logging.getLogger(name=__name__)
@@ -41,15 +36,18 @@ class MergedProjectProfile:
     example, it does project-wide analysis of reachable/unreachable functions by
     digesting data from all the fuzzers in the project.
     """
+
     def __init__(self, profiles: List[fuzzer_profile.FuzzerProfile]):
         self.name = None
         self.profiles = profiles
-        self.all_functions: Dict[str, function_profile.FunctionProfile] = dict()
+        self.all_functions: Dict[str,
+                                 function_profile.FunctionProfile] = dict()
         self.unreached_functions = set()
         self.functions_reached = set()
         self.coverage_url = "#"
 
-        logger.info(f"Creating merged profile of {len(self.profiles)} profiles")
+        logger.info(
+            f"Creating merged profile of {len(self.profiles)} profiles")
         # Populate functions reached
         logger.info("Populating functions reached")
         for profile in profiles:
@@ -66,13 +64,14 @@ class MergedProjectProfile:
         # Add all functions from the various profiles into the merged profile. Don't
         # add duplicates
         logger.info("Creating all_functions dictionary")
-        excluded_functions = {
-            "sanitizer", "llvm", "LLVMFuzzerTestOneInput"
-        }
+        excluded_functions = {"sanitizer", "llvm", "LLVMFuzzerTestOneInput"}
         for profile in profiles:
             for fd in profile.all_class_functions.values():
                 # continue if the function is to be excluded
-                if len([ef for ef in excluded_functions if ef in fd.function_name]) != 0:
+                if len([
+                        ef
+                        for ef in excluded_functions if ef in fd.function_name
+                ]) != 0:
                     continue
 
                 # populate hitcount and reached_by_fuzzers and whether it has been handled already
@@ -84,7 +83,8 @@ class MergedProjectProfile:
                         self.all_functions[fd.function_name] = fd
 
         # Gather complexity information about each function
-        logger.info("Gathering complexity and incoming references of each function")
+        logger.info(
+            "Gathering complexity and incoming references of each function")
         for fp_obj in self.all_functions.values():
             total_cyclomatic_complexity = 0
             total_new_complexity = 0
@@ -92,26 +92,26 @@ class MergedProjectProfile:
             for reached_func_name in fp_obj.functions_reached:
                 if reached_func_name not in self.all_functions:
                     if profile.target_lang == "jvm":
-                        logger.debug(f"{reached_func_name} not provided within classpath")
+                        logger.debug(
+                            f"{reached_func_name} not provided within classpath"
+                        )
                     else:
-                        logger.error(f"Mismatched function name: {reached_func_name}")
+                        logger.error(
+                            f"Mismatched function name: {reached_func_name}")
                     continue
                 reached_func_obj = self.all_functions[reached_func_name]
-                reached_func_obj.incoming_references.append(fp_obj.function_name)
+                reached_func_obj.incoming_references.append(
+                    fp_obj.function_name)
                 total_cyclomatic_complexity += reached_func_obj.cyclomatic_complexity
                 if reached_func_obj.hitcount == 0:
                     total_new_complexity += reached_func_obj.cyclomatic_complexity
             if fp_obj.hitcount == 0:
                 fp_obj.new_unreached_complexity = (
-                    total_new_complexity
-                    + fp_obj.cyclomatic_complexity
-                )
+                    total_new_complexity + fp_obj.cyclomatic_complexity)
             else:
                 fp_obj.new_unreached_complexity = total_new_complexity
-            fp_obj.total_cyclomatic_complexity = (
-                total_cyclomatic_complexity
-                + fp_obj.cyclomatic_complexity
-            )
+            fp_obj.total_cyclomatic_complexity = (total_cyclomatic_complexity +
+                                                  fp_obj.cyclomatic_complexity)
 
         # Accumulate run-time coverage mapping
         self.runtime_coverage = code_coverage.CoverageProfile()
@@ -120,19 +120,24 @@ class MergedProjectProfile:
                 continue
             for func_name in profile.coverage.covmap:
                 if func_name not in self.runtime_coverage.covmap:
-                    self.runtime_coverage.covmap[func_name] = profile.coverage.covmap[func_name]
+                    self.runtime_coverage.covmap[
+                        func_name] = profile.coverage.covmap[func_name]
                 else:
                     # Merge by picking highest line numbers. Here we can assume they coverage
                     # maps have the same number of elements with the same line numbers but
                     # different hit counts.
                     new_line_counts = list()
-                    for idx1 in range(len(self.runtime_coverage.covmap[func_name])):
+                    for idx1 in range(
+                            len(self.runtime_coverage.covmap[func_name])):
                         try:
-                            ln1, ht1 = self.runtime_coverage.covmap[func_name][idx1]
+                            ln1, ht1 = self.runtime_coverage.covmap[func_name][
+                                idx1]
                             ln2, ht2 = profile.coverage.covmap[func_name][idx1]
                         except Exception:
-                            ln1, ht1 = self.runtime_coverage.covmap[func_name][idx1]
-                            ln2, ht2 = self.runtime_coverage.covmap[func_name][idx1]
+                            ln1, ht1 = self.runtime_coverage.covmap[func_name][
+                                idx1]
+                            ln2, ht2 = self.runtime_coverage.covmap[func_name][
+                                idx1]
                         # It may be that line numbers are not the same for the same function
                         # name across different fuzzers.
                         # This *could* actually happen, and will often (almost always) happen for
@@ -141,8 +146,7 @@ class MergedProjectProfile:
                         if ln1 != ln2:
                             logger.info(
                                 f"Line numbers are different in the same function: "
-                                f"{func_name}:{ln1}:{ln2}, ignoring"
-                            )
+                                f"{func_name}:{ln1}:{ln2}, ignoring")
                             continue
                         new_line_counts.append((ln1, max(ht1, ht2)))
                     self.runtime_coverage.covmap[func_name] = new_line_counts
@@ -170,44 +174,25 @@ class MergedProjectProfile:
         reached_func_count = self._get_total_reached_function_count()
         unreached_func_count = self._get_total_unreached_function_count()
         total_functions = reached_func_count + unreached_func_count
-        reached_percentage = (float(reached_func_count) / float(total_functions)) * 100
-        unreached_percentage = (float(unreached_func_count) / float(total_functions)) * 100
-        return (
-            total_functions,
-            reached_func_count,
-            unreached_func_count,
-            reached_percentage,
-            unreached_percentage
-        )
+        reached_percentage = (float(reached_func_count) /
+                              float(total_functions)) * 100
+        unreached_percentage = (float(unreached_func_count) /
+                                float(total_functions)) * 100
+        return (total_functions, reached_func_count, unreached_func_count,
+                reached_percentage, unreached_percentage)
 
-    def resolve_coverage_report_link(
-        self,
-        coverage_url,
-        function_source_file,
-        lineno,
-        func_name
-    ):
+    def resolve_coverage_report_link(self, coverage_url, function_source_file,
+                                     lineno, func_name):
 
         if self.target_lang == "python":
             return self.profiles[0].resolve_coverage_link(
-                coverage_url,
-                function_source_file,
-                lineno,
-                func_name
-            )
+                coverage_url, function_source_file, lineno, func_name)
         elif self.target_lang == "jvm":
             return self.profiles[0].resolve_coverage_link(
-                coverage_url,
-                function_source_file,
-                lineno,
-                func_name
-            )
+                coverage_url, function_source_file, lineno, func_name)
         else:
-            return "%s%s.html#L%d" % (
-                coverage_url,
-                function_source_file,
-                lineno
-            )
+            return "%s%s.html#L%d" % (coverage_url, function_source_file,
+                                      lineno)
 
     @property
     def target_lang(self):
@@ -217,8 +202,7 @@ class MergedProjectProfile:
             set_of_targets.add(profile.target_lang)
         if len(set_of_targets) > 1:
             raise exceptions.AnalysisError(
-                "Project has fuzzers with multiple targets"
-            )
+                "Project has fuzzers with multiple targets")
         return set_of_targets.pop()
 
     def get_profiles_coverage_files(self) -> List[str]:
@@ -241,29 +225,23 @@ class MergedProjectProfile:
         total_complexity = complexity_unreached + complexity_reached
 
         try:
-            reached_complexity_percentage = (float(complexity_reached) / (total_complexity)) * 100.0
+            reached_complexity_percentage = (float(complexity_reached) /
+                                             (total_complexity)) * 100.0
         except Exception:
             logger.info("Total complexity is 0")
             reached_complexity_percentage = 0
         try:
-            unreached_complexity_percentage = (
-                (float(complexity_unreached) / (total_complexity)) * 100.0
-            )
+            unreached_complexity_percentage = ((float(complexity_unreached) /
+                                                (total_complexity)) * 100.0)
         except Exception:
             logger.info("Total complexity is 0")
             unreached_complexity_percentage = 0
 
-        return (
-            total_complexity,
-            complexity_reached,
-            complexity_unreached,
-            reached_complexity_percentage,
-            unreached_complexity_percentage
-        )
+        return (total_complexity, complexity_reached, complexity_unreached,
+                reached_complexity_percentage, unreached_complexity_percentage)
 
     def get_direct_parent_list(
-        self,
-        target_function: function_profile.FunctionProfile
+        self, target_function: function_profile.FunctionProfile
     ) -> Tuple[List[function_profile.FunctionProfile], List[str]]:
         """
         Search through list of parent functions of the
@@ -306,7 +284,8 @@ class MergedProjectProfile:
 
                 if target_function.function_name in fd.functions_called:
                     handled_functions.append(fd)
-                    inner_list, inner_name_list = self.get_function_callpaths(fd, handled_functions)
+                    inner_list, inner_name_list = self.get_function_callpaths(
+                        fd, handled_functions)
                     for list in inner_list:
                         list.append(fd)
                         result_list.append(list)
@@ -316,22 +295,19 @@ class MergedProjectProfile:
         return (result_list, result_name_list)
 
     def write_stats_to_summary_file(self) -> None:
-        (total_complexity,
-         complexity_reached,
-         complexity_unreached,
+        (total_complexity, complexity_reached, complexity_unreached,
          reached_complexity_percentage,
          unreached_complexity_percentage) = self.get_complexity_summaries()
 
         json_report.add_project_key_value_to_report(
-            "stats",
-            {
+            "stats", {
                 "total-complexity": total_complexity,
                 "complexity-reached": complexity_reached,
                 "complexity-unreached": complexity_unreached,
                 "reached-complexity-percentage": reached_complexity_percentage,
-                "unreached-complexity-percentage": unreached_complexity_percentage
-            }
-        )
+                "unreached-complexity-percentage":
+                unreached_complexity_percentage
+            })
 
     def _set_basefolder(self) -> None:
         """Identifies a common path-prefix amongst source files in. This is

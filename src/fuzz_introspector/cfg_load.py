@@ -15,10 +15,7 @@
 
 import logging
 
-from typing import (
-    List,
-    Optional
-)
+from typing import (List, Optional)
 
 from fuzz_introspector.exceptions import CalltreeError
 
@@ -29,20 +26,18 @@ class CalltreeCallsite():
     """
     Represents a single node in the calltree
     """
+
     def __init__(
-        self,
-        dst_function_name: str,
-        dst_function_source_file: str,
-        depth: int,
-        src_linenumber: int,
-        parent_calltree_callsite: Optional['CalltreeCallsite']
-    ) -> None:
+            self, dst_function_name: str, dst_function_source_file: str,
+            depth: int, src_linenumber: int,
+            parent_calltree_callsite: Optional['CalltreeCallsite']) -> None:
 
         # Destination information
         self.dst_function_name: str = dst_function_name
         self.dst_function_source_file: str = dst_function_source_file
         self.src_linenumber: int = src_linenumber
-        self.parent_calltree_callsite: Optional[CalltreeCallsite] = parent_calltree_callsite
+        self.parent_calltree_callsite: Optional[
+            CalltreeCallsite] = parent_calltree_callsite
         self.depth = depth
         self.src_function_source_file: Optional[str] = None
         self.src_function_name: Optional[str] = None
@@ -59,9 +54,8 @@ class CalltreeCallsite():
 
 
 def extract_all_callsites_recursive(
-    calltree: CalltreeCallsite,
-    callsite_nodes: List[CalltreeCallsite]
-) -> None:
+        calltree: CalltreeCallsite,
+        callsite_nodes: List[CalltreeCallsite]) -> None:
     """
     Given a node, will assemble all callsites in the children. Recursive function.
     """
@@ -70,7 +64,8 @@ def extract_all_callsites_recursive(
         extract_all_callsites_recursive(c, callsite_nodes)
 
 
-def extract_all_callsites(calltree: Optional[CalltreeCallsite]) -> List[CalltreeCallsite]:
+def extract_all_callsites(
+        calltree: Optional[CalltreeCallsite]) -> List[CalltreeCallsite]:
     if calltree is None:
         logger.error("Trying to extract from a None calltree")
         raise CalltreeError("Calltree is None")
@@ -82,10 +77,8 @@ def extract_all_callsites(calltree: Optional[CalltreeCallsite]) -> List[Calltree
 
 def print_ctcs_tree(ctcs: CalltreeCallsite) -> None:
     spacing = " " * int(ctcs.depth)
-    print(
-        f"{spacing}{ctcs.dst_function_name}"
-        f" -- {ctcs.dst_function_source_file} -- {ctcs.src_linenumber}"
-    )
+    print(f"{spacing}{ctcs.dst_function_name}"
+          f" -- {ctcs.dst_function_source_file} -- {ctcs.src_linenumber}")
     for c in ctcs.children:
         print_ctcs_tree(c)
 
@@ -118,7 +111,8 @@ def data_file_read_calltree(filename: str) -> Optional[CalltreeCallsite]:
                 if len(stripped_line) == 3:
                     target_func = stripped_line[0]
                     filename = stripped_line[1]
-                    linenumber = int(stripped_line[2].replace("linenumber=", ""))
+                    linenumber = int(stripped_line[2].replace(
+                        "linenumber=", ""))
                 else:
                     target_func = stripped_line[0]
                     filename = ""
@@ -132,13 +126,8 @@ def data_file_read_calltree(filename: str) -> Optional[CalltreeCallsite]:
                 depth = int(space_count / 2)
 
                 # Create a callsite nide
-                ctcs = CalltreeCallsite(
-                    target_func,
-                    filename,
-                    depth,
-                    linenumber,
-                    curr_ctcs_node
-                )
+                ctcs = CalltreeCallsite(target_func, filename, depth,
+                                        linenumber, curr_ctcs_node)
 
                 # Check if this node is still a child of the current parent node and handle if not.
                 if curr_depth == -1:

@@ -31,6 +31,7 @@ class FunctionProfile:
     """
     Class for storing information about a given Function
     """
+
     def __init__(self, elem: Dict[Any, Any]) -> None:
         self.function_name = utils.demangle_cpp_func(elem['functionName'])
         self.function_source_file = elem['functionSourceFile']
@@ -44,17 +45,20 @@ class FunctionProfile:
         self.i_count = elem['ICount']
         self.edge_count = elem['EdgeCount']
         self.cyclomatic_complexity = elem['CyclomaticComplexity']
-        self.functions_reached = utils.load_func_names(elem['functionsReached'], False)
+        self.functions_reached = utils.load_func_names(
+            elem['functionsReached'], False)
         self.function_uses = elem['functionUses']
         self.function_depth = elem['functionDepth']
         self.constants_touched = elem['constantsTouched']
-        self.branch_profiles = self.load_func_branch_profiles(elem['BranchProfiles'])
+        self.branch_profiles = self.load_func_branch_profiles(
+            elem['BranchProfiles'])
 
         # Duplication of functions_reached to keep the original sets
         # of call trees for further processing and analysis. This
         # could avoid loss of call tree information when functions_reached
         # is further propagated by later operations.
-        self.functions_called = utils.load_func_names(elem['functionsReached'], False)
+        self.functions_called = utils.load_func_names(elem['functionsReached'],
+                                                      False)
 
         # Temporary handle for unreadable library method (JVM)
         # (jar missing or purposely ignored)
@@ -81,8 +85,7 @@ class FunctionProfile:
         self.total_cyclomatic_complexity: int = 0
 
     def load_func_branch_profiles(
-        self,
-        yaml_branch_profiles: Any
+            self, yaml_branch_profiles: Any
     ) -> Dict[str, branch_profile.BranchProfile]:
         bp_loaded = {}
         for entry in yaml_branch_profiles:
@@ -92,10 +95,7 @@ class FunctionProfile:
 
         return bp_loaded
 
-    def load_func_callsites(
-        self,
-        yaml_callsites: Any
-    ) -> Dict[str, List[str]]:
+    def load_func_callsites(self, yaml_callsites: Any) -> Dict[str, List[str]]:
         cs_loaded: Dict[str, List[str]] = {}
         for callsite in yaml_callsites:
             if callsite['Dst'] not in cs_loaded.keys():
@@ -104,9 +104,7 @@ class FunctionProfile:
                 callsite_list = cs_loaded[callsite['Dst']]
 
             callsite_src = callsite['Src'].split(',')[0].replace(
-                ':',
-                '#%s:' % self.function_name
-            )
+                ':', '#%s:' % self.function_name)
             callsite_list.append(callsite_src)
             cs_loaded.update({callsite['Dst']: callsite_list})
 

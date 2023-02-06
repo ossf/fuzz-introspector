@@ -20,15 +20,9 @@ logger = logging.getLogger(name=__name__)
 
 class Bug:
     """Holds data about a given bug found by fuzzers."""
-    def __init__(
-        self,
-        source_file: str,
-        source_line: str,
-        function_name: str,
-        fuzzer_name: str,
-        description: str,
-        bug_type: str
-    ) -> None:
+
+    def __init__(self, source_file: str, source_line: str, function_name: str,
+                 fuzzer_name: str, description: str, bug_type: str) -> None:
         self.source_file = source_file
         self.source_line = source_line
         self.function_name = function_name
