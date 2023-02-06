@@ -22,7 +22,6 @@ the OSS-Fuzz environment. The steps taken are:
 """
 
 import os
-import shutil
 import subprocess
 
 FI_JVM_BASE="/fuzz-introspector/frontends/java"
@@ -55,47 +54,38 @@ def find_fuzz_targets(path):
   For each fuzz target, if there is no {fuzzername}.jar then it is created.
   """
   print("Finding fuzz targets in %s" % path)
-  jar_files = set()
   targets = list()
+  class_file_list = list()
   for wrapper_script in os.listdir(path):
-    print("Checking target %s" % classfile)
+    print("Checking target %s" % wrapper_script)
     # Check if wrapper script exists and whether it has the right tag.
     if not os.path.isfile(wrapper_script):
       continue
     with open(wrapper_script) as wrapper_script_fd:
-      if 'LLVMFuzzerTestOneInput' not in wrapper_script_fd.read():
+      try:
+        content = wrapper_script_fd.read()
+      except:
+        # Fail safe for unreadable files
+        continue
+      if 'LLVMFuzzerTestOneInput' not in content:
         continue
 
-    classfile = "%s.class" % wrapper_script
-    jar_file = "%s.jar" % wrapper_script
+      # If wrapper script exists, retrieve the java class with package name
+      classname = content.split("--target_class=")[1].split(" ")[0]
+      targets.append(classname)
 
-    # Create relevant .jar file if it is not there.
-    if not os.path.exists(jar_file):
-      subprocess.check_call("jar cvf %s %s" % (jar_file, classfile), shell=True)
+      # If classfile exists, pack it to jar file
+      for root, _, files in os.walk(path):
+        for file in files:
+          class_location = "%s.class" % classname.replace(".", "/")
+          full_path = os.path.join(root, file)
+          if full_path.endswith(class_location):
+            os.makedirs(os.path.join(path, class_location.rsplit("/", 1)[0]), exist_ok=True)
+            os.rename(full_path, os.path.join(path, class_location))
+            class_file_list.append(os.path.join(path, class_location))
 
-    # Extract jar file for package name discovery.
-    temp_dir = os.path.join(path, 'temp-jar')
-    os.mkdir(temp_dir)
-    subprocess.check_call("jar xvf %s/%s" % (path, jar_file), shell=True, cwd=temp-dir)
-
-    # Walk through directories for the unzipped jar file
-    # to discover package folder of class files. Java class
-    # in jar file will store in subdirectories following its
-    # package name.
-    for (root, _, files) in os.walk(temp_dir, topdown=True):
-      for file in files:
-        if file.endswith(classfile):
-           # Target classfile found, remove .class and
-           # temp_dir path, keep the remaining path as
-           # as package name by replacing "/" to "."
-           classfile = os.path.join(root, file)
-           classfile = classfile.replace("%s/" % temp_dir, "")
-           classfile = classfile.replace(".class", "")
-           classfile = classfile.replace("/", ".")
-
-    shutil.rmtree(tmp_dir)
-
-    targets.append(classfile)
+  # Create relevant .jar file for all loose class files
+  subprocess.check_call("jar cvf package.jar %s" %  " ".join(class_file_list), shell=True)
 
   return targets
 
@@ -148,6 +138,7 @@ def run_analysis(path):
   os.chdir(currwd)
 
 if __name__ == "__main__":
+  print("In oss-fuzz-main")
   if 'MVN' in os.environ:
     target_mvn = os.environ['MVN']
   currdir = os.getcwd()
@@ -155,3 +146,4 @@ if __name__ == "__main__":
   os.chdir(mydir)
   run_analysis(os.environ['OUT'])
   os.chdir(currdir)
+  print("Exit oss-fuzz-main")
