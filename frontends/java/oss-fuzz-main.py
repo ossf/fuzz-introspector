@@ -80,8 +80,11 @@ def find_fuzz_targets(path):
           class_location = "%s.class" % classname.replace(".", "/")
           full_path = os.path.join(root, file)
           if full_path.endswith(class_location):
-            os.makedirs(os.path.join(path, class_location.rsplit("/", 1)[0]), exist_ok=True)
-            os.rename(full_path, os.path.join(path, class_location))
+            if "/" in class_location:
+              newdir = os.path.join(path, class_location.rsplit("/", 1)[0])
+              if not os.path.exists(newdir):
+                os.makedirs(newdir, exist_ok=True)
+              os.rename(full_path, os.path.join(path, class_location))
             class_file_list.append(os.path.join(path, class_location))
 
   # Create relevant .jar file for all loose class files
@@ -116,7 +119,21 @@ def run_introspector_frontend(target_class, jar_set):
       jarfile_str,
       target_class,
       "fuzzerTestOneInput", # entrymethod
-      "===jdk.:java.:javax.:sun.:sunw.:com.sun.:com.ibm.:com.apple.:apple.awt." # include prefix === exclude prefix
+      """java.lang.Runtime:javax.xml.xpath.XPath:java.lang.Thread:java.lang.Runnable:\
+java.util.concurrent.Executor:java.util.concurrent.Callable:java.lang.System:\
+java.lang.ProcessBuilder===jdk.*:java.*:javax.*:sun.*:sunw.*:com.sun.*:com.ibm.*:\
+com.apple.*:apple.awt.*===[java.lang.Runtime].exec:[javax.xml.xpath.XPath].compile:\
+[javax.xml.xpath.XPath].evaluate:[java.lang.Thread].run:[java.lang.Runnable].run:\
+[java.util.concurrent.Executor].execute:[java.util.concurrent.Callable].call:\
+[java.lang.System].console:[java.lang.System].load:[java.lang.System].loadLibrary:\
+[java.lang.System].apLibraryName:[java.lang.System].runFinalization:\
+[java.lang.System].setErr:[java.lang.System].setIn:[java.lang.System].setOut:\
+[java.lang.System].setProperties:[java.lang.System].setProperty:\
+[java.lang.System].setSecurityManager:[java.lang.ProcessBuilder].directory:\
+[java.lang.ProcessBuilder].inheritIO:[java.lang.ProcessBuilder].command:\
+[java.lang.ProcessBuilder].redirectError:[java.lang.ProcessBuilder].redirectErrorStream:\
+[java.lang.ProcessBuilder].redirectInput:[java.lang.ProcessBuilder].redirectOutput:\
+[java.lang.ProcessBuilder].start""" # include prefix === exclude prefix === sink functions
   ]
 
   print("Running command: [%s]" % " ".join(cmd))
