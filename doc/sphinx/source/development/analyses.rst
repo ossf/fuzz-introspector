@@ -45,3 +45,9 @@ Engine input
 .. automodule:: fuzz_introspector.analyses.engine_input
    :members:
    :show-inheritance:
+
+Sink function analyser
+======================
+.. automodule:: fuzz_introspector.analyses.sinks_analyser
+   :members:
+   :show-inheritance:
