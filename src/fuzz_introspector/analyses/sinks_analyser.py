@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Analysis plugin for introspection sinks of interest"""
+"""Analysis plugin for introspection sink functions of interest"""
 
 import json
 import logging
@@ -85,14 +85,27 @@ SINK_FUNCTION = {
 
 
 class SinkCoverageAnalyser(analysis.AnalysisInterface):
-    """This Analysis aims to analyse and generate html report content table
-    to show all occurence of possible sink functions / methods existed in the
-    target project and if those functions / methods are statically reached or
-    dynamically covered by any of the fuzzers. If not, it also provides the
-    closet callable entry points to those sink functions / methods for fuzzer
-    developers to improve their fuzzers to statically reached and dynamically
-    covered those sensitive sink fnctions / method in aid to discover possible
-    code / command injection through though fuzzing on sink functions / methods..
+    """This analyser aims to analyse and generate reports to show the occurrence
+    of possible sink functions/methods existed in the target project and if
+    those functions/methods are statically reached or dynamically covered
+    by any of the fuzzers. If not, it provides the information of the parent
+    functions that directly invoke the sink functions and possible call path
+    information to reach the parent functions. This information helps the
+    fuzzer developers to create fuzzers that target specific sink functions.
+    If the target sink function is statically reached by at least a fuzzer but
+    it fails to be covered by a fuzzer during runtime, information of the possible
+    blocking functions are provided to help the fuzzer developers to modify the
+    the fuzzers to make it cover the target sink functions.
+    It is one of the analyser class implementing the :class:`analysis.AnalysisInterface`
+    class.
+
+    :param json_string_result: JSON result stored when this analyser is first invoked
+    :type json_string_result: str
+    :param index: Storing the index using to keep track of the separate callpath html
+        file generated
+    :type index: int
+    :param display_html: A boolean value to turn html report generation on and off
+    :type display_html: bool
     """
     name: str = "SinkCoverageAnalyser"
 
@@ -104,12 +117,30 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
 
     @classmethod
     def get_name(cls):
+        """Return the analyser identifying name for processing.
+
+        :return: The identifying name of this analyser
+        :rtype: str
+        """
         return cls.name
 
     def get_json_string_result(self):
+        """Return the stored json string result.
+
+        :return: The json string result processed and stored
+            by this analyser
+        :rtype: str
+        """
         return self.json_string_result
 
     def set_json_string_result(self, json_string):
+        """Store the result of this analyser as json string result
+        for further processing in a later time.
+
+        :param json_string: A json string variable storing the
+            processing result of the analyser for future use
+        :type json_string: str
+        """
         self.json_string_result = json_string
 
     def _get_source_file(self, callsite) -> str:
@@ -552,20 +583,48 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
                       basefolder: str, coverage_url: str,
                       conclusions: List[html_helpers.HTMLConclusion]) -> str:
         """
-        Show all used sensitive sink functions / methods in the project and display
-        if any fuzzers statically or dynamically reached them. If not, display closest
-        entry point to reach them
+        Performs an analysis based on the sink function discovery and analysis.
+        Show all possible sensitive sink functions / methods in the project and display
+        if any fuzzers statically or dynamically reached them. If not, display the parent
+        functions that invoked the sink functions and possible callpath that could reach
+        that specific parent function. Also, possible blocking functions stopping the
+        fuzzer to reach the sink functions in runtime will also be displayed, together
+        with its information to help the developer to update their fuzzers.
+        Simple processing flow of the sink analyser is shown below.
+
         1) Loop through the all function list of the project and see if any of the sink
            functions exists.
-        2) Shows if each of those third party function call location is statically
-           reachable
-        3) Analyse and show closet entry point suggestions for fuzzers developer to
-           statically reached those functions / methods
-        4) Analyse the fuzzer report to determine if each of those statically reachable
-           sink functions / methods has been dynamically coveed by any of the fuzzers
-        5) Provide additional entry point to increase the chance of dynamically covering
-           those sink functions / methods.
-        Remark: json report will be generated instead of html report if tables is None
+        2) Shows if each of those functions is statically reachable.
+        3) Analyse and show the parent functions that invoked the target sink functions.
+        4) Discover and display callpath tree to reach each of the parent functions if
+           that sink function is not statically reached by any fuzzers.
+        5) Analyse the fuzzer report to determine if each of those statically reachable
+           sink functions / methods has been dynamically covered by any of the fuzzers
+        6) Provide blocker information for those sink functions that are not dynamically
+           covered to help the developer to update their fuzzers.
+        Remark: json report will be generated, and html report will only be generated
+        if the display_html variable of this analyser is set to True.
+        Please also refer to :class:`calltree_analysis.FuzzCalltreeAnalysis`
+
+        :param table_of_contents: The object that handle the table of contents generation
+            for the html report
+        :type table_of_contents: html_helpers.HtmlTableOfContents
+        :param tables: List of html strings for each table to be included in the html
+            report, if it is empty or display_html is False, there will be no html report
+            generated for this analyser
+        :type tables: List[str]
+        :param proj_profile: The object storing all the information for this fuzzing project
+        :type proj_profile: project_profile.MergedProjectProfile
+        :param profiles: The object list storing the information of each fuzzers for this
+            fuzzing project
+        :type profiles: List[fuzzer_profile.FuzzerProfile]
+        :param basefolder: The path of the base directory for this fuzz-introspector run
+        :type basefolder: str
+        :param coverage_url: The base URL of the coverage report for this session on this
+            fuzzing project
+        :type coverage_url: str
+        :param conclusions: The object list handling the conclusion session of the html report
+        :type conclusions:  List[html_helpers.HTMLConclusion]
         """
         logger.info(f" - Running analysis {self.get_name()}")
 
