@@ -39,7 +39,7 @@ def is_jvm_frontend_built():
 
 def build_jvm_frontend():
   if not is_jvm_frontend_built():
-    subprocess.check_call(f"{target_mvn} clean package -Dmaven.test.skip", shell=True)
+    subprocess.check_call(f"apt install maven -y && {target_mvn} clean package -Dmaven.test.skip", shell=True)
 
   if not is_jvm_frontend_built():
     return False
