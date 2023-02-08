@@ -119,9 +119,7 @@ def run_introspector_frontend(target_class, jar_set):
       jarfile_str,
       target_class,
       "fuzzerTestOneInput", # entrymethod
-      """java.lang.Runtime:javax.xml.xpath.XPath:java.lang.Thread:java.lang.Runnable:\
-java.util.concurrent.Executor:java.util.concurrent.Callable:java.lang.System:\
-java.lang.ProcessBuilder===jdk.*:java.*:javax.*:sun.*:sunw.*:com.sun.*:com.ibm.*:\
+      """===jdk.*:java.*:javax.*:sun.*:sunw.*:com.sun.*:com.ibm.*:\
 com.apple.*:apple.awt.*===[java.lang.Runtime].exec:[javax.xml.xpath.XPath].compile:\
 [javax.xml.xpath.XPath].evaluate:[java.lang.Thread].run:[java.lang.Runnable].run:\
 [java.util.concurrent.Executor].execute:[java.util.concurrent.Callable].call:\

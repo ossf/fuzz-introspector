@@ -209,6 +209,7 @@ class CustomSenceTransformer extends SceneTransformer {
     while (classIterator.hasNext()) {
       boolean isInclude = false;
       boolean isIgnore = false;
+      boolean isSinkClass = false;
       SootClass c = classIterator.next();
       String cname = c.getName();
 
@@ -221,7 +222,11 @@ class CustomSenceTransformer extends SceneTransformer {
       if (!isInclude) {
         for (String prefix : excludeList) {
           if (cname.startsWith(prefix.replace("*", ""))) {
-            isIgnore = true;
+            if (this.sinkMethodMap.containsKey(cname)) {
+              isSinkClass = true;
+            } else {
+              isIgnore = true;
+            }
             break;
           }
         }
@@ -230,7 +235,17 @@ class CustomSenceTransformer extends SceneTransformer {
       if (!isIgnore) {
         System.out.println("[Callgraph] [USE] class: " + cname);
         List<SootMethod> methodList = new LinkedList<SootMethod>();
-        methodList.addAll(c.getMethods());
+
+        if (isSinkClass) {
+          for (SootMethod method : c.getMethods()) {
+            Set<String> sinkMethodNameSet = this.sinkMethodMap.get(cname);
+            if (sinkMethodNameSet.contains(method.getName())) {
+              methodList.add(method);
+            }
+          }
+        } else {
+          methodList.addAll(c.getMethods());
+        }
 
         classMethodMap.put(c, methodList);
       } else {
@@ -242,11 +257,16 @@ class CustomSenceTransformer extends SceneTransformer {
     for (SootClass c : classMethodMap.keySet()) {
       System.out.println("Inspecting class: " + c.getName());
       // Loop through each methods in the class
+      boolean isSinkClass = this.sinkMethodMap.containsKey(c.getName());
       List<SootMethod> mList = new LinkedList<SootMethod>();
       mList.addAll(classMethodMap.get(c));
       for (SootMethod m : mList) {
         if (this.excludeMethodList.contains(m.getName())) {
           System.out.println("[Callgraph] Skipping method: " + m.getName());
+          continue;
+        }
+        if (isSinkClass && !callGraph.edgesInto(m).hasNext()) {
+          System.out.println("[Callgraph] Skipping unused sink method: " + m.getName());
           continue;
         }
         System.out.println("[Callgraph] Analysing method: " + m.getName());
@@ -480,6 +500,7 @@ class CustomSenceTransformer extends SceneTransformer {
       String callerClass) {
     StringBuilder callTree = new StringBuilder();
 
+    handled.add(method);
     if (this.excludeMethodList.contains(method.getName())) {
       return "";
     }
@@ -514,6 +535,7 @@ class CustomSenceTransformer extends SceneTransformer {
     for (String cl : className.split(":")) {
       for (String prefix : this.excludeList) {
         if (cl.startsWith(prefix.replace("*", ""))) {
+
           if (sinkMethodMap.getOrDefault(cl, Collections.emptySet()).contains(method.getName())) {
             sink = true;
           }
@@ -532,9 +554,7 @@ class CustomSenceTransformer extends SceneTransformer {
     }
 
     if (!handled.contains(method)) {
-      handled.add(method);
       Iterator<Edge> outEdges = this.mergePolymorphism(cg, cg.edgesOutOf(method));
-
       while (outEdges.hasNext()) {
         Edge edge = outEdges.next();
         SootMethod tgt = edge.tgt();
@@ -650,7 +670,6 @@ class CustomSenceTransformer extends SceneTransformer {
     while (it.hasNext()) {
       edgeList.add(it.next());
     }
-
     Collections.sort(
         edgeList,
         new Comparator<Edge>() {
@@ -666,6 +685,7 @@ class CustomSenceTransformer extends SceneTransformer {
             }
           }
         });
+
     return edgeList.iterator();
   }
 
@@ -687,7 +707,7 @@ class CustomSenceTransformer extends SceneTransformer {
       boolean excluded = false;
       for (String prefix : this.excludeList) {
         if (className.startsWith(prefix.replace("*", ""))) {
-          if (!this.includeList.contains(className)) {
+          if (!this.getIncludeList().contains(className)) {
             excluded = true;
             break;
           }
@@ -810,7 +830,9 @@ class CustomSenceTransformer extends SceneTransformer {
   }
 
   public List<String> getIncludeList() {
-    return includeList;
+    List<String> output = new LinkedList<String>(this.includeList);
+    output.addAll(this.sinkMethodMap.keySet());
+    return output;
   }
 
   public List<String> getExcludeList() {
