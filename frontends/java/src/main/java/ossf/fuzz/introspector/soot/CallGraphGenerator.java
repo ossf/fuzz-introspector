@@ -422,7 +422,7 @@ class CustomSenceTransformer extends SceneTransformer {
     for (SootMethod method : this.reachedSinkMethodList) {
       SootClass cl = method.getDeclaringClass();
       FunctionElement element = new FunctionElement();
-      element.setFunctionName("[" + cl.getName() + "]." + method.getName());
+      element.setFunctionName("[" + cl.getName() + "]." + method.getSubSignature().split(" ")[1]);
       element.setFunctionSourceFile(cl.getName());
       element.setFunctionLinenumber(method.getJavaSourceStartLineNumber());
       element.setReturnType(method.getReturnType().toString());
