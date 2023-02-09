@@ -79,7 +79,7 @@ fi
 if [ -z $INCLUDEPREFIX ]
 then
     echo "No include prefix list defined, using default include prefix list"
-    INCLUDEPREFIX="java.lang.Runtime:javax.xml.xpath.XPath:java.lang.Thread:java.lang.Runnable:java.util.concurrent.Executor:java.util.concurrent.Callable:java.lang.System:java.lang.ProcessBuilder"
+    INCLUDEPREFIX=
 fi
 if [ -z $SINKMETHOD ]
 then
