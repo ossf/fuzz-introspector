@@ -320,6 +320,8 @@ class MergedProjectProfile:
                 'code-coverage-function-count': len(covered_funcs),
                 'code-coverage-function-percentage': cov_percentage
             })
+        json_report.add_project_key_value_to_report(
+            'overview', {'language': self.target_lang})
 
     def _set_basefolder(self) -> None:
         """Identifies a common path-prefix amongst source files in. This is
