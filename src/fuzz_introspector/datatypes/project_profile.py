@@ -373,16 +373,16 @@ class MergedProjectProfile:
         """
         return self.all_functions
 
-
-    def get_all_functions_with_source(self) -> Dict[str, function_profile.FunctionProfile]:
+    def get_all_functions_with_source(
+            self) -> Dict[str, function_profile.FunctionProfile]:
         """Returns all functions where there was a source code location
         attached, which roughly corresponds to functions declared in the
         project or third parties where source code was pulled in.
         """
         all_functions = self.get_all_functions()
 
-        local_functions_with_source: Dict[str,
-                                 function_profile.FunctionProfile] = dict()
+        local_functions_with_source: Dict[
+            str, function_profile.FunctionProfile] = dict()
 
         for func_name in all_functions:
             func_profile = self.all_functions[func_name]
