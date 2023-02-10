@@ -84,6 +84,10 @@ class FunctionProfile:
         self.new_unreached_complexity: int = 0
         self.total_cyclomatic_complexity: int = 0
 
+    @property
+    def has_source_file(self) -> bool:
+        return len(self.function_source_file.strip()) > 0
+
     def load_func_branch_profiles(
             self, yaml_branch_profiles: Any
     ) -> Dict[str, branch_profile.BranchProfile]:

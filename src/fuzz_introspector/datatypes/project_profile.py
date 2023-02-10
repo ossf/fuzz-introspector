@@ -340,14 +340,14 @@ class MergedProjectProfile:
 
     def _get_total_unreached_function_count(self) -> int:
         unreached_function_count = 0
-        for fd in self.all_functions.values():
+        for fd in self.get_all_functions_with_source().values():
             if fd.hitcount == 0:
                 unreached_function_count += 1
         return unreached_function_count
 
     def _get_total_reached_function_count(self) -> int:
         reached_function_count = 0
-        for fd in self.all_functions.values():
+        for fd in self.get_all_functions_with_source().values():
             if fd.hitcount != 0:
                 reached_function_count += 1
         return reached_function_count
@@ -355,9 +355,37 @@ class MergedProjectProfile:
     def _get_total_complexity(self) -> Tuple[int, int]:
         reached_complexity = 0
         unreached_complexity = 0
-        for fd in self.all_functions.values():
+        for fd in self.get_all_functions_with_source().values():
             if fd.hitcount == 0:
                 unreached_complexity += fd.cyclomatic_complexity
             else:
                 reached_complexity += fd.cyclomatic_complexity
         return reached_complexity, unreached_complexity
+
+    def get_all_functions(self) -> Dict[str, function_profile.FunctionProfile]:
+        """Returns all function profiles of this project. This includes both
+        functions of the module where file paths are available, and, also
+        functions of external dependencies that are just destinations of
+        callsites, namely where there was no source code to inspect.
+
+        Use only this for accessing/inspecting/operating on the functions, and
+        not the internal all_functions dictionary.
+        """
+        return self.all_functions
+
+    def get_all_functions_with_source(
+            self) -> Dict[str, function_profile.FunctionProfile]:
+        """Returns all functions where there was a source code location
+        attached, which roughly corresponds to functions declared in the
+        project or third parties where source code was pulled in.
+        """
+        all_functions = self.get_all_functions()
+
+        local_functions_with_source: Dict[
+            str, function_profile.FunctionProfile] = dict()
+
+        for func_name in all_functions:
+            func_profile = self.all_functions[func_name]
+            if func_profile.has_source_file:
+                local_functions_with_source[func_name] = func_profile
+        return local_functions_with_source
