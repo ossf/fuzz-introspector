@@ -220,7 +220,7 @@ HTML report
 The HTML report of the Fuzz Introspector Sink Analyser shows all existing 
 sink functions/methods in the target project. The table report also
 contains some runtime coverage and information for each sink function/method
-in the table. A sample result of the html table report for project croniter
+in the table. A sample result of the html table report for project ``libssh``
 is shown below.
 
 .. figure:: /user-guides/images/sink-analyser-html-table.png
@@ -265,7 +265,7 @@ list of Sink Functions and the related information similar to the HTML report.
 The JSON result list is stored under the key ``SinkCoverageAnalyser`` in the ``analyses``
 section within the Fuzz Introspector summary.json output which also contains 
 the data from main Fuzz Introspector logic and other analysers. A sample
-result for project croniter is shown below.
+result for project ``libssh`` is shown below.
 
 .. code-block:: json
 
