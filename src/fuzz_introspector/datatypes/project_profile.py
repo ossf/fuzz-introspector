@@ -299,6 +299,13 @@ class MergedProjectProfile:
          reached_complexity_percentage,
          unreached_complexity_percentage) = self.get_complexity_summaries()
 
+        (total_functions, reached_func_count, unreached_func_count,
+         reached_func_percentage,
+         unreached_func_percentage) = self.get_function_summaries()
+
+        covered_funcs = self.get_all_runtime_covered_functions()
+        cov_percentage = round(len(covered_funcs) / total_functions, 2) * 100.0
+
         json_report.add_project_key_value_to_report(
             "stats", {
                 "total-complexity": total_complexity,
@@ -306,7 +313,14 @@ class MergedProjectProfile:
                 "complexity-unreached": complexity_unreached,
                 "reached-complexity-percentage": reached_complexity_percentage,
                 "unreached-complexity-percentage":
-                unreached_complexity_percentage
+                unreached_complexity_percentage,
+                'total-functions': total_functions,
+                'reached-function-count': reached_func_count,
+                'unreached-function-count': unreached_func_count,
+                'reached-function-percentage': reached_func_percentage,
+                'unreached-function-percentage': unreached_func_percentage,
+                'code-coverage-function-count': len(covered_funcs),
+                'code-coverage-function-percentage': cov_percentage
             })
 
     def _set_basefolder(self) -> None:
