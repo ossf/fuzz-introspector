@@ -31,4 +31,4 @@ straightforward to install and set up. For details on this, please see
    control-instrumentation
    inspect-single-fuzzer
    identify-how-well-a-func-is-fuzzed
-
+   analyse-sink-function
