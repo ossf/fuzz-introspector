@@ -68,10 +68,8 @@ class MergedProjectProfile:
         for profile in profiles:
             for fd in profile.all_class_functions.values():
                 # continue if the function is to be excluded
-                if len([
-                        ef
-                        for ef in excluded_functions if ef in fd.function_name
-                ]) != 0:
+                if any(to_exclude in fd.function_name
+                       for to_exclude in excluded_functions):
                     continue
 
                 # populate hitcount and reached_by_fuzzers and whether it has been handled already
