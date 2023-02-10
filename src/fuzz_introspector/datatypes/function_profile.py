@@ -86,7 +86,8 @@ class FunctionProfile:
 
     @property
     def has_source_file(self) -> bool:
-        return self.function_source_file == ''
+        return (self.function_source_file != ''
+                and len(self.function_source_file.strip()) > 0)
 
     def load_func_branch_profiles(
             self, yaml_branch_profiles: Any
