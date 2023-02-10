@@ -217,7 +217,7 @@ def create_all_function_table(
     table_rows_json_html = []
     table_rows_json_report = []
 
-    for fd_k, fd in proj_profile.all_functions.items():
+    for fd_k, fd in proj_profile.get_all_functions_with_source().items():
         demangled_func_name = utils.demangle_cpp_func(fd.function_name)
         try:
             func_total_lines, hit_lines = proj_profile.runtime_coverage.get_hit_summary(
