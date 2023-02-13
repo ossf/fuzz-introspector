@@ -16,7 +16,7 @@ How to enable Sink Analyser in the Fuzz Introspector
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 By default, Sink Analyser is not included in the Fuzz Introspector 
-processing. To enable Sink Analyser in the Fuzz Intorpsector report,
+processing. To enable Sink Analyser in the Fuzz Intropsector report,
 please add the argument ``--analysis SinkCoverageAnalyser`` when 
 executing the main method of the Fuzz Introspector. Fuzz Introspector
 will then run the Sink Analyser to generate both a result table section
