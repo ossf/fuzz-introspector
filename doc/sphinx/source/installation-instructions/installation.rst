@@ -138,7 +138,7 @@ both rely on compiled code. The benefit of this is that it is lighter from
 a user perspective, however, the disadvantage is that there is less information
 in the AST than in the compiled code.
 
-The easiest way to getting started with Fuzz Introspector for Python is to
+The easiest way to get started with Fuzz Introspector for Python is to
 build one of the test cases bundled in the Fuzz Introspector repository. We do
 this using the following steps starting from the root of the Fuzz Introspector
 repository:
@@ -175,4 +175,36 @@ repository:
 Java
 ....
 
-To be described.
+The Java frontend uses the `Soot framework <http://soot-oss.github.io/soot/>`_
+for analysing and transforming Java class files (packed in JAR). The analysing
+and transforming results are generated into data files needed by Fuzz Introspector.
+This is similar to the LLVM frontends, which also rely on compiled code. As Java
+contains many library classes included during compile time and run time, there
+is additional logic in the Java frontend to ignore certain commonly known Java
+library packages, like packages starting with ``java.`` or ``javax.``. This could
+help reduce the processing time and resources needed for analysing and transforming
+Java code.
+
+The easiest way to get started with Fuzz Introspector for Java is to build one of
+the test cases bundled in the Fuzz Introspector repository. We do this using the
+following steps starting from the root of the Fuzz Introspector repository:
+
+.. code-block:: bash
+
+    # Build one of the Java examples and run the frontend to extract data about the test project code
+    # There are a total of 11 test cases named from test1 to test11.
+    # If no argument is specify for ./runTest.sh, all 11 test cases are built
+    # Built result are stored under ./result/testX where testX is the test case name
+    cd tests/java
+    mkdir -p result
+    ./runTest.sh test1
+
+    # Analyse the extract data and generate an HTML report
+    mkdir web
+    cd web
+    python3 ../../../src/main.py report \
+      --target_dir=$PWD/../result/test1
+      --language=jvm
+
+    # Launch srver to view the generated HTML report
+    python3 -m http.server 8008
