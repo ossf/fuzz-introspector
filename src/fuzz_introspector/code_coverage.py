@@ -101,7 +101,10 @@ class CoverageProfile:
         target_key = target_file
         # Resolve name if required. This is needed to normalise filenames.
         if resolve_name:
-            target_key = self._python_ast_funcname_to_cov_file(target_file)
+            normalized_key = self._python_ast_funcname_to_cov_file(target_file)
+            if normalized_key is None:
+                return False
+            target_key = normalized_key
 
         # Return False if file is not in file_map
         if target_key not in self.file_map:
