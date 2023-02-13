@@ -161,8 +161,14 @@ class MergedProjectProfile:
         :returns: List of strings corresponding to function names
         """
         all_covered_functions = []
-        for funcname in self.runtime_coverage.covmap:
-            all_covered_functions.append(funcname)
+        for funcname in self.get_all_functions_with_source():
+            is_covered = False
+            coverage_data = self.runtime_coverage.get_hit_details(funcname)
+            if len(coverage_data) > 0:
+                is_covered = True
+            if is_covered:
+                all_covered_functions.append(funcname)
+
         return all_covered_functions
 
     def get_function_summaries(self) -> Tuple[int, int, int, float, float]:
