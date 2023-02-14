@@ -20,12 +20,10 @@ import subprocess
 
 def run(cmd):
     # Set stdin to NULL to avoid messing up the terminal.
-    proc = subprocess.Popen(
-        cmd,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        stdin=subprocess.DEVNULL
-    )
+    proc = subprocess.Popen(cmd,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                            stdin=subprocess.DEVNULL)
     stdout, stderr = proc.communicate()
 
     return proc.returncode, stdout, stderr
