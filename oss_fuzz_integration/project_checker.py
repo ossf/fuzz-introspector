@@ -44,7 +44,7 @@ def check_project_htslib(summary_dict):
     """Checks summary dict against htslib details"""
     fuzzer_list = []
     for k in summary_dict:
-        if k != "MergedProjectProfile":
+        if k != "MergedProjectProfile" and k != "analyses":
             fuzzer_list.append(k)
     if len(fuzzer_list) != 1:
         guide_exit("htslib fuzzer count is wrong")
@@ -74,7 +74,7 @@ def check_project_jsoncpp(summary_dict):
     """Checks summary dict against htslib details"""
     fuzzer_list = []
     for k in summary_dict:
-        if k != "MergedProjectProfile":
+        if k != "MergedProjectProfile" and k != "analyses":
             fuzzer_list.append(k)
     if len(fuzzer_list) != 2:
         guide_exit("jsoncpp fuzzer count is wrong")
@@ -109,7 +109,7 @@ def check_project_unrar(summary_dict):
     """Checks summary dict against htslib details"""
     fuzzer_list = []
     for k in summary_dict:
-        if k != "MergedProjectProfile":
+        if k != "MergedProjectProfile" and k != "analyses":
             fuzzer_list.append(k)
     if len(fuzzer_list) != 1:
         guide_exit("unrar fuzzer count is wrong")
