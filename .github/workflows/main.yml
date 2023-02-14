@@ -32,3 +32,4 @@ jobs:
       - name: yapf code formatting
         run: |
           yapf -d -r ./src/fuzz_introspector/
+          yapf -d -r ./tools/auto-fuzz
