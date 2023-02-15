@@ -319,6 +319,10 @@ def run_builder_pool(autofuzz_base_workdir, oss_fuzz_base_project,
     pool.starmap(build_and_test_single_possible_target, arg_list)
     pool.close()
     pool.join()
+    try:
+        tqdm_tracker.close()
+    except:
+        pass
 
 
 def git_clone_project(github_url, destination):
