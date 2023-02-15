@@ -22,16 +22,13 @@ def get_max_code_cov_from_trial(dirname):
     """Returns the max edge coverage of a specific OSS-Fuzz run. Return -1
     if the build or run was unsuccessful.
     """
-    result_txt = os.path.join(dirname, "result.txt")
-    if not os.path.isfile(result_txt):
+    result_path = os.path.join(dirname, "result.json")
+    if not os.path.isfile(result_path):
         return -1
+    with open(result_path, "r") as result_file:
+        result = json.load(result_file)
 
-    with open(result_txt, "r") as f:
-        content = f.read()
-        build = "Auto-build: Succe" in content or "Auto-build: True" in content
-        run = "Auto-run: Succe" in content or "Auto-run: True" in content
-
-    if not build or not run:
+    if result.get('auto-build') != 'True' or result.get('auto-run') != 'True':
         return -1
 
     # Read coverage log
