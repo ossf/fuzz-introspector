@@ -238,10 +238,16 @@ def build_and_test_single_possible_target(idx_folder,
     #       str(run_success)))
 
     # Log results.
-    with open(os.path.join(auto_fuzz_proj_dir, "result.txt"), "w") as f:
-        f.write("Auto-build: %s\n" % str(build_success))
-        f.write("Auto-run: %s\n" % str(run_success))
-        f.write(f"Target: {possible_target.function_target}")
+    summary = dict()
+    summary['auto-build'] = str(build_success)
+    summary['auto-run'] = str(run_success)
+    summary['target function'] = possible_target.function_target
+    summary['heuristics-used'] = list()
+    for heuristic in possible_target.heuristics_used:
+        summary['heuristics-used'].append(heuristic)
+    with open(os.path.join(auto_fuzz_proj_dir, "result.json"),
+              "w") as summary_file:
+        json.dump(summary, summary_file)
 
     # Cleanup oss-fuzz artifacts
     oss_fuzz_manager.cleanup_project(os.path.basename(auto_fuzz_proj_dir),

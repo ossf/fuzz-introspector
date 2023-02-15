@@ -24,6 +24,7 @@ class FuzzTarget:
     fuzzer_source_code: str
     variables_to_add: List[Any]
     imports_to_add: List[str]
+    heuristics_used: List[str]
 
     def __init__(self):
         self.function_target = ""
@@ -31,6 +32,7 @@ class FuzzTarget:
         self.fuzzer_source_code = ""
         self.variables_to_add = []
         self.imports_to_add = []
+        self.heuristics_used = []
 
     def __dict__(self):
         return {"function": self.function_target}
@@ -67,6 +69,10 @@ class FuzzTarget:
 
                 # Add imports string after "import atheris"
                 if "import atheris" in line:
+                    # Add the heuristics used as a comment
+                    content += "# Auto-fuzz heuristics used: %s\n" % (",".join(
+                        self.heuristics_used))
+
                     content += import_to_add
 
                 # Add the fuzzer code after creation of the fuzzed data provider.
@@ -185,7 +191,7 @@ def _generate_heuristic_1(yaml_dict, possible_targets):
     Will also add proper exception handling based on each raise instruction of
     all the reachable functions from the target function.
     """
-    HEURISTIC_NAME = "Heuristic 1"
+    HEURISTIC_NAME = "py-autofuzz-heuristics-1"
     for func_elem in yaml_dict['All functions']['Elements']:
         if func_elem['functionLinenumber'] != -1:
             if len(func_elem['argNames']) < 1 or len(
@@ -204,6 +210,7 @@ def _generate_heuristic_1(yaml_dict, possible_targets):
             # Create the possible target
             possible_target = FuzzTarget()
             possible_target.function_target = func_name
+            possible_target.heuristics_used.append(HEURISTIC_NAME)
 
             # Set exceptions raised
             exceptions_thrown = find_all_exceptions(
@@ -219,7 +226,6 @@ def _generate_heuristic_1(yaml_dict, possible_targets):
 
             # Create the actual source
             fuzzer_source_code = ""
-            fuzzer_source_code += "  # Heuristic name: %s\n" % (HEURISTIC_NAME)
             fuzzer_source_code += "  try:\n"
             fuzzer_source_code += "    %s(val_1)\n" % (func_name)
             fuzzer_source_code += "  except ("
@@ -247,7 +253,7 @@ def _generate_heuristic_2(yaml_dict, possible_targets):
     is needed for some packages that may have imports that overwrite certain
     attributes in modules. Python email-validator is a case of this.
     """
-    HEURISTIC_NAME = "Heuristic 2"
+    HEURISTIC_NAME = "py-autofuzz-heuristics-2"
     for func_elem in yaml_dict['All functions']['Elements']:
         if func_elem['functionLinenumber'] != -1:
             if len(func_elem['argNames']) < 1 or len(
@@ -266,6 +272,7 @@ def _generate_heuristic_2(yaml_dict, possible_targets):
             # Create the possible target
             possible_target = FuzzTarget()
             possible_target.function_target = func_name
+            possible_target.heuristics_used.append(HEURISTIC_NAME)
 
             # Set exceptions raised
             exceptions_thrown = find_all_exceptions(
@@ -285,7 +292,6 @@ def _generate_heuristic_2(yaml_dict, possible_targets):
 
             # Create the actual source
             fuzzer_source_code = ""
-            fuzzer_source_code += "  # Heuristic name: %s\n" % (HEURISTIC_NAME)
             fuzzer_source_code += "  try:\n"
             fuzzer_source_code += "    %s(val_1)\n" % (r_fuzz_target)
             fuzzer_source_code += "  except ("
@@ -304,7 +310,7 @@ def _generate_heuristic_2(yaml_dict, possible_targets):
 def _generate_heuristic_3(yaml_dict, possible_targets):
     # Heuristic 1.1
     # For file writes
-    HEURISTIC_NAME = "Heuristic 3"
+    HEURISTIC_NAME = "py-autofuzz-heuristics-3"
     for func_elem in yaml_dict['All functions']['Elements']:
         if func_elem['functionLinenumber'] != -1:
             if len(func_elem['argNames']) < 1 or len(
@@ -331,6 +337,7 @@ def _generate_heuristic_3(yaml_dict, possible_targets):
             # Create the possible target
             possible_target = FuzzTarget()
             possible_target.function_target = func_name
+            possible_target.heuristics_used.append(HEURISTIC_NAME)
 
             # Set exceptions raised
             exceptions_thrown = find_all_exceptions(
@@ -348,7 +355,6 @@ def _generate_heuristic_3(yaml_dict, possible_targets):
 
             # Create the actual source
             fuzzer_source_code = ""
-            fuzzer_source_code += "  # Heuristic name: %s\n" % (HEURISTIC_NAME)
             fuzzer_source_code += "  try:\n"
             fuzzer_source_code += "    %s(val_1)\n" % (func_name)
             fuzzer_source_code += "  except ("
@@ -369,7 +375,6 @@ def _generate_heuristic_4(yaml_dict, possible_targets):
     # Go through each class and call each function in the class on the created
     # object.
     """
-    HEURISTIC_NAME = "Heuristic 4"
     all_classes = []
     for class_path in yaml_dict['All classes']:
         # Let's see if we find an init function
@@ -403,10 +408,11 @@ def _generate_heuristic_4(yaml_dict, possible_targets):
                                                       yaml_dict['All classes'],
                                                       yaml_dict['Inheritance'])
             possible_target = FuzzTarget()
+            HEURISTIC_NAME = "py-autofuzz-heuristics-4.1"
+            possible_target.heuristics_used.append(HEURISTIC_NAME)
             possible_class_target_name = elem['functionName'].split(".")[-1]
 
             fuzzer_source_code = "  # Class target.\n"
-            fuzzer_source_code += "  # Heuristic name: %s\n" % (HEURISTIC_NAME)
             fuzzer_source_code += "  try:\n"
             fuzzer_source_code += "    c1 = %s()\n" % (class_path)
             fuzzer_source_code += "    c1.%s(val_1)\n" % (
@@ -428,6 +434,8 @@ def _generate_heuristic_4(yaml_dict, possible_targets):
             # Make second one
             possible_target2 = FuzzTarget()
             possible_target2.imports_to_add = possible_target.imports_to_add
+            HEURISTIC_NAME = "py-autofuzz-heuristics-4.2"
+            possible_target2.heuristics_used.append(HEURISTIC_NAME)
             possible_target2.variables_to_add = possible_target.variables_to_add
             fuzzer_source_code2 = "  # Class target.\n"
             fuzzer_source_code2 += "  # Heuristic name: %s .1\n" % (
