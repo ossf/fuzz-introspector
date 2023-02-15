@@ -21,6 +21,10 @@ import subprocess
 import constants
 import shlex
 import threading
+try:
+    import tqdm
+except ImportError:
+    print("No tqdm module, skipping progress bar")
 
 # Auto-fuzz modules
 import base_files
@@ -178,6 +182,17 @@ def copy_oss_fuzz_project_source(src_oss_project, dst_oss_project):
                      dst_oss_project.project_name))
 
 
+tqdm_tracker = None
+
+
+def tick_tqdm_tracker():
+    global tqdm_tracker
+    try:
+        tqdm_tracker.update(1)
+    except:
+        return
+
+
 def build_and_test_single_possible_target(idx_folder,
                                           idx,
                                           oss_fuzz_base_project,
@@ -216,6 +231,7 @@ def build_and_test_single_possible_target(idx_folder,
         fl.write(fuzzer_source)
 
     if not should_run_checks:
+        tick_tqdm_tracker()
         return
 
     # Run OSS-Fuzz checks; first build then running fuzzers
@@ -270,6 +286,7 @@ def build_and_test_single_possible_target(idx_folder,
                                      os.path.basename(auto_fuzz_proj_dir),
                                      src_dir)
         shutil.rmtree(oss_fuzz_path)
+    tick_tqdm_tracker()
 
 
 def run_builder_pool(autofuzz_base_workdir, oss_fuzz_base_project,
@@ -277,6 +294,8 @@ def run_builder_pool(autofuzz_base_workdir, oss_fuzz_base_project,
     """Runs a set of possible oss-fuzz targets in `possible_targets` in a
     multithreaded manner using ThreadPools.
     """
+    global tqdm_tracker
+
     # Create copies of all of our targets, start with empty too.
     idx_folder = os.path.join(
         autofuzz_base_workdir,
@@ -289,6 +308,14 @@ def run_builder_pool(autofuzz_base_workdir, oss_fuzz_base_project,
             (idx_folder, idx, oss_fuzz_base_project, possible_targets))
 
     pool = ThreadPool(constants.MAX_THREADS)
+    print("Launching multi-threaded processing")
+    print("Jobs completed:")
+    try:
+        # Allow failing here in the event tqdm is not present
+        tqdm_tracker = tqdm.tqdm(
+            total=min(max_targets_to_analyse, len(possible_targets)))
+    except:
+        pass
     pool.starmap(build_and_test_single_possible_target, arg_list)
     pool.close()
     pool.join()
