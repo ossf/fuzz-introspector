@@ -18,15 +18,30 @@ import yaml
 import json
 
 
+def get_result_json(dirname):
+    """Reads the result.json from a possible target dir."""
+    result_path = os.path.join(dirname, "result.json")
+    if not os.path.isfile(result_path):
+        return None
+    with open(result_path, "r") as result_file:
+        result = json.load(result_file)
+    return result
+
+
+def get_heuristics_from_trial(dirname):
+    result = get_result_json(dirname)
+    if result is None:
+        return []
+    return result.get('heuristics-used')
+
+
 def get_max_code_cov_from_trial(dirname):
     """Returns the max edge coverage of a specific OSS-Fuzz run. Return -1
     if the build or run was unsuccessful.
     """
-    result_path = os.path.join(dirname, "result.json")
-    if not os.path.isfile(result_path):
+    result = get_result_json(dirname)
+    if result is None:
         return -1
-    with open(result_path, "r") as result_file:
-        result = json.load(result_file)
 
     if result.get('auto-build') != 'True' or result.get('auto-run') != 'True':
         return -1
@@ -75,20 +90,26 @@ def interpret_autofuzz_run(dirname: str, only_report_max: bool = False):
         max_cov = get_max_code_cov_from_trial(subpath)
         trial_runs[trial_run_dir]['max_cov'] = max_cov
         trial_runs[trial_run_dir]['name'] = trial_run_dir
+        trial_runs[trial_run_dir][
+            'heuristics-used'] = get_heuristics_from_trial(subpath)
 
     return proj_yaml, trial_runs
 
 
-def _print_summary_of_trial_run(trial_run, proj_name, autofuzz_project_dir):
+def _print_summary_of_trial_run(trial_run,
+                                proj_name,
+                                autofuzz_project_dir,
+                                additional=""):
     trial_name = trial_run['name']
     if len(proj_name) < 50:
         proj_name = proj_name + " " * (50 - len(proj_name))
     if len(trial_name) < 21:
         trial_name = trial_name + " " * (21 - len(trial_name))
-    print("%s :: %15s ::  %21s :: %5s :: %s" %
+    print("%s :: %15s ::  %21s :: %5s :: %s :: %s" %
           (proj_name, autofuzz_project_dir, trial_name,
            str(trial_run['max_cov']),
-           os.path.join(autofuzz_project_dir, trial_run['name'], "fuzz_1.py")))
+           os.path.join(autofuzz_project_dir, trial_run['name'],
+                        "fuzz_1.py"), trial_run['heuristics-used']))
 
 
 def get_top_trial_run(trial_runs):
@@ -126,10 +147,42 @@ def run_on_all_dirs():
             top_run = get_top_trial_run(trial_runs)
             if top_run is None:
                 continue
-
             _print_summary_of_trial_run(trial_runs[top_run],
                                         proj_yaml['main_repo'],
                                         autofuzz_project_dir)
+
+
+def heuristics_summary():
+    """Print for each heuristic the resulting code coverage achieved."""
+    all_runs = []
+    for autofuzz_project_dir in os.listdir("."):
+        if "autofuzz-" in autofuzz_project_dir:
+            proj_yaml, trial_runs = interpret_autofuzz_run(
+                autofuzz_project_dir)
+            if proj_yaml is None:
+                continue
+            if len(trial_runs) == 0:
+                continue
+            for trial_run in trial_runs:
+                all_runs.append((proj_yaml, trial_runs[trial_run]))
+
+    heuristics_dict = dict()
+    for proj_yaml, trial_run in all_runs:
+        heuristics = ",".join(trial_run.get('heuristics-used'))
+        if heuristics not in heuristics_dict:
+            heuristics_dict[heuristics] = dict()
+        if not trial_run['max_cov'] in heuristics_dict[heuristics]:
+            heuristics_dict[heuristics][trial_run['max_cov']] = list()
+
+        heuristics_dict[heuristics][trial_run['max_cov']].append(trial_run)
+
+    for hrst in heuristics_dict:
+        print("Heuristic: %s" % (hrst))
+        cov_list = []
+        for cov in heuristics_dict[hrst]:
+            cov_list.append((cov, len(heuristics_dict[hrst][cov])))
+        for cov, count in sorted(cov_list, key=lambda x: x[1], reverse=True):
+            print("  cov: %d :: %d" % (cov, count))
 
 
 def extract_ranked(target_dir, runs_to_rank=20):
@@ -153,7 +206,10 @@ def main():
     if len(sys.argv) == 1:
         run_on_all_dirs()
     if len(sys.argv) > 1:
-        extract_ranked(sys.argv[1])
+        if sys.argv[1] == 'heuristics':
+            heuristics_summary()
+        else:
+            extract_ranked(sys.argv[1])
 
 
 if __name__ == "__main__":
