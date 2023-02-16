@@ -38,6 +38,7 @@ public class FunctionElement {
   private Integer functionUses;
   private List<BranchProfile> branchProfiles;
   private List<Callsite> callsites;
+  private JavaMethodInfo javaMethodInfo;
 
   public FunctionElement() {
     this.argTypes = new ArrayList<String>();
@@ -220,5 +221,14 @@ public class FunctionElement {
 
   public void setCallsites(List<Callsite> callsites) {
     this.callsites = callsites;
+  }
+
+  @JsonProperty("JavaMethodInfo")
+  public JavaMethodInfo getJavaMethodInfo() {
+    return this.javaMethodInfo;
+  }
+
+  public void setJavaMethodInfo(JavaMethodInfo javaMethodInfo) {
+    this.javaMethodInfo = javaMethodInfo;
   }
 }
