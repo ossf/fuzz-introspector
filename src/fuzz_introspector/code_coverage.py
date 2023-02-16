@@ -101,26 +101,10 @@ class CoverageProfile:
         target_key = target_file
         # Resolve name if required. This is needed to normalise filenames.
         if resolve_name:
-            splits = target_file.split(".")
-            potentials = []
-            curr = ""
-            found_key = ""
-            for s2 in splits:
-                curr += s2
-                potentials.append(curr + ".py")
-                curr += "/"
-            logger.debug(f"Potentials: {str(potentials)}")
-            for potential_key in self.file_map:
-                logger.debug(f"Scanning {str(potential_key)}")
-                for p in potentials:
-                    if potential_key.endswith(p):
-                        found_key = potential_key
-                        break
-            logger.debug(f"Found key: {str(found_key)}")
-            if found_key == "":
-                logger.debug("Could not find key")
+            normalized_key = self._python_ast_funcname_to_cov_file(target_file)
+            if normalized_key is None:
                 return False
-            target_key = found_key
+            target_key = normalized_key
 
         # Return False if file is not in file_map
         if target_key not in self.file_map:
@@ -178,35 +162,41 @@ class CoverageProfile:
         return self.covmap[fuzz_key]
 
     def _python_ast_funcname_to_cov_file(self, function_name) -> Optional[str]:
-        function_name = function_name.replace("......", "")
+        """Convert a Python module path to a given file, and searches the
+        file_map for whether this path exists in it.
 
-        target_file = function_name
+        For example,
+
+        mod_a.mod_b.func_1
+
+        Is converted into:
+        [ "/mod_a.py", "/mod_a/mod_b.py", "/mod_a/mod_b/func_1.py"] and then
+        for each of those elements are searched whether any of those exist
+        in the file_map. In the event one of the elements matches a file
+        in the file_map then this file is returned.
+        """
+        function_name = function_name.replace("......", "")
 
         # Resolve name if required. This is needed to normalise filenames.
         logger.debug("Resolving name")
-        splits = target_file.split(".")
-        potentials = []
-        curr = ""
-        found_key = ""
-        for s2 in splits:
-            curr += s2
-            potentials.append(curr + ".py")
-            curr += "/"
-        logger.debug(f"Potentials: {str(potentials)}")
+        potential_paths = []
+        current_path = ""
+        for module_name in function_name.split("."):
+            current_path += module_name
+            potential_paths.append(current_path + ".py")
+            current_path += "/"
+
+        logger.debug(f"Potentials: {str(potential_paths)}")
         for potential_key in self.file_map:
             logger.debug(f"Scanning {str(potential_key)}")
-            for p in potentials:
-                if potential_key.endswith(p):
-                    found_key = potential_key
-                    break
-        logger.debug(f"Found key: {str(found_key)}")
-        if found_key == "":
-            logger.debug("Could not find key")
-            return None
+            for potential_path in potential_paths:
+                if potential_key.endswith(potential_path):
+                    logger.debug(f"Found key: {str(potential_key)}")
+                    return potential_key
 
-        target_key = found_key
-
-        return target_key
+        # If this is reached then no match was found. Return None.
+        logger.debug("Could not find key")
+        return None
 
     def _retrieve_func_line(
         self,
