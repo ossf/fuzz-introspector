@@ -526,13 +526,14 @@ class CustomSenceTransformer extends SceneTransformer {
           continue;
         }
 
-        Pair<String, Integer> pair = extractCallTree(
-            cg,
-            tgt,
-            depth + 1,
-            (edge.srcStmt() == null) ? -1 : edge.srcStmt().getJavaSourceStartLineNumber(),
-            handled,
-            edge.src().getDeclaringClass().getName());
+        Pair<String, Integer> pair =
+            extractCallTree(
+                cg,
+                tgt,
+                depth + 1,
+                (edge.srcStmt() == null) ? -1 : edge.srcStmt().getJavaSourceStartLineNumber(),
+                handled,
+                edge.src().getDeclaringClass().getName());
         if (!pair.getKey().equals("")) {
           callTree.append(pair.getKey());
           Integer newDepth = pair.getValue() + 1;
@@ -543,7 +544,7 @@ class CustomSenceTransformer extends SceneTransformer {
       }
     }
 
-    return Pair.of(callTree.toString(), (element == null)?0:element.getFunctionDepth());
+    return Pair.of(callTree.toString(), (element == null) ? 0 : element.getFunctionDepth());
   }
 
   private Integer calculateCyclomaticComplexity(UnitGraph unitGraph) {
