@@ -181,7 +181,8 @@ class CustomSenceTransformer extends SceneTransformer {
       }
     }
 
-    excludeMethodList.add("<init>");
+    // Required for auto-fuzz
+    // excludeMethodList.add("<init>");
     excludeMethodList.add("<clinit>");
     excludeMethodList.add("finalize");
 
