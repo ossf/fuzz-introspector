@@ -38,6 +38,7 @@ import ossf.fuzz.introspector.soot.yaml.Callsite;
 import ossf.fuzz.introspector.soot.yaml.FunctionConfig;
 import ossf.fuzz.introspector.soot.yaml.FunctionElement;
 import ossf.fuzz.introspector.soot.yaml.FuzzerConfig;
+import ossf.fuzz.introspector.soot.yaml.JavaMethodInfo;
 import soot.Body;
 import soot.PackManager;
 import soot.Scene;
@@ -235,20 +236,20 @@ class CustomSenceTransformer extends SceneTransformer {
 
       if (!isIgnore) {
         System.out.println("[Callgraph] [USE] class: " + cname);
-        List<SootMethod> methodList = new LinkedList<SootMethod>();
+        List<SootMethod> mList = new LinkedList<SootMethod>();
 
         if (isSinkClass) {
           for (SootMethod method : c.getMethods()) {
             Set<String> sinkMethodNameSet = this.sinkMethodMap.get(cname);
             if (sinkMethodNameSet.contains(method.getName())) {
-              methodList.add(method);
+              mList.add(method);
             }
           }
         } else {
-          methodList.addAll(c.getMethods());
+          mList.addAll(c.getMethods());
         }
 
-        classMethodMap.put(c, methodList);
+        classMethodMap.put(c, mList);
       } else {
         System.out.println("[Callgraph] [SKIP] class: " + cname);
       }
@@ -289,6 +290,15 @@ class CustomSenceTransformer extends SceneTransformer {
         for (soot.Type type : m.getParameterTypes()) {
           element.addArgType(type.toString());
         }
+        JavaMethodInfo methodInfo = new JavaMethodInfo();
+        methodInfo.setIsConcrete(m.isConcrete());
+        methodInfo.setIsJavaLibraryMethod(m.isJavaLibraryMethod());
+        methodInfo.setIsPublic(m.isPublic());
+        methodInfo.setIsStatic(m.isStatic());
+        for (SootClass exception : m.getExceptions()) {
+          methodInfo.addException(exception.getFilePath());
+        }
+        element.setJavaMethodInfo(methodInfo);
 
         // Identify in / out edges of each method.
         int methodEdges = 0;
@@ -434,6 +444,17 @@ class CustomSenceTransformer extends SceneTransformer {
       element.setBBCount(0);
       element.setiCount(0);
       element.setCyclomaticComplexity(0);
+
+      JavaMethodInfo methodInfo = new JavaMethodInfo();
+      methodInfo.setIsConcrete(method.isConcrete());
+      methodInfo.setIsJavaLibraryMethod(method.isJavaLibraryMethod());
+      methodInfo.setIsPublic(method.isPublic());
+      methodInfo.setIsStatic(method.isStatic());
+      for (SootClass exception : method.getExceptions()) {
+        methodInfo.addException(exception.getFilePath());
+      }
+      element.setJavaMethodInfo(methodInfo);
+
       methodList.addFunctionElement(element);
     }
   }
