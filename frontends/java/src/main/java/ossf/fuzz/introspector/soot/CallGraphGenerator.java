@@ -181,6 +181,7 @@ class CustomSenceTransformer extends SceneTransformer {
       }
     }
 
+    // Required for auto-fuzz
     excludeMethodList.add("<init>");
     excludeMethodList.add("<clinit>");
     excludeMethodList.add("finalize");
@@ -253,6 +254,7 @@ class CustomSenceTransformer extends SceneTransformer {
       } else {
         System.out.println("[Callgraph] [SKIP] class: " + cname);
       }
+      this.includeConstructor(c);
     }
     System.out.println("[Callgraph] Finished going through classes");
 
@@ -423,6 +425,41 @@ class CustomSenceTransformer extends SceneTransformer {
       System.err.println(e);
     }
     System.out.println("Finish processing for fuzzer: " + this.entryClassStr);
+  }
+
+  // Include empty profile for class constructor for reference
+  private void includeConstructor(SootClass sootClass) {
+    List<SootMethod> mList = new LinkedList<SootMethod>(sootClass.getMethods());
+    for (SootMethod method : mList) {
+      if (method.getName().equals("<init>")) {
+        FunctionElement element = new FunctionElement();
+        String name = "[" + sootClass.getName() + "]." + method.getSubSignature().split(" ")[1];
+        element.setFunctionName(name);
+        element.setFunctionSourceFile(sootClass.getName());
+        element.setFunctionLinenumber(method.getJavaSourceStartLineNumber());
+        element.setReturnType("");
+        element.setFunctionDepth(0);
+        element.setArgCount(method.getParameterCount());
+        for (soot.Type type : method.getParameterTypes()) {
+          element.addArgType(type.toString());
+        }
+        element.setFunctionUses(0);
+        element.setEdgeCount(0);
+        element.setBBCount(0);
+        element.setiCount(0);
+        element.setCyclomaticComplexity(0);
+
+        JavaMethodInfo methodInfo = new JavaMethodInfo();
+        methodInfo.setIsConcrete(method.isConcrete());
+        methodInfo.setIsPublic(method.isPublic());
+        for (SootClass exception : method.getExceptions()) {
+          methodInfo.addException(exception.getFilePath());
+        }
+        element.setJavaMethodInfo(methodInfo);
+
+        methodList.addFunctionElement(element);
+      }
+    }
   }
 
   // Include empty profile for touched sink methods

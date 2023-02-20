@@ -484,6 +484,10 @@ class FuzzerProfile:
                     f"May have non-normalised function: {elem['functionName']}"
                 )
 
+            if self.target_lang == "jvm" and "<init>" in elem['functionName']:
+                logger.debug("Skipping <init> method for JVM")
+                continue
+
             func_profile = function_profile.FunctionProfile(elem)
             logger.debug(f"Adding {func_profile.function_name}")
             self.all_class_functions[func_profile.function_name] = func_profile
