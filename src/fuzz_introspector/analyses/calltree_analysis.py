@@ -45,6 +45,7 @@ class FuzzCalltreeAnalysis(analysis.AnalysisInterface):
     def __init__(self) -> None:
         logger.info("Creating FuzzCalltreeAnalysis")
         self.json_string_result = "[]"
+        self.dump_files = True
 
     @classmethod
     def get_name(cls):
@@ -296,8 +297,9 @@ class FuzzCalltreeAnalysis(analysis.AnalysisInterface):
         # Beautify and write HTML
         soup = bs(complete_html_string, "html.parser")
         pretty_html = soup.prettify()
-        with open(filename, "w+") as cf:
-            cf.write(pretty_html)
+        if self.dump_files:
+            with open(filename, "w+") as cf:
+                cf.write(pretty_html)
 
     def create_str_node_ctx_idx(self, cov_ct_idx: str) -> str:
         prefixed_zeros = "0" * (len("00000") - len(cov_ct_idx))

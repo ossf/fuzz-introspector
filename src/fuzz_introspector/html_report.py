@@ -38,8 +38,9 @@ from fuzz_introspector.datatypes import project_profile, fuzzer_profile
 logger = logging.getLogger(name=__name__)
 
 
-def create_horisontal_calltree_image(
-        image_name: str, profile: fuzzer_profile.FuzzerProfile) -> List[str]:
+def create_horisontal_calltree_image(image_name: str,
+                                     profile: fuzzer_profile.FuzzerProfile,
+                                     dump_files: bool) -> List[str]:
     """
     Creates a horisontal image of the calltree. The height is fixed and
     each element on the x-axis shows a node in the calltree in the form
@@ -113,11 +114,12 @@ def create_horisontal_calltree_image(
     xlabel = ax.set_xlabel("Callsite index")
 
     # Save the image
-    logger.info("- saving image")
-    plt.title(image_name.replace(".png", "").replace("_colormap", ""))
-    fig.tight_layout()
-    fig.savefig(image_name, bbox_extra_artists=[xlabel])
-    logger.info("- image saved")
+    if dump_files:
+        logger.info("- saving image")
+        plt.title(image_name.replace(".png", "").replace("_colormap", ""))
+        fig.tight_layout()
+        fig.savefig(image_name, bbox_extra_artists=[xlabel])
+        logger.info("- image saved")
     return color_list
 
 
@@ -506,7 +508,8 @@ def create_fuzzer_detailed_section(
         profile: fuzzer_profile.FuzzerProfile,
         table_of_contents: html_helpers.HtmlTableOfContents, tables: List[str],
         curr_tt_profile: int, conclusions: List[html_helpers.HTMLConclusion],
-        extract_conclusion: bool, fuzzer_table_data: Dict[str, Any]) -> str:
+        extract_conclusion: bool, fuzzer_table_data: Dict[str, Any],
+        dump_files: bool) -> str:
     html_string = ""
     html_string += html_helpers.html_add_header_with_link(
         f"Fuzzer: {profile.identifier}", html_helpers.HTML_HEADING.H2,
@@ -521,6 +524,7 @@ def create_fuzzer_detailed_section(
 
     from fuzz_introspector.analyses import calltree_analysis as cta
     calltree_analysis = cta.FuzzCalltreeAnalysis()
+    calltree_analysis.dump_files = dump_files
     calltree_file_name = calltree_analysis.create_calltree(profile)
 
     html_string += f"""<p class='no-top-margin'>The calltree shows the
@@ -555,7 +559,8 @@ def create_fuzzer_detailed_section(
         colormap_file_prefix = colormap_file_prefix.replace("/", "_")
     image_name = f"{colormap_file_prefix}_colormap.png"
 
-    color_list = create_horisontal_calltree_image(image_name, profile)
+    color_list = create_horisontal_calltree_image(image_name, profile,
+                                                  dump_files)
     html_string += f"<img class=\"colormap\" src=\"{image_name}\">"
 
     # At this point we want to ensure there is coverage in order to proceed.
@@ -803,8 +808,8 @@ def extract_highlevel_guidance(
 def create_html_report(profiles: List[fuzzer_profile.FuzzerProfile],
                        proj_profile: project_profile.MergedProjectProfile,
                        analyses_to_run: List[str], output_json: List[str],
-                       coverage_url: str, basefolder: str,
-                       report_name: str) -> None:
+                       coverage_url: str, basefolder: str, report_name: str,
+                       dump_files: bool) -> None:
     """
     Logs a complete report. This is the current main place for looking at
     data produced by fuzz introspector.
@@ -943,7 +948,7 @@ def create_html_report(profiles: List[fuzzer_profile.FuzzerProfile],
     for profile_idx in range(len(profiles)):
         html_report_core += create_fuzzer_detailed_section(
             proj_profile, profiles[profile_idx], table_of_contents, tables,
-            profile_idx, conclusions, True, fuzzer_table_data)
+            profile_idx, conclusions, True, fuzzer_table_data, dump_files)
     html_report_core += "</div>"  # .collapsible
     html_report_core += "</div>"  # report box
 
@@ -968,6 +973,8 @@ def create_html_report(profiles: List[fuzzer_profile.FuzzerProfile],
         if analysis_name in combined_analyses:
             analysis_instance = analysis.instantiate_analysis_interface(
                 analysis_interface)
+            analysis_instance.dump_files = dump_files
+
             html_string = analysis_instance.analysis_func(
                 table_of_contents, tables, proj_profile, profiles, basefolder,
                 coverage_url, conclusions)
@@ -1031,47 +1038,48 @@ def create_html_report(profiles: List[fuzzer_profile.FuzzerProfile],
                      html_overview + html_report_top + html_report_core +
                      html_body_end + html_footer)
 
-    # Pretty print the html document
-    soup = bs4.BeautifulSoup(html_full_doc, "html.parser")
-    try:
-        prettyHTML = soup.prettify()
-    except RecursionError:
-        prettyHTML = html_full_doc
+    if dump_files:
+        # Pretty print the html document
+        soup = bs4.BeautifulSoup(html_full_doc, "html.parser")
+        try:
+            prettyHTML = soup.prettify()
+        except RecursionError:
+            prettyHTML = html_full_doc
 
-    # Remove existing html report
-    report_name = "fuzz_report.html"
-    if os.path.isfile(report_name):
-        os.remove(report_name)
+        # Remove existing html report
+        report_name = "fuzz_report.html"
+        if os.path.isfile(report_name):
+            os.remove(report_name)
 
-    # Write new html report
-    with open(report_name, "a+") as html_report:
-        html_report.write(prettyHTML)
+        # Write new html report
+        with open(report_name, "a+") as html_report:
+            html_report.write(prettyHTML)
 
-    # Remove existing all funcs .js file
-    report_name = "all_functions.js"
-    if os.path.isfile(report_name):
-        os.remove(report_name)
+        # Remove existing all funcs .js file
+        report_name = "all_functions.js"
+        if os.path.isfile(report_name):
+            os.remove(report_name)
 
-    # Write all functions to the .js file
-    with open(report_name, "a+") as all_funcs_json_file:
-        all_funcs_json_file.write("var all_functions_table_data = ")
-        all_funcs_json_file.write(json.dumps(all_functions_json_html))
+        # Write all functions to the .js file
+        with open(report_name, "a+") as all_funcs_json_file:
+            all_funcs_json_file.write("var all_functions_table_data = ")
+            all_funcs_json_file.write(json.dumps(all_functions_json_html))
 
-    # Remove existing fuzzer table data .js file
-    js_file = "fuzzer_table_data.js"
-    if os.path.isfile(js_file):
-        os.remove(js_file)
+        # Remove existing fuzzer table data .js file
+        js_file = "fuzzer_table_data.js"
+        if os.path.isfile(js_file):
+            os.remove(js_file)
 
-    # Write fuzzer table data to the .js file
-    with open(js_file, "a+") as fuzzer_table_data_file:
-        fuzzer_table_data_file.write("var fuzzer_table_data = ")
-        fuzzer_table_data_file.write(json.dumps(fuzzer_table_data))
+        # Write fuzzer table data to the .js file
+        with open(js_file, "a+") as fuzzer_table_data_file:
+            fuzzer_table_data_file.write("var fuzzer_table_data = ")
+            fuzzer_table_data_file.write(json.dumps(fuzzer_table_data))
 
-    # Copy all of the styling into the directory.
-    basedir = os.path.dirname(os.path.realpath(__file__))
-    style_dir = os.path.join(basedir, "styling")
-    for s in [
-            "clike.js", "prism.css", "prism.js", "styles.css", "custom.js",
-            "calltree.js"
-    ]:
-        shutil.copy(os.path.join(style_dir, s), s)
+        # Copy all of the styling into the directory.
+        basedir = os.path.dirname(os.path.realpath(__file__))
+        style_dir = os.path.join(basedir, "styling")
+        for s in [
+                "clike.js", "prism.css", "prism.js", "styles.css", "custom.js",
+                "calltree.js"
+        ]:
+            shutil.copy(os.path.join(style_dir, s), s)

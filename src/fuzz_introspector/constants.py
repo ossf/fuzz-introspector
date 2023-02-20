@@ -20,6 +20,10 @@ GIT_BRANCH_URL = f"{GIT_REPO}/blob/main"
 ENGINE_INPUT_FILE = "fuzz-introspector-engine-input.json"
 SUMMARY_FILE = "summary.json"
 
+# Global that may change.
+# Indicates if files should be dumped.
+should_dump_files = True
+
 APP_EXIT_ERROR = 1
 APP_EXIT_SUCCESS = 0
 

@@ -26,6 +26,8 @@ try:
 except ImportError:
     print("No tqdm module, skipping progress bar")
 
+from fuzz_introspector import commands
+
 # Auto-fuzz modules
 import base_files
 import oss_fuzz_manager
@@ -375,6 +377,20 @@ def autofuzz_project_from_github(github_url, do_static_analysis=False):
         print("Running static analysis on %s" % (github_url))
         static_res = run_static_analysis(github_url,
                                          oss_fuzz_base_project.project_folder)
+
+        if static_res:
+            workdir = os.path.join(oss_fuzz_base_project.project_folder,
+                                   "work")
+            commands.run_analysis_on_dir(target_folder=workdir,
+                                         coverage_url="",
+                                         analyses_to_run=[],
+                                         correlation_file="",
+                                         enable_all_analyses=True,
+                                         report_name="",
+                                         language="python",
+                                         output_json=[],
+                                         parallelise=False,
+                                         dump_files=False)
 
     # Check basic fuzzer
     res = oss_fuzz_manager.copy_and_build_project(
