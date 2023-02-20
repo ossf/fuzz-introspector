@@ -485,7 +485,7 @@ class FuzzerProfile:
                 )
 
             if self.target_lang == "jvm" and "<init>" in elem['functionName']:
-                logger.debug(f"Skipping <init> method for JVM")
+                logger.debug("Skipping <init> method for JVM")
                 continue
 
             func_profile = function_profile.FunctionProfile(elem)
