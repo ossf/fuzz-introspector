@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import ossf.fuzz.introspector.soot.yaml.BranchProfile;
 import ossf.fuzz.introspector.soot.yaml.BranchSide;
 import ossf.fuzz.introspector.soot.yaml.Callsite;
@@ -397,9 +398,6 @@ class CustomSenceTransformer extends SceneTransformer {
       fw.write(extractCallTree(callGraph, this.entryMethod, 0, -1));
       fw.close();
 
-      // Calculate function depth
-      // this.calculateDepth();
-
       // Extract other info and write to .data.yaml
       System.out.println("Generating fuzzerLogFile-" + this.entryClassStr + ".data.yaml");
       ObjectMapper om = new ObjectMapper(new YAMLFactory());
@@ -449,42 +447,14 @@ class CustomSenceTransformer extends SceneTransformer {
     return null;
   }
 
-  // Shorthand for calculateDepth from Top
-  private void calculateDepth() {
-    for (FunctionElement element : methodList.getFunctionElements()) {
-      element.setFunctionDepth(this.calculateDepth(element, new HashSet<FunctionElement>()));
-    }
-  }
-
-  // Calculate method depth
-  private Integer calculateDepth(FunctionElement element, Set<FunctionElement> handled) {
-    Integer depth = element.getFunctionDepth();
-
-    if ((depth > 0) || (handled.contains(element))) {
-      return depth;
-    }
-
-    handled.add(element);
-
-    for (String reachedName : element.getFunctionsReached()) {
-      FunctionElement reachedElement = this.searchElement(reachedName);
-      if (reachedElement != null) {
-        Integer newDepth = this.calculateDepth(reachedElement, handled) + 1;
-        depth = (newDepth > depth) ? newDepth : depth;
-      }
-    }
-
-    return depth;
-  }
-
   // Shorthand for extractCallTree from top
   private String extractCallTree(CallGraph cg, SootMethod method, Integer depth, Integer line) {
     return "Call tree\n"
-        + extractCallTree(cg, method, depth, line, new LinkedList<SootMethod>(), null);
+        + extractCallTree(cg, method, depth, line, new LinkedList<SootMethod>(), null).getKey();
   }
 
   // Recursively extract calltree from stored method relationship, ignoring loops
-  private String extractCallTree(
+  private Pair<String, Integer> extractCallTree(
       CallGraph cg,
       SootMethod method,
       Integer depth,
@@ -494,7 +464,7 @@ class CustomSenceTransformer extends SceneTransformer {
     StringBuilder callTree = new StringBuilder();
 
     if (this.excludeMethodList.contains(method.getName())) {
-      return "";
+      return Pair.of("", 0);
     }
 
     String className = "";
@@ -537,11 +507,13 @@ class CustomSenceTransformer extends SceneTransformer {
     }
     if (excluded) {
       if (sink) {
-        return callTree.toString();
+        return Pair.of(callTree.toString(), 0);
       } else {
-        return "";
+        return Pair.of("", 0);
       }
     }
+
+    FunctionElement element = this.searchElement("[" + className + "]." + methodName);
 
     if (!handled.contains(method)) {
       handled.add(method);
@@ -554,18 +526,25 @@ class CustomSenceTransformer extends SceneTransformer {
           continue;
         }
 
-        callTree.append(
+        Pair<String, Integer> pair =
             extractCallTree(
                 cg,
                 tgt,
                 depth + 1,
                 (edge.srcStmt() == null) ? -1 : edge.srcStmt().getJavaSourceStartLineNumber(),
                 handled,
-                edge.src().getDeclaringClass().getName()));
+                edge.src().getDeclaringClass().getName());
+        if (!pair.getKey().equals("")) {
+          callTree.append(pair.getKey());
+          Integer newDepth = pair.getValue() + 1;
+          if ((element != null) && (newDepth > element.getFunctionDepth())) {
+            element.setFunctionDepth(newDepth);
+          }
+        }
       }
     }
 
-    return callTree.toString();
+    return Pair.of(callTree.toString(), (element == null) ? 0 : element.getFunctionDepth());
   }
 
   private Integer calculateCyclomaticComplexity(UnitGraph unitGraph) {
