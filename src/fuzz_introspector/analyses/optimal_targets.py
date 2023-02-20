@@ -39,6 +39,7 @@ class OptimalTargets(analysis.AnalysisInterface):
 
     def __init__(self) -> None:
         self.json_string_result = "[]"
+        self.dump_files = True
 
     @classmethod
     def get_name(cls):
@@ -292,7 +293,8 @@ class OptimalTargets(analysis.AnalysisInterface):
             os.remove(report_name)
 
         # Write all functions to the .js file
-        with open(report_name, "a+") as all_funcs_json_file:
-            all_funcs_json_file.write("var analysis_1_data = ")
-            all_funcs_json_file.write(json.dumps(all_functions_json))
+        if self.dump_files:
+            with open(report_name, "a+") as all_funcs_json_file:
+                all_funcs_json_file.write("var analysis_1_data = ")
+                all_funcs_json_file.write(json.dumps(all_functions_json))
         return html_string

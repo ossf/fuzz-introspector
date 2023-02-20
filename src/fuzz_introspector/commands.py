@@ -49,7 +49,10 @@ def run_analysis_on_dir(target_folder: str,
                         report_name: str,
                         language: str,
                         output_json: List[str] = [],
-                        parallelise: bool = True) -> int:
+                        parallelise: bool = True,
+                        dump_files: bool = True) -> int:
+    constants.should_dump_files = dump_files
+
     if enable_all_analyses:
         for analysis_interface in analysis.get_all_analyses():
             if analysis_interface.get_name() not in analyses_to_run:
@@ -105,6 +108,7 @@ def run_analysis_on_dir(target_folder: str,
     logger.info("[+] Creating HTML report")
     html_report.create_html_report(profiles, proj_profile, analyses_to_run,
                                    output_json, proj_profile.coverage_url,
-                                   proj_profile.basefolder, report_name)
+                                   proj_profile.basefolder, report_name,
+                                   dump_files)
 
     return constants.APP_EXIT_SUCCESS

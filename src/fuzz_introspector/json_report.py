@@ -38,6 +38,9 @@ def _overwrite_report_with_dict(new_dict: Dict[Any, Any]) -> None:
     """Writes `new_dict` as contents to the report on disk. Will overwrite any
     contents of the existing report.
     """
+    if not constants.should_dump_files:
+        return
+
     # Write back the json file
     with open(constants.SUMMARY_FILE, 'w') as report_fd:
         json.dump(dict(new_dict), report_fd)
