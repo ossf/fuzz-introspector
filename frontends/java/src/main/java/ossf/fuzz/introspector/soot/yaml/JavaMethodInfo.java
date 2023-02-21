@@ -20,18 +20,24 @@ import java.util.List;
 
 public class JavaMethodInfo {
   private List<String> exceptions;
+  private List<String> interfaces;
+  private String superClass;
   private Integer methodStatus;
   private Boolean isConcrete;
   private Boolean isJavaLibraryMethod;
   private Boolean isPublic;
   private Boolean isStatic;
+  private Boolean isClassConcrete;
 
   public JavaMethodInfo() {
     this.exceptions = new ArrayList<String>();
+    this.interfaces = new ArrayList<String>();
+    this.superClass = "";
     this.isConcrete = true;
     this.isJavaLibraryMethod = false;
     this.isPublic = true;
     this.isStatic = false;
+    this.isClassConcrete = true;
   }
 
   public List<String> getExceptions() {
@@ -44,6 +50,26 @@ public class JavaMethodInfo {
 
   public void setExceptions(List<String> exceptions) {
     this.exceptions = exceptions;
+  }
+
+  public String getSuperClass() {
+    return this.superClass;
+  }
+
+  public void setSuperClass(String superClass) {
+    this.superClass = superClass;
+  }
+
+  public List<String> getInterfaces() {
+    return this.interfaces;
+  }
+
+  public void addInterface(String interfaceName) {
+    this.interfaces.add(interfaceName);
+  }
+
+  public void setInterfaces(List<String> interfaces) {
+    this.interfaces = interfaces;
   }
 
   public Boolean isConcrete() {
@@ -76,5 +102,13 @@ public class JavaMethodInfo {
 
   public void setIsStatic(Boolean isStatic) {
     this.isStatic = isStatic;
+  }
+
+  public Boolean isClassConcrete() {
+    return this.isClassConcrete;
+  }
+
+  public void setIsClassConcrete(Boolean isClassConcrete) {
+    this.isClassConcrete = isClassConcrete;
   }
 }

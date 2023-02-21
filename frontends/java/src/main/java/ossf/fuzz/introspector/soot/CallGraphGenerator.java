@@ -452,9 +452,18 @@ class CustomSenceTransformer extends SceneTransformer {
         JavaMethodInfo methodInfo = new JavaMethodInfo();
         methodInfo.setIsConcrete(method.isConcrete());
         methodInfo.setIsPublic(method.isPublic());
+        methodInfo.setIsClassConcrete(sootClass.isConcrete());
+        if (sootClass.hasSuperclass()) {
+          methodInfo.setSuperClass(sootClass.getSuperclass().getName());
+        }
         for (SootClass exception : method.getExceptions()) {
           methodInfo.addException(exception.getFilePath());
         }
+        Iterator<SootClass> interfaces = sootClass.getInterfaces().snapshotIterator();
+        while (interfaces.hasNext()) {
+          methodInfo.addInterface(interfaces.next().getName());
+        }
+
         element.setJavaMethodInfo(methodInfo);
 
         methodList.addFunctionElement(element);
