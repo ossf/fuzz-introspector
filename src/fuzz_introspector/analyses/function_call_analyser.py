@@ -166,7 +166,8 @@ class ThirdPartyAPICoverageAnalyser(analysis.AnalysisInterface):
         function_list = []
         for profile in profiles:
             callsite_list.extend(
-                cfg_load.extract_all_callsites(profile.function_call_depths))
+                cfg_load.extract_all_callsites(
+                    profile.fuzzer_callsite_calltree))
             for key in profile.all_class_functions.keys():
                 function_list.append(profile.all_class_functions[key])
         (func_profile_list, called_func_dict,

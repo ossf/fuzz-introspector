@@ -193,10 +193,10 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
                 function_name_list.append(function.function_name)
 
         for profile in profiles:
-            if profile.function_call_depths is not None:
+            if profile.fuzzer_callsite_calltree is not None:
                 callsite_list.extend(
                     cfg_load.extract_all_callsites(
-                        profile.function_call_depths))
+                        profile.fuzzer_callsite_calltree))
             for (key, function) in profile.all_class_functions.items():
                 if key not in function_name_list:
                     function_list.append(function)

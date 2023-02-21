@@ -56,12 +56,13 @@ def create_horisontal_calltree_image(image_name: str,
 
     logger.info(f"Creating image {image_name}")
 
-    if profile.function_call_depths is None:
+    if profile.fuzzer_callsite_calltree is None:
         return []
 
     # Extract color sequence
     color_list: List[str] = []
-    for node in cfg_load.extract_all_callsites(profile.function_call_depths):
+    for node in cfg_load.extract_all_callsites(
+            profile.fuzzer_callsite_calltree):
         if (node.cov_color != ""):
             color_list.append(node.cov_color)
     logger.info(f"- extracted the callsites ({len(color_list)} nodes)")
@@ -143,15 +144,11 @@ def create_overview_table(tables: List[str],
     ])
     for profile in profiles:  # create a row for each fuzzer.
         fuzzer_filename = profile.fuzzer_source_file
-        max_depth = 0
-        for cs in cfg_load.extract_all_callsites(profile.function_call_depths):
-            if cs.depth > max_depth:
-                max_depth = cs.depth
-
         html_string += html_helpers.html_table_add_row([
             profile.identifier, fuzzer_filename,
             len(profile.functions_reached_by_fuzzer),
-            len(profile.functions_unreached_by_fuzzer), max_depth,
+            len(profile.functions_unreached_by_fuzzer),
+            profile.max_func_call_depth,
             len(profile.file_targets), profile.total_basic_blocks,
             profile.total_cyclomatic_complexity,
             fuzzer_filename.replace(" ", "").split("/")[-1]
@@ -405,22 +402,19 @@ def create_boxed_top_summary_info(
         display_coverage: bool = False) -> str:
     html_string = ""
 
-    graph1_title = "Functions statically reachable by fuzzers"
-    html_string += create_percentage_graph(graph1_title,
-                                           proj_profile.reached_func_count,
-                                           proj_profile.total_functions)
+    html_string += create_percentage_graph(
+        "Functions statically reachable by fuzzers",
+        proj_profile.reached_func_count, proj_profile.total_functions)
 
-    graph2_title = "Cyclomatic complexity statically reachable by fuzzers"
-    html_string += create_percentage_graph(graph2_title,
-                                           proj_profile.reached_complexity,
-                                           proj_profile.total_complexity)
+    html_string += create_percentage_graph(
+        "Cyclomatic complexity statically reachable by fuzzers",
+        proj_profile.reached_complexity, proj_profile.total_complexity)
 
     if display_coverage:
         covered_funcs = proj_profile.get_all_runtime_covered_functions()
-        graph3_title = "Runtime code coverage of functions"
-        html_string += create_percentage_graph(graph3_title,
-                                               len(covered_funcs),
-                                               proj_profile.total_functions)
+        html_string += create_percentage_graph(
+            "Runtime code coverage of functions", len(covered_funcs),
+            proj_profile.total_functions)
 
     # Add conclusion
     if extract_conclusion:
@@ -458,15 +452,13 @@ def create_top_summary_info(tables: List[str],
     # Display reachability information
     html_string += "<div style=\"display: flex; max-width: 50%\">"
 
-    graph1_title = "Functions statically reachable by fuzzers"
-    html_string += create_percentage_graph(graph1_title,
-                                           proj_profile.reached_func_count,
-                                           proj_profile.total_functions)
+    html_string += create_percentage_graph(
+        "Functions statically reachable by fuzzers",
+        proj_profile.reached_func_count, proj_profile.total_functions)
 
-    graph2_title = "Cyclomatic complexity statically reachable by fuzzers"
-    html_string += create_percentage_graph(graph2_title,
-                                           proj_profile.reached_complexity,
-                                           proj_profile.total_complexity)
+    html_string += create_percentage_graph(
+        "Cyclomatic complexity statically reachable by fuzzers",
+        proj_profile.reached_complexity, proj_profile.total_complexity)
 
     html_string += "</div>"
     if display_coverage:

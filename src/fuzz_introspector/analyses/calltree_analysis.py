@@ -96,7 +96,8 @@ class FuzzCalltreeAnalysis(analysis.AnalysisInterface):
         calltree_html_string += "<div id=\"calltree-wrapper\">"
 
         calltree_html_section_string = "<div class='call-tree-section-wrapper'>"
-        nodes = cfg_load.extract_all_callsites(profile.function_call_depths)
+        nodes = cfg_load.extract_all_callsites(
+            profile.fuzzer_callsite_calltree)
 
         for i in range(len(nodes)):
             # All divs created in this loop must also be closed in this loop.
@@ -252,7 +253,7 @@ class FuzzCalltreeAnalysis(analysis.AnalysisInterface):
         # Display fuzz blocker at top of page
         if profile.branch_blockers:
             blockers_node_map = self.collect_calltree_nodes(
-                profile.branch_blockers[:12], profile.function_call_depths)
+                profile.branch_blockers[:12], profile.fuzzer_callsite_calltree)
             # Record the link to coverage report for the branch blocker.
             for b_blocker, ct_node in blockers_node_map.items():
                 idx = self.create_str_node_ctx_idx(str(ct_node.cov_ct_idx))
@@ -315,7 +316,7 @@ class FuzzCalltreeAnalysis(analysis.AnalysisInterface):
 
         # Extract all callsites in calltree and exit early if none
         all_callsites = cfg_load.extract_all_callsites(
-            profile.function_call_depths)
+            profile.fuzzer_callsite_calltree)
         if len(all_callsites) == 0:
             return blocker_list
 
@@ -405,7 +406,7 @@ class FuzzCalltreeAnalysis(analysis.AnalysisInterface):
                            k=7))
 
         blockers_node_map = self.collect_calltree_nodes(
-            branch_blockers, profile.function_call_depths)
+            branch_blockers, profile.fuzzer_callsite_calltree)
 
         html_table_string = "<p class='no-top-margin'>The followings are " \
                             "the branches where fuzzer fails to bypass.</p>"
