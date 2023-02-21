@@ -209,6 +209,69 @@ class MergedProjectProfile:
                 "Project has fuzzers with multiple targets")
         return set_of_targets.pop()
 
+    @property
+    def total_complexity(self):
+        complexity_reached, complexity_unreached = self._get_total_complexity()
+        return complexity_unreached + complexity_reached
+
+    @property
+    def reached_complexity(self):
+        complexity_reached, _ = self._get_total_complexity()
+        return complexity_reached
+
+    @property
+    def unreached_complexity(self):
+        _, complexity_unreached = self._get_total_complexity()
+        return complexity_unreached
+
+    @property
+    def reached_complexity_percentage(self):
+        complexity_reached, complexity_unreached = self._get_total_complexity()
+        total_complexity = complexity_unreached + complexity_reached
+
+        try:
+            reached_complexity_percentage = (float(complexity_reached) /
+                                             (total_complexity)) * 100.0
+        except Exception:
+            logger.info("Total complexity is 0")
+            reached_complexity_percentage = 0
+        return reached_complexity_percentage
+
+    @property
+    def unreached_complexity_percentage(self):
+        complexity_reached, complexity_unreached = self._get_total_complexity()
+        total_complexity = complexity_unreached + complexity_reached
+
+        try:
+            unreached_complexity_percentage = ((float(complexity_unreached) /
+                                                (total_complexity)) * 100.0)
+        except Exception:
+            logger.info("Total complexity is 0")
+            unreached_complexity_percentage = 0
+
+        return unreached_complexity_percentage
+
+    @property
+    def total_functions(self):
+        reached_func_count = self._get_total_reached_function_count()
+        unreached_func_count = self._get_total_unreached_function_count()
+        total_functions = reached_func_count + unreached_func_count
+        return total_functions
+
+    @property
+    def reached_func_count(self):
+        reached_func_count = self._get_total_reached_function_count()
+        return reached_func_count
+
+    @property
+    def reached_func_percentage(self):
+        reached_func_count = self._get_total_reached_function_count()
+        unreached_func_count = self._get_total_unreached_function_count()
+        total_functions = reached_func_count + unreached_func_count
+        reached_percentage = (float(reached_func_count) /
+                              float(total_functions)) * 100
+        return reached_percentage
+
     def get_profiles_coverage_files(self) -> List[str]:
         all_coverage_files_used = list()
         for profile in self.profiles:
@@ -234,6 +297,7 @@ class MergedProjectProfile:
         except Exception:
             logger.info("Total complexity is 0")
             reached_complexity_percentage = 0
+
         try:
             unreached_complexity_percentage = ((float(complexity_unreached) /
                                                 (total_complexity)) * 100.0)
