@@ -356,7 +356,7 @@ def create_collapsible_element(non_collapsed: str, collapsed: str,
 def create_percentage_graph(title: str, numerator: int,
                             denominator: int) -> str:
     percentage = round(float(numerator) / float(denominator), 2) * 100.0
-    subtitle = "{numerator} / {denominator}"
+    subtitle = f"{numerator} / {denominator}"
     return f"""<div style="flex:1; margin-right: 20px"class="report-box mt-0">
             <div style="font-weight: 600; text-align: center;">
                 {title}
