@@ -1006,7 +1006,7 @@ def create_html_report(profiles: List[fuzzer_profile.FuzzerProfile],
     # Javascript files/references to add to report.
     js_files = styling.MAIN_JS_FILES
     js_files.append(constants.ALL_FUNCTION_JS)
-    js_files.append(constants.OPTIMAL_TARGETS_ALL_FUNCTIONS),
+    js_files.append(constants.OPTIMAL_TARGETS_ALL_FUNCTIONS)
     js_files.append(constants.FUZZER_TABLE_JS)
     js_files.extend(styling.JAVASCRIPT_REMOTE_SCRIPTS)
     for js_file in js_files:
