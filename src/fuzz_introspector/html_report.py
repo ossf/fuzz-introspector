@@ -462,7 +462,7 @@ def create_top_summary_info(tables: List[str],
 
     graph1_title = "Functions statically reachable by fuzzers"
     html_string += create_percentage_graph(graph1_title,
-                                           proj_file.reached_func_count,
+                                           proj_profile.reached_func_count,
                                            proj_profile.total_functions)
 
     graph2_title = "Cyclomatic complexity statically reachable by fuzzers"
