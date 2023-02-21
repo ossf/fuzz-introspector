@@ -353,7 +353,10 @@ def create_collapsible_element(non_collapsed: str, collapsed: str,
     </div>"""
 
 
-def create_percentage_graph(title: str, percentage: str, numbers: str) -> str:
+def create_percentage_graph(title: str, numerator: int,
+                            denominator: int) -> str:
+    percentage = round(float(numerator) / float(denominator), 2) * 100.0
+    subtitle = f"{numerator} / {denominator}"
     return f"""<div style="flex:1; margin-right: 20px"class="report-box mt-0">
             <div style="font-weight: 600; text-align: center;">
                 {title}
@@ -377,7 +380,7 @@ def create_percentage_graph(title: str, percentage: str, numbers: str) -> str:
               </div>
             </div>
             <div style="font-size: .9rem; color: #b5b5b5; text-align: center">
-              {numbers}
+              {subtitle}
             </div>
         </div>"""
 
@@ -403,39 +406,28 @@ def create_boxed_top_summary_info(
         extract_conclusion: bool,
         display_coverage: bool = False) -> str:
     html_string = ""
-    # Get complexity and function counts
-    (total_functions, reached_func_count, unreached_func_count,
-     reached_percentage,
-     unreached_percentage) = proj_profile.get_function_summaries()
-    (total_complexity, complexity_reached, complexity_unreached,
-     reached_complexity_percentage, unreached_complexity_percentage
-     ) = proj_profile.get_complexity_summaries()
 
     graph1_title = "Functions statically reachable by fuzzers"
-    graph1_percentage = str(round(reached_percentage, 2))
-    graph1_numbers = f"{reached_func_count}/{total_functions}"
-    html_string += create_percentage_graph(graph1_title, graph1_percentage,
-                                           graph1_numbers)
+    html_string += create_percentage_graph(graph1_title,
+                                           proj_profile.reached_func_count,
+                                           proj_profile.total_functions)
 
     graph2_title = "Cyclomatic complexity statically reachable by fuzzers"
-    graph2_percentage = str(round(reached_complexity_percentage, 2))
-    graph2_numbers = f"{complexity_reached}/{int(total_complexity)}"
-    html_string += create_percentage_graph(graph2_title, graph2_percentage,
-                                           graph2_numbers)
+    html_string += create_percentage_graph(graph2_title,
+                                           proj_profile.reached_complexity,
+                                           proj_profile.total_complexity)
 
     if display_coverage:
         covered_funcs = proj_profile.get_all_runtime_covered_functions()
         graph3_title = "Runtime code coverage of functions"
-        cov_percentage = round(len(covered_funcs) / total_functions, 2) * 100.0
-        graph3_percentage = str(cov_percentage)
-        graph3_numbers = f"{len(covered_funcs)} / {total_functions}"
-        html_string += create_percentage_graph(graph3_title, graph3_percentage,
-                                               graph3_numbers)
+        html_string += create_percentage_graph(graph3_title,
+                                               len(covered_funcs),
+                                               proj_profile.total_functions)
 
     # Add conclusion
     if extract_conclusion:
-        create_conclusions(conclusions, reached_percentage,
-                           reached_complexity_percentage)
+        create_conclusions(conclusions, proj_profile.reached_func_percentage,
+                           proj_profile.reached_complexity_percentage)
     return html_string
 
 
@@ -465,27 +457,19 @@ def create_top_summary_info(tables: List[str],
                             display_coverage: bool = False) -> str:
     html_string = ""
 
-    # Get complexity and function counts
-    (total_functions, reached_func_count, unreached_func_count,
-     reached_percentage,
-     unreached_percentage) = proj_profile.get_function_summaries()
-    (total_complexity, complexity_reached, complexity_unreached,
-     reached_complexity_percentage, unreached_complexity_percentage
-     ) = proj_profile.get_complexity_summaries()
-
     # Display reachability information
     html_string += "<div style=\"display: flex; max-width: 50%\">"
+
     graph1_title = "Functions statically reachable by fuzzers"
-    graph1_percentage = str(round(reached_percentage, 2))
-    graph1_numbers = f"{reached_func_count}/{total_functions}"
-    html_string += create_percentage_graph(graph1_title, graph1_percentage,
-                                           graph1_numbers)
+    html_string += create_percentage_graph(graph1_title,
+                                           proj_profile.reached_func_count,
+                                           proj_profile.total_functions)
 
     graph2_title = "Cyclomatic complexity statically reachable by fuzzers"
-    graph2_percentage = str(round(reached_complexity_percentage, 2))
-    graph2_numbers = f"{complexity_reached} / {int(total_complexity)}"
-    html_string += create_percentage_graph(graph2_title, graph2_percentage,
-                                           graph2_numbers)
+    html_string += create_percentage_graph(graph2_title,
+                                           proj_profile.reached_complexity,
+                                           proj_profile.total_complexity)
+
     html_string += "</div>"
     if display_coverage:
         logger.info("Displaying coverage in summary")
@@ -497,8 +481,8 @@ def create_top_summary_info(tables: List[str],
 
     # Add conclusion
     if extract_conclusion:
-        create_conclusions(conclusions, reached_percentage,
-                           reached_complexity_percentage)
+        create_conclusions(conclusions, proj_profile.reached_func_percentage,
+                           proj_profile.reached_complexity_percentage)
 
     return html_string
 
