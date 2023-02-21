@@ -96,7 +96,8 @@ class FuzzCalltreeAnalysis(analysis.AnalysisInterface):
         calltree_html_string += "<div id=\"calltree-wrapper\">"
 
         calltree_html_section_string = "<div class='call-tree-section-wrapper'>"
-        nodes = cfg_load.extract_all_callsites(profile.fuzzer_callsite_calltree)
+        nodes = cfg_load.extract_all_callsites(
+            profile.fuzzer_callsite_calltree)
 
         for i in range(len(nodes)):
             # All divs created in this loop must also be closed in this loop.

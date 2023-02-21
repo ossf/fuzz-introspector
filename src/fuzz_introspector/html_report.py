@@ -61,7 +61,8 @@ def create_horisontal_calltree_image(image_name: str,
 
     # Extract color sequence
     color_list: List[str] = []
-    for node in cfg_load.extract_all_callsites(profile.fuzzer_callsite_calltree):
+    for node in cfg_load.extract_all_callsites(
+            profile.fuzzer_callsite_calltree):
         if (node.cov_color != ""):
             color_list.append(node.cov_color)
     logger.info(f"- extracted the callsites ({len(color_list)} nodes)")
@@ -146,7 +147,8 @@ def create_overview_table(tables: List[str],
         html_string += html_helpers.html_table_add_row([
             profile.identifier, fuzzer_filename,
             len(profile.functions_reached_by_fuzzer),
-            len(profile.functions_unreached_by_fuzzer), profile.max_func_call_depth,
+            len(profile.functions_unreached_by_fuzzer),
+            profile.max_func_call_depth,
             len(profile.file_targets), profile.total_basic_blocks,
             profile.total_cyclomatic_complexity,
             fuzzer_filename.replace(" ", "").split("/")[-1]

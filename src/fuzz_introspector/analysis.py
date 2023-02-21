@@ -274,7 +274,8 @@ def overlay_calltree_with_coverage(
         coverage_url, target_name, profile.target_lang)
     logger.info(f"Using coverage url: {target_coverage_url}")
 
-    for node in cfg_load.extract_all_callsites(profile.fuzzer_callsite_calltree):
+    for node in cfg_load.extract_all_callsites(
+            profile.fuzzer_callsite_calltree):
         node.cov_ct_idx = ct_idx
         ct_idx += 1
 
@@ -302,7 +303,8 @@ def overlay_calltree_with_coverage(
             node, callstack, profile, target_coverage_url)
     # For python, do a hack where we check if any node is covered, and, if so,
     # ensure the entrypoint is covered.
-    all_nodes = cfg_load.extract_all_callsites(profile.fuzzer_callsite_calltree)
+    all_nodes = cfg_load.extract_all_callsites(
+        profile.fuzzer_callsite_calltree)
     if len(all_nodes) > 0:
         for node in cfg_load.extract_all_callsites(
                 profile.fuzzer_callsite_calltree)[1:]:

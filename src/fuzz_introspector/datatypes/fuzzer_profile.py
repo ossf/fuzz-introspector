@@ -55,7 +55,8 @@ class FuzzerProfile:
         self.introspector_data_file = cfg_file
 
         # Load calltree file
-        self.fuzzer_callsite_calltree = cfg_load.data_file_read_calltree(cfg_file)
+        self.fuzzer_callsite_calltree = cfg_load.data_file_read_calltree(
+            cfg_file)
 
         # Read yaml data (as dictionary) from frontend
         try:
@@ -109,7 +110,8 @@ class FuzzerProfile:
     def max_func_call_depth(self):
         """The maximum depth of all callsites in the fuzzer's calltree."""
         max_depth = 0
-        for callsite in cfg_load.extract_all_callsites(self.fuzzer_callsite_calltree):
+        for callsite in cfg_load.extract_all_callsites(
+                self.fuzzer_callsite_calltree):
             if callsite.depth > max_depth:
                 max_depth = callsite.depth
         return max_depth
