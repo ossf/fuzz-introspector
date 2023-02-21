@@ -17,7 +17,6 @@ import logging
 import shutil
 import json
 import typing
-import bs4
 import random
 import string
 from datetime import datetime
@@ -1031,23 +1030,16 @@ def create_html_report(profiles: List[fuzzer_profile.FuzzerProfile],
                      html_body_end + html_footer)
 
     if dump_files:
-        # Pretty print the html document
-        soup = bs4.BeautifulSoup(html_full_doc, "html.parser")
-        try:
-            prettyHTML = soup.prettify()
-        except RecursionError:
-            prettyHTML = html_full_doc
-
-        # Remove existing html report
+        # Dump the HTML report.
         with open(constants.HTML_REPORT, 'w') as report_file:
-            report_file.write(prettyHTML)
+            report_file.write(html_helpers.prettify_html(html_full_doc))
 
-        # Remove existing all funcs .js file
+        # Dump function data to the relevant javascript file.
         with open(constants.ALL_FUNCTION_JS, 'w') as all_function_file:
             all_function_file.write("var all_functions_table_data = ")
             all_function_file.write(json.dumps(all_functions_json_html))
 
-        # Remove existing fuzzer table data .js file
+        # Dump table data to relevant javascript file.
         with open(constants.FUZZER_TABLE_JS, 'w') as js_file_fd:
             js_file_fd.write("var fuzzer_table_data = ")
             js_file_fd.write(json.dumps(fuzzer_table_data))
