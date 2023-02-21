@@ -14,7 +14,6 @@
 """Module for creating HTML reports"""
 import os
 import logging
-import shutil
 import json
 import typing
 import random

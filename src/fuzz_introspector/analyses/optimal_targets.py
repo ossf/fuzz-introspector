@@ -14,7 +14,6 @@
 """Analysis for identifying optimal targets"""
 
 import copy
-import os
 import json
 import logging
 

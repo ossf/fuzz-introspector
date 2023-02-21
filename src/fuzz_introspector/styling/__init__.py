@@ -14,7 +14,6 @@
 """Styling files for HTML reports."""
 import os
 import shutil
-from typing import List
 
 # All style files in the repository.
 ALL_STYLE_FILES = [
