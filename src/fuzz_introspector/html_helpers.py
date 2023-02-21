@@ -21,6 +21,7 @@ from typing import (
 )
 
 import os
+import bs4
 from enum import Enum
 
 from fuzz_introspector import utils
@@ -275,3 +276,13 @@ def html_create_table_head(table_head: str,
             html_str += f"<th title='{column_description}'>{column_title}</th>\n"
     html_str += "</tr></thead><tbody>"
     return html_str
+
+
+def prettify_html(html_doc: str) -> str:
+    """Prettify a HTML document."""
+    soup = bs4.BeautifulSoup(html_doc, "html.parser")
+    try:
+        pretty_html = soup.prettify()
+    except RecursionError:
+        pretty_html = html_doc
+    return pretty_html
