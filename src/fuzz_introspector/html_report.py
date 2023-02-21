@@ -353,7 +353,6 @@ def create_collapsible_element(non_collapsed: str, collapsed: str,
     </div>"""
 
 
-#def create_percentage_graph(title: str, percentage: str, numbers: str) -> str:
 def create_percentage_graph(title: str, numerator: int,
                             denominator: int) -> str:
     percentage = round(float(numerator) / float(denominator), 2) * 100.0
