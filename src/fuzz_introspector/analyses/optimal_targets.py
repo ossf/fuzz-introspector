@@ -14,7 +14,6 @@
 """Analysis for identifying optimal targets"""
 
 import copy
-import os
 import json
 import logging
 
@@ -24,6 +23,7 @@ from typing import (
 )
 
 from fuzz_introspector import analysis
+from fuzz_introspector import constants
 from fuzz_introspector import data_loader
 from fuzz_introspector import html_report
 from fuzz_introspector import html_helpers
@@ -287,14 +287,10 @@ class OptimalTargets(analysis.AnalysisInterface):
         html_string += all_function_table
         html_string += "</div>"  # close report-box
 
-        # Remove existing all funcs .js file
-        report_name = "analysis_1.js"
-        if os.path.isfile(report_name):
-            os.remove(report_name)
-
         # Write all functions to the .js file
         if self.dump_files:
-            with open(report_name, "a+") as all_funcs_json_file:
-                all_funcs_json_file.write("var analysis_1_data = ")
-                all_funcs_json_file.write(json.dumps(all_functions_json))
+            with open(constants.OPTIMAL_TARGETS_ALL_FUNCTIONS,
+                      'w') as func_file:
+                func_file.write("var analysis_1_data = ")
+                func_file.write(json.dumps(all_functions_json))
         return html_string

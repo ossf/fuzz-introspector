@@ -28,6 +28,9 @@ ALL_FUNCTION_JS = "all_functions.js"
 
 FUZZER_TABLE_JS = "fuzzer_table_data.js"
 
+# TODO: change the name of the following file to be something meaningful.
+OPTIMAL_TARGETS_ALL_FUNCTIONS = "analysis_1.js"
+
 # Global that may change.
 # Indicates if files should be dumped.
 should_dump_files = True

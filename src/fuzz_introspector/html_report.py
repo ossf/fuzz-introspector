@@ -14,7 +14,6 @@
 """Module for creating HTML reports"""
 import os
 import logging
-import shutil
 import json
 import typing
 import random
@@ -30,7 +29,7 @@ from typing import (
 )
 
 from fuzz_introspector import (analysis, cfg_load, constants, html_helpers,
-                               json_report, utils)
+                               json_report, styling, utils)
 
 from fuzz_introspector.datatypes import project_profile, fuzzer_profile
 
@@ -1003,13 +1002,12 @@ def create_html_report(profiles: List[fuzzer_profile.FuzzerProfile],
     # Close the content div and content_wrapper
     html_body_end = "</div>\n</div>\n"
 
-    # .js files to add to report
-    js_files = [
-        "prism.js", "clike.js", "custom.js", "all_functions.js",
-        "analysis_1.js", "fuzzer_table_data.js",
-        "https://cdn.datatables.net/buttons/2.2.2/js/dataTables.buttons.min.js",
-        "https://cdn.datatables.net/buttons/2.2.2/js/buttons.colVis.min.js"
-    ]
+    # Javascript files/references to add to report.
+    js_files = styling.MAIN_JS_FILES
+    js_files.append(constants.ALL_FUNCTION_JS)
+    js_files.append(constants.OPTIMAL_TARGETS_ALL_FUNCTIONS)
+    js_files.append(constants.FUZZER_TABLE_JS)
+    js_files.extend(styling.JAVASCRIPT_REMOTE_SCRIPTS)
     for js_file in js_files:
         html_body_end += f"<script src=\"{js_file}\"></script>"
 
@@ -1045,10 +1043,4 @@ def create_html_report(profiles: List[fuzzer_profile.FuzzerProfile],
             js_file_fd.write(json.dumps(fuzzer_table_data))
 
         # Copy all of the styling into the directory.
-        basedir = os.path.dirname(os.path.realpath(__file__))
-        style_dir = os.path.join(basedir, "styling")
-        for s in [
-                "clike.js", "prism.css", "prism.js", "styles.css", "custom.js",
-                "calltree.js"
-        ]:
-            shutil.copy(os.path.join(style_dir, s), s)
+        styling.copy_style_files(os.getcwd())
