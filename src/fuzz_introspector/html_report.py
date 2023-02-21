@@ -143,15 +143,10 @@ def create_overview_table(tables: List[str],
     ])
     for profile in profiles:  # create a row for each fuzzer.
         fuzzer_filename = profile.fuzzer_source_file
-        max_depth = 0
-        for cs in cfg_load.extract_all_callsites(profile.fuzzer_callsite_calltree):
-            if cs.depth > max_depth:
-                max_depth = cs.depth
-
         html_string += html_helpers.html_table_add_row([
             profile.identifier, fuzzer_filename,
             len(profile.functions_reached_by_fuzzer),
-            len(profile.functions_unreached_by_fuzzer), max_depth,
+            len(profile.functions_unreached_by_fuzzer), profile.max_func_call_depth,
             len(profile.file_targets), profile.total_basic_blocks,
             profile.total_cyclomatic_complexity,
             fuzzer_filename.replace(" ", "").split("/")[-1]

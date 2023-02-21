@@ -105,6 +105,15 @@ class FuzzerProfile:
 
         return self.fuzzer_source_file
 
+    @property
+    def max_func_call_depth(self):
+        """The maximum depth of all callsites in the fuzzer's calltree."""
+        max_depth = 0
+        for callsite in cfg_load.extract_all_callsites(self.fuzzer_callsite_calltree):
+            if callsite.depth > max_depth:
+                max_depth = callsite.depth
+        return max_depth
+
     def has_entry_point(self) -> bool:
         """Returns whether an entrypoint is identified"""
         if self.target_lang == "c-cpp":
