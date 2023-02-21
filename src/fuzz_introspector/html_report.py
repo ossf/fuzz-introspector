@@ -805,6 +805,30 @@ def extract_highlevel_guidance(
     return html_string
 
 
+def create_html_footer(tables):
+    """Create an array of table ids wrapped in a <script> tag, and close
+    <body> and <html> tags.
+    """
+    html_footer = "<script>\n"
+
+    # Create array of all table ids
+    html_footer += "var tableIds = ["
+    counter = 0
+    for tablename in tables:
+        html_footer += f"'{tablename}'"
+        if counter != len(tables) - 1:
+            html_footer += ", "
+        else:
+            html_footer += "];\n"
+        counter += 1
+
+    # Closing tags
+    html_footer += ("</script>\n")
+    html_footer += ("</body>\n")
+    html_footer += ("</html>\n")
+    return html_footer
+
+
 def create_html_report(profiles: List[fuzzer_profile.FuzzerProfile],
                        proj_profile: project_profile.MergedProjectProfile,
                        analyses_to_run: List[str], output_json: List[str],
@@ -1009,23 +1033,7 @@ def create_html_report(profiles: List[fuzzer_profile.FuzzerProfile],
     ###########################
     # Footer
     ###########################
-    html_footer = "<script>\n"
-
-    # Create array of all table ids
-    html_footer += "var tableIds = ["
-    counter = 0
-    for tablename in tables:
-        html_footer += f"'{tablename}'"
-        if counter != len(tables) - 1:
-            html_footer += ", "
-        else:
-            html_footer += "];\n"
-        counter += 1
-
-    # Closing tags
-    html_footer += ("</script>\n")
-    html_footer += ("</body>\n")
-    html_footer += ("</html>\n")
+    html_footer = create_html_footer(tables)
 
     ###########################
     # Fix up table of contents.
@@ -1047,33 +1055,18 @@ def create_html_report(profiles: List[fuzzer_profile.FuzzerProfile],
             prettyHTML = html_full_doc
 
         # Remove existing html report
-        report_name = "fuzz_report.html"
-        if os.path.isfile(report_name):
-            os.remove(report_name)
-
-        # Write new html report
-        with open(report_name, "a+") as html_report:
-            html_report.write(prettyHTML)
+        with open(constants.HTML_REPORT, 'w') as report_file:
+            report_file.write(prettyHTML)
 
         # Remove existing all funcs .js file
-        report_name = "all_functions.js"
-        if os.path.isfile(report_name):
-            os.remove(report_name)
-
-        # Write all functions to the .js file
-        with open(report_name, "a+") as all_funcs_json_file:
-            all_funcs_json_file.write("var all_functions_table_data = ")
-            all_funcs_json_file.write(json.dumps(all_functions_json_html))
+        with open(constants.ALL_FUNCTION_JS, 'w') as all_function_file:
+            all_function_file.write("var all_functions_table_data = ")
+            all_function_file.write(json.dumps(all_functions_json_html))
 
         # Remove existing fuzzer table data .js file
-        js_file = "fuzzer_table_data.js"
-        if os.path.isfile(js_file):
-            os.remove(js_file)
-
-        # Write fuzzer table data to the .js file
-        with open(js_file, "a+") as fuzzer_table_data_file:
-            fuzzer_table_data_file.write("var fuzzer_table_data = ")
-            fuzzer_table_data_file.write(json.dumps(fuzzer_table_data))
+        with open(constants.FUZZER_TABLE_JS, 'w') as js_file_fd:
+            js_file_fd.write("var fuzzer_table_data = ")
+            js_file_fd.write(json.dumps(fuzzer_table_data))
 
         # Copy all of the styling into the directory.
         basedir = os.path.dirname(os.path.realpath(__file__))

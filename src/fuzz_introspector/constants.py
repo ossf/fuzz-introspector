@@ -20,6 +20,14 @@ GIT_BRANCH_URL = f"{GIT_REPO}/blob/main"
 ENGINE_INPUT_FILE = "fuzz-introspector-engine-input.json"
 SUMMARY_FILE = "summary.json"
 
+HTML_REPORT = "fuzz_report.html"
+
+# Holds data about all functions in javascript, to ease loading of static
+# website.
+ALL_FUNCTION_JS = "all_functions.js"
+
+FUZZER_TABLE_JS = "fuzzer_table_data.js"
+
 # Global that may change.
 # Indicates if files should be dumped.
 should_dump_files = True
