@@ -167,7 +167,7 @@ def _search_concrete_subclass(classname, init_dict):
             return func_elem
         else:
             result = _search_concrete_subclass(func_elem['functionSourceFile'],
-                                              init_dict)
+                                               init_dict)
             if result:
                 return result
 
