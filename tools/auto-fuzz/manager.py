@@ -28,6 +28,8 @@ try:
 except ImportError:
     print("No tqdm module, skipping progress bar")
 
+# temporary fix: adding fuzz-introspector to the system path
+sys.path.insert(0, '../../src/')
 from fuzz_introspector import commands
 
 # Auto-fuzz modules
@@ -42,8 +44,8 @@ from multiprocessing.dummy import Pool as ThreadPool
 # Set default directories and error if they do not exist
 tqdm_tracker = None
 basedir = os.path.dirname(os.path.realpath(__file__))
-FUZZ_INTRO_BASE = basedir + "/../fuzz-introspector"
-OSS_FUZZ_BASE = basedir + "/../oss-fuzz"
+FUZZ_INTRO_BASE = basedir + "/../../../fuzz-introspector"
+OSS_FUZZ_BASE = basedir + "/../../../oss-fuzz"
 FUZZ_INTRO_MAIN = {
     "python":os.path.join(FUZZ_INTRO_BASE, "frontends", "python", "main.py"),
     "jvm":os.path.join(FUZZ_INTRO_BASE, "frontends", "java", "run.sh")
@@ -549,5 +551,5 @@ def run_on_projects(language):
 
 
 if __name__ == "__main__":
-    # run_on_projects("python")
+    run_on_projects("python")
     run_on_projects("jvm")
