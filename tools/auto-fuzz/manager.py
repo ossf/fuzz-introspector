@@ -317,7 +317,7 @@ def build_and_test_single_possible_target(idx_folder,
                                           oss_fuzz_base_project,
                                           possible_targets,
                                           language,
-                                          should_run_checks=False):
+                                          should_run_checks=True):
     """Builds and tests a given FuzzTarget.
 
     1) copies the base oss-fuzz project into the target idx autofuzz dir
@@ -562,4 +562,4 @@ def run_on_projects(language):
 
 if __name__ == "__main__":
     run_on_projects("python")
-    run_on_projects("jvm")
+    #run_on_projects("jvm")
