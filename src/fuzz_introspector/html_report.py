@@ -380,20 +380,6 @@ def create_percentage_graph(title: str, numerator: int,
         </div>"""
 
 
-def create_covered_func_box(covered_funcs: str) -> str:
-    return f"""<div
-    style="flex:1; flex-direction: column; display: flex;"
-    class="report-box">
-
-    <div style="font-weight: 600; text-align: center; flex: 1">
-        Functions covered at runtime
-    </div>
-    <div style="text-align: center; font-size: 3rem; font-weight: 450; flex: 3; padding-top: 20%">
-        {covered_funcs}
-    </div>
-</div>"""
-
-
 def create_boxed_top_summary_info(
         tables: List[str],
         proj_profile: project_profile.MergedProjectProfile,
