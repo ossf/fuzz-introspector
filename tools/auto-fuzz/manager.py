@@ -337,6 +337,13 @@ def build_and_test_single_possible_target(idx_folder,
     # Copy files from base OSS-Fuzz project
     copy_core_oss_fuzz_project_files(oss_fuzz_base_project,
                                      dst_oss_fuzz_project)
+    if language == "jvm":
+        maven_path = os.path.join(oss_fuzz_base_project.project_folder,
+                                  "maven.zip")
+        maven_dst = os.path.join(dst_oss_fuzz_project.project_folder,
+                                 "maven.zip")
+        shutil.copy(maven_path, maven_dst)
+
     copy_oss_fuzz_project_source(oss_fuzz_base_project, dst_oss_fuzz_project)
 
     # Log dir
@@ -395,6 +402,11 @@ def build_and_test_single_possible_target(idx_folder,
         full_path = os.path.join(auto_fuzz_proj_dir, src_dir)
         if not os.path.isdir(full_path):
             continue
+
+        if language == "jvm":
+            maven_file = os.path.join(auto_fuzz_proj_dir, "maven.zip")
+            if os.path.isfile(maven_file):
+                os.remove(maven_file)
 
         if dst_oss_fuzz_project.project_name not in src_dir:
             continue
@@ -491,6 +503,15 @@ def autofuzz_project_from_github(github_url,
                          oss_fuzz_base_project.project_name)):
         return False
 
+    # If this is a jvm target download maven once so we don't have to do it
+    # for each proejct.
+    if language == "jvm":
+        MAVEN_URL = "https://downloads.apache.org/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.zip"
+        target_maven_path = os.path.join(oss_fuzz_base_project.project_folder,
+                                         "maven.zip")
+        with open(target_maven_path, 'wb') as mf:
+            mf.write(requests.get(MAVEN_URL).content)
+
     # Generate the base Dockerfile, build.sh, project.yaml and fuzz_1.py
     oss_fuzz_base_project.write_basefiles()
 
@@ -561,5 +582,12 @@ def run_on_projects(language):
 
 
 if __name__ == "__main__":
-    run_on_projects("python")
-    #run_on_projects("jvm")
+    if len(sys.argv) > 1:
+        if sys.argv[1] == 'python':
+            run_on_projects("python")
+        elif sys.argv[1] == 'java':
+            run_on_projects("jvm")
+        else:
+            print("Please give a language of either {python, jvm}")
+    else:
+        run_on_projects("python")

@@ -105,11 +105,18 @@ def _print_summary_of_trial_run(trial_run,
         proj_name = proj_name + " " * (50 - len(proj_name))
     if len(trial_name) < 21:
         trial_name = trial_name + " " * (21 - len(trial_name))
+    python_fuzz_path = os.path.join(autofuzz_project_dir, trial_run['name'],
+                                    "fuzz_1.py")
+    jvm_fuzz_path = os.path.join(autofuzz_project_dir, trial_run['name'],
+                                 "Fuzz1.java")
+    fuzz_path = ""
+    if os.path.isfile(python_fuzz_path):
+        fuzz_path = python_fuzz_path
+    elif os.path.isfile(jvm_fuzz_path):
+        fuzz_path = jvm_fuzz_path
     print("%s :: %15s ::  %21s :: %5s :: %s :: %s" %
           (proj_name, autofuzz_project_dir, trial_name,
-           str(trial_run['max_cov']),
-           os.path.join(autofuzz_project_dir, trial_run['name'],
-                        "fuzz_1.py"), trial_run['heuristics-used']))
+           str(trial_run['max_cov']), fuzz_path, trial_run['heuristics-used']))
 
 
 def get_top_trial_run(trial_runs):

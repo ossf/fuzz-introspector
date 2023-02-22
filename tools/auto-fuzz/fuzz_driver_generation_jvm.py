@@ -65,7 +65,9 @@ class FuzzTarget:
                 if "/*IMPORTS*/" in line:
                     # Insert Java class import statement
                     content += "".join(self.imports_to_add)
+                    content += "\n// "
                     content += ",".join(self.heuristics_used)
+                    content += "\n"
                 elif "/*CODE*/" in line:
                     # Insert Fuzzer main code logic and replace variables
                     code = self.fuzzer_source_code.replace(
