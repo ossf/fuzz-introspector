@@ -44,7 +44,7 @@ from multiprocessing.dummy import Pool as ThreadPool
 # Set default directories and error if they do not exist
 tqdm_tracker = None
 basedir = os.path.dirname(os.path.realpath(__file__))
-FUZZ_INTRO_BASE = basedir + "/../../../fuzz-introspector"
+FUZZ_INTRO_BASE = basedir + "/../../"
 OSS_FUZZ_BASE = basedir + "/../../../oss-fuzz"
 FUZZ_INTRO_MAIN = {
     "python": os.path.join(FUZZ_INTRO_BASE, "frontends", "python", "main.py"),

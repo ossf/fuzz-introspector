@@ -152,7 +152,7 @@ def _handle_argument(argType, init_dict, possible_target):
         return _handle_object_creation(argType, init_dict, possible_target)
 
 
-def _search_conrete_subclass(classname, init_dict):
+def _search_concrete_subclass(classname, init_dict):
     """Search concrete subclass for the target classname"""
     for key in init_dict:
         func_elem = init_dict[key]
@@ -166,7 +166,7 @@ def _search_conrete_subclass(classname, init_dict):
         if java_info['classConcrete'] and java_info['public']:
             return func_elem
         else:
-            result = _search_conrete_subclass(func_elem['functionSourceFile'],
+            result = _search_concrete_subclass(func_elem['functionSourceFile'],
                                               init_dict)
             if result:
                 return result
@@ -188,7 +188,7 @@ def _handle_object_creation(classname, init_dict, possible_target):
             func_elem = init_dict[classname]
 
             if not func_elem['JavaMethodInfo']['classConcrete']:
-                func_elem = _search_conrete_subclass(classname, init_dict)
+                func_elem = _search_concrete_subclass(classname, init_dict)
             if not func_elem:
                 return "new " + classname.replace("$", ".") + "()"
 

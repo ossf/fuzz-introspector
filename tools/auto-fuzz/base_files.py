@@ -84,7 +84,7 @@ main_repo: %s
 sanitizers:
 - address
 - undefined
-primary_contants: autofuzz@fuzz-introspector.com""" % (github_url, language,
+primary_contacts: autofuzz@fuzz-introspector.com""" % (github_url, language,
                                                        github_url)
 
     return BASE_YAML
