@@ -747,6 +747,39 @@ def create_html_footer(tables):
     return html_footer
 
 
+def write_content_to_html_files(html_full_doc, all_functions_json_html,
+                                fuzzer_table_data):
+    """Writes the content of the HTML static website to the relevant files.
+
+    :param html_full_doc: content of the main fuzz_report.html file
+
+    :param all_functions_json_html: dictionary in json format for all functions
+      in the all functions table. These will be written ot a javascript file
+      that is then loaded dynamically in the browser to reduce overhead of
+      loading it all by way of hte .html file.
+
+    :param fuzzer_table_data: data for tables for each fuzzer, in the detailed
+      fuzzer section. To be written in a javascript file that is loaded
+      dynamically.
+    """
+    # Dump the HTML report.
+    with open(constants.HTML_REPORT, 'w') as report_file:
+        report_file.write(html_helpers.prettify_html(html_full_doc))
+
+    # Dump function data to the relevant javascript file.
+    with open(constants.ALL_FUNCTION_JS, 'w') as all_function_file:
+        all_function_file.write("var all_functions_table_data = ")
+        all_function_file.write(json.dumps(all_functions_json_html))
+
+    # Dump table data to relevant javascript file.
+    with open(constants.FUZZER_TABLE_JS, 'w') as js_file_fd:
+        js_file_fd.write("var fuzzer_table_data = ")
+        js_file_fd.write(json.dumps(fuzzer_table_data))
+
+    # Copy all of the styling into the directory.
+    styling.copy_style_files(os.getcwd())
+
+
 def create_html_report(profiles: List[fuzzer_profile.FuzzerProfile],
                        proj_profile: project_profile.MergedProjectProfile,
                        analyses_to_run: List[str], output_json: List[str],
@@ -964,19 +997,5 @@ def create_html_report(profiles: List[fuzzer_profile.FuzzerProfile],
                      html_body_end + html_footer)
 
     if dump_files:
-        # Dump the HTML report.
-        with open(constants.HTML_REPORT, 'w') as report_file:
-            report_file.write(html_helpers.prettify_html(html_full_doc))
-
-        # Dump function data to the relevant javascript file.
-        with open(constants.ALL_FUNCTION_JS, 'w') as all_function_file:
-            all_function_file.write("var all_functions_table_data = ")
-            all_function_file.write(json.dumps(all_functions_json_html))
-
-        # Dump table data to relevant javascript file.
-        with open(constants.FUZZER_TABLE_JS, 'w') as js_file_fd:
-            js_file_fd.write("var fuzzer_table_data = ")
-            js_file_fd.write(json.dumps(fuzzer_table_data))
-
-        # Copy all of the styling into the directory.
-        styling.copy_style_files(os.getcwd())
+        write_content_to_html_files(html_full_doc, all_functions_json_html,
+                                    fuzzer_table_data)
