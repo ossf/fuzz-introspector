@@ -15,8 +15,13 @@
 MAX_FUZZERS_PER_PROJECT = 10
 MAX_THREADS = 4
 
-python_git_repos = [
-    #'https://github.com/davidhalter/parso',
-    'https://github.com/nvawda/bz2file',
-    #'https://github.com/executablebooks/markdown-it-py'
-]
+git_repos = {
+    'python': [
+        # 'https://github.com/davidhalter/parso',
+        'https://github.com/nvawda/bz2file',
+        # 'https://github.com/executablebooks/markdown-it-py'
+    ],
+    'jvm': [
+        'https://github.com/eclipse-ee4j/angus-mail'
+    ]
+}
