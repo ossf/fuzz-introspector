@@ -633,11 +633,6 @@ def create_fuzzer_detailed_section(
                     "percentage hit":
                     "%.5s" % (str(hit_percentage)) + "%"
                 })
-                '''func_hit_table_string += html_table_add_row([
-                    funcname,
-                    total_func_lines,
-                    hit_lines,
-                    "%.5s" % (str(hit_percentage)) + "%"])'''
             else:
                 logger.error("Could not write coverage line for function %s" %
                              funcname)
