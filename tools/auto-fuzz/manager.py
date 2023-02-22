@@ -47,8 +47,8 @@ basedir = os.path.dirname(os.path.realpath(__file__))
 FUZZ_INTRO_BASE = basedir + "/../../../fuzz-introspector"
 OSS_FUZZ_BASE = basedir + "/../../../oss-fuzz"
 FUZZ_INTRO_MAIN = {
-    "python":os.path.join(FUZZ_INTRO_BASE, "frontends", "python", "main.py"),
-    "jvm":os.path.join(FUZZ_INTRO_BASE, "frontends", "java", "run.sh")
+    "python": os.path.join(FUZZ_INTRO_BASE, "frontends", "python", "main.py"),
+    "jvm": os.path.join(FUZZ_INTRO_BASE, "frontends", "java", "run.sh")
 }
 
 if not os.path.isdir(FUZZ_INTRO_BASE):
@@ -126,11 +126,13 @@ class OSS_FUZZ_PROJECT:
             ffile.write(base_files.gen_base_fuzzer(self.language))
 
         with open(self.project_yaml, "w") as yfile:
-            yfile.write(base_files.gen_project_yaml(self.github_url, self.language))
+            yfile.write(
+                base_files.gen_project_yaml(self.github_url, self.language))
 
         with open(self.dockerfile, "w") as dfile:
             dfile.write(
-                base_files.gen_dockerfile(self.github_url, self.project_name, self.language))
+                base_files.gen_dockerfile(self.github_url, self.project_name,
+                                          self.language))
 
 
 def get_next_project_folder(base_dir):
@@ -193,6 +195,7 @@ def run_static_analysis_python(git_repo, basedir):
     os.chdir(curr_dir)
     return ret
 
+
 def run_static_analysis_jvm(git_repo, basedir):
     possible_imports = set()
     curr_dir = os.getcwd()
@@ -211,8 +214,10 @@ def run_static_analysis_jvm(git_repo, basedir):
     except subprocess.TimeoutExpired:
         pass
 
-    cmd = ["mvn clean package", "-DskipTests", "-Djavac.src.version=15",
-           "-Djavac.target.version=15", "-Dmaven.javadoc.skip=true"]
+    cmd = [
+        "mvn clean package", "-DskipTests", "-Djavac.src.version=15",
+        "-Djavac.target.version=15", "-Dmaven.javadoc.skip=true"
+    ]
     try:
         subprocess.check_call(" ".join(cmd),
                               shell=True,
@@ -233,7 +238,8 @@ def run_static_analysis_jvm(git_repo, basedir):
         f.extractall("./")
 
     # Compile and package fuzzer to jar file
-    cmd = ["javac -cp jazzer_standalone.jar ../Fuzz1.java",
+    cmd = [
+        "javac -cp jazzer_standalone.jar ../Fuzz1.java",
         "jar cvf ../Fuzz1.jar ../Fuzz1.class"
     ]
     try:
@@ -254,7 +260,9 @@ def run_static_analysis_jvm(git_repo, basedir):
                     jarfiles.append(os.path.abspath(os.path.join(root, file)))
 
     # Run the java frontend static analysis
-    cmd = ["./run.sh", "--jarfile", ":".join(jarfiles), "--entryclass", "Fuzz1"]
+    cmd = [
+        "./run.sh", "--jarfile", ":".join(jarfiles), "--entryclass", "Fuzz1"
+    ]
     try:
         subprocess.check_call(" ".join(cmd),
                               shell=True,
@@ -266,10 +274,8 @@ def run_static_analysis_jvm(git_repo, basedir):
         pass
 
     # Move data and data.yaml to working directory
-    src = os.path.join(
-        os.path.dirname(FUZZ_INTRO_MAIN["jvm"]),
-        "fuzzerLogFile-Fuzz1.data.yaml"
-    )
+    src = os.path.join(os.path.dirname(FUZZ_INTRO_MAIN["jvm"]),
+                       "fuzzerLogFile-Fuzz1.data.yaml")
     dst = os.path.join(basedir, "work", "fuzzerLogFile-Fuzz1.data.yaml")
     if os.path.isfile(src):
         ret = True
@@ -403,6 +409,7 @@ def build_and_test_single_possible_target(idx_folder,
         shutil.rmtree(oss_fuzz_path)
     tick_tqdm_tracker()
 
+
 def run_builder_pool(autofuzz_base_workdir, oss_fuzz_base_project,
                      possible_targets, max_targets_to_analyse, language):
     """Runs a set of possible oss-fuzz targets in `possible_targets` in a
@@ -418,8 +425,8 @@ def run_builder_pool(autofuzz_base_workdir, oss_fuzz_base_project,
     for idx in range(len(possible_targets)):
         if idx > max_targets_to_analyse:
             continue
-        arg_list.append(
-            (idx_folder, idx, oss_fuzz_base_project, possible_targets, language))
+        arg_list.append((idx_folder, idx, oss_fuzz_base_project,
+                         possible_targets, language))
 
     pool = ThreadPool(constants.MAX_THREADS)
     print("Launching multi-threaded processing")
@@ -454,7 +461,9 @@ def git_clone_project(github_url, destination):
     return True
 
 
-def autofuzz_project_from_github(github_url, language, do_static_analysis=False):
+def autofuzz_project_from_github(github_url,
+                                 language,
+                                 do_static_analysis=False):
     """Auto-generates fuzzers for a Github project and performs runtime checks
     on the fuzzers.
     """
@@ -489,11 +498,11 @@ def autofuzz_project_from_github(github_url, language, do_static_analysis=False)
     if do_static_analysis:
         print("Running static analysis on %s" % (github_url))
         if language == "python":
-            static_res = run_static_analysis_python(github_url,
-                                         oss_fuzz_base_project.project_folder)
+            static_res = run_static_analysis_python(
+                github_url, oss_fuzz_base_project.project_folder)
         elif language == "jvm":
-            static_res = run_static_analysis_jvm(github_url,
-                                         oss_fuzz_base_project.project_folder)
+            static_res = run_static_analysis_jvm(
+                github_url, oss_fuzz_base_project.project_folder)
 
         if static_res:
             workdir = os.path.join(oss_fuzz_base_project.project_folder,
@@ -534,7 +543,8 @@ def autofuzz_project_from_github(github_url, language, do_static_analysis=False)
     print("Running runtime checking on %d fuzzers for %s" % (min(
         constants.MAX_FUZZERS_PER_PROJECT, len(possible_targets)), github_url))
     run_builder_pool(autofuzz_base_workdir, oss_fuzz_base_project,
-                     possible_targets, constants.MAX_FUZZERS_PER_PROJECT, language)
+                     possible_targets, constants.MAX_FUZZERS_PER_PROJECT,
+                     language)
     return True
 
 

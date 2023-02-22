@@ -47,7 +47,8 @@ JVM_LICENSE = """// Copyright 2023 Google LLC
 //
 ///////////////////////////////////////////////////////////////////////////"""
 
-def gen_dockerfile(github_url, project_name, language = "python"):
+
+def gen_dockerfile(github_url, project_name, language="python"):
     if language == "python":
         return gen_dockerfile_python(github_url, project_name)
     elif language == "jvm":
@@ -55,7 +56,8 @@ def gen_dockerfile(github_url, project_name, language = "python"):
     else:
         return None
 
-def gen_builder_1(language = "python"):
+
+def gen_builder_1(language="python"):
     if language == "python":
         return gen_builder_1_python()
     elif language == "jvm":
@@ -63,7 +65,8 @@ def gen_builder_1(language = "python"):
     else:
         return None
 
-def gen_base_fuzzer(language = "python"):
+
+def gen_base_fuzzer(language="python"):
     if language == "python":
         return gen_base_fuzzer_python()
     elif language == "jvm":
@@ -71,7 +74,8 @@ def gen_base_fuzzer(language = "python"):
     else:
         return None
 
-def gen_project_yaml(github_url, language = "python"):
+
+def gen_project_yaml(github_url, language="python"):
     BASE_YAML = """fuzzing_engines:
 - libfuzzer
 homepage: %s
@@ -80,9 +84,11 @@ main_repo: %s
 sanitizers:
 - address
 - undefined
-primary_contants: autofuzz@fuzz-introspector.com""" % (github_url, language, github_url)
+primary_contants: autofuzz@fuzz-introspector.com""" % (github_url, language,
+                                                       github_url)
 
     return BASE_YAML
+
 
 def gen_dockerfile_python(github_url, project_name):
     DOCKER_LICENSE = "#!/usr/bin/python3\n" + BASH_LICENSE
@@ -95,6 +101,7 @@ WORKDIR $SRC/%s
 """ % (github_url, project_name, project_name, project_name, project_name)
 
     return DOCKER_LICENSE + "\n" + DOCKER_STEPS
+
 
 def gen_dockerfile_jvm(github_url, project_name):
     DOCKER_STEPS = """FROM gcr.io/oss-fuzz-base/base-builder-jvm
@@ -109,6 +116,7 @@ WORKDIR $SRC/%s
 
     return BASH_LICENSE + "\n" + DOCKER_STEPS
 
+
 def gen_builder_1_python():
     BUILD_LICENSE = "#!/bin/bash -eu\n" + BASH_LICENSE
     BUILD_SCRIPT = """pip3 install .
@@ -119,9 +127,10 @@ done"""
 
     return BUILD_LICENSE + "\n" + BUILD_SCRIPT
 
+
 def gen_builder_1_jvm():
     BUILD_LICENSE = "#!/bin/bash -eu\n" + BASH_LICENSE
-    BUILD_SCRIPT="""MAVEN_ARGS="-Dmaven.test.skip=true -Djavac.src.version=15 -Djavac.target.version=15"
+    BUILD_SCRIPT = """MAVEN_ARGS="-Dmaven.test.skip=true -Djavac.src.version=15 -Djavac.target.version=15"
 $MVN clean package $MAVEN_ARGS
 
 BUILD_CLASSPATH=
@@ -164,6 +173,7 @@ LD_LIBRARY_PATH=\"$JVM_LD_LIBRARY_PATH\":\$this_dir \
 
     return BUILD_LICENSE + "\n" + BUILD_SCRIPT
 
+
 def gen_base_fuzzer_python():
     BASE_LICENSE = "#!/usr/bin/python3\n" + BASH_LICENSE
     BASE_FUZZER = """import sys
@@ -185,6 +195,7 @@ if __name__ == "__main__":
   main()"""
 
     return BASE_LICENSE + "\n" + BASE_FUZZER
+
 
 def gen_base_fuzzer_jvm():
     BASE_FUZZER = """import com.code_intelligence.jazzer.api.FuzzedDataProvider;

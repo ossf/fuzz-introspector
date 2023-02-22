@@ -68,17 +68,21 @@ class FuzzTarget:
                     content += ",".join(self.heuristics_used)
                 elif "/*CODE*/" in line:
                     # Insert Fuzzer main code logic and replace variables
-                    code = self.fuzzer_source_code.replace("$VARIABLE$",
-                                                           ",".join(self.variables_to_add))
+                    code = self.fuzzer_source_code.replace(
+                        "$VARIABLE$", ",".join(self.variables_to_add))
                     content += code
                 else:
                     # Copy other lines from the base fuzzer
                     content += line
         return content
 
+
 def _determine_import_statement(classname):
     """Generate java import statement for a given class name"""
-    primitives = ["boolean", "byte", "char", "short", "int", "long", "float", "double", "void"]
+    primitives = [
+        "boolean", "byte", "char", "short", "int", "long", "float", "double",
+        "void"
+    ]
 
     if classname and not classname.startswith('java.lang.'):
         classname = classname.split("$")[0].replace("[]", "")
@@ -99,7 +103,8 @@ def _handle_import(func_elem):
     import_set = set()
 
     # functionSourceFile
-    import_set.add(_determine_import_statement(func_elem['functionSourceFile']))
+    import_set.add(_determine_import_statement(
+        func_elem['functionSourceFile']))
 
     # returnType
     import_set.add(_determine_import_statement(func_elem['returnType']))
@@ -153,13 +158,16 @@ def _search_conrete_subclass(classname, init_dict):
         func_elem = init_dict[key]
         java_info = func_elem['JavaMethodInfo']
 
-        if not java_info['superClass'] == classname and classname not in java_info['interfaces']:
+        if not java_info[
+                'superClass'] == classname and classname not in java_info[
+                    'interfaces']:
             continue
 
         if java_info['classConcrete'] and java_info['public']:
             return func_elem
         else:
-            result = _search_conrete_subclass(func_elem['functionSourceFile'], init_dict)
+            result = _search_conrete_subclass(func_elem['functionSourceFile'],
+                                              init_dict)
             if result:
                 return result
 
@@ -186,10 +194,13 @@ def _handle_object_creation(classname, init_dict, possible_target):
 
             classname = func_elem['functionSourceFile']
             for argType in func_elem['argTypes']:
-                arg_list.append(_handle_argument(argType, init_dict, possible_target))
-            possible_target.exceptions_to_handle.update(func_elem['JavaMethodInfo']['exceptions'])
+                arg_list.append(
+                    _handle_argument(argType, init_dict, possible_target))
+            possible_target.exceptions_to_handle.update(
+                func_elem['JavaMethodInfo']['exceptions'])
             possible_target.imports_to_add.update(_handle_import(func_elem))
-            return "new " + classname.replace("$", ".") + "(" + ",".join(arg_list) + ")"
+            return "new " + classname.replace(
+                "$", ".") + "(" + ",".join(arg_list) + ")"
         except RecursionError:
             # Fail to create constructor code with parameters, using default constructor
             return "new " + classname.replace("$", ".") + "()"
@@ -209,7 +220,7 @@ def _generate_heuristic_1(yaml_dict, possible_targets):
     Will also add proper exception handling based on the exception list
     provided by the frontend code.
     """
-    HEURISTIC_NAME="jvm-autofuzz-heuristics-1"
+    HEURISTIC_NAME = "jvm-autofuzz-heuristics-1"
     for func_elem in yaml_dict['All functions']['Elements']:
         java_method_info = func_elem['JavaMethodInfo']
 
@@ -238,18 +249,21 @@ def _generate_heuristic_1(yaml_dict, possible_targets):
         possible_target.function_class = func_class
 
         # Store exceptions thrown by the target method
-        possible_target.exceptions_to_handle.update(java_method_info['exceptions'])
+        possible_target.exceptions_to_handle.update(
+            java_method_info['exceptions'])
 
         # Store java import statement
         possible_target.imports_to_add.update(_handle_import(func_elem))
 
         # Store function parameter list
         for argType in func_elem['argTypes']:
-            possible_target.variables_to_add.append(_handle_argument(argType, None, possible_target))
+            possible_target.variables_to_add.append(
+                _handle_argument(argType, None, possible_target))
 
         # Create the actual source
-        fuzzer_source_code = "  // Heuristic name: %s\n"%(HEURISTIC_NAME)
-        fuzzer_source_code += "  %s.%s($VARIABLE$);\n" % (func_class, func_name)
+        fuzzer_source_code = "  // Heuristic name: %s\n" % (HEURISTIC_NAME)
+        fuzzer_source_code += "  %s.%s($VARIABLE$);\n" % (func_class,
+                                                          func_name)
         if len(possible_target.exceptions_to_handle) > 0:
             fuzzer_source_code += "  try {\n" + fuzzer_source_code
             fuzzer_source_code += "  }\n"
