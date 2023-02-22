@@ -561,5 +561,5 @@ def run_on_projects(language):
 
 
 if __name__ == "__main__":
-    #run_on_projects("python")
-    run_on_projects("jvm")
+    run_on_projects("python")
+    #run_on_projects("jvm")
