@@ -254,74 +254,37 @@ def create_all_function_table(
         else:
             args_row = "0"
 
-        table_rows_json_html.append({
-            "Func name":
-            func_name_row,
-            "func_url":
-            func_cov_url,
-            "Functions filename":
-            fd.function_source_file,
-            "Args":
-            args_row,
-            "Function call depth":
-            fd.function_depth,
-            "Reached by Fuzzers":
-            reached_by_fuzzers_row,
-            "collapsible_id":
-            collapsible_id,
-            "Fuzzers runtime hit":
-            func_hit_at_runtime_row,
-            "Func lines hit %":
-            "%.5s" % (str(hit_percentage)) + "%",
-            "I Count":
-            fd.i_count,
-            "BB Count":
-            fd.bb_count,
-            "Cyclomatic complexity":
-            fd.cyclomatic_complexity,
-            "Functions reached":
-            len(fd.functions_reached),
-            "Reached by functions":
-            len(fd.incoming_references),
+        row_element = {
+            "Func name": func_name_row,
+            "func_url": func_cov_url,
+            "Functions filename": fd.function_source_file,
+            "Args": args_row,
+            "Function call depth": fd.function_depth,
+            "Reached by Fuzzers": reached_by_fuzzers_row,
+            "collapsible_id": collapsible_id,
+            "Fuzzers runtime hit": func_hit_at_runtime_row,
+            "Func lines hit %": "%.5s" % (str(hit_percentage)) + "%",
+            "I Count": fd.i_count,
+            "BB Count": fd.bb_count,
+            "Cyclomatic complexity": fd.cyclomatic_complexity,
+            "Functions reached": len(fd.functions_reached),
+            "Reached by functions": len(fd.incoming_references),
             "Accumulated cyclomatic complexity":
             fd.total_cyclomatic_complexity,
-            "Undiscovered complexity":
-            fd.new_unreached_complexity
-        })
-        table_rows_json_report.append({
-            "Func name":
-            demangled_func_name,
-            "func_url":
-            func_cov_url,
-            "Functions filename":
-            fd.function_source_file,
-            "Args":
-            str(fd.arg_types),
-            "Function call depth":
-            fd.function_depth,
-            "Reached by Fuzzers":
-            fd.reached_by_fuzzers,
-            "collapsible_id":
-            collapsible_id,
-            "Fuzzers runtime hit":
-            func_hit_at_runtime_row,
-            "Func lines hit %":
-            "%.5s" % (str(hit_percentage)) + "%",
-            "I Count":
-            fd.i_count,
-            "BB Count":
-            fd.bb_count,
-            "Cyclomatic complexity":
-            fd.cyclomatic_complexity,
-            "Functions reached":
-            len(fd.functions_reached),
-            "Reached by functions":
-            len(fd.incoming_references),
-            "Accumulated cyclomatic complexity":
-            fd.total_cyclomatic_complexity,
-            "Undiscovered complexity":
-            fd.new_unreached_complexity
-        })
+            "Undiscovered complexity": fd.new_unreached_complexity
+        }
+        table_rows_json_html.append(row_element)
+
+        # Add the entry to json list.
+        # Overwrite some fields to have raw text and not HTML-formatted text.
+        json_copy = row_element.copy()
+        json_copy['Func name'] = demangled_func_name
+        json_copy['Args'] = str(fd.arg_types)
+        json_copy['Reached by Fuzzers'] = fd.reached_by_fuzzers
+        table_rows_json_report.append(json_copy)
+
+    logger.info("Assembled a total of %d entries" %
+                (len(table_rows_json_report)))
     html_string += ("</table>\n")
     return html_string, table_rows_json_html, table_rows_json_report
 
