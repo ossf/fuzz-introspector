@@ -22,20 +22,20 @@ INFO_ALL_FUNCTION_OVERVIEW_TEXT = f"""<p>
     be functions that are from third-party libraries.
 </p>
 <p>
-    For further technical details on the meaning of columns in the
-	below table, please see the
-	<a href="{constants.GIT_BRANCH_URL}/doc/Glossary.md#project-functions-overview">Glossary</a>.
+    For further technical details on the meaning of columns in the below
+    table, please see the
+    <a href="{constants.GIT_BRANCH_URL}/doc/Glossary.md#project-functions-overview">Glossary</a>.
 </p>"""
 
-INFO_SUM_OF_COVERED_FUNCS_EQ_REACHABLE_FUNCS = """<div style="font-size: 0.85rem; color: #adadad; margin-bottom: 40px">
+INFO_SUM_OF_COVERED_FUNCS_EQ_REACHABLE_FUNCS = """
+<div style="font-size: 0.85rem; color: #adadad; margin-bottom: 40px">
     <b>NB:</b> The sum of <i>covered functions</i> and <i>functions
     that are reachable but not covered</i> need not be equal to <i>Reachable
     functions</i>. This is because the reachability analysis is an
     approximation and thus at runtime some functions may be covered
     that are not included in the reachability analysis. This is a
     limitation of our static analysis capabilities.
-</div>
-"""
+</div>"""
 
 INFO_CALLTREE_DESCRIPTION = f"""The calltree shows the
 control flow of the fuzzer. This is overlaid with coverage information
@@ -62,15 +62,15 @@ INFO_CALLTREE_LINK_BUTTON = """<p class='no-top-margin'>
 </p>"""
 
 WARNING_TOTAL_FUNC_OVER_REACHABLE_FUNC = """<div class="warning-box-wrapper">
-	<span class="warning-box red-warning">
-		<b>Warning:</b> The number of covered functions are larger than the 
-		number of reachable functions. This means that there are more functions covered at
-		runtime than are extracted using static analysis. This is likely a result
-		of the static analysis component failing to extract the right
-		call graph or the coverage runtime being compiled with sanitizers in code that
-		the static analysis has not analysed. This can happen if lto/gold is not
-		used in all places that coverage instrumentation is used.
-	</span>
+   <span class="warning-box red-warning">
+        <b>Warning:</b> The number of covered functions are larger than the
+        number of reachable functions. This means that there are more functions covered at
+        runtime than are extracted using static analysis. This is likely a result
+        of the static analysis component failing to extract the right
+        call graph or the coverage runtime being compiled with sanitizers in code that
+        the static analysis has not analysed. This can happen if lto/gold is not
+        used in all places that coverage instrumentation is used.
+    </span>
 </div>"""
 
 ALL_FUNCTION_TABLE_COLUMNS = [
