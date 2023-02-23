@@ -588,6 +588,6 @@ if __name__ == "__main__":
         elif sys.argv[1] == 'java':
             run_on_projects("jvm")
         else:
-            print("Please give a language of either {python, jvm}")
+            print("Please give a language of either {python, java}")
     else:
         run_on_projects("python")
