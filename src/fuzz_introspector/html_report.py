@@ -28,7 +28,7 @@ from typing import (
     Tuple,
 )
 
-from fuzz_introspector import (analysis, cfg_load, constants, html_helpers,
+from fuzz_introspector import (analysis, cfg_load, constants, html_constants, html_helpers,
                                json_report, styling, utils)
 
 from fuzz_introspector.datatypes import project_profile, fuzzer_profile
@@ -360,29 +360,10 @@ def create_fuzzer_detailed_section(
     calltree_analysis.dump_files = dump_files
     calltree_file_name = calltree_analysis.create_calltree(profile)
 
-    html_string += f"""<p class='no-top-margin'>The calltree shows the
-    control flow of the fuzzer. This is overlaid with coverage information
-    to display how much of the potential code a fuzzer can reach is in fact
-    covered at runtime.
-    In the following there is a link to a detailed calltree visualisation
-    as well as a bitmap showing a high-level view of the calltree. For
-    further information about these topics please see the glossary for
-    <a href="{constants.GIT_BRANCH_URL}/doc/Glossary.md#full-calltree">
-    full calltree</a> and
-    <a href="{constants.GIT_BRANCH_URL}/doc/Glossary.md#call-tree-overview">
-    calltree overview</a>"""
+    html_string += "<p class='no-top-margin'>"
+    html_string += html_constants.INFO_CALLTREE_DESCRIPTION
+    html_string += html_constants.INFO_CALLTREE_LINK_BUTTON.format(calltree_file_name)
 
-    html_string += (
-        "<p class='no-top-margin'>\n"
-        "<div class=\"yellow-button-wrapper\" "
-        "style=\"position: relative; margin: 30px 0 5px 0; max-width: 200px\">"
-        f"<a href=\"{calltree_file_name}\">"
-        "<div class=\"yellow-button\">"
-        "Full calltree"
-        "</div>"
-        "</a>"
-        "</div>"
-        "</p>")
     html_string += ("<p class='no-top-margin'>"
                     "Call tree overview bitmap:"
                     "</p>")
@@ -552,28 +533,10 @@ def create_fuzzer_detailed_section(
         "Percentage of reachable functions covered",
         "%s%%" % str(round(cov_reach_proportion, 2)))
     html_string += "</div>"
-    html_string += "<div style=\"font-size: 0.85rem; color: #adadad; margin-bottom: 40px\">"
-    html_string += "<b>NB:</b> The sum of <i>covered functions</i> and <i>functions " \
-                   "that are reachable but not covered</i> need not be equal to <i>Reachable " \
-                   "functions</i>. This is because the reachability analysis is an "  \
-                   "approximation and thus at runtime some functions may be covered " \
-                   "that are not included in the reachability analysis. This is a "   \
-                   "limitation of our static analysis capabilities."
-    html_string += "</div>"
+    html_string += html_constants.INFO_SUM_OF_COVERED_FUNCS_EQ_REACHABLE_FUNCS
 
     if total_hit_functions > reachable_funcs:
-        html_string += (
-            "<div class=\"warning-box-wrapper\">"
-            "<span class=\"warning-box red-warning\">"
-            "<b>Warning:</b> The number of covered functions are larger than the "
-            "number of reachable functions. This means that there are more functions covered at "
-            "runtime than are extracted using static analysis. This is likely a result "
-            "of the static analysis component failing to extract the right "
-            "call graph or the coverage runtime being compiled with sanitizers in code that "
-            "the static analysis has not analysed. This can happen if lto/gold is not "
-            "used in all places that coverage instrumentation is used."
-            "</span>"
-            "</div>")
+        html_string += html_constants.WARNING_TOTAL_FUNC_OVER_REACHABLE_FUNC
 
     html_string += func_hit_table_string
 

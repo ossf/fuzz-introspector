@@ -356,12 +356,11 @@ def create_percentage_graph(title: str, numerator: int,
 
 
 def create_conclusions_box(
-        conclusions: List[html_helpers.HTMLConclusion]) -> str:
+        conclusions: List[HTMLConclusion]) -> str:
     """Creates a <div> with all conclusions displayed. Conclusions of highest
     severity are placed lowest (positive conclusiosn at top, negative at
     bottom).
     """
-    logger.info("Extracting high level guidance")
     html_string = ""
     html_string += "<div class=\"high-level-conclusions-wrapper\">"
 
