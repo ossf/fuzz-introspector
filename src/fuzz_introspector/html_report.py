@@ -594,36 +594,6 @@ def create_fuzzer_detailed_section(
     return html_string
 
 
-def extract_highlevel_guidance(
-        conclusions: List[html_helpers.HTMLConclusion]) -> str:
-    """
-    Creates colorful boxes for the conlusions made throughout the analysis
-    """
-    logger.info("Extracting high level guidance")
-    html_string = ""
-    html_string += "<div class=\"high-level-conclusions-wrapper\">"
-
-    # Sort conclusions to show highest level (positive conclusion) first
-    conclusions = list(reversed(sorted(conclusions)))
-    for conclusion in conclusions:
-        if conclusion.severity < 5:
-            conclusion_color = "red"
-        elif conclusion.severity < 8:
-            conclusion_color = "yellow"
-        else:
-            conclusion_color = "green"
-        html_string += f"""<div class="line-wrapper">
-    <div class="high-level-conclusion { conclusion_color }-conclusion collapsed">
-    { conclusion.title }
-        <div class="high-level-extended" style="background:transparent; overflow:hidden">
-            { conclusion.description }
-        </div>
-    </div>
-</div>"""
-    html_string += "</div>"
-    return html_string
-
-
 def create_html_footer(tables):
     """Create an array of table ids wrapped in a <script> tag, and close
     <body> and <html> tags.
@@ -866,7 +836,7 @@ def create_html_report(profiles: List[fuzzer_profile.FuzzerProfile],
     #############################################
     # Create top level conclusions
     #############################################
-    html_report_top += extract_highlevel_guidance(conclusions)
+    html_report_top += html_helpers.create_conclusions_box(conclusions)
 
     # Wrap up the HTML generation
     # Close the content div and content_wrapper
