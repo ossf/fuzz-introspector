@@ -119,3 +119,9 @@ FUZZER_OVERVIEW_TABLE_COLUMNS = [
      "The accummulated cyclomatic complexity of all functions reached by the fuzzer."
      ), ("Details", "")
 ]
+
+WARNING_NO_COVERAGE = """"No files with coverage data was found. This is either
+because an error occurred when compiling and running
+coverage runs, or because the introspector run was
+intentionally done without coverage collection. In order
+to get optimal results coverage data is needed."""

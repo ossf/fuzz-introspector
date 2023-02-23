@@ -593,12 +593,7 @@ def create_html_report(profiles: List[fuzzer_profile.FuzzerProfile],
             html_helpers.HTMLConclusion(
                 severity=0,
                 title="No coverage data was found",
-                description=(
-                    "No files with coverage data was found. This is either "
-                    "because an error occurred when compiling and running "
-                    "coverage runs, or because the introspector run was "
-                    "intentionally done without coverage collection. In order "
-                    "to get optimal results coverage data is needed.")))
+                description=html_constants.WARNING_NO_COVERAGE))
 
     # Create html header, which will be used to assemble the doc at the
     # end of this function.
