@@ -723,14 +723,7 @@ def create_html_report(profiles: List[fuzzer_profile.FuzzerProfile],
         "Project functions overview", html_helpers.HTML_HEADING.H1,
         table_of_contents)
     html_report_core += "<div class=\"collapsible\">"
-    html_report_core += "<p> The following table shows data about each function in the project. " \
-                        "The functions included in this table correspond to all functions " \
-                        "that exist in the executables of the fuzzers. As such, there may  " \
-                        "be functions that are from third-party libraries.</p>"
-    html_report_core += f"<p>For further technical details on the meaning of columns in the " \
-                        f"below table, please see the " \
-                        f"<a href=\"{constants.GIT_BRANCH_URL}/doc/Glossary.md#project-"\
-                        f"functions-overview\">Glossary</a>.</p>"
+    html_report_core += html_constants.INFO_ALL_FUNCTION_OVERVIEW_TEXT
 
     table_id = "fuzzers_overview_table"
     tables.append(table_id)

@@ -15,6 +15,18 @@
 
 from fuzz_introspector import constants
 
+INFO_ALL_FUNCTION_OVERVIEW_TEXT = f"""<p>
+    The following table shows data about each function in the project.
+    The functions included in this table correspond to all functions
+    that exist in the executables of the fuzzers. As such, there may
+    be functions that are from third-party libraries.
+</p>
+<p>
+    For further technical details on the meaning of columns in the
+	below table, please see the
+	<a href="{constants.GIT_BRANCH_URL}/doc/Glossary.md#project-functions-overview">Glossary</a>.
+</p>"""
+
 INFO_SUM_OF_COVERED_FUNCS_EQ_REACHABLE_FUNCS = """<div style="font-size: 0.85rem; color: #adadad; margin-bottom: 40px">
     <b>NB:</b> The sum of <i>covered functions</i> and <i>functions
     that are reachable but not covered</i> need not be equal to <i>Reachable
@@ -38,7 +50,7 @@ full calltree</a> and
 calltree overview</a>"""
 
 # Calltree button, must be formatted with calltree file name.
-INFO_CALLTREE_LINK_BUTTON = """<p class='no-top-margin'>"
+INFO_CALLTREE_LINK_BUTTON = """<p class='no-top-margin'>
     <div class="yellow-button-wrapper"
          style="position: relative; margin: 30px 0 5px 0; max-width: 200px">
         <a href="{0}">
