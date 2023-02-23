@@ -242,15 +242,14 @@ def create_all_function_table(
         collapsible_id = demangled_func_name + random_suffix
 
         if fd.hitcount > 0:
-            reached_by_fuzzers_row = create_collapsible_element(
+            reached_by_fuzzers_row = html_helpers.create_collapsible_element(
                 str(fd.hitcount), str(fd.reached_by_fuzzers), collapsible_id)
         else:
             reached_by_fuzzers_row = "0"
 
         if fd.arg_count > 0:
-            args_row = create_collapsible_element(str(fd.arg_count),
-                                                  str(fd.arg_types),
-                                                  collapsible_id + "2")
+            args_row = html_helpers.create_collapsible_element(
+                str(fd.arg_count), str(fd.arg_types), collapsible_id + "2")
         else:
             args_row = "0"
 
@@ -289,60 +288,6 @@ def create_all_function_table(
     return html_string, table_rows_json_html, table_rows_json_report
 
 
-def create_collapsible_element(non_collapsed: str, collapsed: str,
-                               collapsible_id: str) -> str:
-    return f"""{ non_collapsed } : <div
-    class='wrap-collabsible'>
-        <input id='{collapsible_id}'
-               class='toggle'
-               type='checkbox'>
-            <label
-                for='{collapsible_id}'
-                class='lbl-toggle'>
-                    View List
-            </label>
-        <div class='collapsible-content'>
-            <div class='content-inner'>
-                <p>
-                    {collapsed}
-                </p>
-            </div>
-        </div>
-    </div>"""
-
-
-def create_percentage_graph(title: str, numerator: int,
-                            denominator: int) -> str:
-    percentage = round(float(numerator) / float(denominator), 2) * 100.0
-    subtitle = f"{numerator} / {denominator}"
-    return f"""<div style="flex:1; margin-right: 20px"class="report-box mt-0">
-            <div style="font-weight: 600; text-align: center;">
-                {title}
-            </div>
-            <div class="flex-wrapper">
-              <div class="single-chart">
-                <svg viewBox="0 0 36 36" class="circular-chart green">
-                  <path class="circle-bg"
-                    d="M18 2.0845
-                      a 15.9155 15.9155 0 0 1 0 31.831
-                      a 15.9155 15.9155 0 0 1 0 -31.831"
-                  />
-                  <path class="circle"
-                    stroke-dasharray="{percentage}, 100"
-                    d="M18 2.0845
-                      a 15.9155 15.9155 0 0 1 0 31.831
-                      a 15.9155 15.9155 0 0 1 0 -31.831"
-                  />
-                  <text x="18" y="20.35" class="percentage">{str(percentage)[:4]}%</text>
-                </svg>
-              </div>
-            </div>
-            <div style="font-size: .9rem; color: #b5b5b5; text-align: center">
-              {subtitle}
-            </div>
-        </div>"""
-
-
 def create_boxed_top_summary_info(
         tables: List[str],
         proj_profile: project_profile.MergedProjectProfile,
@@ -351,17 +296,17 @@ def create_boxed_top_summary_info(
         display_coverage: bool = False) -> str:
     html_string = ""
 
-    html_string += create_percentage_graph(
+    html_string += html_helpers.create_percentage_graph(
         "Functions statically reachable by fuzzers",
         proj_profile.reached_func_count, proj_profile.total_functions)
 
-    html_string += create_percentage_graph(
+    html_string += html_helpers.create_percentage_graph(
         "Cyclomatic complexity statically reachable by fuzzers",
         proj_profile.reached_complexity, proj_profile.total_complexity)
 
     if display_coverage:
         covered_funcs = proj_profile.get_all_runtime_covered_functions()
-        html_string += create_percentage_graph(
+        html_string += html_helpers.create_percentage_graph(
             "Runtime code coverage of functions", len(covered_funcs),
             proj_profile.total_functions)
 
@@ -389,41 +334,6 @@ def create_conclusions(conclusions: List[html_helpers.HTMLConclusion],
         html_helpers.HTMLConclusion(severity=int(reached_percentage * 0.1),
                                     title=sentence,
                                     description=""))
-
-
-def create_top_summary_info(tables: List[str],
-                            proj_profile: project_profile.MergedProjectProfile,
-                            conclusions: List[html_helpers.HTMLConclusion],
-                            extract_conclusion: bool,
-                            display_coverage: bool = False) -> str:
-    html_string = ""
-
-    # Display reachability information
-    html_string += "<div style=\"display: flex; max-width: 50%\">"
-
-    html_string += create_percentage_graph(
-        "Functions statically reachable by fuzzers",
-        proj_profile.reached_func_count, proj_profile.total_functions)
-
-    html_string += create_percentage_graph(
-        "Cyclomatic complexity statically reachable by fuzzers",
-        proj_profile.reached_complexity, proj_profile.total_complexity)
-
-    html_string += "</div>"
-    if display_coverage:
-        logger.info("Displaying coverage in summary")
-        covered_funcs = proj_profile.get_all_runtime_covered_functions()
-        html_string += f"Functions covered at runtime: { len(covered_funcs) }"
-        html_string += "<br>"
-    else:
-        logger.info("Not displaying coverage in summary")
-
-    # Add conclusion
-    if extract_conclusion:
-        create_conclusions(conclusions, proj_profile.reached_func_percentage,
-                           proj_profile.reached_complexity_percentage)
-
-    return html_string
 
 
 def create_fuzzer_detailed_section(
@@ -630,15 +540,17 @@ def create_fuzzer_detailed_section(
                      f"to continue exploring more code at run time. ")))
 
     html_string += "<div style=\"display: flex; margin-bottom: 10px;\">"
-    html_string += get_simple_box("Covered functions",
-                                  str(total_hit_functions))
-    html_string += get_simple_box(
+    html_string += html_helpers.get_simple_box("Covered functions",
+                                               str(total_hit_functions))
+    html_string += html_helpers.get_simple_box(
         "Functions that are reachable but not covered",
         str(uncovered_reachable_funcs))
 
-    html_string += get_simple_box("Reachable functions", str(reachable_funcs))
-    html_string += get_simple_box("Percentage of reachable functions covered",
-                                  "%s%%" % str(round(cov_reach_proportion, 2)))
+    html_string += html_helpers.get_simple_box("Reachable functions",
+                                               str(reachable_funcs))
+    html_string += html_helpers.get_simple_box(
+        "Percentage of reachable functions covered",
+        "%s%%" % str(round(cov_reach_proportion, 2)))
     html_string += "</div>"
     html_string += "<div style=\"font-size: 0.85rem; color: #adadad; margin-bottom: 40px\">"
     html_string += "<b>NB:</b> The sum of <i>covered functions</i> and <i>functions " \
@@ -680,17 +592,6 @@ def create_fuzzer_detailed_section(
             [k, len(profile.file_targets[k])])
     html_string += "</table>\n"
     return html_string
-
-
-def get_simple_box(title: str, value: str) -> str:
-    return f"""<div class="report-box" style="flex: 1; display: flex; flex-direction: column;">
-        <div style="font-size: 0.9rem;">
-          {title}
-        </div>
-        <div style="font-size: 1.2rem; font-weight: 550;">
-          {value}
-        </div>
-      </div>"""
 
 
 def extract_highlevel_guidance(

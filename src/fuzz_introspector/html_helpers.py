@@ -278,6 +278,83 @@ def html_create_table_head(table_head: str,
     return html_str
 
 
+def get_simple_box(title: str, value: str) -> str:
+    """Wraps a title and value in a simle HTML div box, where the box has some
+    simple borders.
+    """
+
+    return f"""<div class="report-box"
+                    style="flex: 1; display: flex; flex-direction: column;">
+        <div style="font-size: 0.9rem;">
+          {title}
+        </div>
+        <div style="font-size: 1.2rem; font-weight: 550;">
+          {value}
+        </div>
+      </div>"""
+
+
+def create_collapsible_element(non_collapsed: str, collapsed: str,
+                               collapsible_id: str) -> str:
+    """Creates a string followed by a <div> that is collapsible. We use this
+    for displaying items in tables where the full substance of the item is
+    too large to display by default for all items, but we still want the user
+    to be able to see the full substance of the item on demand.
+    """
+    return f"""{ non_collapsed } : <div
+    class='wrap-collabsible'>
+        <input id='{collapsible_id}'
+               class='toggle'
+               type='checkbox'>
+            <label for='{collapsible_id}'
+                   class='lbl-toggle'>
+                View List
+            </label>
+        <div class='collapsible-content'>
+            <div class='content-inner'>
+                <p>
+                    {collapsed}
+                </p>
+            </div>
+        </div>
+    </div>"""
+
+
+def create_percentage_graph(title: str, numerator: int,
+                            denominator: int) -> str:
+    """Creates a percentage tag within a <div> tag. This is used to show
+    "how much X is of Y" for a {numerator, denominator} pair.
+    """
+    percentage = round(float(numerator) / float(denominator), 2) * 100.0
+    subtitle = f"{numerator} / {denominator}"
+    return f"""<div style="flex:1; margin-right: 20px"class="report-box mt-0">
+            <div style="font-weight: 600; text-align: center;">
+                {title}
+            </div>
+            <div class="flex-wrapper">
+              <div class="single-chart">
+                <svg viewBox="0 0 36 36" class="circular-chart green">
+                  <path class="circle-bg"
+                    d="M18 2.0845
+                      a 15.9155 15.9155 0 0 1 0 31.831
+                      a 15.9155 15.9155 0 0 1 0 -31.831"
+                  />
+                  <path class="circle"
+                    stroke-dasharray="{percentage}, 100"
+                    d="M18 2.0845
+                      a 15.9155 15.9155 0 0 1 0 31.831
+                      a 15.9155 15.9155 0 0 1 0 -31.831"
+                  />
+                  <text x="18" y="20.35" class="percentage">{str(percentage)[:4]}%</text>
+                </svg>
+              </div>
+            </div>
+            <div style="font-size: .9rem; color: #b5b5b5; text-align: center">
+              {subtitle}
+            </div>
+        </div>"""
+
+
 def prettify_html(html_doc: str) -> str:
     """Prettify a HTML document."""
     soup = bs4.BeautifulSoup(html_doc, "html.parser")
