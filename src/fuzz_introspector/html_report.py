@@ -28,8 +28,8 @@ from typing import (
     Tuple,
 )
 
-from fuzz_introspector import (analysis, cfg_load, constants, html_helpers,
-                               json_report, styling, utils)
+from fuzz_introspector import (analysis, cfg_load, constants, html_constants,
+                               html_helpers, json_report, styling, utils)
 
 from fuzz_introspector.datatypes import project_profile, fuzzer_profile
 
@@ -125,23 +125,8 @@ def create_horisontal_calltree_image(image_name: str,
 def create_overview_table(tables: List[str],
                           profiles: List[fuzzer_profile.FuzzerProfile]) -> str:
     """Table with an overview of all the fuzzers"""
-    html_string = html_helpers.html_create_table_head(tables[-1], [
-        ("Fuzzer", "Fuzzer key. Usually fuzzer executable file"),
-        ("Fuzzer filename", "Fuzzer source code file"),
-        ("Functions Reached",
-         "Number of functions this fuzzer reaches. This data is based on static analysis."
-         ),
-        ("Functions unreached",
-         "Number of functions unreached by this fuzzer. This data is based on static analysis."
-         ), ("Fuzzer depth", "Function call depth of this fuzer."),
-        ("Files reached", "Source code files reached by the fuzzer."),
-        ("Basic blocks reached",
-         "The total number of basic blocks of all functions reached by the fuzzer."
-         ),
-        ("Cyclomatic complexity",
-         "The accummulated cyclomatic complexity of all functions reached by the fuzzer."
-         ), ("Details", "")
-    ])
+    html_string = html_helpers.html_create_table_head(
+        tables[-1], html_constants.FUZZER_OVERVIEW_TABLE_COLUMNS)
     for profile in profiles:  # create a row for each fuzzer.
         fuzzer_filename = profile.fuzzer_source_file
         html_string += html_helpers.html_table_add_row([
@@ -171,41 +156,10 @@ def create_all_function_table(
     if table_id is None:
         table_id = tables[-1]
 
-    table_columns = [
-        ("Func name", ""),
-        ("Functions filename", "Source code file where function is defined."),
-        ("Args", "Types of arguments to this function."),
-        ("Function call depth",
-         "Function call depth based on static analysis."),
-        ("Reached by Fuzzers",
-         "The specific fuzzers that reach this function. Based on static analysis."
-         ),
-        ("Fuzzers runtime hit",
-         "Indicates whether the function is hit at runtime by the given corpus. "
-         "Based on dynamic analysis."),
-        ("Func lines hit %",
-         "Indicates the percentage of the function that is covered at runtime. "
-         "This is based on dynamic analysis."),
-        ("I Count",
-         "Instruction count. The number of LLVM instructions in the function."
-         ),
-        ("BB Count",
-         "Basic block count. The number of basic blocks in the function."),
-        ("Cyclomatic complexity",
-         "The cyclomatic complexity of the function."),
-        ("Functions reached",
-         "The number of functions reached, based on static analysis."),
-        ("Reached by functions",
-         "The number of functions that reaches this function, based on static analysis."
-         ),
-        ("Accumulated cyclomatic complexity",
-         "Accummulated cyclomatic complexity of all functions reachable by this function. "
-         "Based on static analysis."), ("Undiscovered complexity", "")
-    ]
     html_string = html_helpers.html_create_table_head(
         table_id,
-        table_columns,
-        sort_by_column=len(table_columns) - 1,
+        html_constants.ALL_FUNCTION_TABLE_COLUMNS,
+        sort_by_column=len(html_constants.ALL_FUNCTION_TABLE_COLUMNS) - 1,
         sort_order="desc")
 
     # an array in development to replace html generation in python.
@@ -360,29 +314,11 @@ def create_fuzzer_detailed_section(
     calltree_analysis.dump_files = dump_files
     calltree_file_name = calltree_analysis.create_calltree(profile)
 
-    html_string += f"""<p class='no-top-margin'>The calltree shows the
-    control flow of the fuzzer. This is overlaid with coverage information
-    to display how much of the potential code a fuzzer can reach is in fact
-    covered at runtime.
-    In the following there is a link to a detailed calltree visualisation
-    as well as a bitmap showing a high-level view of the calltree. For
-    further information about these topics please see the glossary for
-    <a href="{constants.GIT_BRANCH_URL}/doc/Glossary.md#full-calltree">
-    full calltree</a> and
-    <a href="{constants.GIT_BRANCH_URL}/doc/Glossary.md#call-tree-overview">
-    calltree overview</a>"""
+    html_string += "<p class='no-top-margin'>"
+    html_string += html_constants.INFO_CALLTREE_DESCRIPTION
+    html_string += html_constants.INFO_CALLTREE_LINK_BUTTON.format(
+        calltree_file_name)
 
-    html_string += (
-        "<p class='no-top-margin'>\n"
-        "<div class=\"yellow-button-wrapper\" "
-        "style=\"position: relative; margin: 30px 0 5px 0; max-width: 200px\">"
-        f"<a href=\"{calltree_file_name}\">"
-        "<div class=\"yellow-button\">"
-        "Full calltree"
-        "</div>"
-        "</a>"
-        "</div>"
-        "</p>")
     html_string += ("<p class='no-top-margin'>"
                     "Call tree overview bitmap:"
                     "</p>")
@@ -552,28 +488,10 @@ def create_fuzzer_detailed_section(
         "Percentage of reachable functions covered",
         "%s%%" % str(round(cov_reach_proportion, 2)))
     html_string += "</div>"
-    html_string += "<div style=\"font-size: 0.85rem; color: #adadad; margin-bottom: 40px\">"
-    html_string += "<b>NB:</b> The sum of <i>covered functions</i> and <i>functions " \
-                   "that are reachable but not covered</i> need not be equal to <i>Reachable " \
-                   "functions</i>. This is because the reachability analysis is an "  \
-                   "approximation and thus at runtime some functions may be covered " \
-                   "that are not included in the reachability analysis. This is a "   \
-                   "limitation of our static analysis capabilities."
-    html_string += "</div>"
+    html_string += html_constants.INFO_SUM_OF_COVERED_FUNCS_EQ_REACHABLE_FUNCS
 
     if total_hit_functions > reachable_funcs:
-        html_string += (
-            "<div class=\"warning-box-wrapper\">"
-            "<span class=\"warning-box red-warning\">"
-            "<b>Warning:</b> The number of covered functions are larger than the "
-            "number of reachable functions. This means that there are more functions covered at "
-            "runtime than are extracted using static analysis. This is likely a result "
-            "of the static analysis component failing to extract the right "
-            "call graph or the coverage runtime being compiled with sanitizers in code that "
-            "the static analysis has not analysed. This can happen if lto/gold is not "
-            "used in all places that coverage instrumentation is used."
-            "</span>"
-            "</div>")
+        html_string += html_constants.WARNING_TOTAL_FUNC_OVER_REACHABLE_FUNC
 
     html_string += func_hit_table_string
 
@@ -591,36 +509,6 @@ def create_fuzzer_detailed_section(
         html_string += html_helpers.html_table_add_row(
             [k, len(profile.file_targets[k])])
     html_string += "</table>\n"
-    return html_string
-
-
-def extract_highlevel_guidance(
-        conclusions: List[html_helpers.HTMLConclusion]) -> str:
-    """
-    Creates colorful boxes for the conlusions made throughout the analysis
-    """
-    logger.info("Extracting high level guidance")
-    html_string = ""
-    html_string += "<div class=\"high-level-conclusions-wrapper\">"
-
-    # Sort conclusions to show highest level (positive conclusion) first
-    conclusions = list(reversed(sorted(conclusions)))
-    for conclusion in conclusions:
-        if conclusion.severity < 5:
-            conclusion_color = "red"
-        elif conclusion.severity < 8:
-            conclusion_color = "yellow"
-        else:
-            conclusion_color = "green"
-        html_string += f"""<div class="line-wrapper">
-    <div class="high-level-conclusion { conclusion_color }-conclusion collapsed">
-    { conclusion.title }
-        <div class="high-level-extended" style="background:transparent; overflow:hidden">
-            { conclusion.description }
-        </div>
-    </div>
-</div>"""
-    html_string += "</div>"
     return html_string
 
 
@@ -705,12 +593,7 @@ def create_html_report(profiles: List[fuzzer_profile.FuzzerProfile],
             html_helpers.HTMLConclusion(
                 severity=0,
                 title="No coverage data was found",
-                description=(
-                    "No files with coverage data was found. This is either "
-                    "because an error occurred when compiling and running "
-                    "coverage runs, or because the introspector run was "
-                    "intentionally done without coverage collection. In order "
-                    "to get optimal results coverage data is needed.")))
+                description=html_constants.WARNING_NO_COVERAGE))
 
     # Create html header, which will be used to assemble the doc at the
     # end of this function.
@@ -790,14 +673,7 @@ def create_html_report(profiles: List[fuzzer_profile.FuzzerProfile],
         "Project functions overview", html_helpers.HTML_HEADING.H1,
         table_of_contents)
     html_report_core += "<div class=\"collapsible\">"
-    html_report_core += "<p> The following table shows data about each function in the project. " \
-                        "The functions included in this table correspond to all functions " \
-                        "that exist in the executables of the fuzzers. As such, there may  " \
-                        "be functions that are from third-party libraries.</p>"
-    html_report_core += f"<p>For further technical details on the meaning of columns in the " \
-                        f"below table, please see the " \
-                        f"<a href=\"{constants.GIT_BRANCH_URL}/doc/Glossary.md#project-"\
-                        f"functions-overview\">Glossary</a>.</p>"
+    html_report_core += html_constants.INFO_ALL_FUNCTION_OVERVIEW_TEXT
 
     table_id = "fuzzers_overview_table"
     tables.append(table_id)
@@ -866,7 +742,7 @@ def create_html_report(profiles: List[fuzzer_profile.FuzzerProfile],
     #############################################
     # Create top level conclusions
     #############################################
-    html_report_top += extract_highlevel_guidance(conclusions)
+    html_report_top += html_helpers.create_conclusions_box(conclusions)
 
     # Wrap up the HTML generation
     # Close the content div and content_wrapper

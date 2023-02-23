@@ -355,6 +355,38 @@ def create_percentage_graph(title: str, numerator: int,
         </div>"""
 
 
+def create_conclusions_box(conclusions: List[HTMLConclusion]) -> str:
+    """Creates a <div> with all conclusions displayed. Conclusions of highest
+    severity are placed lowest (positive conclusiosn at top, negative at
+    bottom).
+    """
+    html_string = ""
+    html_string += "<div class=\"high-level-conclusions-wrapper\">"
+
+    # Sort conclusions to show highest level (positive conclusion) first
+    conclusions = list(reversed(sorted(conclusions)))
+    for conclusion in conclusions:
+        if conclusion.severity < 5:
+            conclusion_color = "red"
+        elif conclusion.severity < 8:
+            conclusion_color = "yellow"
+        else:
+            conclusion_color = "green"
+        html_string += f"""<div class="line-wrapper">
+    <div class="high-level-conclusion { conclusion_color }-conclusion collapsed">
+    { conclusion.title }
+        <div class="high-level-extended" style="background:transparent; overflow:hidden">
+            { conclusion.description }
+        </div>
+    </div>
+</div>"""
+    # TODO(david)
+    # The below </div> was there when refactoring, but it does not look like
+    # it shuold be there. Verify.
+    html_string += "</div>"
+    return html_string
+
+
 def prettify_html(html_doc: str) -> str:
     """Prettify a HTML document."""
     soup = bs4.BeautifulSoup(html_doc, "html.parser")
