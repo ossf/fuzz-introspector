@@ -381,6 +381,9 @@ def create_conclusions_box(
         </div>
     </div>
 </div>"""
+    # TODO(david)
+    # The below </div> was there when refactoring, but it does not look like
+    # it shuold be there. Verify.
     html_string += "</div>"
     return html_string
 
