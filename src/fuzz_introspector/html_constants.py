@@ -72,3 +72,55 @@ WARNING_TOTAL_FUNC_OVER_REACHABLE_FUNC = """<div class="warning-box-wrapper">
 		used in all places that coverage instrumentation is used.
 	</span>
 </div>"""
+
+
+ALL_FUNCTION_TABLE_COLUMNS=[
+        ("Func name", ""),
+        ("Functions filename", "Source code file where function is defined."),
+        ("Args", "Types of arguments to this function."),
+        ("Function call depth",
+         "Function call depth based on static analysis."),
+        ("Reached by Fuzzers",
+         "The specific fuzzers that reach this function. Based on static analysis."
+         ),
+        ("Fuzzers runtime hit",
+         "Indicates whether the function is hit at runtime by the given corpus. "
+         "Based on dynamic analysis."),
+        ("Func lines hit %",
+         "Indicates the percentage of the function that is covered at runtime. "
+         "This is based on dynamic analysis."),
+        ("I Count",
+         "Instruction count. The number of LLVM instructions in the function."
+         ),
+        ("BB Count",
+         "Basic block count. The number of basic blocks in the function."),
+        ("Cyclomatic complexity",
+         "The cyclomatic complexity of the function."),
+        ("Functions reached",
+         "The number of functions reached, based on static analysis."),
+        ("Reached by functions",
+         "The number of functions that reaches this function, based on static analysis."
+         ),
+        ("Accumulated cyclomatic complexity",
+         "Accummulated cyclomatic complexity of all functions reachable by this function. "
+         "Based on static analysis."), ("Undiscovered complexity", "")
+    ]
+
+
+FUZZER_OVERVIEW_TABLE_COLUMNS=[
+        ("Fuzzer", "Fuzzer key. Usually fuzzer executable file"),
+        ("Fuzzer filename", "Fuzzer source code file"),
+        ("Functions Reached",
+         "Number of functions this fuzzer reaches. This data is based on static analysis."
+         ),
+        ("Functions unreached",
+         "Number of functions unreached by this fuzzer. This data is based on static analysis."
+         ), ("Fuzzer depth", "Function call depth of this fuzer."),
+        ("Files reached", "Source code files reached by the fuzzer."),
+        ("Basic blocks reached",
+         "The total number of basic blocks of all functions reached by the fuzzer."
+         ),
+        ("Cyclomatic complexity",
+         "The accummulated cyclomatic complexity of all functions reached by the fuzzer."
+         ), ("Details", "")
+    ]

@@ -125,23 +125,7 @@ def create_horisontal_calltree_image(image_name: str,
 def create_overview_table(tables: List[str],
                           profiles: List[fuzzer_profile.FuzzerProfile]) -> str:
     """Table with an overview of all the fuzzers"""
-    html_string = html_helpers.html_create_table_head(tables[-1], [
-        ("Fuzzer", "Fuzzer key. Usually fuzzer executable file"),
-        ("Fuzzer filename", "Fuzzer source code file"),
-        ("Functions Reached",
-         "Number of functions this fuzzer reaches. This data is based on static analysis."
-         ),
-        ("Functions unreached",
-         "Number of functions unreached by this fuzzer. This data is based on static analysis."
-         ), ("Fuzzer depth", "Function call depth of this fuzer."),
-        ("Files reached", "Source code files reached by the fuzzer."),
-        ("Basic blocks reached",
-         "The total number of basic blocks of all functions reached by the fuzzer."
-         ),
-        ("Cyclomatic complexity",
-         "The accummulated cyclomatic complexity of all functions reached by the fuzzer."
-         ), ("Details", "")
-    ])
+    html_string = html_helpers.html_create_table_head(tables[-1], html_constants.FUZZER_OVERVIEW_TABLE_COLUMNS)
     for profile in profiles:  # create a row for each fuzzer.
         fuzzer_filename = profile.fuzzer_source_file
         html_string += html_helpers.html_table_add_row([
@@ -171,41 +155,10 @@ def create_all_function_table(
     if table_id is None:
         table_id = tables[-1]
 
-    table_columns = [
-        ("Func name", ""),
-        ("Functions filename", "Source code file where function is defined."),
-        ("Args", "Types of arguments to this function."),
-        ("Function call depth",
-         "Function call depth based on static analysis."),
-        ("Reached by Fuzzers",
-         "The specific fuzzers that reach this function. Based on static analysis."
-         ),
-        ("Fuzzers runtime hit",
-         "Indicates whether the function is hit at runtime by the given corpus. "
-         "Based on dynamic analysis."),
-        ("Func lines hit %",
-         "Indicates the percentage of the function that is covered at runtime. "
-         "This is based on dynamic analysis."),
-        ("I Count",
-         "Instruction count. The number of LLVM instructions in the function."
-         ),
-        ("BB Count",
-         "Basic block count. The number of basic blocks in the function."),
-        ("Cyclomatic complexity",
-         "The cyclomatic complexity of the function."),
-        ("Functions reached",
-         "The number of functions reached, based on static analysis."),
-        ("Reached by functions",
-         "The number of functions that reaches this function, based on static analysis."
-         ),
-        ("Accumulated cyclomatic complexity",
-         "Accummulated cyclomatic complexity of all functions reachable by this function. "
-         "Based on static analysis."), ("Undiscovered complexity", "")
-    ]
     html_string = html_helpers.html_create_table_head(
         table_id,
-        table_columns,
-        sort_by_column=len(table_columns) - 1,
+        html_constants.ALL_FUNCTION_TABLE_COLUMNS,
+        sort_by_column=len(html_constants.ALL_FUNCTION_TABLE_COLUMNS) - 1,
         sort_order="desc")
 
     # an array in development to replace html generation in python.
