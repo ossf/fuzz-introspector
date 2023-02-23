@@ -151,7 +151,8 @@ def _handle_argument(argType, init_dict, possible_target, recursion_count):
     elif argType == "java.lang.String":
         return "data.consumeString(100)"
     else:
-        return _handle_object_creation(argType, init_dict, possible_target, recursion_count)
+        return _handle_object_creation(argType, init_dict, possible_target,
+                                       recursion_count)
 
 
 def _search_concrete_subclass(classname, init_dict):
@@ -176,7 +177,8 @@ def _search_concrete_subclass(classname, init_dict):
     return None
 
 
-def _handle_object_creation(classname, init_dict, possible_target, recursion_count):
+def _handle_object_creation(classname, init_dict, possible_target,
+                            recursion_count):
     """
     Generate statement for Java object creation of the target class.
     If constructor (<init>) does existed in the yaml file, we will
@@ -198,7 +200,8 @@ def _handle_object_creation(classname, init_dict, possible_target, recursion_cou
             classname = func_elem['functionSourceFile']
             for argType in func_elem['argTypes']:
                 arg_list.append(
-                    _handle_argument(argType, init_dict, possible_target, recursion_count))
+                    _handle_argument(argType, init_dict, possible_target,
+                                     recursion_count))
             possible_target.exceptions_to_handle.update(
                 func_elem['JavaMethodInfo']['exceptions'])
             possible_target.imports_to_add.update(_handle_import(func_elem))
@@ -295,7 +298,7 @@ def _generate_heuristic_2(yaml_dict, possible_targets):
     Will also add proper exception handling based on the exception list
     provided by the frontend code.
     """
-    HEURISTIC_NAME="jvm-autofuzz-heuristics-2"
+    HEURISTIC_NAME = "jvm-autofuzz-heuristics-2"
     # Retrieve <init> method definition for all classes
     init_dict = {}
     method_list = []
@@ -335,21 +338,22 @@ def _generate_heuristic_2(yaml_dict, possible_targets):
         possible_target.function_class = func_class
 
         # Store exceptions thrown by the target method
-        possible_target.exceptions_to_handle.update(java_method_info['exceptions'])
+        possible_target.exceptions_to_handle.update(
+            java_method_info['exceptions'])
 
         # Store java import statement
         possible_target.imports_to_add.update(_handle_import(func_elem))
 
         # Store function parameter list
         for argType in func_elem['argTypes']:
-            possible_target.variables_to_add.append(_handle_argument(argType, init_dict, possible_target, 0))
+            possible_target.variables_to_add.append(
+                _handle_argument(argType, init_dict, possible_target, 0))
 
         # Create the actual source
-        fuzzer_source_code = "  // Heuristic name: %s\n"%(HEURISTIC_NAME)
+        fuzzer_source_code = "  // Heuristic name: %s\n" % (HEURISTIC_NAME)
         fuzzer_source_code += "  %s obj = %s;\n" % (
             func_class,
-            _handle_object_creation(func_class, init_dict, possible_target, 0)
-        )
+            _handle_object_creation(func_class, init_dict, possible_target, 0))
         fuzzer_source_code += "  obj.%s($VARIABLE$);\n" % (func_name)
         if len(possible_target.exceptions_to_handle) > 0:
             fuzzer_source_code = "  try {\n" + fuzzer_source_code
