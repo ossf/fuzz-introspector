@@ -336,41 +336,6 @@ def create_conclusions(conclusions: List[html_helpers.HTMLConclusion],
                                     description=""))
 
 
-def create_top_summary_info(tables: List[str],
-                            proj_profile: project_profile.MergedProjectProfile,
-                            conclusions: List[html_helpers.HTMLConclusion],
-                            extract_conclusion: bool,
-                            display_coverage: bool = False) -> str:
-    html_string = ""
-
-    # Display reachability information
-    html_string += "<div style=\"display: flex; max-width: 50%\">"
-
-    html_string += html_helpers.create_percentage_graph(
-        "Functions statically reachable by fuzzers",
-        proj_profile.reached_func_count, proj_profile.total_functions)
-
-    html_string += html_helpers.create_percentage_graph(
-        "Cyclomatic complexity statically reachable by fuzzers",
-        proj_profile.reached_complexity, proj_profile.total_complexity)
-
-    html_string += "</div>"
-    if display_coverage:
-        logger.info("Displaying coverage in summary")
-        covered_funcs = proj_profile.get_all_runtime_covered_functions()
-        html_string += f"Functions covered at runtime: { len(covered_funcs) }"
-        html_string += "<br>"
-    else:
-        logger.info("Not displaying coverage in summary")
-
-    # Add conclusion
-    if extract_conclusion:
-        create_conclusions(conclusions, proj_profile.reached_func_percentage,
-                           proj_profile.reached_complexity_percentage)
-
-    return html_string
-
-
 def create_fuzzer_detailed_section(
         proj_profile: project_profile.MergedProjectProfile,
         profile: fuzzer_profile.FuzzerProfile,
