@@ -28,8 +28,8 @@ from typing import (
     Tuple,
 )
 
-from fuzz_introspector import (analysis, cfg_load, constants, html_constants, html_helpers,
-                               json_report, styling, utils)
+from fuzz_introspector import (analysis, cfg_load, constants, html_constants,
+                               html_helpers, json_report, styling, utils)
 
 from fuzz_introspector.datatypes import project_profile, fuzzer_profile
 
@@ -125,7 +125,8 @@ def create_horisontal_calltree_image(image_name: str,
 def create_overview_table(tables: List[str],
                           profiles: List[fuzzer_profile.FuzzerProfile]) -> str:
     """Table with an overview of all the fuzzers"""
-    html_string = html_helpers.html_create_table_head(tables[-1], html_constants.FUZZER_OVERVIEW_TABLE_COLUMNS)
+    html_string = html_helpers.html_create_table_head(
+        tables[-1], html_constants.FUZZER_OVERVIEW_TABLE_COLUMNS)
     for profile in profiles:  # create a row for each fuzzer.
         fuzzer_filename = profile.fuzzer_source_file
         html_string += html_helpers.html_table_add_row([
@@ -315,7 +316,8 @@ def create_fuzzer_detailed_section(
 
     html_string += "<p class='no-top-margin'>"
     html_string += html_constants.INFO_CALLTREE_DESCRIPTION
-    html_string += html_constants.INFO_CALLTREE_LINK_BUTTON.format(calltree_file_name)
+    html_string += html_constants.INFO_CALLTREE_LINK_BUTTON.format(
+        calltree_file_name)
 
     html_string += ("<p class='no-top-margin'>"
                     "Call tree overview bitmap:"

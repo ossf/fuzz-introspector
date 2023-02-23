@@ -355,8 +355,7 @@ def create_percentage_graph(title: str, numerator: int,
         </div>"""
 
 
-def create_conclusions_box(
-        conclusions: List[HTMLConclusion]) -> str:
+def create_conclusions_box(conclusions: List[HTMLConclusion]) -> str:
     """Creates a <div> with all conclusions displayed. Conclusions of highest
     severity are placed lowest (positive conclusiosn at top, negative at
     bottom).
@@ -386,6 +385,7 @@ def create_conclusions_box(
     # it shuold be there. Verify.
     html_string += "</div>"
     return html_string
+
 
 def prettify_html(html_doc: str) -> str:
     """Prettify a HTML document."""
