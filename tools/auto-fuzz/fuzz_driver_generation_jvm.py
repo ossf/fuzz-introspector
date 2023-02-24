@@ -132,7 +132,11 @@ def _handle_import(func_elem):
     return list(import_set)
 
 
-def _handle_argument(argType, init_dict, possible_target, recursion_count, obj_creation = True):
+def _handle_argument(argType,
+                     init_dict,
+                     possible_target,
+                     recursion_count,
+                     obj_creation=True):
     """Generate data creation statement for given argument type"""
     if argType == "int" or argType == "java.lang.Integer":
         return ["data.consumeInt(0,100)"]
@@ -214,7 +218,8 @@ def _search_factory_method(classname, static_method_list, possible_target):
         factory_call += '(' + ','.join(arg_list) + ');\n'
 
         # Handle exceptions and import
-        possible_target.exceptions_to_handle.update(func_elem['JavaMethodInfo']['exceptions'])
+        possible_target.exceptions_to_handle.update(
+            func_elem['JavaMethodInfo']['exceptions'])
         possible_target.imports_to_add.update(_handle_import(func_elem))
 
         result_list.append(factory_call)
@@ -540,7 +545,8 @@ def _generate_heuristic_3(yaml_dict, possible_targets, max_target):
                 _handle_argument(argType, None, possible_target, 0)[0])
 
         # Retrieve list of factory method for the target object
-        factory_method_list = _search_factory_method(func_class, static_method_list,
+        factory_method_list = _search_factory_method(func_class,
+                                                     static_method_list,
                                                      possible_target)
 
         for factory_method in factory_method_list:
