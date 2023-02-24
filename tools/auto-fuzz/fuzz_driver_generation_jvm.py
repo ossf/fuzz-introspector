@@ -14,6 +14,7 @@
 
 import os
 import yaml
+import itertools
 
 from typing import List, Set, Any
 
@@ -27,14 +28,23 @@ class FuzzTarget:
     imports_to_add: Set[str]
     heuristics_used: List[str]
 
-    def __init__(self):
-        self.function_target = ""
-        self.function_class = ""
-        self.exceptions_to_handle = set()
-        self.fuzzer_source_code = ""
-        self.variables_to_add = []
-        self.imports_to_add = set()
-        self.heuristics_used = []
+    def __init__(self, orig=None):
+        if orig:
+            self.function_target = orig.function_target
+            self.function_class = orig.function_class
+            self.exceptions_to_handle = orig.exceptions_to_handle
+            self.fuzzer_source_code = orig.fuzzer_source_code
+            self.variables_to_add = orig.variables_to_add
+            self.imports_to_add = orig.imports_to_add
+            self.heuristics_used = orig.heuristics_used
+        else:
+            self.function_target = ""
+            self.function_class = ""
+            self.exceptions_to_handle = set()
+            self.fuzzer_source_code = ""
+            self.variables_to_add = []
+            self.imports_to_add = set()
+            self.heuristics_used = []
 
     def __dict__(self):
         return {"function": self.function_target}
@@ -125,37 +135,37 @@ def _handle_import(func_elem):
 def _handle_argument(argType, init_dict, possible_target, recursion_count):
     """Generate data creation statement for given argument type"""
     if argType == "int" or argType == "java.lang.Integer":
-        return "data.consumeInt(0,100)"
+        return ["data.consumeInt(0,100)"]
     elif argType == "int[]" or argType == "java.lang.Integer[]":
-        return "data.consumeInts(100)"
+        return ["data.consumeInts(100)"]
     elif argType == "boolean" or argType == "java.lang.Boolean":
-        return "data.consumeBoolean()"
+        return ["data.consumeBoolean()"]
     elif argType == "boolean[]" or argType == "java.lang.Boolean[]":
-        return "data.consumeBooleans(100)"
+        return ["data.consumeBooleans(100)"]
     elif argType == "byte" or argType == "java.lang.Byte":
-        return "data.consumeByte()"
+        return ["data.consumeByte()"]
     elif argType == "byte[]" or argType == "java.lang.Byte[]":
-        return "data.consumeBytes(100)"
+        return ["data.consumeBytes(100)"]
     elif argType == "short" or argType == "java.lang.Short":
-        return "data.consumeShort()"
+        return ["data.consumeShort()"]
     elif argType == "short[]" or argType == "java.lang.Short[]":
-        return "data.consumeShorts(100)"
+        return ["data.consumeShorts(100)"]
     elif argType == "long" or argType == "java.lang.Long":
-        return "data.consumeLong()"
+        return ["data.consumeLong()"]
     elif argType == "long[]" or argType == "java.lang.Long[]":
-        return "data.consumeLongs(100)"
+        return ["data.consumeLongs(100)"]
     elif argType == "float" or argType == "java.lang.Float":
-        return "data.consumeFloat()"
+        return ["data.consumeFloat()"]
     elif argType == "char" or argType == "java.lang.Character":
-        return "data.consumeCharacter()"
+        return ["data.consumeCharacter()"]
     elif argType == "java.lang.String":
-        return "data.consumeString(100)"
+        return ["data.consumeString(100)"]
     else:
         return _handle_object_creation(argType, init_dict, possible_target,
                                        recursion_count)
 
 
-def _search_concrete_subclass(classname, init_dict):
+def _search_concrete_subclass(classname, init_dict, result_list=[]):
     """Search concrete subclass for the target classname"""
     for key in init_dict:
         func_elem = init_dict[key]
@@ -167,14 +177,15 @@ def _search_concrete_subclass(classname, init_dict):
             continue
 
         if java_info['classConcrete'] and java_info['public']:
-            return func_elem
+            if func_elem not in result_list:
+                result_list.append(func_elem)
         else:
-            result = _search_concrete_subclass(func_elem['functionSourceFile'],
-                                               init_dict)
-            if result:
-                return result
+            for result in _search_concrete_subclass(
+                    func_elem['functionSourceFile'], init_dict):
+                if result not in result_list:
+                    result_list.append(result)
 
-    return None
+    return result_list
 
 
 def _handle_object_creation(classname, init_dict, possible_target,
@@ -186,35 +197,48 @@ def _handle_object_creation(classname, init_dict, possible_target,
     are used.
     """
     recursion_count += 1
-    if init_dict and classname in init_dict.keys() and recursion_count <= 10:
+    if init_dict and classname in init_dict.keys() and recursion_count <= 5:
         # Process arguments for constructor
         try:
             arg_list = []
+            class_list = []
             func_elem = init_dict[classname]
 
-            if not func_elem['JavaMethodInfo']['classConcrete']:
-                func_elem = _search_concrete_subclass(classname, init_dict)
-            if not func_elem:
+            if func_elem['JavaMethodInfo']['classConcrete']:
+                class_list.append(func_elem)
+            else:
+                class_list.extend(
+                    _search_concrete_subclass(classname, init_dict))
+            if len(class_list) == 0:
                 return "new " + classname.replace("$", ".") + "()"
 
-            classname = func_elem['functionSourceFile']
-            for argType in func_elem['argTypes']:
-                arg_list.append(
-                    _handle_argument(argType, init_dict, possible_target,
-                                     recursion_count))
-            possible_target.exceptions_to_handle.update(
-                func_elem['JavaMethodInfo']['exceptions'])
-            possible_target.imports_to_add.update(_handle_import(func_elem))
-            return "new " + classname.replace(
-                "$", ".") + "(" + ",".join(arg_list) + ")"
+            result_list = []
+            handled = []
+            for elem in class_list:
+                if elem in handled:
+                    continue
+                handled.append(elem)
+                classname = elem['functionSourceFile']
+                for argType in elem['argTypes']:
+                    arg_list.append(
+                        _handle_argument(argType, init_dict, possible_target,
+                                         recursion_count))
+                possible_target.exceptions_to_handle.update(
+                    elem['JavaMethodInfo']['exceptions'])
+                possible_target.imports_to_add.update(
+                    _handle_import(func_elem))
+                for args_item in list(itertools.product(*arg_list)):
+                    result_list.append("new " + classname.replace("$", ".") +
+                                       "(" + ",".join(args_item) + ")")
+            return result_list
         except RecursionError:
             # Fail to create constructor code with parameters, using default constructor
-            return "new " + classname.replace("$", ".") + "()"
+            return ["new " + classname.replace("$", ".") + "()"]
     else:
-        return "new " + classname.replace("$", ".") + "()"
+        return ["new " + classname.replace("$", ".") + "()"]
 
 
-def _generate_heuristic_1(yaml_dict, possible_targets):
+def _generate_heuristic_1(yaml_dict, possible_targets, max_target):
     """Heuristic 1.
     Creates a FuzzTarget for each method that satisfy all:
         - public class method which are not abstract or found in JDK library
@@ -228,6 +252,9 @@ def _generate_heuristic_1(yaml_dict, possible_targets):
     """
     HEURISTIC_NAME = "jvm-autofuzz-heuristics-1"
     for func_elem in yaml_dict['All functions']['Elements']:
+        if len(possible_targets) > max_target:
+            return
+
         java_method_info = func_elem['JavaMethodInfo']
 
         # Skip method which doese not match this heuristic
@@ -265,7 +292,7 @@ def _generate_heuristic_1(yaml_dict, possible_targets):
         # Store function parameter list
         for argType in func_elem['argTypes']:
             possible_target.variables_to_add.append(
-                _handle_argument(argType, None, possible_target, 0))
+                _handle_argument(argType, None, possible_target, 0)[0])
 
         # Create the actual source
         fuzzer_source_code = "  // Heuristic name: %s\n" % (HEURISTIC_NAME)
@@ -284,7 +311,7 @@ def _generate_heuristic_1(yaml_dict, possible_targets):
         possible_targets.append(possible_target)
 
 
-def _generate_heuristic_2(yaml_dict, possible_targets):
+def _generate_heuristic_2(yaml_dict, possible_targets, max_target):
     """Heuristic 2.
     Creates a FuzzTarget for each method that satisfy all:
         - public object method which are not abstract or found in JDK library
@@ -307,9 +334,11 @@ def _generate_heuristic_2(yaml_dict, possible_targets):
             init_dict[func_elem['functionSourceFile']] = func_elem
         else:
             method_list.append(func_elem)
-    print(len(method_list))
+
     for func_elem in method_list:
-        print(func_elem['functionName'])
+        if len(possible_targets) > max_target:
+            return
+
         java_method_info = func_elem['JavaMethodInfo']
 
         # Skip method which doese not match this heuristic
@@ -344,31 +373,40 @@ def _generate_heuristic_2(yaml_dict, possible_targets):
         # Store java import statement
         possible_target.imports_to_add.update(_handle_import(func_elem))
 
-        # Store function parameter list
+        # Get all possible argument lists with different possible object creation combination
         for argType in func_elem['argTypes']:
             possible_target.variables_to_add.append(
-                _handle_argument(argType, init_dict, possible_target, 0))
+                _handle_argument(argType, init_dict, possible_target, 0)[0])
 
-        # Create the actual source
-        fuzzer_source_code = "  // Heuristic name: %s\n" % (HEURISTIC_NAME)
-        fuzzer_source_code += "  %s obj = %s;\n" % (
-            func_class,
-            _handle_object_creation(func_class, init_dict, possible_target, 0))
-        fuzzer_source_code += "  obj.%s($VARIABLE$);\n" % (func_name)
-        if len(possible_target.exceptions_to_handle) > 0:
-            fuzzer_source_code = "  try {\n" + fuzzer_source_code
-            fuzzer_source_code += "  }\n"
-            counter = 1
-            for exc in possible_target.exceptions_to_handle:
-                fuzzer_source_code += "  catch (%s e%d) {}\n" % (exc, counter)
-                counter += 1
-        possible_target.fuzzer_source_code = fuzzer_source_code
-        possible_target.heuristics_used.append(HEURISTIC_NAME)
+        # Get all object creation statement for each possible concrete classes of the object
+        object_creation_list = _handle_object_creation(func_class, init_dict,
+                                                       possible_target, 0)
 
-        possible_targets.append(possible_target)
+        for object_creation_item in object_creation_list:
+            # Create possible target for all possible object creation statement
+            # Clone the base target object
+            cloned_possible_target = FuzzTarget(possible_target)
+
+            # Create the actual source
+            fuzzer_source_code = "  // Heuristic name: %s\n" % (HEURISTIC_NAME)
+            fuzzer_source_code += "  %s obj = %s;\n" % (func_class,
+                                                        object_creation_item)
+            fuzzer_source_code += "  obj.%s($VARIABLE$);\n" % (func_name)
+            if len(cloned_possible_target.exceptions_to_handle) > 0:
+                fuzzer_source_code = "  try {\n" + fuzzer_source_code
+                fuzzer_source_code += "  }\n"
+                counter = 1
+                for exc in cloned_possible_target.exceptions_to_handle:
+                    fuzzer_source_code += "  catch (%s e%d) {}\n" % (exc,
+                                                                     counter)
+                    counter += 1
+            cloned_possible_target.fuzzer_source_code = fuzzer_source_code
+            cloned_possible_target.heuristics_used.append(HEURISTIC_NAME)
+
+            possible_targets.append(cloned_possible_target)
 
 
-def generate_possible_targets(proj_folder):
+def generate_possible_targets(proj_folder, max_target):
     """Generate all possible targets for a given project folder"""
 
     # Read the Fuzz Introspector generated data
@@ -378,7 +416,7 @@ def generate_possible_targets(proj_folder):
         yaml_dict = yaml.safe_load(stream)
 
     possible_targets = []
-    _generate_heuristic_1(yaml_dict, possible_targets)
-    _generate_heuristic_2(yaml_dict, possible_targets)
+    _generate_heuristic_1(yaml_dict, possible_targets, max_target)
+    _generate_heuristic_2(yaml_dict, possible_targets, max_target)
 
     return possible_targets

@@ -555,7 +555,8 @@ def autofuzz_project_from_github(github_url,
                 oss_fuzz_base_project.project_folder)
         elif language == "jvm":
             possible_targets = fuzz_driver_generation_jvm.generate_possible_targets(
-                oss_fuzz_base_project.project_folder)
+                oss_fuzz_base_project.project_folder,
+                constants.MAX_TARGET_PER_PROJECT_HEURISTIC)
 
     print("Generated %d possible targets for %s." %
           (len(possible_targets), github_url))

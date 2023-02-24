@@ -13,6 +13,7 @@
 # limitations under the License.
 
 MAX_FUZZERS_PER_PROJECT = 10
+MAX_TARGET_PER_PROJECT_HEURISTIC = 100
 MAX_THREADS = 4
 
 git_repos = {
