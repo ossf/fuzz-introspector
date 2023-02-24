@@ -311,7 +311,7 @@ def create_fuzzer_detailed_section(
         proj_profile: project_profile.MergedProjectProfile,
         profile: fuzzer_profile.FuzzerProfile,
         table_of_contents: html_helpers.HtmlTableOfContents, tables: List[str],
-        curr_tt_profile: int, conclusions: List[html_helpers.HTMLConclusion],
+        profile_idx: int, conclusions: List[html_helpers.HTMLConclusion],
         extract_conclusion: bool, fuzzer_table_data: Dict[str, Any],
         dump_files: bool) -> str:
     html_string = ""
@@ -324,7 +324,7 @@ def create_fuzzer_detailed_section(
         "Call tree",
         html_helpers.HTML_HEADING.H3,
         table_of_contents,
-        link=f"call_tree_{curr_tt_profile}")
+        link=f"call_tree_{profile_idx}")
 
     from fuzz_introspector.analyses import calltree_analysis as cta
     calltree_analysis = cta.FuzzCalltreeAnalysis()
@@ -377,7 +377,7 @@ def create_fuzzer_detailed_section(
             "Fuzz blockers",
             html_helpers.HTML_HEADING.H3,
             table_of_contents,
-            link=f"fuzz_blocker{curr_tt_profile}")
+            link=f"fuzz_blocker{profile_idx}")
         html_string += html_fuzz_blocker_table
 
     profile.write_stats_to_summary_file()
@@ -386,7 +386,7 @@ def create_fuzzer_detailed_section(
         "Runtime coverage analysis",
         html_helpers.HTML_HEADING.H3,
         table_of_contents,
-        link=f"functions_cov_hit_{curr_tt_profile}")
+        link=f"functions_cov_hit_{profile_idx}")
     table_name = f"myTable{len(tables)}"
 
     # Add this table name to fuzzer_table_data
@@ -476,7 +476,7 @@ def create_fuzzer_detailed_section(
         "Files reached",
         html_helpers.HTML_HEADING.H3,
         table_of_contents,
-        link=f"files_hit_{curr_tt_profile}")
+        link=f"files_hit_{profile_idx}")
     tables.append(f"myTable{len(tables)}")
     html_string += html_helpers.html_create_table_head(tables[-1],
                                                        [("filename", ""),
