@@ -182,24 +182,24 @@ def _search_factory_method(classname, static_method_list, possible_target):
         java_info = func_elem['JavaMethodInfo']
 
         # Elimnate candidates
-        if not java_method_info['public']:
+        if not java_info['public']:
             continue
-        if not java_method_info['concrete']:
+        if not java_info['concrete']:
             continue
-        if len(func_elem['argTypes']) < 20:
+        if len(func_elem['argTypes']) > 20:
             continue
         if "test" in func_elem['functionName']:
             continue
-        if func_elem['returnType'] != "classname":
+        if func_elem['returnType'] != classname:
             continue
 
         # Retrieve primitive arguments list
         arg_list = []
-        for argType in elem['argTypes']:
+        for argType in func_elem['argTypes']:
             arg_list.extend(_handle_argument(argType, None, None, None, False))
 
         # Non-primitive parameters existed
-        if len(arg_list) != len(elem['argTypes']):
+        if len(arg_list) != len(func_elem['argTypes']):
             continue
 
         # Generate call to factory methods
@@ -214,7 +214,7 @@ def _search_factory_method(classname, static_method_list, possible_target):
         factory_call += '(' + ','.join(arg_list) + ');\n'
 
         # Handle exceptions and import
-        possible_target.exceptions_to_handle.update(elem['JavaMethodInfo']['exceptions'])
+        possible_target.exceptions_to_handle.update(func_elem['JavaMethodInfo']['exceptions'])
         possible_target.imports_to_add.update(_handle_import(func_elem))
 
         result_list.append(factory_call)
@@ -487,15 +487,18 @@ def _generate_heuristic_3(yaml_dict, possible_targets, max_target):
     """
     HEURISTIC_NAME = "jvm-autofuzz-heuristics-3"
 
+    init_dict = {}
     static_method_list = []
     method_list = []
     for func_elem in yaml_dict['All functions']['Elements']:
-        if func_elem['JavaMethodInfo']['static']:
+        if "<init>" in func_elem['functionName']:
+            init_dict[func_elem['functionSourceFile']] = func_elem
+        elif func_elem['JavaMethodInfo']['static']:
             static_method_list.append(func_elem)
         else:
             method_list.append(func_elem)
 
-    for func_elem in yaml_dict['All functions']['Elements']:
+    for func_elem in method_list:
         if len(possible_targets) > max_target:
             return
 
@@ -562,6 +565,7 @@ def _generate_heuristic_3(yaml_dict, possible_targets, max_target):
             cloned_possible_target.heuristics_used.append(HEURISTIC_NAME)
 
             possible_targets.append(cloned_possible_target)
+
 
 def generate_possible_targets(proj_folder, max_target):
     """Generate all possible targets for a given project folder"""
