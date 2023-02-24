@@ -28,7 +28,7 @@ from typing import (
     Tuple,
 )
 
-from fuzz_introspector import (analysis, cfg_load, constants, html_constants,
+from fuzz_introspector import (analysis, constants, html_constants,
                                html_helpers, json_report, styling, utils)
 
 from fuzz_introspector.datatypes import project_profile, fuzzer_profile
@@ -267,7 +267,7 @@ def create_reachability_conclusions(
 
 def create_calltree_color_distribution_table(color_list: List[str]) -> str:
     html_string = ""
-    color_dictionary = {}
+    color_dictionary: Dict[str, int] = {}
     for color in color_list:
         color_dictionary[color] = color_dictionary.get(color, 0) + 1
 
