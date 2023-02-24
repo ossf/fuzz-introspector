@@ -402,4 +402,4 @@ def wrap_link(url, text):
 
 
 def create_coded_text(text):
-    return f"<code class='language-clike'>{text}</code>"
+    return f"<code class='language-clike'>\n{text}\n</code>"
