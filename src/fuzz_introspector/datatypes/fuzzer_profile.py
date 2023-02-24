@@ -170,6 +170,9 @@ class FuzzerProfile:
                 new_dict[key.replace(basefolder, "")] = self.file_targets[key]
             self.file_targets = new_dict
 
+    def get_callsites(self):
+        return cfg_load.extract_all_callsites(self.fuzzer_callsite_calltree)
+
     def reaches_file(self,
                      file_name: str,
                      basefolder: Optional[str] = None) -> bool:

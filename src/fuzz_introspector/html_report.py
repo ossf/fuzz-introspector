@@ -56,15 +56,8 @@ def create_horisontal_calltree_image(image_name: str,
 
     logger.info(f"Creating image {image_name}")
 
-    if profile.fuzzer_callsite_calltree is None:
-        return []
-
-    # Extract color sequence
-    color_list: List[str] = []
-    for node in cfg_load.extract_all_callsites(
-            profile.fuzzer_callsite_calltree):
-        if (node.cov_color != ""):
-            color_list.append(node.cov_color)
+    # Get the callsites of the profile as a list of colors.
+    color_list: List[str] = [cs.cov_color for cs in profile.get_callsites()]
     logger.info(f"- extracted the callsites ({len(color_list)} nodes)")
 
     # Show one read rectangle if the list is empty. An alternative is
@@ -72,6 +65,7 @@ def create_horisontal_calltree_image(image_name: str,
     if len(color_list) == 0:
         color_list = ['red']
 
+    # Create a plot
     fig, ax = plt.subplots()
     ax.clear()
     fig.set_size_inches(15, 2.5)
@@ -92,17 +86,17 @@ def create_horisontal_calltree_image(image_name: str,
             curr_x += curr_size
             curr_color = color_list[i]
             curr_size = 1.0
-    logger.info("- iterated over color list")
-
     # Plot the last case
     ax.add_patch(Rectangle((curr_x, 0.0), curr_size, 1.0, color=curr_color))
-    ax.set_yticklabels([])
-    ax.set_yticks([])
-    xlabel = ax.set_xlabel("Callsite index")
+    logger.info("- iterated over color list")
 
     # Save the image
     if dump_files:
         logger.info("- saving image")
+        ax.set_yticklabels([])
+        ax.set_yticks([])
+        xlabel = ax.set_xlabel("Callsite index")
+
         plt.title(image_name.replace(".png", "").replace("_colormap", ""))
         fig.tight_layout()
         fig.savefig(image_name, bbox_extra_artists=[xlabel])
