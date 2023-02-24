@@ -260,6 +260,26 @@ class OptimalTargets(analysis.AnalysisInterface):
         html_string += ("</table>\n")
         return html_string
 
+    def create_top_summary_info(
+            self, tables: List[str],
+            proj_profile: project_profile.MergedProjectProfile) -> str:
+        html_string = ""
+
+        # Display reachability information
+        html_string += "<div style=\"display: flex; max-width: 50%\">"
+
+        html_string += html_helpers.create_percentage_graph(
+            "Functions statically reachable by fuzzers",
+            proj_profile.reached_func_count, proj_profile.total_functions)
+
+        html_string += html_helpers.create_percentage_graph(
+            "Cyclomatic complexity statically reachable by fuzzers",
+            proj_profile.reached_complexity, proj_profile.total_complexity)
+
+        html_string += "</div>"
+
+        return html_string
+
     def get_consequential_section(
             self, new_profile: project_profile.MergedProjectProfile,
             conclusions: List[html_helpers.HTMLConclusion], tables: List[str],
@@ -270,8 +290,7 @@ class OptimalTargets(analysis.AnalysisInterface):
             "<p>Implementing fuzzers that target the above functions "
             "will improve reachability such that it becomes:</p>")
         tables.append(f"myTable{len(tables)}")
-        html_string += html_report.create_top_summary_info(
-            tables, new_profile, conclusions, False)
+        html_string += self.create_top_summary_info(tables, new_profile)
 
         # Table with details about all functions in the project in case the
         # suggested fuzzers are implemented.

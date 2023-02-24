@@ -34,8 +34,6 @@ from fuzz_introspector.datatypes import project_profile, fuzzer_profile
 # For pretty printing the html code:
 from bs4 import BeautifulSoup as bs
 
-from fuzz_introspector.html_report import create_collapsible_element
-
 logger = logging.getLogger(name=__name__)
 
 
@@ -453,7 +451,7 @@ class FuzzCalltreeAnalysis(analysis.AnalysisInterface):
             collapsible_id = entry.source_file + entry.blocked_side_line_numder + random_suffix
             func_num = len(entry.blocked_unique_funcs)
             if func_num > 0:
-                collapsible_string = create_collapsible_element(
+                collapsible_string = html_helpers.create_collapsible_element(
                     str(func_num), entry.blocked_unique_funcs, collapsible_id)
             else:
                 collapsible_string = "None"
