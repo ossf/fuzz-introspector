@@ -23,7 +23,7 @@ git_repos = {
         # 'https://github.com/executablebooks/markdown-it-py'
     ],
     'jvm': [
-        'https://github.com/eclipse-ee4j/angus-mail',
-        # 'https://github.com/jboss-javassist/javassist'
+        # 'https://github.com/eclipse-ee4j/angus-mail',
+        'https://github.com/jboss-javassist/javassist'
     ]
 }
