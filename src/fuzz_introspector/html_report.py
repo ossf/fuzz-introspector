@@ -264,6 +264,49 @@ def create_reachability_conclusions(
                                     description=""))
 
 
+def create_calltree_color_distribution_table(color_list: List[str]) -> str:
+    html_string = ""
+    color_dictionary = {}
+    for color in color_list:
+        color_dictionary[color] = color_dictionary.get(color, 0) + 1
+
+    html_string += ("<p>The distribution of callsites in terms of coloring is")
+    html_string += ("<table><tr>"
+                    "<th style=\"text-align: left;\">Color</th>"
+                    "<th style=\"text-align: left;\">Runtime hitcount</th>"
+                    "<th style=\"text-align: left;\">Callsite count</th>"
+                    "<th style=\"text-align: left;\">Percentage</th>"
+                    "</tr>")
+    for _min, _max, color, rgb_code in constants.COLOR_CONSTANTS:
+        html_string += (f"<tr><td style=\"color:{color}; "
+                        f"text-shadow: -1px 0 black, 0 1px black, "
+                        f"1px 0 black, 0 -1px black;\"><b>{color}</b></td>")
+        if _max == 1:
+            interval = "0"
+        elif _max > 1000:
+            interval = f"{_min}+"
+        else:
+            interval = f"[{_min}:{_max-1}]"
+        html_string += f"<td>{interval}</td>"
+        cover_count = color_dictionary.get(color, 0)
+        html_string += f"<td>{cover_count}</td>"
+        if len(color_list) > 0:
+            f1 = float(cover_count)
+            f2 = float(len(color_list))
+            percentage_c = (f1 / f2) * 100.0
+        else:
+            percentage_c = 0.0
+        percentage_s = str(percentage_c)[0:4]
+        html_string += f"<td>{percentage_s}%</td>"
+        html_string += "</tr>"
+
+    # Add a row with total amount of callsites
+    html_string += f"<tr><td>All colors</td><td>{len(color_list)}</td><td>100</td></tr>"
+    html_string += "</table>"
+    html_string += "</p>"
+    return html_string
+
+
 def create_fuzzer_detailed_section(
         proj_profile: project_profile.MergedProjectProfile,
         profile: fuzzer_profile.FuzzerProfile,
@@ -316,44 +359,8 @@ def create_fuzzer_detailed_section(
             "as blockers depend on code coverage.</p>")
         return html_string
 
-    color_dictionary = {}
-    for color in color_list:
-        color_dictionary[color] = color_dictionary.get(color, 0) + 1
-
-    html_string += ("<p>The distribution of callsites in terms of coloring is")
-    html_string += ("<table><tr>"
-                    "<th style=\"text-align: left;\">Color</th>"
-                    "<th style=\"text-align: left;\">Runtime hitcount</th>"
-                    "<th style=\"text-align: left;\">Callsite count</th>"
-                    "<th style=\"text-align: left;\">Percentage</th>"
-                    "</tr>")
-    for _min, _max, color, rgb_code in constants.COLOR_CONSTANTS:
-        html_string += (f"<tr><td style=\"color:{color}; "
-                        f"text-shadow: -1px 0 black, 0 1px black, "
-                        f"1px 0 black, 0 -1px black;\"><b>{color}</b></td>")
-        if _max == 1:
-            interval = "0"
-        elif _max > 1000:
-            interval = f"{_min}+"
-        else:
-            interval = f"[{_min}:{_max-1}]"
-        html_string += f"<td>{interval}</td>"
-        cover_count = color_dictionary.get(color, 0)
-        html_string += f"<td>{cover_count}</td>"
-        if len(color_list) > 0:
-            f1 = float(cover_count)
-            f2 = float(len(color_list))
-            percentage_c = (f1 / f2) * 100.0
-        else:
-            percentage_c = 0.0
-        percentage_s = str(percentage_c)[0:4]
-        html_string += f"<td>{percentage_s}%</td>"
-        html_string += "</tr>"
-
-    # Add a row with total amount of callsites
-    html_string += f"<tr><td>All colors</td><td>{len(color_list)}</td><td>100</td></tr>"
-    html_string += "</table>"
-    html_string += "</p>"
+    # Show the distribution of colors in the calltree.
+    html_string += create_calltree_color_distribution_table(color_list)
 
     # Decide what kind of blockers to report: if branch blockers are not present,
     # fall back to calltree-based blockers.
