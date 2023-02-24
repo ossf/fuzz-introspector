@@ -152,15 +152,8 @@ def create_all_function_table(
 
     for fd_k, fd in proj_profile.get_all_functions_with_source().items():
         demangled_func_name = utils.demangle_cpp_func(fd.function_name)
-        try:
-            func_total_lines, hit_lines = proj_profile.runtime_coverage.get_hit_summary(
-                demangled_func_name)
-            if hit_lines is None or func_total_lines is None:
-                hit_percentage = 0.0
-            else:
-                hit_percentage = (hit_lines / func_total_lines) * 100.0
-        except Exception:
-            hit_percentage = 0.0
+        hit_percentage = proj_profile.get_func_hit_percentage(
+            demangled_func_name)
 
         func_cov_url = proj_profile.resolve_coverage_report_link(
             coverage_url, fd.function_source_file, fd.function_linenumber,
@@ -170,13 +163,10 @@ def create_all_function_table(
             func_hit_at_runtime_row = "yes"
         else:
             func_hit_at_runtime_row = "no"
-
-        func_name_row = f"""<a href='{ func_cov_url }'><code class='language-clike'>
-            { demangled_func_name }
-            </code></a>"""
+        func_name_row = html_helpers.wrap_link(
+            func_cov_url, html_helpers.create_coded_text(demangled_func_name))
 
         collapsible_id = demangled_func_name + random_suffix
-
         if fd.hitcount > 0:
             reached_by_fuzzers_row = html_helpers.create_collapsible_element(
                 str(fd.hitcount), str(fd.reached_by_fuzzers), collapsible_id)
@@ -248,14 +238,16 @@ def create_boxed_top_summary_info(
 
     # Add conclusion
     if extract_conclusion:
-        create_conclusions(conclusions, proj_profile.reached_func_percentage,
-                           proj_profile.reached_complexity_percentage)
+        create_reachability_conclusions(
+            conclusions, proj_profile.reached_func_percentage,
+            proj_profile.reached_complexity_percentage)
     return html_string
 
 
-def create_conclusions(conclusions: List[html_helpers.HTMLConclusion],
-                       reached_percentage: float,
-                       reached_complexity_percentage: float) -> None:
+def create_reachability_conclusions(
+        conclusions: List[html_helpers.HTMLConclusion],
+        reached_percentage: float,
+        reached_complexity_percentage: float) -> None:
     # Functions reachability
     sentence = f"""Fuzzers reach { "%.5s%%"%(str(reached_percentage)) } of all functions. """
     conclusions.append(
@@ -324,17 +316,11 @@ def create_fuzzer_detailed_section(
             "as blockers depend on code coverage.</p>")
         return html_string
 
-    color_dictionary = {
-        "red": 0,
-        "gold": 0,
-        "yellow": 0,
-        "greenyellow": 0,
-        "lawngreen": 0
-    }
+    color_dictionary = {}
     for color in color_list:
-        color_dictionary[color] = color_dictionary[color] + 1
-    html_string += ("<p>The distribution of callsites in terms of coloring is")
+        color_dictionary[color] = color_dictionary.get(color, 0) + 1
 
+    html_string += ("<p>The distribution of callsites in terms of coloring is")
     html_string += ("<table><tr>"
                     "<th style=\"text-align: left;\">Color</th>"
                     "<th style=\"text-align: left;\">Runtime hitcount</th>"
@@ -352,9 +338,10 @@ def create_fuzzer_detailed_section(
         else:
             interval = f"[{_min}:{_max-1}]"
         html_string += f"<td>{interval}</td>"
-        html_string += f"<td>{color_dictionary[color]}</td>"
+        cover_count = color_dictionary.get(color, 0)
+        html_string += f"<td>{cover_count}</td>"
         if len(color_list) > 0:
-            f1 = float(color_dictionary[color])
+            f1 = float(cover_count)
             f2 = float(len(color_list))
             percentage_c = (f1 / f2) * 100.0
         else:
