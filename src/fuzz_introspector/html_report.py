@@ -71,8 +71,6 @@ def create_horisontal_calltree_image(image_name: str,
     # to not include the image at all.
     if len(color_list) == 0:
         color_list = ['red']
-    plot_size = len(color_list)
-    multiplier = plot_size / len(color_list)
 
     fig, ax = plt.subplots()
     ax.clear()
@@ -80,34 +78,24 @@ def create_horisontal_calltree_image(image_name: str,
     ax.plot()
 
     # Create our rectangles
-    curr_start_x = 0.0
+    curr_x = 0.0
     curr_size = 1.0
     curr_color = color_list[0]
-    height = 1.0
-
     for i in range(1, len(color_list)):
         if curr_color == color_list[i]:
             curr_size += 1.0
         else:
-            final_start_x = curr_start_x * multiplier
-            final_size = curr_size * multiplier
             ax.add_patch(
-                Rectangle((final_start_x, 0.0),
-                          final_size,
-                          height,
-                          color=curr_color))
+                Rectangle((curr_x, 0.0), curr_size, 1.0, color=curr_color))
 
             # Start next color area
-            curr_start_x += curr_size
+            curr_x += curr_size
             curr_color = color_list[i]
             curr_size = 1.0
     logger.info("- iterated over color list")
 
     # Plot the last case
-    final_start_x = curr_start_x * multiplier
-    final_size = curr_size * multiplier
-    ax.add_patch(
-        Rectangle((final_start_x, 0.0), final_size, height, color=curr_color))
+    ax.add_patch(Rectangle((curr_x, 0.0), curr_size, 1.0, color=curr_color))
     ax.set_yticklabels([])
     ax.set_yticks([])
     xlabel = ax.set_xlabel("Callsite index")
