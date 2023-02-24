@@ -395,3 +395,11 @@ def prettify_html(html_doc: str) -> str:
     except RecursionError:
         pretty_html = html_doc
     return pretty_html
+
+
+def wrap_link(url, text):
+    return f"<a href='{url}'>{text}</a>"
+
+
+def create_coded_text(text):
+    return f"<code class='language-clike'>\n{text}\n</code>"

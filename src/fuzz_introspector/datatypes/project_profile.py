@@ -459,3 +459,18 @@ class MergedProjectProfile:
             if func_profile.has_source_file:
                 local_functions_with_source[func_name] = func_profile
         return local_functions_with_source
+
+    def get_func_hit_percentage(self, func_name):
+        """Returns the percentage of lines covered of a function at runtime.
+        Returns 0.0 in case any error happens.
+        """
+        try:
+            func_total_lines, hit_lines = self.runtime_coverage.get_hit_summary(
+                func_name)
+            if hit_lines is None or func_total_lines is None:
+                hit_percentage = 0.0
+            else:
+                hit_percentage = (hit_lines / func_total_lines) * 100.0
+        except Exception:
+            hit_percentage = 0.0
+        return hit_percentage
