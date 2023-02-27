@@ -137,7 +137,8 @@ def _handle_argument(argType,
                      possible_target,
                      recursion_count,
                      max_target,
-                     obj_creation=True):
+                     obj_creation = True,
+                     handled = []):
     """Generate data creation statement for given argument type"""
     if argType == "int" or argType == "java.lang.Integer":
         return ["data.consumeInt(0,100)"]
@@ -167,7 +168,7 @@ def _handle_argument(argType,
         return ["data.consumeString(100)"]
     elif obj_creation:
         return _handle_object_creation(argType, init_dict, possible_target,
-                                       recursion_count, max_target)
+                                       recursion_count, max_target, handled)
     else:
         return []
 
@@ -218,7 +219,7 @@ def _search_static_factory_method(classname, static_method_list, possible_target
         call = call.replace('[', '').replace(']', '')
 
         # Add parameters
-        call += '(' + ','.join(arg_list) + ');\n'
+        call += '(' + ','.join(arg_list) + ')'
 
         if call:
             result_list.append(call)
@@ -266,7 +267,7 @@ def _search_factory_method(classname, static_method_list, possible_method_list, 
         # Retrieve arguments list
         arg_list = []
         for argType in func_elem['argTypes']:
-            arg_list.append( _handle_argument(argType, init_dict, possible_target, 0, max_target))
+            arg_list.append(_handle_argument(argType, init_dict, possible_target, 0, max_target))
 
         if len(arg_list) != len(func_elem['argTypes']):
             continue
@@ -298,11 +299,14 @@ def _search_factory_method(classname, static_method_list, possible_method_list, 
     return result_list
 
 
-def _search_concrete_subclass(classname, init_dict, result_list=[]):
+def _search_concrete_subclass(classname, init_dict, handled = [], result_list = []):
     """Search concrete subclass for the target classname"""
     for key in init_dict:
         func_elem = init_dict[key]
         java_info = func_elem['JavaMethodInfo']
+
+        if func_elem in handled:
+            continue
 
         if not java_info[
                 'superClass'] == classname and classname not in java_info[
@@ -314,7 +318,7 @@ def _search_concrete_subclass(classname, init_dict, result_list=[]):
                 result_list.append(func_elem)
         else:
             for result in _search_concrete_subclass(
-                    func_elem['functionSourceFile'], init_dict):
+                    func_elem['functionSourceFile'], init_dict, handled):
                 if result not in result_list:
                     result_list.append(result)
 
@@ -322,7 +326,7 @@ def _search_concrete_subclass(classname, init_dict, result_list=[]):
 
 
 def _handle_object_creation(classname, init_dict, possible_target,
-                            recursion_count, max_target):
+                            recursion_count, max_target, handled = []):
     """
     Generate statement for Java object creation of the target class.
     If constructor (<init>) does existed in the yaml file, we will
@@ -341,21 +345,21 @@ def _handle_object_creation(classname, init_dict, possible_target,
                 class_list.append(func_elem)
             else:
                 class_list.extend(
-                    _search_concrete_subclass(classname, init_dict))
+                    _search_concrete_subclass(classname, init_dict, handled))
             if len(class_list) == 0:
                 return "new " + classname.replace("$", ".") + "()"
 
             result_list = []
-            handled = []
             for elem in class_list:
-                classname = elem['functionSourceFile']
-                if elem in handled or classname in elem['argTypes']:
+                elem_classname = elem['functionSourceFile']
+                if elem in handled:
                     continue
                 handled.append(elem)
                 for argType in elem['argTypes']:
-                    arg_list.append(
-                        _handle_argument(argType, init_dict, possible_target,
-                                         recursion_count, max_target))
+                    arg = _handle_argument(argType, init_dict, possible_target,
+                                           recursion_count, max_target, True, handled)
+                    if arg:
+                        arg_list.append(arg)
                 if len(arg_list) != len(elem['argTypes']):
                     continue
                 possible_target.exceptions_to_handle.update(
@@ -363,7 +367,7 @@ def _handle_object_creation(classname, init_dict, possible_target,
                 possible_target.imports_to_add.update(
                     _handle_import(func_elem))
                 for args_item in list(itertools.product(*arg_list)):
-                    result_list.append("new " + classname.replace("$", ".") +
+                    result_list.append("new " + elem_classname.replace("$", ".") +
                                        "(" + ",".join(args_item) + ")")
                     if len(result_list) > max_target:
                         return result_list
