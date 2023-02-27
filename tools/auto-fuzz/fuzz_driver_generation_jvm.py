@@ -137,8 +137,8 @@ def _handle_argument(argType,
                      possible_target,
                      recursion_count,
                      max_target,
-                     obj_creation = True,
-                     handled = []):
+                     obj_creation=True,
+                     handled=[]):
     """Generate data creation statement for given argument type"""
     if argType == "int" or argType == "java.lang.Integer":
         return ["data.consumeInt(0,100)"]
@@ -173,7 +173,8 @@ def _handle_argument(argType,
         return []
 
 
-def _search_static_factory_method(classname, static_method_list, possible_target, max_target):
+def _search_static_factory_method(classname, static_method_list,
+                                  possible_target, max_target):
     """
     Search for all factory methods of the target class that statisfy all:
         - Public
@@ -202,7 +203,8 @@ def _search_static_factory_method(classname, static_method_list, possible_target
         # Retrieve primitive arguments list
         arg_list = []
         for argType in func_elem['argTypes']:
-            arg_list.extend(_handle_argument(argType, None, None, None, max_target, False))
+            arg_list.extend(
+                _handle_argument(argType, None, None, None, max_target, False))
 
         # Error in some parameters
         if len(arg_list) != len(func_elem['argTypes']):
@@ -230,7 +232,8 @@ def _search_static_factory_method(classname, static_method_list, possible_target
     return result_list
 
 
-def _search_factory_method(classname, static_method_list, possible_method_list, possible_target, init_dict, max_target):
+def _search_factory_method(classname, static_method_list, possible_method_list,
+                           possible_target, init_dict, max_target):
     """
     Search for all factory methods of the target class that statisfy all:
         - Public
@@ -267,13 +270,17 @@ def _search_factory_method(classname, static_method_list, possible_method_list, 
         # Retrieve arguments list
         arg_list = []
         for argType in func_elem['argTypes']:
-            arg_list.append(_handle_argument(argType, init_dict, possible_target, 0, max_target))
+            arg_list.append(
+                _handle_argument(argType, init_dict, possible_target, 0,
+                                 max_target))
 
         if len(arg_list) != len(func_elem['argTypes']):
             continue
 
         # Create possible factory method invoking statements with constructor or static factory
-        for creation in _handle_object_creation(func_class, init_dict, possible_target, 0, max_target):
+        for creation in _handle_object_creation(func_class, init_dict,
+                                                possible_target, 0,
+                                                max_target):
             if creation and len(result_list) > max_target:
                 return result_list
 
@@ -282,7 +289,10 @@ def _search_factory_method(classname, static_method_list, possible_method_list, 
                 call += "(" + ",".join(arg_item) + ")"
                 result_list.append(call)
 
-        for creation in _search_static_factory_method(func_class, static_method_list, possible_target, max_target):
+        for creation in _search_static_factory_method(func_class,
+                                                      static_method_list,
+                                                      possible_target,
+                                                      max_target):
             if creation and len(result_list) > max_target:
                 return result_list
 
@@ -299,7 +309,10 @@ def _search_factory_method(classname, static_method_list, possible_method_list, 
     return result_list
 
 
-def _search_concrete_subclass(classname, init_dict, handled = [], result_list = []):
+def _search_concrete_subclass(classname,
+                              init_dict,
+                              handled=[],
+                              result_list=[]):
     """Search concrete subclass for the target classname"""
     for key in init_dict:
         func_elem = init_dict[key]
@@ -325,8 +338,12 @@ def _search_concrete_subclass(classname, init_dict, handled = [], result_list = 
     return result_list
 
 
-def _handle_object_creation(classname, init_dict, possible_target,
-                            recursion_count, max_target, handled = []):
+def _handle_object_creation(classname,
+                            init_dict,
+                            possible_target,
+                            recursion_count,
+                            max_target,
+                            handled=[]):
     """
     Generate statement for Java object creation of the target class.
     If constructor (<init>) does existed in the yaml file, we will
@@ -357,7 +374,8 @@ def _handle_object_creation(classname, init_dict, possible_target,
                 handled.append(elem)
                 for argType in elem['argTypes']:
                     arg = _handle_argument(argType, init_dict, possible_target,
-                                           recursion_count, max_target, True, handled)
+                                           recursion_count, max_target, True,
+                                           handled)
                     if arg:
                         arg_list.append(arg)
                 if len(arg_list) != len(elem['argTypes']):
@@ -367,8 +385,9 @@ def _handle_object_creation(classname, init_dict, possible_target,
                 possible_target.imports_to_add.update(
                     _handle_import(func_elem))
                 for args_item in list(itertools.product(*arg_list)):
-                    result_list.append("new " + elem_classname.replace("$", ".") +
-                                       "(" + ",".join(args_item) + ")")
+                    result_list.append("new " +
+                                       elem_classname.replace("$", ".") + "(" +
+                                       ",".join(args_item) + ")")
                     if len(result_list) > max_target:
                         return result_list
             return result_list
@@ -432,7 +451,8 @@ def _generate_heuristic_1(yaml_dict, possible_targets, max_target):
 
         # Store function parameter list
         for argType in func_elem['argTypes']:
-            arg_list = _handle_argument(argType, None, possible_target, 0, max_target)
+            arg_list = _handle_argument(argType, None, possible_target, 0,
+                                        max_target)
             if arg_list:
                 possible_target.variables_to_add.append(arg_list[0])
         if len(possible_target.variables_to_add) != len(func_elem['argTypes']):
@@ -519,7 +539,8 @@ def _generate_heuristic_2(yaml_dict, possible_targets, max_target):
 
         # Get all possible argument lists with different possible object creation combination
         for argType in func_elem['argTypes']:
-            arg_list = _handle_argument(argType, init_dict, possible_target, 0, max_target)
+            arg_list = _handle_argument(argType, init_dict, possible_target, 0,
+                                        max_target)
             if arg_list:
                 possible_target.variables_to_add.append(arg_list[0])
         if len(possible_target.variables_to_add) != len(func_elem['argTypes']):
@@ -527,7 +548,8 @@ def _generate_heuristic_2(yaml_dict, possible_targets, max_target):
 
         # Get all object creation statement for each possible concrete classes of the object
         object_creation_list = _handle_object_creation(func_class, init_dict,
-                                                       possible_target, 0, max_target)
+                                                       possible_target, 0,
+                                                       max_target)
 
         for object_creation_item in object_creation_list:
             # Create possible target for all possible object creation statement
@@ -626,17 +648,16 @@ def _generate_heuristic_3(yaml_dict, possible_targets, max_target):
 
         # Store function parameter list
         for argType in func_elem['argTypes']:
-            arg_list = _handle_argument(argType, None, possible_target, 0, max_target)
+            arg_list = _handle_argument(argType, None, possible_target, 0,
+                                        max_target)
             if arg_list:
                 possible_target.variables_to_add.append(arg_list[0])
         if len(possible_target.variables_to_add) != len(func_elem['argTypes']):
             continue
 
         # Retrieve list of factory method for the target object
-        factory_method_list = _search_static_factory_method(func_class,
-                                                            static_method_list,
-                                                            possible_target,
-                                                            max_target)
+        factory_method_list = _search_static_factory_method(
+            func_class, static_method_list, possible_target, max_target)
 
         for factory_method in factory_method_list:
             # Create possible target for all possible factory method
@@ -734,7 +755,8 @@ def _generate_heuristic_4(yaml_dict, possible_targets, max_target):
 
         # Store function parameter list
         for argType in func_elem['argTypes']:
-            arg_list = _handle_argument(argType, None, possible_target, 0, max_target)
+            arg_list = _handle_argument(argType, None, possible_target, 0,
+                                        max_target)
             if arg_list:
                 possible_target.variables_to_add.append(arg_list[0])
         if len(possible_target.variables_to_add) != len(func_elem['argTypes']):
@@ -745,8 +767,7 @@ def _generate_heuristic_4(yaml_dict, possible_targets, max_target):
                                                      static_method_list,
                                                      instance_method_list,
                                                      possible_target,
-                                                     init_dict,
-                                                     max_target)
+                                                     init_dict, max_target)
 
         for factory_method in factory_method_list:
             # Create possible target for all possible factory method
@@ -783,9 +804,9 @@ def generate_possible_targets(proj_folder, max_target):
         yaml_dict = yaml.safe_load(stream)
 
     possible_targets = []
-#    _generate_heuristic_1(yaml_dict, possible_targets, max_target)
-#    _generate_heuristic_2(yaml_dict, possible_targets, max_target)
-#    _generate_heuristic_3(yaml_dict, possible_targets, max_target)
+    #    _generate_heuristic_1(yaml_dict, possible_targets, max_target)
+    #    _generate_heuristic_2(yaml_dict, possible_targets, max_target)
+    #    _generate_heuristic_3(yaml_dict, possible_targets, max_target)
     _generate_heuristic_4(yaml_dict, possible_targets, max_target)
 
     return possible_targets
