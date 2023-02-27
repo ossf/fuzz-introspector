@@ -203,7 +203,7 @@ def _search_static_factory_method(classname, static_method_list, possible_target
         for argType in func_elem['argTypes']:
             arg_list.extend(_handle_argument(argType, None, None, None, max_target, False))
 
-        # Non-primitive parameters existed
+        # Error in some parameters
         if len(arg_list) != len(func_elem['argTypes']):
             continue
 
@@ -215,7 +215,7 @@ def _search_static_factory_method(classname, static_method_list, possible_target
         # Remove [] character and argument list from function name
         # Method name in .data.yaml for jvm: [className].methodName(methodParameterList)
         call = func_elem['functionName'].split('(')[0]
-        call = call.replace('[', '').replace('].', '')
+        call = call.replace('[', '').replace(']', '')
 
         # Add parameters
         call += '(' + ','.join(arg_list) + ');\n'
@@ -257,6 +257,8 @@ def _search_factory_method(classname, static_method_list, possible_method_list, 
             continue
         if not classname == "javassist.CtClass":
             continue
+        if "makeClass" not in func_elem['functionName']:
+            continue
 
         func_name = func_elem['functionName'].split('(')[0].split('].')[1]
         func_class = func_elem['functionSourceFile']
@@ -264,14 +266,14 @@ def _search_factory_method(classname, static_method_list, possible_method_list, 
         # Retrieve arguments list
         arg_list = []
         for argType in func_elem['argTypes']:
-            arg_list.append(_handle_argument(argType, init_dict, possible_target, 0, max_target))
+            arg_list.append( _handle_argument(argType, init_dict, possible_target, 0, max_target))
 
-        arg_item_list = list(itertools.product(*arg_list))
+        if len(arg_list) != len(func_elem['argTypes']):
+            continue
 
-        print("ABC")
         # Create possible factory method invoking statements with constructor or static factory
         for creation in _handle_object_creation(func_class, init_dict, possible_target, 0, max_target):
-            if len(result_list) > max_target:
+            if creation and len(result_list) > max_target:
                 return result_list
 
             call = creation + "." + func_name
@@ -279,9 +281,8 @@ def _search_factory_method(classname, static_method_list, possible_method_list, 
                 call += "(" + ",".join(arg_item) + ")"
                 result_list.append(call)
 
-        print("DEF")
         for creation in _search_static_factory_method(func_class, static_method_list, possible_target, max_target):
-            if len(result_list) > max_target:
+            if creation and len(result_list) > max_target:
                 return result_list
 
             call = creation + "." + func_name
@@ -289,7 +290,6 @@ def _search_factory_method(classname, static_method_list, possible_method_list, 
                 call += "(" + ",".join(arg_item) + ")"
                 result_list.append(call)
 
-        print("FUCK")
         # Handle exceptions and import
         possible_target.exceptions_to_handle.update(
             func_elem['JavaMethodInfo']['exceptions'])
@@ -348,14 +348,16 @@ def _handle_object_creation(classname, init_dict, possible_target,
             result_list = []
             handled = []
             for elem in class_list:
-                if elem in handled:
+                classname = elem['functionSourceFile']
+                if elem in handled or classname in elem['argTypes']:
                     continue
                 handled.append(elem)
-                classname = elem['functionSourceFile']
                 for argType in elem['argTypes']:
                     arg_list.append(
                         _handle_argument(argType, init_dict, possible_target,
                                          recursion_count, max_target))
+                if len(arg_list) != len(elem['argTypes']):
+                    continue
                 possible_target.exceptions_to_handle.update(
                     elem['JavaMethodInfo']['exceptions'])
                 possible_target.imports_to_add.update(
@@ -426,8 +428,11 @@ def _generate_heuristic_1(yaml_dict, possible_targets, max_target):
 
         # Store function parameter list
         for argType in func_elem['argTypes']:
-            possible_target.variables_to_add.append(
-                _handle_argument(argType, None, possible_target, 0, max_target)[0])
+            arg_list = _handle_argument(argType, None, possible_target, 0, max_target)
+            if arg_list:
+                possible_target.variables_to_add.append(arg_list[0])
+        if len(possible_target.variables_to_add) != len(func_elem['argTypes']):
+            continue
 
         # Create the actual source
         fuzzer_source_code = "  // Heuristic name: %s\n" % (HEURISTIC_NAME)
@@ -510,8 +515,11 @@ def _generate_heuristic_2(yaml_dict, possible_targets, max_target):
 
         # Get all possible argument lists with different possible object creation combination
         for argType in func_elem['argTypes']:
-            possible_target.variables_to_add.append(
-                _handle_argument(argType, init_dict, possible_target, 0, max_target)[0])
+            arg_list = _handle_argument(argType, init_dict, possible_target, 0, max_target)
+            if arg_list:
+                possible_target.variables_to_add.append(arg_list[0])
+        if len(possible_target.variables_to_add) != len(func_elem['argTypes']):
+            continue
 
         # Get all object creation statement for each possible concrete classes of the object
         object_creation_list = _handle_object_creation(func_class, init_dict,
@@ -614,8 +622,11 @@ def _generate_heuristic_3(yaml_dict, possible_targets, max_target):
 
         # Store function parameter list
         for argType in func_elem['argTypes']:
-            possible_target.variables_to_add.append(
-                _handle_argument(argType, None, possible_target, 0, max_target)[0])
+            arg_list = _handle_argument(argType, None, possible_target, 0, max_target)
+            if arg_list:
+                possible_target.variables_to_add.append(arg_list[0])
+        if len(possible_target.variables_to_add) != len(func_elem['argTypes']):
+            continue
 
         # Retrieve list of factory method for the target object
         factory_method_list = _search_static_factory_method(func_class,
@@ -696,6 +707,8 @@ def _generate_heuristic_4(yaml_dict, possible_targets, max_target):
             continue
         if "test" in func_elem['functionName']:
             continue
+        if "javassist.CtClass" not in func_elem['functionSourceFile']:
+            continue
 
         possible_target = FuzzTarget()
 
@@ -717,8 +730,11 @@ def _generate_heuristic_4(yaml_dict, possible_targets, max_target):
 
         # Store function parameter list
         for argType in func_elem['argTypes']:
-            possible_target.variables_to_add.append(
-                _handle_argument(argType, None, possible_target, 0, max_target)[0])
+            arg_list = _handle_argument(argType, None, possible_target, 0, max_target)
+            if arg_list:
+                possible_target.variables_to_add.append(arg_list[0])
+        if len(possible_target.variables_to_add) != len(func_elem['argTypes']):
+            continue
 
         # Retrieve list of factory method for the target object
         factory_method_list = _search_factory_method(func_class,
@@ -747,7 +763,8 @@ def _generate_heuristic_4(yaml_dict, possible_targets, max_target):
                                                                      counter)
                     counter += 1
             cloned_possible_target.fuzzer_source_code = fuzzer_source_code
-            cloned_possible_target.heuristics_used.append(HEURISTIC_NAME)
+            if HEURISTIC_NAME not in cloned_possible_target.heuristics_used:
+                cloned_possible_target.heuristics_used.append(HEURISTIC_NAME)
 
             possible_targets.append(cloned_possible_target)
 
