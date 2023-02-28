@@ -238,14 +238,14 @@ def _gradle_build_project(basedir, projectdir):
 
     # Build project with maven
     cmd = [
-        "./gradlew clean build"
+        "./gradlew clean build -x test"
     ]
     try:
         subprocess.check_call(" ".join(cmd),
                               shell=True,
                               timeout=1800,
-#                              stdout=subprocess.DEVNULL,
-#                              stderr=subprocess.DEVNULL,
+                              stdout=subprocess.DEVNULL,
+                              stderr=subprocess.DEVNULL,
                               env=env_var,
                               cwd=projectdir)
     except subprocess.TimeoutExpired:
@@ -292,9 +292,17 @@ def run_static_analysis_jvm(git_repo, basedir):
     with tarfile.open("./jazzer.tar.gz") as f:
         f.extractall("./")
 
+    # Retrieve path of all jar files
+    jarfiles = [os.path.abspath("../Fuzz1.jar")]
+    for root, _, files in os.walk(projectdir):
+        if "target" in root:
+            for file in files:
+                if file.endswith(".jar"):
+                    jarfiles.append(os.path.abspath(os.path.join(root, file)))
+
     # Compile and package fuzzer to jar file
     cmd = [
-        "javac -cp jazzer_standalone.jar ../Fuzz1.java",
+        "javac -cp jazzer_standalone.jar:%s ../Fuzz1.java" % ":".join(jarfiles),
         "jar cvf ../Fuzz1.jar ../Fuzz1.class"
     ]
     try:
@@ -305,14 +313,6 @@ def run_static_analysis_jvm(git_repo, basedir):
                               stderr=subprocess.DEVNULL)
     except subprocess.TimeoutExpired:
         pass
-
-    # Retrieve path of all jar files
-    jarfiles = [os.path.abspath("../Fuzz1.jar")]
-    for root, _, files in os.walk(projectdir):
-        if "target" in root:
-            for file in files:
-                if file.endswith(".jar"):
-                    jarfiles.append(os.path.abspath(os.path.join(root, file)))
 
     # Run the java frontend static analysis
     cmd = [
