@@ -16,3 +16,4 @@ configparser
 coverage
 atheris
 setuptools>=65.5.1 # not directly required, pinned by Snyk to avoid a vulnerability 
+tqdm # For displaying loading bar (auto-fuzz tool)
