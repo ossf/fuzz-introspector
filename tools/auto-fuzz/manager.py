@@ -224,6 +224,8 @@ def _maven_build_project(basedir, projectdir):
                               cwd=projectdir)
     except subprocess.TimeoutExpired:
         pass
+    except subprocess.CalledProcessError:
+        pass
 
 
 def _gradle_build_project(basedir, projectdir):
@@ -252,6 +254,8 @@ def _gradle_build_project(basedir, projectdir):
                               env=env_var,
                               cwd=projectdir)
     except subprocess.TimeoutExpired:
+        pass
+    except subprocess.CalledProcessError:
         pass
 
 
