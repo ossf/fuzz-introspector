@@ -137,6 +137,7 @@ def gen_builder_1_jvm():
     BUILD_LICENSE = "#!/bin/bash -eu\n" + BASH_LICENSE
     BUILD_SCRIPT = """if test -f "build.gradle"
 then
+  chmod +x ./gradlew
   ./gradlew clean build -x test
 elif test -f "pom.xml"
 then
