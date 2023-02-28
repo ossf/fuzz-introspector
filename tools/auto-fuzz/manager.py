@@ -238,10 +238,11 @@ def _gradle_build_project(basedir, projectdir):
 
     # Build project with maven
     cmd = [
-        "./gradlew clean build -x test"
+        "./gradlew clean build -x test",
+        "jar cvf proj.jar -C build/classes/java/main/ ."
     ]
     try:
-        subprocess.check_call(" ".join(cmd),
+        subprocess.check_call(" && ".join(cmd),
                               shell=True,
                               timeout=1800,
                               stdout=subprocess.DEVNULL,
@@ -259,6 +260,7 @@ def run_static_analysis_jvm(git_repo, basedir):
     os.mkdir("work")
     os.chdir("work")
 
+    jarfiles = []
     # Clone the project
     cmd = ["git clone --depth=1", git_repo, "proj"]
     try:
@@ -278,6 +280,7 @@ def run_static_analysis_jvm(git_repo, basedir):
     elif os.path.exists(os.path.join(projectdir, "build.gradle")):
         # Gradle project
         _gradle_build_project(basedir, projectdir)
+        jarfiles.append(os.path.join(projectdir, "proj.jar"))
     else:
         # Unknown project type
         print("Unknown project type.\n")
@@ -293,7 +296,7 @@ def run_static_analysis_jvm(git_repo, basedir):
         f.extractall("./")
 
     # Retrieve path of all jar files
-    jarfiles = [os.path.abspath("../Fuzz1.jar")]
+    jarfiles.append(os.path.abspath("../Fuzz1.jar"))
     for root, _, files in os.walk(projectdir):
         if "target" in root:
             for file in files:
@@ -397,7 +400,12 @@ def build_and_test_single_possible_target(idx_folder,
                                   "maven.zip")
         maven_dst = os.path.join(dst_oss_fuzz_project.project_folder,
                                  "maven.zip")
+        gradle_path = os.path.join(oss_fuzz_base_project.project_folder,
+                                  "gradle.zip")
+        gradle_dst = os.path.join(dst_oss_fuzz_project.project_folder,
+                                 "gradle.zip")
         shutil.copy(maven_path, maven_dst)
+        shutil.copy(gradle_path, gradle_dst)
 
     copy_oss_fuzz_project_source(oss_fuzz_base_project, dst_oss_fuzz_project)
 
@@ -460,8 +468,11 @@ def build_and_test_single_possible_target(idx_folder,
 
         if language == "jvm":
             maven_file = os.path.join(auto_fuzz_proj_dir, "maven.zip")
+            gradle_file = os.path.join(auto_fuzz_proj_dir, "gradle.zip")
             if os.path.isfile(maven_file):
                 os.remove(maven_file)
+            if os.path.isfile(gradle_file):
+                os.remove(gradle_file)
 
         if dst_oss_fuzz_project.project_name not in src_dir:
             continue
