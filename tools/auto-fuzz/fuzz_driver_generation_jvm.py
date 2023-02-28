@@ -426,7 +426,9 @@ def _generate_heuristic_1(yaml_dict, possible_targets, max_target):
             continue
         if "test" in func_elem['functionName']:
             continue
-        if "jazzer" in func_elem['functionName'] or "fuzzerTestOneInput" in func_elem['functionName']:
+        if "jazzer" in func_elem[
+                'functionName'] or "fuzzerTestOneInput" in func_elem[
+                    'functionName']:
             continue
 
         possible_target = FuzzTarget()
@@ -516,7 +518,9 @@ def _generate_heuristic_2(yaml_dict, possible_targets, max_target):
             continue
         if "test" in func_elem['functionName']:
             continue
-        if "jazzer" in func_elem['functionName'] or "fuzzerTestOneInput" in func_elem['functionName']:
+        if "jazzer" in func_elem[
+                'functionName'] or "fuzzerTestOneInput" in func_elem[
+                    'functionName']:
             continue
 
         possible_target = FuzzTarget()
@@ -627,7 +631,9 @@ def _generate_heuristic_3(yaml_dict, possible_targets, max_target):
             continue
         if "test" in func_elem['functionName']:
             continue
-        if "jazzer" in func_elem['functionName'] or "fuzzerTestOneInput" in func_elem['functionName']:
+        if "jazzer" in func_elem[
+                'functionName'] or "fuzzerTestOneInput" in func_elem[
+                    'functionName']:
             continue
 
         possible_target = FuzzTarget()
@@ -734,7 +740,9 @@ def _generate_heuristic_4(yaml_dict, possible_targets, max_target):
             continue
         if "test" in func_elem['functionName']:
             continue
-        if "jazzer" in func_elem['functionName'] or "fuzzerTestOneInput" in func_elem['functionName']:
+        if "jazzer" in func_elem[
+                'functionName'] or "fuzzerTestOneInput" in func_elem[
+                    'functionName']:
             continue
 
         possible_target = FuzzTarget()

@@ -206,7 +206,8 @@ def _maven_build_project(basedir, projectdir):
 
     # Set environment variable
     env_var = os.environ.copy()
-    env_var['PATH'] = os.path.join(basedir, "apache-maven-3.6.3", "bin") + ":" + env_var['PATH']
+    env_var['PATH'] = os.path.join(basedir, "apache-maven-3.6.3",
+                                   "bin") + ":" + env_var['PATH']
 
     # Build project with maven
     cmd = [
@@ -234,7 +235,8 @@ def _gradle_build_project(basedir, projectdir):
     # Set environment variable
     env_var = os.environ.copy()
     env_var['GRADLE_HOME'] = os.path.join(basedir, "gradle-7.4.2")
-    env_var['PATH'] = os.path.join(basedir, "gradle-7.4.2", "bin") + ":" + env_var['PATH']
+    env_var['PATH'] = os.path.join(basedir, "gradle-7.4.2",
+                                   "bin") + ":" + env_var['PATH']
 
     # Build project with maven
     cmd = [
@@ -305,8 +307,8 @@ def run_static_analysis_jvm(git_repo, basedir):
 
     # Compile and package fuzzer to jar file
     cmd = [
-        "javac -cp jazzer_standalone.jar:%s ../Fuzz1.java" % ":".join(jarfiles),
-        "jar cvf ../Fuzz1.jar ../Fuzz1.class"
+        "javac -cp jazzer_standalone.jar:%s ../Fuzz1.java" %
+        ":".join(jarfiles), "jar cvf ../Fuzz1.jar ../Fuzz1.class"
     ]
     try:
         subprocess.check_call(" && ".join(cmd),
@@ -401,9 +403,9 @@ def build_and_test_single_possible_target(idx_folder,
         maven_dst = os.path.join(dst_oss_fuzz_project.project_folder,
                                  "maven.zip")
         gradle_path = os.path.join(oss_fuzz_base_project.project_folder,
-                                  "gradle.zip")
+                                   "gradle.zip")
         gradle_dst = os.path.join(dst_oss_fuzz_project.project_folder,
-                                 "gradle.zip")
+                                  "gradle.zip")
         shutil.copy(maven_path, maven_dst)
         shutil.copy(gradle_path, gradle_dst)
 
@@ -582,7 +584,7 @@ def autofuzz_project_from_github(github_url,
         # Download Gradle
         GRADLE_URL = "https://services.gradle.org/distributions/gradle-7.4.2-bin.zip"
         target_gradle_path = os.path.join(oss_fuzz_base_project.project_folder,
-                                               "gradle.zip")
+                                          "gradle.zip")
         with open(target_gradle_path, 'wb') as gf:
             gf.write(requests.get(GRADLE_URL).content)
 
