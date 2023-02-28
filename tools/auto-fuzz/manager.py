@@ -22,6 +22,7 @@ import constants
 import requests
 import shlex
 import tarfile
+import zipfile
 import threading
 try:
     import tqdm
@@ -38,6 +39,7 @@ import oss_fuzz_manager
 import fuzz_driver_generation_python
 import fuzz_driver_generation_jvm
 
+from io import BytesIO
 from typing import List, Any
 from multiprocessing.dummy import Pool as ThreadPool
 
@@ -196,6 +198,63 @@ def run_static_analysis_python(git_repo, basedir):
     return ret
 
 
+def _maven_build_project(basedir, projectdir):
+    """Helper method to build project using maven"""
+    # Prepare maven
+    with zipfile.ZipFile(os.path.join(basedir, "maven.zip"), "r") as mf:
+        mf.extractall(basedir)
+
+    # Set environment variable
+    env_var = os.environ.copy()
+    env_var['PATH'] = os.path.join(basedir, "apache-maven-3.6.3",
+                                   "bin") + ":" + env_var['PATH']
+
+    # Build project with maven
+    cmd = [
+        "mvn clean package", "-DskipTests", "-Djavac.src.version=15",
+        "-Djavac.target.version=15", "-Dmaven.javadoc.skip=true"
+    ]
+    try:
+        subprocess.check_call(" ".join(cmd),
+                              shell=True,
+                              timeout=1800,
+                              stdout=subprocess.DEVNULL,
+                              stderr=subprocess.DEVNULL,
+                              env=env_var,
+                              cwd=projectdir)
+    except subprocess.TimeoutExpired:
+        pass
+
+
+def _gradle_build_project(basedir, projectdir):
+    """Helper method to build project using maven"""
+    # Prepare gradle
+    with zipfile.ZipFile(os.path.join(basedir, "gradle.zip"), "r") as gf:
+        gf.extractall(basedir)
+
+    # Set environment variable
+    env_var = os.environ.copy()
+    env_var['GRADLE_HOME'] = os.path.join(basedir, "gradle-7.4.2")
+    env_var['PATH'] = os.path.join(basedir, "gradle-7.4.2",
+                                   "bin") + ":" + env_var['PATH']
+
+    # Build project with maven
+    cmd = [
+        "./gradlew clean build -x test",
+        "jar cvf proj.jar -C build/classes/java/main/ ."
+    ]
+    try:
+        subprocess.check_call(" && ".join(cmd),
+                              shell=True,
+                              timeout=1800,
+                              stdout=subprocess.DEVNULL,
+                              stderr=subprocess.DEVNULL,
+                              env=env_var,
+                              cwd=projectdir)
+    except subprocess.TimeoutExpired:
+        pass
+
+
 def run_static_analysis_jvm(git_repo, basedir):
     possible_imports = set()
     curr_dir = os.getcwd()
@@ -203,6 +262,7 @@ def run_static_analysis_jvm(git_repo, basedir):
     os.mkdir("work")
     os.chdir("work")
 
+    jarfiles = []
     # Clone the project
     cmd = ["git clone --depth=1", git_repo, "proj"]
     try:
@@ -214,19 +274,19 @@ def run_static_analysis_jvm(git_repo, basedir):
     except subprocess.TimeoutExpired:
         pass
 
-    cmd = [
-        "mvn clean package", "-DskipTests", "-Djavac.src.version=15",
-        "-Djavac.target.version=15", "-Dmaven.javadoc.skip=true"
-    ]
-    try:
-        subprocess.check_call(" ".join(cmd),
-                              shell=True,
-                              timeout=1800,
-                              stdout=subprocess.DEVNULL,
-                              stderr=subprocess.DEVNULL,
-                              cwd=os.path.join(basedir, "work", "proj"))
-    except subprocess.TimeoutExpired:
-        pass
+    projectdir = os.path.join(basedir, "work", "proj")
+
+    if os.path.exists(os.path.join(projectdir, "pom.xml")):
+        # Maven project
+        _maven_build_project(basedir, projectdir)
+    elif os.path.exists(os.path.join(projectdir, "build.gradle")):
+        # Gradle project
+        _gradle_build_project(basedir, projectdir)
+        jarfiles.append(os.path.join(projectdir, "proj.jar"))
+    else:
+        # Unknown project type
+        print("Unknown project type.\n")
+        return False
 
     # Retrieve Jazzer package for building fuzzer
     jazzer_url = "https://github.com/CodeIntelligenceTesting/jazzer/releases/download/v0.15.0/jazzer-linux.tar.gz"
@@ -237,10 +297,18 @@ def run_static_analysis_jvm(git_repo, basedir):
     with tarfile.open("./jazzer.tar.gz") as f:
         f.extractall("./")
 
+    # Retrieve path of all jar files
+    jarfiles.append(os.path.abspath("../Fuzz1.jar"))
+    for root, _, files in os.walk(projectdir):
+        if "target" in root:
+            for file in files:
+                if file.endswith(".jar"):
+                    jarfiles.append(os.path.abspath(os.path.join(root, file)))
+
     # Compile and package fuzzer to jar file
     cmd = [
-        "javac -cp jazzer_standalone.jar ../Fuzz1.java",
-        "jar cvf ../Fuzz1.jar ../Fuzz1.class"
+        "javac -cp jazzer_standalone.jar:%s ../Fuzz1.java" %
+        ":".join(jarfiles), "jar cvf ../Fuzz1.jar ../Fuzz1.class"
     ]
     try:
         subprocess.check_call(" && ".join(cmd),
@@ -250,14 +318,6 @@ def run_static_analysis_jvm(git_repo, basedir):
                               stderr=subprocess.DEVNULL)
     except subprocess.TimeoutExpired:
         pass
-
-    # Retrieve path of all jar files
-    jarfiles = [os.path.abspath("../Fuzz1.jar")]
-    for root, _, files in os.walk(os.path.join(basedir, "work", "proj")):
-        if "target" in root:
-            for file in files:
-                if file.endswith(".jar"):
-                    jarfiles.append(os.path.abspath(os.path.join(root, file)))
 
     # Run the java frontend static analysis
     cmd = [
@@ -342,7 +402,12 @@ def build_and_test_single_possible_target(idx_folder,
                                   "maven.zip")
         maven_dst = os.path.join(dst_oss_fuzz_project.project_folder,
                                  "maven.zip")
+        gradle_path = os.path.join(oss_fuzz_base_project.project_folder,
+                                   "gradle.zip")
+        gradle_dst = os.path.join(dst_oss_fuzz_project.project_folder,
+                                  "gradle.zip")
         shutil.copy(maven_path, maven_dst)
+        shutil.copy(gradle_path, gradle_dst)
 
     copy_oss_fuzz_project_source(oss_fuzz_base_project, dst_oss_fuzz_project)
 
@@ -405,8 +470,11 @@ def build_and_test_single_possible_target(idx_folder,
 
         if language == "jvm":
             maven_file = os.path.join(auto_fuzz_proj_dir, "maven.zip")
+            gradle_file = os.path.join(auto_fuzz_proj_dir, "gradle.zip")
             if os.path.isfile(maven_file):
                 os.remove(maven_file)
+            if os.path.isfile(gradle_file):
+                os.remove(gradle_file)
 
         if dst_oss_fuzz_project.project_name not in src_dir:
             continue
@@ -503,14 +571,22 @@ def autofuzz_project_from_github(github_url,
                          oss_fuzz_base_project.project_name)):
         return False
 
-    # If this is a jvm target download maven once so we don't have to do it
-    # for each proejct.
+    # If this is a jvm target download maven and gradle once so we don't
+    # have to do it for each proejct.
     if language == "jvm":
+        # Download Maven
         MAVEN_URL = "https://downloads.apache.org/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.zip"
         target_maven_path = os.path.join(oss_fuzz_base_project.project_folder,
                                          "maven.zip")
         with open(target_maven_path, 'wb') as mf:
             mf.write(requests.get(MAVEN_URL).content)
+
+        # Download Gradle
+        GRADLE_URL = "https://services.gradle.org/distributions/gradle-7.4.2-bin.zip"
+        target_gradle_path = os.path.join(oss_fuzz_base_project.project_folder,
+                                          "gradle.zip")
+        with open(target_gradle_path, 'wb') as gf:
+            gf.write(requests.get(GRADLE_URL).content)
 
     # Generate the base Dockerfile, build.sh, project.yaml and fuzz_1.py
     oss_fuzz_base_project.write_basefiles()

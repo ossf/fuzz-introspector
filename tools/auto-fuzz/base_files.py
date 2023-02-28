@@ -107,8 +107,12 @@ def gen_dockerfile_jvm(github_url, project_name):
     DOCKER_STEPS = """FROM gcr.io/oss-fuzz-base/base-builder-jvm
 #RUN curl -L https://downloads.apache.org/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.zip -o maven.zip && unzip maven.zip -d $SRC/maven && rm -rf maven.zip
 COPY maven.zip $SRC/maven.zip
+COPY gradle.zip $SRC/gradle.zip
 RUN unzip maven.zip -d $SRC/maven && rm ./maven.zip
+RUN unzip gradle.zip -d $SRC/gradle && rm ./gradle.zip
 ENV MVN $SRC/maven/apache-maven-3.6.3/bin/mvn
+ENV GRADLE_HOME $SRC/gradle/gradle-7.4.2
+ENV PATH="$SRC/gradle/gradle-7.4.2/bin:$PATH"
 #RUN git clone --depth 1 %s %s
 COPY %s %s
 COPY *.sh *.java $SRC/
@@ -131,8 +135,17 @@ done"""
 
 def gen_builder_1_jvm():
     BUILD_LICENSE = "#!/bin/bash -eu\n" + BASH_LICENSE
-    BUILD_SCRIPT = """MAVEN_ARGS="-Dmaven.test.skip=true -Djavac.src.version=15 -Djavac.target.version=15"
-$MVN clean package $MAVEN_ARGS
+    BUILD_SCRIPT = """if test -f "build.gradle"
+then
+  ./gradlew clean build -x test
+elif test -f "pom.xml"
+then
+  MAVEN_ARGS="-Dmaven.test.skip=true -Djavac.src.version=15 -Djavac.target.version=15"
+  $MVN clean package $MAVEN_ARGS
+else
+  echo "Unknown project type"
+  return 127
+fi
 
 BUILD_CLASSPATH=
 RUNTIME_CLASSPATH=

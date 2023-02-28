@@ -259,10 +259,6 @@ def _search_factory_method(classname, static_method_list, possible_method_list,
             continue
         if func_elem['returnType'] != classname:
             continue
-        if not classname == "javassist.CtClass":
-            continue
-        if "makeClass" not in func_elem['functionName']:
-            continue
 
         func_name = func_elem['functionName'].split('(')[0].split('].')[1]
         func_class = func_elem['functionSourceFile']
@@ -430,6 +426,10 @@ def _generate_heuristic_1(yaml_dict, possible_targets, max_target):
             continue
         if "test" in func_elem['functionName']:
             continue
+        if "jazzer" in func_elem[
+                'functionName'] or "fuzzerTestOneInput" in func_elem[
+                    'functionName']:
+            continue
 
         possible_target = FuzzTarget()
 
@@ -517,6 +517,10 @@ def _generate_heuristic_2(yaml_dict, possible_targets, max_target):
         if len(func_elem['argTypes']) > 20:
             continue
         if "test" in func_elem['functionName']:
+            continue
+        if "jazzer" in func_elem[
+                'functionName'] or "fuzzerTestOneInput" in func_elem[
+                    'functionName']:
             continue
 
         possible_target = FuzzTarget()
@@ -627,6 +631,10 @@ def _generate_heuristic_3(yaml_dict, possible_targets, max_target):
             continue
         if "test" in func_elem['functionName']:
             continue
+        if "jazzer" in func_elem[
+                'functionName'] or "fuzzerTestOneInput" in func_elem[
+                    'functionName']:
+            continue
 
         possible_target = FuzzTarget()
 
@@ -732,7 +740,9 @@ def _generate_heuristic_4(yaml_dict, possible_targets, max_target):
             continue
         if "test" in func_elem['functionName']:
             continue
-        if "javassist.CtClass" not in func_elem['functionSourceFile']:
+        if "jazzer" in func_elem[
+                'functionName'] or "fuzzerTestOneInput" in func_elem[
+                    'functionName']:
             continue
 
         possible_target = FuzzTarget()
