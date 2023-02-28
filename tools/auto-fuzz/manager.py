@@ -372,6 +372,17 @@ def tick_tqdm_tracker():
         return
 
 
+def cleanup_build_cache():
+    """Cleans up Docker build cache. This is needed becaus auto-fuzz builds
+    up a large docker build cache, which can take up hundreds of GBs on a
+    small run.
+    """
+    subprocess.check_call('docker builder prune --force',
+                          shell=True,
+                          stdout=subprocess.DEVNULL,
+                          stderr=subprocess.DEVNULL)
+
+
 def build_and_test_single_possible_target(idx_folder,
                                           idx,
                                           oss_fuzz_base_project,
@@ -514,7 +525,6 @@ def run_builder_pool(autofuzz_base_workdir, oss_fuzz_base_project,
         arg_list.append((idx_folder, idx, oss_fuzz_base_project,
                          possible_targets, language))
 
-    pool = ThreadPool(constants.MAX_THREADS)
     print("Launching multi-threaded processing")
     print("Jobs completed:")
     try:
@@ -523,9 +533,21 @@ def run_builder_pool(autofuzz_base_workdir, oss_fuzz_base_project,
             total=min(max_targets_to_analyse, len(possible_targets)))
     except:
         pass
-    pool.starmap(build_and_test_single_possible_target, arg_list)
-    pool.close()
-    pool.join()
+
+    # Run in batches of 10
+    all_batches = [
+        arg_list[x:x + constants.BATCH_SIZE_BEFORE_DOCKER_CLEAN] for x in
+        range(0, len(arg_list), constants.BATCH_SIZE_BEFORE_DOCKER_CLEAN)
+    ]
+    for curr_batch in all_batches:
+        pool = ThreadPool(constants.MAX_THREADS)
+        pool.starmap(build_and_test_single_possible_target, curr_batch)
+        pool.close()
+        pool.join()
+
+        # Cleanup docker
+        cleanup_build_cache()
+
     try:
         tqdm_tracker.close()
     except:
