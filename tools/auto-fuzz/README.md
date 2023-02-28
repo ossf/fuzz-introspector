@@ -32,7 +32,8 @@ pip3 install .
 cd ../../../tools/auto-fuzz/
 
 # Run a small experiment (it's set to being small by default)
-python3 ./manager.py
+# Currently, only java or python supported for the language option
+python3 ./manager.py <language>
 
 # Once it's finished, let's inspect the results.
 # Identify the best targets per project
