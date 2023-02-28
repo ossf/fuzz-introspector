@@ -468,13 +468,19 @@ def build_and_test_single_possible_target(idx_folder,
         if not os.path.isdir(full_path):
             continue
 
-        if language == "jvm":
-            maven_file = os.path.join(auto_fuzz_proj_dir, "maven.zip")
-            gradle_file = os.path.join(auto_fuzz_proj_dir, "gradle.zip")
-            if os.path.isfile(maven_file):
-                os.remove(maven_file)
-            if os.path.isfile(gradle_file):
-                os.remove(gradle_file)
+        files_to_cleanup = ['maven.zip', 'gradle.zip']
+        for filename in files_to_cleanup:
+            # Auto-fuzz path
+            autofuzz_filename_path = os.path.join(auto_fuzz_proj_dir, filename)
+            if os.path.isfile(autofuzz_filename_path):
+                os.remove(autofuzz_filename_path)
+
+            # OSS-Fuzz directory path
+            ossfuzz_filename_path = os.path.join(
+                OSS_FUZZ_BASE, "projects",
+                os.path.basename(auto_fuzz_proj_dir), filename)
+            if os.path.isfile(ossfuzz_filename_path):
+                os.remove(ossfuzz_filename_path)
 
         if dst_oss_fuzz_project.project_name not in src_dir:
             continue
