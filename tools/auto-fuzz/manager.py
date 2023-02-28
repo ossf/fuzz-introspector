@@ -476,9 +476,9 @@ def build_and_test_single_possible_target(idx_folder,
                 os.remove(autofuzz_filename_path)
 
             # OSS-Fuzz directory path
-            ossfuzz_filename_path = os.path.join(OSS_FUZZ_BASE, "projects",
-                                     os.path.basename(auto_fuzz_proj_dir),
-                                     filename)
+            ossfuzz_filename_path = os.path.join(
+                OSS_FUZZ_BASE, "projects",
+                os.path.basename(auto_fuzz_proj_dir), filename)
             if os.path.isfile(ossfuzz_filename_path):
                 os.remove(ossfuzz_filename_path)
 
