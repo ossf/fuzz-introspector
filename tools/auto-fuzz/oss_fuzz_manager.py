@@ -99,7 +99,7 @@ def cleanup_project(proj_name, oss_fuzz_base):
     try:
         subprocess.check_call(oss_fuzz_docker_cmd)
     except subprocess.CalledProcessError:
-        return False
+        return pass
 
     # Remove the OSS-Fuzz docker image itself
     oss_fuzz_docker_tag = f'gcr.io/oss-fuzz/{proj_name}'
