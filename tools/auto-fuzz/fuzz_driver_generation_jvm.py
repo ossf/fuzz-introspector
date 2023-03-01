@@ -135,7 +135,6 @@ def _handle_import(func_elem):
 def _handle_argument(argType,
                      init_dict,
                      possible_target,
-                     recursion_count,
                      max_target,
                      obj_creation=True,
                      handled=[]):
@@ -168,7 +167,7 @@ def _handle_argument(argType,
         return ["data.consumeString(100)"]
     elif obj_creation:
         return _handle_object_creation(argType, init_dict, possible_target,
-                                       recursion_count, max_target, handled)
+                                       max_target, handled)
     else:
         return []
 
@@ -267,7 +266,7 @@ def _search_factory_method(classname, static_method_list, possible_method_list,
         arg_list = []
         for argType in func_elem['argTypes']:
             arg_list.append(
-                _handle_argument(argType, init_dict, possible_target, 0,
+                _handle_argument(argType, init_dict, possible_target,
                                  max_target))
 
         if len(arg_list) != len(func_elem['argTypes']):
@@ -275,8 +274,7 @@ def _search_factory_method(classname, static_method_list, possible_method_list,
 
         # Create possible factory method invoking statements with constructor or static factory
         for creation in _handle_object_creation(func_class, init_dict,
-                                                possible_target, 0,
-                                                max_target):
+                                                possible_target, max_target):
             if creation and len(result_list) > max_target:
                 return result_list
 
@@ -337,7 +335,6 @@ def _search_concrete_subclass(classname,
 def _handle_object_creation(classname,
                             init_dict,
                             possible_target,
-                            recursion_count,
                             max_target,
                             handled=[]):
     """
@@ -346,8 +343,7 @@ def _handle_object_creation(classname,
     use it as reference, otherwise the default empty constructor
     are used.
     """
-    recursion_count += 1
-    if init_dict and classname in init_dict.keys() and recursion_count <= 5:
+    if init_dict and classname in init_dict.keys():
         # Process arguments for constructor
         try:
             arg_list = []
@@ -370,8 +366,7 @@ def _handle_object_creation(classname,
                 handled.append(elem)
                 for argType in elem['argTypes']:
                     arg = _handle_argument(argType, init_dict, possible_target,
-                                           recursion_count, max_target, True,
-                                           handled)
+                                           max_target, True, handled)
                     if arg:
                         arg_list.append(arg)
                 if len(arg_list) != len(elem['argTypes']):
@@ -552,7 +547,7 @@ def _generate_heuristic_2(yaml_dict, possible_targets, max_target):
 
         # Get all object creation statement for each possible concrete classes of the object
         object_creation_list = _handle_object_creation(func_class, init_dict,
-                                                       possible_target, 0,
+                                                       possible_target,
                                                        max_target)
 
         for object_creation_item in object_creation_list:
