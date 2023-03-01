@@ -28,6 +28,28 @@ def get_result_json(dirname):
     return result
 
 
+# "imports_to_add": ["import markdown_it"], "exceptions_to_handle": ["KeyError"],
+def get_exceptions(dirname):
+    result = get_result_json(dirname)
+    if result is None:
+        return []
+    return result.get('exceptions_to_handle')
+
+
+def get_imports(dirname):
+    result = get_result_json(dirname)
+    if result is None:
+        return []
+    return result.get('imports_to_add')
+
+
+def get_function_target(dirname):
+    result = get_result_json(dirname)
+    if result is None:
+        return []
+    return result.get('target function')
+
+
 def get_heuristics_from_trial(dirname):
     result = get_result_json(dirname)
     if result is None:
@@ -100,6 +122,10 @@ def interpret_autofuzz_run(dirname: str, only_report_max: bool = False):
         trial_runs[trial_run_dir]['name'] = trial_run_dir
         trial_runs[trial_run_dir][
             'heuristics-used'] = get_heuristics_from_trial(subpath)
+        trial_runs[trial_run_dir]['function-target'] = get_function_target(
+            subpath)
+        trial_runs[trial_run_dir]['exceptions'] = get_exceptions(subpath)
+        trial_runs[trial_run_dir]['imports'] = get_imports(subpath)
 
     return proj_yaml, trial_runs
 
@@ -122,10 +148,10 @@ def _print_summary_of_trial_run(trial_run,
         fuzz_path = python_fuzz_path
     elif os.path.isfile(jvm_fuzz_path):
         fuzz_path = jvm_fuzz_path
-    print("%s :: %15s ::  %21s :: [%5s : %5s] :: %s :: %s" %
+    print("%s :: %15s ::  %21s :: [%5s : %5s] :: %s :: %s :: %s" %
           (proj_name, autofuzz_project_dir, trial_name,
-           str(trial_run['max_cov']), str(
-               trial_run['min_cov']), fuzz_path, trial_run['heuristics-used']))
+           str(trial_run['max_cov']), str(trial_run['min_cov']), fuzz_path,
+           trial_run['heuristics-used'], trial_run['function-target']))
 
 
 def get_top_trial_run(trial_runs):
@@ -209,13 +235,16 @@ def extract_ranked(target_dir, runs_to_rank=20):
         return None
     ranked_runs = get_cov_ranked_trial_runs(trial_runs)
 
+    success_runs = []
     for i in range(min(runs_to_rank, len(ranked_runs))):
         trial_run = ranked_runs[i]
         if trial_run['max_cov'] <= 0:
             continue
+        success_runs.append(trial_run)
 
         _print_summary_of_trial_run(trial_run, proj_yaml['main_repo'],
                                     target_dir)
+    return success_runs
 
 
 def main():
@@ -225,7 +254,11 @@ def main():
         if sys.argv[1] == 'heuristics':
             heuristics_summary()
         else:
-            extract_ranked(sys.argv[1])
+            if len(sys.argv) == 3:
+                runs_to_rank = int(sys.argv[2])
+            else:
+                runs_to_rank = 20
+            extract_ranked(sys.argv[1], runs_to_rank)
 
 
 if __name__ == "__main__":

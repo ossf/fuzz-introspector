@@ -38,6 +38,7 @@ import base_files
 import oss_fuzz_manager
 import fuzz_driver_generation_python
 import fuzz_driver_generation_jvm
+import post_process
 
 from io import BytesIO
 from typing import List, Any
@@ -466,6 +467,8 @@ def build_and_test_single_possible_target(idx_folder,
     summary['auto-build'] = str(build_success)
     summary['auto-run'] = str(run_success)
     summary['target function'] = possible_target.function_target
+    summary['imports_to_add'] = possible_target.imports_to_add
+    summary['exceptions_to_handle'] = possible_target.exceptions_to_handle
     summary['heuristics-used'] = list()
     for heuristic in possible_target.heuristics_used:
         summary['heuristics-used'].append(heuristic)
@@ -575,7 +578,8 @@ def git_clone_project(github_url, destination):
 
 def autofuzz_project_from_github(github_url,
                                  language,
-                                 do_static_analysis=False):
+                                 do_static_analysis=False,
+                                 possible_targets=None):
     """Auto-generates fuzzers for a Github project and performs runtime checks
     on the fuzzers.
     """
@@ -653,16 +657,17 @@ def autofuzz_project_from_github(github_url,
     print(res)
 
     # Generate all possible targets
-    possible_targets = []
-    if do_static_analysis and static_res:
-        print("Generating fuzzers for %s" % (github_url))
-        if language == "python":
-            possible_targets = fuzz_driver_generation_python.generate_possible_targets(
-                oss_fuzz_base_project.project_folder)
-        elif language == "jvm":
-            possible_targets = fuzz_driver_generation_jvm.generate_possible_targets(
-                oss_fuzz_base_project.project_folder,
-                constants.MAX_TARGET_PER_PROJECT_HEURISTIC)
+    if possible_targets is None:
+        possible_targets = []
+        if do_static_analysis and static_res:
+            print("Generating fuzzers for %s" % (github_url))
+            if language == "python":
+                possible_targets = fuzz_driver_generation_python.generate_possible_targets(
+                    oss_fuzz_base_project.project_folder)
+            elif language == "jvm":
+                possible_targets = fuzz_driver_generation_jvm.generate_possible_targets(
+                    oss_fuzz_base_project.project_folder,
+                    constants.MAX_TARGET_PER_PROJECT_HEURISTIC)
 
     print("Generated %d possible targets for %s." %
           (len(possible_targets), github_url))
@@ -683,9 +688,21 @@ def run_on_projects(language):
     for repo in repos_to_target:
         os.chdir(home_dir)
         autofuzz_project_from_github(repo, language, do_static_analysis=True)
-
     print("Completed auto-fuzz generation on %d projects" %
           len(repos_to_target))
+
+
+def run_stage_two(target_dir):
+    success_runs = post_process.extract_ranked(target_dir,
+                                               runs_to_rank=1000000)
+    heuristic_dict = dict()
+    possible_targets = fuzz_driver_generation_python.merge_stage_one_targets(
+        success_runs)
+    autofuzz_project_from_github(
+        'https://github.com/executablebooks/markdown-it-py',
+        'python',
+        do_static_analysis=False,
+        possible_targets=possible_targets)
 
 
 if __name__ == "__main__":
@@ -694,6 +711,9 @@ if __name__ == "__main__":
             run_on_projects("python")
         elif sys.argv[1] == 'java':
             run_on_projects("jvm")
+        elif sys.argv[1] == 'stage-two':
+            target_folder = sys.argv[2]
+            run_stage_two(target_folder)
         else:
             print("Please give a language of either {python, java}")
     else:
