@@ -27,12 +27,14 @@ def get_result_json(dirname):
         result = json.load(result_file)
     return result
 
-# "imports_to_add": ["import markdown_it"], "exceptions_to_handle": ["KeyError"], 
+
+# "imports_to_add": ["import markdown_it"], "exceptions_to_handle": ["KeyError"],
 def get_exceptions(dirname):
     result = get_result_json(dirname)
     if result is None:
         return []
     return result.get('exceptions_to_handle')
+
 
 def get_imports(dirname):
     result = get_result_json(dirname)
@@ -120,7 +122,8 @@ def interpret_autofuzz_run(dirname: str, only_report_max: bool = False):
         trial_runs[trial_run_dir]['name'] = trial_run_dir
         trial_runs[trial_run_dir][
             'heuristics-used'] = get_heuristics_from_trial(subpath)
-        trial_runs[trial_run_dir]['function-target'] = get_function_target(subpath)
+        trial_runs[trial_run_dir]['function-target'] = get_function_target(
+            subpath)
         trial_runs[trial_run_dir]['exceptions'] = get_exceptions(subpath)
         trial_runs[trial_run_dir]['imports'] = get_imports(subpath)
 
@@ -147,9 +150,8 @@ def _print_summary_of_trial_run(trial_run,
         fuzz_path = jvm_fuzz_path
     print("%s :: %15s ::  %21s :: [%5s : %5s] :: %s :: %s :: %s" %
           (proj_name, autofuzz_project_dir, trial_name,
-           str(trial_run['max_cov']), str(
-               trial_run['min_cov']), fuzz_path, trial_run['heuristics-used'],
-           trial_run['function-target']))
+           str(trial_run['max_cov']), str(trial_run['min_cov']), fuzz_path,
+           trial_run['heuristics-used'], trial_run['function-target']))
 
 
 def get_top_trial_run(trial_runs):

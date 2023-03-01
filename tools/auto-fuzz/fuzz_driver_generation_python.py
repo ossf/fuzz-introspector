@@ -431,7 +431,8 @@ def _generate_heuristic_4(yaml_dict, possible_targets):
 
             # Add open variables
             possible_target.variables_to_add.append(("val_1", "str"))
-            possible_target.function_target = "%s.%s"%(class_path, possible_class_target_name)
+            possible_target.function_target = "%s.%s" % (
+                class_path, possible_class_target_name)
             possible_targets.append(possible_target)
 
             # Make second one
@@ -453,7 +454,8 @@ def _generate_heuristic_4(yaml_dict, possible_targets):
             fuzzer_source_code2 += "):\n"
             fuzzer_source_code2 += "    pass\n"
             possible_target2.fuzzer_source_code = fuzzer_source_code2
-            possible_target2.function_target = "%s.%s"%(class_path, possible_class_target_name)
+            possible_target2.function_target = "%s.%s" % (
+                class_path, possible_class_target_name)
 
             possible_targets.append(possible_target2)
 
@@ -471,7 +473,6 @@ def impl_merge_heuristic_41(runs_to_merge):
         for im in run['imports']:
             imports_to_add.add(im)
 
-
     fuzzer_source_code = "  # Class target.\n"
     fuzzer_source_code += "  try:\n"
     fuzzer_source_code += "    c1 = %s()\n" % (class_path)
@@ -480,10 +481,11 @@ def impl_merge_heuristic_41(runs_to_merge):
     variables_to_add = list()
     idx = 0
     for func_to_hit in functions_to_hit:
-        variable_to_add = ("val_%d"%(idx), "str")
+        variable_to_add = ("val_%d" % (idx), "str")
         variables_to_add.append(variable_to_add)
         idx += 1
-        fuzzer_source_code += "    c1.%s(%s)\n" % (func_to_hit, variable_to_add[0])
+        fuzzer_source_code += "    c1.%s(%s)\n" % (func_to_hit,
+                                                   variable_to_add[0])
 
     # Add exceitions
     fuzzer_source_code += "  except("
@@ -492,7 +494,7 @@ def impl_merge_heuristic_41(runs_to_merge):
     fuzzer_source_code += "):\n"
     fuzzer_source_code += "    pass\n"
 
-    print("="*60)
+    print("=" * 60)
     print(fuzzer_source_code)
 
     possible_target = FuzzTarget()
@@ -515,9 +517,9 @@ def merged_heuristic_41(targets):
     print("Classes:")
     class_combinations = dict()
     for c in classes:
-        print("Classes: %s -- target count: %d"%(c, len(classes[c])))
+        print("Classes: %s -- target count: %d" % (c, len(classes[c])))
         combination_levels = dict()
-        for L in range(len(classes[c])+1):
+        for L in range(len(classes[c]) + 1):
             combination_levels[L] = list()
             for subset in itertools.combinations(classes[c], L):
                 combination_levels[L].append(subset)
@@ -527,26 +529,27 @@ def merged_heuristic_41(targets):
     targets_to_create = dict()
     for c in class_combinations:
         targets_to_create[c] = list()
-        print("Class combinations: %s-- Levels: %d"%(c, len(class_combinations[c])))
+        print("Class combinations: %s-- Levels: %d" %
+              (c, len(class_combinations[c])))
         for L in class_combinations[c]:
-            print("Level: %d -- %d"%(L, len(class_combinations[c][L])))
+            print("Level: %d -- %d" % (L, len(class_combinations[c][L])))
             # Pick which combinations to do
             # We go for: layer [2,3, -1, -2, -3]
             if L == 2:
                 targets_to_create[c].extend(class_combinations[c][L])
             elif L == 3:
                 targets_to_create[c].extend(class_combinations[c][L])
-            elif L == len(class_combinations[c])-3:
+            elif L == len(class_combinations[c]) - 3:
                 targets_to_create[c].extend(class_combinations[c][L])
-            elif L == len(class_combinations[c])-2:
+            elif L == len(class_combinations[c]) - 2:
                 targets_to_create[c].extend(class_combinations[c][L])
-            elif L == len(class_combinations[c])-1:
+            elif L == len(class_combinations[c]) - 1:
                 targets_to_create[c].extend(class_combinations[c][L])
 
     print("Targets to create")
     possible_targets = []
     for c in targets_to_create:
-        print("%s :: %d"%(c, len(targets_to_create[c])))
+        print("%s :: %d" % (c, len(targets_to_create[c])))
         for runs_to_merge in targets_to_create[c]:
             #print(">"*75)
             #print(runs_to_merge)
@@ -557,19 +560,20 @@ def merged_heuristic_41(targets):
 
 
 def merge_stage_one_targets(target_runs):
-    heuristic_merge_groups = {
-        'py-autofuzz-heuristics-4.1' : list()
-    }
+    heuristic_merge_groups = {'py-autofuzz-heuristics-4.1': list()}
     # Collect target into groups that can be merged. Simple for now.
     for target_run in target_runs:
-        if len(target_run['heuristics-used']) == 1 and target_run['heuristics-used'][0] == 'py-autofuzz-heuristics-4.1':
-            heuristic_merge_groups['py-autofuzz-heuristics-4.1'].append(target_run)
+        if len(target_run['heuristics-used']) == 1 and target_run[
+                'heuristics-used'][0] == 'py-autofuzz-heuristics-4.1':
+            heuristic_merge_groups['py-autofuzz-heuristics-4.1'].append(
+                target_run)
 
     print("Merge groups:")
     print(len(heuristic_merge_groups['py-autofuzz-heuristics-4.1']))
 
     if len(heuristic_merge_groups['py-autofuzz-heuristics-4.1']) > 1:
-        merged_targets = merged_heuristic_41(heuristic_merge_groups['py-autofuzz-heuristics-4.1'])
+        merged_targets = merged_heuristic_41(
+            heuristic_merge_groups['py-autofuzz-heuristics-4.1'])
         return merged_targets
     return []
 

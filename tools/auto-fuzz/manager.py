@@ -579,7 +579,7 @@ def git_clone_project(github_url, destination):
 def autofuzz_project_from_github(github_url,
                                  language,
                                  do_static_analysis=False,
-                                 possible_targets = None):
+                                 possible_targets=None):
     """Auto-generates fuzzers for a Github project and performs runtime checks
     on the fuzzers.
     """
@@ -694,10 +694,16 @@ def run_on_projects(language):
 
 
 def run_stage_two(target_dir):
-    success_runs = post_process.extract_ranked(target_dir, runs_to_rank=1000000)
+    success_runs = post_process.extract_ranked(target_dir,
+                                               runs_to_rank=1000000)
     heuristic_dict = dict()
-    possible_targets = fuzz_driver_generation_python.merge_stage_one_targets(success_runs)
-    autofuzz_project_from_github('https://github.com/executablebooks/markdown-it-py', 'python', do_static_analysis = False, possible_targets = possible_targets)
+    possible_targets = fuzz_driver_generation_python.merge_stage_one_targets(
+        success_runs)
+    autofuzz_project_from_github(
+        'https://github.com/executablebooks/markdown-it-py',
+        'python',
+        do_static_analysis=False,
+        possible_targets=possible_targets)
     #for success_run in success_runs:
     #   if str(success_run['heuristics-used']) not in heuristic_dict:
     #        heuristic_dict[str(success_run['heuristics-used'])] = list()
