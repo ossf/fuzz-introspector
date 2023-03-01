@@ -35,32 +35,33 @@ def get_heuristics_from_trial(dirname):
     return result.get('heuristics-used')
 
 
-def get_max_code_cov_from_trial(dirname):
+def get_code_cov_from_trial(dirname):
     """Returns the max edge coverage of a specific OSS-Fuzz run. Return -1
     if the build or run was unsuccessful.
     """
     result = get_result_json(dirname)
     if result is None:
-        return -1
+        return None
 
     if result.get('auto-build') != 'True' or result.get('auto-run') != 'True':
-        return -1
+        return None
 
     # Read coverage log
     oss_fuzz_run_log = os.path.join(dirname, "autofuzz-log",
                                     "oss-fuzz-run.out")
     if not os.path.isfile(oss_fuzz_run_log):
-        return
+        return None
     with open(oss_fuzz_run_log, "r") as orf:
         oss_run_out = orf.read()
 
     max_cov = -1
+    cov_data = []
     for line in oss_run_out.split("\n"):
         if "cov: " in line:
             line_cov = int(line.split("cov:")[1].lstrip().split(" ")[0])
-            if line_cov > max_cov:
-                max_cov = line_cov
-    return max_cov
+            cov_data.append(line_cov)
+
+    return cov_data
 
 
 def interpret_autofuzz_run(dirname: str, only_report_max: bool = False):
@@ -87,8 +88,15 @@ def interpret_autofuzz_run(dirname: str, only_report_max: bool = False):
             continue
         trial_runs[trial_run_dir] = {'max_cov': -2}
         subpath = os.path.join(dirname, trial_run_dir)
-        max_cov = get_max_code_cov_from_trial(subpath)
+        cov_data = get_code_cov_from_trial(subpath)
+        if cov_data is None:
+            max_cov = -1
+            min_cov = -1
+        else:
+            min_cov = cov_data[0]
+            max_cov = cov_data[-1]
         trial_runs[trial_run_dir]['max_cov'] = max_cov
+        trial_runs[trial_run_dir]['min_cov'] = min_cov
         trial_runs[trial_run_dir]['name'] = trial_run_dir
         trial_runs[trial_run_dir][
             'heuristics-used'] = get_heuristics_from_trial(subpath)
@@ -114,9 +122,10 @@ def _print_summary_of_trial_run(trial_run,
         fuzz_path = python_fuzz_path
     elif os.path.isfile(jvm_fuzz_path):
         fuzz_path = jvm_fuzz_path
-    print("%s :: %15s ::  %21s :: %5s :: %s :: %s" %
+    print("%s :: %15s ::  %21s :: [%5s : %5s] :: %s :: %s" %
           (proj_name, autofuzz_project_dir, trial_name,
-           str(trial_run['max_cov']), fuzz_path, trial_run['heuristics-used']))
+           str(trial_run['max_cov']), str(
+               trial_run['min_cov']), fuzz_path, trial_run['heuristics-used']))
 
 
 def get_top_trial_run(trial_runs):
