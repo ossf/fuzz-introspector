@@ -84,6 +84,10 @@ def run_fuzz_pass(
             for rdir in os.path.split(root):
                 if rdir == "test" or rdir == "tests":
                     to_include = False
+            # Avoid any paths with tests or test as a folder
+            for split_dir in root.split("/"):
+                if split_dir == "tests" or split_dir == "test":
+                    to_include = False
             if not to_include:
                 continue
             for filename in files:
