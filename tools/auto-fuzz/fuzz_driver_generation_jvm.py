@@ -266,7 +266,8 @@ def _search_factory_method(classname, static_method_list, possible_method_list,
         arg_list = []
         for argType in func_elem['argTypes']:
             arg_list.append(
-                _handle_argument(argType, init_dict, possible_target, max_target))
+                _handle_argument(argType, init_dict, possible_target,
+                                 max_target))
 
         if len(arg_list) != len(func_elem['argTypes']):
             continue
@@ -546,7 +547,8 @@ def _generate_heuristic_2(yaml_dict, possible_targets, max_target):
 
         # Get all object creation statement for each possible concrete classes of the object
         object_creation_list = _handle_object_creation(func_class, init_dict,
-                                                       possible_target, max_target)
+                                                       possible_target,
+                                                       max_target)
 
         for object_creation_item in object_creation_list:
             # Create possible target for all possible object creation statement
