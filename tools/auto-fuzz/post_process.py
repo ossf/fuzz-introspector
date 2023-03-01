@@ -124,8 +124,8 @@ def _print_summary_of_trial_run(trial_run,
         fuzz_path = jvm_fuzz_path
     print("%s :: %15s ::  %21s :: [%5s : %5s] :: %s :: %s" %
           (proj_name, autofuzz_project_dir, trial_name,
-           str(trial_run['max_cov']), str(trial_run['min_cov']),
-           fuzz_path, trial_run['heuristics-used']))
+           str(trial_run['max_cov']), str(
+               trial_run['min_cov']), fuzz_path, trial_run['heuristics-used']))
 
 
 def get_top_trial_run(trial_runs):
