@@ -206,7 +206,8 @@ def _maven_build_project(basedir, projectdir):
 
     # Set environment variable
     env_var = os.environ.copy()
-    env_var['PATH'] = os.path.join(basedir, constants.MAVEN_PATH) + ":" + env_var['PATH']
+    env_var['PATH'] = os.path.join(
+        basedir, constants.MAVEN_PATH) + ":" + env_var['PATH']
 
     # Build project with maven
     cmd = [
@@ -236,7 +237,8 @@ def _gradle_build_project(basedir, projectdir):
     # Set environment variable
     env_var = os.environ.copy()
     env_var['GRADLE_HOME'] = os.path.join(basedir, constants.GRADLE_HOME)
-    env_var['PATH'] = os.path.join(basedir, constants.GRADLE_PATH) + ":" + env_var['PATH']
+    env_var['PATH'] = os.path.join(
+        basedir, constants.GRADLE_PATH) + ":" + env_var['PATH']
 
     # Build project with maven
     cmd = [
