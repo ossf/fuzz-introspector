@@ -688,7 +688,6 @@ def run_on_projects(language):
     for repo in repos_to_target:
         os.chdir(home_dir)
         autofuzz_project_from_github(repo, language, do_static_analysis=True)
-
     print("Completed auto-fuzz generation on %d projects" %
           len(repos_to_target))
 
@@ -704,14 +703,6 @@ def run_stage_two(target_dir):
         'python',
         do_static_analysis=False,
         possible_targets=possible_targets)
-    #for success_run in success_runs:
-    #   if str(success_run['heuristics-used']) not in heuristic_dict:
-    #        heuristic_dict[str(success_run['heuristics-used'])] = list()
-    #    heuristic_dict[str(success_run['heuristics-used'])].append(success_run)
-
-    #print("Summary of heuristics:")
-    #for hst in heuristic_dict:
-    #    print(hst)
 
 
 if __name__ == "__main__":
