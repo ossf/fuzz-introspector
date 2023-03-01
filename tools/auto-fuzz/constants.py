@@ -18,6 +18,13 @@ MAX_THREADS = 4
 
 BATCH_SIZE_BEFORE_DOCKER_CLEAN = 40
 
+MAVEN_URL = "https://downloads.apache.org/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.zip"
+GRADLE_URL = "https://services.gradle.org/distributions/gradle-7.4.2-bin.zip"
+
+MAVEN_PATH = "apache-maven-3.6.3/bin"
+GRADLE_HOME = "gradle-7.4.2"
+GRADLE_PATH = f"{GRADLE_HOME}/bin"
+
 git_repos = {
     'python': [
         # 'https://github.com/davidhalter/parso',

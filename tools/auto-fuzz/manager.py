@@ -206,8 +206,8 @@ def _maven_build_project(basedir, projectdir):
 
     # Set environment variable
     env_var = os.environ.copy()
-    env_var['PATH'] = os.path.join(basedir, "apache-maven-3.6.3",
-                                   "bin") + ":" + env_var['PATH']
+    env_var['PATH'] = os.path.join(
+        basedir, constants.MAVEN_PATH) + ":" + env_var['PATH']
 
     # Build project with maven
     cmd = [
@@ -236,9 +236,9 @@ def _gradle_build_project(basedir, projectdir):
 
     # Set environment variable
     env_var = os.environ.copy()
-    env_var['GRADLE_HOME'] = os.path.join(basedir, "gradle-7.4.2")
-    env_var['PATH'] = os.path.join(basedir, "gradle-7.4.2",
-                                   "bin") + ":" + env_var['PATH']
+    env_var['GRADLE_HOME'] = os.path.join(basedir, constants.GRADLE_HOME)
+    env_var['PATH'] = os.path.join(
+        basedir, constants.GRADLE_PATH) + ":" + env_var['PATH']
 
     # Build project with maven
     cmd = [
@@ -607,18 +607,16 @@ def autofuzz_project_from_github(github_url,
     # have to do it for each proejct.
     if language == "jvm":
         # Download Maven
-        MAVEN_URL = "https://downloads.apache.org/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.zip"
         target_maven_path = os.path.join(oss_fuzz_base_project.project_folder,
                                          "maven.zip")
         with open(target_maven_path, 'wb') as mf:
-            mf.write(requests.get(MAVEN_URL).content)
+            mf.write(requests.get(constants.MAVEN_URL).content)
 
         # Download Gradle
-        GRADLE_URL = "https://services.gradle.org/distributions/gradle-7.4.2-bin.zip"
         target_gradle_path = os.path.join(oss_fuzz_base_project.project_folder,
                                           "gradle.zip")
         with open(target_gradle_path, 'wb') as gf:
-            gf.write(requests.get(GRADLE_URL).content)
+            gf.write(requests.get(constants.GRADLE_URL).content)
 
     # Generate the base Dockerfile, build.sh, project.yaml and fuzz_1.py
     oss_fuzz_base_project.write_basefiles()
