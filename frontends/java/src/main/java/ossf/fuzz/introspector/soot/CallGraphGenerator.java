@@ -297,6 +297,7 @@ class CustomSenceTransformer extends SceneTransformer {
         methodInfo.setIsJavaLibraryMethod(m.isJavaLibraryMethod());
         methodInfo.setIsPublic(m.isPublic());
         methodInfo.setIsStatic(m.isStatic());
+        methodInfo.setIsClassEnum(c.isEnum());
         for (SootClass exception : m.getExceptions()) {
           methodInfo.addException(exception.getFilePath());
         }
@@ -453,6 +454,7 @@ class CustomSenceTransformer extends SceneTransformer {
         methodInfo.setIsConcrete(method.isConcrete());
         methodInfo.setIsPublic(method.isPublic());
         methodInfo.setIsClassConcrete(sootClass.isConcrete());
+        methodInfo.setIsClassEnum(sootClass.isEnum());
         if (sootClass.hasSuperclass()) {
           methodInfo.setSuperClass(sootClass.getSuperclass().getName());
         }
@@ -496,6 +498,7 @@ class CustomSenceTransformer extends SceneTransformer {
       methodInfo.setIsJavaLibraryMethod(method.isJavaLibraryMethod());
       methodInfo.setIsPublic(method.isPublic());
       methodInfo.setIsStatic(method.isStatic());
+      methodInfo.setIsClassEnum(method.getDeclaringClass().isEnum());
       for (SootClass exception : method.getExceptions()) {
         methodInfo.addException(exception.getFilePath());
       }
