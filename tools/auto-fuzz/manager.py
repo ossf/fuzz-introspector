@@ -467,8 +467,9 @@ def build_and_test_single_possible_target(idx_folder,
     summary['auto-build'] = str(build_success)
     summary['auto-run'] = str(run_success)
     summary['target function'] = possible_target.function_target
-    summary['imports_to_add'] = possible_target.imports_to_add
-    summary['exceptions_to_handle'] = possible_target.exceptions_to_handle
+    summary['imports_to_add'] = list(possible_target.imports_to_add)
+    summary['exceptions_to_handle'] = list(
+        possible_target.exceptions_to_handle)
     summary['heuristics-used'] = list()
     for heuristic in possible_target.heuristics_used:
         summary['heuristics-used'].append(heuristic)
