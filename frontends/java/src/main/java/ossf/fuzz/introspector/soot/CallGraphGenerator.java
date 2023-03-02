@@ -453,6 +453,7 @@ class CustomSenceTransformer extends SceneTransformer {
         methodInfo.setIsConcrete(method.isConcrete());
         methodInfo.setIsPublic(method.isPublic());
         methodInfo.setIsClassConcrete(sootClass.isConcrete());
+        methodInfo.setIsClassEnum(sootClass.isEnum());
         if (sootClass.hasSuperclass()) {
           methodInfo.setSuperClass(sootClass.getSuperclass().getName());
         }
