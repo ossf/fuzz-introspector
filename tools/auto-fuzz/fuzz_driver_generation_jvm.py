@@ -177,7 +177,7 @@ def _handle_argument(argType,
     elif argType == "java.lang.String":
         return ["data.consumeString(100)"]
     elif enum_object:
-        result = _handle_enum_choice(init_dict, argType);
+        result = _handle_enum_choice(init_dict, argType)
         if result:
             return result
 
@@ -476,7 +476,8 @@ def _generate_heuristic_1(yaml_dict, possible_targets, max_target):
 
         # Store function parameter list
         for argType in func_elem['argTypes']:
-            arg_list = _handle_argument(argType, None, possible_target, max_target)
+            arg_list = _handle_argument(argType, None, possible_target,
+                                        max_target)
             if arg_list:
                 possible_target.variables_to_add.append(arg_list[0])
         if len(possible_target.variables_to_add) != len(func_elem['argTypes']):
@@ -567,7 +568,8 @@ def _generate_heuristic_2(yaml_dict, possible_targets, max_target):
 
         # Get all possible argument lists with different possible object creation combination
         for argType in func_elem['argTypes']:
-            arg_list = _handle_argument(argType, init_dict, possible_target, max_target)
+            arg_list = _handle_argument(argType, init_dict, possible_target,
+                                        max_target)
             if arg_list:
                 possible_target.variables_to_add.append(arg_list[0])
         if len(possible_target.variables_to_add) != len(func_elem['argTypes']):
@@ -679,7 +681,8 @@ def _generate_heuristic_3(yaml_dict, possible_targets, max_target):
 
         # Store function parameter list
         for argType in func_elem['argTypes']:
-            arg_list = _handle_argument(argType, None, possible_target, max_target)
+            arg_list = _handle_argument(argType, None, possible_target,
+                                        max_target)
             if arg_list:
                 possible_target.variables_to_add.append(arg_list[0])
         if len(possible_target.variables_to_add) != len(func_elem['argTypes']):
@@ -787,7 +790,8 @@ def _generate_heuristic_4(yaml_dict, possible_targets, max_target):
 
         # Store function parameter list
         for argType in func_elem['argTypes']:
-            arg_list = _handle_argument(argType, None, possible_target, max_target)
+            arg_list = _handle_argument(argType, None, possible_target,
+                                        max_target)
             if arg_list:
                 possible_target.variables_to_add.append(arg_list[0])
         if len(possible_target.variables_to_add) != len(func_elem['argTypes']):
@@ -898,8 +902,11 @@ def _generate_heuristic_8(yaml_dict, possible_targets, max_target):
         for argType in func_elem['argTypes']:
             if _is_enum_class(init_dict, argType):
                 enum_argument = True
-            arg_list = _handle_argument(argType, init_dict, possible_target,
-                                        max_target, enum_object = True)
+            arg_list = _handle_argument(argType,
+                                        init_dict,
+                                        possible_target,
+                                        max_target,
+                                        enum_object=True)
             if arg_list:
                 possible_target.variables_to_add.append(arg_list[0])
 
@@ -914,8 +921,9 @@ def _generate_heuristic_8(yaml_dict, possible_targets, max_target):
                                                      instance_method_list,
                                                      possible_target,
                                                      init_dict, max_target)
-        factory_method_list.append(_search_static_factory_method(
-            func_class, static_method_list, possible_target, max_target))
+        factory_method_list.append(
+            _search_static_factory_method(func_class, static_method_list,
+                                          possible_target, max_target))
 
         for factory_method in factory_method_list:
             # Create possible target for all possible factory method
@@ -952,10 +960,10 @@ def generate_possible_targets(proj_folder, max_target):
         yaml_dict = yaml.safe_load(stream)
 
     possible_targets = []
-#    _generate_heuristic_1(yaml_dict, possible_targets, max_target)
-#    _generate_heuristic_2(yaml_dict, possible_targets, max_target)
-#    _generate_heuristic_3(yaml_dict, possible_targets, max_target)
-#    _generate_heuristic_4(yaml_dict, possible_targets, max_target)
+    #    _generate_heuristic_1(yaml_dict, possible_targets, max_target)
+    #    _generate_heuristic_2(yaml_dict, possible_targets, max_target)
+    #    _generate_heuristic_3(yaml_dict, possible_targets, max_target)
+    #    _generate_heuristic_4(yaml_dict, possible_targets, max_target)
     _generate_heuristic_8(yaml_dict, possible_targets, max_target)
 
     return possible_targets
