@@ -118,8 +118,15 @@ class OSS_FUZZ_PROJECT:
     @property
     def project_name(self):
         # Simplify url by cutting https out, then assume what we have left is:
+        # HTTP Type
         # github.com/{user}/{proj_name}
-        return self.github_url.replace("https://", "").split("/")[2]
+        # or
+        # SSH Type
+        # git@github.com:{user}/{proj_name}
+        if self.github_url.startswith("https://"):
+            return self.github_url.replace("https://", "").split("/")[2]
+        else:
+            return self.github_url.split("/")[1]
 
     def write_basefiles(self):
         with open(self.build_script, "w") as bfile:
