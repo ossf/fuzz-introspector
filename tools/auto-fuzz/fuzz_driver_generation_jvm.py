@@ -960,10 +960,10 @@ def generate_possible_targets(proj_folder, max_target):
         yaml_dict = yaml.safe_load(stream)
 
     possible_targets = []
-    #    _generate_heuristic_1(yaml_dict, possible_targets, max_target)
-    #    _generate_heuristic_2(yaml_dict, possible_targets, max_target)
-    #    _generate_heuristic_3(yaml_dict, possible_targets, max_target)
-    #    _generate_heuristic_4(yaml_dict, possible_targets, max_target)
+    _generate_heuristic_1(yaml_dict, possible_targets, max_target)
+    _generate_heuristic_2(yaml_dict, possible_targets, max_target)
+    _generate_heuristic_3(yaml_dict, possible_targets, max_target)
+    _generate_heuristic_4(yaml_dict, possible_targets, max_target)
     _generate_heuristic_8(yaml_dict, possible_targets, max_target)
 
     return possible_targets
