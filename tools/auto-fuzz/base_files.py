@@ -138,7 +138,7 @@ def gen_builder_1_jvm():
     BUILD_SCRIPT = """if test -f "build.gradle"
 then
   chmod +x ./gradlew
-  ./gradlew clean build -x test
+  ./gradlew clean build -x test -x :checker:javadoc -x :framework-test:spotlessJavaCheck
 elif test -f "pom.xml"
 then
   MAVEN_ARGS="-Dmaven.test.skip=true -Djavac.src.version=15 -Djavac.target.version=15"
