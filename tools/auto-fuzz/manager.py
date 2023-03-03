@@ -250,6 +250,7 @@ def _gradle_build_project(basedir, projectdir):
 
     # Build project with maven
     cmd = [
+        "chmod +x gradlew",
         "./gradlew clean build -x test",
         "jar cvf proj.jar -C build/classes/java/main/ ."
     ]
