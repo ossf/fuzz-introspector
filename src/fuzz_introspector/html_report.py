@@ -18,7 +18,6 @@ import json
 import typing
 import random
 import string
-from datetime import datetime
 
 from typing import (
     Any,
@@ -499,6 +498,9 @@ def create_html_report(profiles: List[fuzzer_profile.FuzzerProfile],
                 title="No coverage data was found",
                 description=html_constants.WARNING_NO_COVERAGE))
 
+    # Write stats summary to json file.
+    proj_profile.write_stats_to_summary_file()
+
     # Create html header, which will be used to assemble the doc at the
     # end of this function.
     html_header = html_helpers.html_get_header()
@@ -506,21 +508,15 @@ def create_html_report(profiles: List[fuzzer_profile.FuzzerProfile],
     # Start creation of core html
     html_body_start = '<div class="content-section">'
     html_overview = "<div class=\"report-box\">"
-    html_overview += "<b>Report generation date:</b>"
-    html_overview += datetime.today().strftime('%Y-%m-%d')
-    html_overview += "<br>"
 
+    # Add timestamp
+    html_overview += html_helpers.html_get_report_creation_tag()
     html_overview += html_helpers.html_add_header_with_link(
         f"Project overview: {report_name}",
         html_helpers.HTML_HEADING.H1,
         table_of_contents,
         link="Project-overview")
-    proj_profile.write_stats_to_summary_file()
     html_overview += "<div class=\"collapsible\">"
-
-    # Project overview
-    # html_overview += html_helpers.html_add_header_with_link(
-    #   "Project information", 2, table_of_contents)
 
     #############################################
     # Section with high level suggestions
@@ -543,14 +539,11 @@ def create_html_report(profiles: List[fuzzer_profile.FuzzerProfile],
                                                       conclusions,
                                                       True,
                                                       display_coverage=True)
-    # Boxed summary
     html_report_core += "</div>"
 
-    # .collapsible
-    html_report_core += "</div>"
-
-    # report-box
-    html_report_core += "</div>"
+    # Close the section
+    html_report_core += "</div>"  # .collapsible
+    html_report_core += "</div>"  # report-box
 
     #############################################
     # Table with overview of all fuzzers.
@@ -619,22 +612,21 @@ def create_html_report(profiles: List[fuzzer_profile.FuzzerProfile],
     html_report_core += "<div class=\"collapsible\">"
 
     # Combine and distinguish analyser requires output in html or both (html and json)
-    combined_analyses = analyses_to_run
-    for analyses in output_json:
-        if analyses not in analyses_to_run:
-            combined_analyses.append(analyses)
-    analysis_array = analysis.get_all_analyses()
-    for analysis_interface in analysis_array:
-        analysis_name = analysis_interface.get_name()
-        if analysis_name in combined_analyses:
+    combined_analyses = analyses_to_run + [
+        x for x in output_json if x not in analyses_to_run
+    ]
+    for analysis_interface in analysis.get_all_analyses():
+        if analysis_interface.get_name() in combined_analyses:
             analysis_instance = analysis.instantiate_analysis_interface(
                 analysis_interface)
             analysis_instance.dump_files = dump_files
-
             html_string = analysis_instance.analysis_func(
                 table_of_contents, tables, proj_profile, profiles, basefolder,
                 coverage_url, conclusions)
-            if analysis_name in analyses_to_run:
+
+            # Only add the HTML content if it's an analysis that we want
+            # the non-json output from.
+            if analysis_interface.get_name() in analyses_to_run:
                 html_report_core += html_string
     html_report_core += "</div>"  # .collapsible
     html_report_core += "</div>"  # report box

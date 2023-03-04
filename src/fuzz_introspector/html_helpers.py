@@ -24,6 +24,7 @@ from typing import (
 import os
 import bs4
 import logging
+from datetime import datetime
 from enum import Enum
 
 from fuzz_introspector import utils, constants
@@ -500,6 +501,13 @@ def create_horisontal_calltree_image(image_name: str,
         fig.savefig(image_name, bbox_extra_artists=[xlabel])
         logger.info("- image saved")
     return color_list
+
+
+def html_get_report_creation_tag() -> str:
+    html_overview = "<b>Report generation date:</b>"
+    html_overview += datetime.today().strftime('%Y-%m-%d')
+    html_overview += "<br>"
+    return html_overview
 
 
 def prettify_html(html_doc: str) -> str:
