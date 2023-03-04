@@ -36,74 +36,6 @@ from fuzz_introspector.datatypes import project_profile, fuzzer_profile
 logger = logging.getLogger(name=__name__)
 
 
-def create_horisontal_calltree_image(image_name: str,
-                                     profile: fuzzer_profile.FuzzerProfile,
-                                     dump_files: bool) -> List[str]:
-    """
-    Creates a horisontal image of the calltree. The height is fixed and
-    each element on the x-axis shows a node in the calltree in the form
-    of a rectangle. The rectangle is red if not visited and green if visited.
-    """
-    try:
-        import matplotlib.pyplot as plt
-        from matplotlib.patches import Rectangle
-    except ModuleNotFoundError:
-        # It's useful to avoid this in CIFuzz because building the fuzzers with
-        # matplotlib costs a lot of time (10 minutes) in the CI, which we prefer
-        # to avoid.
-        logger.info("Could not import matplotlib. No bitmaps are created")
-        return []
-
-    logger.info(f"Creating image {image_name}")
-
-    # Get the callsites of the profile as a list of colors.
-    color_list: List[str] = [cs.cov_color for cs in profile.get_callsites()]
-    logger.info(f"- extracted the callsites ({len(color_list)} nodes)")
-
-    # Show one read rectangle if the list is empty. An alternative is
-    # to not include the image at all.
-    if len(color_list) == 0:
-        color_list = ['red']
-
-    # Create a plot
-    fig, ax = plt.subplots()
-    ax.clear()
-    fig.set_size_inches(15, 2.5)
-    ax.plot()
-
-    # Create our rectangles
-    curr_x = 0.0
-    curr_size = 1.0
-    curr_color = color_list[0]
-    for i in range(1, len(color_list)):
-        if curr_color == color_list[i]:
-            curr_size += 1.0
-        else:
-            ax.add_patch(
-                Rectangle((curr_x, 0.0), curr_size, 1.0, color=curr_color))
-
-            # Start next color area
-            curr_x += curr_size
-            curr_color = color_list[i]
-            curr_size = 1.0
-    # Plot the last case
-    ax.add_patch(Rectangle((curr_x, 0.0), curr_size, 1.0, color=curr_color))
-    logger.info("- iterated over color list")
-
-    # Save the image
-    if dump_files:
-        logger.info("- saving image")
-        ax.set_yticklabels([])
-        ax.set_yticks([])
-        xlabel = ax.set_xlabel("Callsite index")
-
-        plt.title(image_name.replace(".png", "").replace("_colormap", ""))
-        fig.tight_layout()
-        fig.savefig(image_name, bbox_extra_artists=[xlabel])
-        logger.info("- image saved")
-    return color_list
-
-
 def create_overview_table(tables: List[str],
                           profiles: List[fuzzer_profile.FuzzerProfile]) -> str:
     """Table with an overview of all the fuzzers"""
@@ -265,49 +197,6 @@ def create_reachability_conclusions(
                                     description=""))
 
 
-def create_calltree_color_distribution_table(color_list: List[str]) -> str:
-    html_string = ""
-    color_dictionary: Dict[str, int] = {}
-    for color in color_list:
-        color_dictionary[color] = color_dictionary.get(color, 0) + 1
-
-    html_string += ("<p>The distribution of callsites in terms of coloring is")
-    html_string += ("<table><tr>"
-                    "<th style=\"text-align: left;\">Color</th>"
-                    "<th style=\"text-align: left;\">Runtime hitcount</th>"
-                    "<th style=\"text-align: left;\">Callsite count</th>"
-                    "<th style=\"text-align: left;\">Percentage</th>"
-                    "</tr>")
-    for _min, _max, color, rgb_code in constants.COLOR_CONSTANTS:
-        html_string += (f"<tr><td style=\"color:{color}; "
-                        f"text-shadow: -1px 0 black, 0 1px black, "
-                        f"1px 0 black, 0 -1px black;\"><b>{color}</b></td>")
-        if _max == 1:
-            interval = "0"
-        elif _max > 1000:
-            interval = f"{_min}+"
-        else:
-            interval = f"[{_min}:{_max-1}]"
-        html_string += f"<td>{interval}</td>"
-        cover_count = color_dictionary.get(color, 0)
-        html_string += f"<td>{cover_count}</td>"
-        if len(color_list) > 0:
-            f1 = float(cover_count)
-            f2 = float(len(color_list))
-            percentage_c = (f1 / f2) * 100.0
-        else:
-            percentage_c = 0.0
-        percentage_s = str(percentage_c)[0:4]
-        html_string += f"<td>{percentage_s}%</td>"
-        html_string += "</tr>"
-
-    # Add a row with total amount of callsites
-    html_string += f"<tr><td>All colors</td><td>{len(color_list)}</td><td>100</td></tr>"
-    html_string += "</table>"
-    html_string += "</p>"
-    return html_string
-
-
 def create_fuzzer_profile_runtime_coverage_section(proj_profile, profile,
                                                    table_of_contents,
                                                    profile_idx,
@@ -445,8 +334,8 @@ def create_fuzzer_detailed_section(
         colormap_file_prefix = colormap_file_prefix.replace("/", "_")
     image_name = f"{colormap_file_prefix}_colormap.png"
 
-    color_list = create_horisontal_calltree_image(image_name, profile,
-                                                  dump_files)
+    color_list = html_helpers.create_horisontal_calltree_image(
+        image_name, profile, dump_files)
     html_string += f"<img class=\"colormap\" src=\"{image_name}\">"
 
     # At this point we want to ensure there is coverage in order to proceed.
@@ -460,10 +349,35 @@ def create_fuzzer_detailed_section(
         return html_string
 
     # Show the distribution of colors in the calltree.
-    html_string += create_calltree_color_distribution_table(color_list)
+    html_string += html_helpers.create_calltree_color_distribution_table(
+        color_list)
 
+    # Create fuzz blocker section
+    html_string += create_fuzzer_profile_section_blocker_table(
+        profile, profile_idx, tables, calltree_file_name, table_of_contents,
+        calltree_analysis)
+
+    profile.write_stats_to_summary_file()
+
+    # Runtime code coverage section
+    html_string += create_fuzzer_profile_runtime_coverage_section(
+        proj_profile, profile, table_of_contents, profile_idx,
+        fuzzer_table_data, extract_conclusion, conclusions, tables)
+
+    # Section about files hit by fuzzers.
+    html_string += create_fuzzer_profile_section_files_hit(
+        profile, profile_idx, table_of_contents, tables)
+
+    return html_string
+
+
+def create_fuzzer_profile_section_blocker_table(profile, profile_idx, tables,
+                                                calltree_file_name,
+                                                table_of_contents,
+                                                calltree_analysis):
     # Decide what kind of blockers to report: if branch blockers are not present,
     # fall back to calltree-based blockers.
+    html_string = ""
     if profile.branch_blockers:
         # Populate branch blocker table
         html_fuzz_blocker_table = calltree_analysis.create_branch_blocker_table(
@@ -479,13 +393,12 @@ def create_fuzzer_detailed_section(
             table_of_contents,
             link=f"fuzz_blocker{profile_idx}")
         html_string += html_fuzz_blocker_table
+    return html_string
 
-    profile.write_stats_to_summary_file()
 
-    html_string += create_fuzzer_profile_runtime_coverage_section(
-        proj_profile, profile, table_of_contents, profile_idx,
-        fuzzer_table_data, extract_conclusion, conclusions, tables)
-
+def create_fuzzer_profile_section_files_hit(profile, profile_idx,
+                                            table_of_contents, tables):
+    html_string = ""
     # Table showing which files this fuzzer hits.
     html_string += html_helpers.html_add_header_with_link(
         "Files reached",
@@ -496,9 +409,9 @@ def create_fuzzer_detailed_section(
     html_string += html_helpers.html_create_table_head(tables[-1],
                                                        [("filename", ""),
                                                         ("functions hit", "")])
-    for k in profile.file_targets:
+    for file_target, functions_hit_in_file in profile.file_targets.items():
         html_string += html_helpers.html_table_add_row(
-            [k, len(profile.file_targets[k])])
+            [file_target, len(functions_hit_in_file)])
     html_string += "</table>\n"
     return html_string
 
