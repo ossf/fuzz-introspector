@@ -616,7 +616,6 @@ def create_html_report(profiles: List[fuzzer_profile.FuzzerProfile],
         x for x in output_json if x not in analyses_to_run
     ]
     for analysis_interface in analysis.get_all_analyses():
-        #analysis_name = analysis_interface.get_name()
         if analysis_interface.get_name() in combined_analyses:
             analysis_instance = analysis.instantiate_analysis_interface(
                 analysis_interface)
