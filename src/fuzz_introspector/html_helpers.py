@@ -502,6 +502,7 @@ def create_horisontal_calltree_image(image_name: str,
         logger.info("- image saved")
     return color_list
 
+
 def html_get_report_creation_tag() -> str:
     html_overview = "<b>Report generation date:</b>"
     html_overview += datetime.today().strftime('%Y-%m-%d')
