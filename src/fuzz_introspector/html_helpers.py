@@ -507,6 +507,7 @@ def html_get_report_creation_tag() -> str:
     html_overview = "<b>Report generation date:</b>"
     html_overview += datetime.today().strftime('%Y-%m-%d')
     html_overview += "<br>"
+    return html_overview
 
 
 def prettify_html(html_doc: str) -> str:
