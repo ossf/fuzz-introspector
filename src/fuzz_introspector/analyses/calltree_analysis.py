@@ -244,7 +244,8 @@ class FuzzCalltreeAnalysis(analysis.AnalysisInterface):
         blocker_infos = {}
         # HTML start
         html_header = html_helpers.html_get_header(
-            calltree=True, title=f"Fuzz introspector: { profile.identifier }")
+            title=f"Fuzz introspector: { profile.identifier }")
+        html_header += "<div class='content-wrapper calltree-page'>"
         html_header += '<div class="content-section calltree-content-section">'
         complete_html_string += html_header
 

@@ -147,32 +147,30 @@ def create_all_function_table(
 
 
 def create_boxed_top_summary_info(
-        tables: List[str],
         proj_profile: project_profile.MergedProjectProfile,
-        conclusions: List[html_helpers.HTMLConclusion],
-        extract_conclusion: bool,
-        display_coverage: bool = False) -> str:
+        conclusions: List[html_helpers.HTMLConclusion]) -> str:
     html_string = ""
 
+    # Functions statically reached
     html_string += html_helpers.create_percentage_graph(
         "Functions statically reachable by fuzzers",
         proj_profile.reached_func_count, proj_profile.total_functions)
 
+    # Cyclomatic complexity reached
     html_string += html_helpers.create_percentage_graph(
         "Cyclomatic complexity statically reachable by fuzzers",
         proj_profile.reached_complexity, proj_profile.total_complexity)
 
-    if display_coverage:
-        covered_funcs = proj_profile.get_all_runtime_covered_functions()
-        html_string += html_helpers.create_percentage_graph(
-            "Runtime code coverage of functions", len(covered_funcs),
-            proj_profile.total_functions)
+    # Function code coverage
+    covered_funcs = proj_profile.get_all_runtime_covered_functions()
+    html_string += html_helpers.create_percentage_graph(
+        "Runtime code coverage of functions", len(covered_funcs),
+        proj_profile.total_functions)
 
     # Add conclusion
-    if extract_conclusion:
-        create_reachability_conclusions(
-            conclusions, proj_profile.reached_func_percentage,
-            proj_profile.reached_complexity_percentage)
+    create_reachability_conclusions(conclusions,
+                                    proj_profile.reached_func_percentage,
+                                    proj_profile.reached_complexity_percentage)
     return html_string
 
 
@@ -472,6 +470,111 @@ def write_content_to_html_files(html_full_doc, all_functions_json_html,
     styling.copy_style_files(os.getcwd())
 
 
+def create_section_fuzzers_overview(table_of_contents, tables,
+                                    profiles) -> str:
+    """Section with table with overview of all fuzzers."""
+    logger.info(" - Creating table with overview of all fuzzers")
+    html_report_core = "<div class=\"report-box\">"
+    html_report_core += html_helpers.html_add_header_with_link(
+        "Fuzzers overview", html_helpers.HTML_HEADING.H1, table_of_contents)
+    html_report_core += "<div class=\"collapsible\">"
+    tables.append(f"myTable{len(tables)}")
+    html_report_core += create_overview_table(tables, profiles)
+
+    # report-box
+    html_report_core += "</div>"  # .collapsible
+    html_report_core += "</div>"  # .report-box
+    return html_report_core
+
+
+def create_section_project_overview(table_of_contents, proj_profile,
+                                    conclusions, report_name):
+    html_overview = "<div class=\"report-box\">"
+    html_overview += html_helpers.html_get_report_creation_tag()
+    html_overview += html_helpers.html_add_header_with_link(
+        f"Project overview: {report_name}",
+        html_helpers.HTML_HEADING.H1,
+        table_of_contents,
+        link="Project-overview")
+    html_overview += "<div class=\"collapsible\">"
+
+    #############################################
+    # Section with high level suggestions
+    #############################################
+    html_report_top = html_helpers.html_add_header_with_link(
+        "High level conclusions", html_helpers.HTML_HEADING.H2,
+        table_of_contents)
+
+    #############################################
+    # Reachability overview
+    #############################################
+    logger.info(" - Creating reachability overview table")
+    html_report_core = html_helpers.html_add_header_with_link(
+        "Reachability and coverage overview", html_helpers.HTML_HEADING.H2,
+        table_of_contents)
+    top_summary = create_boxed_top_summary_info(proj_profile, conclusions)
+    html_report_core += f"""<div style="display: flex; max-width: 800px">
+        {top_summary}
+    </div>"""
+
+    # Close the section
+    html_report_core += "</div>"  # .collapsible
+    html_report_core += "</div>"  # report-box
+    return html_overview, html_report_top, html_report_core
+
+
+def create_section_fuzzer_detailed_section(table_of_contents, profiles,
+                                           proj_profile, tables, conclusions,
+                                           fuzzer_table_data, dump_files):
+    """
+    #############################################
+    # Section with details about each fuzzer, including calltree.
+    #############################################
+    """
+    logger.info(" - Creating section with details about each fuzzer")
+    html_report_core = "<div class=\"report-box\">"
+    html_report_core += html_helpers.html_add_header_with_link(
+        "Fuzzer details", html_helpers.HTML_HEADING.H1, table_of_contents)
+
+    html_report_core += "<div class=\"collapsible\">"
+    for profile_idx in range(len(profiles)):
+        html_report_core += create_fuzzer_detailed_section(
+            proj_profile, profiles[profile_idx], table_of_contents, tables,
+            profile_idx, conclusions, True, fuzzer_table_data, dump_files)
+    html_report_core += "</div>"  # .collapsible
+
+    html_report_core += "</div>"  # report box
+    return html_report_core
+
+
+def create_section_all_functions(table_of_contents, tables, proj_profile,
+                                 coverage_url, basefolder):
+    """
+    #############################################
+    # Table with details about all functions in the target project.
+    #############################################
+    """
+    logger.info(
+        " - Creating table with information about all functions in target")
+    html_report_core = "<div class=\"report-box\">"
+    html_report_core += html_helpers.html_add_header_with_link(
+        "Project functions overview", html_helpers.HTML_HEADING.H1,
+        table_of_contents)
+    html_report_core += "<div class=\"collapsible\">"
+    html_report_core += html_constants.INFO_ALL_FUNCTION_OVERVIEW_TEXT
+
+    table_id = "fuzzers_overview_table"
+    tables.append(table_id)
+    (all_function_table, all_functions_json_html,
+     all_functions_json_report) = create_all_function_table(
+         tables, proj_profile, coverage_url, basefolder, table_id)
+    html_report_core += all_function_table
+    html_report_core += "</div>"  # .collapsible
+    html_report_core += "</div>"  # report box
+
+    return all_function_table, all_functions_json_html, all_functions_json_report, html_report_core
+
+
 def create_html_report(profiles: List[fuzzer_profile.FuzzerProfile],
                        proj_profile: project_profile.MergedProjectProfile,
                        analyses_to_run: List[str], output_json: List[str],
@@ -505,101 +608,35 @@ def create_html_report(profiles: List[fuzzer_profile.FuzzerProfile],
     # end of this function.
     html_header = html_helpers.html_get_header()
 
-    # Start creation of core html
+    # Create a wrapper <div> of all content
+    html_content_start = "<div class='content-wrapper report-page'>"
+
+    # Start the contents section.
     html_body_start = '<div class="content-section">'
-    html_overview = "<div class=\"report-box\">"
 
-    # Add timestamp
-    html_overview += html_helpers.html_get_report_creation_tag()
-    html_overview += html_helpers.html_add_header_with_link(
-        f"Project overview: {report_name}",
-        html_helpers.HTML_HEADING.H1,
-        table_of_contents,
-        link="Project-overview")
-    html_overview += "<div class=\"collapsible\">"
+    # Create overview section
+    html_overview, html_report_top, html_report_core = create_section_project_overview(
+        table_of_contents, proj_profile, conclusions, report_name)
 
-    #############################################
-    # Section with high level suggestions
-    #############################################
-    html_report_top = html_helpers.html_add_header_with_link(
-        "High level conclusions", html_helpers.HTML_HEADING.H2,
-        table_of_contents)
+    # Create section with overview of all fuzzers
+    html_report_core += create_section_fuzzers_overview(
+        table_of_contents, tables, profiles)
 
-    #############################################
-    # Reachability overview
-    #############################################
-    logger.info(" - Creating reachability overview table")
-    html_report_core = html_helpers.html_add_header_with_link(
-        "Reachability and coverage overview", html_helpers.HTML_HEADING.H2,
-        table_of_contents)
-    tables.append(f"myTable{len(tables)}")
-    html_report_core += "<div style=\"display: flex; max-width: 800px\">"
-    html_report_core += create_boxed_top_summary_info(tables,
-                                                      proj_profile,
-                                                      conclusions,
-                                                      True,
-                                                      display_coverage=True)
-    html_report_core += "</div>"
-
-    # Close the section
-    html_report_core += "</div>"  # .collapsible
-    html_report_core += "</div>"  # report-box
-
-    #############################################
-    # Table with overview of all fuzzers.
-    #############################################
-    logger.info(" - Creating table with overview of all fuzzers")
-    html_report_core += "<div class=\"report-box\">"
-    html_report_core += html_helpers.html_add_header_with_link(
-        "Fuzzers overview", html_helpers.HTML_HEADING.H1, table_of_contents)
-    html_report_core += "<div class=\"collapsible\">"
-    tables.append(f"myTable{len(tables)}")
-    html_report_core += create_overview_table(tables, profiles)
-
-    # report-box
-    html_report_core += "</div>"  # .collapsible
-    html_report_core += "</div>"
-
-    #############################################
-    # Table with details about all functions in the target project.
-    #############################################
-    logger.info(
-        " - Creating table with information about all functions in target")
-    html_report_core += "<div class=\"report-box\">"
-    html_report_core += html_helpers.html_add_header_with_link(
-        "Project functions overview", html_helpers.HTML_HEADING.H1,
-        table_of_contents)
-    html_report_core += "<div class=\"collapsible\">"
-    html_report_core += html_constants.INFO_ALL_FUNCTION_OVERVIEW_TEXT
-
-    table_id = "fuzzers_overview_table"
-    tables.append(table_id)
-    (all_function_table, all_functions_json_html,
-     all_functions_json_report) = create_all_function_table(
-         tables, proj_profile, coverage_url, basefolder, table_id)
-    html_report_core += all_function_table
-    html_report_core += "</div>"  # .collapsible
-    html_report_core += "</div>"  # report box
+    # Create section with table of all functions in project.
+    (all_function_table, all_functions_json_html, all_functions_json_report,
+     html_all_function_section) = create_section_all_functions(
+         table_of_contents, tables, proj_profile, coverage_url, basefolder)
+    html_report_core += html_all_function_section
 
     # Dump all functions in json report
     json_report.add_project_key_value_to_report("all-functions",
                                                 all_functions_json_report)
 
-    #############################################
-    # Section with details about each fuzzer, including calltree.
-    #############################################
-    logger.info(" - Creating section with details about each fuzzer")
+    # Section with details of each fuzzer.
     fuzzer_table_data: Dict[str, Any] = dict()
-    html_report_core += "<div class=\"report-box\">"
-    html_report_core += html_helpers.html_add_header_with_link(
-        "Fuzzer details", html_helpers.HTML_HEADING.H1, table_of_contents)
-    html_report_core += "<div class=\"collapsible\">"
-    for profile_idx in range(len(profiles)):
-        html_report_core += create_fuzzer_detailed_section(
-            proj_profile, profiles[profile_idx], table_of_contents, tables,
-            profile_idx, conclusions, True, fuzzer_table_data, dump_files)
-    html_report_core += "</div>"  # .collapsible
-    html_report_core += "</div>"  # report box
+    html_report_core += create_section_fuzzer_detailed_section(
+        table_of_contents, profiles, proj_profile, tables, conclusions,
+        fuzzer_table_data, dump_files)
 
     #############################################
     # Handle optional analyses
@@ -642,7 +679,10 @@ def create_html_report(profiles: List[fuzzer_profile.FuzzerProfile],
 
     # Wrap up the HTML generation
     # Close the content div and content_wrapper
-    html_body_end = "</div>\n</div>\n"
+    html_body_end = "</div>\n"
+
+    # End content-wrapper
+    html_content_end = "</div>"
 
     # Javascript files/references to add to report.
     js_files = styling.MAIN_JS_FILES
@@ -665,9 +705,10 @@ def create_html_report(profiles: List[fuzzer_profile.FuzzerProfile],
         table_of_contents, coverage_url, profiles, proj_profile)
 
     # Assemble the final HTML report and write it to a file.
-    html_full_doc = (html_header + html_toc_string + html_body_start +
-                     html_overview + html_report_top + html_report_core +
-                     html_body_end + html_footer)
+    html_full_doc = (html_header + html_content_start + html_toc_string +
+                     html_body_start + html_overview + html_report_top +
+                     html_report_core + html_body_end + html_content_end +
+                     html_footer)
 
     if dump_files:
         write_content_to_html_files(html_full_doc, all_functions_json_html,
