@@ -533,11 +533,7 @@ def create_section_project_overview(table_of_contents, proj_profile,
 def create_section_fuzzer_detailed_section(table_of_contents, profiles,
                                            proj_profile, tables, conclusions,
                                            fuzzer_table_data, dump_files):
-    """
-    #############################################
-    # Section with details about each fuzzer, including calltree.
-    #############################################
-    """
+    """Section with details about each fuzzer, including calltree."""
     logger.info(" - Creating section with details about each fuzzer")
     html_report_core = "<div class=\"report-box\">"
     html_report_core += html_helpers.html_add_header_with_link(
@@ -549,18 +545,13 @@ def create_section_fuzzer_detailed_section(table_of_contents, profiles,
             proj_profile, profiles[profile_idx], table_of_contents, tables,
             profile_idx, conclusions, True, fuzzer_table_data, dump_files)
     html_report_core += "</div>"  # .collapsible
-
     html_report_core += "</div>"  # report box
     return html_report_core
 
 
 def create_section_all_functions(table_of_contents, tables, proj_profile,
                                  coverage_url, basefolder):
-    """
-    #############################################
-    # Table with details about all functions in the target project.
-    #############################################
-    """
+    """Table with details about all functions in the target project."""
     logger.info(
         " - Creating table with information about all functions in target")
     html_report_core = "<div class=\"report-box\">"
@@ -586,9 +577,7 @@ def create_section_optional_analyses(table_of_contents, analyses_to_run,
                                      output_json, tables, proj_profile,
                                      profiles, basefolder, coverage_url,
                                      conclusions, dump_files) -> str:
-    #############################################
-    # Handle optional analyses
-    #############################################
+    """Creates the HTML sections containing optional analyses."""
     html_report_core = ""
     logger.info(" - Handling optional analyses")
     html_report_core += "<div class=\"report-box\">"
@@ -681,17 +670,11 @@ def create_html_report(profiles: List[fuzzer_profile.FuzzerProfile],
         table_of_contents, analyses_to_run, output_json, tables, proj_profile,
         profiles, basefolder, coverage_url, conclusions, dump_files)
 
-    #############################################
-    # Create top level conclusions
-    #############################################
+    # Create HTML showing the conclusions at the top of the report.
     html_report_top += html_helpers.create_conclusions_box(conclusions)
 
-    # Wrap up the HTML generation
-    # Close the content div and content_wrapper
+    # Close content-section.
     html_body_end = "</div>\n"
-
-    # End content-wrapper
-    html_content_end = "</div>"
 
     # Javascript files/references to add to report.
     js_files = styling.MAIN_JS_FILES
@@ -712,6 +695,9 @@ def create_html_report(profiles: List[fuzzer_profile.FuzzerProfile],
     ###########################
     html_toc_string = html_helpers.html_get_table_of_contents(
         table_of_contents, coverage_url, profiles, proj_profile)
+
+    # Close content-wrapper.
+    html_content_end = "</div>"
 
     # Assemble the final HTML report and write it to a file.
     html_full_doc = (html_header + html_content_start + html_toc_string +
