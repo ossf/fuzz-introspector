@@ -91,7 +91,8 @@ class FuzzTarget:
 
 def _is_enum_class(init_dict, classname):
     """Check if the method's class is an enum type"""
-    for func_elem in init_dict:
+    for key in init_dict:
+        func_elem = init_dict[key]
         if func_elem['functionSourceFile'] == classname:
             if func_elem['JavaMethodInfo']['enum']:
                 return True
