@@ -320,6 +320,37 @@ def _search_factory_method(classname, static_method_list, possible_method_list,
     return result_list
 
 
+def _search_setting_method(method_list, target_class_name, target_method_name):
+    """
+    Search for all possible non-static setting methods for the target method.
+    Assume all setting methods are methods belongs to the same class of the
+    target method with no return value or have a name start with set (i.e. setXXX).
+    """
+    result_list = []
+    for func_elem in method_list:
+        func_name = func_elem['functionName']
+        func_class = func_elem['functionSourceFile']
+        if func_class != target_class_name:
+            continue
+        if func_name == target_method_name:
+            continue
+        if not func_name.startswith(
+                'set') and func_elem['returnType'] != 'void':
+            continue
+
+        arg_list = []
+        for argType in func_elem['argTypes']:
+            arg = _handle_argument(argType, None, possible_target, max_target)
+            if arg:
+                arg_list.append(arg[0])
+        if len(arg_list) != len(func_elem['argTypes']):
+            continue
+
+        result.append('obj.' + func_name + '(' + ','.join(arg_list) + ')')
+
+    return result_list
+
+
 def _search_concrete_subclass(classname,
                               init_dict,
                               handled=[],
@@ -830,6 +861,132 @@ def _generate_heuristic_4(yaml_dict, possible_targets, max_target):
             possible_targets.append(cloned_possible_target)
 
 
+def _generate_heuristic_6(yaml_dict, possible_targets, max_target):
+    """Heuristic 6.
+    Creates a FuzzTarget for each method that satisfy all:
+        - public object method which are not abstract or found in JDK library
+        - have between 0-20 arguments
+        - do not have "test" in the function name
+        - require certain pre-settings before use (by calling all non-static
+          method of the same class which does not have return values or start with
+          set, except the target function itself)
+
+    Will also add proper exception handling based on the exception list
+    provided by the frontend code.
+    """
+    HEURISTIC_NAME = "jvm-autofuzz-heuristics-6"
+
+    init_dict = {}
+    method_list = []
+    instance_method_list = []
+    static_method_list = []
+    for func_elem in yaml_dict['All functions']['Elements']:
+        if "<init>" in func_elem['functionName']:
+            init_dict[func_elem['functionSourceFile']] = func_elem
+        elif func_elem['JavaMethodInfo']['static']:
+            static_method_list.append(func_elem)
+        else:
+            instance_method_list.append(func_elem)
+            method_list.append(func_elem)
+
+    for func_elem in method_list:
+        if len(possible_targets) > max_target:
+            return
+
+        java_method_info = func_elem['JavaMethodInfo']
+
+        # Skip method which doese not match this heuristic
+        if not java_method_info['public']:
+            continue
+        if not java_method_info['concrete']:
+            continue
+        if java_method_info['javaLibraryMethod']:
+            continue
+        if len(func_elem['argTypes']) > 20:
+            continue
+        if "test" in func_elem['functionName']:
+            continue
+        if "jazzer" in func_elem[
+                'functionName'] or "fuzzerTestOneInput" in func_elem[
+                    'functionName']:
+            continue
+
+        possible_target = FuzzTarget()
+
+        # Store target method name
+        # Method name in .data.yaml for jvm: [className].methodName(methodParameterList)
+        func_name = func_elem['functionName'].split('].')[1].split('(')[0]
+        possible_target.function_target = func_name
+
+        # Store function class
+        func_class = func_elem['functionSourceFile'].replace('$', '.')
+        possible_target.function_class = func_class
+
+        # Store exceptions thrown by the target method
+        possible_target.exceptions_to_handle.update(
+            java_method_info['exceptions'])
+
+        # Store java import statement
+        possible_target.imports_to_add.update(_handle_import(func_elem))
+
+        # Store function parameter list
+        # Skip this method is it does not take at least one
+        # enum object as parameter
+        enum_argument = False
+        for argType in func_elem['argTypes']:
+            if _is_enum_class(init_dict, argType):
+                enum_argument = True
+            arg_list = _handle_argument(argType,
+                                        init_dict,
+                                        possible_target,
+                                        max_target,
+                                        enum_object=True)
+            if arg_list:
+                possible_target.variables_to_add.append(arg_list[0])
+
+        if len(possible_target.variables_to_add) != len(func_elem['argTypes']):
+            continue
+        if not enum_argument:
+            continue
+
+        # Retrieve list of factory method for the target object
+        factory_method_list = _search_factory_method(func_class,
+                                                     static_method_list,
+                                                     instance_method_list,
+                                                     possible_target,
+                                                     init_dict, max_target)
+        factory_method_list.append(
+            _search_static_factory_method(func_class, static_method_list,
+                                          possible_target, max_target))
+
+        for factory_method in factory_method_list:
+            # Create possible target for all possible factory method
+            # Clone the base target object
+            cloned_possible_target = FuzzTarget(possible_target)
+
+            # Create the actual source
+            fuzzer_source_code = "  // Heuristic name: %s\n" % (HEURISTIC_NAME)
+            fuzzer_source_code += "  %s obj = %s;\n" % (func_class,
+                                                        factory_method)
+            for settings in _search_setting_method(instance_method_list,
+                                                   func_class, func_name):
+                fuzzer_source_code += "  %s;\n" % (settings)
+            fuzzer_source_code += "  obj.%s($VARIABLE$);\n" % (func_name)
+            if len(cloned_possible_target.exceptions_to_handle) > 0:
+                fuzzer_source_code = "  try {\n" + fuzzer_source_code
+                fuzzer_source_code += "  }\n"
+                counter = 1
+                for exc in cloned_possible_target.exceptions_to_handle:
+                    fuzzer_source_code += "  catch (%s e%d) {}\n" % (exc,
+                                                                     counter)
+                    counter += 1
+            cloned_possible_target.fuzzer_source_code = fuzzer_source_code
+            if HEURISTIC_NAME not in cloned_possible_target.heuristics_used:
+                cloned_possible_target.heuristics_used.append(HEURISTIC_NAME)
+
+            possible_targets.append(cloned_possible_target)
+
+
 def _generate_heuristic_8(yaml_dict, possible_targets, max_target):
     """Heuristic 8.
     Creates a FuzzTarget for each method that satisfy all:
@@ -965,6 +1122,7 @@ def generate_possible_targets(proj_folder, max_target):
     _generate_heuristic_2(yaml_dict, possible_targets, max_target)
     _generate_heuristic_3(yaml_dict, possible_targets, max_target)
     _generate_heuristic_4(yaml_dict, possible_targets, max_target)
+    _generate_heuristic_6(yaml_dict, possible_targets, max_target)
     _generate_heuristic_8(yaml_dict, possible_targets, max_target)
 
     return possible_targets
