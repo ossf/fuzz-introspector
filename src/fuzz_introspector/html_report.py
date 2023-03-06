@@ -608,6 +608,19 @@ def create_section_optional_analyses(table_of_contents, analyses_to_run,
     return html_report_core
 
 
+def get_body_script_tags() -> str():
+    """Add relevant <script> tag at the end of the body."""
+    html_script_tags = ""
+    js_files = styling.MAIN_JS_FILES
+    js_files.append(constants.ALL_FUNCTION_JS)
+    js_files.append(constants.OPTIMAL_TARGETS_ALL_FUNCTIONS)
+    js_files.append(constants.FUZZER_TABLE_JS)
+    js_files.extend(styling.JAVASCRIPT_REMOTE_SCRIPTS)
+    for js_file in js_files:
+        html_script_tags += f"<script src=\"{js_file}\"></script>"
+    return html_script_tags
+
+
 def create_html_report(profiles: List[fuzzer_profile.FuzzerProfile],
                        proj_profile: project_profile.MergedProjectProfile,
                        analyses_to_run: List[str], output_json: List[str],
@@ -626,9 +639,6 @@ def create_html_report(profiles: List[fuzzer_profile.FuzzerProfile],
     conclusions: List[html_helpers.HTMLConclusion] = []
 
     logger.info(" - Creating HTML report")
-
-    # Write stats summary to json file.
-    proj_profile.write_stats_to_summary_file()
 
     # Create html header, which will be used to assemble the doc at the
     # end of this function.
@@ -655,10 +665,6 @@ def create_html_report(profiles: List[fuzzer_profile.FuzzerProfile],
          table_of_contents, tables, proj_profile, coverage_url, basefolder)
     html_report_core += html_all_function_section
 
-    # Dump all functions in json report
-    json_report.add_project_key_value_to_report("all-functions",
-                                                all_functions_json_report)
-
     # Section with details of each fuzzer.
     fuzzer_table_data: Dict[str, Any] = dict()
     html_report_core += create_section_fuzzer_detailed_section(
@@ -675,35 +681,29 @@ def create_html_report(profiles: List[fuzzer_profile.FuzzerProfile],
 
     # Close content-section.
     html_body_end = "</div>\n"
+    html_body_end += get_body_script_tags()
 
-    # Javascript files/references to add to report.
-    js_files = styling.MAIN_JS_FILES
-    js_files.append(constants.ALL_FUNCTION_JS)
-    js_files.append(constants.OPTIMAL_TARGETS_ALL_FUNCTIONS)
-    js_files.append(constants.FUZZER_TABLE_JS)
-    js_files.extend(styling.JAVASCRIPT_REMOTE_SCRIPTS)
-    for js_file in js_files:
-        html_body_end += f"<script src=\"{js_file}\"></script>"
-
-    ###########################
-    # Footer
-    ###########################
-    html_footer = create_html_footer(tables)
-
-    ###########################
-    # Fix up table of contents.
-    ###########################
+    # Make table of contents. We can first do this now because it should be
+    # done after assembling all entires in the table of contents.
     html_toc_string = html_helpers.html_get_table_of_contents(
         table_of_contents, coverage_url, profiles, proj_profile)
 
     # Close content-wrapper.
     html_content_end = "</div>"
 
+    # Create the footer
+    html_footer = create_html_footer(tables)
+
     # Assemble the final HTML report and write it to a file.
     html_full_doc = (html_header + html_content_start + html_toc_string +
                      html_body_start + html_overview + html_report_top +
                      html_report_core + html_body_end + html_content_end +
                      html_footer)
+
+    # Write various stats and all-functions data to summary.json
+    proj_profile.write_stats_to_summary_file()
+    json_report.add_project_key_value_to_report("all-functions",
+                                                all_functions_json_report)
 
     if dump_files:
         write_content_to_html_files(html_full_doc, all_functions_json_html,
