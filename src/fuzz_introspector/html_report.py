@@ -608,7 +608,7 @@ def create_section_optional_analyses(table_of_contents, analyses_to_run,
     return html_report_core
 
 
-def get_body_script_tags() -> str():
+def get_body_script_tags() -> str:
     """Add relevant <script> tag at the end of the body."""
     html_script_tags = ""
     js_files = styling.MAIN_JS_FILES
