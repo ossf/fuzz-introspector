@@ -94,7 +94,7 @@ def _is_enum_class(init_dict, classname):
     for key in init_dict:
         func_elem = init_dict[key]
         if func_elem['functionSourceFile'] == classname:
-            if func_elem['JavaMethodInfo']['enum']:
+            if func_elem['JavaMethodInfo']['classEnum']:
                 return True
 
     return False
