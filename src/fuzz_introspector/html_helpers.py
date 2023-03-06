@@ -89,8 +89,7 @@ def html_table_add_row(elems: List[Any]) -> str:
     return html_str
 
 
-def html_get_header(calltree: bool = False,
-                    title: str = "Fuzz introspector") -> str:
+def html_get_header(title: str = "Fuzz introspector") -> str:
     gtag_tracking = ""
     try:
         gtag = os.environ['G_ANALYTICS_TAG']
@@ -136,10 +135,6 @@ def html_get_header(calltree: bool = False,
                 href='https://cdn.datatables.net/buttons/2.2.2/css/buttons.dataTables.min.css'>"""
     # Add navbar to header
     header = header + html_get_navbar(title)
-    if calltree:
-        header = header + "<div class='content-wrapper calltree-page'>"
-    else:
-        header = header + "<div class='content-wrapper report-page'>"
     return header
 
 

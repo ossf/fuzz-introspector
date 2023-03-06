@@ -405,8 +405,8 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
 
         section += "</div></div></div>"
 
-        html = html_helpers.html_get_header(calltree=True,
-                                            title="Fuzz introspector")
+        html = html_helpers.html_get_header(title="Fuzz introspector")
+        html += "<div class='content-wrapper calltree-page'>"
         html += '<div class="content-section calltree-content-section">'
         html += f"{section}</div></div>"
         html += '<script src="calltree.js"></script></body></html>'
