@@ -623,8 +623,9 @@ def create_html_report(profiles: List[fuzzer_profile.FuzzerProfile],
                                                        tables, profiles)
 
     # Create section with table of all functions in project.
-    all_function_table, all_functions_json_html, all_functions_json_report, html_all_function_section = create_section_all_functions(
-        table_of_contents, tables, proj_profile, coverage_url, basefolder)
+    (all_function_table, all_functions_json_html, all_functions_json_report,
+     html_all_function_section) = create_section_all_functions(
+         table_of_contents, tables, proj_profile, coverage_url, basefolder)
     html_report_core += html_all_function_section
 
     # Dump all functions in json report
