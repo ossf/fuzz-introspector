@@ -620,8 +620,7 @@ def create_html_report(profiles: List[fuzzer_profile.FuzzerProfile],
 
     # Create section with overview of all fuzzers
     html_report_core = create_section_fuzzers_overview(table_of_contents,
-                                                       tables, profiles,
-                                                       dump_files)
+                                                       tables, profiles)
 
     # Create section with table of all functions in project.
     all_function_table, all_functions_json_html, all_functions_json_report, html_all_function_section = create_section_all_functions(
@@ -636,7 +635,7 @@ def create_html_report(profiles: List[fuzzer_profile.FuzzerProfile],
     fuzzer_table_data: Dict[str, Any] = dict()
     html_report_core += create_section_fuzzer_detailed_section(
         table_of_contents, profiles, proj_profile, tables, conclusions,
-        fuzzer_table_data)
+        fuzzer_table_data, dump_files)
 
     #############################################
     # Handle optional analyses
