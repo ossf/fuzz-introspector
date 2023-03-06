@@ -167,6 +167,13 @@ def create_boxed_top_summary_info(
         "Runtime code coverage of functions", len(covered_funcs),
         proj_profile.total_functions)
 
+    if not proj_profile.has_coverage_data():
+        conclusions.append(
+            html_helpers.HTMLConclusion(
+                severity=0,
+                title="No coverage data was found",
+                description=html_constants.WARNING_NO_COVERAGE))
+
     # Add conclusion
     create_reachability_conclusions(conclusions,
                                     proj_profile.reached_func_percentage,
@@ -526,11 +533,7 @@ def create_section_project_overview(table_of_contents, proj_profile,
 def create_section_fuzzer_detailed_section(table_of_contents, profiles,
                                            proj_profile, tables, conclusions,
                                            fuzzer_table_data, dump_files):
-    """
-    #############################################
-    # Section with details about each fuzzer, including calltree.
-    #############################################
-    """
+    """Section with details about each fuzzer, including calltree."""
     logger.info(" - Creating section with details about each fuzzer")
     html_report_core = "<div class=\"report-box\">"
     html_report_core += html_helpers.html_add_header_with_link(
@@ -542,18 +545,13 @@ def create_section_fuzzer_detailed_section(table_of_contents, profiles,
             proj_profile, profiles[profile_idx], table_of_contents, tables,
             profile_idx, conclusions, True, fuzzer_table_data, dump_files)
     html_report_core += "</div>"  # .collapsible
-
     html_report_core += "</div>"  # report box
     return html_report_core
 
 
 def create_section_all_functions(table_of_contents, tables, proj_profile,
                                  coverage_url, basefolder):
-    """
-    #############################################
-    # Table with details about all functions in the target project.
-    #############################################
-    """
+    """Table with details about all functions in the target project."""
     logger.info(
         " - Creating table with information about all functions in target")
     html_report_core = "<div class=\"report-box\">"
@@ -575,72 +573,12 @@ def create_section_all_functions(table_of_contents, tables, proj_profile,
     return all_function_table, all_functions_json_html, all_functions_json_report, html_report_core
 
 
-def create_html_report(profiles: List[fuzzer_profile.FuzzerProfile],
-                       proj_profile: project_profile.MergedProjectProfile,
-                       analyses_to_run: List[str], output_json: List[str],
-                       coverage_url: str, basefolder: str, report_name: str,
-                       dump_files: bool) -> None:
-    """
-    Logs a complete report. This is the current main place for looking at
-    data produced by fuzz introspector.
-    This method will return a dict contains analyser name to instance
-    mapping that requires separate json report generation to avoid
-    reruning those analysing process.
-    """
-    tables: List[str] = list()
-    table_of_contents: html_helpers.HtmlTableOfContents = html_helpers.HtmlTableOfContents(
-    )
-    conclusions: List[html_helpers.HTMLConclusion] = []
-
-    logger.info(" - Creating HTML report")
-
-    if not proj_profile.has_coverage_data():
-        conclusions.append(
-            html_helpers.HTMLConclusion(
-                severity=0,
-                title="No coverage data was found",
-                description=html_constants.WARNING_NO_COVERAGE))
-
-    # Write stats summary to json file.
-    proj_profile.write_stats_to_summary_file()
-
-    # Create html header, which will be used to assemble the doc at the
-    # end of this function.
-    html_header = html_helpers.html_get_header()
-
-    # Create a wrapper <div> of all content
-    html_content_start = "<div class='content-wrapper report-page'>"
-
-    # Start the contents section.
-    html_body_start = '<div class="content-section">'
-
-    # Create overview section
-    html_overview, html_report_top, html_report_core = create_section_project_overview(
-        table_of_contents, proj_profile, conclusions, report_name)
-
-    # Create section with overview of all fuzzers
-    html_report_core += create_section_fuzzers_overview(
-        table_of_contents, tables, profiles)
-
-    # Create section with table of all functions in project.
-    (all_function_table, all_functions_json_html, all_functions_json_report,
-     html_all_function_section) = create_section_all_functions(
-         table_of_contents, tables, proj_profile, coverage_url, basefolder)
-    html_report_core += html_all_function_section
-
-    # Dump all functions in json report
-    json_report.add_project_key_value_to_report("all-functions",
-                                                all_functions_json_report)
-
-    # Section with details of each fuzzer.
-    fuzzer_table_data: Dict[str, Any] = dict()
-    html_report_core += create_section_fuzzer_detailed_section(
-        table_of_contents, profiles, proj_profile, tables, conclusions,
-        fuzzer_table_data, dump_files)
-
-    #############################################
-    # Handle optional analyses
-    #############################################
+def create_section_optional_analyses(table_of_contents, analyses_to_run,
+                                     output_json, tables, proj_profile,
+                                     profiles, basefolder, coverage_url,
+                                     conclusions, dump_files) -> str:
+    """Creates the HTML sections containing optional analyses."""
+    html_report_core = ""
     logger.info(" - Handling optional analyses")
     html_report_core += "<div class=\"report-box\">"
     html_report_core += html_helpers.html_add_header_with_link(
@@ -667,48 +605,105 @@ def create_html_report(profiles: List[fuzzer_profile.FuzzerProfile],
                 html_report_core += html_string
     html_report_core += "</div>"  # .collapsible
     html_report_core += "</div>"  # report box
+    return html_report_core
 
-    #############################################
-    # End of optional analyses
-    #############################################
 
-    #############################################
-    # Create top level conclusions
-    #############################################
-    html_report_top += html_helpers.create_conclusions_box(conclusions)
-
-    # Wrap up the HTML generation
-    # Close the content div and content_wrapper
-    html_body_end = "</div>\n"
-
-    # End content-wrapper
-    html_content_end = "</div>"
-
-    # Javascript files/references to add to report.
+def get_body_script_tags() -> str:
+    """Add relevant <script> tag at the end of the body."""
+    html_script_tags = ""
     js_files = styling.MAIN_JS_FILES
     js_files.append(constants.ALL_FUNCTION_JS)
     js_files.append(constants.OPTIMAL_TARGETS_ALL_FUNCTIONS)
     js_files.append(constants.FUZZER_TABLE_JS)
     js_files.extend(styling.JAVASCRIPT_REMOTE_SCRIPTS)
     for js_file in js_files:
-        html_body_end += f"<script src=\"{js_file}\"></script>"
+        html_script_tags += f"<script src=\"{js_file}\"></script>"
+    return html_script_tags
 
-    ###########################
-    # Footer
-    ###########################
-    html_footer = create_html_footer(tables)
 
-    ###########################
-    # Fix up table of contents.
-    ###########################
+def create_html_report(profiles: List[fuzzer_profile.FuzzerProfile],
+                       proj_profile: project_profile.MergedProjectProfile,
+                       analyses_to_run: List[str], output_json: List[str],
+                       coverage_url: str, basefolder: str, report_name: str,
+                       dump_files: bool) -> None:
+    """
+    Logs a complete report. This is the current main place for looking at
+    data produced by fuzz introspector.
+    This method will return a dict contains analyser name to instance
+    mapping that requires separate json report generation to avoid
+    reruning those analysing process.
+    """
+    tables: List[str] = list()
+    table_of_contents: html_helpers.HtmlTableOfContents = html_helpers.HtmlTableOfContents(
+    )
+    conclusions: List[html_helpers.HTMLConclusion] = []
+
+    logger.info(" - Creating HTML report")
+
+    # Create html header, which will be used to assemble the doc at the
+    # end of this function.
+    html_header = html_helpers.html_get_header()
+
+    # Create a wrapper <div> of all content
+    html_content_start = "<div class='content-wrapper report-page'>"
+
+    # Start the contents section.
+    html_body_start = '<div class="content-section">'
+
+    # Create overview section
+    (html_overview, html_report_top,
+     html_report_core) = create_section_project_overview(
+         table_of_contents, proj_profile, conclusions, report_name)
+
+    # Create section with overview of all fuzzers
+    html_report_core += create_section_fuzzers_overview(
+        table_of_contents, tables, profiles)
+
+    # Create section with table of all functions in project.
+    (all_function_table, all_functions_json_html, all_functions_json_report,
+     html_all_function_section) = create_section_all_functions(
+         table_of_contents, tables, proj_profile, coverage_url, basefolder)
+    html_report_core += html_all_function_section
+
+    # Section with details of each fuzzer.
+    fuzzer_table_data: Dict[str, Any] = dict()
+    html_report_core += create_section_fuzzer_detailed_section(
+        table_of_contents, profiles, proj_profile, tables, conclusions,
+        fuzzer_table_data, dump_files)
+
+    # Generate sections for all optional analyses
+    html_report_core += create_section_optional_analyses(
+        table_of_contents, analyses_to_run, output_json, tables, proj_profile,
+        profiles, basefolder, coverage_url, conclusions, dump_files)
+
+    # Create HTML showing the conclusions at the top of the report.
+    html_report_top += html_helpers.create_conclusions_box(conclusions)
+
+    # Close content-section.
+    html_body_end = "</div>\n"
+    html_body_end += get_body_script_tags()
+
+    # Make table of contents. We can first do this now because it should be
+    # done after assembling all entires in the table of contents.
     html_toc_string = html_helpers.html_get_table_of_contents(
         table_of_contents, coverage_url, profiles, proj_profile)
+
+    # Close content-wrapper.
+    html_content_end = "</div>"
+
+    # Create the footer
+    html_footer = create_html_footer(tables)
 
     # Assemble the final HTML report and write it to a file.
     html_full_doc = (html_header + html_content_start + html_toc_string +
                      html_body_start + html_overview + html_report_top +
                      html_report_core + html_body_end + html_content_end +
                      html_footer)
+
+    # Write various stats and all-functions data to summary.json
+    proj_profile.write_stats_to_summary_file()
+    json_report.add_project_key_value_to_report("all-functions",
+                                                all_functions_json_report)
 
     if dump_files:
         write_content_to_html_files(html_full_doc, all_functions_json_html,
