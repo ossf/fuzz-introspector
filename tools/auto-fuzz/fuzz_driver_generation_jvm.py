@@ -334,9 +334,10 @@ def _search_setting_method(method_list, target_class_name, target_method_name):
             continue
         if func_name == target_method_name:
             continue
-        if not func_name.startswith('set') and func_elem['returnType'] != 'void':
+        if not func_name.startswith(
+                'set') and func_elem['returnType'] != 'void':
             continue
-        
+
         arg_list = []
         for argType in func_elem['argTypes']:
             arg = _handle_argument(argType, None, possible_target, max_target)
@@ -344,7 +345,7 @@ def _search_setting_method(method_list, target_class_name, target_method_name):
                 arg_list.append(arg[0])
         if len(arg_list) != len(func_elem['argTypes']):
             continue
-            
+
         result.append('obj.' + func_name + '(' + ','.join(arg_list) + ')')
 
     return result_list
@@ -967,7 +968,8 @@ def _generate_heuristic_6(yaml_dict, possible_targets, max_target):
             fuzzer_source_code = "  // Heuristic name: %s\n" % (HEURISTIC_NAME)
             fuzzer_source_code += "  %s obj = %s;\n" % (func_class,
                                                         factory_method)
-            for settings in _search_setting_method(instance_method_list, func_class, func_name):
+            for settings in _search_setting_method(instance_method_list,
+                                                   func_class, func_name):
                 fuzzer_source_code += "  %s;\n" % (settings)
             fuzzer_source_code += "  obj.%s($VARIABLE$);\n" % (func_name)
             if len(cloned_possible_target.exceptions_to_handle) > 0:
