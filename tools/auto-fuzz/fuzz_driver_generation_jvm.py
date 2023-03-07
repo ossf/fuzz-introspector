@@ -227,7 +227,8 @@ def _search_static_factory_method(classname, static_method_list,
         arg_list = []
         for argType in func_elem['argTypes']:
             arg_list.extend(
-                _handle_argument(argType.replace('$', '.'), None, None, max_target, False))
+                _handle_argument(argType.replace('$', '.'), None, None,
+                                 max_target, False))
 
         # Error in some parameters
         if len(arg_list) != len(func_elem['argTypes']):
@@ -290,8 +291,8 @@ def _search_factory_method(classname, static_method_list, possible_method_list,
         arg_list = []
         for argType in func_elem['argTypes']:
             arg_list.append(
-                _handle_argument(argType.replace('$', '.'), init_dict, possible_target,
-                                 max_target))
+                _handle_argument(argType.replace('$', '.'), init_dict,
+                                 possible_target, max_target))
 
         if len(arg_list) != len(func_elem['argTypes']):
             continue
@@ -347,7 +348,8 @@ def _search_setting_method(method_list, target_class_name, target_method_name):
 
         arg_list = []
         for argType in func_elem['argTypes']:
-            arg = _handle_argument(argType.replace('$', '.'), None, possible_target, max_target)
+            arg = _handle_argument(argType.replace('$', '.'), None,
+                                   possible_target, max_target)
             if arg:
                 arg_list.append(arg[0])
         if len(arg_list) != len(func_elem['argTypes']):
@@ -380,7 +382,8 @@ def _search_concrete_subclass(classname,
                     result_list.append(func_elem)
             else:
                 for result in _search_concrete_subclass(
-                        func_elem['functionSourceFile'].replace('$', '.'), init_dict, handled):
+                        func_elem['functionSourceFile'].replace('$', '.'),
+                        init_dict, handled):
                     if result not in result_list:
                         result_list.append(result)
 
@@ -423,17 +426,20 @@ def _handle_object_creation(classname,
                     class_list.append(func_elem)
                 else:
                     class_list.extend(
-                        _search_concrete_subclass(classname, init_dict, handled))
+                        _search_concrete_subclass(classname, init_dict,
+                                                  handled))
                 if len(class_list) == 0:
                     return "new " + classname.replace("$", ".") + "()"
 
                 for elem in class_list:
-                    elem_classname = elem['functionSourceFile'].replace('$', '.')
+                    elem_classname = elem['functionSourceFile'].replace(
+                        '$', '.')
                     if elem in handled:
                         continue
                     handled.append(elem)
                     for argType in elem['argTypes']:
-                        arg = _handle_argument(argType.replace('$', '.'), init_dict, possible_target,
+                        arg = _handle_argument(argType.replace('$', '.'),
+                                               init_dict, possible_target,
                                                max_target, True, handled)
                         if arg:
                             arg_list.append(arg)
@@ -445,8 +451,8 @@ def _handle_object_creation(classname,
                         _handle_import(func_elem))
                     for args_item in list(itertools.product(*arg_list)):
                         result_list.append("new " +
-                                           elem_classname.replace("$", ".") + "(" +
-                                           ",".join(args_item) + ")")
+                                           elem_classname.replace("$", ".") +
+                                           "(" + ",".join(args_item) + ")")
                         if len(result_list) > max_target:
                             return result_list
             except RecursionError:
@@ -525,8 +531,8 @@ def _generate_heuristic_1(yaml_dict, possible_targets, max_target):
 
         # Store function parameter list
         for argType in func_elem['argTypes']:
-            arg_list = _handle_argument(argType.replace('$', '.'), None, possible_target,
-                                        max_target)
+            arg_list = _handle_argument(argType.replace('$', '.'), None,
+                                        possible_target, max_target)
             if arg_list:
                 possible_target.variables_to_add.append(arg_list[0])
         if len(possible_target.variables_to_add) != len(func_elem['argTypes']):
@@ -577,8 +583,8 @@ def _generate_heuristic_2(yaml_dict, possible_targets, max_target):
 
         # Get all possible argument lists with different possible object creation combination
         for argType in func_elem['argTypes']:
-            arg_list = _handle_argument(argType.replace('$', '.'), init_dict, possible_target,
-                                        max_target)
+            arg_list = _handle_argument(argType.replace('$', '.'), init_dict,
+                                        possible_target, max_target)
             if arg_list:
                 possible_target.variables_to_add.append(arg_list[0])
         if len(possible_target.variables_to_add) != len(func_elem['argTypes']):
@@ -649,8 +655,8 @@ def _generate_heuristic_3(yaml_dict, possible_targets, max_target):
 
         # Store function parameter list
         for argType in func_elem['argTypes']:
-            arg_list = _handle_argument(argType.replace('$', '.'), None, possible_target,
-                                        max_target)
+            arg_list = _handle_argument(argType.replace('$', '.'), None,
+                                        possible_target, max_target)
             if arg_list:
                 possible_target.variables_to_add.append(arg_list[0])
         if len(possible_target.variables_to_add) != len(func_elem['argTypes']):
@@ -716,8 +722,8 @@ def _generate_heuristic_4(yaml_dict, possible_targets, max_target):
 
         # Store function parameter list
         for argType in func_elem['argTypes']:
-            arg_list = _handle_argument(argType.replace('$', '.'), None, possible_target,
-                                        max_target)
+            arg_list = _handle_argument(argType.replace('$', '.'), None,
+                                        possible_target, max_target)
             if arg_list:
                 possible_target.variables_to_add.append(arg_list[0])
         if len(possible_target.variables_to_add) != len(func_elem['argTypes']):
