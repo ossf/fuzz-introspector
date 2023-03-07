@@ -35,6 +35,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import ossf.fuzz.introspector.soot.yaml.BranchProfile;
 import ossf.fuzz.introspector.soot.yaml.BranchSide;
 import ossf.fuzz.introspector.soot.yaml.Callsite;
+import ossf.fuzz.introspector.soot.yaml.ClassField;
 import ossf.fuzz.introspector.soot.yaml.FunctionConfig;
 import ossf.fuzz.introspector.soot.yaml.FunctionElement;
 import ossf.fuzz.introspector.soot.yaml.FuzzerConfig;
@@ -44,6 +45,7 @@ import soot.PackManager;
 import soot.Scene;
 import soot.SceneTransformer;
 import soot.SootClass;
+import soot.SootField;
 import soot.SootMethod;
 import soot.Transform;
 import soot.Unit;
@@ -464,6 +466,20 @@ class CustomSenceTransformer extends SceneTransformer {
         Iterator<SootClass> interfaces = sootClass.getInterfaces().snapshotIterator();
         while (interfaces.hasNext()) {
           methodInfo.addInterface(interfaces.next().getName());
+        }
+        Iterator<SootField> fields = sootClass.getFields().snapshotIterator();
+        while (fields.hasNext()) {
+          SootField field = fields.next();
+          ClassField classField = new ClassField();
+
+          classField.setFieldName(field.getName());
+          classField.setFieldType(field.getType().toString());
+          classField.setIsConcrete(field.isDeclared());
+          classField.setIsPublic(field.isPublic());
+          classField.setIsStatic(field.isStatic());
+          classField.setIsFinal(field.isFinal());
+
+          methodInfo.addClassField(classField);
         }
 
         element.setJavaMethodInfo(methodInfo);
