@@ -46,11 +46,13 @@ class FuzzTarget:
             self.heuristics_used = orig.heuristics_used
         elif func_elem:
             # Method name in .data.yaml for jvm: [className].methodName(methodParameterList)
-            self.function_target = func_elem['functionName'].split('].')[1].split('(')[0]
-            self.function_class = func_elem['functionSourceFile'].replace('$', '.')
-            self.exceptions_to_handle.update(func_elem['JavaMethodInfo']['exceptions'])
+            self.function_target = func_elem['functionName'].split(
+                '].')[1].split('(')[0]
+            self.function_class = func_elem['functionSourceFile'].replace(
+                '$', '.')
+            self.exceptions_to_handle.update(
+                func_elem['JavaMethodInfo']['exceptions'])
             self.imports_to_add.update(_handle_import(func_elem))
-
 
     def __dict__(self):
         return {"function": self.function_target}
@@ -480,8 +482,8 @@ def _extract_method(yaml_dict):
         if "test" in func_elem['functionName']:
             continue
         if "jazzer" in func_elem[
-            'functionName'] or "fuzzerTestOneInput" in func_elem[
-                'functionName']:
+                'functionName'] or "fuzzerTestOneInput" in func_elem[
+                    'functionName']:
             continue
 
         # Add candidates to result lists
@@ -698,7 +700,8 @@ def _generate_heuristic_4(yaml_dict, possible_targets, max_target):
     """
     HEURISTIC_NAME = "jvm-autofuzz-heuristics-4"
 
-    init_dict, method_list, instance_method_list, static_method_list = _extract_method(yaml_dict)
+    init_dict, method_list, instance_method_list, static_method_list = _extract_method(
+        yaml_dict)
     for func_elem in method_list:
         if len(possible_targets) > max_target:
             return
@@ -764,7 +767,8 @@ def _generate_heuristic_6(yaml_dict, possible_targets, max_target):
     """
     HEURISTIC_NAME = "jvm-autofuzz-heuristics-6"
 
-    init_dict, method_list, instance_method_list, static_method_list = _extract_method(yaml_dict)
+    init_dict, method_list, instance_method_list, static_method_list = _extract_method(
+        yaml_dict)
     for func_elem in method_list:
         if len(possible_targets) > max_target:
             return
@@ -845,7 +849,8 @@ def _generate_heuristic_8(yaml_dict, possible_targets, max_target):
     """
     HEURISTIC_NAME = "jvm-autofuzz-heuristics-8"
 
-    init_dict, method_list, instance_method_list, static_method_list = _extract_method(yaml_dict)
+    init_dict, method_list, instance_method_list, static_method_list = _extract_method(
+        yaml_dict)
     for func_elem in method_list:
         if len(possible_targets) > max_target:
             return
