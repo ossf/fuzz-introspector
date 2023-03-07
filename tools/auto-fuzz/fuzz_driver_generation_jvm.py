@@ -193,7 +193,7 @@ def _handle_argument(argType,
         return ["data.consumeCharacter()"]
     elif argType == "java.lang.String":
         return ["data.consumeString(100)"]
-    
+
     if enum_object:
         result = _handle_enum_choice(init_dict, argType)
         if result:
@@ -266,8 +266,13 @@ def _search_static_factory_method(classname, static_method_list,
     return result_list
 
 
-def _search_factory_method(classname, static_method_list, possible_method_list,
-                           possible_target, init_dict, max_target, class_object=False):
+def _search_factory_method(classname,
+                           static_method_list,
+                           possible_method_list,
+                           possible_target,
+                           init_dict,
+                           max_target,
+                           class_object=False):
     """
     Search for all factory methods of the target class that statisfy all:
         - Public
@@ -309,7 +314,8 @@ def _search_factory_method(classname, static_method_list, possible_method_list,
 
         # Create possible factory method invoking statements with constructor or static factory
         for creation in _handle_object_creation(func_class, init_dict,
-                                                possible_target, max_target, class_object):
+                                                possible_target, max_target,
+                                                class_object):
             if creation and len(result_list) > max_target:
                 return result_list
 
@@ -412,8 +418,8 @@ def _handle_enum_choice(init_dict, enum_name):
         result = "data.pickValue(" + result + ");\n"
         return [result]
     return []
-    
-    
+
+
 def _handle_class_object_list(func_elem, possible_target):
     """
     Create an array of all public static final class object
@@ -433,23 +439,23 @@ def _handle_class_object_list(func_elem, possible_target):
             continue
         if not item['concrete']:
             continue
-        
+
         # Filter out class field with non-match type
         field_type = item['Type'].replace('$', '.')
         if field_type != classname:
             continue
-            
+
         # Store possible public static final class object name
         field_list.append(item['Name'])
-        
+
     if field_list:
         class_object_array = 'final static ' + classname + '[] '
         class_object_array += classname.replace('.', '') + '={'
         for field_name in field_list:
             class_object_array += classname + '.' + field_name + ','
-        class_object_array += '};';
-        
-        self.class_object_list.append(class_object_array);
+        class_object_array += '};'
+
+        self.class_object_list.append(class_object_array)
         result = 'data.pickValue(' + classname.replace('.', '') + ')'
 
     return result
@@ -466,12 +472,13 @@ def _handle_object_creation(classname,
     If constructor (<init>) does existed in the yaml file, we will
     use it as reference, otherwise the default empty constructor
     are used.
-    """    
+    """
     if classname in init_dict.keys():
         if class_object and init_dict[classname]:
             # Use defined class object
             func_elem = init_dict[classname][0]
-            class_object_choice = _handle_class_object_list(func_elem, possible_target)
+            class_object_choice = _handle_class_object_list(
+                func_elem, possible_target)
             if class_object_choice:
                 return [class_object_choice]
 
@@ -481,7 +488,7 @@ def _handle_object_creation(classname,
             try:
                 arg_list = []
                 class_list = []
-        
+
                 if func_elem['JavaMethodInfo']['classConcrete']:
                     class_list.append(func_elem)
                 else:
@@ -490,7 +497,7 @@ def _handle_object_creation(classname,
                                                   handled))
                 if len(class_list) == 0:
                     return "new " + classname.replace("$", ".") + "()"
-        
+
                 for elem in class_list:
                     elem_classname = elem['functionSourceFile'].replace(
                         '$', '.')
@@ -980,7 +987,7 @@ def _generate_heuristic_8(yaml_dict, possible_targets, max_target):
                 cloned_possible_target.heuristics_used.append(HEURISTIC_NAME)
 
             possible_targets.append(cloned_possible_target)
-            
+
 
 def _generate_heuristic_9(yaml_dict, possible_targets, max_target):
     """Heuristic 9.
@@ -1029,14 +1036,18 @@ def _generate_heuristic_9(yaml_dict, possible_targets, max_target):
                                                       static_method_list,
                                                       instance_method_list,
                                                       possible_target,
-                                                      init_dict, max_target,
+                                                      init_dict,
+                                                      max_target,
                                                       class_object=True)
         object_creation_list.append(
             _search_static_factory_method(func_class, static_method_list,
                                           possible_target, max_target))
         object_creation_list.append(
-            _handle_object_creation(func_class, init_dict, possile_target,
-                                    max_target, class_object=True))
+            _handle_object_creation(func_class,
+                                    init_dict,
+                                    possile_target,
+                                    max_target,
+                                    class_object=True))
 
         for object_creation in object_creation_list:
             # Create possible target for all possible factory method

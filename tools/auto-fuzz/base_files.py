@@ -217,6 +217,7 @@ def gen_base_fuzzer_jvm():
 /*IMPORTS*/
 public class Fuzz1 {
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
+/*STATIC_OBJECT_CHOICE*/
 /*CODE*/
   }
 }"""
