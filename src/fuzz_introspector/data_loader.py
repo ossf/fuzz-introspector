@@ -203,33 +203,3 @@ def load_input_bugs(bug_file: str) -> List[bug.Bug]:
             continue
 
     return input_bugs
-
-
-def read_branch_data_file_to_profile(filename: str,
-                                     bp_dict: Dict[Any, Any]) -> None:
-    """
-    Loads branch profiles from LLVM pass output yaml file.
-    """
-    logger.info(f" - loading {filename}")
-    if not os.path.isfile(filename):
-        return
-
-    data_dict_yaml = utils.data_file_read_yaml(filename)
-    if data_dict_yaml is None:
-        return
-
-    for elem in data_dict_yaml:
-        new_branch = branch_profile.BranchProfile()
-        new_branch.assign_from_yaml_elem(elem)
-        bp_dict[new_branch.branch_pos] = new_branch
-
-
-def load_all_branch_profiles(
-        target_folder: str) -> Dict[str, branch_profile.BranchProfile]:
-    all_branch_profiles: Dict[str, branch_profile.BranchProfile] = dict()
-    data_files = utils.get_all_files_in_tree_with_regex(
-        target_folder, ".*branchProfile\.yaml$")
-    logger.info(f" - found {len(data_files)} branchProfiles to load")
-    for data_file in data_files:
-        read_branch_data_file_to_profile(data_file, all_branch_profiles)
-    return all_branch_profiles

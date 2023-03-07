@@ -93,11 +93,6 @@ def run_analysis_on_dir(target_folder: str,
     for profile in profiles:
         profile.refine_paths(proj_profile.basefolder)
 
-    # logger.info("[+] Loading branch profiles")
-    # branch_profiles = data_loader.load_all_branch_profiles(target_folder)
-    # if len(branch_profiles) == 0:
-    #     logger.info("[X][X] Found no branch profiles!")
-
     # Overlay coverage in each profile
     for profile in profiles:
         analysis.overlay_calltree_with_coverage(profile, proj_profile,
