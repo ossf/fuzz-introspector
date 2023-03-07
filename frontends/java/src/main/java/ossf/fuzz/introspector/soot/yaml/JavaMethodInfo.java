@@ -21,6 +21,7 @@ import java.util.List;
 public class JavaMethodInfo {
   private List<String> exceptions;
   private List<String> interfaces;
+  private List<ClassField> classFields;
   private String superClass;
   private Integer methodStatus;
   private Boolean isConcrete;
@@ -33,6 +34,7 @@ public class JavaMethodInfo {
   public JavaMethodInfo() {
     this.exceptions = new ArrayList<String>();
     this.interfaces = new ArrayList<String>();
+    this.classFields = new ArrayList<ClassField>();
     this.superClass = "";
     this.isConcrete = true;
     this.isJavaLibraryMethod = false;
@@ -72,6 +74,18 @@ public class JavaMethodInfo {
 
   public void setInterfaces(List<String> interfaces) {
     this.interfaces = interfaces;
+  }
+
+  public List<ClassField> getClassFields() {
+    return this.classFields;
+  }
+
+  public void addClassField(ClassField classField) {
+    this.classFields.add(classField);
+  }
+
+  public void setClassFields(List<ClassField> classFields) {
+    this.classFields = classFields;
   }
 
   public Boolean isConcrete() {
