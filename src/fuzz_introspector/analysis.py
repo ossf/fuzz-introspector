@@ -23,7 +23,7 @@ from typing import (
     Type,
 )
 
-from fuzz_introspector import (cfg_load, code_coverage, constants,
+from fuzz_introspector import (cfg_load, code_coverage, constants, data_loader,
                                html_helpers, json_report, utils)
 
 from fuzz_introspector.datatypes import (
@@ -31,9 +31,49 @@ from fuzz_introspector.datatypes import (
     fuzzer_profile,
     function_profile,
 )
-from fuzz_introspector.exceptions import AnalysisError
+from fuzz_introspector.exceptions import AnalysisError, DataLoaderError
 
 logger = logging.getLogger(name=__name__)
+
+
+class IntrospectionProject():
+    """Wrapper class for manging Fuzz Introspector analysis."""
+
+    def __init__(self, language, target_folder, coverage_url):
+        self.language = language
+        self.base_folder = target_folder
+        self.coverage_url = coverage_url
+
+    def load_data_files(self, parallelise=True, correlation_file=None):
+        self.profiles = data_loader.load_all_profiles(self.base_folder,
+                                                      self.language,
+                                                      parallelise)
+        logger.info(f"Found {len(self.profiles)} profiles")
+        if len(self.profiles) == 0:
+            logger.info("Found no profiles")
+            raise DataLoaderError("No fuzzer profiles")
+
+        self.input_bugs = data_loader.try_load_input_bugs()
+        correlation_dict = utils.data_file_read_yaml(correlation_file)
+        if correlation_dict is not None and "pairings" in correlation_dict:
+            for profile in self.profiles:
+                profile.correlate_executable_name(correlation_dict)
+
+        logger.info("[+] Accummulating profiles")
+        for profile in self.profiles:
+            profile.accummulate_profile(self.base_folder)
+
+        logger.info("[+] Creating project profile")
+        self.proj_profile = project_profile.MergedProjectProfile(self.profiles)
+        self.proj_profile.coverage_url = self.coverage_url
+
+        logger.info("[+] Refining profiles")
+        for profile in self.profiles:
+            profile.refine_paths(self.proj_profile.basefolder)
+
+        for profile in self.profiles:
+            overlay_calltree_with_coverage(profile, self.proj_profile,
+                                           self.coverage_url, self.base_folder)
 
 
 class AnalysisInterface(abc.ABC):
