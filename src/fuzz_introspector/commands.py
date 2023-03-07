@@ -19,11 +19,9 @@ from typing import List
 
 from fuzz_introspector import analysis
 from fuzz_introspector import constants
-from fuzz_introspector import data_loader
 from fuzz_introspector import diff_report
 from fuzz_introspector import html_report
 from fuzz_introspector import utils
-from fuzz_introspector.datatypes import project_profile
 
 logger = logging.getLogger(name=__name__)
 
