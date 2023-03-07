@@ -227,8 +227,7 @@ def _search_static_factory_method(classname, static_method_list,
         arg_list = []
         for argType in func_elem['argTypes']:
             arg_list.extend(
-                _handle_argument(argType.replace('$', '.'), None, None,
-                                 max_target, False))
+                _handle_argument(argType.replace('$', '.'), None, None, max_target, False))
 
         # Error in some parameters
         if len(arg_list) != len(func_elem['argTypes']):
@@ -291,8 +290,8 @@ def _search_factory_method(classname, static_method_list, possible_method_list,
         arg_list = []
         for argType in func_elem['argTypes']:
             arg_list.append(
-                _handle_argument(argType.replace('$', '.'), init_dict,
-                                 possible_target, max_target))
+                _handle_argument(argType.replace('$', '.'), init_dict, possible_target,
+                                 max_target))
 
         if len(arg_list) != len(func_elem['argTypes']):
             continue
@@ -348,8 +347,7 @@ def _search_setting_method(method_list, target_class_name, target_method_name):
 
         arg_list = []
         for argType in func_elem['argTypes']:
-            arg = _handle_argument(argType.replace('$', '.'), None,
-                                   possible_target, max_target)
+            arg = _handle_argument(argType.replace('$', '.'), None, possible_target, max_target)
             if arg:
                 arg_list.append(arg[0])
         if len(arg_list) != len(func_elem['argTypes']):
@@ -382,8 +380,7 @@ def _search_concrete_subclass(classname,
                     result_list.append(func_elem)
             else:
                 for result in _search_concrete_subclass(
-                        func_elem['functionSourceFile'].replace('$', '.'),
-                        init_dict, handled):
+                        func_elem['functionSourceFile'].replace('$', '.'), init_dict, handled):
                     if result not in result_list:
                         result_list.append(result)
 
@@ -426,20 +423,17 @@ def _handle_object_creation(classname,
                     class_list.append(func_elem)
                 else:
                     class_list.extend(
-                        _search_concrete_subclass(classname, init_dict,
-                                                  handled))
+                        _search_concrete_subclass(classname, init_dict, handled))
                 if len(class_list) == 0:
                     return "new " + classname.replace("$", ".") + "()"
 
                 for elem in class_list:
-                    elem_classname = elem['functionSourceFile'].replace(
-                        '$', '.')
+                    elem_classname = elem['functionSourceFile'].replace('$', '.')
                     if elem in handled:
                         continue
                     handled.append(elem)
                     for argType in elem['argTypes']:
-                        arg = _handle_argument(argType.replace('$', '.'),
-                                               init_dict, possible_target,
+                        arg = _handle_argument(argType.replace('$', '.'), init_dict, possible_target,
                                                max_target, True, handled)
                         if arg:
                             arg_list.append(arg)
@@ -451,8 +445,8 @@ def _handle_object_creation(classname,
                         _handle_import(func_elem))
                     for args_item in list(itertools.product(*arg_list)):
                         result_list.append("new " +
-                                           elem_classname.replace("$", ".") +
-                                           "(" + ",".join(args_item) + ")")
+                                           elem_classname.replace("$", ".") + "(" +
+                                           ",".join(args_item) + ")")
                         if len(result_list) > max_target:
                             return result_list
             except RecursionError:
@@ -531,8 +525,8 @@ def _generate_heuristic_1(yaml_dict, possible_targets, max_target):
 
         # Store function parameter list
         for argType in func_elem['argTypes']:
-            arg_list = _handle_argument(argType.replace('$', '.'), None,
-                                        possible_target, max_target)
+            arg_list = _handle_argument(argType.replace('$', '.'), None, possible_target,
+                                        max_target)
             if arg_list:
                 possible_target.variables_to_add.append(arg_list[0])
         if len(possible_target.variables_to_add) != len(func_elem['argTypes']):
@@ -583,8 +577,8 @@ def _generate_heuristic_2(yaml_dict, possible_targets, max_target):
 
         # Get all possible argument lists with different possible object creation combination
         for argType in func_elem['argTypes']:
-            arg_list = _handle_argument(argType.replace('$', '.'), init_dict,
-                                        possible_target, max_target)
+            arg_list = _handle_argument(argType.replace('$', '.'), init_dict, possible_target,
+                                        max_target)
             if arg_list:
                 possible_target.variables_to_add.append(arg_list[0])
         if len(possible_target.variables_to_add) != len(func_elem['argTypes']):
@@ -655,8 +649,8 @@ def _generate_heuristic_3(yaml_dict, possible_targets, max_target):
 
         # Store function parameter list
         for argType in func_elem['argTypes']:
-            arg_list = _handle_argument(argType.replace('$', '.'), None,
-                                        possible_target, max_target)
+            arg_list = _handle_argument(argType.replace('$', '.'), None, possible_target,
+                                        max_target)
             if arg_list:
                 possible_target.variables_to_add.append(arg_list[0])
         if len(possible_target.variables_to_add) != len(func_elem['argTypes']):
@@ -722,8 +716,8 @@ def _generate_heuristic_4(yaml_dict, possible_targets, max_target):
 
         # Store function parameter list
         for argType in func_elem['argTypes']:
-            arg_list = _handle_argument(argType.replace('$', '.'), None,
-                                        possible_target, max_target)
+            arg_list = _handle_argument(argType.replace('$', '.'), None, possible_target,
+                                        max_target)
             if arg_list:
                 possible_target.variables_to_add.append(arg_list[0])
         if len(possible_target.variables_to_add) != len(func_elem['argTypes']):
@@ -788,36 +782,31 @@ def _generate_heuristic_6(yaml_dict, possible_targets, max_target):
         func_class = possible_target.function_class
 
         # Store function parameter list
-        # Skip this method is it does not take at least one
+        # Skip this method if it does not take at least one
         # enum object as parameter
-        enum_argument = False
         for argType in func_elem['argTypes']:
-            if _is_enum_class(init_dict, argType.replace('$', '.')):
-                enum_argument = True
             arg_list = _handle_argument(argType.replace('$', '.'),
                                         init_dict,
                                         possible_target,
-                                        max_target,
-                                        enum_object=True)
+                                        max_target)
             if arg_list:
                 possible_target.variables_to_add.append(arg_list[0])
 
         if len(possible_target.variables_to_add) != len(func_elem['argTypes']):
             continue
-        if not enum_argument:
-            continue
 
-        # Retrieve list of factory method for the target object
-        factory_method_list = _search_factory_method(func_class,
-                                                     static_method_list,
-                                                     instance_method_list,
-                                                     possible_target,
-                                                     init_dict, max_target)
-        factory_method_list.append(
+        # Retrieve list of factory method or constructor for the target object
+        object_creation_list = _search_factory_method(func_class,
+                                                      static_method_list,
+                                                      instance_method_list,
+                                                      possible_target,
+                                                      init_dict, max_target)
+        object_creation_list.append(
             _search_static_factory_method(func_class, static_method_list,
                                           possible_target, max_target))
+        object_creation_list.append(_handle_object_creation(func_class, init_dict, possile_target, max_target))
 
-        for factory_method in factory_method_list:
+        for object_creation in object_creation_list:
             # Create possible target for all possible factory method
             # Clone the base target object
             cloned_possible_target = FuzzTarget(orig=possible_target)
@@ -825,7 +814,7 @@ def _generate_heuristic_6(yaml_dict, possible_targets, max_target):
             # Create the actual source
             fuzzer_source_code = "  // Heuristic name: %s\n" % (HEURISTIC_NAME)
             fuzzer_source_code += "  %s obj = %s;\n" % (func_class,
-                                                        factory_method)
+                                                        object_creation)
             for settings in _search_setting_method(instance_method_list,
                                                    func_class, func_name):
                 fuzzer_source_code += "  %s;\n" % (settings)
@@ -870,7 +859,7 @@ def _generate_heuristic_8(yaml_dict, possible_targets, max_target):
         func_class = possible_target.function_class
 
         # Store function parameter list
-        # Skip this method is it does not take at least one
+        # Skip this method if it does not take at least one
         # enum object as parameter
         enum_argument = False
         for argType in func_elem['argTypes']:
@@ -890,16 +879,17 @@ def _generate_heuristic_8(yaml_dict, possible_targets, max_target):
             continue
 
         # Retrieve list of factory method for the target object
-        factory_method_list = _search_factory_method(func_class,
-                                                     static_method_list,
-                                                     instance_method_list,
-                                                     possible_target,
-                                                     init_dict, max_target)
-        factory_method_list.append(
+        object_creation_list = _search_factory_method(func_class,
+                                                      static_method_list,
+                                                      instance_method_list,
+                                                      possible_target,
+                                                      init_dict, max_target)
+        object_creation_list.append(
             _search_static_factory_method(func_class, static_method_list,
                                           possible_target, max_target))
+        object_creation_list.append(_handle_object_creation(func_class, init_dict, possile_target, max_target))
 
-        for factory_method in factory_method_list:
+        for object_creation in object_creation_list:
             # Create possible target for all possible factory method
             # Clone the base target object
             cloned_possible_target = FuzzTarget(orig=possible_target)
@@ -907,7 +897,7 @@ def _generate_heuristic_8(yaml_dict, possible_targets, max_target):
             # Create the actual source
             fuzzer_source_code = "  // Heuristic name: %s\n" % (HEURISTIC_NAME)
             fuzzer_source_code += "  %s obj = %s;\n" % (func_class,
-                                                        factory_method)
+                                                        object_creation)
             fuzzer_source_code += "  obj.%s($VARIABLE$);\n" % (func_name)
             if len(cloned_possible_target.exceptions_to_handle) > 0:
                 fuzzer_source_code = "  try {\n" + fuzzer_source_code
