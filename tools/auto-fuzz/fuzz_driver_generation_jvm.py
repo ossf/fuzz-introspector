@@ -27,6 +27,7 @@ class FuzzTarget:
     variables_to_add: List[Any]
     imports_to_add: Set[str]
     heuristics_used: List[str]
+    class_object_list: List[str]
 
     def __init__(self, orig=None, func_elem=None):
         self.function_target = ""
@@ -36,6 +37,7 @@ class FuzzTarget:
         self.variables_to_add = []
         self.imports_to_add = set()
         self.heuristics_used = []
+        self.class_object_list = []
         if orig:
             self.function_target = orig.function_target
             self.function_class = orig.function_class
@@ -44,6 +46,7 @@ class FuzzTarget:
             self.variables_to_add = orig.variables_to_add
             self.imports_to_add = orig.imports_to_add
             self.heuristics_used = orig.heuristics_used
+            self.class_object_list = orig.class_object_list
         elif func_elem:
             # Method name in .data.yaml for jvm: [className].methodName(methodParameterList)
             self.function_target = func_elem['functionName'].split(
@@ -72,6 +75,7 @@ class FuzzTarget:
         1) Adds the imports necessary for the fuzzer.
         2) Adds the variables that should be seeded with fuzzing data.
         3) Adds the source code of the fuzzer.
+        4) If there are class object list for random choice, create them.
         """
 
         # Hold the source code of the ending fuzzer.
@@ -91,6 +95,10 @@ class FuzzTarget:
                     code = self.fuzzer_source_code.replace(
                         "$VARIABLE$", ",".join(self.variables_to_add))
                     content += code
+                elif "/*STATIC_OBJECT_CHOICE*/" in line:
+                    # Create an array of possible static objects for random choice
+                    for item in self.class_object_list:
+                        content += item
                 else:
                     # Copy other lines from the base fuzzer
                     content += line
@@ -156,7 +164,8 @@ def _handle_argument(argType,
                      max_target,
                      obj_creation=True,
                      handled=[],
-                     enum_object=False):
+                     enum_object=False,
+                     class_object=False):
     """Generate data creation statement for given argument type"""
     if argType == "int" or argType == "java.lang.Integer":
         return ["data.consumeInt(0,100)"]
@@ -184,14 +193,15 @@ def _handle_argument(argType,
         return ["data.consumeCharacter()"]
     elif argType == "java.lang.String":
         return ["data.consumeString(100)"]
-    elif enum_object:
+
+    if enum_object:
         result = _handle_enum_choice(init_dict, argType)
         if result:
             return result
 
     if obj_creation:
         return _handle_object_creation(argType, init_dict, possible_target,
-                                       max_target, handled)
+                                       max_target, handled, class_object)
     else:
         return []
 
@@ -256,8 +266,13 @@ def _search_static_factory_method(classname, static_method_list,
     return result_list
 
 
-def _search_factory_method(classname, static_method_list, possible_method_list,
-                           possible_target, init_dict, max_target):
+def _search_factory_method(classname,
+                           static_method_list,
+                           possible_method_list,
+                           possible_target,
+                           init_dict,
+                           max_target,
+                           class_object=False):
     """
     Search for all factory methods of the target class that statisfy all:
         - Public
@@ -299,7 +314,8 @@ def _search_factory_method(classname, static_method_list, possible_method_list,
 
         # Create possible factory method invoking statements with constructor or static factory
         for creation in _handle_object_creation(func_class, init_dict,
-                                                possible_target, max_target):
+                                                possible_target, max_target,
+                                                class_object):
             if creation and len(result_list) > max_target:
                 return result_list
 
@@ -392,7 +408,7 @@ def _search_concrete_subclass(classname,
 
 def _handle_enum_choice(init_dict, enum_name):
     """
-    Create an array of all value of this enum
+    Create an array of all values of this enum
     and randomly choose one with the jazzer
     fuzzer data provider.
     """
@@ -404,11 +420,53 @@ def _handle_enum_choice(init_dict, enum_name):
     return []
 
 
+def _handle_class_object_list(func_elem, possible_target):
+    """
+    Create an array of all public static final class object
+    from the given class elements to object preconfigured 
+    or default object
+    """
+    result = None
+    field_list = []
+    classname = func_elem['functionSourceFile'].replace('$', '.')
+    for field in func_elem['JavaMethodInfo']['classField']:
+        # Check if the function element match the requirement
+        if not item['static']:
+            continue
+        if not item['public']:
+            continue
+        if not item['final']:
+            continue
+        if not item['concrete']:
+            continue
+
+        # Filter out class field with non-match type
+        field_type = item['Type'].replace('$', '.')
+        if field_type != classname:
+            continue
+
+        # Store possible public static final class object name
+        field_list.append(item['Name'])
+
+    if field_list:
+        class_object_array = 'final static ' + classname + '[] '
+        class_object_array += classname.replace('.', '') + '={'
+        for field_name in field_list:
+            class_object_array += classname + '.' + field_name + ','
+        class_object_array += '};'
+
+        self.class_object_list.append(class_object_array)
+        result = 'data.pickValue(' + classname.replace('.', '') + ')'
+
+    return result
+
+
 def _handle_object_creation(classname,
                             init_dict,
                             possible_target,
                             max_target,
-                            handled=[]):
+                            handled=[],
+                            class_object=False):
     """
     Generate statement for Java object creation of the target class.
     If constructor (<init>) does existed in the yaml file, we will
@@ -416,8 +474,17 @@ def _handle_object_creation(classname,
     are used.
     """
     if classname in init_dict.keys():
+        if class_object and init_dict[classname]:
+            # Use defined class object
+            func_elem = init_dict[classname][0]
+            class_object_choice = _handle_class_object_list(
+                func_elem, possible_target)
+            if class_object_choice:
+                return [class_object_choice]
+
         result_list = []
         for func_elem in init_dict[classname]:
+            # Use constructor or factory method
             try:
                 arg_list = []
                 class_list = []
@@ -922,6 +989,91 @@ def _generate_heuristic_8(yaml_dict, possible_targets, max_target):
             possible_targets.append(cloned_possible_target)
 
 
+def _generate_heuristic_9(yaml_dict, possible_targets, max_target):
+    """Heuristic 9.
+    Creates a FuzzTarget for each method that satisfy all:
+        - public object method which are not abstract or found in JDK library
+        - have between 0-20 arguments
+        - do not have "test" in the function name
+
+    Use public static final object defined in the target class for getting
+    the needed object
+
+    Will also add proper exception handling based on the exception list
+    provided by the frontend code.
+    """
+    HEURISTIC_NAME = "jvm-autofuzz-heuristics-9"
+
+    init_dict, method_list, instance_method_list, static_method_list = _extract_method(
+        yaml_dict)
+    for func_elem in method_list:
+        if len(possible_targets) > max_target:
+            return
+
+        # Initialize base possible_target object
+        possible_target = FuzzTarget(func_elem=func_elem)
+        func_name = possible_target.function_target
+        func_class = possible_target.function_class
+
+        # Store function parameter list
+        # Skip this method if it does not take at least one
+        # enum object as parameter
+        for argType in func_elem['argTypes']:
+            arg_list = _handle_argument(argType.replace('$', '.'),
+                                        init_dict,
+                                        possible_target,
+                                        max_target,
+                                        enum_object=True,
+                                        class_object=True)
+            if arg_list:
+                possible_target.variables_to_add.append(arg_list[0])
+
+        if len(possible_target.variables_to_add) != len(func_elem['argTypes']):
+            continue
+
+        # Retrieve list of factory method for the target object
+        object_creation_list = _search_factory_method(func_class,
+                                                      static_method_list,
+                                                      instance_method_list,
+                                                      possible_target,
+                                                      init_dict,
+                                                      max_target,
+                                                      class_object=True)
+        object_creation_list.append(
+            _search_static_factory_method(func_class, static_method_list,
+                                          possible_target, max_target))
+        object_creation_list.append(
+            _handle_object_creation(func_class,
+                                    init_dict,
+                                    possile_target,
+                                    max_target,
+                                    class_object=True))
+
+        for object_creation in object_creation_list:
+            # Create possible target for all possible factory method
+            # Clone the base target object
+            cloned_possible_target = FuzzTarget(orig=possible_target)
+
+            # Create the actual source
+            fuzzer_source_code = "  // Heuristic name: %s\n" % (HEURISTIC_NAME)
+            fuzzer_source_code += "  %s obj = %s;\n" % (func_class,
+                                                        object_creation)
+            fuzzer_source_code += "  obj.%s($VARIABLE$);\n" % (func_name)
+            if len(cloned_possible_target.exceptions_to_handle) > 0:
+                fuzzer_source_code = "  try {\n" + fuzzer_source_code
+                fuzzer_source_code += "  }\n"
+                counter = 1
+                for exc in cloned_possible_target.exceptions_to_handle:
+                    fuzzer_source_code += "  catch (%s e%d) {}\n" % (exc,
+                                                                     counter)
+                    counter += 1
+            cloned_possible_target.fuzzer_source_code = fuzzer_source_code
+            if HEURISTIC_NAME not in cloned_possible_target.heuristics_used:
+                cloned_possible_target.heuristics_used.append(HEURISTIC_NAME)
+
+            possible_targets.append(cloned_possible_target)
+
+
 def generate_possible_targets(proj_folder, max_target):
     """Generate all possible targets for a given project folder"""
 
@@ -938,5 +1090,6 @@ def generate_possible_targets(proj_folder, max_target):
     _generate_heuristic_4(yaml_dict, possible_targets, max_target)
     _generate_heuristic_6(yaml_dict, possible_targets, max_target)
     _generate_heuristic_8(yaml_dict, possible_targets, max_target)
+    _generate_heuristic_9(yaml_dict, possible_targets, max_target)
 
     return possible_targets
