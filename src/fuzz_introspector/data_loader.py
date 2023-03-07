@@ -30,7 +30,7 @@ from typing import (
 from fuzz_introspector import constants
 from fuzz_introspector import utils
 from fuzz_introspector.datatypes import (project_profile, fuzzer_profile,
-                                         function_profile, branch_profile, bug)
+                                         function_profile, bug)
 from fuzz_introspector.exceptions import DataLoaderError
 
 logger = logging.getLogger(name=__name__)
