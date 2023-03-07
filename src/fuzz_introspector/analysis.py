@@ -37,6 +37,7 @@ logger = logging.getLogger(name=__name__)
 
 
 class IntrospectionProject():
+    """Wrapper class for manging Fuzz Introspector analysis."""
 
     def __init__(self, language, target_folder, coverage_url):
         self.language = language
