@@ -469,17 +469,17 @@ class CustomSenceTransformer extends SceneTransformer {
         }
         Iterator<SootField> fields = sootClass.getFields().snapshotIterator();
         while (fields.hasNext()) {
-            SootField field = fields.next();
-            ClassField classField = new ClassField();
+          SootField field = fields.next();
+          ClassField classField = new ClassField();
 
-            classField.setFieldName(field.getName());
-            classField.setFieldType(field.getType().toString());
-            classField.setIsConcrete(field.isDeclared());
-            classField.setIsPublic(field.isPublic());
-            classField.setIsStatic(field.isStatic());
-            classField.setIsFinal(field.isFinal());
+          classField.setFieldName(field.getName());
+          classField.setFieldType(field.getType().toString());
+          classField.setIsConcrete(field.isDeclared());
+          classField.setIsPublic(field.isPublic());
+          classField.setIsStatic(field.isStatic());
+          classField.setIsFinal(field.isFinal());
 
-            methodInfo.addClassField(classField);
+          methodInfo.addClassField(classField);
         }
 
         element.setJavaMethodInfo(methodInfo);
