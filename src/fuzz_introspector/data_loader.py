@@ -21,8 +21,6 @@ import threading
 import queue
 
 from typing import (
-    Any,
-    Dict,
     List,
     Optional,
 )
