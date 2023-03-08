@@ -317,6 +317,14 @@ def run_static_analysis_jvm(git_repo, basedir):
     with tarfile.open("./jazzer.tar.gz") as f:
         f.extractall("./")
 
+    # Retrieve Apache Common Lang3 package
+    # This library provides method to translate primitive type arrays to
+    # their respective class object arrays to avoid compilation error.
+    apache_url = "https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar"
+    response = requests.get(apache_url)
+    with open("./commons-lang3.jar", "wb") as f:
+        f.write(response.content)
+
     # Retrieve path of all jar files
     jarfiles.append(os.path.abspath("../Fuzz1.jar"))
     for root, _, files in os.walk(projectdir):
@@ -327,7 +335,7 @@ def run_static_analysis_jvm(git_repo, basedir):
 
     # Compile and package fuzzer to jar file
     cmd = [
-        "javac -cp jazzer_standalone.jar:%s ../Fuzz1.java" %
+        "javac -cp jazzer_standalone.jar:commons-lang3.jar:%s ../Fuzz1.java" %
         ":".join(jarfiles), "jar cvf ../Fuzz1.jar ../Fuzz1.class"
     ]
     try:

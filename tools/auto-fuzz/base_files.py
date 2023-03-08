@@ -158,8 +158,13 @@ do
   RUNTIME_CLASSPATH=$RUNTIME_CLASSPATH\$this_dir/$(basename $JARFILE):
 done
 
-BUILD_CLASSPATH=$BUILD_CLASSPATH:$JAZZER_API_PATH
-RUNTIME_CLASSPATH=$RUNTIME_CLASSPATH:\$this_dir
+# Retrieve apache-common-lang3 library
+# This library provides method to translate primitive type arrays to
+# their respective class object arrays to avoid compilation error.
+wget -P $OUT/ https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar
+
+BUILD_CLASSPATH=$BUILD_CLASSPATH:$JAZZER_API_PATH:$OUT/commons-lang3-3.12.0.jar
+RUNTIME_CLASSPATH=$RUNTIME_CLASSPATH:\$this_dir/commons-lang3-3.12.0.jar:\$this_dir
 
 fuzzer="Fuzz1.java"
 fuzzer_basename="Fuzz1"
@@ -214,6 +219,7 @@ if __name__ == "__main__":
 
 def gen_base_fuzzer_jvm():
     BASE_FUZZER = """import com.code_intelligence.jazzer.api.FuzzedDataProvider;
+import org.apache.commons.lang3.ArrayUtils;
 /*IMPORTS*/
 public class Fuzz1 {
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
