@@ -231,9 +231,11 @@ def _maven_build_project(basedir, projectdir):
                               env=env_var,
                               cwd=projectdir)
     except subprocess.TimeoutExpired:
-        pass
+        return False
     except subprocess.CalledProcessError:
-        pass
+        return False
+
+    return True
 
 
 def _gradle_build_project(basedir, projectdir):
@@ -262,9 +264,11 @@ def _gradle_build_project(basedir, projectdir):
                               env=env_var,
                               cwd=projectdir)
     except subprocess.TimeoutExpired:
-        pass
+        return False
     except subprocess.CalledProcessError:
-        pass
+        return False
+
+    return True
 
 
 def run_static_analysis_jvm(git_repo, basedir):
@@ -290,14 +294,18 @@ def run_static_analysis_jvm(git_repo, basedir):
 
     if os.path.exists(os.path.join(projectdir, "pom.xml")):
         # Maven project
-        _maven_build_project(basedir, projectdir)
+        build_ret = _maven_build_project(basedir, projectdir)
     elif os.path.exists(os.path.join(projectdir, "build.gradle")):
         # Gradle project
-        _gradle_build_project(basedir, projectdir)
+        build_ret = _gradle_build_project(basedir, projectdir)
         jarfiles.append(os.path.join(projectdir, "proj.jar"))
     else:
         # Unknown project type
         print("Unknown project type.\n")
+        return False
+
+    if not build_ret:
+        print("Project build fail.\n")
         return False
 
     # Retrieve Jazzer package for building fuzzer
@@ -329,7 +337,8 @@ def run_static_analysis_jvm(git_repo, basedir):
                               stdout=subprocess.DEVNULL,
                               stderr=subprocess.DEVNULL)
     except subprocess.TimeoutExpired:
-        pass
+        print("Fail to compile Fuzz1.java.\n")
+        return False
 
     # Run the java frontend static analysis
     cmd = [
@@ -343,7 +352,11 @@ def run_static_analysis_jvm(git_repo, basedir):
                               stderr=subprocess.DEVNULL,
                               cwd=os.path.dirname(FUZZ_INTRO_MAIN["jvm"]))
     except subprocess.TimeoutExpired:
-        pass
+        print("Fail to execute java frontend code.\n")
+        return False
+    except subprocess.CalledProcessError:
+        print("Fail to execute java frontend code.\n")
+        return False
 
     # Move data and data.yaml to working directory
     src = os.path.join(os.path.dirname(FUZZ_INTRO_MAIN["jvm"]),
@@ -354,8 +367,10 @@ def run_static_analysis_jvm(git_repo, basedir):
         try:
             shutil.copy(src, dst)
         except:
+            print("Fail to execute java frontend code.\n")
             ret = False
     else:
+        print("Fail to execute java frontend code.\n")
         ret = False
 
     os.chdir(curr_dir)
@@ -656,13 +671,16 @@ def autofuzz_project_from_github(github_url,
                                          output_json=[],
                                          parallelise=False,
                                          dump_files=False)
+        else:
+            return False
 
     # Check basic fuzzer
     res = oss_fuzz_manager.copy_and_build_project(
         oss_fuzz_base_project.project_folder,
         OSS_FUZZ_BASE,
         log_dir=base_oss_fuzz_project_dir)
-    print(res)
+    if not res:
+        return False
 
     # Generate all possible targets
     if possible_targets is None:
