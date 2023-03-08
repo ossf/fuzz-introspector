@@ -325,7 +325,7 @@ def run_static_analysis_jvm(git_repo, basedir):
 
     # Compile and package fuzzer to jar file
     cmd = [
-        "javac -cp jazzer_standalone.jar:%s ../Fuzz1.java" %
+        "javac -cp jazzer_standalone.jar:commons-lang3.jar:%s ../Fuzz1.java" %
         ":".join(jarfiles), "jar cvf ../Fuzz1.jar ../Fuzz1.class"
     ]
     try:
