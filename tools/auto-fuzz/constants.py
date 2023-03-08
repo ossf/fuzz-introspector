@@ -25,6 +25,8 @@ MAVEN_PATH = "apache-maven-3.6.3/bin"
 GRADLE_HOME = "gradle-7.4.2"
 GRADLE_PATH = f"{GRADLE_HOME}/bin"
 
+SEARCH_SUBCLASS_FOR_OBJECT_CREATION = False
+
 git_repos = {
     'python': [
         # 'https://github.com/davidhalter/parso',
