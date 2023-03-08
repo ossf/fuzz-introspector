@@ -359,13 +359,17 @@ def run_static_analysis_jvm(git_repo, basedir):
         return False
 
     # Move data and data.yaml to working directory
-    src = os.path.join(os.path.dirname(FUZZ_INTRO_MAIN["jvm"]),
-                       "fuzzerLogFile-Fuzz1.data.yaml")
-    dst = os.path.join(basedir, "work", "fuzzerLogFile-Fuzz1.data.yaml")
-    if os.path.isfile(src):
+    data_src = os.path.join(os.path.dirname(FUZZ_INTRO_MAIN["jvm"]),
+                            "fuzzerLogFile-Fuzz1.data")
+    yaml_src = os.path.join(os.path.dirname(FUZZ_INTRO_MAIN["jvm"]),
+                            "fuzzerLogFile-Fuzz1.data.yaml")
+    data_dst = os.path.join(basedir, "work", "fuzzerLogFile-Fuzz1.data")
+    yaml_dst = os.path.join(basedir, "work", "fuzzerLogFile-Fuzz1.data.yaml")
+    if os.path.isfile(data_src) and os.path.isfile(yaml_src):
         ret = True
         try:
-            shutil.copy(src, dst)
+            shutil.copy(data_src, data_dst)
+            shutil.copy(yaml_src, yaml_dst)
         except:
             print("Fail to execute java frontend code.\n")
             ret = False
