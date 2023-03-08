@@ -314,8 +314,10 @@ def _search_factory_method(classname,
             continue
 
         # Create possible factory method invoking statements with constructor or static factory
-        for creation in _handle_object_creation(func_class, init_dict,
-                                                possible_target, max_target,
+        for creation in _handle_object_creation(func_class,
+                                                init_dict,
+                                                possible_target,
+                                                max_target,
                                                 class_object=class_object):
             if creation and len(result_list) > max_target:
                 return result_list
