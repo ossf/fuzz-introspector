@@ -25,6 +25,12 @@ MAVEN_PATH = "apache-maven-3.6.3/bin"
 GRADLE_HOME = "gradle-7.4.2"
 GRADLE_PATH = f"{GRADLE_HOME}/bin"
 
+# This is an user-controlled optios. If this is set to True, it will always
+# search for all subclasses of a target class when the auto-fuzz generation
+# handles object creation of the target class. Otherwise, the searching of
+# subclasses will only happen when the the target class is not concrete.
+SEARCH_SUBCLASS_FOR_OBJECT_CREATION = False
+
 git_repos = {
     'python': [
         # 'https://github.com/davidhalter/parso',

@@ -14,6 +14,7 @@
 
 import os
 import yaml
+import constants
 import itertools
 
 from typing import List, Set, Any
@@ -489,9 +490,11 @@ def _handle_object_creation(classname,
                 arg_list = []
                 class_list = []
 
+                concrete = False
                 if func_elem['JavaMethodInfo']['classConcrete']:
                     class_list.append(func_elem)
-                else:
+                    concrete = True
+                if not concrete or constants.SEARCH_SUBCLASS_FOR_OBJECT_CREATION:
                     class_list.extend(
                         _search_concrete_subclass(classname, init_dict,
                                                   handled))
