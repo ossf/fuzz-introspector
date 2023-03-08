@@ -107,7 +107,7 @@ class FuzzTarget:
 
 def _is_enum_class(init_dict, classname):
     """Check if the method's class is an enum type"""
-    if classname in init_dict.keys():
+    if init_dict and classname in init_dict.keys():
         for func_elem in init_dict[classname]:
             if func_elem['JavaMethodInfo']['classEnum']:
                 return True
@@ -381,7 +381,7 @@ def _search_concrete_subclass(classname,
                               handled=[],
                               result_list=[]):
     """Search concrete subclass for the target classname"""
-    if classname in init_dict.keys():
+    if init_dict and classname in init_dict.keys():
         for func_elem in init_dict[classname]:
             java_info = func_elem['JavaMethodInfo']
 
@@ -473,7 +473,7 @@ def _handle_object_creation(classname,
     use it as reference, otherwise the default empty constructor
     are used.
     """
-    if classname in init_dict.keys():
+    if init_dict and classname in init_dict.keys():
         if class_object and init_dict[classname]:
             # Use defined class object
             func_elem = init_dict[classname][0]
