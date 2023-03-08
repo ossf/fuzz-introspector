@@ -309,6 +309,12 @@ def run_static_analysis_jvm(git_repo, basedir):
     with tarfile.open("./jazzer.tar.gz") as f:
         f.extractall("./")
 
+    # Retrieve Apache Common Lang3 package
+    apache_url = "https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar"
+    response = requests.get(apache_url)
+    with open("./commons-lang3.jar", "wb") as f:
+        f.write(response.content)
+
     # Retrieve path of all jar files
     jarfiles.append(os.path.abspath("../Fuzz1.jar"))
     for root, _, files in os.walk(projectdir):
