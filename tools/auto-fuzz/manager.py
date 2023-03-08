@@ -235,6 +235,8 @@ def _maven_build_project(basedir, projectdir):
     except subprocess.CalledProcessError:
         return False
 
+    return True
+
 
 def _gradle_build_project(basedir, projectdir):
     """Helper method to build project using maven"""
