@@ -310,6 +310,8 @@ def run_static_analysis_jvm(git_repo, basedir):
         f.extractall("./")
 
     # Retrieve Apache Common Lang3 package
+    # This library provides method to translate primitive type arrays to
+    # their respective class object arrays to avoid compilation error.
     apache_url = "https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar"
     response = requests.get(apache_url)
     with open("./commons-lang3.jar", "wb") as f:

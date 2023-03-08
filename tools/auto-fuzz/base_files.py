@@ -159,6 +159,8 @@ do
 done
 
 # Retrieve apache-common-lang3 library
+# This library provides method to translate primitive type arrays to
+# their respective class object arrays to avoid compilation error.
 wget -P $OUT/ https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar
 
 BUILD_CLASSPATH=$BUILD_CLASSPATH:$JAZZER_API_PATH:$OUT/commons-lang3-3.12.0.jar
