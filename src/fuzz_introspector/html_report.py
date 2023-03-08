@@ -621,11 +621,9 @@ def get_body_script_tags() -> str:
     return html_script_tags
 
 
-def create_html_report(profiles: List[fuzzer_profile.FuzzerProfile],
-                       proj_profile: project_profile.MergedProjectProfile,
-                       analyses_to_run: List[str], output_json: List[str],
-                       coverage_url: str, basefolder: str, report_name: str,
-                       dump_files: bool) -> None:
+def create_html_report(introspection_proj: analysis.IntrospectionProject,
+                       analyses_to_run, output_json, report_name,
+                       dump_files) -> None:
     """
     Logs a complete report. This is the current main place for looking at
     data produced by fuzz introspector.
@@ -633,6 +631,12 @@ def create_html_report(profiles: List[fuzzer_profile.FuzzerProfile],
     mapping that requires separate json report generation to avoid
     reruning those analysing process.
     """
+    profiles = introspection_proj.profiles
+    proj_profile = introspection_proj.proj_profile
+    coverage_url = introspection_proj.proj_profile.coverage_url
+    basefolder = introspection_proj.proj_profile.basefolder
+
+    # Main logic
     tables: List[str] = list()
     table_of_contents: html_helpers.HtmlTableOfContents = html_helpers.HtmlTableOfContents(
     )
