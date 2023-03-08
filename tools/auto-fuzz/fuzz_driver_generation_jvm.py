@@ -316,7 +316,7 @@ def _search_factory_method(classname,
         # Create possible factory method invoking statements with constructor or static factory
         for creation in _handle_object_creation(func_class, init_dict,
                                                 possible_target, max_target,
-                                                class_object):
+                                                class_object=class_object):
             if creation and len(result_list) > max_target:
                 return result_list
 
@@ -879,7 +879,7 @@ def _generate_heuristic_6(yaml_dict, possible_targets, max_target):
             _search_static_factory_method(func_class, static_method_list,
                                           possible_target, max_target))
         object_creation_list.append(
-            _handle_object_creation(func_class, init_dict, possile_target,
+            _handle_object_creation(func_class, init_dict, possible_target,
                                     max_target))
 
         for object_creation in object_creation_list:
@@ -975,7 +975,7 @@ def _generate_heuristic_7(yaml_dict, possible_targets, max_target):
             _search_static_factory_method(func_class, static_method_list,
                                           possible_target, max_target))
         object_creation_list.append(
-            _handle_object_creation(func_class, init_dict, possile_target,
+            _handle_object_creation(func_class, init_dict, possible_target,
                                     max_target))
 
         for object_creation in object_creation_list:
@@ -991,7 +991,7 @@ def _generate_heuristic_7(yaml_dict, possible_targets, max_target):
             for arg_tuple in arg_tuple_list:
                 fuzzer_source_code += "  %s arg%d = %s;\n" % (
                     arg_tuple[0], arg_counter, arg_tuple[1])
-                possible_target.variables_to_add("arg%d" % arg_counter)
+                possible_target.variables_to_add.append("arg%d" % arg_counter)
                 arg_counter += 1
 
             # Invoke static or object method with fixed parameters (from random data)
@@ -1079,7 +1079,7 @@ def _generate_heuristic_8(yaml_dict, possible_targets, max_target):
             _search_static_factory_method(func_class, static_method_list,
                                           possible_target, max_target))
         object_creation_list.append(
-            _handle_object_creation(func_class, init_dict, possile_target,
+            _handle_object_creation(func_class, init_dict, possible_target,
                                     max_target))
 
         for object_creation in object_creation_list:
@@ -1163,7 +1163,7 @@ def _generate_heuristic_9(yaml_dict, possible_targets, max_target):
         object_creation_list.append(
             _handle_object_creation(func_class,
                                     init_dict,
-                                    possile_target,
+                                    possible_target,
                                     max_target,
                                     class_object=True))
 
