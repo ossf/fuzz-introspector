@@ -1207,6 +1207,7 @@ def generate_possible_targets(proj_folder, max_target):
     _generate_heuristic_3(yaml_dict, possible_targets, max_target)
     _generate_heuristic_4(yaml_dict, possible_targets, max_target)
     _generate_heuristic_6(yaml_dict, possible_targets, max_target)
+    _generate_heuristic_7(yaml_dict, possible_targets, max_target)
     _generate_heuristic_8(yaml_dict, possible_targets, max_target)
     _generate_heuristic_9(yaml_dict, possible_targets, max_target)
 
