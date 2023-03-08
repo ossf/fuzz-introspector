@@ -491,10 +491,10 @@ def _handle_object_creation(classname,
 
                 if func_elem['JavaMethodInfo']['classConcrete']:
                     class_list.append(func_elem)
-                else:
-                    class_list.extend(
-                        _search_concrete_subclass(classname, init_dict,
-                                                  handled))
+
+                class_list.extend(
+                    _search_concrete_subclass(classname, init_dict,
+                                              handled))
                 if len(class_list) == 0:
                     return "new " + classname.replace("$", ".") + "()"
 
