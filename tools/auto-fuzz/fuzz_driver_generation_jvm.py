@@ -324,9 +324,11 @@ def _search_factory_method(classname,
             continue
 
         # Create possible factory method invoking statements with constructor or static factory
-        for creation in _handle_object_creation(func_class, init_dict,
-                                                possible_target, max_target,
-                                                class_object):
+        for creation in _handle_object_creation(func_class,
+                                                init_dict,
+                                                possible_target,
+                                                max_target,
+                                                class_object=class_object):
             if creation and len(result_list) > max_target:
                 return result_list
 
@@ -434,7 +436,7 @@ def _handle_enum_choice(init_dict, enum_name):
 def _handle_class_object_list(func_elem, possible_target):
     """
     Create an array of all public static final class object
-    from the given class elements to object preconfigured 
+    from the given class elements to object preconfigured
     or default object
     """
     result = None
@@ -889,7 +891,7 @@ def _generate_heuristic_6(yaml_dict, possible_targets, max_target):
             _search_static_factory_method(func_class, static_method_list,
                                           possible_target, max_target))
         object_creation_list.append(
-            _handle_object_creation(func_class, init_dict, possile_target,
+            _handle_object_creation(func_class, init_dict, possible_target,
                                     max_target))
 
         for object_creation in object_creation_list:
@@ -905,6 +907,121 @@ def _generate_heuristic_6(yaml_dict, possible_targets, max_target):
                                                    func_class, func_name):
                 fuzzer_source_code += "  %s;\n" % (settings)
             fuzzer_source_code += "  obj.%s($VARIABLE$);\n" % (func_name)
+            if len(cloned_possible_target.exceptions_to_handle) > 0:
+                fuzzer_source_code = "  try {\n" + fuzzer_source_code
+                fuzzer_source_code += "  }\n"
+                counter = 1
+                for exc in cloned_possible_target.exceptions_to_handle:
+                    fuzzer_source_code += "  catch (%s e%d) {}\n" % (exc,
+                                                                     counter)
+                    counter += 1
+            cloned_possible_target.fuzzer_source_code = fuzzer_source_code
+            if HEURISTIC_NAME not in cloned_possible_target.heuristics_used:
+                cloned_possible_target.heuristics_used.append(HEURISTIC_NAME)
+
+            possible_targets.append(cloned_possible_target)
+
+
+def _generate_heuristic_7(yaml_dict, possible_targets, max_target):
+    """Heuristic 7.
+    Creates a FuzzTarget for each method that satisfy all:
+        - public static or object method which are not abstract or found in JDK library
+        - have between 0-20 arguments
+        - do not have "test" in the function name
+        - have return value
+
+    This heuristic adds in assert logic to confirm the consistency of method call. That
+    is using the same set of parameters to invoke a method will always return the same
+    result.
+
+    Will also add proper exception handling based on the exception list
+    provided by the frontend code.
+    """
+    HEURISTIC_NAME = "jvm-autofuzz-heuristics-7"
+
+    init_dict, method_list, instance_method_list, static_method_list = _extract_method(
+        yaml_dict)
+    for func_elem in method_list + static_method_list:
+        if len(possible_targets) > max_target:
+            return
+
+        # Skip method with no return value
+        func_return_type = func_elem['returnType'].replace('$', '.')
+        if not func_return_type:
+            continue
+
+        # Distinguish static or object method
+        if func_elem in method_list:
+            static = False
+        else:
+            static = True
+
+        # Initialize base possible_target object
+        possible_target = FuzzTarget(func_elem=func_elem)
+        func_name = possible_target.function_target
+        func_class = possible_target.function_class
+
+        # Store function parameter list
+        # Skip this method if it does not take at least one
+        # enum object as parameter
+        arg_tuple_list = []
+        for argType in func_elem['argTypes']:
+            arg_list = _handle_argument(argType.replace('$', '.'),
+                                        init_dict,
+                                        possible_target,
+                                        max_target,
+                                        enum_object=True)
+            if arg_list:
+                arg_tuple_list.append((argType.replace('$', '.'), arg_list[0]))
+
+        if len(arg_tuple_list) != len(func_elem['argTypes']):
+            continue
+
+        # Retrieve list of factory method for the target object
+        object_creation_list = _search_factory_method(func_class,
+                                                      static_method_list,
+                                                      instance_method_list,
+                                                      possible_target,
+                                                      init_dict, max_target)
+        object_creation_list.append(
+            _search_static_factory_method(func_class, static_method_list,
+                                          possible_target, max_target))
+        object_creation_list.append(
+            _handle_object_creation(func_class, init_dict, possible_target,
+                                    max_target))
+
+        for object_creation in object_creation_list:
+            # Create possible target for all possible factory method
+            # Clone the base target object
+            cloned_possible_target = FuzzTarget(orig=possible_target)
+
+            # Create the actual source
+            fuzzer_source_code = "  // Heuristic name: %s\n" % (HEURISTIC_NAME)
+
+            # Create fix parameters from random data
+            arg_counter = 1
+            for arg_tuple in arg_tuple_list:
+                fuzzer_source_code += "  %s arg%d = %s;\n" % (
+                    arg_tuple[0], arg_counter, arg_tuple[1])
+                possible_target.variables_to_add.append("arg%d" % arg_counter)
+                arg_counter += 1
+
+            # Invoke static or object method with fixed parameters (from random data)
+            # and assert for consistency
+            if static:
+                fuzzer_source_code += "  %s result1 = %s.%s($VARIABLE$);\n" % (
+                    func_return_type, func_class, func_name)
+                fuzzer_source_code += "  %s result2 = %s.%s($VARIABLE$);\n" % (
+                    func_return_type, func_class, func_name)
+            else:
+                fuzzer_source_code += "  %s obj = %s;\n" % (func_class,
+                                                            object_creation)
+                fuzzer_source_code += "  %s result1 = obj.%s($VARIABLE$);\n" % (
+                    func_return_type, func_name)
+                fuzzer_source_code += "  %s result2 = obj.%s($VARIABLE$);\n" % (
+                    func_return_type, func_name)
+            fuzzer_source_code += '  assert result1.equals(result2) : "Result not match.";\n'
+
             if len(cloned_possible_target.exceptions_to_handle) > 0:
                 fuzzer_source_code = "  try {\n" + fuzzer_source_code
                 fuzzer_source_code += "  }\n"
@@ -974,7 +1091,7 @@ def _generate_heuristic_8(yaml_dict, possible_targets, max_target):
             _search_static_factory_method(func_class, static_method_list,
                                           possible_target, max_target))
         object_creation_list.append(
-            _handle_object_creation(func_class, init_dict, possile_target,
+            _handle_object_creation(func_class, init_dict, possible_target,
                                     max_target))
 
         for object_creation in object_creation_list:
@@ -1058,7 +1175,7 @@ def _generate_heuristic_9(yaml_dict, possible_targets, max_target):
         object_creation_list.append(
             _handle_object_creation(func_class,
                                     init_dict,
-                                    possile_target,
+                                    possible_target,
                                     max_target,
                                     class_object=True))
 
@@ -1102,6 +1219,7 @@ def generate_possible_targets(proj_folder, max_target):
     _generate_heuristic_3(yaml_dict, possible_targets, max_target)
     _generate_heuristic_4(yaml_dict, possible_targets, max_target)
     _generate_heuristic_6(yaml_dict, possible_targets, max_target)
+    _generate_heuristic_7(yaml_dict, possible_targets, max_target)
     _generate_heuristic_8(yaml_dict, possible_targets, max_target)
     _generate_heuristic_9(yaml_dict, possible_targets, max_target)
 
