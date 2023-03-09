@@ -469,7 +469,7 @@ def _handle_class_field_list(func_elem, possible_target):
     result = None
     field_list = []
     classname = func_elem['functionSourceFile'].replace('$', '.')
-    for field in func_elem['JavaMethodInfo']['classField']:
+    for item in func_elem['JavaMethodInfo']['classFields']:
         # Check if the function element match the requirement
         if not item['static']:
             continue
@@ -1296,7 +1296,7 @@ def _generate_heuristic_10(yaml_dict, possible_targets, max_target):
                                     init_dict,
                                     possible_target,
                                     max_target,
-                                    class_field=True
+                                    class_field=True,
                                     class_object=True))
 
         for object_creation in object_creation_list:
