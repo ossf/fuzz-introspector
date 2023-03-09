@@ -108,7 +108,7 @@ class FuzzTarget:
 
 def _is_enum_class(init_dict, classname):
     """Check if the method's class is an enum type"""
-    if classname in init_dict.keys():
+    if init_dict and classname in init_dict.keys():
         for func_elem in init_dict[classname]:
             if func_elem['JavaMethodInfo']['classEnum']:
                 return True
@@ -170,24 +170,34 @@ def _handle_argument(argType,
     """Generate data creation statement for given argument type"""
     if argType == "int" or argType == "java.lang.Integer":
         return ["data.consumeInt(0,100)"]
-    elif argType == "int[]" or argType == "java.lang.Integer[]":
+    elif argType == "int[]":
         return ["data.consumeInts(100)"]
+    elif argType == "java.lang.Integer[]":
+        return ["ArrayUtils.toObject(data.consumeInts(100))"]
     elif argType == "boolean" or argType == "java.lang.Boolean":
         return ["data.consumeBoolean()"]
-    elif argType == "boolean[]" or argType == "java.lang.Boolean[]":
+    elif argType == "boolean[]":
         return ["data.consumeBooleans(100)"]
+    elif argType == "java.lang.Boolean[]":
+        return ["ArrayUtils.toObject(data.consumeBooleans(100))"]
     elif argType == "byte" or argType == "java.lang.Byte":
         return ["data.consumeByte()"]
-    elif argType == "byte[]" or argType == "java.lang.Byte[]":
+    elif argType == "byte[]":
         return ["data.consumeBytes(100)"]
+    elif argType == "java.lang.Byte[]":
+        return ["ArrayUtils.toObject(data.consumeBytes(100))"]
     elif argType == "short" or argType == "java.lang.Short":
         return ["data.consumeShort()"]
-    elif argType == "short[]" or argType == "java.lang.Short[]":
+    elif argType == "short[]":
         return ["data.consumeShorts(100)"]
+    elif argType == "java.lang.Short[]":
+        return ["ArrayUtils.toObject(data.consumeShorts(100))"]
     elif argType == "long" or argType == "java.lang.Long":
         return ["data.consumeLong()"]
-    elif argType == "long[]" or argType == "java.lang.Long[]":
+    elif argType == "long[]":
         return ["data.consumeLongs(100)"]
+    elif argType == "java.lang.Long[]":
+        return ["ArrayUtils.toObject(data.consumeLongs(100))"]
     elif argType == "float" or argType == "java.lang.Float":
         return ["data.consumeFloat()"]
     elif argType == "char" or argType == "java.lang.Character":
@@ -384,7 +394,7 @@ def _search_concrete_subclass(classname,
                               handled=[],
                               result_list=[]):
     """Search concrete subclass for the target classname"""
-    if classname in init_dict.keys():
+    if init_dict and classname in init_dict.keys():
         for func_elem in init_dict[classname]:
             java_info = func_elem['JavaMethodInfo']
 
@@ -476,7 +486,7 @@ def _handle_object_creation(classname,
     use it as reference, otherwise the default empty constructor
     are used.
     """
-    if classname in init_dict.keys():
+    if init_dict and classname in init_dict.keys():
         if class_object and init_dict[classname]:
             # Use defined class object
             func_elem = init_dict[classname][0]

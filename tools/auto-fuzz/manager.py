@@ -231,9 +231,11 @@ def _maven_build_project(basedir, projectdir):
                               env=env_var,
                               cwd=projectdir)
     except subprocess.TimeoutExpired:
-        pass
+        return False
     except subprocess.CalledProcessError:
-        pass
+        return False
+
+    return True
 
 
 def _gradle_build_project(basedir, projectdir):
@@ -262,9 +264,11 @@ def _gradle_build_project(basedir, projectdir):
                               env=env_var,
                               cwd=projectdir)
     except subprocess.TimeoutExpired:
-        pass
+        return False
     except subprocess.CalledProcessError:
-        pass
+        return False
+
+    return True
 
 
 def run_static_analysis_jvm(git_repo, basedir):
@@ -290,14 +294,18 @@ def run_static_analysis_jvm(git_repo, basedir):
 
     if os.path.exists(os.path.join(projectdir, "pom.xml")):
         # Maven project
-        _maven_build_project(basedir, projectdir)
+        build_ret = _maven_build_project(basedir, projectdir)
     elif os.path.exists(os.path.join(projectdir, "build.gradle")):
         # Gradle project
-        _gradle_build_project(basedir, projectdir)
+        build_ret = _gradle_build_project(basedir, projectdir)
         jarfiles.append(os.path.join(projectdir, "proj.jar"))
     else:
         # Unknown project type
         print("Unknown project type.\n")
+        return False
+
+    if not build_ret:
+        print("Project build fail.\n")
         return False
 
     # Retrieve Jazzer package for building fuzzer
@@ -309,6 +317,14 @@ def run_static_analysis_jvm(git_repo, basedir):
     with tarfile.open("./jazzer.tar.gz") as f:
         f.extractall("./")
 
+    # Retrieve Apache Common Lang3 package
+    # This library provides method to translate primitive type arrays to
+    # their respective class object arrays to avoid compilation error.
+    apache_url = "https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar"
+    response = requests.get(apache_url)
+    with open("./commons-lang3.jar", "wb") as f:
+        f.write(response.content)
+
     # Retrieve path of all jar files
     jarfiles.append(os.path.abspath("../Fuzz1.jar"))
     for root, _, files in os.walk(projectdir):
@@ -319,7 +335,7 @@ def run_static_analysis_jvm(git_repo, basedir):
 
     # Compile and package fuzzer to jar file
     cmd = [
-        "javac -cp jazzer_standalone.jar:%s ../Fuzz1.java" %
+        "javac -cp jazzer_standalone.jar:commons-lang3.jar:%s ../Fuzz1.java" %
         ":".join(jarfiles), "jar cvf ../Fuzz1.jar ../Fuzz1.class"
     ]
     try:
@@ -329,7 +345,8 @@ def run_static_analysis_jvm(git_repo, basedir):
                               stdout=subprocess.DEVNULL,
                               stderr=subprocess.DEVNULL)
     except subprocess.TimeoutExpired:
-        pass
+        print("Fail to compile Fuzz1.java.\n")
+        return False
 
     # Run the java frontend static analysis
     cmd = [
@@ -343,19 +360,29 @@ def run_static_analysis_jvm(git_repo, basedir):
                               stderr=subprocess.DEVNULL,
                               cwd=os.path.dirname(FUZZ_INTRO_MAIN["jvm"]))
     except subprocess.TimeoutExpired:
-        pass
+        print("Fail to execute java frontend code.\n")
+        return False
+    except subprocess.CalledProcessError:
+        print("Fail to execute java frontend code.\n")
+        return False
 
     # Move data and data.yaml to working directory
-    src = os.path.join(os.path.dirname(FUZZ_INTRO_MAIN["jvm"]),
-                       "fuzzerLogFile-Fuzz1.data.yaml")
-    dst = os.path.join(basedir, "work", "fuzzerLogFile-Fuzz1.data.yaml")
-    if os.path.isfile(src):
+    data_src = os.path.join(os.path.dirname(FUZZ_INTRO_MAIN["jvm"]),
+                            "fuzzerLogFile-Fuzz1.data")
+    yaml_src = os.path.join(os.path.dirname(FUZZ_INTRO_MAIN["jvm"]),
+                            "fuzzerLogFile-Fuzz1.data.yaml")
+    data_dst = os.path.join(basedir, "work", "fuzzerLogFile-Fuzz1.data")
+    yaml_dst = os.path.join(basedir, "work", "fuzzerLogFile-Fuzz1.data.yaml")
+    if os.path.isfile(data_src) and os.path.isfile(yaml_src):
         ret = True
         try:
-            shutil.copy(src, dst)
+            shutil.copy(data_src, data_dst)
+            shutil.copy(yaml_src, yaml_dst)
         except:
+            print("Fail to execute java frontend code.\n")
             ret = False
     else:
+        print("Fail to execute java frontend code.\n")
         ret = False
 
     os.chdir(curr_dir)
@@ -656,13 +683,16 @@ def autofuzz_project_from_github(github_url,
                                          output_json=[],
                                          parallelise=False,
                                          dump_files=False)
+        else:
+            return False
 
     # Check basic fuzzer
     res = oss_fuzz_manager.copy_and_build_project(
         oss_fuzz_base_project.project_folder,
         OSS_FUZZ_BASE,
         log_dir=base_oss_fuzz_project_dir)
-    print(res)
+    if not res:
+        return False
 
     # Generate all possible targets
     if possible_targets is None:
