@@ -28,7 +28,7 @@ class FuzzTarget:
     variables_to_add: List[Any]
     imports_to_add: Set[str]
     heuristics_used: List[str]
-    class_object_list: List[str]
+    class_field_list: List[str]
 
     def __init__(self, orig=None, func_elem=None):
         self.function_target = ""
@@ -38,7 +38,7 @@ class FuzzTarget:
         self.variables_to_add = []
         self.imports_to_add = set()
         self.heuristics_used = []
-        self.class_object_list = []
+        self.class_field_list = []
         if orig:
             self.function_target = orig.function_target
             self.function_class = orig.function_class
@@ -47,7 +47,7 @@ class FuzzTarget:
             self.variables_to_add = orig.variables_to_add
             self.imports_to_add = orig.imports_to_add
             self.heuristics_used = orig.heuristics_used
-            self.class_object_list = orig.class_object_list
+            self.class_field_list = orig.class_field_list
         elif func_elem:
             # Method name in .data.yaml for jvm: [className].methodName(methodParameterList)
             self.function_target = func_elem['functionName'].split(
@@ -98,7 +98,7 @@ class FuzzTarget:
                     content += code
                 elif "/*STATIC_OBJECT_CHOICE*/" in line:
                     # Create an array of possible static objects for random choice
-                    for item in self.class_object_list:
+                    for item in self.class_field_list:
                         content += item
                 else:
                     # Copy other lines from the base fuzzer
@@ -166,6 +166,7 @@ def _handle_argument(argType,
                      obj_creation=True,
                      handled=[],
                      enum_object=False,
+                     class_field=False,
                      class_object=False):
     """Generate data creation statement for given argument type"""
     if argType == "int" or argType == "java.lang.Integer":
@@ -210,15 +211,24 @@ def _handle_argument(argType,
         if result:
             return result
 
+    if class_object and argType == "java.lang.Class":
+        result = _handle_class_object(init_dict)
+        if result:
+            return result
+
     if obj_creation:
         return _handle_object_creation(argType, init_dict, possible_target,
-                                       max_target, handled, class_object)
+                                       max_target, handled, class_field,
+                                       class_object)
     else:
         return []
 
 
-def _search_static_factory_method(classname, static_method_list,
-                                  possible_target, max_target):
+def _search_static_factory_method(classname,
+                                  static_method_list,
+                                  possible_target,
+                                  max_target,
+                                  class_object=False):
     """
     Search for all factory methods of the target class that statisfy all:
         - Public
@@ -226,7 +236,7 @@ def _search_static_factory_method(classname, static_method_list,
         - Argument less than 20
         - No "test" in method name
         - Return an object of the target class
-        - Only primitive arguments
+        - Only primitive arguments or class object if class_object set to True
     """
     result_list = []
     for func_elem in static_method_list:
@@ -248,8 +258,12 @@ def _search_static_factory_method(classname, static_method_list,
         arg_list = []
         for argType in func_elem['argTypes']:
             arg_list.extend(
-                _handle_argument(argType.replace('$', '.'), None, None,
-                                 max_target, False))
+                _handle_argument(argType.replace('$', '.'),
+                                 None,
+                                 None,
+                                 max_target,
+                                 False,
+                                 class_object=class_object))
 
         # Error in some parameters
         if len(arg_list) != len(func_elem['argTypes']):
@@ -283,6 +297,7 @@ def _search_factory_method(classname,
                            possible_target,
                            init_dict,
                            max_target,
+                           class_field=False,
                            class_object=False):
     """
     Search for all factory methods of the target class that statisfy all:
@@ -328,6 +343,7 @@ def _search_factory_method(classname,
                                                 init_dict,
                                                 possible_target,
                                                 max_target,
+                                                class_field=class_field,
                                                 class_object=class_object):
             if creation and len(result_list) > max_target:
                 return result_list
@@ -433,7 +449,25 @@ def _handle_enum_choice(init_dict, enum_name):
     return []
 
 
-def _handle_class_object_list(func_elem, possible_target):
+def _handle_class_object(init_dict):
+    """
+    Return a list of all class object of the
+    existing classes.
+    """
+    result_list = []
+    if init_dict:
+        for key in init_dict.keys():
+            if not init_dict[key]:
+                continue
+
+            func_elem = init_dict[key][0]
+            classname = func_elem['functionSourceFile'].replace('$', '.')
+            result_list.append(classname + '.class')
+
+    return result_list
+
+
+def _handle_class_field_list(func_elem, possible_target):
     """
     Create an array of all public static final class object
     from the given class elements to object preconfigured
@@ -442,7 +476,7 @@ def _handle_class_object_list(func_elem, possible_target):
     result = None
     field_list = []
     classname = func_elem['functionSourceFile'].replace('$', '.')
-    for field in func_elem['JavaMethodInfo']['classField']:
+    for item in func_elem['JavaMethodInfo']['classFields']:
         # Check if the function element match the requirement
         if not item['static']:
             continue
@@ -462,13 +496,13 @@ def _handle_class_object_list(func_elem, possible_target):
         field_list.append(item['Name'])
 
     if field_list:
-        class_object_array = 'final static ' + classname + '[] '
-        class_object_array += classname.replace('.', '') + '={'
+        class_field_array = 'final static ' + classname + '[] '
+        class_field_array += classname.replace('.', '') + '={'
         for field_name in field_list:
-            class_object_array += classname + '.' + field_name + ','
-        class_object_array += '};'
+            class_field_array += classname + '.' + field_name + ','
+        class_field_array += '};'
 
-        self.class_object_list.append(class_object_array)
+        self.class_field_list.append(class_field_array)
         result = 'data.pickValue(' + classname.replace('.', '') + ')'
 
     return result
@@ -479,6 +513,7 @@ def _handle_object_creation(classname,
                             possible_target,
                             max_target,
                             handled=[],
+                            class_field=False,
                             class_object=False):
     """
     Generate statement for Java object creation of the target class.
@@ -487,13 +522,13 @@ def _handle_object_creation(classname,
     are used.
     """
     if init_dict and classname in init_dict.keys():
-        if class_object and init_dict[classname]:
+        if class_field and init_dict[classname]:
             # Use defined class object
             func_elem = init_dict[classname][0]
-            class_object_choice = _handle_class_object_list(
+            class_field_choice = _handle_class_field_list(
                 func_elem, possible_target)
-            if class_object_choice:
-                return [class_object_choice]
+            if class_field_choice:
+                return [class_field_choice]
 
         result_list = []
         for func_elem in init_dict[classname]:
@@ -521,8 +556,12 @@ def _handle_object_creation(classname,
                     handled.append(elem)
                     for argType in elem['argTypes']:
                         arg = _handle_argument(argType.replace('$', '.'),
-                                               init_dict, possible_target,
-                                               max_target, True, handled)
+                                               init_dict,
+                                               possible_target,
+                                               max_target,
+                                               True,
+                                               handled,
+                                               class_object=class_object)
                         if arg:
                             arg_list.append(arg)
                     if len(arg_list) != len(elem['argTypes']):
@@ -1154,6 +1193,94 @@ def _generate_heuristic_9(yaml_dict, possible_targets, max_target):
                                         possible_target,
                                         max_target,
                                         enum_object=True,
+                                        class_field=True)
+            if arg_list:
+                possible_target.variables_to_add.append(arg_list[0])
+
+        if len(possible_target.variables_to_add) != len(func_elem['argTypes']):
+            continue
+
+        # Retrieve list of factory method for the target object
+        object_creation_list = _search_factory_method(func_class,
+                                                      static_method_list,
+                                                      instance_method_list,
+                                                      possible_target,
+                                                      init_dict,
+                                                      max_target,
+                                                      class_field=True)
+        object_creation_list.append(
+            _search_static_factory_method(func_class, static_method_list,
+                                          possible_target, max_target))
+        object_creation_list.append(
+            _handle_object_creation(func_class,
+                                    init_dict,
+                                    possible_target,
+                                    max_target,
+                                    class_field=True))
+
+        for object_creation in object_creation_list:
+            # Create possible target for all possible factory method
+            # Clone the base target object
+            cloned_possible_target = FuzzTarget(orig=possible_target)
+
+            # Create the actual source
+            fuzzer_source_code = "  // Heuristic name: %s\n" % (HEURISTIC_NAME)
+            fuzzer_source_code += "  %s obj = %s;\n" % (func_class,
+                                                        object_creation)
+            fuzzer_source_code += "  obj.%s($VARIABLE$);\n" % (func_name)
+            if len(cloned_possible_target.exceptions_to_handle) > 0:
+                fuzzer_source_code = "  try {\n" + fuzzer_source_code
+                fuzzer_source_code += "  }\n"
+                counter = 1
+                for exc in cloned_possible_target.exceptions_to_handle:
+                    fuzzer_source_code += "  catch (%s e%d) {}\n" % (exc,
+                                                                     counter)
+                    counter += 1
+            cloned_possible_target.fuzzer_source_code = fuzzer_source_code
+            if HEURISTIC_NAME not in cloned_possible_target.heuristics_used:
+                cloned_possible_target.heuristics_used.append(HEURISTIC_NAME)
+
+            possible_targets.append(cloned_possible_target)
+
+
+def _generate_heuristic_10(yaml_dict, possible_targets, max_target):
+    """Heuristic 10.
+    Creates a FuzzTarget for each method that satisfy all:
+        - public object or static method which are not abstract or found in JDK library
+        - have between 0-20 arguments
+        - do not have "test" in the function name
+        - Have at least one arguments required a class object.
+
+    Will also add proper exception handling based on the exception list
+    provided by the frontend code.
+    """
+    HEURISTIC_NAME = "jvm-autofuzz-heuristics-10"
+
+    init_dict, method_list, instance_method_list, static_method_list = _extract_method(
+        yaml_dict)
+    for func_elem in method_list + static_method_list:
+        if len(possible_targets) > max_target:
+            return
+
+        # Skip method without using at least one class object
+        if "java.lang.Class" not in func_elem['argTypes']:
+            continue
+
+        # Initialize base possible_target object
+        possible_target = FuzzTarget(func_elem=func_elem)
+        func_name = possible_target.function_target
+        func_class = possible_target.function_class
+
+        # Store function parameter list
+        # Skip this method if it does not take at least one
+        # enum object as parameter
+        for argType in func_elem['argTypes']:
+            arg_list = _handle_argument(argType.replace('$', '.'),
+                                        init_dict,
+                                        possible_target,
+                                        max_target,
+                                        enum_object=True,
+                                        class_field=True,
                                         class_object=True)
             if arg_list:
                 possible_target.variables_to_add.append(arg_list[0])
@@ -1168,15 +1295,20 @@ def _generate_heuristic_9(yaml_dict, possible_targets, max_target):
                                                       possible_target,
                                                       init_dict,
                                                       max_target,
+                                                      class_field=True,
                                                       class_object=True)
         object_creation_list.append(
-            _search_static_factory_method(func_class, static_method_list,
-                                          possible_target, max_target))
+            _search_static_factory_method(func_class,
+                                          static_method_list,
+                                          possible_target,
+                                          max_target,
+                                          class_object=True))
         object_creation_list.append(
             _handle_object_creation(func_class,
                                     init_dict,
                                     possible_target,
                                     max_target,
+                                    class_field=True,
                                     class_object=True))
 
         for object_creation in object_creation_list:
@@ -1222,5 +1354,6 @@ def generate_possible_targets(proj_folder, max_target):
     _generate_heuristic_7(yaml_dict, possible_targets, max_target)
     _generate_heuristic_8(yaml_dict, possible_targets, max_target)
     _generate_heuristic_9(yaml_dict, possible_targets, max_target)
+    _generate_heuristic_10(yaml_dict, possible_targets, max_target)
 
     return possible_targets
