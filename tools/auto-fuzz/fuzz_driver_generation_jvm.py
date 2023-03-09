@@ -224,8 +224,10 @@ def _handle_argument(argType,
         return []
 
 
-def _search_static_factory_method(classname, static_method_list,
-                                  possible_target, max_target,
+def _search_static_factory_method(classname,
+                                  static_method_list,
+                                  possible_target,
+                                  max_target,
                                   class_object=False):
     """
     Search for all factory methods of the target class that statisfy all:
@@ -256,8 +258,12 @@ def _search_static_factory_method(classname, static_method_list,
         arg_list = []
         for argType in func_elem['argTypes']:
             arg_list.extend(
-                _handle_argument(argType.replace('$', '.'), None, None,
-                                 max_target, False, class_object=class_object))
+                _handle_argument(argType.replace('$', '.'),
+                                 None,
+                                 None,
+                                 max_target,
+                                 False,
+                                 class_object=class_object))
 
         # Error in some parameters
         if len(arg_list) != len(func_elem['argTypes']):
@@ -460,6 +466,7 @@ def _handle_class_object(init_dict):
 
     return result_list
 
+
 def _handle_class_field_list(func_elem, possible_target):
     """
     Create an array of all public static final class object
@@ -549,8 +556,11 @@ def _handle_object_creation(classname,
                     handled.append(elem)
                     for argType in elem['argTypes']:
                         arg = _handle_argument(argType.replace('$', '.'),
-                                               init_dict, possible_target,
-                                               max_target, True, handled,
+                                               init_dict,
+                                               possible_target,
+                                               max_target,
+                                               True,
+                                               handled,
                                                class_object=class_object)
                         if arg:
                             arg_list.append(arg)
@@ -1288,8 +1298,10 @@ def _generate_heuristic_10(yaml_dict, possible_targets, max_target):
                                                       class_field=True,
                                                       class_object=True)
         object_creation_list.append(
-            _search_static_factory_method(func_class, static_method_list,
-                                          possible_target, max_target,
+            _search_static_factory_method(func_class,
+                                          static_method_list,
+                                          possible_target,
+                                          max_target,
                                           class_object=True))
         object_creation_list.append(
             _handle_object_creation(func_class,
