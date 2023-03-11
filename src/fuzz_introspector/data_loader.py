@@ -90,10 +90,10 @@ def load_all_profiles(
         for k, v in return_dict.items():
             profiles.append(v)
     else:
-        return_dict: Dict[Any, Any] = dict()
+        return_dict_gen: Dict[Any, Any] = dict()
         for data_file in data_files:
-            _load_profile(data_file, language, return_dict)
-        for k, v in return_dict.items():
+            _load_profile(data_file, language, return_dict_gen)
+        for k, v in return_dict_gen.items():
             profiles.append(v)
 
     return profiles
