@@ -16,10 +16,11 @@
 import os
 import json
 import logging
-import threading
-import queue
+import multiprocessing
 
 from typing import (
+    Any,
+    Dict,
     List,
     Optional,
 )
@@ -57,11 +58,11 @@ def read_fuzzer_data_file_to_profile(
     return profile
 
 
-def _load_profile(data_file: str, language: str, profiles: queue.Queue):
+def _load_profile(data_file: str, language: str, manager):
     """Internal function used for multithreaded profile loading"""
     profile = read_fuzzer_data_file_to_profile(data_file, language)
     if profile is not None:
-        profiles.put(profile)
+        manager[data_file] = profile
 
 
 def load_all_profiles(
@@ -73,24 +74,27 @@ def load_all_profiles(
     data_files = utils.get_all_files_in_tree_with_regex(
         target_folder, "fuzzerLogFile.*\.data$")
     logger.info(f" - found {len(data_files)} profiles to load")
-    thread_safe_queue: queue.Queue = queue.Queue()
     if parallelise:
-        all_threads = []
+        manager = multiprocessing.Manager()
+        return_dict = manager.dict()
+        jobs = []
         for data_file in data_files:
-            x = threading.Thread(target=_load_profile,
-                                 args=(data_file, language, thread_safe_queue))
-            x.start()
-            all_threads.append(x)
+            p = multiprocessing.Process(target=_load_profile,
+                                        args=(data_file, language,
+                                              return_dict))
+            jobs.append(p)
+            p.start()
+        for proc in jobs:
+            proc.join()
 
-        for thread in all_threads:
-            thread.join()
-
+        for k, v in return_dict.items():
+            profiles.append(v)
     else:
+        return_dict_gen: Dict[Any, Any] = dict()
         for data_file in data_files:
-            _load_profile(data_file, language, thread_safe_queue)
-
-    while not thread_safe_queue.empty():
-        profiles.append(thread_safe_queue.get())
+            _load_profile(data_file, language, return_dict_gen)
+        for k, v in return_dict_gen.items():
+            profiles.append(v)
 
     return profiles
 
