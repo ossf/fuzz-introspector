@@ -141,29 +141,3 @@ def get_all_reports(project_names: List[str],
                 continue
 
             yield (project, date_as_str, introspector_project)
-
-
-def analyse_all_projects(project_names: List[str], days_to_analyse,
-                         interval_size):
-    """Runs the given introspector analysis on all of the projects in the
-    project_names list.
-    """
-    report_generator = get_all_reports(project_names, days_to_analyse,
-                                       interval_size)
-    complexities = []
-    for project, date_as_str, introspector_project in report_generator:
-        #print("%s -- %s -- %s"%(project, date_as_str, introspector_report.)
-        complexities.append(
-            (project, introspector_project.proj_profile.reached_complexity,
-             len(introspector_project.proj_profile.
-                 get_all_runtime_covered_functions()), date_as_str))
-    print("Project: %s" % (project))
-    for complexity in complexities:
-        print("- %s" % (str(complexity)))
-    return
-
-
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
-    projects_to_analyse = ['htslib', 'random-proj']
-    analyse_all_projects(projects_to_analyse, 10, 3)
