@@ -19,6 +19,8 @@ import logging
 import multiprocessing
 
 from typing import (
+    Any,
+    Dict,
     List,
     Optional,
 )
@@ -88,7 +90,7 @@ def load_all_profiles(
         for k, v in return_dict.items():
             profiles.append(v)
     else:
-        return_dict = dict()
+        return_dict: Dict[Any, Any] = dict()
         for data_file in data_files:
             _load_profile(data_file, language, return_dict)
         for k, v in return_dict.items():
