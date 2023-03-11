@@ -25,7 +25,7 @@ def print_function_details(project_name, functions_to_analyse):
     for function_name in functions_to_analyse:
         if function_name not in all_functions:
             print(f"Could not find {function_name} in the project")
-            return
+            continue
 
         function_profile = all_functions[function_name]
         reached_by_fuzzer_count = len(function_profile.reached_by_fuzzers)
