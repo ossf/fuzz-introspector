@@ -151,7 +151,7 @@ def _handle_import(func_elem):
 
     # argTypes
     for argType in func_elem['argTypes']:
-        import_set.add(_determine_import_statement(argType.replace('$', '.')))
+        import_set.add(_determine_import_statement(argType.split('$')[0]))
 
     # exceptions
     for exception in func_elem['JavaMethodInfo']['exceptions']:
