@@ -373,7 +373,8 @@ def _search_factory_method(classname,
     return result_list
 
 
-def _search_setting_method(method_list, target_class_name, target_method_name):
+def _search_setting_method(method_list, target_class_name, target_method_name,
+                           possible_target):
     """
     Search for all possible non-static setting methods for the target method.
     Assume all setting methods are methods belongs to the same class of the
@@ -943,7 +944,8 @@ def _generate_heuristic_6(yaml_dict, possible_targets, max_target):
             fuzzer_source_code += "  %s obj = %s;\n" % (func_class,
                                                         object_creation)
             for settings in _search_setting_method(instance_method_list,
-                                                   func_class, func_name):
+                                                   func_class, func_name,
+                                                   possible_target):
                 fuzzer_source_code += "  %s;\n" % (settings)
             fuzzer_source_code += "  obj.%s($VARIABLE$);\n" % (func_name)
             if len(cloned_possible_target.exceptions_to_handle) > 0:
