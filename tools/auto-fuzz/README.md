@@ -33,7 +33,7 @@ cd ../../../tools/auto-fuzz/
 
 # Run a small experiment (it's set to being small by default)
 # Currently, only java or python supported for the language option
-python3 ./manager.py <language>
+python3 ./manager.py --language=<language> --targets=constants
 
 # Once it's finished, let's inspect the results.
 # Identify the best targets per project
