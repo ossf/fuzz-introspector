@@ -214,8 +214,8 @@ def _ant_build_project(basedir, projectdir):
 
     # Set environment variable
     env_var = os.environ.copy()
-    env_var['PATH'] = os.path.join(
-        basedir, constants.ANT_PATH) + ":" + env_var['PATH']
+    env_var['PATH'] = os.path.join(basedir,
+                                   constants.ANT_PATH) + ":" + env_var['PATH']
 
     # Build project with maven
     cmd = ["ant"]
@@ -371,7 +371,8 @@ def run_static_analysis_jvm(git_repo, basedir):
             if "target" in root:
                 for file in files:
                     if file.endswith(".jar"):
-                        jarfiles.append(os.path.abspath(os.path.join(root, file)))
+                        jarfiles.append(
+                            os.path.abspath(os.path.join(root, file)))
 
     # Compile and package fuzzer to jar file
     cmd = [
@@ -490,8 +491,7 @@ def build_and_test_single_possible_target(idx_folder,
     if language == "jvm":
         ant_path = os.path.join(oss_fuzz_base_project.project_folder,
                                 "ant.zip")
-        ant_dst = os.path.join(dst_oss_fuzz_project.project_folder,
-                               "ant.zip")
+        ant_dst = os.path.join(dst_oss_fuzz_project.project_folder, "ant.zip")
         maven_path = os.path.join(oss_fuzz_base_project.project_folder,
                                   "maven.zip")
         maven_dst = os.path.join(dst_oss_fuzz_project.project_folder,
