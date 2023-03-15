@@ -120,7 +120,8 @@ def _determine_import_statement(classname):
     """Generate java import statement for a given class name"""
     primitives = [
         "boolean", "byte", "char", "short", "int", "long", "float", "double",
-        "void"
+        "boolean[]", "byte[]", "char[]", "short[]", "int[]", "long[]",
+        "float[]", "double[]", "void"
     ]
 
     if classname and not classname.startswith('java.lang.'):
