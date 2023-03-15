@@ -43,12 +43,22 @@ def get_project_url(project_name, day_offset=-1):
     return project_url
 
 
-def project_exists_in_db(project_name, day_offset=-1) -> bool:
+def project_exists_in_db(project_name,
+                         day_offset=-1,
+                         target="fuzz_report.html") -> bool:
     """Returns whether the project exists in the fuzz introspector DB"""
-    project_url = get_project_url(project_name,
-                                  day_offset) + "fuzz_report.html"
+    project_url = get_project_url(project_name, day_offset) + target
     r = requests.get(project_url)
     return r.ok
+
+
+def download_project_introspector_summary(project_name,
+                                          dst_path,
+                                          day_offset=-1):
+    project_url = get_project_url(project_name, day_offset)
+    summary_url = project_url + "summary.json"
+    r = requests.get(summary_url)
+    return r.text
 
 
 def download_project_introspector_artifacts(project_name,
@@ -63,7 +73,7 @@ def download_project_introspector_artifacts(project_name,
 
     r = requests.get(project_report_url)
     if not r.ok:
-        print(f"Could not find a report: {project_report_url}")
+        #print(f"Could not find a report: {project_report_url}")
         return False
 
     html_doc = lxml.html.document_fromstring(r.text)
@@ -126,14 +136,14 @@ def get_all_reports(project_names: List[str],
             day_offset = 0 - (i * interval_size)
             date_as_str = get_date_at_offset_as_str(day_offset)
             if not project_exists_in_db(project, day_offset):
-                print("Does not exist in DB")
+                #print("Does not exist in DB")
                 continue
 
             workdir = get_next_workdir()
             os.mkdir(workdir)
             if not download_project_introspector_artifacts(
                     project, workdir, day_offset):
-                print("Could not download artifacts")
+                #print("Could not download artifacts")
                 continue
 
             introspector_project = run_fuzz_introspector_on_dir(workdir)
@@ -141,3 +151,25 @@ def get_all_reports(project_names: List[str],
                 continue
 
             yield (project, date_as_str, introspector_project)
+
+
+def get_all_summaries(project_names: List[str],
+                      days_to_analyse=10,
+                      interval_size=10):
+    for project in project_names:
+        for i in range(1, days_to_analyse):
+            day_offset = 0 - (i * interval_size)
+            date_as_str = get_date_at_offset_as_str(day_offset)
+            # Continue
+            day_offset = 0 - (i * interval_size)
+            date_as_str = get_date_at_offset_as_str(day_offset)
+            if not project_exists_in_db(
+                    project, day_offset, target="summary.json"):
+                #print("Does not exist in DB")
+                continue
+
+            workdir = get_next_workdir()
+            os.mkdir(workdir)
+            summary_file = download_project_introspector_summary(
+                project, workdir, day_offset)
+            yield (project, date_as_str, summary_file)
