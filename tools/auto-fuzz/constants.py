@@ -41,6 +41,7 @@ git_repos = {
     ],
     'jvm': [
         # 'https://github.com/eclipse-ee4j/angus-mail',
-        'https://github.com/jboss-javassist/javassist'
+        # 'https://github.com/jboss-javassist/javassist'
+        'https://github.com/tukaani-project/xz-java'
     ]
 }

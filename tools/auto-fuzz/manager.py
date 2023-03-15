@@ -321,11 +321,7 @@ def run_static_analysis_jvm(git_repo, basedir):
 
     projectdir = os.path.join(basedir, "work", "proj")
 
-    if os.path.exists(os.path.join(projectdir, "build.xml")):
-        # Ant project
-        build_ret = _ant_build_project(basedir, projectdir)
-        project_type = "ant"
-    elif os.path.exists(os.path.join(projectdir, "pom.xml")):
+    if os.path.exists(os.path.join(projectdir, "pom.xml")):
         # Maven project
         build_ret = _maven_build_project(basedir, projectdir)
         project_type = "maven"
@@ -334,6 +330,10 @@ def run_static_analysis_jvm(git_repo, basedir):
         build_ret = _gradle_build_project(basedir, projectdir)
         jarfiles.append(os.path.join(projectdir, "proj.jar"))
         project_type = "gradle"
+    elif os.path.exists(os.path.join(projectdir, "build.xml")):
+        # Ant project
+        build_ret = _ant_build_project(basedir, projectdir)
+        project_type = "ant"
     else:
         # Unknown project type
         print("Unknown project type.\n")
@@ -393,7 +393,6 @@ def run_static_analysis_jvm(git_repo, basedir):
         "./run.sh", "--jarfile", ":".join(jarfiles), "--entryclass", "Fuzz1"
     ]
     try:
-        print(cmd)
         subprocess.check_call(" ".join(cmd),
                               shell=True,
                               timeout=1800,
