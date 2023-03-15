@@ -125,6 +125,8 @@ class OSS_FUZZ_PROJECT:
         # git@github.com:{user}/{proj_name}
         if self.github_url.startswith("https://"):
             return self.github_url.replace("https://", "").split("/")[2]
+        elif self.github_url.startswith("http://"):
+            return self.github_url.replace("http://", "").split("/")[2]
         else:
             return self.github_url.split("/")[1]
 
