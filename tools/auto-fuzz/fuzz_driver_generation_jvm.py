@@ -120,7 +120,8 @@ def _determine_import_statement(classname):
     """Generate java import statement for a given class name"""
     primitives = [
         "boolean", "byte", "char", "short", "int", "long", "float", "double",
-        "void"
+        "boolean[]", "byte[]", "char[]", "short[]", "int[]", "long[]",
+        "float[]", "double[]", "void"
     ]
 
     if classname and not classname.startswith('java.lang.'):
@@ -150,7 +151,7 @@ def _handle_import(func_elem):
 
     # argTypes
     for argType in func_elem['argTypes']:
-        import_set.add(_determine_import_statement(argType.replace('$', '.')))
+        import_set.add(_determine_import_statement(argType.split('$')[0]))
 
     # exceptions
     for exception in func_elem['JavaMethodInfo']['exceptions']:
