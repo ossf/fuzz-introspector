@@ -373,7 +373,8 @@ def _search_factory_method(classname,
     return result_list
 
 
-def _search_setting_method(method_list, target_class_name, target_method_name, possible_target):
+def _search_setting_method(method_list, target_class_name, target_method_name,
+                           possible_target):
     """
     Search for all possible non-static setting methods for the target method.
     Assume all setting methods are methods belongs to the same class of the
