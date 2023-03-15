@@ -207,7 +207,7 @@ def _handle_argument(argType,
     elif argType == "java.lang.String":
         return ["data.consumeString(100)"]
 
-    if enum_object:
+    if enum_object and _is_enum_class(init_dict, argType):
         result = _handle_enum_choice(init_dict, argType)
         if result:
             return result
