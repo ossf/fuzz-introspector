@@ -18,9 +18,11 @@ MAX_THREADS = 4
 
 BATCH_SIZE_BEFORE_DOCKER_CLEAN = 40
 
+ANT_URL = "https://dlcdn.apache.org//ant/binaries/apache-ant-1.9.16-bin.zip"
 MAVEN_URL = "https://downloads.apache.org/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.zip"
 GRADLE_URL = "https://services.gradle.org/distributions/gradle-7.4.2-bin.zip"
 
+ANT_PATH = "apache-ant-1.9.16/bin"
 MAVEN_PATH = "apache-maven-3.6.3/bin"
 GRADLE_HOME = "gradle-7.4.2"
 GRADLE_PATH = f"{GRADLE_HOME}/bin"
@@ -39,6 +41,7 @@ git_repos = {
     ],
     'jvm': [
         # 'https://github.com/eclipse-ee4j/angus-mail',
-        'https://github.com/jboss-javassist/javassist'
+        # 'https://github.com/jboss-javassist/javassist'
+        'https://github.com/tukaani-project/xz-java'
     ]
 }

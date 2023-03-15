@@ -208,6 +208,35 @@ def run_static_analysis_python(git_repo, basedir):
     return ret
 
 
+def _ant_build_project(basedir, projectdir):
+    """Helper method to build project using ant"""
+    # Prepare maven
+    with zipfile.ZipFile(os.path.join(basedir, "ant.zip"), "r") as af:
+        af.extractall(basedir)
+
+    # Set environment variable
+    env_var = os.environ.copy()
+    env_var['PATH'] = os.path.join(basedir,
+                                   constants.ANT_PATH) + ":" + env_var['PATH']
+
+    # Build project with maven
+    cmd = ["ant"]
+    try:
+        subprocess.check_call(" ".join(cmd),
+                              shell=True,
+                              timeout=1800,
+                              stdout=subprocess.DEVNULL,
+                              stderr=subprocess.DEVNULL,
+                              env=env_var,
+                              cwd=projectdir)
+    except subprocess.TimeoutExpired:
+        return False
+    except subprocess.CalledProcessError:
+        return False
+
+    return True
+
+
 def _maven_build_project(basedir, projectdir):
     """Helper method to build project using maven"""
     # Prepare maven
@@ -297,10 +326,16 @@ def run_static_analysis_jvm(git_repo, basedir):
     if os.path.exists(os.path.join(projectdir, "pom.xml")):
         # Maven project
         build_ret = _maven_build_project(basedir, projectdir)
+        project_type = "maven"
     elif os.path.exists(os.path.join(projectdir, "build.gradle")):
         # Gradle project
         build_ret = _gradle_build_project(basedir, projectdir)
         jarfiles.append(os.path.join(projectdir, "proj.jar"))
+        project_type = "gradle"
+    elif os.path.exists(os.path.join(projectdir, "build.xml")):
+        # Ant project
+        build_ret = _ant_build_project(basedir, projectdir)
+        project_type = "ant"
     else:
         # Unknown project type
         print("Unknown project type.\n")
@@ -329,11 +364,17 @@ def run_static_analysis_jvm(git_repo, basedir):
 
     # Retrieve path of all jar files
     jarfiles.append(os.path.abspath("../Fuzz1.jar"))
-    for root, _, files in os.walk(projectdir):
-        if "target" in root:
-            for file in files:
-                if file.endswith(".jar"):
-                    jarfiles.append(os.path.abspath(os.path.join(root, file)))
+    if project_type == "ant":
+        for file in os.listdir(os.path.join(projectdir, "build", "jar")):
+            if file.endswith(".jar"):
+                jarfiles.append(os.path.join(projectdir, "build", "jar", file))
+    else:
+        for root, _, files in os.walk(projectdir):
+            if "target" in root:
+                for file in files:
+                    if file.endswith(".jar"):
+                        jarfiles.append(
+                            os.path.abspath(os.path.join(root, file)))
 
     # Compile and package fuzzer to jar file
     cmd = [
@@ -450,6 +491,9 @@ def build_and_test_single_possible_target(idx_folder,
     copy_core_oss_fuzz_project_files(oss_fuzz_base_project,
                                      dst_oss_fuzz_project)
     if language == "jvm":
+        ant_path = os.path.join(oss_fuzz_base_project.project_folder,
+                                "ant.zip")
+        ant_dst = os.path.join(dst_oss_fuzz_project.project_folder, "ant.zip")
         maven_path = os.path.join(oss_fuzz_base_project.project_folder,
                                   "maven.zip")
         maven_dst = os.path.join(dst_oss_fuzz_project.project_folder,
@@ -458,6 +502,7 @@ def build_and_test_single_possible_target(idx_folder,
                                    "gradle.zip")
         gradle_dst = os.path.join(dst_oss_fuzz_project.project_folder,
                                   "gradle.zip")
+        shutil.copy(ant_path, ant_dst)
         shutil.copy(maven_path, maven_dst)
         shutil.copy(gradle_path, gradle_dst)
 
@@ -523,7 +568,7 @@ def build_and_test_single_possible_target(idx_folder,
         if not os.path.isdir(full_path):
             continue
 
-        files_to_cleanup = ['maven.zip', 'gradle.zip']
+        files_to_cleanup = ['ant.zip', 'maven.zip', 'gradle.zip']
         for filename in files_to_cleanup:
             # Auto-fuzz path
             autofuzz_filename_path = os.path.join(auto_fuzz_proj_dir, filename)
@@ -644,9 +689,15 @@ def autofuzz_project_from_github(github_url,
                          oss_fuzz_base_project.project_name)):
         return False
 
-    # If this is a jvm target download maven and gradle once so we don't
+    # If this is a jvm target download ant, maven and gradle once so we don't
     # have to do it for each proejct.
     if language == "jvm":
+        # Download Ant
+        target_ant_path = os.path.join(oss_fuzz_base_project.project_folder,
+                                       "ant.zip")
+        with open(target_ant_path, 'wb') as mf:
+            mf.write(requests.get(constants.ANT_URL).content)
+
         # Download Maven
         target_maven_path = os.path.join(oss_fuzz_base_project.project_folder,
                                          "maven.zip")
