@@ -21,6 +21,7 @@ import subprocess
 import constants
 import requests
 import shlex
+import argparse
 import tarfile
 import zipfile
 import threading
@@ -817,16 +818,31 @@ def run_stage_two(target_dir):
         possible_targets=possible_targets)
 
 
+def get_cmdline_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--language",
+                        type=str,
+                        help="The languaeg of the projects",
+                        default='python')
+    parser.add_argument("--targets", type=str, help="The targets to use")
+    return parser
+
+
 if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        if sys.argv[1] == 'python':
-            run_on_projects("python")
-        elif sys.argv[1] == 'java':
-            run_on_projects("jvm")
-        elif sys.argv[1] == 'stage-two':
-            target_folder = sys.argv[2]
-            run_stage_two(target_folder)
+    parser = get_cmdline_parser()
+    args = parser.parse_args()
+
+    if args.language == 'python':
+        if args.targets == 'constants':
+            github_projects = constants.git_repos['python']
         else:
-            print("Please give a language of either {python, java}")
+            github_projects = []
+            with open(args.targets, 'r') as f:
+                for line in f:
+                    github_projects.append(line.replace("\n", ""))
+        run_on_projects("python", github_projects)
+    elif args.language == 'java':
+        github_projects = constants.git_repos['jvm']
+        run_on_projects("jvm")
     else:
-        run_on_projects("python")
+        print("Language not supported")
