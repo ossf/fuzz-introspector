@@ -302,6 +302,43 @@ def _gradle_build_project(basedir, projectdir):
     return True
 
 
+def find_project_build_folder(dir):
+    if os.path.exists(os.path.join(dir, "pom.xml")) or os.path.exists(
+            os.path.join(dir, "build.gradle")) or os.path.exists(
+                os.path.join(dir, "build.xml")):
+        return os.path.abspath(dir)
+    else:
+        for subdir in os.listdir(dir):
+            if not subdir.startswith('.') and os.path.isdir(subdir):
+                return find_project_build_folder(os.path.join(dir, subdir))
+
+    return None
+
+
+def build_jvm_project(basedir, projectdir):
+    # Find project subfolder if build properties not in the outtermost
+    # directory
+    builddir = find_project_build_folder(projectdir)
+
+    if builddir:
+        if os.path.exists(os.path.join(builddir, "pom.xml")):
+            # Maven project
+            build_ret = _maven_build_project(basedir, builddir)
+            return ("maven", build_ret, builddir, [])
+        elif os.path.exists(os.path.join(builddir, "build.gradle")):
+            # Gradle project
+            build_ret = _gradle_build_project(basedir, builddir)
+            jarfiles = [os.path.join(builddir, "proj.jar")]
+            return ("gradle", build_ret, builddir, jarfiles)
+        elif os.path.exists(os.path.join(builddir, "build.xml")):
+            # Ant project
+            build_ret = _ant_build_project(basedir, builddir)
+            return ("ant", build_ret, builddir, [])
+
+    # Unknown project type
+    return (None, False, None, None)
+
+
 def run_static_analysis_jvm(git_repo, basedir):
     possible_imports = set()
     curr_dir = os.getcwd()
@@ -309,7 +346,6 @@ def run_static_analysis_jvm(git_repo, basedir):
     os.mkdir("work")
     os.chdir("work")
 
-    jarfiles = []
     # Clone the project
     cmd = ["git clone --depth=1", git_repo, "proj"]
     try:
@@ -323,26 +359,11 @@ def run_static_analysis_jvm(git_repo, basedir):
 
     projectdir = os.path.join(basedir, "work", "proj")
 
-    if os.path.exists(os.path.join(projectdir, "pom.xml")):
-        # Maven project
-        build_ret = _maven_build_project(basedir, projectdir)
-        project_type = "maven"
-    elif os.path.exists(os.path.join(projectdir, "build.gradle")):
-        # Gradle project
-        build_ret = _gradle_build_project(basedir, projectdir)
-        jarfiles.append(os.path.join(projectdir, "proj.jar"))
-        project_type = "gradle"
-    elif os.path.exists(os.path.join(projectdir, "build.xml")):
-        # Ant project
-        build_ret = _ant_build_project(basedir, projectdir)
-        project_type = "ant"
-    else:
-        # Unknown project type
-        print("Unknown project type.\n")
-        return False
+    project_type, build_ret, builddir, jarfiles = build_jvm_project(
+        basedir, projectdir)
 
     if not build_ret:
-        print("Project build fail.\n")
+        print("Unknown project type or project build fail.\n")
         return False
 
     # Retrieve Jazzer package for building fuzzer
@@ -365,11 +386,11 @@ def run_static_analysis_jvm(git_repo, basedir):
     # Retrieve path of all jar files
     jarfiles.append(os.path.abspath("../Fuzz1.jar"))
     if project_type == "ant":
-        for file in os.listdir(os.path.join(projectdir, "build", "jar")):
+        for file in os.listdir(os.path.join(builddir, "build", "jar")):
             if file.endswith(".jar"):
-                jarfiles.append(os.path.join(projectdir, "build", "jar", file))
+                jarfiles.append(os.path.join(builddir, "build", "jar", file))
     else:
-        for root, _, files in os.walk(projectdir):
+        for root, _, files in os.walk(builddir):
             if "target" in root:
                 for file in files:
                     if file.endswith(".jar"):
