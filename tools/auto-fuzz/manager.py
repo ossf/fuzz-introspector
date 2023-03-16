@@ -318,7 +318,7 @@ def find_project_build_folder(dir):
 def build_jvm_project(basedir, projectdir):
     # Find project subfolder if build properties not in the outtermost
     # directory
-    builddir = find_project_build_folder(basedir, projectdir)
+    builddir = find_project_build_folder(projectdir)
 
     if builddir:
         if os.path.exists(os.path.join(builddir, "pom.xml")):
