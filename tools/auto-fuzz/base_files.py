@@ -138,18 +138,32 @@ done"""
 
 def gen_builder_1_jvm():
     BUILD_LICENSE = "#!/bin/bash -eu\n" + BASH_LICENSE
-    BUILD_SCRIPT = """if test -f "build.gradle"
+    BUILD_SCRIPT = """SUCCESS=false
+for dir in . $(ls -d */)
+do
+  cd $dir
+  if test -f "build.gradle"
+  then
+    chmod +x ./gradlew
+    ./gradlew clean build -x test
+    SUCCESS=true
+    break
+  elif test -f "pom.xml"
+  then
+    MAVEN_ARGS="-Dmaven.test.skip=true -Djavac.src.version=15 -Djavac.target.version=15"
+    $MVN clean package $MAVEN_ARGS
+    SUCCESS=true
+    break
+  elif test -f "build.xml"
+  then
+    $ANT
+    SUCCESS=true
+    break
+  fi
+done
+
+if [ "$SUCCESS" = false ]
 then
-  chmod +x ./gradlew
-  ./gradlew clean build -x test
-elif test -f "pom.xml"
-then
-  MAVEN_ARGS="-Dmaven.test.skip=true -Djavac.src.version=15 -Djavac.target.version=15"
-  $MVN clean package $MAVEN_ARGS
-elif test -f "build.xml"
-then
-  $ANT
-else
   echo "Unknown project type"
   exit 127
 fi
