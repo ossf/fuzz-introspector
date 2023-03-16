@@ -139,26 +139,30 @@ done"""
 def gen_builder_1_jvm():
     BUILD_LICENSE = "#!/bin/bash -eu\n" + BASH_LICENSE
     BUILD_SCRIPT = """SUCCESS=false
-for dir in . $(ls -d */)
+for dir in $(ls -R)
 do
-  cd $dir
-  if test -f "build.gradle"
+  if [[ $dir == *: ]]
   then
-    chmod +x ./gradlew
-    ./gradlew clean build -x test
-    SUCCESS=true
-    break
-  elif test -f "pom.xml"
-  then
-    MAVEN_ARGS="-Dmaven.test.skip=true -Djavac.src.version=15 -Djavac.target.version=15"
-    $MVN clean package $MAVEN_ARGS
-    SUCCESS=true
-    break
-  elif test -f "build.xml"
-  then
-    $ANT
-    SUCCESS=true
-    break
+    dir=$(realpath ${dir%*:})
+    cd $dir
+    if test -f "build.gradle"
+    then
+      chmod +x ./gradlew
+      ./gradlew clean build -x test
+      SUCCESS=true
+      break
+    elif test -f "pom.xml"
+    then
+      MAVEN_ARGS="-Dmaven.test.skip=true -Djavac.src.version=15 -Djavac.target.version=15"
+      $MVN clean package $MAVEN_ARGS
+      SUCCESS=true
+      break
+    elif test -f "build.xml"
+    then
+      $ANT
+      SUCCESS=true
+      break
+    fi
   fi
 done
 
