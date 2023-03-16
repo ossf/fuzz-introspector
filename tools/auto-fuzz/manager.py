@@ -303,7 +303,9 @@ def _gradle_build_project(basedir, projectdir):
 
 
 def find_project_build_folder(dir):
-    if os.path.exists(os.path.join(dir, "pom.xml")) or os.path.exists(os.path.join(dir, "build.gradle")) or os.path.exists(os.path.join(dir, "build.xml")):
+    if os.path.exists(os.path.join(dir, "pom.xml")) or os.path.exists(
+            os.path.join(dir, "build.gradle")) or os.path.exists(
+                os.path.join(dir, "build.xml")):
         return os.path.abspath(dir)
     else:
         for subdir in os.listdir(dir):
@@ -357,7 +359,8 @@ def run_static_analysis_jvm(git_repo, basedir):
 
     projectdir = os.path.join(basedir, "work", "proj")
 
-    project_type, build_ret, builddir, jarfiles = build_jvm_project(basedir, projectdir)
+    project_type, build_ret, builddir, jarfiles = build_jvm_project(
+        basedir, projectdir)
 
     if not build_ret:
         print("Unknown project type or project build fail.\n")
