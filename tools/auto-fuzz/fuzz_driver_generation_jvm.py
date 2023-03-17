@@ -402,7 +402,7 @@ def _search_setting_method(method_list, target_class_name, target_method_name,
         if len(arg_list) != len(func_elem['argTypes']):
             continue
 
-        result.append('obj.' + func_name + '(' + ','.join(arg_list) + ')')
+        result_list.append('obj.' + func_name + '(' + ','.join(arg_list) + ')')
 
     return result_list
 
