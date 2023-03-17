@@ -249,6 +249,21 @@ def _maven_build_project(basedir, projectdir):
     env_var['PATH'] = os.path.join(
         basedir, constants.MAVEN_PATH) + ":" + env_var['PATH']
 
+    # Patch pom.xml to use at least jdk 1.8
+    cmd = ["sed", "-i", "'s/>1.5</>1.8</g'", "pom.xml"]
+    try:
+        subprocess.check_call(" ".join(cmd),
+                              shell=True,
+                              timeout=1800,
+                              stdout=subprocess.DEVNULL,
+                              stderr=subprocess.DEVNULL,
+                              env=env_var,
+                              cwd=projectdir)
+    except subprocess.TimeoutExpired:
+        return False
+    except subprocess.CalledProcessError:
+        return False
+
     # Build project with maven
     cmd = [
         "mvn clean package", "-DskipTests", "-Djavac.src.version=15",
