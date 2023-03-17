@@ -319,14 +319,9 @@ def _gradle_build_project(basedir, projectdir):
 
 
 def find_project_build_folder(dir):
-    if os.path.exists(os.path.join(dir, "pom.xml")) or os.path.exists(
-            os.path.join(dir, "build.gradle")) or os.path.exists(
-                os.path.join(dir, "build.xml")):
-        return os.path.abspath(dir)
-    else:
-        for subdir in os.listdir(dir):
-            if not subdir.startswith('.') and os.path.isdir(subdir):
-                return find_project_build_folder(os.path.join(dir, subdir))
+    for root, _, files in os.walk(dir):
+        if "pom.xml" in files or "build.gradle" in files or "build.xml" in files:
+            return os.path.abspath(root)
 
     return None
 
