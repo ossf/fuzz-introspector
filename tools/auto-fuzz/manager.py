@@ -810,6 +810,19 @@ def autofuzz_project_from_github(github_url,
     should_merge = language == "python"  # Only supports Python for now.
     if should_merge:
         merged_directory = post_process.merge_run(autofuzz_base_workdir)
+        if merged_directory is not None:
+            oss_fuzz_manager.copy_and_introspect_project(
+                merged_directory, OSS_FUZZ_BASE, merged_directory)
+            introspector_oss_base = os.path.join(
+                OSS_FUZZ_BASE, "build", "out",
+                os.path.basename(merged_directory), "introspector-report")
+            if os.path.isdir(introspector_oss_base):
+                print("Copying over introspector report")
+                shutil.copytree(
+                    introspector_oss_base,
+                    os.path.join(merged_directory, "introspector-report"))
+            else:
+                print("No introspector generated")
 
     return True
 
