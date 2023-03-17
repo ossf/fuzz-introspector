@@ -17,6 +17,8 @@ import sys
 import yaml
 import json
 
+import argparse
+
 
 def get_result_json(dirname):
     """Reads the result.json from a possible target dir."""
@@ -247,18 +249,37 @@ def extract_ranked(target_dir, runs_to_rank=20):
     return success_runs
 
 
+def get_cmdline_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser()
+    subparsers = parser.add_subparsers(dest='command')
+
+    all_parser = subparsers.add_parser(
+        'all', help="Gets the max performer in all auto-fuzz runs.")
+
+    run_parser = subparsers.add_parser(
+        'run', help="Handles activities with respect to individual runs")
+    run_parser.add_argument("dir", type=str)
+    run_parser.add_argument("--to-rank", type=int, default=20)
+
+    heuristics_parser = subparsers.add_parser(
+        'heuristics-summary',
+        help=
+        "Shows summary of how each heuristic performed with respect to all auto-fuzz modules"
+    )
+
+    return parser
+
+
 def main():
-    if len(sys.argv) == 1:
+    parser = get_cmdline_parser()
+    args = parser.parse_args()
+
+    if args.command == 'all':
         run_on_all_dirs()
-    if len(sys.argv) > 1:
-        if sys.argv[1] == 'heuristics':
-            heuristics_summary()
-        else:
-            if len(sys.argv) == 3:
-                runs_to_rank = int(sys.argv[2])
-            else:
-                runs_to_rank = 20
-            extract_ranked(sys.argv[1], runs_to_rank)
+    elif args.command == 'run':
+        extract_ranked(args.dir, args.to_rank)
+    elif args.command == 'heuristics-summary':
+        heuristics_summary()
 
 
 if __name__ == "__main__":
