@@ -807,7 +807,7 @@ def autofuzz_project_from_github(github_url,
                      possible_targets, constants.MAX_FUZZERS_PER_PROJECT,
                      language)
 
-    should_merge = True
+    should_merge = language == "python"  # Only supports Python for now.
     if should_merge:
         merged_directory = post_process.merge_run(autofuzz_base_workdir)
 
