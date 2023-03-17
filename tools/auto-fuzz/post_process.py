@@ -289,6 +289,9 @@ def _get_next_merged_dir(base_dir):
 
 
 def _merge_runs(trial_dir, successful_runs):
+    """Wraps a list of successful runs into a single directory.
+    Returns the directory name of the merged directory.
+    """
     next_merged_dir = _get_next_merged_dir(os.getcwd())
     os.mkdir(next_merged_dir)
 
@@ -314,9 +317,11 @@ def _merge_runs(trial_dir, successful_runs):
 
     for ld in os.listdir(base_autofuzz):
         if os.path.isdir(os.path.join(base_autofuzz, ld)) and ld != "work":
-            # This is likely the work folder. Copy it over.
+            # This is likely the folder containing the source code of the
+            # project. Copy this over.
             shutil.copytree(os.path.join(base_autofuzz, ld),
                             os.path.join(next_merged_dir, ld))
+    return next_merged_dir
 
 
 def merge_run(target_directory):
@@ -324,13 +329,21 @@ def merge_run(target_directory):
     # Get all succcessful directories in target module
     proj_yaml, trial_runs = interpret_autofuzz_run(target_directory)
     if proj_yaml is None:
+        print("Found no project.yaml files. Will not perform merge.")
         return None
     if len(trial_runs) == 0:
+        print("Found no trial runs. Will not perform merge.")
         return None
-
     ranked_runs = get_cov_ranked_trial_runs(trial_runs)
     successful_runs = [run for run in ranked_runs if run['max_cov'] > 0]
+
+    if len(successful_runs) == 0:
+        print("Found no successful runs. Will not perform merge.")
+        return None
+
+    print("Merging %d runs" % (len(successful_runs)))
     merged_project_dir = _merge_runs(target_directory, successful_runs)
+    return merged_project_dir
 
 
 def main():
