@@ -18,6 +18,7 @@ import yaml
 import json
 
 import argparse
+import shutil
 
 
 def get_result_json(dirname):
@@ -267,7 +268,82 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
         "Shows summary of how each heuristic performed with respect to all auto-fuzz modules"
     )
 
+    merge_parser = subparsers.add_parser(
+        'merge', help="Merge all fuzzers from one run into one project")
+    merge_parser.add_argument("dir", type=str)
+
     return parser
+
+
+def _get_next_merged_dir(base_dir):
+    AUTO_MERGE = "auto-merged-"
+    max_idx = -1
+    for dirname in os.listdir(base_dir):
+        try:
+            idx = int(dirname.replace(AUTO_MERGE, ""))
+            if idx > max_idx:
+                max_idx = idx
+        except:
+            pass
+    return os.path.join(base_dir, AUTO_MERGE + str(max_idx + 1))
+
+
+def _merge_runs(trial_dir, successful_runs):
+    """Wraps a list of successful runs into a single directory.
+    Returns the directory name of the merged directory.
+    """
+    next_merged_dir = _get_next_merged_dir(os.getcwd())
+    os.mkdir(next_merged_dir)
+
+    print("Working directory: %s" % (next_merged_dir))
+    idx = 0
+    for run in successful_runs:
+        print(os.path.join(trial_dir, run['name']))
+
+        # Copy over the fuzzer
+        src_file = os.path.join(trial_dir, run['name'], "fuzz_1.py")
+        dst_file = os.path.join(next_merged_dir, "fuzz_%d.py" % (idx))
+        idx += 1
+        shutil.copyfile(src_file, dst_file)
+
+    # Copy over some base dfiles
+    base_autofuzz = os.path.join(trial_dir, "base-autofuzz")
+    build_file = os.path.join(base_autofuzz, "build.sh")
+    shutil.copy(build_file, next_merged_dir)
+    docker_file = os.path.join(base_autofuzz, "Dockerfile")
+    shutil.copy(docker_file, next_merged_dir)
+    project_yaml = os.path.join(base_autofuzz, "project.yaml")
+    shutil.copy(project_yaml, next_merged_dir)
+
+    for ld in os.listdir(base_autofuzz):
+        if os.path.isdir(os.path.join(base_autofuzz, ld)) and ld != "work":
+            # This is likely the folder containing the source code of the
+            # project. Copy this over.
+            shutil.copytree(os.path.join(base_autofuzz, ld),
+                            os.path.join(next_merged_dir, ld))
+    return next_merged_dir
+
+
+def merge_run(target_directory):
+    print("Merging run")
+    # Get all succcessful directories in target module
+    proj_yaml, trial_runs = interpret_autofuzz_run(target_directory)
+    if proj_yaml is None:
+        print("Found no project.yaml files. Will not perform merge.")
+        return None
+    if len(trial_runs) == 0:
+        print("Found no trial runs. Will not perform merge.")
+        return None
+    ranked_runs = get_cov_ranked_trial_runs(trial_runs)
+    successful_runs = [run for run in ranked_runs if run['max_cov'] > 0]
+
+    if len(successful_runs) == 0:
+        print("Found no successful runs. Will not perform merge.")
+        return None
+
+    print("Merging %d runs" % (len(successful_runs)))
+    merged_project_dir = _merge_runs(target_directory, successful_runs)
+    return merged_project_dir
 
 
 def main():
@@ -280,6 +356,8 @@ def main():
         extract_ranked(args.dir, args.to_rank)
     elif args.command == 'heuristics-summary':
         heuristics_summary()
+    elif args.command == "merge":
+        merge_run(args.dir)
 
 
 if __name__ == "__main__":

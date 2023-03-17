@@ -806,13 +806,17 @@ def autofuzz_project_from_github(github_url,
     run_builder_pool(autofuzz_base_workdir, oss_fuzz_base_project,
                      possible_targets, constants.MAX_FUZZERS_PER_PROJECT,
                      language)
+
+    should_merge = language == "python"  # Only supports Python for now.
+    if should_merge:
+        merged_directory = post_process.merge_run(autofuzz_base_workdir)
+
     return True
 
 
-def run_on_projects(language):
+def run_on_projects(language, repos_to_target):
     """Run autofuzz generation on a list of Github projects."""
     home_dir = os.getcwd()
-    repos_to_target = constants.git_repos[language]
     for repo in repos_to_target:
         os.chdir(home_dir)
         autofuzz_project_from_github(repo, language, do_static_analysis=True)
@@ -858,6 +862,6 @@ if __name__ == "__main__":
         run_on_projects("python", github_projects)
     elif args.language == 'java':
         github_projects = constants.git_repos['jvm']
-        run_on_projects("jvm")
+        run_on_projects("jvm", github_projects)
     else:
         print("Language not supported")
