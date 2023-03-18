@@ -68,7 +68,7 @@ def get_code_cov_from_trial(dirname):
     if result is None:
         return None
 
-    if result.get('auto-build') != 'True' or result.get('auto-run') != 'True':
+    if result.get('auto-build') != 'True':
         return None
 
     # Read coverage log
@@ -114,7 +114,7 @@ def interpret_autofuzz_run(dirname: str, only_report_max: bool = False):
         trial_runs[trial_run_dir] = {'max_cov': -2}
         subpath = os.path.join(dirname, trial_run_dir)
         cov_data = get_code_cov_from_trial(subpath)
-        if cov_data is None:
+        if cov_data is None or len(cov_data) < 1:
             max_cov = -1
             min_cov = -1
         else:
