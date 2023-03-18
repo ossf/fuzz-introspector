@@ -68,7 +68,6 @@ def get_code_cov_from_trial(dirname):
     if result is None:
         return None
 
-    #if result.get('auto-build') != 'True' or result.get('auto-run') != 'True':
     if result.get('auto-build') != 'True':
         return None
 
