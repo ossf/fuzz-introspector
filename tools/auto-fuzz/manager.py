@@ -402,13 +402,18 @@ def run_static_analysis_jvm(git_repo, basedir):
     if project_type == "ant":
         for file in os.listdir(os.path.join(builddir, "build", "jar")):
             if file.endswith(".jar"):
-                shutil.copyfile(os.path.join(builddir, "build", "jar", file), os.path.join(jardir, file))
+                shutil.copyfile(os.path.join(builddir, "build", "jar", file),
+                                os.path.join(jardir, file))
     else:
         for root, _, files in os.walk(builddir):
             if "target" in root:
                 for file in files:
-                    if file.endswith(".jar") and "SNAPSHOT" not in file and "sources" not in file:
-                        shutil.copyfile(os.path.abspath(os.path.join(root, file)), os.path.join(jardir, file))
+                    if file.endswith(
+                            ".jar"
+                    ) and "SNAPSHOT" not in file and "sources" not in file:
+                        shutil.copyfile(
+                            os.path.abspath(os.path.join(root, file)),
+                            os.path.join(jardir, file))
 
     # Compile and package fuzzer to jar file
     cmd = [

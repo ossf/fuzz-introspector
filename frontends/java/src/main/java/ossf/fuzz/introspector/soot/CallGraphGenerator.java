@@ -78,7 +78,8 @@ public class CallGraphGenerator {
       System.err.println("No jarFiles, entryClass or entryMethod.");
       return;
     }
-    List<String> jarFiles = CallGraphGenerator.handleJarFilesWildcard(Arrays.asList(args[0].split(":")));
+    List<String> jarFiles =
+        CallGraphGenerator.handleJarFilesWildcard(Arrays.asList(args[0].split(":")));
     String entryClass = args[1];
     String entryMethod = args[2];
     String includePrefix = "";
