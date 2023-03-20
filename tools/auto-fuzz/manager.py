@@ -318,7 +318,20 @@ def _gradle_build_project(basedir, projectdir):
     return True
 
 
-def find_project_build_folder(dir):
+def find_project_build_folder(dir, proj_name):
+    # Search for current directory first
+    currdir = os.listdir(dir)
+    if "pom.xml" in currdir or "build.gradle" in currdir or "build.xml" in currdir:
+        return os.path.abspath(dir)
+
+    # Search for sub directory with name same as project name
+    for subdir in currdir:
+        if os.path.isdir(os.path.join(dir, subdir)) and subdir == proj_name:
+            subdir_list = os.listdir(os.path.join(dir, subdir))
+            if "pom.xml" in subdir_list or "build.gradle" in subdir_list or "build.xml" in subdir_list:
+                return os.path.abspath(os.path.join(dir, subdir))
+
+    # Recursively look for subdirectory that contains build property file
     for root, _, files in os.walk(dir):
         if "pom.xml" in files or "build.gradle" in files or "build.xml" in files:
             return os.path.abspath(root)
@@ -326,10 +339,10 @@ def find_project_build_folder(dir):
     return None
 
 
-def build_jvm_project(basedir, projectdir):
+def build_jvm_project(basedir, projectdir, proj_name):
     # Find project subfolder if build properties not in the outtermost
     # directory
-    builddir = find_project_build_folder(projectdir)
+    builddir = find_project_build_folder(projectdir, proj_name)
 
     if builddir:
         if os.path.exists(os.path.join(builddir, "pom.xml")):
@@ -371,9 +384,10 @@ def run_static_analysis_jvm(git_repo, basedir):
 
     jardir = os.path.join(basedir, "work", "jar")
     projectdir = os.path.join(basedir, "work", "proj")
+    proj_name = git_repo.split("/")[-1].replace(".git", "")
 
     project_type, build_ret, builddir, jarfiles = build_jvm_project(
-        basedir, projectdir)
+        basedir, projectdir, proj_name)
 
     if not build_ret:
         print("Unknown project type or project build fail.\n")
