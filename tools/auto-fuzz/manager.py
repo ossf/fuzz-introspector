@@ -356,6 +356,7 @@ def run_static_analysis_jvm(git_repo, basedir):
     os.chdir(basedir)
     os.mkdir("work")
     os.chdir("work")
+    os.mkdir("jar")
 
     # Clone the project
     cmd = ["git clone --depth=1", git_repo, "proj"]
@@ -368,6 +369,7 @@ def run_static_analysis_jvm(git_repo, basedir):
     except subprocess.TimeoutExpired:
         pass
 
+    jardir = os.path.join(basedir, "work", "jar")
     projectdir = os.path.join(basedir, "work", "proj")
 
     project_type, build_ret, builddir, jarfiles = build_jvm_project(
@@ -396,17 +398,22 @@ def run_static_analysis_jvm(git_repo, basedir):
 
     # Retrieve path of all jar files
     jarfiles.append(os.path.abspath("../Fuzz1.jar"))
+    jarfiles.append("%s/*.jar" % jardir)
     if project_type == "ant":
         for file in os.listdir(os.path.join(builddir, "build", "jar")):
             if file.endswith(".jar"):
-                jarfiles.append(os.path.join(builddir, "build", "jar", file))
+                shutil.copyfile(os.path.join(builddir, "build", "jar", file),
+                                os.path.join(jardir, file))
     else:
         for root, _, files in os.walk(builddir):
             if "target" in root:
                 for file in files:
-                    if file.endswith(".jar"):
-                        jarfiles.append(
-                            os.path.abspath(os.path.join(root, file)))
+                    if file.endswith(
+                            ".jar"
+                    ) and "SNAPSHOT" not in file and "sources" not in file:
+                        shutil.copyfile(
+                            os.path.abspath(os.path.join(root, file)),
+                            os.path.join(jardir, file))
 
     # Compile and package fuzzer to jar file
     cmd = [

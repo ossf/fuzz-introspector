@@ -78,7 +78,8 @@ public class CallGraphGenerator {
       System.err.println("No jarFiles, entryClass or entryMethod.");
       return;
     }
-    List<String> jarFiles = Arrays.asList(args[0].split(":"));
+    List<String> jarFiles =
+        CallGraphGenerator.handleJarFilesWildcard(Arrays.asList(args[0].split(":")));
     String entryClass = args[1];
     String entryMethod = args[2];
     String includePrefix = "";
@@ -139,6 +140,26 @@ public class CallGraphGenerator {
 
     // Start the generation
     PackManager.v().runPacks();
+  }
+
+  public static List<String> handleJarFilesWildcard(List<String> jarFiles) {
+    List<String> resultList = new LinkedList<String>();
+    for (String jarFile : jarFiles) {
+      if (jarFile.endsWith("*.jar")) {
+        File dir = new File(jarFile.substring(0, jarFile.lastIndexOf("/")));
+        if (dir.isDirectory()) {
+          for (File file : dir.listFiles()) {
+            String fileName = file.getAbsolutePath();
+            if (fileName.endsWith(".jar")) {
+              resultList.add(fileName);
+            }
+          }
+        }
+      } else {
+        resultList.add(jarFile);
+      }
+    }
+    return resultList;
   }
 }
 
