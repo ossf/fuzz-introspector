@@ -316,7 +316,8 @@ def _gradle_build_project(basedir, projectdir):
     possible_build_path = []
     for root, dirs, _ in os.walk("."):
         for dir in dirs:
-            build_path = os.path.join(root, dir, "build", "classes", "java", "main")
+            build_path = os.path.join(root, dir, "build", "classes", "java",
+                                      "main")
             if os.path.exists(build_path):
                 possible_build_path.append(os.path.abspath(build_path))
 
