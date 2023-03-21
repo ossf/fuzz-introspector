@@ -298,10 +298,7 @@ def _gradle_build_project(basedir, projectdir):
         basedir, constants.GRADLE_PATH) + ":" + env_var['PATH']
 
     # Build project with maven
-    cmd = [
-        "chmod +x gradlew", "./gradlew clean build -x test",
-        "jar cvf proj.jar -C build/classes/java/main/ ."
-    ]
+    cmd = ["chmod +x gradlew", "./gradlew clean build -x test"]
     try:
         subprocess.check_call(" && ".join(cmd),
                               shell=True,
@@ -313,6 +310,35 @@ def _gradle_build_project(basedir, projectdir):
     except subprocess.TimeoutExpired:
         return False
     except subprocess.CalledProcessError:
+        return False
+
+    # Search for possible classes location
+    possible_build_path = []
+    for root, dirs, _ in os.walk("."):
+        for dir in dirs:
+            build_path = os.path.join(root, dir, "build", "classes", "java",
+                                      "main")
+            if os.path.exists(build_path):
+                possible_build_path.append(os.path.abspath(build_path))
+
+    # Add in jar packing command for all possible build path
+    cmd = []
+    for build_path in possible_build_path:
+        if os.path.exists("proj.jar"):
+            cmd.append("jar uvf proj.jar -C %s ." % build_path)
+        else:
+            cmd.append("jar cvf proj.jar -C %s ." % build_path)
+    try:
+        if cmd:
+            subprocess.check_call(" && ".join(cmd),
+                                  shell=True,
+                                  timeout=1800,
+                                  stdout=subprocess.DEVNULL,
+                                  stderr=subprocess.DEVNULL,
+                                  cwd=projectdir)
+    except subprocess.TimeoutExpired:
+        return False
+    except subprocess.CalledProcessError as e:
         return False
 
     return True
