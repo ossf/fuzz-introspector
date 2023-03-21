@@ -603,8 +603,6 @@ def _extract_method(yaml_dict):
             continue
 
         # Skip excluded methods
-        if func_elem['JavaMethodInfo']['static']:
-            continue
         if not func_elem['JavaMethodInfo']['public']:
             continue
         if not func_elem['JavaMethodInfo']['concrete']:
