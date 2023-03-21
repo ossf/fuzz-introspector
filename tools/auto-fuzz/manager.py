@@ -372,7 +372,7 @@ def run_static_analysis_jvm(git_repo, basedir):
     os.mkdir("jar")
 
     # Clone the project
-    cmd = ["git clone --depth=1", git_repo, "proj"]
+    cmd = ["git clone", git_repo, "proj"]
     try:
         subprocess.check_call(" ".join(cmd),
                               shell=True,
