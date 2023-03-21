@@ -211,7 +211,7 @@ def run_static_analysis_python(git_repo, basedir):
 
 def _ant_build_project(basedir, projectdir):
     """Helper method to build project using ant"""
-    # Prepare maven
+    # Prepare ant
     with zipfile.ZipFile(os.path.join(basedir, "ant.zip"), "r") as af:
         af.extractall(basedir)
 
@@ -220,7 +220,7 @@ def _ant_build_project(basedir, projectdir):
     env_var['PATH'] = os.path.join(basedir,
                                    constants.ANT_PATH) + ":" + env_var['PATH']
 
-    # Build project with maven
+    # Build project with ant
     cmd = ["ant"]
     try:
         subprocess.check_call(" ".join(cmd),
@@ -446,14 +446,10 @@ def run_static_analysis_jvm(git_repo, basedir):
                                 os.path.join(jardir, file))
     else:
         for root, _, files in os.walk(builddir):
-            if "target" in root:
-                for file in files:
-                    if file.endswith(
-                            ".jar"
-                    ) and "SNAPSHOT" not in file and "sources" not in file:
-                        shutil.copyfile(
-                            os.path.abspath(os.path.join(root, file)),
-                            os.path.join(jardir, file))
+            for file in [file for file in files if file.endswith(".jar")]:
+                if "test" not in file and "sources" not in file:
+                    shutil.copyfile(os.path.abspath(os.path.join(root, file)),
+                                    os.path.join(jardir, file))
 
     # Compile and package fuzzer to jar file
     cmd = [
