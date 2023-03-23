@@ -180,7 +180,7 @@ def create_boxed_top_summary_info(
                 number of reachable functions. This means that Fuzz Introspector found
                 there are more functions covered at runtime than what is considered
                 reachable based on the static analysis. This is a limitation in the
-                anlysis as anything covered at runtime is by definition reachable by the
+                analysis as anything covered at runtime is by definition reachable by the
                 fuzzers.
             <br>
                 This is likely due to a limitation in the static analysis. In this case, the
