@@ -456,8 +456,13 @@ class MergedProjectProfile:
 
         for func_name in all_functions:
             func_profile = self.all_functions[func_name]
-            if func_profile.has_source_file:
-                local_functions_with_source[func_name] = func_profile
+            # Go through checks to ensure we have the source code.
+            if not func_profile.has_source_file:
+                continue
+            # Skip any where we do not have a line number.
+            if int(func_profile.function_linenumber) == -1:
+                continue
+            local_functions_with_source[func_name] = func_profile
         return local_functions_with_source
 
     def get_func_hit_percentage(self, func_name):
