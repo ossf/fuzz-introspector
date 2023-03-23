@@ -495,6 +495,11 @@ input[type="checkbox"] {
     color: #3b7300;
 }
 
+.warning-box.blue-warning {
+    background: #D4FDFF;
+    color: #007183;
+}
+
 
 .colormap {
 	width: 100%;
