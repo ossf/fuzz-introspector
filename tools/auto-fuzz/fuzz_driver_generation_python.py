@@ -582,6 +582,9 @@ def generate_possible_targets(proj_folder):
     # Read the Fuzz Introspector generated data
     yaml_file = os.path.join(proj_folder, "work",
                              "fuzzerLogFile-fuzz_1.data.yaml")
+    if not os.path.isfile(yaml_file):
+        return []
+
     with open(yaml_file, "r") as stream:
         yaml_dict = yaml.safe_load(stream)
 
