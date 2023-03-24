@@ -182,6 +182,7 @@ def give_right_path(import_str):
 def get_arguments_to_provide(func_elem):
     return len(func_elem['argNames']) - len(func_elem['argDefaultValues'])
 
+
 def _generate_heuristic_1(yaml_dict, possible_targets):
     """Heuristic 1.
     Creates a FuzzTarget for each function that satisfy all:
