@@ -801,16 +801,16 @@ def autofuzz_project_from_github(github_url,
         if static_res:
             workdir = os.path.join(oss_fuzz_base_project.project_folder,
                                    "work")
-            commands.run_analysis_on_dir(target_folder=workdir,
-                                         coverage_url="",
-                                         analyses_to_run=[],
-                                         correlation_file="",
-                                         enable_all_analyses=True,
-                                         report_name="",
-                                         language=language,
-                                         output_json=[],
-                                         parallelise=False,
-                                         dump_files=False)
+            #commands.run_analysis_on_dir(target_folder=workdir,
+            #                             coverage_url="",
+            #                             analyses_to_run=[],
+            #                             correlation_file="",
+            #                             enable_all_analyses=True,
+            #                             report_name="",
+            #                             language=language,
+            #                             output_json=[],
+            #                             parallelise=False,
+            #                             dump_files=False)
         else:
             return False
 

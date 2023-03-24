@@ -179,6 +179,10 @@ def give_right_path(import_str):
     return ".".join(split_import_str[1:])
 
 
+def get_arguments_to_provide(func_elem):
+    return len(func_elem['argNames']) - len(func_elem['argDefaultValues'])
+
+
 def _generate_heuristic_1(yaml_dict, possible_targets):
     """Heuristic 1.
     Creates a FuzzTarget for each function that satisfy all:
@@ -195,8 +199,7 @@ def _generate_heuristic_1(yaml_dict, possible_targets):
     HEURISTIC_NAME = "py-autofuzz-heuristics-1"
     for func_elem in yaml_dict['All functions']['Elements']:
         if func_elem['functionLinenumber'] != -1:
-            if len(func_elem['argNames']) < 1 or len(
-                    func_elem['argNames']) > 20:
+            if get_arguments_to_provide(func_elem) != 1:
                 continue
             if 'self' in func_elem['argNames'][0]:
                 continue
@@ -257,8 +260,7 @@ def _generate_heuristic_2(yaml_dict, possible_targets):
     HEURISTIC_NAME = "py-autofuzz-heuristics-2"
     for func_elem in yaml_dict['All functions']['Elements']:
         if func_elem['functionLinenumber'] != -1:
-            if len(func_elem['argNames']) < 1 or len(
-                    func_elem['argNames']) > 20:
+            if get_arguments_to_provide(func_elem) != 1:
                 continue
             if 'self' in func_elem['argNames'][0]:
                 continue
@@ -314,9 +316,9 @@ def _generate_heuristic_3(yaml_dict, possible_targets):
     HEURISTIC_NAME = "py-autofuzz-heuristics-3"
     for func_elem in yaml_dict['All functions']['Elements']:
         if func_elem['functionLinenumber'] != -1:
-            if len(func_elem['argNames']) < 1 or len(
-                    func_elem['argNames']) > 50:
+            if get_arguments_to_provide(func_elem) != 1:
                 continue
+
             if 'self' in func_elem['argNames'][0]:
                 continue
             if "test" in func_elem['functionName']:
@@ -402,6 +404,8 @@ def _generate_heuristic_4(yaml_dict, possible_targets):
 
         # Create a possible target for each function in the object.
         for elem in possible_class_targets:
+            if get_arguments_to_provide(elem) != 2:
+                continue
             exceptions_thrown = find_all_exceptions(
                 elem, yaml_dict['All functions']['Elements'])
             # Add neccessary prefixes

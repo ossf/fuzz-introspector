@@ -240,6 +240,11 @@ def convert_cg_to_introspector_data(cg_extended, fuzzer_filename):
         d['constantsTouched'] = []
         d['argNames'] = elem_dict['meta']['argNames'] if 'argNames' in elem_dict['meta'] else []
         d['argTypes'] = elem_dict['meta']['argTypes'] if 'argTypes' in elem_dict['meta'] else []
+        # Write it out to make lines shorter
+        if 'argDefaultValues' in elem_dict['meta']:
+            d['argDefaultValues'] = elem_dict['meta']['argDefaultValues']
+        else:
+            d['argDefaultValues'] = []
         d['ICount'] = elem_dict['meta']['exprCount'] if 'exprCount' in elem_dict['meta'] else 0
         d['IfCount'] = elem_dict['meta']['ifCount'] if 'ifCount' in elem_dict['meta'] else 0
         d['raised'] = list(elem_dict['meta']['raises']) if 'raises' in elem_dict['meta'] else []
