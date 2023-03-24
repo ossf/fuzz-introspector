@@ -736,7 +736,8 @@ def git_clone_project(github_url, destination):
 def autofuzz_project_from_github(github_url,
                                  language,
                                  do_static_analysis=False,
-                                 possible_targets=None):
+                                 possible_targets=None,
+                                 to_merge=False):
     """Auto-generates fuzzers for a Github project and performs runtime checks
     on the fuzzers.
     """
@@ -845,8 +846,7 @@ def autofuzz_project_from_github(github_url,
                      possible_targets, constants.MAX_FUZZERS_PER_PROJECT,
                      language)
 
-    should_merge = language == "python"  # Only supports Python for now.
-    if should_merge:
+    if to_merge:
         merged_directory = post_process.merge_run(autofuzz_base_workdir)
         if merged_directory is not None:
             oss_fuzz_manager.copy_and_introspect_project(
@@ -865,12 +865,15 @@ def autofuzz_project_from_github(github_url,
     return True
 
 
-def run_on_projects(language, repos_to_target):
+def run_on_projects(language, repos_to_target, to_merge=False):
     """Run autofuzz generation on a list of Github projects."""
     home_dir = os.getcwd()
     for repo in repos_to_target:
         os.chdir(home_dir)
-        autofuzz_project_from_github(repo, language, do_static_analysis=True)
+        autofuzz_project_from_github(repo,
+                                     language,
+                                     do_static_analysis=True,
+                                     to_merge=to_merge)
     print("Completed auto-fuzz generation on %d projects" %
           len(repos_to_target))
 
@@ -895,6 +898,12 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
                         help="The languaeg of the projects",
                         default='python')
     parser.add_argument("--targets", type=str, help="The targets to use")
+    parser.add_argument(
+        "--merge",
+        action="store_true",
+        help=("If set, will for each project combine all successful projects "
+              "into a single OSS-Fuzz project and run Fuzz Introspector on "
+              "this project."))
     return parser
 
 
@@ -910,7 +919,7 @@ if __name__ == "__main__":
             with open(args.targets, 'r') as f:
                 for line in f:
                     github_projects.append(line.replace("\n", ""))
-        run_on_projects("python", github_projects)
+        run_on_projects("python", github_projects, args.merge)
     elif args.language == 'java':
         github_projects = constants.git_repos['jvm']
         run_on_projects("jvm", github_projects)
