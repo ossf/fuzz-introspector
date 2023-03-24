@@ -167,17 +167,54 @@ def create_boxed_top_summary_info(
         "Runtime code coverage of functions", len(covered_funcs),
         proj_profile.total_functions)
 
+    # Wrap it in a horisontal list.
+    html_string = f"""<div style="display: flex; max-width: 800px">
+        {html_string}
+    </div>"""
+
+    if len(covered_funcs) > proj_profile.reached_func_count:
+        # Add warning
+        html_string += """<span class="warning-box blue-warning">
+            <p> <b>Warning:</b>
+                The number of runtime covered functions are larger than the
+                number of reachable functions. This means that Fuzz Introspector found
+                there are more functions covered at runtime than what is considered
+                reachable based on the static analysis. This is a limitation in the
+                analysis as anything covered at runtime is by definition reachable by the
+                fuzzers.
+            <br>
+                This is likely due to a limitation in the static analysis. In this case, the
+                count of functions covered at runtime is the true value, which means this
+                is what should be considered "achieved" by the fuzzer.
+            </p>
+            <p>
+                Use the project functions table below to query all functions that were
+                not covered at runtime.
+            </p>
+        </span>"""
+
     if not proj_profile.has_coverage_data():
         conclusions.append(
             html_helpers.HTMLConclusion(
                 severity=0,
                 title="No coverage data was found",
                 description=html_constants.WARNING_NO_COVERAGE))
+    # Add coverage conclusion
+    coverage_percentage = float(
+        len(covered_funcs) / float(proj_profile.total_functions) * 100.0)
+    if coverage_percentage > 50.0:
+        sentence = f"""Fuzzers reach {"%.5s%%"%(str(coverage_percentage))} code coverage."""
+        conclusions.append(
+            html_helpers.HTMLConclusion(severity=8,
+                                        title=sentence,
+                                        description=""))
 
-    # Add conclusion
-    create_reachability_conclusions(conclusions,
-                                    proj_profile.reached_func_percentage,
-                                    proj_profile.reached_complexity_percentage)
+    # Add conclusios about reachability.
+    # Avoid Python due to limitations in the callgraph extraction.
+    if proj_profile.target_lang != "python":
+        create_reachability_conclusions(
+            conclusions, proj_profile.reached_func_percentage,
+            proj_profile.reached_complexity_percentage)
     return html_string
 
 
@@ -520,9 +557,7 @@ def create_section_project_overview(table_of_contents, proj_profile,
         "Reachability and coverage overview", html_helpers.HTML_HEADING.H2,
         table_of_contents)
     top_summary = create_boxed_top_summary_info(proj_profile, conclusions)
-    html_report_core += f"""<div style="display: flex; max-width: 800px">
-        {top_summary}
-    </div>"""
+    html_report_core += top_summary
 
     # Close the section
     html_report_core += "</div>"  # .collapsible
