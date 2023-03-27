@@ -72,14 +72,7 @@ def find_fuzz_targets(path):
 
       # If wrapper script exists, retrieve the java class with package name
       classname = content.split("--target_class=")[1].split(" ")[0]
-
-      # If wrapper script exists, retrieve target analysing package name if exists
-      # If ##PACKAGE_NAME##[package]##PACKAGE_NAME## exists, java frontend will
-      # only handle classes in that package, plus all the sink classes
-      if "##PACKAGE_NAME##" in content:
-        packagename = content.split("##PACKAGE_NAME##")[1]
-
-      targets.append((classname, packagename))
+      targets.append(classname)
 
       # If classfile exists, pack it to jar file
       for root, _, files in os.walk(path):
@@ -111,13 +104,15 @@ def get_all_jar_files(path):
   return jar_files
 
 
-def run_introspector_frontend(target, jar_set):
+def run_introspector_frontend(target_class, jar_set):
   """Call into the frontend for analysing java targets. The output of this
   is a set of *.data and *.data.yaml files in the current directory.
   """
-  target_class, package = target
   print("Running introspector frontend on %s :: %s" % (target_class, jar_set))
   jarfile_str = ":".join(jar_set)
+  package_name = os.getenv("TARGET_PACKAGE_PREFIX")
+  if not package_name:
+    package_name = "ALL"
   cmd = [
       "java",
       "-Xmx6144M",
@@ -126,7 +121,7 @@ def run_introspector_frontend(target, jar_set):
       CGRAPH_STR,
       jarfile_str,
       target_class,
-      package,
+      package_name,
       "fuzzerTestOneInput", # entrymethod
       """===jdk.*:java.*:javax.*:sun.*:sunw.*:com.sun.*:com.ibm.*:\
 com.apple.*:apple.awt.*===[java.lang.Runtime].exec:[javax.xml.xpath.XPath].compile:\

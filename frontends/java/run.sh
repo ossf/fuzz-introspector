@@ -94,7 +94,7 @@ fi
 if [ -z $PACKAGEPREFIX ]
 then
     echo "No target package prefix defined, analysing all packages"
-    PACKAGEPREFIX="*"
+    PACKAGEPREFIX="ALL"
 fi
 
 # Build and execute the call graph generator

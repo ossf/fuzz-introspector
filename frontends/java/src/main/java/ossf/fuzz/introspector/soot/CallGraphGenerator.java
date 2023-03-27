@@ -86,12 +86,11 @@ public class CallGraphGenerator {
     String includePrefix = "";
     String excludePrefix = "";
     String sinkMethod = "";
-    if (args.length == 4) {
+    if (args.length == 5) {
       includePrefix = args[4].split("===")[0];
       excludePrefix = args[4].split("===")[1];
       sinkMethod = args[4].split("===")[2];
     }
-
     if (jarFiles.size() < 1) {
       System.err.println("Invalid jarFiles");
     }
@@ -197,7 +196,7 @@ class CustomSenceTransformer extends SceneTransformer {
     sinkMethodMap = new HashMap<String, Set<String>>();
     methodList = new FunctionConfig();
 
-    if (!targetPackagePrefix.equals("*")) {
+    if (!targetPackagePrefix.equals("ALL")) {
       for (String targetPackage : targetPackagePrefix.split(":")) {
         if (!targetPackage.equals("")) {
           targetPackageList.add(targetPackage);
@@ -209,6 +208,7 @@ class CustomSenceTransformer extends SceneTransformer {
         includeList.add(include);
       }
     }
+    includeList.add(entryClassStr);
     for (String exclude : excludePrefix.split(":")) {
       if (!exclude.equals("")) {
         excludeList.add(exclude);
@@ -279,7 +279,7 @@ class CustomSenceTransformer extends SceneTransformer {
       // of the target package
       // If target package prefix has been specified and the
       // classes are not in those package, ignore it
-      if (!isIgnore && !isSinkClass) {
+      if (!isIgnore && !isSinkClass && !isInclude && this.hasTargetPackage()) {
         boolean targetPackage = false;
         for (String prefix : targetPackageList) {
           if (cname.startsWith(prefix.replace("*", ""))) {
