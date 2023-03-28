@@ -91,7 +91,12 @@ def copy_and_build_project(src_folder, oss_fuzz_base, log_dir=None):
     dst_project_folder = os.path.join(oss_fuzz_base, "projects", project_name)
     if os.path.isdir(dst_project_folder):
         shutil.rmtree(dst_project_folder)
-    shutil.copytree(src_folder, dst_project_folder)
+
+    try:
+        shutil.copytree(src_folder, dst_project_folder)
+    except shutil.Error:
+        # Bail out if an error occurred.
+        return False
 
     cmd = [
         "python3",
@@ -126,7 +131,12 @@ def copy_and_build_project(src_folder, oss_fuzz_base, log_dir=None):
     dst_project_folder = os.path.join(oss_fuzz_base, "projects", project_name)
     if os.path.isdir(dst_project_folder):
         shutil.rmtree(dst_project_folder)
-    shutil.copytree(src_folder, dst_project_folder)
+
+    try:
+        shutil.copytree(src_folder, dst_project_folder)
+    except shutil.Error:
+        # Bail out if an error occurred.
+        return False
 
     cmd = [
         "python3",
