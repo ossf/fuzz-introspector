@@ -264,7 +264,7 @@ def _maven_build_project(basedir, projectdir):
     except subprocess.CalledProcessError:
         return False
 
-    # Build project with maven
+    # Build project with maven with javac version 15
     cmd = [
         "mvn clean package", "-DskipTests", "-Djavac.src.version=15",
         "-Djavac.target.version=15", "-Dmaven.javadoc.skip=true",
@@ -281,7 +281,25 @@ def _maven_build_project(basedir, projectdir):
     except subprocess.TimeoutExpired:
         return False
     except subprocess.CalledProcessError:
-        return False
+        # Fail to build project with javac version 15,
+        # try javac version 8 instead
+        cmd = [
+            "mvn clean package", "-DskipTests", "-Djavac.src.version=8",
+            "-Djavac.target.version=8", "-Dmaven.javadoc.skip=true",
+            "--update-snapshots"
+        ]
+        try:
+            subprocess.check_call(" ".join(cmd),
+                                  shell=True,
+                                  timeout=1800,
+                                  stdout=subprocess.DEVNULL,
+                                  stderr=subprocess.DEVNULL,
+                                  env=env_var,
+                                  cwd=projectdir)
+        except subprocess.TimeoutExpired:
+            return False
+        except subprocess.CalledProcessError:
+            return False
 
     return True
 

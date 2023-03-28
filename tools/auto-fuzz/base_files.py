@@ -156,6 +156,11 @@ do
       sed -i 's/>1.5</>1.8</g' pom.xml
       MAVEN_ARGS="-Dmaven.test.skip=true -Djavac.src.version=15 -Djavac.target.version=15 --update-snapshots"
       $MVN clean package $MAVEN_ARGS
+      if [[ $? != "0" ]]
+      then
+        MAVEN_ARGS="-Dmaven.test.skip=true -Djavac.src.version=8 -Djavac.target.version=8 --update-snapshots"
+        $MVN clean package $MAVEN_ARGS
+      fi
       SUCCESS=true
       break
     elif test -f "build.xml"
@@ -166,6 +171,12 @@ do
     fi
   fi
 done
+
+if [[ $? != "0" ]]
+then
+  echo "Unknown project type"
+  exit 127
+fi
 
 if [ "$SUCCESS" = false ]
 then
