@@ -179,22 +179,20 @@ def run_cmd(cmd, timeout_sec):
     return no_timeout
 
 
-def run_static_analysis_python(git_repo, basedir):
+def run_static_analysis_python(git_repo, basedir, project_name):
     possible_imports = set()
     curr_dir = os.getcwd()
     os.chdir(basedir)
     os.mkdir("work")
     os.chdir("work")
 
-    cmd = ["git clone --depth=1", git_repo]
+    # Copy the project directory from the basedir
     try:
-        subprocess.check_call(" ".join(cmd),
-                              shell=True,
-                              timeout=180,
-                              stdout=subprocess.DEVNULL,
-                              stderr=subprocess.DEVNULL)
-    except subprocess.TimeoutExpired:
-        pass
+        shutil.copytree(os.path.join(basedir, project_name),
+                        os.path.join(os.getcwd(), project_name))
+    except:
+        print("Fail to retrieve github directory.")
+        return False
 
     cmd = [
         "python3", FUZZ_INTRO_MAIN["python"], "--fuzzer", "../fuzz_1.py",
@@ -408,7 +406,7 @@ def build_jvm_project(basedir, projectdir, proj_name):
     return (None, False, None, None)
 
 
-def run_static_analysis_jvm(git_repo, basedir):
+def run_static_analysis_jvm(git_repo, basedir, project_name):
     possible_imports = set()
     curr_dir = os.getcwd()
     os.chdir(basedir)
@@ -416,16 +414,13 @@ def run_static_analysis_jvm(git_repo, basedir):
     os.chdir("work")
     os.mkdir("jar")
 
-    # Clone the project
-    cmd = ["git clone", git_repo, "proj"]
+    # Copy the project directory from the basedir
     try:
-        subprocess.check_call(" ".join(cmd),
-                              shell=True,
-                              timeout=600,
-                              stdout=subprocess.DEVNULL,
-                              stderr=subprocess.DEVNULL)
-    except subprocess.TimeoutExpired:
-        pass
+        shutil.copytree(os.path.join(basedir, project_name),
+                        os.path.join(os.getcwd(), "proj"))
+    except:
+        print("Fail to retrieve github directory.")
+        return False
 
     jardir = os.path.join(basedir, "work", "jar")
     projectdir = os.path.join(basedir, "work", "proj")
@@ -738,11 +733,11 @@ def run_builder_pool(autofuzz_base_workdir, oss_fuzz_base_project,
 
 
 def git_clone_project(github_url, destination):
-    cmd = ["git clone --depth=1", github_url, destination]
+    cmd = ["git clone", github_url, destination]
     try:
         subprocess.check_call(" ".join(cmd),
                               shell=True,
-                              timeout=180,
+                              timeout=600,
                               stdout=subprocess.DEVNULL,
                               stderr=subprocess.DEVNULL)
     except subprocess.TimeoutExpired:
@@ -813,10 +808,12 @@ def autofuzz_project_from_github(github_url,
         print("Running static analysis on %s" % (github_url))
         if language == "python":
             static_res = run_static_analysis_python(
-                github_url, oss_fuzz_base_project.project_folder)
+                github_url, oss_fuzz_base_project.project_folder,
+                oss_fuzz_base_project.project_name)
         elif language == "jvm":
             static_res = run_static_analysis_jvm(
-                github_url, oss_fuzz_base_project.project_folder)
+                github_url, oss_fuzz_base_project.project_folder,
+                oss_fuzz_base_project.project_name)
 
         if static_res:
             workdir = os.path.join(oss_fuzz_base_project.project_folder,
