@@ -154,7 +154,7 @@ do
     elif test -f "pom.xml"
     then
       sed -i 's/>1.5</>1.8</g' pom.xml
-      MAVEN_ARGS="-Dmaven.test.skip=true -Djavac.src.version=15 -Djavac.target.version=15"
+      MAVEN_ARGS="-Dmaven.test.skip=true -Djavac.src.version=15 -Djavac.target.version=15 --update-snapshots"
       $MVN clean package $MAVEN_ARGS
       SUCCESS=true
       break
