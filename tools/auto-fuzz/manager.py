@@ -926,21 +926,25 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def get_target_repos(targets, language):
+    if targets == "constants":
+        return constants.git_repos[language]
+    github_projects = []
+    with open(args.targets, 'r') as f:
+        for line in f:
+            github_projects.append(line.replace("\n", ""))
+    return github_projects
+
+
 if __name__ == "__main__":
     parser = get_cmdline_parser()
     args = parser.parse_args()
 
     if args.language == 'python':
-        if args.targets == 'constants':
-            github_projects = constants.git_repos['python']
-        else:
-            github_projects = []
-            with open(args.targets, 'r') as f:
-                for line in f:
-                    github_projects.append(line.replace("\n", ""))
+        github_projects = get_target_repos(args.targets, 'python')
         run_on_projects("python", github_projects, args.merge)
     elif args.language == 'java':
-        github_projects = constants.git_repos['jvm']
+        github_projects = get_target_repos(args.targets, 'jvm')
         run_on_projects("jvm", github_projects)
     else:
         print("Language not supported")
