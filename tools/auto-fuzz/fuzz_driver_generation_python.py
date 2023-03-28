@@ -145,7 +145,12 @@ def get_exception_imports(exceptions_thrown, all_classes, inheritance):
     # If we have some exceptions that are top-level, we will use those
     # for catching.
     if len(inherited_from_exception) > 0:
-        return list(inherited_from_exception)
+        base_exceptions = {"RuntimeError", "TypeError"}
+        base_exceptions_to_analyse = []
+        for base_exception in base_exceptions:
+            if base_exception in refined:
+                base_exceptions_to_analyse.append(base_exception)
+        return list(inherited_from_exception) + base_exceptions_to_analyse
 
     # Otheriwse, return the more fine-grained
     return refined
@@ -438,6 +443,35 @@ def _generate_heuristic_4(yaml_dict, possible_targets):
             possible_target.function_target = "%s.%s" % (
                 class_path, possible_class_target_name)
             possible_targets.append(possible_target)
+
+            # Another target
+            possible_target3 = FuzzTarget()
+            HEURISTIC_NAME = "py-autofuzz-heuristics-4.1.1"
+            possible_target3.exceptions_to_handle = exceptions_thrown
+            possible_target3.heuristics_used.append(HEURISTIC_NAME)
+            possible_class_target_name = elem['functionName'].split(".")[-1]
+
+            fuzzer_source_code = "  # Class target.\n"
+            fuzzer_source_code += "  try:\n"
+            fuzzer_source_code += "    c1 = %s(val_1)\n" % (class_path)
+            fuzzer_source_code += "    c1.%s(val_2)\n" % (
+                possible_class_target_name)
+            fuzzer_source_code += "  except("
+            for exc in exceptions_thrown:
+                fuzzer_source_code += exc + ","
+            fuzzer_source_code += "):\n"
+            fuzzer_source_code += "    pass\n"
+
+            possible_target3.fuzzer_source_code = fuzzer_source_code
+            possible_target3.imports_to_add.append(
+                "import %s" % (cleanup_import(class_path)))
+
+            # Add open variables
+            possible_target3.variables_to_add.append(("val_1", "str"))
+            possible_target3.variables_to_add.append(("val_2", "str"))
+            possible_target3.function_target = "%s.%s" % (
+                class_path, possible_class_target_name)
+            possible_targets.append(possible_target3)
 
             # Make second one
             possible_target2 = FuzzTarget()
