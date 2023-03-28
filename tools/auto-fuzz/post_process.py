@@ -136,12 +136,9 @@ def interpret_autofuzz_run(dirname: str, only_report_max: bool = False):
 def _print_summary_of_trial_run(trial_run,
                                 proj_name,
                                 autofuzz_project_dir,
-                                additional=""):
+                                additional="",
+                                print_in_ci=False):
     trial_name = trial_run['name']
-    if len(proj_name) < 50:
-        proj_name = proj_name + " " * (50 - len(proj_name))
-    if len(trial_name) < 21:
-        trial_name = trial_name + " " * (21 - len(trial_name))
     python_fuzz_path = os.path.join(autofuzz_project_dir, trial_run['name'],
                                     "fuzz_1.py")
     jvm_fuzz_path = os.path.join(autofuzz_project_dir, trial_run['name'],
@@ -151,10 +148,23 @@ def _print_summary_of_trial_run(trial_run,
         fuzz_path = python_fuzz_path
     elif os.path.isfile(jvm_fuzz_path):
         fuzz_path = jvm_fuzz_path
-    print("%s :: %15s ::  %21s :: [%5s : %5s] :: %s :: %s :: %s" %
-          (proj_name, autofuzz_project_dir, trial_name,
-           str(trial_run['max_cov']), str(trial_run['min_cov']), fuzz_path,
-           trial_run['heuristics-used'], trial_run['function-target']))
+
+    if print_in_ci:
+        if len(proj_name) < 50:
+            proj_name = proj_name + " " * (50 - len(proj_name))
+        if len(trial_name) < 21:
+            trial_name = trial_name + " " * (21 - len(trial_name))
+        print("%s :: %15s ::  %21s :: [%5s : %5s] :: %s :: %s :: %s" %
+              (proj_name, autofuzz_project_dir, trial_name,
+               str(trial_run['max_cov']), str(trial_run['min_cov']), fuzz_path,
+               trial_run['heuristics-used'], trial_run['function-target']))
+    else:
+        # Print using space-sepratation between columns.
+        print("%s %s %s %s %s %s %s %s %s" %
+              (proj_name, autofuzz_project_dir, trial_name,
+               str(trial_run['min_cov']), str(trial_run['max_cov']),
+               str(trial_run['max_cov'] - trial_run['min_cov']), fuzz_path,
+               trial_run['heuristics-used'], trial_run['function-target']))
 
 
 def get_top_trial_run(trial_runs):
