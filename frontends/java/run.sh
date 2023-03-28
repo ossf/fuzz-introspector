@@ -49,6 +49,11 @@ while [[ $# -gt 0 ]]; do
       shift
       shift
       ;;
+    -p|--package)
+      PACKAGEPREFIX="$2"
+      shift
+      shift
+      ;;
     *)
       echo "Unknown option $1"
       exit 1
@@ -86,6 +91,11 @@ then
     echo "No sink method list defined, using default sink method list"
     SINKMETHOD="[java.lang.Runtime].exec:[javax.xml.xpath.XPath].compile:[javax.xml.xpath.XPath].evaluate:[java.lang.Thread].run:[java.lang.Runnable].run:[java.util.concurrent.Executor].execute:[java.util.concurrent.Callable].call:[java.lang.System].console:[java.lang.System].load:[java.lang.System].loadLibrary:[java.lang.System].apLibraryName:[java.lang.System].runFinalization:[java.lang.System].setErr:[java.lang.System].setIn:[java.lang.System].setOut:[java.lang.System].setProperties:[java.lang.System].setProperty:[java.lang.System].setSecurityManager:[java.lang.ProcessBuilder].directory:[java.lang.ProcessBuilder].inheritIO:[java.lang.ProcessBuilder].command:[java.lang.ProcessBuilder].redirectError:[java.lang.ProcessBuilder].redirectErrorStream:[java.lang.ProcessBuilder].redirectInput:[java.lang.ProcessBuilder].redirectOutput:[java.lang.ProcessBuilder].start"
 fi
+if [ -z $PACKAGEPREFIX ]
+then
+    echo "No target package prefix defined, analysing all packages"
+    PACKAGEPREFIX="ALL"
+fi
 
 # Build and execute the call graph generator
 mvn clean package -Dmaven.test.skip
@@ -94,5 +104,5 @@ mvn clean package -Dmaven.test.skip
 for CLASS in $(echo $ENTRYCLASS | tr ":" "\n")
 do
     echo $CLASS
-    java -Xmx6144M -cp "target/ossf.fuzz.introspector.soot-1.0.jar" ossf.fuzz.introspector.soot.CallGraphGenerator $JARFILE $CLASS $ENTRYMETHOD "$INCLUDEPREFIX===$EXCLUDEPREFIX===$SINKMETHOD"
+    java -Xmx6144M -cp "target/ossf.fuzz.introspector.soot-1.0.jar" ossf.fuzz.introspector.soot.CallGraphGenerator $JARFILE $CLASS $ENTRYMETHOD "$PACKAGEPREFIX" "$INCLUDEPREFIX===$EXCLUDEPREFIX===$SINKMETHOD"
 done

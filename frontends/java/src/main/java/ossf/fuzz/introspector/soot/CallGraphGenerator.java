@@ -74,23 +74,23 @@ import soot.toolkits.graph.UnitGraph;
 public class CallGraphGenerator {
   public static void main(String[] args) {
     System.out.println("[Callgraph] Running callgraph plugin");
-    if (args.length < 3 || args.length > 4) {
-      System.err.println("No jarFiles, entryClass or entryMethod.");
+    if (args.length < 4 || args.length > 5) {
+      System.err.println("No jarFiles, entryClass, entryMethod and target package.");
       return;
     }
     List<String> jarFiles =
         CallGraphGenerator.handleJarFilesWildcard(Arrays.asList(args[0].split(":")));
     String entryClass = args[1];
     String entryMethod = args[2];
+    String targetPackagePrefix = args[3];
     String includePrefix = "";
     String excludePrefix = "";
     String sinkMethod = "";
-    if (args.length == 4) {
-      includePrefix = args[3].split("===")[0];
-      excludePrefix = args[3].split("===")[1];
-      sinkMethod = args[3].split("===")[2];
+    if (args.length == 5) {
+      includePrefix = args[4].split("===")[0];
+      excludePrefix = args[4].split("===")[1];
+      sinkMethod = args[4].split("===")[2];
     }
-
     if (jarFiles.size() < 1) {
       System.err.println("Invalid jarFiles");
     }
@@ -102,7 +102,7 @@ public class CallGraphGenerator {
     // Add an custom analysis phase to Soot
     CustomSenceTransformer custom =
         new CustomSenceTransformer(
-            entryClass, entryMethod, includePrefix, excludePrefix, sinkMethod);
+            entryClass, entryMethod, targetPackagePrefix, includePrefix, excludePrefix, sinkMethod);
     PackManager.v().getPack("wjtp").add(new Transform("wjtp.custom", custom));
 
     // Set basic settings for the call graph generation
@@ -164,6 +164,7 @@ public class CallGraphGenerator {
 }
 
 class CustomSenceTransformer extends SceneTransformer {
+  private List<String> targetPackageList;
   private List<String> includeList;
   private List<String> excludeList;
   private List<String> excludeMethodList;
@@ -178,6 +179,7 @@ class CustomSenceTransformer extends SceneTransformer {
   public CustomSenceTransformer(
       String entryClassStr,
       String entryMethodStr,
+      String targetPackagePrefix,
       String includePrefix,
       String excludePrefix,
       String sinkMethod) {
@@ -185,6 +187,7 @@ class CustomSenceTransformer extends SceneTransformer {
     this.entryMethodStr = entryMethodStr;
     this.entryMethod = null;
 
+    targetPackageList = new LinkedList<String>();
     includeList = new LinkedList<String>();
     excludeList = new LinkedList<String>();
     excludeMethodList = new LinkedList<String>();
@@ -193,11 +196,19 @@ class CustomSenceTransformer extends SceneTransformer {
     sinkMethodMap = new HashMap<String, Set<String>>();
     methodList = new FunctionConfig();
 
+    if (!targetPackagePrefix.equals("ALL")) {
+      for (String targetPackage : targetPackagePrefix.split(":")) {
+        if (!targetPackage.equals("")) {
+          targetPackageList.add(targetPackage);
+        }
+      }
+    }
     for (String include : includePrefix.split(":")) {
       if (!include.equals("")) {
         includeList.add(include);
       }
     }
+    includeList.add(entryClassStr);
     for (String exclude : excludePrefix.split(":")) {
       if (!exclude.equals("")) {
         excludeList.add(exclude);
@@ -239,12 +250,18 @@ class CustomSenceTransformer extends SceneTransformer {
       SootClass c = classIterator.next();
       String cname = c.getName();
 
+      // Check for a list of classes of prefixes that must handled
       for (String prefix : includeList) {
-        if (cname.startsWith(prefix)) {
+        if (cname.startsWith(prefix.replace("*", ""))) {
           isInclude = true;
           break;
         }
       }
+
+      // Check if remaining classes are in the exclude list
+      // Or if it is a class contains sink method
+      // If the class is in the exclude list and are not classes
+      // that contains sink method, ignore it
       if (!isInclude) {
         for (String prefix : excludeList) {
           if (cname.startsWith(prefix.replace("*", ""))) {
@@ -255,6 +272,23 @@ class CustomSenceTransformer extends SceneTransformer {
             }
             break;
           }
+        }
+      }
+
+      // Check if the remaining classes have a prefix of one
+      // of the target package
+      // If target package prefix has been specified and the
+      // classes are not in those package, ignore it
+      if (!isIgnore && !isSinkClass && !isInclude && this.hasTargetPackage()) {
+        boolean targetPackage = false;
+        for (String prefix : targetPackageList) {
+          if (cname.startsWith(prefix.replace("*", ""))) {
+            targetPackage = true;
+            break;
+          }
+        }
+        if (!targetPackage) {
+          isIgnore = true;
         }
       }
 
@@ -909,6 +943,10 @@ class CustomSenceTransformer extends SceneTransformer {
     branchSide.setBranchSideFuncs(getFunctionCallInTargetLine(functionLineMap, start, end));
 
     return branchSide;
+  }
+
+  public Boolean hasTargetPackage() {
+    return (targetPackageList.size() > 0);
   }
 
   public List<String> getIncludeList() {

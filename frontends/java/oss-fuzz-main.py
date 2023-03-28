@@ -110,6 +110,9 @@ def run_introspector_frontend(target_class, jar_set):
   """
   print("Running introspector frontend on %s :: %s" % (target_class, jar_set))
   jarfile_str = ":".join(jar_set)
+  package_name = os.getenv("TARGET_PACKAGE_PREFIX")
+  if not package_name:
+    package_name = "ALL"
   cmd = [
       "java",
       "-Xmx6144M",
@@ -118,6 +121,7 @@ def run_introspector_frontend(target_class, jar_set):
       CGRAPH_STR,
       jarfile_str,
       target_class,
+      package_name,
       "fuzzerTestOneInput", # entrymethod
       """===jdk.*:java.*:javax.*:sun.*:sunw.*:com.sun.*:com.ibm.*:\
 com.apple.*:apple.awt.*===[java.lang.Runtime].exec:[javax.xml.xpath.XPath].compile:\
