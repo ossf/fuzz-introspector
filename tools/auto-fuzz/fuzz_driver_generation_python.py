@@ -145,9 +145,7 @@ def get_exception_imports(exceptions_thrown, all_classes, inheritance):
     # If we have some exceptions that are top-level, we will use those
     # for catching.
     if len(inherited_from_exception) > 0:
-        base_exceptions = {
-            "RuntimeError", "TypeError"
-        }
+        base_exceptions = {"RuntimeError", "TypeError"}
         base_exceptions_to_analyse = []
         for base_exception in base_exceptions:
             if base_exception in refined:
@@ -446,7 +444,6 @@ def _generate_heuristic_4(yaml_dict, possible_targets):
                 class_path, possible_class_target_name)
             possible_targets.append(possible_target)
 
-
             # Another target
             possible_target3 = FuzzTarget()
             HEURISTIC_NAME = "py-autofuzz-heuristics-4.1.1"
@@ -466,8 +463,8 @@ def _generate_heuristic_4(yaml_dict, possible_targets):
             fuzzer_source_code += "    pass\n"
 
             possible_target3.fuzzer_source_code = fuzzer_source_code
-            possible_target3.imports_to_add.append("import %s" %
-                                                  (cleanup_import(class_path)))
+            possible_target3.imports_to_add.append(
+                "import %s" % (cleanup_import(class_path)))
 
             # Add open variables
             possible_target3.variables_to_add.append(("val_1", "str"))
@@ -475,10 +472,6 @@ def _generate_heuristic_4(yaml_dict, possible_targets):
             possible_target3.function_target = "%s.%s" % (
                 class_path, possible_class_target_name)
             possible_targets.append(possible_target3)
-
-
-
-
 
             # Make second one
             possible_target2 = FuzzTarget()
