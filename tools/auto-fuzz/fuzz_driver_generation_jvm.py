@@ -116,6 +116,17 @@ def _is_enum_class(init_dict, classname):
     return False
 
 
+def _is_project_class(classname):
+    """Check if the method's class is in the target project"""
+    global project_class_list
+    if project_class_list:
+        for project_class in project_class_list:
+            if project_class.endswith(classname):
+                return True
+
+    return False
+
+
 def _determine_import_statement(classname):
     """Generate java import statement for a given class name"""
     primitives = [
@@ -586,6 +597,29 @@ def _handle_object_creation(classname,
         return ["new " + classname.replace("$", ".") + "()"]
 
 
+def _extract_class_list(projectdir):
+    """Extract a list of path for all java files exist in the project directory"""
+    global project_class_list
+    project_class_list = []
+
+    for root, _, files in os.walk(projectdir):
+        for file in [file for file in files if file.endswith(".java")]:
+            path = os.path.join(root, file)
+            path = path.replace("%s/" % projectdir, "")
+            path = path.replace(".java", "").replace("/", ".")
+
+            # Filter some unrelatede class
+            if "module-info" in path or "package-info" in path:
+                continue
+            if "test" in path or "Test" in path:
+                continue
+            if path.endswith("Exception"):
+                continue
+
+            if path not in project_class_list:
+                project_class_list.append(path)
+
+
 def _extract_method(yaml_dict):
     """Extract method and group them into list for heuristic processing"""
     init_dict = {}
@@ -621,7 +655,11 @@ def _extract_method(yaml_dict):
             static_method_list.append(func_elem)
         else:
             instance_method_list.append(func_elem)
-            method_list.append(func_elem)
+            # Check if this method belongs to this project
+            # or not and filter out unrelated methods
+            # from dependencies or libraries
+            if _is_project_class(func_elem['functionSourceFile']):
+                method_list.append(func_elem)
 
     return init_dict, method_list, instance_method_list, static_method_list
 
@@ -1346,6 +1384,11 @@ def generate_possible_targets(proj_folder, max_target):
                              "fuzzerLogFile-Fuzz1.data.yaml")
     with open(yaml_file, "r") as stream:
         yaml_dict = yaml.safe_load(stream)
+
+    # Extract a list of possible java classes of the project
+    # This is used to filter out methods not belonging to
+    # this project.
+    _extract_class_list(os.path.join(proj_folder, "work", "proj"))
 
     possible_targets = []
     _generate_heuristic_1(yaml_dict, possible_targets, max_target)
