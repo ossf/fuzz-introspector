@@ -88,7 +88,16 @@ class FuzzTarget:
                                 f"  {var_name} = '/tmp/random_file.txt'\n"
                                 f"  with open({var_name}, 'wb') as f:\n"
                                 f"    f.write(fdp.ConsumeBytes(1024))\n")
-
+                        if var_type == "random-dict":
+                            content += (
+                                f"  {var_name} = dict()\n"
+                                f"  {var_name}[fdp.ConsumeUnicodeNoSurrogates(12)] = fdp.ConsumeUnicodeNoSurrogates(24)\n"
+                                f"  {var_name}[fdp.ConsumeUnicodeNoSurrogates(12)] = fdp.ConsumeUnicodeNoSurrogates(24)\n"
+                                f"  {var_name}[fdp.ConsumeUnicodeNoSurrogates(12)] = fdp.ConsumeUnicodeNoSurrogates(24)\n"
+                                f"  {var_name}[fdp.ConsumeUnicodeNoSurrogates(12)] = [fdp.ConsumeUnicodeNoSurrogates(24), 2]\n"
+                                f"  {var_name}[fdp.ConsumeUnicodeNoSurrogates(12)] = 3\n"
+                                f"  {var_name}[fdp.ConsumeUnicodeNoSurrogates(12)] = fdp.ConsumeIntInRange(1, 10)\n"
+                            )
                         content += "\n"
 
                     # Add core source code of the target, that calls into the
@@ -217,37 +226,38 @@ def _generate_heuristic_1(yaml_dict, possible_targets):
             func_name = give_right_path(func_name)
 
             # Create the possible target
-            possible_target = FuzzTarget()
-            possible_target.function_target = func_name
-            possible_target.heuristics_used.append(HEURISTIC_NAME)
+            for type_to_use in ["str", "random-dict"]:
+                possible_target = FuzzTarget()
+                possible_target.function_target = func_name
+                possible_target.heuristics_used.append(HEURISTIC_NAME)
 
-            # Set exceptions raised
-            exceptions_thrown = find_all_exceptions(
-                func_elem, yaml_dict['All functions']['Elements'])
-            exceptions_thrown = get_exception_imports(exceptions_thrown,
-                                                      yaml_dict['All classes'],
-                                                      yaml_dict['Inheritance'])
-            possible_target.exceptions_to_handle = list(exceptions_thrown)
+                # Set exceptions raised
+                exceptions_thrown = find_all_exceptions(
+                    func_elem, yaml_dict['All functions']['Elements'])
+                exceptions_thrown = get_exception_imports(
+                    exceptions_thrown, yaml_dict['All classes'],
+                    yaml_dict['Inheritance'])
+                possible_target.exceptions_to_handle = list(exceptions_thrown)
 
-            # Set imports
-            possible_target.imports_to_add.append("import %s" %
-                                                  (cleanup_import(func_name)))
+                # Set imports
+                possible_target.imports_to_add.append(
+                    "import %s" % (cleanup_import(func_name)))
 
-            # Create the actual source
-            fuzzer_source_code = ""
-            fuzzer_source_code += "  try:\n"
-            fuzzer_source_code += "    %s(val_1)\n" % (func_name)
-            fuzzer_source_code += "  except ("
-            for exc in possible_target.exceptions_to_handle:
-                fuzzer_source_code += exc + ","
-            fuzzer_source_code += "):\n    pass\n"
-            possible_target.fuzzer_source_code = fuzzer_source_code
+                # Create the actual source
+                fuzzer_source_code = ""
+                fuzzer_source_code += "  try:\n"
+                fuzzer_source_code += "    %s(val_1)\n" % (func_name)
+                fuzzer_source_code += "  except ("
+                for exc in possible_target.exceptions_to_handle:
+                    fuzzer_source_code += exc + ","
+                fuzzer_source_code += "):\n    pass\n"
+                possible_target.fuzzer_source_code = fuzzer_source_code
 
-            # Set free variables and their types.
-            possible_target.variables_to_add.append(("val_1", "str"))
+                # Set free variables and their types.
+                possible_target.variables_to_add.append(("val_1", type_to_use))
 
-            # Add to list of possible targets.
-            possible_targets.append(possible_target)
+                # Add to list of possible targets.
+                possible_targets.append(possible_target)
 
 
 def _generate_heuristic_2(yaml_dict, possible_targets):
