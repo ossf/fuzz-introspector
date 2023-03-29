@@ -402,9 +402,6 @@ def _generate_heuristic_4(yaml_dict, possible_targets):
             if init_name == elem['functionName']:
                 init_elem = elem
 
-        if init_elem is None:
-            continue
-
         # Strip some prefixes off
         try:
             class_path = give_right_path(class_path)
