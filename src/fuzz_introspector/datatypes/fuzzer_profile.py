@@ -408,8 +408,8 @@ class FuzzerProfile:
                     entrypoint = name
                     break
             if entrypoint:
-                self.functions_reached_by_fuzzer = (self.all_class_functions[
-                    entrypoint].functions_reached)
+                self.functions_reached_by_fuzzer = (
+                    self.all_class_functions[entrypoint].functions_reached)
                 self.functions_reached_by_fuzzer.append(entrypoint)
                 return
 
