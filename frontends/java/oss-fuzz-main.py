@@ -119,10 +119,10 @@ def run_introspector_frontend(target_class, jar_set):
       "-cp",
       FI_JVM_BASE + "/" + PLUGIN_PATH,
       CGRAPH_STR,
-      jarfile_str,
-      target_class,
-      package_name,
-      "fuzzerTestOneInput", # entrymethod
+      jarfile_str, # jar files path
+      target_class, # entry class
+      "fuzzerTestOneInput", # entry method
+      package_name, # target package prefix
       """===jdk.*:java.*:javax.*:sun.*:sunw.*:com.sun.*:com.ibm.*:\
 com.apple.*:apple.awt.*===[java.lang.Runtime].exec:[javax.xml.xpath.XPath].compile:\
 [javax.xml.xpath.XPath].evaluate:[java.lang.Thread].run:[java.lang.Runnable].run:\
