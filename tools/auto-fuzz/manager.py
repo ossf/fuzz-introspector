@@ -913,7 +913,10 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
                         type=str,
                         help="The languaeg of the projects",
                         default='python')
-    parser.add_argument("--targets", type=str, help="The targets to use")
+    parser.add_argument("--targets",
+                        type=str,
+                        help="The targets to use",
+                        default='constants')
     parser.add_argument(
         "--merge",
         action="store_true",
