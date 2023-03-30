@@ -202,7 +202,7 @@ wget -P $OUT/ https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.
 BUILD_CLASSPATH=$BUILD_CLASSPATH:$JAZZER_API_PATH:$OUT/commons-lang3-3.12.0.jar
 RUNTIME_CLASSPATH=$RUNTIME_CLASSPATH:\$this_dir/commons-lang3-3.12.0.jar:\$this_dir
 
-for fuzzer in $(find $SRC -name 'Fuzz1-*.java')
+for fuzzer in $(find $SRC -name 'Fuzz1*.java')
 do
   fuzzer_basename=$(basename -s .java $fuzzer)
   javac -cp $BUILD_CLASSPATH $fuzzer
