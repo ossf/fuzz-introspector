@@ -85,8 +85,7 @@ class FuzzerProfile:
             return self.entrypoint_fun
         elif self.target_lang == "jvm":
             cname = self.fuzzer_source_file
-            arg = 'com.code_intelligence.jazzer.api.FuzzedDataProvider'
-            return f"[{cname}].fuzzerTestOneInput({arg})"
+            return f"[{cname}].fuzzerTestOneInput"
         else:
             return None
 
@@ -125,11 +124,15 @@ class FuzzerProfile:
             return self.entrypoint_function is not None
 
         elif self.target_lang == "jvm":
-            return self.entrypoint_function in self.all_class_functions
+            for name in self.all_class_functions:
+                if name.startswith(self.entrypoint_function):
+                    return True
 
         return False
 
     def func_is_entrypoint(self, demangled_func_name: str) -> bool:
+        if self.target_lang == "jvm":
+            return demangled_func_name.startswith(self.entrypoint_function)
         if (demangled_func_name != self.entrypoint_function
                 and self.entrypoint_function not in demangled_func_name):
             return False
@@ -399,11 +402,15 @@ class FuzzerProfile:
 
         # Find JVM entrypoint
         elif self._target_lang == "jvm":
-            if self.entrypoint_function in self.all_class_functions:
-                self.functions_reached_by_fuzzer = (self.all_class_functions[
-                    self.entrypoint_function].functions_reached)
-                self.functions_reached_by_fuzzer.append(
-                    self.entrypoint_function)
+            entrypoint = None
+            for name in self.all_class_functions:
+                if name.startswith(self.entrypoint_function):
+                    entrypoint = name
+                    break
+            if entrypoint:
+                self.functions_reached_by_fuzzer = (
+                    self.all_class_functions[entrypoint].functions_reached)
+                self.functions_reached_by_fuzzer.append(entrypoint)
                 return
 
         raise DataLoaderError("Can not identify entrypoint")
