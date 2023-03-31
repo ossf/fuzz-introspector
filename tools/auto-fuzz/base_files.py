@@ -202,30 +202,32 @@ wget -P $OUT/ https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.
 BUILD_CLASSPATH=$BUILD_CLASSPATH:$JAZZER_API_PATH:$OUT/commons-lang3-3.12.0.jar
 RUNTIME_CLASSPATH=$RUNTIME_CLASSPATH:\$this_dir/commons-lang3-3.12.0.jar:\$this_dir
 
-fuzzer="Fuzz1.java"
-fuzzer_basename="Fuzz1"
-javac -cp $BUILD_CLASSPATH $SRC/$fuzzer
-cp $SRC/$fuzzer_basename.class $OUT/
+for fuzzer in $(find $SRC -name 'Fuzz1*.java')
+do
+  fuzzer_basename=$(basename -s .java $fuzzer)
+  javac -cp $BUILD_CLASSPATH $fuzzer
+  cp $SRC/$fuzzer_basename.class $OUT/
 
-# Create an execution wrapper that executes Jazzer with the correct arguments.
-echo "#!/bin/bash
+  # Create an execution wrapper that executes Jazzer with the correct arguments.
+  echo "#!/bin/bash
 
-# LLVMFuzzerTestOneInput for fuzzer detection.
-this_dir=\$(dirname \"\$0\")
-if [[ \"\$@\" =~ (^| )-runs=[0-9]+($| ) ]]
-then
-  mem_settings='-Xmx1900m:-Xss900k'
-else
-  mem_settings='-Xmx2048m:-Xss1024k'
-fi
+  # LLVMFuzzerTestOneInput for fuzzer detection.
+  this_dir=\$(dirname \"\$0\")
+  if [[ \"\$@\" =~ (^| )-runs=[0-9]+($| ) ]]
+  then
+    mem_settings='-Xmx1900m:-Xss900k'
+  else
+    mem_settings='-Xmx2048m:-Xss1024k'
+  fi
 
-LD_LIBRARY_PATH=\"$JVM_LD_LIBRARY_PATH\":\$this_dir \
-  \$this_dir/jazzer_driver --agent_path=\$this_dir/jazzer_agent_deploy.jar \
-  --cp=$RUNTIME_CLASSPATH \
-  --target_class=$fuzzer_basename \
-  --jvm_args=\"\$mem_settings\" \
-  \$@" > $OUT/$fuzzer_basename
-  chmod u+x $OUT/$fuzzer_basename"""
+  LD_LIBRARY_PATH=\"$JVM_LD_LIBRARY_PATH\":\$this_dir \
+    \$this_dir/jazzer_driver --agent_path=\$this_dir/jazzer_agent_deploy.jar \
+    --cp=$RUNTIME_CLASSPATH \
+    --target_class=$fuzzer_basename \
+    --jvm_args=\"\$mem_settings\" \
+    \$@" > $OUT/$fuzzer_basename
+    chmod u+x $OUT/$fuzzer_basename
+done"""
 
     return BUILD_LICENSE + "\n" + BUILD_SCRIPT
 
@@ -257,7 +259,7 @@ def gen_base_fuzzer_jvm():
     BASE_FUZZER = """import com.code_intelligence.jazzer.api.FuzzedDataProvider;
 import org.apache.commons.lang3.ArrayUtils;
 /*IMPORTS*/
-public class Fuzz1 {
+public class Fuzz1/*COUNTER*/ {
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
 /*STATIC_OBJECT_CHOICE*/
 /*CODE*/
