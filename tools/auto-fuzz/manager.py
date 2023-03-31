@@ -866,7 +866,8 @@ def autofuzz_project_from_github(github_url,
                      language)
 
     if to_merge:
-        merged_directory = post_process.merge_run(autofuzz_base_workdir, language)
+        merged_directory = post_process.merge_run(autofuzz_base_workdir,
+                                                  language)
         if merged_directory:
             oss_fuzz_manager.copy_and_introspect_project(
                 merged_directory, OSS_FUZZ_BASE, merged_directory)

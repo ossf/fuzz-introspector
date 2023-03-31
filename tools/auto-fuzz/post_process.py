@@ -363,7 +363,7 @@ def _merge_runs(trial_dir, successful_runs, language):
     return next_merged_dir
 
 
-def merge_run(target_directory, language = "python"):
+def merge_run(target_directory, language="python"):
     print("Merging run")
     # Get all succcessful directories in target module
     proj_yaml, trial_runs = interpret_autofuzz_run(target_directory)
@@ -386,7 +386,8 @@ def merge_run(target_directory, language = "python"):
     # None if language not supported
     merged_project_dir = None
     if language == "python" or language == "jvm":
-        merged_project_dir = _merge_runs(target_directory, successful_runs, language)
+        merged_project_dir = _merge_runs(target_directory, successful_runs,
+                                         language)
 
     return merged_project_dir
 
