@@ -501,13 +501,13 @@ def detect_branch_level_blockers(
             function_name, rest_string = branch_string.rsplit(':', maxsplit=1)
             line_number, column_number = rest_string.split(',')
         except ValueError:
-            logger.error(
+            logger.debug(
                 f"branch-profiling: error getting function name from {branch_string}"
             )
             continue
 
         if function_name not in functions_profile:
-            logger.error(
+            logger.debug(
                 f"branch-profiling: func name not in functions_profile {function_name}"
             )
             continue

@@ -94,7 +94,7 @@ class MergedProjectProfile:
                             f"{reached_func_name} not provided within classpath"
                         )
                     else:
-                        logger.error(
+                        logger.debug(
                             f"Mismatched function name: {reached_func_name}")
                     continue
                 reached_func_obj = self.all_functions[reached_func_name]
