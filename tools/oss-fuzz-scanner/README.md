@@ -48,4 +48,4 @@ We can see the the function is reached by 6 fuzzers and has code coverage of
 
 The above roughly corresponds to navigating to [the relevant section](https://storage.googleapis.com/oss-fuzz-introspector/openssh/inspector-report/20230402/fuzz_report.html#Project-functions-overview) in the
 Fuzz Introspector report and searching for `sshkey_verify`:
-[screenshot of report](/tools/oss-fuzz-scanner/openssh-verify-key.png)
+![screenshot of report](/tools/oss-fuzz-scanner/openssh-verify-key.png)
