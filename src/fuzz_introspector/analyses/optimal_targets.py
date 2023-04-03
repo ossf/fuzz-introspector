@@ -62,7 +62,7 @@ def add_func_to_reached_and_clone(
             if merged_profile_old.profiles[0].target_lang == "jvm":
                 logger.debug(f"{func_name} not provided within classpath")
             else:
-                logger.error(f"Mismatched function name: {func_name}")
+                logger.debug(f"Mismatched function name: {func_name}")
             continue
         f = merged_profile.all_functions[func_name]
         f.hitcount += 1
@@ -82,7 +82,7 @@ def add_func_to_reached_and_clone(
                     logger.debug(
                         f"{reached_func_name} not provided within classpath")
                 else:
-                    logger.error(
+                    logger.debug(
                         f"Mismatched function name: {reached_func_name}")
                 continue
             f_reached = merged_profile.all_functions[reached_func_name]
