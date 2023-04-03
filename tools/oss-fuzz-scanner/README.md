@@ -24,6 +24,9 @@ pip3 install .
 ```
 
 ## function_inspector.py
+
+Usage: `python3 ./function_inspector.py {project_name} {function_name}`
+
 Provides summary information about a given function in a given project. This
 is centred around reachability and code coverage.
 
