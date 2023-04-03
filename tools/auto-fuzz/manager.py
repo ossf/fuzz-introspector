@@ -866,8 +866,9 @@ def autofuzz_project_from_github(github_url,
                      language)
 
     if to_merge:
-        merged_directory = post_process.merge_run(autofuzz_base_workdir)
-        if merged_directory is not None:
+        merged_directory = post_process.merge_run(autofuzz_base_workdir,
+                                                  language)
+        if merged_directory:
             oss_fuzz_manager.copy_and_introspect_project(
                 merged_directory, OSS_FUZZ_BASE, merged_directory)
             introspector_oss_base = os.path.join(
@@ -880,6 +881,8 @@ def autofuzz_project_from_github(github_url,
                     os.path.join(merged_directory, "introspector-report"))
             else:
                 print("No introspector generated")
+        else:
+            print("Fail to merge project")
 
     return True
 
@@ -948,6 +951,6 @@ if __name__ == "__main__":
         run_on_projects("python", github_projects, args.merge)
     elif args.language == 'java':
         github_projects = get_target_repos(args.targets, 'jvm')
-        run_on_projects("jvm", github_projects)
+        run_on_projects("jvm", github_projects, args.merge)
     else:
         print("Language not supported")
