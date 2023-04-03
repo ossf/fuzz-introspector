@@ -886,7 +886,10 @@ def autofuzz_project_from_github(github_url,
     return True
 
 
-def run_on_projects(language, repos_to_target, to_merge=False, param_combination=False):
+def run_on_projects(language,
+                    repos_to_target,
+                    to_merge=False,
+                    param_combination=False):
     """Run autofuzz generation on a list of Github projects."""
     home_dir = os.getcwd()
     for repo in repos_to_target:
@@ -932,13 +935,15 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--param_combination",
         action="store_true",
-        help=("If set and if some method parameters can be generated with "
-              "multiple ways, the auto-fuzz generator will create one target "
-              "for each of the possible comibinations for parameter generation. "
-              "Creating a set of possible target with same method call but different "
-              "parameter generating combination. If this is not set, only one possible "
-              "target is generated for each method call with the first parameter generating "
-              "combination. Currently, this option is only processed for java project."))
+        help=
+        ("If set and if some method parameters can be generated with "
+         "multiple ways, the auto-fuzz generator will create one target "
+         "for each of the possible comibinations for parameter generation. "
+         "Creating a set of possible target with same method call but different "
+         "parameter generating combination. If this is not set, only one possible "
+         "target is generated for each method call with the first parameter generating "
+         "combination. Currently, this option is only processed for java project."
+         ))
 
     return parser
 
@@ -962,6 +967,7 @@ if __name__ == "__main__":
         run_on_projects("python", github_projects, args.merge)
     elif args.language == 'java':
         github_projects = get_target_repos(args.targets, 'jvm')
-        run_on_projects("jvm", github_projects, args.merge, args.param_combination)
+        run_on_projects("jvm", github_projects, args.merge,
+                        args.param_combination)
     else:
         print("Language not supported")

@@ -368,7 +368,6 @@ def _search_factory_method(classname,
                 if not need_param_combination:
                     break
 
-
         for creation in _search_static_factory_method(func_class,
                                                       static_method_list,
                                                       possible_target,
