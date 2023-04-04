@@ -319,6 +319,7 @@ def _search_factory_method(classname,
         - No "test" in method name
         - Return an object of the target class
     """
+    global need_param_combination
     result_list = []
     for func_elem in possible_method_list:
         java_info = func_elem['JavaMethodInfo']
@@ -364,6 +365,8 @@ def _search_factory_method(classname,
             for arg_item in list(itertools.product(*arg_list)):
                 call += "(" + ",".join(arg_item) + ")"
                 result_list.append(call)
+                if not need_param_combination:
+                    break
 
         for creation in _search_static_factory_method(func_class,
                                                       static_method_list,
@@ -376,6 +379,8 @@ def _search_factory_method(classname,
             for arg_item in list(itertools.product(*arg_list)):
                 call += "(" + ",".join(arg_item) + ")"
                 result_list.append(call)
+                if not need_param_combination:
+                    break
 
         # Handle exceptions and import
         possible_target.exceptions_to_handle.update(
@@ -534,6 +539,7 @@ def _handle_object_creation(classname,
     use it as reference, otherwise the default empty constructor
     are used.
     """
+    global need_param_combination
     if init_dict and classname in init_dict.keys():
         if class_field and init_dict[classname]:
             # Use defined class object
@@ -589,6 +595,8 @@ def _handle_object_creation(classname,
                                            "(" + ",".join(args_item) + ")")
                         if len(result_list) > max_target:
                             return result_list
+                        if not need_param_combination:
+                            break
             except RecursionError:
                 # Fail to create constructor code with parameters, using default constructor
                 return ["new " + classname.replace("$", ".") + "()"]
@@ -1376,8 +1384,12 @@ def _generate_heuristic_10(yaml_dict, possible_targets, max_target):
             possible_targets.append(cloned_possible_target)
 
 
-def generate_possible_targets(proj_folder, max_target):
+def generate_possible_targets(proj_folder, max_target, param_combination):
     """Generate all possible targets for a given project folder"""
+
+    # Set param_combination to global
+    global need_param_combination
+    need_param_combination = param_combination
 
     # Read the Fuzz Introspector generated data
     yaml_file = os.path.join(proj_folder, "work",
