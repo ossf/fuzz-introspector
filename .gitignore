@@ -7,3 +7,8 @@ tmp
 *.err
 *.profile
 *fuzz_report.html
+
+__pycache__/
+*.py[cod]
+.*$py.class
+*.so

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html class="no-js" lang="">
+  <head>
+    <meta charset="utf-8" />
+    <title>Fuzzing | Project Profile</title>
+    <meta name="description" content="" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <meta property="og:title" content="" />
+    <meta property="og:type" content="" />
+    <meta property="og:url" content="" />
+    <meta property="og:image" content="" />
+
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="icon.png" />
+    <link rel="stylesheet" href="{{url_for('static', filename='assets/css/normalize.css')}}" />
+    <!-- font awesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.css"
+    />
+    <!-- bootstrap -->
+    <link rel="stylesheet" href="{{url_for('static', filename='assets/css/bootstrap.min.css')}}" />
+    <link rel="stylesheet" href="{{url_for('static', filename='assets/css/style.css')}}" />
+    <link rel="stylesheet" href="{{url_for('static', filename='assets/css/responsive.css')}}" />
+    <!-- fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="manifest" href="site.webmanifest" />
+    <meta name="theme-color" content="#fafafa" />
+  </head>
+  <body>
+    <!-- header -->
+    <header>
+      <div class="container">
+        <div class="header__wrapper">
+            <a href="{{ url_for('site.index') }}" class="logo">
+            Open Source <br />
+            Fuzzing Introspection
+          </a>
+          <nav>
+            <ul class="menu">
+                <li><a href="{{ url_for('site.projects_overview') }}">Project Overview</a></li>
+              <li><a href="{{ url_for('site.function_search') }}">Function Database</a></li>
+              <li><a href="#">Blog</a></li>
+            </ul>
+            <ul class="menu">
+              <li><a href="https://github.com/ossf/fuzz-introspector">Fuzz Introspector</a></li>
+              <li><a href="https://github.com/google/oss-fuzz">OSS-Fuzz</a></li>
+              <li><a href="#">About</a></li>
+            </ul>
+          </nav>
+        </div>
+      </div>
+    </header>
+    <!-- end header -->
+    <!-- main content -->
+    {% block content %}
+
+    {% endblock %}
+    <!-- end main content -->
+    <!-- footer -->
+
+    <!-- end footer -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="{url_for('static', filename='assets/js/jquery.min.js')}}"></script>
+    <script src="{url_for('static', filename='assets/js/waypoints.min.js')}}"></script>
+    <script src="{url_for('static', filename='assets/js/jquery.counterup.min.js')}}"></script>
+    <!-- bootstrap js -->
+    <script src="{url_for('static', filename='assets/js/bootstrap.bundle.min.js')}}"></script>
+    <!-- main js -->
+    <script src="{url_for('static', filename='assets/js/vendor/modernizr-3.12.0.min.js')}}"></script>
+    <script src="{url_for('static', filename='assets/js/app.js')}}"></script>
+  </body>
+</html>

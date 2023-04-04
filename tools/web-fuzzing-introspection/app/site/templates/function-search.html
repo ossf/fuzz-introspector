@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block content %}
+	<!-- main content -->
+    <main>
+      <!-- hero area -->
+      <section class="search__hero">
+        <div class="container">
+          <div class="search__hero-wrapper">
+            <h1 class="section__title">
+              Open Source Fuzzing Introspection Database
+            </h1>
+            <form action="#" class="search__box">
+              <div class="search__input">
+                <input type="search" placeholder="Function name..." />
+                <span>
+                    <img src="{{url_for('static', filename='assets/img/search.svg')}}" alt="search" />
+                </span>
+              </div>
+              <button type="submit" class="btn__primary">
+                Search database
+              </button>
+            </form>
+          </div>
+          <div class="database">
+            <div class="database__header">
+              <!-- database select -->
+              <div class="database__select">
+                <select name="page" id="page">
+                  <option value="0">24 per page</option>
+                  <option value="1">50 per page</option>
+                  <option value="2">100 per page</option>
+                </select>
+              </div>
+            </div>
+            <div class="database__body">
+              <table>
+                <thead>
+                  <tr>
+                    <td>Function name</td>
+                    <td>Project</td>
+                    <td>Is reached?</td>
+                    <td>Runtime code coverage</td>
+                  </tr>
+                </thead>
+                <tbody>
+                {% for func in all_functions %}
+                  <tr>
+                      <td> <a href="/function-profile">{{ func.name }}</a></td>
+                      <td> <a href="/project-profile">{{ func.project.name }}</a></td>
+                      <td> {{ func.is_reached }} </td>
+                      <td> {{ func.runtime_code_coverage }}% </td>
+                  </tr>
+                {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            <!-- entry count -->
+            <p class="table__data-count">
+              Showing <span>1</span> to <span>10</span> of
+              <span>4132</span> entries
+            </p>
+            <!-- pagination -->
+            <div class="pagination">
+              <ul>
+                <li><a href="#">Previous</a></li>
+                <li><a href="#">1</a></li>
+                <li><a href="#">2</a></li>
+                <li><a href="#">3</a></li>
+              </ul>
+              <ul>
+                <li><a href="#">Next</a></li>
+                <li><a href="#">Last</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+      <!-- end hero area -->
+    </main>
+    <!-- end main content -->
+{% endblock %}

@@ -1,0 +1,84 @@
+{% extends "base.html" %}                                                       
+{% block content %}   
+
+<!-- end header -->
+    <!-- main content -->
+    <main class="functions__profile">
+      <section class="project__profile">
+        <div class="container">
+          <div class="project__profile-wrapper">
+            <div class="pr__profile-header">
+              <h2>Project: <a href="#"> {{ project.name }}</a></h2>
+            </div>
+            <div class="profile__table" style="max-width: 300px">
+              <table>
+                <tbody>
+                  <tr>
+                    <td>Language</td>
+                    <td> {{ project.language }}
+                  </tr>
+                  <tr>
+                    <td>Fuzzer count</td>
+                    <td> {{ project.fuzz_count }}</td>
+                  </tr>
+                  <tr>
+                    <td>Code coverage</td>
+                    <td> {{ project.runtime_cov }}% </td>
+                  </tr>
+                  <tr>
+                    <td>Static reachability</td>
+                    <td> {{ project.reach }} </td>
+                  </tr>
+                  <tr>
+                    <td>Code coverage report</td>
+                    <td><a href="#">Report link</a></td>
+                  </tr>
+                  <tr>
+                    <td>Fuzz Introspector report</td>
+                    <td><a href="#">Report link</a></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <!-- project profile table -->
+          <div class="project__progress">
+            <h2>Historical progression</h2>
+            <div class="progress__graph">
+              <!-- single graph -->
+              <div class="single__graph">
+                <div class="graph__chart">
+                    <img src="{{url_for('static', filename='assets/img/progress-chart-1.svg')}}" alt="chart" />
+                </div>
+                <p>Code coverage (lines)</p>
+              </div>
+              <!-- single graph -->
+              <div class="single__graph">
+                <div class="graph__chart">
+                    <img src="{{url_for('static', filename='assets/img/progress-chart-2.svg')}}" alt="chart" />
+                </div>
+                <p>Code coverage (functions)</p>
+              </div>
+              <!-- single graph -->
+              <div class="single__graph">
+                <div class="graph__chart">
+                    <img src="{{url_for('static', filename='assets/img/progress-chart-3.svg')}}" alt="chart" />
+                </div>
+                <p>Static reachability</p>
+              </div>
+              <!-- single graph -->
+              <div class="single__graph">
+                <div class="graph__chart">
+                    <img src="{{url_for('static', filename='assets/img/progress-chart-4.svg')}}" alt="chart" />
+                </div>
+                <p>Fuzzer count</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+    <!-- end main content -->
+    <!-- footer -->
+
+{% endblock %}
