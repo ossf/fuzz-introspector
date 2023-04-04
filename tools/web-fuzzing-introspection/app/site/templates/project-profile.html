@@ -42,36 +42,35 @@
             </div>
           </div>
           <!-- project profile table -->
+
+
           <div class="project__progress">
             <h2>Historical progression</h2>
             <div class="progress__graph">
               <!-- single graph -->
               <div class="single__graph">
+
                 <div class="graph__chart">
-                    <img src="{{url_for('static', filename='assets/img/progress-chart-1.svg')}}" alt="chart" />
+                    <div id="codeCoverageLinesOverTimePlot" style="width:100%;max-width:500px"></div>
                 </div>
-                <p>Code coverage (lines)</p>
               </div>
               <!-- single graph -->
               <div class="single__graph">
                 <div class="graph__chart">
-                    <img src="{{url_for('static', filename='assets/img/progress-chart-2.svg')}}" alt="chart" />
+                    <div id="codeCoverageFunctionsOverTimePlot" style="width:100%;max-width:500px"></div>
                 </div>
-                <p>Code coverage (functions)</p>
               </div>
               <!-- single graph -->
               <div class="single__graph">
                 <div class="graph__chart">
-                    <img src="{{url_for('static', filename='assets/img/progress-chart-3.svg')}}" alt="chart" />
+                    <div id="staticReachabilityOverTimePlot" style="width:100%;max-width:500px"></div>
                 </div>
-                <p>Static reachability</p>
               </div>
               <!-- single graph -->
               <div class="single__graph">
                 <div class="graph__chart">
-                    <img src="{{url_for('static', filename='assets/img/progress-chart-4.svg')}}" alt="chart" />
+                    <div id="fuzzerCountOverTimePlot" style="width:100%;max-width:500px"></div>
                 </div>
-                <p>Fuzzer count</p>
               </div>
             </div>
           </div>
@@ -80,5 +79,106 @@
     </main>
     <!-- end main content -->
     <!-- footer -->
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script>
+
+// Plot for code coverage in terms of lines over time
+const xArray = [
+  {% for x_cord in project.code_coverage_history_x %}
+    "{{ x_cord }}",
+  {% endfor %}
+];
+const yArray = [
+  {% for y_cord in project.code_coverage_history_y %}
+    {{ y_cord }},
+  {% endfor %}
+];
+const data = [{
+  x: xArray,
+  y: yArray,
+  mode:"lines"
+}];
+const layout = {
+  xaxis: {title: "Date"},
+  yaxis: {title: "Coverage"},  
+  title: "Code Coverage (lines)",
+  type: "scatter"
+};
+Plotly.newPlot("codeCoverageLinesOverTimePlot", data, layout);
+
+
+// Plot for code coverage in terms of functions over time
+const xArray2 = [
+  {% for x_cord in project.code_coverage_history_x %}
+    "{{ x_cord }}",
+  {% endfor %}
+];
+const yArray2 = [
+  {% for y_cord in project.code_coverage_history_y %}
+    {{ y_cord }},
+  {% endfor %}
+];
+const data2 = [{
+  x: xArray2,
+  y: yArray2,
+  mode:"lines"
+}];
+const layout2 = {
+  xaxis: {title: "Date"},
+  yaxis: {title: "Coverage"},  
+  title: "Code Coverage (functions)",
+  type: "scatter"
+};
+Plotly.newPlot("codeCoverageFunctionsOverTimePlot", data2, layout2);
+
+// Plot for static rachability over time
+const xArray3 = [
+  {% for x_cord in project.code_coverage_history_x %}
+    "{{ x_cord }}",
+  {% endfor %}
+];
+const yArray3 = [
+  {% for y_cord in project.code_coverage_history_y %}
+    {{ y_cord }},
+  {% endfor %}
+];
+const data3 = [{
+  x: xArray3,
+  y: yArray3,
+  mode:"lines"
+}];
+const layout3 = {
+  xaxis: {title: "Date"},
+  yaxis: {title: "Coverage"},  
+  title: "Static reachability",
+  type: "scatter"
+};
+Plotly.newPlot("staticReachabilityOverTimePlot", data3, layout3);
+
+
+// Plot for fuzzer counter over time
+const xArray4 = [
+  {% for x_cord in project.code_coverage_history_x %}
+    "{{ x_cord }}",
+  {% endfor %}
+];
+const yArray4 = [
+  {% for y_cord in project.code_coverage_history_y %}
+    {{ y_cord }},
+  {% endfor %}
+];
+const data4 = [{
+  x: xArray3,
+  y: yArray3,
+  mode:"lines"
+}];
+const layout4 = {
+  xaxis: {title: "Date"},
+  yaxis: {title: "Coverage"},  
+  title: "Static reachability",
+  type: "scatter"
+};
+Plotly.newPlot("fuzzerCountOverTimePlot", data4, layout4);
+</script>
 
 {% endblock %}

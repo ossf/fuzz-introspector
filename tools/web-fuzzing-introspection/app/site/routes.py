@@ -35,7 +35,6 @@ def get_frontpage_summary_stats():
     db_summary = models.DBSummary(all_projects, total_number_of_projects, total_fuzzers, total_functions, language_count)
     return db_summary
 
-
 @site.route('/')
 def index():
     db_summary = get_frontpage_summary_stats()

@@ -12,6 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import datetime
+
+def get_date_at_offset_as_str(day_offset=-1):
+    datestr = (datetime.date.today() +
+               datetime.timedelta(day_offset)).strftime("%Y-%m-%d")
+    return datestr
+
 class DBSummary:
     def __init__(self, all_projects, total_number_of_projects, total_fuzzers, total_functions, language_count):
         self.all_projects = all_projects
@@ -27,6 +34,14 @@ class Project:
         self.fuzz_count = fuzz_count
         self.reach = reach
         self.runtime_cov = runtime_cov
+
+        self.code_coverage_history_x = []
+        self.code_coverage_history_y = []
+        for i in range(100):
+            self.code_coverage_history_y.append(i)
+            self.code_coverage_history_x.append(get_date_at_offset_as_str(i * -1))
+        self.code_coverage_history_x = list(reversed(self.code_coverage_history_x))
+
 
 class Function:
     def __init__(self, name, project, is_reached=False, runtime_code_coverage = 32.4):
