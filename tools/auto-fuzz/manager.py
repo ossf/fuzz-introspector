@@ -97,7 +97,7 @@ class OSS_FUZZ_PROJECT:
         if self.language == "python":
             return self.project_folder + "/fuzz_1.py"
         elif self.language == "jvm":
-            return self.project_folder + "/Fuzz1.java"
+            return self.project_folder + "/Fuzz.java"
         else:
             # Temporary fail safe logic
             return self.project_folder + "/fuzz_1.py"
@@ -451,7 +451,7 @@ def run_static_analysis_jvm(git_repo, basedir, project_name):
         f.write(response.content)
 
     # Retrieve path of all jar files
-    jarfiles.append(os.path.abspath("../Fuzz1.jar"))
+    jarfiles.append(os.path.abspath("../Fuzz.jar"))
     jarfiles.append("%s/*.jar" % jardir)
     if project_type == "ant":
         for file in os.listdir(os.path.join(builddir, "build", "jar")):
@@ -467,8 +467,8 @@ def run_static_analysis_jvm(git_repo, basedir, project_name):
 
     # Compile and package fuzzer to jar file
     cmd = [
-        "javac -cp jazzer_standalone.jar:commons-lang3.jar:%s ../Fuzz1.java" %
-        ":".join(jarfiles), "jar cvf ../Fuzz1.jar ../Fuzz1.class"
+        "javac -cp jazzer_standalone.jar:commons-lang3.jar:%s ../Fuzz.java" %
+        ":".join(jarfiles), "jar cvf ../Fuzz.jar ../Fuzz.class"
     ]
     try:
         subprocess.check_call(" && ".join(cmd),
@@ -477,13 +477,11 @@ def run_static_analysis_jvm(git_repo, basedir, project_name):
                               stdout=subprocess.DEVNULL,
                               stderr=subprocess.DEVNULL)
     except subprocess.TimeoutExpired:
-        print("Fail to compile Fuzz1.java.\n")
+        print("Fail to compile Fuzz.java.\n")
         return False
 
     # Run the java frontend static analysis
-    cmd = [
-        "./run.sh", "--jarfile", ":".join(jarfiles), "--entryclass", "Fuzz1"
-    ]
+    cmd = ["./run.sh", "--jarfile", ":".join(jarfiles), "--entryclass", "Fuzz"]
     try:
         subprocess.check_call(" ".join(cmd),
                               shell=True,
@@ -500,11 +498,11 @@ def run_static_analysis_jvm(git_repo, basedir, project_name):
 
     # Move data and data.yaml to working directory
     data_src = os.path.join(os.path.dirname(FUZZ_INTRO_MAIN["jvm"]),
-                            "fuzzerLogFile-Fuzz1.data")
+                            "fuzzerLogFile-Fuzz.data")
     yaml_src = os.path.join(os.path.dirname(FUZZ_INTRO_MAIN["jvm"]),
-                            "fuzzerLogFile-Fuzz1.data.yaml")
-    data_dst = os.path.join(basedir, "work", "fuzzerLogFile-Fuzz1.data")
-    yaml_dst = os.path.join(basedir, "work", "fuzzerLogFile-Fuzz1.data.yaml")
+                            "fuzzerLogFile-Fuzz.data.yaml")
+    data_dst = os.path.join(basedir, "work", "fuzzerLogFile-Fuzz.data")
+    yaml_dst = os.path.join(basedir, "work", "fuzzerLogFile-Fuzz.data.yaml")
     if os.path.isfile(data_src) and os.path.isfile(yaml_src):
         ret = True
         try:
