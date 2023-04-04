@@ -21,10 +21,25 @@ from app.site import test_data
 
 site = Blueprint('site', __name__, template_folder='templates')
 
+def get_frontpage_summary_stats():
+    # Get total number of projects
+    all_projects = test_data.get_projects()
+    total_number_of_projects = len(all_projects)
+    total_fuzzers = sum([project.fuzz_count for project in all_projects])
+    total_functions = len(test_data.get_functions())
+    language_count = {'c' : 0, 'python': 0, 'c++': 0, 'java': 0}
+    for project in all_projects:
+        language_count[project.language] += 1
+
+    # wrap it in a DBSummary
+    db_summary = models.DBSummary(all_projects, total_number_of_projects, total_fuzzers, total_functions, language_count)
+    return db_summary
+
 
 @site.route('/')
 def index():
-    return render_template('index.html')
+    db_summary = get_frontpage_summary_stats()
+    return render_template('index.html', db_summary = db_summary)
 
 @site.route('/function-profile')
 def function_profile():

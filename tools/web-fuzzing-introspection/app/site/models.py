@@ -12,6 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+class DBSummary:
+    def __init__(self, all_projects, total_number_of_projects, total_fuzzers, total_functions, language_count):
+        self.all_projects = all_projects
+        self.total_number_of_projects = total_number_of_projects
+        self.total_fuzzers = total_fuzzers
+        self.total_functions = total_functions
+        self.language_count = language_count
+
 class Project:
     def __init__(self, name, language, fuzz_count, reach, runtime_cov):
         self.name = name
