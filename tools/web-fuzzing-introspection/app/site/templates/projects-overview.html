@@ -1,0 +1,88 @@
+{% extends "base.html" %}                                                       
+{% block content %}        
+<!-- main content -->
+    <main>
+      <!-- hero area -->
+      <section class="search__hero overview__hero">
+        <div class="container">
+          <div class="search__hero-wrapper">
+            <h1 class="section__title">
+              Fuzzing Introspection of OSS-Fuzz projects
+            </h1>
+          </div>
+          <div class="database overviewBody">
+            <div class="database__header">
+              <div class="database__header-left">
+                <!-- database select -->
+                <div class="database__select">
+                  <select name="page" id="page">
+                    <option value="0">24 per page</option>
+                    <option value="1">50 per page</option>
+                    <option value="2">100 per page</option>
+                  </select>
+                </div>
+                <!-- database search -->
+                <div class="database__search">
+                  <span>
+                      <img src="{{ url_for('static', filename='assets/img/search.svg') }}" alt="icon" />
+                  </span>
+                  <input type="search" placeholder="Search table" />
+                </div>
+              </div>
+              <div class="database__header-right">
+                <button type="button" class="btn__table">
+                  Fuzz Introspector
+                </button>
+                <button type="button" class="btn__table">Suggest ideas</button>
+                <button type="button" class="btn__table">Report issues</button>
+              </div>
+            </div>
+            <div class="database__body">
+              <table>
+                <thead>
+                  <tr>
+                    <td>Project name</td>
+                    <td>Language</td>
+                    <td>Fuzz target count</td>
+                    <td>Code statically reached</td>
+                    <td>Runtime code coverage</td>
+                  </tr>
+                </thead>
+                <tbody>
+                {% for project in all_projects %}
+                  <tr>
+                      <td> <a href="/project-profile">{{ project.name }}</a> </td>
+                      <td> {{ project.language }} </td>
+                      <td> {{ project.fuzz_count }} </td>
+                      <td> {{ project.reach }} </td>
+                      <td> {{ project.runtime_cov }} </td>
+                  </tr>
+                {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            <!-- entry count -->
+            <p class="table__data-count">
+              Showing <span>1</span> to <span>10</span> of
+              <span>4132</span> entries
+            </p>
+            <!-- pagination -->
+            <div class="pagination">
+              <ul>
+                <li><a href="#">Previous</a></li>
+                <li><a href="#">1</a></li>
+                <li><a href="#">2</a></li>
+                <li><a href="#">3</a></li>
+              </ul>
+              <ul>
+                <li><a href="#">Next</a></li>
+                <li><a href="#">Last</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+      <!-- end hero area -->
+    </main>
+    <!-- end main content -->
+{% endblock %}
