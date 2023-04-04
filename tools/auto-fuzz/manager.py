@@ -868,8 +868,9 @@ def autofuzz_project_from_github(github_url,
                      language)
 
     if to_merge:
-        merged_directory = post_process.merge_run(autofuzz_base_workdir)
-        if merged_directory is not None:
+        merged_directory = post_process.merge_run(autofuzz_base_workdir,
+                                                  language)
+        if merged_directory:
             oss_fuzz_manager.copy_and_introspect_project(
                 merged_directory, OSS_FUZZ_BASE, merged_directory)
             introspector_oss_base = os.path.join(
@@ -882,6 +883,8 @@ def autofuzz_project_from_github(github_url,
                     os.path.join(merged_directory, "introspector-report"))
             else:
                 print("No introspector generated")
+        else:
+            print("Fail to merge project")
 
     return True
 
