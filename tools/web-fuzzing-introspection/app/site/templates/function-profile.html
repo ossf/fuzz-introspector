@@ -30,27 +30,23 @@
                 <tbody>
                   <tr>
                     <td>Function filename</td>
-                    <td>/src/openssh/autofile.c</td>
+                    <td>{{ function_profile.function_filename }}</td>
                   </tr>
                   <tr>
                     <td>Code coverage</td>
-                    <td>25%</td>
+                    <td>{{ function_profile.runtime_code_coverage }}%</td>
                   </tr>
                   <tr>
                     <td>Coverage by fuzzers:</td>
-                    <td>2</td>
+                    <td>{{ function_profile.coverage_by_fuzzers }}</td>
                   </tr>
                   <tr>
                     <td>Reached by fuzzers</td>
-                    <td>3</td>
-                  </tr>
-                  <tr>
-                    <td>Cyclomatic complexity</td>
-                    <td>34</td>
+                    <td>{{ function_profile.reached_by_fuzzers }}</td>
                   </tr>
                   <tr>
                     <td>Fuzz Introspector report</td>
-                    <td><a href="#">Report link</a></td>
+                    <td><a href="#"> {{ function_profile.fuzz_introspector_report_url }}</a></td>
                   </tr>
                 </tbody>
               </table>
@@ -77,7 +73,7 @@
                   <!-- database search -->
                   <div class="database__search">
                     <span>
-                      <img src="assets/img/search.svg" alt="icon" />
+                      <img src="{{ url_for('static', filename='assets/img/search.svg') }}" alt="search" />
                     </span>
                     <input type="search" placeholder="Search table" />
                   </div>
