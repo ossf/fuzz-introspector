@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, request
 
 from app.site import models
 
@@ -53,8 +53,19 @@ def project_profile():
 
 @site.route('/function-search')
 def function_search():
-    functions = test_data.get_functions()
-    return render_template('function-search.html', all_functions=functions)
+    print("Showing functions overview")
+    query = request.args.get('q', '')
+    print("query: { %s }"%(query))
+
+    functions_to_display = test_data.get_functions()
+    if query != '':
+        tmp_list = []
+        for function in functions_to_display:
+            if query in function.name:
+                tmp_list.append(function)
+        functions_to_display = tmp_list
+
+    return render_template('function-search.html', all_functions=functions_to_display)
 
 @site.route('/projects-overview')
 def projects_overview():

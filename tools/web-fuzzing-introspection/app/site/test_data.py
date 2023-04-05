@@ -33,9 +33,9 @@ TEST_PROJECTS = [
 TEST_FUNCTIONS = [
 	Function(name="function name1", project=TEST_PROJECTS[0]),
   Function(name="function name2", project=TEST_PROJECTS[0]),
-  Function(name="function name3", project=TEST_PROJECTS[0]),
-  Function(name="function name4", project=TEST_PROJECTS[0]),
-  Function(name="function name5", project=TEST_PROJECTS[0]),
+  Function(name="function 3", project=TEST_PROJECTS[0]),
+  Function(name="function 4", project=TEST_PROJECTS[0]),
+  Function(name="function 5", project=TEST_PROJECTS[0]),
   Function(name="function name6", project=TEST_PROJECTS[0]),
   Function(name="function name7", project=TEST_PROJECTS[0]),
 ]
