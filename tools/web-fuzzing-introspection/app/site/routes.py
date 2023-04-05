@@ -43,7 +43,8 @@ def index():
 @site.route('/function-profile')
 def function_profile():
     related_functions = test_data.get_functions()
-    return render_template('function-profile.html', related_functions = related_functions)
+    function_profile = related_functions[0]
+    return render_template('function-profile.html', related_functions = related_functions, function_profile = function_profile)
 
 @site.route('/project-profile')
 def project_profile():

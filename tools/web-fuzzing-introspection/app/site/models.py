@@ -56,8 +56,12 @@ class Project:
             self.fuzzer_count_history.append((get_date_at_offset_as_str(i-100), 3))
 
 class Function:
-    def __init__(self, name, project, is_reached=False, runtime_code_coverage = 32.4):
+    def __init__(self, name, project, is_reached=False, runtime_code_coverage = 32.4, function_filename = "/src/model/filename.cpp"):
         self.name = name
+        self.function_filename = function_filename
         self.project = project
         self.is_reached = is_reached
         self.runtime_code_coverage = runtime_code_coverage
+        self.reached_by_fuzzers = 4
+        self.coverage_by_fuzzers = 3
+        self.fuzz_introspector_report_url = "#"
