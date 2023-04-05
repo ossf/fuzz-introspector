@@ -35,13 +35,25 @@ class Project:
         self.reach = reach
         self.runtime_cov = runtime_cov
 
-        self.code_coverage_history_x = []
-        self.code_coverage_history_y = []
+        # Line coverage history
+        self.code_coverage_line_history = []
         for i in range(100):
-            self.code_coverage_history_y.append(i)
-            self.code_coverage_history_x.append(get_date_at_offset_as_str(i * -1))
-        self.code_coverage_history_x = list(reversed(self.code_coverage_history_x))
+            self.code_coverage_line_history.append((get_date_at_offset_as_str(i-100), i))
 
+        # Function coverage history
+        self.code_coverage_functions_history = []
+        for i in range(100):
+            self.code_coverage_functions_history.append((get_date_at_offset_as_str(i-100), i*2))
+
+        # Static reachability history
+        self.code_reachability_history = []
+        for i in range(100):
+            self.code_reachability_history.append((get_date_at_offset_as_str(i-100), i*1.5))
+
+        # Fuzzer count history
+        self.fuzzer_count_history = []
+        for i in range(100):
+            self.fuzzer_count_history.append((get_date_at_offset_as_str(i-100), 3))
 
 class Function:
     def __init__(self, name, project, is_reached=False, runtime_code_coverage = 32.4):
