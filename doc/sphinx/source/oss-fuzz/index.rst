@@ -158,6 +158,7 @@ tool that can be run as follows:
 .. code-block:: bash
 
     $ python3 ./find-uncovered-functions.py libssh
+    Stats as of 2023-04-05
     Functions with 0 coverage: 685
     Most complex functions with no code coverage:
     - ssh_execute_server_request, 72
@@ -172,6 +173,7 @@ tool that can be run as follows:
     - channel_write_common, 28
 
     $ python3 ./find-uncovered-functions.py libpng
+    Stats as of 2023-04-05
     Functions with 0 coverage: 250
     Most complex functions with no code coverage:
     - png_do_compose, 91
@@ -186,6 +188,7 @@ tool that can be run as follows:
     - OSS_FUZZ_png_set_keep_unknown_chunks, 23
 
     $ python3 ./find-uncovered-functions.py c-ares
+    Stats as of 2023-04-05
     Functions with 0 coverage: 149
     Most complex functions with no code coverage:
     - ares__get_hostent, 61
