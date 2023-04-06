@@ -9,9 +9,9 @@
             <h1 class="section__title">
               Open Source Fuzzing Introspection Database
             </h1>
-            <form action="#" class="search__box">
+            <form action="{{ url_for('site.function_search') }}" class="search__box">
               <div class="search__input">
-                <input type="search" placeholder="Function name..." />
+                <input type="search" name="q" placeholder="Function name..." />
                 <span>
                     <img src="{{url_for('static', filename='assets/img/search.svg')}}" alt="search" />
                 </span>
