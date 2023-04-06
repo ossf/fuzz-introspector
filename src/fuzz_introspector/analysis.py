@@ -37,7 +37,7 @@ logger = logging.getLogger(name=__name__)
 
 
 class IntrospectionProject():
-    """Wrapper class for manging Fuzz Introspector analysis.
+    """Wrapper class for managing Fuzz Introspector analysis.
 
     The most important two elments of this class are
     `proj_profile` which is type :py:class:`project_profile.MergedProjectProfile` and
