@@ -37,7 +37,14 @@ logger = logging.getLogger(name=__name__)
 
 
 class IntrospectionProject():
-    """Wrapper class for manging Fuzz Introspector analysis."""
+    """Wrapper class for managing Fuzz Introspector analysis.
+
+    The most important two elments of this class are
+    `proj_profile` which is type :py:class:`project_profile.MergedProjectProfile` and
+    `profiles` which is a list of :py:class:`fuzzer_profile.FuzzerProfile` and
+    references the individual fuzzers of the given module. All analysis is done
+    basically by way of these two elements.
+    """
 
     def __init__(self, language, target_folder, coverage_url):
         self.language = language
@@ -48,6 +55,10 @@ class IntrospectionProject():
         self.profiles = data_loader.load_all_profiles(self.base_folder,
                                                       self.language,
                                                       parallelise)
+        """Generates the `proj_profile` and `profiles` elements of this class
+        based on the raw data given as arguments. This function must be called
+        before any real use of `IntrospectionProject` can happen.
+        """
         logger.info(f"Found {len(self.profiles)} profiles")
         if len(self.profiles) == 0:
             logger.info("Found no profiles")
