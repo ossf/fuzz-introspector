@@ -46,7 +46,7 @@
                 {% for func in all_functions %}
                   <tr>
                       <td> <a href="/function-profile">{{ func.name }}</a></td>
-                      <td> <a href="/project-profile">{{ func.project.name }}</a></td>
+                      <td> <a href="/project-profile">{{ func.project }}</a></td>
                       <td> {{ func.is_reached }} </td>
                       <td> {{ func.runtime_code_coverage }}% </td>
                   </tr>
