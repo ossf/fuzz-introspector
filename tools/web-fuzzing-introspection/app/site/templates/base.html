@@ -33,6 +33,11 @@
     />
 
     <link rel="manifest" href="site.webmanifest" />
+
+    <script src="{{ url_for('static', filename='assets/js/jquery.min.js') }}"></script>
+    <link rel="stylesheet" href="//cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css"/>
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.js"></script>
+
     <meta name="theme-color" content="#fafafa" />
   </head>
   <body>
@@ -69,13 +74,12 @@
 
     <!-- end footer -->
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-    <script src="{url_for('static', filename='assets/js/jquery.min.js')}}"></script>
-    <script src="{url_for('static', filename='assets/js/waypoints.min.js')}}"></script>
-    <script src="{url_for('static', filename='assets/js/jquery.counterup.min.js')}}"></script>
+    <script src="{{ url_for('static', filename='assets/js/waypoints.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/js/jquery.counterup.min.js') }}"></script>
     <!-- bootstrap js -->
-    <script src="{url_for('static', filename='assets/js/bootstrap.bundle.min.js')}}"></script>
+    <script src="{{ url_for('static', filename='assets/js/bootstrap.bundle.min.js') }}"></script>
     <!-- main js -->
-    <script src="{url_for('static', filename='assets/js/vendor/modernizr-3.12.0.min.js')}}"></script>
-    <script src="{url_for('static', filename='assets/js/app.js')}}"></script>
+    <script src="{{ url_for('static', filename='assets/js/vendor/modernizr-3.12.0.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/js/app.js') }}"></script>
   </body>
 </html>

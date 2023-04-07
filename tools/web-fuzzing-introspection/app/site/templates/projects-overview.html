@@ -12,23 +12,6 @@
           </div>
           <div class="database overviewBody">
             <div class="database__header">
-              <div class="database__header-left">
-                <!-- database select -->
-                <div class="database__select">
-                  <select name="page" id="page">
-                    <option value="0">24 per page</option>
-                    <option value="1">50 per page</option>
-                    <option value="2">100 per page</option>
-                  </select>
-                </div>
-                <!-- database search -->
-                <div class="database__search">
-                  <span>
-                      <img src="{{ url_for('static', filename='assets/img/search.svg') }}" alt="icon" />
-                  </span>
-                  <input type="search" placeholder="Search table" />
-                </div>
-              </div>
               <div class="database__header-right">
                 <button type="button" class="btn__table">
                   Fuzz Introspector
@@ -38,7 +21,7 @@
               </div>
             </div>
             <div class="database__body">
-              <table>
+              <table id="projectOverviewTable">
                 <thead>
                   <tr>
                     <td>Project name</td>
@@ -61,28 +44,15 @@
                 </tbody>
               </table>
             </div>
-            <!-- entry count -->
-            <p class="table__data-count">
-              Showing <span>1</span> to <span>10</span> of
-              <span>4132</span> entries
-            </p>
-            <!-- pagination -->
-            <div class="pagination">
-              <ul>
-                <li><a href="#">Previous</a></li>
-                <li><a href="#">1</a></li>
-                <li><a href="#">2</a></li>
-                <li><a href="#">3</a></li>
-              </ul>
-              <ul>
-                <li><a href="#">Next</a></li>
-                <li><a href="#">Last</a></li>
-              </ul>
-            </div>
           </div>
         </div>
       </section>
       <!-- end hero area -->
     </main>
     <!-- end main content -->
+ <script>
+  $( document ).ready(function() {
+    let table = new DataTable('#projectOverviewTable');
+  });
+ </script> 
 {% endblock %}
