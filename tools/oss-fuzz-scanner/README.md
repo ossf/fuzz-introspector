@@ -52,3 +52,57 @@ We can see the the function is reached by 6 fuzzers and has code coverage of
 The above roughly corresponds to navigating to [the relevant section](https://storage.googleapis.com/oss-fuzz-introspector/openssh/inspector-report/20230402/fuzz_report.html#Project-functions-overview) in the
 Fuzz Introspector report and searching for `sshkey_verify`:
 ![screenshot of report](/tools/oss-fuzz-scanner/openssh-verify-key.png)
+
+## branch_blocker_inspector.py
+
+Usage: `python3 branch_blocker_inspector.py {project_name}`
+
+Example:
+
+```bash
+python3 branch_blocker_inspector.py htslib
+
+Profile: /src/htslib/test/fuzz/hts_open_fuzzer.c has 659 blokers
+{
+  "Function where blocker is": "cram_close",
+  "Blocker source code location": "/src/htslib/cram/cram_io.c:5532",
+  "Complexity blocked": 6556,
+  "Num of unique blocked funcs": 1,
+  "Unique blocked funcs:": "['cram_write_eof_block']"
+}
+{
+  "Function where blocker is": "cram_close",
+  "Blocker source code location": "/src/htslib/cram/cram_io.c:5503",
+  "Complexity blocked": 17194,
+  "Num of unique blocked funcs": 2,
+  "Unique blocked funcs:": "['cram_flush_container_mt', 'cram_update_curr_slice']"
+}
+{
+  "Function where blocker is": "cram_close",
+  "Blocker source code location": "/src/htslib/cram/cram_io.c:5514",
+  "Complexity blocked": 10769,
+  "Num of unique blocked funcs": 4,
+  "Unique blocked funcs:": "['cram_flush_result', 'hts_tpool_process_destroy', 'pthread_mutex_destroy', 'hts_tpool_process_flush']"
+}
+{
+  "Function where blocker is": "hts_hopen",
+  "Blocker source code location": "/src/htslib/hts.c:1505",
+  "Complexity blocked": 2827,
+  "Num of unique blocked funcs": 1,
+  "Unique blocked funcs:": "['hts_process_opts']"
+}
+{
+  "Function where blocker is": "hts_open_format",
+  "Blocker source code location": "/src/htslib/hts.c:900",
+  "Complexity blocked": 2733,
+  "Num of unique blocked funcs": 5,
+  "Unique blocked funcs:": "['strerror', 'hts_log', 'hts_opt_apply', 'hclose_abruptly', '__errno_location']"
+}
+{
+  "Function where blocker is": "bcf_write",
+  "Blocker source code location": "/src/htslib/vcf.c:2096",
+  "Complexity blocked": 1042,
+  "Num of unique blocked funcs": 10,
+  "Unique blocked funcs:": "['bcf1_sync', 'bcf_seqname_safe', 'u32_to_le.1828', 'hts_idx_push', 'bgzf_write', 'hts_log', 'u16_to_le.1829', 'bcf_strerror', 'float_to_le.1868', 'i32_to_le.1827']"
+}
+```
