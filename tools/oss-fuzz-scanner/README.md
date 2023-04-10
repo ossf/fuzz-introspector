@@ -53,6 +53,54 @@ The above roughly corresponds to navigating to [the relevant section](https://st
 Fuzz Introspector report and searching for `sshkey_verify`:
 ![screenshot of report](/tools/oss-fuzz-scanner/openssh-verify-key.png)
 
+
+## function_target_inspector.py
+Module for finding functions with no coverage but a lot of complexity.
+
+These often consitute good targets for fuzzers, and, likely missing important
+functions for an existing fuzzing set up.
+
+```bash
+python3 ./function_target_inspector.py elfutils
+Stats as of 2023-04-09
+Functions with 0 coverage: 830
+Most complex functions with no code coverage:
+{
+  "function name": "riscv_disasm",
+  "code-coverage": 0.0,
+  "cyclomatic complexity": 217,
+  "accummulated complexity": 239,
+  "unreached complexity": 225
+}
+{
+  "function name": "x86_64_disasm",
+  "code-coverage": 0.0,
+  "cyclomatic complexity": 182,
+  "accummulated complexity": 200,
+  "unreached complexity": 188
+}
+{
+  "function name": "i386_disasm",
+  "code-coverage": 0.0,
+  "cyclomatic complexity": 165,
+  "accummulated complexity": 183,
+  "unreached complexity": 171
+}
+{
+  "function name": "expr_eval",
+  "code-coverage": 0.0,
+  "cyclomatic complexity": 115,
+  "accummulated complexity": 447,
+  "unreached complexity": 422
+}
+{
+  "function name": "__libdw_read_begin_end_pair_inc",
+  "code-coverage": 0.0,
+  "cyclomatic complexity": 67,
+  "accummulated complexity": 2449,
+  "unreached complexity": 661
+```
+
 ## branch_blocker_inspector.py
 
 Usage: `python3 branch_blocker_inspector.py {project_name}`
