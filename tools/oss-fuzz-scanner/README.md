@@ -60,7 +60,7 @@ Module for finding functions with no coverage but a lot of complexity.
 These often consitute good targets for fuzzers, and, likely missing important
 functions for an existing fuzzing set up.
 
-``bash
+```bash
 python3 ./function_target_inspector.py elfutils
 Stats as of 2023-04-09
 Functions with 0 coverage: 830
@@ -99,6 +99,7 @@ Most complex functions with no code coverage:
   "cyclomatic complexity": 67,
   "accummulated complexity": 2449,
   "unreached complexity": 661
+```
 
 ## branch_blocker_inspector.py
 
