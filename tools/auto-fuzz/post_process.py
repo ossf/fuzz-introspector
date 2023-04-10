@@ -319,8 +319,8 @@ def _merge_runs(trial_dir, successful_runs, language):
             shutil.copyfile(src_file, dst_file)
         elif language == "jvm":
             # Copy over the fuzzer for java project
-            src_file = os.path.join(trial_dir, run['name'], "Fuzz1.java")
-            dst_file = os.path.join(next_merged_dir, "Fuzz1-%d.java" % (idx))
+            src_file = os.path.join(trial_dir, run['name'], "Fuzz.java")
+            dst_file = os.path.join(next_merged_dir, "Fuzz%d.java" % (idx))
 
             # Read in the content of the original Fuzz1.java, changing
             # the class name to the new one and write the content to
@@ -328,7 +328,7 @@ def _merge_runs(trial_dir, successful_runs, language):
             with open(src_file, "r") as fin:
                 with open(dst_file, "w") as fout:
                     for line in fin:
-                        fout.write(line.replace('/*COUNTER*/', '-%d' % (idx)))
+                        fout.write(line.replace('/*COUNTER*/', '%d' % (idx)))
 
             idx += 1
 

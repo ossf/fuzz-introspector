@@ -1,0 +1,186 @@
+{% extends "base.html" %}                                                       
+{% block content %}   
+
+<!-- end header -->
+    <!-- main content -->
+    <main class="functions__profile">
+      <section class="project__profile">
+        <div class="container">
+          <div class="project__profile-wrapper">
+            <div class="pr__profile-header">
+              <h2>Project: <a href="#"> {{ project.name }}</a></h2>
+            </div>
+            <div class="profile__table" style="max-width: 300px">
+              <table>
+                <tbody>
+                  <tr>
+                    <td>Language</td>
+                    <td> {{ project.language }}
+                  </tr>
+                  <tr>
+                    <td>Fuzzer count</td>
+                    <td> {{ project.fuzz_count }}</td>
+                  </tr>
+                  <tr>
+                    <td>Code coverage</td>
+                    <td> {{ project.runtime_cov }}% </td>
+                  </tr>
+                  <tr>
+                    <td>Static reachability</td>
+                    <td> {{ project.reach }} </td>
+                  </tr>
+                  <tr>
+                    <td>Code coverage report</td>
+                    <td><a href="#">Report link</a></td>
+                  </tr>
+                  <tr>
+                    <td>Fuzz Introspector report</td>
+                    <td><a href="#">Report link</a></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <!-- project profile table -->
+
+
+          <div class="project__progress">
+            <h2>Historical progression</h2>
+            <div class="progress__graph">
+              <!-- single graph -->
+              <div class="single__graph">
+
+                <div class="graph__chart">
+                    <div id="codeCoverageLinesOverTimePlot" style="width:100%;max-width:500px"></div>
+                </div>
+              </div>
+              <!-- single graph -->
+              <div class="single__graph">
+                <div class="graph__chart">
+                    <div id="codeCoverageFunctionsOverTimePlot" style="width:100%;max-width:500px"></div>
+                </div>
+              </div>
+              <!-- single graph -->
+              <div class="single__graph">
+                <div class="graph__chart">
+                    <div id="staticReachabilityOverTimePlot" style="width:100%;max-width:500px"></div>
+                </div>
+              </div>
+              <!-- single graph -->
+              <div class="single__graph">
+                <div class="graph__chart">
+                    <div id="fuzzerCountOverTimePlot" style="width:100%;max-width:500px"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+    <!-- end main content -->
+    <!-- footer -->
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script>
+
+// Plot for code coverage in terms of lines over time
+const code_coverage_lines_x = [
+  {% for x_cord, y_cord in project.code_coverage_line_history %}
+    "{{ x_cord }}",
+  {% endfor %}
+];
+const code_coverage_lines_y = [
+  {% for x_cord, y_cord in project.code_coverage_line_history %}
+    {{ y_cord }},
+  {% endfor %}
+];
+const code_coverage_lines_data = [{
+  x: code_coverage_lines_x,
+  y: code_coverage_lines_y,
+  mode:"lines"
+}];
+const code_coverage_lines_layout = {
+  xaxis: {title: "Date"},
+  yaxis: {title: "Coverage"},  
+  title: "Code Coverage (lines)",
+  type: "scatter"
+};
+Plotly.newPlot("codeCoverageLinesOverTimePlot", code_coverage_lines_data, code_coverage_lines_layout);
+
+
+// Plot for code coverage in terms of functions over time
+const code_coverage_functions_x = [
+  {% for x_cord, y_cord in project.code_coverage_functions_history %}
+    "{{ x_cord }}",
+  {% endfor %}
+];
+const code_coverage_functions_y = [
+  {% for x_cord, y_cord in project.code_coverage_functions_history %}
+    {{ y_cord }},
+  {% endfor %}
+];
+const code_coverage_functions_data = [{
+  x: code_coverage_functions_x,
+  y: code_coverage_functions_y,
+  mode:"lines"
+}];
+const code_coverage_functions_layout = {
+  xaxis: {title: "Date"},
+  yaxis: {title: "Coverage"},  
+  title: "Code Coverage (lines)",
+  type: "scatter"
+};
+Plotly.newPlot("codeCoverageFunctionsOverTimePlot", code_coverage_functions_data, code_coverage_functions_layout);
+
+
+// Plot for static rachability over time
+const code_reachability_x = [
+  {% for x_cord, y_cord in project.code_reachability_history %}
+    "{{ x_cord }}",
+  {% endfor %}
+];
+const code_reachability_y = [
+  {% for x_cord, y_cord in project.code_reachability_history %}
+    {{ y_cord }},
+  {% endfor %}
+];
+const code_reachability_data = [{
+  x: code_reachability_x,
+  y: code_reachability_y,
+  mode:"lines"
+}];
+const code_reachability_layout = {
+  xaxis: {title: "Date"},
+  yaxis: {title: "Coverage"},  
+  title: "Code Coverage (lines)",
+  type: "scatter"
+};
+Plotly.newPlot("staticReachabilityOverTimePlot", code_reachability_data, code_reachability_layout);
+
+
+// Plot for fuzzer counter over time
+const fuzzer_count_x = [
+  {% for x_cord, y_cord in project.fuzzer_count_history %}
+    "{{ x_cord }}",
+  {% endfor %}
+];
+const fuzzer_count_y = [
+  {% for x_cord, y_cord in project.fuzzer_count_history %}
+    {{ y_cord }},
+  {% endfor %}
+];
+const fuzzer_count_data = [{
+  x: fuzzer_count_x,
+  y: fuzzer_count_y,
+  mode:"lines"
+}];
+const fuzzer_count_layout = {
+  xaxis: {title: "Date"},
+  yaxis: {title: "Coverage"},  
+  title: "Code Coverage (lines)",
+  type: "scatter"
+};
+Plotly.newPlot("fuzzerCountOverTimePlot", fuzzer_count_data, fuzzer_count_layout);
+
+</script>
+
+{% endblock %}

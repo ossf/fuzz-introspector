@@ -1,0 +1,107 @@
+{% extends "base.html" %}                                                       
+{% block content %}   
+<!-- main content -->
+    <main>
+      <section class="project__profile">
+        <div class="container">
+          <div class="project__profile-wrapper">
+            <div class="pr__profile-header">
+              <h2>
+                Function:
+                <a
+                  href="https://storage.googleapis.com/oss-fuzz-coverage/openssh/reports/20230303/linux/src/openssh/krl.c.html#L983"
+                  target="_blank"
+                >
+                  {{function_profile.name}}
+                </a>
+              </h2>
+              <h2>
+               Project:
+                <a
+                  href="https://storage.googleapis.com/oss-fuzz-coverage/openssh/reports/20230303/linux/src/openssh/krl.c.html#L983"
+                  target="_blank"
+                >
+                  <a href="/project-profile?project={{function_profile.project}}">{{function_profile.project}}</a>
+                </a>
+              </h2>
+            </div>
+            <div class="profile__table">
+              <table>
+                <tbody>
+                  <tr>
+                    <td>Function filename</td>
+                    <td>{{ function_profile.function_filename }}</td>
+                  </tr>
+                  <tr>
+                    <td>Code coverage</td>
+                    <td>{{ function_profile.runtime_code_coverage }}%</td>
+                  </tr>
+                  <tr>
+                    <td>Coverage by fuzzers:</td>
+                    <td>{{ function_profile.coverage_by_fuzzers }}</td>
+                  </tr>
+                  <tr>
+                    <td>Reached by fuzzers</td>
+                    <td>{{ function_profile.reached_by_fuzzers }}</td>
+                  </tr>
+                  <tr>
+                    <td>Fuzz Introspector report</td>
+                    <td><a href="#"> {{ function_profile.fuzz_introspector_report_url }}</a></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <!-- project profile table -->
+          <div class="profile__project-table">
+            <div class="profile__project-table-header">
+              <h3>
+                Functions with similar name in different OSS-Fuzz projects
+              </h3>
+            </div>
+            <div class="database">
+              <div class="database__header">
+                <div class="database__header-left">
+                  <!-- database search -->
+                  <div class="database__search">
+                    <span>
+                      <img src="{{ url_for('static', filename='assets/img/search.svg') }}" alt="search" />
+                    </span>
+                    <input type="search" placeholder="Search table" />
+                  </div>
+                </div>
+              </div>
+              <div class="database__body">
+                <table id="relatedFunctionTable">
+                  <thead>
+                    <tr>
+                      <td>Function name</td>
+                      <td>Project</td>
+                      <td>Is reached?</td>
+                      <td>Runtime code coverage</td>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for func in related_functions %}
+                      <tr>
+                          <td> <a href="/function-profile?project={{func.project}}&function={{func.name}}">{{ func.name }}</a> </td>
+                          <td> <a href="/project-profile?project={{func.project}}"> {{ func.project }} </a></td>
+                          <td> {{ func.is_reached }} </td>
+                          <td> {{ func.runtime_code_coverage }} </td>
+                      </tr>
+                    {% endfor %}                    
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+    <!-- end main content -->
+ <script>
+  $( document ).ready(function() {
+    let table = new DataTable('#relatedFunctionTable');
+  });
+ </script> 
+{% endblock %}

@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block content %}
+	<!-- main content -->
+    <main>
+      <!-- hero area -->
+      <section class="search__hero">
+        <div class="container">
+          <div class="search__hero-wrapper">
+            <h1 class="section__title">
+              Open Source Fuzzing Introspection Database
+            </h1>
+            <form action="{{ url_for('site.function_search') }}" class="search__box">
+              <div class="search__input">
+                <input type="search" name="q" placeholder="Function name..." />
+                <span>
+                    <img src="{{url_for('static', filename='assets/img/search.svg')}}" alt="search" />
+                </span>
+              </div>
+              <button type="submit" class="btn__primary">
+                Search database
+              </button>
+            </form>
+          </div>
+          <div class="database">
+            <div class="database__body">
+              <table id="functionOverviewTable">
+                <thead>
+                  <tr>
+                    <td>Function name</td>
+                    <td>Project</td>
+                    <td>Is reached?</td>
+                    <td>Runtime code coverage</td>
+                  </tr>
+                </thead>
+                <tbody>
+                {% for func in all_functions %}
+                  <tr>
+                      <td> <a href="/function-profile?function={{func.name}}&project={{func.project}}">{{ func.name }}</a></td>
+                      <td> <a href="/project-profile?project={{func.project}}">{{ func.project }}</a></td>
+                      <td> {{ func.is_reached }} </td>
+                      <td> {{ func.runtime_code_coverage }}% </td>
+                  </tr>
+                {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+      <!-- end hero area -->
+    </main>
+    <!-- end main content -->
+ <script>
+  $( document ).ready(function() {
+    $('#functionOverviewTable').dataTable({'pageLength': 25})
+    //let table = new DataTable('#functionOverviewTable');
+  });
+ </script>     
+{% endblock %}
