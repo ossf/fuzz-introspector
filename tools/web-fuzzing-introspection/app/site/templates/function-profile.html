@@ -12,7 +12,7 @@
                   href="https://storage.googleapis.com/oss-fuzz-coverage/openssh/reports/20230303/linux/src/openssh/krl.c.html#L983"
                   target="_blank"
                 >
-                  sshkey_check_revoked
+                  {{function_profile.name}}
                 </a>
               </h2>
               <h2>
@@ -21,7 +21,7 @@
                   href="https://storage.googleapis.com/oss-fuzz-coverage/openssh/reports/20230303/linux/src/openssh/krl.c.html#L983"
                   target="_blank"
                 >
-                  <a href="/project-profile">openssl</a>
+                  <a href="/project-profile?project={{function_profile.project}}">{{function_profile.project}}</a>
                 </a>
               </h2>
             </div>
@@ -62,14 +62,6 @@
             <div class="database">
               <div class="database__header">
                 <div class="database__header-left">
-                  <!-- database select -->
-                  <div class="database__select">
-                    <select name="page" id="page">
-                      <option value="0">24 per page</option>
-                      <option value="1">50 per page</option>
-                      <option value="2">100 per page</option>
-                    </select>
-                  </div>
                   <!-- database search -->
                   <div class="database__search">
                     <span>
@@ -80,46 +72,26 @@
                 </div>
               </div>
               <div class="database__body">
-                <table>
+                <table id="relatedFunctionTable">
                   <thead>
                     <tr>
                       <td>Function name</td>
                       <td>Project</td>
                       <td>Is reached?</td>
-                      <td>Code coverage</td>
                       <td>Runtime code coverage</td>
                     </tr>
                   </thead>
                   <tbody>
                     {% for func in related_functions %}
                       <tr>
-                          <td> <a href="/function-profile">{{ func.name }}</a> </td>
-                          <td> <a href="/project-profile"> {{ func.project.name }} </a></td>
-                          <td> y </td>
-                          <td> y </td>
-                          <td> y </td>
+                          <td> <a href="/function-profile?project={{func.project}}&function={{func.name}}">{{ func.name }}</a> </td>
+                          <td> <a href="/project-profile?project={{func.project}}"> {{ func.project }} </a></td>
+                          <td> {{ func.is_reached }} </td>
+                          <td> {{ func.runtime_code_coverage }} </td>
                       </tr>
                     {% endfor %}                    
                   </tbody>
                 </table>
-              </div>
-              <!-- entry count -->
-              <p class="table__data-count">
-                Showing <span>1</span> to <span>10</span> of
-                <span>4132</span> entries
-              </p>
-              <!-- pagination -->
-              <div class="pagination">
-                <ul>
-                  <li><a href="#">Previous</a></li>
-                  <li><a href="#">1</a></li>
-                  <li><a href="#">2</a></li>
-                  <li><a href="#">3</a></li>
-                </ul>
-                <ul>
-                  <li><a href="#">Next</a></li>
-                  <li><a href="#">Last</a></li>
-                </ul>
               </div>
             </div>
           </div>
@@ -127,5 +99,9 @@
       </section>
     </main>
     <!-- end main content -->
-
+ <script>
+  $( document ).ready(function() {
+    let table = new DataTable('#relatedFunctionTable');
+  });
+ </script> 
 {% endblock %}

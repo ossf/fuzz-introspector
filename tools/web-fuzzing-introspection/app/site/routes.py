@@ -21,6 +21,7 @@ from app.site import test_data
 
 site = Blueprint('site', __name__, template_folder='templates')
 
+
 def get_frontpage_summary_stats():
     # Get total number of projects
     all_projects = test_data.get_projects()
@@ -35,21 +36,53 @@ def get_frontpage_summary_stats():
     db_summary = models.DBSummary(all_projects, total_number_of_projects, total_fuzzers, total_functions, language_count)
     return db_summary
 
+
+def get_project_with_name(project_name):
+    all_projects = test_data.get_projects()
+    for project in all_projects:
+        if project.name == project_name:
+            return project
+
+    # TODO: Handle the case where there is no such project.
+    return all_projects[0]
+
+def get_fuction_with_name(function_name, project_name):
+    all_functions = test_data.get_functions()
+    for function in all_functions:
+        if function.name == function_name and function.project == project_name:
+            return function
+
+    # TODO: Handle the case where there is no such function
+    return all_functions[0] 
+
+def get_all_related_functions(primary_function):
+    all_functions = test_data.get_functions()
+    related_functions = []
+    for function in all_functions:
+        if function.name == primary_function.name and function.project != primary_function.project:
+            related_functions.append(function)
+    return related_functions   
+
 @site.route('/')
 def index():
     db_summary = get_frontpage_summary_stats()
     return render_template('index.html', db_summary = db_summary)
 
-@site.route('/function-profile')
+
+@site.route('/function-profile', methods=['GET'])
 def function_profile():
-    related_functions = test_data.get_functions()
-    function_profile = related_functions[0]
+    function_profile = get_fuction_with_name(request.args.get('function', 'none'), request.args.get('project', 'none'))
+
+    related_functions = get_all_related_functions(function_profile)
     return render_template('function-profile.html', related_functions = related_functions, function_profile = function_profile)
 
-@site.route('/project-profile')
+
+@site.route('/project-profile', methods=['GET'])
 def project_profile():
-    project = test_data.get_projects()[0]
+    #print(request.args.get('project', 'none'))
+    project = get_project_with_name(request.args.get('project', 'none'))
     return render_template('project-profile.html', project=project)
+
 
 @site.route('/function-search')
 def function_search():
@@ -57,15 +90,18 @@ def function_search():
     query = request.args.get('q', '')
     print("query: { %s }"%(query))
 
-    functions_to_display = test_data.get_functions()
-    if query != '':
+    if query == '':
+        # Pick 25 random functions per default
+        functions_to_display = test_data.get_functions()[0:20]
+    else:
         tmp_list = []
-        for function in functions_to_display:
+        for function in test_data.get_functions():
             if query in function.name:
                 tmp_list.append(function)
         functions_to_display = tmp_list
 
     return render_template('function-search.html', all_functions=functions_to_display)
+
 
 @site.route('/projects-overview')
 def projects_overview():
