@@ -81,7 +81,8 @@ def function_profile():
 def project_profile():
     #print(request.args.get('project', 'none'))
     project = get_project_with_name(request.args.get('project', 'none'))
-    return render_template('project-profile.html', project=project)
+    project_statistics = test_data.TEST_PROJECT_TIMESTAMPS
+    return render_template('project-profile.html', project=project, project_statistics=project_statistics)
 
 
 @site.route('/function-search')

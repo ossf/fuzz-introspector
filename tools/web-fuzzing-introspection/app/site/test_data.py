@@ -23,6 +23,13 @@ TEST_PROJECTS = [
   Project(name='icu', language='c', fuzz_count=14, reach='30.0', runtime_cov='32.0'),
 ]
 
+TEST_PROJECT_TIMESTAMPS = [
+  ProjectTimestamp(project_name="random", date="2023-01-01", coverage_lines=64.2, coverage_functions=67.2, static_reachability=73.12, fuzzer_count=2),
+  ProjectTimestamp(project_name="random", date="2023-01-03", coverage_lines=65.2, coverage_functions=63.2, static_reachability=75.12, fuzzer_count=2),
+  ProjectTimestamp(project_name="random", date="2023-01-04", coverage_lines=66.2, coverage_functions=69.2, static_reachability=79.12, fuzzer_count=4),
+  ProjectTimestamp(project_name="random", date="2023-01-05", coverage_lines=67.2, coverage_functions=77.2, static_reachability=81.12, fuzzer_count=5),
+]
+
 TEST_FUNCTIONS = [
   Function(name='hts_close_or_abort', project='htslib', runtime_code_coverage=60.0, function_filename='/src/htslib/test/fuzz/hts_open_fuzzer.c'),
   Function(name='abort', project='htslib', runtime_code_coverage=0.0, function_filename=''),

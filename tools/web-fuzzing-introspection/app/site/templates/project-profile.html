@@ -83,16 +83,12 @@
 <script>
 
 // Plot for code coverage in terms of lines over time
-const code_coverage_lines_x = [
-  {% for x_cord, y_cord in project.code_coverage_line_history %}
-    "{{ x_cord }}",
-  {% endfor %}
-];
-const code_coverage_lines_y = [
-  {% for x_cord, y_cord in project.code_coverage_line_history %}
-    {{ y_cord }},
-  {% endfor %}
-];
+const code_coverage_lines_x = [];
+const code_coverage_lines_y = [];
+{% for project_timestamp in project_statistics %}
+code_coverage_lines_x.push("{{project_timestamp.date}}");
+code_coverage_lines_y.push({{project_timestamp.coverage_lines}});
+{%endfor%}
 const code_coverage_lines_data = [{
   x: code_coverage_lines_x,
   y: code_coverage_lines_y,
@@ -108,11 +104,12 @@ Plotly.newPlot("codeCoverageLinesOverTimePlot", code_coverage_lines_data, code_c
 
 
 // Plot for code coverage in terms of functions over time
-const code_coverage_functions_x = [
-  {% for x_cord, y_cord in project.code_coverage_functions_history %}
-    "{{ x_cord }}",
-  {% endfor %}
-];
+const code_coverage_functions_x = [];
+
+{% for x_cord, y_cord in project.code_coverage_functions_history %}
+code_coverage_functions_x.push("{{x_cord}}");
+{% endfor %}
+
 const code_coverage_functions_y = [
   {% for x_cord, y_cord in project.code_coverage_functions_history %}
     {{ y_cord }},

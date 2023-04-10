@@ -27,6 +27,16 @@ class DBSummary:
         self.total_functions = total_functions
         self.language_count = language_count
 
+class ProjectTimestamp:
+    def __init__(self, project_name, date, coverage_lines, coverage_functions, static_reachability, fuzzer_count):
+        self.project_name = project_name
+        # date in the format Y-m-d
+        self.date = date
+        self.coverage_lines = coverage_lines
+        self.coverage_functions = coverage_functions
+        self.static_reachability = static_reachability
+        self.fuzzer_count = fuzzer_count
+
 class Project:
     def __init__(self, name, language, fuzz_count, reach, runtime_cov):
         self.name = name
