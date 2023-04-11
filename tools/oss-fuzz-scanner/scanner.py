@@ -29,6 +29,15 @@ from fuzz_introspector import analysis, exceptions
 CORRELATION_FILENAME = "exe_to_fuzz_introspector_logs.yaml"
 BASE_PROJ_DIR = "workdir-"
 
+def get_introspector_report_url(project_name, datestr):
+    base_url = 'https://storage.googleapis.com/oss-fuzz-introspector/{0}/inspector-report/{1}/fuzz_report.html'
+    project_url = base_url.format(project_name, datestr)
+    return project_url
+
+def get_coverage_report_url(project_name, datestr):
+    base_url = 'https://storage.googleapis.com/oss-fuzz-coverage/{0}/reports/{1}/linux/report.html'
+    project_url = base_url.format(project_name, datestr)
+    return project_url
 
 def get_date_at_offset_as_str(day_offset=-1):
     datestr = (datetime.date.today() +
