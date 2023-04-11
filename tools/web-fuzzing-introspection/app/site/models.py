@@ -19,6 +19,13 @@ def get_date_at_offset_as_str(day_offset=-1):
                datetime.timedelta(day_offset)).strftime("%Y-%m-%d")
     return datestr
 
+class DBTimestamp:
+    def __init__(self, date, project_count, fuzzer_count, function_count):
+        self.date = date
+        self.project_count = project_count
+        self.fuzzer_count = fuzzer_count
+        self.function_count = function_count
+
 class DBSummary:
     def __init__(self, all_projects, total_number_of_projects, total_fuzzers, total_functions, language_count):
         self.all_projects = all_projects

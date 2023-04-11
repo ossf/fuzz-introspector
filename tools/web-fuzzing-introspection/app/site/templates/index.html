@@ -88,23 +88,23 @@
               <!-- single item -->
               <div class="single__graph">
                 <div class="graph__chart">
-                    <img src="{{url_for('static', filename='assets/img/line-chart-1.svg')}}" alt="chart" />
+                    <div id="projectCountPlot" style="width:100%;max-width:500px"></div>
                 </div>
                 <p class="graph__title">Project count</p>
               </div>
               <!-- single item -->
               <div class="single__graph">
                 <div class="graph__chart">
-                    <img src="{{url_for('static', filename='assets/img/line-chart-2.svg')}}" alt="chart" />
+                    <div id="fuzzerCountPlot" style="width:100%;max-width:500px"></div>
                 </div>
-                <p class="graph__title">Project count</p>
+                <p class="graph__title">Fuzzer count</p>
               </div>
               <!-- single item -->
               <div class="single__graph">
                 <div class="graph__chart">
-                    <img src="{{url_for('static', filename='assets/img/line-chart-3.svg')}}" alt="chart" />
+                    <div id="functionCountPlot" style="width:100%;max-width:500px"></div>
                 </div>
-                <p class="graph__title">Project count</p>
+                <p class="graph__title">Function count</p>
               </div>
             </div>
           </div>
@@ -113,4 +113,68 @@
       <!-- end database overview -->
     </main>
     <!-- end main content -->
+
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script>
+// Plot for code coverage in terms of lines over time
+const db_timestamp_x_axis = [];
+const project_count_over_time = [];
+const fuzzer_count_over_time = [];
+const function_count_over_time = [];
+
+
+{% for db_timestamp in db_timestamps %}
+db_timestamp_x_axis.push("{{db_timestamp.date}}");
+project_count_over_time.push({{db_timestamp.project_count}})
+fuzzer_count_over_time.push({{db_timestamp.fuzzer_count}})
+function_count_over_time.push({{db_timestamp.function_count}})
+{%endfor%}
+
+
+// Plot for code coverage in terms of lines over time
+const project_count_over_time_data = [{
+  x: db_timestamp_x_axis,
+  y: project_count_over_time,
+  mode:"lines"
+}];
+const project_count_over_time_layout = {
+  xaxis: {title: "Date"},
+  yaxis: {title: "Projects"},  
+  type: "scatter",
+  paper_bgcolor: "rgba(0,0,0,0)",
+  plot_bgcolor: "rgba(0,0,0,0)"
+};
+Plotly.newPlot("projectCountPlot", project_count_over_time_data, project_count_over_time_layout);
+
+// Plot for fuzzer count over time
+const fuzzer_count_over_time_data = [{
+  x: db_timestamp_x_axis,
+  y: fuzzer_count_over_time,
+  mode:"lines"
+}];
+const fuzzer_count_over_time_layout = {
+  xaxis: {title: "Date"},
+  yaxis: {title: "Fuzzers"},  
+  type: "scatter",
+  paper_bgcolor: "rgba(0,0,0,0)",
+  plot_bgcolor: "rgba(0,0,0,0)"
+};
+Plotly.newPlot("fuzzerCountPlot", fuzzer_count_over_time_data, fuzzer_count_over_time_layout);
+
+
+// Plot for function count over time
+const function_count_over_time_data = [{
+  x: db_timestamp_x_axis,
+  y: function_count_over_time,
+  mode:"lines"
+}];
+const function_count_over_time_layout = {
+  xaxis: {title: "Date"},
+  yaxis: {title: "Functions"},  
+  type: "scatter",
+  paper_bgcolor: "rgba(0,0,0,0)",
+  plot_bgcolor: "rgba(0,0,0,0)"
+};
+Plotly.newPlot("functionCountPlot", function_count_over_time_data, function_count_over_time_layout);
+</script>    
 {% endblock %}
