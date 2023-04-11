@@ -38,7 +38,7 @@
                       <td> <a href="/function-profile?function={{func.name}}&project={{func.project}}">{{ func.name }}</a></td>
                       <td> <a href="/project-profile?project={{func.project}}">{{ func.project }}</a></td>
                       <td> {{ func.is_reached }} </td>
-                      <td> {{ func.runtime_code_coverage }}% </td>
+                      <td> {{ '%0.2f' % func.runtime_code_coverage|float }}% </td>
                   </tr>
                 {% endfor %}
                 </tbody>

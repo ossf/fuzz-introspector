@@ -23,11 +23,11 @@
                   </tr>
                   <tr>
                     <td>Code coverage</td>
-                    <td> {{ project.runtime_cov }}% </td>
+                    <td> {{ '%0.2f' % project.runtime_cov |float}}% </td>
                   </tr>
                   <tr>
                     <td>Static reachability</td>
-                    <td> {{ project.reach }} </td>
+                    <td> {{ '%0.2f' % project.reach |float }} </td>
                   </tr>
                   <tr>
                     <td>Code coverage report</td>

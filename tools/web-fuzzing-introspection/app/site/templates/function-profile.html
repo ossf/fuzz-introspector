@@ -34,7 +34,7 @@
                   </tr>
                   <tr>
                     <td>Code coverage</td>
-                    <td>{{ function_profile.runtime_code_coverage }}%</td>
+                    <td>{{ '%0.2f' % function_profile.runtime_code_coverage|float }}%</td>
                   </tr>
                   <tr>
                     <td>Coverage by fuzzers:</td>
