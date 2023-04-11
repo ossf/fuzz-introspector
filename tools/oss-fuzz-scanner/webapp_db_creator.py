@@ -35,7 +35,7 @@ def inspect_project(project_name):
 
     function_list = list()
     idx = 0
-    max_to_count = 500
+    max_to_count = 1500
 
     project_reach_count = get_percentage(
         introspector_project.proj_profile.reached_func_count,
@@ -74,7 +74,6 @@ def inspect_project(project_name):
         code_coverage = introspector_project.proj_profile.get_func_hit_percentage(
             function_name)
 
-        #coverage_url=""
         func_cov_url = introspector_project.proj_profile.resolve_coverage_report_link(
             coverage_url.replace("/report.html", ""), function_profile.function_source_file, function_profile.function_linenumber,
             function_profile.function_name)
@@ -97,7 +96,6 @@ def handle_projects(project_list):
     db_dict['function-list'] = list()
     db_dict['project-list'] = list()
     db_dict['project-timestamps'] = list()
-
     for project in project_list:
         print("Analysing %s" % (project))
         try:
@@ -161,7 +159,7 @@ if __name__ == "__main__":
             'postfix', 'c-ares', 'brunsli', 'phpmap', 'lodepng', 'libpng',
             'nettle', 'h2o', 'libxml2', 'libgd', 'zstd', 'flac', 'icu'
         ]
-        projects_to_analyse = ['htslib', 'libexif', 'hdf5', 'janet', 'opus', 'gpac', 'llhttp', 'c-ares', 'libssh']
+        projects_to_analyse = ['htslib', 'libexif', 'hdf5', 'janet', 'opus', 'llhttp', 'c-ares', 'libssh', 'libssh2']
         #projects_to_analyse = ['htslib']
         handle_projects(projects_to_analyse)
     elif sys.argv[1] == 'convert':
