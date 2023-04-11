@@ -28,7 +28,8 @@ def get_percentage(numerator, denominator):
 def inspect_project(project_name):
     report_generator = scanner.get_all_reports([project_name], 300, 1)
     project, date_as_str, introspector_project = next(report_generator)
-    introspector_url = scanner.get_introspector_report_url(project, date_as_str)
+    introspector_url = scanner.get_introspector_report_url(
+        project, date_as_str)
     coverage_url = scanner.get_coverage_report_url(project, date_as_str)
 
     all_functions = introspector_project.proj_profile.get_all_functions()
@@ -54,7 +55,8 @@ def inspect_project(project_name):
         'code-coverage-url': coverage_url,
     }
 
-    covered_funcs = introspector_project.proj_profile.get_all_runtime_covered_functions()
+    covered_funcs = introspector_project.proj_profile.get_all_runtime_covered_functions(
+    )
     introspector_project.proj_profile.total_functions
     project_timestamp = {
         'project_name': project_name,
@@ -75,7 +77,9 @@ def inspect_project(project_name):
             function_name)
 
         func_cov_url = introspector_project.proj_profile.resolve_coverage_report_link(
-            coverage_url.replace("/report.html", ""), function_profile.function_source_file, function_profile.function_linenumber,
+            coverage_url.replace("/report.html",
+                                 ""), function_profile.function_source_file,
+            function_profile.function_linenumber,
             function_profile.function_name)
 
         function_list.append({
@@ -99,7 +103,8 @@ def handle_projects(project_list):
     for project in project_list:
         print("Analysing %s" % (project))
         try:
-            project_dict, function_list, project_timestamp = inspect_project(project)
+            project_dict, function_list, project_timestamp = inspect_project(
+                project)
         except:
             print("Failed %s" % (project))
             continue
@@ -130,8 +135,9 @@ def convert_db():
     func_decl = ""
     for func in json_dict['function-list']:
         s = "Function(name='%s', project='%s', is_reached=%s, runtime_code_coverage=%s, function_filename='%s', code_coverage_url='%s')" % (
-            func['name'], func['project_name'], func['is_reached'], func['code_coverage'],
-            func['function_filename'], func['function-codereport-url'])
+            func['name'], func['project_name'], func['is_reached'],
+            func['code_coverage'], func['function_filename'],
+            func['function-codereport-url'])
         func_decl += "  %s,\n" % (s)
 
     module = f"""# Auto-generated
@@ -159,7 +165,10 @@ if __name__ == "__main__":
             'postfix', 'c-ares', 'brunsli', 'phpmap', 'lodepng', 'libpng',
             'nettle', 'h2o', 'libxml2', 'libgd', 'zstd', 'flac', 'icu'
         ]
-        projects_to_analyse = ['htslib', 'libexif', 'hdf5', 'janet', 'opus', 'llhttp', 'c-ares', 'libssh', 'libssh2']
+        projects_to_analyse = [
+            'htslib', 'libexif', 'hdf5', 'janet', 'opus', 'llhttp', 'c-ares',
+            'libssh', 'libssh2'
+        ]
         #projects_to_analyse = ['htslib']
         handle_projects(projects_to_analyse)
     elif sys.argv[1] == 'convert':
