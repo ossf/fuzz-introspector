@@ -28,6 +28,15 @@ TEST_PROJECT_TIMESTAMPS = [
   ProjectTimestamp(project_name="random", date="2023-01-03", coverage_lines=65.2, coverage_functions=63.2, static_reachability=75.12, fuzzer_count=2),
   ProjectTimestamp(project_name="random", date="2023-01-04", coverage_lines=66.2, coverage_functions=69.2, static_reachability=79.12, fuzzer_count=4),
   ProjectTimestamp(project_name="random", date="2023-01-05", coverage_lines=67.2, coverage_functions=77.2, static_reachability=81.12, fuzzer_count=5),
+  ProjectTimestamp(project_name="random", date="2023-01-06", coverage_lines=67.2, coverage_functions=74.2, static_reachability=81.12, fuzzer_count=5),
+  ProjectTimestamp(project_name="random", date="2023-01-07", coverage_lines=67.2, coverage_functions=73.2, static_reachability=81.12, fuzzer_count=5),
+  ProjectTimestamp(project_name="random", date="2023-01-08", coverage_lines=65.2, coverage_functions=78.2, static_reachability=81.12, fuzzer_count=5),
+  ProjectTimestamp(project_name="random", date="2023-01-09", coverage_lines=71.2, coverage_functions=79.2, static_reachability=81.12, fuzzer_count=5),
+  ProjectTimestamp(project_name="random", date="2023-01-10", coverage_lines=72.2, coverage_functions=82.2, static_reachability=81.12, fuzzer_count=5),
+  ProjectTimestamp(project_name="random", date="2023-01-11", coverage_lines=75.2, coverage_functions=82.2, static_reachability=81.12, fuzzer_count=5),
+  ProjectTimestamp(project_name="random", date="2023-01-12", coverage_lines=77.2, coverage_functions=82.2, static_reachability=81.12, fuzzer_count=5),
+  ProjectTimestamp(project_name="random", date="2023-01-13", coverage_lines=77.2, coverage_functions=82.2, static_reachability=81.12, fuzzer_count=5),
+  ProjectTimestamp(project_name="random", date="2023-01-14", coverage_lines=77.2, coverage_functions=82.2, static_reachability=81.12, fuzzer_count=5),
 ]
 
 TEST_FUNCTIONS = [
