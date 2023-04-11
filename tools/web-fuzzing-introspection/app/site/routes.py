@@ -66,7 +66,8 @@ def get_all_related_functions(primary_function):
 @site.route('/')
 def index():
     db_summary = get_frontpage_summary_stats()
-    return render_template('index.html', db_summary = db_summary)
+    db_timestamps = test_data.TEST_DB_TIMESTAMPS
+    return render_template('index.html', db_summary = db_summary, db_timestamps = db_timestamps)
 
 
 @site.route('/function-profile', methods=['GET'])
@@ -81,7 +82,8 @@ def function_profile():
 def project_profile():
     #print(request.args.get('project', 'none'))
     project = get_project_with_name(request.args.get('project', 'none'))
-    return render_template('project-profile.html', project=project)
+    project_statistics = test_data.TEST_PROJECT_TIMESTAMPS
+    return render_template('project-profile.html', project=project, project_statistics=project_statistics)
 
 
 @site.route('/function-search')

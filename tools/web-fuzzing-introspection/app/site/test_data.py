@@ -23,6 +23,35 @@ TEST_PROJECTS = [
   Project(name='icu', language='c', fuzz_count=14, reach='30.0', runtime_cov='32.0'),
 ]
 
+TEST_PROJECT_TIMESTAMPS = [
+  ProjectTimestamp(project_name="random", date="2023-01-01", coverage_lines=64.2, coverage_functions=67.2, static_reachability=73.12, fuzzer_count=2),
+  ProjectTimestamp(project_name="random", date="2023-01-03", coverage_lines=65.2, coverage_functions=63.2, static_reachability=75.12, fuzzer_count=2),
+  ProjectTimestamp(project_name="random", date="2023-01-04", coverage_lines=66.2, coverage_functions=69.2, static_reachability=79.12, fuzzer_count=4),
+  ProjectTimestamp(project_name="random", date="2023-01-05", coverage_lines=67.2, coverage_functions=77.2, static_reachability=81.12, fuzzer_count=5),
+  ProjectTimestamp(project_name="random", date="2023-01-06", coverage_lines=67.2, coverage_functions=74.2, static_reachability=81.12, fuzzer_count=5),
+  ProjectTimestamp(project_name="random", date="2023-01-07", coverage_lines=67.2, coverage_functions=73.2, static_reachability=81.12, fuzzer_count=5),
+  ProjectTimestamp(project_name="random", date="2023-01-08", coverage_lines=65.2, coverage_functions=78.2, static_reachability=81.12, fuzzer_count=5),
+  ProjectTimestamp(project_name="random", date="2023-01-09", coverage_lines=71.2, coverage_functions=79.2, static_reachability=81.12, fuzzer_count=5),
+  ProjectTimestamp(project_name="random", date="2023-01-10", coverage_lines=72.2, coverage_functions=82.2, static_reachability=81.12, fuzzer_count=5),
+  ProjectTimestamp(project_name="random", date="2023-01-11", coverage_lines=75.2, coverage_functions=82.2, static_reachability=81.12, fuzzer_count=5),
+  ProjectTimestamp(project_name="random", date="2023-01-12", coverage_lines=77.2, coverage_functions=82.2, static_reachability=81.12, fuzzer_count=5),
+  ProjectTimestamp(project_name="random", date="2023-01-13", coverage_lines=77.2, coverage_functions=82.2, static_reachability=81.12, fuzzer_count=5),
+  ProjectTimestamp(project_name="random", date="2023-01-14", coverage_lines=77.2, coverage_functions=82.2, static_reachability=81.12, fuzzer_count=5),
+]
+
+TEST_DB_TIMESTAMPS = [
+  DBTimestamp(date="2023-01-10", project_count=100, fuzzer_count=300, function_count=1000),
+  DBTimestamp(date="2023-01-11", project_count=100, fuzzer_count=300, function_count=1000),
+  DBTimestamp(date="2023-01-12", project_count=105, fuzzer_count=330, function_count=1100),
+  DBTimestamp(date="2023-01-13", project_count=110, fuzzer_count=340, function_count=1150),
+  DBTimestamp(date="2023-01-14", project_count=111, fuzzer_count=350, function_count=1200),
+  DBTimestamp(date="2023-01-15", project_count=112, fuzzer_count=390, function_count=1500),
+  DBTimestamp(date="2023-01-16", project_count=112, fuzzer_count=410, function_count=1550),
+  DBTimestamp(date="2023-01-17", project_count=113, fuzzer_count=450, function_count=1560),
+  DBTimestamp(date="2023-01-18", project_count=114, fuzzer_count=450, function_count=1570),
+  DBTimestamp(date="2023-01-19", project_count=116, fuzzer_count=460, function_count=1580),
+]
+
 TEST_FUNCTIONS = [
   Function(name='hts_close_or_abort', project='htslib', runtime_code_coverage=60.0, function_filename='/src/htslib/test/fuzz/hts_open_fuzzer.c'),
   Function(name='abort', project='htslib', runtime_code_coverage=0.0, function_filename=''),

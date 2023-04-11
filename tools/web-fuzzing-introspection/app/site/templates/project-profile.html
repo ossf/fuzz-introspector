@@ -23,11 +23,11 @@
                   </tr>
                   <tr>
                     <td>Code coverage</td>
-                    <td> {{ project.runtime_cov }}% </td>
+                    <td> {{ '%0.2f' % project.runtime_cov |float}}% </td>
                   </tr>
                   <tr>
                     <td>Static reachability</td>
-                    <td> {{ project.reach }} </td>
+                    <td> {{ '%0.2f' % project.reach |float }} </td>
                   </tr>
                   <tr>
                     <td>Code coverage report</td>
@@ -83,16 +83,23 @@
 <script>
 
 // Plot for code coverage in terms of lines over time
-const code_coverage_lines_x = [
-  {% for x_cord, y_cord in project.code_coverage_line_history %}
-    "{{ x_cord }}",
-  {% endfor %}
-];
-const code_coverage_lines_y = [
-  {% for x_cord, y_cord in project.code_coverage_line_history %}
-    {{ y_cord }},
-  {% endfor %}
-];
+const code_coverage_lines_x = [];
+const code_coverage_lines_y = [];
+const code_coverage_functions_y = [];
+const code_reachability_y = [];
+const fuzzer_count_y = [];
+max_fuzzer_count = 0;
+
+{% for project_timestamp in project_statistics %}
+code_coverage_lines_x.push("{{project_timestamp.date}}");
+code_coverage_lines_y.push({{project_timestamp.coverage_lines}});
+code_coverage_functions_y.push({{project_timestamp.coverage_functions}});
+code_reachability_y.push({{project_timestamp.static_reachability}});
+fuzzer_count_y.push({{project_timestamp.fuzzer_count}});
+max_fuzzer_count = Math.max(max_fuzzer_count, {{project_timestamp.fuzzer_count}});
+{%endfor%}
+
+// Plot for code coverage in terms of lines over time
 const code_coverage_lines_data = [{
   x: code_coverage_lines_x,
   y: code_coverage_lines_y,
@@ -100,83 +107,53 @@ const code_coverage_lines_data = [{
 }];
 const code_coverage_lines_layout = {
   xaxis: {title: "Date"},
-  yaxis: {title: "Coverage"},  
-  title: "Code Coverage (lines)",
+  yaxis: {title: "Coverage", range: [0.0, 100.0]},  
+  title: "Code Coverage (lines) %",
   type: "scatter"
 };
 Plotly.newPlot("codeCoverageLinesOverTimePlot", code_coverage_lines_data, code_coverage_lines_layout);
 
 
 // Plot for code coverage in terms of functions over time
-const code_coverage_functions_x = [
-  {% for x_cord, y_cord in project.code_coverage_functions_history %}
-    "{{ x_cord }}",
-  {% endfor %}
-];
-const code_coverage_functions_y = [
-  {% for x_cord, y_cord in project.code_coverage_functions_history %}
-    {{ y_cord }},
-  {% endfor %}
-];
 const code_coverage_functions_data = [{
-  x: code_coverage_functions_x,
+  x: code_coverage_lines_x,
   y: code_coverage_functions_y,
   mode:"lines"
 }];
 const code_coverage_functions_layout = {
   xaxis: {title: "Date"},
-  yaxis: {title: "Coverage"},  
-  title: "Code Coverage (lines)",
+  yaxis: {title: "Coverage", range: [0.0, 100.0]},  
+  title: "Code Coverage (functions) %",
   type: "scatter"
 };
 Plotly.newPlot("codeCoverageFunctionsOverTimePlot", code_coverage_functions_data, code_coverage_functions_layout);
 
 
 // Plot for static rachability over time
-const code_reachability_x = [
-  {% for x_cord, y_cord in project.code_reachability_history %}
-    "{{ x_cord }}",
-  {% endfor %}
-];
-const code_reachability_y = [
-  {% for x_cord, y_cord in project.code_reachability_history %}
-    {{ y_cord }},
-  {% endfor %}
-];
 const code_reachability_data = [{
-  x: code_reachability_x,
+  x: code_coverage_lines_x,
   y: code_reachability_y,
   mode:"lines"
 }];
 const code_reachability_layout = {
   xaxis: {title: "Date"},
-  yaxis: {title: "Coverage"},  
-  title: "Code Coverage (lines)",
+  yaxis: {title: "Reachability", range: [0.0, 100.0]},  
+  title: "Static reachability %",
   type: "scatter"
 };
 Plotly.newPlot("staticReachabilityOverTimePlot", code_reachability_data, code_reachability_layout);
 
 
 // Plot for fuzzer counter over time
-const fuzzer_count_x = [
-  {% for x_cord, y_cord in project.fuzzer_count_history %}
-    "{{ x_cord }}",
-  {% endfor %}
-];
-const fuzzer_count_y = [
-  {% for x_cord, y_cord in project.fuzzer_count_history %}
-    {{ y_cord }},
-  {% endfor %}
-];
 const fuzzer_count_data = [{
-  x: fuzzer_count_x,
+  x: code_coverage_lines_x,
   y: fuzzer_count_y,
   mode:"lines"
 }];
 const fuzzer_count_layout = {
   xaxis: {title: "Date"},
-  yaxis: {title: "Coverage"},  
-  title: "Code Coverage (lines)",
+  yaxis: {title: "Fuzzers", range: [0.0, max_fuzzer_count + 5]},  
+  title: "Fuzzer count",
   type: "scatter"
 };
 Plotly.newPlot("fuzzerCountOverTimePlot", fuzzer_count_data, fuzzer_count_layout);
