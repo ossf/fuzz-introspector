@@ -45,12 +45,14 @@ class ProjectTimestamp:
         self.fuzzer_count = fuzzer_count
 
 class Project:
-    def __init__(self, name, language, fuzz_count, reach, runtime_cov):
+    def __init__(self, name, language, fuzz_count, reach, runtime_cov, introspector_report_url, code_coverage_report_url):
         self.name = name
         self.language = language
         self.fuzz_count = fuzz_count
         self.reach = reach
         self.runtime_cov = runtime_cov
+        self.introspector_report_url = introspector_report_url
+        self.code_coverage_report_url = code_coverage_report_url
 
         # Line coverage history
         self.code_coverage_line_history = []
@@ -73,7 +75,7 @@ class Project:
             self.fuzzer_count_history.append((get_date_at_offset_as_str(i-100), 3))
 
 class Function:
-    def __init__(self, name, project, is_reached=False, runtime_code_coverage = 32.4, function_filename = "/src/model/filename.cpp", reached_by_fuzzers=0):
+    def __init__(self, name, project, is_reached=False, runtime_code_coverage = 32.4, function_filename = "/src/model/filename.cpp", reached_by_fuzzers=0, code_coverage_url=""):
         self.name = name
         self.function_filename = function_filename
         self.project = project
@@ -82,3 +84,4 @@ class Function:
         self.reached_by_fuzzers = reached_by_fuzzers
         self.coverage_by_fuzzers = 3
         self.fuzz_introspector_report_url = "#"
+        self.code_coverage_url = code_coverage_url
