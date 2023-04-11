@@ -593,7 +593,7 @@ button.btn__primary {
   content: "";
 }
 .profile__table {
-  max-width: 350px;
+  max-width: 550px;
 }
 .project__profile-wrapper h2 {
   font-weight: 700;
