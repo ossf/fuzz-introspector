@@ -84,7 +84,11 @@ def project_profile():
     #print(request.args.get('project', 'none'))
     project = get_project_with_name(request.args.get('project', 'none'))
     project_statistics = test_data.TEST_PROJECT_TIMESTAMPS
-    return render_template('project-profile.html', project=project, project_statistics=project_statistics)
+    real_stats = []
+    for ps in project_statistics:
+        if ps.project_name == project.name:
+            real_stats.append(ps)
+    return render_template('project-profile.html', project=project, project_statistics=real_stats)
 
 
 @site.route('/function-search')

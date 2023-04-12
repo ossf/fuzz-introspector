@@ -203,7 +203,7 @@ def get_date_at_offset_as_str(day_offset=-1):
     return datestr
 
 dates_list = []
-for i in list(reversed(list(range(2,4)))):
+for i in list(reversed(list(range(2,16)))):
     dates_list.append(get_date_at_offset_as_str(i * -1))
 
 analyse_set_of_dates(dates_list)
