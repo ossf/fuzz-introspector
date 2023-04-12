@@ -281,6 +281,7 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
     merge_parser = subparsers.add_parser(
         'merge', help="Merge all fuzzers from one run into one project")
     merge_parser.add_argument("dir", type=str)
+    merge_parser.add_argument("language", type=str, default="python")
 
     return parser
 
@@ -402,8 +403,13 @@ def main():
         extract_ranked(args.dir, args.to_rank)
     elif args.command == 'heuristics-summary':
         heuristics_summary()
-    elif args.command == "merge":
-        merge_run(args.dir)
+    elif args.command == 'merge':
+        if args.language == 'python':
+            merge_run(args.dir, 'python')
+        elif args.language == 'java':
+            merge_run(args.dir, 'jvm')
+        else:
+            print('Unsupported language: %s' % args.language)
 
 
 if __name__ == "__main__":
