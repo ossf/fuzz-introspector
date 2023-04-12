@@ -67,6 +67,7 @@ def get_all_related_functions(primary_function):
 def index():
     db_summary = get_frontpage_summary_stats()
     db_timestamps = test_data.TEST_DB_TIMESTAMPS
+    print("Length of timestamps: %d"%(len(db_timestamps)))
     return render_template('index.html', db_summary = db_summary, db_timestamps = db_timestamps)
 
 
