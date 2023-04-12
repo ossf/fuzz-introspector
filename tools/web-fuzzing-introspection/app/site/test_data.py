@@ -2,7 +2,6 @@
 from app.site.models import *
 
 
-
 TEST_PROJECT_TIMESTAMPS = []
 
 TEST_DB_TIMESTAMPS = []
