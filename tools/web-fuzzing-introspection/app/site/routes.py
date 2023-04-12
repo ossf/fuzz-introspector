@@ -92,6 +92,7 @@ def function_search():
     query = request.args.get('q', '')
     print("query: { %s }"%(query))
 
+    print("Length of functions: %d"%(len(test_data.get_functions())))
     if query == '':
         # Pick 25 random functions per default
         functions_to_display = test_data.get_functions()[0:20]
