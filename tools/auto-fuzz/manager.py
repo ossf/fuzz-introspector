@@ -219,9 +219,9 @@ def _ant_build_project(basedir, projectdir):
                                    constants.ANT_PATH) + ":" + env_var['PATH']
 
     # Build project with ant
-    cmd = ["ant"]
+    cmd = "chmod +x %s/ant && ant" % os.path.join(basedir, constants.ANT_PATH)
     try:
-        subprocess.check_call(" ".join(cmd),
+        subprocess.check_call(cmd,
                               shell=True,
                               timeout=1800,
                               stdout=subprocess.DEVNULL,
