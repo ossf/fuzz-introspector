@@ -10,6 +10,21 @@ def load_db():
     db_timestamps_file = os.path.join(os.path.dirname(__file__), "../static/assets/db/db-timestamps.json")
     all_functions_file = os.path.join(os.path.dirname(__file__), "../static/assets/db/all-functions-db.json")
     project_timestamps_file = os.path.join(os.path.dirname(__file__), "../static/assets/db/all-project-timestamps.json")
+    project_currents = os.path.join(os.path.dirname(__file__), "../static/assets/db/all-project-current.json")
+    if len(test_data.TEST_DB_TIMESTAMPS) > 0:
+        return
+
+    with open(db_timestamps_file, 'r') as f:
+        db_tss = json.load(f)
+    for ts in db_tss:
+        test_data.TEST_DB_TIMESTAMPS.append(
+            models.DBTimestamp(
+                date = ts['date'],
+                project_count = ts['project_count'],
+                fuzzer_count = ts['fuzzer_count'],
+                function_count = ts['function_count']
+            )
+        )
 
     with open(all_functions_file, 'r') as f:
         all_function_list = json.load(f)
@@ -31,14 +46,28 @@ def load_db():
     print("Loadded %d functions"%(idx))
     print("Len %d"%(len(test_data.TEST_FUNCTIONS)))
 
-    # Load all profiles
     with open(project_timestamps_file, 'r') as f:
-        all_project_timestamps_json = json.load(f)
-    for project_timestamp in all_project_timestamps_json:
+        project_timestamps_json = json.load(f)
+    for project_timestamp in project_timestamps_json:
+        test_data.TEST_PROJECT_TIMESTAMPS.append(
+            models.ProjectTimestamp(
+				date = project_timestamp['date'],
+				project_name = project_timestamp['project_name'],
+				coverage_lines = project_timestamp['coverage_lines'],
+				static_reachability = project_timestamp['static_reachability'],
+				fuzzer_count = project_timestamp['fuzzer_count'],
+                coverage_functions = project_timestamp['coverage_lines']
+            )
+        )
+
+    # Load all profiles
+    with open(project_currents, 'r') as f:
+        project_currents_json = json.load(f)
+    for project_timestamp in project_currents_json:
         test_data.TEST_PROJECTS.append(
             models.Project(
                 name=project_timestamp['project_name'],
-                language='c',
+                language=project_timestamp.get('language', 'c'),
                 fuzz_count=project_timestamp['fuzzer_count'],
                 reach = project_timestamp['static_reachability'],
                 runtime_cov=project_timestamp['coverage_lines'],

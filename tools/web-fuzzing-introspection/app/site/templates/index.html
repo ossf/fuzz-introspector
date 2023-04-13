@@ -139,7 +139,7 @@ const project_count_over_time_data = [{
 }];
 const project_count_over_time_layout = {
   xaxis: {title: "Date"},
-  yaxis: {title: "Projects"},  
+  yaxis: {title: "Projects", range: [0.0, {{max_proj}}]},
   type: "scatter",
   paper_bgcolor: "rgba(0,0,0,0)",
   plot_bgcolor: "rgba(0,0,0,0)"
@@ -154,7 +154,7 @@ const fuzzer_count_over_time_data = [{
 }];
 const fuzzer_count_over_time_layout = {
   xaxis: {title: "Date"},
-  yaxis: {title: "Fuzzers"},  
+        yaxis: {title: "Fuzzers", range: [0.0, {{max_fuzzer_count}}]},  
   type: "scatter",
   paper_bgcolor: "rgba(0,0,0,0)",
   plot_bgcolor: "rgba(0,0,0,0)"
@@ -170,7 +170,7 @@ const function_count_over_time_data = [{
 }];
 const function_count_over_time_layout = {
   xaxis: {title: "Date"},
-  yaxis: {title: "Functions"},  
+        yaxis: {title: "Functions", range: [0.0, {{max_function_count}}]},  
   type: "scatter",
   paper_bgcolor: "rgba(0,0,0,0)",
   plot_bgcolor: "rgba(0,0,0,0)"

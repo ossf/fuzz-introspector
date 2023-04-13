@@ -67,7 +67,21 @@ def get_all_related_functions(primary_function):
 def index():
     db_summary = get_frontpage_summary_stats()
     db_timestamps = test_data.TEST_DB_TIMESTAMPS
-    return render_template('index.html', db_summary = db_summary, db_timestamps = db_timestamps)
+    print("Length of timestamps: %d"%(len(db_timestamps)))
+    # Maximum projects
+    max_proj = 0
+    max_fuzzer_count = 0
+    max_function_count = 0
+    for db_timestamp in db_timestamps:
+        max_proj = max(db_timestamp.project_count, max_proj)
+        max_fuzzer_count = max(db_timestamp.fuzzer_count, max_fuzzer_count)
+        max_function_count = max(db_timestamp.function_count, max_function_count)
+
+    max_proj = int(max_proj*1.2)
+    max_fuzzer_count = int(max_fuzzer_count*1.2)
+    max_function_count = int(max_function_count*1.2)
+
+    return render_template('index.html', db_summary = db_summary, db_timestamps = db_timestamps, max_proj=max_proj, max_fuzzer_count = max_fuzzer_count, max_function_count= max_function_count)
 
 
 @site.route('/function-profile', methods=['GET'])
@@ -83,7 +97,11 @@ def project_profile():
     #print(request.args.get('project', 'none'))
     project = get_project_with_name(request.args.get('project', 'none'))
     project_statistics = test_data.TEST_PROJECT_TIMESTAMPS
-    return render_template('project-profile.html', project=project, project_statistics=project_statistics)
+    real_stats = []
+    for ps in project_statistics:
+        if ps.project_name == project.name:
+            real_stats.append(ps)
+    return render_template('project-profile.html', project=project, project_statistics=real_stats)
 
 
 @site.route('/function-search')
