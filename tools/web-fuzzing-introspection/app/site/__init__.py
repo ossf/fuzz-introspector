@@ -67,7 +67,7 @@ def load_db():
         test_data.TEST_PROJECTS.append(
             models.Project(
                 name=project_timestamp['project_name'],
-                language=project_timestamp['language'],
+                language=project_timestamp.get('language', 'c'),
                 fuzz_count=project_timestamp['fuzzer_count'],
                 reach = project_timestamp['static_reachability'],
                 runtime_cov=project_timestamp['coverage_lines'],
