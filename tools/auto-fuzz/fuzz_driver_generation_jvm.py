@@ -565,7 +565,7 @@ def _handle_object_creation(classname,
                         _search_concrete_subclass(classname, init_dict,
                                                   handled))
                 if len(class_list) == 0:
-                    return "new " + classname.replace("$", ".") + "()"
+                    return ["new " + classname.replace("$", ".") + "()"]
 
                 for elem in class_list:
                     elem_classname = elem['functionSourceFile'].replace(
@@ -992,10 +992,10 @@ def _generate_heuristic_6(yaml_dict, possible_targets, max_target):
                                                       instance_method_list,
                                                       possible_target,
                                                       init_dict, max_target)
-        object_creation_list.append(
+        object_creation_list.extend(
             _search_static_factory_method(func_class, static_method_list,
                                           possible_target, max_target))
-        object_creation_list.append(
+        object_creation_list.extend(
             _handle_object_creation(func_class, init_dict, possible_target,
                                     max_target))
 
@@ -1090,10 +1090,10 @@ def _generate_heuristic_7(yaml_dict, possible_targets, max_target):
                                                       instance_method_list,
                                                       possible_target,
                                                       init_dict, max_target)
-        object_creation_list.append(
+        object_creation_list.extend(
             _search_static_factory_method(func_class, static_method_list,
                                           possible_target, max_target))
-        object_creation_list.append(
+        object_creation_list.extend(
             _handle_object_creation(func_class, init_dict, possible_target,
                                     max_target))
 
@@ -1194,10 +1194,10 @@ def _generate_heuristic_8(yaml_dict, possible_targets, max_target):
                                                       instance_method_list,
                                                       possible_target,
                                                       init_dict, max_target)
-        object_creation_list.append(
+        object_creation_list.extend(
             _search_static_factory_method(func_class, static_method_list,
                                           possible_target, max_target))
-        object_creation_list.append(
+        object_creation_list.extend(
             _handle_object_creation(func_class, init_dict, possible_target,
                                     max_target))
 
@@ -1276,10 +1276,10 @@ def _generate_heuristic_9(yaml_dict, possible_targets, max_target):
                                                       init_dict,
                                                       max_target,
                                                       class_field=True)
-        object_creation_list.append(
+        object_creation_list.extend(
             _search_static_factory_method(func_class, static_method_list,
                                           possible_target, max_target))
-        object_creation_list.append(
+        object_creation_list.extend(
             _handle_object_creation(func_class,
                                     init_dict,
                                     possible_target,
@@ -1365,13 +1365,13 @@ def _generate_heuristic_10(yaml_dict, possible_targets, max_target):
                                                       max_target,
                                                       class_field=True,
                                                       class_object=True)
-        object_creation_list.append(
+        object_creation_list.extend(
             _search_static_factory_method(func_class,
                                           static_method_list,
                                           possible_target,
                                           max_target,
                                           class_object=True))
-        object_creation_list.append(
+        object_creation_list.extend(
             _handle_object_creation(func_class,
                                     init_dict,
                                     possible_target,
