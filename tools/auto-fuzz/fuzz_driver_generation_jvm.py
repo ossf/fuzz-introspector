@@ -651,7 +651,13 @@ def _extract_method(yaml_dict):
             continue
         if len(func_elem['argTypes']) > 20:
             continue
-        if "test" in func_elem['functionName']:
+        if "test" in func_elem['functionName'].lower():
+            continue
+        if "demo" in func_elem['functionName'].lower():
+            continue
+        if "test" in func_elem['functionSourceFile'].lower():
+            continue
+        if "demo" in func_elem['functionSourceFile'].lower():
             continue
         if "jazzer" in func_elem[
                 'functionName'] or "fuzzerTestOneInput" in func_elem[
@@ -674,10 +680,10 @@ def _extract_method(yaml_dict):
 
 def _generate_heuristic_1(yaml_dict, possible_targets, max_target):
     """Heuristic 1.
-    Creates a FuzzTarget for each method that satisfy all:
+    Creates a single FuzzTarget for all method that satisfy all:
         - public class method which are not abstract or found in JDK library
         - have between 0-20 arguments
-        - do not have "test" in the function name
+        - do not have "test" or "Demo" in the function name or class name
     The fuzz target is simply one that calls into the target class function with
     suitable primitive fuzz data or simple concrete public constructor
 
@@ -727,7 +733,7 @@ def _generate_heuristic_2(yaml_dict, possible_targets, max_target):
     Creates a FuzzTarget for each method that satisfy all:
         - public object method which are not abstract or found in JDK library
         - have between 0-20 arguments
-        - do not have "test" in the function name
+        - do not have "test" or "demo" in the function name or class name
     The fuzz target is simply one that calls into the target function with
     seeded fuzz data. It will create the object with the class constructor
     before calling the function. Primitive type will be passed with the seeded
@@ -791,11 +797,11 @@ def _generate_heuristic_3(yaml_dict, possible_targets, max_target):
     Creates a FuzzTarget for each method that satisfy all:
         - public object method which are not abstract or found in JDK library
         - have between 0-20 arguments
-        - do not have "test" in the function name
+        - do not have "test" or "demo" in the function name or class name
     and Object creation method that satisfy all:
         - public static method which are not abstract
         - have less than 20 primitive arguments
-        - do not have "test" in the function name
+        - do not have "test" or "demo" in the function name or class name
         - return an object of the needed class
     Similar to Heuristic 2, the fuzz target is simply one that calls into the
     target function with seeded fuzz data. But it create the object differently
@@ -862,11 +868,11 @@ def _generate_heuristic_4(yaml_dict, possible_targets, max_target):
     Creates a FuzzTarget for each method that satisfy all:
         - public object method which are not abstract or found in JDK library
         - have between 0-20 arguments
-        - do not have "test" in the function name
+        - do not have "test" or "demo" in the function name or class name
     and Object creation method that satisfy all:
         - public non-static method which are not abstract
         - have less than 20 arguments
-        - do not have "test" in the function name
+        - do not have "test" or "demo" in the function name or class name
         - return an object of the needed class
     Similar to Heuristic 3, instead of static factory method, it will find
     non-static factory method instead.
@@ -933,7 +939,7 @@ def _generate_heuristic_6(yaml_dict, possible_targets, max_target):
     Creates a FuzzTarget for each method that satisfy all:
         - public object method which are not abstract or found in JDK library
         - have between 0-20 arguments
-        - do not have "test" in the function name
+        - do not have "test" or "demo" in the function name or class name
         - require certain pre-settings before use (by calling all non-static
           method of the same class which does not have return values or start with
           set, except the target function itself)
@@ -1014,7 +1020,7 @@ def _generate_heuristic_7(yaml_dict, possible_targets, max_target):
     Creates a FuzzTarget for each method that satisfy all:
         - public static or object method which are not abstract or found in JDK library
         - have between 0-20 arguments
-        - do not have "test" in the function name
+        - do not have "test" or "demo" in the function name or class name
         - have return value
 
     This heuristic adds in assert logic to confirm the consistency of method call. That
@@ -1129,7 +1135,7 @@ def _generate_heuristic_8(yaml_dict, possible_targets, max_target):
     Creates a FuzzTarget for each method that satisfy all:
         - public object method which are not abstract or found in JDK library
         - have between 0-20 arguments
-        - do not have "test" in the function name
+        - do not have "test" or "demo" in the function name or class name
         - require enum object as parameter
 
     Will also add proper exception handling based on the exception list
@@ -1211,7 +1217,7 @@ def _generate_heuristic_9(yaml_dict, possible_targets, max_target):
     Creates a FuzzTarget for each method that satisfy all:
         - public object method which are not abstract or found in JDK library
         - have between 0-20 arguments
-        - do not have "test" in the function name
+        - do not have "test" or "demo" in the function name or class name
 
     Use public static final object defined in the target class for getting
     the needed object
@@ -1296,7 +1302,7 @@ def _generate_heuristic_10(yaml_dict, possible_targets, max_target):
     Creates a FuzzTarget for each method that satisfy all:
         - public object or static method which are not abstract or found in JDK library
         - have between 0-20 arguments
-        - do not have "test" in the function name
+        - do not have "test" or "demo" in the function name or class name
         - Have at least one arguments required a class object.
 
     Will also add proper exception handling based on the exception list
