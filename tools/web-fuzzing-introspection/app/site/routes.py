@@ -132,3 +132,7 @@ def function_search():
 def projects_overview():
     projects = test_data.get_projects()
     return render_template('projects-overview.html', all_projects=projects)
+
+@site.route('/about')
+def about():
+    return render_template('about.html')
