@@ -54,28 +54,8 @@ class Project:
         self.introspector_report_url = introspector_report_url
         self.code_coverage_report_url = code_coverage_report_url
 
-        # Line coverage history
-        self.code_coverage_line_history = []
-        for i in range(100):
-            self.code_coverage_line_history.append((get_date_at_offset_as_str(i-100), i))
-
-        # Function coverage history
-        self.code_coverage_functions_history = []
-        for i in range(100):
-            self.code_coverage_functions_history.append((get_date_at_offset_as_str(i-100), i*2))
-
-        # Static reachability history
-        self.code_reachability_history = []
-        for i in range(100):
-            self.code_reachability_history.append((get_date_at_offset_as_str(i-100), i*1.5))
-
-        # Fuzzer count history
-        self.fuzzer_count_history = []
-        for i in range(100):
-            self.fuzzer_count_history.append((get_date_at_offset_as_str(i-100), 3))
-
 class Function:
-    def __init__(self, name, project, is_reached=False, runtime_code_coverage = 32.4, function_filename = "/src/model/filename.cpp", reached_by_fuzzers=0, code_coverage_url=""):
+    def __init__(self, name, project, is_reached=False, runtime_code_coverage = 0.0, function_filename = "", reached_by_fuzzers=0, code_coverage_url=""):
         self.name = name
         self.function_filename = function_filename
         self.project = project
@@ -83,5 +63,4 @@ class Function:
         self.runtime_code_coverage = runtime_code_coverage
         self.reached_by_fuzzers = reached_by_fuzzers
         self.coverage_by_fuzzers = 3
-        self.fuzz_introspector_report_url = "#"
         self.code_coverage_url = code_coverage_url

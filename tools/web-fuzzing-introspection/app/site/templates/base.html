@@ -53,12 +53,11 @@
             <ul class="menu">
                 <li><a href="{{ url_for('site.projects_overview') }}">Project Overview</a></li>
               <li><a href="{{ url_for('site.function_search') }}">Function Database</a></li>
-              <li><a href="#">Blog</a></li>
             </ul>
             <ul class="menu">
               <li><a href="https://github.com/ossf/fuzz-introspector">Fuzz Introspector</a></li>
               <li><a href="https://github.com/google/oss-fuzz">OSS-Fuzz</a></li>
-              <li><a href="#">About</a></li>
+              <li><a href="{{ url_for('site.about') }}">About</a></li>
             </ul>
           </nav>
         </div>

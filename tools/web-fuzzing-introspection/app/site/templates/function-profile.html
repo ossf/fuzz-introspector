@@ -9,7 +9,7 @@
               <h2>
                 Function:
                 <a
-                  href="https://storage.googleapis.com/oss-fuzz-coverage/openssh/reports/20230303/linux/src/openssh/krl.c.html#L983"
+                  href="{{ function_profile.code_coverage_url }}"
                   target="_blank"
                 >
                   {{function_profile.name}}
@@ -17,10 +17,6 @@
               </h2>
               <h2>
                Project:
-                <a
-                  href="https://storage.googleapis.com/oss-fuzz-coverage/openssh/reports/20230303/linux/src/openssh/krl.c.html#L983"
-                  target="_blank"
-                >
                   <a href="/project-profile?project={{function_profile.project}}">{{function_profile.project}}</a>
                 </a>
               </h2>
@@ -47,10 +43,6 @@
                   <tr>
                     <td>Code coverage</td>
                     <td><a href="{{ function_profile.code_coverage_url }}">report url</a></td>
-                  </tr>
-                  <tr>
-                    <td>Fuzz Introspector report</td>
-                    <td><a href="#"> {{ function_profile.fuzz_introspector_report_url }}</a></td>
                   </tr>
                 </tbody>
               </table>
