@@ -30,6 +30,7 @@ public class JavaMethodInfo {
   private Boolean isStatic;
   private Boolean isClassConcrete;
   private Boolean isClassEnum;
+  private Boolean isClassPublic;
 
   public JavaMethodInfo() {
     this.exceptions = new ArrayList<String>();
@@ -42,6 +43,7 @@ public class JavaMethodInfo {
     this.isStatic = false;
     this.isClassConcrete = true;
     this.isClassEnum = false;
+    this.isClassPublic = true;
   }
 
   public List<String> getExceptions() {
@@ -134,5 +136,13 @@ public class JavaMethodInfo {
 
   public void setIsClassEnum(Boolean isClassEnum) {
     this.isClassEnum = isClassEnum;
+  }
+
+  public Boolean isClassPublic() {
+    return this.isClassPublic;
+  }
+
+  public void setIsClassPublic(Boolean isClassPublic) {
+    this.isClassPublic = isClassPublic;
   }
 }
