@@ -154,9 +154,10 @@ def _print_summary_of_trial_run(trial_run,
             proj_name = proj_name + " " * (50 - len(proj_name))
         if len(trial_name) < 21:
             trial_name = trial_name + " " * (21 - len(trial_name))
-        print("%s :: %15s ::  %21s :: [%5s : %5s] :: %s :: %s :: %s" %
+        print("%s :: %15s ::  %21s :: [%5s : %5s : %5s] :: %s :: %s :: %s" %
               (proj_name, autofuzz_project_dir, trial_name,
-               str(trial_run['max_cov']), str(trial_run['min_cov']), fuzz_path,
+               str(trial_run['max_cov']), str(trial_run['min_cov']),
+               str(trial_run['max_cov'] - trial_run['min_cov']), fuzz_path,
                trial_run['heuristics-used'], trial_run['function-target']))
     else:
         # Print using space-sepratation between columns.
