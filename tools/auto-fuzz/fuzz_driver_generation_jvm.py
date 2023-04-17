@@ -693,39 +693,53 @@ def _generate_heuristic_1(yaml_dict, possible_targets, max_target):
     HEURISTIC_NAME = "jvm-autofuzz-heuristics-1"
 
     _, _, _, static_method_list = _extract_method(yaml_dict)
-    for func_elem in static_method_list:
-        if len(possible_targets) > max_target:
-            return
 
-        # Initialize base possible_target object
-        possible_target = FuzzTarget(func_elem=func_elem)
-        func_name = possible_target.function_target
-        func_class = possible_target.function_class
+    if len(possible_targets) > max_target:
+        return
+
+    # Initialize base possible_target object
+    base_possible_target = FuzzTarget()
+    source_code_list = []
+
+    for func_elem in static_method_list:
+        func_name = func_elem['functionName'].split('].')[1].split('(')[0]
+        func_class = func_elem['functionSourceFile'].replace('$', '.')
+        base_possible_target.exceptions_to_handle.update(
+            func_elem['JavaMethodInfo']['exceptions'])
+        base_possible_target.imports_to_add.update(_handle_import(func_elem))
 
         # Store function parameter list
+        variable_list = []
         for argType in func_elem['argTypes']:
             arg_list = _handle_argument(argType.replace('$', '.'), None,
-                                        possible_target, max_target)
+                                        base_possible_target, max_target)
             if arg_list:
-                possible_target.variables_to_add.append(arg_list[0])
-        if len(possible_target.variables_to_add) != len(func_elem['argTypes']):
+                variable_list.append(arg_list[0])
+        if len(variable_list) != len(func_elem['argTypes']):
             continue
 
         # Create the actual source
+        fuzzer_source_code = "  %s.%s(%s);\n" % (func_class, func_name,
+                                                 ",".join(variable_list))
+
+        source_code_list.append(fuzzer_source_code)
+
+    if (len(source_code_list) > 0):
+        base_possible_target.heuristics_used.append(HEURISTIC_NAME)
         fuzzer_source_code = "  // Heuristic name: %s\n" % (HEURISTIC_NAME)
-        fuzzer_source_code += "  %s.%s($VARIABLE$);\n" % (func_class,
-                                                          func_name)
-        if len(possible_target.exceptions_to_handle) > 0:
-            fuzzer_source_code += "  try {\n" + fuzzer_source_code
+        for source_code in source_code_list:
+            fuzzer_source_code += source_code
+
+        if len(base_possible_target.exceptions_to_handle) > 0:
+            fuzzer_source_code = "  try {\n" + fuzzer_source_code
             fuzzer_source_code += "  }\n"
             counter = 1
-            for exc in possible_target.exceptions_to_handle:
+            for exc in base_possible_target.exceptions_to_handle:
                 fuzzer_source_code += "  catch (%s e%d) {}\n" % (exc, counter)
                 counter += 1
-        possible_target.fuzzer_source_code = fuzzer_source_code
-        possible_target.heuristics_used.append(HEURISTIC_NAME)
 
-        possible_targets.append(possible_target)
+        base_possible_target.fuzzer_source_code = fuzzer_source_code
+        possible_targets.append(base_possible_target)
 
 
 def _generate_heuristic_2(yaml_dict, possible_targets, max_target):
