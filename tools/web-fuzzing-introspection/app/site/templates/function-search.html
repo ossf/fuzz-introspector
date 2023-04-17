@@ -20,9 +20,15 @@
                 Search database
               </button>
             </form>
+
           </div>
           <div class="database">
             <div class="database__body">
+              {% if info_msg != None %}
+              <div class="alert alert-info" role="alert">
+                {{info_msg}}
+              </div>
+              {% endif %}
               <table style="width: 100%" id="functionOverviewTable">
                 <thead>
                   <tr>

@@ -106,10 +106,10 @@ def project_profile():
 
 @site.route('/function-search')
 def function_search():
-    print("Showing functions overview")
+    info_msg = None
+    MAX_MATCHES_TO_DISPLAY = 900
     query = request.args.get('q', '')
     print("query: { %s }"%(query))
-
     print("Length of functions: %d"%(len(test_data.get_functions())))
     if query == '':
         # Pick 25 random functions per default
@@ -121,7 +121,11 @@ def function_search():
                 tmp_list.append(function)
         functions_to_display = tmp_list
 
-    return render_template('function-search.html', all_functions=functions_to_display)
+    total_matches = len(functions_to_display)
+    if total_matches >= MAX_MATCHES_TO_DISPLAY:
+        functions_to_display = functions_to_display[0:MAX_MATCHES_TO_DISPLAY]
+        info_msg = f"Found {total_matches} matches. Only showing the first {MAX_MATCHES_TO_DISPLAY}."
+    return render_template('function-search.html', all_functions=functions_to_display, info_msg=info_msg)
 
 
 @site.route('/projects-overview')
