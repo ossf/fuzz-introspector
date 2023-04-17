@@ -137,6 +137,7 @@ def _is_primitive_class(classname):
 
     return classname in primitives
 
+
 def _determine_import_statement(classname):
     """Generate java import statement for a given class name"""
     if classname and not classname.startswith('java.lang.'):
@@ -547,7 +548,7 @@ def _handle_object_creation(classname,
 
     # Handles array
     if "[]" in classname and not _is_primitive_class(classname):
-        classname = classname.replace("[]", "");
+        classname = classname.replace("[]", "")
         isArray = True
     else:
         isArray = False
@@ -603,9 +604,10 @@ def _handle_object_creation(classname,
                         _handle_import(func_elem))
                     for args_item in list(itertools.product(*arg_list)):
                         statement = "new " + elem_classname.replace("$", ".")
-                        statement +=  "(" + ",".join(args_item) + ")"
+                        statement += "(" + ",".join(args_item) + ")"
                         if isArray:
-                            statement = "new " + elem_classname.replace("$", ".") + "[]{%s}" % statement
+                            statement = "new " + elem_classname.replace(
+                                "$", ".") + "[]{%s}" % statement
                         result_list.append(statement)
                         if len(result_list) > max_target:
                             return result_list
