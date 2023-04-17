@@ -127,17 +127,22 @@ def _is_project_class(classname):
     return False
 
 
-def _determine_import_statement(classname):
-    """Generate java import statement for a given class name"""
+def _is_primitive_class(classname):
+    """Determine if the classname is a java primitives"""
     primitives = [
         "boolean", "byte", "char", "short", "int", "long", "float", "double",
         "boolean[]", "byte[]", "char[]", "short[]", "int[]", "long[]",
         "float[]", "double[]", "void"
     ]
 
+    return classname in primitives
+
+
+def _determine_import_statement(classname):
+    """Generate java import statement for a given class name"""
     if classname and not classname.startswith('java.lang.'):
         classname = classname.split("$")[0].replace("[]", "")
-        if classname not in primitives:
+        if not _is_primitive_class(classname):
             return 'import %s;\n' % classname
 
     return ''
@@ -184,33 +189,33 @@ def _handle_argument(argType,
     if argType == "int" or argType == "java.lang.Integer":
         return ["data.consumeInt(0,100)"]
     elif argType == "int[]":
-        return ["data.consumeInts(100)"]
+        return ["data.consumeInts(5)"]
     elif argType == "java.lang.Integer[]":
-        return ["ArrayUtils.toObject(data.consumeInts(100))"]
+        return ["ArrayUtils.toObject(data.consumeInts(5))"]
     elif argType == "boolean" or argType == "java.lang.Boolean":
         return ["data.consumeBoolean()"]
     elif argType == "boolean[]":
-        return ["data.consumeBooleans(100)"]
+        return ["data.consumeBooleans(5)"]
     elif argType == "java.lang.Boolean[]":
-        return ["ArrayUtils.toObject(data.consumeBooleans(100))"]
+        return ["ArrayUtils.toObject(data.consumeBooleans(5))"]
     elif argType == "byte" or argType == "java.lang.Byte":
         return ["data.consumeByte()"]
     elif argType == "byte[]":
-        return ["data.consumeBytes(100)"]
+        return ["data.consumeBytes(5)"]
     elif argType == "java.lang.Byte[]":
-        return ["ArrayUtils.toObject(data.consumeBytes(100))"]
+        return ["ArrayUtils.toObject(data.consumeBytes(5))"]
     elif argType == "short" or argType == "java.lang.Short":
         return ["data.consumeShort()"]
     elif argType == "short[]":
-        return ["data.consumeShorts(100)"]
+        return ["data.consumeShorts(5)"]
     elif argType == "java.lang.Short[]":
-        return ["ArrayUtils.toObject(data.consumeShorts(100))"]
+        return ["ArrayUtils.toObject(data.consumeShorts(5))"]
     elif argType == "long" or argType == "java.lang.Long":
         return ["data.consumeLong()"]
     elif argType == "long[]":
-        return ["data.consumeLongs(100)"]
+        return ["data.consumeLongs(5)"]
     elif argType == "java.lang.Long[]":
-        return ["ArrayUtils.toObject(data.consumeLongs(100))"]
+        return ["ArrayUtils.toObject(data.consumeLongs(5))"]
     elif argType == "float" or argType == "java.lang.Float":
         return ["data.consumeFloat()"]
     elif argType == "char" or argType == "java.lang.Character":
@@ -540,6 +545,14 @@ def _handle_object_creation(classname,
     are used.
     """
     global need_param_combination
+
+    # Handles array
+    if "[]" in classname and not _is_primitive_class(classname):
+        classname = classname.replace("[]", "")
+        isArray = True
+    else:
+        isArray = False
+
     if init_dict and classname in init_dict.keys():
         if class_field and init_dict[classname]:
             # Use defined class object
@@ -565,7 +578,7 @@ def _handle_object_creation(classname,
                         _search_concrete_subclass(classname, init_dict,
                                                   handled))
                 if len(class_list) == 0:
-                    return ["new " + classname.replace("$", ".") + "()"]
+                    return []
 
                 for elem in class_list:
                     elem_classname = elem['functionSourceFile'].replace(
@@ -590,19 +603,22 @@ def _handle_object_creation(classname,
                     possible_target.imports_to_add.update(
                         _handle_import(func_elem))
                     for args_item in list(itertools.product(*arg_list)):
-                        result_list.append("new " +
-                                           elem_classname.replace("$", ".") +
-                                           "(" + ",".join(args_item) + ")")
+                        statement = "new " + elem_classname.replace("$", ".")
+                        statement += "(" + ",".join(args_item) + ")"
+                        if isArray:
+                            statement = "new " + elem_classname.replace(
+                                "$", ".") + "[]{%s}" % statement
+                        result_list.append(statement)
                         if len(result_list) > max_target:
                             return result_list
                         if not need_param_combination:
                             break
             except RecursionError:
-                # Fail to create constructor code with parameters, using default constructor
-                return ["new " + classname.replace("$", ".") + "()"]
+                # Fail to create constructor code with parameters
+                pass
         return result_list
     else:
-        return ["new " + classname.replace("$", ".") + "()"]
+        return []
 
 
 def _extract_class_list(projectdir):
@@ -635,6 +651,18 @@ def _extract_method(yaml_dict):
     instance_method_list = []
     static_method_list = []
     for func_elem in yaml_dict['All functions']['Elements']:
+        # Skip method belongs to non public or non concrete class
+        if not func_elem['JavaMethodInfo']['classPublic']:
+            continue
+        if not func_elem['JavaMethodInfo']['classConcrete']:
+            continue
+
+        # Skip excluded methods
+        if not func_elem['JavaMethodInfo']['public']:
+            continue
+        if not func_elem['JavaMethodInfo']['concrete']:
+            continue
+
         if "<init>" in func_elem['functionName']:
             init_list = []
             func_class = func_elem['functionSourceFile'].replace('$', '.')
@@ -645,10 +673,6 @@ def _extract_method(yaml_dict):
             continue
 
         # Skip excluded methods
-        if not func_elem['JavaMethodInfo']['public']:
-            continue
-        if not func_elem['JavaMethodInfo']['concrete']:
-            continue
         if len(func_elem['argTypes']) > 20:
             continue
         if "test" in func_elem['functionName'].lower():
@@ -734,7 +758,18 @@ def _generate_heuristic_1(yaml_dict, possible_targets, max_target):
             fuzzer_source_code = "  try {\n" + fuzzer_source_code
             fuzzer_source_code += "  }\n"
             counter = 1
+
+            super_exceptions = []
             for exc in base_possible_target.exceptions_to_handle:
+                # Skip super class exception and add them at the end
+                if exc.startswith("java"):
+                    super_exceptions.append(exc)
+                    continue
+                fuzzer_source_code += "  catch (%s e%d) {}\n" % (exc, counter)
+                counter += 1
+
+            # Add back super class exception
+            for exc in super_exceptions:
                 fuzzer_source_code += "  catch (%s e%d) {}\n" % (exc, counter)
                 counter += 1
 
