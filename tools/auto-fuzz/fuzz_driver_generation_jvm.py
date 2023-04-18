@@ -698,17 +698,22 @@ def _extract_method(yaml_dict):
             # from dependencies or libraries
             if _is_project_class(func_elem['functionSourceFile']):
                 # Exclude possible getters and setters
-                if func_elem['functionName'].startswith("get") and len(func_elem['argTypes']) == 0:
+                if func_elem['functionName'].startswith("get") and len(
+                        func_elem['argTypes']) == 0:
                     continue
-                if func_elem['functionName'].startswith("is") and len(func_elem['argTypes']) == 0:
+                if func_elem['functionName'].startswith("is") and len(
+                        func_elem['argTypes']) == 0:
                     continue
-                if func_elem['functionName'].startswith("set") and len(func_elem['argTypes']) == 1:
+                if func_elem['functionName'].startswith("set") and len(
+                        func_elem['argTypes']) == 1:
                     continue
 
                 # Exclude general Object methods
-                object_methods = ['clone()', 'equals(java.lang.Object)', 'finalize()', 'getClass()',
-                                  'hashCode()', 'notify()', 'notifyAll()', 'toString()', 'wait()',
-                                  'wait(long)', 'wait(long,int)']
+                object_methods = [
+                    'clone()', 'equals(java.lang.Object)', 'finalize()',
+                    'getClass()', 'hashCode()', 'notify()', 'notifyAll()',
+                    'toString()', 'wait()', 'wait(long)', 'wait(long,int)'
+                ]
                 for object_method in object_methods:
                     if object_method in func_elem['functionName']:
                         continue
