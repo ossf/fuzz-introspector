@@ -89,7 +89,11 @@ def get_coverage_report_url(project_name, datestr, language):
 
 
 def get_all_functions_for_project(project_name, date_str="2023-04-11"):
-
+    """For a given project and date gets a list of function profiles for
+    the project on the givne date, and also creates a project time stamp.
+    The list of function profiles and the project timestamp is returned
+    as a tuple.
+    """
     introspector_summary_url = get_introspector_report_url_summary(
         project_name, date_str.replace("-", ""))
     introspector_report_url = get_introspector_report_url_report(
@@ -119,27 +123,8 @@ def get_all_functions_for_project(project_name, date_str="2023-04-11"):
         "introspector_report_url": introspector_report_url,
     }
 
-    #print("List of all functions: %d"%(len(all_function_list)))
-    #print("Stats:")
-    #print(project_stats)
-    #print("Number of fuzzers: %d"%(amount_of_functions))
-    has_c = False
-    has_cpp = False
-    has_py = False
-    has_java = False
     refined_proj_list = list()
     for func in all_function_list:
-        if func['Functions filename'].endswith(".c"):
-            has_c = True
-        if func['Functions filename'].endswith(".cc"):
-            has_cpp = True
-        if func['Functions filename'].endswith(".cpp"):
-            has_cpp = True
-        if func['Functions filename'].endswith(".py"):
-            has_py = True
-        if func['Functions filename'].endswith(".java"):
-            has_java = True
-
         refined_proj_list.append({
             'name':
             func['Func name'],
@@ -154,14 +139,6 @@ def get_all_functions_for_project(project_name, date_str="2023-04-11"):
             'project':
             project_name
         })
-    if has_c:
-        project_timestamp['language'] = 'c'
-    if has_cpp:
-        project_timestamp['language'] = 'c++'
-    if has_py:
-        project_timestamp['language'] = 'python'
-    if has_java:
-        project_timestamp['language'] = 'java'
 
     # The previous techniques we used to set language was quite heuristically.
     # Here, we make a more precise effort by reading the project yaml file.
@@ -171,13 +148,13 @@ def get_all_functions_for_project(project_name, date_str="2023-04-11"):
             lang = 'java'
         project_timestamp['language'] = lang
     except:
-        pass
+        # Default set to c++ as this is OSS-Fuzz's default.
+        project_timestamp['language'] = 'c++'
 
     coverage_url = get_coverage_report_url(project_name,
                                            date_str.replace("-", ""),
                                            project_timestamp['language'])
     project_timestamp["coverage_url"] = coverage_url
-
     return refined_proj_list, project_timestamp
 
 
@@ -209,11 +186,11 @@ def analyse_list_of_projects(date, projects_to_analyse):
     return function_list, project_timestamps, db_timestamp
 
 
-#def extend_project_project_timestamps(project_timestamps):
-#    if os.path.isfile('
-
-
 def extend_db_timestamps(db_timestamp, output_directory):
+    """Extends a DB timestamp .json file in output_directory with a given
+    DB timestamp. If there is no DB timestamp .json file in the output
+    directory then a DB timestamp file will be created.
+    """
     existing_timestamps = []
     if os.path.isfile(os.path.join(output_directory, DB_JSON_DB_TIMESTAMP)):
         with open(os.path.join(output_directory, DB_JSON_DB_TIMESTAMP),
@@ -235,7 +212,8 @@ def extend_db_timestamps(db_timestamp, output_directory):
             json.dump(existing_timestamps, f)
 
 
-def extend_project_timestamps(project_timestamps, output_directory):
+def extend_db_json_files(project_timestamps, output_directory):
+    """Extends a set of DB .json files."""
     existing_timestamps = []
     if os.path.isfile(
             os.path.join(output_directory, DB_JSON_ALL_PROJECT_TIMESTAMP)):
@@ -271,6 +249,9 @@ def extend_project_timestamps(project_timestamps, output_directory):
 
 
 def analyse_set_of_dates(dates, projects_to_analyse, output_directory):
+    """Performs analysis of all projects in the projects_to_analyse argument for
+    the given set of dates. DB .json files are stored in output_directory.
+    """
     dates_to_analyse = len(dates)
     idx = 0
     for date in dates:
@@ -282,12 +263,8 @@ def analyse_set_of_dates(dates, projects_to_analyse, output_directory):
         with open(os.path.join(output_directory, DB_JSON_ALL_FUNCTIONS),
                   'w') as f:
             json.dump(function_list, f)
-        #with open('all-project-timestamps.json', 'w') as f:
-        #    json.dump(project_timestamps, f)
-        extend_project_timestamps(project_timestamps, output_directory)
+        extend_db_json_files(project_timestamps, output_directory)
         extend_db_timestamps(db_timestamp, output_directory)
-        #with open('db-timestamps.json', 'w') as f:
-        #    json.dump([db_timestamp], f)
 
 
 def get_date_at_offset_as_str(day_offset=-1):
