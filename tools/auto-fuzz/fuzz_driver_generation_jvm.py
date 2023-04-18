@@ -697,6 +697,27 @@ def _extract_method(yaml_dict):
             # or not and filter out unrelated methods
             # from dependencies or libraries
             if _is_project_class(func_elem['functionSourceFile']):
+                # Exclude possible getters and setters
+                if func_elem['functionName'].startswith("get") and len(
+                        func_elem['argTypes']) == 0:
+                    continue
+                if func_elem['functionName'].startswith("is") and len(
+                        func_elem['argTypes']) == 0:
+                    continue
+                if func_elem['functionName'].startswith("set") and len(
+                        func_elem['argTypes']) == 1:
+                    continue
+
+                # Exclude general Object methods
+                object_methods = [
+                    'clone()', 'equals(java.lang.Object)', 'finalize()',
+                    'getClass()', 'hashCode()', 'notify()', 'notifyAll()',
+                    'toString()', 'wait()', 'wait(long)', 'wait(long,int)'
+                ]
+                for object_method in object_methods:
+                    if object_method in func_elem['functionName']:
+                        continue
+
                 method_list.append(func_elem)
 
     return init_dict, method_list, instance_method_list, static_method_list
