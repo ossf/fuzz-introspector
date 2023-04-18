@@ -18,10 +18,12 @@ ALL_JSON_FILES = [
     DB_JSON_ALL_CURRENT_FUNCS,
 ]
 
+
 def get_introspector_summary():
     introspector_summary_url = 'https://oss-fuzz-build-logs.storage.googleapis.com/status-introspector.json'
     r = requests.get(introspector_summary_url)
     return json.loads(r.text)
+
 
 def get_all_valid_projects(introspector_summary):
     successfull_projects = list()
@@ -30,30 +32,39 @@ def get_all_valid_projects(introspector_summary):
             successfull_projects.append(project['name'])
     return successfull_projects
 
+
 def get_latest_valid_reports():
     introspector_summary = get_introspector_summary()
     successfull_projects = get_all_valid_projects(introspector_summary)
     return successfull_projects
 
+
 def try_to_get_project_language(project_name):
-    proj_yaml_url = 'https://raw.githubusercontent.com/google/oss-fuzz/master/projects/%s/project.yaml'%(project_name)
+    proj_yaml_url = 'https://raw.githubusercontent.com/google/oss-fuzz/master/projects/%s/project.yaml' % (
+        project_name)
     r = requests.get(proj_yaml_url)
     project_yaml = yaml.safe_load(r.text)
     return project_yaml['language']
+
 
 def get_introspector_report_url_base(project_name, datestr):
     base_url = 'https://storage.googleapis.com/oss-fuzz-introspector/{0}/inspector-report/{1}/'
     project_url = base_url.format(project_name, datestr)
     return project_url
 
+
 def get_introspector_report_url_summary(project_name, datestr):
-    return get_introspector_report_url_base(project_name, datestr) + "summary.json"
+    return get_introspector_report_url_base(project_name,
+                                            datestr) + "summary.json"
+
 
 def get_introspector_report_url_report(project_name, datestr):
-    return get_introspector_report_url_base(project_name, datestr) + "fuzz_report.html"
+    return get_introspector_report_url_base(project_name,
+                                            datestr) + "fuzz_report.html"
+
 
 def get_coverage_report_url(project_name, datestr, language):
-    if language == 'java' or language=='python':
+    if language == 'java' or language == 'python':
         file_report = "index.html"
     else:
         file_report = "report.html"
@@ -61,10 +72,13 @@ def get_coverage_report_url(project_name, datestr, language):
     project_url = base_url.format(project_name, datestr, file_report)
     return project_url
 
+
 def get_all_functions_for_project(project_name, date_str="2023-04-11"):
-    
-    introspector_summary_url = get_introspector_report_url_summary(project_name, date_str.replace("-",""))
-    introspector_report_url = get_introspector_report_url_report(project_name, date_str.replace("-",""))
+
+    introspector_summary_url = get_introspector_report_url_summary(
+        project_name, date_str.replace("-", ""))
+    introspector_report_url = get_introspector_report_url_report(
+        project_name, date_str.replace("-", ""))
 
     # Read the introspector atifact
     try:
@@ -112,12 +126,18 @@ def get_all_functions_for_project(project_name, date_str="2023-04-11"):
             has_java = True
 
         refined_proj_list.append({
-            'name': func['Func name'],
-            'code_coverage_url': func['func_url'],
-            'function_filename': func['Functions filename'],
-            'runtime_code_coverage': float(func['Func lines hit %'].replace("%","")),
-            'is_reached': len(func['Reached by Fuzzers']) > 1,
-            'project': project_name
+            'name':
+            func['Func name'],
+            'code_coverage_url':
+            func['func_url'],
+            'function_filename':
+            func['Functions filename'],
+            'runtime_code_coverage':
+            float(func['Func lines hit %'].replace("%", "")),
+            'is_reached':
+            len(func['Reached by Fuzzers']) > 1,
+            'project':
+            project_name
         })
     if has_c:
         project_timestamp['language'] = 'c'
@@ -138,10 +158,13 @@ def get_all_functions_for_project(project_name, date_str="2023-04-11"):
     except:
         pass
 
-    coverage_url = get_coverage_report_url(project_name, date_str.replace("-",""), project_timestamp['language'])
+    coverage_url = get_coverage_report_url(project_name,
+                                           date_str.replace("-", ""),
+                                           project_timestamp['language'])
     project_timestamp["coverage_url"] = coverage_url
 
     return refined_proj_list, project_timestamp
+
 
 def analyse_list_of_projects(date, projects_to_analyse):
     """Creates a DB snapshot of a list of projects for a given date."""
@@ -150,8 +173,9 @@ def analyse_list_of_projects(date, projects_to_analyse):
     accummulated_fuzzer_count = 0
     accummulated_function_count = 0
     for project_name in projects_to_analyse:
-        print("%d"%(len(function_list)))
-        project_function_list, project_timestamp = get_all_functions_for_project(project_name, date)
+        print("%d" % (len(function_list)))
+        project_function_list, project_timestamp = get_all_functions_for_project(
+            project_name, date)
         if project_timestamp is None:
             continue
         function_list += project_function_list
@@ -169,8 +193,10 @@ def analyse_list_of_projects(date, projects_to_analyse):
     }
     return function_list, project_timestamps, db_timestamp
 
+
 #def extend_project_project_timestamps(project_timestamps):
 #    if os.path.isfile('
+
 
 def extend_db_timestamps(db_timestamp):
     existing_timestamps = []
@@ -190,7 +216,7 @@ def extend_db_timestamps(db_timestamp):
         existing_timestamps.append(db_timestamp)
         with open(DB_JSON_DB_TIMESTAMP, 'w') as f:
             json.dump(existing_timestamps, f)
-    
+
 
 def extend_project_timestamps(project_timestamps):
     existing_timestamps = []
@@ -207,7 +233,8 @@ def extend_project_timestamps(project_timestamps):
     for new_ts in project_timestamps:
         to_add = True
         for ts in existing_timestamps:
-            if ts['date'] == new_ts['date'] and ts['project_name'] == new_ts['project_name']:
+            if ts['date'] == new_ts['date'] and ts['project_name'] == new_ts[
+                    'project_name']:
                 to_add = False
         if to_add:
             existing_timestamps.append(new_ts)
@@ -219,16 +246,16 @@ def extend_project_timestamps(project_timestamps):
     with open(DB_JSON_ALL_CURRENT_FUNCS, 'w') as f:
         json.dump(project_timestamps, f)
 
-    
-
 
 def analyse_set_of_dates(dates, projects_to_analyse):
     dates_to_analyse = len(dates)
     idx = 0
     for date in dates:
-        print("Analysing date %s -- [%d of %d]"%(date, idx, dates_to_analyse))
+        print("Analysing date %s -- [%d of %d]" %
+              (date, idx, dates_to_analyse))
         idx += 1
-        function_list, project_timestamps, db_timestamp = analyse_list_of_projects(date, projects_to_analyse)
+        function_list, project_timestamps, db_timestamp = analyse_list_of_projects(
+            date, projects_to_analyse)
         with open(DB_JSON_ALL_FUNCTIONS, 'w') as f:
             json.dump(function_list, f)
         #with open('all-project-timestamps.json', 'w') as f:
@@ -238,10 +265,12 @@ def analyse_set_of_dates(dates, projects_to_analyse):
         #with open('db-timestamps.json', 'w') as f:
         #    json.dump([db_timestamp], f)
 
+
 def get_date_at_offset_as_str(day_offset=-1):
     datestr = (datetime.date.today() +
                datetime.timedelta(day_offset)).strftime("%Y-%m-%d")
     return datestr
+
 
 def cleanup():
     for f in ALL_JSON_FILES:
@@ -251,10 +280,19 @@ def cleanup():
 
 def get_cmdline_parser():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--max-projects", help="The maximum number of projects to include in the DB. -1 will extract data about all projects.", default=-1, type=int)
-    parser.add_argument("--days-to-analyse", help="The number of days to analyse", default=1, type=int)
+    parser.add_argument(
+        "--max-projects",
+        help=
+        "The maximum number of projects to include in the DB. -1 will extract data about all projects.",
+        default=-1,
+        type=int)
+    parser.add_argument("--days-to-analyse",
+                        help="The number of days to analyse",
+                        default=1,
+                        type=int)
 
     return parser
+
 
 def create_db(max_projects, days_to_analyse):
     project_list = get_latest_valid_reports()
@@ -263,7 +301,7 @@ def create_db(max_projects, days_to_analyse):
 
     cleanup()
     dates_list = []
-    for i in list(reversed(list(range(1, 1+days_to_analyse)))):
+    for i in list(reversed(list(range(1, 1 + days_to_analyse)))):
         dates_list.append(get_date_at_offset_as_str(i * -1))
 
     analyse_set_of_dates(dates_list, project_list)
