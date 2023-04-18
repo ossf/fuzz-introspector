@@ -3,6 +3,7 @@ import sys
 import argparse
 import json
 import yaml
+import shutil
 import datetime
 import requests
 
@@ -198,10 +199,10 @@ def analyse_list_of_projects(date, projects_to_analyse):
 #    if os.path.isfile('
 
 
-def extend_db_timestamps(db_timestamp):
+def extend_db_timestamps(db_timestamp, output_directory):
     existing_timestamps = []
-    if os.path.isfile(DB_JSON_DB_TIMESTAMP):
-        with open(DB_JSON_DB_TIMESTAMP, 'r') as f:
+    if os.path.isfile(os.path.join(output_directory, DB_JSON_DB_TIMESTAMP)):
+        with open(os.path.join(output_directory, DB_JSON_DB_TIMESTAMP), 'r') as f:
             try:
                 existing_timestamps = json.load(f)
             except:
@@ -214,14 +215,14 @@ def extend_db_timestamps(db_timestamp):
             to_add = False
     if to_add:
         existing_timestamps.append(db_timestamp)
-        with open(DB_JSON_DB_TIMESTAMP, 'w') as f:
+        with open(os.path.join(output_directory, DB_JSON_DB_TIMESTAMP), 'w') as f:
             json.dump(existing_timestamps, f)
 
 
-def extend_project_timestamps(project_timestamps):
+def extend_project_timestamps(project_timestamps, output_directory):
     existing_timestamps = []
-    if os.path.isfile(DB_JSON_ALL_PROJECT_TIMESTAMP):
-        with open(DB_JSON_ALL_PROJECT_TIMESTAMP, 'r') as f:
+    if os.path.isfile(os.path.join(output_directory, DB_JSON_ALL_PROJECT_TIMESTAMP)):
+        with open(os.path.join(output_directory, DB_JSON_ALL_PROJECT_TIMESTAMP), 'r') as f:
             try:
                 existing_timestamps = json.load(f)
             except:
@@ -240,14 +241,14 @@ def extend_project_timestamps(project_timestamps):
             existing_timestamps.append(new_ts)
             have_added = True
     if have_added:
-        with open(DB_JSON_ALL_PROJECT_TIMESTAMP, 'w') as f:
+        with open(os.path.join(output_directory, DB_JSON_ALL_PROJECT_TIMESTAMP), 'w') as f:
             json.dump(existing_timestamps, f)
 
-    with open(DB_JSON_ALL_CURRENT_FUNCS, 'w') as f:
+    with open(os.path.join(output_directory, DB_JSON_ALL_CURRENT_FUNCS), 'w') as f:
         json.dump(project_timestamps, f)
 
 
-def analyse_set_of_dates(dates, projects_to_analyse):
+def analyse_set_of_dates(dates, projects_to_analyse, output_directory):
     dates_to_analyse = len(dates)
     idx = 0
     for date in dates:
@@ -256,12 +257,12 @@ def analyse_set_of_dates(dates, projects_to_analyse):
         idx += 1
         function_list, project_timestamps, db_timestamp = analyse_list_of_projects(
             date, projects_to_analyse)
-        with open(DB_JSON_ALL_FUNCTIONS, 'w') as f:
+        with open(os.path.join(output_directory, DB_JSON_ALL_FUNCTIONS), 'w') as f:
             json.dump(function_list, f)
         #with open('all-project-timestamps.json', 'w') as f:
         #    json.dump(project_timestamps, f)
-        extend_project_timestamps(project_timestamps)
-        extend_db_timestamps(db_timestamp)
+        extend_project_timestamps(project_timestamps, output_directory)
+        extend_db_timestamps(db_timestamp, output_directory)
         #with open('db-timestamps.json', 'w') as f:
         #    json.dump([db_timestamp], f)
 
@@ -272,11 +273,21 @@ def get_date_at_offset_as_str(day_offset=-1):
     return datestr
 
 
-def cleanup():
+def cleanup(output_directory):
     for f in ALL_JSON_FILES:
-        if os.path.isfile(f):
-            os.remove(f)
+        if os.path.isfile(os.path.join(output_directory, f)):
+            os.remove(os.path.join(output_directory, f))
 
+def copy_input_to_output(input_dir, output_dir):
+    if not os.path.isdir(input_dir):
+        raise Exception("No input directory, but specified")
+
+    if not os.path.isdir(output_dir):
+        os.mkdir(output_dir)
+
+    for f in ALL_JSON_FILES:
+        if os.path.isfile(os.path.join(input_dir, f)):
+            shutil.copyfile(os.path.join(input_dir, f), os.path.join(output_dir, f))
 
 def get_cmdline_parser():
     parser = argparse.ArgumentParser()
@@ -290,24 +301,44 @@ def get_cmdline_parser():
                         help="The number of days to analyse",
                         default=1,
                         type=int)
+    parser.add_argument("--output-dir",
+                        help="Output directory for the produced .json files",
+                        default=os.getcwd())
+    parser.add_argument("--input-dir",
+                        help="Input directory with existing .json files",
+                        default=None)
+    parser.add_argument("--base-offset",
+                        help="Day offset",
+                        type=int,
+                        default=1)
+    parser.add_argument("--cleanup",
+                        action="store_true")
 
     return parser
 
 
-def create_db(max_projects, days_to_analyse):
+def create_db(max_projects, days_to_analyse, output_directory, input_directory, day_offset, to_cleanup):
+    if input_directory is not None:
+        copy_input_to_output(input_directory, output_directory)
+
+    if not os.path.isdir(output_directory):
+        os.mkdir(output_directory)
+
     project_list = get_latest_valid_reports()
     if max_projects > 0 and len(project_list) > max_projects:
         project_list = project_list[0:max_projects]
 
-    cleanup()
+    if to_cleanup:
+        cleanup(output_directory)
     dates_list = []
-    for i in list(reversed(list(range(1, 1 + days_to_analyse)))):
+    range_to_analyse = range(day_offset, day_offset + days_to_analyse)
+    for i in list(reversed(list(range_to_analyse))):
         dates_list.append(get_date_at_offset_as_str(i * -1))
 
-    analyse_set_of_dates(dates_list, project_list)
+    analyse_set_of_dates(dates_list, project_list, output_directory)
 
 
 if __name__ == "__main__":
     parser = get_cmdline_parser()
     args = parser.parse_args()
-    create_db(args.max_projects, args.days_to_analyse)
+    create_db(args.max_projects, args.days_to_analyse, args.output_dir, args.input_dir, args.base_offset, args.cleanup)
