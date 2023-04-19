@@ -643,7 +643,8 @@ def _filter_polymorphism(method_list):
         target = None
         elem_list = process_map[keys]
         for func_elem in elem_list:
-            if not target or len(func_elem['argTypes']) > len(target['argTypes']):
+            if not target or len(func_elem['argTypes']) > len(
+                    target['argTypes']):
                 target = func_elem
         if target:
             result_list.append(target)
@@ -742,7 +743,8 @@ def _extract_method(yaml_dict):
             # Check if this method belongs to this project
             # or not and filter out unrelated methods
             # from dependencies or libraries
-            if _is_project_class(func_elem['functionSourceFile'].split("$")[0]):
+            if _is_project_class(
+                    func_elem['functionSourceFile'].split("$")[0]):
                 func_name = func_elem['functionName'].split("].")[1]
                 # Exclude possible getters and setters
                 if func_name.startswith("get") and len(
@@ -805,7 +807,8 @@ def _generate_heuristic_1(method_tuple, possible_targets, max_target):
             func_class = func_elem['functionSourceFile'].replace('$', '.')
             base_possible_target.exceptions_to_handle.update(
                 func_elem['JavaMethodInfo']['exceptions'])
-            base_possible_target.imports_to_add.update(_handle_import(func_elem))
+            base_possible_target.imports_to_add.update(
+                _handle_import(func_elem))
 
             # Store function parameter list
             variable_list = []
@@ -840,12 +843,14 @@ def _generate_heuristic_1(method_tuple, possible_targets, max_target):
                     if exc.startswith("java"):
                         super_exceptions.append(exc)
                         continue
-                    fuzzer_source_code += "  catch (%s e%d) {}\n" % (exc, counter)
+                    fuzzer_source_code += "  catch (%s e%d) {}\n" % (exc,
+                                                                     counter)
                     counter += 1
 
                 # Add back super class exception
                 for exc in super_exceptions:
-                    fuzzer_source_code += "  catch (%s e%d) {}\n" % (exc, counter)
+                    fuzzer_source_code += "  catch (%s e%d) {}\n" % (exc,
+                                                                     counter)
                     counter += 1
 
             base_possible_target.fuzzer_source_code = fuzzer_source_code
