@@ -18,6 +18,7 @@ import argparse
 import json
 import yaml
 import shutil
+import logging
 import datetime
 import requests
 
@@ -32,6 +33,11 @@ ALL_JSON_FILES = [
     DB_JSON_ALL_FUNCTIONS,
     DB_JSON_ALL_CURRENT_FUNCS,
 ]
+
+logging.getLogger("requests").setLevel(logging.WARNING)
+logging.getLogger("urllib3").setLevel(logging.WARNING)
+
+logger = logging.getLogger(name=__name__)
 
 
 def get_introspector_summary():
@@ -165,7 +171,7 @@ def analyse_list_of_projects(date, projects_to_analyse):
     accummulated_fuzzer_count = 0
     accummulated_function_count = 0
     for project_name in projects_to_analyse:
-        print("%d" % (len(function_list)))
+        logger.debug("%d" % (len(function_list)))
         project_function_list, project_timestamp = get_all_functions_for_project(
             project_name, date)
         if project_timestamp is None:
@@ -248,23 +254,31 @@ def extend_db_json_files(project_timestamps, output_directory):
         json.dump(project_timestamps, f)
 
 
+def update_db_files(db_timestamp, project_timestamps, function_list,
+                    output_directory):
+    logger.info(
+        "Updating the database with DB snapshot. Number of functions in total: %d"
+        % (len(function_list)))
+    with open(os.path.join(output_directory, DB_JSON_ALL_FUNCTIONS), 'w') as f:
+        json.dump(function_list, f)
+    extend_db_json_files(project_timestamps, output_directory)
+    extend_db_timestamps(db_timestamp, output_directory)
+
+
 def analyse_set_of_dates(dates, projects_to_analyse, output_directory):
     """Performs analysis of all projects in the projects_to_analyse argument for
     the given set of dates. DB .json files are stored in output_directory.
     """
     dates_to_analyse = len(dates)
-    idx = 0
+    idx = 1
     for date in dates:
-        print("Analysing date %s -- [%d of %d]" %
-              (date, idx, dates_to_analyse))
+        logger.info("Analysing date %s -- [%d of %d]" %
+                    (date, idx, dates_to_analyse))
         idx += 1
         function_list, project_timestamps, db_timestamp = analyse_list_of_projects(
             date, projects_to_analyse)
-        with open(os.path.join(output_directory, DB_JSON_ALL_FUNCTIONS),
-                  'w') as f:
-            json.dump(function_list, f)
-        extend_db_json_files(project_timestamps, output_directory)
-        extend_db_timestamps(db_timestamp, output_directory)
+        update_db_files(db_timestamp, project_timestamps, function_list,
+                        output_directory)
 
 
 def get_date_at_offset_as_str(day_offset=-1):
@@ -315,6 +329,7 @@ def get_cmdline_parser():
                         type=int,
                         default=1)
     parser.add_argument("--cleanup", action="store_true")
+    parser.add_argument("--debug", action="store_true")
 
     return parser
 
@@ -334,8 +349,10 @@ def create_db(max_projects, days_to_analyse, output_directory, input_directory,
     if to_cleanup:
         cleanup(output_directory)
     dates_list = []
-    range_to_analyse = range(day_offset, day_offset + days_to_analyse)
-    for i in list(reversed(list(range_to_analyse))):
+    #range_to_analyse = range(day_offset, day_offset + days_to_analyse)
+    range_to_analyse = range(day_offset + days_to_analyse, day_offset, -1)
+    #for i in list(reversed(list(range_to_analyse))):
+    for i in range_to_analyse:
         dates_list.append(get_date_at_offset_as_str(i * -1))
 
     analyse_set_of_dates(dates_list, project_list, output_directory)
@@ -344,5 +361,9 @@ def create_db(max_projects, days_to_analyse, output_directory, input_directory,
 if __name__ == "__main__":
     parser = get_cmdline_parser()
     args = parser.parse_args()
+    if args.debug:
+        logging.basicConfig(level=logging.DEBUG)
+    else:
+        logging.basicConfig(level=logging.INFO)
     create_db(args.max_projects, args.days_to_analyse, args.output_dir,
               args.input_dir, args.base_offset, args.cleanup)
