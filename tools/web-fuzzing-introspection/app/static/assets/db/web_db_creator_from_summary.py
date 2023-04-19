@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+"""Helper for creating the necessary .json files used by the webapp."""
 import os
 import sys
 import argparse
@@ -306,6 +306,44 @@ def copy_input_to_output(input_dir, output_dir):
                             os.path.join(output_dir, f))
 
 
+def setup_folders(input_directory, output_directory):
+    if input_directory is not None:
+        copy_input_to_output(input_directory, output_directory)
+    if not os.path.isdir(output_directory):
+        os.mkdir(output_directory)
+
+
+def create_date_range(day_offset, days_to_analyse):
+    date_range = []
+    range_to_analyse = range(day_offset + days_to_analyse, day_offset, -1)
+    for i in range_to_analyse:
+        date_range.append(get_date_at_offset_as_str(i * -1))
+    return date_range
+
+
+def create_db(max_projects, days_to_analyse, output_directory, input_directory,
+              day_offset, to_cleanup):
+    setup_folders(input_directory, output_directory)
+    project_list = get_latest_valid_reports()
+    if max_projects > 0 and len(project_list) > max_projects:
+        project_list = project_list[0:max_projects]
+
+    if to_cleanup:
+        cleanup(output_directory)
+
+    date_range = create_date_range(day_offset, days_to_analyse)
+
+    logger.info("Creating a DB with the specifications:")
+    logger.info("- Date range: [%s : %s]" %
+                (str(date_range[0]), str(date_range[-1])))
+    logger.info("- Total of %d projects to analyse" % (len(project_list)))
+    if input_directory is not None:
+        logger.info("- Extending upon the DB in %s" % (str(input_directory)))
+    else:
+        logger.info("- Creating the DB from scratch")
+    analyse_set_of_dates(date_range, project_list, output_directory)
+
+
 def get_cmdline_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -330,35 +368,10 @@ def get_cmdline_parser():
                         default=1)
     parser.add_argument("--cleanup", action="store_true")
     parser.add_argument("--debug", action="store_true")
-
     return parser
 
 
-def create_db(max_projects, days_to_analyse, output_directory, input_directory,
-              day_offset, to_cleanup):
-    if input_directory is not None:
-        copy_input_to_output(input_directory, output_directory)
-
-    if not os.path.isdir(output_directory):
-        os.mkdir(output_directory)
-
-    project_list = get_latest_valid_reports()
-    if max_projects > 0 and len(project_list) > max_projects:
-        project_list = project_list[0:max_projects]
-
-    if to_cleanup:
-        cleanup(output_directory)
-    dates_list = []
-    #range_to_analyse = range(day_offset, day_offset + days_to_analyse)
-    range_to_analyse = range(day_offset + days_to_analyse, day_offset, -1)
-    #for i in list(reversed(list(range_to_analyse))):
-    for i in range_to_analyse:
-        dates_list.append(get_date_at_offset_as_str(i * -1))
-
-    analyse_set_of_dates(dates_list, project_list, output_directory)
-
-
-if __name__ == "__main__":
+def main():
     parser = get_cmdline_parser()
     args = parser.parse_args()
     if args.debug:
@@ -367,3 +380,7 @@ if __name__ == "__main__":
         logging.basicConfig(level=logging.INFO)
     create_db(args.max_projects, args.days_to_analyse, args.output_dir,
               args.input_dir, args.base_offset, args.cleanup)
+
+
+if __name__ == "__main__":
+    main()
