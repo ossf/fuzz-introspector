@@ -621,6 +621,53 @@ def _handle_object_creation(classname,
         return []
 
 
+def _filter_polymorphism(method_list):
+    """Filter polymorphism methods in each class. If multiple methods have the same
+    name and return type, keeping the one with the most arguments. If two or more
+    of them have the same number of arguments, only keeping the first one."""
+    process_map = {}
+    result_list = []
+
+    # Group polymorphism method
+    for func_elem in method_list:
+        key = func_elem['returnType'] + func_elem['functionName'].split("(")[0]
+        if key in process_map.keys():
+            elem_list = process_map[key]
+        else:
+            elem_list = []
+        elem_list.append(func_elem)
+        process_map[key] = elem_list
+
+    # Handle polymorphism method with same name and the most number of arguments
+    for keys in process_map:
+        target = None
+        elem_list = process_map[keys]
+        for func_elem in elem_list:
+            if not target or len(func_elem['argTypes']) > len(
+                    target['argTypes']):
+                target = func_elem
+        if target:
+            result_list.append(target)
+
+    return result_list
+
+
+def _group_method_by_class(method_list):
+    """Group method element by class name"""
+    result_map = {}
+
+    for func_elem in method_list:
+        key = func_elem['functionSourceFile']
+        if key in result_map.keys():
+            elem_list = result_map[key]
+        else:
+            elem_list = []
+        elem_list.append(func_elem)
+        result_map[key] = elem_list
+
+    return result_map
+
+
 def _extract_class_list(projectdir):
     """Extract a list of path for all java files exist in the project directory"""
     global project_class_list
@@ -696,15 +743,17 @@ def _extract_method(yaml_dict):
             # Check if this method belongs to this project
             # or not and filter out unrelated methods
             # from dependencies or libraries
-            if _is_project_class(func_elem['functionSourceFile']):
+            if _is_project_class(
+                    func_elem['functionSourceFile'].split("$")[0]):
+                func_name = func_elem['functionName'].split("].")[1]
                 # Exclude possible getters and setters
-                if func_elem['functionName'].startswith("get") and len(
+                if func_name.startswith("get") and len(
                         func_elem['argTypes']) == 0:
                     continue
-                if func_elem['functionName'].startswith("is") and len(
+                if func_name.startswith("is") and len(
                         func_elem['argTypes']) == 0:
                     continue
-                if func_elem['functionName'].startswith("set") and len(
+                if func_name.startswith("set") and len(
                         func_elem['argTypes']) == 1:
                     continue
 
@@ -720,10 +769,11 @@ def _extract_method(yaml_dict):
 
                 method_list.append(func_elem)
 
+    method_list = _filter_polymorphism(method_list)
     return init_dict, method_list, instance_method_list, static_method_list
 
 
-def _generate_heuristic_1(yaml_dict, possible_targets, max_target):
+def _generate_heuristic_1(method_tuple, possible_targets, max_target):
     """Heuristic 1.
     Creates a single FuzzTarget for all method that satisfy all:
         - public class method which are not abstract or found in JDK library
@@ -737,68 +787,77 @@ def _generate_heuristic_1(yaml_dict, possible_targets, max_target):
     """
     HEURISTIC_NAME = "jvm-autofuzz-heuristics-1"
 
-    _, _, _, static_method_list = _extract_method(yaml_dict)
+    _, _, _, static_method_list = method_tuple
 
     if len(possible_targets) > max_target:
         return
 
-    # Initialize base possible_target object
-    base_possible_target = FuzzTarget()
-    source_code_list = []
+    static_method_map = _group_method_by_class(static_method_list)
 
-    for func_elem in static_method_list:
-        func_name = func_elem['functionName'].split('].')[1].split('(')[0]
-        func_class = func_elem['functionSourceFile'].replace('$', '.')
-        base_possible_target.exceptions_to_handle.update(
-            func_elem['JavaMethodInfo']['exceptions'])
-        base_possible_target.imports_to_add.update(_handle_import(func_elem))
+    # Process static method class by class
+    for key in static_method_map.keys():
+        method_list = static_method_map[key]
 
-        # Store function parameter list
-        variable_list = []
-        for argType in func_elem['argTypes']:
-            arg_list = _handle_argument(argType.replace('$', '.'), None,
-                                        base_possible_target, max_target)
-            if arg_list:
-                variable_list.append(arg_list[0])
-        if len(variable_list) != len(func_elem['argTypes']):
-            continue
+        # Initialize base possible_target object
+        base_possible_target = FuzzTarget()
+        source_code_list = []
 
-        # Create the actual source
-        fuzzer_source_code = "  %s.%s(%s);\n" % (func_class, func_name,
-                                                 ",".join(variable_list))
+        for func_elem in method_list:
+            func_name = func_elem['functionName'].split('].')[1].split('(')[0]
+            func_class = func_elem['functionSourceFile'].replace('$', '.')
+            base_possible_target.exceptions_to_handle.update(
+                func_elem['JavaMethodInfo']['exceptions'])
+            base_possible_target.imports_to_add.update(
+                _handle_import(func_elem))
 
-        source_code_list.append(fuzzer_source_code)
+            # Store function parameter list
+            variable_list = []
+            for argType in func_elem['argTypes']:
+                arg_list = _handle_argument(argType.replace('$', '.'), None,
+                                            base_possible_target, max_target)
+                if arg_list:
+                    variable_list.append(arg_list[0])
+            if len(variable_list) != len(func_elem['argTypes']):
+                continue
 
-    if (len(source_code_list) > 0):
-        base_possible_target.heuristics_used.append(HEURISTIC_NAME)
-        fuzzer_source_code = "  // Heuristic name: %s\n" % (HEURISTIC_NAME)
-        for source_code in source_code_list:
-            fuzzer_source_code += source_code
+            # Create the actual source
+            fuzzer_source_code = "  %s.%s(%s);\n" % (func_class, func_name,
+                                                     ",".join(variable_list))
 
-        if len(base_possible_target.exceptions_to_handle) > 0:
-            fuzzer_source_code = "  try {\n" + fuzzer_source_code
-            fuzzer_source_code += "  }\n"
-            counter = 1
+            source_code_list.append(fuzzer_source_code)
 
-            super_exceptions = []
-            for exc in base_possible_target.exceptions_to_handle:
-                # Skip super class exception and add them at the end
-                if exc.startswith("java"):
-                    super_exceptions.append(exc)
-                    continue
-                fuzzer_source_code += "  catch (%s e%d) {}\n" % (exc, counter)
-                counter += 1
+        if (len(source_code_list) > 0):
+            base_possible_target.heuristics_used.append(HEURISTIC_NAME)
+            fuzzer_source_code = "  // Heuristic name: %s\n" % (HEURISTIC_NAME)
+            for source_code in source_code_list:
+                fuzzer_source_code += source_code
 
-            # Add back super class exception
-            for exc in super_exceptions:
-                fuzzer_source_code += "  catch (%s e%d) {}\n" % (exc, counter)
-                counter += 1
+            if len(base_possible_target.exceptions_to_handle) > 0:
+                fuzzer_source_code = "  try {\n" + fuzzer_source_code
+                fuzzer_source_code += "  }\n"
+                counter = 1
 
-        base_possible_target.fuzzer_source_code = fuzzer_source_code
-        possible_targets.append(base_possible_target)
+                super_exceptions = []
+                for exc in base_possible_target.exceptions_to_handle:
+                    # Skip super class exception and add them at the end
+                    if exc.startswith("java"):
+                        super_exceptions.append(exc)
+                        continue
+                    fuzzer_source_code += "  catch (%s e%d) {}\n" % (exc,
+                                                                     counter)
+                    counter += 1
+
+                # Add back super class exception
+                for exc in super_exceptions:
+                    fuzzer_source_code += "  catch (%s e%d) {}\n" % (exc,
+                                                                     counter)
+                    counter += 1
+
+            base_possible_target.fuzzer_source_code = fuzzer_source_code
+            possible_targets.append(base_possible_target)
 
 
-def _generate_heuristic_2(yaml_dict, possible_targets, max_target):
+def _generate_heuristic_2(method_tuple, possible_targets, max_target):
     """Heuristic 2.
     Creates a FuzzTarget for each method that satisfy all:
         - public object method which are not abstract or found in JDK library
@@ -814,7 +873,7 @@ def _generate_heuristic_2(yaml_dict, possible_targets, max_target):
     """
     HEURISTIC_NAME = "jvm-autofuzz-heuristics-2"
 
-    init_dict, method_list, _, _ = _extract_method(yaml_dict)
+    init_dict, method_list, _, _ = method_tuple
     for func_elem in method_list:
         if len(possible_targets) > max_target:
             return
@@ -862,7 +921,7 @@ def _generate_heuristic_2(yaml_dict, possible_targets, max_target):
             possible_targets.append(cloned_possible_target)
 
 
-def _generate_heuristic_3(yaml_dict, possible_targets, max_target):
+def _generate_heuristic_3(method_tuple, possible_targets, max_target):
     """Heuristic 3.
     Creates a FuzzTarget for each method that satisfy all:
         - public object method which are not abstract or found in JDK library
@@ -886,7 +945,7 @@ def _generate_heuristic_3(yaml_dict, possible_targets, max_target):
     """
     HEURISTIC_NAME = "jvm-autofuzz-heuristics-3"
 
-    init_dict, method_list, _, static_method_list = _extract_method(yaml_dict)
+    init_dict, method_list, _, static_method_list = method_tuple
     for func_elem in method_list:
         if len(possible_targets) > max_target:
             return
@@ -933,7 +992,7 @@ def _generate_heuristic_3(yaml_dict, possible_targets, max_target):
             possible_targets.append(cloned_possible_target)
 
 
-def _generate_heuristic_4(yaml_dict, possible_targets, max_target):
+def _generate_heuristic_4(method_tuple, possible_targets, max_target):
     """Heuristic 4.
     Creates a FuzzTarget for each method that satisfy all:
         - public object method which are not abstract or found in JDK library
@@ -952,8 +1011,7 @@ def _generate_heuristic_4(yaml_dict, possible_targets, max_target):
     """
     HEURISTIC_NAME = "jvm-autofuzz-heuristics-4"
 
-    init_dict, method_list, instance_method_list, static_method_list = _extract_method(
-        yaml_dict)
+    init_dict, method_list, instance_method_list, static_method_list = method_tuple
     for func_elem in method_list:
         if len(possible_targets) > max_target:
             return
@@ -1004,7 +1062,7 @@ def _generate_heuristic_4(yaml_dict, possible_targets, max_target):
             possible_targets.append(cloned_possible_target)
 
 
-def _generate_heuristic_6(yaml_dict, possible_targets, max_target):
+def _generate_heuristic_6(method_tuple, possible_targets, max_target):
     """Heuristic 6.
     Creates a FuzzTarget for each method that satisfy all:
         - public object method which are not abstract or found in JDK library
@@ -1019,8 +1077,7 @@ def _generate_heuristic_6(yaml_dict, possible_targets, max_target):
     """
     HEURISTIC_NAME = "jvm-autofuzz-heuristics-6"
 
-    init_dict, method_list, instance_method_list, static_method_list = _extract_method(
-        yaml_dict)
+    init_dict, method_list, instance_method_list, static_method_list = method_tuple
     for func_elem in method_list:
         if len(possible_targets) > max_target:
             return
@@ -1085,7 +1142,7 @@ def _generate_heuristic_6(yaml_dict, possible_targets, max_target):
             possible_targets.append(cloned_possible_target)
 
 
-def _generate_heuristic_7(yaml_dict, possible_targets, max_target):
+def _generate_heuristic_7(method_tuple, possible_targets, max_target):
     """Heuristic 7.
     Creates a FuzzTarget for each method that satisfy all:
         - public static or object method which are not abstract or found in JDK library
@@ -1102,8 +1159,7 @@ def _generate_heuristic_7(yaml_dict, possible_targets, max_target):
     """
     HEURISTIC_NAME = "jvm-autofuzz-heuristics-7"
 
-    init_dict, method_list, instance_method_list, static_method_list = _extract_method(
-        yaml_dict)
+    init_dict, method_list, instance_method_list, static_method_list = method_tuple
     for func_elem in method_list + static_method_list:
         if len(possible_targets) > max_target:
             return
@@ -1200,7 +1256,7 @@ def _generate_heuristic_7(yaml_dict, possible_targets, max_target):
             possible_targets.append(cloned_possible_target)
 
 
-def _generate_heuristic_8(yaml_dict, possible_targets, max_target):
+def _generate_heuristic_8(method_tuple, possible_targets, max_target):
     """Heuristic 8.
     Creates a FuzzTarget for each method that satisfy all:
         - public object method which are not abstract or found in JDK library
@@ -1213,8 +1269,7 @@ def _generate_heuristic_8(yaml_dict, possible_targets, max_target):
     """
     HEURISTIC_NAME = "jvm-autofuzz-heuristics-8"
 
-    init_dict, method_list, instance_method_list, static_method_list = _extract_method(
-        yaml_dict)
+    init_dict, method_list, instance_method_list, static_method_list = method_tuple
     for func_elem in method_list:
         if len(possible_targets) > max_target:
             return
@@ -1282,7 +1337,7 @@ def _generate_heuristic_8(yaml_dict, possible_targets, max_target):
             possible_targets.append(cloned_possible_target)
 
 
-def _generate_heuristic_9(yaml_dict, possible_targets, max_target):
+def _generate_heuristic_9(method_tuple, possible_targets, max_target):
     """Heuristic 9.
     Creates a FuzzTarget for each method that satisfy all:
         - public object method which are not abstract or found in JDK library
@@ -1297,8 +1352,7 @@ def _generate_heuristic_9(yaml_dict, possible_targets, max_target):
     """
     HEURISTIC_NAME = "jvm-autofuzz-heuristics-9"
 
-    init_dict, method_list, instance_method_list, static_method_list = _extract_method(
-        yaml_dict)
+    init_dict, method_list, instance_method_list, static_method_list = method_tuple
     for func_elem in method_list:
         if len(possible_targets) > max_target:
             return
@@ -1367,7 +1421,7 @@ def _generate_heuristic_9(yaml_dict, possible_targets, max_target):
             possible_targets.append(cloned_possible_target)
 
 
-def _generate_heuristic_10(yaml_dict, possible_targets, max_target):
+def _generate_heuristic_10(method_tuple, possible_targets, max_target):
     """Heuristic 10.
     Creates a FuzzTarget for each method that satisfy all:
         - public object or static method which are not abstract or found in JDK library
@@ -1380,8 +1434,7 @@ def _generate_heuristic_10(yaml_dict, possible_targets, max_target):
     """
     HEURISTIC_NAME = "jvm-autofuzz-heuristics-10"
 
-    init_dict, method_list, instance_method_list, static_method_list = _extract_method(
-        yaml_dict)
+    init_dict, method_list, instance_method_list, static_method_list = method_tuple
     for func_elem in method_list + static_method_list:
         if len(possible_targets) > max_target:
             return
@@ -1467,26 +1520,27 @@ def generate_possible_targets(proj_folder, max_target, param_combination):
     global need_param_combination
     need_param_combination = param_combination
 
-    # Read the Fuzz Introspector generated data
-    yaml_file = os.path.join(proj_folder, "work",
-                             "fuzzerLogFile-Fuzz.data.yaml")
-    with open(yaml_file, "r") as stream:
-        yaml_dict = yaml.safe_load(stream)
-
     # Extract a list of possible java classes of the project
     # This is used to filter out methods not belonging to
     # this project.
     _extract_class_list(os.path.join(proj_folder, "work", "proj"))
 
+    # Read the Fuzz Introspector generated data as a method tuple
+    yaml_file = os.path.join(proj_folder, "work",
+                             "fuzzerLogFile-Fuzz.data.yaml")
+    with open(yaml_file, "r") as stream:
+        yaml_dict = yaml.safe_load(stream)
+    method_tuple = _extract_method(yaml_dict)
+
     possible_targets = []
-    _generate_heuristic_1(yaml_dict, possible_targets, max_target)
-    _generate_heuristic_2(yaml_dict, possible_targets, max_target)
-    _generate_heuristic_3(yaml_dict, possible_targets, max_target)
-    _generate_heuristic_4(yaml_dict, possible_targets, max_target)
-    _generate_heuristic_6(yaml_dict, possible_targets, max_target)
-    _generate_heuristic_7(yaml_dict, possible_targets, max_target)
-    _generate_heuristic_8(yaml_dict, possible_targets, max_target)
-    _generate_heuristic_9(yaml_dict, possible_targets, max_target)
-    _generate_heuristic_10(yaml_dict, possible_targets, max_target)
+    _generate_heuristic_1(method_tuple, possible_targets, max_target)
+    _generate_heuristic_2(method_tuple, possible_targets, max_target)
+    _generate_heuristic_3(method_tuple, possible_targets, max_target)
+    _generate_heuristic_4(method_tuple, possible_targets, max_target)
+    _generate_heuristic_6(method_tuple, possible_targets, max_target)
+    _generate_heuristic_7(method_tuple, possible_targets, max_target)
+    _generate_heuristic_8(method_tuple, possible_targets, max_target)
+    _generate_heuristic_9(method_tuple, possible_targets, max_target)
+    _generate_heuristic_10(method_tuple, possible_targets, max_target)
 
     return possible_targets
