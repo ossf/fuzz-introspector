@@ -202,7 +202,7 @@ class CoverageProfile:
         # at the end of __init__matches list.
         logger.info("Scanning for init paths")
         for potential_init_path in init_paths:
-            logger.info("Trying %s"%(potential_init_path))
+            logger.info("Trying %s" % (potential_init_path))
             for potential_key in self.file_map:
                 logger.debug(f"Scanning {str(potential_key)}")
                 if potential_key.endswith(potential_init_path):
