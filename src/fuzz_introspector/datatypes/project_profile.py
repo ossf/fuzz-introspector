@@ -165,7 +165,9 @@ class MergedProjectProfile:
             is_covered = False
             coverage_data = self.runtime_coverage.get_hit_details(funcname)
             if len(coverage_data) > 0:
-                is_covered = True
+                for linenumber, hitcount in coverage_data:
+                    if hitcount > 0:
+                        is_covered = True
             if is_covered:
                 all_covered_functions.append(funcname)
 
