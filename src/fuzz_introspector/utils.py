@@ -25,6 +25,7 @@ from typing import (
     List,
     Dict,
     Optional,
+    Tuple,
 )
 
 from fuzz_introspector import constants
@@ -193,8 +194,10 @@ def scan_executables_for_fuzz_introspector_logs(
     return executable_to_fuzz_reports
 
 
-def approximate_python_coverage_files(src1: str, src2: str) -> bool:
-    logger.debug(f"Approximating {src1} to {src2}")
+def approximate_python_coverage_files_list(
+        src1: str,
+        possible_targets: List[Tuple[str, str]],
+        resolve_inits=False) -> Optional[str]:
     # Remove prefixed .....
     src1 = src1.lstrip(".")
 
@@ -206,36 +209,36 @@ def approximate_python_coverage_files(src1: str, src2: str) -> bool:
     for s2 in splits:
         curr_str = curr_str + s2
         possible_candidates.append(curr_str + ".py")
-        possible_init_candidates.append("/__init__.py")
+        possible_init_candidates.append(curr_str + "/__init__.py")
         curr_str = curr_str + "/"
+    logger.debug("[%s] -- Created init candidates: %s" %
+                 (src1, str(possible_init_candidates)))
 
     # Start from backwards to find te longest possible candidate
-    target = None
     for candidate in reversed(possible_candidates):
-        if src2.endswith(candidate):
-            # ensure the entire filename is matched in the event of not slashes
-            if "/" not in candidate:
-                if not src2.split("/")[-1] == candidate:
-                    continue
-            target = candidate
-            break
-
-    if target is None:
-        for init_candidate in reversed(possible_init_candidates):
-            if src2.endswith(init_candidate):
+        for fl, src2 in possible_targets:
+            if src2.endswith(candidate):
                 # ensure the entire filename is matched in the event of not slashes
-                if "/" not in init_candidate:
-                    if not src2.split("/")[-1] == init_candidate:
+                if "/" not in candidate:
+                    if not src2.split("/")[-1] == candidate:
                         continue
-                target = init_candidate
-                break
+                logger.debug("Found target: %s" % (candidate))
+                return fl
 
-    if target is not None:
-        logger.debug(f"Found target {target}")
-        return True
-    else:
-        logger.debug("Found no target")
-        return False
+    # Will only get to hear if none of the above candidates matched. This
+    # means the match is either in an __init__.py file or there is no match.
+    if resolve_inits:
+        for init_candidate in reversed(possible_init_candidates):
+            for fl, src2 in possible_targets:
+                if src2.endswith(init_candidate):
+                    # ensure the entire filename is matched in the event of not slashes
+                    if "/" not in init_candidate:
+                        if not src2.split("/")[-1] == init_candidate:
+                            continue
+                    logger.debug("Found target: %s" % (init_candidate))
+                    return fl
+    logger.debug("Could not find target")
+    return None
 
 
 def get_target_coverage_url(coverage_url: str, target_name: str,
@@ -297,13 +300,15 @@ def resolve_coverage_link(cov_url: str, source_file: str, lineno: int,
             html_idx = html_summaries[0]
             with open(html_idx, "r") as jf:
                 data = json.load(jf)
+            possible_targets = []
             for fl in data['files']:
-                found_target = approximate_python_coverage_files(
-                    function_name,
-                    data['files'][fl]['index']['relative_filename'],
-                )
-                if found_target:
-                    result = fl + ".html" + "#t" + str(lineno)
+                possible_targets.append(
+                    (fl, data['files'][fl]['index']['relative_filename']))
+
+            found_target = approximate_python_coverage_files_list(
+                function_name, possible_targets, True)
+            if found_target is not None:
+                result = found_target + ".html" + "#t" + str(lineno)
         else:
             logger.info("Could not find any html_status.json file")
     elif (target_lang == "jvm"):
