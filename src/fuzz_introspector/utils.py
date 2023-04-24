@@ -230,7 +230,6 @@ def approximate_python_coverage_files(src1: str, src2: str) -> bool:
                 target = init_candidate
                 break
 
-
     if target is not None:
         logger.debug(f"Found target {target}")
         return True
