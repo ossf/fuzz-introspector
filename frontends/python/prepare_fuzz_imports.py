@@ -114,7 +114,7 @@ class FuzzerVisitor(ast.NodeVisitor):
         print("- Fuzzer imports:")
         for _import in self.fuzzer_imports:
             print("  - %s" % (_import))
-            if _import.count(".") > 1:
+            if _import.count(".") > 0:
                 _import = _import.split(".")[0]
                 print("Refining import to %s" % (_import))
 
@@ -125,13 +125,12 @@ class FuzzerVisitor(ast.NodeVisitor):
                 continue
             except ImportError:
                 continue
+            print("No error")
             if specs is not None:
                 print("Spec:")
                 print(specs)
                 avoid = ['atheris', 'sys', 'os']
-                print("Hello")
                 if _import not in avoid:
-                    print("hello to")
                     if specs.submodule_search_locations:
                         for elem in specs.submodule_search_locations:
                             print("Checking --- %s" % (elem))
@@ -146,6 +145,8 @@ class FuzzerVisitor(ast.NodeVisitor):
                                 continue
                             print("Adding --- %s" % (elem))
                             self.fuzzer_packages.append(elem)
+            else:
+                print("Spec is none")
         print("Iterating")
         for pkg in self.fuzzer_packages:
             print("package: %s" % (pkg))
