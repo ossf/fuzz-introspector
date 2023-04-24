@@ -193,9 +193,10 @@ def scan_executables_for_fuzz_introspector_logs(
     return executable_to_fuzz_reports
 
 
-def approximate_python_coverage_files_list(src1: str,
-                                           possible_targets,
-                                           resolve_inits=False) -> bool:
+def approximate_python_coverage_files_list(
+        src1: str,
+        possible_targets: List[Tuple[str, str]],
+        resolve_inits=False) -> Optional[str]:
     # Remove prefixed .....
     src1 = src1.lstrip(".")
 
@@ -305,7 +306,7 @@ def resolve_coverage_link(cov_url: str, source_file: str, lineno: int,
 
             found_target = approximate_python_coverage_files_list(
                 function_name, possible_targets, True)
-            if found_target:
+            if found_target is not None:
                 result = found_target + ".html" + "#t" + str(lineno)
         else:
             logger.info("Could not find any html_status.json file")
