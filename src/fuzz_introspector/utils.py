@@ -25,6 +25,7 @@ from typing import (
     List,
     Dict,
     Optional,
+    Tuple,
 )
 
 from fuzz_introspector import constants
