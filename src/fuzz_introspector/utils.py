@@ -211,8 +211,8 @@ def approximate_python_coverage_files_list(
         possible_candidates.append(curr_str + ".py")
         possible_init_candidates.append(curr_str + "/__init__.py")
         curr_str = curr_str + "/"
-    logger.info("[%s] -- Created init candidates: %s" %
-                (src1, str(possible_init_candidates)))
+    logger.debug("[%s] -- Created init candidates: %s" %
+                 (src1, str(possible_init_candidates)))
 
     # Start from backwards to find te longest possible candidate
     for candidate in reversed(possible_candidates):
@@ -222,7 +222,7 @@ def approximate_python_coverage_files_list(
                 if "/" not in candidate:
                     if not src2.split("/")[-1] == candidate:
                         continue
-                logger.info("Found target: %s" % (candidate))
+                logger.debug("Found target: %s" % (candidate))
                 return fl
 
     # Will only get to hear if none of the above candidates matched. This
@@ -235,9 +235,9 @@ def approximate_python_coverage_files_list(
                     if "/" not in init_candidate:
                         if not src2.split("/")[-1] == init_candidate:
                             continue
-                    logger.info("Found target: %s" % (init_candidate))
+                    logger.debug("Found target: %s" % (init_candidate))
                     return fl
-    logger.info("Could not find target")
+    logger.debug("Could not find target")
     return None
 
 
