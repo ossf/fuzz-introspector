@@ -200,11 +200,13 @@ def approximate_python_coverage_files(src1: str, src2: str) -> bool:
 
     # Generate list of potential candidates
     possible_candidates = []
+    possible_init_candidates = []
     splits = src1.split(".")
     curr_str = ""
     for s2 in splits:
         curr_str = curr_str + s2
         possible_candidates.append(curr_str + ".py")
+        possible_init_candidates.append("/__init__.py")
         curr_str = curr_str + "/"
 
     # Start from backwards to find te longest possible candidate
@@ -217,6 +219,16 @@ def approximate_python_coverage_files(src1: str, src2: str) -> bool:
                     continue
             target = candidate
             break
+
+    if target is None:
+        for init_candidate in reversed(possible_init_candidates):
+            if src2.endswith(init_candidate):
+                # ensure the entire filename is matched in the event of not slashes
+                if "/" not in init_candidate:
+                    if not src2.split("/")[-1] == init_candidate:
+                        continue
+                target = init_candidate
+                break
 
     if target is not None:
         logger.debug(f"Found target {target}")

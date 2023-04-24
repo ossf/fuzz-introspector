@@ -180,9 +180,11 @@ class CoverageProfile:
         # Resolve name if required. This is needed to normalise filenames.
         logger.debug("Resolving name")
         potential_paths = []
+        init_paths = []
         current_path = ""
         for module_name in function_name.split("."):
             current_path += module_name
+            init_paths.append(current_path + "/__init__.py")
             potential_paths.append(current_path + ".py")
             current_path += "/"
 
@@ -193,6 +195,24 @@ class CoverageProfile:
                 if potential_key.endswith(potential_path):
                     logger.debug(f"Found key: {str(potential_key)}")
                     return potential_key
+        # We found no matches when filenames exclude __init__.py. Try to
+        # include these now.
+        init_matches = []
+        # Iterate based in init paths since we want to have the longest match
+        # at the end of __init__matches list.
+        logger.info("Scanning for init paths")
+        for potential_init_path in init_paths:
+            logger.info("Trying %s" % (potential_init_path))
+            for potential_key in self.file_map:
+                logger.debug(f"Scanning {str(potential_key)}")
+                if potential_key.endswith(potential_init_path):
+                    logger.debug(f"Found __init__ match: {str(potential_key)}")
+                    init_matches.append(potential_key)
+
+        # Return the last match, as this signals the path with most precise
+        # matching.
+        if len(init_matches) > 0:
+            return init_matches[-1]
 
         # If this is reached then no match was found. Return None.
         logger.debug("Could not find key")
@@ -639,7 +659,6 @@ def load_python_json_coverage(json_file: str,
             'executed_lines']
         cp.dual_file_map[cov_entry]['missing_lines'] = data['files'][entry][
             'missing_lines']
-
     return cp
 
 
