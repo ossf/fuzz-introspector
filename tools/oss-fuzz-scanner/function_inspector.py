@@ -15,10 +15,12 @@
 
 import sys
 import scanner
+import typing
 
 
-def print_function_details(project_name, functions_to_analyse):
-    report_generator = scanner.get_all_reports([project_name], 2)
+def print_function_details(project_name, functions_to_analyse: typing.List[str],
+    language: str = 'c-cpp'):
+    report_generator = scanner.get_all_reports([project_name], 2, language=language)
 
     project, date_as_str, introspector_project = next(report_generator)
     all_functions = introspector_project.proj_profile.get_all_functions()
@@ -41,10 +43,15 @@ def print_function_details(project_name, functions_to_analyse):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
+    if len(sys.argv) < 3:
         print(
-            "Usage: python3 function_inspector.py project_name function_name")
+            "Usage: python3 function_inspector.py project_name function_name language")
         sys.exit(0)
     project_name = sys.argv[1]
     function_name = sys.argv[2]
-    print_function_details(project_name, [function_name])
+    language = None
+    try:
+        language = sys.argv[3]
+    except IndexError:
+        language = 'c-cpp'
+    print_function_details(project_name, [function_name], language=language)
