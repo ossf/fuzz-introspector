@@ -294,6 +294,9 @@ def cleanup(output_directory):
 
 
 def copy_input_to_output(input_dir, output_dir):
+    if input_dir == output_dir:
+        return
+
     if not os.path.isdir(input_dir):
         raise Exception("No input directory, but specified")
 
