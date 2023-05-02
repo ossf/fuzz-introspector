@@ -325,7 +325,7 @@ def create_date_range(day_offset, days_to_analyse):
 
 
 def create_db(max_projects, days_to_analyse, output_directory, input_directory,
-              day_offset, to_cleanup):
+              day_offset, to_cleanup, since_date):
     setup_folders(input_directory, output_directory)
     project_list = get_latest_valid_reports()
     if max_projects > 0 and len(project_list) > max_projects:
@@ -333,6 +333,13 @@ def create_db(max_projects, days_to_analyse, output_directory, input_directory,
 
     if to_cleanup:
         cleanup(output_directory)
+
+    if since_date != None:
+        start_date = datetime.datetime.strptime(since_date, "%d-%m-%Y").date()
+        today = datetime.date.today()
+        delta = today - start_date
+        days_to_analyse = delta.days - 1
+        day_offset = 1
 
     date_range = create_date_range(day_offset, days_to_analyse)
 
@@ -369,6 +376,10 @@ def get_cmdline_parser():
                         help="Day offset",
                         type=int,
                         default=1)
+    parser.add_argument(
+        "--since-date",
+        help="Include data from this date an onwards, in format \"d-m-y\"",
+        default=None)
     parser.add_argument("--cleanup", action="store_true")
     parser.add_argument("--debug", action="store_true")
     return parser
@@ -382,7 +393,7 @@ def main():
     else:
         logging.basicConfig(level=logging.INFO)
     create_db(args.max_projects, args.days_to_analyse, args.output_dir,
-              args.input_dir, args.base_offset, args.cleanup)
+              args.input_dir, args.base_offset, args.cleanup, args.since_date)
 
 
 if __name__ == "__main__":
