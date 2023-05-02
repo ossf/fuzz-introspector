@@ -14,12 +14,14 @@
 
 from flask import Blueprint, render_template, request
 
-from app.site import models
+#from app.site import models
+from . import models
 
 # Use these during testing.
-from app.site import test_data
+#from app.site import test_data
+from . import test_data
 
-site = Blueprint('site', __name__, template_folder='templates')
+blueprint = Blueprint('site', __name__, template_folder='templates')
 
 
 def get_frontpage_summary_stats():
@@ -63,7 +65,7 @@ def get_all_related_functions(primary_function):
             related_functions.append(function)
     return related_functions   
 
-@site.route('/')
+@blueprint.route('/')
 def index():
     db_summary = get_frontpage_summary_stats()
     db_timestamps = test_data.TEST_DB_TIMESTAMPS
@@ -84,7 +86,7 @@ def index():
     return render_template('index.html', db_summary = db_summary, db_timestamps = db_timestamps, max_proj=max_proj, max_fuzzer_count = max_fuzzer_count, max_function_count= max_function_count)
 
 
-@site.route('/function-profile', methods=['GET'])
+@blueprint.route('/function-profile', methods=['GET'])
 def function_profile():
     function_profile = get_fuction_with_name(request.args.get('function', 'none'), request.args.get('project', 'none'))
 
@@ -92,7 +94,7 @@ def function_profile():
     return render_template('function-profile.html', related_functions = related_functions, function_profile = function_profile)
 
 
-@site.route('/project-profile', methods=['GET'])
+@blueprint.route('/project-profile', methods=['GET'])
 def project_profile():
     #print(request.args.get('project', 'none'))
     project = get_project_with_name(request.args.get('project', 'none'))
@@ -104,7 +106,7 @@ def project_profile():
     return render_template('project-profile.html', project=project, project_statistics=real_stats)
 
 
-@site.route('/function-search')
+@blueprint.route('/function-search')
 def function_search():
     info_msg = None
     MAX_MATCHES_TO_DISPLAY = 900
@@ -128,11 +130,11 @@ def function_search():
     return render_template('function-search.html', all_functions=functions_to_display, info_msg=info_msg)
 
 
-@site.route('/projects-overview')
+@blueprint.route('/projects-overview')
 def projects_overview():
     projects = test_data.get_projects()
     return render_template('projects-overview.html', all_projects=projects)
 
-@site.route('/about')
+@blueprint.route('/about')
 def about():
     return render_template('about.html')
