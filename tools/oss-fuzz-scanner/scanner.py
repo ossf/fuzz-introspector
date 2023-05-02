@@ -112,11 +112,11 @@ def download_project_introspector_artifacts(project_name,
 
 
 def run_fuzz_introspector_on_dir(
-        artifact_dir) -> Optional[analysis.IntrospectionProject]:
+        artifact_dir, language: str = 'c-cpp') -> Optional[analysis.IntrospectionProject]:
     """Runs introspector on the files in artifact_dir."""
     try:
         introspector_proj = analysis.IntrospectionProject(
-            language='c-cpp', target_folder=artifact_dir, coverage_url="")
+            language=language, target_folder=artifact_dir, coverage_url="")
         introspector_proj.load_data_files(correlation_file="")
     except exceptions.FuzzIntrospectorError:
         return None
@@ -138,7 +138,8 @@ def get_next_workdir():
 
 def get_all_reports(project_names: List[str],
                     days_to_analyse=10,
-                    interval_size=10):
+                    interval_size=10,
+                    language: str='c-cpp'):
     for project in project_names:
         complexities = []
         for i in range(1, days_to_analyse):
@@ -155,7 +156,7 @@ def get_all_reports(project_names: List[str],
                 #print("Could not download artifacts")
                 continue
 
-            introspector_project = run_fuzz_introspector_on_dir(workdir)
+            introspector_project = run_fuzz_introspector_on_dir(workdir, language)
             if introspector_project is None:
                 continue
 
