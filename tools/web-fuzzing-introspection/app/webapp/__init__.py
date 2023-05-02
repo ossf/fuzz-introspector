@@ -3,10 +3,27 @@ import json
 
 from .  import test_data
 from . import models
+from . import db_manager
+
+
+def update_db():
+    print("Updating DB")
+    db_out_dir = os.path.join(os.path.dirname(__file__), "../static/assets/db/")
+    db_in_dir = os.path.join(os.path.dirname(__file__), "../static/assets/db/")
+    db_manager.create_db(20, 5, db_out_dir, db_in_dir, 1, False)
+    print("DB updated")
+
+def is_db_valid():
+    db_timestamps_file = os.path.join(os.path.dirname(__file__), "../static/assets/db/db-timestamps.json")
+    if not os.path.isfile(db_timestamps_file):
+        return False
 
 def load_db():
     """Loads the database"""
     print("Loading db")
+    if not is_db_valid():
+        update_db()
+
     db_timestamps_file = os.path.join(os.path.dirname(__file__), "../static/assets/db/db-timestamps.json")
     all_functions_file = os.path.join(os.path.dirname(__file__), "../static/assets/db/all-functions-db.json")
     project_timestamps_file = os.path.join(os.path.dirname(__file__), "../static/assets/db/all-project-timestamps.json")
@@ -76,5 +93,3 @@ def load_db():
             )
         )
     return
-
-load_db()

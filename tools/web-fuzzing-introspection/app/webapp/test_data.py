@@ -1,5 +1,6 @@
 # Auto-generated
-from app.site.models import *
+#from app.site.models import *
+from .models import *
 
 
 TEST_PROJECT_TIMESTAMPS = []
