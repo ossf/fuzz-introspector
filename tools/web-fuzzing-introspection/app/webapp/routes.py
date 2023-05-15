@@ -158,3 +158,28 @@ def projects_overview():
 @blueprint.route('/about')
 def about():
     return render_template('about.html')
+
+
+@blueprint.route('/api/project-summary')
+def api_project_summary():
+    project_name = request.args.get('project', None)
+    if project_name == None:
+        return {'result': 'error', 'msg': 'Please provide project name'}
+    target_project = None
+    all_projects = test_data.get_projects()
+    for project in all_projects:
+        if project.name == project_name:
+            target_project = project
+            break
+    if target_project is None:
+        return {'result': 'error', 'msg': 'Project not in the database'}
+
+    return {
+        'result': 'success',
+        'project': {
+            'name': project_name,
+            'fuzzer-count': target_project.fuzz_count,
+            'runtime-coverage': project.runtime_cov,
+            'static-reachability': project.reach
+        }
+    }
