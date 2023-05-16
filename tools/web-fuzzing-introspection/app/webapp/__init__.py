@@ -23,6 +23,8 @@ def load_db():
         os.path.dirname(__file__), "../static/assets/db/db-timestamps.json")
     all_functions_file = os.path.join(
         os.path.dirname(__file__), "../static/assets/db/all-functions-db.json")
+    all_branch_blockers_file = os.path.join(
+        os.path.dirname(__file__), "../static/assets/db/all-branch-blockers.json")
     project_timestamps_file = os.path.join(
         os.path.dirname(__file__),
         "../static/assets/db/all-project-timestamps.json")
@@ -43,7 +45,6 @@ def load_db():
 
     with open(all_functions_file, 'r') as f:
         all_function_list = json.load(f)
-
     idx = 0
     for func in all_function_list:
         idx += 1
@@ -58,6 +59,16 @@ def load_db():
                 is_reached=func['is_reached']))
     print("Loadded %d functions" % (idx))
     print("Len %d" % (len(test_data.TEST_FUNCTIONS)))
+
+    with open(all_branch_blockers_file, 'r') as f:
+        all_branch_blockers = json.load(f)
+
+    for json_bb in all_branch_blockers:
+        test_data.TEST_BLOCKERS.append(
+                models.BranchBlocker(
+                    project_name = json_bb.get('project', ''),
+                    function_name = json_bb.get('function-name', ''),
+                    unique_blocked_coverage = json_bb.get('blocked-runtime-coverage')))
 
     with open(project_timestamps_file, 'r') as f:
         project_timestamps_json = json.load(f)

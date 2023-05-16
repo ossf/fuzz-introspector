@@ -85,3 +85,14 @@ class Function:
         self.reached_by_fuzzers = reached_by_fuzzers
         self.coverage_by_fuzzers = 3
         self.code_coverage_url = code_coverage_url
+
+
+class BranchBlocker:
+
+    def __init__(self,
+                 project_name,
+                 function_name,
+                 unique_blocked_coverage):
+        self.project_name = project_name
+        self.function_name = function_name
+        self.unique_blocked_coverage = unique_blocked_coverage
