@@ -149,20 +149,21 @@ def get_all_functions_for_project(project_name, date_str="2023-04-11"):
 
     # Get all branch blockers
     branch_pairs = list()
-    for k in json_dict:
-        if k == "analyses" or k == "MergedProjectProfile":
+    for key in json_dict:
+        # We look for dicts with fuzzer-specific content. The following two
+        # are not such keys, so skip them.
+        if key == "analyses" or key == "MergedProjectProfile":
             continue
 
-        val = json_dict[k]
+        # Fuzzer-specific dictionary, get the contents of it.
+        val = json_dict[key]
         if not isinstance(val, dict):
             continue
 
-        fuzzer_name = k
         branch_blockers = val.get('branch_blockers', None)
         if branch_blockers == None or not isinstance(branch_blockers, list):
             continue
 
-        functions_blocked = set()
         for branch_blocker in branch_blockers:
             function_blocked = branch_blocker.get('function_name', None)
             blocked_unique_not_covered_complexity = branch_blocker.get(
@@ -171,10 +172,7 @@ def get_all_functions_for_project(project_name, date_str="2023-04-11"):
                 continue
             if blocked_unique_not_covered_complexity == None:
                 continue
-            #if function_blocked in functions_blocked:
-            #    continue
 
-            #functions_blocked.add(function_blocked)
             branch_pairs.append({
                 'project':
                 project_name,
