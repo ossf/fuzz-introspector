@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import random
 from flask import Blueprint, render_template, request
 
 #from app.site import models
@@ -131,8 +132,27 @@ def function_search():
     print("query: { %s }" % (query))
     print("Length of functions: %d" % (len(test_data.get_functions())))
     if query == '':
-        # Pick 25 random functions per default
-        functions_to_display = test_data.get_functions()[0:20]
+        # Pick a random interesting query
+        # Some queries involving fuzzing-interesting targets.
+        interesting_query_roulette = [
+            'deserialize', 'parse', 'parse_xml', 'read_file', 'read_json',
+            'read_xml', 'message', 'request', 'parse_header', 'parse_request',
+            'header', 'decompress', 'file_read'
+        ]
+        interesting_query = random.choice(interesting_query_roulette)
+        tmp_list = []
+        for function in test_data.get_functions():
+            if interesting_query in function.name:
+                tmp_list.append(function)
+        functions_to_display = tmp_list
+
+        # Shuffle to give varying results each time
+        random.shuffle(functions_to_display)
+
+        total_matches = len(functions_to_display)
+        if total_matches >= 100:
+            functions_to_display = functions_to_display[:100]
+        info_msg = f"No query was given, picked the query \"{interesting_query}\" for this"
     else:
         tmp_list = []
         for function in test_data.get_functions():
@@ -140,10 +160,12 @@ def function_search():
                 tmp_list.append(function)
         functions_to_display = tmp_list
 
-    total_matches = len(functions_to_display)
-    if total_matches >= MAX_MATCHES_TO_DISPLAY:
-        functions_to_display = functions_to_display[0:MAX_MATCHES_TO_DISPLAY]
-        info_msg = f"Found {total_matches} matches. Only showing the first {MAX_MATCHES_TO_DISPLAY}."
+        total_matches = len(functions_to_display)
+        if total_matches >= MAX_MATCHES_TO_DISPLAY:
+            functions_to_display = functions_to_display[
+                0:MAX_MATCHES_TO_DISPLAY]
+            info_msg = f"Found {total_matches} matches. Only showing the first {MAX_MATCHES_TO_DISPLAY}."
+
     return render_template('function-search.html',
                            all_functions=functions_to_display,
                            info_msg=info_msg)
