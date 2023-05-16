@@ -26,6 +26,7 @@ DB_JSON_DB_TIMESTAMP = 'db-timestamps.json'
 DB_JSON_ALL_PROJECT_TIMESTAMP = 'all-project-timestamps.json'
 DB_JSON_ALL_FUNCTIONS = 'all-functions-db.json'
 DB_JSON_ALL_CURRENT_FUNCS = 'all-project-current.json'
+DB_JSON_ALL_BRANCH_BLOCKERS = 'all-branch-blockers.json'
 
 ALL_JSON_FILES = [
     DB_JSON_DB_TIMESTAMP,
@@ -109,11 +110,11 @@ def get_all_functions_for_project(project_name, date_str="2023-04-11"):
     try:
         json_raw = requests.get(introspector_summary_url)
     except:
-        return [], None
+        return [], [], None
     try:
         json_dict = json.loads(json_raw.text)
     except:
-        return [], None
+        return [], [], None
 
     # Access all functions
     all_function_list = json_dict['MergedProjectProfile']['all-functions']
@@ -146,6 +147,41 @@ def get_all_functions_for_project(project_name, date_str="2023-04-11"):
             project_name
         })
 
+    # Get all branch blockers
+    branch_pairs = list()
+    for key in json_dict:
+        # We look for dicts with fuzzer-specific content. The following two
+        # are not such keys, so skip them.
+        if key == "analyses" or key == "MergedProjectProfile":
+            continue
+
+        # Fuzzer-specific dictionary, get the contents of it.
+        val = json_dict[key]
+        if not isinstance(val, dict):
+            continue
+
+        branch_blockers = val.get('branch_blockers', None)
+        if branch_blockers == None or not isinstance(branch_blockers, list):
+            continue
+
+        for branch_blocker in branch_blockers:
+            function_blocked = branch_blocker.get('function_name', None)
+            blocked_unique_not_covered_complexity = branch_blocker.get(
+                'blocked_unique_not_covered_complexity', None)
+            if function_blocked == None:
+                continue
+            if blocked_unique_not_covered_complexity == None:
+                continue
+
+            branch_pairs.append({
+                'project':
+                project_name,
+                'function-name':
+                function_blocked,
+                'blocked-runtime-coverage':
+                blocked_unique_not_covered_complexity
+            })
+
     # The previous techniques we used to set language was quite heuristically.
     # Here, we make a more precise effort by reading the project yaml file.
     try:
@@ -161,22 +197,24 @@ def get_all_functions_for_project(project_name, date_str="2023-04-11"):
                                            date_str.replace("-", ""),
                                            project_timestamp['language'])
     project_timestamp["coverage_url"] = coverage_url
-    return refined_proj_list, project_timestamp
+    return refined_proj_list, branch_pairs, project_timestamp
 
 
 def analyse_list_of_projects(date, projects_to_analyse):
     """Creates a DB snapshot of a list of projects for a given date."""
     function_list = list()
+    fuzz_branch_blocker_list = list()
     project_timestamps = list()
     accummulated_fuzzer_count = 0
     accummulated_function_count = 0
     for project_name in projects_to_analyse:
         logger.debug("%d" % (len(function_list)))
-        project_function_list, project_timestamp = get_all_functions_for_project(
+        project_function_list, branch_pairs, project_timestamp = get_all_functions_for_project(
             project_name, date)
         if project_timestamp is None:
             continue
         function_list += project_function_list
+        fuzz_branch_blocker_list += branch_pairs
         project_timestamps.append(project_timestamp)
 
         accummulated_fuzzer_count += project_timestamp['fuzzer_count']
@@ -189,7 +227,7 @@ def analyse_list_of_projects(date, projects_to_analyse):
         "fuzzer_count": accummulated_fuzzer_count,
         "function_count": accummulated_function_count,
     }
-    return function_list, project_timestamps, db_timestamp
+    return function_list, fuzz_branch_blocker_list, project_timestamps, db_timestamp
 
 
 def extend_db_timestamps(db_timestamp, output_directory):
@@ -255,12 +293,15 @@ def extend_db_json_files(project_timestamps, output_directory):
 
 
 def update_db_files(db_timestamp, project_timestamps, function_list,
-                    output_directory):
+                    fuzz_branch_blocker_list, output_directory):
     logger.info(
         "Updating the database with DB snapshot. Number of functions in total: %d"
         % (len(function_list)))
     with open(os.path.join(output_directory, DB_JSON_ALL_FUNCTIONS), 'w') as f:
         json.dump(function_list, f)
+    with open(os.path.join(output_directory, DB_JSON_ALL_BRANCH_BLOCKERS),
+              'w') as f:
+        json.dump(fuzz_branch_blocker_list, f)
     extend_db_json_files(project_timestamps, output_directory)
     extend_db_timestamps(db_timestamp, output_directory)
 
@@ -275,10 +316,10 @@ def analyse_set_of_dates(dates, projects_to_analyse, output_directory):
         logger.info("Analysing date %s -- [%d of %d]" %
                     (date, idx, dates_to_analyse))
         idx += 1
-        function_list, project_timestamps, db_timestamp = analyse_list_of_projects(
+        function_list, fuzz_branch_blocker_list, project_timestamps, db_timestamp = analyse_list_of_projects(
             date, projects_to_analyse)
         update_db_files(db_timestamp, project_timestamps, function_list,
-                        output_directory)
+                        fuzz_branch_blocker_list, output_directory)
 
 
 def get_date_at_offset_as_str(day_offset=-1):

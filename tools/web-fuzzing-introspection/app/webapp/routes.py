@@ -183,3 +183,34 @@ def api_project_summary():
             'static-reachability': project.reach
         }
     }
+
+
+@blueprint.route('/api/branch-blockers')
+def branch_blockers():
+    project_name = request.args.get('project', None)
+    if project_name == None:
+        return {'result': 'error', 'msg': 'Please provide project name'}
+
+    target_project = None
+    all_projects = test_data.get_projects()
+    for project in all_projects:
+        if project.name == project_name:
+            target_project = project
+            break
+    if target_project is None:
+        return {'result': 'error', 'msg': 'Project not in the database'}
+
+    all_branch_blockers = test_data.get_blockers()
+
+    project_blockers = []
+    for blocker in all_branch_blockers:
+        if blocker.project_name == project_name:
+            project_blockers.append({
+                'project-name':
+                blocker.project_name,
+                'function-name':
+                blocker.function_name,
+                'unique_blocked_coverage':
+                blocker.unique_blocked_coverage
+            })
+    return {'result': 'success', 'project-blockers': project_blockers}
