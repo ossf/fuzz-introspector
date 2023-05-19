@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import random
+
 from flask import Blueprint, render_template, request
 
 #from app.site import models
@@ -236,3 +237,52 @@ def branch_blockers():
                 blocker.unique_blocked_coverage
             })
     return {'result': 'success', 'project-blockers': project_blockers}
+
+
+@blueprint.route('/api/far-reach-but-low-coverage')
+def far_reach_but_low_coverage():
+    project_name = request.args.get('project', None)
+    if project_name == None:
+        return {'result': 'error', 'msg': 'Please provide project name'}  ##
+
+    target_project = None
+    all_projects = test_data.get_projects()
+    for project in all_projects:
+        if project.name == project_name:
+            target_project = project
+            break
+    if target_project is None:
+        return {'result': 'error', 'msg': 'Project not in the database'}
+
+    all_functions = test_data.get_functions()
+    project_functions = []
+    for function in all_functions:
+        if function.project == project_name:
+            if function.runtime_code_coverage < 20.0:
+                project_functions.append(function)
+
+    # Filter based on accummulated cyclomatic complexity and low coverage
+    sorted_functions_of_interest = sorted(
+        project_functions,
+        key=lambda x:
+        (-x.accummulated_cyclomatic_complexity, -x.runtime_code_coverage))
+
+    max_functions_to_show = 30
+    functions_to_return = list()
+    idx = 0
+    for function in sorted_functions_of_interest:
+        if idx >= max_functions_to_show:
+            break
+        idx += 1
+        functions_to_return.append({
+            'function-name':
+            function.name,
+            'function_filename':
+            function.function_filename,
+            'runtime-coverage-percent':
+            function.runtime_code_coverage,
+            'accummulated-complexity':
+            function.accummulated_cyclomatic_complexity
+        })
+
+    return {'result': 'succes', 'functions': functions_to_return}

@@ -144,7 +144,13 @@ def get_all_functions_for_project(project_name, date_str="2023-04-11"):
             'is_reached':
             len(func['Reached by Fuzzers']) > 1,
             'project':
-            project_name
+            project_name,
+            'accumulated_cyclomatic_complexity':
+            func['Accumulated cyclomatic complexity'],
+            'llvm-instruction-count':
+            func['I Count'],
+            'undiscovered-complexity':
+            func['Undiscovered complexity'],
         })
 
     # Get all branch blockers

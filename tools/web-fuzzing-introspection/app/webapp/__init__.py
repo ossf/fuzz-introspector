@@ -56,7 +56,11 @@ def load_db():
                 function_filename=func['function_filename'],
                 reached_by_fuzzers=0,
                 code_coverage_url=func['code_coverage_url'],
-                is_reached=func['is_reached']))
+                is_reached=func['is_reached'],
+                llvm_instruction_count=func['llvm-instruction-count'],
+                accummulated_cyclomatic_complexity=func['accumulated_cyclomatic_complexity'],
+                undiscovered_complexity=func['undiscovered-complexity']))
+
     print("Loadded %d functions" % (idx))
     print("Len %d" % (len(test_data.TEST_FUNCTIONS)))
 
