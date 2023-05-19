@@ -380,6 +380,8 @@ button.btn__primary {
   font-size: 12px;
   line-height: 15px;
   color: #000000;
+  word-break: break-all;
+  max-width: 200px;
 }
 .database table tr td a {
   font-weight: 400;

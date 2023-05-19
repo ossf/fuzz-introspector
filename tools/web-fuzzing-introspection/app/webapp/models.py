@@ -76,7 +76,10 @@ class Function:
                  runtime_code_coverage=0.0,
                  function_filename="",
                  reached_by_fuzzers=0,
-                 code_coverage_url=""):
+                 code_coverage_url="",
+                 accummulated_cyclomatic_complexity=0,
+                 llvm_instruction_count=0,
+                 undiscovered_complexity=0):
         self.name = name
         self.function_filename = function_filename
         self.project = project
@@ -85,14 +88,14 @@ class Function:
         self.reached_by_fuzzers = reached_by_fuzzers
         self.coverage_by_fuzzers = 3
         self.code_coverage_url = code_coverage_url
+        self.accummulated_cyclomatic_complexity = accummulated_cyclomatic_complexity
+        self.llvm_instruction_count = llvm_instruction_count
+        self.undiscovered_complexity = undiscovered_complexity
 
 
 class BranchBlocker:
 
-    def __init__(self,
-                 project_name,
-                 function_name,
-                 unique_blocked_coverage):
+    def __init__(self, project_name, function_name, unique_blocked_coverage):
         self.project_name = project_name
         self.function_name = function_name
         self.unique_blocked_coverage = unique_blocked_coverage
