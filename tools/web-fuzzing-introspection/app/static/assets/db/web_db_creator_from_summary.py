@@ -21,6 +21,7 @@ import shutil
 import logging
 import datetime
 import requests
+from threading import Thread
 
 DB_JSON_DB_TIMESTAMP = 'db-timestamps.json'
 DB_JSON_ALL_PROJECT_TIMESTAMP = 'all-project-timestamps.json'
@@ -43,7 +44,7 @@ logger = logging.getLogger(name=__name__)
 
 def get_introspector_summary():
     introspector_summary_url = 'https://oss-fuzz-build-logs.storage.googleapis.com/status-introspector.json'
-    r = requests.get(introspector_summary_url)
+    r = requests.get(introspector_summary_url, timeout=20)
     return json.loads(r.text)
 
 
@@ -56,7 +57,10 @@ def get_all_valid_projects(introspector_summary):
 
 
 def get_latest_valid_reports():
-    introspector_summary = get_introspector_summary()
+    try:
+        introspector_summary = get_introspector_summary()
+    except:
+        return []
     successfull_projects = get_all_valid_projects(introspector_summary)
     return successfull_projects
 
@@ -64,7 +68,7 @@ def get_latest_valid_reports():
 def try_to_get_project_language(project_name):
     proj_yaml_url = 'https://raw.githubusercontent.com/google/oss-fuzz/master/projects/%s/project.yaml' % (
         project_name)
-    r = requests.get(proj_yaml_url)
+    r = requests.get(proj_yaml_url, timeout=10)
     project_yaml = yaml.safe_load(r.text)
     return project_yaml['language']
 
@@ -95,7 +99,8 @@ def get_coverage_report_url(project_name, datestr, language):
     return project_url
 
 
-def get_all_functions_for_project(project_name, date_str="2023-04-11"):
+def get_all_functions_for_project(project_name, date_str,
+                                  should_include_details, manager_return_dict):
     """For a given project and date gets a list of function profiles for
     the project on the givne date, and also creates a project time stamp.
     The list of function profiles and the project timestamp is returned
@@ -108,13 +113,13 @@ def get_all_functions_for_project(project_name, date_str="2023-04-11"):
 
     # Read the introspector atifact
     try:
-        json_raw = requests.get(introspector_summary_url)
+        json_raw = requests.get(introspector_summary_url, timeout=10)
     except:
-        return [], [], None
+        return
     try:
         json_dict = json.loads(json_raw.text)
     except:
-        return [], [], None
+        return
 
     # Access all functions
     all_function_list = json_dict['MergedProjectProfile']['all-functions']
@@ -131,62 +136,65 @@ def get_all_functions_for_project(project_name, date_str="2023-04-11"):
     }
 
     refined_proj_list = list()
-    for func in all_function_list:
-        refined_proj_list.append({
-            'name':
-            func['Func name'],
-            'code_coverage_url':
-            func['func_url'],
-            'function_filename':
-            func['Functions filename'],
-            'runtime_code_coverage':
-            float(func['Func lines hit %'].replace("%", "")),
-            'is_reached':
-            len(func['Reached by Fuzzers']) > 1,
-            'project':
-            project_name,
-            'accumulated_cyclomatic_complexity':
-            func['Accumulated cyclomatic complexity'],
-            'llvm-instruction-count':
-            func['I Count'],
-            'undiscovered-complexity':
-            func['Undiscovered complexity'],
-        })
+    if should_include_details:
+        for func in all_function_list:
+            refined_proj_list.append({
+                'name':
+                func['Func name'],
+                'code_coverage_url':
+                func['func_url'],
+                'function_filename':
+                func['Functions filename'],
+                'runtime_code_coverage':
+                float(func['Func lines hit %'].replace("%", "")),
+                'is_reached':
+                len(func['Reached by Fuzzers']) > 1,
+                'project':
+                project_name,
+                'accumulated_cyclomatic_complexity':
+                func['Accumulated cyclomatic complexity'],
+                'llvm-instruction-count':
+                func['I Count'],
+                'undiscovered-complexity':
+                func['Undiscovered complexity'],
+            })
 
     # Get all branch blockers
     branch_pairs = list()
-    for key in json_dict:
-        # We look for dicts with fuzzer-specific content. The following two
-        # are not such keys, so skip them.
-        if key == "analyses" or key == "MergedProjectProfile":
-            continue
-
-        # Fuzzer-specific dictionary, get the contents of it.
-        val = json_dict[key]
-        if not isinstance(val, dict):
-            continue
-
-        branch_blockers = val.get('branch_blockers', None)
-        if branch_blockers == None or not isinstance(branch_blockers, list):
-            continue
-
-        for branch_blocker in branch_blockers:
-            function_blocked = branch_blocker.get('function_name', None)
-            blocked_unique_not_covered_complexity = branch_blocker.get(
-                'blocked_unique_not_covered_complexity', None)
-            if function_blocked == None:
-                continue
-            if blocked_unique_not_covered_complexity == None:
+    if should_include_details:
+        for key in json_dict:
+            # We look for dicts with fuzzer-specific content. The following two
+            # are not such keys, so skip them.
+            if key == "analyses" or key == "MergedProjectProfile":
                 continue
 
-            branch_pairs.append({
-                'project':
-                project_name,
-                'function-name':
-                function_blocked,
-                'blocked-runtime-coverage':
-                blocked_unique_not_covered_complexity
-            })
+            # Fuzzer-specific dictionary, get the contents of it.
+            val = json_dict[key]
+            if not isinstance(val, dict):
+                continue
+
+            branch_blockers = val.get('branch_blockers', None)
+            if branch_blockers == None or not isinstance(
+                    branch_blockers, list):
+                continue
+
+            for branch_blocker in branch_blockers:
+                function_blocked = branch_blocker.get('function_name', None)
+                blocked_unique_not_covered_complexity = branch_blocker.get(
+                    'blocked_unique_not_covered_complexity', None)
+                if function_blocked == None:
+                    continue
+                if blocked_unique_not_covered_complexity == None:
+                    continue
+
+                branch_pairs.append({
+                    'project':
+                    project_name,
+                    'function-name':
+                    function_blocked,
+                    'blocked-runtime-coverage':
+                    blocked_unique_not_covered_complexity
+                })
 
     # The previous techniques we used to set language was quite heuristically.
     # Here, we make a more precise effort by reading the project yaml file.
@@ -203,22 +211,52 @@ def get_all_functions_for_project(project_name, date_str="2023-04-11"):
                                            date_str.replace("-", ""),
                                            project_timestamp['language'])
     project_timestamp["coverage_url"] = coverage_url
-    return refined_proj_list, branch_pairs, project_timestamp
+    dictionary_key = '%s###%s' % (project_name, date_str)
+    manager_return_dict[dictionary_key] = {
+        'refined_proj_list': refined_proj_list,
+        'branch_pairs': branch_pairs,
+        'project_timestamp': project_timestamp
+    }
+    return
 
 
-def analyse_list_of_projects(date, projects_to_analyse):
+def analyse_list_of_projects(date, projects_to_analyse,
+                             should_include_details):
     """Creates a DB snapshot of a list of projects for a given date."""
     function_list = list()
     fuzz_branch_blocker_list = list()
     project_timestamps = list()
     accummulated_fuzzer_count = 0
     accummulated_function_count = 0
-    for project_name in projects_to_analyse:
-        logger.debug("%d" % (len(function_list)))
-        project_function_list, branch_pairs, project_timestamp = get_all_functions_for_project(
-            project_name, date)
-        if project_timestamp is None:
-            continue
+    idx = 0
+    jobs = []
+    return_dict = dict()
+
+    batch_size = 20 if not should_include_details else 5
+    all_batches = [
+        projects_to_analyse[x:x + batch_size]
+        for x in range(0, len(projects_to_analyse), batch_size)
+    ]
+
+    for batch in all_batches:
+        for project_name in batch:
+            idx += 1
+            logger.debug("%d" % (len(function_list)))
+            t = Thread(target=get_all_functions_for_project,
+                       args=(project_name, date, should_include_details,
+                             return_dict))
+            jobs.append(t)
+            t.start()
+
+        for proc in jobs:
+            proc.join()
+
+    # Accummulate data
+    for key in return_dict:
+        project_function_list = return_dict[key]['refined_proj_list']
+        branch_pairs = return_dict[key]['branch_pairs']
+        project_timestamp = return_dict[key]['project_timestamp']
+
         function_list += project_function_list
         fuzz_branch_blocker_list += branch_pairs
         project_timestamps.append(project_timestamp)
@@ -299,33 +337,39 @@ def extend_db_json_files(project_timestamps, output_directory):
 
 
 def update_db_files(db_timestamp, project_timestamps, function_list,
-                    fuzz_branch_blocker_list, output_directory):
+                    fuzz_branch_blocker_list, output_directory,
+                    should_include_details):
     logger.info(
         "Updating the database with DB snapshot. Number of functions in total: %d"
-        % (len(function_list)))
-    with open(os.path.join(output_directory, DB_JSON_ALL_FUNCTIONS), 'w') as f:
-        json.dump(function_list, f)
-    with open(os.path.join(output_directory, DB_JSON_ALL_BRANCH_BLOCKERS),
-              'w') as f:
-        json.dump(fuzz_branch_blocker_list, f)
+        % (db_timestamp['function_count']))
+    if should_include_details:
+        with open(os.path.join(output_directory, DB_JSON_ALL_FUNCTIONS),
+                  'w') as f:
+            json.dump(function_list, f)
+        with open(os.path.join(output_directory, DB_JSON_ALL_BRANCH_BLOCKERS),
+                  'w') as f:
+            json.dump(fuzz_branch_blocker_list, f)
     extend_db_json_files(project_timestamps, output_directory)
     extend_db_timestamps(db_timestamp, output_directory)
 
 
 def analyse_set_of_dates(dates, projects_to_analyse, output_directory):
-    """Performs analysis of all projects in the projects_to_analyse argument for
+    """Pe/rforms analysis of all projects in the projects_to_analyse argument for
     the given set of dates. DB .json files are stored in output_directory.
     """
     dates_to_analyse = len(dates)
     idx = 1
     for date in dates:
-        logger.info("Analysing date %s -- [%d of %d]" %
-                    (date, idx, dates_to_analyse))
+        current_time = datetime.datetime.now().strftime("%H:%M:%S")
+        logger.info("Analysing date %s -- [%d of %d] -- %s" %
+                    (date, idx, dates_to_analyse, current_time))
         idx += 1
+        should_include_details = idx == len(dates)
         function_list, fuzz_branch_blocker_list, project_timestamps, db_timestamp = analyse_list_of_projects(
-            date, projects_to_analyse)
+            date, projects_to_analyse, should_include_details)
         update_db_files(db_timestamp, project_timestamps, function_list,
-                        fuzz_branch_blocker_list, output_directory)
+                        fuzz_branch_blocker_list, output_directory,
+                        should_include_details)
 
 
 def get_date_at_offset_as_str(day_offset=-1):
