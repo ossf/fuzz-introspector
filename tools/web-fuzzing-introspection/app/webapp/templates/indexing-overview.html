@@ -42,6 +42,7 @@
                         {% else %}
                         <span class="red_dot"></span> fail
                         {% endif %}
+                        <a href="{{build_status.fuzz_build_log}}">[log]</a>
                       </td>                      
                       <td>
                         {% if build_status.coverage_build_status == True%}
@@ -49,6 +50,7 @@
                         {% else %}
                         <span class="red_dot"></span> fail
                         {% endif %}
+                        <a href="{{build_status.coverage_build_log}}">[log]</a>
                       </td>
                       <td>
                         {% if build_status.introspector_build_status == True %}
@@ -56,6 +58,7 @@
                         {% else %}
                         <span class="red_dot"></span> fail
                         {% endif %}
+                        <a href="{{build_status.introspector_build_log}}">[log]</a>
                       </td>
                   </tr>
                 {% endfor %}

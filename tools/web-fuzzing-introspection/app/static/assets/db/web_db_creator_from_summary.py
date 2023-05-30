@@ -42,6 +42,7 @@ OSS_FUZZ_BUILD_STATUS_URL = 'https://oss-fuzz-build-logs.storage.googleapis.com'
 INTROSPECTOR_BUILD_JSON = 'status-introspector.json'
 COVERAGE_BUILD_JSON = 'status-coverage.json'
 FUZZ_BUILD_JSON = 'status.json'
+OSS_FUZZ_BUILD_LOG_BASE = 'https://oss-fuzz-build-logs.storage.googleapis.com/log-'
 
 OSS_FUZZ_CLONE = ""
 
@@ -82,18 +83,21 @@ def get_projects_build_status():
     for p in fuzz_build_json['projects']:
         project_dict = build_status_dict.get(p['name'], dict())
         project_dict['fuzz-build'] = p['history'][0]['success']
+        project_dict['fuzz-build-log'] = OSS_FUZZ_BUILD_LOG_BASE + p['history'][0]['build_id'] + '.txt'
         build_status_dict[p['name']] = project_dict
     for p in cov_build_json['projects']:
         project_dict = build_status_dict.get(p['name'], dict())
         project_dict['cov-build'] = p['history'][0]['success']
+        project_dict['cov-build-log'] = OSS_FUZZ_BUILD_LOG_BASE + p['history'][0]['build_id'] + '.txt'
         build_status_dict[p['name']] = project_dict
     for p in introspector_build_json['projects']:
         project_dict = build_status_dict.get(p['name'], dict())
         project_dict['introspector-build'] = p['history'][0]['success']
+        project_dict['introspector-build-log'] = OSS_FUZZ_BUILD_LOG_BASE + p['history'][0]['build_id'] + '.txt'
         build_status_dict[p['name']] = project_dict
 
     # Ensure all fields are set in each dictionary
-    needed_keys = ['introspector-build', 'fuzz-build', 'cov-build']
+    needed_keys = ['introspector-build', 'fuzz-build', 'cov-build', 'introspector-build-log', 'cov-build-log', 'fuzz-build-log']
     for project_name in build_status_dict:
         project_dict = build_status_dict[project_name]
         for needed_key in needed_keys:
