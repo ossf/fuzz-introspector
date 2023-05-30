@@ -104,7 +104,6 @@ def get_projects_build_status():
 
     print("Going through all of the projects")
     for project_name in build_status_dict:
-        print("Handling %s"%(project_name))
         try:
             project_language = try_to_get_project_language(project_name)
         except:
