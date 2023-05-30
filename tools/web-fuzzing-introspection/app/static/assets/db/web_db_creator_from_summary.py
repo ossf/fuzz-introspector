@@ -79,8 +79,6 @@ def get_projects_build_status():
     introspector_build_json = json.loads(introspector_build_raw)
 
     build_status_dict = dict()
-    succ = 0
-    fail = 0
     for p in fuzz_build_json['projects']:
         project_dict = build_status_dict.get(p['name'], dict())
         project_dict['fuzz-build'] = p['history'][0]['success']
