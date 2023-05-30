@@ -21,6 +21,7 @@ import shutil
 import logging
 import datetime
 import requests
+import subprocess
 from threading import Thread
 
 DB_JSON_DB_TIMESTAMP = 'db-timestamps.json'
@@ -28,6 +29,7 @@ DB_JSON_ALL_PROJECT_TIMESTAMP = 'all-project-timestamps.json'
 DB_JSON_ALL_FUNCTIONS = 'all-functions-db.json'
 DB_JSON_ALL_CURRENT_FUNCS = 'all-project-current.json'
 DB_JSON_ALL_BRANCH_BLOCKERS = 'all-branch-blockers.json'
+DB_BUILD_STATUS_JSON = 'build-status.json'
 
 ALL_JSON_FILES = [
     DB_JSON_DB_TIMESTAMP,
@@ -36,14 +38,80 @@ ALL_JSON_FILES = [
     DB_JSON_ALL_CURRENT_FUNCS,
 ]
 
+OSS_FUZZ_BUILD_STATUS_URL = 'https://oss-fuzz-build-logs.storage.googleapis.com'
+INTROSPECTOR_BUILD_JSON = 'status-introspector.json'
+COVERAGE_BUILD_JSON = 'status-coverage.json'
+FUZZ_BUILD_JSON = 'status.json'
+
+OSS_FUZZ_CLONE = ""
+
 logging.getLogger("requests").setLevel(logging.WARNING)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 logger = logging.getLogger(name=__name__)
 
 
+def git_clone_project(github_url, destination):
+    cmd = ["git clone", github_url, destination]
+    try:
+        subprocess.check_call(" ".join(cmd),
+                              shell=True,
+                              timeout=600,
+                              stdout=subprocess.DEVNULL,
+                              stderr=subprocess.DEVNULL)
+    except subprocess.TimeoutExpired:
+        return False
+    except subprocess.CalledProcessError:
+        return False
+    return True
+
+def get_projects_build_status():
+    fuzz_build_url = OSS_FUZZ_BUILD_STATUS_URL + '/' + FUZZ_BUILD_JSON
+    coverage_build_url = OSS_FUZZ_BUILD_STATUS_URL + '/' + COVERAGE_BUILD_JSON
+    introspector_build_url = OSS_FUZZ_BUILD_STATUS_URL + '/' + INTROSPECTOR_BUILD_JSON
+
+    fuzz_build_raw = requests.get(fuzz_build_url, timeout=20).text
+    coverage_build_raw = requests.get(coverage_build_url, timeout=20).text
+    introspector_build_raw = requests.get(introspector_build_url, timeout=20).text
+
+    fuzz_build_json = json.loads(fuzz_build_raw)
+    cov_build_json = json.loads(coverage_build_raw)
+    introspector_build_json = json.loads(introspector_build_raw)
+
+    build_status_dict = dict()
+    for p in fuzz_build_json['projects']:
+        project_dict = build_status_dict.get(p['name'], dict())
+        project_dict['fuzz-build'] = p['history'][0]['success']
+        build_status_dict[p['name']] = project_dict
+    for p in cov_build_json['projects']:
+        project_dict = build_status_dict.get(p['name'], dict())
+        project_dict['cov-build'] = p['history'][0]['success']
+        build_status_dict[p['name']] = project_dict
+    for p in introspector_build_json['projects']:
+        project_dict = build_status_dict.get(p['name'], dict())
+        project_dict['introspector-build'] = p['history'][0]['success']
+        build_status_dict[p['name']] = project_dict
+
+    # Ensure all fields are set in each dictionary
+    needed_keys = ['introspector-build', 'fuzz-build', 'cov-build']
+    for project_name in build_status_dict:
+        project_dict = build_status_dict[project_name]
+        for needed_key in needed_keys:
+            if needed_key not in project_dict:
+                project_dict[needed_key] = 'N/A'
+
+    print("Going through all of the projects")
+    for project_name in build_status_dict:
+        try:
+            project_language = try_to_get_project_language(project_name)
+        except:
+            project_language = 'N/A'
+        build_status_dict[project_name]['language'] = project_language
+    print("Number of projects: %d"%(len(build_status_dict)))
+    return build_status_dict
+
 def get_introspector_summary():
-    introspector_summary_url = 'https://oss-fuzz-build-logs.storage.googleapis.com/status-introspector.json'
+    introspector_summary_url = OSS_FUZZ_BUILD_STATUS_URL + '/' + INTROSPECTOR_BUILD_JSON
     r = requests.get(introspector_summary_url, timeout=20)
     return json.loads(r.text)
 
@@ -66,11 +134,21 @@ def get_latest_valid_reports():
 
 
 def try_to_get_project_language(project_name):
-    proj_yaml_url = 'https://raw.githubusercontent.com/google/oss-fuzz/master/projects/%s/project.yaml' % (
-        project_name)
-    r = requests.get(proj_yaml_url, timeout=10)
-    project_yaml = yaml.safe_load(r.text)
-    return project_yaml['language']
+    if os.path.isdir(OSS_FUZZ_CLONE):
+        local_project_path = os.path.join(OSS_FUZZ_CLONE, "projects", project_name)
+        if os.path.isdir(local_project_path):
+            project_yaml_path = os.path.join(local_project_path, "project.yaml")
+            if os.path.isfile(project_yaml_path):
+                with open(project_yaml_path, "r") as f:
+                    project_yaml = yaml.safe_load(f.read())
+                    return project_yaml['language']
+    else:
+        proj_yaml_url = 'https://raw.githubusercontent.com/google/oss-fuzz/master/projects/%s/project.yaml' % (
+            project_name)
+        r = requests.get(proj_yaml_url, timeout=10)
+        project_yaml = yaml.safe_load(r.text)
+        return project_yaml['language']
+    return "N/A"
 
 
 def get_introspector_report_url_base(project_name, datestr):
@@ -352,6 +430,9 @@ def update_db_files(db_timestamp, project_timestamps, function_list,
     extend_db_json_files(project_timestamps, output_directory)
     extend_db_timestamps(db_timestamp, output_directory)
 
+def update_build_status(build_dict):
+    with open(DB_BUILD_STATUS_JSON, "w") as f:
+        json.dump(build_dict, f)
 
 def analyse_set_of_dates(dates, projects_to_analyse, output_directory):
     """Pe/rforms analysis of all projects in the projects_to_analyse argument for
@@ -417,6 +498,7 @@ def create_date_range(day_offset, days_to_analyse):
 
 def create_db(max_projects, days_to_analyse, output_directory, input_directory,
               day_offset, to_cleanup, since_date):
+    global OSS_FUZZ_CLONE
     setup_folders(input_directory, output_directory)
     project_list = get_latest_valid_reports()
     if max_projects > 0 and len(project_list) > max_projects:
@@ -441,7 +523,16 @@ def create_db(max_projects, days_to_analyse, output_directory, input_directory,
     if input_directory is not None:
         logger.info("- Extending upon the DB in %s" % (str(input_directory)))
     else:
-        logger.info("- Creating the DB from scratch")
+        logger.info("-Creating the DB from scratch")
+
+    oss_fuzz_local_clone = os.path.join(output_directory, "oss-fuzz-clone")
+    if os.path.isdir(oss_fuzz_local_clone):
+        shutil.rmtree(oss_fuzz_local_clone)
+    git_clone_project("https://github.com/google/oss-fuzz", oss_fuzz_local_clone)
+
+    OSS_FUZZ_CLONE = oss_fuzz_local_clone
+    build_status_dict = get_projects_build_status()
+    update_build_status(build_status_dict)
     analyse_set_of_dates(date_range, project_list, output_directory)
 
 

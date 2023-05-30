@@ -31,6 +31,10 @@ def load_db():
     project_currents = os.path.join(
         os.path.dirname(__file__),
         "../static/assets/db/all-project-current.json")
+    projects_build_status = os.path.join(
+        os.path.dirname(__file__),
+        "../static/assets/db/build-status.json")
+
     if len(test_data.TEST_DB_TIMESTAMPS) > 0:
         return
 
@@ -100,4 +104,22 @@ def load_db():
                 introspector_report_url=project_timestamp[
                     'introspector_report_url'],
                 code_coverage_report_url=project_timestamp['coverage_url']))
+
+    if os.path.isfile(projects_build_status):
+        # Read the builds
+        with open(projects_build_status, 'r') as f:
+            build_json = json.load(f)
+
+        for project_name in build_json:
+            project_dict = build_json[project_name]
+
+            test_data.TEST_BUILD_STATUS.append(
+                models.BuildStatus(
+                    project_name=project_name,
+                    fuzz_build_status=project_dict['fuzz-build'],
+                    coverage_build_status=project_dict['cov-build'],
+                    introspector_build_status=project_dict['introspector-build'],
+                    language=project_dict['language'])
+            )
+
     return

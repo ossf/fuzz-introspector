@@ -691,3 +691,19 @@ button.btn__primary {
   margin-bottom: 0;
   background: #fff;
 }
+
+.green_dot {
+  height: 15px;
+  width: 15px;
+  background-color: #00FF00;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.red_dot {
+  height: 15px;
+  width: 15px;
+  background-color: #FF0000;
+  border-radius: 50%;
+  display: inline-block;
+}

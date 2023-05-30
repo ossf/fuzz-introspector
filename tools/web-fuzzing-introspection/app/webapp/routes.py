@@ -177,6 +177,10 @@ def projects_overview():
     projects = test_data.get_projects()
     return render_template('projects-overview.html', all_projects=projects)
 
+@blueprint.route('/indexing-overview')
+def indexing_overview():
+    build_status = test_data.get_build_status()
+    return render_template('indexing-overview.html', all_build_status=build_status)
 
 @blueprint.route('/about')
 def about():

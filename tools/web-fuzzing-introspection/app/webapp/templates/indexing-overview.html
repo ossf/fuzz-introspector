@@ -1,0 +1,76 @@
+{% extends "base.html" %}                                                       
+{% block content %}        
+<!-- main content -->
+    <main>
+      <!-- hero area -->
+      <section class="search__hero overview__hero">
+        <div class="container">
+          <div class="search__hero-wrapper">
+            <h1 class="section__title">
+              Fuzzing Introspection Indexing OSS-Fuzz projects
+            </h1>
+          </div>
+          <div class="database overviewBody">
+            <div class="database__header">
+              <div class="database__header-right">
+                <button type="button" class="btn__table" onclick="location.href='https://github.com/ossf/fuzz-introspector'">
+                  Fuzz Introspector
+                </button>
+                <button type="button" class="btn__table" onclick="location.href='https://github.com/ossf/fuzz-introspector/issues'">Suggest ideas</button>
+                <button type="button" class="btn__table" onclick="location.href='https://github.com/ossf/fuzz-introspector/issues'">Report issues</button>
+              </div>
+            </div>
+            <div class="database__body">
+              <table id="projectOverviewTable">
+                <thead>
+                  <tr>
+                    <td>Project name</td>
+                    <td>Language</td>
+                    <td>Fuzz build status</td>
+                    <td>Coverage build status</td>
+                    <td>Introspector build status</td>
+                  </tr>
+                </thead>
+                <tbody>
+                {% for build_status in all_build_status %}
+                  <tr>
+                      <td> <a href="/project-profile?project={{build_status.project_name}}">{{ build_status.project_name }}</a> </td>
+                      <td> {{ build_status.language }} </td>
+                      <td>
+                        {% if build_status.fuzz_build_status %}
+                        <span class="green_dot"></span> success
+                        {% else %}
+                        <span class="red_dot"></span> fail
+                        {% endif %}
+                      </td>                      
+                      <td>
+                        {% if build_status.coverage_build_status %}
+                        <span class="green_dot"></span> success
+                        {% else %}
+                        <span class="red_dot"></span> fail
+                        {% endif %}
+                      </td>
+                      <td>
+                        {% if build_status.introspector_build_status %}
+                        <span class="green_dot"></span> success
+                        {% else %}
+                        <span class="red_dot"></span> fail
+                        {% endif %}
+                      </td>
+                  </tr>
+                {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+      <!-- end hero area -->
+    </main>
+    <!-- end main content -->
+ <script>
+  $( document ).ready(function() {
+    $('#projectOverviewTable').dataTable({'pageLength': 1000})
+  });
+ </script> 
+{% endblock %}

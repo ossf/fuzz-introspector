@@ -99,3 +99,11 @@ class BranchBlocker:
         self.project_name = project_name
         self.function_name = function_name
         self.unique_blocked_coverage = unique_blocked_coverage
+
+class BuildStatus:
+    def __init__(self, project_name, fuzz_build_status, coverage_build_status, introspector_build_status, language):
+        self.project_name = project_name
+        self.fuzz_build_status = fuzz_build_status
+        self.coverage_build_status = coverage_build_status
+        self.introspector_build_status = introspector_build_status
+        self.language = language
