@@ -13,6 +13,8 @@ TEST_FUNCTIONS = []
 
 TEST_BLOCKERS = []
 
+TEST_BUILD_STATUS = []
+
 def get_projects():
   return TEST_PROJECTS
 
@@ -21,3 +23,6 @@ def get_functions():
 
 def get_blockers():
   return TEST_BLOCKERS
+
+def get_build_status():
+  return TEST_BUILD_STATUS
