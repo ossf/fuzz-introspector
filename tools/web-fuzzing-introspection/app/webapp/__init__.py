@@ -119,7 +119,10 @@ def load_db():
                     fuzz_build_status=project_dict['fuzz-build'],
                     coverage_build_status=project_dict['cov-build'],
                     introspector_build_status=project_dict['introspector-build'],
-                    language=project_dict['language'])
+                    language=project_dict['language'],
+                    introspector_build_log = project_dict['introspector-build-log'],
+                    coverage_build_log = project_dict['cov-build-log'],
+                    fuzz_build_log = project_dict['fuzz-build-log'])
             )
 
     return
