@@ -37,21 +37,21 @@
                       <td> <a href="/project-profile?project={{build_status.project_name}}">{{ build_status.project_name }}</a> </td>
                       <td> {{ build_status.language }} </td>
                       <td>
-                        {% if build_status.fuzz_build_status %}
+                        {% if build_status.fuzz_build_status == True%}
                         <span class="green_dot"></span> success
                         {% else %}
                         <span class="red_dot"></span> fail
                         {% endif %}
                       </td>                      
                       <td>
-                        {% if build_status.coverage_build_status %}
+                        {% if build_status.coverage_build_status == True%}
                         <span class="green_dot"></span> success
                         {% else %}
                         <span class="red_dot"></span> fail
                         {% endif %}
                       </td>
                       <td>
-                        {% if build_status.introspector_build_status %}
+                        {% if build_status.introspector_build_status == True %}
                         <span class="green_dot"></span> success
                         {% else %}
                         <span class="red_dot"></span> fail
