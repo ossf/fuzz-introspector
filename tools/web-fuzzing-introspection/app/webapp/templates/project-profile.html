@@ -19,33 +19,58 @@
                   </tr>
                   <tr>
                     <td>Fuzzer count</td>
-                    <td> {{ project.fuzz_count }}</td>
+                    {% if has_project_details %}
+                      <td> {{ project.fuzz_count }}</td>
+                    {% else %}
+                      <td>N/A</td>
+                    {% endif %}                          
                   </tr>
                   <tr>
                     <td>Code coverage</td>
-                    <td> {{ '%0.2f' % project.runtime_cov |float}}% </td>
+                    {% if has_project_details %}
+                      <td> {{ '%0.2f' % project.runtime_cov |float}}% </td>
+                    {% else %}
+                      <td>N/A</td>
+                    {% endif %}                      
                   </tr>
                   <tr>
                     <td>Static reachability</td>
-                    <td> {{ '%0.2f' % project.reach |float }} </td>
+                    {% if has_project_details %}
+                      <td> {{ '%0.2f' % project.reach |float }} </td>
+                    {% else %}
+                      <td>N/A</td>
+                    {% endif %}
                   </tr>
                   <tr>
                     <td>Code coverage report</td>
+                    {% if has_project_details %}
                     <td><a href="{{ project.code_coverage_report_url }}">Report link</a></td>
+                    {% else %}
+                      <td>N/A</td>
+                    {% endif %}                             
                   </tr>
                   <tr>
                     <td>Fuzz Introspector report</td>
-                    <td><a href="{{ project.introspector_report_url }}">Report link</a></td>
+                    {% if has_project_details %}
+                      <td><a href="{{ project.introspector_report_url }}">Report link</a></td>
+                    {% else %}
+                      <td>N/A</td>
+                    {% endif %}                      
                   </tr>
+                  <tr>
+                    <td>OSS-Fuzz set up</td>
+                    <td> <a href="{{ oss_fuzz_url }}">link</a></td>
+                  </tr>                  
                 </tbody>
               </table>
             </div>
           </div>
           <!-- project profile table -->
 
-
+          
           <div class="project__progress">
             <h2>Historical progression</h2>
+            {% if has_project_details %}
             <div class="progress__graph">
               <!-- single graph -->
               <div class="single__graph">
@@ -73,13 +98,22 @@
                 </div>
               </div>
             </div>
-          </div>
+            {% else %}
+            <p>Data not available because the Fuzz Introspector build failing. Please see indexing page for the relevant build logs. Once the build is working the data on this page will be populated.</p>
+            {% endif %}
+          </div> <!-- project progress -->
+          
+
+
         </div>
       </section>
     </main>
     <!-- end main content -->
     <!-- footer -->
+{% if has_project_details %}    
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+
 <script>
 
 // Plot for code coverage in terms of lines over time
@@ -159,5 +193,6 @@ const fuzzer_count_layout = {
 Plotly.newPlot("fuzzerCountOverTimePlot", fuzzer_count_data, fuzzer_count_layout);
 
 </script>
+{% endif %}
 
 {% endblock %}
