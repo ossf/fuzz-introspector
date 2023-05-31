@@ -14,7 +14,7 @@
 
 import random
 
-from flask import Blueprint, render_template, request
+from flask import Blueprint, render_template, request, redirect
 
 #from app.site import models
 from . import models
@@ -50,7 +50,7 @@ def get_project_with_name(project_name):
             return project
 
     # TODO: Handle the case where there is no such project.
-    return all_projects[0]
+    return None
 
 
 def get_fuction_with_name(function_name, project_name):
@@ -91,12 +91,15 @@ def index():
     max_fuzzer_count = int(max_fuzzer_count * 1.2)
     max_function_count = int(max_function_count * 1.2)
 
+
+    oss_fuzz_total_number = len(test_data.get_build_status())
     return render_template('index.html',
                            db_summary=db_summary,
                            db_timestamps=db_timestamps,
                            max_proj=max_proj,
                            max_fuzzer_count=max_fuzzer_count,
-                           max_function_count=max_function_count)
+                           max_function_count=max_function_count,
+                           oss_fuzz_total_number = oss_fuzz_total_number)
 
 
 @blueprint.route('/function-profile', methods=['GET'])
@@ -114,15 +117,42 @@ def function_profile():
 @blueprint.route('/project-profile', methods=['GET'])
 def project_profile():
     #print(request.args.get('project', 'none'))
-    project = get_project_with_name(request.args.get('project', 'none'))
-    project_statistics = test_data.TEST_PROJECT_TIMESTAMPS
-    real_stats = []
-    for ps in project_statistics:
-        if ps.project_name == project.name:
-            real_stats.append(ps)
-    return render_template('project-profile.html',
-                           project=project,
-                           project_statistics=real_stats)
+    target_project_name = request.args.get('project', 'none')
+    oss_fuzz_url = 'https://github.com/google/oss-fuzz/tree/master/projects/' + target_project_name
+    project = get_project_with_name(target_project_name)
+    if project != None:
+        project_statistics = test_data.TEST_PROJECT_TIMESTAMPS
+        real_stats = []
+        for ps in project_statistics:
+            if ps.project_name == project.name:
+                real_stats.append(ps)
+
+        return render_template('project-profile.html',
+                               project=project,
+                               project_statistics=real_stats,
+                               oss_fuzz_url=oss_fuzz_url,
+                               has_project_details=True)
+
+    # Either this is a wrong project or we only have a build status for it
+    all_build_status = test_data.get_build_status()
+    for build_status in all_build_status:
+        if build_status.project_name == target_project_name:
+            project = models.Project(
+                name=build_status.project_name,
+                language=build_status.language,
+                fuzz_count=0,
+                reach=0,
+                runtime_cov=0,
+                introspector_report_url="#",
+                code_coverage_report_url="#")
+
+            return render_template('project-profile.html',
+                               project=project,
+                               project_statistics=None,
+                               oss_fuzz_url=oss_fuzz_url,
+                               has_project_details=False)
+    print("Nothing to do. We shuold probably have a 404")
+    return redirect("/")
 
 
 @blueprint.route('/function-search')

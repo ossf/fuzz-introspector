@@ -30,7 +30,9 @@
         <div class="container">
           <div class="overview__wrapper">
             <h2 class="section__title">Database overview</h2>
+             <p>OSS-Fuzz continuously fuzzes a total of {{oss_fuzz_total_number}} open source projects, and the list is growing. This page indexes projects integrated into OSS-Fuzz based on the fuzzing introspection tool Fuzz Introspector. Since not all languages in OSS-Fuzz are supported by Fuzz Introspector and some projects fail to build with the compiler extensions of Fuzz Introspector the total number of projects indexed on this page is a subset of the total OSS-Fuzz count. For an overview of our project indexing please see the <a href="{{ url_for('site.indexing_overview') }}">indexing overview</a> page. In total, the projects indexed so far include:</p>
             <div class="overview__content">
+
               <!-- single overview -->
               <div class="single__overview">
                 <div class="overvide__counter">
