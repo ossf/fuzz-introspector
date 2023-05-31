@@ -83,7 +83,7 @@ public class CallGraphGenerator {
     String entryClass = args[1];
     String entryMethod = args[2];
     String targetPackagePrefix = args[3];
-    Boolean isAutoFuzz = (args[4].equals("True"))? true : false;
+    Boolean isAutoFuzz = (args[4].equals("True")) ? true : false;
     String includePrefix = "";
     String excludePrefix = "";
     String sinkMethod = "";
@@ -103,7 +103,13 @@ public class CallGraphGenerator {
     // Add an custom analysis phase to Soot
     CustomSenceTransformer custom =
         new CustomSenceTransformer(
-            entryClass, entryMethod, targetPackagePrefix, includePrefix, excludePrefix, sinkMethod, isAutoFuzz);
+            entryClass,
+            entryMethod,
+            targetPackagePrefix,
+            includePrefix,
+            excludePrefix,
+            sinkMethod,
+            isAutoFuzz);
     PackManager.v().getPack("wjtp").add(new Transform("wjtp.custom", custom));
 
     // Set basic settings for the call graph generation
@@ -185,7 +191,14 @@ class CustomSenceTransformer extends SceneTransformer {
       String includePrefix,
       String excludePrefix,
       String sinkMethod) {
-      this(entryClassStr, entryMethodStr, targetPackagePrefix, includePrefix, excludePrefix, sinkMethod, false);
+    this(
+        entryClassStr,
+        entryMethodStr,
+        targetPackagePrefix,
+        includePrefix,
+        excludePrefix,
+        sinkMethod,
+        false);
   }
 
   public CustomSenceTransformer(
@@ -617,7 +630,6 @@ class CustomSenceTransformer extends SceneTransformer {
       this.methodList.addFunctionElement(element);
     }
   }
-
 
   // Shorthand for extractCallTree from top
   private String extractCallTree(CallGraph cg, SootMethod method, Integer depth, Integer line) {
