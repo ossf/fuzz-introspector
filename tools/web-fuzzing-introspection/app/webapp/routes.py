@@ -91,12 +91,15 @@ def index():
     max_fuzzer_count = int(max_fuzzer_count * 1.2)
     max_function_count = int(max_function_count * 1.2)
 
+
+    oss_fuzz_total_number = len(test_data.get_build_status())
     return render_template('index.html',
                            db_summary=db_summary,
                            db_timestamps=db_timestamps,
                            max_proj=max_proj,
                            max_fuzzer_count=max_fuzzer_count,
-                           max_function_count=max_function_count)
+                           max_function_count=max_function_count,
+                           oss_fuzz_total_number = oss_fuzz_total_number)
 
 
 @blueprint.route('/function-profile', methods=['GET'])
