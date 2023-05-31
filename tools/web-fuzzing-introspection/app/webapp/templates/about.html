@@ -20,6 +20,53 @@
             </p>
         </div>
       </section>
+
+      <section class="overview">
+        <div class="container">
+          <div class="overview__wrapper">
+            <h2 class="section__title">FAQs</h2>
+
+              <div style="padding-top: 5px;">
+                <p>
+                  <center>
+                    <a class="btn btn__primary" data-bs-toggle="collapse" href="#collapseExample" role="button" aria-expanded="false" aria-controls="collapseExample">
+                      My project is on OSS-Fuzz but is not indexed?
+                    </a>
+                  </center>
+                </p>
+
+                <div class="collapse" id="collapseExample">
+                  <div class="card card-body">
+                    There are two main reasons for this:
+                    <ol>
+                        <li>
+                            1) In order to index the project it needs to be analysed by Fuzz Introspector. Fuzz Introspector currently supports C/C++/Python/Java so if your project is in another language than this then it currently can't be indexed.
+                        </li>
+                        <li>
+                            2) The OSS-Fuzz build is currently failing either code coverage builds or fuzz introspector builds, if any of these are failing then the project will not be indexed.
+                        </li>
+                    </ol>
+                  </div>
+                </div>
+            </div>
+
+            <div style="padding-top: 5px;">
+              <p>
+                <center>
+                  <a class="btn btn__primary" data-bs-toggle="collapse" href="#addOssFuzzProject" role="button" aria-expanded="false" aria-controls="addOssFuzzProject">
+                    I would like to add an open source project to the database, how do I do this?
+                  </a>
+                </center>
+              </p>
+              <div class="collapse" id="addOssFuzzProject">
+                <div class="card card-body">
+                  Any project integrated into https://github.com/google/oss-fuzz will be added to this database. Please add your project to OSS-Fuzz and it will be automatically indexed.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
       <!-- end hero area -->
       <!-- end database overview -->
     </main>
