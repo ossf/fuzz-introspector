@@ -70,6 +70,13 @@ def load_all_profiles(
         language: str,
         parallelise: bool = True) -> List[fuzzer_profile.FuzzerProfile]:
     """Loads all profiles in target_folder in a multi-threaded manner"""
+
+    # Disable multiprocessing for jvm profiles as it will result in
+    # recursion error easily because java data.yaml file are generally
+    # large
+    if language == "jvm":
+        parallelise = False
+
     profiles = []
     data_files = utils.get_all_files_in_tree_with_regex(
         target_folder, "fuzzerLogFile.*\.data$")
