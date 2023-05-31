@@ -54,6 +54,10 @@ while [[ $# -gt 0 ]]; do
       shift
       shift
       ;;
+    -a|--autofuzz)
+      AUTOFUZZ="True"
+      shift
+      ;;
     *)
       echo "Unknown option $1"
       exit 1
@@ -96,6 +100,10 @@ then
     echo "No target package prefix defined, analysing all packages"
     PACKAGEPREFIX="ALL"
 fi
+if [ -z $AUTOFUZZ ]
+then
+    AUTOFUZZ="False"
+fi
 
 # Build and execute the call graph generator
 mvn clean package -Dmaven.test.skip
@@ -104,5 +112,5 @@ mvn clean package -Dmaven.test.skip
 for CLASS in $(echo $ENTRYCLASS | tr ":" "\n")
 do
     echo $CLASS
-    java -Xmx6144M -cp "target/ossf.fuzz.introspector.soot-1.0.jar" ossf.fuzz.introspector.soot.CallGraphGenerator $JARFILE $CLASS $ENTRYMETHOD "$PACKAGEPREFIX" "$INCLUDEPREFIX===$EXCLUDEPREFIX===$SINKMETHOD"
+    java -Xmx6144M -cp "target/ossf.fuzz.introspector.soot-1.0.jar" ossf.fuzz.introspector.soot.CallGraphGenerator $JARFILE $CLASS $ENTRYMETHOD "$PACKAGEPREFIX" $AUTOFUZZ "$INCLUDEPREFIX===$EXCLUDEPREFIX===$SINKMETHOD"
 done
