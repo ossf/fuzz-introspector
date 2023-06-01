@@ -79,7 +79,10 @@ class FuzzerVisitor(ast.NodeVisitor):
                     self.visit_Call(lhs_obj)
                     lhs_obj = None
             if lhs_obj is not None:
-                lhs = lhs_obj.id + lhs
+                try:
+                    lhs = lhs_obj.id + lhs
+                except AttributeError:
+                    lhs = ""
             print(" [C] %s" % (lhs))
 
             # Check if we have atheris.Setup
