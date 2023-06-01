@@ -81,7 +81,7 @@ class FuzzerVisitor(ast.NodeVisitor):
             if lhs_obj is not None:
                 try:
                     lhs = lhs_obj.id + lhs
-                except:
+                except AttributeError:
                     lhs = ""
             print(" [C] %s" % (lhs))
 
