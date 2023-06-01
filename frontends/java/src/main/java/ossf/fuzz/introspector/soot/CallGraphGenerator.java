@@ -74,7 +74,7 @@ import soot.toolkits.graph.UnitGraph;
 public class CallGraphGenerator {
   public static void main(String[] args) {
     System.out.println("[Callgraph] Running callgraph plugin");
-    if (args.length < 4 || args.length > 5) {
+    if (args.length < 5 || args.length > 6) {
       System.err.println("No jarFiles, entryClass, entryMethod and target package.");
       return;
     }
@@ -83,13 +83,14 @@ public class CallGraphGenerator {
     String entryClass = args[1];
     String entryMethod = args[2];
     String targetPackagePrefix = args[3];
+    Boolean isAutoFuzz = (args[4].equals("True")) ? true : false;
     String includePrefix = "";
     String excludePrefix = "";
     String sinkMethod = "";
-    if (args.length == 5) {
-      includePrefix = args[4].split("===")[0];
-      excludePrefix = args[4].split("===")[1];
-      sinkMethod = args[4].split("===")[2];
+    if (args.length == 6) {
+      includePrefix = args[5].split("===")[0];
+      excludePrefix = args[5].split("===")[1];
+      sinkMethod = args[5].split("===")[2];
     }
     if (jarFiles.size() < 1) {
       System.err.println("Invalid jarFiles");
@@ -102,7 +103,13 @@ public class CallGraphGenerator {
     // Add an custom analysis phase to Soot
     CustomSenceTransformer custom =
         new CustomSenceTransformer(
-            entryClass, entryMethod, targetPackagePrefix, includePrefix, excludePrefix, sinkMethod);
+            entryClass,
+            entryMethod,
+            targetPackagePrefix,
+            includePrefix,
+            excludePrefix,
+            sinkMethod,
+            isAutoFuzz);
     PackManager.v().getPack("wjtp").add(new Transform("wjtp.custom", custom));
 
     // Set basic settings for the call graph generation
@@ -175,6 +182,7 @@ class CustomSenceTransformer extends SceneTransformer {
   private String entryMethodStr;
   private SootMethod entryMethod;
   private FunctionConfig methodList;
+  private Boolean isAutoFuzz;
 
   public CustomSenceTransformer(
       String entryClassStr,
@@ -183,8 +191,27 @@ class CustomSenceTransformer extends SceneTransformer {
       String includePrefix,
       String excludePrefix,
       String sinkMethod) {
+    this(
+        entryClassStr,
+        entryMethodStr,
+        targetPackagePrefix,
+        includePrefix,
+        excludePrefix,
+        sinkMethod,
+        false);
+  }
+
+  public CustomSenceTransformer(
+      String entryClassStr,
+      String entryMethodStr,
+      String targetPackagePrefix,
+      String includePrefix,
+      String excludePrefix,
+      String sinkMethod,
+      Boolean isAutoFuzz) {
     this.entryClassStr = entryClassStr;
     this.entryMethodStr = entryMethodStr;
+    this.isAutoFuzz = isAutoFuzz;
     this.entryMethod = null;
 
     targetPackageList = new LinkedList<String>();
@@ -311,7 +338,9 @@ class CustomSenceTransformer extends SceneTransformer {
       } else {
         System.out.println("[Callgraph] [SKIP] class: " + cname);
       }
-      this.includeConstructor(c);
+      if (isAutoFuzz) {
+        this.includeConstructor(c);
+      }
     }
     System.out.println("[Callgraph] Finished going through classes");
 
@@ -323,14 +352,14 @@ class CustomSenceTransformer extends SceneTransformer {
       mList.addAll(classMethodMap.get(c));
       for (SootMethod m : mList) {
         if (this.excludeMethodList.contains(m.getName())) {
-          System.out.println("[Callgraph] Skipping method: " + m.getName());
+          // System.out.println("[Callgraph] Skipping method: " + m.getName());
           continue;
         }
         if (isSinkClass) {
-          System.out.println("[Callgraph] Skipping sink method: " + m.getName());
+          // System.out.println("[Callgraph] Skipping sink method: " + m.getName());
           continue;
         }
-        System.out.println("[Callgraph] Analysing method: " + m.getName());
+        // System.out.println("[Callgraph] Analysing method: " + m.getName());
 
         // Discover method related information
         FunctionElement element = new FunctionElement();
@@ -349,17 +378,19 @@ class CustomSenceTransformer extends SceneTransformer {
         for (soot.Type type : m.getParameterTypes()) {
           element.addArgType(type.toString());
         }
-        JavaMethodInfo methodInfo = new JavaMethodInfo();
-        methodInfo.setIsConcrete(m.isConcrete());
-        methodInfo.setIsJavaLibraryMethod(m.isJavaLibraryMethod());
-        methodInfo.setIsPublic(m.isPublic());
-        methodInfo.setIsStatic(m.isStatic());
-        methodInfo.setIsClassEnum(c.isEnum());
-        methodInfo.setIsClassPublic(c.isPublic());
-        for (SootClass exception : m.getExceptions()) {
-          methodInfo.addException(exception.getFilePath());
+        if (isAutoFuzz) {
+          JavaMethodInfo methodInfo = new JavaMethodInfo();
+          methodInfo.setIsConcrete(m.isConcrete());
+          methodInfo.setIsJavaLibraryMethod(m.isJavaLibraryMethod());
+          methodInfo.setIsPublic(m.isPublic());
+          methodInfo.setIsStatic(m.isStatic());
+          methodInfo.setIsClassEnum(c.isEnum());
+          methodInfo.setIsClassPublic(c.isPublic());
+          for (SootClass exception : m.getExceptions()) {
+            methodInfo.addException(exception.getFilePath());
+          }
+          element.setJavaMethodInfo(methodInfo);
         }
-        element.setJavaMethodInfo(methodInfo);
 
         // Identify in / out edges of each method.
         int methodEdges = 0;
@@ -417,7 +448,7 @@ class CustomSenceTransformer extends SceneTransformer {
           element.setBBCount(0);
           element.setiCount(0);
           element.setCyclomaticComplexity(0);
-          methodList.addFunctionElement(element);
+          this.addMethodElement(element);
           // System.err.println("Source code for " + m + " not found.");
           continue;
         }
@@ -449,7 +480,7 @@ class CustomSenceTransformer extends SceneTransformer {
         UnitGraph unitGraph = new BriefUnitGraph(methodBody);
         element.setCyclomaticComplexity(calculateCyclomaticComplexity(unitGraph));
 
-        methodList.addFunctionElement(element);
+        this.addMethodElement(element);
       }
     }
     try {
@@ -541,7 +572,7 @@ class CustomSenceTransformer extends SceneTransformer {
 
         element.setJavaMethodInfo(methodInfo);
 
-        methodList.addFunctionElement(element);
+        this.addMethodElement(element);
       }
     }
   }
@@ -566,19 +597,21 @@ class CustomSenceTransformer extends SceneTransformer {
       element.setiCount(0);
       element.setCyclomaticComplexity(0);
 
-      JavaMethodInfo methodInfo = new JavaMethodInfo();
-      methodInfo.setIsConcrete(method.isConcrete());
-      methodInfo.setIsJavaLibraryMethod(method.isJavaLibraryMethod());
-      methodInfo.setIsPublic(method.isPublic());
-      methodInfo.setIsStatic(method.isStatic());
-      methodInfo.setIsClassEnum(method.getDeclaringClass().isEnum());
-      methodInfo.setIsClassPublic(method.getDeclaringClass().isPublic());
-      for (SootClass exception : method.getExceptions()) {
-        methodInfo.addException(exception.getFilePath());
+      if (isAutoFuzz) {
+        JavaMethodInfo methodInfo = new JavaMethodInfo();
+        methodInfo.setIsConcrete(method.isConcrete());
+        methodInfo.setIsJavaLibraryMethod(method.isJavaLibraryMethod());
+        methodInfo.setIsPublic(method.isPublic());
+        methodInfo.setIsStatic(method.isStatic());
+        methodInfo.setIsClassEnum(method.getDeclaringClass().isEnum());
+        methodInfo.setIsClassPublic(method.getDeclaringClass().isPublic());
+        for (SootClass exception : method.getExceptions()) {
+          methodInfo.addException(exception.getFilePath());
+        }
+        element.setJavaMethodInfo(methodInfo);
       }
-      element.setJavaMethodInfo(methodInfo);
 
-      methodList.addFunctionElement(element);
+      this.addMethodElement(element);
     }
   }
 
@@ -589,6 +622,13 @@ class CustomSenceTransformer extends SceneTransformer {
       }
     }
     return null;
+  }
+
+  // Add method element to the method list, ignoring method already added to the list
+  private void addMethodElement(FunctionElement element) {
+    if (this.searchElement(element.getFunctionName()) == null) {
+      this.methodList.addFunctionElement(element);
+    }
   }
 
   // Shorthand for extractCallTree from top
@@ -829,19 +869,15 @@ class CustomSenceTransformer extends SceneTransformer {
       }
 
       if (!excluded) {
-        if (cg.edgesOutOf(edge.tgt()).hasNext()) {
-          edgeList.add(edge);
+        Set<String> classNameSet;
+        if (this.edgeClassMap.containsKey(matchStr)) {
+          classNameSet = new HashSet<String>(this.edgeClassMap.get(matchStr));
         } else {
-          Set<String> classNameSet;
-          if (this.edgeClassMap.containsKey(matchStr)) {
-            classNameSet = new HashSet<String>(this.edgeClassMap.get(matchStr));
-          } else {
-            classNameSet = new HashSet<String>();
-            edgeList.add(edge);
-          }
-          classNameSet.add(className);
-          this.edgeClassMap.put(matchStr, classNameSet);
+          classNameSet = new HashSet<String>();
+          edgeList.add(edge);
         }
+        classNameSet.add(className);
+        this.edgeClassMap.put(matchStr, classNameSet);
       }
     }
 
@@ -854,6 +890,7 @@ class CustomSenceTransformer extends SceneTransformer {
     for (String key : keySet) {
       this.edgeClassMap.remove(key);
     }
+
     return this.sortEdgeByLineNumber(edgeList.iterator());
   }
 
