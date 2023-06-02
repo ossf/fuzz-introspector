@@ -313,7 +313,11 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
         linenumber = function.function_linenumber
 
         if target_name and target_name in function.callsite.keys():
-            linenumber = int(function.callsite[target_name][0].split(':')[1])
+            try:
+                linenumber = int(
+                    function.callsite[target_name][0].split(':')[1])
+            except ValueError:
+                linenumber = -1
 
         link = proj_profile.resolve_coverage_report_link(
             proj_profile.coverage_url,
