@@ -153,7 +153,12 @@ do
       break
     elif test -f "pom.xml"
     then
-      sed -i 's/>1.5</>1.8</g' pom.xml
+      find ./ -name pom.xml -exec sed -i 's/>1.5</>1.8</g' {} \;
+      find ./ -name pom.xml -exec sed -i 's/>1.6</>1.8</g' {} \;
+      find ./ -name pom.xml -exec sed -i 's/java15/java18/g' {} \;
+      find ./ -name pom.xml -exec sed -i 's/java16/java18/g' {} \;
+      find ./ -name pom.xml -exec sed -i 's/java-1.5/java-1.8/g' {} \;
+      find ./ -name pom.xml -exec sed -i 's/java-1.6/java-1.8/g' {} \;
       MAVEN_ARGS="-Dmaven.test.skip=true -Djavac.src.version=15 -Djavac.target.version=15 --update-snapshots"
       $MVN clean package $MAVEN_ARGS
       if [[ $? != "0" ]]
