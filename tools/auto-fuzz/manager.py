@@ -248,7 +248,8 @@ def _maven_build_project(basedir, projectdir):
         basedir, constants.MAVEN_PATH) + ":" + env_var['PATH']
 
     # Patch pom.xml to use at least jdk 1.8
-    cmd = ["find ./ -name pom.xml -exec sed -i 's/>1.5</>1.8</g' {} \;",
+    cmd = [
+        "find ./ -name pom.xml -exec sed -i 's/>1.5</>1.8</g' {} \;",
         "find ./ -name pom.xml -exec sed -i 's/>1.6</>1.8</g' {} \;",
         "find ./ -name pom.xml -exec sed -i 's/java15/java18/g' {} \;",
         "find ./ -name pom.xml -exec sed -i 's/java16/java18/g' {} \;",
