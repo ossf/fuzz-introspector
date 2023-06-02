@@ -314,7 +314,8 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
 
         if target_name and target_name in function.callsite.keys():
             try:
-                linenumber = int(function.callsite[target_name][0].split(':')[1])
+                linenumber = int(
+                    function.callsite[target_name][0].split(':')[1])
             except ValueError:
                 linenumber = -1
 
