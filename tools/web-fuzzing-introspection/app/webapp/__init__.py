@@ -45,7 +45,8 @@ def load_db():
             models.DBTimestamp(date=ts['date'],
                                project_count=ts['project_count'],
                                fuzzer_count=ts['fuzzer_count'],
-                               function_count=ts['function_count']))
+                               function_count=ts['function_count'],
+                               function_coverage_estimate=ts['function_coverage_estimate']))
 
     with open(all_functions_file, 'r') as f:
         all_function_list = json.load(f)
