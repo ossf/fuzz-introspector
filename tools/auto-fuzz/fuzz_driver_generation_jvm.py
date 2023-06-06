@@ -737,7 +737,8 @@ def _extract_method(yaml_dict):
 
         # Add candidates to result lists
         if func_elem['JavaMethodInfo']['static']:
-            static_method_list.append(func_elem)
+            if len(func_elem['argTypes']) > 0:
+                static_method_list.append(func_elem)
         else:
             instance_method_list.append(func_elem)
             # Check if this method belongs to this project
@@ -746,12 +747,9 @@ def _extract_method(yaml_dict):
             if _is_project_class(
                     func_elem['functionSourceFile'].split("$")[0]):
                 func_name = func_elem['functionName'].split("].")[1]
-                # Exclude possible getters and setters
-                if func_name.startswith("get") and len(
-                        func_elem['argTypes']) == 0:
-                    continue
-                if func_name.startswith("is") and len(
-                        func_elem['argTypes']) == 0:
+                # Exclude possible getters, setters and methods
+                # does not take any arguments
+                if len(func_elem['argTypes']) == 0:
                     continue
                 if func_name.startswith("set") and len(
                         func_elem['argTypes']) == 1:
@@ -766,7 +764,6 @@ def _extract_method(yaml_dict):
                 for object_method in object_methods:
                     if object_method in func_elem['functionName']:
                         continue
-
                 method_list.append(func_elem)
 
     method_list = _filter_polymorphism(method_list)
@@ -777,7 +774,7 @@ def _generate_heuristic_1(method_tuple, possible_targets, max_target):
     """Heuristic 1.
     Creates a single FuzzTarget for all method that satisfy all:
         - public class method which are not abstract or found in JDK library
-        - have between 0-20 arguments
+        - have between 1-20 arguments
         - do not have "test" or "Demo" in the function name or class name
     The fuzz target is simply one that calls into the target class function with
     suitable primitive fuzz data or simple concrete public constructor
@@ -861,7 +858,7 @@ def _generate_heuristic_2(method_tuple, possible_targets, max_target):
     """Heuristic 2.
     Creates a FuzzTarget for each method that satisfy all:
         - public object method which are not abstract or found in JDK library
-        - have between 0-20 arguments
+        - have between 1-20 arguments
         - do not have "test" or "demo" in the function name or class name
     The fuzz target is simply one that calls into the target function with
     seeded fuzz data. It will create the object with the class constructor
@@ -925,7 +922,7 @@ def _generate_heuristic_3(method_tuple, possible_targets, max_target):
     """Heuristic 3.
     Creates a FuzzTarget for each method that satisfy all:
         - public object method which are not abstract or found in JDK library
-        - have between 0-20 arguments
+        - have between 1-20 arguments
         - do not have "test" or "demo" in the function name or class name
     and Object creation method that satisfy all:
         - public static method which are not abstract
@@ -996,7 +993,7 @@ def _generate_heuristic_4(method_tuple, possible_targets, max_target):
     """Heuristic 4.
     Creates a FuzzTarget for each method that satisfy all:
         - public object method which are not abstract or found in JDK library
-        - have between 0-20 arguments
+        - have between 1-20 arguments
         - do not have "test" or "demo" in the function name or class name
     and Object creation method that satisfy all:
         - public non-static method which are not abstract
@@ -1066,7 +1063,7 @@ def _generate_heuristic_6(method_tuple, possible_targets, max_target):
     """Heuristic 6.
     Creates a FuzzTarget for each method that satisfy all:
         - public object method which are not abstract or found in JDK library
-        - have between 0-20 arguments
+        - have between 1-20 arguments
         - do not have "test" or "demo" in the function name or class name
         - require certain pre-settings before use (by calling all non-static
           method of the same class which does not have return values or start with
@@ -1146,7 +1143,7 @@ def _generate_heuristic_7(method_tuple, possible_targets, max_target):
     """Heuristic 7.
     Creates a FuzzTarget for each method that satisfy all:
         - public static or object method which are not abstract or found in JDK library
-        - have between 0-20 arguments
+        - have between 1-20 arguments
         - do not have "test" or "demo" in the function name or class name
         - have return value
 
@@ -1260,7 +1257,7 @@ def _generate_heuristic_8(method_tuple, possible_targets, max_target):
     """Heuristic 8.
     Creates a FuzzTarget for each method that satisfy all:
         - public object method which are not abstract or found in JDK library
-        - have between 0-20 arguments
+        - have between 1-20 arguments
         - do not have "test" or "demo" in the function name or class name
         - require enum object as parameter
 
@@ -1341,7 +1338,7 @@ def _generate_heuristic_9(method_tuple, possible_targets, max_target):
     """Heuristic 9.
     Creates a FuzzTarget for each method that satisfy all:
         - public object method which are not abstract or found in JDK library
-        - have between 0-20 arguments
+        - have between 1-20 arguments
         - do not have "test" or "demo" in the function name or class name
 
     Use public static final object defined in the target class for getting
@@ -1425,7 +1422,7 @@ def _generate_heuristic_10(method_tuple, possible_targets, max_target):
     """Heuristic 10.
     Creates a FuzzTarget for each method that satisfy all:
         - public object or static method which are not abstract or found in JDK library
-        - have between 0-20 arguments
+        - have between 1-20 arguments
         - do not have "test" or "demo" in the function name or class name
         - Have at least one arguments required a class object.
 
