@@ -189,9 +189,9 @@ def _is_method_excluded(func_elem):
             test = True
     if constants.JAVA_IGNORE_OBJECT_METHOD:
         object_methods = [
-            'clone()', 'equals(java.lang.Object)', 'finalize()',
-            'getClass()', 'hashCode()', 'notify()', 'notifyAll()',
-            'toString()', 'wait()', 'wait(long)', 'wait(long,int)'
+            'clone()', 'equals(java.lang.Object)', 'finalize()', 'getClass()',
+            'hashCode()', 'notify()', 'notifyAll()', 'toString()', 'wait()',
+            'wait(long)', 'wait(long,int)'
         ]
         for object_method in object_methods:
             if object_method in func_elem['functionName']:
@@ -781,7 +781,8 @@ def _extract_method(yaml_dict):
             init_dict[func_class] = init_list
             continue
 
-        getter_setter, plain, leaf, test, object = _is_method_excluded(func_elem)
+        getter_setter, plain, leaf, test, object = _is_method_excluded(
+            func_elem)
 
         # Skip excluded methods
         if len(func_elem['argTypes']) > 20:
