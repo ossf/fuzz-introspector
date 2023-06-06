@@ -138,6 +138,68 @@ def _is_primitive_class(classname):
     return classname in primitives
 
 
+def _is_method_excluded(func_elem):
+    """
+    Determine if the methods should be ignored for fuzzer generation.
+    If any of the switch has been set to False in the constant.py, that
+    specific group will not be checked and always return false.
+    This method takes the method function element and returns a
+    tuple of five booleans, representing if the provided method is
+    being ignored by one of the five groups. The five groups are
+    getter and setters, plain methods, leaf methods, test methods
+    and methods in the Object class.
+    """
+    getter_setter = False
+    plain = False
+    leaf = False
+    test = False
+    object = False
+
+    func_name = func_elem['functionName'].split("].")[1]
+
+    if constants.JAVA_IGNORE_GETTER_SETTER:
+        if func_name.startswith("set") and len(func_elem['argTypes']) == 1:
+            getter_setter = True
+        if func_name.startswith("get") and len(func_elem['argTypes']) == 0:
+            getter_setter = True
+        if func_name.startswith("is") and len(func_elem['argTypes']) == 0:
+            getter_setter = True
+    if constants.JAVA_IGNORE_PLAIN_METHOD:
+        if len(func_elem['argTypes']) == 0:
+            plain = True
+    if constants.JAVA_IGNORE_LEAF_METHOD:
+        leaf = True
+        for callsite in func_elem['Callsites']:
+            dst_class = callsite['Dst'].split("]")[0][1:]
+            if _is_project_class(dst_class):
+                leaf = False
+                break
+    if constants.JAVA_IGNORE_TEST_METHOD:
+        if "test" in func_elem['functionName'].lower():
+            test = True
+        if "demo" in func_elem['functionName'].lower():
+            test = True
+        if "test" in func_elem['functionSourceFile'].lower():
+            test = True
+        if "demo" in func_elem['functionSourceFile'].lower():
+            test = True
+        if "jazzer" in func_elem[
+                'functionName'] or "fuzzerTestOneInput" in func_elem[
+                    'functionName']:
+            test = True
+    if constants.JAVA_IGNORE_OBJECT_METHOD:
+        object_methods = [
+            'clone()', 'equals(java.lang.Object)', 'finalize()', 'getClass()',
+            'hashCode()', 'notify()', 'notifyAll()', 'toString()', 'wait()',
+            'wait(long)', 'wait(long,int)'
+        ]
+        for object_method in object_methods:
+            if object_method in func_elem['functionName']:
+                object = True
+
+    return (getter_setter, plain, leaf, test, object)
+
+
 def _determine_import_statement(classname):
     """Generate java import statement for a given class name"""
     if classname and not classname.startswith('java.lang.'):
@@ -719,25 +781,19 @@ def _extract_method(yaml_dict):
             init_dict[func_class] = init_list
             continue
 
+        getter_setter, plain, leaf, test, object = _is_method_excluded(
+            func_elem)
+
         # Skip excluded methods
         if len(func_elem['argTypes']) > 20:
             continue
-        if "test" in func_elem['functionName'].lower():
-            continue
-        if "demo" in func_elem['functionName'].lower():
-            continue
-        if "test" in func_elem['functionSourceFile'].lower():
-            continue
-        if "demo" in func_elem['functionSourceFile'].lower():
-            continue
-        if "jazzer" in func_elem[
-                'functionName'] or "fuzzerTestOneInput" in func_elem[
-                    'functionName']:
+        if test:
             continue
 
         # Add candidates to result lists
         if func_elem['JavaMethodInfo']['static']:
-            if len(func_elem['argTypes']) > 0:
+            # Exclude methods that does not require parameters
+            if not plain:
                 static_method_list.append(func_elem)
         else:
             instance_method_list.append(func_elem)
@@ -747,23 +803,13 @@ def _extract_method(yaml_dict):
             if _is_project_class(
                     func_elem['functionSourceFile'].split("$")[0]):
                 func_name = func_elem['functionName'].split("].")[1]
+
                 # Exclude possible getters, setters and methods
-                # does not take any arguments
-                if len(func_elem['argTypes']) == 0:
-                    continue
-                if func_name.startswith("set") and len(
-                        func_elem['argTypes']) == 1:
+                # does not take any arguments. Also exclude leaf
+                # methods and methods inherits from the Object class
+                if plain or getter_setter or leaf or object:
                     continue
 
-                # Exclude general Object methods
-                object_methods = [
-                    'clone()', 'equals(java.lang.Object)', 'finalize()',
-                    'getClass()', 'hashCode()', 'notify()', 'notifyAll()',
-                    'toString()', 'wait()', 'wait(long)', 'wait(long,int)'
-                ]
-                for object_method in object_methods:
-                    if object_method in func_elem['functionName']:
-                        continue
                 method_list.append(func_elem)
 
     method_list = _filter_polymorphism(method_list)

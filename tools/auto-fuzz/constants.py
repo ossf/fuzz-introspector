@@ -27,11 +27,26 @@ MAVEN_PATH = "apache-maven-3.6.3/bin"
 GRADLE_HOME = "gradle-7.4.2"
 GRADLE_PATH = f"{GRADLE_HOME}/bin"
 
-# This is an user-controlled optios. If this is set to True, it will always
+# This is an user-controlled options. If this is set to True, it will always
 # search for all subclasses of a target class when the auto-fuzz generation
 # handles object creation of the target class. Otherwise, the searching of
 # subclasses will only happen when the the target class is not concrete.
 SEARCH_SUBCLASS_FOR_OBJECT_CREATION = False
+
+# These are user-controlled options. If any of them are set to True, the
+# auto-fuzz generation process for java will ignore some targets methods
+# which does not have much fuzzing value. Otherwise, those methods will
+# be included in the generation result
+# JAVA_IGNORE_GETTER_SETTER: All getters, setters and boolean checking methods.
+# JAVA_IGNORE_PLAIN_METHOD: Methods without parameters.
+# JAVA_IGNORE_LEAF_METHOD: Methods that does not call any non-JDK library methods.
+# JAVA_IGNORE_TEST_METHOD: Methods that belongs to fuzzing engine or unit testing engine.
+# JAVA_IGNORE_GENERAL_METHOD: Methods that are inherited from the Object class.
+JAVA_IGNORE_GETTER_SETTER = True
+JAVA_IGNORE_PLAIN_METHOD = True
+JAVA_IGNORE_LEAF_METHOD = True
+JAVA_IGNORE_TEST_METHOD = True
+JAVA_IGNORE_OBJECT_METHOD = True
 
 git_repos = {
     'python': [
