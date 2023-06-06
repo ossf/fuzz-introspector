@@ -207,6 +207,9 @@ def get_all_functions_for_project(project_name, date_str,
     all_function_list = json_dict['MergedProjectProfile']['all-functions']
     project_stats = json_dict['MergedProjectProfile']['stats']
     amount_of_fuzzers = len(json_dict) - 2
+    number_of_functions = len(all_function_list)
+
+    functions_covered_estimate = int(number_of_functions * float(0.01 * project_stats['code-coverage-function-percentage']))
     project_timestamp = {
         "project_name": project_name,
         "date": date_str,
@@ -215,6 +218,7 @@ def get_all_functions_for_project(project_name, date_str,
         "fuzzer_count": amount_of_fuzzers,
         "function_count": len(all_function_list),
         "introspector_report_url": introspector_report_url,
+        "functions_covered_estimate": functions_covered_estimate,
     }
 
     refined_proj_list = list()
@@ -310,6 +314,7 @@ def analyse_list_of_projects(date, projects_to_analyse,
     project_timestamps = list()
     accummulated_fuzzer_count = 0
     accummulated_function_count = 0
+    accummulated_covered_functions = 0
     idx = 0
     jobs = []
     return_dict = dict()
@@ -334,6 +339,7 @@ def analyse_list_of_projects(date, projects_to_analyse,
             proc.join()
 
     # Accummulate data
+
     for key in return_dict:
         project_function_list = return_dict[key]['refined_proj_list']
         branch_pairs = return_dict[key]['branch_pairs']
@@ -346,12 +352,15 @@ def analyse_list_of_projects(date, projects_to_analyse,
         accummulated_fuzzer_count += project_timestamp['fuzzer_count']
         accummulated_function_count += project_timestamp['function_count']
 
+        accummulated_covered_functions += project_timestamp['functions_covered_estimate']
+
     # Create a DB timestamp
     db_timestamp = {
         "date": date,
         "project_count": len(project_timestamps),
         "fuzzer_count": accummulated_fuzzer_count,
         "function_count": accummulated_function_count,
+        "function_coverage_estimate": accummulated_covered_functions,
     }
     return function_list, fuzz_branch_blocker_list, project_timestamps, db_timestamp
 

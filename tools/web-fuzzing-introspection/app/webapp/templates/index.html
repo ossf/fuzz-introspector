@@ -136,6 +136,7 @@ const db_timestamp_x_axis = [];
 const project_count_over_time = [];
 const fuzzer_count_over_time = [];
 const function_count_over_time = [];
+const function_count_over_time2 = [];
 
 
 {% for db_timestamp in db_timestamps %}
@@ -143,6 +144,7 @@ db_timestamp_x_axis.push("{{db_timestamp.date}}");
 project_count_over_time.push({{db_timestamp.project_count}})
 fuzzer_count_over_time.push({{db_timestamp.fuzzer_count}})
 function_count_over_time.push({{db_timestamp.function_count}})
+function_count_over_time2.push({{db_timestamp.function_coverage_estimate}})
 {%endfor%}
 
 
@@ -178,11 +180,30 @@ Plotly.newPlot("fuzzerCountPlot", fuzzer_count_over_time_data, fuzzer_count_over
 
 
 // Plot for function count over time
-const function_count_over_time_data = [{
+const function_count_over_time_data = [
+  {
+    x: db_timestamp_x_axis,
+    y: function_count_over_time,
+    mode:"lines",
+    name: "Total",
+  },
+  {
+    x: db_timestamp_x_axis,
+    y: function_count_over_time2,
+    mode:"lines",
+    name: "Covered",
+    line: {
+      color: 'rgb(0, 204, 0)',
+    }
+  }
+];
+
+const function_count_over_time_data2 = [{
   x: db_timestamp_x_axis,
-  y: function_count_over_time,
+  y: function_count_over_time2,
   mode:"lines"
 }];
+
 const function_count_over_time_layout = {
   xaxis: {title: "Date"},
         yaxis: {title: "Functions", range: [0.0, {{max_function_count}}]},  

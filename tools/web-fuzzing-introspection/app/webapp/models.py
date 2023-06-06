@@ -23,11 +23,12 @@ def get_date_at_offset_as_str(day_offset=-1):
 
 class DBTimestamp:
 
-    def __init__(self, date, project_count, fuzzer_count, function_count):
+    def __init__(self, date, project_count, fuzzer_count, function_count, function_coverage_estimate):
         self.date = date
         self.project_count = project_count
         self.fuzzer_count = fuzzer_count
         self.function_count = function_count
+        self.function_coverage_estimate = function_coverage_estimate
 
 
 class DBSummary:
