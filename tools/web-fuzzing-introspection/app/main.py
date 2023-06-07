@@ -24,6 +24,13 @@ def create_app():
     app = Flask(__name__)
     app.register_blueprint(routes.blueprint)
 
+    try:
+        routes.gtag = os.environ['G_ANALYTICS_TAG']
+        print("google tag set")
+    except KeyError:
+        print("Not setting google tag")
+        routes.gtag = None
+
     webapp.load_db()
 
     return app

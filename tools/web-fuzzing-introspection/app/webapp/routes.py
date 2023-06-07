@@ -25,6 +25,7 @@ from . import test_data
 
 blueprint = Blueprint('site', __name__, template_folder='templates')
 
+gtag = None
 
 def get_frontpage_summary_stats():
     # Get total number of projects
@@ -94,6 +95,7 @@ def index():
 
     oss_fuzz_total_number = len(test_data.get_build_status())
     return render_template('index.html',
+                           gtag=gtag,
                            db_summary=db_summary,
                            db_timestamps=db_timestamps,
                            max_proj=max_proj,
@@ -110,6 +112,7 @@ def function_profile():
 
     related_functions = get_all_related_functions(function_profile)
     return render_template('function-profile.html',
+                           gtag = gtag,
                            related_functions=related_functions,
                            function_profile=function_profile)
 
@@ -128,6 +131,7 @@ def project_profile():
                 real_stats.append(ps)
 
         return render_template('project-profile.html',
+                               gtag=gtag,
                                project=project,
                                project_statistics=real_stats,
                                oss_fuzz_url=oss_fuzz_url,
@@ -147,6 +151,7 @@ def project_profile():
                 code_coverage_report_url="#")
 
             return render_template('project-profile.html',
+                               gtag=gtag,
                                project=project,
                                project_statistics=None,
                                oss_fuzz_url=oss_fuzz_url,
@@ -198,6 +203,7 @@ def function_search():
             info_msg = f"Found {total_matches} matches. Only showing the first {MAX_MATCHES_TO_DISPLAY}."
 
     return render_template('function-search.html',
+                           gtag=gtag,
                            all_functions=functions_to_display,
                            info_msg=info_msg)
 
@@ -205,16 +211,16 @@ def function_search():
 @blueprint.route('/projects-overview')
 def projects_overview():
     projects = test_data.get_projects()
-    return render_template('projects-overview.html', all_projects=projects)
+    return render_template('projects-overview.html', gtag=gtag, all_projects=projects)
 
 @blueprint.route('/indexing-overview')
 def indexing_overview():
     build_status = test_data.get_build_status()
-    return render_template('indexing-overview.html', all_build_status=build_status)
+    return render_template('indexing-overview.html', gtag=gtag, all_build_status=build_status)
 
 @blueprint.route('/about')
 def about():
-    return render_template('about.html')
+    return render_template('about.html', gtag=gtag)
 
 
 @blueprint.route('/api/project-summary')
