@@ -11,14 +11,23 @@ Fuzz-introspector aims to improve fuzzing experience of a project by guiding on 
 - introduce new fuzzers to a fuzz harness
 - modify existing fuzzers to improve the quality of your harness.
 
-## Documentation and samples
-The main Fuzz Introspector documentation is available here: https://fuzz-introspector.readthedocs.io This documentation includes user guides, OSS-Fuzz instructions, tutorials, development docs and more.
+## Indexing OSS-Fuzz projects
 
+[Open Source Fuzzing Introspection](https://introspector.oss-fuzz.com) provides introspection capabilities to [OSS-Fuzz](https://github.com/google/oss-fuzz) projects and is powered by Fuzz Introspector. This page gives macro insights into the fuzzing of open source projects.
+
+On this page you'll see a list of all the projects that are currently analysed by Fuzz Introspector:
+- [Table of projects with Fuzz Introspector analysis](https://introspector.oss-fuzz.com/projects-overview)
+- Examples, with links in profile to latest Fuzz Introspector analysis:
+  - [Liblouis / C](https://introspector.oss-fuzz.com/project-profile?project=liblouis)
+  - [htslib / C](https://introspector.oss-fuzz.com/project-profile?project=htslib)
+  - [brotli / C++](https://introspector.oss-fuzz.com/project-profile?project=brotli)
+  - [idna / python](https://introspector.oss-fuzz.com/project-profile?project=idna)
+  - [junrar / java](https://introspector.oss-fuzz.com/project-profile?project=junrar)
+
+
+## Docs and demonstrations
+The main Fuzz Introspector documentation is available here: https://fuzz-introspector.readthedocs.io This documentation includes user guides, OSS-Fuzz instructions, tutorials, development docs and more.
 Additionally, there is more information:
-- [Sample OSS-Fuzz reports](https://oss-fuzz-introspector.storage.googleapis.com/index.html). [OSS-Fuzz](https://github.com/google/oss-fuzz) supports Fuzz Introspector and maintains a list of reports.
-  - Sample C project report: [htslib](https://storage.googleapis.com/oss-fuzz-introspector/htslib/inspector-report/20230124/fuzz_report.html)
-  - Sample C++ project report: [leveldb](https://storage.googleapis.com/oss-fuzz-introspector/leveldb/inspector-report/20230125/fuzz_report.html)
-  - Sample Python project report: [idna](https://storage.googleapis.com/oss-fuzz-introspector/idna/inspector-report/20230120/fuzz_report.html)
 - [Video demonstration](https://www.youtube.com/watch?v=cheo-liJhuE)
 - [List of Case studies](doc/CaseStudies.md)
 - [Screenshots](doc/ExampleOutput.md)
