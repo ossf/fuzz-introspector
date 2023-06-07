@@ -845,6 +845,8 @@ class CustomSenceTransformer extends SceneTransformer {
 
   private Iterator<Edge> mergePolymorphism(CallGraph cg, Iterator<Edge> it) {
     List<Edge> edgeList = new LinkedList<Edge>();
+    List<Edge> processingEdgeList = new LinkedList<Edge>();
+    Edge previous = null;
 
     it = this.sortEdgeByLineNumber(it);
 
@@ -869,26 +871,54 @@ class CustomSenceTransformer extends SceneTransformer {
       }
 
       if (!excluded) {
-        Set<String> classNameSet;
-        if (this.edgeClassMap.containsKey(matchStr)) {
-          classNameSet = new HashSet<String>(this.edgeClassMap.get(matchStr));
-        } else {
-          classNameSet = new HashSet<String>();
+        if (cg.edgesOutOf(edge.tgt()).hasNext()) {
+          // Does not merge methods with deeper method calls
           edgeList.add(edge);
+        } else {
+          // Merge previously processed methods when this edge
+          // is differ from the last one cause edges are sorted
+          if (previous != null) {
+            String edgeName = edge.tgt().getName();
+            String previousEdgeName = previous.tgt().getName();
+            Integer edgeLineNo = edge.srcStmt().getJavaSourceStartLineNumber();
+            Integer previousEdgeLineNo = previous.srcStmt().getJavaSourceStartLineNumber();
+            if (!(edgeName.equals(previousEdgeName)) || !(edgeLineNo == previousEdgeLineNo)) {
+              if (processingEdgeList.size() > 0) {
+                Set<String> classNameSet = new HashSet<String>();
+                for (Edge mergeEdge : processingEdgeList) {
+                  classNameSet.add(mergeEdge.tgt().getDeclaringClass().getName());
+                }
+                if (classNameSet.size() > 1) {
+                  this.edgeClassMap.put(matchStr, classNameSet);
+                }
+                edgeList.add(processingEdgeList.get(0));
+                processingEdgeList = new LinkedList<Edge>();
+              }
+            }
+          }
+          processingEdgeList.add(edge);
         }
-        classNameSet.add(className);
-        this.edgeClassMap.put(matchStr, classNameSet);
       }
+      previous = edge;
     }
 
-    List<String> keySet = new LinkedList<String>();
-    for (String key : this.edgeClassMap.keySet()) {
-      if (this.edgeClassMap.get(key).size() <= 1) {
-        keySet.add(key);
+    // Merge the final group of processed methods
+    if (processingEdgeList.size() > 0) {
+      Edge edgeToAdd = processingEdgeList.get(0);
+      edgeList.add(edgeToAdd);
+      Set<String> classNameSet = new HashSet<String>();
+      for (Edge mergeEdge : processingEdgeList) {
+        classNameSet.add(mergeEdge.tgt().getDeclaringClass().getName());
       }
-    }
-    for (String key : keySet) {
-      this.edgeClassMap.remove(key);
+      if (classNameSet.size() > 1) {
+        String matchStr =
+            edgeToAdd.src().getDeclaringClass().getName()
+                + ":"
+                + edgeToAdd.tgt().getName()
+                + ":"
+                + edgeToAdd.srcStmt().getJavaSourceStartLineNumber();
+        this.edgeClassMap.put(matchStr, classNameSet);
+      }
     }
 
     return this.sortEdgeByLineNumber(edgeList.iterator());
