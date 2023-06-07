@@ -74,7 +74,7 @@ import soot.toolkits.graph.UnitGraph;
 public class CallGraphGenerator {
   public static void main(String[] args) {
     System.out.println("[Callgraph] Running callgraph plugin");
-    if (args.length < 5 || args.length > 6) {
+    if (args.length < 6 || args.length > 7) {
       System.err.println("No jarFiles, entryClass, entryMethod and target package.");
       return;
     }
@@ -83,14 +83,15 @@ public class CallGraphGenerator {
     String entryClass = args[1];
     String entryMethod = args[2];
     String targetPackagePrefix = args[3];
-    Boolean isAutoFuzz = (args[4].equals("True")) ? true : false;
+    String excludeMethod = args[4];
+    Boolean isAutoFuzz = (args[5].equals("True")) ? true : false;
     String includePrefix = "";
     String excludePrefix = "";
     String sinkMethod = "";
-    if (args.length == 6) {
-      includePrefix = args[5].split("===")[0];
-      excludePrefix = args[5].split("===")[1];
-      sinkMethod = args[5].split("===")[2];
+    if (args.length == 7) {
+      includePrefix = args[6].split("===")[0];
+      excludePrefix = args[6].split("===")[1];
+      sinkMethod = args[6].split("===")[2];
     }
     if (jarFiles.size() < 1) {
       System.err.println("Invalid jarFiles");
@@ -106,6 +107,7 @@ public class CallGraphGenerator {
             entryClass,
             entryMethod,
             targetPackagePrefix,
+            excludeMethod,
             includePrefix,
             excludePrefix,
             sinkMethod,
@@ -188,6 +190,7 @@ class CustomSenceTransformer extends SceneTransformer {
       String entryClassStr,
       String entryMethodStr,
       String targetPackagePrefix,
+      String excludeMethodStr,
       String includePrefix,
       String excludePrefix,
       String sinkMethod) {
@@ -195,6 +198,7 @@ class CustomSenceTransformer extends SceneTransformer {
         entryClassStr,
         entryMethodStr,
         targetPackagePrefix,
+        excludeMethodStr,
         includePrefix,
         excludePrefix,
         sinkMethod,
@@ -205,6 +209,7 @@ class CustomSenceTransformer extends SceneTransformer {
       String entryClassStr,
       String entryMethodStr,
       String targetPackagePrefix,
+      String excludeMethodStr,
       String includePrefix,
       String excludePrefix,
       String sinkMethod,
@@ -242,10 +247,9 @@ class CustomSenceTransformer extends SceneTransformer {
       }
     }
 
-    // Required for auto-fuzz
-    excludeMethodList.add("<init>");
-    excludeMethodList.add("<clinit>");
-    excludeMethodList.add("finalize");
+    for (String exclude : excludeMethodStr.split(":")) {
+      excludeMethodList.add(exclude);
+    }
 
     sinkMethodMap = new HashMap<String, Set<String>>();
     for (String sink : sinkMethod.split(":")) {
