@@ -44,6 +44,11 @@ while [[ $# -gt 0 ]]; do
       shift
       shift
       ;;
+    -x|--excludemethod)
+      EXCLUDEMETHOD="$2"
+      shift
+      shift
+      ;;
     -s|--sinkmethod)
       SINKMETHOD="$2"
       shift
@@ -90,6 +95,11 @@ then
     echo "No include prefix list defined, using default include prefix list"
     INCLUDEPREFIX=
 fi
+if [ -z $EXCLUDEMETHOD ]
+then
+    echo "No exclude method list defined, using default exclude method list"
+    EXCLUDEPREFIX="<cinit>:finalize"
+fi
 if [ -z $SINKMETHOD ]
 then
     echo "No sink method list defined, using default sink method list"
@@ -112,5 +122,5 @@ mvn clean package -Dmaven.test.skip
 for CLASS in $(echo $ENTRYCLASS | tr ":" "\n")
 do
     echo $CLASS
-    java -Xmx6144M -cp "target/ossf.fuzz.introspector.soot-1.0.jar" ossf.fuzz.introspector.soot.CallGraphGenerator $JARFILE $CLASS $ENTRYMETHOD "$PACKAGEPREFIX" $AUTOFUZZ "$INCLUDEPREFIX===$EXCLUDEPREFIX===$SINKMETHOD"
+    java -Xmx6144M -cp "target/ossf.fuzz.introspector.soot-1.0.jar" ossf.fuzz.introspector.soot.CallGraphGenerator $JARFILE $CLASS $ENTRYMETHOD "$PACKAGEPREFIX" "$EXCLUDEMETHOD" $AUTOFUZZ "$INCLUDEPREFIX===$EXCLUDEPREFIX===$SINKMETHOD"
 done
