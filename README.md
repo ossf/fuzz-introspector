@@ -13,7 +13,7 @@ Fuzz-introspector aims to improve fuzzing experience of a project by guiding on 
 
 ## Indexing OSS-Fuzz projects
 
-Fuzz Introspector is used to index OSS-Fuzz projects on [https://introspector.oss-fuzz.com/](https://introspector.oss-fuzz.com/). This page gives macro insights into the fuzzing of open source projects.
+[Open Source Fuzzing Introspector](https://introspector.oss-fuzz.com) provides introspection capabilities to [OSS-Fuzz](https://github.com/google/oss-fuzz) projects and is powered by Fuzz Introspector. This page gives macro insights into the fuzzing of open source projects.
 
 On this page you'll see a list of all the projects that are currently analysed by Fuzz Introspector:
 - [Table of projects with Fuzz Introspector analysis](https://introspector.oss-fuzz.com/projects-overview)
