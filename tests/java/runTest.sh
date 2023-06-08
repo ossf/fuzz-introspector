@@ -28,7 +28,7 @@ then
 
   # Extract data
   cd $ROOT/../../frontends/java
-  ./run.sh -j $jarfile -c $entryclass
+  ./run.sh -j $jarfile -c $entryclass -x "<init>:<cinit>:finalize"
 
   rm -rf $ROOT/result/$1
   mkdir -p $ROOT/result/$1
