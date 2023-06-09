@@ -143,8 +143,8 @@ const function_count_over_time2 = [];
 db_timestamp_x_axis.push("{{db_timestamp.date}}");
 project_count_over_time.push({{db_timestamp.project_count}})
 fuzzer_count_over_time.push({{db_timestamp.fuzzer_count}})
-function_count_over_time.push({{db_timestamp.function_count}})
-function_count_over_time2.push({{db_timestamp.function_coverage_estimate}})
+function_count_over_time.push({{db_timestamp.accummulated_lines_total}})
+function_count_over_time2.push({{db_timestamp.accummulated_lines_covered}})
 {%endfor%}
 
 
@@ -206,7 +206,7 @@ const function_count_over_time_data2 = [{
 
 const function_count_over_time_layout = {
   xaxis: {title: "Date"},
-        yaxis: {title: "Functions", range: [0.0, {{max_function_count}}]},  
+        yaxis: {title: "Functions", range: [0.0, {{max_line_count}}]},  
   type: "scatter",
   paper_bgcolor: "rgba(0,0,0,0)",
   plot_bgcolor: "rgba(0,0,0,0)"

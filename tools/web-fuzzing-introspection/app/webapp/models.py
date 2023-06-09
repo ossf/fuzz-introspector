@@ -23,12 +23,15 @@ def get_date_at_offset_as_str(day_offset=-1):
 
 class DBTimestamp:
 
-    def __init__(self, date, project_count, fuzzer_count, function_count, function_coverage_estimate):
+    def __init__(self, date, project_count, fuzzer_count, function_count,
+                 function_coverage_estimate, accummulated_lines_total, accummulated_lines_covered):
         self.date = date
         self.project_count = project_count
         self.fuzzer_count = fuzzer_count
         self.function_count = function_count
         self.function_coverage_estimate = function_coverage_estimate
+        self.accummulated_lines_total = accummulated_lines_total
+        self.accummulated_lines_covered = accummulated_lines_covered
 
 
 class DBSummary:
@@ -44,28 +47,23 @@ class DBSummary:
 
 class ProjectTimestamp:
 
-    def __init__(self, project_name, date, coverage_lines, coverage_functions,
-                 static_reachability, fuzzer_count):
+    def __init__(self, project_name, date, language, coverage_data, introspector_data):
         self.project_name = project_name
         # date in the format Y-m-d
         self.date = date
-        self.coverage_lines = coverage_lines
-        self.coverage_functions = coverage_functions
-        self.static_reachability = static_reachability
-        self.fuzzer_count = fuzzer_count
+        self.language = language
+        self.coverage_data = coverage_data
+        self.introspector_data = introspector_data
 
 
 class Project:
 
-    def __init__(self, name, language, fuzz_count, reach, runtime_cov,
-                 introspector_report_url, code_coverage_report_url):
+    def __init__(self, name, language, date, coverage_data, introspector_data):
         self.name = name
         self.language = language
-        self.fuzz_count = fuzz_count
-        self.reach = reach
-        self.runtime_cov = runtime_cov
-        self.introspector_report_url = introspector_report_url
-        self.code_coverage_report_url = code_coverage_report_url
+        self.date = date
+        self.coverage_data = coverage_data
+        self.introspector_data = introspector_data
 
 
 class Function:
