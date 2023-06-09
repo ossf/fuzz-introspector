@@ -116,9 +116,7 @@ def get_projects_build_status():
 
 def get_introspector_summary():
     introspector_summary_url = OSS_FUZZ_BUILD_STATUS_URL + '/' + INTROSPECTOR_BUILD_JSON
-    #logger.info("Requesting %s"%(introspector_summary_url))
     r = requests.get(introspector_summary_url, timeout=20)
-    #logger.info("Got content")
     return json.loads(r.text)
 
 
@@ -188,12 +186,9 @@ def get_coverage_report_url(project_name, datestr, language):
 
 def get_code_coverage_summary(project_name, datestr):
     cov_summary_url = get_code_coverage_summary_url(project_name, datestr)
-    #logger.info("Getting coverage summary: %s"%(cov_summary_url))
     coverage_summary_raw = requests.get(cov_summary_url, timeout=20).text
-    #logger.info("Got coverage report")
     try:
         json_dict = json.loads(coverage_summary_raw)
-        #print(json.dumps(json_dict, indent=4))
         return json_dict
     except:
         return None
@@ -233,12 +228,6 @@ def extract_project_data(project_name, date_str,
     - Details extracted from code coverage reports
         - Lines of code totally in the project
         - Lines of code covered at runtime
-
-    OLD: For a given project and date gets a list of function profiles for
-    the project on the given date, and also creates a project time stamp.
-    The list of function profiles and the project timestamp is returned
-    as a tuple.
-    OLD END.
     """
 
     # TODO (David): handle the case where there is neither code coverage or introspector reports.
@@ -378,26 +367,7 @@ def extract_project_data(project_name, date_str,
         'language': project_language,
         'coverage-data': code_coverage_data_dict,
         'introspector-data': introspector_data_dict,
-        #"coverage_lines": project_stats['code-coverage-function-percentage'],
-        #"static_reachability": project_stats['reached-complexity-percentage'],
-        #"fuzzer_count": amount_of_fuzzers,
-        #"function_count": len(all_function_list),
-        #"introspector_report_url": introspector_report_url,
-        #"functions_covered_estimate": functions_covered_estimate,
     }
-
-
-    # The previous techniques we used to set language was quite heuristically.
-    # Here, we make a more precise effort by reading the project yaml file.
-    #try:
-    #    lang = try_to_get_project_language(project_name)
-    #    if lang == 'jvm':
-    #        lang = 'java'
-    #    project_timestamp['language'] = lang
-    #except:
-    #    # Default set to c++ as this is OSS-Fuzz's default.
-    #    project_timestamp['language'] = 'c++'
-
 
     dictionary_key = '%s###%s' % (project_name, date_str)
     manager_return_dict[dictionary_key] = {
@@ -689,10 +659,6 @@ def create_db(max_projects, days_to_analyse, output_directory, input_directory,
             tmp_dictionary[k] = projects_to_analyse[k]
             idx += 1
         projects_to_analyse = tmp_dictionary
-
-    #project_list = get_latest_valid_reports()
-    #if max_projects > 0 and len(project_list) > max_projects:
-    #    project_list = project_list[0:max_projects]
 
     if to_cleanup:
         cleanup(output_directory)
