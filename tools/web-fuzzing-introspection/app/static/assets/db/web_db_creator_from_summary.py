@@ -216,11 +216,8 @@ def extract_introspector_report(project_name, date_str):
 
     # Read the introspector atifact
     try:
-        logger.info("Extracting all functions from: %s" %
-                    (introspector_summary_url))
         raw_introspector_json_request = requests.get(introspector_summary_url,
                                                      timeout=10)
-        logger.info("Got all functions")
     except:
         return None
     try:
