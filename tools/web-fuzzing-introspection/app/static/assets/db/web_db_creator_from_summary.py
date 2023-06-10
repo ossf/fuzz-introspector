@@ -365,8 +365,13 @@ def extract_project_data(project_name, date_str, should_include_details,
         code_coverage_data_dict = None
     else:
         if code_coverage_summary != None:
-            line_total_summary = code_coverage_summary['data'][0]['totals'][
-                'lines']
+            try:
+                line_total_summary = code_coverage_summary['data'][0]['totals'][
+                    'lines']
+            except KeyError:
+                # This can happen in Python, where the correct code formatting was only done
+                # May 3rd 2023: https://github.com/google/oss-fuzz/pull/10201
+                return
             #line_total_summary['percent']
             # For the sake of consistency, we re-calculate the percentage. This is because
             # some of the implentations have a value 0 <= p <= 1 and some have 0 <= p <= 100.
