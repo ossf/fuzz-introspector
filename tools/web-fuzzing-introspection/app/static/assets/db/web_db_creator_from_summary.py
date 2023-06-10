@@ -66,6 +66,7 @@ def git_clone_project(github_url, destination):
         return False
     return True
 
+
 def get_projects_build_status():
     fuzz_build_url = OSS_FUZZ_BUILD_STATUS_URL + '/' + FUZZ_BUILD_JSON
     coverage_build_url = OSS_FUZZ_BUILD_STATUS_URL + '/' + COVERAGE_BUILD_JSON
@@ -73,7 +74,8 @@ def get_projects_build_status():
 
     fuzz_build_raw = requests.get(fuzz_build_url, timeout=20).text
     coverage_build_raw = requests.get(coverage_build_url, timeout=20).text
-    introspector_build_raw = requests.get(introspector_build_url, timeout=20).text
+    introspector_build_raw = requests.get(introspector_build_url,
+                                          timeout=20).text
 
     fuzz_build_json = json.loads(fuzz_build_raw)
     cov_build_json = json.loads(coverage_build_raw)
@@ -83,21 +85,27 @@ def get_projects_build_status():
     for p in fuzz_build_json['projects']:
         project_dict = build_status_dict.get(p['name'], dict())
         project_dict['fuzz-build'] = p['history'][0]['success']
-        project_dict['fuzz-build-log'] = OSS_FUZZ_BUILD_LOG_BASE + p['history'][0]['build_id'] + '.txt'
+        project_dict['fuzz-build-log'] = OSS_FUZZ_BUILD_LOG_BASE + p[
+            'history'][0]['build_id'] + '.txt'
         build_status_dict[p['name']] = project_dict
     for p in cov_build_json['projects']:
         project_dict = build_status_dict.get(p['name'], dict())
         project_dict['cov-build'] = p['history'][0]['success']
-        project_dict['cov-build-log'] = OSS_FUZZ_BUILD_LOG_BASE + p['history'][0]['build_id'] + '.txt'
+        project_dict['cov-build-log'] = OSS_FUZZ_BUILD_LOG_BASE + p['history'][
+            0]['build_id'] + '.txt'
         build_status_dict[p['name']] = project_dict
     for p in introspector_build_json['projects']:
         project_dict = build_status_dict.get(p['name'], dict())
         project_dict['introspector-build'] = p['history'][0]['success']
-        project_dict['introspector-build-log'] = OSS_FUZZ_BUILD_LOG_BASE + p['history'][0]['build_id'] + '.txt'
+        project_dict['introspector-build-log'] = OSS_FUZZ_BUILD_LOG_BASE + p[
+            'history'][0]['build_id'] + '.txt'
         build_status_dict[p['name']] = project_dict
 
     # Ensure all fields are set in each dictionary
-    needed_keys = ['introspector-build', 'fuzz-build', 'cov-build', 'introspector-build-log', 'cov-build-log', 'fuzz-build-log']
+    needed_keys = [
+        'introspector-build', 'fuzz-build', 'cov-build',
+        'introspector-build-log', 'cov-build-log', 'fuzz-build-log'
+    ]
     for project_name in build_status_dict:
         project_dict = build_status_dict[project_name]
         for needed_key in needed_keys:
@@ -111,8 +119,9 @@ def get_projects_build_status():
         except:
             project_language = 'N/A'
         build_status_dict[project_name]['language'] = project_language
-    print("Number of projects: %d"%(len(build_status_dict)))
+    print("Number of projects: %d" % (len(build_status_dict)))
     return build_status_dict
+
 
 def get_introspector_summary():
     introspector_summary_url = OSS_FUZZ_BUILD_STATUS_URL + '/' + INTROSPECTOR_BUILD_JSON
@@ -139,9 +148,11 @@ def get_latest_valid_reports():
 
 def try_to_get_project_language(project_name):
     if os.path.isdir(OSS_FUZZ_CLONE):
-        local_project_path = os.path.join(OSS_FUZZ_CLONE, "projects", project_name)
+        local_project_path = os.path.join(OSS_FUZZ_CLONE, "projects",
+                                          project_name)
         if os.path.isdir(local_project_path):
-            project_yaml_path = os.path.join(local_project_path, "project.yaml")
+            project_yaml_path = os.path.join(local_project_path,
+                                             "project.yaml")
             if os.path.isfile(project_yaml_path):
                 with open(project_yaml_path, "r") as f:
                     project_yaml = yaml.safe_load(f.read())
@@ -170,10 +181,12 @@ def get_introspector_report_url_report(project_name, datestr):
     return get_introspector_report_url_base(project_name,
                                             datestr) + "fuzz_report.html"
 
+
 def get_code_coverage_summary_url(project_name, datestr):
     base_url = 'https://storage.googleapis.com/oss-fuzz-coverage/{0}/reports/{1}/linux/summary.json'
     project_url = base_url.format(project_name, datestr)
     return project_url
+
 
 def get_coverage_report_url(project_name, datestr, language):
     if language == 'java' or language == 'python':
@@ -184,6 +197,7 @@ def get_coverage_report_url(project_name, datestr, language):
     project_url = base_url.format(project_name, datestr, file_report)
     return project_url
 
+
 def get_code_coverage_summary(project_name, datestr):
     cov_summary_url = get_code_coverage_summary_url(project_name, datestr)
     coverage_summary_raw = requests.get(cov_summary_url, timeout=20).text
@@ -193,6 +207,7 @@ def get_code_coverage_summary(project_name, datestr):
     except:
         return None
 
+
 def extract_introspector_report(project_name, date_str):
     introspector_summary_url = get_introspector_report_url_summary(
         project_name, date_str.replace("-", ""))
@@ -201,8 +216,10 @@ def extract_introspector_report(project_name, date_str):
 
     # Read the introspector atifact
     try:
-        logger.info("Extracting all functions from: %s"%(introspector_summary_url))
-        raw_introspector_json_request = requests.get(introspector_summary_url, timeout=10)
+        logger.info("Extracting all functions from: %s" %
+                    (introspector_summary_url))
+        raw_introspector_json_request = requests.get(introspector_summary_url,
+                                                     timeout=10)
         logger.info("Got all functions")
     except:
         return None
@@ -214,8 +231,8 @@ def extract_introspector_report(project_name, date_str):
     return introspector_report
 
 
-def extract_project_data(project_name, date_str,
-                                  should_include_details, manager_return_dict):
+def extract_project_data(project_name, date_str, should_include_details,
+                         manager_return_dict):
     """
     Extracts data about a given project on a given date. The data will be placed
     in manager_return dict.
@@ -232,7 +249,7 @@ def extract_project_data(project_name, date_str,
 
     # TODO (David): handle the case where there is neither code coverage or introspector reports.
     # In this case we should simply return an error so it will not be included. This is also useful
-    # for creating history 
+    # for creating history
 
     # Extract programming language of the project
     # The previous techniques we used to set language was quite heuristically.
@@ -246,7 +263,8 @@ def extract_project_data(project_name, date_str,
         project_language = 'c++'
 
     # Extract code coverage and introspector reports.
-    code_coverage_summary = get_code_coverage_summary(project_name, date_str.replace("-", ""))
+    code_coverage_summary = get_code_coverage_summary(
+        project_name, date_str.replace("-", ""))
     introspector_report = extract_introspector_report(project_name, date_str)
     introspector_report_url = get_introspector_report_url_report(
         project_name, date_str.replace("-", ""))
@@ -263,13 +281,15 @@ def extract_project_data(project_name, date_str,
 
     if introspector_report != None:
         # Access all functions
-        all_function_list = introspector_report['MergedProjectProfile']['all-functions']
+        all_function_list = introspector_report['MergedProjectProfile'][
+            'all-functions']
         project_stats = introspector_report['MergedProjectProfile']['stats']
         amount_of_fuzzers = len(introspector_report) - 2
         number_of_functions = len(all_function_list)
 
         #functions_covered_estimate = int(number_of_functions * float(0.01 * project_stats['code-coverage-function-percentage']))
-        functions_covered_estimate = project_stats['code-coverage-function-percentage']
+        functions_covered_estimate = project_stats[
+            'code-coverage-function-percentage']
         refined_proj_list = list()
         if should_include_details:
             for func in all_function_list:
@@ -314,7 +334,8 @@ def extract_project_data(project_name, date_str,
                     continue
 
                 for branch_blocker in branch_blockers:
-                    function_blocked = branch_blocker.get('function_name', None)
+                    function_blocked = branch_blocker.get(
+                        'function_name', None)
                     blocked_unique_not_covered_complexity = branch_blocker.get(
                         'blocked_unique_not_covered_complexity', None)
                     if function_blocked == None:
@@ -332,8 +353,10 @@ def extract_project_data(project_name, date_str,
                     })
         introspector_data_dict = {
             "introspector_report_url": introspector_report_url,
-            "coverage_lines": project_stats['code-coverage-function-percentage'],
-            "static_reachability": project_stats['reached-complexity-percentage'],
+            "coverage_lines":
+            project_stats['code-coverage-function-percentage'],
+            "static_reachability":
+            project_stats['reached-complexity-percentage'],
             "fuzzer_count": amount_of_fuzzers,
             "function_count": len(all_function_list),
             "functions_covered_estimate": functions_covered_estimate,
@@ -341,18 +364,20 @@ def extract_project_data(project_name, date_str,
             'branch_pairs': branch_pairs,
         }
 
-
     # Extract data from the code coverage reports
     if code_coverage_summary == None:
         code_coverage_data_dict = None
     else:
         if code_coverage_summary != None:
-            line_total_summary = code_coverage_summary['data'][0]['totals']['lines']
+            line_total_summary = code_coverage_summary['data'][0]['totals'][
+                'lines']
             #line_total_summary['percent']
             # For the sake of consistency, we re-calculate the percentage. This is because
             # some of the implentations have a value 0 <= p <= 1 and some have 0 <= p <= 100.
             try:
-                line_total_summary['percent'] = round(100.0*(float(line_total_summary['covered']) / float(line_total_summary['count'])),2) 
+                line_total_summary['percent'] = round(
+                    100.0 * (float(line_total_summary['covered']) /
+                             float(line_total_summary['count'])), 2)
             except:
                 pass
         else:
@@ -450,11 +475,13 @@ def analyse_list_of_projects(date, projects_to_analyse,
     # Accummulate the data from all the projects.
     for project_key in analyses_dictionary:
         # Append project timestamp to the list of timestamps
-        project_timestamp = analyses_dictionary[project_key]['project_timestamp']
-        project_timestamps.append(project_timestamp)        
+        project_timestamp = analyses_dictionary[project_key][
+            'project_timestamp']
+        project_timestamps.append(project_timestamp)
 
         # Accummulate all function list and branch blockers
-        introspector_dictionary = project_timestamp.get('introspector-data', None)
+        introspector_dictionary = project_timestamp.get(
+            'introspector-data', None)
         if introspector_dictionary != None:
             function_list += introspector_dictionary['refined_proj_list']
             # Remove the function list because we don't want it anymore.
@@ -462,15 +489,22 @@ def analyse_list_of_projects(date, projects_to_analyse,
             fuzz_branch_blocker_list += introspector_dictionary['branch_pairs']
 
             # Accummulate various stats for the DB timestamp.
-            db_timestamp['fuzzer_count'] += introspector_dictionary['fuzzer_count']
-            db_timestamp['function_count'] += introspector_dictionary['function_count']
-            db_timestamp['function_coverage_estimate'] += introspector_dictionary['functions_covered_estimate']
+            db_timestamp['fuzzer_count'] += introspector_dictionary[
+                'fuzzer_count']
+            db_timestamp['function_count'] += introspector_dictionary[
+                'function_count']
+            db_timestamp[
+                'function_coverage_estimate'] += introspector_dictionary[
+                    'functions_covered_estimate']
 
-        coverage_dictionary = analyses_dictionary[project_key].get('coverage-data-dict', None)
+        coverage_dictionary = analyses_dictionary[project_key].get(
+            'coverage-data-dict', None)
         if coverage_dictionary != None:
             # Accummulate various stats for the DB timestamp.
-            db_timestamp["accummulated_lines_total"] += coverage_dictionary['line_coverage']['count']
-            db_timestamp["accummulated_lines_covered"] += coverage_dictionary['line_coverage']['covered']
+            db_timestamp["accummulated_lines_total"] += coverage_dictionary[
+                'line_coverage']['count']
+            db_timestamp["accummulated_lines_covered"] += coverage_dictionary[
+                'line_coverage']['covered']
 
             # We include in project count if coverage is in here
             db_timestamp["project_count"] += 1
@@ -566,6 +600,7 @@ def update_build_status(build_dict):
     with open(DB_BUILD_STATUS_JSON, "w") as f:
         json.dump(build_dict, f)
 
+
 def analyse_set_of_dates(dates, projects_to_analyse, output_directory):
     """Pe/rforms analysis of all projects in the projects_to_analyse argument for
     the given set of dates. DB .json files are stored in output_directory.
@@ -629,7 +664,8 @@ def extract_oss_fuzz_build_status(output_directory):
     oss_fuzz_local_clone = os.path.join(output_directory, "oss-fuzz-clone")
     if os.path.isdir(oss_fuzz_local_clone):
         shutil.rmtree(oss_fuzz_local_clone)
-    git_clone_project("https://github.com/google/oss-fuzz", oss_fuzz_local_clone)
+    git_clone_project("https://github.com/google/oss-fuzz",
+                      oss_fuzz_local_clone)
 
     OSS_FUZZ_CLONE = oss_fuzz_local_clone
     build_status_dict = get_projects_build_status()
@@ -650,10 +686,13 @@ def create_db(max_projects, days_to_analyse, output_directory, input_directory,
     setup_folders(input_directory, output_directory)
 
     # Extract fuzz/coverage/introspector build status of each project and extract
-    projects_list_build_status = extract_oss_fuzz_build_status(output_directory)
+    projects_list_build_status = extract_oss_fuzz_build_status(
+        output_directory)
     projects_to_analyse = dict()
     for p in projects_list_build_status:
-        if projects_list_build_status[p]['introspector-build'] == True and projects_list_build_status[p]['cov-build'] == True:
+        if projects_list_build_status[p][
+                'introspector-build'] == True and projects_list_build_status[
+                    p]['cov-build'] == True:
             projects_to_analyse[p] = projects_list_build_status[p]
     #for project_name in projects_list_build_status:
     #    print("project: %s"%(project_name))
@@ -684,7 +723,8 @@ def create_db(max_projects, days_to_analyse, output_directory, input_directory,
     logger.info("Creating a DB with the specifications:")
     logger.info("- Date range: [%s : %s]" %
                 (str(date_range[0]), str(date_range[-1])))
-    logger.info("- Total of %d projects to analyse" % (len(projects_to_analyse)))
+    logger.info("- Total of %d projects to analyse" %
+                (len(projects_to_analyse)))
     if input_directory is not None:
         logger.info("- Extending upon the DB in %s" % (str(input_directory)))
     else:
