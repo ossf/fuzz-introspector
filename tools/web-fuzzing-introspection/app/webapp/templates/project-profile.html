@@ -36,7 +36,7 @@
                   <tr>
                     <td>Static reachability</td>
                     {% if has_project_details %}
-                      <td> {{ '%0.2f' % project.introspector_data.static_reachability |float }} </td>
+                      <td> {{ '%0.2f' % project.introspector_data.static_reachability |float }}% </td>
                     {% else %}
                       <td>N/A</td>
                     {% endif %}
