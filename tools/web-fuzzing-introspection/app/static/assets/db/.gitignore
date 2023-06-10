@@ -1,3 +1,4 @@
 *.json
 backup
 outdir*
+oss-fuzz-clone

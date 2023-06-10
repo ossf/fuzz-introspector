@@ -28,7 +28,7 @@
                   <tr>
                     <td>Code coverage</td>
                     {% if has_project_details %}
-                      <td> {{ '%0.2f' % project.runtime_cov |float}}% </td>
+                      <td> {{ '%0.2f' % project.coverage_data.line_coverage.percent |float}}% </td>
                     {% else %}
                       <td>N/A</td>
                     {% endif %}                      
@@ -36,7 +36,7 @@
                   <tr>
                     <td>Static reachability</td>
                     {% if has_project_details %}
-                      <td> {{ '%0.2f' % project.reach |float }} </td>
+                      <td> {{ '%0.2f' % project.introspector_data.static_reachability |float }}% </td>
                     {% else %}
                       <td>N/A</td>
                     {% endif %}
@@ -44,7 +44,7 @@
                   <tr>
                     <td>Code coverage report</td>
                     {% if has_project_details %}
-                    <td><a href="{{ project.code_coverage_report_url }}">Report link</a></td>
+                    <td><a href="{{ project.coverage_data.coverage_url }}">Report link</a></td>
                     {% else %}
                       <td>N/A</td>
                     {% endif %}                             
@@ -52,7 +52,7 @@
                   <tr>
                     <td>Fuzz Introspector report</td>
                     {% if has_project_details %}
-                      <td><a href="{{ project.introspector_report_url }}">Report link</a></td>
+                      <td><a href="{{ project.introspector_data.introspector_report_url }}">Report link</a></td>
                     {% else %}
                       <td>N/A</td>
                     {% endif %}                      
@@ -125,12 +125,12 @@ const fuzzer_count_y = [];
 max_fuzzer_count = 0;
 
 {% for project_timestamp in project_statistics %}
-code_coverage_lines_x.push("{{project_timestamp.date}}");
-code_coverage_lines_y.push({{project_timestamp.coverage_lines}});
-code_coverage_functions_y.push({{project_timestamp.coverage_functions}});
-code_reachability_y.push({{project_timestamp.static_reachability}});
-fuzzer_count_y.push({{project_timestamp.fuzzer_count}});
-max_fuzzer_count = Math.max(max_fuzzer_count, {{project_timestamp.fuzzer_count}});
+  code_coverage_lines_x.push("{{project_timestamp.date}}");
+  code_coverage_lines_y.push({{project_timestamp.coverage_data.line_coverage.percent}});
+  code_coverage_functions_y.push({{project_timestamp.introspector_data.functions_covered_estimate}});
+  code_reachability_y.push({{project_timestamp.introspector_data.static_reachability}});
+  fuzzer_count_y.push({{project_timestamp.introspector_data.fuzzer_count}});
+  max_fuzzer_count = Math.max(max_fuzzer_count, {{project_timestamp.introspector_data.fuzzer_count}});
 {%endfor%}
 
 // Plot for code coverage in terms of lines over time

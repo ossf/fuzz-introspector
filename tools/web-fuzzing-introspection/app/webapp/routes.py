@@ -30,15 +30,22 @@ gtag = None
 def get_frontpage_summary_stats():
     # Get total number of projects
     all_projects = test_data.get_projects()
-    total_number_of_projects = len(all_projects)
-    total_fuzzers = sum([project.fuzz_count for project in all_projects])
+
+    projects_to_use = []
+    # Only include fuzz introspector projects
+    for project in all_projects:
+        if project.introspector_data != None:
+            projects_to_use.append(project)
+
+    total_number_of_projects = len(projects_to_use)
+    total_fuzzers = sum([project.introspector_data['fuzzer_count'] for project in projects_to_use])
     total_functions = len(test_data.get_functions())
     language_count = {'c': 0, 'python': 0, 'c++': 0, 'java': 0}
-    for project in all_projects:
+    for project in projects_to_use:
         language_count[project.language] += 1
 
     # wrap it in a DBSummary
-    db_summary = models.DBSummary(all_projects, total_number_of_projects,
+    db_summary = models.DBSummary(projects_to_use, total_number_of_projects,
                                   total_fuzzers, total_functions,
                                   language_count)
     return db_summary
@@ -82,16 +89,18 @@ def index():
     max_proj = 0
     max_fuzzer_count = 0
     max_function_count = 0
+    max_line_count = 0
     for db_timestamp in db_timestamps:
         max_proj = max(db_timestamp.project_count, max_proj)
         max_fuzzer_count = max(db_timestamp.fuzzer_count, max_fuzzer_count)
         max_function_count = max(db_timestamp.function_count,
                                  max_function_count)
+        max_line_count = max(max_line_count, db_timestamp.accummulated_lines_total)
 
     max_proj = int(max_proj * 1.2)
     max_fuzzer_count = int(max_fuzzer_count * 1.2)
     max_function_count = int(max_function_count * 1.2)
-
+    max_line_count = int(max_line_count * 1.2)
 
     oss_fuzz_total_number = len(test_data.get_build_status())
     return render_template('index.html',
@@ -101,7 +110,8 @@ def index():
                            max_proj=max_proj,
                            max_fuzzer_count=max_fuzzer_count,
                            max_function_count=max_function_count,
-                           oss_fuzz_total_number = oss_fuzz_total_number)
+                           oss_fuzz_total_number = oss_fuzz_total_number,
+                           max_line_count = max_line_count)
 
 
 @blueprint.route('/function-profile', methods=['GET'])
@@ -210,8 +220,13 @@ def function_search():
 
 @blueprint.route('/projects-overview')
 def projects_overview():
-    projects = test_data.get_projects()
-    return render_template('projects-overview.html', gtag=gtag, all_projects=projects)
+    all_projects = test_data.get_projects()
+    projects_to_use = []
+    # Only include fuzz introspector projects
+    for project in all_projects:
+        if project.introspector_data != None:
+            projects_to_use.append(project)
+    return render_template('projects-overview.html', gtag=gtag, all_projects=projects_to_use)
 
 @blueprint.route('/indexing-overview')
 def indexing_overview():

@@ -46,7 +46,9 @@ def load_db():
                                project_count=ts['project_count'],
                                fuzzer_count=ts['fuzzer_count'],
                                function_count=ts['function_count'],
-                               function_coverage_estimate=ts['function_coverage_estimate']))
+                               function_coverage_estimate=ts['function_coverage_estimate'],
+                               accummulated_lines_total=ts['accummulated_lines_total'],
+                               accummulated_lines_covered=ts['accummulated_lines_covered']))
 
     with open(all_functions_file, 'r') as f:
         all_function_list = json.load(f)
@@ -86,10 +88,9 @@ def load_db():
             models.ProjectTimestamp(
                 date=project_timestamp['date'],
                 project_name=project_timestamp['project_name'],
-                coverage_lines=project_timestamp['coverage_lines'],
-                static_reachability=project_timestamp['static_reachability'],
-                fuzzer_count=project_timestamp['fuzzer_count'],
-                coverage_functions=project_timestamp['coverage_lines']))
+                language=project_timestamp['language'],
+                coverage_data=project_timestamp['coverage-data'],
+                introspector_data=project_timestamp['introspector-data']))
 
     # Load all profiles
     with open(project_currents, 'r') as f:
@@ -99,12 +100,10 @@ def load_db():
             models.Project(
                 name=project_timestamp['project_name'],
                 language=project_timestamp.get('language', 'c'),
-                fuzz_count=project_timestamp['fuzzer_count'],
-                reach=project_timestamp['static_reachability'],
-                runtime_cov=project_timestamp['coverage_lines'],
-                introspector_report_url=project_timestamp[
-                    'introspector_report_url'],
-                code_coverage_report_url=project_timestamp['coverage_url']))
+                date=project_timestamp['date'],
+                coverage_data=project_timestamp['coverage-data'],
+                introspector_data=project_timestamp['introspector-data']
+        ))
 
     if os.path.isfile(projects_build_status):
         # Read the builds
