@@ -287,7 +287,6 @@ def extract_project_data(project_name, date_str, should_include_details,
         amount_of_fuzzers = len(introspector_report) - 2
         number_of_functions = len(all_function_list)
 
-        #functions_covered_estimate = int(number_of_functions * float(0.01 * project_stats['code-coverage-function-percentage']))
         functions_covered_estimate = project_stats[
             'code-coverage-function-percentage']
         refined_proj_list = list()
