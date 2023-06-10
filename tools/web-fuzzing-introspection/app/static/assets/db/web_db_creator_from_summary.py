@@ -245,13 +245,23 @@ def extract_project_data(project_name, date_str,
         # Default set to c++ as this is OSS-Fuzz's default.
         project_language = 'c++'
 
-    # Extract introspect report.
+    # Extract code coverage and introspector reports.
+    code_coverage_summary = get_code_coverage_summary(project_name, date_str.replace("-", ""))
     introspector_report = extract_introspector_report(project_name, date_str)
     introspector_report_url = get_introspector_report_url_report(
         project_name, date_str.replace("-", ""))
-    if introspector_report == None:
+
+    # Currently, we fail if any of code_coverage_summary of introspector_report is
+    # None. This should later be adjusted such that we can continue if we only
+    # have code coverage but no introspector data. However, we need to adjust
+    # the OSS-Fuzz data generated before doing so, we need some basic stats e.g.
+    # number of fuzzers, which are currently only available in Fuzz Introspector.
+    if code_coverage_summary == None or introspector_report == None:
+        # Do not adjust the `manager_return_dict`, so nothing will be included in
+        # the report.
         return
-    else:
+
+    if introspector_report != None:
         # Access all functions
         all_function_list = introspector_report['MergedProjectProfile']['all-functions']
         project_stats = introspector_report['MergedProjectProfile']['stats']
@@ -333,7 +343,6 @@ def extract_project_data(project_name, date_str,
 
 
     # Extract data from the code coverage reports
-    code_coverage_summary = get_code_coverage_summary(project_name, date_str.replace("-", ""))
     if code_coverage_summary == None:
         code_coverage_data_dict = None
     else:
