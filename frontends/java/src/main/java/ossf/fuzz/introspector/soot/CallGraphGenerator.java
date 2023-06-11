@@ -41,6 +41,7 @@ import ossf.fuzz.introspector.soot.yaml.FuzzerConfig;
 import ossf.fuzz.introspector.soot.yaml.JavaMethodInfo;
 import soot.Body;
 import soot.PackManager;
+import soot.ResolutionFailedException;
 import soot.Scene;
 import soot.SceneTransformer;
 import soot.SootClass;
@@ -124,6 +125,12 @@ public class CallGraphGenerator {
     Options.v().set_whole_program(true);
     Options.v().set_keep_line_number(true);
     Options.v().set_no_writeout_body_releasing(true);
+
+    // Special options to ignore wrong staticness methods
+    // For example, invoking a static class method from its
+    // instance object will trigger resolve error because of
+    // wrong staticness invocation
+    Options.v().set_wrong_staticness(Options.wrong_staticness_ignore);
 
     // Load and set main class
     Options.v().set_main_class(entryClass);
@@ -973,24 +980,33 @@ class CustomSenceTransformer extends SceneTransformer {
    *
    * @param stmt the statement to handle
    * @param sourceFilePath the file path for the parent method
-   * @return the callsite object to store in the output yaml file
+   * @return the callsite object to store in the output yaml file, return null if Soot fails to
+   *     resolve the invocation
    */
   private Callsite handleMethodInvocationInStatement(Stmt stmt, String sourceFilePath) {
     // Handle statements of a method
-    if ((stmt.containsInvokeExpr()) && (sourceFilePath != null)) {
-      InvokeExpr expr = stmt.getInvokeExpr();
-      Callsite callsite = new Callsite();
-      SootMethod target = expr.getMethod();
-      SootClass tClass = target.getDeclaringClass();
-      Set<String> sink = this.sinkMethodMap.getOrDefault(tClass.getName(), Collections.emptySet());
-      if (sink.contains(target.getName())) {
-        this.reachedSinkMethodList.add(target);
+    try {
+      if ((stmt.containsInvokeExpr()) && (sourceFilePath != null)) {
+        InvokeExpr expr = stmt.getInvokeExpr();
+        Callsite callsite = new Callsite();
+        SootMethod target = expr.getMethod();
+        SootClass tClass = target.getDeclaringClass();
+        Set<String> sink =
+            this.sinkMethodMap.getOrDefault(tClass.getName(), Collections.emptySet());
+        if (sink.contains(target.getName())) {
+          this.reachedSinkMethodList.add(target);
+        }
+        if (!this.excludeMethodList.contains(target.getName())) {
+          callsite.setSource(sourceFilePath + ":" + stmt.getJavaSourceStartLineNumber() + ",1");
+          callsite.setMethodName("[" + tClass.getName() + "]." + target.getName());
+          return callsite;
+        }
       }
-      if (!this.excludeMethodList.contains(target.getName())) {
-        callsite.setSource(sourceFilePath + ":" + stmt.getJavaSourceStartLineNumber() + ",1");
-        callsite.setMethodName("[" + tClass.getName() + "]." + target.getName());
-        return callsite;
-      }
+    } catch (ResolutionFailedException e) {
+      // Some project may invoke method in a non-traditional way, for example
+      // invoking class static method within an object instance of that class.
+      // These invocation could cause ResolutionFailedException and they are skipped
+      // as the normal static invocation is handled in other location. So do nothing here.
     }
 
     return null;
