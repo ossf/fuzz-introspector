@@ -31,7 +31,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import ossf.fuzz.introspector.soot.yaml.BranchProfile;
 import ossf.fuzz.introspector.soot.yaml.BranchSide;
 import ossf.fuzz.introspector.soot.yaml.Callsite;
@@ -502,7 +501,7 @@ class CustomSenceTransformer extends SceneTransformer {
       file.createNewFile();
       FileWriter fw = new FileWriter(file);
       this.edgeClassMap = new HashMap<String, Set<String>>();
-      fw.write(extractCallTree(callGraph, this.entryMethod, 0, -1));
+      this.extractCallTree(fw, callGraph, this.entryMethod, 0, -1);
       fw.close();
 
       // Extract other info and write to .data.yaml
@@ -637,23 +636,28 @@ class CustomSenceTransformer extends SceneTransformer {
   }
 
   // Shorthand for extractCallTree from top
-  private String extractCallTree(CallGraph cg, SootMethod method, Integer depth, Integer line) {
-    return "Call tree\n"
-        + extractCallTree(cg, method, depth, line, new LinkedList<SootMethod>(), null).getKey();
+  private void extractCallTree(
+      FileWriter fw, CallGraph cg, SootMethod method, Integer depth, Integer line)
+      throws IOException {
+    fw.write("Call tree\n");
+    this.extractCallTree(fw, cg, method, depth, line, new LinkedList<SootMethod>(), null);
   }
 
   // Recursively extract calltree from stored method relationship, ignoring loops
-  private Pair<String, Integer> extractCallTree(
+  // and write to the output data file
+  private Integer extractCallTree(
+      FileWriter fw,
       CallGraph cg,
       SootMethod method,
       Integer depth,
       Integer line,
       List<SootMethod> handled,
-      String callerClass) {
+      String callerClass)
+      throws IOException {
     StringBuilder callTree = new StringBuilder();
 
     if (this.excludeMethodList.contains(method.getName())) {
-      return Pair.of("", 0);
+      return 0;
     }
 
     String className = "";
@@ -677,8 +681,14 @@ class CustomSenceTransformer extends SceneTransformer {
       className = method.getDeclaringClass().getName();
     }
     String methodName = method.getSubSignature().split(" ")[1];
-    callTree.append(StringUtils.leftPad("", depth * 2));
-    callTree.append(methodName + " " + className + " linenumber=" + line + "\n");
+    String calltreeLine =
+        StringUtils.leftPad("", depth * 2)
+            + methodName
+            + " "
+            + className
+            + " linenumber="
+            + line
+            + "\n";
 
     boolean excluded = false;
     boolean sink = false;
@@ -694,12 +704,14 @@ class CustomSenceTransformer extends SceneTransformer {
         }
       }
     }
+
     if (excluded) {
       if (sink) {
-        return Pair.of(callTree.toString(), 0);
-      } else {
-        return Pair.of("", 0);
+        fw.write(calltreeLine);
       }
+      return 0;
+    } else {
+      fw.write(calltreeLine);
     }
 
     FunctionElement element = this.searchElement("[" + className + "]." + methodName);
@@ -715,25 +727,23 @@ class CustomSenceTransformer extends SceneTransformer {
           continue;
         }
 
-        Pair<String, Integer> pair =
+        Integer resultDepth =
             extractCallTree(
+                fw,
                 cg,
                 tgt,
                 depth + 1,
                 (edge.srcStmt() == null) ? -1 : edge.srcStmt().getJavaSourceStartLineNumber(),
                 handled,
                 edge.src().getDeclaringClass().getName());
-        if (!pair.getKey().equals("")) {
-          callTree.append(pair.getKey());
-          Integer newDepth = pair.getValue() + 1;
-          if ((element != null) && (newDepth > element.getFunctionDepth())) {
-            element.setFunctionDepth(newDepth);
-          }
+        Integer newDepth = resultDepth + 1;
+        if ((element != null) && (newDepth > element.getFunctionDepth())) {
+          element.setFunctionDepth(newDepth);
         }
       }
     }
 
-    return Pair.of(callTree.toString(), (element == null) ? 0 : element.getFunctionDepth());
+    return (element == null) ? 0 : element.getFunctionDepth();
   }
 
   private Integer calculateCyclomaticComplexity(UnitGraph unitGraph) {
