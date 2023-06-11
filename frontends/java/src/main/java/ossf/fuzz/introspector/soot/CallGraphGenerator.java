@@ -42,6 +42,7 @@ import ossf.fuzz.introspector.soot.yaml.FuzzerConfig;
 import ossf.fuzz.introspector.soot.yaml.JavaMethodInfo;
 import soot.Body;
 import soot.PackManager;
+import soot.ResolutionFailedException;
 import soot.Scene;
 import soot.SceneTransformer;
 import soot.SootClass;
@@ -969,7 +970,8 @@ class CustomSenceTransformer extends SceneTransformer {
    *
    * @param stmt the statement to handle
    * @param sourceFilePath the file path for the parent method
-   * @return the callsite object to store in the output yaml file, return null if Soot fails to resolve the invocation
+   * @return the callsite object to store in the output yaml file, return null if Soot fails to
+   *     resolve the invocation
    */
   private Callsite handleMethodInvocationInStatement(Stmt stmt, String sourceFilePath) {
     // Handle statements of a method
@@ -979,7 +981,8 @@ class CustomSenceTransformer extends SceneTransformer {
         Callsite callsite = new Callsite();
         SootMethod target = expr.getMethod();
         SootClass tClass = target.getDeclaringClass();
-        Set<String> sink = this.sinkMethodMap.getOrDefault(tClass.getName(), Collections.emptySet());
+        Set<String> sink =
+            this.sinkMethodMap.getOrDefault(tClass.getName(), Collections.emptySet());
         if (sink.contains(target.getName())) {
           this.reachedSinkMethodList.add(target);
         }
