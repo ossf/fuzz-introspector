@@ -216,7 +216,16 @@ public class FunctionElement {
   }
 
   public void addCallsite(Callsite callsite) {
-    this.callsites.add(callsite);
+    Boolean duplicate = false;
+    for (Callsite item : this.callsites) {
+      if (item.equals(callsite)) {
+        duplicate = true;
+      }
+    }
+
+    if (!duplicate) {
+      this.callsites.add(callsite);
+    }
   }
 
   public void setCallsites(List<Callsite> callsites) {

@@ -38,4 +38,14 @@ public class Callsite {
   public void setMethodName(String methodName) {
     this.methodName = methodName;
   }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (obj instanceof Callsite) {
+      String selfMethodName = this.getMethodName();
+      String objMethodName = ((Callsite) obj).getMethodName();
+      return selfMethodName.equals(objMethodName);
+    }
+    return false;
+  }
 }
