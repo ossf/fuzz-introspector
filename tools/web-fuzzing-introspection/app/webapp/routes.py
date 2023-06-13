@@ -256,9 +256,8 @@ def api_project_summary():
         'result': 'success',
         'project': {
             'name': project_name,
-            'fuzzer-count': target_project.fuzz_count,
-            'runtime-coverage': project.runtime_cov,
-            'static-reachability': project.reach
+            'runtime-coverage-data': project.coverage_data,
+            'introspector-data': project.introspector_data
         }
     }
 
