@@ -131,7 +131,6 @@ def function_profile():
 def project_profile():
     #print(request.args.get('project', 'none'))
     target_project_name = request.args.get('project', 'none')
-    oss_fuzz_url = 'https://github.com/google/oss-fuzz/tree/master/projects/' + target_project_name
     project = get_project_with_name(target_project_name)
     if project != None:
         project_statistics = data_storage.PROJECT_TIMESTAMPS
@@ -144,7 +143,6 @@ def project_profile():
                                gtag=gtag,
                                project=project,
                                project_statistics=real_stats,
-                               oss_fuzz_url=oss_fuzz_url,
                                has_project_details=True)
 
     # Either this is a wrong project or we only have a build status for it
@@ -164,7 +162,6 @@ def project_profile():
                                gtag=gtag,
                                project=project,
                                project_statistics=None,
-                               oss_fuzz_url=oss_fuzz_url,
                                has_project_details=False)
     print("Nothing to do. We shuold probably have a 404")
     return redirect("/")

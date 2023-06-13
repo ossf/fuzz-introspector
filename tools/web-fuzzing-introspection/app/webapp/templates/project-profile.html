@@ -8,7 +8,7 @@
         <div class="container">
           <div class="project__profile-wrapper">
             <div class="pr__profile-header">
-              <h2>Project: <a href="#"> {{ project.name }}</a></h2>
+              <h2>Project: <a href="https://github.com/google/oss-fuzz/tree/master/projects/{{project.name}}"> {{ project.name }}</a></h2>
             </div>
             <div class="profile__table" style="max-width: 300px">
               <table>
@@ -18,12 +18,16 @@
                     <td> {{ project.language }}
                   </tr>
                   <tr>
+                    <td>OSS-Fuzz project</td>
+                    <td><a href="https://github.com/google/oss-fuzz/tree/master/projects/{{project.name}}">link</a></td>
+                  </tr>
+                  <tr>
                     <td>Fuzzer count</td>
                     {% if has_project_details %}
-                      <td> {{ project.fuzz_count }}</td>
+                      <td> {{ project.introspector_data.fuzzer_count }}</td>
                     {% else %}
                       <td>N/A</td>
-                    {% endif %}                          
+                    {% endif %}
                   </tr>
                   <tr>
                     <td>Code coverage</td>
@@ -31,7 +35,7 @@
                       <td> {{ '%0.2f' % project.coverage_data.line_coverage.percent |float}}% </td>
                     {% else %}
                       <td>N/A</td>
-                    {% endif %}                      
+                    {% endif %}
                   </tr>
                   <tr>
                     <td>Static reachability</td>
@@ -47,7 +51,7 @@
                     <td><a href="{{ project.coverage_data.coverage_url }}">Report link</a></td>
                     {% else %}
                       <td>N/A</td>
-                    {% endif %}                             
+                    {% endif %}
                   </tr>
                   <tr>
                     <td>Fuzz Introspector report</td>
@@ -55,12 +59,8 @@
                       <td><a href="{{ project.introspector_data.introspector_report_url }}">Report link</a></td>
                     {% else %}
                       <td>N/A</td>
-                    {% endif %}                      
-                  </tr>
-                  <tr>
-                    <td>OSS-Fuzz set up</td>
-                    <td> <a href="{{ oss_fuzz_url }}">link</a></td>
-                  </tr>                  
+                    {% endif %}
+                  </tr> 
                 </tbody>
               </table>
             </div>
