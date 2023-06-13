@@ -719,7 +719,7 @@ def _group_method_by_class(method_list):
     result_map = {}
 
     for func_elem in method_list:
-        key = func_elem['functionSourceFile']
+        key = func_elem['functionSourceFile'].replace('$', '.')
         if key in result_map.keys():
             elem_list = result_map[key]
         else:
@@ -816,6 +816,31 @@ def _extract_method(yaml_dict):
     return init_dict, method_list, instance_method_list, static_method_list
 
 
+def _extract_super_exceptions(exceptions):
+    """
+    Some predefined java exceptions, like IOException are
+    super class of many custom exceptions. In java, if we
+    catch the super class exception first, you cannot add
+    additional statement to catch a subclass of that exception.
+    In order to allow the logic to catch subclass exception first,
+    it is necessary to extract the super class exception into
+    a separate set and only catch them after all other exceptions
+    has been caught. This method separates the exception set and
+    return a set of normal exceptions and a set of java exceptions
+    which normally is a superclass of many exceptions.
+    """
+    normal_exceptions = set()
+    super_exceptions = set()
+
+    for exception in exceptions:
+        if exception.startswith("java"):
+            super_exceptions.add(exception)
+        else:
+            normal_exceptions.add(exception)
+
+    return normal_exceptions, super_exceptions
+
+
 def _generate_heuristic_1(method_tuple, possible_targets, max_target):
     """Heuristic 1.
     Creates a single FuzzTarget for all method that satisfy all:
@@ -880,18 +905,9 @@ def _generate_heuristic_1(method_tuple, possible_targets, max_target):
                 fuzzer_source_code += "  }\n"
                 counter = 1
 
-                super_exceptions = []
-                for exc in base_possible_target.exceptions_to_handle:
-                    # Skip super class exception and add them at the end
-                    if exc.startswith("java"):
-                        super_exceptions.append(exc)
-                        continue
-                    fuzzer_source_code += "  catch (%s e%d) {}\n" % (exc,
-                                                                     counter)
-                    counter += 1
-
-                # Add back super class exception
-                for exc in super_exceptions:
+                exceptions, super_exceptions = _extract_super_exceptions(
+                    base_possible_target.exceptions_to_handle)
+                for exc in list(exceptions) + list(super_exceptions):
                     fuzzer_source_code += "  catch (%s e%d) {}\n" % (exc,
                                                                      counter)
                     counter += 1
@@ -917,23 +933,16 @@ def _generate_heuristic_2(method_tuple, possible_targets, max_target):
     HEURISTIC_NAME = "jvm-autofuzz-heuristics-2"
 
     init_dict, method_list, _, _ = method_tuple
-    for func_elem in method_list:
-        if len(possible_targets) > max_target:
-            return
+
+    method_map = _group_method_by_class(method_list)
+
+    # Process target method class by class
+    for key in method_map.keys():
+        method_list = method_map[key]
 
         # Initialize base possible_target object
-        possible_target = FuzzTarget(func_elem=func_elem)
-        func_name = possible_target.function_target
+        possible_target = FuzzTarget(func_elem=method_list[0])
         func_class = possible_target.function_class
-
-        # Get all possible argument lists with different possible object creation combination
-        for argType in func_elem['argTypes']:
-            arg_list = _handle_argument(argType.replace('$', '.'), init_dict,
-                                        possible_target, max_target)
-            if arg_list:
-                possible_target.variables_to_add.append(arg_list[0])
-        if len(possible_target.variables_to_add) != len(func_elem['argTypes']):
-            continue
 
         # Get all object creation statement for each possible concrete classes of the object
         object_creation_list = _handle_object_creation(func_class, init_dict,
@@ -944,20 +953,47 @@ def _generate_heuristic_2(method_tuple, possible_targets, max_target):
             # Create possible target for all possible object creation statement
             # Clone the base target object
             cloned_possible_target = FuzzTarget(orig=possible_target)
+            exception_set = set(possible_target.exceptions_to_handle)
 
-            # Create the actual source
+            # Create the actual source for base object creation
             fuzzer_source_code = "  // Heuristic name: %s\n" % (HEURISTIC_NAME)
             fuzzer_source_code += "  %s obj = %s;\n" % (func_class,
                                                         object_creation_item)
-            fuzzer_source_code += "  obj.%s($VARIABLE$);\n" % (func_name)
-            if len(cloned_possible_target.exceptions_to_handle) > 0:
+
+            for func_elem in method_list:
+                if len(possible_targets) > max_target:
+                    return
+                # Clone the method FuzzTarget object for this target method
+                method_possible_target = FuzzTarget(func_elem=func_elem)
+                func_name = method_possible_target.function_target
+
+                # Get all possible argument lists with different possible object creation combination
+                for argType in func_elem['argTypes']:
+                    arg_list = _handle_argument(argType.replace('$', '.'),
+                                                init_dict, possible_target,
+                                                max_target)
+                    if arg_list:
+                        possible_target.variables_to_add.append(arg_list[0])
+                if len(possible_target.variables_to_add) != len(
+                        func_elem['argTypes']):
+                    continue
+
+                fuzzer_source_code += "  obj.%s($VARIABLE$);\n" % (func_name)
+                exception_set.update(
+                    method_possible_target.exceptions_to_handle)
+
+            if len(exception_set) > 0:
                 fuzzer_source_code = "  try {\n" + fuzzer_source_code
                 fuzzer_source_code += "  }\n"
                 counter = 1
-                for exc in cloned_possible_target.exceptions_to_handle:
+
+                exceptions, super_exceptions = _extract_super_exceptions(
+                    exception_set)
+                for exc in list(exceptions) + list(super_exceptions):
                     fuzzer_source_code += "  catch (%s e%d) {}\n" % (exc,
                                                                      counter)
                     counter += 1
+
             cloned_possible_target.fuzzer_source_code = fuzzer_source_code
             cloned_possible_target.heuristics_used.append(HEURISTIC_NAME)
 
