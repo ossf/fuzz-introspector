@@ -905,7 +905,8 @@ def _generate_heuristic_1(method_tuple, possible_targets, max_target):
                 fuzzer_source_code += "  }\n"
                 counter = 1
 
-                exceptions, super_exceptions = _extract_super_exceptions(base_possible_target.exceptions_to_handle)
+                exceptions, super_exceptions = _extract_super_exceptions(
+                    base_possible_target.exceptions_to_handle)
                 for exc in list(exceptions) + list(super_exceptions):
                     fuzzer_source_code += "  catch (%s e%d) {}\n" % (exc,
                                                                      counter)
@@ -968,22 +969,26 @@ def _generate_heuristic_2(method_tuple, possible_targets, max_target):
 
                 # Get all possible argument lists with different possible object creation combination
                 for argType in func_elem['argTypes']:
-                    arg_list = _handle_argument(argType.replace('$', '.'), init_dict,
-                                                possible_target, max_target)
+                    arg_list = _handle_argument(argType.replace('$', '.'),
+                                                init_dict, possible_target,
+                                                max_target)
                     if arg_list:
                         possible_target.variables_to_add.append(arg_list[0])
-                if len(possible_target.variables_to_add) != len(func_elem['argTypes']):
+                if len(possible_target.variables_to_add) != len(
+                        func_elem['argTypes']):
                     continue
 
                 fuzzer_source_code += "  obj.%s($VARIABLE$);\n" % (func_name)
-                exception_set.update(method_possible_target.exceptions_to_handle)
+                exception_set.update(
+                    method_possible_target.exceptions_to_handle)
 
             if len(exception_set) > 0:
                 fuzzer_source_code = "  try {\n" + fuzzer_source_code
                 fuzzer_source_code += "  }\n"
                 counter = 1
 
-                exceptions, super_exceptions = _extract_super_exceptions(exception_set)
+                exceptions, super_exceptions = _extract_super_exceptions(
+                    exception_set)
                 for exc in list(exceptions) + list(super_exceptions):
                     fuzzer_source_code += "  catch (%s e%d) {}\n" % (exc,
                                                                      counter)
