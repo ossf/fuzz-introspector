@@ -21,7 +21,7 @@ from . import models
 
 # Use these during testing.
 #from app.site import test_data
-from . import test_data
+from . import data_storage
 
 blueprint = Blueprint('site', __name__, template_folder='templates')
 
@@ -29,7 +29,7 @@ gtag = None
 
 def get_frontpage_summary_stats():
     # Get total number of projects
-    all_projects = test_data.get_projects()
+    all_projects = data_storage.get_projects()
 
     projects_to_use = []
     # Only include fuzz introspector projects
@@ -39,7 +39,7 @@ def get_frontpage_summary_stats():
 
     total_number_of_projects = len(projects_to_use)
     total_fuzzers = sum([project.introspector_data['fuzzer_count'] for project in projects_to_use])
-    total_functions = len(test_data.get_functions())
+    total_functions = len(data_storage.get_functions())
     language_count = {'c': 0, 'python': 0, 'c++': 0, 'java': 0}
     for project in projects_to_use:
         language_count[project.language] += 1
@@ -52,7 +52,7 @@ def get_frontpage_summary_stats():
 
 
 def get_project_with_name(project_name):
-    all_projects = test_data.get_projects()
+    all_projects = data_storage.get_projects()
     for project in all_projects:
         if project.name == project_name:
             return project
@@ -62,7 +62,7 @@ def get_project_with_name(project_name):
 
 
 def get_fuction_with_name(function_name, project_name):
-    all_functions = test_data.get_functions()
+    all_functions = data_storage.get_functions()
     for function in all_functions:
         if function.name == function_name and function.project == project_name:
             return function
@@ -72,7 +72,7 @@ def get_fuction_with_name(function_name, project_name):
 
 
 def get_all_related_functions(primary_function):
-    all_functions = test_data.get_functions()
+    all_functions = data_storage.get_functions()
     related_functions = []
     for function in all_functions:
         if function.name == primary_function.name and function.project != primary_function.project:
@@ -83,7 +83,7 @@ def get_all_related_functions(primary_function):
 @blueprint.route('/')
 def index():
     db_summary = get_frontpage_summary_stats()
-    db_timestamps = test_data.TEST_DB_TIMESTAMPS
+    db_timestamps = data_storage.DB_TIMESTAMPS
     print("Length of timestamps: %d" % (len(db_timestamps)))
     # Maximum projects
     max_proj = 0
@@ -102,7 +102,7 @@ def index():
     max_function_count = int(max_function_count * 1.2)
     max_line_count = int(max_line_count * 1.2)
 
-    oss_fuzz_total_number = len(test_data.get_build_status())
+    oss_fuzz_total_number = len(data_storage.get_build_status())
     return render_template('index.html',
                            gtag=gtag,
                            db_summary=db_summary,
@@ -134,7 +134,7 @@ def project_profile():
     oss_fuzz_url = 'https://github.com/google/oss-fuzz/tree/master/projects/' + target_project_name
     project = get_project_with_name(target_project_name)
     if project != None:
-        project_statistics = test_data.TEST_PROJECT_TIMESTAMPS
+        project_statistics = data_storage.PROJECT_TIMESTAMPS
         real_stats = []
         for ps in project_statistics:
             if ps.project_name == project.name:
@@ -148,7 +148,7 @@ def project_profile():
                                has_project_details=True)
 
     # Either this is a wrong project or we only have a build status for it
-    all_build_status = test_data.get_build_status()
+    all_build_status = data_storage.get_build_status()
     for build_status in all_build_status:
         if build_status.project_name == target_project_name:
             project = models.Project(
@@ -176,7 +176,7 @@ def function_search():
     MAX_MATCHES_TO_DISPLAY = 900
     query = request.args.get('q', '')
     print("query: { %s }" % (query))
-    print("Length of functions: %d" % (len(test_data.get_functions())))
+    print("Length of functions: %d" % (len(data_storage.get_functions())))
     if query == '':
         # Pick a random interesting query
         # Some queries involving fuzzing-interesting targets.
@@ -187,7 +187,7 @@ def function_search():
         ]
         interesting_query = random.choice(interesting_query_roulette)
         tmp_list = []
-        for function in test_data.get_functions():
+        for function in data_storage.get_functions():
             if interesting_query in function.name:
                 tmp_list.append(function)
         functions_to_display = tmp_list
@@ -201,7 +201,7 @@ def function_search():
         info_msg = f"No query was given, picked the query \"{interesting_query}\" for this"
     else:
         tmp_list = []
-        for function in test_data.get_functions():
+        for function in data_storage.get_functions():
             if query in function.name:
                 tmp_list.append(function)
         functions_to_display = tmp_list
@@ -220,7 +220,7 @@ def function_search():
 
 @blueprint.route('/projects-overview')
 def projects_overview():
-    all_projects = test_data.get_projects()
+    all_projects = data_storage.get_projects()
     projects_to_use = []
     # Only include fuzz introspector projects
     for project in all_projects:
@@ -230,7 +230,7 @@ def projects_overview():
 
 @blueprint.route('/indexing-overview')
 def indexing_overview():
-    build_status = test_data.get_build_status()
+    build_status = data_storage.get_build_status()
     return render_template('indexing-overview.html', gtag=gtag, all_build_status=build_status)
 
 @blueprint.route('/about')
@@ -244,7 +244,7 @@ def api_project_summary():
     if project_name == None:
         return {'result': 'error', 'msg': 'Please provide project name'}
     target_project = None
-    all_projects = test_data.get_projects()
+    all_projects = data_storage.get_projects()
     for project in all_projects:
         if project.name == project_name:
             target_project = project
@@ -269,7 +269,7 @@ def branch_blockers():
         return {'result': 'error', 'msg': 'Please provide project name'}
 
     target_project = None
-    all_projects = test_data.get_projects()
+    all_projects = data_storage.get_projects()
     for project in all_projects:
         if project.name == project_name:
             target_project = project
@@ -277,7 +277,7 @@ def branch_blockers():
     if target_project is None:
         return {'result': 'error', 'msg': 'Project not in the database'}
 
-    all_branch_blockers = test_data.get_blockers()
+    all_branch_blockers = data_storage.get_blockers()
 
     project_blockers = []
     for blocker in all_branch_blockers:
@@ -300,7 +300,7 @@ def far_reach_but_low_coverage():
         return {'result': 'error', 'msg': 'Please provide project name'}  ##
 
     target_project = None
-    all_projects = test_data.get_projects()
+    all_projects = data_storage.get_projects()
     for project in all_projects:
         if project.name == project_name:
             target_project = project
@@ -308,7 +308,7 @@ def far_reach_but_low_coverage():
     if target_project is None:
         return {'result': 'error', 'msg': 'Project not in the database'}
 
-    all_functions = test_data.get_functions()
+    all_functions = data_storage.get_functions()
     project_functions = []
     for function in all_functions:
         if function.project == project_name:

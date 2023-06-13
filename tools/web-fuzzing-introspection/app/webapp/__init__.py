@@ -1,7 +1,7 @@
 import os
 import json
 
-from . import test_data
+from . import data_storage
 from . import models
 
 
@@ -35,13 +35,13 @@ def load_db():
         os.path.dirname(__file__),
         "../static/assets/db/build-status.json")
 
-    if len(test_data.TEST_DB_TIMESTAMPS) > 0:
+    if len(data_storage.DB_TIMESTAMPS) > 0:
         return
 
     with open(db_timestamps_file, 'r') as f:
         db_tss = json.load(f)
     for ts in db_tss:
-        test_data.TEST_DB_TIMESTAMPS.append(
+        data_storage.DB_TIMESTAMPS.append(
             models.DBTimestamp(date=ts['date'],
                                project_count=ts['project_count'],
                                fuzzer_count=ts['fuzzer_count'],
@@ -55,7 +55,7 @@ def load_db():
     idx = 0
     for func in all_function_list:
         idx += 1
-        test_data.TEST_FUNCTIONS.append(
+        data_storage.FUNCTIONS.append(
             models.Function(
                 name=func['name'],
                 project=func['project'],
@@ -69,13 +69,13 @@ def load_db():
                 undiscovered_complexity=func['undiscovered-complexity']))
 
     print("Loadded %d functions" % (idx))
-    print("Len %d" % (len(test_data.TEST_FUNCTIONS)))
+    print("Len %d" % (len(data_storage.FUNCTIONS)))
 
     with open(all_branch_blockers_file, 'r') as f:
         all_branch_blockers = json.load(f)
 
     for json_bb in all_branch_blockers:
-        test_data.TEST_BLOCKERS.append(
+        data_storage.BLOCKERS.append(
                 models.BranchBlocker(
                     project_name = json_bb.get('project', ''),
                     function_name = json_bb.get('function-name', ''),
@@ -84,7 +84,7 @@ def load_db():
     with open(project_timestamps_file, 'r') as f:
         project_timestamps_json = json.load(f)
     for project_timestamp in project_timestamps_json:
-        test_data.TEST_PROJECT_TIMESTAMPS.append(
+        data_storage.PROJECT_TIMESTAMPS.append(
             models.ProjectTimestamp(
                 date=project_timestamp['date'],
                 project_name=project_timestamp['project_name'],
@@ -96,7 +96,7 @@ def load_db():
     with open(project_currents, 'r') as f:
         project_currents_json = json.load(f)
     for project_timestamp in project_currents_json:
-        test_data.TEST_PROJECTS.append(
+        data_storage.PROJECTS.append(
             models.Project(
                 name=project_timestamp['project_name'],
                 language=project_timestamp.get('language', 'c'),
@@ -113,7 +113,7 @@ def load_db():
         for project_name in build_json:
             project_dict = build_json[project_name]
 
-            test_data.TEST_BUILD_STATUS.append(
+            data_storage.BUILD_STATUS.append(
                 models.BuildStatus(
                     project_name=project_name,
                     fuzz_build_status=project_dict['fuzz-build'],
