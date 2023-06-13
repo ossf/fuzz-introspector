@@ -8,7 +8,7 @@
         <div class="container">
           <div class="project__profile-wrapper">
             <div class="pr__profile-header">
-              <h2>Project: <a href="#"> {{ project.name }}</a></h2>
+              <h2>Project: <a href="https://github.com/google/oss-fuzz/tree/master/projects/{{project.name}}"> {{ project.name }}</a></h2>
             </div>
             <div class="profile__table" style="max-width: 300px">
               <table>
@@ -18,9 +18,13 @@
                     <td> {{ project.language }}
                   </tr>
                   <tr>
+                    <td>OSS-Fuzz project</td>
+                    <td><a href="https://github.com/google/oss-fuzz/tree/master/projects/{{project.name}}">link</a></td>
+                  </tr>
+                  <tr>
                     <td>Fuzzer count</td>
                     {% if has_project_details %}
-                      <td> {{ project.fuzz_count }}</td>
+                      <td> {{ project.introspector_data.fuzzer_count }}</td>
                     {% else %}
                       <td>N/A</td>
                     {% endif %}                          
