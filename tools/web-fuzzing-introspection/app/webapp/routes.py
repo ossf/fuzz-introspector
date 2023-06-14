@@ -333,7 +333,8 @@ def far_reach_but_low_coverage():
             'runtime-coverage-percent':
             function.runtime_code_coverage,
             'accummulated-complexity':
-            function.accummulated_cyclomatic_complexity
+            function.accummulated_cyclomatic_complexity,
+            'function-arguments': function.function_arguments
         })
 
     return {'result': 'succes', 'functions': functions_to_return}

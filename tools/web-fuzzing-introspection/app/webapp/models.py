@@ -78,7 +78,8 @@ class Function:
                  code_coverage_url="",
                  accummulated_cyclomatic_complexity=0,
                  llvm_instruction_count=0,
-                 undiscovered_complexity=0):
+                 undiscovered_complexity=0,
+                 function_arguments=[]):
         self.name = name
         self.function_filename = function_filename
         self.project = project
@@ -90,6 +91,7 @@ class Function:
         self.accummulated_cyclomatic_complexity = accummulated_cyclomatic_complexity
         self.llvm_instruction_count = llvm_instruction_count
         self.undiscovered_complexity = undiscovered_complexity
+        self.function_arguments = function_arguments
 
 
 class BranchBlocker:

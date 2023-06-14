@@ -66,7 +66,8 @@ def load_db():
                 is_reached=func['is_reached'],
                 llvm_instruction_count=func['llvm-instruction-count'],
                 accummulated_cyclomatic_complexity=func['accumulated_cyclomatic_complexity'],
-                undiscovered_complexity=func['undiscovered-complexity']))
+                undiscovered_complexity=func['undiscovered-complexity'],
+                function_arguments=func['function-arguments']))
 
     print("Loadded %d functions" % (idx))
     print("Len %d" % (len(data_storage.FUNCTIONS)))
