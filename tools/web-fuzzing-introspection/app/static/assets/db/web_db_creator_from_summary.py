@@ -308,6 +308,7 @@ def extract_project_data(project_name, date_str, should_include_details,
                     func['I Count'],
                     'undiscovered-complexity':
                     func['Undiscovered complexity'],
+                    'function-arguments': func['Args']
                 })
 
         # Get all branch blockers
