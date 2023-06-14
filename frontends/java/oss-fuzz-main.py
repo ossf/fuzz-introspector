@@ -123,7 +123,7 @@ def run_introspector_frontend(target_class, jar_set):
       target_class, # entry class
       "fuzzerTestOneInput", # entry method
       package_name, # target package prefix
-      "<clinit>:finalize", # exclude method list
+      "\"<clinit>:finalize\"", # exclude method list
       "False", # Auto-fuzz switch
       """===jdk.*:java.*:javax.*:sun.*:sunw.*:com.sun.*:com.ibm.*:\
 com.apple.*:apple.awt.*===[java.lang.Runtime].exec:[javax.xml.xpath.XPath].compile:\
