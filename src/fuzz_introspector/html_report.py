@@ -137,6 +137,7 @@ def create_all_function_table(
         json_copy['Func name'] = demangled_func_name
         json_copy['Args'] = str(fd.arg_types)
         json_copy['Reached by Fuzzers'] = fd.reached_by_fuzzers
+        json_copy['return_type'] = fd.return_type
         table_rows_json_report.append(json_copy)
 
     logger.info("Assembled a total of %d entries" %
