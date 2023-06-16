@@ -1612,14 +1612,32 @@ def generate_possible_targets(proj_folder, max_target, param_combination):
     method_tuple = _extract_method(yaml_dict)
 
     possible_targets = []
-    _generate_heuristic_1(method_tuple, possible_targets, max_target)
-    _generate_heuristic_2(method_tuple, possible_targets, max_target)
-    _generate_heuristic_3(method_tuple, possible_targets, max_target)
-    _generate_heuristic_4(method_tuple, possible_targets, max_target)
-    _generate_heuristic_6(method_tuple, possible_targets, max_target)
-    _generate_heuristic_7(method_tuple, possible_targets, max_target)
-    _generate_heuristic_8(method_tuple, possible_targets, max_target)
-    _generate_heuristic_9(method_tuple, possible_targets, max_target)
-    _generate_heuristic_10(method_tuple, possible_targets, max_target)
+    temp_targets = []
+    _generate_heuristic_1(method_tuple, temp_targets, max_target)
+    possible_targets.extend(temp_targets)
+    temp_targets = []
+    _generate_heuristic_2(method_tuple, temp_targets, max_target)
+    possible_targets.extend(temp_targets)
+    temp_targets = []
+    _generate_heuristic_3(method_tuple, temp_targets, max_target)
+    possible_targets.extend(temp_targets)
+    temp_targets = []
+    _generate_heuristic_4(method_tuple, temp_targets, max_target)
+    possible_targets.extend(temp_targets)
+    temp_targets = []
+    _generate_heuristic_6(method_tuple, temp_targets, max_target)
+    possible_targets.extend(temp_targets)
+    temp_targets = []
+    _generate_heuristic_7(method_tuple, temp_targets, max_target)
+    possible_targets.extend(temp_targets)
+    temp_targets = []
+    _generate_heuristic_8(method_tuple, temp_targets, max_target)
+    possible_targets.extend(temp_targets)
+    temp_targets = []
+    _generate_heuristic_9(method_tuple, temp_targets, max_target)
+    possible_targets.extend(temp_targets)
+    temp_targets = []
+    _generate_heuristic_10(method_tuple, temp_targets, max_target)
+    possible_targets.extend(temp_targets)
 
     return possible_targets
