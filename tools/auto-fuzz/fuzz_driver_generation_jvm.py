@@ -587,7 +587,7 @@ def _handle_class_field_list(func_elem, possible_target):
             class_field_array += classname + '.' + field_name + ','
         class_field_array += '};'
 
-        self.class_field_list.append(class_field_array)
+        possible_target.class_field_list.append(class_field_array)
         result = 'data.pickValue(' + classname.replace('.', '') + ')'
 
     return result
