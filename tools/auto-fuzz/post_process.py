@@ -324,13 +324,16 @@ def _merge_runs(trial_dir, successful_runs, language):
             src_file = os.path.join(trial_dir, run['name'], "Fuzz.java")
             dst_file = os.path.join(next_merged_dir, "Fuzz%d.java" % (idx))
 
-            # Read in the content of the original Fuzz1.java, changing
+            # Read in the content of the original Fuzz.java, changing
             # the class name to the new one and write the content to
             # the new destination with new file name.
             with open(src_file, "r") as fin:
                 with open(dst_file, "w") as fout:
                     for line in fin:
-                        fout.write(line.replace('/*COUNTER*/', '%d' % (idx)))
+                        line = line.replace('/*COUNTER*/', '%d' % (idx))
+                        line = line.replace('Fuzz.class',
+                                            'Fuzz%d.class' % (idx))
+                        fout.write(line)
 
             idx += 1
 
