@@ -260,10 +260,10 @@ if __name__ == "__main__":
     return BASE_LICENSE + "\n" + BASE_FUZZER
 
 
-def gen_base_fuzzer_jvm():
-    BASE_FUZZER = """import com.code_intelligence.jazzer.api.FuzzedDataProvider;
-import org.apache.commons.lang3.ArrayUtils;
-/*IMPORTS*/
+def gen_base_fuzzer_jvm(need_base_import=True):
+    BASE_IMPORT = """import com.code_intelligence.jazzer.api.FuzzedDataProvider;
+import org.apache.commons.lang3.ArrayUtils;"""
+    BASE_FUZZER = """/*IMPORTS*/
 public class Fuzz/*COUNTER*/ {
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
 /*STATIC_OBJECT_CHOICE*/
@@ -271,4 +271,7 @@ public class Fuzz/*COUNTER*/ {
   }
 }"""
 
-    return JVM_LICENSE + "\n" + BASE_FUZZER
+    if need_base_import:
+        return JVM_LICENSE + "\n" + BASE_IMPORT + BASE_FUZZER
+    else:
+        return JVM_LICENSE + "\n" + BASE_FUZZER

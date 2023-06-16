@@ -20,6 +20,9 @@ import json
 import argparse
 import shutil
 
+import base_files
+import constants
+
 
 def get_result_json(dirname):
     """Reads the result.json from a possible target dir."""
@@ -310,6 +313,9 @@ def _merge_runs(trial_dir, successful_runs, language):
 
     print("Working directory: %s" % (next_merged_dir))
     idx = 0
+    java_import_stmt = set()
+    java_main_code = ""
+    java_heuristic_count = dict()
     for run in successful_runs:
         print(os.path.join(trial_dir, run['name']))
 
@@ -320,22 +326,55 @@ def _merge_runs(trial_dir, successful_runs, language):
             idx += 1
             shutil.copyfile(src_file, dst_file)
         elif language == "jvm":
-            # Copy over the fuzzer for java project
+            # Extract import statement and main code from original Fuzz.java
             src_file = os.path.join(trial_dir, run['name'], "Fuzz.java")
-            dst_file = os.path.join(next_merged_dir, "Fuzz%d.java" % (idx))
-
-            # Read in the content of the original Fuzz.java, changing
-            # the class name to the new one and write the content to
-            # the new destination with new file name.
             with open(src_file, "r") as fin:
-                with open(dst_file, "w") as fout:
-                    for line in fin:
-                        line = line.replace('/*COUNTER*/', '%d' % (idx))
-                        line = line.replace('Fuzz.class',
-                                            'Fuzz%d.class' % (idx))
-                        fout.write(line)
+                code_start = False
+                close_method = False
+                for line in fin:
+                    # Determine if it is end of code method
+                    if close_method:
+                        if line.startswith("}"):
+                            break
+                        else:
+                            close_method = False
+                            java_main_code += "  }"
+                    if line.startswith("  }"):
+                        close_method = True
+                        continue
 
-            idx += 1
+                    # Store the code for the fuzzer
+                    if code_start:
+                        java_main_code += line
+                        if line.startswith("  // Heuristic name: "):
+                            heuristic_name = line.split(": ")[-1][:-1]
+                            if heuristic_name in java_heuristic_count:
+                                java_heuristic_count[heuristic_name] += 1
+                            else:
+                                java_heuristic_count[heuristic_name] = 1
+
+                    # Store import statement
+                    if line.startswith('import'):
+                        java_import_stmt.add(line)
+
+                    # Indication of main code started
+                    if 'fuzzerTestOneInput' in line:
+                        code_start = True
+            java_main_code += "\n"
+
+    # Writing the merged code into a single Fuzz.java
+    if language == "jvm":
+        # Process the merged java code
+        base_java = base_files.gen_base_fuzzer_jvm(False)
+        base_java = base_java.replace("/*IMPORTS*/", "".join(java_import_stmt))
+        base_java = base_java.replace("/*COUNTER*/", "")
+        base_java = base_java.replace("/*STATIC_OBJECT_CHOICE*/", "")
+        base_java = base_java.replace("/*CODE*/", java_main_code)
+
+        # Write the merged code to Fuzz.java
+        dst_file = os.path.join(next_merged_dir, "Fuzz.java")
+        with open(dst_file, "w") as fout:
+            fout.write(base_java)
 
     # Copy over some base dfiles
     base_autofuzz = os.path.join(trial_dir, "base-autofuzz")
@@ -365,6 +404,22 @@ def _merge_runs(trial_dir, successful_runs, language):
             # project. Copy this over.
             shutil.copytree(os.path.join(base_autofuzz, ld),
                             os.path.join(next_merged_dir, ld))
+
+    # Output heuristic ratio
+    if language == "jvm":
+        max_heuristic_target = constants.MAX_TARGET_PER_PROJECT_HEURISTIC
+        print("\nHeuristic generation summary:")
+        for i in range(10):
+            if i == 4:
+                continue
+            heuristic = 'jvm-autofuzz-heuristics-%d' % (i + 1)
+            if heuristic in java_heuristic_count:
+                print("%s: %d / %s" %
+                      (heuristic, java_heuristic_count[heuristic],
+                       max_heuristic_target))
+            else:
+                print("%s: 0 / %s" % (heuristic, max_heuristic_target))
+
     return next_merged_dir
 
 
