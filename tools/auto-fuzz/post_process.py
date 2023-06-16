@@ -23,6 +23,7 @@ import shutil
 import base_files
 import constants
 
+
 def get_result_json(dirname):
     """Reads the result.json from a possible target dir."""
     result_path = os.path.join(dirname, "result.json")
@@ -411,11 +412,13 @@ def _merge_runs(trial_dir, successful_runs, language):
         for i in range(10):
             if i == 4:
                 continue
-            heuristic = 'jvm-autofuzz-heuristics-%d' % (i+1)
+            heuristic = 'jvm-autofuzz-heuristics-%d' % (i + 1)
             if heuristic in java_heuristic_count:
-               print("%s: %d / %s" %(heuristic, java_heuristic_count[heuristic], max_heuristic_target))
+                print("%s: %d / %s" %
+                      (heuristic, java_heuristic_count[heuristic],
+                       max_heuristic_target))
             else:
-               print("%s: 0 / %s" %(heuristic, max_heuristic_target))
+                print("%s: 0 / %s" % (heuristic, max_heuristic_target))
 
     return next_merged_dir
 

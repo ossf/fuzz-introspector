@@ -260,7 +260,7 @@ if __name__ == "__main__":
     return BASE_LICENSE + "\n" + BASE_FUZZER
 
 
-def gen_base_fuzzer_jvm(need_base_import = True):
+def gen_base_fuzzer_jvm(need_base_import=True):
     BASE_IMPORT = """import com.code_intelligence.jazzer.api.FuzzedDataProvider;
 import org.apache.commons.lang3.ArrayUtils;"""
     BASE_FUZZER = """/*IMPORTS*/
