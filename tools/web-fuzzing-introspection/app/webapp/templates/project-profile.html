@@ -26,6 +26,14 @@
                       <td> {{ project.fuzzer_count }}</td>
                   </tr>
                   <tr>
+                    <td>Lines of code</td>
+                    <td> {{ project.coverage_data.line_coverage.count }} </td>
+                  </tr>
+                  <tr>
+                    <td>Lines covered</td>
+                    <td>{{ project.coverage_data.line_coverage.covered }} </td>
+                  </tr>
+                  <tr>
                     <td>Code coverage</td>
                     {% if has_project_details %}
                       <td> {{ '%0.2f' % project.coverage_data.line_coverage.percent |float}}% </td>
