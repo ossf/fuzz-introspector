@@ -24,7 +24,8 @@ def load_db():
     all_functions_file = os.path.join(
         os.path.dirname(__file__), "../static/assets/db/all-functions-db.json")
     all_branch_blockers_file = os.path.join(
-        os.path.dirname(__file__), "../static/assets/db/all-branch-blockers.json")
+        os.path.dirname(__file__),
+        "../static/assets/db/all-branch-blockers.json")
     project_timestamps_file = os.path.join(
         os.path.dirname(__file__),
         "../static/assets/db/all-project-timestamps.json")
@@ -32,8 +33,7 @@ def load_db():
         os.path.dirname(__file__),
         "../static/assets/db/all-project-current.json")
     projects_build_status = os.path.join(
-        os.path.dirname(__file__),
-        "../static/assets/db/build-status.json")
+        os.path.dirname(__file__), "../static/assets/db/build-status.json")
 
     if len(data_storage.DB_TIMESTAMPS) > 0:
         return
@@ -42,13 +42,14 @@ def load_db():
         db_tss = json.load(f)
     for ts in db_tss:
         data_storage.DB_TIMESTAMPS.append(
-            models.DBTimestamp(date=ts['date'],
-                               project_count=ts['project_count'],
-                               fuzzer_count=ts['fuzzer_count'],
-                               function_count=ts['function_count'],
-                               function_coverage_estimate=ts['function_coverage_estimate'],
-                               accummulated_lines_total=ts['accummulated_lines_total'],
-                               accummulated_lines_covered=ts['accummulated_lines_covered']))
+            models.DBTimestamp(
+                date=ts['date'],
+                project_count=ts['project_count'],
+                fuzzer_count=ts['fuzzer_count'],
+                function_count=ts['function_count'],
+                function_coverage_estimate=ts['function_coverage_estimate'],
+                accummulated_lines_total=ts['accummulated_lines_total'],
+                accummulated_lines_covered=ts['accummulated_lines_covered']))
 
     with open(all_functions_file, 'r') as f:
         all_function_list = json.load(f)
@@ -65,7 +66,8 @@ def load_db():
                 code_coverage_url=func['code_coverage_url'],
                 is_reached=func['is_reached'],
                 llvm_instruction_count=func['llvm-instruction-count'],
-                accummulated_cyclomatic_complexity=func['accumulated_cyclomatic_complexity'],
+                accummulated_cyclomatic_complexity=func[
+                    'accumulated_cyclomatic_complexity'],
                 undiscovered_complexity=func['undiscovered-complexity'],
                 function_arguments=func['function-arguments']))
 
@@ -77,10 +79,11 @@ def load_db():
 
     for json_bb in all_branch_blockers:
         data_storage.BLOCKERS.append(
-                models.BranchBlocker(
-                    project_name = json_bb.get('project', ''),
-                    function_name = json_bb.get('function-name', ''),
-                    unique_blocked_coverage = json_bb.get('blocked-runtime-coverage')))
+            models.BranchBlocker(project_name=json_bb.get('project', ''),
+                                 function_name=json_bb.get(
+                                     'function-name', ''),
+                                 unique_blocked_coverage=json_bb.get(
+                                     'blocked-runtime-coverage')))
 
     with open(project_timestamps_file, 'r') as f:
         project_timestamps_json = json.load(f)
@@ -92,7 +95,7 @@ def load_db():
                 language=project_timestamp['language'],
                 coverage_data=project_timestamp['coverage-data'],
                 introspector_data=project_timestamp['introspector-data'],
-                fuzzer_count = project_timestamp['fuzzer-count']))
+                fuzzer_count=project_timestamp['fuzzer-count']))
 
     # Load all profiles
     with open(project_currents, 'r') as f:
@@ -105,8 +108,7 @@ def load_db():
                 date=project_timestamp['date'],
                 coverage_data=project_timestamp['coverage-data'],
                 introspector_data=project_timestamp['introspector-data'],
-                fuzzer_count = project_timestamp['fuzzer-count']
-        ))
+                fuzzer_count=project_timestamp['fuzzer-count']))
 
     if os.path.isfile(projects_build_status):
         # Read the builds
@@ -121,11 +123,12 @@ def load_db():
                     project_name=project_name,
                     fuzz_build_status=project_dict['fuzz-build'],
                     coverage_build_status=project_dict['cov-build'],
-                    introspector_build_status=project_dict['introspector-build'],
+                    introspector_build_status=project_dict[
+                        'introspector-build'],
                     language=project_dict['language'],
-                    introspector_build_log = project_dict['introspector-build-log'],
-                    coverage_build_log = project_dict['cov-build-log'],
-                    fuzz_build_log = project_dict['fuzz-build-log'])
-            )
+                    introspector_build_log=project_dict[
+                        'introspector-build-log'],
+                    coverage_build_log=project_dict['cov-build-log'],
+                    fuzz_build_log=project_dict['fuzz-build-log']))
 
     return

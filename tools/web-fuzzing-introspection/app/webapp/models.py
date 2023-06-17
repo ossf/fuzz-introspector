@@ -24,7 +24,8 @@ def get_date_at_offset_as_str(day_offset=-1):
 class DBTimestamp:
 
     def __init__(self, date, project_count, fuzzer_count, function_count,
-                 function_coverage_estimate, accummulated_lines_total, accummulated_lines_covered):
+                 function_coverage_estimate, accummulated_lines_total,
+                 accummulated_lines_covered):
         self.date = date
         self.project_count = project_count
         self.fuzzer_count = fuzzer_count
@@ -46,7 +47,9 @@ class DBSummary:
 
 
 class ProjectTimestamp:
-    def __init__(self, project_name, date, language, coverage_data, introspector_data, fuzzer_count):
+
+    def __init__(self, project_name, date, language, coverage_data,
+                 introspector_data, fuzzer_count):
         self.project_name = project_name
         # date in the format Y-m-d
         self.date = date
@@ -58,9 +61,11 @@ class ProjectTimestamp:
     def has_introspector(self) -> bool:
         return self.introspector_data != None
 
+
 class Project:
 
-    def __init__(self, name, language, date, coverage_data, introspector_data, fuzzer_count):
+    def __init__(self, name, language, date, coverage_data, introspector_data,
+                 fuzzer_count):
         self.name = name
         self.language = language
         self.date = date
@@ -70,6 +75,7 @@ class Project:
 
     def has_introspector(self) -> bool:
         return self.introspector_data != None
+
 
 class Function:
 
@@ -106,9 +112,12 @@ class BranchBlocker:
         self.function_name = function_name
         self.unique_blocked_coverage = unique_blocked_coverage
 
+
 class BuildStatus:
-    def __init__(self, project_name, fuzz_build_status, coverage_build_status, introspector_build_status, language,
-        introspector_build_log, coverage_build_log, fuzz_build_log):
+
+    def __init__(self, project_name, fuzz_build_status, coverage_build_status,
+                 introspector_build_status, language, introspector_build_log,
+                 coverage_build_log, fuzz_build_log):
         self.project_name = project_name
         self.fuzz_build_status = fuzz_build_status
         self.coverage_build_status = coverage_build_status
