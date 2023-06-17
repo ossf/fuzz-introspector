@@ -34,17 +34,17 @@
                     {% endif %}
                   </tr>
                   <tr>
-                    <td>Static reachability</td>
-                    {% if project.has_introspector() %}
-                      <td> {{ '%0.2f' % project.introspector_data.static_reachability |float }}% </td>
+                    <td>Code coverage report</td>
+                    {% if has_project_details %}
+                    <td><a href="{{ project.coverage_data.coverage_url }}">Report link</a></td>
                     {% else %}
                       <td>N/A</td>
                     {% endif %}
                   </tr>
                   <tr>
-                    <td>Code coverage report</td>
-                    {% if has_project_details %}
-                    <td><a href="{{ project.coverage_data.coverage_url }}">Report link</a></td>
+                    <td>Static reachability</td>
+                    {% if project.has_introspector() %}
+                      <td> {{ '%0.2f' % project.introspector_data.static_reachability |float }}% </td>
                     {% else %}
                       <td>N/A</td>
                     {% endif %}
