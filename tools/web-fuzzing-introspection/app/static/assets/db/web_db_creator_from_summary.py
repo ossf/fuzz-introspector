@@ -181,13 +181,16 @@ def get_introspector_report_url_report(project_name, datestr):
     return get_introspector_report_url_base(project_name,
                                             datestr) + "fuzz_report.html"
 
+
 def get_fuzzer_stats_fuzz_count_url(project_name, date_str):
     base_url = 'https://storage.googleapis.com/oss-fuzz-coverage/{0}/fuzzer_stats/{1}/coverage_targets.txt'
     coverage_targets = base_url.format(project_name, date_str)
     return coverage_targets
 
+
 def get_fuzzer_stats_fuzz_count(project_name, date_str):
-    coverage_stats_url = get_fuzzer_stats_fuzz_count_url(project_name, date_str)
+    coverage_stats_url = get_fuzzer_stats_fuzz_count_url(
+        project_name, date_str)
     coverage_summary_raw = requests.get(coverage_stats_url, timeout=20).text
     if "The specified key does not exist" in coverage_summary_raw:
         return None
@@ -275,8 +278,8 @@ def extract_project_data(project_name, date_str, should_include_details,
     # Extract code coverage and introspector reports.
     code_coverage_summary = get_code_coverage_summary(
         project_name, date_str.replace("-", ""))
-    cov_fuzz_stats = get_fuzzer_stats_fuzz_count(
-            project_name, date_str.replace("-", ""))
+    cov_fuzz_stats = get_fuzzer_stats_fuzz_count(project_name,
+                                                 date_str.replace("-", ""))
     introspector_report = extract_introspector_report(project_name, date_str)
     introspector_report_url = get_introspector_report_url_report(
         project_name, date_str.replace("-", ""))
@@ -289,13 +292,14 @@ def extract_project_data(project_name, date_str, should_include_details,
     #if code_coverage_summary == None and introspector_report == None:
     #    # Do not adjust the `manager_return_dict`, so nothing will be included in
     #    # the report.
-     #   return
+    #   return
 
     # We need either:
     # - coverage + fuzzer stats
     # - introspector
     # - both
-    if not ((code_coverage_summary != None and cov_fuzz_stats != None) or introspector_report != None):
+    if not ((code_coverage_summary != None and cov_fuzz_stats != None)
+            or introspector_report != None):
         return
 
     if introspector_report == None:
@@ -332,7 +336,8 @@ def extract_project_data(project_name, date_str, should_include_details,
                     func['I Count'],
                     'undiscovered-complexity':
                     func['Undiscovered complexity'],
-                    'function-arguments': func['Args']
+                    'function-arguments':
+                    func['Args']
                 })
 
         # Get all branch blockers
@@ -391,8 +396,8 @@ def extract_project_data(project_name, date_str, should_include_details,
     else:
         if code_coverage_summary != None:
             try:
-                line_total_summary = code_coverage_summary['data'][0]['totals'][
-                    'lines']
+                line_total_summary = code_coverage_summary['data'][0][
+                    'totals']['lines']
             except KeyError:
                 # This can happen in Python, where the correct code formatting was only done
                 # May 3rd 2023: https://github.com/google/oss-fuzz/pull/10201
@@ -426,7 +431,6 @@ def extract_project_data(project_name, date_str, should_include_details,
         if all_fuzzers[-1] == '':
             all_fuzzers = all_fuzzers[0:-1]
         amount_of_fuzzers = len(all_fuzzers)
-
 
     project_timestamp = {
         "project_name": project_name,
@@ -512,8 +516,7 @@ def analyse_list_of_projects(date, projects_to_analyse,
         project_timestamp = analyses_dictionary[project_key][
             'project_timestamp']
         project_timestamps.append(project_timestamp)
-        db_timestamp['fuzzer_count'] += project_timestamp[
-                'fuzzer-count']
+        db_timestamp['fuzzer_count'] += project_timestamp['fuzzer-count']
 
         # Accummulate all function list and branch blockers
         introspector_dictionary = project_timestamp.get(
@@ -767,7 +770,7 @@ def create_db(max_projects, days_to_analyse, output_directory, input_directory,
 
     print("Starting analysis of:")
     for p in projects_to_analyse:
-        print("- %s"%(p))
+        print("- %s" % (p))
 
     analyse_set_of_dates(date_range, projects_to_analyse, output_directory)
 

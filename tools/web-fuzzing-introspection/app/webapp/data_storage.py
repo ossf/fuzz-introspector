@@ -2,7 +2,6 @@
 #from app.site.models import *
 from .models import *
 
-
 PROJECT_TIMESTAMPS = []
 
 DB_TIMESTAMPS = []
@@ -15,14 +14,18 @@ BLOCKERS = []
 
 BUILD_STATUS = []
 
+
 def get_projects():
-  return PROJECTS
+    return PROJECTS
+
 
 def get_functions():
-  return FUNCTIONS
+    return FUNCTIONS
+
 
 def get_blockers():
-  return BLOCKERS
+    return BLOCKERS
+
 
 def get_build_status():
-  return BUILD_STATUS
+    return BUILD_STATUS
