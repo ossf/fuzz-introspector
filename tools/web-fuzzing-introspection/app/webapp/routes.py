@@ -33,19 +33,19 @@ def get_frontpage_summary_stats():
 
     projects_to_use = []
     # Only include fuzz introspector projects
-    for project in all_projects:
-        if project.introspector_data != None:
-            projects_to_use.append(project)
+    #for project in all_projects:
+    #    if project.introspector_data != None:
+    #        projects_to_use.append(project)
 
-    total_number_of_projects = len(projects_to_use)
-    total_fuzzers = sum([project.introspector_data['fuzzer_count'] for project in projects_to_use])
+    total_number_of_projects = len(all_projects)
+    total_fuzzers = sum([project.fuzzer_count for project in all_projects])
     total_functions = len(data_storage.get_functions())
-    language_count = {'c': 0, 'python': 0, 'c++': 0, 'java': 0}
-    for project in projects_to_use:
+    language_count = {'c': 0, 'python': 0, 'c++': 0, 'java': 0, 'go': 0, 'rust': 0, 'swift': 0}
+    for project in all_projects:
         language_count[project.language] += 1
 
     # wrap it in a DBSummary
-    db_summary = models.DBSummary(projects_to_use, total_number_of_projects,
+    db_summary = models.DBSummary(all_projects, total_number_of_projects,
                                   total_fuzzers, total_functions,
                                   language_count)
     return db_summary
@@ -221,8 +221,8 @@ def projects_overview():
     projects_to_use = []
     # Only include fuzz introspector projects
     for project in all_projects:
-        if project.introspector_data != None:
-            projects_to_use.append(project)
+        #if project.introspector_data != None:
+        projects_to_use.append(project)
     return render_template('projects-overview.html', gtag=gtag, all_projects=projects_to_use)
 
 @blueprint.route('/indexing-overview')

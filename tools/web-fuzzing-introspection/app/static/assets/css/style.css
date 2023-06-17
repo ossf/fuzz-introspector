@@ -647,6 +647,14 @@ button.btn__primary {
   line-height: 47px;
   color: #000000;
 }
+.project__progress h4 {
+  padding-bottom: 15px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 20px;
+  line-height: 27px;
+  color: #000000;
+}
 /* progress__graph */
 .progress__graph {
   display: -ms-grid;

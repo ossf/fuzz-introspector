@@ -181,6 +181,18 @@ def get_introspector_report_url_report(project_name, datestr):
     return get_introspector_report_url_base(project_name,
                                             datestr) + "fuzz_report.html"
 
+def get_fuzzer_stats_fuzz_count_url(project_name, date_str):
+    base_url = 'https://storage.googleapis.com/oss-fuzz-coverage/{0}/fuzzer_stats/{1}/coverage_targets.txt'
+    coverage_targets = base_url.format(project_name, date_str)
+    return coverage_targets
+
+def get_fuzzer_stats_fuzz_count(project_name, date_str):
+    coverage_stats_url = get_fuzzer_stats_fuzz_count_url(project_name, date_str)
+    coverage_summary_raw = requests.get(coverage_stats_url, timeout=20).text
+    if "The specified key does not exist" in coverage_summary_raw:
+        return None
+    return coverage_summary_raw
+
 
 def get_code_coverage_summary_url(project_name, datestr):
     base_url = 'https://storage.googleapis.com/oss-fuzz-coverage/{0}/reports/{1}/linux/summary.json'
@@ -189,7 +201,7 @@ def get_code_coverage_summary_url(project_name, datestr):
 
 
 def get_coverage_report_url(project_name, datestr, language):
-    if language == 'java' or language == 'python':
+    if language == 'java' or language == 'python' or language == 'go':
         file_report = "index.html"
     else:
         file_report = "report.html"
@@ -243,6 +255,7 @@ def extract_project_data(project_name, date_str, should_include_details,
         - Lines of code totally in the project
         - Lines of code covered at runtime
     """
+    amount_of_fuzzers = None
 
     # TODO (David): handle the case where there is neither code coverage or introspector reports.
     # In this case we should simply return an error so it will not be included. This is also useful
@@ -262,6 +275,8 @@ def extract_project_data(project_name, date_str, should_include_details,
     # Extract code coverage and introspector reports.
     code_coverage_summary = get_code_coverage_summary(
         project_name, date_str.replace("-", ""))
+    cov_fuzz_stats = get_fuzzer_stats_fuzz_count(
+            project_name, date_str.replace("-", ""))
     introspector_report = extract_introspector_report(project_name, date_str)
     introspector_report_url = get_introspector_report_url_report(
         project_name, date_str.replace("-", ""))
@@ -271,12 +286,21 @@ def extract_project_data(project_name, date_str, should_include_details,
     # have code coverage but no introspector data. However, we need to adjust
     # the OSS-Fuzz data generated before doing so, we need some basic stats e.g.
     # number of fuzzers, which are currently only available in Fuzz Introspector.
-    if code_coverage_summary == None or introspector_report == None:
-        # Do not adjust the `manager_return_dict`, so nothing will be included in
-        # the report.
+    #if code_coverage_summary == None and introspector_report == None:
+    #    # Do not adjust the `manager_return_dict`, so nothing will be included in
+    #    # the report.
+     #   return
+
+    # We need either:
+    # - coverage + fuzzer stats
+    # - introspector
+    # - both
+    if not ((code_coverage_summary != None and cov_fuzz_stats != None) or introspector_report != None):
         return
 
-    if introspector_report != None:
+    if introspector_report == None:
+        introspector_data_dict = None
+    else:
         # Access all functions
         all_function_list = introspector_report['MergedProjectProfile'][
             'all-functions']
@@ -397,12 +421,20 @@ def extract_project_data(project_name, date_str, should_include_details,
             'line_coverage': line_total_summary
         }
 
+    if cov_fuzz_stats != None:
+        all_fuzzers = cov_fuzz_stats.split("\n")
+        if all_fuzzers[-1] == '':
+            all_fuzzers = all_fuzzers[0:-1]
+        amount_of_fuzzers = len(all_fuzzers)
+
+
     project_timestamp = {
         "project_name": project_name,
         "date": date_str,
         'language': project_language,
         'coverage-data': code_coverage_data_dict,
         'introspector-data': introspector_data_dict,
+        'fuzzer-count': amount_of_fuzzers,
     }
 
     dictionary_key = '%s###%s' % (project_name, date_str)
@@ -480,6 +512,8 @@ def analyse_list_of_projects(date, projects_to_analyse,
         project_timestamp = analyses_dictionary[project_key][
             'project_timestamp']
         project_timestamps.append(project_timestamp)
+        db_timestamp['fuzzer_count'] += project_timestamp[
+                'fuzzer-count']
 
         # Accummulate all function list and branch blockers
         introspector_dictionary = project_timestamp.get(
@@ -491,8 +525,6 @@ def analyse_list_of_projects(date, projects_to_analyse,
             fuzz_branch_blocker_list += introspector_dictionary['branch_pairs']
 
             # Accummulate various stats for the DB timestamp.
-            db_timestamp['fuzzer_count'] += introspector_dictionary[
-                'fuzzer_count']
             db_timestamp['function_count'] += introspector_dictionary[
                 'function_count']
             db_timestamp[
@@ -692,9 +724,10 @@ def create_db(max_projects, days_to_analyse, output_directory, input_directory,
         output_directory)
     projects_to_analyse = dict()
     for p in projects_list_build_status:
-        if projects_list_build_status[p][
-                'introspector-build'] == True and projects_list_build_status[
-                    p]['cov-build'] == True:
+        #if projects_list_build_status[p][
+        #        'introspector-build'] == True or projects_list_build_status[
+        #            p]['cov-build'] == True:
+        if projects_list_build_status[p]['cov-build'] == True:
             projects_to_analyse[p] = projects_list_build_status[p]
     #for project_name in projects_list_build_status:
     #    print("project: %s"%(project_name))
@@ -731,6 +764,10 @@ def create_db(max_projects, days_to_analyse, output_directory, input_directory,
         logger.info("- Extending upon the DB in %s" % (str(input_directory)))
     else:
         logger.info("-Creating the DB from scratch")
+
+    print("Starting analysis of:")
+    for p in projects_to_analyse:
+        print("- %s"%(p))
 
     analyse_set_of_dates(date_range, projects_to_analyse, output_directory)
 

@@ -46,25 +46,30 @@ class DBSummary:
 
 
 class ProjectTimestamp:
-
-    def __init__(self, project_name, date, language, coverage_data, introspector_data):
+    def __init__(self, project_name, date, language, coverage_data, introspector_data, fuzzer_count):
         self.project_name = project_name
         # date in the format Y-m-d
         self.date = date
         self.language = language
         self.coverage_data = coverage_data
         self.introspector_data = introspector_data
+        self.fuzzer_count = fuzzer_count
 
+    def has_introspector(self) -> bool:
+        return self.introspector_data != None
 
 class Project:
 
-    def __init__(self, name, language, date, coverage_data, introspector_data):
+    def __init__(self, name, language, date, coverage_data, introspector_data, fuzzer_count):
         self.name = name
         self.language = language
         self.date = date
         self.coverage_data = coverage_data
         self.introspector_data = introspector_data
+        self.fuzzer_count = fuzzer_count
 
+    def has_introspector(self) -> bool:
+        return self.introspector_data != None
 
 class Function:
 
