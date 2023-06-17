@@ -27,6 +27,7 @@ blueprint = Blueprint('site', __name__, template_folder='templates')
 
 gtag = None
 
+
 def get_frontpage_summary_stats():
     # Get total number of projects
     all_projects = data_storage.get_projects()
@@ -40,7 +41,15 @@ def get_frontpage_summary_stats():
     total_number_of_projects = len(all_projects)
     total_fuzzers = sum([project.fuzzer_count for project in all_projects])
     total_functions = len(data_storage.get_functions())
-    language_count = {'c': 0, 'python': 0, 'c++': 0, 'java': 0, 'go': 0, 'rust': 0, 'swift': 0}
+    language_count = {
+        'c': 0,
+        'python': 0,
+        'c++': 0,
+        'java': 0,
+        'go': 0,
+        'rust': 0,
+        'swift': 0
+    }
     for project in all_projects:
         language_count[project.language] += 1
 
@@ -95,7 +104,8 @@ def index():
         max_fuzzer_count = max(db_timestamp.fuzzer_count, max_fuzzer_count)
         max_function_count = max(db_timestamp.function_count,
                                  max_function_count)
-        max_line_count = max(max_line_count, db_timestamp.accummulated_lines_total)
+        max_line_count = max(max_line_count,
+                             db_timestamp.accummulated_lines_total)
 
     max_proj = int(max_proj * 1.2)
     max_fuzzer_count = int(max_fuzzer_count * 1.2)
@@ -110,8 +120,8 @@ def index():
                            max_proj=max_proj,
                            max_fuzzer_count=max_fuzzer_count,
                            max_function_count=max_function_count,
-                           oss_fuzz_total_number = oss_fuzz_total_number,
-                           max_line_count = max_line_count)
+                           oss_fuzz_total_number=oss_fuzz_total_number,
+                           max_line_count=max_line_count)
 
 
 @blueprint.route('/function-profile', methods=['GET'])
@@ -122,7 +132,7 @@ def function_profile():
 
     related_functions = get_all_related_functions(function_profile)
     return render_template('function-profile.html',
-                           gtag = gtag,
+                           gtag=gtag,
                            related_functions=related_functions,
                            function_profile=function_profile)
 
@@ -149,20 +159,19 @@ def project_profile():
     all_build_status = data_storage.get_build_status()
     for build_status in all_build_status:
         if build_status.project_name == target_project_name:
-            project = models.Project(
-                name=build_status.project_name,
-                language=build_status.language,
-                fuzz_count=0,
-                reach=0,
-                runtime_cov=0,
-                introspector_report_url="#",
-                code_coverage_report_url="#")
+            project = models.Project(name=build_status.project_name,
+                                     language=build_status.language,
+                                     fuzz_count=0,
+                                     reach=0,
+                                     runtime_cov=0,
+                                     introspector_report_url="#",
+                                     code_coverage_report_url="#")
 
             return render_template('project-profile.html',
-                               gtag=gtag,
-                               project=project,
-                               project_statistics=None,
-                               has_project_details=False)
+                                   gtag=gtag,
+                                   project=project,
+                                   project_statistics=None,
+                                   has_project_details=False)
     print("Nothing to do. We shuold probably have a 404")
     return redirect("/")
 
@@ -223,12 +232,18 @@ def projects_overview():
     for project in all_projects:
         #if project.introspector_data != None:
         projects_to_use.append(project)
-    return render_template('projects-overview.html', gtag=gtag, all_projects=projects_to_use)
+    return render_template('projects-overview.html',
+                           gtag=gtag,
+                           all_projects=projects_to_use)
+
 
 @blueprint.route('/indexing-overview')
 def indexing_overview():
     build_status = data_storage.get_build_status()
-    return render_template('indexing-overview.html', gtag=gtag, all_build_status=build_status)
+    return render_template('indexing-overview.html',
+                           gtag=gtag,
+                           all_build_status=build_status)
+
 
 @blueprint.route('/about')
 def about():
@@ -334,7 +349,8 @@ def far_reach_but_low_coverage():
             function.runtime_code_coverage,
             'accummulated-complexity':
             function.accummulated_cyclomatic_complexity,
-            'function-arguments': function.function_arguments
+            'function-arguments':
+            function.function_arguments
         })
 
     return {'result': 'succes', 'functions': functions_to_return}
