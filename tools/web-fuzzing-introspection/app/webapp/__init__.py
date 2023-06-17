@@ -91,7 +91,8 @@ def load_db():
                 project_name=project_timestamp['project_name'],
                 language=project_timestamp['language'],
                 coverage_data=project_timestamp['coverage-data'],
-                introspector_data=project_timestamp['introspector-data']))
+                introspector_data=project_timestamp['introspector-data'],
+                fuzzer_count = project_timestamp['fuzzer-count']))
 
     # Load all profiles
     with open(project_currents, 'r') as f:
@@ -103,7 +104,8 @@ def load_db():
                 language=project_timestamp.get('language', 'c'),
                 date=project_timestamp['date'],
                 coverage_data=project_timestamp['coverage-data'],
-                introspector_data=project_timestamp['introspector-data']
+                introspector_data=project_timestamp['introspector-data'],
+                fuzzer_count = project_timestamp['fuzzer-count']
         ))
 
     if os.path.isfile(projects_build_status):

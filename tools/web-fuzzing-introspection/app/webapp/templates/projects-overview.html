@@ -27,8 +27,9 @@
                     <td>Project name</td>
                     <td>Language</td>
                     <td>Fuzz target count</td>
-                    <td>Code statically reached</td>
                     <td>Runtime code coverage</td>
+                    <td>Total lines</td>
+                    <td>Lines covered</td>
                   </tr>
                 </thead>
                 <tbody>
@@ -36,9 +37,10 @@
                   <tr>
                       <td> <a href="/project-profile?project={{project.name}}">{{ project.name }}</a> </td>
                       <td> {{ project.language }} </td>
-                      <td> {{ project.introspector_data.fuzzer_count }} </td>
-                      <td> {{ '%0.2f' % project.introspector_data.static_reachability |float }} </td>
+                      <td> {{ project.fuzzer_count }} </td>
                       <td> {{ '%0.2f' % project.coverage_data.line_coverage.percent |float }} </td>
+                      <td> {{ project.coverage_data.line_coverage.count }}</td>
+                      <td> {{ project.coverage_data.line_coverage.covered }}</td>
                   </tr>
                 {% endfor %}
                 </tbody>
