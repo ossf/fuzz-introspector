@@ -22,6 +22,7 @@ import logging
 import datetime
 import requests
 import subprocess
+import zipfile
 from threading import Thread
 
 DB_JSON_DB_TIMESTAMP = 'db-timestamps.json'
@@ -638,6 +639,25 @@ def update_build_status(build_dict):
         json.dump(build_dict, f)
 
 
+def is_date_in_db(date, output_directory):
+    existing_timestamps = []
+    if os.path.isfile(os.path.join(output_directory, DB_JSON_DB_TIMESTAMP)):
+        with open(os.path.join(output_directory, DB_JSON_DB_TIMESTAMP),
+                  'r') as f:
+            try:
+                existing_timestamps = json.load(f)
+            except:
+                existing_timestamps = []
+    else:
+        existing_timestamps = []
+
+    in_db = False
+    for ts in existing_timestamps:
+        if ts['date'] == date:
+            in_db = True
+    return in_db
+
+
 def analyse_set_of_dates(dates, projects_to_analyse, output_directory):
     """Pe/rforms analysis of all projects in the projects_to_analyse argument for
     the given set of dates. DB .json files are stored in output_directory.
@@ -649,6 +669,14 @@ def analyse_set_of_dates(dates, projects_to_analyse, output_directory):
         logger.info("Analysing date %s -- [%d of %d] -- %s" %
                     (date, idx, dates_to_analyse, current_time))
         idx += 1
+        # if idx > 5:
+        #     break
+
+        # Check if it's in the cache
+        if is_date_in_db(date, output_directory):
+            logger.info("Date already analysed, skipping")
+            continue
+
         should_include_details = idx == len(dates)
         function_list, fuzz_branch_blocker_list, project_timestamps, db_timestamp = analyse_list_of_projects(
             date, projects_to_analyse, should_include_details)
@@ -718,8 +746,27 @@ def create_date_range(day_offset, days_to_analyse):
     return date_range
 
 
+def setup_github_cache():
+    if os.path.isdir("github_cache"):
+        shutil.rmtree("github_cache")
+
+    git_clone_project(
+        "https://github.com/DavidKorczynski/oss-fuzz-db-fuzzintro",
+        "github_cache")
+    if not os.path.isdir("github_cache"):
+        return False
+    db_zipfile = os.path.join("github_cache", "db-stamp.zip")
+    if os.path.isfile(db_zipfile):
+        with zipfile.ZipFile(db_zipfile, 'r') as zip_ref:
+            zip_ref.extractall("github_cache")
+
+
 def create_db(max_projects, days_to_analyse, output_directory, input_directory,
-              day_offset, to_cleanup, since_date):
+              day_offset, to_cleanup, since_date, use_github_cache):
+    if use_github_cache:
+        setup_github_cache()
+        input_directory = "github_cache"
+
     setup_folders(input_directory, output_directory)
 
     # Extract fuzz/coverage/introspector build status of each project and extract
@@ -730,8 +777,8 @@ def create_db(max_projects, days_to_analyse, output_directory, input_directory,
         #if projects_list_build_status[p][
         #        'introspector-build'] == True or projects_list_build_status[
         #            p]['cov-build'] == True:
-        if projects_list_build_status[p]['cov-build'] == True:
-            projects_to_analyse[p] = projects_list_build_status[p]
+        #if projects_list_build_status[p]['cov-build'] == True:
+        projects_to_analyse[p] = projects_list_build_status[p]
     #for project_name in projects_list_build_status:
     #    print("project: %s"%(project_name))
 
@@ -757,7 +804,7 @@ def create_db(max_projects, days_to_analyse, output_directory, input_directory,
         day_offset = 1
 
     date_range = create_date_range(day_offset, days_to_analyse)
-
+    print(date_range)
     logger.info("Creating a DB with the specifications:")
     logger.info("- Date range: [%s : %s]" %
                 (str(date_range[0]), str(date_range[-1])))
@@ -768,9 +815,7 @@ def create_db(max_projects, days_to_analyse, output_directory, input_directory,
     else:
         logger.info("-Creating the DB from scratch")
 
-    print("Starting analysis of:")
-    for p in projects_to_analyse:
-        print("- %s" % (p))
+    print("Starting analysis of max %d projects" % (len(projects_to_analyse)))
 
     analyse_set_of_dates(date_range, projects_to_analyse, output_directory)
 
@@ -803,6 +848,7 @@ def get_cmdline_parser():
         default=None)
     parser.add_argument("--cleanup", action="store_true")
     parser.add_argument("--debug", action="store_true")
+    parser.add_argument("--use_gh_cache", action="store_false")
     return parser
 
 
@@ -814,7 +860,8 @@ def main():
     else:
         logging.basicConfig(level=logging.INFO)
     create_db(args.max_projects, args.days_to_analyse, args.output_dir,
-              args.input_dir, args.base_offset, args.cleanup, args.since_date)
+              args.input_dir, args.base_offset, args.cleanup, args.since_date,
+              args.use_gh_cache)
 
 
 if __name__ == "__main__":
