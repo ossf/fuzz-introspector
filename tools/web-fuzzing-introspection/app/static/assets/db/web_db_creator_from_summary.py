@@ -767,7 +767,6 @@ def create_db(max_projects, days_to_analyse, output_directory, input_directory,
         setup_github_cache()
         input_directory = "github_cache"
 
-    #setup_folders(input_directory, output_directory)
     setup_folders(input_directory, output_directory)
 
     # Extract fuzz/coverage/introspector build status of each project and extract
@@ -806,7 +805,6 @@ def create_db(max_projects, days_to_analyse, output_directory, input_directory,
 
     date_range = create_date_range(day_offset, days_to_analyse)
     print(date_range)
-    #sys.exit(0)
     logger.info("Creating a DB with the specifications:")
     logger.info("- Date range: [%s : %s]" %
                 (str(date_range[0]), str(date_range[-1])))
@@ -818,8 +816,6 @@ def create_db(max_projects, days_to_analyse, output_directory, input_directory,
         logger.info("-Creating the DB from scratch")
 
     print("Starting analysis of max %d projects" % (len(projects_to_analyse)))
-    #for p in projects_to_analyse:
-    #    print("- %s" % (p))
 
     analyse_set_of_dates(date_range, projects_to_analyse, output_directory)
 
