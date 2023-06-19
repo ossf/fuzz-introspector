@@ -16,22 +16,47 @@
 package autofuzz.benchmark;
 
 import autofuzz.benchmark.object.*;
-import java.nio.charset.Charset;
 import java.util.*;
 
+/**
+ * This is one of the benchmark class for Auto-Fuzz post processing filter. This benchmark focus on
+ * the multiple layer of method calls with three entry methods recursive loop. Auto-Fuzz post
+ * processing should be able to identify either one of the method and include that in a fuzzer and
+ * ignoring the remaining two as they are created as recursive loop.
+ *
+ * @author Fuzz Introspector
+ */
 public class Benchmark5 {
+  /** The sample object for method invocation */
   private SampleObject parser;
+
+  /** The main list object to store the parse result */
   private List<Object> list;
 
+  /**
+   * This is the constructor of the benchmark.
+   *
+   * @since 1.0
+   */
   public Benchmark5() {
     this.parser = new SampleObject();
     this.list = new LinkedList<Object>();
   }
 
+  /**
+   * One of the three entry methods included in the cross method recursive loop. This should be the
+   * target method to be included and kept in the resulting fuzzer after Auto-Fuzz post processing
+   * filter has been done. But only one of the three entry methods should be included in the result
+   * while the other two should be filtered out.
+   *
+   * @param string the main data string for parsing
+   * @throws AutoFuzzException if the input cannot be parsed
+   * @since 1.0
+   */
   public void parseAlphabetic(String string) throws AutoFuzzException {
     String result = "";
 
-    for (int i = 0;i<string.length();i++) {
+    for (int i = 0; i < string.length(); i++) {
       Character chr = string.charAt(i);
       if (Character.isAlphabetic(chr)) {
         result += string.charAt(i);
@@ -51,10 +76,20 @@ public class Benchmark5 {
     }
   }
 
+  /**
+   * One of the three entry methods included in the cross method recursive loop. This should be the
+   * target method to be included and kept in the resulting fuzzer after Auto-Fuzz post processing
+   * filter has been done. But only one of the three entry methods should be included in the result
+   * while the other two should be filtered out.
+   *
+   * @param string the main data string for parsing
+   * @throws AutoFuzzException if the input cannot be parsed
+   * @since 1.0
+   */
   public void parseInteger(String string) throws AutoFuzzException {
     String result = "";
 
-    for (int i = 0;i<string.length();i++) {
+    for (int i = 0; i < string.length(); i++) {
       Character chr = string.charAt(i);
       if ((Character.isDigit(chr)) || chr.equals('-')) {
         result += string.charAt(i);
@@ -87,10 +122,20 @@ public class Benchmark5 {
     }
   }
 
+  /**
+   * One of the three entry methods included in the cross method recursive loop. This should be the
+   * target method to be included and kept in the resulting fuzzer after Auto-Fuzz post processing
+   * filter has been done. But only one of the three entry methods should be included in the result
+   * while the other two should be filtered out.
+   *
+   * @param string the main data string for parsing
+   * @throws AutoFuzzException if the input cannot be parsed
+   * @since 1.0
+   */
   public void parseFloat(String string) throws AutoFuzzException {
     String result = "";
 
-    for (int i = 0;i<string.length();i++) {
+    for (int i = 0; i < string.length(); i++) {
       Character chr = string.charAt(i);
       if ((Character.isDigit(chr)) || chr.equals('-') || chr.equals('.')) {
         result += string.charAt(i);

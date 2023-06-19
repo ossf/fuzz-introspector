@@ -18,24 +18,59 @@ package autofuzz.benchmark;
 import autofuzz.benchmark.object.*;
 import java.nio.charset.Charset;
 
+/**
+ * This is one of the benchmark class for Auto-Fuzz post processing filter. This benchmark focus on
+ * the multiple layer of method calls with serveral logic branches. There are two entry methods
+ * which will process some logic and then call each other if the wrong mode is used. Auto-Fuzz post
+ * processing should be able to identify both of them as they have separate logic but does call each
+ * other in some conditions.
+ *
+ * @author Fuzz Introspector
+ */
 public class Benchmark4 {
   public static final int FULL_PARSING = 1;
   public static final int FULL_REVERSE_PARSING = 2;
   public static final int PARIAL_PARSING = 3;
   public static final int PARTIAL_REVERSE_PARSING = 4;
 
+  /** The main data string for parsing */
   private String data;
+
+  /** The sample object for method invocation */
   private SampleObject parser;
 
+  /**
+   * This is the constructor of the benchmark.
+   *
+   * @param string the main data string for parsing
+   * @since 1.0
+   */
   public Benchmark4(String string) {
     this.data = string;
     this.parser = new SampleObject();
   }
 
+  /**
+   * This is the constructor of the benchmark.
+   *
+   * @param data the byte array which will transform to the main data string for parsing
+   * @since 1.0
+   */
   public Benchmark4(byte[] data) {
     this(new String(data, Charset.defaultCharset()));
   }
 
+  /**
+   * Static method to parse a string without creating the object instance. This should be one of the
+   * target methods to be included and kept in the resulting fuzzer after Auto-Fuzz post processing
+   * filter has been done.
+   *
+   * @param string the main data string for parsing
+   * @param mode the mode to be used
+   * @return if the parsing is success or not
+   * @throws AutoFuzzException if the input cannot be parsed
+   * @since 1.0
+   */
   public static Boolean parseData(String string, Integer mode) throws AutoFuzzException {
     Boolean result = true;
 
@@ -61,6 +96,19 @@ public class Benchmark4 {
     throw new AutoFuzzException("Error parsing string.", new IllegalArgumentException());
   }
 
+  /**
+   * Static method to parse a string without creating the object instance. This should be one of the
+   * target methods to be included and kept in the resulting fuzzer after Auto-Fuzz post processing
+   * filter has been done.
+   *
+   * @param string the main data string for parsing
+   * @param mode the mode to be used
+   * @param start the start index for string parsing
+   * @param end the end index for string parsing
+   * @return if the parsing is success or not
+   * @throws AutoFuzzException if the input cannot be parsed
+   * @since 1.0
+   */
   public static Boolean parseData(String string, Integer mode, Integer start, Integer end)
       throws AutoFuzzException {
     Boolean result = true;
@@ -87,6 +135,13 @@ public class Benchmark4 {
     throw new AutoFuzzException("Error parsing string.", new IllegalArgumentException());
   }
 
+  /**
+   * Helpers method to reverse the string before parsing.
+   *
+   * @param string the string to reverse
+   * @return the resulting string
+   * @since 1.0
+   */
   public static String reverseString(String string) {
     String resultString = "";
 
@@ -97,6 +152,15 @@ public class Benchmark4 {
     return resultString;
   }
 
+  /**
+   * One of the two cross recursive methods to parse the string.
+   *
+   * @param start the start index for string parsing
+   * @param end the end index for string parsing
+   * @return if the parsing is success or not
+   * @throws AutoFuzzException if the input cannot be parsed
+   * @since 1.0
+   */
   public Boolean parseData(Integer start, Integer end) throws AutoFuzzException {
     if ((start < 0) || (end < start) || (end >= this.data.length())) {
       throw new AutoFuzzException("Illegal start and end index.", new IllegalArgumentException());
@@ -106,6 +170,15 @@ public class Benchmark4 {
     return true;
   }
 
+  /**
+   * One of the two cross recursive methods to parse the string.
+   *
+   * @param start the start index for string parsing
+   * @param end the end index for string parsing
+   * @return if the parsing is success or not
+   * @throws AutoFuzzException if the input cannot be parsed
+   * @since 1.0
+   */
   public void parseString(String string, String indentation) throws AutoFuzzException {
     if (string.length() == 0) {
       return;

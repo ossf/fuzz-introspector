@@ -18,25 +18,68 @@ package autofuzz.benchmark;
 import autofuzz.benchmark.object.*;
 import java.nio.charset.Charset;
 
+/**
+ * This is one of the benchmark class for Auto-Fuzz post processing filter. This benchmark focus on
+ * the multiple layer of method calls with serveral logic branches. Auto-Fuzz post processing should
+ * be able to identify only one fuzzers that covers all other logic.
+ *
+ * @author Fuzz Introspector
+ */
 public class Benchmark1 {
+  /** The main data string for parsing */
   private String data;
+
+  /** The sample object for method invocation */
   private SampleObject parser;
 
+  /**
+   * This is the constructor of the benchmark.
+   *
+   * @param string the main data string for parsing
+   * @since 1.0
+   */
   public Benchmark1(String string) {
     this.data = string;
     this.parser = new SampleObject();
   }
 
+  /**
+   * This is the constructor of the benchmark.
+   *
+   * @param data the byte array which will transform to the main data string for parsing
+   * @since 1.0
+   */
   public Benchmark1(byte[] data) {
     this(new String(data, Charset.defaultCharset()));
   }
 
+  /**
+   * Static method to parse a string without creating the object instance. This should be the target
+   * method to be included and kept in the resulting fuzzer after Auto-Fuzz post processing filter
+   * has been done.
+   *
+   * @param string the main data string for parsing
+   * @param start the start index for string parsing
+   * @param end the end index for string parsing
+   * @return if the parsing is success or not
+   * @throws AutoFuzzException if the input cannot be parsed
+   * @since 1.0
+   */
   public static Boolean parseData(String string, Integer start, Integer end)
       throws AutoFuzzException {
     Benchmark1 benchmark1 = new Benchmark1(string);
     return benchmark1.parseData(start, end);
   }
 
+  /**
+   * Main method to parse the string.
+   *
+   * @param start the start index for string parsing
+   * @param end the end index for string parsing
+   * @return if the parsing is success or not
+   * @throws AutoFuzzException if the input cannot be parsed
+   * @since 1.0
+   */
   public Boolean parseData(Integer start, Integer end) throws AutoFuzzException {
     Character[] array = this.getCharacterArray(start, end);
 
@@ -55,6 +98,15 @@ public class Benchmark1 {
     return true;
   }
 
+  /**
+   * Helpers method to retrieve the needed Chacater array for parsing.
+   *
+   * @param start the start index for string parsing
+   * @param end the end index for string parsing
+   * @return the resulting Character array
+   * @throws AutoFuzzException if the input cannot be parsed
+   * @since 1.0
+   */
   public Character[] getCharacterArray(Integer start, Integer end) throws AutoFuzzException {
     if ((start < 0) || (end < start) || (end >= data.length())) {
       throw new AutoFuzzException("Invalid start and end index.", new IllegalArgumentException());
