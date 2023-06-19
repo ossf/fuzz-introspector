@@ -48,7 +48,7 @@ public class Benchmark4 {
         break;
       case Benchmark4.PARIAL_PARSING:
       case Benchmark4.PARTIAL_REVERSE_PARSING:
-        Benchmark4.parseData(string, mode, 0, string.length());
+        result = Benchmark4.parseData(string, mode, 0, string.length());
         break;
       default:
         result = false;
@@ -74,7 +74,7 @@ public class Benchmark4 {
         break;
       case Benchmark4.FULL_PARSING:
       case Benchmark4.FULL_REVERSE_PARSING:
-        Benchmark4.parseData(string, mode);
+        result = Benchmark4.parseData(string, mode);
         break;
       default:
         result = false;
