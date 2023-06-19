@@ -31,7 +31,8 @@ public class Benchmark1 {
     this(new String(data, Charset.defaultCharset()));
   }
 
-  public static Boolean parseData(String string, Integer start, Integer end) throws AutoFuzzException {
+  public static Boolean parseData(String string, Integer start, Integer end)
+      throws AutoFuzzException {
     Benchmark1 benchmark1 = new Benchmark1(string);
     return benchmark1.parseData(start, end);
   }
@@ -77,14 +78,14 @@ public class Benchmark1 {
   public void handleNumber(Character chr) throws AutoFuzzException {
     int value = Character.getNumericValue(chr);
 
-    SampleObject.testStaticMethodShort((short)value);
+    SampleObject.testStaticMethodShort((short) value);
     SampleObject.testStaticMethodInteger(value);
-    SampleObject.testStaticMethodLong((long)value);
-    SampleObject.testStaticMethodFloat((float)value);
-    parser.testMethodShort((short)value);
+    SampleObject.testStaticMethodLong((long) value);
+    SampleObject.testStaticMethodFloat((float) value);
+    parser.testMethodShort((short) value);
     parser.testMethodInteger(value);
-    parser.testMethodLong((long)value);
-    parser.testMethodFloat((float)value);
+    parser.testMethodLong((long) value);
+    parser.testMethodFloat((float) value);
   }
 
   public void handleByte(Character chr) throws AutoFuzzException {

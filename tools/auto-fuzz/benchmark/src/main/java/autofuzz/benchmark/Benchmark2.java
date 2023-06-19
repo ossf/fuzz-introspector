@@ -31,7 +31,8 @@ public class Benchmark2 {
     this(new String(data, Charset.defaultCharset()));
   }
 
-  public static Boolean parseData(String string, Integer start, Integer end) throws AutoFuzzException {
+  public static Boolean parseData(String string, Integer start, Integer end)
+      throws AutoFuzzException {
     Benchmark2 benchmark2 = new Benchmark2(string);
     return benchmark2.parseData(start, end);
   }
@@ -47,7 +48,7 @@ public class Benchmark2 {
 
   public void parseString(String string, String indentation) throws AutoFuzzException {
     if (string.length() == 0) {
-        return;
+      return;
     }
     if (string.charAt(0) == '{') {
       parseString(string.substring(1), indentation + " ");
