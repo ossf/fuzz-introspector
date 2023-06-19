@@ -19,9 +19,9 @@ import autofuzz.benchmark.object.*;
 import java.nio.charset.Charset;
 
 /**
- * This is one of the benchmark class for Auto-Fuzz post processing filter. This benchmark focus on
- * the multiple layer of method calls with cross methods recursion. Auto-Fuzz post processing should
- * be able to identify only one fuzzers that covers all other logic.
+ * This is one of the benchmark classes for the Auto-Fuzz post-processing filter. This benchmark
+ * focus on the multiple layers of method calls with cross-methods recursion. Auto-Fuzz
+ * post-processing should be able to identify only one fuzzer that covers all other logic.
  *
  * <p>Target fuzzing method: public static Boolean parseData(String, Integer, Integer, String)
  * throws AutoFuzzException

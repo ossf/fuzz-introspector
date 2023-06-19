@@ -19,13 +19,13 @@ import autofuzz.benchmark.object.*;
 import java.util.*;
 
 /**
- * This is one of the benchmark class for Auto-Fuzz post processing filter. This benchmark focus on
- * the multiple layer of method calls with three entry methods recursive loop. Auto-Fuzz post
- * processing should be able to identify either one of the method and include that in a fuzzer and
- * ignoring the remaining two as they are created as recursive loop.
+ * This is one of the benchmark classes for the Auto-Fuzz post-processing filter. This benchmark
+ * focus on the multiple layers of method calls with three entry methods recursive loop. Auto-Fuzz
+ * post processing should be able to identify either one of the methods and include that in a fuzzer
+ * and ignoring the remaining two as they created a recursive loop.
  *
  * <p>Target fuzzing methods (either one of them only): public static void parseAlphabetic(String)
- * throws AutoFuzzException public static void parseInteger(String) throws AutoFuzzException public
+ * throws AutoFuzzException; public static void parseInteger(String) throws AutoFuzzException; pulic
  * static void parseFloat(String) throws AutoFuzzException
  *
  * @author Fuzz Introspector

@@ -19,14 +19,14 @@ import autofuzz.benchmark.object.*;
 import java.nio.charset.Charset;
 
 /**
- * This is one of the benchmark class for Auto-Fuzz post processing filter. This benchmark focus on
- * the multiple layer of method calls with serveral logic branches. There are two entry methods
- * which will process some logic and then call each other if the wrong mode is used. Auto-Fuzz post
- * processing should be able to identify both of them as they have separate logic but does call each
- * other in some conditions.
+ * This is one of the benchmark classes for the Auto-Fuzz post-processing filter. This benchmark
+ * focus on the multiple layers of method calls with several logic branches. There are two entry
+ * methods which will process some logic and then call each other if the wrong mode is used.
+ * Auto-Fuzz post processing should be able to identify both of them as they have separate logic but
+ * do call each other in some conditions.
  *
  * <p>Target fuzzing methods: public static Boolean parseData(String, Integer) throws
- * AutoFuzzException public static Boolean parseData(String, Integer, Integer, Integer) throws
+ * AutoFuzzException; public static Boolean parseData(String, Integer, Integer, Integer) throws
  * AutoFuzzException
  *
  * @author Fuzz Introspector
