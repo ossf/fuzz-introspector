@@ -1,0 +1,104 @@
+// Copyright 2023 Fuzz Introspector Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+///////////////////////////////////////////////////////////////////////////
+
+package autofuzz.benchmark;
+
+import autofuzz.benchmark.object.*;
+import java.nio.charset.Charset;
+
+public class Benchmark1 {
+  private String data;
+  private SampleObject parser;
+
+  public Benchmark1(String string) {
+    this.data = string;
+    this.parser = new SampleObject();
+  }
+
+  public Benchmark1(byte[] data) {
+    this(new String(data, Charset.defaultCharset()));
+  }
+
+  public static Boolean parseData(String string, Integer start, Integer end) throws AutoFuzzException {
+    Benchmark1 benchmark1 = new Benchmark1(string);
+    return benchmark1.parseData(start, end);
+  }
+
+  public Boolean parseData(Integer start, Integer end) throws AutoFuzzException {
+    Character[] array = this.getCharacterArray(start, end);
+
+    for (Character chr : array) {
+      if (Character.isAlphabetic(chr)) {
+        this.handleCharacter(chr);
+      } else if (Character.isDigit(chr)) {
+        this.handleNumber(chr);
+      } else if (Character.isLetter(chr)) {
+        this.handleByte(chr);
+      } else {
+        throw new AutoFuzzException("Invalid data.", new IllegalArgumentException());
+      }
+    }
+
+    return true;
+  }
+
+  public Character[] getCharacterArray(Integer start, Integer end) throws AutoFuzzException {
+    if ((start < 0) || (end < start) || (end >= data.length())) {
+      throw new AutoFuzzException("Invalid start and end index.", new IllegalArgumentException());
+    }
+
+    Character[] result = new Character[end - start + 1];
+    char[] charArray = data.toCharArray();
+
+    for (int i = start, j = 0; i <= end; i++, j++) {
+      result[j] = Character.valueOf(charArray[i]);
+    }
+
+    return result;
+  }
+
+  public void handleCharacter(Character chr) throws AutoFuzzException {
+    SampleObject.testStaticMethodCharacter(chr);
+    parser.testMethodCharacter(chr);
+  }
+
+  public void handleNumber(Character chr) throws AutoFuzzException {
+    int value = Character.getNumericValue(chr);
+
+    SampleObject.testStaticMethodShort((short)value);
+    SampleObject.testStaticMethodInteger(value);
+    SampleObject.testStaticMethodLong((long)value);
+    SampleObject.testStaticMethodFloat((float)value);
+    parser.testMethodShort((short)value);
+    parser.testMethodInteger(value);
+    parser.testMethodLong((long)value);
+    parser.testMethodFloat((float)value);
+  }
+
+  public void handleByte(Character chr) throws AutoFuzzException {
+    Byte value = Character.getDirectionality(chr);
+
+    SampleObject.testStaticMethodByte(value);
+    parser.testMethodByte(value);
+  }
+
+  public byte[] getDataByteArray() {
+    return this.data.getBytes(Charset.defaultCharset());
+  }
+
+  public String getDataString() {
+    return this.data;
+  }
+}
