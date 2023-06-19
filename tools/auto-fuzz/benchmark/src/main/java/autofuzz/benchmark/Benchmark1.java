@@ -23,6 +23,9 @@ import java.nio.charset.Charset;
  * the multiple layer of method calls with serveral logic branches. Auto-Fuzz post processing should
  * be able to identify only one fuzzers that covers all other logic.
  *
+ * <p>Target fuzzing method: public static Boolean parseData(String, Integer, Integer) throws
+ * AutoFuzzException
+ *
  * @author Fuzz Introspector
  */
 public class Benchmark1 {
@@ -122,11 +125,25 @@ public class Benchmark1 {
     return result;
   }
 
+  /**
+   * Helpers method for handling character.
+   *
+   * @param chr the character to handle
+   * @throws AutoFuzzException if the input cannot be parsed
+   * @since 1.0
+   */
   public void handleCharacter(Character chr) throws AutoFuzzException {
     SampleObject.testStaticMethodCharacter(chr);
     parser.testMethodCharacter(chr);
   }
 
+  /**
+   * Helpers method for handling character in number format.
+   *
+   * @param chr the character to handle
+   * @throws AutoFuzzException if the input cannot be parsed
+   * @since 1.0
+   */
   public void handleNumber(Character chr) throws AutoFuzzException {
     int value = Character.getNumericValue(chr);
 
@@ -140,6 +157,13 @@ public class Benchmark1 {
     parser.testMethodFloat((float) value);
   }
 
+  /**
+   * Helpers method for handling character in byte format.
+   *
+   * @param chr the character to handle
+   * @throws AutoFuzzException if the input cannot be parsed
+   * @since 1.0
+   */
   public void handleByte(Character chr) throws AutoFuzzException {
     Byte value = Character.getDirectionality(chr);
 

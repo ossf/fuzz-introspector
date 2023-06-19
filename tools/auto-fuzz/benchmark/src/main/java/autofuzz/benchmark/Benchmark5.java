@@ -24,6 +24,10 @@ import java.util.*;
  * processing should be able to identify either one of the method and include that in a fuzzer and
  * ignoring the remaining two as they are created as recursive loop.
  *
+ * <p>Target fuzzing methods (either one of them only): public static void parseAlphabetic(String)
+ * throws AutoFuzzException public static void parseInteger(String) throws AutoFuzzException public
+ * static void parseFloat(String) throws AutoFuzzException
+ *
  * @author Fuzz Introspector
  */
 public class Benchmark5 {

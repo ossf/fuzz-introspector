@@ -25,6 +25,10 @@ import java.nio.charset.Charset;
  * processing should be able to identify both of them as they have separate logic but does call each
  * other in some conditions.
  *
+ * <p>Target fuzzing methods: public static Boolean parseData(String, Integer) throws
+ * AutoFuzzException public static Boolean parseData(String, Integer, Integer, Integer) throws
+ * AutoFuzzException
+ *
  * @author Fuzz Introspector
  */
 public class Benchmark4 {
