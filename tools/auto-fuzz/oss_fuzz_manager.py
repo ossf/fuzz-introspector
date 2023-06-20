@@ -118,46 +118,6 @@ def copy_and_build_project(src_folder, oss_fuzz_base, log_dir=None):
         return True
 
 
-def copy_and_build_project(src_folder, oss_fuzz_base, log_dir=None):
-    """Copies src_folder into the oss-fuzz located at oss_fuzz_base project's
-    folder and runs the oss-fuzz command:
-    build_fuzzers
-
-    Returns True if the build passed. False otherwise.
-    """
-    project_name = os.path.basename(src_folder)
-
-    # Copy the directory
-    dst_project_folder = os.path.join(oss_fuzz_base, "projects", project_name)
-    if os.path.isdir(dst_project_folder):
-        shutil.rmtree(dst_project_folder)
-
-    try:
-        shutil.copytree(src_folder, dst_project_folder)
-    except shutil.Error:
-        # Bail out if an error occurred.
-        return False
-
-    cmd = [
-        "python3",
-        os.path.join(oss_fuzz_base, "infra/helper.py"), "build_fuzzers",
-        project_name
-    ]
-    code, out, err = run(cmd)
-    # Write build output to log diretory.
-    out_log = os.path.join(log_dir, "oss-fuzz.out")
-    err_log = os.path.join(log_dir, "oss-fuzz.err")
-    with open(out_log, "wb") as f:
-        f.write(out)
-    with open(err_log, "wb") as f:
-        f.write(err)
-
-    if b"Building fuzzers failed" in err:
-        return False
-    else:
-        return True
-
-
 def cleanup_project(proj_name, oss_fuzz_base):
     """Remove everything in the /out/ folder of a project. Does this by calling
     docker run in the same way that OSS-Fuzz handles its Docker images."""
