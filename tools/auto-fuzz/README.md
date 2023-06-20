@@ -35,6 +35,15 @@ cd ../../../tools/auto-fuzz/
 # Currently, only java or python supported for the language option
 python3 ./manager.py --language=<language> --targets=constants
 
+# You may also choose to run the locally provided benchmark project
+# instead of real projects to test the result of the Auto-Fuzz.
+# With the additional --benchmark tag, Auto-Fuzz will run the
+# process on the benchmark project located in benchmark/<language>
+# instead of real projects
+# Remark: Currently, Auto-Fuzz only support benchmarking sample 
+# on Java.
+python3 ./manager.py --language=<language> --benchmark
+
 # Once it's finished, let's inspect the results.
 # Identify the best targets per project
 python3 ./post-process.py
