@@ -22,6 +22,7 @@ import shutil
 
 import base_files
 import constants
+import benchmark_target
 
 
 def get_result_json(dirname):
@@ -244,6 +245,77 @@ def heuristics_summary():
             print("  cov: %d :: %d" % (cov, count))
 
 
+def extract_target_method(target_dir) :
+    result = dict()
+
+    fuzzer_path = os.path.join(target_dir, "Fuzz.java")
+    with open(fuzzer_path, "r") as fuzzer:
+        for line in fuzzer.readlines():
+            if "// Target method: " in line:
+                class_name = line.split("[")[1].split("]")[0]
+                method_name = line.split("] ")[1].strip()
+
+                if class_name in result:
+                    method_set = result[class_name]
+                else:
+                    method_set = set()
+
+                method_set.add(method_name)
+                result[class_name] = method_set
+
+    return result
+
+
+def print_benchmark_summary(target_dir, trial_runs, language):
+    benchmark_map = benchmark_target.TARGET_METHOD[language]
+    for trial_run in trial_runs:
+        target_dict = extract_target_method(os.path.join(target_dir, trial_run['name']))
+        for target_class in target_dict:
+            for target_method in target_dict[target_class]:
+                if target_class in benchmark_map:
+                    benchmark_method = benchmark_map[target_class]
+                    if target_method in benchmark_method:
+                        fuzzer_list = benchmark_method[target_method]
+                        fuzzer_list.append(trial_run['name'])
+                        benchmark_method[target_method] = list(set(fuzzer_list))
+                    benchmark_map[target_class] = benchmark_method
+
+    for target_class in benchmark_map:
+        print("Target benchmark class: %s" % target_class)
+        benchmark_class = benchmark_map[target_class]
+        for target_method in benchmark_class:
+            print("  Method: %s" % target_method)
+            benchmark_method = benchmark_class[target_method]
+            for fuzzer in benchmark_method:
+                print("    %s/Fuzz.java" % fuzzer)
+            print("\n")
+        print("\n")
+
+
+def benchmark_summary(target_dir, language):
+    """Print a list of benchmark target methods and fuzzers that covers them"""
+    proj_yaml, trial_runs = interpret_autofuzz_run(target_dir)
+
+    if proj_yaml is None or len(trial_runs) == 0:
+        ranked_runs = []
+    else:
+        ranked_runs = get_cov_ranked_trial_runs(trial_runs)
+
+    success_runs = []
+    for i in range(len(ranked_runs)):
+        trial_run = ranked_runs[i]
+        if trial_run['max_cov'] > 0:
+            success_runs.append(trial_run)
+
+    print("List of benchmark methods and which fuzzer covers them")
+    print("-----------------------------------------------------------------------------")
+    print_benchmark_summary(target_dir, ranked_runs, language)
+
+    print("\nList of benchmark methods and which fuzzer covers them and run successfully")
+    print("-----------------------------------------------------------------------------")
+    print_benchmark_summary(target_dir, success_runs, language)
+
+
 def extract_ranked(target_dir, runs_to_rank=20):
     proj_yaml, trial_runs = interpret_autofuzz_run(target_dir)
     if proj_yaml is None:
@@ -281,6 +353,15 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
         help=
         "Shows summary of how each heuristic performed with respect to all auto-fuzz modules"
     )
+
+    benchmark_parser = subparsers.add_parser(
+        'benchmark-summary',
+        help=
+        """Shows a list of the benchmark target methods of the chosen language and which generated
+        fuzzers covers that"""
+    )
+    benchmark_parser.add_argument("dir", type=str)
+    benchmark_parser.add_argument("language", type=str, default="java")
 
     merge_parser = subparsers.add_parser(
         'merge', help="Merge all fuzzers from one run into one project")
@@ -462,6 +543,11 @@ def main():
         extract_ranked(args.dir, args.to_rank)
     elif args.command == 'heuristics-summary':
         heuristics_summary()
+    elif args.command == 'benchmark-summary':
+        if args.language == 'java':
+            benchmark_summary(args.dir, 'jvm')
+        else:
+            print('Unsupported language: %s' % args.language)
     elif args.command == 'merge':
         if args.language == 'python':
             merge_run(args.dir, 'python')
