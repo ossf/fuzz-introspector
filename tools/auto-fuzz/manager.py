@@ -75,10 +75,11 @@ class OSS_FUZZ_PROJECT:
     operations on a given OSS-Fuzz project.
     """
 
-    def __init__(self, project_folder, github_url, language):
+    def __init__(self, project_folder, github_url, language, benchmark=False):
         self.project_folder = project_folder
         self.github_url = github_url
         self.language = language
+        self.benchmark = benchmark
 
     @property
     def build_script(self):
@@ -118,18 +119,21 @@ class OSS_FUZZ_PROJECT:
 
     @property
     def project_name(self):
-        # Simplify url by cutting https out, then assume what we have left is:
-        # HTTP Type
-        # github.com/{user}/{proj_name}
-        # or
-        # SSH Type
-        # git@github.com:{user}/{proj_name}
-        if self.github_url.startswith("https://"):
-            return self.github_url.replace("https://", "").split("/")[2]
-        elif self.github_url.startswith("http://"):
-            return self.github_url.replace("http://", "").split("/")[2]
+        if self.benchmark:
+            return "%s-benchmark" % self.language
         else:
-            return self.github_url.split("/")[1]
+            # Simplify url by cutting https out, then assume what we have left is:
+            # HTTP Type
+            # github.com/{user}/{proj_name}
+            # or
+            # SSH Type
+            # git@github.com:{user}/{proj_name}
+            if self.github_url.startswith("https://"):
+                return self.github_url.replace("https://", "").split("/")[2]
+            elif self.github_url.startswith("http://"):
+                return self.github_url.replace("http://", "").split("/")[2]
+            else:
+                return self.github_url.split("/")[1]
 
     def write_basefiles(self):
         with open(self.build_script, "w") as bfile:
@@ -431,10 +435,9 @@ def run_static_analysis_jvm(git_repo, basedir, project_name):
 
     jardir = os.path.join(basedir, "work", "jar")
     projectdir = os.path.join(basedir, "work", "proj")
-    proj_name = git_repo.split("/")[-1].replace(".git", "")
 
     project_type, build_ret, builddir, jarfiles = build_jvm_project(
-        basedir, projectdir, proj_name)
+        basedir, projectdir, project_name)
 
     if not build_ret:
         print("Unknown project type or project build fail.\n")
@@ -567,6 +570,7 @@ def build_and_test_single_possible_target(idx_folder,
                                           oss_fuzz_base_project,
                                           possible_targets,
                                           language,
+                                          benchmark,
                                           should_run_checks=True):
     """Builds and tests a given FuzzTarget.
 
@@ -582,7 +586,7 @@ def build_and_test_single_possible_target(idx_folder,
     # Create the new OSS-Fuzz project for the FuzzTarget to validate
     dst_oss_fuzz_project = OSS_FUZZ_PROJECT(auto_fuzz_proj_dir,
                                             oss_fuzz_base_project.github_url,
-                                            language)
+                                            language, benchmark)
 
     # Copy files from base OSS-Fuzz project
     copy_core_oss_fuzz_project_files(oss_fuzz_base_project,
@@ -696,8 +700,12 @@ def build_and_test_single_possible_target(idx_folder,
     tick_tqdm_tracker()
 
 
-def run_builder_pool(autofuzz_base_workdir, oss_fuzz_base_project,
-                     possible_targets, max_targets_to_analyse, language):
+def run_builder_pool(autofuzz_base_workdir,
+                     oss_fuzz_base_project,
+                     possible_targets,
+                     max_targets_to_analyse,
+                     language,
+                     benchmark=False):
     """Runs a set of possible oss-fuzz targets in `possible_targets` in a
     multithreaded manner using ThreadPools.
     """
@@ -712,7 +720,7 @@ def run_builder_pool(autofuzz_base_workdir, oss_fuzz_base_project,
         if idx > max_targets_to_analyse:
             continue
         arg_list.append((idx_folder, idx, oss_fuzz_base_project,
-                         possible_targets, language))
+                         possible_targets, language, benchmark))
 
     print("Launching multi-threaded processing")
     print("Jobs completed:")
@@ -743,6 +751,11 @@ def run_builder_pool(autofuzz_base_workdir, oss_fuzz_base_project,
         pass
 
 
+def copy_benchmark_project(base_dir, language, destination):
+    shutil.copytree(os.path.join(base_dir, "benchmark", language), destination)
+    return True
+
+
 def git_clone_project(github_url, destination):
     cmd = ["git clone", github_url, destination]
     try:
@@ -763,12 +776,14 @@ def autofuzz_project_from_github(github_url,
                                  do_static_analysis=False,
                                  possible_targets=None,
                                  to_merge=False,
-                                 param_combination=False):
+                                 param_combination=False,
+                                 benchmark=False):
     """Auto-generates fuzzers for a Github project and performs runtime checks
     on the fuzzers.
     """
     print("Running autofuzz on %s" % (github_url))
-    autofuzz_base_workdir = get_next_project_folder(base_dir=os.getcwd())
+    base_dir = os.getcwd()
+    autofuzz_base_workdir = get_next_project_folder(base_dir=base_dir)
     os.mkdir(autofuzz_base_workdir)
 
     #autofuzz_data_dir = os.path.join(autofuzz_base_workdir, "base-autofuzz")
@@ -779,17 +794,26 @@ def autofuzz_project_from_github(github_url,
     # Create a OSS-Fuzz project abstraction for the base project.
     # A lot of derivatives will be created based off of this base project.
     oss_fuzz_base_project = OSS_FUZZ_PROJECT(base_oss_fuzz_project_dir,
-                                             github_url, language)
+                                             github_url, language, benchmark)
 
     # Clone the target and store it in our base OSS-Fuzz project. We need to get
     # the source for both static analysis and also for running each OSS-Fuzz
     # experiment. We store it like this to avoid having "git clone" in each
     # experiment, but rather using Docker's COPY.
-    if not git_clone_project(
-            github_url,
-            os.path.join(oss_fuzz_base_project.project_folder,
-                         oss_fuzz_base_project.project_name)):
-        return False
+    # If benchmark option is true, instead of cloning the project from github,
+    # copy the local benchmark directory of the chosen language instead.
+    if benchmark:
+        if not copy_benchmark_project(
+                base_dir, language,
+                os.path.join(oss_fuzz_base_project.project_folder,
+                             oss_fuzz_base_project.project_name)):
+            return False
+    else:
+        if not git_clone_project(
+                github_url,
+                os.path.join(oss_fuzz_base_project.project_folder,
+                             oss_fuzz_base_project.project_name)):
+            return False
 
     # If this is a jvm target download ant, maven and gradle once so we don't
     # have to do it for each proejct.
@@ -873,7 +897,7 @@ def autofuzz_project_from_github(github_url,
         constants.MAX_FUZZERS_PER_PROJECT, len(possible_targets)), github_url))
     run_builder_pool(autofuzz_base_workdir, oss_fuzz_base_project,
                      possible_targets, constants.MAX_FUZZERS_PER_PROJECT,
-                     language)
+                     language, benchmark)
 
     if to_merge:
         merged_directory = post_process.merge_run(autofuzz_base_workdir,
@@ -955,6 +979,12 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
          "target is generated for each method call with the first parameter generating "
          "combination. Currently, this option is only processed for java project."
          ))
+    parser.add_argument(
+        "--benchmark",
+        action="store_true",
+        help=(
+            "If set, the auto-fuzz process will be executed on the benchmark "
+            "project instead of real project."))
 
     return parser
 
@@ -974,11 +1004,23 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.language == 'python':
-        github_projects = get_target_repos(args.targets, 'python')
-        run_on_projects("python", github_projects, args.merge)
+        if (args.benchmark):
+            print("Benchmarking for python is not supported yet")
+        else:
+            github_projects = get_target_repos(args.targets, 'python')
+            run_on_projects("python", github_projects, args.merge)
     elif args.language == 'java':
-        github_projects = get_target_repos(args.targets, 'jvm')
-        run_on_projects("jvm", github_projects, args.merge,
-                        args.param_combination)
+        if (args.benchmark):
+            autofuzz_project_from_github(
+                "java-benchmark",
+                "jvm",
+                do_static_analysis=True,
+                to_merge=args.merge,
+                param_combination=args.param_combination,
+                benchmark=args.benchmark)
+        else:
+            github_projects = get_target_repos(args.targets, 'jvm')
+            run_on_projects("jvm", github_projects, args.merge,
+                            args.param_combination)
     else:
         print("Language not supported")
