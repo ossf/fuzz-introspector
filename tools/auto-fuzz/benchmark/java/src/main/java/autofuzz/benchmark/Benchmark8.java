@@ -211,7 +211,7 @@ public class Benchmark8 {
   }
 
   public void method15(String string, Integer path) throws AutoFuzzException {
-    this.method8(string, path);
+    this.method18(string, path);
   }
 
   public void method16(String string, Integer path) throws AutoFuzzException {
