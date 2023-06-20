@@ -106,4 +106,31 @@ def main():
 if __name__ == "__main__":
   main()
 ```
+# Benchmarking of Auto-Fuzz
+You may also choose to run the locally provided benchmark project 
+instead of real projects to test the result of the Auto-Fuzz. 
+With the additional --benchmark tag, Auto-Fuzz will run the
+process on the benchmark project located in benchmark/<language>
+instead of real projects.
 
+Remark: Currently, Auto-Fuzz only support benchmarking sample on Java.
+```
+python3 ./manager.py --language=<language> --benchmark
+```
+There are a total of 8 benchmarks for the Java benchmark project. Auto-Fuzz generation and post-processing should get a total of 13 fuzzers, each of which covers one of the 13 unique high-level functions. With all 13 fuzzers, all the code in the Java benchmark project should be statically reachable. The table below shows the list of those 13 unique methods.
+
+| Java benchmark              | Method target                                                                                                                                                                                              |
+|-----------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Benchmark 1                 | public static Boolean parseData(String, Integer, Integer) throws AutoFuzzException                                                                                                                         |
+| Benchmark 2                 | public static Boolean parseData(String, Integer, Integer) throws AutoFuzzException                                                                                                                         |
+| Benchmark 3                 | public static Boolean parseData(String, Integer, Integer, String) throws AutoFuzzException                                                                                                                 |
+| Benchmark 4                 | public static Boolean parseData(String, Integer) throws AutoFuzzException                                                                                                                                  |
+| Benchmark 4                 | public static Boolean parseData(String, Integer, Integer, Integer) throws AutoFuzzException                                                                                                                |
+| Benchmark 5<br>(Either one) | public static void parseAlphabetic(String) throws AutoFuzzException <br>public static void parseInteger(String) throws AutoFuzzException<br>public static void parseFloat(String) throws AutoFuzzException |
+| Benchmark 6                 | public void parseData(String[]) throws AutoFuzzException                                                                                                                                                   |
+| Benchmark 7                 | public static Boolean processClass(Class<? extends SampleObject>, String, Integer) throws AutoFuzzException                                                                                                |
+| Benchmark 8                 | public void entry1(String) throws AutoFuzzException                                                                                                                                                        |
+| Benchmark 8                 | public void entry2(String) throws AutoFuzzException                                                                                                                                                        |
+| Benchmark 8                 | public void entry3(String) throws AutoFuzzException                                                                                                                                                        |
+| Benchmark 8                 | public void entry4(String) throws AutoFuzzException                                                                                                                                                        |
+| Benchmark 8                 | public void entry5(String) throws AutoFuzzException
