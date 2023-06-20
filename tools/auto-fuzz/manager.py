@@ -700,9 +700,12 @@ def build_and_test_single_possible_target(idx_folder,
     tick_tqdm_tracker()
 
 
-def run_builder_pool(autofuzz_base_workdir, oss_fuzz_base_project,
-                     possible_targets, max_targets_to_analyse,
-                     language, benchmark=False):
+def run_builder_pool(autofuzz_base_workdir,
+                     oss_fuzz_base_project,
+                     possible_targets,
+                     max_targets_to_analyse,
+                     language,
+                     benchmark=False):
     """Runs a set of possible oss-fuzz targets in `possible_targets` in a
     multithreaded manner using ThreadPools.
     """
@@ -752,6 +755,7 @@ def copy_benchmark_project(base_dir, language, destination):
     shutil.copytree(os.path.join(base_dir, "benchmark", language), destination)
     return True
 
+
 def git_clone_project(github_url, destination):
     cmd = ["git clone", github_url, destination]
     try:
@@ -800,8 +804,7 @@ def autofuzz_project_from_github(github_url,
     # copy the local benchmark directory of the chosen language instead.
     if benchmark:
         if not copy_benchmark_project(
-                base_dir,
-                language,
+                base_dir, language,
                 os.path.join(oss_fuzz_base_project.project_folder,
                              oss_fuzz_base_project.project_name)):
             return False
@@ -974,12 +977,14 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
          "Creating a set of possible target with same method call but different "
          "parameter generating combination. If this is not set, only one possible "
          "target is generated for each method call with the first parameter generating "
-         "combination. Currently, this option is only processed for java project."))
+         "combination. Currently, this option is only processed for java project."
+         ))
     parser.add_argument(
         "--benchmark",
         action="store_true",
-        help=("If set, the auto-fuzz process will be executed on the benchmark "
-              "project instead of real project."))
+        help=(
+            "If set, the auto-fuzz process will be executed on the benchmark "
+            "project instead of real project."))
 
     return parser
 
@@ -1006,12 +1011,13 @@ if __name__ == "__main__":
             run_on_projects("python", github_projects, args.merge)
     elif args.language == 'java':
         if (args.benchmark):
-            autofuzz_project_from_github("java-benchmark",
-                                         "jvm",
-                                         do_static_analysis=True,
-                                         to_merge=args.merge,
-                                         param_combination=args.param_combination,
-                                         benchmark=args.benchmark)
+            autofuzz_project_from_github(
+                "java-benchmark",
+                "jvm",
+                do_static_analysis=True,
+                to_merge=args.merge,
+                param_combination=args.param_combination,
+                benchmark=args.benchmark)
         else:
             github_projects = get_target_repos(args.targets, 'jvm')
             run_on_projects("jvm", github_projects, args.merge,
