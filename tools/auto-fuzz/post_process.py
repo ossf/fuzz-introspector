@@ -245,7 +245,7 @@ def heuristics_summary():
             print("  cov: %d :: %d" % (cov, count))
 
 
-def extract_target_method(target_dir) :
+def extract_target_method(target_dir):
     result = dict()
 
     fuzzer_path = os.path.join(target_dir, "Fuzz.java")
@@ -270,7 +270,8 @@ def print_benchmark_summary(target_dir, trial_runs, language):
     benchmark_map = benchmark_target.TARGET_METHOD[language]
     redundant_map = dict()
     for trial_run in trial_runs:
-        target_dict = extract_target_method(os.path.join(target_dir, trial_run['name']))
+        target_dict = extract_target_method(
+            os.path.join(target_dir, trial_run['name']))
         for target_class in target_dict:
             for target_method in target_dict[target_class]:
                 if target_class in benchmark_map:
@@ -282,7 +283,8 @@ def print_benchmark_summary(target_dir, trial_runs, language):
                     if target_method in benchmark_method:
                         fuzzer_list = benchmark_method[target_method]
                         fuzzer_list.append(trial_run['name'])
-                        benchmark_method[target_method] = list(set(fuzzer_list))
+                        benchmark_method[target_method] = list(
+                            set(fuzzer_list))
                         benchmark_map[target_class] = benchmark_method
                     else:
                         if target_method in redundant_method:
@@ -290,11 +292,16 @@ def print_benchmark_summary(target_dir, trial_runs, language):
                         else:
                             redundant_list = []
                         redundant_list.append(trial_run['name'])
-                        redundant_method[target_method] = list(set(redundant_list))
+                        redundant_method[target_method] = list(
+                            set(redundant_list))
                         redundant_map[target_class] = redundant_method
 
-    print("List of benchmark methods and which fuzzer covers them and run successfully")
-    print("-----------------------------------------------------------------------------")
+    print(
+        "List of benchmark methods and which fuzzer covers them and run successfully"
+    )
+    print(
+        "-----------------------------------------------------------------------------"
+    )
     for target_class in benchmark_map:
         print("Target benchmark class: %s" % target_class)
         benchmark_class = benchmark_map[target_class]
@@ -306,7 +313,9 @@ def print_benchmark_summary(target_dir, trial_runs, language):
             print("\n")
 
     print("\nList of redundant methods and the fuzzer covers them")
-    print("-----------------------------------------------------------------------------")
+    print(
+        "-----------------------------------------------------------------------------"
+    )
     for target_class in redundant_map:
         print("Class: %s" % target_class)
         redundant_class = redundant_map[target_class]
@@ -378,8 +387,7 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
         'benchmark-summary',
         help=
         """Shows a list of the benchmark target methods of the chosen language and which generated
-        fuzzers covers that"""
-    )
+        fuzzers covers that""")
     benchmark_parser.add_argument("dir", type=str)
     benchmark_parser.add_argument("language", type=str, default="java")
 
