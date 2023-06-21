@@ -288,7 +288,7 @@ def print_benchmark_summary(target_dir, trial_runs, language):
                         benchmark_map[target_class] = benchmark_method
                     else:
                         if target_method in redundant_method:
-                            redundant_list = redundant_method[redundant_method]
+                            redundant_list = redundant_method[target_method]
                         else:
                             redundant_list = []
                         redundant_list.append(trial_run['name'])
