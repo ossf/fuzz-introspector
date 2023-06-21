@@ -266,83 +266,69 @@ def extract_target_method(target_dir):
     return result
 
 
-def print_benchmark_summary(target_dir, trial_runs, language):
-    benchmark_map = benchmark_target.TARGET_METHOD[language]
+def print_benchmark_summary(target_dir, trial_runs, language, project_name):
+    benchmark_methods = benchmark_target.TARGET_METHOD[language][project_name]
+    benchmark_map = dict()
     redundant_map = dict()
+    for benchmark_method in benchmark_methods:
+        benchmark_map[benchmark_method] = []
+
     for trial_run in trial_runs:
         target_dict = extract_target_method(
             os.path.join(target_dir, trial_run['name']))
         for target_class in target_dict:
-            for target_method in target_dict[target_class]:
-                if target_class in benchmark_map:
-                    benchmark_method = benchmark_map[target_class]
-                    if target_class in redundant_map:
-                        redundant_method = redundant_map[target_class]
-                    else:
-                        redundant_method = dict()
-                    if target_method in benchmark_method:
-                        fuzzer_list = benchmark_method[target_method]
+            if target_class.split('.')[-1].lower() == project_name:
+                for target_method in target_dict[target_class]:
+                    if target_method in benchmark_map:
+                        fuzzer_list = benchmark_map[target_method]
                         fuzzer_list.append(trial_run['name'])
-                        benchmark_method[target_method] = list(
-                            set(fuzzer_list))
-                        benchmark_map[target_class] = benchmark_method
+                        benchmark_map[target_method] = list(set(fuzzer_list))
                     else:
-                        if target_method in redundant_method:
-                            redundant_list = redundant_method[target_method]
+                        if target_method in redundant_map:
+                            redundant_list = redundant_map[target_method]
                         else:
                             redundant_list = []
                         redundant_list.append(trial_run['name'])
-                        redundant_method[target_method] = list(
+                        redundant_map[target_method] = list(
                             set(redundant_list))
-                        redundant_map[target_class] = redundant_method
 
     print(
         "List of benchmark methods and which fuzzer covers them and run successfully"
     )
-    print(
-        "-----------------------------------------------------------------------------"
-    )
-    for target_class in benchmark_map:
-        print("Target benchmark class: %s" % target_class)
-        benchmark_class = benchmark_map[target_class]
-        for target_method in benchmark_class:
-            print("  Method: %s" % target_method)
-            benchmark_method = benchmark_class[target_method]
-            for fuzzer in benchmark_method:
-                print("    %s/Fuzz.java" % fuzzer)
-            print("\n")
+    for target_method in benchmark_map:
+        print("  Method: %s" % target_method)
+        benchmark_method = benchmark_map[target_method]
+        if len(benchmark_method) == 0:
+            print("    No fuzzer")
+            continue
+        for fuzzer in benchmark_method:
+            print("    %s/Fuzz.java" % fuzzer)
 
-    print("\nList of redundant methods and the fuzzer covers them")
-    print(
-        "-----------------------------------------------------------------------------"
-    )
-    for target_class in redundant_map:
-        print("Class: %s" % target_class)
-        redundant_class = redundant_map[target_class]
-        for target_method in redundant_class:
+    if len(redundant_map) > 0:
+        print("\nList of redundant methods and the fuzzer covers them")
+        for target_method in redundant_map:
             print("  Method: %s" % target_method)
-            redundant_method = redundant_class[target_method]
+            redundant_method = redundant_map[target_method]
             for fuzzer in redundant_method:
                 print("    %s/Fuzz.java" % fuzzer)
-            print("\n")
 
 
-def benchmark_summary(target_dir, language):
+def benchmark_summary(language):
     """Print a list of benchmark target methods and fuzzers that covers them"""
-    proj_yaml, trial_runs = interpret_autofuzz_run(target_dir)
+    for autofuzz_project_dir in os.listdir("."):
+        if "autofuzz-" in autofuzz_project_dir:
+            proj_yaml, trial_runs = interpret_autofuzz_run(
+                autofuzz_project_dir)
+            if proj_yaml is None or len(trial_runs) == 0:
+                continue
+            if not proj_yaml['main_repo'].startswith('benchmark'):
+                continue
+            ranked_runs = get_cov_ranked_trial_runs(trial_runs)
 
-    if proj_yaml is None or len(trial_runs) == 0:
-        ranked_runs = []
-    else:
-        ranked_runs = get_cov_ranked_trial_runs(trial_runs)
-
-    success_runs = []
-    for i in range(len(ranked_runs)):
-        trial_run = ranked_runs[i]
-        if trial_run['max_cov'] > 0:
-            success_runs.append(trial_run)
-
-    print_benchmark_summary(target_dir, success_runs, language)
+            print(autofuzz_project_dir + ": " + proj_yaml['main_repo'])
+            print_benchmark_summary(autofuzz_project_dir, ranked_runs,
+                                    language, proj_yaml['main_repo'])
+            print("\n")
 
 
 def extract_ranked(target_dir, runs_to_rank=20):
@@ -388,7 +374,6 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
         help=
         """Shows a list of the benchmark target methods of the chosen language and which generated
         fuzzers covers that""")
-    benchmark_parser.add_argument("dir", type=str)
     benchmark_parser.add_argument("language", type=str, default="java")
 
     merge_parser = subparsers.add_parser(
@@ -573,7 +558,7 @@ def main():
         heuristics_summary()
     elif args.command == 'benchmark-summary':
         if args.language == 'java':
-            benchmark_summary(args.dir, 'jvm')
+            benchmark_summary('jvm')
         else:
             print('Unsupported language: %s' % args.language)
     elif args.command == 'merge':

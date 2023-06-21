@@ -120,7 +120,7 @@ class OSS_FUZZ_PROJECT:
     @property
     def project_name(self):
         if self.benchmark:
-            return "%s-benchmark" % self.language
+            return "%s-%s" % (self.language, self.github_url)
         else:
             # Simplify url by cutting https out, then assume what we have left is:
             # HTTP Type
@@ -751,8 +751,9 @@ def run_builder_pool(autofuzz_base_workdir,
         pass
 
 
-def copy_benchmark_project(base_dir, language, destination):
-    shutil.copytree(os.path.join(base_dir, "benchmark", language), destination)
+def copy_benchmark_project(base_dir, benchmark, language, destination):
+    shutil.copytree(os.path.join(base_dir, "benchmark", language, benchmark),
+                    destination)
     return True
 
 
@@ -804,7 +805,7 @@ def autofuzz_project_from_github(github_url,
     # copy the local benchmark directory of the chosen language instead.
     if benchmark:
         if not copy_benchmark_project(
-                base_dir, language,
+                base_dir, github_url, language,
                 os.path.join(oss_fuzz_base_project.project_folder,
                              oss_fuzz_base_project.project_name)):
             return False
@@ -921,6 +922,24 @@ def autofuzz_project_from_github(github_url,
     return True
 
 
+def benchmark_on_projects(language,
+                          benchmarks_to_target,
+                          to_merge=False,
+                          param_combination=False):
+    """Run autofuzz generation on a list of local benchmark."""
+    home_dir = os.getcwd()
+    for benchmark in benchmarks_to_target:
+        os.chdir(home_dir)
+        autofuzz_project_from_github(benchmark,
+                                     language,
+                                     do_static_analysis=True,
+                                     to_merge=to_merge,
+                                     param_combination=param_combination,
+                                     benchmark=True)
+    print("Completed auto-fuzz generation on %d benchmarks" %
+          len(benchmarks_to_target))
+
+
 def run_on_projects(language,
                     repos_to_target,
                     to_merge=False,
@@ -1011,13 +1030,8 @@ if __name__ == "__main__":
             run_on_projects("python", github_projects, args.merge)
     elif args.language == 'java':
         if (args.benchmark):
-            autofuzz_project_from_github(
-                "java-benchmark",
-                "jvm",
-                do_static_analysis=True,
-                to_merge=args.merge,
-                param_combination=args.param_combination,
-                benchmark=args.benchmark)
+            benchmark_projects = constants.benchmark['jvm']
+            benchmark_on_projects("jvm", benchmark_projects, args.merge)
         else:
             github_projects = get_target_repos(args.targets, 'jvm')
             run_on_projects("jvm", github_projects, args.merge,
