@@ -115,14 +115,14 @@ instead of real projects.
 
 Remark: Currently, Auto-Fuzz only support benchmarking sample on Java.
 
-To run Auto-Fuzz on the benchmark project
+To run Auto-Fuzz on the benchmark project, to choose the benchmark needed, change the list in constants.py
 ```
 python3 ./manager.py --language=<language> --benchmark
 ```
 
 To validate the result
 ```
-python3 ./post_processing.py benchmark_summary <directory> <language>
+python3 ./post_processing.py benchmark_summary <language>
 ```
 
 
