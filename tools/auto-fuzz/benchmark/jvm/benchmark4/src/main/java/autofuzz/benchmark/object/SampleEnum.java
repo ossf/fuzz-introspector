@@ -16,34 +16,34 @@
 package autofuzz.benchmark.object;
 
 public enum SampleEnum {
-    A("Alpha"),
-    B("Bravo"),
-    C("Charlie"),
-    D("Delta"),
-    E("Echo"),
-    F("Foxtrot"),
-    G("Golf"),
-    H("Hotel"),
-    I("India"),
-    J("Jullett");
+  A("Alpha"),
+  B("Bravo"),
+  C("Charlie"),
+  D("Delta"),
+  E("Echo"),
+  F("Foxtrot"),
+  G("Golf"),
+  H("Hotel"),
+  I("India"),
+  J("Jullett");
 
-    public final String label;
+  public final String label;
 
-    private SampleEnum(String label) {
-        this.label = label;
+  private SampleEnum(String label) {
+    this.label = label;
+  }
+
+  public static SampleEnum valueOfLabel(String label) {
+    for (SampleEnum e : values()) {
+      if (e.label.equals(label)) {
+        return e;
+      }
     }
+    return null;
+  }
 
-    public static SampleEnum valueOfLabel(String label) {
-        for (SampleEnum e : values()) {
-            if (e.label.equals(label)) {
-                return e;
-            }
-        }
-        return null;
-    }
-
-    @Override
-    public String toString() {
-        return this.label;
-    }
+  @Override
+  public String toString() {
+    return this.label;
+  }
 }

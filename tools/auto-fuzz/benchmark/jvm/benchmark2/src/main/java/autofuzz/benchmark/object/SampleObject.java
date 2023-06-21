@@ -34,7 +34,7 @@ public class SampleObject extends SampleClass implements SampleInterface {
     SampleObject.privateInterfaceMethod();
   }
 
-  public static SampleObject factoryMethod(){
+  public static SampleObject factoryMethod() {
     return new SampleObject();
   }
 

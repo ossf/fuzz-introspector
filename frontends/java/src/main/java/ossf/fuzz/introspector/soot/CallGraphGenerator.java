@@ -473,7 +473,8 @@ class CustomSenceTransformer extends SceneTransformer {
             // Looping statement from all blocks from this specific method.
             Unit unit = blockIt.next();
             if (unit instanceof Stmt) {
-              Callsite callsite = handleMethodInvocationInStatement((Stmt) unit, c.getFilePath());
+              Callsite callsite =
+                  handleMethodInvocationInStatement((Stmt) unit, c.getFilePath(), isAutoFuzz);
               if (callsite != null) {
                 element.addCallsite(callsite);
               }
@@ -983,7 +984,8 @@ class CustomSenceTransformer extends SceneTransformer {
    * @return the callsite object to store in the output yaml file, return null if Soot fails to
    *     resolve the invocation
    */
-  private Callsite handleMethodInvocationInStatement(Stmt stmt, String sourceFilePath) {
+  private Callsite handleMethodInvocationInStatement(
+      Stmt stmt, String sourceFilePath, Boolean isAutoFuzz) {
     // Handle statements of a method
     try {
       if ((stmt.containsInvokeExpr()) && (sourceFilePath != null)) {
@@ -998,7 +1000,12 @@ class CustomSenceTransformer extends SceneTransformer {
         }
         if (!this.excludeMethodList.contains(target.getName())) {
           callsite.setSource(sourceFilePath + ":" + stmt.getJavaSourceStartLineNumber() + ",1");
-          callsite.setMethodName("[" + tClass.getName() + "]." + target.getName());
+          if (isAutoFuzz) {
+            callsite.setMethodName(
+                "[" + tClass.getName() + "]." + target.getSubSignature().split(" ")[1]);
+          } else {
+            callsite.setMethodName("[" + tClass.getName() + "]." + target.getName());
+          }
           return callsite;
         }
       }
