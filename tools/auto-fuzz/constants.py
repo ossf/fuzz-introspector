@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-MAX_FUZZERS_PER_PROJECT = 10
-MAX_TARGET_PER_PROJECT_HEURISTIC = 100
+MAX_FUZZERS_PER_PROJECT = 1000
+MAX_TARGET_PER_PROJECT_HEURISTIC = 1000
 MAX_THREADS = 4
 
 BATCH_SIZE_BEFORE_DOCKER_CLEAN = 40
@@ -58,5 +58,12 @@ git_repos = {
         # 'https://github.com/eclipse-ee4j/angus-mail',
         # 'https://github.com/jboss-javassist/javassist'
         'https://github.com/tukaani-project/xz-java'
+    ]
+}
+
+benchmark = {
+    'jvm': [
+        'benchmark1', 'benchmark2', 'benchmark3', 'benchmark4', 'benchmark5',
+        'benchmark6', 'benchmark7', 'benchmark8'
     ]
 }

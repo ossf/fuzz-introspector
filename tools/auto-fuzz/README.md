@@ -114,9 +114,18 @@ process on the benchmark project located in benchmark/<language>
 instead of real projects.
 
 Remark: Currently, Auto-Fuzz only support benchmarking sample on Java.
+
+To run Auto-Fuzz on the benchmark project, to choose the benchmark needed, change the list in constants.py
 ```
 python3 ./manager.py --language=<language> --benchmark
 ```
+
+To validate the result
+```
+python3 ./post_processing.py benchmark_summary <language>
+```
+
+
 There are a total of 8 benchmarks for the Java benchmark project. Auto-Fuzz generation and post-processing should get a total of 13 fuzzers, each of which covers one of the 13 unique high-level functions. With all 13 fuzzers, all the code in the Java benchmark project should be statically reachable. The table below shows the list of those 13 unique methods.
 
 | Java benchmark              | Method target                                                                                                                                                                                              |

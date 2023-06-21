@@ -200,6 +200,24 @@ def _is_method_excluded(func_elem):
     return (getter_setter, plain, leaf, test, object)
 
 
+def get_target_method_statement(func_elem):
+    name = func_elem['functionName'].split('].')[1]
+    class_name = func_elem['functionSourceFile'].replace('$', '.')
+    if func_elem['JavaMethodInfo']['static']:
+        static = "static "
+    else:
+        static = ""
+
+    name = "[%s] public %s%s %s" % (class_name, static,
+                                    func_elem['returnType'], name)
+
+    exception_set = set(func_elem['JavaMethodInfo']['exceptions'])
+    if len(exception_set) > 0:
+        name += " throws %s" % (",".join(exception_set))
+
+    return name
+
+
 def _determine_import_statement(classname):
     """Generate java import statement for a given class name"""
     if classname and not classname.startswith('java.lang.'):
@@ -889,8 +907,11 @@ def _generate_heuristic_1(method_tuple, possible_targets, max_target):
                 continue
 
             # Create the actual source
-            fuzzer_source_code = "  %s.%s(%s);\n" % (func_class, func_name,
-                                                     ",".join(variable_list))
+            target_method_name = get_target_method_statement(func_elem)
+            fuzzer_source_code = "  // Target method: %s\n" % (
+                target_method_name)
+            fuzzer_source_code += "  %s.%s(%s);\n" % (func_class, func_name,
+                                                      ",".join(variable_list))
 
             source_code_list.append(fuzzer_source_code)
 
@@ -957,6 +978,9 @@ def _generate_heuristic_2(method_tuple, possible_targets, max_target):
 
             # Create the actual source for base object creation
             fuzzer_source_code = "  // Heuristic name: %s\n" % (HEURISTIC_NAME)
+            target_method_name = get_target_method_statement(method_list[0])
+            fuzzer_source_code += "  // Target method: %s\n" % (
+                target_method_name)
             fuzzer_source_code += "  %s obj = %s;\n" % (func_class,
                                                         object_creation_item)
 
@@ -1054,6 +1078,9 @@ def _generate_heuristic_3(method_tuple, possible_targets, max_target):
 
             # Create the actual source
             fuzzer_source_code = "  // Heuristic name: %s\n" % (HEURISTIC_NAME)
+            target_method_name = get_target_method_statement(func_elem)
+            fuzzer_source_code += "  // Target method: %s\n" % (
+                target_method_name)
             fuzzer_source_code += "  %s obj = %s;\n" % (func_class,
                                                         factory_method)
             fuzzer_source_code += "  obj.%s($VARIABLE$);\n" % (func_name)
@@ -1123,6 +1150,9 @@ def _generate_heuristic_4(method_tuple, possible_targets, max_target):
 
             # Create the actual source
             fuzzer_source_code = "  // Heuristic name: %s\n" % (HEURISTIC_NAME)
+            target_method_name = get_target_method_statement(func_elem)
+            fuzzer_source_code += "  // Target method: %s\n" % (
+                target_method_name)
             fuzzer_source_code += "  %s obj = %s;\n" % (func_class,
                                                         factory_method)
             fuzzer_source_code += "  obj.%s($VARIABLE$);\n" % (func_name)
@@ -1198,6 +1228,9 @@ def _generate_heuristic_6(method_tuple, possible_targets, max_target):
 
             # Create the actual source
             fuzzer_source_code = "  // Heuristic name: %s\n" % (HEURISTIC_NAME)
+            target_method_name = get_target_method_statement(func_elem)
+            fuzzer_source_code += "  // Target method: %s\n" % (
+                target_method_name)
             fuzzer_source_code += "  %s obj = %s;\n" % (func_class,
                                                         object_creation)
             for settings in _search_setting_method(instance_method_list,
@@ -1295,6 +1328,9 @@ def _generate_heuristic_7(method_tuple, possible_targets, max_target):
 
             # Create the actual source
             fuzzer_source_code = "  // Heuristic name: %s\n" % (HEURISTIC_NAME)
+            target_method_name = get_target_method_statement(func_elem)
+            fuzzer_source_code += "  // Target method: %s\n" % (
+                target_method_name)
 
             # Create fix parameters from random data
             arg_counter = 1
@@ -1398,6 +1434,9 @@ def _generate_heuristic_8(method_tuple, possible_targets, max_target):
 
             # Create the actual source
             fuzzer_source_code = "  // Heuristic name: %s\n" % (HEURISTIC_NAME)
+            target_method_name = get_target_method_statement(func_elem)
+            fuzzer_source_code += "  // Target method: %s\n" % (
+                target_method_name)
             fuzzer_source_code += "  %s obj = %s;\n" % (func_class,
                                                         object_creation)
             fuzzer_source_code += "  obj.%s($VARIABLE$);\n" % (func_name)
@@ -1482,6 +1521,9 @@ def _generate_heuristic_9(method_tuple, possible_targets, max_target):
 
             # Create the actual source
             fuzzer_source_code = "  // Heuristic name: %s\n" % (HEURISTIC_NAME)
+            target_method_name = get_target_method_statement(func_elem)
+            fuzzer_source_code += "  // Target method: %s\n" % (
+                target_method_name)
             fuzzer_source_code += "  %s obj = %s;\n" % (func_class,
                                                         object_creation)
             fuzzer_source_code += "  obj.%s($VARIABLE$);\n" % (func_name)
@@ -1574,6 +1616,9 @@ def _generate_heuristic_10(method_tuple, possible_targets, max_target):
 
             # Create the actual source
             fuzzer_source_code = "  // Heuristic name: %s\n" % (HEURISTIC_NAME)
+            target_method_name = get_target_method_statement(func_elem)
+            fuzzer_source_code += "  // Target method: %s\n" % (
+                target_method_name)
             fuzzer_source_code += "  %s obj = %s;\n" % (func_class,
                                                         object_creation)
             fuzzer_source_code += "  obj.%s($VARIABLE$);\n" % (func_name)

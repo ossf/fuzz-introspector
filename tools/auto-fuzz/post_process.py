@@ -22,6 +22,7 @@ import shutil
 
 import base_files
 import constants
+import benchmark_target
 
 
 def get_result_json(dirname):
@@ -244,6 +245,92 @@ def heuristics_summary():
             print("  cov: %d :: %d" % (cov, count))
 
 
+def extract_target_method(target_dir):
+    result = dict()
+
+    fuzzer_path = os.path.join(target_dir, "Fuzz.java")
+    with open(fuzzer_path, "r") as fuzzer:
+        for line in fuzzer.readlines():
+            if "// Target method: " in line:
+                class_name = line.split("[")[1].split("]")[0]
+                method_name = line.split("] ")[1].strip()
+
+                if class_name in result:
+                    method_set = result[class_name]
+                else:
+                    method_set = set()
+
+                method_set.add(method_name)
+                result[class_name] = method_set
+
+    return result
+
+
+def print_benchmark_summary(target_dir, trial_runs, language, project_name):
+    benchmark_methods = benchmark_target.TARGET_METHOD[language][project_name]
+    benchmark_map = dict()
+    redundant_map = dict()
+    for benchmark_method in benchmark_methods:
+        benchmark_map[benchmark_method] = []
+
+    for trial_run in trial_runs:
+        target_dict = extract_target_method(
+            os.path.join(target_dir, trial_run['name']))
+        for target_class in target_dict:
+            if target_class.split('.')[-1].lower() == project_name:
+                for target_method in target_dict[target_class]:
+                    if target_method in benchmark_map:
+                        fuzzer_list = benchmark_map[target_method]
+                        fuzzer_list.append(trial_run['name'])
+                        benchmark_map[target_method] = list(set(fuzzer_list))
+                    else:
+                        if target_method in redundant_map:
+                            redundant_list = redundant_map[target_method]
+                        else:
+                            redundant_list = []
+                        redundant_list.append(trial_run['name'])
+                        redundant_map[target_method] = list(
+                            set(redundant_list))
+
+    print(
+        "List of benchmark methods and which fuzzer covers them and run successfully"
+    )
+    for target_method in benchmark_map:
+        print("  Method: %s" % target_method)
+        benchmark_method = benchmark_map[target_method]
+        if len(benchmark_method) == 0:
+            print("    No fuzzer")
+            continue
+        for fuzzer in benchmark_method:
+            print("    %s/Fuzz.java" % fuzzer)
+
+    if len(redundant_map) > 0:
+        print("\nList of redundant methods and the fuzzer covers them")
+        for target_method in redundant_map:
+            print("  Method: %s" % target_method)
+            redundant_method = redundant_map[target_method]
+            for fuzzer in redundant_method:
+                print("    %s/Fuzz.java" % fuzzer)
+
+
+def benchmark_summary(language):
+    """Print a list of benchmark target methods and fuzzers that covers them"""
+    for autofuzz_project_dir in os.listdir("."):
+        if "autofuzz-" in autofuzz_project_dir:
+            proj_yaml, trial_runs = interpret_autofuzz_run(
+                autofuzz_project_dir)
+            if proj_yaml is None or len(trial_runs) == 0:
+                continue
+            if not proj_yaml['main_repo'].startswith('benchmark'):
+                continue
+            ranked_runs = get_cov_ranked_trial_runs(trial_runs)
+
+            print(autofuzz_project_dir + ": " + proj_yaml['main_repo'])
+            print_benchmark_summary(autofuzz_project_dir, ranked_runs,
+                                    language, proj_yaml['main_repo'])
+            print("\n")
+
+
 def extract_ranked(target_dir, runs_to_rank=20):
     proj_yaml, trial_runs = interpret_autofuzz_run(target_dir)
     if proj_yaml is None:
@@ -281,6 +368,13 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
         help=
         "Shows summary of how each heuristic performed with respect to all auto-fuzz modules"
     )
+
+    benchmark_parser = subparsers.add_parser(
+        'benchmark-summary',
+        help=
+        """Shows a list of the benchmark target methods of the chosen language and which generated
+        fuzzers covers that""")
+    benchmark_parser.add_argument("language", type=str, default="java")
 
     merge_parser = subparsers.add_parser(
         'merge', help="Merge all fuzzers from one run into one project")
@@ -462,6 +556,11 @@ def main():
         extract_ranked(args.dir, args.to_rank)
     elif args.command == 'heuristics-summary':
         heuristics_summary()
+    elif args.command == 'benchmark-summary':
+        if args.language == 'java':
+            benchmark_summary('jvm')
+        else:
+            print('Unsupported language: %s' % args.language)
     elif args.command == 'merge':
         if args.language == 'python':
             merge_run(args.dir, 'python')
