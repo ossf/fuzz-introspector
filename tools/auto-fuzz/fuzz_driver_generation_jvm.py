@@ -571,12 +571,14 @@ def _should_filter_method(callsites, target_method, current_method, handled):
             if caller not in callsites:
                 return True
             handled.append(caller)
-            if _should_filter_method(callsites, target_method, caller, handled):
+            if _should_filter_method(callsites, target_method, caller,
+                                     handled):
                 return True
     else:
         return False
 
     return False
+
 
 def _handle_enum_choice(init_dict, enum_name):
     """
@@ -789,7 +791,8 @@ def _filter_method(reference_method_list, target_method_list):
 
     result_method_list = []
     for func_elem in target_method_list:
-        if not _should_filter_method(callsites, func_elem['functionName'], func_elem['functionName'], []):
+        if not _should_filter_method(callsites, func_elem['functionName'],
+                                     func_elem['functionName'], []):
             result_method_list.append(func_elem)
 
     return result_method_list
