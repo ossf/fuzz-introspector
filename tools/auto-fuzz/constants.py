@@ -63,13 +63,7 @@ git_repos = {
 
 benchmark = {
     'jvm': [
-        'benchmark1',
-        'benchmark2',
-        'benchmark3',
-        'benchmark4',
-        'benchmark5',
-        'benchmark6',
-        'benchmark7',
-        'benchmark8'
+        'benchmark1', 'benchmark2', 'benchmark3', 'benchmark4', 'benchmark5',
+        'benchmark6', 'benchmark7', 'benchmark8'
     ]
 }

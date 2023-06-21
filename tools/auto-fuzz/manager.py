@@ -752,7 +752,8 @@ def run_builder_pool(autofuzz_base_workdir,
 
 
 def copy_benchmark_project(base_dir, benchmark, language, destination):
-    shutil.copytree(os.path.join(base_dir, "benchmark", language, benchmark), destination)
+    shutil.copytree(os.path.join(base_dir, "benchmark", language, benchmark),
+                    destination)
     return True
 
 
@@ -937,7 +938,6 @@ def benchmark_on_projects(language,
                                      benchmark=True)
     print("Completed auto-fuzz generation on %d benchmarks" %
           len(benchmarks_to_target))
-
 
 
 def run_on_projects(language,

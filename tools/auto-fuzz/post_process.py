@@ -289,7 +289,8 @@ def print_benchmark_summary(target_dir, trial_runs, language, project_name):
                         else:
                             redundant_list = []
                         redundant_list.append(trial_run['name'])
-                        redundant_map[target_method] = list(set(redundant_list))
+                        redundant_map[target_method] = list(
+                            set(redundant_list))
 
     print(
         "List of benchmark methods and which fuzzer covers them and run successfully"
@@ -325,7 +326,8 @@ def benchmark_summary(language):
             ranked_runs = get_cov_ranked_trial_runs(trial_runs)
 
             print(autofuzz_project_dir + ": " + proj_yaml['main_repo'])
-            print_benchmark_summary(autofuzz_project_dir, ranked_runs, language, proj_yaml['main_repo'])
+            print_benchmark_summary(autofuzz_project_dir, ranked_runs,
+                                    language, proj_yaml['main_repo'])
             print("\n")
 
 
