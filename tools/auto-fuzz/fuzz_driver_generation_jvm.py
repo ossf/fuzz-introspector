@@ -541,12 +541,43 @@ def _search_all_callsite_dst(method_list):
     methods called by any method in the
     provided method list.
     """
-    result_set = set()
+    result_map = dict()
     for func_elem in method_list:
         for callsite in func_elem['Callsites']:
-            result_set.add(callsite['Dst'])
+            if callsite['Dst'] != func_elem['functionName']:
+                if callsite['Dst'] in result_map:
+                    caller_list = result_map[callsite['Dst']]
+                else:
+                    caller_list = []
+                caller_list.append(func_elem['functionName'])
+                result_map[callsite['Dst']] = list(set(caller_list))
 
-    return list(result_set)
+    return result_map
+
+
+def _should_filter_method(callsites, target_method, current_method, handled):
+    """
+    Search recursively if the target_method has
+    been called by any methods except for themself.
+    If yes, that method should be filtered.
+    """
+    if current_method in callsites:
+        callers = callsites[current_method]
+        for caller in callers:
+            if caller == target_method:
+                return False
+            if caller in handled:
+                return True
+            if caller not in callsites:
+                return True
+            handled.append(caller)
+            if _should_filter_method(callsites, target_method, caller,
+                                     handled):
+                return True
+    else:
+        return False
+
+    return False
 
 
 def _handle_enum_choice(init_dict, enum_name):
@@ -749,12 +780,19 @@ def _filter_method(reference_method_list, target_method_list):
     been called by and methods in both method list.
     """
     callsites = _search_all_callsite_dst(reference_method_list)
-    callsites.extend(_search_all_callsite_dst(target_method_list))
-    callsites = list(set(callsites))
+    target_callsites = _search_all_callsite_dst(target_method_list)
+    for item in target_callsites:
+        if item in callsites:
+            caller_list = callsites[item]
+            caller_list.extend(target_callsites[item])
+            callsites[item] = list(set(caller_list))
+        else:
+            callsites[item] = target_callsites[item]
 
     result_method_list = []
     for func_elem in target_method_list:
-        if func_elem['functionName'] not in callsites:
+        if not _should_filter_method(callsites, func_elem['functionName'],
+                                     func_elem['functionName'], []):
             result_method_list.append(func_elem)
 
     return result_method_list
