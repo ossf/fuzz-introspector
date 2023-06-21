@@ -260,8 +260,8 @@ def _handle_argument(argType,
                      init_dict,
                      possible_target,
                      max_target,
+                     handled,
                      obj_creation=True,
-                     handled=[],
                      enum_object=False,
                      class_field=False,
                      class_object=False):
@@ -359,6 +359,7 @@ def _search_static_factory_method(classname,
                                  None,
                                  None,
                                  max_target,
+                                 [],
                                  False,
                                  class_object=class_object))
 
@@ -431,7 +432,7 @@ def _search_factory_method(classname,
         for argType in func_elem['argTypes']:
             arg_list.append(
                 _handle_argument(argType.replace('$', '.'), init_dict,
-                                 possible_target, max_target))
+                                 possible_target, max_target, []))
 
         if len(arg_list) != len(func_elem['argTypes']):
             continue
@@ -441,6 +442,7 @@ def _search_factory_method(classname,
                                                 init_dict,
                                                 possible_target,
                                                 max_target,
+                                                [],
                                                 class_field=class_field,
                                                 class_object=class_object):
             if creation and len(result_list) > max_target:
@@ -497,7 +499,7 @@ def _search_setting_method(method_list, target_class_name, target_method_name,
         arg_list = []
         for argType in func_elem['argTypes']:
             arg = _handle_argument(argType.replace('$', '.'), None,
-                                   possible_target, max_target)
+                                   possible_target, max_target, [])
             if arg:
                 arg_list.append(arg[0])
         if len(arg_list) != len(func_elem['argTypes']):
@@ -510,7 +512,7 @@ def _search_setting_method(method_list, target_class_name, target_method_name,
 
 def _search_concrete_subclass(classname,
                               init_dict,
-                              handled=[],
+                              handled,
                               result_list=[]):
     """Search concrete subclass for the target classname"""
     if init_dict and classname in init_dict.keys():
@@ -615,7 +617,7 @@ def _handle_object_creation(classname,
                             init_dict,
                             possible_target,
                             max_target,
-                            handled=[],
+                            handled,
                             class_field=False,
                             class_object=False):
     """
@@ -671,8 +673,8 @@ def _handle_object_creation(classname,
                                                init_dict,
                                                possible_target,
                                                max_target,
-                                               True,
                                                handled,
+                                               True,
                                                class_object=class_object)
                         if arg:
                             arg_list.append(arg)
@@ -900,7 +902,7 @@ def _generate_heuristic_1(method_tuple, possible_targets, max_target):
             variable_list = []
             for argType in func_elem['argTypes']:
                 arg_list = _handle_argument(argType.replace('$', '.'), None,
-                                            base_possible_target, max_target)
+                                            base_possible_target, max_target, [])
                 if arg_list:
                     variable_list.append(arg_list[0])
             if len(variable_list) != len(func_elem['argTypes']):
@@ -967,7 +969,7 @@ def _generate_heuristic_2(method_tuple, possible_targets, max_target):
         # Get all possible argument lists with different possible object creation combination
         for argType in func_elem['argTypes']:
             arg_list = _handle_argument(argType.replace('$', '.'), init_dict,
-                                        possible_target, max_target)
+                                        possible_target, max_target, [])
             if arg_list:
                 possible_target.variables_to_add.append(arg_list[0])
         if len(possible_target.variables_to_add) != len(func_elem['argTypes']):
@@ -976,7 +978,7 @@ def _generate_heuristic_2(method_tuple, possible_targets, max_target):
         # Get all object creation statement for each possible concrete classes of the object
         object_creation_list = _handle_object_creation(func_class, init_dict,
                                                        possible_target,
-                                                       max_target)
+                                                       max_target, [])
 
         for object_creation_item in object_creation_list:
             # Create possible target for all possible object creation statement
@@ -1047,7 +1049,7 @@ def _generate_heuristic_3(method_tuple, possible_targets, max_target):
         # Store function parameter list
         for argType in func_elem['argTypes']:
             arg_list = _handle_argument(argType.replace('$', '.'), None,
-                                        possible_target, max_target)
+                                        possible_target, max_target, [])
             if arg_list:
                 possible_target.variables_to_add.append(arg_list[0])
         if len(possible_target.variables_to_add) != len(func_elem['argTypes']):
@@ -1116,7 +1118,7 @@ def _generate_heuristic_4(method_tuple, possible_targets, max_target):
         # Store function parameter list
         for argType in func_elem['argTypes']:
             arg_list = _handle_argument(argType.replace('$', '.'), None,
-                                        possible_target, max_target)
+                                        possible_target, max_target, [])
             if arg_list:
                 possible_target.variables_to_add.append(arg_list[0])
         if len(possible_target.variables_to_add) != len(func_elem['argTypes']):
@@ -1187,7 +1189,7 @@ def _generate_heuristic_6(method_tuple, possible_targets, max_target):
         # enum object as parameter
         for argType in func_elem['argTypes']:
             arg_list = _handle_argument(argType.replace('$', '.'), init_dict,
-                                        possible_target, max_target)
+                                        possible_target, max_target, [])
             if arg_list:
                 possible_target.variables_to_add.append(arg_list[0])
 
@@ -1205,7 +1207,7 @@ def _generate_heuristic_6(method_tuple, possible_targets, max_target):
                                           possible_target, max_target))
         object_creation_list.extend(
             _handle_object_creation(func_class, init_dict, possible_target,
-                                    max_target))
+                                    max_target, []))
 
         for object_creation in object_creation_list:
             # Create possible target for all possible factory method
@@ -1287,6 +1289,7 @@ def _generate_heuristic_7(method_tuple, possible_targets, max_target):
                                         init_dict,
                                         possible_target,
                                         max_target,
+                                        [],
                                         enum_object=True)
             if arg_list:
                 arg_tuple_list.append((argType.replace('$', '.'), arg_list[0]))
@@ -1305,7 +1308,7 @@ def _generate_heuristic_7(method_tuple, possible_targets, max_target):
                                           possible_target, max_target))
         object_creation_list.extend(
             _handle_object_creation(func_class, init_dict, possible_target,
-                                    max_target))
+                                    max_target, []))
 
         for object_creation in object_creation_list:
             # Create possible target for all possible factory method
@@ -1391,6 +1394,7 @@ def _generate_heuristic_8(method_tuple, possible_targets, max_target):
                                         init_dict,
                                         possible_target,
                                         max_target,
+                                        [],
                                         enum_object=True)
             if arg_list:
                 possible_target.variables_to_add.append(arg_list[0])
@@ -1411,7 +1415,7 @@ def _generate_heuristic_8(method_tuple, possible_targets, max_target):
                                           possible_target, max_target))
         object_creation_list.extend(
             _handle_object_creation(func_class, init_dict, possible_target,
-                                    max_target))
+                                    max_target, []))
 
         for object_creation in object_creation_list:
             # Create possible target for all possible factory method
@@ -1474,6 +1478,7 @@ def _generate_heuristic_9(method_tuple, possible_targets, max_target):
                                         init_dict,
                                         possible_target,
                                         max_target,
+                                        [],
                                         enum_object=True,
                                         class_field=True)
             if arg_list:
@@ -1498,6 +1503,7 @@ def _generate_heuristic_9(method_tuple, possible_targets, max_target):
                                     init_dict,
                                     possible_target,
                                     max_target,
+                                    [],
                                     class_field=True))
 
         for object_creation in object_creation_list:
@@ -1563,6 +1569,7 @@ def _generate_heuristic_10(method_tuple, possible_targets, max_target):
                                         init_dict,
                                         possible_target,
                                         max_target,
+                                        [],
                                         enum_object=True,
                                         class_field=True,
                                         class_object=True)
@@ -1592,6 +1599,7 @@ def _generate_heuristic_10(method_tuple, possible_targets, max_target):
                                     init_dict,
                                     possible_target,
                                     max_target,
+                                    [],
                                     class_field=True,
                                     class_object=True))
 
