@@ -16,7 +16,7 @@
 package autofuzz.benchmark.object;
 
 public class AutoFuzzException extends Exception {
-    public AutoFuzzException(String errorMessage, Throwable err) {
-        super(errorMessage, err);
-    }
+  public AutoFuzzException(String errorMessage, Throwable err) {
+    super(errorMessage, err);
+  }
 }
