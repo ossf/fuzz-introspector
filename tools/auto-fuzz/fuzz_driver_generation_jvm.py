@@ -884,6 +884,8 @@ def _extract_method(yaml_dict):
             continue
         if test:
             continue
+        if func_elem['JavaMethodInfo']['classEnum']:
+            continue
 
         # Add candidates to result lists
         if func_elem['JavaMethodInfo']['static']:
@@ -1622,6 +1624,7 @@ def _generate_heuristic_10(method_tuple, possible_targets, max_target):
     """
     HEURISTIC_NAME = "jvm-autofuzz-heuristics-10"
 
+    global need_param_combination
     init_dict, method_list, instance_method_list, static_method_list, filtered_static_method_list = method_tuple
     for func_elem in method_list + filtered_static_method_list:
         if len(possible_targets) > max_target:
@@ -1713,6 +1716,8 @@ def _generate_heuristic_10(method_tuple, possible_targets, max_target):
                     orig=cloned_possible_target)
                 cross_product_possible_target.variables_to_add = arg_list
                 possible_targets.append(cross_product_possible_target)
+                if not need_param_combination:
+                    break
 
 
 def generate_possible_targets(proj_folder, max_target, param_combination):
