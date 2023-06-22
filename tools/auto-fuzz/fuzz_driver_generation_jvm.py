@@ -567,8 +567,8 @@ def _should_filter_method(callsites, target_method, current_method, handled):
             if caller not in handled:
                 if caller in callsites:
                     handled.append(caller)
-                    inner_result = _should_filter_method(callsites, target_method,
-                                                         caller, handled)
+                    inner_result = _should_filter_method(
+                        callsites, target_method, caller, handled)
                     if inner_result:
                         return True
                     result = False
@@ -801,8 +801,10 @@ def _filter_method(reference_method_list, target_method_list):
 
     result_method_list = []
     for func_elem in target_method_list:
-        if func_elem['functionName'] not in callsites or not _should_filter_method(callsites, func_elem['functionName'],
-                                                                   func_elem['functionName'], []):
+        if func_elem[
+                'functionName'] not in callsites or not _should_filter_method(
+                    callsites, func_elem['functionName'],
+                    func_elem['functionName'], []):
             result_method_list.append(func_elem)
 
     return result_method_list
