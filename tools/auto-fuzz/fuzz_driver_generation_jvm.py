@@ -302,6 +302,8 @@ def _handle_argument(argType,
         return ["data.consumeCharacter()"]
     elif argType == "java.lang.String":
         return ["data.consumeString(100)"]
+    elif argType == "java.lang.String[]":
+        return ["new java.lang.String[]{data.consumeString(100)}"]
 
     if enum_object and _is_enum_class(init_dict, argType):
         result = _handle_enum_choice(init_dict, argType)
@@ -561,23 +563,23 @@ def _should_filter_method(callsites, target_method, current_method, handled):
     been called by any methods except for themself.
     If yes, that method should be filtered.
     """
+    result = True
     if current_method in callsites:
         callers = callsites[current_method]
         for caller in callers:
             if caller == target_method:
-                return False
-            if caller in handled:
-                return True
-            if caller not in callsites:
-                return True
-            handled.append(caller)
-            if _should_filter_method(callsites, target_method, caller,
-                                     handled):
-                return True
+                result = False
+                continue
+            if caller not in handled:
+                if caller in callsites:
+                    handled.append(caller)
+                    if not _should_filter_method(callsites, target_method,
+                                                 caller, handled):
+                        result = False
     else:
         return False
 
-    return False
+    return result
 
 
 def _handle_enum_choice(init_dict, enum_name):
