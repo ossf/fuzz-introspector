@@ -593,7 +593,10 @@ def _handle_class_object(init_dict):
     Return a list of all class object of the
     existing classes.
     """
-    excluded_prefix = ["jdk.", "java.", "javax.", "sun.", "sunw.", "com.sun.", "com.ibm.", "com.apple.", "apple.awt.", "com.code_intelligence.jazzer."]
+    excluded_prefix = [
+        "jdk.", "java.", "javax.", "sun.", "sunw.", "com.sun.", "com.ibm.",
+        "com.apple.", "apple.awt.", "com.code_intelligence.jazzer."
+    ]
 
     result_list = []
     if init_dict:
@@ -868,8 +871,7 @@ def _extract_method(yaml_dict):
             init_dict[func_class] = init_list
             continue
 
-        getter_setter, plain, test, object = _is_method_excluded(
-            func_elem)
+        getter_setter, plain, test, object = _is_method_excluded(func_elem)
 
         # Skip excluded methods
         if len(func_elem['argTypes']) > 20:
@@ -1701,7 +1703,8 @@ def _generate_heuristic_10(method_tuple, possible_targets, max_target):
                 cloned_possible_target.heuristics_used.append(HEURISTIC_NAME)
 
             for arg_list in list(itertools.product(*arg_lists)):
-                cross_product_possible_target = FuzzTarget(orig=cloned_possible_target)
+                cross_product_possible_target = FuzzTarget(
+                    orig=cloned_possible_target)
                 cross_product_possible_target.variables_to_add = arg_list
                 possible_targets.append(cross_product_possible_target)
 
