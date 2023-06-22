@@ -22,7 +22,7 @@ TARGET_METHOD = {
             'public void parseData(java.lang.String[]) throws autofuzz.benchmark.object.AutoFuzzException'
         ],
         'benchmark7': [
-            'public static java.lang.Boolean processClass(java.lang.Class,java.lang.String,java.lang.Integer) throws autofuzz.benchmark.object.AutoFuzzException'
+            'public java.lang.Boolean processClass(java.lang.Class,java.lang.String,java.lang.Integer) throws autofuzz.benchmark.object.AutoFuzzException'
         ],
         'benchmark8': [
             'public void entry1(java.lang.String) throws autofuzz.benchmark.object.AutoFuzzException',

@@ -39,12 +39,10 @@ SEARCH_SUBCLASS_FOR_OBJECT_CREATION = False
 # be included in the generation result
 # JAVA_IGNORE_GETTER_SETTER: All getters, setters and boolean checking methods.
 # JAVA_IGNORE_PLAIN_METHOD: Methods without parameters.
-# JAVA_IGNORE_LEAF_METHOD: Methods that does not call any non-JDK library methods.
 # JAVA_IGNORE_TEST_METHOD: Methods that belongs to fuzzing engine or unit testing engine.
 # JAVA_IGNORE_GENERAL_METHOD: Methods that are inherited from the Object class.
 JAVA_IGNORE_GETTER_SETTER = True
 JAVA_IGNORE_PLAIN_METHOD = True
-JAVA_IGNORE_LEAF_METHOD = True
 JAVA_IGNORE_TEST_METHOD = True
 JAVA_IGNORE_OBJECT_METHOD = True
 

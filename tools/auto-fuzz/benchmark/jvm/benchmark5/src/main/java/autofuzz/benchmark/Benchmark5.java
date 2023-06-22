@@ -24,9 +24,9 @@ import java.util.*;
  * post processing should be able to identify either one of the methods and include that in a fuzzer
  * and ignoring the remaining two as they created a recursive loop.
  *
- * <p>Target fuzzing methods (either one of them only): public static void parseAlphabetic(String)
- * throws AutoFuzzException; public static void parseInteger(String) throws AutoFuzzException; pulic
- * static void parseFloat(String) throws AutoFuzzException
+ * <p>Target fuzzing methods (either one of them only): public void parseAlphabetic(String)
+ * throws AutoFuzzException; public void parseInteger(String) throws AutoFuzzException; pulic
+ * void parseFloat(String) throws AutoFuzzException
  *
  * @author Fuzz Introspector
  */

@@ -146,12 +146,11 @@ def _is_method_excluded(func_elem):
     This method takes the method function element and returns a
     tuple of five booleans, representing if the provided method is
     being ignored by one of the five groups. The five groups are
-    getter and setters, plain methods, leaf methods, test methods
+    getter and setters, plain methods, test methods
     and methods in the Object class.
     """
     getter_setter = False
     plain = False
-    leaf = False
     test = False
     object = False
 
@@ -167,13 +166,6 @@ def _is_method_excluded(func_elem):
     if constants.JAVA_IGNORE_PLAIN_METHOD:
         if len(func_elem['argTypes']) == 0:
             plain = True
-    if constants.JAVA_IGNORE_LEAF_METHOD:
-        leaf = True
-        for callsite in func_elem['Callsites']:
-            dst_class = callsite['Dst'].split("]")[0][1:]
-            if _is_project_class(dst_class):
-                leaf = False
-                break
     if constants.JAVA_IGNORE_TEST_METHOD:
         if "test" in func_elem['functionName'].lower():
             test = True
@@ -197,7 +189,7 @@ def _is_method_excluded(func_elem):
             if object_method in func_elem['functionName']:
                 object = True
 
-    return (getter_setter, plain, leaf, test, object)
+    return getter_setter, plain, test, object
 
 
 def get_target_method_statement(func_elem):
@@ -601,6 +593,11 @@ def _handle_class_object(init_dict):
     Return a list of all class object of the
     existing classes.
     """
+    excluded_prefix = [
+        "jdk.", "java.", "javax.", "sun.", "sunw.", "com.sun.", "com.ibm.",
+        "com.apple.", "apple.awt.", "com.code_intelligence.jazzer."
+    ]
+
     result_list = []
     if init_dict:
         for key in init_dict.keys():
@@ -608,8 +605,15 @@ def _handle_class_object(init_dict):
                 continue
 
             func_elem = init_dict[key][0]
-            classname = func_elem['functionSourceFile'].replace('$', '.')
-            result_list.append(classname + '.class')
+
+            excluded = False
+            for prefix in excluded_prefix:
+                if func_elem['functionSourceFile'].startswith(prefix):
+                    excluded = True
+
+            if not excluded:
+                classname = func_elem['functionSourceFile'].replace('$', '.')
+                result_list.append(classname + '.class')
 
     return result_list
 
@@ -867,8 +871,7 @@ def _extract_method(yaml_dict):
             init_dict[func_class] = init_list
             continue
 
-        getter_setter, plain, leaf, test, object = _is_method_excluded(
-            func_elem)
+        getter_setter, plain, test, object = _is_method_excluded(func_elem)
 
         # Skip excluded methods
         if len(func_elem['argTypes']) > 20:
@@ -891,9 +894,9 @@ def _extract_method(yaml_dict):
                 func_name = func_elem['functionName'].split("].")[1]
 
                 # Exclude possible getters, setters and methods
-                # does not take any arguments. Also exclude leaf
-                # methods and methods inherits from the Object class
-                if plain or getter_setter or leaf or object:
+                # does not take any arguments. Also exclude methods
+                # inherits from the Object class
+                if plain or getter_setter or object:
                     continue
 
                 method_list.append(func_elem)
@@ -1630,6 +1633,7 @@ def _generate_heuristic_10(method_tuple, possible_targets, max_target):
         # Store function parameter list
         # Skip this method if it does not take at least one
         # enum object as parameter
+        arg_lists = []
         for argType in func_elem['argTypes']:
             arg_list = _handle_argument(argType.replace('$', '.'),
                                         init_dict,
@@ -1639,9 +1643,15 @@ def _generate_heuristic_10(method_tuple, possible_targets, max_target):
                                         class_field=True,
                                         class_object=True)
             if arg_list:
-                possible_target.variables_to_add.append(arg_list[0])
+                if argType == "java.lang.Class":
+                    list_to_append = arg_list
+                else:
+                    list_to_append = []
+                    list_to_append.append(arg_list[0])
 
-        if len(possible_target.variables_to_add) != len(func_elem['argTypes']):
+                arg_lists.append(list_to_append)
+
+        if len(arg_lists) != len(func_elem['argTypes']):
             continue
 
         # Retrieve list of factory method for the target object
@@ -1692,7 +1702,11 @@ def _generate_heuristic_10(method_tuple, possible_targets, max_target):
             if HEURISTIC_NAME not in cloned_possible_target.heuristics_used:
                 cloned_possible_target.heuristics_used.append(HEURISTIC_NAME)
 
-            possible_targets.append(cloned_possible_target)
+            for arg_list in list(itertools.product(*arg_lists)):
+                cross_product_possible_target = FuzzTarget(
+                    orig=cloned_possible_target)
+                cross_product_possible_target.variables_to_add = arg_list
+                possible_targets.append(cross_product_possible_target)
 
 
 def generate_possible_targets(proj_folder, max_target, param_combination):
