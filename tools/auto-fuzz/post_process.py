@@ -253,7 +253,7 @@ def extract_target_method(target_dir):
         for line in fuzzer.readlines():
             if "// Target method: " in line:
                 class_name = line.split("[")[1].split("]")[0]
-                method_name = line.split("] ")[1].strip()
+                method_name = line.split("] ", 1)[1].strip()
 
                 if class_name in result:
                     method_set = result[class_name]
