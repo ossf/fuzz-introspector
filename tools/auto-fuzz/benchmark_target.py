@@ -14,12 +14,12 @@ TARGET_METHOD = {
             'public static java.lang.Boolean parseData(java.lang.String,java.lang.Integer,java.lang.Integer,java.lang.Integer) throws autofuzz.benchmark.object.AutoFuzzException'
         ],
         'benchmark5': [
-            'public static void parseAlphabetic(java.lang.String) throws autofuzz.benchmark.object.AutoFuzzException',
-            'public static void parseInteger(java.lang.String) throws autofuzz.benchmark.object.AutoFuzzException',
-            'public static void parseFloat(java.lang.String) throws autofuzz.benchmark.object.AutoFuzzException'
+            'public void parseAlphabetic(java.lang.String) throws autofuzz.benchmark.object.AutoFuzzException',
+            'public void parseInteger(java.lang.String) throws autofuzz.benchmark.object.AutoFuzzException',
+            'public void parseFloat(java.lang.String) throws autofuzz.benchmark.object.AutoFuzzException'
         ],
         'benchmark6': [
-            'public java.lang.Boolean parseData(java.lang.String[]) throws autofuzz.benchmark.object.AutoFuzzException'
+            'public void parseData(java.lang.String[]) throws autofuzz.benchmark.object.AutoFuzzException'
         ],
         'benchmark7': [
             'public static java.lang.Boolean processClass(java.lang.Class,java.lang.String,java.lang.Integer) throws autofuzz.benchmark.object.AutoFuzzException'
