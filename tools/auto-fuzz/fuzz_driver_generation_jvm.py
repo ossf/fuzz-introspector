@@ -573,8 +573,8 @@ def _should_filter_method(callsites, target_method, current_method, handled):
             if caller not in handled:
                 if caller in callsites:
                     handled.append(caller)
-                    if not _should_filter_method(callsites, target_method, caller,
-                                             handled):
+                    if not _should_filter_method(callsites, target_method,
+                                                 caller, handled):
                         result = False
     else:
         return False
