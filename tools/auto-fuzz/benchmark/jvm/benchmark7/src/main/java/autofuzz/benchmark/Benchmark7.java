@@ -24,8 +24,8 @@ import java.util.*;
  * focus on invoking methods in the SampleObject with Java Reflection. Auto-Fuzz post-processing
  * should be able to identify only one fuzzer that covers all other logic.
  *
- * <p>Target fuzzing method: public Boolean processClass(Class<? extends SampleObject>,
- * String, Integer) throws AutoFuzzException
+ * <p>Target fuzzing method: public Boolean processClass(Class<? extends SampleObject>, String,
+ * Integer) throws AutoFuzzException
  *
  * @author Fuzz Introspector
  */
