@@ -633,6 +633,18 @@ def update_db_files(db_timestamp, project_timestamps, function_list,
     extend_db_json_files(project_timestamps, output_directory)
     extend_db_timestamps(db_timestamp, output_directory)
 
+    # Write a zip folder the values that make sense to save
+    if should_include_details:
+        with zipfile.ZipFile('db-archive.zip', 'w') as zip_object:
+            zip_object.write(os.path.join(output_directory,
+                                          DB_JSON_DB_TIMESTAMP),
+                             DB_JSON_DB_TIMESTAMP,
+                             compress_type=zipfile.ZIP_DEFLATED)
+            zip_object.write(os.path.join(output_directory,
+                                          DB_JSON_ALL_PROJECT_TIMESTAMP),
+                             DB_JSON_ALL_PROJECT_TIMESTAMP,
+                             compress_type=zipfile.ZIP_DEFLATED)
+
 
 def update_build_status(build_dict):
     with open(DB_BUILD_STATUS_JSON, "w") as f:
