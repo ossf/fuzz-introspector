@@ -772,6 +772,30 @@ def git_clone_project(github_url, destination):
     return True
 
 
+def extract_class_list(projectdir):
+    """Extract a list of path for all java files exist in the project directory"""
+    project_class_list = []
+
+    for root, _, files in os.walk(projectdir):
+        for file in [file for file in files if file.endswith(".java")]:
+            path = os.path.join(root, file)
+            path = path.replace("%s/" % projectdir, "")
+            path = path.replace(".java", "").replace("/", ".")
+
+            # Filter some unrelated class
+            if "module-info" in path or "package-info" in path:
+                continue
+            if "test" in path or "Test" in path:
+                continue
+            if path.endswith("Exception"):
+                continue
+
+            if path not in project_class_list:
+                project_class_list.append(path)
+
+    return project_class_list
+
+
 def autofuzz_project_from_github(github_url,
                                  language,
                                  do_static_analysis=False,
@@ -817,7 +841,9 @@ def autofuzz_project_from_github(github_url,
             return False
 
     # If this is a jvm target download ant, maven and gradle once so we don't
-    # have to do it for each proejct.
+    # have to do it for each proejct. Also extract a class_list for java classes
+    # in the repository before building the project. This class_list is used for
+    # target method filtering in the target generation stage.
     if language == "jvm":
         # Download Ant
         target_ant_path = os.path.join(oss_fuzz_base_project.project_folder,
@@ -836,6 +862,11 @@ def autofuzz_project_from_github(github_url,
                                           "gradle.zip")
         with open(target_gradle_path, 'wb') as gf:
             gf.write(requests.get(constants.GRADLE_URL).content)
+
+        # Extract class list for the etarget project
+        java_class_list = extract_class_list(
+            os.path.join(oss_fuzz_base_project.project_folder,
+                         oss_fuzz_base_project.project_name))
 
     # Generate the base Dockerfile, build.sh, project.yaml and fuzz_1.py
     oss_fuzz_base_project.write_basefiles()
@@ -886,7 +917,7 @@ def autofuzz_project_from_github(github_url,
                     oss_fuzz_base_project.project_folder)
             elif language == "jvm":
                 possible_targets = fuzz_driver_generation_jvm.generate_possible_targets(
-                    oss_fuzz_base_project.project_folder,
+                    oss_fuzz_base_project.project_folder, java_class_list,
                     constants.MAX_TARGET_PER_PROJECT_HEURISTIC,
                     param_combination)
 
