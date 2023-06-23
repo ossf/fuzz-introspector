@@ -549,6 +549,20 @@ def _search_all_callsite_dst(method_list):
     return result_map
 
 
+def _search_max_calldepth(method_list):
+    """
+    Search the method list and returns
+    the max calldepth for all methods.
+    """
+    max_calldepth = 0
+
+    for func_elem in method_list:
+        if func_elem['functionDepth'] > max_calldepth:
+            max_calldepth = func_elem['functionDepth']
+
+    return max_calldepth
+
+
 def _should_filter_method(callsites, target_method, current_method, handled):
     """
     Search recursively if the target_method has
@@ -799,13 +813,22 @@ def _filter_method(reference_method_list, target_method_list):
         else:
             callsites[item] = target_callsites[item]
 
+    max_calldepth = _search_max_calldepth(reference_method_list +
+                                          target_method_list)
+    if constants.TARGET_FUNCTION_DEPTH_RATIO >= 0 and constants.TARGET_FUNCTION_DEPTH_RATIO < 1:
+        target_depth_ratio = constants.TARGET_FUNCTION_DEPTH_RATIO
+    else:
+        target_depth_ratio = 0.75
+    min_calldepth = max_calldepth * target_depth_ratio
+
     result_method_list = []
     for func_elem in target_method_list:
         if func_elem[
                 'functionName'] not in callsites or not _should_filter_method(
                     callsites, func_elem['functionName'],
                     func_elem['functionName'], []):
-            result_method_list.append(func_elem)
+            if func_elem['functionDepth'] > min_calldepth:
+                result_method_list.append(func_elem)
 
     return result_method_list
 
