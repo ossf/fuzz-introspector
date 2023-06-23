@@ -5,6 +5,7 @@ on:
     paths:
       - 'frontends/java/**'
       - '.github/workflows/google-java.yml'
+      - 'tools/auto-fuzz/benchmark/jvm/**'
 jobs:
   formatting:
     runs-on: ubuntu-latest
