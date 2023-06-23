@@ -184,6 +184,7 @@ class CustomSenceTransformer extends SceneTransformer {
   private List<String> excludeList;
   private List<String> excludeMethodList;
   private List<SootMethod> reachedSinkMethodList;
+  private List<FunctionElement> depthHandled;
   private Map<String, Set<String>> edgeClassMap;
   private Map<String, Set<String>> sinkMethodMap;
   private String entryClassStr;
@@ -501,6 +502,7 @@ class CustomSenceTransformer extends SceneTransformer {
             "No method in analysing scope, consider relaxing the exclude constraint.");
       }
 
+      this.calculateAllCallDepth();
       this.includeSinkMethod();
 
       // Extract call tree and write to .data
@@ -636,10 +638,13 @@ class CustomSenceTransformer extends SceneTransformer {
     return null;
   }
 
-  // Add method element to the method list, ignoring method already added to the list
-  private void addMethodElement(FunctionElement element) {
-    if (this.searchElement(element.getFunctionName()) == null) {
-      this.methodList.addFunctionElement(element);
+  // Add or replace method element to the method list
+  private void addMethodElement(FunctionElement newElement) {
+    FunctionElement oldElement = this.searchElement(newElement.getFunctionName());
+    if (oldElement == null) {
+      this.methodList.addFunctionElement(newElement);
+    } else {
+      this.methodList.replaceFunctionElement(oldElement, newElement);
     }
   }
 
@@ -653,7 +658,7 @@ class CustomSenceTransformer extends SceneTransformer {
 
   // Recursively extract calltree from stored method relationship, ignoring loops
   // and write to the output data file
-  private Integer extractCallTree(
+  private void extractCallTree(
       FileWriter fw,
       CallGraph cg,
       SootMethod method,
@@ -665,7 +670,7 @@ class CustomSenceTransformer extends SceneTransformer {
     StringBuilder callTree = new StringBuilder();
 
     if (this.excludeMethodList.contains(method.getName())) {
-      return 0;
+      return;
     }
 
     String className = "";
@@ -717,12 +722,10 @@ class CustomSenceTransformer extends SceneTransformer {
       if (sink) {
         fw.write(calltreeLine);
       }
-      return 0;
+      return;
     } else {
       fw.write(calltreeLine);
     }
-
-    FunctionElement element = this.searchElement("[" + className + "]." + methodName);
 
     if (!handled.contains(method)) {
       handled.add(method);
@@ -735,23 +738,63 @@ class CustomSenceTransformer extends SceneTransformer {
           continue;
         }
 
-        Integer resultDepth =
-            extractCallTree(
-                fw,
-                cg,
-                tgt,
-                depth + 1,
-                (edge.srcStmt() == null) ? -1 : edge.srcStmt().getJavaSourceStartLineNumber(),
-                handled,
-                edge.src().getDeclaringClass().getName());
-        Integer newDepth = resultDepth + 1;
-        if ((element != null) && (newDepth > element.getFunctionDepth())) {
-          element.setFunctionDepth(newDepth);
+        extractCallTree(
+            fw,
+            cg,
+            tgt,
+            depth + 1,
+            (edge.srcStmt() == null) ? -1 : edge.srcStmt().getJavaSourceStartLineNumber(),
+            handled,
+            edge.src().getDeclaringClass().getName());
+      }
+    }
+  }
+
+  private void calculateAllCallDepth() {
+    List<FunctionElement> newMethodList = new LinkedList<FunctionElement>();
+
+    for (FunctionElement element : this.methodList.getFunctionElements()) {
+      if (!element.getFunctionName().contains("init>")) {
+        this.calculateCallDepth(element, null);
+      }
+      if (this.depthHandled != null) {
+        for (FunctionElement handledElement : this.depthHandled) {
+          newMethodList.add(handledElement);
         }
       }
     }
 
-    return (element == null) ? 0 : element.getFunctionDepth();
+    this.methodList.setFunctionElements(newMethodList);
+  }
+
+  private Integer calculateCallDepth(FunctionElement element, List<FunctionElement> handled) {
+    if (handled == null) {
+      handled = new LinkedList<FunctionElement>();
+    }
+
+    List<String> handledName = new LinkedList<String>();
+    for (FunctionElement handledElement : handled) {
+      handledName.add(handledElement.getFunctionName());
+    }
+
+    Integer depth = element.getFunctionDepth();
+    if (!handledName.contains(element.getFunctionName())) {
+      handled.add(element);
+      if (depth == 0) {
+        for (Callsite callsite : element.getCallsites()) {
+          String callerName = callsite.getMethodName();
+          FunctionElement caller = this.searchElement(callerName);
+          if (caller != null) {
+            Integer newDepth = this.calculateCallDepth(caller, handled) + 1;
+            depth = (newDepth > depth) ? newDepth : depth;
+          }
+        }
+      }
+      element.setFunctionDepth(depth);
+    }
+    depthHandled = handled;
+
+    return depth;
   }
 
   private Integer calculateCyclomaticComplexity(UnitGraph unitGraph) {

@@ -45,6 +45,12 @@ public class FunctionConfig {
     this.functionElements.add(functionElement);
   }
 
+  public void replaceFunctionElement(FunctionElement oldElement, FunctionElement newElement) {
+    if (this.functionElements.remove(oldElement)) {
+      this.addFunctionElement(newElement);
+    }
+  }
+
   public void setFunctionElements(List<FunctionElement> functionElements) {
     this.functionElements = functionElements;
   }
