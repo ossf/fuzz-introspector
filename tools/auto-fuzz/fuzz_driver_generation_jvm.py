@@ -1695,7 +1695,8 @@ def _generate_heuristic_10(method_tuple, possible_targets, max_target):
                     break
 
 
-def generate_possible_targets(proj_folder, class_list, max_target, param_combination):
+def generate_possible_targets(proj_folder, class_list, max_target,
+                              param_combination):
     """Generate all possible targets for a given project folder"""
 
     # Set param_combination to global

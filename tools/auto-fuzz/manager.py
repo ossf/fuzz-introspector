@@ -864,8 +864,9 @@ def autofuzz_project_from_github(github_url,
             gf.write(requests.get(constants.GRADLE_URL).content)
 
         # Extract class list for the etarget project
-        java_class_list = extract_class_list(os.path.join(oss_fuzz_base_project.project_folder,
-                                                         oss_fuzz_base_project.project_name))
+        java_class_list = extract_class_list(
+            os.path.join(oss_fuzz_base_project.project_folder,
+                         oss_fuzz_base_project.project_name))
 
     # Generate the base Dockerfile, build.sh, project.yaml and fuzz_1.py
     oss_fuzz_base_project.write_basefiles()
@@ -916,8 +917,7 @@ def autofuzz_project_from_github(github_url,
                     oss_fuzz_base_project.project_folder)
             elif language == "jvm":
                 possible_targets = fuzz_driver_generation_jvm.generate_possible_targets(
-                    oss_fuzz_base_project.project_folder,
-                    java_class_list,
+                    oss_fuzz_base_project.project_folder, java_class_list,
                     constants.MAX_TARGET_PER_PROJECT_HEURISTIC,
                     param_combination)
 
