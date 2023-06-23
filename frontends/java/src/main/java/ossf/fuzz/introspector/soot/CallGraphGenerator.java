@@ -184,7 +184,7 @@ class CustomSenceTransformer extends SceneTransformer {
   private List<String> excludeList;
   private List<String> excludeMethodList;
   private List<SootMethod> reachedSinkMethodList;
-  private List<FunctionElement> depthHandled;;
+  private List<FunctionElement> depthHandled;
   private Map<String, Set<String>> edgeClassMap;
   private Map<String, Set<String>> sinkMethodMap;
   private String entryClassStr;
@@ -642,7 +642,7 @@ class CustomSenceTransformer extends SceneTransformer {
   private void addMethodElement(FunctionElement newElement) {
     FunctionElement oldElement = this.searchElement(newElement.getFunctionName());
     if (oldElement == null) {
-       this.methodList.addFunctionElement(newElement);
+      this.methodList.addFunctionElement(newElement);
     } else {
       this.methodList.replaceFunctionElement(oldElement, newElement);
     }
@@ -739,13 +739,13 @@ class CustomSenceTransformer extends SceneTransformer {
         }
 
         extractCallTree(
-                fw,
-                cg,
-                tgt,
-                depth + 1,
-                (edge.srcStmt() == null) ? -1 : edge.srcStmt().getJavaSourceStartLineNumber(),
-                handled,
-                edge.src().getDeclaringClass().getName());
+            fw,
+            cg,
+            tgt,
+            depth + 1,
+            (edge.srcStmt() == null) ? -1 : edge.srcStmt().getJavaSourceStartLineNumber(),
+            handled,
+            edge.src().getDeclaringClass().getName());
       }
     }
   }
