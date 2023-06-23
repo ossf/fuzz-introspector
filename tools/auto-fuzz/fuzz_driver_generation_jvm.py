@@ -813,7 +813,8 @@ def _filter_method(reference_method_list, target_method_list):
         else:
             callsites[item] = target_callsites[item]
 
-    max_calldepth = _search_max_calldepth(reference_method_list + target_method_list)
+    max_calldepth = _search_max_calldepth(reference_method_list +
+                                          target_method_list)
     if constants.TARGET_FUNCTION_DEPTH_RATIO >= 0 and constants.TARGET_FUNCTION_DEPTH_RATIO < 1:
         target_depth_ratio = constants.TARGET_FUNCTION_DEPTH_RATIO
     else:
