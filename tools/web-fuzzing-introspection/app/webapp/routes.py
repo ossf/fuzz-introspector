@@ -161,10 +161,10 @@ def project_profile():
         if build_status.project_name == target_project_name:
             project = models.Project(name=build_status.project_name,
                                      language=build_status.language,
-                                     date = "",
+                                     date="",
                                      fuzzer_count=0,
-                                     coverage_data = None,
-                                     introspector_data = None)
+                                     coverage_data=None,
+                                     introspector_data=None)
 
             return render_template('project-profile.html',
                                    gtag=gtag,
