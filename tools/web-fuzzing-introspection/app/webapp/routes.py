@@ -333,7 +333,7 @@ def far_reach_but_low_coverage():
         key=lambda x:
         (-x.accummulated_cyclomatic_complexity, -x.runtime_code_coverage))
 
-    max_functions_to_show = 30
+    max_functions_to_show = 1000
     functions_to_return = list()
     idx = 0
     for function in sorted_functions_of_interest:
@@ -350,7 +350,9 @@ def far_reach_but_low_coverage():
             'accummulated-complexity':
             function.accummulated_cyclomatic_complexity,
             'function-arguments':
-            function.function_arguments
+            function.function_arguments,
+            'is-reached':
+            function.is_reached,
         })
 
     return {'result': 'succes', 'functions': functions_to_return}
