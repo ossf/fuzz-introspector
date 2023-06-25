@@ -27,11 +27,23 @@
                   </tr>
                   <tr>
                     <td>Lines of code</td>
-                    <td> {{ project.coverage_data.line_coverage.count }} </td>
+                    <td>
+                      {% if project.coverage_data is not none %} 
+                        {{ project.coverage_data.line_coverage.count }}
+                      {% else %}
+                        N/A
+                      {% endif %} 
+                    </td>
                   </tr>
                   <tr>
                     <td>Lines covered</td>
-                    <td>{{ project.coverage_data.line_coverage.covered }} </td>
+                    <td>
+                      {% if project.coverage_data is not none %}
+                        {{ project.coverage_data.line_coverage.covered }}
+                      {% else %}
+                        N/A
+                      {% endif %} 
+                    </td>
                   </tr>
                   <tr>
                     <td>Code coverage</td>
@@ -43,11 +55,11 @@
                   </tr>
                   <tr>
                     <td>Code coverage report</td>
-                    {% if has_project_details %}
-                    <td><a href="{{ project.coverage_data.coverage_url }}">Report link</a></td>
-                    {% else %}
-                      <td>N/A</td>
-                    {% endif %}
+                      {% if has_project_details %}
+                        <td><a href="{{ project.coverage_data.coverage_url }}">Report link</a></td>
+                      {% else %}
+                        <td>N/A</td>
+                      {% endif %}
                   </tr>
                   <tr>
                     <td>Static reachability</td>

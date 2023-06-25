@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Helper for creating the necessary .json files used by the webapp."""
+import io
 import os
 import sys
 import argparse
@@ -46,6 +47,8 @@ FUZZ_BUILD_JSON = 'status.json'
 OSS_FUZZ_BUILD_LOG_BASE = 'https://oss-fuzz-build-logs.storage.googleapis.com/log-'
 
 OSS_FUZZ_CLONE = ""
+
+INTROSPECTOR_WEBAPP_ZIP = 'https://introspector.oss-fuzz.com/static/assets/db/db-archive.zip'
 
 logging.getLogger("requests").setLevel(logging.WARNING)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
@@ -683,18 +686,21 @@ def analyse_set_of_dates(dates, projects_to_analyse, output_directory):
         idx += 1
         # if idx > 5:
         #     break
+        is_end = idx == len(dates)
 
-        # Check if it's in the cache
-        if is_date_in_db(date, output_directory):
+        # Check if it's not the last date and the data is in the cache
+        if is_end == False and is_date_in_db(date, output_directory):
             logger.info("Date already analysed, skipping")
             continue
 
-        should_include_details = idx == len(dates)
         function_list, fuzz_branch_blocker_list, project_timestamps, db_timestamp = analyse_list_of_projects(
-            date, projects_to_analyse, should_include_details)
-        update_db_files(db_timestamp, project_timestamps, function_list,
-                        fuzz_branch_blocker_list, output_directory,
-                        should_include_details)
+            date, projects_to_analyse, should_include_details=is_end)
+        update_db_files(db_timestamp,
+                        project_timestamps,
+                        function_list,
+                        fuzz_branch_blocker_list,
+                        output_directory,
+                        should_include_details=is_end)
 
 
 def get_date_at_offset_as_str(day_offset=-1):
@@ -773,9 +779,41 @@ def setup_github_cache():
             zip_ref.extractall("github_cache")
 
 
+def setup_webapp_cache():
+    print("Getting the db archive")
+    r = requests.get(INTROSPECTOR_WEBAPP_ZIP, stream=True)
+    db_archive = zipfile.ZipFile(io.BytesIO(r.content))
+
+    if os.path.isdir("extracted-db-archive"):
+        shutil.rmtree("extracted-db-archive")
+    os.mkdir("extracted-db-archive")
+
+    db_archive.extractall("extracted-db-archive")
+    print("Extracted it all")
+
+    # Copy over the files
+    shutil.copyfile(os.path.join("extracted-db-archive", DB_JSON_DB_TIMESTAMP),
+                    DB_JSON_DB_TIMESTAMP)
+    shutil.copyfile(
+        os.path.join("extracted-db-archive", DB_JSON_ALL_PROJECT_TIMESTAMP),
+        DB_JSON_ALL_PROJECT_TIMESTAMP)
+
+    # If we get to here it all went well.
+
+
 def create_db(max_projects, days_to_analyse, output_directory, input_directory,
-              day_offset, to_cleanup, since_date, use_github_cache):
-    if use_github_cache:
+              day_offset, to_cleanup, since_date, use_github_cache,
+              use_webapp_cache):
+    got_cache = False
+    if use_webapp_cache:
+        try:
+            setup_webapp_cache()
+            # If we got to here, that means the cache download went well.
+            got_cache = True
+        except:
+            got_cache = False
+
+    if use_github_cache and not got_cache:
         setup_github_cache()
         input_directory = "github_cache"
 
@@ -861,6 +899,7 @@ def get_cmdline_parser():
     parser.add_argument("--cleanup", action="store_true")
     parser.add_argument("--debug", action="store_true")
     parser.add_argument("--use_gh_cache", action="store_false")
+    parser.add_argument("--use_webapp_cache", action="store_false")
     return parser
 
 
@@ -873,7 +912,7 @@ def main():
         logging.basicConfig(level=logging.INFO)
     create_db(args.max_projects, args.days_to_analyse, args.output_dir,
               args.input_dir, args.base_offset, args.cleanup, args.since_date,
-              args.use_gh_cache)
+              args.use_gh_cache, args.use_webapp_cache)
 
 
 if __name__ == "__main__":
