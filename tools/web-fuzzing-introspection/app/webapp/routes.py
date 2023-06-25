@@ -333,7 +333,7 @@ def far_reach_but_low_coverage():
         key=lambda x:
         (-x.accummulated_cyclomatic_complexity, -x.runtime_code_coverage))
 
-    max_functions_to_show = 30
+    max_functions_to_show = 1000
     functions_to_return = list()
     idx = 0
     for function in sorted_functions_of_interest:
@@ -341,16 +341,13 @@ def far_reach_but_low_coverage():
             break
         idx += 1
         functions_to_return.append({
-            'function-name':
-            function.name,
-            'function_filename':
-            function.function_filename,
-            'runtime-coverage-percent':
-            function.runtime_code_coverage,
+            'function-name': function.name,
+            'function_filename': function.function_filename,
+            'runtime-coverage-percent': function.runtime_code_coverage,
             'accummulated-complexity':
             function.accummulated_cyclomatic_complexity,
-            'function-arguments':
-            function.function_arguments
+            'function-arguments': function.function_arguments,
+            'is-reached': function.is_reached,
         })
 
     return {'result': 'succes', 'functions': functions_to_return}
