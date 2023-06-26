@@ -59,6 +59,11 @@ while [[ $# -gt 0 ]]; do
       shift
       shift
       ;;
+    -r|--src)
+      SRCDIRECTORY="$2"
+      shift
+      shift
+      ;;
     -a|--autofuzz)
       AUTOFUZZ="True"
       shift
@@ -110,6 +115,10 @@ then
     echo "No target package prefix defined, analysing all packages"
     PACKAGEPREFIX="ALL"
 fi
+if [ -z $SRCDIRECTORY ]
+then
+    SRCDIRECTORY="NULL"
+fi
 if [ -z $AUTOFUZZ ]
 then
     AUTOFUZZ="False"
@@ -122,5 +131,5 @@ mvn clean package -Dmaven.test.skip
 for CLASS in $(echo $ENTRYCLASS | tr ":" "\n")
 do
     echo $CLASS
-    java -Xmx6144M -cp "target/ossf.fuzz.introspector.soot-1.0.jar" ossf.fuzz.introspector.soot.CallGraphGenerator $JARFILE $CLASS $ENTRYMETHOD "$PACKAGEPREFIX" "$EXCLUDEMETHOD" $AUTOFUZZ "$INCLUDEPREFIX===$EXCLUDEPREFIX===$SINKMETHOD"
+    java -Xmx6144M -cp "target/ossf.fuzz.introspector.soot-1.0.jar" ossf.fuzz.introspector.soot.CallGraphGenerator $JARFILE $CLASS $ENTRYMETHOD "$PACKAGEPREFIX" "$EXCLUDEMETHOD" "$SRCDIRECTORY" $AUTOFUZZ "$INCLUDEPREFIX===$EXCLUDEPREFIX===$SINKMETHOD"
 done
