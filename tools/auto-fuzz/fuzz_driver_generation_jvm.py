@@ -42,12 +42,12 @@ class FuzzTarget:
         if orig:
             self.function_target = orig.function_target
             self.function_class = orig.function_class
-            self.exceptions_to_handle = orig.exceptions_to_handle
+            self.exceptions_to_handle.update(orig.exceptions_to_handle)
             self.fuzzer_source_code = orig.fuzzer_source_code
-            self.variables_to_add = orig.variables_to_add
-            self.imports_to_add = orig.imports_to_add
-            self.heuristics_used = orig.heuristics_used
-            self.class_field_list = orig.class_field_list
+            self.variables_to_add.extend(orig.variables_to_add)
+            self.imports_to_add.update(orig.imports_to_add)
+            self.heuristics_used.extend(list(set(orig.heuristics_used)))
+            self.class_field_list.extend(orig.class_field_list)
         elif func_elem:
             # Method name in .data.yaml for jvm: [className].methodName(methodParameterList)
             self.function_target = func_elem['functionName'].split(
@@ -818,7 +818,7 @@ def _filter_method(reference_method_list, target_method_list):
     if constants.TARGET_FUNCTION_DEPTH_RATIO >= 0 and constants.TARGET_FUNCTION_DEPTH_RATIO < 1:
         target_depth_ratio = constants.TARGET_FUNCTION_DEPTH_RATIO
     else:
-        target_depth_ratio = 0.75
+        target_depth_ratio = 0.5
     min_calldepth = max_calldepth * target_depth_ratio
 
     result_method_list = []
@@ -1345,7 +1345,7 @@ def _generate_heuristic_7(method_tuple, possible_targets, max_target):
 
         # Skip method with no return value
         func_return_type = func_elem['returnType'].replace('$', '.')
-        if not func_return_type:
+        if not func_return_type or func_return_type == "void":
             continue
 
         # Distinguish static or object method
@@ -1401,26 +1401,29 @@ def _generate_heuristic_7(method_tuple, possible_targets, max_target):
 
             # Create fix parameters from random data
             arg_counter = 1
+            variable_list = []
             for arg_tuple in arg_tuple_list:
                 fuzzer_source_code += "  %s arg%d = %s;\n" % (
                     arg_tuple[0], arg_counter, arg_tuple[1])
-                possible_target.variables_to_add.append("arg%d" % arg_counter)
+                variable_list.append("arg%d" % arg_counter)
                 arg_counter += 1
 
             # Invoke static or object method with fixed parameters (from random data)
             # and assert for consistency
             if static:
-                fuzzer_source_code += "  %s result1 = %s.%s($VARIABLE$);\n" % (
-                    func_return_type, func_class, func_name)
-                fuzzer_source_code += "  %s result2 = %s.%s($VARIABLE$);\n" % (
-                    func_return_type, func_class, func_name)
+                fuzzer_source_code += "  %s result1 = %s.%s(%s);\n" % (
+                    func_return_type, func_class, func_name,
+                    ",".join(variable_list))
+                fuzzer_source_code += "  %s result2 = %s.%s(%s);\n" % (
+                    func_return_type, func_class, func_name,
+                    ",".join(variable_list))
             else:
                 fuzzer_source_code += "  %s obj = %s;\n" % (func_class,
                                                             object_creation)
-                fuzzer_source_code += "  %s result1 = obj.%s($VARIABLE$);\n" % (
-                    func_return_type, func_name)
-                fuzzer_source_code += "  %s result2 = obj.%s($VARIABLE$);\n" % (
-                    func_return_type, func_name)
+                fuzzer_source_code += "  %s result1 = obj.%s(%s);\n" % (
+                    func_return_type, func_name, ",".join(variable_list))
+                fuzzer_source_code += "  %s result2 = obj.%s(%s);\n" % (
+                    func_return_type, func_name, ",".join(variable_list))
             fuzzer_source_code += '  assert result1.equals(result2) : "Result not match.";\n'
 
             if len(cloned_possible_target.exceptions_to_handle) > 0:
