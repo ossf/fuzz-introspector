@@ -62,7 +62,7 @@ def load_db():
                 project=func['project'],
                 runtime_code_coverage=func['runtime_code_coverage'],
                 function_filename=func['function_filename'],
-                reached_by_fuzzers=0,
+                reached_by_fuzzers=func['reached-by-fuzzers'],
                 code_coverage_url=func['code_coverage_url'],
                 is_reached=func['is_reached'],
                 llvm_instruction_count=func['llvm-instruction-count'],
