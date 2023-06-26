@@ -1412,9 +1412,11 @@ def _generate_heuristic_7(method_tuple, possible_targets, max_target):
             # and assert for consistency
             if static:
                 fuzzer_source_code += "  %s result1 = %s.%s(%s);\n" % (
-                    func_return_type, func_class, func_name, ",".join(variable_list))
+                    func_return_type, func_class, func_name,
+                    ",".join(variable_list))
                 fuzzer_source_code += "  %s result2 = %s.%s(%s);\n" % (
-                    func_return_type, func_class, func_name, ",".join(variable_list))
+                    func_return_type, func_class, func_name,
+                    ",".join(variable_list))
             else:
                 fuzzer_source_code += "  %s obj = %s;\n" % (func_class,
                                                             object_creation)
