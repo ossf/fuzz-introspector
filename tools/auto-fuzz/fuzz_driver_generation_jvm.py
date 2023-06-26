@@ -798,27 +798,15 @@ def _filter_polymorphism(method_list):
     return result_list
 
 
-def _filter_method(reference_method_list, target_method_list):
+def _filter_method(callsites, max_calldepth, target_method_list):
     """
     Filter methods from the target_method list which has
     been called by and methods in both method list.
     """
-    callsites = _search_all_callsite_dst(reference_method_list)
-    target_callsites = _search_all_callsite_dst(target_method_list)
-    for item in target_callsites:
-        if item in callsites:
-            caller_list = callsites[item]
-            caller_list.extend(target_callsites[item])
-            callsites[item] = list(set(caller_list))
-        else:
-            callsites[item] = target_callsites[item]
-
-    max_calldepth = _search_max_calldepth(reference_method_list +
-                                          target_method_list)
     if constants.TARGET_FUNCTION_DEPTH_RATIO >= 0 and constants.TARGET_FUNCTION_DEPTH_RATIO < 1:
         target_depth_ratio = constants.TARGET_FUNCTION_DEPTH_RATIO
     else:
-        target_depth_ratio = 0.5
+        target_depth_ratio = 0.4
     min_calldepth = max_calldepth * target_depth_ratio
 
     result_method_list = []
@@ -908,9 +896,23 @@ def _extract_method(yaml_dict):
                 method_list.append(func_elem)
 
     method_list = _filter_polymorphism(method_list)
-    method_list = _filter_method(static_method_list, method_list)
-    filtered_static_method_list = _filter_method(method_list,
+
+    callsites = _search_all_callsite_dst(static_method_list)
+    target_callsites = _search_all_callsite_dst(method_list)
+    for item in target_callsites:
+        if item in callsites:
+            caller_list = callsites[item]
+            caller_list.extend(target_callsites[item])
+            callsites[item] = list(set(caller_list))
+        else:
+            callsites[item] = target_callsites[item]
+
+    max_calldepth = _search_max_calldepth(static_method_list + method_list)
+
+    method_list = _filter_method(callsites, max_calldepth, method_list)
+    filtered_static_method_list = _filter_method(callsites, max_calldepth,
                                                  static_method_list)
+
     return init_dict, method_list, instance_method_list, static_method_list, filtered_static_method_list
 
 

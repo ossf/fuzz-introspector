@@ -47,12 +47,12 @@ JAVA_IGNORE_TEST_METHOD = True
 JAVA_IGNORE_OBJECT_METHOD = True
 
 # This is an user-controlled options. If it is not between 0 and 1, the
-# default value of 0.5 is used. This ratio is used to config and filter
+# default value of 0.4 is used. This ratio is used to config and filter
 # of some target methods which does not have too much function depth.
 # The ratio indicated that the methods with function depth lower
 # than the ratio times the max function depth of all methods will
 # be ignored in the fuzzer target generation process.
-TARGET_FUNCTION_DEPTH_RATIO = 0.5
+TARGET_FUNCTION_DEPTH_RATIO = 0.4
 
 git_repos = {
     'python': [
