@@ -189,23 +189,34 @@ then
   exit 127
 fi
 
-BUILD_CLASSPATH=
-RUNTIME_CLASSPATH=
-
+JARFILE_LIST=
 for JARFILE in $(find ./ -name *.jar)
 do
   cp $JARFILE $OUT/
-  BUILD_CLASSPATH=$BUILD_CLASSPATH$OUT/$(basename $JARFILE):
-  RUNTIME_CLASSPATH=$RUNTIME_CLASSPATH\$this_dir/$(basename $JARFILE):
+  JARFILE_LIST="$JARFILE_LIST$(basename $JARFILE) "
 done
+
+BUILD_CLASSPATH=
+
+curr_dir=$(pwd)
+mkdir $OUT/jar_temp
+cd $OUT/jar_temp
+for JARFILE in $JARFILE_LIST
+do
+  jar -xf $OUT/$JARFILE
+  BUILD_CLASSPATH=$BUILD_CLASSPATH$OUT/$(basename $JARFILE):
+done
+jar -cf $OUT/combined.jar .
+cd $curr_dir
+rm -r $OUT/jar_temp
 
 # Retrieve apache-common-lang3 library
 # This library provides method to translate primitive type arrays to
 # their respective class object arrays to avoid compilation error.
 wget -P $OUT/ https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar
 
-BUILD_CLASSPATH=$BUILD_CLASSPATH:$JAZZER_API_PATH:$OUT/commons-lang3-3.12.0.jar
-RUNTIME_CLASSPATH=$RUNTIME_CLASSPATH:\$this_dir/commons-lang3-3.12.0.jar:\$this_dir
+BUILD_CLASSPATH=$BUILD_CLASSPATH$JAZZER_API_PATH:$OUT/combined.jar:$OUT/commons-lang3-3.12.0.jar
+RUNTIME_CLASSPATH=\$this_dir/combined.jar:\$this_dir/commons-lang3-3.12.0.jar:\$this_dir
 
 for fuzzer in $(find $SRC -name 'Fuzz*.java')
 do

@@ -493,7 +493,7 @@ def run_static_analysis_jvm(git_repo, basedir, project_name):
     # Run the java frontend static analysis
     cmd = [
         "./run.sh", "--jarfile", ":".join(jarfiles), "--entryclass", "Fuzz",
-        "--autofuzz"
+        "--src", projectdir, "--autofuzz"
     ]
     try:
         subprocess.check_call(" ".join(cmd),
