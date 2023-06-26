@@ -332,6 +332,8 @@ def extract_project_data(project_name, date_str, should_include_details,
                     float(func['Func lines hit %'].replace("%", "")),
                     'is_reached':
                     len(func['Reached by Fuzzers']) > 0,
+                    'reached-by-fuzzers':
+                    func['Reached by Fuzzers'],
                     'project':
                     project_name,
                     'accumulated_cyclomatic_complexity':

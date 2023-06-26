@@ -340,13 +340,20 @@ def far_reach_but_low_coverage():
             break
         idx += 1
         functions_to_return.append({
-            'function-name': function.name,
-            'function_filename': function.function_filename,
-            'runtime-coverage-percent': function.runtime_code_coverage,
+            'function-name':
+            function.name,
+            'function_filename':
+            function.function_filename,
+            'runtime-coverage-percent':
+            function.runtime_code_coverage,
             'accummulated-complexity':
             function.accummulated_cyclomatic_complexity,
-            'function-arguments': function.function_arguments,
-            'is-reached': function.is_reached,
+            'function-arguments':
+            function.function_arguments,
+            'is-reached':
+            function.is_reached,
+            'reached-by-fuzzers':
+            function.reached_by_fuzzers,
         })
 
     return {'result': 'succes', 'functions': functions_to_return}
