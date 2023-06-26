@@ -21,6 +21,7 @@ from typing import List, Set, Any
 
 
 class FuzzTarget:
+    function_name: str
     function_target: str
     function_class: str
     exceptions_to_handle: Set[str]
@@ -31,6 +32,7 @@ class FuzzTarget:
     class_field_list: List[str]
 
     def __init__(self, orig=None, func_elem=None):
+        self.function_name = ""
         self.function_target = ""
         self.function_class = ""
         self.exceptions_to_handle = set()
@@ -40,6 +42,7 @@ class FuzzTarget:
         self.heuristics_used = []
         self.class_field_list = []
         if orig:
+            self.function_name = orig.function_name
             self.function_target = orig.function_target
             self.function_class = orig.function_class
             self.exceptions_to_handle.update(orig.exceptions_to_handle)
@@ -50,8 +53,9 @@ class FuzzTarget:
             self.class_field_list.extend(orig.class_field_list)
         elif func_elem:
             # Method name in .data.yaml for jvm: [className].methodName(methodParameterList)
-            self.function_target = func_elem['functionName'].split(
+            self.function_name = func_elem['functionName'].split(
                 '].')[1].split('(')[0]
+            self.function_target = get_target_method_statement(func_elem)
             self.function_class = func_elem['functionSourceFile'].replace(
                 '$', '.')
             self.exceptions_to_handle.update(
@@ -950,8 +954,9 @@ def _generate_heuristic_1(method_tuple, possible_targets, max_target):
 
         # Initialize base possible_target object
         possible_target = FuzzTarget(func_elem=func_elem)
-        func_name = possible_target.function_target
+        func_name = possible_target.function_name
         func_class = possible_target.function_class
+        target_method_name = possible_target.function_target
 
         # Store function parameter list
         variable_list = []
@@ -965,7 +970,6 @@ def _generate_heuristic_1(method_tuple, possible_targets, max_target):
 
         # Create the actual source
         fuzzer_source_code = "  // Heuristic name: %s\n" % (HEURISTIC_NAME)
-        target_method_name = get_target_method_statement(func_elem)
         fuzzer_source_code += "  // Target method: %s\n" % (target_method_name)
         fuzzer_source_code += "  %s.%s(%s);\n" % (func_class, func_name,
                                                   ",".join(variable_list))
@@ -1013,8 +1017,9 @@ def _generate_heuristic_2(method_tuple, possible_targets, max_target):
 
         # Initialize base possible_target object
         possible_target = FuzzTarget(func_elem=func_elem)
-        func_name = possible_target.function_target
+        func_name = possible_target.function_name
         func_class = possible_target.function_class
+        target_method_name = possible_target.function_target
 
         # Get all possible argument lists with different possible object creation combination
         for argType in func_elem['argTypes']:
@@ -1038,7 +1043,6 @@ def _generate_heuristic_2(method_tuple, possible_targets, max_target):
 
             # Create the actual source
             fuzzer_source_code = "  // Heuristic name: %s\n" % (HEURISTIC_NAME)
-            target_method_name = get_target_method_statement(func_elem)
             fuzzer_source_code += "  // Target method: %s\n" % (
                 target_method_name)
             fuzzer_source_code += "  %s obj = %s;\n" % (func_class,
@@ -1094,8 +1098,9 @@ def _generate_heuristic_3(method_tuple, possible_targets, max_target):
 
         # Initialize base possible_target object
         possible_target = FuzzTarget(func_elem=func_elem)
-        func_name = possible_target.function_target
+        func_name = possible_target.function_name
         func_class = possible_target.function_class
+        target_method_name = possible_target.function_target
 
         # Store function parameter list
         for argType in func_elem['argTypes']:
@@ -1117,7 +1122,6 @@ def _generate_heuristic_3(method_tuple, possible_targets, max_target):
 
             # Create the actual source
             fuzzer_source_code = "  // Heuristic name: %s\n" % (HEURISTIC_NAME)
-            target_method_name = get_target_method_statement(func_elem)
             fuzzer_source_code += "  // Target method: %s\n" % (
                 target_method_name)
             fuzzer_source_code += "  %s obj = %s;\n" % (func_class,
@@ -1170,8 +1174,9 @@ def _generate_heuristic_4(method_tuple, possible_targets, max_target):
 
         # Initialize base possible_target object
         possible_target = FuzzTarget(func_elem=func_elem)
-        func_name = possible_target.function_target
+        func_name = possible_target.function_name
         func_class = possible_target.function_class
+        target_method_name = possible_target.function_target
 
         # Store function parameter list
         for argType in func_elem['argTypes']:
@@ -1196,7 +1201,6 @@ def _generate_heuristic_4(method_tuple, possible_targets, max_target):
 
             # Create the actual source
             fuzzer_source_code = "  // Heuristic name: %s\n" % (HEURISTIC_NAME)
-            target_method_name = get_target_method_statement(func_elem)
             fuzzer_source_code += "  // Target method: %s\n" % (
                 target_method_name)
             fuzzer_source_code += "  %s obj = %s;\n" % (func_class,
@@ -1245,8 +1249,9 @@ def _generate_heuristic_6(method_tuple, possible_targets, max_target):
 
         # Initialize base possible_target object
         possible_target = FuzzTarget(func_elem=func_elem)
-        func_name = possible_target.function_target
+        func_name = possible_target.function_name
         func_class = possible_target.function_class
+        target_method_name = possible_target.function_target
 
         # Store function parameter list
         # Skip this method if it does not take at least one
@@ -1280,7 +1285,6 @@ def _generate_heuristic_6(method_tuple, possible_targets, max_target):
 
             # Create the actual source
             fuzzer_source_code = "  // Heuristic name: %s\n" % (HEURISTIC_NAME)
-            target_method_name = get_target_method_statement(func_elem)
             fuzzer_source_code += "  // Target method: %s\n" % (
                 target_method_name)
             fuzzer_source_code += "  %s obj = %s;\n" % (func_class,
@@ -1347,8 +1351,9 @@ def _generate_heuristic_7(method_tuple, possible_targets, max_target):
 
         # Initialize base possible_target object
         possible_target = FuzzTarget(func_elem=func_elem)
-        func_name = possible_target.function_target
+        func_name = possible_target.function_name
         func_class = possible_target.function_class
+        target_method_name = possible_target.function_target
 
         # Store function parameter list
         # Skip this method if it does not take at least one
@@ -1386,7 +1391,6 @@ def _generate_heuristic_7(method_tuple, possible_targets, max_target):
 
             # Create the actual source
             fuzzer_source_code = "  // Heuristic name: %s\n" % (HEURISTIC_NAME)
-            target_method_name = get_target_method_statement(func_elem)
             fuzzer_source_code += "  // Target method: %s\n" % (
                 target_method_name)
 
@@ -1457,8 +1461,9 @@ def _generate_heuristic_8(method_tuple, possible_targets, max_target):
 
         # Initialize base possible_target object
         possible_target = FuzzTarget(func_elem=func_elem)
-        func_name = possible_target.function_target
+        func_name = possible_target.function_name
         func_class = possible_target.function_class
+        target_method_name = possible_target.function_target
 
         # Store function parameter list
         # Skip this method if it does not take at least one
@@ -1500,7 +1505,6 @@ def _generate_heuristic_8(method_tuple, possible_targets, max_target):
 
             # Create the actual source
             fuzzer_source_code = "  // Heuristic name: %s\n" % (HEURISTIC_NAME)
-            target_method_name = get_target_method_statement(func_elem)
             fuzzer_source_code += "  // Target method: %s\n" % (
                 target_method_name)
             fuzzer_source_code += "  %s obj = %s;\n" % (func_class,
@@ -1549,8 +1553,9 @@ def _generate_heuristic_9(method_tuple, possible_targets, max_target):
 
         # Initialize base possible_target object
         possible_target = FuzzTarget(func_elem=func_elem)
-        func_name = possible_target.function_target
+        func_name = possible_target.function_name
         func_class = possible_target.function_class
+        target_method_name = possible_target.function_target
 
         # Store function parameter list
         # Skip this method if it does not take at least one
@@ -1593,7 +1598,6 @@ def _generate_heuristic_9(method_tuple, possible_targets, max_target):
 
             # Create the actual source
             fuzzer_source_code = "  // Heuristic name: %s\n" % (HEURISTIC_NAME)
-            target_method_name = get_target_method_statement(func_elem)
             fuzzer_source_code += "  // Target method: %s\n" % (
                 target_method_name)
             fuzzer_source_code += "  %s obj = %s;\n" % (func_class,
@@ -1645,8 +1649,9 @@ def _generate_heuristic_10(method_tuple, possible_targets, max_target):
 
         # Initialize base possible_target object
         possible_target = FuzzTarget(func_elem=func_elem)
-        func_name = possible_target.function_target
+        func_name = possible_target.function_name
         func_class = possible_target.function_class
+        target_method_name = possible_target.function_target
 
         # Store function parameter list
         # Skip this method if it does not take at least one
@@ -1702,7 +1707,6 @@ def _generate_heuristic_10(method_tuple, possible_targets, max_target):
 
             # Create the actual source
             fuzzer_source_code = "  // Heuristic name: %s\n" % (HEURISTIC_NAME)
-            target_method_name = get_target_method_statement(func_elem)
             fuzzer_source_code += "  // Target method: %s\n" % (
                 target_method_name)
             fuzzer_source_code += "  %s obj = %s;\n" % (func_class,
