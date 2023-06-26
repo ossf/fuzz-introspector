@@ -821,22 +821,6 @@ def _filter_method(callsites, max_calldepth, target_method_list):
     return result_method_list
 
 
-def _group_method_by_class(method_list):
-    """Group method element by class name"""
-    result_map = {}
-
-    for func_elem in method_list:
-        key = func_elem['functionSourceFile'].replace('$', '.')
-        if key in result_map.keys():
-            elem_list = result_map[key]
-        else:
-            elem_list = []
-        elem_list.append(func_elem)
-        result_map[key] = elem_list
-
-    return result_map
-
-
 def _extract_method(yaml_dict):
     """Extract method and group them into list for heuristic processing"""
     init_dict = {}
@@ -960,64 +944,49 @@ def _generate_heuristic_1(method_tuple, possible_targets, max_target):
     if len(possible_targets) > max_target:
         return
 
-    static_method_map = _group_method_by_class(static_method_list)
-
-    # Process static method class by class
-    for key in static_method_map.keys():
-        method_list = static_method_map[key]
+    for func_elem in static_method_list:
+        if len(possible_targets) > max_target:
+            return
 
         # Initialize base possible_target object
-        base_possible_target = FuzzTarget()
-        source_code_list = []
+        possible_target = FuzzTarget(func_elem=func_elem)
+        func_name = possible_target.function_target
+        func_class = possible_target.function_class
 
-        for func_elem in method_list:
-            func_name = func_elem['functionName'].split('].')[1].split('(')[0]
-            func_class = func_elem['functionSourceFile'].replace('$', '.')
-            base_possible_target.exceptions_to_handle.update(
-                func_elem['JavaMethodInfo']['exceptions'])
-            base_possible_target.imports_to_add.update(
-                _handle_import(func_elem))
+        # Store function parameter list
+        variable_list = []
+        for argType in func_elem['argTypes']:
+            arg_list = _handle_argument(argType.replace('$', '.'), None,
+                                        possible_target, max_target, [])
+            if arg_list:
+                variable_list.append(arg_list[0])
+        if len(variable_list) != len(func_elem['argTypes']):
+            continue
 
-            # Store function parameter list
-            variable_list = []
-            for argType in func_elem['argTypes']:
-                arg_list = _handle_argument(argType.replace('$', '.'), None,
-                                            base_possible_target, max_target,
-                                            [])
-                if arg_list:
-                    variable_list.append(arg_list[0])
-            if len(variable_list) != len(func_elem['argTypes']):
-                continue
+        # Create the actual source
+        fuzzer_source_code = "  // Heuristic name: %s\n" % (HEURISTIC_NAME)
+        target_method_name = get_target_method_statement(func_elem)
+        fuzzer_source_code += "  // Target method: %s\n" % (target_method_name)
+        fuzzer_source_code += "  %s.%s(%s);\n" % (func_class, func_name,
+                                                  ",".join(variable_list))
 
-            # Create the actual source
-            target_method_name = get_target_method_statement(func_elem)
-            fuzzer_source_code = "  // Target method: %s\n" % (
-                target_method_name)
-            fuzzer_source_code += "  %s.%s(%s);\n" % (func_class, func_name,
-                                                      ",".join(variable_list))
+        exception_set = set(possible_target.exceptions_to_handle)
+        if len(exception_set) > 0:
+            fuzzer_source_code = "  try {\n" + fuzzer_source_code
+            fuzzer_source_code += "  }\n"
+            counter = 1
 
-            source_code_list.append(fuzzer_source_code)
+            exceptions, super_exceptions = _extract_super_exceptions(
+                exception_set)
+            for exc in list(exceptions) + list(super_exceptions):
+                fuzzer_source_code += "  catch (%s e%d) {}\n" % (exc, counter)
+                counter += 1
 
-        if (len(source_code_list) > 0):
-            base_possible_target.heuristics_used.append(HEURISTIC_NAME)
-            fuzzer_source_code = "  // Heuristic name: %s\n" % (HEURISTIC_NAME)
-            for source_code in source_code_list:
-                fuzzer_source_code += source_code
+        possible_target.fuzzer_source_code = fuzzer_source_code
+        if HEURISTIC_NAME not in possible_target.heuristics_used:
+            possible_target.heuristics_used.append(HEURISTIC_NAME)
 
-            if len(base_possible_target.exceptions_to_handle) > 0:
-                fuzzer_source_code = "  try {\n" + fuzzer_source_code
-                fuzzer_source_code += "  }\n"
-                counter = 1
-
-                exceptions, super_exceptions = _extract_super_exceptions(
-                    base_possible_target.exceptions_to_handle)
-                for exc in list(exceptions) + list(super_exceptions):
-                    fuzzer_source_code += "  catch (%s e%d) {}\n" % (exc,
-                                                                     counter)
-                    counter += 1
-
-            base_possible_target.fuzzer_source_code = fuzzer_source_code
-            possible_targets.append(base_possible_target)
+        possible_targets.append(possible_target)
 
 
 def _generate_heuristic_2(method_tuple, possible_targets, max_target):
@@ -1088,7 +1057,8 @@ def _generate_heuristic_2(method_tuple, possible_targets, max_target):
                     counter += 1
 
             cloned_possible_target.fuzzer_source_code = fuzzer_source_code
-            cloned_possible_target.heuristics_used.append(HEURISTIC_NAME)
+            if HEURISTIC_NAME not in cloned_possible_target.heuristics_used:
+                cloned_possible_target.heuristics_used.append(HEURISTIC_NAME)
 
             possible_targets.append(cloned_possible_target)
 
@@ -1153,16 +1123,23 @@ def _generate_heuristic_3(method_tuple, possible_targets, max_target):
             fuzzer_source_code += "  %s obj = %s;\n" % (func_class,
                                                         factory_method)
             fuzzer_source_code += "  obj.%s($VARIABLE$);\n" % (func_name)
-            if len(cloned_possible_target.exceptions_to_handle) > 0:
+
+            exception_set = set(cloned_possible_target.exceptions_to_handle)
+            if len(exception_set) > 0:
                 fuzzer_source_code = "  try {\n" + fuzzer_source_code
                 fuzzer_source_code += "  }\n"
                 counter = 1
-                for exc in cloned_possible_target.exceptions_to_handle:
+
+                exceptions, super_exceptions = _extract_super_exceptions(
+                    exception_set)
+                for exc in list(exceptions) + list(super_exceptions):
                     fuzzer_source_code += "  catch (%s e%d) {}\n" % (exc,
                                                                      counter)
                     counter += 1
+
             cloned_possible_target.fuzzer_source_code = fuzzer_source_code
-            cloned_possible_target.heuristics_used.append(HEURISTIC_NAME)
+            if HEURISTIC_NAME not in cloned_possible_target.heuristics_used:
+                cloned_possible_target.heuristics_used.append(HEURISTIC_NAME)
 
             possible_targets.append(cloned_possible_target)
 
@@ -1225,14 +1202,20 @@ def _generate_heuristic_4(method_tuple, possible_targets, max_target):
             fuzzer_source_code += "  %s obj = %s;\n" % (func_class,
                                                         factory_method)
             fuzzer_source_code += "  obj.%s($VARIABLE$);\n" % (func_name)
-            if len(cloned_possible_target.exceptions_to_handle) > 0:
+
+            exception_set = set(cloned_possible_target.exceptions_to_handle)
+            if len(exception_set) > 0:
                 fuzzer_source_code = "  try {\n" + fuzzer_source_code
                 fuzzer_source_code += "  }\n"
                 counter = 1
-                for exc in cloned_possible_target.exceptions_to_handle:
+
+                exceptions, super_exceptions = _extract_super_exceptions(
+                    exception_set)
+                for exc in list(exceptions) + list(super_exceptions):
                     fuzzer_source_code += "  catch (%s e%d) {}\n" % (exc,
                                                                      counter)
                     counter += 1
+
             cloned_possible_target.fuzzer_source_code = fuzzer_source_code
             if HEURISTIC_NAME not in cloned_possible_target.heuristics_used:
                 cloned_possible_target.heuristics_used.append(HEURISTIC_NAME)
@@ -1308,14 +1291,20 @@ def _generate_heuristic_6(method_tuple, possible_targets, max_target):
                                                    max_target):
                 fuzzer_source_code += "  %s;\n" % (settings)
             fuzzer_source_code += "  obj.%s($VARIABLE$);\n" % (func_name)
-            if len(cloned_possible_target.exceptions_to_handle) > 0:
+
+            exception_set = set(cloned_possible_target.exceptions_to_handle)
+            if len(exception_set) > 0:
                 fuzzer_source_code = "  try {\n" + fuzzer_source_code
                 fuzzer_source_code += "  }\n"
                 counter = 1
-                for exc in cloned_possible_target.exceptions_to_handle:
+
+                exceptions, super_exceptions = _extract_super_exceptions(
+                    exception_set)
+                for exc in list(exceptions) + list(super_exceptions):
                     fuzzer_source_code += "  catch (%s e%d) {}\n" % (exc,
                                                                      counter)
                     counter += 1
+
             cloned_possible_target.fuzzer_source_code = fuzzer_source_code
             if HEURISTIC_NAME not in cloned_possible_target.heuristics_used:
                 cloned_possible_target.heuristics_used.append(HEURISTIC_NAME)
@@ -1428,14 +1417,19 @@ def _generate_heuristic_7(method_tuple, possible_targets, max_target):
                     func_return_type, func_name, ",".join(variable_list))
             fuzzer_source_code += '  assert result1.equals(result2) : "Result not match.";\n'
 
-            if len(cloned_possible_target.exceptions_to_handle) > 0:
+            exception_set = set(cloned_possible_target.exceptions_to_handle)
+            if len(exception_set) > 0:
                 fuzzer_source_code = "  try {\n" + fuzzer_source_code
                 fuzzer_source_code += "  }\n"
                 counter = 1
-                for exc in cloned_possible_target.exceptions_to_handle:
+
+                exceptions, super_exceptions = _extract_super_exceptions(
+                    exception_set)
+                for exc in list(exceptions) + list(super_exceptions):
                     fuzzer_source_code += "  catch (%s e%d) {}\n" % (exc,
                                                                      counter)
                     counter += 1
+
             cloned_possible_target.fuzzer_source_code = fuzzer_source_code
             if HEURISTIC_NAME not in cloned_possible_target.heuristics_used:
                 cloned_possible_target.heuristics_used.append(HEURISTIC_NAME)
@@ -1512,14 +1506,20 @@ def _generate_heuristic_8(method_tuple, possible_targets, max_target):
             fuzzer_source_code += "  %s obj = %s;\n" % (func_class,
                                                         object_creation)
             fuzzer_source_code += "  obj.%s($VARIABLE$);\n" % (func_name)
-            if len(cloned_possible_target.exceptions_to_handle) > 0:
+
+            exception_set = set(cloned_possible_target.exceptions_to_handle)
+            if len(exception_set) > 0:
                 fuzzer_source_code = "  try {\n" + fuzzer_source_code
                 fuzzer_source_code += "  }\n"
                 counter = 1
-                for exc in cloned_possible_target.exceptions_to_handle:
+
+                exceptions, super_exceptions = _extract_super_exceptions(
+                    exception_set)
+                for exc in list(exceptions) + list(super_exceptions):
                     fuzzer_source_code += "  catch (%s e%d) {}\n" % (exc,
                                                                      counter)
                     counter += 1
+
             cloned_possible_target.fuzzer_source_code = fuzzer_source_code
             if HEURISTIC_NAME not in cloned_possible_target.heuristics_used:
                 cloned_possible_target.heuristics_used.append(HEURISTIC_NAME)
@@ -1599,14 +1599,20 @@ def _generate_heuristic_9(method_tuple, possible_targets, max_target):
             fuzzer_source_code += "  %s obj = %s;\n" % (func_class,
                                                         object_creation)
             fuzzer_source_code += "  obj.%s($VARIABLE$);\n" % (func_name)
-            if len(cloned_possible_target.exceptions_to_handle) > 0:
+
+            exception_set = set(cloned_possible_target.exceptions_to_handle)
+            if len(exception_set) > 0:
                 fuzzer_source_code = "  try {\n" + fuzzer_source_code
                 fuzzer_source_code += "  }\n"
                 counter = 1
-                for exc in cloned_possible_target.exceptions_to_handle:
+
+                exceptions, super_exceptions = _extract_super_exceptions(
+                    exception_set)
+                for exc in list(exceptions) + list(super_exceptions):
                     fuzzer_source_code += "  catch (%s e%d) {}\n" % (exc,
                                                                      counter)
                     counter += 1
+
             cloned_possible_target.fuzzer_source_code = fuzzer_source_code
             if HEURISTIC_NAME not in cloned_possible_target.heuristics_used:
                 cloned_possible_target.heuristics_used.append(HEURISTIC_NAME)
@@ -1702,14 +1708,20 @@ def _generate_heuristic_10(method_tuple, possible_targets, max_target):
             fuzzer_source_code += "  %s obj = %s;\n" % (func_class,
                                                         object_creation)
             fuzzer_source_code += "  obj.%s($VARIABLE$);\n" % (func_name)
-            if len(cloned_possible_target.exceptions_to_handle) > 0:
+
+            exception_set = set(cloned_possible_target.exceptions_to_handle)
+            if len(exception_set) > 0:
                 fuzzer_source_code = "  try {\n" + fuzzer_source_code
                 fuzzer_source_code += "  }\n"
                 counter = 1
-                for exc in cloned_possible_target.exceptions_to_handle:
+
+                exceptions, super_exceptions = _extract_super_exceptions(
+                    exception_set)
+                for exc in list(exceptions) + list(super_exceptions):
                     fuzzer_source_code += "  catch (%s e%d) {}\n" % (exc,
                                                                      counter)
                     counter += 1
+
             cloned_possible_target.fuzzer_source_code = fuzzer_source_code
             if HEURISTIC_NAME not in cloned_possible_target.heuristics_used:
                 cloned_possible_target.heuristics_used.append(HEURISTIC_NAME)
