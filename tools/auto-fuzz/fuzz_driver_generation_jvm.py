@@ -907,8 +907,7 @@ def _extract_method(yaml_dict):
         else:
             callsites[item] = target_callsites[item]
 
-    max_calldepth = _search_max_calldepth(static_method_list +
-                                          method_list)
+    max_calldepth = _search_max_calldepth(static_method_list + method_list)
 
     method_list = _filter_method(callsites, max_calldepth, method_list)
     filtered_static_method_list = _filter_method(callsites, max_calldepth,
