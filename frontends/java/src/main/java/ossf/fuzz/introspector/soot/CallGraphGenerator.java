@@ -20,6 +20,9 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -30,6 +33,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
 import ossf.fuzz.introspector.soot.yaml.BranchProfile;
 import ossf.fuzz.introspector.soot.yaml.BranchSide;
@@ -74,7 +79,7 @@ import soot.toolkits.graph.UnitGraph;
 public class CallGraphGenerator {
   public static void main(String[] args) {
     System.out.println("[Callgraph] Running callgraph plugin");
-    if (args.length < 6 || args.length > 7) {
+    if (args.length < 7 || args.length > 8) {
       System.err.println("No jarFiles, entryClass, entryMethod and target package.");
       return;
     }
@@ -84,14 +89,15 @@ public class CallGraphGenerator {
     String entryMethod = args[2];
     String targetPackagePrefix = args[3];
     String excludeMethod = args[4];
-    Boolean isAutoFuzz = (args[5].equals("True")) ? true : false;
+    String sourceDirectory = args[5];
+    Boolean isAutoFuzz = (args[6].equals("True")) ? true : false;
     String includePrefix = "";
     String excludePrefix = "";
     String sinkMethod = "";
-    if (args.length == 7) {
-      includePrefix = args[6].split("===")[0];
-      excludePrefix = args[6].split("===")[1];
-      sinkMethod = args[6].split("===")[2];
+    if (args.length == 8) {
+      includePrefix = args[7].split("===")[0];
+      excludePrefix = args[7].split("===")[1];
+      sinkMethod = args[7].split("===")[2];
     }
     if (jarFiles.size() < 1) {
       System.err.println("Invalid jarFiles");
@@ -111,6 +117,7 @@ public class CallGraphGenerator {
             includePrefix,
             excludePrefix,
             sinkMethod,
+            sourceDirectory,
             isAutoFuzz);
     PackManager.v().getPack("wjtp").add(new Transform("wjtp.custom", custom));
 
@@ -183,6 +190,7 @@ class CustomSenceTransformer extends SceneTransformer {
   private List<String> includeList;
   private List<String> excludeList;
   private List<String> excludeMethodList;
+  private List<String> projectClassList;
   private List<SootMethod> reachedSinkMethodList;
   private List<FunctionElement> depthHandled;
   private Map<String, Set<String>> edgeClassMap;
@@ -200,26 +208,8 @@ class CustomSenceTransformer extends SceneTransformer {
       String excludeMethodStr,
       String includePrefix,
       String excludePrefix,
-      String sinkMethod) {
-    this(
-        entryClassStr,
-        entryMethodStr,
-        targetPackagePrefix,
-        excludeMethodStr,
-        includePrefix,
-        excludePrefix,
-        sinkMethod,
-        false);
-  }
-
-  public CustomSenceTransformer(
-      String entryClassStr,
-      String entryMethodStr,
-      String targetPackagePrefix,
-      String excludeMethodStr,
-      String includePrefix,
-      String excludePrefix,
       String sinkMethod,
+      String sourceDirectory,
       Boolean isAutoFuzz) {
     this.entryClassStr = entryClassStr;
     this.entryMethodStr = entryMethodStr;
@@ -230,6 +220,7 @@ class CustomSenceTransformer extends SceneTransformer {
     includeList = new LinkedList<String>();
     excludeList = new LinkedList<String>();
     excludeMethodList = new LinkedList<String>();
+    projectClassList = new LinkedList<String>();
     reachedSinkMethodList = new LinkedList<SootMethod>();
     edgeClassMap = new HashMap<String, Set<String>>();
     sinkMethodMap = new HashMap<String, Set<String>>();
@@ -256,6 +247,21 @@ class CustomSenceTransformer extends SceneTransformer {
 
     for (String exclude : excludeMethodStr.split(":")) {
       excludeMethodList.add(exclude);
+    }
+
+    if ((!sourceDirectory.equals("")) && (!sourceDirectory.equals("NULL"))) {
+      try (Stream<Path> walk = Files.walk(Paths.get(sourceDirectory))) {
+        List<String> sourceList =
+            walk.map(x -> x.toString())
+                .filter(f -> f.endsWith(".java"))
+                .collect(Collectors.toList());
+        for (String source : sourceList) {
+          projectClassList.add(source.substring(source.lastIndexOf("/") + 1).replace(".java", ""));
+        }
+      } catch (IOException e) {
+        // Fail to retrieve project class list, ignore the list.
+        projectClassList = new LinkedList<String>();
+      }
     }
 
     sinkMethodMap = new HashMap<String, Set<String>>();
@@ -314,24 +320,35 @@ class CustomSenceTransformer extends SceneTransformer {
       }
 
       // Check if the remaining classes have a prefix of one
-      // of the target package
+      // of the target package or if it can be found in the
+      // project source directory if provided.
       // If target package prefix has been specified and the
-      // classes are not in those package, ignore it
-      if (!isIgnore && !isSinkClass && !isInclude && this.hasTargetPackage()) {
-        boolean targetPackage = false;
-        for (String prefix : targetPackageList) {
-          if (cname.startsWith(prefix.replace("*", ""))) {
-            targetPackage = true;
-            break;
+      // class is not in those package, ignore it
+      // If project source directory has been specified and
+      // the class is not exists in the project source
+      // directory, ignore it
+      if (!isIgnore && !isSinkClass && !isInclude) {
+        if (this.hasTargetPackage()) {
+          boolean targetPackage = false;
+          for (String prefix : targetPackageList) {
+            if (cname.startsWith(prefix.replace("*", ""))) {
+              targetPackage = true;
+              break;
+            }
           }
-        }
-        if (!targetPackage) {
-          isIgnore = true;
+          if (!targetPackage) {
+            isIgnore = true;
+          }
+        } else {
+          String currClassName = cname.substring(cname.lastIndexOf(".") + 1).split("$")[0];
+          if ((projectClassList.size() > 0) && (!projectClassList.contains(currClassName))) {
+            isIgnore = true;
+          }
         }
       }
 
       if (!isIgnore) {
-        System.out.println("[Callgraph] [USE] class: " + cname);
+        //        System.out.println("[Callgraph] [USE] class: " + cname);
         List<SootMethod> mList = new LinkedList<SootMethod>();
 
         if (isSinkClass) {
@@ -347,7 +364,7 @@ class CustomSenceTransformer extends SceneTransformer {
 
         classMethodMap.put(c, mList);
       } else {
-        System.out.println("[Callgraph] [SKIP] class: " + cname);
+        //        System.out.println("[Callgraph] [SKIP] class: " + cname);
       }
       if (isAutoFuzz) {
         this.includeConstructor(c);

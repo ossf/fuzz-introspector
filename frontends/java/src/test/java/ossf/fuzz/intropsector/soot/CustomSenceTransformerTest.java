@@ -16,7 +16,8 @@ public class CustomSenceTransformerTest {
 
   @Test
   public void testBasic() {
-    CustomSenceTransformer custom = new CustomSenceTransformer("", "", "ALL", "", "", "", "");
+    CustomSenceTransformer custom =
+        new CustomSenceTransformer("", "", "ALL", "", "", "", "", "NULL", false);
     assertTrue(custom instanceof SceneTransformer);
     assertTrue(custom instanceof CustomSenceTransformer);
     assertEquals(custom.getIncludeList().size(), 1);
@@ -26,7 +27,8 @@ public class CustomSenceTransformerTest {
   @Test
   public void testExcludePrefix() {
     CustomSenceTransformer custom =
-        new CustomSenceTransformer("", "", "ALL", "", "abc:def:ghi", "jkl:mno:pqr", "");
+        new CustomSenceTransformer(
+            "", "", "ALL", "", "abc:def:ghi", "jkl:mno:pqr", "", "NULL", false);
     assertEquals(custom.getIncludeList().size(), 4);
     assertEquals(custom.getExcludeList().size(), 3);
     Object[] eexpected = {"jkl", "mno", "pqr"};
