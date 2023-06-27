@@ -347,6 +347,10 @@ class CustomSenceTransformer extends SceneTransformer {
         }
       }
 
+      if (!c.isConcrete()) {
+        isIgnore = true;
+      }
+
       if (!isIgnore) {
         //        System.out.println("[Callgraph] [USE] class: " + cname);
         List<SootMethod> mList = new LinkedList<SootMethod>();
@@ -414,6 +418,7 @@ class CustomSenceTransformer extends SceneTransformer {
           methodInfo.setIsStatic(m.isStatic());
           methodInfo.setIsClassEnum(c.isEnum());
           methodInfo.setIsClassPublic(c.isPublic());
+          methodInfo.setIsClassConcrete(c.isConcrete());
           for (SootClass exception : m.getExceptions()) {
             methodInfo.addException(exception.getFilePath());
           }
