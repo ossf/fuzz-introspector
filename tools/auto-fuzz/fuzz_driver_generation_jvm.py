@@ -553,18 +553,11 @@ def _search_all_callsite_dst(method_list):
     return result_map
 
 
-def _search_max_calldepth(method_list):
+def _sort_method_list_key(elem):
     """
-    Search the method list and returns
-    the max calldepth for all methods.
+    Provide the key for sorting the method list
     """
-    max_calldepth = 0
-
-    for func_elem in method_list:
-        if func_elem['functionDepth'] > max_calldepth:
-            max_calldepth = func_elem['functionDepth']
-
-    return max_calldepth
+    return elem['functionDepth']
 
 
 def _should_filter_method(callsites, target_method, current_method, handled):
@@ -802,30 +795,28 @@ def _filter_polymorphism(method_list):
     return result_list
 
 
-def _filter_method(callsites, max_calldepth, target_method_list):
+def _filter_method(callsites, max_count, target_method_list):
     """
     Filter methods from the target_method list which has
-    been called by and methods in both method list.
+    been called by any other methods.
+    Also sort the target method list by depth call descendingly
+    and only keep the top number of methods configured by the max_count.
     """
-    if constants.TARGET_FUNCTION_DEPTH_RATIO >= 0 and constants.TARGET_FUNCTION_DEPTH_RATIO < 1:
-        target_depth_ratio = constants.TARGET_FUNCTION_DEPTH_RATIO
-    else:
-        target_depth_ratio = 0.4
-    min_calldepth = max_calldepth * target_depth_ratio
+    target_method_list.sort(key=_sort_method_list_key, reverse=True)
 
     result_method_list = []
-    for func_elem in target_method_list:
+    for counter in range(min(len(target_method_list), max_count)):
+        func_elem = target_method_list[counter]
         if func_elem[
                 'functionName'] not in callsites or not _should_filter_method(
                     callsites, func_elem['functionName'],
                     func_elem['functionName'], []):
-            if func_elem['functionDepth'] > min_calldepth:
-                result_method_list.append(func_elem)
+            result_method_list.append(func_elem)
 
     return result_method_list
 
 
-def _extract_method(yaml_dict):
+def _extract_method(yaml_dict, max_count=20):
     """Extract method and group them into list for heuristic processing"""
     init_dict = {}
     method_list = []
@@ -895,10 +886,8 @@ def _extract_method(yaml_dict):
         else:
             callsites[item] = target_callsites[item]
 
-    max_calldepth = _search_max_calldepth(static_method_list + method_list)
-
-    method_list = _filter_method(callsites, max_calldepth, method_list)
-    filtered_static_method_list = _filter_method(callsites, max_calldepth,
+    method_list = _filter_method(callsites, max_count, method_list)
+    filtered_static_method_list = _filter_method(callsites, max_count,
                                                  static_method_list)
 
     return init_dict, method_list, instance_method_list, static_method_list, filtered_static_method_list
@@ -1756,7 +1745,7 @@ def generate_possible_targets(proj_folder, class_list, max_target,
                              "fuzzerLogFile-Fuzz.data.yaml")
     with open(yaml_file, "r") as stream:
         yaml_dict = yaml.safe_load(stream)
-    method_tuple = _extract_method(yaml_dict)
+    method_tuple = _extract_method(yaml_dict, 20)
 
     possible_targets = []
     temp_targets = []
