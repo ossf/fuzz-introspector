@@ -802,7 +802,7 @@ def _filter_method(callsites, max_count, target_method_list):
     Also sort the target method list by depth call descendingly
     and only keep the top number of methods configured by the max_count.
     """
-    target_method_list.sort(key=_sort_method_list_key)
+    target_method_list.sort(key=_sort_method_list_key, reverse=True)
 
     result_method_list = []
     for counter in range(min(len(target_method_list), max_count)):
@@ -816,7 +816,7 @@ def _filter_method(callsites, max_count, target_method_list):
     return result_method_list
 
 
-def _extract_method(yaml_dict, max_count = 20):
+def _extract_method(yaml_dict, max_count=20):
     """Extract method and group them into list for heuristic processing"""
     init_dict = {}
     method_list = []
