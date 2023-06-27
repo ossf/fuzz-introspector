@@ -145,17 +145,19 @@ def _is_primitive_class(classname):
 def _is_factory_method(methodname, classname):
     """Determine if the target method is a possible factory method"""
 
-    possible_factory_method = ["from", "of", "valueOf", "*instance", "create", "*Type"]
+    possible_factory_method = [
+        "from", "of", "valueOf", "*instance", "create", "*Type"
+    ]
     possible_factory_class = ["*builder", "*factory"]
 
     is_factory = False
 
     for method in possible_factory_method:
         if methodname.lower().endswith(method.replace("*", "")):
-             is_factory = True
+            is_factory = True
     for cl in possible_factory_class:
         if classname.lower().endswith(cl.replace("*", "")):
-             is_factory = True
+            is_factory = True
 
     return is_factory
 
