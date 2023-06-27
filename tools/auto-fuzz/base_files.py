@@ -190,7 +190,7 @@ then
 fi
 
 JARFILE_LIST=
-for JARFILE in $(find ./ -name *.jar)
+for JARFILE in $(find ./target ./build  -name *.jar 2>/dev/null)
 do
   cp $JARFILE $OUT/
   JARFILE_LIST="$JARFILE_LIST$(basename $JARFILE) "
