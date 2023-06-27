@@ -153,8 +153,10 @@ do
       break
     elif test -f "pom.xml"
     then
-      find ./ -name pom.xml -exec sed -i 's/>1.5</>1.8</g' {} \;
-      find ./ -name pom.xml -exec sed -i 's/>1.6</>1.8</g' {} \;
+      find ./ -name pom.xml -exec sed -i 's/<maven.compiler.source>1.5</<maven.compiler.source>1.8</g' {} \;
+      find ./ -name pom.xml -exec sed -i 's/<maven.compiler.source>1.6</<maven.compiler.source>1.8</g' {} \;
+      find ./ -name pom.xml -exec sed -i 's/<maven.compiler.target>1.5</<maven.compiler.target>1.8</g' {} \;
+      find ./ -name pom.xml -exec sed -i 's/<maven.compiler.target>1.6</<maven.compiler.target>1.8</g' {} \;
       find ./ -name pom.xml -exec sed -i 's/java15/java18/g' {} \;
       find ./ -name pom.xml -exec sed -i 's/java16/java18/g' {} \;
       find ./ -name pom.xml -exec sed -i 's/java-1.5/java-1.8/g' {} \;
@@ -190,12 +192,15 @@ then
 fi
 
 JARFILE_LIST=
-for JARFILE in $(find ./target ./build  -name *.jar 2>/dev/null)
+for JARFILE in $(find ./  -name *.jar)
 do
-  if [[ "$JARFILE" != *sources.jar ]] && [[ "$JARFILE" != *javadoc.jar ]]
+  if [[ "$JARFILE" == *"target/"* ]] || [[ "$JARFILE" == *"build/"* ]]
   then
-    cp $JARFILE $OUT/
-    JARFILE_LIST="$JARFILE_LIST$(basename $JARFILE) "
+    if [[ "$JARFILE" != *sources.jar ]] && [[ "$JARFILE" != *javadoc.jar ]]
+    then
+      cp $JARFILE $OUT/
+      JARFILE_LIST="$JARFILE_LIST$(basename $JARFILE) "
+    fi
   fi
 done
 

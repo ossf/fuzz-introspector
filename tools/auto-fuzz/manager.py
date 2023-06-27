@@ -253,8 +253,10 @@ def _maven_build_project(basedir, projectdir):
 
     # Patch pom.xml to use at least jdk 1.8
     cmd = [
-        "find ./ -name pom.xml -exec sed -i 's/>1.5</>1.8</g' {} \;",
-        "find ./ -name pom.xml -exec sed -i 's/>1.6</>1.8</g' {} \;",
+        "find ./ -name pom.xml -exec sed -i 's/<maven.compiler.source>1.5</<maven.compiler.source>1.8</g' {} \;",
+        "find ./ -name pom.xml -exec sed -i 's/<maven.compiler.source>1.6</<maven.compiler.source>1.8</g' {} \;",
+        "find ./ -name pom.xml -exec sed -i 's/<maven.compiler.target>1.5</<maven.compiler.target>1.8</g' {} \;",
+        "find ./ -name pom.xml -exec sed -i 's/<maven.compiler.target>1.6</<maven.compiler.target>1.8</g' {} \;",
         "find ./ -name pom.xml -exec sed -i 's/java15/java18/g' {} \;",
         "find ./ -name pom.xml -exec sed -i 's/java16/java18/g' {} \;",
         "find ./ -name pom.xml -exec sed -i 's/java-1.5/java-1.8/g' {} \;",
@@ -1045,7 +1047,7 @@ def get_target_repos(targets, language):
     github_projects = []
     with open(args.targets, 'r') as f:
         for line in f:
-            github_projects.append(line.replace("\n", ""))
+            github_projects.append(line.replace("\n", "").strip())
     return github_projects
 
 
