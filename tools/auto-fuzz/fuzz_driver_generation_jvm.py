@@ -932,9 +932,11 @@ def _extract_method(yaml_dict, max_count=20, calldepth_filter=False):
         else:
             callsites[item] = target_callsites[item]
 
-    method_list = _filter_method(callsites, max_count, method_list, calldepth_filter)
+    method_list = _filter_method(callsites, max_count, method_list,
+                                 calldepth_filter)
     filtered_static_method_list = _filter_method(callsites, max_count,
-                                                 static_method_list, calldepth_filter)
+                                                 static_method_list,
+                                                 calldepth_filter)
 
     return init_dict, method_list, instance_method_list, static_method_list, filtered_static_method_list
 
@@ -1774,8 +1776,9 @@ def _generate_heuristic_10(method_tuple, possible_targets, max_target):
                     break
 
 
-def _generate_heuristics(yaml_dict, max_target, calldepth_filter = False):
-    method_tuple = _extract_method(yaml_dict, max_count=20,
+def _generate_heuristics(yaml_dict, max_target, calldepth_filter=False):
+    method_tuple = _extract_method(yaml_dict,
+                                   max_count=20,
                                    calldepth_filter=calldepth_filter)
 
     possible_targets = []
