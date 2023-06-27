@@ -142,6 +142,26 @@ def _is_primitive_class(classname):
     return classname in primitives
 
 
+def _is_factory_method(methodname, classname):
+    """Determine if the target method is a possible factory method"""
+
+    possible_factory_method = [
+        "from", "of", "valueOf", "*instance", "create", "*Type"
+    ]
+    possible_factory_class = ["*builder", "*factory"]
+
+    is_factory = False
+
+    for method in possible_factory_method:
+        if methodname.lower().endswith(method.replace("*", "")):
+            is_factory = True
+    for cl in possible_factory_class:
+        if classname.lower().endswith(cl.replace("*", "")):
+            is_factory = True
+
+    return is_factory
+
+
 def _is_method_excluded(func_elem):
     """
     Determine if the methods should be ignored for fuzzer generation.
@@ -332,6 +352,12 @@ def _search_static_factory_method(classname,
         - No "test" in method name
         - Return an object of the target class
         - Only primitive arguments or class object if class_object set to True
+        - method name matches either one of the following
+          "from" / "of" / "valueOf" / "*instance" /
+          "create" / "*type"
+          or methods belongs to class name matches either
+          one of the following
+          "*builder" / "*factory"
     """
     result_list = []
     for func_elem in static_method_list:
@@ -347,6 +373,12 @@ def _search_static_factory_method(classname,
         if "test" in func_elem['functionName']:
             continue
         if func_elem['returnType'] != classname:
+            continue
+
+        func_name = func_elem['functionName'].split('(')[0].split('].')[1]
+        func_class = func_elem['functionSourceFile'].replace('$', '.')
+
+        if not _is_factory_method(func_name, func_class):
             continue
 
         # Retrieve primitive arguments list
@@ -401,6 +433,12 @@ def _search_factory_method(classname,
         - Argument less than 20
         - No "test" in method name
         - Return an object of the target class
+        - method name matches either one of the following
+          "from" / "of" / "valueOf" / "*instance" /
+          "create" / "*type"
+          or methods belongs to class name matches either
+          one of the following
+          "*builder" / "*factory"
     """
     global need_param_combination
     result_list = []
@@ -423,6 +461,9 @@ def _search_factory_method(classname,
 
         func_name = func_elem['functionName'].split('(')[0].split('].')[1]
         func_class = func_elem['functionSourceFile'].replace('$', '.')
+
+        if not _is_factory_method(func_name, func_class):
+            continue
 
         # Retrieve arguments list
         arg_list = []
