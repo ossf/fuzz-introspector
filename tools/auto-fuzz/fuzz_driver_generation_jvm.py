@@ -836,17 +836,22 @@ def _filter_polymorphism(method_list):
     return result_list
 
 
-def _filter_method(callsites, max_count, target_method_list):
+def _filter_method(callsites, max_count, target_method_list, calldepth_filter):
     """
     Filter methods from the target_method list which has
     been called by any other methods.
     Also sort the target method list by depth call descendingly
     and only keep the top number of methods configured by the max_count.
     """
-    target_method_list.sort(key=_sort_method_list_key, reverse=True)
-
     result_method_list = []
-    for counter in range(min(len(target_method_list), max_count)):
+
+    if calldepth_filter:
+        target_method_list.sort(key=_sort_method_list_key, reverse=True)
+        method_range = min(len(target_method_list), max_count)
+    else:
+        method_range = len(target_method_list)
+
+    for counter in range(method_range):
         func_elem = target_method_list[counter]
         if func_elem[
                 'functionName'] not in callsites or not _should_filter_method(
@@ -857,7 +862,7 @@ def _filter_method(callsites, max_count, target_method_list):
     return result_method_list
 
 
-def _extract_method(yaml_dict, max_count=20):
+def _extract_method(yaml_dict, max_count=20, calldepth_filter=False):
     """Extract method and group them into list for heuristic processing"""
     init_dict = {}
     method_list = []
@@ -927,9 +932,11 @@ def _extract_method(yaml_dict, max_count=20):
         else:
             callsites[item] = target_callsites[item]
 
-    method_list = _filter_method(callsites, max_count, method_list)
+    method_list = _filter_method(callsites, max_count, method_list,
+                                 calldepth_filter)
     filtered_static_method_list = _filter_method(callsites, max_count,
-                                                 static_method_list)
+                                                 static_method_list,
+                                                 calldepth_filter)
 
     return init_dict, method_list, instance_method_list, static_method_list, filtered_static_method_list
 
@@ -1769,24 +1776,10 @@ def _generate_heuristic_10(method_tuple, possible_targets, max_target):
                     break
 
 
-def generate_possible_targets(proj_folder, class_list, max_target,
-                              param_combination):
-    """Generate all possible targets for a given project folder"""
-
-    # Set param_combination to global
-    global need_param_combination
-    need_param_combination = param_combination
-
-    # Set the project_class_list to global
-    global project_class_list
-    project_class_list = class_list
-
-    # Read the Fuzz Introspector generated data as a method tuple
-    yaml_file = os.path.join(proj_folder, "work",
-                             "fuzzerLogFile-Fuzz.data.yaml")
-    with open(yaml_file, "r") as stream:
-        yaml_dict = yaml.safe_load(stream)
-    method_tuple = _extract_method(yaml_dict, 20)
+def _generate_heuristics(yaml_dict, max_target, calldepth_filter=False):
+    method_tuple = _extract_method(yaml_dict,
+                                   max_count=20,
+                                   calldepth_filter=calldepth_filter)
 
     possible_targets = []
     temp_targets = []
@@ -1816,5 +1809,30 @@ def generate_possible_targets(proj_folder, class_list, max_target,
     temp_targets = []
     _generate_heuristic_10(method_tuple, temp_targets, max_target)
     possible_targets.extend(temp_targets)
+
+    return possible_targets
+
+
+def generate_possible_targets(proj_folder, class_list, max_target,
+                              param_combination):
+    """Generate all possible targets for a given project folder"""
+
+    # Set param_combination to global
+    global need_param_combination
+    need_param_combination = param_combination
+
+    # Set the project_class_list to global
+    global project_class_list
+    project_class_list = class_list
+
+    # Read the Fuzz Introspector generated data as a method tuple
+    yaml_file = os.path.join(proj_folder, "work",
+                             "fuzzerLogFile-Fuzz.data.yaml")
+    with open(yaml_file, "r") as stream:
+        yaml_dict = yaml.safe_load(stream)
+
+    possible_targets = _generate_heuristics(yaml_dict, max_target, False)
+    if len(possible_targets) > constants.MAX_FUZZERS_PER_PROJECT:
+        possible_targets = _generate_heuristics(yaml_dict, max_target, True)
 
     return possible_targets

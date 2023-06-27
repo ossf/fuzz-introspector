@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-MAX_FUZZERS_PER_PROJECT = 1000
+MAX_FUZZERS_PER_PROJECT = 400
 MAX_TARGET_PER_PROJECT_HEURISTIC = 1000
 MAX_THREADS = 4
 
