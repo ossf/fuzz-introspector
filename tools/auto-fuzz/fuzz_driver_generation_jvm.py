@@ -1035,7 +1035,7 @@ def _generate_heuristic_2(method_tuple, possible_targets, max_target):
                                                        possible_target,
                                                        max_target, [])
 
-        for object_creation_item in object_creation_list:
+        for object_creation_item in list(set(object_creation_list)):
             # Create possible target for all possible object creation statement
             # Clone the base target object
             cloned_possible_target = FuzzTarget(orig=possible_target)
@@ -1115,7 +1115,7 @@ def _generate_heuristic_3(method_tuple, possible_targets, max_target):
         factory_method_list = _search_static_factory_method(
             func_class, static_method_list, possible_target, max_target)
 
-        for factory_method in factory_method_list:
+        for factory_method in list(set(factory_method_list)):
             # Create possible target for all possible factory method
             # Clone the base target object
             cloned_possible_target = FuzzTarget(orig=possible_target)
@@ -1194,7 +1194,7 @@ def _generate_heuristic_4(method_tuple, possible_targets, max_target):
                                                      possible_target,
                                                      init_dict, max_target)
 
-        for factory_method in factory_method_list:
+        for factory_method in list(set(factory_method_list)):
             # Create possible target for all possible factory method
             # Clone the base target object
             cloned_possible_target = FuzzTarget(orig=possible_target)
@@ -1278,7 +1278,7 @@ def _generate_heuristic_6(method_tuple, possible_targets, max_target):
             _handle_object_creation(func_class, init_dict, possible_target,
                                     max_target, []))
 
-        for object_creation in object_creation_list:
+        for object_creation in list(set(object_creation_list)):
             # Create possible target for all possible factory method
             # Clone the base target object
             cloned_possible_target = FuzzTarget(orig=possible_target)
@@ -1384,7 +1384,7 @@ def _generate_heuristic_7(method_tuple, possible_targets, max_target):
             _handle_object_creation(func_class, init_dict, possible_target,
                                     max_target, []))
 
-        for object_creation in object_creation_list:
+        for object_creation in list(set(object_creation_list)):
             # Create possible target for all possible factory method
             # Clone the base target object
             cloned_possible_target = FuzzTarget(orig=possible_target)
@@ -1498,7 +1498,7 @@ def _generate_heuristic_8(method_tuple, possible_targets, max_target):
             _handle_object_creation(func_class, init_dict, possible_target,
                                     max_target, []))
 
-        for object_creation in object_creation_list:
+        for object_creation in list(set(object_creation_list)):
             # Create possible target for all possible factory method
             # Clone the base target object
             cloned_possible_target = FuzzTarget(orig=possible_target)
@@ -1591,7 +1591,7 @@ def _generate_heuristic_9(method_tuple, possible_targets, max_target):
                                     max_target, [],
                                     class_field=True))
 
-        for object_creation in object_creation_list:
+        for object_creation in list(set(object_creation_list)):
             # Create possible target for all possible factory method
             # Clone the base target object
             cloned_possible_target = FuzzTarget(orig=possible_target)
@@ -1700,7 +1700,7 @@ def _generate_heuristic_10(method_tuple, possible_targets, max_target):
                                     class_field=True,
                                     class_object=True))
 
-        for object_creation in object_creation_list:
+        for object_creation in list(set(object_creation_list)):
             # Create possible target for all possible factory method
             # Clone the base target object
             cloned_possible_target = FuzzTarget(orig=possible_target)
