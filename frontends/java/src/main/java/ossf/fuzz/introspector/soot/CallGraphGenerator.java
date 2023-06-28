@@ -161,7 +161,15 @@ public class CallGraphGenerator {
     Scene.v().loadDynamicClasses();
 
     // Start the generation
-    PackManager.v().runPacks();
+    try {
+      PackManager.v().runPacks();
+    } catch (RuntimeException e) {
+      if (!custom.isAnalyseFinished()) {
+        // Only flow the runtime exception when the analyse is not finished.
+        // Runtime exception may happens in stages after the analyse is completed.
+        throw e;
+      }
+    }
   }
 
   public static List<String> handleJarFilesWildcard(List<String> jarFiles) {
@@ -200,6 +208,7 @@ class CustomSenceTransformer extends SceneTransformer {
   private SootMethod entryMethod;
   private FunctionConfig methodList;
   private Boolean isAutoFuzz;
+  private Boolean analyseFinished;
 
   public CustomSenceTransformer(
       String entryClassStr,
@@ -225,6 +234,7 @@ class CustomSenceTransformer extends SceneTransformer {
     edgeClassMap = new HashMap<String, Set<String>>();
     sinkMethodMap = new HashMap<String, Set<String>>();
     methodList = new FunctionConfig();
+    analyseFinished = false;
 
     if (!targetPackagePrefix.equals("ALL")) {
       for (String targetPackage : targetPackagePrefix.split(":")) {
@@ -551,6 +561,7 @@ class CustomSenceTransformer extends SceneTransformer {
       System.err.println(e);
     }
     System.out.println("Finish processing for fuzzer: " + this.entryClassStr);
+    analyseFinished = true;
   }
 
   // Include empty profile for class constructor for reference
@@ -1141,5 +1152,9 @@ class CustomSenceTransformer extends SceneTransformer {
 
   public List<String> getExcludeList() {
     return excludeList;
+  }
+
+  public Boolean isAnalyseFinished() {
+    return this.analyseFinished;
   }
 }
