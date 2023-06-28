@@ -14,6 +14,7 @@
 
 import os
 import sys
+import stat
 import yaml
 import json
 import shutil
@@ -219,8 +220,9 @@ def _ant_build_project(basedir, projectdir):
 
     # Set environment variable
     env_var = os.environ.copy()
-    env_var['PATH'] = os.path.join(basedir,
-                                   constants.ANT_PATH) + ":" + env_var['PATH']
+    env_var['PATH'] = os.path.join(
+        basedir, constants.ANT_PATH) + ":" + os.path.join(
+            basedir, constants.PROTOC_PATH) + ":" + env_var['PATH']
 
     # Build project with ant
     cmd = "chmod +x %s/ant && ant" % os.path.join(basedir, constants.ANT_PATH)
@@ -249,7 +251,8 @@ def _maven_build_project(basedir, projectdir):
     # Set environment variable
     env_var = os.environ.copy()
     env_var['PATH'] = os.path.join(
-        basedir, constants.MAVEN_PATH) + ":" + env_var['PATH']
+        basedir, constants.MAVEN_PATH) + ":" + os.path.join(
+            basedir, constants.PROTOC_PATH) + ":" + env_var['PATH']
 
     # Patch pom.xml to use at least jdk 1.8
     cmd = [
@@ -308,7 +311,8 @@ def _gradle_build_project(basedir, projectdir):
     env_var = os.environ.copy()
     env_var['GRADLE_HOME'] = os.path.join(basedir, constants.GRADLE_HOME)
     env_var['PATH'] = os.path.join(
-        basedir, constants.GRADLE_PATH) + ":" + env_var['PATH']
+        basedir, constants.GRADLE_PATH) + ":" + os.path.join(
+            basedir, constants.PROTOC_PATH) + ":" + env_var['PATH']
 
     # Build project with maven
     cmd = ["chmod +x gradlew", "./gradlew clean build -x test"]
@@ -382,6 +386,15 @@ def build_jvm_project(basedir, projectdir, proj_name):
     # Find project subfolder if build properties not in the outtermost
     # directory
     builddir = find_project_build_folder(projectdir, proj_name)
+
+    # Prepare protoc
+    os.makedirs(os.path.join(basedir, "protoc"), exist_ok=True)
+    with zipfile.ZipFile(os.path.join(basedir, "protoc.zip"), "r") as pf:
+        pf.extractall(os.path.join(basedir, "protoc"))
+    protoc_executable = os.path.join(basedir, "protoc", "bin", "protoc")
+    base_stat = os.stat(protoc_executable)
+    os.chmod(os.path.join(basedir, "protoc", "bin", "protoc"),
+             base_stat.st_mode | stat.S_IEXEC)
 
     if builddir:
         if os.path.exists(os.path.join(builddir, "pom.xml")):
@@ -828,7 +841,8 @@ def autofuzz_project_from_github(github_url,
     # If this is a jvm target download ant, maven and gradle once so we don't
     # have to do it for each proejct. Also extract a class_list for java classes
     # in the repository before building the project. This class_list is used for
-    # target method filtering in the target generation stage.
+    # target method filtering in the target generation stage. Some project requires
+    # protoc to generate java code, so protoc is also downloaded here.
     if language == "jvm":
         # Download Ant
         target_ant_path = os.path.join(oss_fuzz_base_project.project_folder,
@@ -848,7 +862,13 @@ def autofuzz_project_from_github(github_url,
         with open(target_gradle_path, 'wb') as gf:
             gf.write(requests.get(constants.GRADLE_URL).content)
 
-        # Extract class list for the etarget project
+        # Download protoc
+        target_protoc_path = os.path.join(oss_fuzz_base_project.project_folder,
+                                          "protoc.zip")
+        with open(target_protoc_path, 'wb') as gf:
+            gf.write(requests.get(constants.PROTOC_URL).content)
+
+        # Extract class list for the target project
         java_class_list = extract_class_list(
             os.path.join(oss_fuzz_base_project.project_folder,
                          oss_fuzz_base_project.project_name))

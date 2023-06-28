@@ -109,13 +109,16 @@ def gen_dockerfile_jvm(github_url, project_name):
 COPY ant.zip $SRC/ant.zip
 COPY maven.zip $SRC/maven.zip
 COPY gradle.zip $SRC/gradle.zip
+COPY protoc.zip $SRC/protoc.zip
 RUN unzip ant.zip -d $SRC/ant && rm ./ant.zip
 RUN unzip maven.zip -d $SRC/maven && rm ./maven.zip
 RUN unzip gradle.zip -d $SRC/gradle && rm ./gradle.zip
+RUN mkdir -p $SRC/protoc
+RUN unzip protoc.zip -d $SRC/protoc && rm ./gradle.zip
 ENV ANT $SRC/ant/apache-ant-1.9.16/bin/ant
 ENV MVN $SRC/maven/apache-maven-3.6.3/bin/mvn
 ENV GRADLE_HOME $SRC/gradle/gradle-7.4.2
-ENV PATH="$SRC/gradle/gradle-7.4.2/bin:$PATH"
+ENV PATH="$SRC/gradle/gradle-7.4.2/bin:$SRC/protoc/bin:$PATH"
 #RUN git clone --depth 1 %s %s
 COPY %s %s
 COPY *.sh *.java $SRC/
@@ -145,6 +148,7 @@ do
   then
     dir=$(realpath ${dir%*:})
     cd $dir
+    chmod +x $SRC/protoc/bin/protoc
     if test -f "pom.xml"
     then
       find ./ -name pom.xml -exec sed -i 's/compilerVersion>1.5</compilerVersion>1.8</g' {} \;
