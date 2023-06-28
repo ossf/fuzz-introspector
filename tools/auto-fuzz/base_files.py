@@ -114,7 +114,7 @@ RUN unzip ant.zip -d $SRC/ant && rm ./ant.zip
 RUN unzip maven.zip -d $SRC/maven && rm ./maven.zip
 RUN unzip gradle.zip -d $SRC/gradle && rm ./gradle.zip
 RUN mkdir -p $SRC/protoc
-RUN unzip protoc.zip -d $SRC/protoc && rm ./gradle.zip
+RUN unzip protoc.zip -d $SRC/protoc && rm ./protoc.zip
 ENV ANT $SRC/ant/apache-ant-1.9.16/bin/ant
 ENV MVN $SRC/maven/apache-maven-3.6.3/bin/mvn
 ENV GRADLE_HOME $SRC/gradle/gradle-7.4.2

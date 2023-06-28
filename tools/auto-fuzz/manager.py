@@ -601,9 +601,14 @@ def build_and_test_single_possible_target(idx_folder,
                                    "gradle.zip")
         gradle_dst = os.path.join(dst_oss_fuzz_project.project_folder,
                                   "gradle.zip")
+        protoc_path = os.path.join(oss_fuzz_base_project.project_folder,
+                                   "protoc.zip")
+        protoc_dst = os.path.join(dst_oss_fuzz_project.project_folder,
+                                  "protoc.zip")
         shutil.copy(ant_path, ant_dst)
         shutil.copy(maven_path, maven_dst)
         shutil.copy(gradle_path, gradle_dst)
+        shutil.copy(protoc_path, protoc_dst)
 
     copy_oss_fuzz_project_source(oss_fuzz_base_project, dst_oss_fuzz_project)
 
@@ -667,7 +672,7 @@ def build_and_test_single_possible_target(idx_folder,
         if not os.path.isdir(full_path):
             continue
 
-        files_to_cleanup = ['ant.zip', 'maven.zip', 'gradle.zip']
+        files_to_cleanup = ['ant.zip', 'maven.zip', 'gradle.zip', 'protoc.zip']
         for filename in files_to_cleanup:
             # Auto-fuzz path
             autofuzz_filename_path = os.path.join(auto_fuzz_proj_dir, filename)
