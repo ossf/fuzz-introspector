@@ -103,7 +103,7 @@ fi
 if [ -z $EXCLUDEMETHOD ]
 then
     echo "No exclude method list defined, using default exclude method list"
-    EXCLUDEMETHOD="<clinit>:finalize"
+    EXCLUDEMETHOD="<clinit>:finalize:main"
 fi
 if [ -z $SINKMETHOD ]
 then
