@@ -340,7 +340,7 @@ class CustomSenceTransformer extends SceneTransformer {
             isIgnore = true;
           }
         } else {
-          String currClassName = cname.substring(cname.lastIndexOf(".") + 1).split("$")[0];
+          String currClassName = cname.substring(cname.lastIndexOf(".") + 1).split("\\$")[0];
           if ((projectClassList.size() > 0) && (!projectClassList.contains(currClassName))) {
             isIgnore = true;
           }
@@ -660,13 +660,11 @@ class CustomSenceTransformer extends SceneTransformer {
     return null;
   }
 
-  // Add or replace method element to the method list
+  // Add method element to the method list
   private void addMethodElement(FunctionElement newElement) {
     FunctionElement oldElement = this.searchElement(newElement.getFunctionName());
     if (oldElement == null) {
       this.methodList.addFunctionElement(newElement);
-    } else {
-      this.methodList.replaceFunctionElement(oldElement, newElement);
     }
   }
 
@@ -778,11 +776,13 @@ class CustomSenceTransformer extends SceneTransformer {
     for (FunctionElement element : this.methodList.getFunctionElements()) {
       if (!element.getFunctionName().contains("init>")) {
         this.calculateCallDepth(element, null);
-      }
-      if (this.depthHandled != null) {
-        for (FunctionElement handledElement : this.depthHandled) {
-          newMethodList.add(handledElement);
+        if (this.depthHandled != null) {
+          for (FunctionElement handledElement : this.depthHandled) {
+            newMethodList.add(handledElement);
+          }
         }
+      } else {
+        newMethodList.add(element);
       }
     }
 
