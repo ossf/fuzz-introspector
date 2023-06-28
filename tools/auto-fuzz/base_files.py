@@ -145,13 +145,7 @@ do
   then
     dir=$(realpath ${dir%*:})
     cd $dir
-    if test -f "build.gradle"
-    then
-      chmod +x ./gradlew
-      ./gradlew clean build -x test
-      SUCCESS=true
-      break
-    elif test -f "pom.xml"
+    if test -f "pom.xml"
     then
       find ./ -name pom.xml -exec sed -i 's/compilerVersion>1.5</compilerVersion>1.8</g' {} \;
       find ./ -name pom.xml -exec sed -i 's/compilerVersion>1.6</compilerVersion>1.8</g' {} \;
@@ -165,6 +159,12 @@ do
       find ./ -name pom.xml -exec sed -i 's/java-1.6/java-1.8/g' {} \;
       MAVEN_ARGS="-Dmaven.test.skip=true --update-snapshots -Dmaven.javadoc.skip=true"
       $MVN clean package $MAVEN_ARGS
+      SUCCESS=true
+      break
+    elif test -f "build.gradle"
+    then
+      chmod +x ./gradlew
+      ./gradlew clean build -x test
       SUCCESS=true
       break
     elif test -f "build.xml"
