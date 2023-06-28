@@ -220,9 +220,9 @@ def _ant_build_project(basedir, projectdir):
 
     # Set environment variable
     env_var = os.environ.copy()
-    env_var['PATH'] = os.path.join(basedir,
-                                   constants.ANT_PATH) + ":" + os.path.join(
-        basedir, constants.PROTOC_PATH) + ":" + env_var['PATH']
+    env_var['PATH'] = os.path.join(
+        basedir, constants.ANT_PATH) + ":" + os.path.join(
+            basedir, constants.PROTOC_PATH) + ":" + env_var['PATH']
 
     # Build project with ant
     cmd = "chmod +x %s/ant && ant" % os.path.join(basedir, constants.ANT_PATH)
@@ -252,7 +252,7 @@ def _maven_build_project(basedir, projectdir):
     env_var = os.environ.copy()
     env_var['PATH'] = os.path.join(
         basedir, constants.MAVEN_PATH) + ":" + os.path.join(
-        basedir, constants.PROTOC_PATH) + ":" + env_var['PATH']
+            basedir, constants.PROTOC_PATH) + ":" + env_var['PATH']
 
     # Patch pom.xml to use at least jdk 1.8
     cmd = [
@@ -312,7 +312,7 @@ def _gradle_build_project(basedir, projectdir):
     env_var['GRADLE_HOME'] = os.path.join(basedir, constants.GRADLE_HOME)
     env_var['PATH'] = os.path.join(
         basedir, constants.GRADLE_PATH) + ":" + os.path.join(
-        basedir, constants.PROTOC_PATH) + ":" + env_var['PATH']
+            basedir, constants.PROTOC_PATH) + ":" + env_var['PATH']
 
     # Build project with maven
     cmd = ["chmod +x gradlew", "./gradlew clean build -x test"]
@@ -393,7 +393,8 @@ def build_jvm_project(basedir, projectdir, proj_name):
         pf.extractall(os.path.join(basedir, "protoc"))
     protoc_executable = os.path.join(basedir, "protoc", "bin", "protoc")
     base_stat = os.stat(protoc_executable)
-    os.chmod(os.path.join(basedir, "protoc", "bin", "protoc"), base_stat.st_mode | stat.S_IEXEC)
+    os.chmod(os.path.join(basedir, "protoc", "bin", "protoc"),
+             base_stat.st_mode | stat.S_IEXEC)
 
     if builddir:
         if os.path.exists(os.path.join(builddir, "pom.xml")):
@@ -866,7 +867,6 @@ def autofuzz_project_from_github(github_url,
                                           "protoc.zip")
         with open(target_protoc_path, 'wb') as gf:
             gf.write(requests.get(constants.PROTOC_URL).content)
-
 
         # Extract class list for the target project
         java_class_list = extract_class_list(
