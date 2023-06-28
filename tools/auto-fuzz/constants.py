@@ -21,11 +21,13 @@ BATCH_SIZE_BEFORE_DOCKER_CLEAN = 40
 ANT_URL = "https://dlcdn.apache.org//ant/binaries/apache-ant-1.9.16-bin.zip"
 MAVEN_URL = "https://archive.apache.org/dist/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.zip"
 GRADLE_URL = "https://services.gradle.org/distributions/gradle-7.4.2-bin.zip"
+PROTOC_URL = "https://github.com/protocolbuffers/protobuf/releases/download/v3.15.8/protoc-3.15.8-linux-x86_64.zip"
 
 ANT_PATH = "apache-ant-1.9.16/bin"
 MAVEN_PATH = "apache-maven-3.6.3/bin"
 GRADLE_HOME = "gradle-7.4.2"
 GRADLE_PATH = f"{GRADLE_HOME}/bin"
+PROTOC_PATH = "protoc/bin"
 
 # This is an user-controlled options. If this is set to True, it will always
 # search for all subclasses of a target class when the auto-fuzz generation
