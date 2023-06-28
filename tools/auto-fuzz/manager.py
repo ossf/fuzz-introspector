@@ -253,10 +253,12 @@ def _maven_build_project(basedir, projectdir):
 
     # Patch pom.xml to use at least jdk 1.8
     cmd = [
-        "find ./ -name pom.xml -exec sed -i 's/<maven.compiler.source>1.5</<maven.compiler.source>1.8</g' {} \;",
-        "find ./ -name pom.xml -exec sed -i 's/<maven.compiler.source>1.6</<maven.compiler.source>1.8</g' {} \;",
-        "find ./ -name pom.xml -exec sed -i 's/<maven.compiler.target>1.5</<maven.compiler.target>1.8</g' {} \;",
-        "find ./ -name pom.xml -exec sed -i 's/<maven.compiler.target>1.6</<maven.compiler.target>1.8</g' {} \;",
+        "find ./ -name pom.xml -exec sed -i 's/compilerVersion>1.5</compilerVersion>1.8</g' {} \;",
+        "find ./ -name pom.xml -exec sed -i 's/compilerVersion>1.6</compilerVersion>1.8</g' {} \;",
+        "find ./ -name pom.xml -exec sed -i 's/source>1.5</source>1.8</g' {} \;",
+        "find ./ -name pom.xml -exec sed -i 's/source>1.6</source>1.8</g' {} \;",
+        "find ./ -name pom.xml -exec sed -i 's/target>1.5</target>1.8</g' {} \;",
+        "find ./ -name pom.xml -exec sed -i 's/target>1.6</target>1.8</g' {} \;",
         "find ./ -name pom.xml -exec sed -i 's/java15/java18/g' {} \;",
         "find ./ -name pom.xml -exec sed -i 's/java16/java18/g' {} \;",
         "find ./ -name pom.xml -exec sed -i 's/java-1.5/java-1.8/g' {} \;",
