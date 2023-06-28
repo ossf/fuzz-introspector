@@ -163,13 +163,8 @@ do
       find ./ -name pom.xml -exec sed -i 's/java16/java18/g' {} \;
       find ./ -name pom.xml -exec sed -i 's/java-1.5/java-1.8/g' {} \;
       find ./ -name pom.xml -exec sed -i 's/java-1.6/java-1.8/g' {} \;
-      MAVEN_ARGS="-Dmaven.test.skip=true -Djavac.src.version=15 -Djavac.target.version=15 --update-snapshots"
+      MAVEN_ARGS="-Dmaven.test.skip=true --update-snapshots -Dmaven.javadoc.skip=true"
       $MVN clean package $MAVEN_ARGS
-      if [[ $? != "0" ]]
-      then
-        MAVEN_ARGS="-Dmaven.test.skip=true -Djavac.src.version=8 -Djavac.target.version=8 --update-snapshots"
-        $MVN clean package $MAVEN_ARGS
-      fi
       SUCCESS=true
       break
     elif test -f "build.xml"
