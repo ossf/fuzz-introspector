@@ -172,19 +172,28 @@ def _print_summary_of_trial_run(trial_run,
                trial_run['heuristics-used'], trial_run['function-target']))
 
 
-def get_top_trial_run(trial_runs):
+def get_top_trial_run(trial_runs, rank_cov_diff: bool = False):
     curr_top = None
     top_dir = None
     for subdir in trial_runs:
         sd = trial_runs[subdir]
-        if sd['max_cov'] < 0:
+        if sd['max_cov'] < 0 or sd['min_cov'] < 0:
             continue
         if curr_top is None:
             curr_top = sd
             top_dir = subdir
-        if sd['max_cov'] > curr_top['max_cov']:
+
+        if rank_cov_diff:
+            rank_key = sd['max_cov'] - sd['min_cov']
+            curr_top_key = curr_top['max_cov'] - curr_top['min_cov']
+        else:
+            rank_key = sd['max_cov']
+            curr_top_key = curr_top['max_cov']
+
+        if rank_key > curr_top_key:
             curr_top = sd
             top_dir = subdir
+
     return top_dir
 
 
@@ -195,7 +204,7 @@ def get_cov_ranked_trial_runs(trial_runs):
     return ranked_runs
 
 
-def run_on_all_dirs():
+def run_on_all_dirs(rank_cov_diff):
     for autofuzz_project_dir in os.listdir("."):
         if "autofuzz-" in autofuzz_project_dir:
             proj_yaml, trial_runs = interpret_autofuzz_run(
@@ -204,7 +213,7 @@ def run_on_all_dirs():
                 continue
             if len(trial_runs) == 0:
                 continue
-            top_run = get_top_trial_run(trial_runs)
+            top_run = get_top_trial_run(trial_runs, rank_cov_diff)
             if top_run is None:
                 continue
             _print_summary_of_trial_run(trial_runs[top_run],
@@ -357,6 +366,11 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
 
     all_parser = subparsers.add_parser(
         'all', help="Gets the max performer in all auto-fuzz runs.")
+    all_parser.add_argument(
+        "--rankdiff",
+        action="store_true",
+        help=("If set, the trial run will be ranked by"
+              "coverage difference instead of max coverage."))
 
     run_parser = subparsers.add_parser(
         'run', help="Handles activities with respect to individual runs")
@@ -551,7 +565,7 @@ def main():
     args = parser.parse_args()
 
     if args.command == 'all':
-        run_on_all_dirs()
+        run_on_all_dirs(args.rankdiff)
     elif args.command == 'run':
         extract_ranked(args.dir, args.to_rank)
     elif args.command == 'heuristics-summary':
