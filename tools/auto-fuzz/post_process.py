@@ -160,16 +160,18 @@ def _print_summary_of_trial_run(trial_run,
         if len(trial_name) < 21:
             trial_name = trial_name + " " * (21 - len(trial_name))
 
-        result = "%s :: %15s ::  %21s :: [%5s : %5s : %5s] :: %s :: %s :: %s" % (proj_name, autofuzz_project_dir, trial_name,
-                  str(trial_run['max_cov']), str(trial_run['min_cov']),
-                  str(trial_run['max_cov'] - trial_run['min_cov']), fuzz_path,
-                  trial_run['heuristics-used'], trial_run['function-target'])
+        result = "%s :: %15s ::  %21s :: [%5s : %5s : %5s] :: %s :: %s :: %s" % (
+            proj_name, autofuzz_project_dir, trial_name,
+            str(trial_run['max_cov']), str(trial_run['min_cov']),
+            str(trial_run['max_cov'] - trial_run['min_cov']), fuzz_path,
+            trial_run['heuristics-used'], trial_run['function-target'])
     else:
         # Print using space-sepratation between columns.
-        result = "%s %s %s %s %s %s %s %s %s" % (proj_name, autofuzz_project_dir, trial_name,
-                  str(trial_run['min_cov']), str(trial_run['max_cov']),
-                  str(trial_run['max_cov'] - trial_run['min_cov']), fuzz_path,
-                  trial_run['heuristics-used'], trial_run['function-target'])
+        result = "%s %s %s %s %s %s %s %s %s" % (
+            proj_name, autofuzz_project_dir, trial_name,
+            str(trial_run['min_cov']), str(trial_run['max_cov']),
+            str(trial_run['max_cov'] - trial_run['min_cov']), fuzz_path,
+            trial_run['heuristics-used'], trial_run['function-target'])
 
     if return_text:
         return result
@@ -232,12 +234,15 @@ def csv_for_all_dirs():
             proj_yaml, trial_runs = interpret_autofuzz_run(
                 autofuzz_project_dir)
             if proj_yaml is None:
-              continue
-            if not os.path.isfile(os.path.join(autofuzz_project_dir, "base-autofuzz", "oss-fuzz.out")):
+                continue
+            if not os.path.isfile(
+                    os.path.join(autofuzz_project_dir, "base-autofuzz",
+                                 "oss-fuzz.out")):
                 print("%s,Fail to build project" % (proj_yaml['main_repo']))
                 continue
             if len(trial_runs) == 0:
-                print("%s,Fail to generate any fuzzers" % (proj_yaml['main_repo']))
+                print("%s,Fail to generate any fuzzers" %
+                      (proj_yaml['main_repo']))
                 continue
             top_run = get_top_trial_run(trial_runs, True)
             result = "Success"
@@ -400,9 +405,8 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
     all_parser.add_argument(
         "--rankdiff",
         action="store_true",
-        help=(
-            "If set, the trial run will be ranked by"
-            "coverage difference instead of max coverage."))
+        help=("If set, the trial run will be ranked by"
+              "coverage difference instead of max coverage."))
 
     csv_parser = subparsers.add_parser(
         'csv', help="Gets csv result for all auto-fuzz runs.")
@@ -623,4 +627,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
