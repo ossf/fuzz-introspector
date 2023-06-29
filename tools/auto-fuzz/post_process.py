@@ -141,8 +141,7 @@ def _print_summary_of_trial_run(trial_run,
                                 proj_name,
                                 autofuzz_project_dir,
                                 additional="",
-                                print_in_ci=False,
-                                return_text=False):
+                                print_in_ci=False):
     trial_name = trial_run['name']
     python_fuzz_path = os.path.join(autofuzz_project_dir, trial_run['name'],
                                     "fuzz_1.py")
@@ -160,23 +159,18 @@ def _print_summary_of_trial_run(trial_run,
         if len(trial_name) < 21:
             trial_name = trial_name + " " * (21 - len(trial_name))
 
-        result = "%s :: %15s ::  %21s :: [%5s : %5s : %5s] :: %s :: %s :: %s" % (
-            proj_name, autofuzz_project_dir, trial_name,
-            str(trial_run['max_cov']), str(trial_run['min_cov']),
-            str(trial_run['max_cov'] - trial_run['min_cov']), fuzz_path,
-            trial_run['heuristics-used'], trial_run['function-target'])
+        print("%s :: %15s ::  %21s :: [%5s : %5s : %5s] :: %s :: %s :: %s" %
+              (proj_name, autofuzz_project_dir, trial_name,
+               str(trial_run['max_cov']), str(trial_run['min_cov']),
+               str(trial_run['max_cov'] - trial_run['min_cov']), fuzz_path,
+               trial_run['heuristics-used'], trial_run['function-target']))
     else:
         # Print using space-sepratation between columns.
-        result = "%s %s %s %s %s %s %s %s %s" % (
-            proj_name, autofuzz_project_dir, trial_name,
-            str(trial_run['min_cov']), str(trial_run['max_cov']),
-            str(trial_run['max_cov'] - trial_run['min_cov']), fuzz_path,
-            trial_run['heuristics-used'], trial_run['function-target'])
-
-    if return_text:
-        return result
-    else:
-        print(result)
+        print("%s %s %s %s %s %s %s %s %s" %
+              (proj_name, autofuzz_project_dir, trial_name,
+               str(trial_run['min_cov']), str(trial_run['max_cov']),
+               str(trial_run['max_cov'] - trial_run['min_cov']), fuzz_path,
+               trial_run['heuristics-used'], trial_run['function-target']))
 
 
 def get_top_trial_run(trial_runs, rank_cov_diff: bool = False):
@@ -229,6 +223,9 @@ def run_on_all_dirs(rank_cov_diff):
 
 
 def csv_for_all_dirs():
+    print(
+        "Project,Project Build Success?,Have Fuzzers?,Fuzzer Build Success?,Fuzzer Folder,Heuristic,Target Method,Min Cov,Max Cov,Max Diff"
+    )
     for autofuzz_project_dir in os.listdir("."):
         if "autofuzz-" in autofuzz_project_dir:
             proj_yaml, trial_runs = interpret_autofuzz_run(
@@ -238,23 +235,26 @@ def csv_for_all_dirs():
             if not os.path.isfile(
                     os.path.join(autofuzz_project_dir, "base-autofuzz",
                                  "oss-fuzz.out")):
-                print("%s,Fail to build project" % (proj_yaml['main_repo']))
+                print("%s,No,No,No" % (proj_yaml['main_repo']))
                 continue
             if len(trial_runs) == 0:
-                print("%s,Fail to generate any fuzzers" %
-                      (proj_yaml['main_repo']))
+                print("%s,Yes,No,No" % (proj_yaml['main_repo']))
                 continue
             top_run = get_top_trial_run(trial_runs, True)
-            result = "Success"
             if top_run is None:
-                result = "Fail to compile any generated fuzzer"
-                top_run = list(trial_runs.keys())[0]
-
-            best_stat = _print_summary_of_trial_run(trial_runs[top_run],
-                                                    proj_yaml['main_repo'],
-                                                    autofuzz_project_dir,
-                                                    return_text=True)
-            print("%s,%s,%s" % (proj_yaml['main_repo'], result, best_stat))
+                error_run = list(trial_runs.values())[0]
+                print("%s,Yes,Yes,No,%s,%s,%s" %
+                      (proj_yaml['main_repo'], error_run['name'],
+                       error_run['heuristics-used'],
+                       error_run['function-target'].replace(",", "/")))
+                continue
+            trial_run = trial_runs[top_run]
+            print("%s,Yes,Yes,Yes,%s,%s,%s,%s,%s,%s" %
+                  (proj_yaml['main_repo'], trial_run['name'],
+                   trial_run['heuristics-used'],
+                   trial_run['function-target'].replace(",", "/"),
+                   str(trial_run['min_cov']), str(trial_run['max_cov']),
+                   str(trial_run['max_cov'] - trial_run['min_cov'])))
 
 
 def heuristics_summary():
