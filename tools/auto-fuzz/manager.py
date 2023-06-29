@@ -283,7 +283,8 @@ def _maven_build_project(basedir, projectdir):
     # Build project with maven with default jdk
     cmd = [
         "mvn clean package dependency:copy-dependencies", "-DskipTests",
-        "-Dmaven.javadoc.skip=true", "--update-snapshots"
+        "-Dmaven.javadoc.skip=true", "--update-snapshots",
+        "-DoutputDirectory=lib"
     ]
     try:
         subprocess.check_call(" ".join(cmd),
@@ -461,17 +462,25 @@ def run_static_analysis_jvm(git_repo, basedir, project_name):
     # Retrieve path of all jar files
     jarfiles.append(os.path.abspath("../Fuzz.jar"))
     jarfiles.append("%s/*.jar" % jardir)
+    jarfiles_no_dependency = []
+    jarfiles_no_dependency.extend(jarfiles)
+    jarfiles.append("%s/lib/*.jar" % jardir)
     if project_type == "ant":
         for file in os.listdir(os.path.join(builddir, "build", "jar")):
             if file.endswith(".jar"):
                 shutil.copyfile(os.path.join(builddir, "build", "jar", file),
                                 os.path.join(jardir, file))
     else:
+        os.makedirs("%s/lib" % jardir, exist_ok=True)
         for root, _, files in os.walk(builddir):
             for file in [file for file in files if file.endswith(".jar")]:
                 if "test" not in file and "sources" not in file:
+                    if root.endswith("lib"):
+                        dst_path = os.path.join(jardir, "lib", file)
+                    else:
+                        dst_path = os.path.join(jardir, file)
                     shutil.copyfile(os.path.abspath(os.path.join(root, file)),
-                                    os.path.join(jardir, file))
+                                    dst_path)
 
     # Compile and package fuzzer to jar file
     cmd = [
@@ -490,8 +499,8 @@ def run_static_analysis_jvm(git_repo, basedir, project_name):
 
     # Run the java frontend static analysis
     cmd = [
-        "./run.sh", "--jarfile", ":".join(jarfiles), "--entryclass", "Fuzz",
-        "--src", projectdir, "--autofuzz"
+        "./run.sh", "--jarfile", ":".join(jarfiles_no_dependency),
+        "--entryclass", "Fuzz", "--src", projectdir, "--autofuzz"
     ]
     try:
         subprocess.check_call(" ".join(cmd),
