@@ -282,8 +282,8 @@ def _maven_build_project(basedir, projectdir):
 
     # Build project with maven with default jdk
     cmd = [
-        "mvn clean package", "-DskipTests", "-Dmaven.javadoc.skip=true",
-        "--update-snapshots"
+        "mvn clean package dependency:copy-dependencies", "-DskipTests",
+        "-Dmaven.javadoc.skip=true", "--update-snapshots"
     ]
     try:
         subprocess.check_call(" ".join(cmd),

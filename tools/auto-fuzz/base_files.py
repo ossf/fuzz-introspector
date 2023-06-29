@@ -162,7 +162,7 @@ do
       find ./ -name pom.xml -exec sed -i 's/java-1.5/java-1.8/g' {} \;
       find ./ -name pom.xml -exec sed -i 's/java-1.6/java-1.8/g' {} \;
       MAVEN_ARGS="-Dmaven.test.skip=true --update-snapshots -Dmaven.javadoc.skip=true"
-      $MVN clean package $MAVEN_ARGS
+      $MVN clean package dependency:copy-dependencies $MAVEN_ARGS
       SUCCESS=true
       break
     elif test -f "build.gradle"
