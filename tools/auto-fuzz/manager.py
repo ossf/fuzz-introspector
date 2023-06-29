@@ -283,8 +283,8 @@ def _maven_build_project(basedir, projectdir):
     # Build project with maven with default jdk
     cmd = [
         "mvn clean package dependency:copy-dependencies", "-DskipTests",
-         "-Dmaven.javadoc.skip=true", "--update-snapshots",
-         "-DoutputDirectory=lib"
+        "-Dmaven.javadoc.skip=true", "--update-snapshots",
+        "-DoutputDirectory=lib"
     ]
     try:
         subprocess.check_call(" ".join(cmd),
@@ -471,7 +471,7 @@ def run_static_analysis_jvm(git_repo, basedir, project_name):
                 shutil.copyfile(os.path.join(builddir, "build", "jar", file),
                                 os.path.join(jardir, file))
     else:
-        os.makedirs("%s/lib" % jardir, exist_ok = True)
+        os.makedirs("%s/lib" % jardir, exist_ok=True)
         for root, _, files in os.walk(builddir):
             for file in [file for file in files if file.endswith(".jar")]:
                 if "test" not in file and "sources" not in file:
@@ -499,8 +499,8 @@ def run_static_analysis_jvm(git_repo, basedir, project_name):
 
     # Run the java frontend static analysis
     cmd = [
-        "./run.sh", "--jarfile", ":".join(jarfiles_no_dependency), "--entryclass", "Fuzz",
-        "--src", projectdir, "--autofuzz"
+        "./run.sh", "--jarfile", ":".join(jarfiles_no_dependency),
+        "--entryclass", "Fuzz", "--src", projectdir, "--autofuzz"
     ]
     try:
         subprocess.check_call(" ".join(cmd),
