@@ -369,10 +369,8 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
     all_parser.add_argument(
         "--rankdiff",
         action="store_true",
-        help=(
-            "If set, the trial run will be ranked by"
-            "coverage difference instead of max coverage."))
-
+        help=("If set, the trial run will be ranked by"
+              "coverage difference instead of max coverage."))
 
     run_parser = subparsers.add_parser(
         'run', help="Handles activities with respect to individual runs")
@@ -588,4 +586,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
