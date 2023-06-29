@@ -220,6 +220,7 @@ def _ant_build_project(basedir, projectdir):
 
     # Set environment variable
     env_var = os.environ.copy()
+    env_var['JAVA_HOME'] = os.path.join(basedir, "jdk-15", "jdk-15.0.2")
     env_var['PATH'] = os.path.join(
         basedir, constants.ANT_PATH) + ":" + os.path.join(
             basedir, constants.PROTOC_PATH) + ":" + env_var['PATH']
@@ -250,6 +251,7 @@ def _maven_build_project(basedir, projectdir):
 
     # Set environment variable
     env_var = os.environ.copy()
+    env_var['JAVA_HOME'] = os.path.join(basedir, "jdk-15", "jdk-15.0.2")
     env_var['PATH'] = os.path.join(
         basedir, constants.MAVEN_PATH) + ":" + os.path.join(
             basedir, constants.PROTOC_PATH) + ":" + env_var['PATH']
@@ -311,6 +313,7 @@ def _gradle_build_project(basedir, projectdir):
     # Set environment variable
     env_var = os.environ.copy()
     env_var['GRADLE_HOME'] = os.path.join(basedir, constants.GRADLE_HOME)
+    env_var['JAVA_HOME'] = os.path.join(basedir, "jdk-15", "jdk-15.0.2")
     env_var['PATH'] = os.path.join(
         basedir, constants.GRADLE_PATH) + ":" + os.path.join(
             basedir, constants.PROTOC_PATH) + ":" + env_var['PATH']
@@ -387,6 +390,11 @@ def build_jvm_project(basedir, projectdir, proj_name):
     # Find project subfolder if build properties not in the outtermost
     # directory
     builddir = find_project_build_folder(projectdir, proj_name)
+
+    # Prepare OpenJDK 15
+    os.makedirs(os.path.join(basedir, "jdk-15"), exist_ok=True)
+    with tarfile.open(os.path.join(basedir, "jdk.tar.gz"), "r:gz") as jf:
+        jf.extractall(os.path.join(basedir, "jdk-15"))
 
     # Prepare protoc
     os.makedirs(os.path.join(basedir, "protoc"), exist_ok=True)
@@ -858,6 +866,11 @@ def autofuzz_project_from_github(github_url,
     # target method filtering in the target generation stage. Some project requires
     # protoc to generate java code, so protoc is also downloaded here.
     if language == "jvm":
+        # Download OpenJDK 15:
+        target_jdk_path = os.path.join(oss_fuzz_base_project.project_folder,
+                                       "jdk.tar.gz")
+        with open(target_jdk_path, 'wb') as jf:
+            jf.write(requests.get(constants.JDK_URL).content)
         # Download Ant
         target_ant_path = os.path.join(oss_fuzz_base_project.project_folder,
                                        "ant.zip")
