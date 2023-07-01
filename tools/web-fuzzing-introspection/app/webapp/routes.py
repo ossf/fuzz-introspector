@@ -350,6 +350,8 @@ def far_reach_but_low_coverage():
             function.accummulated_cyclomatic_complexity,
             'function-arguments':
             function.function_arguments,
+            'return-type':
+            function.return_type,
             'is-reached':
             function.is_reached,
             'reached-by-fuzzers':
