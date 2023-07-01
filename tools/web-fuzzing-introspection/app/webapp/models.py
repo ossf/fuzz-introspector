@@ -90,7 +90,8 @@ class Function:
                  accummulated_cyclomatic_complexity=0,
                  llvm_instruction_count=0,
                  undiscovered_complexity=0,
-                 function_arguments=[]):
+                 function_arguments=[],
+                 return_type=""):
         self.name = name
         self.function_filename = function_filename
         self.project = project
@@ -103,6 +104,7 @@ class Function:
         self.llvm_instruction_count = llvm_instruction_count
         self.undiscovered_complexity = undiscovered_complexity
         self.function_arguments = function_arguments
+        self.return_type = return_type
 
 
 class BranchBlocker:
