@@ -584,8 +584,15 @@ def cleanup_base_directory(base_dir, project_name):
     """Cleans up the base directory, removing unnecessary files after
     the fuzzers auto-generation and checking process.
     """
-    file_to_clean = ['Fuzz.jar', 'Fuzz.class', 'ant.zip', 'gradle.zip', 'maven.zip', 'protoc.zip', 'jdk.tar.gz', 'work/commons-lang3.jar', 'work/jazzer', 'work/jazzer.tar.gz', 'work/jazzer_standalone.jar']
-    dir_to_clean = ['apache-maven-3.6.3', 'apache-ant-1.9.16', 'gradle-7.4.2', 'jdk-15', 'protoc', project_name, 'work/jar', 'work/proj']
+    file_to_clean = [
+        'Fuzz.jar', 'Fuzz.class', 'ant.zip', 'gradle.zip', 'maven.zip',
+        'protoc.zip', 'jdk.tar.gz', 'work/commons-lang3.jar', 'work/jazzer',
+        'work/jazzer.tar.gz', 'work/jazzer_standalone.jar'
+    ]
+    dir_to_clean = [
+        'apache-maven-3.6.3', 'apache-ant-1.9.16', 'gradle-7.4.2', 'jdk-15',
+        'protoc', project_name, 'work/jar', 'work/proj'
+    ]
 
     for file in file_to_clean:
         if os.path.isfile(os.path.join(base_dir, file)):
@@ -1001,7 +1008,8 @@ def autofuzz_project_from_github(github_url,
 
     # Clean base directory for the project
     print("Cleaning base directory for %s" % (github_url))
-    cleanup_base_directory(base_oss_fuzz_project_dir, oss_fuzz_base_project.project_name)
+    cleanup_base_directory(base_oss_fuzz_project_dir,
+                           oss_fuzz_base_project.project_name)
 
     return True
 
