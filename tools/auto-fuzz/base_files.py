@@ -169,6 +169,7 @@ do
     then
       chmod +x ./gradlew
       ./gradlew clean build -x test
+      ./gradlew --stop
       SUCCESS=true
       break
     elif test -f "build.xml"

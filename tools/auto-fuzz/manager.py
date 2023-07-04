@@ -319,7 +319,9 @@ def _gradle_build_project(basedir, projectdir):
             basedir, constants.PROTOC_PATH) + ":" + env_var['PATH']
 
     # Build project with maven
-    cmd = ["chmod +x gradlew", "./gradlew clean build -x test"]
+    cmd = [
+        "chmod +x gradlew", "./gradlew clean build -x test", "./gradlew --stop"
+    ]
     try:
         subprocess.check_call(" && ".join(cmd),
                               shell=True,
