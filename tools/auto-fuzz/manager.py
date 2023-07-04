@@ -582,6 +582,29 @@ def cleanup_build_cache():
                           stderr=subprocess.DEVNULL)
 
 
+def cleanup_base_directory(base_dir, project_name):
+    """Cleans up the base directory, removing unnecessary files after
+    the fuzzers auto-generation and checking process.
+    """
+    file_to_clean = [
+        'Fuzz.jar', 'Fuzz.class', 'ant.zip', 'gradle.zip', 'maven.zip',
+        'protoc.zip', 'jdk.tar.gz', 'work/commons-lang3.jar', 'work/jazzer',
+        'work/jazzer.tar.gz', 'work/jazzer_standalone.jar'
+    ]
+    dir_to_clean = [
+        'apache-maven-3.6.3', 'apache-ant-1.9.16', 'gradle-7.4.2', 'jdk-15',
+        'protoc', project_name, 'work/jar', 'work/proj'
+    ]
+
+    for file in file_to_clean:
+        if os.path.isfile(os.path.join(base_dir, file)):
+            os.remove(os.path.join(base_dir, file))
+
+    for dir in dir_to_clean:
+        if os.path.isdir(os.path.join(base_dir, dir)):
+            shutil.rmtree(os.path.join(base_dir, dir))
+
+
 def build_and_test_single_possible_target(idx_folder,
                                           idx,
                                           oss_fuzz_base_project,
@@ -933,11 +956,12 @@ def autofuzz_project_from_github(github_url,
         else:
             return False
 
-    # Check basic fuzzer
+    # Check basic fuzzer and clean it afterwards
     res = oss_fuzz_manager.copy_and_build_project(
         oss_fuzz_base_project.project_folder,
         OSS_FUZZ_BASE,
-        log_dir=base_oss_fuzz_project_dir)
+        log_dir=base_oss_fuzz_project_dir,
+        base_autofuzz=True)
     if not res:
         return False
 
@@ -983,6 +1007,11 @@ def autofuzz_project_from_github(github_url,
                 print("No introspector generated")
         else:
             print("Fail to merge project")
+
+    # Clean base directory for the project
+    print("Cleaning base directory for %s" % (github_url))
+    cleanup_base_directory(base_oss_fuzz_project_dir,
+                           oss_fuzz_base_project.project_name)
 
     return True
 
