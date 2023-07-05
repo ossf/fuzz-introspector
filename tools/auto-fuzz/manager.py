@@ -342,7 +342,8 @@ def _gradle_build_project(basedir, projectdir):
         for dir in dirs:
             build_path = os.path.join(root, dir, "build", "classes", "java",
                                       "main")
-            if os.path.exists(build_path):
+            jar_path = os.path.join(root, dir, "build", "libs")
+            if os.path.exists(build_path) and not os.path.exists(jar_path):
                 possible_build_path.append(os.path.abspath(build_path))
 
     # Add in jar packing command for all possible build path
@@ -371,19 +372,19 @@ def _gradle_build_project(basedir, projectdir):
 def find_project_build_folder(dir, proj_name):
     # Search for current directory first
     currdir = os.listdir(dir)
-    if "pom.xml" in currdir or "build.gradle" in currdir or "build.xml" in currdir:
+    if "pom.xml" in currdir or "build.gradle" in currdir or "build.xml" in currdir or "build.gradle.kts" in currdir:
         return os.path.abspath(dir)
 
     # Search for sub directory with name same as project name
     for subdir in currdir:
         if os.path.isdir(os.path.join(dir, subdir)) and subdir == proj_name:
             subdir_list = os.listdir(os.path.join(dir, subdir))
-            if "pom.xml" in subdir_list or "build.gradle" in subdir_list or "build.xml" in subdir_list:
+            if "pom.xml" in subdir_list or "build.gradle" in subdir_list or "build.xml" in subdir_list or "build.gradle.kts" in currdir:
                 return os.path.abspath(os.path.join(dir, subdir))
 
     # Recursively look for subdirectory that contains build property file
     for root, _, files in os.walk(dir):
-        if "pom.xml" in files or "build.gradle" in files or "build.xml" in files:
+        if "pom.xml" in files or "build.gradle" in files or "build.xml" in files or "build.gradle.kts" in files:
             return os.path.abspath(root)
 
     return None
@@ -413,10 +414,15 @@ def build_jvm_project(basedir, projectdir, proj_name):
             # Maven project
             build_ret = _maven_build_project(basedir, builddir)
             return ("maven", build_ret, builddir, [])
-        elif os.path.exists(os.path.join(builddir, "build.gradle")):
+        elif os.path.exists(os.path.join(
+                builddir, "build.gradle")) or os.path.exists(
+                    os.path.join(builddir, "build.gradle.kts")):
             # Gradle project
             build_ret = _gradle_build_project(basedir, builddir)
-            jarfiles = [os.path.join(builddir, "proj.jar")]
+            if os.path.exists(os.path.join(builddir, "proj.jar")):
+                jarfiles = [os.path.join(builddir, "proj.jar")]
+            else:
+                jarfiles = []
             return ("gradle", build_ret, builddir, jarfiles)
         elif os.path.exists(os.path.join(builddir, "build.xml")):
             # Ant project

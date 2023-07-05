@@ -167,7 +167,7 @@ do
       $MVN clean package dependency:copy-dependencies $MAVEN_ARGS
       SUCCESS=true
       break
-    elif test -f "build.gradle"
+    elif test -f "build.gradle" || test -f "build.gradle.kts"
     then
       chmod +x ./gradlew
       ./gradlew clean build -x test
