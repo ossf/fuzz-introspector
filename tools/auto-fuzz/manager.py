@@ -194,7 +194,8 @@ def run_static_analysis_python(git_repo, basedir, project_name):
     # Copy the project directory from the basedir
     try:
         shutil.copytree(os.path.join(basedir, project_name),
-                        os.path.join(os.getcwd(), project_name))
+                        os.path.join(os.getcwd(), project_name),
+                        symlinks=True)
     except:
         print("Fail to retrieve github directory.")
         return False
@@ -286,7 +287,7 @@ def _maven_build_project(basedir, projectdir):
     cmd = [
         "mvn clean package dependency:copy-dependencies", "-DskipTests",
         "-Dmaven.javadoc.skip=true", "--update-snapshots",
-        "-DoutputDirectory=lib -Dpmd.skip=true"
+        "-DoutputDirectory=lib", "-Dpmd.skip=true"
     ]
     try:
         subprocess.check_call(" ".join(cmd),
@@ -437,7 +438,8 @@ def run_static_analysis_jvm(git_repo, basedir, project_name):
     # Copy the project directory from the basedir
     try:
         shutil.copytree(os.path.join(basedir, project_name),
-                        os.path.join(os.getcwd(), "proj"))
+                        os.path.join(os.getcwd(), "proj"),
+                        symlinks=True)
     except:
         print("Fail to retrieve github directory.")
         return False
