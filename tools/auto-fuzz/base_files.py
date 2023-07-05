@@ -142,11 +142,13 @@ done"""
 def gen_builder_1_jvm():
     BUILD_LICENSE = "#!/bin/bash -eu\n" + BASH_LICENSE
     BUILD_SCRIPT = """SUCCESS=false
+BASEDIR=$(pwd)
 for dir in $(ls -R)
 do
+  cd $BASEDIR
   if [[ $dir == *: ]]
   then
-    dir=$(realpath ${dir%*:})
+    dir=${dir%*:}
     cd $dir
     chmod +x $SRC/protoc/bin/protoc
     if test -f "pom.xml"
@@ -181,17 +183,13 @@ do
   fi
 done
 
-if [[ $? != "0" ]]
-then
-  echo "Unknown project type"
-  exit 127
-fi
-
 if [ "$SUCCESS" = false ]
 then
   echo "Unknown project type"
   exit 127
 fi
+
+cd $BASEDIR
 
 JARFILE_LIST=
 for JARFILE in $(find ./  -name *.jar)
