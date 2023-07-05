@@ -413,7 +413,9 @@ def build_jvm_project(basedir, projectdir, proj_name):
             # Maven project
             build_ret = _maven_build_project(basedir, builddir)
             return ("maven", build_ret, builddir, [])
-        elif os.path.exists(os.path.join(builddir, "build.gradle")) or os.path.exists(os.path.join(builddir, "build.gradle.kts")):
+        elif os.path.exists(os.path.join(
+                builddir, "build.gradle")) or os.path.exists(
+                    os.path.join(builddir, "build.gradle.kts")):
             # Gradle project
             build_ret = _gradle_build_project(basedir, builddir)
             if os.path.exists(os.path.join(builddir, "proj.jar")):
