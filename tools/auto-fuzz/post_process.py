@@ -243,10 +243,12 @@ def csv_for_all_dirs():
             top_run = get_top_trial_run(trial_runs, True)
             if top_run is None:
                 error_run = list(trial_runs.values())[0]
+                target = error_run['function-target']
+                if "," in target:
+                    target = target.replace(",", "/")
                 print("%s,Yes,Yes,No,%s,%s,%s" %
                       (proj_yaml['main_repo'], error_run['name'],
-                       error_run['heuristics-used'],
-                       error_run['function-target'].replace(",", "/")))
+                       error_run['heuristics-used'], target))
                 continue
             trial_run = trial_runs[top_run]
             print("%s,Yes,Yes,Yes,%s,%s,%s,%s,%s,%s" %
