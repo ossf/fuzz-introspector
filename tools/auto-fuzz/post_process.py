@@ -248,8 +248,7 @@ def csv_for_all_dirs():
                     target = target.replace(",", "/")
                 print("%s,Yes,Yes,No,%s,%s,%s" %
                       (proj_yaml['main_repo'], error_run['name'],
-                       error_run['heuristics-used'],
-                       target))
+                       error_run['heuristics-used'], target))
                 continue
             trial_run = trial_runs[top_run]
             print("%s,Yes,Yes,Yes,%s,%s,%s,%s,%s,%s" %
