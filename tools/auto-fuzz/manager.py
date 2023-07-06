@@ -321,7 +321,8 @@ def _gradle_build_project(basedir, projectdir):
 
     # Build project with maven
     cmd = [
-        "chmod +x gradlew", "./gradlew clean build -x test", "./gradlew --stop"
+        "chmod +x gradlew", "./gradlew clean build -x test -x spotlessCheck",
+        "./gradlew --stop"
     ]
     try:
         subprocess.check_call(" && ".join(cmd),

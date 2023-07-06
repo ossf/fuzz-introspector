@@ -170,7 +170,7 @@ do
     elif test -f "build.gradle" || test -f "build.gradle.kts"
     then
       chmod +x ./gradlew
-      ./gradlew clean build -x test
+      ./gradlew clean build -x test -x spotlessCheck
       ./gradlew --stop
       SUCCESS=true
       break
