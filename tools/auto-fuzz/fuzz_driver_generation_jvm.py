@@ -315,7 +315,7 @@ def _handle_argument(argType,
     elif argType == "float" or argType == "java.lang.Float":
         return ["data.consumeFloat()"]
     elif argType == "char" or argType == "java.lang.Character":
-        return ["data.consumeCharacter()"]
+        return ["data.consumeCharNoSurrogates()"]
     elif argType == "java.lang.String":
         return ["data.consumeString(100)"]
     elif argType == "java.lang.String[]":
