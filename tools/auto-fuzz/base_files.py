@@ -171,7 +171,12 @@ do
     elif test -f "build.gradle" || test -f "build.gradle.kts"
     then
       chmod +x ./gradlew
-      ./gradlew clean build -x test -x spotlessCheck
+      if ./gradlew tasks --all | grep -qw "^spotlessCheck"
+      then
+        ./gradlew clean build -x test -x spotlessCheck
+      else
+        ./gradlew clean build -x test
+      fi
       ./gradlew --stop
       SUCCESS=true
       break
