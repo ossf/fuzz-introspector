@@ -322,7 +322,13 @@ def _gradle_build_project(basedir, projectdir):
 
     # Build project with maven
     cmd = [
-        "chmod +x gradlew", "./gradlew clean build -x test -x spotlessCheck",
+        "chmod +x gradlew",
+        """if ./gradlew tasks --all | grep -qw "^spotlessCheck";
+        then
+          ./gradlew clean build -x test -x spotlessCheck;
+        else
+          ./gradlew clean build -x test;
+        fi""",
         "./gradlew --stop"
     ]
     try:
