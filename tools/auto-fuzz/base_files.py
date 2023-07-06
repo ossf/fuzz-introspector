@@ -163,7 +163,8 @@ do
       find ./ -name pom.xml -exec sed -i 's/java16/java18/g' {} \;
       find ./ -name pom.xml -exec sed -i 's/java-1.5/java-1.8/g' {} \;
       find ./ -name pom.xml -exec sed -i 's/java-1.6/java-1.8/g' {} \;
-      MAVEN_ARGS="-Dmaven.test.skip=true --update-snapshots -Dmaven.javadoc.skip=true -Dpmd.skip=true"
+      MAVEN_ARGS="-Dmaven.test.skip=true --update-snapshots -Dmaven.javadoc.skip=true "
+      MAVEN_ARGS=$MAVEN_ARGS"-Dpmd.skip=true -Dencoding=UTF-8 -Dmaven.antrun.skip=true"
       $MVN clean package dependency:copy-dependencies $MAVEN_ARGS
       SUCCESS=true
       break
