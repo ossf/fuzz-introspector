@@ -116,13 +116,7 @@ def copy_and_build_project(src_folder,
         f.write(err)
 
     if base_autofuzz:
-        try:
-            shutil.rmtree(
-                os.path.join(oss_fuzz_base, "projects", "base-autofuzz"))
-            cleanup_project("base-autofuzz", oss_fuzz_base)
-        except shutil.Error:
-            # Pass if base_autofuzz cleaning is failed
-            pass
+        cleanup_project("base-autofuzz", oss_fuzz_base)
 
     if b"Building fuzzers failed" in err:
         return False
@@ -132,7 +126,8 @@ def copy_and_build_project(src_folder,
 
 def cleanup_project(proj_name, oss_fuzz_base):
     """Remove everything in the /out/ folder of a project. Does this by calling
-    docker run in the same way that OSS-Fuzz handles its Docker images."""
+    docker run in the same way that OSS-Fuzz handles its Docker images.
+    Also remove the copied oss-fuzz project folder."""
     project_out = os.path.join(oss_fuzz_base, "build", "out", proj_name)
     oss_fuzz_project_docker_args = [
         '-v', f'{project_out}:/out', '-t', f'gcr.io/oss-fuzz/{proj_name}',
@@ -157,4 +152,10 @@ def cleanup_project(proj_name, oss_fuzz_base):
                               stdout=subprocess.DEVNULL)
     except subprocess.CalledProcessError:
         pass
+
+    try:
+        shutil.rmtree(os.path.join(oss_fuzz_base, "projects", proj_name))
+    except shutil.Error:
+        pass
+
     return True
