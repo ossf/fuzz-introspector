@@ -328,8 +328,7 @@ def _gradle_build_project(basedir, projectdir):
           ./gradlew clean build -x test -x spotlessCheck;
         else
           ./gradlew clean build -x test;
-        fi""",
-        "./gradlew --stop"
+        fi""", "./gradlew --stop"
     ]
     try:
         subprocess.check_call(" && ".join(cmd),
