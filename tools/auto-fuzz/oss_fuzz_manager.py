@@ -154,8 +154,7 @@ def cleanup_project(proj_name, oss_fuzz_base):
         pass
 
     try:
-        shutil.rmtree(
-            os.path.join(oss_fuzz_base, "projects", proj_name))
+        shutil.rmtree(os.path.join(oss_fuzz_base, "projects", proj_name))
     except shutil.Error:
         pass
 
