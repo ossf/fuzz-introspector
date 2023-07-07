@@ -125,7 +125,7 @@ ENV ANT $SRC/ant/apache-ant-1.9.16/bin/ant
 ENV MVN $SRC/maven/apache-maven-3.6.3/bin/mvn
 ENV GRADLE_HOME $SRC/gradle/gradle-7.4.2
 ENV PATH="$SRC/gradle/gradle-7.4.2/bin:$SRC/protoc/bin:$PATH"
-ENV JAVA_HOME="$SRC/jdk-19"
+ENV JAVA_HOME="$SRC/jdk-17"
 #RUN git clone --depth 1 %s %s
 COPY %s %s
 COPY *.sh *.java $SRC/
@@ -172,8 +172,6 @@ do
       find ./ -name pom.xml -exec sed -i 's/java16/java18/g' {} \;
       find ./ -name pom.xml -exec sed -i 's/java-1.5/java-1.8/g' {} \;
       find ./ -name pom.xml -exec sed -i 's/java-1.6/java-1.8/g' {} \;
-      MAVEN_ARGS="-Dmaven.test.skip=true -Dmaven.javadoc.skip=true "
-      MAVEN_ARGS=$MAVEN_ARGS"-Dpmd.skip=true -Dencoding=UTF-8 -Dmaven.antrun.skip=true"
       mkdir -p ~/.m2
       echo "<toolchains><toolchain><type>jdk</type><provides><version>1.8</version></provides>" > ~/.m2/toolchains.xml
       echo "<configuration><jdkHome>\${env.JAVA_HOME}</jdkHome></configuration></toolchain>" >> ~/.m2/toolchains.xml
@@ -184,8 +182,6 @@ do
       echo "<toolchain><type>jdk</type><provides><version>15</version></provides>" >> ~/.m2/toolchains.xml
       echo "<configuration><jdkHome>\${env.JAVA_HOME}</jdkHome></configuration></toolchain>" >> ~/.m2/toolchains.xml
       echo "<toolchain><type>jdk</type><provides><version>17</version></provides>" >> ~/.m2/toolchains.xml
-      echo "<configuration><jdkHome>\${env.JAVA_HOME}</jdkHome></configuration></toolchain>" >> ~/.m2/toolchains.xml
-      echo "<toolchain><type>jdk</type><provides><version>19</version></provides>" >> ~/.m2/toolchains.xml
       echo "<configuration><jdkHome>\${env.JAVA_HOME}</jdkHome></configuration></toolchain>" >> ~/.m2/toolchains.xml
       echo "</toolchains>" >> ~/.m2/toolchains.xml
       $MVN clean package -Dmaven.javadoc.skip=true -DskipTests=true -Dpmd.skip=true -Dencoding=UTF-8 \

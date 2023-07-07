@@ -18,7 +18,7 @@ MAX_THREADS = 4
 
 BATCH_SIZE_BEFORE_DOCKER_CLEAN = 40
 
-JDK_URL = "https://download.java.net/openjdk/jdk19/ri/openjdk-19+36_linux-x64_bin.tar.gz"
+JDK_URL = "https://download.java.net/openjdk/jdk17/ri/openjdk-17+35_linux-x64_bin.tar.gz"
 ANT_URL = "https://dlcdn.apache.org//ant/binaries/apache-ant-1.9.16-bin.zip"
 MAVEN_URL = "https://archive.apache.org/dist/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.zip"
 GRADLE_URL = "https://services.gradle.org/distributions/gradle-7.4.2-bin.zip"
