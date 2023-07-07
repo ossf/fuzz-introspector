@@ -13,6 +13,8 @@
 # limitations under the License.
 
 # License for bash script or python file
+import constants
+
 BASH_LICENSE = """
 # Copyright 2023 Google LLC
 #
@@ -105,7 +107,11 @@ WORKDIR $SRC/%s
 
 def gen_dockerfile_jvm(github_url, project_name):
     DOCKER_STEPS = """FROM gcr.io/oss-fuzz-base/base-builder-jvm
-#RUN curl -L https://archive.apache.org/dist/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.zip -o maven.zip && unzip maven.zip -d $SRC/maven && rm -rf maven.zip
+#RUN curl -L %s -o ant.zip && unzip ant.zip -d $SRC/maven && rm -rf ant.zip
+#RUN curl -L %s -o maven.zip && unzip maven.zip -d $SRC/maven && rm -rf maven.zip
+#RUN curl -L %s -o gradle.zip && unzip gradle.zip -d $SRC/maven && rm -rf gradle.zip
+#RUN curl -L %s -o protoc.zip && mkdir -p $SRC/protoc && unzip protoc.zip -d $SRC/maven && rm -rf protoc.zip
+RUN curl -L %s -o jdk.tar.gz && tar zxf jdk.tar.gz && rm -rf jdk.tar.gz
 COPY ant.zip $SRC/ant.zip
 COPY maven.zip $SRC/maven.zip
 COPY gradle.zip $SRC/gradle.zip
@@ -119,11 +125,14 @@ ENV ANT $SRC/ant/apache-ant-1.9.16/bin/ant
 ENV MVN $SRC/maven/apache-maven-3.6.3/bin/mvn
 ENV GRADLE_HOME $SRC/gradle/gradle-7.4.2
 ENV PATH="$SRC/gradle/gradle-7.4.2/bin:$SRC/protoc/bin:$PATH"
+ENV JAVA_HOME="$SRC/jdk-17"
 #RUN git clone --depth 1 %s %s
 COPY %s %s
 COPY *.sh *.java $SRC/
 WORKDIR $SRC/%s
-""" % (github_url, project_name, project_name, project_name, project_name)
+""" % (constants.ANT_URL, constants.MAVEN_URL, constants.GRADLE_URL,
+       constants.PROTOC_URL, constants.JDK_URL, github_url, project_name,
+       project_name, project_name, project_name)
 
     return BASH_LICENSE + "\n" + DOCKER_STEPS
 
@@ -163,9 +172,20 @@ do
       find ./ -name pom.xml -exec sed -i 's/java16/java18/g' {} \;
       find ./ -name pom.xml -exec sed -i 's/java-1.5/java-1.8/g' {} \;
       find ./ -name pom.xml -exec sed -i 's/java-1.6/java-1.8/g' {} \;
-      MAVEN_ARGS="-Dmaven.test.skip=true --update-snapshots -Dmaven.javadoc.skip=true "
-      MAVEN_ARGS=$MAVEN_ARGS"-Dpmd.skip=true -Dencoding=UTF-8 -Dmaven.antrun.skip=true"
-      $MVN clean package dependency:copy-dependencies $MAVEN_ARGS
+      mkdir -p ~/.m2
+      echo "<toolchains><toolchain><type>jdk</type><provides><version>1.8</version></provides>" > ~/.m2/toolchains.xml
+      echo "<configuration><jdkHome>\${env.JAVA_HOME}</jdkHome></configuration></toolchain>" >> ~/.m2/toolchains.xml
+      echo "<toolchain><type>jdk</type><provides><version>11</version></provides>" >> ~/.m2/toolchains.xml
+      echo "<configuration><jdkHome>\${env.JAVA_HOME}</jdkHome></configuration></toolchain>" >> ~/.m2/toolchains.xml
+      echo "<toolchain><type>jdk</type><provides><version>14</version></provides>" >> ~/.m2/toolchains.xml
+      echo "<configuration><jdkHome>\${env.JAVA_HOME}</jdkHome></configuration></toolchain>" >> ~/.m2/toolchains.xml
+      echo "<toolchain><type>jdk</type><provides><version>15</version></provides>" >> ~/.m2/toolchains.xml
+      echo "<configuration><jdkHome>\${env.JAVA_HOME}</jdkHome></configuration></toolchain>" >> ~/.m2/toolchains.xml
+      echo "<toolchain><type>jdk</type><provides><version>17</version></provides>" >> ~/.m2/toolchains.xml
+      echo "<configuration><jdkHome>\${env.JAVA_HOME}</jdkHome></configuration></toolchain>" >> ~/.m2/toolchains.xml
+      echo "</toolchains>" >> ~/.m2/toolchains.xml
+      $MVN clean package -Dmaven.javadoc.skip=true -DskipTests=true -Dpmd.skip=true -Dencoding=UTF-8 \
+      -Dmaven.antrun.skip=true -Dcheckstyle.skip=true dependency:copy-dependencies
       SUCCESS=true
       break
     elif test -f "build.gradle" || test -f "build.gradle.kts"
@@ -202,7 +222,7 @@ for JARFILE in $(find ./  -name *.jar)
 do
   if [[ "$JARFILE" == *"target/"* ]] || [[ "$JARFILE" == *"build/"* ]]
   then
-    if [[ "$JARFILE" != *sources.jar ]] && [[ "$JARFILE" != *javadoc.jar ]]
+    if [[ "$JARFILE" != *sources.jar ]] && [[ "$JARFILE" != *javadoc.jar ]] && [[ "$JARFILE" != *tests.jar ]]
     then
       cp $JARFILE $OUT/
       JARFILE_LIST="$JARFILE_LIST$(basename $JARFILE) "
