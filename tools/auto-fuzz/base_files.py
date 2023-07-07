@@ -111,18 +111,16 @@ def gen_dockerfile_jvm(github_url, project_name):
 #RUN curl -L %s -o maven.zip && unzip maven.zip -d $SRC/maven && rm -rf maven.zip
 #RUN curl -L %s -o gradle.zip && unzip gradle.zip -d $SRC/maven && rm -rf gradle.zip
 #RUN curl -L %s -o protoc.zip && mkdir -p $SRC/protoc && unzip protoc.zip -d $SRC/maven && rm -rf protoc.zip
-#RUN curl -L %s -o jdk.tar.gz && tar zxf jdk.tar.gz && rm -rf jdk.tar.gz
+RUN curl -L %s -o jdk.tar.gz && tar zxf jdk.tar.gz && rm -rf jdk.tar.gz
 COPY ant.zip $SRC/ant.zip
 COPY maven.zip $SRC/maven.zip
 COPY gradle.zip $SRC/gradle.zip
 COPY protoc.zip $SRC/protoc.zip
-COPY jdk.tar.gz $SRC/jdk.tar.gz
 RUN unzip ant.zip -d $SRC/ant && rm ./ant.zip
 RUN unzip maven.zip -d $SRC/maven && rm ./maven.zip
 RUN unzip gradle.zip -d $SRC/gradle && rm ./gradle.zip
 RUN mkdir -p $SRC/protoc
 RUN unzip protoc.zip -d $SRC/protoc && rm ./protoc.zip
-RUN tar zxf jdk.tar.gz && rm ./jdk.tar.gz
 ENV ANT $SRC/ant/apache-ant-1.9.16/bin/ant
 ENV MVN $SRC/maven/apache-maven-3.6.3/bin/mvn
 ENV GRADLE_HOME $SRC/gradle/gradle-7.4.2
