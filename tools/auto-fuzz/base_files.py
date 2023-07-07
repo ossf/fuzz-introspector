@@ -188,8 +188,8 @@ do
       echo "<toolchain><type>jdk</type><provides><version>19</version></provides>" >> ~/.m2/toolchains.xml
       echo "<configuration><jdkHome>\${env.JAVA_HOME}</jdkHome></configuration></toolchain>" >> ~/.m2/toolchains.xml
       echo "</toolchains>" >> ~/.m2/toolchains.xml
-      $MVN clean package -Dmaven.javadoc.skip=true -DskipTests=true -Dpmd.skip=true \
-      -Dencoding=UTF-8 -Dmaven.antrun.skip=true dependency:copy-dependencies
+      $MVN clean package -Dmaven.javadoc.skip=true -DskipTests=true -Dpmd.skip=true -Dencoding=UTF-8 \
+      -Dmaven.antrun.skip=true -Dcheckstyle.skip=true dependency:copy-dependencies
       SUCCESS=true
       break
     elif test -f "build.gradle" || test -f "build.gradle.kts"
