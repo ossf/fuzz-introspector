@@ -190,14 +190,14 @@ do
       break
     elif test -f "build.gradle" || test -f "build.gradle.kts"
     then
-      chmod +x ./gradlew
-      if ./gradlew tasks --all | grep -qw "^spotlessCheck"
+      rm -rf $HOME/.gradle/caches/
+      if gradle tasks --all | grep -qw "^spotlessCheck"
       then
-        ./gradlew clean build -x test -x spotlessCheck
+        gradle clean build -x test -x spotlessCheck
       else
-        ./gradlew clean build -x test
+        gradle clean build -x test
       fi
-      ./gradlew --stop
+      gradle --stop
       SUCCESS=true
       break
     elif test -f "build.xml"

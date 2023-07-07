@@ -340,13 +340,13 @@ def _gradle_build_project(basedir, projectdir):
 
     # Build project with maven
     cmd = [
-        "chmod +x gradlew",
-        """if ./gradlew tasks --all | grep -qw "^spotlessCheck";
+        "rm -rf $HOME/.gradle/caches/",
+        """if gradle tasks --all | grep -qw "^spotlessCheck";
         then
-          ./gradlew clean build -x test -x spotlessCheck;
+          gradle clean build -x test -x spotlessCheck;
         else
-          ./gradlew clean build -x test;
-        fi""", "./gradlew --stop"
+          gradle clean build -x test;
+        fi""", "gradle --stop"
     ]
     try:
         subprocess.check_call(" && ".join(cmd),
