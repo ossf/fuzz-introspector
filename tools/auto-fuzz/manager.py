@@ -221,7 +221,7 @@ def _ant_build_project(basedir, projectdir):
 
     # Set environment variable
     env_var = os.environ.copy()
-    env_var['JAVA_HOME'] = os.path.join(basedir, "jdk-15", "jdk-15.0.2")
+    env_var['JAVA_HOME'] = os.path.join(basedir, "jdk-19")
     env_var['PATH'] = os.path.join(
         basedir, constants.ANT_PATH) + ":" + os.path.join(
             basedir, constants.PROTOC_PATH) + ":" + env_var['PATH']
@@ -252,10 +252,28 @@ def _maven_build_project(basedir, projectdir):
 
     # Set environment variable
     env_var = os.environ.copy()
-    env_var['JAVA_HOME'] = os.path.join(basedir, "jdk-15", "jdk-15.0.2")
+    env_var['JAVA_HOME'] = os.path.join(basedir, "jdk-19")
     env_var['PATH'] = os.path.join(
         basedir, constants.MAVEN_PATH) + ":" + os.path.join(
             basedir, constants.PROTOC_PATH) + ":" + env_var['PATH']
+
+    # Prepare maven toolchains location
+    with open(os.path.join(os.path.expanduser('~'), ".m2", "toolchains.xml"),
+              "w") as file:
+        file.write(
+            """<toolchains><toolchain><type>jdk</type><provides><version>1.8</version></provides>
+                    <configuration><jdkHome>${env.JAVA_HOME}</jdkHome></configuration></toolchain>
+                    <toolchain><type>jdk</type><provides><version>11</version></provides>
+                    <configuration><jdkHome>${env.JAVA_HOME}</jdkHome></configuration></toolchain>
+                    <toolchain><type>jdk</type><provides><version>14</version></provides>
+                    <configuration><jdkHome>${env.JAVA_HOME}</jdkHome></configuration></toolchain>
+                    <toolchain><type>jdk</type><provides><version>15</version></provides>
+                    <configuration><jdkHome>${env.JAVA_HOME}</jdkHome></configuration></toolchain>
+                    <toolchain><type>jdk</type><provides><version>17</version></provides>
+                    <configuration><jdkHome>${env.JAVA_HOME}</jdkHome></configuration></toolchain>
+                    <toolchain><type>jdk</type><provides><version>19</version></provides>
+                    <configuration><jdkHome>${env.JAVA_HOME}</jdkHome></configuration></toolchain></toolchains>"""
+        )
 
     # Patch pom.xml to use at least jdk 1.8
     cmd = [
@@ -315,7 +333,7 @@ def _gradle_build_project(basedir, projectdir):
     # Set environment variable
     env_var = os.environ.copy()
     env_var['GRADLE_HOME'] = os.path.join(basedir, constants.GRADLE_HOME)
-    env_var['JAVA_HOME'] = os.path.join(basedir, "jdk-15", "jdk-15.0.2")
+    env_var['JAVA_HOME'] = os.path.join(basedir, "jdk-19")
     env_var['PATH'] = os.path.join(
         basedir, constants.GRADLE_PATH) + ":" + os.path.join(
             basedir, constants.PROTOC_PATH) + ":" + env_var['PATH']
@@ -398,9 +416,9 @@ def build_jvm_project(basedir, projectdir, proj_name):
     builddir = find_project_build_folder(projectdir, proj_name)
 
     # Prepare OpenJDK 15
-    os.makedirs(os.path.join(basedir, "jdk-15"), exist_ok=True)
+    os.makedirs(os.path.join(basedir, "jdk-19"), exist_ok=True)
     with tarfile.open(os.path.join(basedir, "jdk.tar.gz"), "r:gz") as jf:
-        jf.extractall(os.path.join(basedir, "jdk-15"))
+        jf.extractall(os.path.join(basedir))
 
     # Prepare protoc
     os.makedirs(os.path.join(basedir, "protoc"), exist_ok=True)
@@ -602,7 +620,7 @@ def cleanup_base_directory(base_dir, project_name):
         'work/jazzer.tar.gz', 'work/jazzer_standalone.jar'
     ]
     dir_to_clean = [
-        'apache-maven-3.6.3', 'apache-ant-1.9.16', 'gradle-7.4.2', 'jdk-15',
+        'apache-maven-3.6.3', 'apache-ant-1.9.16', 'gradle-7.4.2', 'jdk-19',
         'protoc', project_name, 'work/jar', 'work/proj'
     ]
 
