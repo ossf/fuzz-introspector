@@ -625,8 +625,8 @@ def cleanup_base_directory(base_dir, project_name):
         'work/jazzer.tar.gz', 'work/jazzer_standalone.jar'
     ]
     dir_to_clean = [
-        'apache-maven-3.6.3', 'apache-ant-1.9.16', 'gradle-7.4.2', 'jdk-15.0.2',
-        'protoc', project_name, 'work/jar', 'work/proj'
+        'apache-maven-3.6.3', 'apache-ant-1.9.16', 'gradle-7.4.2',
+        'jdk-15.0.2', 'protoc', project_name, 'work/jar', 'work/proj'
     ]
 
     for file in file_to_clean:
