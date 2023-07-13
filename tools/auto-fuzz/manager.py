@@ -221,7 +221,7 @@ def _ant_build_project(basedir, projectdir):
 
     # Set environment variable
     env_var = os.environ.copy()
-    env_var['JAVA_HOME'] = os.path.join(basedir, "jdk-17")
+    env_var['JAVA_HOME'] = os.path.join(basedir, "jdk-15.0.2")
     env_var['PATH'] = os.path.join(
         basedir, constants.ANT_PATH) + ":" + os.path.join(
             basedir, constants.PROTOC_PATH) + ":" + env_var['PATH']
@@ -252,7 +252,7 @@ def _maven_build_project(basedir, projectdir):
 
     # Set environment variable
     env_var = os.environ.copy()
-    env_var['JAVA_HOME'] = os.path.join(basedir, "jdk-17")
+    env_var['JAVA_HOME'] = os.path.join(basedir, "jdk-15.0.2")
     env_var['PATH'] = os.path.join(
         basedir, constants.MAVEN_PATH) + ":" + os.path.join(
             basedir, constants.PROTOC_PATH) + ":" + env_var['PATH']
@@ -333,7 +333,7 @@ def _gradle_build_project(basedir, projectdir):
     # Set environment variable
     env_var = os.environ.copy()
     env_var['GRADLE_HOME'] = os.path.join(basedir, constants.GRADLE_HOME)
-    env_var['JAVA_HOME'] = os.path.join(basedir, "jdk-17")
+    env_var['JAVA_HOME'] = os.path.join(basedir, "jdk-15.0.2")
     env_var['PATH'] = os.path.join(
         basedir, constants.GRADLE_PATH) + ":" + os.path.join(
             basedir, constants.PROTOC_PATH) + ":" + env_var['PATH']
@@ -420,8 +420,8 @@ def build_jvm_project(basedir, projectdir, proj_name):
     # directory
     builddir = find_project_build_folder(projectdir, proj_name)
 
-    # Prepare OpenJDK 17
-    os.makedirs(os.path.join(basedir, "jdk-17"), exist_ok=True)
+    # Prepare OpenJDK 15
+    os.makedirs(os.path.join(basedir, "jdk-15.0.2"), exist_ok=True)
     with tarfile.open(os.path.join(basedir, "jdk.tar.gz"), "r:gz") as jf:
         jf.extractall(os.path.join(basedir))
 
@@ -625,8 +625,8 @@ def cleanup_base_directory(base_dir, project_name):
         'work/jazzer.tar.gz', 'work/jazzer_standalone.jar'
     ]
     dir_to_clean = [
-        'apache-maven-3.6.3', 'apache-ant-1.9.16', 'gradle-7.4.2', 'jdk-17',
-        'protoc', project_name, 'work/jar', 'work/proj'
+        'apache-maven-3.6.3', 'apache-ant-1.9.16', 'gradle-7.4.2',
+        'jdk-15.0.2', 'protoc', project_name, 'work/jar', 'work/proj'
     ]
 
     for file in file_to_clean:
@@ -924,7 +924,7 @@ def autofuzz_project_from_github(github_url,
     # target method filtering in the target generation stage. Some project requires
     # protoc to generate java code, so protoc is also downloaded here.
     if language == "jvm":
-        # Download OpenJDK 17:
+        # Download OpenJDK 15:
         target_jdk_path = os.path.join(oss_fuzz_base_project.project_folder,
                                        "jdk.tar.gz")
         with open(target_jdk_path, 'wb') as jf:

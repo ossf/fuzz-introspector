@@ -110,7 +110,7 @@ def gen_dockerfile_jvm(github_url, project_name):
 #RUN curl -L %s -o maven.zip && unzip maven.zip -d $SRC/maven && rm -rf maven.zip
 #RUN curl -L %s -o gradle.zip && unzip gradle.zip -d $SRC/maven && rm -rf gradle.zip
 #RUN curl -L %s -o protoc.zip && mkdir -p $SRC/protoc && unzip protoc.zip -d $SRC/maven && rm -rf protoc.zip
-RUN curl -L %s -o jdk.tar.gz && tar zxf jdk.tar.gz && rm -rf jdk.tar.gz
+#RUN curl -L %s -o jdk.tar.gz && tar zxf jdk.tar.gz && rm -rf jdk.tar.gz
 COPY ant.zip $SRC/ant.zip
 COPY maven.zip $SRC/maven.zip
 COPY gradle.zip $SRC/gradle.zip
@@ -124,7 +124,7 @@ ENV ANT $SRC/ant/apache-ant-1.9.16/bin/ant
 ENV MVN $SRC/maven/apache-maven-3.6.3/bin/mvn
 ENV GRADLE_HOME $SRC/gradle/gradle-7.4.2
 ENV PATH="$SRC/gradle/gradle-7.4.2/bin:$SRC/protoc/bin:$PATH"
-ENV JAVA_HOME="$SRC/jdk-17"
+#ENV JAVA_HOME="$SRC/jdk-15.0.2"
 #RUN git clone --depth 1 %s %s
 COPY %s %s
 COPY *.sh *.java $SRC/
