@@ -107,9 +107,9 @@ WORKDIR $SRC/%s
 
 def gen_dockerfile_jvm(github_url, project_name):
     DOCKER_STEPS = """FROM gcr.io/oss-fuzz-base/base-builder-jvm
-#RUN curl -L %s -o ant.zip && unzip ant.zip -d $SRC/maven && rm -rf ant.zip
+#RUN curl -L %s -o ant.zip && unzip ant.zip -d $SRC/ant && rm -rf ant.zip
 #RUN curl -L %s -o maven.zip && unzip maven.zip -d $SRC/maven && rm -rf maven.zip
-#RUN curl -L %s -o gradle.zip && unzip gradle.zip -d $SRC/maven && rm -rf gradle.zip
+#RUN curl -L %s -o gradle.zip && unzip gradle.zip -d $SRC/gradle && rm -rf gradle.zip
 #RUN curl -L %s -o protoc.zip && mkdir -p $SRC/protoc && unzip protoc.zip -d $SRC/protoc && rm -rf protoc.zip
 #RUN curl -L %s -o jdk.tar.gz && tar zxf jdk.tar.gz && rm -rf jdk.tar.gz
 COPY ant.zip $SRC/ant.zip
