@@ -132,6 +132,8 @@ public class CallGraphGenerator {
     Options.v().set_whole_program(true);
     Options.v().set_keep_line_number(true);
     Options.v().set_no_writeout_body_releasing(true);
+    Options.v().set_ignore_classpath_errors(true);
+    Options.v().set_ignore_resolution_errors(true);
 
     // Special options to ignore wrong staticness methods
     // For example, invoking a static class method from its
@@ -160,8 +162,8 @@ public class CallGraphGenerator {
     Scene.v().loadNecessaryClasses();
     Scene.v().loadDynamicClasses();
 
-    // Start the generation
     try {
+      // Start the generation
       PackManager.v().runPacks();
     } catch (RuntimeException e) {
       if (!custom.isAnalyseFinished()) {
@@ -301,6 +303,7 @@ class CustomSenceTransformer extends SceneTransformer {
       boolean isInclude = false;
       boolean isIgnore = false;
       boolean isSinkClass = false;
+      boolean isAutoFuzzIgnore = false;
       SootClass c = classIterator.next();
       String cname = c.getName();
 
@@ -357,8 +360,19 @@ class CustomSenceTransformer extends SceneTransformer {
         }
       }
 
-      if (!c.isConcrete()) {
+      if (!c.isConcrete() || c.isPhantom()) {
         isIgnore = true;
+        isAutoFuzzIgnore = true;
+      }
+
+      if (isAutoFuzz) {
+        if (c.getName().endsWith("Exception")
+            || c.getName().endsWith("Error")
+            || c.getName().contains("$")
+            || !c.isPublic()) {
+          isIgnore = true;
+          isAutoFuzzIgnore = true;
+        }
       }
 
       if (!isIgnore) {
@@ -380,7 +394,7 @@ class CustomSenceTransformer extends SceneTransformer {
       } else {
         //        System.out.println("[Callgraph] [SKIP] class: " + cname);
       }
-      if (isAutoFuzz) {
+      if (isAutoFuzz && !isAutoFuzzIgnore) {
         this.includeConstructor(c);
       }
     }
@@ -535,7 +549,9 @@ class CustomSenceTransformer extends SceneTransformer {
       }
 
       this.calculateAllCallDepth();
-      this.includeSinkMethod();
+      if (!isAutoFuzz) {
+        this.includeSinkMethod();
+      }
 
       // Extract call tree and write to .data
       System.out.println("Generating fuzzerLogFile-" + this.entryClassStr + ".data");
