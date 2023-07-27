@@ -118,13 +118,13 @@ class FuzzTarget:
                         content += item
                 elif "/*PRIVATE_FIELD*/" in line:
                     # Insert fuzzer class field
-                    content += private_field_source_code
+                    content += self.private_field_source_code
                 elif "/*FUZZER_INITIALIZE*/" in line:
                     # Insert fuzzer initialize code
-                    content += fuzzer_init_source_code
+                    content += self.fuzzer_init_source_code
                 elif "/*FUZZER_TEAR_DOWN*/" in line:
                     # Insert fuzzer tear down code
-                    content += fuzzer_tear_down_source_code
+                    content += self.fuzzer_tear_down_source_code
                 elif "/*FILE_PREPERATION*/" in line:
                     # Insert file preparation code
                     content += self.fuzzer_file_prepare_source_code
