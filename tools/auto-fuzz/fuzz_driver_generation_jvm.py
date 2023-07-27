@@ -31,6 +31,7 @@ class FuzzTarget:
     heuristics_used: List[str]
     class_field_list: List[str]
     private_field_source_code: str
+    fuzzer_file_prepare_source_code: str
     fuzzer_init_source_code: str
     fuzzer_tear_down_source_code: str
 
@@ -45,6 +46,7 @@ class FuzzTarget:
         self.heuristics_used = []
         self.class_field_list = []
         self.private_field_source_code = ""
+        self.fuzzer_file_prepare_source_code = ""
         self.fuzzer_init_source_code = ""
         self.fuzzer_tear_down_source_code = ""
         if orig:
@@ -58,6 +60,7 @@ class FuzzTarget:
             self.heuristics_used.extend(list(set(orig.heuristics_used)))
             self.class_field_list.extend(orig.class_field_list)
             self.private_field_source_code = orig.private_field_source_code
+            self.fuzzer_file_prepare_source_code = orig.fuzzer_file_prepare_source_code
             self.fuzzer_init_source_code = orig.fuzzer_init_source_code
             self.fuzzer_tear_down_source_code = orig.fuzzer_tear_down_source_code
         elif func_elem:
@@ -122,6 +125,9 @@ class FuzzTarget:
                 elif "/*FUZZER_TEAR_DOWN*/" in line:
                     # Insert fuzzer tear down code
                     content += fuzzer_tear_down_source_code
+                elif "/*FILE_PREPERATION*/" in line:
+                    # Insert file preparation code
+                    content += self.fuzzer_file_prepare_source_code
                 else:
                     # Copy other lines from the base fuzzer
                     content += line
@@ -662,6 +668,12 @@ def _handle_file_object(possible_target, is_path):
     Prepare a random file for any parameters
     needing a file or file path to process.
     """
+    possible_target.imports_to_add.add("import java.io.File;")
+    possible_target.imports_to_add.add("import java.io.FileWriter;")
+    possible_target.imports_to_add.add("import java.io.IOException;")
+    possible_target.imports_to_add.add("import java.io.PrintWriter;")
+    possible_target.imports_to_add.add("import java.nio.file.Files;")
+
     possible_target.private_field_source_code = """  private static File tempDirectory;
   private static File tempFile;"""
 
@@ -674,6 +686,12 @@ def _handle_file_object(possible_target, is_path):
 
     possible_target.fuzzer_tear_down_source_code = """  tempFile.delete();
     tempDirectory.delete();"""
+
+    possible_target.fuzzer_file_prepare_source_code = """  try {
+      PrintWriter printWriter = new PrintWriter(new FileWriter(tempFile));
+      printWriter.print(data.consumeString(data.remainingBytes() / 2));
+      printWriter.close();
+    } catch (IOException e) {}"""
 
     if is_path:
         return ["tempFile.toPath()"]

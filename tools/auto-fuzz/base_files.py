@@ -318,6 +318,7 @@ public class Fuzz/*COUNTER*/ {
 
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
 /*STATIC_OBJECT_CHOICE*/
+/*FILE_PREPERATION*/
 /*CODE*/
   }
 }"""
