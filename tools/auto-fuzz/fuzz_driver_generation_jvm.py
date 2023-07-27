@@ -836,7 +836,8 @@ def _filter_polymorphism(method_list):
     return result_list
 
 
-def _filter_method(callsites, max_count, target_method_list, calldepth_filter):
+def _filter_method_list(callsites, max_count, target_method_list,
+                        calldepth_filter):
     """
     Filter methods from the target_method list which has
     been called by any other methods.
@@ -862,13 +863,54 @@ def _filter_method(callsites, max_count, target_method_list, calldepth_filter):
     return result_method_list
 
 
-def _extract_method(yaml_dict, max_count=20, calldepth_filter=False):
+def _filter_method(method_list, static_method_list, max_count,
+                   calldepth_filter):
+    """
+    Filter methods from the two method list
+    """
+    filtered_method_list = _filter_polymorphism(method_list)
+
+    callsites = _search_all_callsite_dst(static_method_list)
+    target_callsites = _search_all_callsite_dst(filtered_method_list)
+    for item in target_callsites:
+        if item in callsites:
+            caller_list = callsites[item]
+            caller_list.extend(target_callsites[item])
+            callsites[item] = list(set(caller_list))
+        else:
+            callsites[item] = target_callsites[item]
+
+    filtered_method_list = _filter_method_list(callsites, max_count,
+                                               filtered_method_list,
+                                               calldepth_filter)
+    filtered_static_method_list = _filter_method_list(callsites, max_count,
+                                                      static_method_list,
+                                                      calldepth_filter)
+
+    return filtered_method_list, filtered_static_method_list
+
+
+def _extract_method(yaml_dict,
+                    max_method,
+                    max_count=20,
+                    calldepth_filter=False):
     """Extract method and group them into list for heuristic processing"""
     init_dict = {}
     method_list = []
     instance_method_list = []
     static_method_list = []
     for func_elem in yaml_dict['All functions']['Elements']:
+        # Check and filter method if too many methods in the result method list
+        if len(method_list) > max_method or len(
+                static_method_list) > max_method:
+            method_list, static_method_list = _filter_method(
+                method_list, static_method_list, max_count, calldepth_filter)
+
+        # Still too many method after filtering, return the current result set
+        if len(static_method_list) > max_method or len(
+                method_list) > max_method:
+            return init_dict, method_list, instance_method_list, static_method_list
+
         # Skip method belongs to non public or non concrete class
         if not func_elem['JavaMethodInfo']['classPublic']:
             continue
@@ -895,7 +937,7 @@ def _extract_method(yaml_dict, max_count=20, calldepth_filter=False):
         # Skip excluded methods
         if len(func_elem['argTypes']) > 20:
             continue
-        if test:
+        if test or object:
             continue
         if func_elem['JavaMethodInfo']['classEnum']:
             continue
@@ -907,38 +949,25 @@ def _extract_method(yaml_dict, max_count=20, calldepth_filter=False):
             if not plain and _is_project_class(func_class_name):
                 static_method_list.append(func_elem)
         else:
-            instance_method_list.append(func_elem)
             # Check if this method belongs to this project
             # or not and filter out unrelated methods
             # from dependencies or libraries
             if _is_project_class(func_class_name):
-                # Exclude possible getters, setters and methods
-                # does not take any arguments. Also exclude methods
-                # inherits from the Object class
-                if plain or getter_setter or object:
+                instance_method_list.append(func_elem)
+                # Exclude getters setters and methods
+                # that do not take any arguments.
+                if plain or getter_setter:
                     continue
 
                 method_list.append(func_elem)
 
-    method_list = _filter_polymorphism(method_list)
+    # Final filtering of the method list
+    method_list, static_method_list = _filter_method(method_list,
+                                                     static_method_list,
+                                                     max_count,
+                                                     calldepth_filter)
 
-    callsites = _search_all_callsite_dst(static_method_list)
-    target_callsites = _search_all_callsite_dst(method_list)
-    for item in target_callsites:
-        if item in callsites:
-            caller_list = callsites[item]
-            caller_list.extend(target_callsites[item])
-            callsites[item] = list(set(caller_list))
-        else:
-            callsites[item] = target_callsites[item]
-
-    method_list = _filter_method(callsites, max_count, method_list,
-                                 calldepth_filter)
-    filtered_static_method_list = _filter_method(callsites, max_count,
-                                                 static_method_list,
-                                                 calldepth_filter)
-
-    return init_dict, method_list, instance_method_list, static_method_list, filtered_static_method_list
+    return init_dict, method_list, instance_method_list, static_method_list
 
 
 def _extract_super_exceptions(exceptions):
@@ -980,7 +1009,7 @@ def _generate_heuristic_1(method_tuple, possible_targets, max_target):
     """
     HEURISTIC_NAME = "jvm-autofuzz-heuristics-1"
 
-    _, _, _, _, static_method_list = method_tuple
+    _, _, _, static_method_list = method_tuple
 
     if len(possible_targets) > max_target:
         return
@@ -1046,7 +1075,7 @@ def _generate_heuristic_2(method_tuple, possible_targets, max_target):
     """
     HEURISTIC_NAME = "jvm-autofuzz-heuristics-2"
 
-    init_dict, method_list, _, _, _ = method_tuple
+    init_dict, method_list, _, _ = method_tuple
 
     for func_elem in method_list:
         if len(possible_targets) > max_target:
@@ -1128,7 +1157,7 @@ def _generate_heuristic_3(method_tuple, possible_targets, max_target):
     """
     HEURISTIC_NAME = "jvm-autofuzz-heuristics-3"
 
-    init_dict, method_list, _, static_method_list, _ = method_tuple
+    init_dict, method_list, _, static_method_list = method_tuple
     for func_elem in method_list:
         if len(possible_targets) > max_target:
             return
@@ -1204,7 +1233,7 @@ def _generate_heuristic_4(method_tuple, possible_targets, max_target):
     """
     HEURISTIC_NAME = "jvm-autofuzz-heuristics-4"
 
-    init_dict, method_list, instance_method_list, static_method_list, _ = method_tuple
+    init_dict, method_list, instance_method_list, static_method_list = method_tuple
     for func_elem in method_list:
         if len(possible_targets) > max_target:
             return
@@ -1279,7 +1308,7 @@ def _generate_heuristic_6(method_tuple, possible_targets, max_target):
     """
     HEURISTIC_NAME = "jvm-autofuzz-heuristics-6"
 
-    init_dict, method_list, instance_method_list, static_method_list, _ = method_tuple
+    init_dict, method_list, instance_method_list, static_method_list = method_tuple
     for func_elem in method_list:
         if len(possible_targets) > max_target:
             return
@@ -1370,8 +1399,8 @@ def _generate_heuristic_7(method_tuple, possible_targets, max_target):
     """
     HEURISTIC_NAME = "jvm-autofuzz-heuristics-7"
 
-    init_dict, method_list, instance_method_list, static_method_list, filtered_static_method_list = method_tuple
-    for func_elem in method_list + filtered_static_method_list:
+    init_dict, method_list, instance_method_list, static_method_list = method_tuple
+    for func_elem in method_list + static_method_list:
         if len(possible_targets) > max_target:
             return
 
@@ -1491,7 +1520,7 @@ def _generate_heuristic_8(method_tuple, possible_targets, max_target):
     """
     HEURISTIC_NAME = "jvm-autofuzz-heuristics-8"
 
-    init_dict, method_list, instance_method_list, static_method_list, _ = method_tuple
+    init_dict, method_list, instance_method_list, static_method_list = method_tuple
     for func_elem in method_list:
         if len(possible_targets) > max_target:
             return
@@ -1583,7 +1612,7 @@ def _generate_heuristic_9(method_tuple, possible_targets, max_target):
     """
     HEURISTIC_NAME = "jvm-autofuzz-heuristics-9"
 
-    init_dict, method_list, instance_method_list, static_method_list, _ = method_tuple
+    init_dict, method_list, instance_method_list, static_method_list = method_tuple
     for func_elem in method_list:
         if len(possible_targets) > max_target:
             return
@@ -1675,8 +1704,8 @@ def _generate_heuristic_10(method_tuple, possible_targets, max_target):
     HEURISTIC_NAME = "jvm-autofuzz-heuristics-10"
 
     global need_param_combination
-    init_dict, method_list, instance_method_list, static_method_list, filtered_static_method_list = method_tuple
-    for func_elem in method_list + filtered_static_method_list:
+    init_dict, method_list, instance_method_list, static_method_list = method_tuple
+    for func_elem in method_list + static_method_list:
         if len(possible_targets) > max_target:
             return
 
@@ -1776,8 +1805,12 @@ def _generate_heuristic_10(method_tuple, possible_targets, max_target):
                     break
 
 
-def _generate_heuristics(yaml_dict, max_target, calldepth_filter=False):
+def _generate_heuristics(yaml_dict,
+                         max_target,
+                         max_method,
+                         calldepth_filter=False):
     method_tuple = _extract_method(yaml_dict,
+                                   max_method,
                                    max_count=20,
                                    calldepth_filter=calldepth_filter)
 
@@ -1831,8 +1864,11 @@ def generate_possible_targets(proj_folder, class_list, max_target,
     with open(yaml_file, "r") as stream:
         yaml_dict = yaml.safe_load(stream)
 
-    possible_targets = _generate_heuristics(yaml_dict, max_target, False)
-    if len(possible_targets) > constants.MAX_FUZZERS_PER_PROJECT:
+    max_fuzzer = constants.MAX_FUZZERS_PER_PROJECT
+
+    possible_targets = _generate_heuristics(yaml_dict, max_target, max_fuzzer,
+                                            False)
+    if len(possible_targets) > max_fuzzer:
         possible_targets = _generate_heuristics(yaml_dict, max_target, True)
 
     return possible_targets
