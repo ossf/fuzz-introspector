@@ -109,16 +109,8 @@ public class CallGraphGenerator {
 
     // Add an custom analysis phase to Soot
     CustomSenceTransformer custom =
-        new CustomSenceTransformer(
-            entryClass,
-            entryMethod,
-            targetPackagePrefix,
-            excludeMethod,
-            includePrefix,
-            excludePrefix,
-            sinkMethod,
-            sourceDirectory,
-            isAutoFuzz);
+        new CustomSenceTransformer(entryClass, entryMethod, targetPackagePrefix, excludeMethod,
+            includePrefix, excludePrefix, sinkMethod, sourceDirectory, isAutoFuzz);
     PackManager.v().getPack("wjtp").add(new Transform("wjtp.custom", custom));
 
     // Set basic settings for the call graph generation
@@ -132,6 +124,8 @@ public class CallGraphGenerator {
     Options.v().set_whole_program(true);
     Options.v().set_keep_line_number(true);
     Options.v().set_no_writeout_body_releasing(true);
+    Options.v().set_ignore_classpath_errors(true);
+    Options.v().set_ignore_resolution_errors(true);
 
     // Special options to ignore wrong staticness methods
     // For example, invoking a static class method from its
@@ -160,8 +154,8 @@ public class CallGraphGenerator {
     Scene.v().loadNecessaryClasses();
     Scene.v().loadDynamicClasses();
 
-    // Start the generation
     try {
+      // Start the generation
       PackManager.v().runPacks();
     } catch (RuntimeException e) {
       if (!custom.isAnalyseFinished()) {
@@ -210,16 +204,9 @@ class CustomSenceTransformer extends SceneTransformer {
   private Boolean isAutoFuzz;
   private Boolean analyseFinished;
 
-  public CustomSenceTransformer(
-      String entryClassStr,
-      String entryMethodStr,
-      String targetPackagePrefix,
-      String excludeMethodStr,
-      String includePrefix,
-      String excludePrefix,
-      String sinkMethod,
-      String sourceDirectory,
-      Boolean isAutoFuzz) {
+  public CustomSenceTransformer(String entryClassStr, String entryMethodStr,
+      String targetPackagePrefix, String excludeMethodStr, String includePrefix,
+      String excludePrefix, String sinkMethod, String sourceDirectory, Boolean isAutoFuzz) {
     this.entryClassStr = entryClassStr;
     this.entryMethodStr = entryMethodStr;
     this.isAutoFuzz = isAutoFuzz;
@@ -261,10 +248,9 @@ class CustomSenceTransformer extends SceneTransformer {
 
     if ((!sourceDirectory.equals("")) && (!sourceDirectory.equals("NULL"))) {
       try (Stream<Path> walk = Files.walk(Paths.get(sourceDirectory))) {
-        List<String> sourceList =
-            walk.map(x -> x.toString())
-                .filter(f -> f.endsWith(".java"))
-                .collect(Collectors.toList());
+        List<String> sourceList = walk.map(x -> x.toString())
+                                      .filter(f -> f.endsWith(".java"))
+                                      .collect(Collectors.toList());
         for (String source : sourceList) {
           projectClassList.add(source.substring(source.lastIndexOf("/") + 1).replace(".java", ""));
         }
@@ -301,6 +287,7 @@ class CustomSenceTransformer extends SceneTransformer {
       boolean isInclude = false;
       boolean isIgnore = false;
       boolean isSinkClass = false;
+      boolean isAutoFuzzIgnore = false;
       SootClass c = classIterator.next();
       String cname = c.getName();
 
@@ -357,8 +344,17 @@ class CustomSenceTransformer extends SceneTransformer {
         }
       }
 
-      if (!c.isConcrete()) {
+      if (!c.isConcrete() || c.isPhantom()) {
         isIgnore = true;
+        isAutoFuzzIgnore = true;
+      }
+
+      if (isAutoFuzz) {
+        if (c.getName().endsWith("Exception") || c.getName().endsWith("Error")
+            || c.getName().contains("$") || !c.isPublic()) {
+          isIgnore = true;
+          isAutoFuzzIgnore = true;
+        }
       }
 
       if (!isIgnore) {
@@ -380,7 +376,7 @@ class CustomSenceTransformer extends SceneTransformer {
       } else {
         //        System.out.println("[Callgraph] [SKIP] class: " + cname);
       }
-      if (isAutoFuzz) {
+      if (isAutoFuzz && !isAutoFuzzIgnore) {
         this.includeConstructor(c);
       }
     }
@@ -454,17 +450,10 @@ class CustomSenceTransformer extends SceneTransformer {
           }
           String callerClass = edge.src().getDeclaringClass().getName();
           String className = "";
-          Set<String> classNameSet =
-              new HashSet<String>(
-                  this.edgeClassMap.getOrDefault(
-                      callerClass
-                          + ":"
-                          + tgt.getName()
-                          + ":"
-                          + ((edge.srcStmt() == null)
-                              ? -1
-                              : edge.srcStmt().getJavaSourceStartLineNumber()),
-                      Collections.emptySet()));
+          Set<String> classNameSet = new HashSet<String>(this.edgeClassMap.getOrDefault(callerClass
+                  + ":" + tgt.getName() + ":"
+                  + ((edge.srcStmt() == null) ? -1 : edge.srcStmt().getJavaSourceStartLineNumber()),
+              Collections.emptySet()));
           className = this.mergeClassName(classNameSet);
           boolean merged = false;
           for (String name : className.split(":")) {
@@ -477,8 +466,7 @@ class CustomSenceTransformer extends SceneTransformer {
             className = tgt.getDeclaringClass().getName();
           }
           element.addFunctionsReached("[" + className + "]." + tgt.getSubSignature().split(" ")[1]);
-          functionLineMap.put(
-              tgt.getSubSignature().split(" ")[1],
+          functionLineMap.put(tgt.getSubSignature().split(" ")[1],
               (edge.srcStmt() == null) ? -1 : edge.srcStmt().getJavaSourceStartLineNumber());
         }
         element.setEdgeCount(methodEdges);
@@ -535,7 +523,9 @@ class CustomSenceTransformer extends SceneTransformer {
       }
 
       this.calculateAllCallDepth();
-      this.includeSinkMethod();
+      if (!isAutoFuzz) {
+        this.includeSinkMethod();
+      }
 
       // Extract call tree and write to .data
       System.out.println("Generating fuzzerLogFile-" + this.entryClassStr + ".data");
@@ -680,24 +670,16 @@ class CustomSenceTransformer extends SceneTransformer {
   }
 
   // Shorthand for extractCallTree from top
-  private void extractCallTree(
-      FileWriter fw, CallGraph cg, SootMethod method, Integer depth, Integer line)
-      throws IOException {
+  private void extractCallTree(FileWriter fw, CallGraph cg, SootMethod method, Integer depth,
+      Integer line) throws IOException {
     fw.write("Call tree\n");
     this.extractCallTree(fw, cg, method, depth, line, new LinkedList<SootMethod>(), null);
   }
 
   // Recursively extract calltree from stored method relationship, ignoring loops
   // and write to the output data file
-  private void extractCallTree(
-      FileWriter fw,
-      CallGraph cg,
-      SootMethod method,
-      Integer depth,
-      Integer line,
-      List<SootMethod> handled,
-      String callerClass)
-      throws IOException {
+  private void extractCallTree(FileWriter fw, CallGraph cg, SootMethod method, Integer depth,
+      Integer line, List<SootMethod> handled, String callerClass) throws IOException {
     StringBuilder callTree = new StringBuilder();
 
     if (this.excludeMethodList.contains(method.getName())) {
@@ -706,10 +688,8 @@ class CustomSenceTransformer extends SceneTransformer {
 
     String className = "";
     if (callerClass != null) {
-      Set<String> classNameSet =
-          new HashSet<String>(
-              this.edgeClassMap.getOrDefault(
-                  callerClass + ":" + method.getName() + ":" + line, Collections.emptySet()));
+      Set<String> classNameSet = new HashSet<String>(this.edgeClassMap.getOrDefault(
+          callerClass + ":" + method.getName() + ":" + line, Collections.emptySet()));
       className = this.mergeClassName(classNameSet);
       boolean merged = false;
       for (String name : className.split(":")) {
@@ -725,18 +705,12 @@ class CustomSenceTransformer extends SceneTransformer {
       className = method.getDeclaringClass().getName();
     }
     String methodName = method.getSubSignature().split(" ")[1];
-    String calltreeLine =
-        StringUtils.leftPad("", depth * 2)
-            + methodName
-            + " "
-            + className
-            + " linenumber="
-            + line
-            + "\n";
+    String calltreeLine = StringUtils.leftPad("", depth * 2) + methodName + " " + className
+        + " linenumber=" + line + "\n";
 
     boolean excluded = false;
     boolean sink = false;
-    checkExclusionLoop:
+  checkExclusionLoop:
     for (String cl : className.split(":")) {
       for (String prefix : this.excludeList) {
         if (cl.startsWith(prefix.replace("*", ""))) {
@@ -769,13 +743,8 @@ class CustomSenceTransformer extends SceneTransformer {
           continue;
         }
 
-        extractCallTree(
-            fw,
-            cg,
-            tgt,
-            depth + 1,
-            (edge.srcStmt() == null) ? -1 : edge.srcStmt().getJavaSourceStartLineNumber(),
-            handled,
+        extractCallTree(fw, cg, tgt, depth + 1,
+            (edge.srcStmt() == null) ? -1 : edge.srcStmt().getJavaSourceStartLineNumber(), handled,
             edge.src().getDeclaringClass().getName());
       }
     }
@@ -923,23 +892,21 @@ class CustomSenceTransformer extends SceneTransformer {
     while (it.hasNext()) {
       edgeList.add(it.next());
     }
-    Collections.sort(
-        edgeList,
-        new Comparator<Edge>() {
-          @Override
-          public int compare(Edge e1, Edge e2) {
-            Integer e1LineNo =
-                (e1.srcStmt() == null) ? -1 : e1.srcStmt().getJavaSourceStartLineNumber();
-            Integer e2LineNo =
-                (e2.srcStmt() == null) ? -1 : e2.srcStmt().getJavaSourceStartLineNumber();
-            int line = e1LineNo - e2LineNo;
-            if (line == 0) {
-              return e1.tgt().getName().compareTo(e2.tgt().getName());
-            } else {
-              return line;
-            }
-          }
-        });
+    Collections.sort(edgeList, new Comparator<Edge>() {
+      @Override
+      public int compare(Edge e1, Edge e2) {
+        Integer e1LineNo =
+            (e1.srcStmt() == null) ? -1 : e1.srcStmt().getJavaSourceStartLineNumber();
+        Integer e2LineNo =
+            (e2.srcStmt() == null) ? -1 : e2.srcStmt().getJavaSourceStartLineNumber();
+        int line = e1LineNo - e2LineNo;
+        if (line == 0) {
+          return e1.tgt().getName().compareTo(e2.tgt().getName());
+        } else {
+          return line;
+        }
+      }
+    });
 
     return edgeList.iterator();
   }
@@ -954,12 +921,8 @@ class CustomSenceTransformer extends SceneTransformer {
     while (it.hasNext()) {
       Edge edge = it.next();
       String className = edge.tgt().getDeclaringClass().getName();
-      String matchStr =
-          edge.src().getDeclaringClass().getName()
-              + ":"
-              + edge.tgt().getName()
-              + ":"
-              + ((edge.srcStmt() == null) ? -1 : edge.srcStmt().getJavaSourceStartLineNumber());
+      String matchStr = edge.src().getDeclaringClass().getName() + ":" + edge.tgt().getName() + ":"
+          + ((edge.srcStmt() == null) ? -1 : edge.srcStmt().getJavaSourceStartLineNumber());
 
       boolean excluded = false;
       for (String prefix : this.excludeList) {
@@ -972,8 +935,7 @@ class CustomSenceTransformer extends SceneTransformer {
       }
 
       if (!excluded) {
-        if (cg.edgesOutOf(edge.tgt()).hasNext()
-            || edge.tgt().getName().equals("<init>")
+        if (cg.edgesOutOf(edge.tgt()).hasNext() || edge.tgt().getName().equals("<init>")
             || edge.tgt().getName().equals("<cinit>")) {
           // Does not merge methods with deeper method calls
           // Does not merge edge for constructor calls
@@ -986,10 +948,9 @@ class CustomSenceTransformer extends SceneTransformer {
             String previousEdgeName = previous.tgt().getName();
             Integer edgeLineNo =
                 (edge.srcStmt() == null) ? -1 : edge.srcStmt().getJavaSourceStartLineNumber();
-            Integer previousEdgeLineNo =
-                (previous.srcStmt() == null)
-                    ? -1
-                    : previous.srcStmt().getJavaSourceStartLineNumber();
+            Integer previousEdgeLineNo = (previous.srcStmt() == null)
+                ? -1
+                : previous.srcStmt().getJavaSourceStartLineNumber();
             if (!(edgeName.equals(previousEdgeName)) || !(edgeLineNo == previousEdgeLineNo)) {
               if (processingEdgeList.size() > 0) {
                 Set<String> classNameSet = new HashSet<String>();
@@ -1019,14 +980,10 @@ class CustomSenceTransformer extends SceneTransformer {
         classNameSet.add(mergeEdge.tgt().getDeclaringClass().getName());
       }
       if (classNameSet.size() > 1) {
-        String matchStr =
-            edgeToAdd.src().getDeclaringClass().getName()
-                + ":"
-                + edgeToAdd.tgt().getName()
-                + ":"
-                + ((edgeToAdd.srcStmt() == null)
-                    ? -1
-                    : edgeToAdd.srcStmt().getJavaSourceStartLineNumber());
+        String matchStr = edgeToAdd.src().getDeclaringClass().getName() + ":"
+            + edgeToAdd.tgt().getName() + ":"
+            + ((edgeToAdd.srcStmt() == null) ? -1
+                                             : edgeToAdd.srcStmt().getJavaSourceStartLineNumber());
         this.edgeClassMap.put(matchStr, classNameSet);
       }
     }
