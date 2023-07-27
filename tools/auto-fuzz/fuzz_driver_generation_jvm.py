@@ -30,6 +30,10 @@ class FuzzTarget:
     imports_to_add: Set[str]
     heuristics_used: List[str]
     class_field_list: List[str]
+    private_field_source_code: str
+    fuzzer_file_prepare_source_code: str
+    fuzzer_init_source_code: str
+    fuzzer_tear_down_source_code: str
 
     def __init__(self, orig=None, func_elem=None):
         self.function_name = ""
@@ -41,6 +45,10 @@ class FuzzTarget:
         self.imports_to_add = set()
         self.heuristics_used = []
         self.class_field_list = []
+        self.private_field_source_code = ""
+        self.fuzzer_file_prepare_source_code = ""
+        self.fuzzer_init_source_code = ""
+        self.fuzzer_tear_down_source_code = ""
         if orig:
             self.function_name = orig.function_name
             self.function_target = orig.function_target
@@ -51,6 +59,10 @@ class FuzzTarget:
             self.imports_to_add.update(orig.imports_to_add)
             self.heuristics_used.extend(list(set(orig.heuristics_used)))
             self.class_field_list.extend(orig.class_field_list)
+            self.private_field_source_code = orig.private_field_source_code
+            self.fuzzer_file_prepare_source_code = orig.fuzzer_file_prepare_source_code
+            self.fuzzer_init_source_code = orig.fuzzer_init_source_code
+            self.fuzzer_tear_down_source_code = orig.fuzzer_tear_down_source_code
         elif func_elem:
             # Method name in .data.yaml for jvm: [className].methodName(methodParameterList)
             self.function_name = func_elem['functionName'].split(
@@ -104,6 +116,18 @@ class FuzzTarget:
                     # Create an array of possible static objects for random choice
                     for item in self.class_field_list:
                         content += item
+                elif "/*PRIVATE_FIELD*/" in line:
+                    # Insert fuzzer class field
+                    content += private_field_source_code
+                elif "/*FUZZER_INITIALIZE*/" in line:
+                    # Insert fuzzer initialize code
+                    content += fuzzer_init_source_code
+                elif "/*FUZZER_TEAR_DOWN*/" in line:
+                    # Insert fuzzer tear down code
+                    content += fuzzer_tear_down_source_code
+                elif "/*FILE_PREPERATION*/" in line:
+                    # Insert file preparation code
+                    content += self.fuzzer_file_prepare_source_code
                 else:
                     # Copy other lines from the base fuzzer
                     content += line
@@ -321,6 +345,15 @@ def _handle_argument(argType,
     elif argType == "java.lang.String[]":
         return ["new java.lang.String[]{data.consumeString(100)}"]
 
+    if argType == "java.io.File":
+        result = _handle_file_object(possible_target, False)
+        if result:
+            return result
+    if argType == "java.nio.file.Path":
+        result = _handle_file_object(possible_target, True)
+        if result:
+            return result
+
     if enum_object and _is_enum_class(init_dict, argType):
         result = _handle_enum_choice(init_dict, argType)
         if result:
@@ -445,7 +478,7 @@ def _search_factory_method(classname,
     for func_elem in possible_method_list:
         java_info = func_elem['JavaMethodInfo']
 
-        # Elimnate candidates
+        # Eliminate candidates
         if java_info['static']:
             continue
         if not java_info['public']:
@@ -628,6 +661,42 @@ def _should_filter_method(callsites, target_method, current_method, handled):
         return False
 
     return result
+
+
+def _handle_file_object(possible_target, is_path):
+    """
+    Prepare a random file for any parameters
+    needing a file or file path to process.
+    """
+    possible_target.imports_to_add.add("import java.io.File;")
+    possible_target.imports_to_add.add("import java.io.FileWriter;")
+    possible_target.imports_to_add.add("import java.io.IOException;")
+    possible_target.imports_to_add.add("import java.io.PrintWriter;")
+    possible_target.imports_to_add.add("import java.nio.file.Files;")
+
+    possible_target.private_field_source_code = """  private static File tempDirectory;
+  private static File tempFile;"""
+
+    possible_target.fuzzer_init_source_code = """  try {
+      tempDirectory = Files.createTempDirectory("oss-fuzz").toFile().getAbsoluteFile();
+      tempFile = new File(tempDirectory, "oss-fuzz-temp").getAbsoluteFile();
+    } catch (IOException e) {
+      // Known exception
+    }"""
+
+    possible_target.fuzzer_tear_down_source_code = """  tempFile.delete();
+    tempDirectory.delete();"""
+
+    possible_target.fuzzer_file_prepare_source_code = """  try {
+      PrintWriter printWriter = new PrintWriter(new FileWriter(tempFile));
+      printWriter.print(data.consumeString(data.remainingBytes() / 2));
+      printWriter.close();
+    } catch (IOException e) {}"""
+
+    if is_path:
+        return ["tempFile.toPath()"]
+    else:
+        return ["tempfile"]
 
 
 def _handle_enum_choice(init_dict, enum_name):

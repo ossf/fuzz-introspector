@@ -306,8 +306,19 @@ def gen_base_fuzzer_jvm(need_base_import=True):
 import org.apache.commons.lang3.ArrayUtils;"""
     BASE_FUZZER = """/*IMPORTS*/
 public class Fuzz/*COUNTER*/ {
+/*PRIVATE_FIELD*/
+
+  public static void fuzzerInitialize() {
+/*FUZZER_INITIALIZE*/
+  }
+
+  public static void fuzzerTearDown() {
+/*FUZZER_TEAR_DOWN*/
+  }
+
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
 /*STATIC_OBJECT_CHOICE*/
+/*FILE_PREPERATION*/
 /*CODE*/
   }
 }"""
