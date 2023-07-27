@@ -340,8 +340,7 @@ def _gradle_build_project(basedir, projectdir):
 
     # Build project with gradle wrapper of the project
     cmd = [
-        "rm -rf $HOME/.gradle/caches/",
-        "chmod +x ./gradlew",
+        "rm -rf $HOME/.gradle/caches/", "chmod +x ./gradlew",
         """if ./gradlew tasks --all | grep -qw "^spotlessCheck";
         then
           ./gradlew clean build -x test -x spotlessCheck;
