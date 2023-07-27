@@ -836,7 +836,8 @@ def _filter_polymorphism(method_list):
     return result_list
 
 
-def _filter_method_list(callsites, max_count, target_method_list, calldepth_filter):
+def _filter_method_list(callsites, max_count, target_method_list,
+                        calldepth_filter):
     """
     Filter methods from the target_method list which has
     been called by any other methods.
@@ -862,7 +863,8 @@ def _filter_method_list(callsites, max_count, target_method_list, calldepth_filt
     return result_method_list
 
 
-def _filter_method(method_list, static_method_list, max_count, calldepth_filter):
+def _filter_method(method_list, static_method_list, max_count,
+                   calldepth_filter):
     """
     Filter methods from the two method list
     """
@@ -878,13 +880,20 @@ def _filter_method(method_list, static_method_list, max_count, calldepth_filter)
         else:
             callsites[item] = target_callsites[item]
 
-    filtered_method_list = _filter_method_list(callsites, max_count, filtered_method_list, calldepth_filter)
-    filtered_static_method_list = _filter_method_list(callsites, max_count, static_method_list, calldepth_filter)
+    filtered_method_list = _filter_method_list(callsites, max_count,
+                                               filtered_method_list,
+                                               calldepth_filter)
+    filtered_static_method_list = _filter_method_list(callsites, max_count,
+                                                      static_method_list,
+                                                      calldepth_filter)
 
     return filtered_method_list, filtered_static_method_list
 
 
-def _extract_method(yaml_dict, max_method, max_count=20, calldepth_filter=False):
+def _extract_method(yaml_dict,
+                    max_method,
+                    max_count=20,
+                    calldepth_filter=False):
     """Extract method and group them into list for heuristic processing"""
     init_dict = {}
     method_list = []
@@ -892,11 +901,14 @@ def _extract_method(yaml_dict, max_method, max_count=20, calldepth_filter=False)
     static_method_list = []
     for func_elem in yaml_dict['All functions']['Elements']:
         # Check and filter method if too many methods in the result method list
-        if len(method_list) > max_method or len(static_method_list) > max_method:
-            method_list, static_method_list = _filter_method(method_list, static_method_list, max_count, calldepth_filter)
+        if len(method_list) > max_method or len(
+                static_method_list) > max_method:
+            method_list, static_method_list = _filter_method(
+                method_list, static_method_list, max_count, calldepth_filter)
 
         # Still too many method after filtering, return the current result set
-        if len(static_method_list) > max_method or len(method_list) > max_method:
+        if len(static_method_list) > max_method or len(
+                method_list) > max_method:
             return init_dict, method_list, instance_method_list, static_method_list
 
         # Skip method belongs to non public or non concrete class
@@ -950,7 +962,10 @@ def _extract_method(yaml_dict, max_method, max_count=20, calldepth_filter=False)
                 method_list.append(func_elem)
 
     # Final filtering of the method list
-    method_list, static_method_list = _filter_method(method_list, static_method_list, max_count, calldepth_filter)
+    method_list, static_method_list = _filter_method(method_list,
+                                                     static_method_list,
+                                                     max_count,
+                                                     calldepth_filter)
 
     return init_dict, method_list, instance_method_list, static_method_list
 
@@ -1790,7 +1805,10 @@ def _generate_heuristic_10(method_tuple, possible_targets, max_target):
                     break
 
 
-def _generate_heuristics(yaml_dict, max_target, max_method, calldepth_filter=False):
+def _generate_heuristics(yaml_dict,
+                         max_target,
+                         max_method,
+                         calldepth_filter=False):
     method_tuple = _extract_method(yaml_dict,
                                    max_method,
                                    max_count=20,
@@ -1848,7 +1866,8 @@ def generate_possible_targets(proj_folder, class_list, max_target,
 
     max_fuzzer = constants.MAX_FUZZERS_PER_PROJECT
 
-    possible_targets = _generate_heuristics(yaml_dict, max_target, max_fuzzer, False)
+    possible_targets = _generate_heuristics(yaml_dict, max_target, max_fuzzer,
+                                            False)
     if len(possible_targets) > max_fuzzer:
         possible_targets = _generate_heuristics(yaml_dict, max_target, True)
 
