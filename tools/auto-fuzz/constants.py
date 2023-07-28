@@ -18,12 +18,27 @@ MAX_THREADS = 4
 
 BATCH_SIZE_BEFORE_DOCKER_CLEAN = 40
 
-JDK_URL = "https://download.java.net/java/GA/jdk15.0.2/0d1cfde4252546c6931946de8db48ee2/7/GPL/openjdk-15.0.2_linux-x64_bin.tar.gz"
+JDK_URL = {
+    "jdk15":
+    "https://download.java.net/java/GA/jdk15.0.2/0d1cfde4252546c6931946de8db48ee2/7/GPL/openjdk-15.0.2_linux-x64_bin.tar.gz",
+    "jdk17":
+    "https://download.java.net/openjdk/jdk17/ri/openjdk-17+35_linux-x64_bin.tar.gz",
+    "jdk11":
+    "https://download.java.net/openjdk/jdk11.0.0.1/ri/openjdk-11.0.0.1_linux-x64_bin.tar.gz",
+    "jdk8":
+    "https://download.java.net/openjdk/jdk8u43/ri/openjdk-8u43-linux-x64.tar.gz"
+}
 ANT_URL = "https://dlcdn.apache.org//ant/binaries/apache-ant-1.9.16-bin.zip"
 MAVEN_URL = "https://archive.apache.org/dist/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.zip"
 GRADLE_URL = "https://services.gradle.org/distributions/gradle-7.4.2-bin.zip"
 PROTOC_URL = "https://github.com/protocolbuffers/protobuf/releases/download/v3.15.8/protoc-3.15.8-linux-x86_64.zip"
 
+JDK_HOME = {
+    "jdk15": "jdk-15.0.2",
+    "jdk17": "jdk-17",
+    "jdk11": "jdk-11.0.0.1",
+    "jdk8": "java-se-8u43-ri"
+}
 ANT_PATH = "apache-ant-1.9.16/bin"
 MAVEN_PATH = "apache-maven-3.6.3/bin"
 GRADLE_HOME = "gradle-7.4.2"

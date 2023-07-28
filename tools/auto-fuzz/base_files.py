@@ -49,11 +49,14 @@ JVM_LICENSE = """// Copyright 2023 Google LLC
 ///////////////////////////////////////////////////////////////////////////"""
 
 
-def gen_dockerfile(github_url, project_name, language="python"):
+def gen_dockerfile(github_url,
+                   project_name,
+                   language="python",
+                   jdk_version="jdk15"):
     if language == "python":
         return gen_dockerfile_python(github_url, project_name)
     elif language == "jvm":
-        return gen_dockerfile_jvm(github_url, project_name)
+        return gen_dockerfile_jvm(github_url, project_name, jdk_version)
     else:
         return None
 
@@ -105,13 +108,13 @@ WORKDIR $SRC/%s
     return DOCKER_LICENSE + "\n" + DOCKER_STEPS
 
 
-def gen_dockerfile_jvm(github_url, project_name):
+def gen_dockerfile_jvm(github_url, project_name, jdk_version="jdk15"):
     DOCKER_STEPS = """FROM gcr.io/oss-fuzz-base/base-builder-jvm
 #RUN curl -L %s -o ant.zip && unzip ant.zip -d $SRC/ant && rm -rf ant.zip
 #RUN curl -L %s -o maven.zip && unzip maven.zip -d $SRC/maven && rm -rf maven.zip
 #RUN curl -L %s -o gradle.zip && unzip gradle.zip -d $SRC/gradle && rm -rf gradle.zip
 #RUN curl -L %s -o protoc.zip && mkdir -p $SRC/protoc && unzip protoc.zip -d $SRC/protoc && rm -rf protoc.zip
-#RUN curl -L %s -o jdk.tar.gz && tar zxf jdk.tar.gz && rm -rf jdk.tar.gz
+RUN curl -L %s -o jdk.tar.gz && tar zxf jdk.tar.gz && rm -rf jdk.tar.gz
 COPY ant.zip $SRC/ant.zip
 COPY maven.zip $SRC/maven.zip
 COPY gradle.zip $SRC/gradle.zip
@@ -124,15 +127,16 @@ RUN unzip protoc.zip -d $SRC/protoc && rm ./protoc.zip
 ENV ANT $SRC/ant/apache-ant-1.9.16/bin/ant
 ENV MVN $SRC/maven/apache-maven-3.6.3/bin/mvn
 ENV GRADLE_HOME $SRC/gradle/gradle-7.4.2
-ENV PATH="$SRC/gradle/gradle-7.4.2/bin:$SRC/protoc/bin:$PATH"
-#ENV JAVA_HOME="$SRC/jdk-15.0.2"
+ENV JAVA_HOME="$SRC/%s"
+ENV PATH="$JAVA_HOME/bin:$SRC/gradle/gradle-7.4.2/bin:$SRC/protoc/bin:$PATH"
 #RUN git clone --depth 1 %s %s
 COPY %s %s
 COPY *.sh *.java $SRC/
 WORKDIR $SRC/%s
 """ % (constants.ANT_URL, constants.MAVEN_URL, constants.GRADLE_URL,
-       constants.PROTOC_URL, constants.JDK_URL, github_url, project_name,
-       project_name, project_name, project_name)
+       constants.PROTOC_URL, constants.JDK_URL[jdk_version],
+       constants.JDK_HOME[jdk_version], github_url, project_name, project_name,
+       project_name, project_name)
 
     return BASH_LICENSE + "\n" + DOCKER_STEPS
 
@@ -241,6 +245,8 @@ do
 done
 cd $curr_dir
 
+cp -r $JAVA_HOME $OUT/
+
 # Retrieve apache-common-lang3 library
 # This library provides method to translate primitive type arrays to
 # their respective class object arrays to avoid compilation error.
@@ -252,7 +258,7 @@ RUNTIME_CLASSPATH=\$this_dir/jar_temp:\$this_dir/commons-lang3-3.12.0.jar:\$this
 for fuzzer in $(find $SRC -name 'Fuzz.java')
 do
   fuzzer_basename=$(basename -s .java $fuzzer)
-  javac -cp $BUILD_CLASSPATH $fuzzer
+  $JAVA_HOME/bin/javac -cp $BUILD_CLASSPATH $fuzzer
   cp $SRC/$fuzzer_basename.class $OUT/
 
   # Create an execution wrapper that executes Jazzer with the correct arguments.
@@ -267,7 +273,8 @@ do
     mem_settings='-Xmx2048m:-Xss1024k'
   fi
 
-  LD_LIBRARY_PATH=\"$JVM_LD_LIBRARY_PATH\":\$this_dir \
+  LD_LIBRARY_PATH=\"$JVM_LD_LIBRARY_PATH\":\$this_dir JAVA_HOME=\$this_dir/$(basename $JAVA_HOME) \
+    PATH=$JAVA_HOME/bin:$PATH
     \$this_dir/jazzer_driver --agent_path=\$this_dir/jazzer_agent_deploy.jar \
     --cp=$RUNTIME_CLASSPATH \
     --target_class=$fuzzer_basename \

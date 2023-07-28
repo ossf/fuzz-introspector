@@ -152,6 +152,12 @@ class OSS_FUZZ_PROJECT:
                 base_files.gen_dockerfile(self.github_url, self.project_name,
                                           self.language))
 
+    def change_jvm_dockerfile(self, jdk_version):
+        with open(self.dockerfile, "w") as dfile:
+            dfile.write(
+                base_files.gen_dockerfile(self.github_url, self.project_name,
+                                          self.language, jdk_version))
+
 
 def get_next_project_folder(base_dir):
     AUTOFUZZDIR = "autofuzz-"
@@ -213,7 +219,7 @@ def run_static_analysis_python(git_repo, basedir, project_name):
     return ret
 
 
-def _ant_build_project(basedir, projectdir):
+def _ant_build_project(basedir, projectdir, jdk_dir):
     """Helper method to build project using ant"""
     # Prepare ant
     with zipfile.ZipFile(os.path.join(basedir, "ant.zip"), "r") as af:
@@ -221,7 +227,7 @@ def _ant_build_project(basedir, projectdir):
 
     # Set environment variable
     env_var = os.environ.copy()
-    env_var['JAVA_HOME'] = os.path.join(basedir, "jdk-15.0.2")
+    env_var['JAVA_HOME'] = os.path.join(basedir, jdk_dir)
     env_var['PATH'] = os.path.join(
         basedir, constants.ANT_PATH) + ":" + os.path.join(
             basedir, constants.PROTOC_PATH) + ":" + env_var['PATH']
@@ -244,7 +250,7 @@ def _ant_build_project(basedir, projectdir):
     return True
 
 
-def _maven_build_project(basedir, projectdir):
+def _maven_build_project(basedir, projectdir, jdk_dir):
     """Helper method to build project using maven"""
     # Prepare maven
     with zipfile.ZipFile(os.path.join(basedir, "maven.zip"), "r") as mf:
@@ -252,7 +258,7 @@ def _maven_build_project(basedir, projectdir):
 
     # Set environment variable
     env_var = os.environ.copy()
-    env_var['JAVA_HOME'] = os.path.join(basedir, "jdk-15.0.2")
+    env_var['JAVA_HOME'] = os.path.join(basedir, jdk_dir)
     env_var['PATH'] = os.path.join(
         basedir, constants.MAVEN_PATH) + ":" + os.path.join(
             basedir, constants.PROTOC_PATH) + ":" + env_var['PATH']
@@ -324,7 +330,7 @@ def _maven_build_project(basedir, projectdir):
     return True
 
 
-def _gradle_build_project(basedir, projectdir):
+def _gradle_build_project(basedir, projectdir, jdk_dir):
     """Helper method to build project using maven"""
     # Prepare gradle
     with zipfile.ZipFile(os.path.join(basedir, "gradle.zip"), "r") as gf:
@@ -333,7 +339,7 @@ def _gradle_build_project(basedir, projectdir):
     # Set environment variable
     env_var = os.environ.copy()
     env_var['GRADLE_HOME'] = os.path.join(basedir, constants.GRADLE_HOME)
-    env_var['JAVA_HOME'] = os.path.join(basedir, "jdk-15.0.2")
+    env_var['JAVA_HOME'] = os.path.join(basedir, jdk_dir)
     env_var['PATH'] = os.path.join(
         basedir, constants.GRADLE_PATH) + ":" + os.path.join(
             basedir, constants.PROTOC_PATH) + ":" + env_var['PATH']
@@ -420,9 +426,14 @@ def build_jvm_project(basedir, projectdir, proj_name):
     # directory
     builddir = find_project_build_folder(projectdir, proj_name)
 
-    # Prepare OpenJDK 15
-    os.makedirs(os.path.join(basedir, "jdk-15.0.2"), exist_ok=True)
-    with tarfile.open(os.path.join(basedir, "jdk.tar.gz"), "r:gz") as jf:
+    # Prepare OpenJDK
+    with tarfile.open(os.path.join(basedir, "jdk8.tar.gz"), "r:gz") as jf:
+        jf.extractall(os.path.join(basedir))
+    with tarfile.open(os.path.join(basedir, "jdk11.tar.gz"), "r:gz") as jf:
+        jf.extractall(os.path.join(basedir))
+    with tarfile.open(os.path.join(basedir, "jdk15.tar.gz"), "r:gz") as jf:
+        jf.extractall(os.path.join(basedir))
+    with tarfile.open(os.path.join(basedir, "jdk17.tar.gz"), "r:gz") as jf:
         jf.extractall(os.path.join(basedir))
 
     # Prepare protoc
@@ -434,28 +445,43 @@ def build_jvm_project(basedir, projectdir, proj_name):
     os.chmod(os.path.join(basedir, "protoc", "bin", "protoc"),
              base_stat.st_mode | stat.S_IEXEC)
 
+    type = None
+    build_ret = False
+    jarfiles = None
+    jdk_base = None
     if builddir:
-        if os.path.exists(os.path.join(builddir, "pom.xml")):
-            # Maven project
-            build_ret = _maven_build_project(basedir, builddir)
-            return ("maven", build_ret, builddir, [])
-        elif os.path.exists(os.path.join(
-                builddir, "build.gradle")) or os.path.exists(
-                    os.path.join(builddir, "build.gradle.kts")):
-            # Gradle project
-            build_ret = _gradle_build_project(basedir, builddir)
-            if os.path.exists(os.path.join(builddir, "proj.jar")):
-                jarfiles = [os.path.join(builddir, "proj.jar")]
-            else:
+        # Loop and use each JDK version in order in the previous failed.
+        # Order JDK15 (oss-fuzz default) -> JDK17 -> JDK11 -> JDK8
+        for jdk in constants.JDK_HOME:
+            jdk_dir = constants.JDK_HOME[jdk]
+            if os.path.exists(os.path.join(builddir, "pom.xml")):
+                # Maven project
+                build_ret = _maven_build_project(basedir, builddir, jdk_dir)
+                type = "maven"
                 jarfiles = []
-            return ("gradle", build_ret, builddir, jarfiles)
-        elif os.path.exists(os.path.join(builddir, "build.xml")):
-            # Ant project
-            build_ret = _ant_build_project(basedir, builddir)
-            return ("ant", build_ret, builddir, [])
+            elif os.path.exists(os.path.join(
+                    builddir, "build.gradle")) or os.path.exists(
+                        os.path.join(builddir, "build.gradle.kts")):
+                # Gradle project
+                build_ret = _gradle_build_project(basedir, builddir, jdk_dir)
+                type = "gradle"
+                if os.path.exists(os.path.join(builddir, "proj.jar")):
+                    jarfiles = [os.path.join(builddir, "proj.jar")]
+                else:
+                    jarfiles = []
+            elif os.path.exists(os.path.join(builddir, "build.xml")):
+                # Ant project
+                build_ret = _ant_build_project(basedir, builddir, jdk_dir)
+                type = "ant"
+                jarfiles = []
 
-    # Unknown project type
-    return (None, False, None, None)
+            # Check if the build success with the current JDK version
+            # and record that for future process and oss-fuzz test
+            if build_ret:
+                jdk_base = jdk_dir
+                break
+
+    return (type, build_ret, builddir, jarfiles, jdk_base)
 
 
 def run_static_analysis_jvm(git_repo, basedir, project_name):
@@ -473,17 +499,17 @@ def run_static_analysis_jvm(git_repo, basedir, project_name):
                         symlinks=True)
     except:
         print("Fail to retrieve github directory.")
-        return False
+        return False, None
 
     jardir = os.path.join(basedir, "work", "jar")
     projectdir = os.path.join(basedir, "work", "proj")
 
-    project_type, build_ret, builddir, jarfiles = build_jvm_project(
+    project_type, build_ret, builddir, jarfiles, jdk_base = build_jvm_project(
         basedir, projectdir, project_name)
 
     if not build_ret:
         print("Unknown project type or project build fail.\n")
-        return False
+        return False, None
 
     # Retrieve Jazzer package for building fuzzer
     jazzer_url = "https://github.com/CodeIntelligenceTesting/jazzer/releases/download/v0.15.0/jazzer-linux.tar.gz"
@@ -525,6 +551,12 @@ def run_static_analysis_jvm(git_repo, basedir, project_name):
                     shutil.copyfile(os.path.abspath(os.path.join(root, file)),
                                     dst_path)
 
+    # Prepare environment variable for found version of JDK
+    env_var = os.environ.copy()
+    env_var['JAVA_HOME'] = os.path.join(basedir, jdk_base)
+    env_var['PATH'] = os.path.join(basedir, jdk_base,
+                                   "bin") + ":" + env_var['PATH']
+
     # Compile and package fuzzer to jar file
     cmd = [
         "javac -cp jazzer_standalone.jar:commons-lang3.jar:%s ../Fuzz.java" %
@@ -534,11 +566,12 @@ def run_static_analysis_jvm(git_repo, basedir, project_name):
         subprocess.check_call(" && ".join(cmd),
                               shell=True,
                               timeout=600,
+                              env=env_var,
                               stdout=subprocess.DEVNULL,
                               stderr=subprocess.DEVNULL)
     except subprocess.TimeoutExpired:
         print("Fail to compile Fuzz.java.\n")
-        return False
+        return False, None
 
     # Run the java frontend static analysis
     cmd = [
@@ -549,15 +582,16 @@ def run_static_analysis_jvm(git_repo, basedir, project_name):
         subprocess.check_call(" ".join(cmd),
                               shell=True,
                               timeout=1800,
+                              env=env_var,
                               stdout=subprocess.DEVNULL,
                               stderr=subprocess.DEVNULL,
                               cwd=os.path.dirname(FUZZ_INTRO_MAIN["jvm"]))
     except subprocess.TimeoutExpired:
         print("Fail to execute java frontend code.\n")
-        return False
+        return False, None
     except subprocess.CalledProcessError:
         print("Fail to execute java frontend code.\n")
-        return False
+        return False, None
 
     # Move data and data.yaml to working directory
     data_src = os.path.join(os.path.dirname(FUZZ_INTRO_MAIN["jvm"]),
@@ -579,7 +613,7 @@ def run_static_analysis_jvm(git_repo, basedir, project_name):
         ret = False
 
     os.chdir(curr_dir)
-    return ret
+    return ret, jdk_base
 
 
 def copy_core_oss_fuzz_project_files(src_oss_project, dst_oss_project):
@@ -621,12 +655,14 @@ def cleanup_base_directory(base_dir, project_name):
     """
     file_to_clean = [
         'Fuzz.jar', 'Fuzz.class', 'ant.zip', 'gradle.zip', 'maven.zip',
-        'protoc.zip', 'jdk.tar.gz', 'work/commons-lang3.jar', 'work/jazzer',
+        'protoc.zip', 'jdk15.tar.gz', 'jdk17.tar.gz', 'jdk11.tar.gz',
+        'jdk8.tar.gz', 'work/commons-lang3.jar', 'work/jazzer',
         'work/jazzer.tar.gz', 'work/jazzer_standalone.jar'
     ]
     dir_to_clean = [
         'apache-maven-3.6.3', 'apache-ant-1.9.16', 'gradle-7.4.2',
-        'jdk-15.0.2', 'protoc', project_name, 'work/jar', 'work/proj'
+        'jdk-15.0.2', 'jdk-17', 'jdk-11.0.0.1', 'java-se-8u43-ri', 'protoc',
+        project_name, 'work/jar', 'work/proj'
     ]
 
     for file in file_to_clean:
@@ -924,11 +960,23 @@ def autofuzz_project_from_github(github_url,
     # target method filtering in the target generation stage. Some project requires
     # protoc to generate java code, so protoc is also downloaded here.
     if language == "jvm":
-        # Download OpenJDK 15:
+        # Download OpenJDK:
         target_jdk_path = os.path.join(oss_fuzz_base_project.project_folder,
-                                       "jdk.tar.gz")
+                                       "jdk15.tar.gz")
         with open(target_jdk_path, 'wb') as jf:
-            jf.write(requests.get(constants.JDK_URL).content)
+            jf.write(requests.get(constants.JDK_URL["jdk15"]).content)
+        target_jdk_path = os.path.join(oss_fuzz_base_project.project_folder,
+                                       "jdk17.tar.gz")
+        with open(target_jdk_path, 'wb') as jf:
+            jf.write(requests.get(constants.JDK_URL["jdk17"]).content)
+        target_jdk_path = os.path.join(oss_fuzz_base_project.project_folder,
+                                       "jdk11.tar.gz")
+        with open(target_jdk_path, 'wb') as jf:
+            jf.write(requests.get(constants.JDK_URL["jdk11"]).content)
+        target_jdk_path = os.path.join(oss_fuzz_base_project.project_folder,
+                                       "jdk8.tar.gz")
+        with open(target_jdk_path, 'wb') as jf:
+            jf.write(requests.get(constants.JDK_URL["jdk8"]).content)
         # Download Ant
         target_ant_path = os.path.join(oss_fuzz_base_project.project_folder,
                                        "ant.zip")
@@ -962,6 +1010,7 @@ def autofuzz_project_from_github(github_url,
     oss_fuzz_base_project.write_basefiles()
 
     static_res = None
+    jdk_base = None
     if do_static_analysis:
         print("Running static analysis on %s" % (github_url))
         if language == "python":
@@ -969,9 +1018,15 @@ def autofuzz_project_from_github(github_url,
                 github_url, oss_fuzz_base_project.project_folder,
                 oss_fuzz_base_project.project_name)
         elif language == "jvm":
-            static_res = run_static_analysis_jvm(
+            static_res, jdk_base = run_static_analysis_jvm(
                 github_url, oss_fuzz_base_project.project_folder,
                 oss_fuzz_base_project.project_name)
+
+            # Overwrite dockerfile with correct jdk version
+            for key in constants.JDK_HOME:
+                if constants.JDK_HOME[key] == jdk_base:
+                    oss_fuzz_base_project.change_jvm_dockerfile(key)
+                    break
 
         if static_res:
             workdir = os.path.join(oss_fuzz_base_project.project_folder,
