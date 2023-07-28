@@ -1868,6 +1868,82 @@ def _generate_heuristic_10(method_tuple, possible_targets, max_target):
                     break
 
 
+def _generate_heuristic_11(method_tuple, possible_targets, max_target):
+    """Heuristic 11.
+    Creates FuzzTarget for each constructor that satisfy all:
+        - public constructor of public concrete class
+        - have between 1-20 arguments
+    The fuzz target is simply one that calls into the target constructor
+    with suitable primitive fuzz data or objects
+
+    Will also add proper exception handling based on the exception list
+    provided by the frontend code.
+    """
+    HEURISTIC_NAME = "jvm-autofuzz-heuristics-11"
+
+    init_dict, method_list, instance_method_list, static_method_list = method_tuple
+
+    if len(possible_targets) > max_target:
+        return
+
+    for class_name in init_dict:
+        for func_elem in init_dict[class_name]:
+            if len(possible_targets) > max_target:
+                return
+
+            # Skip excluded constructor
+            if len(func_elem['argTypes']) == 0 or len(
+                    func_elem['argTypes']) > 20:
+                continue
+
+            # Initialize base possible_target object
+            possible_target = FuzzTarget(func_elem=func_elem)
+            func_name = possible_target.function_name
+            func_class = possible_target.function_class
+            target_method_name = possible_target.function_target
+
+            # Store function parameter list
+            variable_list = []
+            for argType in func_elem['argTypes']:
+                arg_list = _handle_argument(argType.replace('$', '.'),
+                                            None,
+                                            possible_target,
+                                            max_target, [],
+                                            enum_object=True,
+                                            class_field=True,
+                                            class_object=True)
+                if arg_list:
+                    variable_list.append(arg_list[0])
+            if len(variable_list) != len(func_elem['argTypes']):
+                continue
+
+            # Create the actual source
+            fuzzer_source_code = "  // Heuristic name: %s\n" % (HEURISTIC_NAME)
+            fuzzer_source_code += "  // Target method: %s\n" % (
+                target_method_name)
+            fuzzer_source_code += "  new %s(%s);\n" % (func_class,
+                                                       ",".join(variable_list))
+
+            exception_set = set(possible_target.exceptions_to_handle)
+            if len(exception_set) > 0:
+                fuzzer_source_code = "  try {\n" + fuzzer_source_code
+                fuzzer_source_code += "  }\n"
+                counter = 1
+
+                exceptions, super_exceptions = _extract_super_exceptions(
+                    exception_set)
+                for exc in list(exceptions) + list(super_exceptions):
+                    fuzzer_source_code += "  catch (%s e%d) {}\n" % (exc,
+                                                                     counter)
+                    counter += 1
+
+            possible_target.fuzzer_source_code = fuzzer_source_code
+            if HEURISTIC_NAME not in possible_target.heuristics_used:
+                possible_target.heuristics_used.append(HEURISTIC_NAME)
+
+            possible_targets.append(possible_target)
+
+
 def _generate_heuristics(yaml_dict,
                          max_target,
                          max_method,
@@ -1904,6 +1980,9 @@ def _generate_heuristics(yaml_dict,
     possible_targets.extend(temp_targets)
     temp_targets = []
     _generate_heuristic_10(method_tuple, temp_targets, max_target)
+    possible_targets.extend(temp_targets)
+    temp_targets = []
+    _generate_heuristic_11(method_tuple, temp_targets, max_target)
     possible_targets.extend(temp_targets)
 
     return possible_targets
