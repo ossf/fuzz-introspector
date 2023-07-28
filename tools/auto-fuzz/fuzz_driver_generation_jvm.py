@@ -1898,7 +1898,8 @@ def _generate_heuristic_11(method_tuple, possible_targets, max_target):
                 return
 
             # Skip excluded constructor
-            if len(func_elem['argTypes']) == 0 or len(func_elem['argTypes']) > 20:
+            if len(func_elem['argTypes']) == 0 or len(
+                    func_elem['argTypes']) > 20:
                 continue
 
             # Initialize base possible_target object
@@ -1910,8 +1911,11 @@ def _generate_heuristic_11(method_tuple, possible_targets, max_target):
             # Store function parameter list
             variable_list = []
             for argType in func_elem['argTypes']:
-                arg_list = _handle_argument(argType.replace('$', '.'), None,
-                                           possible_target, max_target, [], enum_object=True,
+                arg_list = _handle_argument(argType.replace('$', '.'),
+                                            None,
+                                            possible_target,
+                                            max_target, [],
+                                            enum_object=True,
                                             class_field=True,
                                             class_object=True)
                 if arg_list:
@@ -1921,8 +1925,10 @@ def _generate_heuristic_11(method_tuple, possible_targets, max_target):
 
             # Create the actual source
             fuzzer_source_code = "  // Heuristic name: %s\n" % (HEURISTIC_NAME)
-            fuzzer_source_code += "  // Target method: %s\n" % (target_method_name)
-            fuzzer_source_code += "  new %s(%s);\n" % (func_class, ",".join(variable_list))
+            fuzzer_source_code += "  // Target method: %s\n" % (
+                target_method_name)
+            fuzzer_source_code += "  new %s(%s);\n" % (func_class,
+                                                       ",".join(variable_list))
 
             exception_set = set(possible_target.exceptions_to_handle)
             if len(exception_set) > 0:
@@ -1933,7 +1939,8 @@ def _generate_heuristic_11(method_tuple, possible_targets, max_target):
                 exceptions, super_exceptions = _extract_super_exceptions(
                     exception_set)
                 for exc in list(exceptions) + list(super_exceptions):
-                    fuzzer_source_code += "  catch (%s e%d) {}\n" % (exc, counter)
+                    fuzzer_source_code += "  catch (%s e%d) {}\n" % (exc,
+                                                                     counter)
                     counter += 1
 
             possible_target.fuzzer_source_code = fuzzer_source_code
