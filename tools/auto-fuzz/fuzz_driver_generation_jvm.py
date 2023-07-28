@@ -1022,13 +1022,14 @@ def _extract_method(yaml_dict,
             # or not and filter out unrelated methods
             # from dependencies or libraries
             if _is_project_class(func_class_name):
-                instance_method_list.append(func_elem)
                 # Exclude getters setters and methods
-                # that do not take any arguments.
+                # that do not take any arguments. Only
+                # add them to instance_method_list for
+                # supporting purpose of target methods.
                 if plain or getter_setter:
-                    continue
-
-                method_list.append(func_elem)
+                    instance_method_list.append(func_elem)
+                else:
+                    method_list.append(func_elem)
 
     # Final filtering of the method list
     method_list, static_method_list = _filter_method(method_list,
@@ -1325,7 +1326,7 @@ def _generate_heuristic_4(method_tuple, possible_targets, max_target):
         # Retrieve list of factory method for the target object
         factory_method_list = _search_factory_method(func_class,
                                                      static_method_list,
-                                                     instance_method_list,
+                                                     method_list + instance_method_list,
                                                      possible_target,
                                                      init_dict, max_target)
 
@@ -1403,7 +1404,7 @@ def _generate_heuristic_6(method_tuple, possible_targets, max_target):
         # Retrieve list of factory method or constructor for the target object
         object_creation_list = _search_factory_method(func_class,
                                                       static_method_list,
-                                                      instance_method_list,
+                                                      method_list + instance_method_list,
                                                       possible_target,
                                                       init_dict, max_target)
         object_creation_list.extend(
@@ -1424,7 +1425,7 @@ def _generate_heuristic_6(method_tuple, possible_targets, max_target):
                 target_method_name)
             fuzzer_source_code += "  %s obj = %s;\n" % (func_class,
                                                         object_creation)
-            for settings in _search_setting_method(instance_method_list,
+            for settings in _search_setting_method(method_list + instance_method_list,
                                                    func_class, func_name,
                                                    possible_target,
                                                    max_target):
@@ -1509,7 +1510,7 @@ def _generate_heuristic_7(method_tuple, possible_targets, max_target):
         # Retrieve list of factory method for the target object
         object_creation_list = _search_factory_method(func_class,
                                                       static_method_list,
-                                                      instance_method_list,
+                                                      method_list + instance_method_list,
                                                       possible_target,
                                                       init_dict, max_target)
         object_creation_list.extend(
@@ -1623,7 +1624,7 @@ def _generate_heuristic_8(method_tuple, possible_targets, max_target):
         # Retrieve list of factory method for the target object
         object_creation_list = _search_factory_method(func_class,
                                                       static_method_list,
-                                                      instance_method_list,
+                                                      method_list + instance_method_list,
                                                       possible_target,
                                                       init_dict, max_target)
         object_creation_list.extend(
@@ -1711,7 +1712,7 @@ def _generate_heuristic_9(method_tuple, possible_targets, max_target):
         # Retrieve list of factory method for the target object
         object_creation_list = _search_factory_method(func_class,
                                                       static_method_list,
-                                                      instance_method_list,
+                                                      method_list + instance_method_list,
                                                       possible_target,
                                                       init_dict,
                                                       max_target,
@@ -1815,7 +1816,7 @@ def _generate_heuristic_10(method_tuple, possible_targets, max_target):
         # Retrieve list of factory method for the target object
         object_creation_list = _search_factory_method(func_class,
                                                       static_method_list,
-                                                      instance_method_list,
+                                                      method_list + instance_method_list,
                                                       possible_target,
                                                       init_dict,
                                                       max_target,
