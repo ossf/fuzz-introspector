@@ -554,7 +554,8 @@ def run_static_analysis_jvm(git_repo, basedir, project_name):
     # Prepare environment variable for found version of JDK
     env_var = os.environ.copy()
     env_var['JAVA_HOME'] = os.path.join(basedir, jdk_base)
-    env_var['PATH'] = os.path.join(basedir, jdk_base, "bin") + ":" + env_var['PATH']
+    env_var['PATH'] = os.path.join(basedir, jdk_base,
+                                   "bin") + ":" + env_var['PATH']
 
     # Compile and package fuzzer to jar file
     cmd = [
@@ -660,8 +661,8 @@ def cleanup_base_directory(base_dir, project_name):
     ]
     dir_to_clean = [
         'apache-maven-3.6.3', 'apache-ant-1.9.16', 'gradle-7.4.2',
-        'jdk-15.0.2', 'jdk-17', 'jdk-11.0.0.1', 'java-se-8u43-ri',
-        'protoc', project_name, 'work/jar', 'work/proj'
+        'jdk-15.0.2', 'jdk-17', 'jdk-11.0.0.1', 'java-se-8u43-ri', 'protoc',
+        project_name, 'work/jar', 'work/proj'
     ]
 
     for file in file_to_clean:

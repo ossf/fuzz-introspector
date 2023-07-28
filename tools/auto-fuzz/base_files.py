@@ -49,7 +49,10 @@ JVM_LICENSE = """// Copyright 2023 Google LLC
 ///////////////////////////////////////////////////////////////////////////"""
 
 
-def gen_dockerfile(github_url, project_name, language="python", jdk_version="jdk15"):
+def gen_dockerfile(github_url,
+                   project_name,
+                   language="python",
+                   jdk_version="jdk15"):
     if language == "python":
         return gen_dockerfile_python(github_url, project_name)
     elif language == "jvm":
@@ -105,7 +108,7 @@ WORKDIR $SRC/%s
     return DOCKER_LICENSE + "\n" + DOCKER_STEPS
 
 
-def gen_dockerfile_jvm(github_url, project_name, jdk_version = "jdk15"):
+def gen_dockerfile_jvm(github_url, project_name, jdk_version="jdk15"):
     DOCKER_STEPS = """FROM gcr.io/oss-fuzz-base/base-builder-jvm
 #RUN curl -L %s -o ant.zip && unzip ant.zip -d $SRC/ant && rm -rf ant.zip
 #RUN curl -L %s -o maven.zip && unzip maven.zip -d $SRC/maven && rm -rf maven.zip
@@ -132,8 +135,8 @@ COPY *.sh *.java $SRC/
 WORKDIR $SRC/%s
 """ % (constants.ANT_URL, constants.MAVEN_URL, constants.GRADLE_URL,
        constants.PROTOC_URL, constants.JDK_URL[jdk_version],
-       constants.JDK_HOME[jdk_version], github_url, project_name,
-       project_name, project_name, project_name)
+       constants.JDK_HOME[jdk_version], github_url, project_name, project_name,
+       project_name, project_name)
 
     return BASH_LICENSE + "\n" + DOCKER_STEPS
 
