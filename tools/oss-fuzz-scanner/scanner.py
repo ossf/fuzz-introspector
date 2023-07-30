@@ -23,7 +23,8 @@ from typing import Optional, List
 import lxml.html
 from lxml import etree
 
-sys.path.insert(0, '../../src/')
+sys.path.append(os.path.dirname(os.path.realpath(__file__)) + '/../../src/')
+
 from fuzz_introspector import analysis, exceptions
 
 CORRELATION_FILENAME = "exe_to_fuzz_introspector_logs.yaml"
