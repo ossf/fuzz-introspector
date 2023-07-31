@@ -420,7 +420,7 @@ def _search_static_factory_method(classname,
             arg_list.extend(
                 _handle_argument(argType.replace('$', '.'),
                                  None,
-                                 None,
+                                 possible_target,
                                  max_target, [],
                                  False,
                                  class_object=class_object))
