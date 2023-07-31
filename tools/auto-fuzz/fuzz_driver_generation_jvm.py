@@ -1067,7 +1067,7 @@ def _extract_super_exceptions(exceptions):
 
 def _generate_heuristic_1(method_tuple, possible_targets, max_target):
     """Heuristic 1.
-    Creates a single FuzzTarget for all method that satisfy all:
+    Creates FuzzTarget for each method that satisfy all:
         - public class method which are not abstract or found in JDK library
         - have between 1-20 arguments
         - do not have "test" or "Demo" in the function name or class name
@@ -1892,8 +1892,12 @@ def _generate_heuristic_11(method_tuple, possible_targets, max_target):
                 return
 
             # Skip excluded constructor
-            if len(func_elem['argTypes']) == 0 or len(
-                    func_elem['argTypes']) > 20:
+            if len(func_elem['argTypes']) == 0:
+                continue
+            if len(func_elem['argTypes']) > 20:
+                continue
+            if not _is_project_class(
+                    func_elem['functionSourceFile'].split("$")[0]):
                 continue
 
             # Initialize base possible_target object
