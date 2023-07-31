@@ -269,6 +269,8 @@ def _maven_build_project(basedir, projectdir, jdk_dir):
         file.write(
             """<toolchains><toolchain><type>jdk</type><provides><version>1.8</version></provides>
                     <configuration><jdkHome>${env.JAVA_HOME}</jdkHome></configuration></toolchain>
+                    <toolchain><type>jdk</type><provides><version>8</version></provides>
+                    <configuration><jdkHome>${env.JAVA_HOME}</jdkHome></configuration></toolchain>
                     <toolchain><type>jdk</type><provides><version>11</version></provides>
                     <configuration><jdkHome>${env.JAVA_HOME}</jdkHome></configuration></toolchain>
                     <toolchain><type>jdk</type><provides><version>14</version></provides>
@@ -340,6 +342,7 @@ def _gradle_build_project(basedir, projectdir, jdk_dir):
     env_var = os.environ.copy()
     env_var['GRADLE_HOME'] = os.path.join(basedir, constants.GRADLE_HOME)
     env_var['JAVA_HOME'] = os.path.join(basedir, jdk_dir)
+    env_var['GRADLE_OPTS'] = "-Dfile.encoding=utf-8"
     env_var['PATH'] = os.path.join(
         basedir, constants.GRADLE_PATH) + ":" + os.path.join(
             basedir, constants.PROTOC_PATH) + ":" + env_var['PATH']
@@ -349,9 +352,9 @@ def _gradle_build_project(basedir, projectdir, jdk_dir):
         "rm -rf $HOME/.gradle/caches/", "chmod +x ./gradlew",
         """if ./gradlew tasks --all | grep -qw "^spotlessCheck";
         then
-          ./gradlew clean build -x test -x spotlessCheck;
+          ./gradlew clean build -x test -x javadoc -x sources -x spotlessCheck;
         else
-          ./gradlew clean build -x test;
+          ./gradlew clean build -x test -x javadoc -x sources;
         fi""", "./gradlew --stop"
     ]
     try:
