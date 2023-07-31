@@ -1900,7 +1900,6 @@ def _generate_heuristic_11(method_tuple, possible_targets, max_target):
                     func_elem['functionSourceFile'].split("$")[0]):
                 continue
 
-
             # Initialize base possible_target object
             possible_target = FuzzTarget(func_elem=func_elem)
             func_name = possible_target.function_name
