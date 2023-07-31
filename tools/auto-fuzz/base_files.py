@@ -127,6 +127,7 @@ RUN unzip protoc.zip -d $SRC/protoc && rm ./protoc.zip
 ENV ANT $SRC/ant/apache-ant-1.10.13/bin/ant
 ENV MVN $SRC/maven/apache-maven-3.6.3/bin/mvn
 ENV GRADLE_HOME $SRC/gradle/gradle-7.4.2
+ENV GRADLE_OPTS="-Dfile.encoding=utf-8"
 ENV JAVA_HOME="$SRC/%s"
 ENV PATH="$JAVA_HOME/bin:$SRC/gradle/gradle-7.4.2/bin:$SRC/protoc/bin:$PATH"
 #RUN git clone --depth 1 %s %s
@@ -179,6 +180,8 @@ do
       mkdir -p ~/.m2
       echo "<toolchains><toolchain><type>jdk</type><provides><version>1.8</version></provides>" > ~/.m2/toolchains.xml
       echo "<configuration><jdkHome>\${env.JAVA_HOME}</jdkHome></configuration></toolchain>" >> ~/.m2/toolchains.xml
+      echo "<toolchain><type>jdk</type><provides><version>8</version></provides>" >> ~/.m2/toolchains.xml
+      echo "<configuration><jdkHome>\${env.JAVA_HOME}</jdkHome></configuration></toolchain>" >> ~/.m2/toolchains.xml
       echo "<toolchain><type>jdk</type><provides><version>11</version></provides>" >> ~/.m2/toolchains.xml
       echo "<configuration><jdkHome>\${env.JAVA_HOME}</jdkHome></configuration></toolchain>" >> ~/.m2/toolchains.xml
       echo "<toolchain><type>jdk</type><provides><version>14</version></provides>" >> ~/.m2/toolchains.xml
@@ -198,9 +201,9 @@ do
       chmod +x ./gradlew
       if ./gradlew tasks --all | grep -qw "^spotlessCheck"
       then
-        ./gradlew clean build -x test -x spotlessCheck
+        ./gradlew clean build -x test -x javadoc -x sources -x spotlessCheck
       else
-        ./gradlew clean build -x test
+        ./gradlew clean build -x test -x javadoc -x sources
       fi
       ./gradlew --stop
       SUCCESS=true
