@@ -34,7 +34,7 @@ class FuzzAnnotatedCFG(analysis.AnalysisInterface):
     def __init__(self) -> None:
         logger.info("Creating annotated CFG")
         self.json_string_result = ""
-        self.json_results = dict()
+        self.json_results: Dict[str, Any] = dict()
         self.dump_files = False
 
     @classmethod
