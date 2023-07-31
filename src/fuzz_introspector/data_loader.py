@@ -122,7 +122,7 @@ def load_input_bugs(bug_file: str) -> List[bug.Bug]:
     with open(bug_file, "r") as f:
         data = json.load(f)
 
-    if type(data) != dict:
+    if not isinstance(data, dict):
         return input_bugs
 
     if "bugs" not in data:
