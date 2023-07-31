@@ -245,21 +245,6 @@ class CustomSenceTransformer extends SceneTransformer {
         }
       }
     }
-    for (String include : includePrefix.split(":")) {
-      if (!include.equals("")) {
-        includeList.add(include);
-      }
-    }
-    includeList.add(entryClassStr);
-    for (String exclude : excludePrefix.split(":")) {
-      if (!exclude.equals("")) {
-        excludeList.add(exclude);
-      }
-    }
-
-    for (String exclude : excludeMethodStr.split(":")) {
-      excludeMethodList.add(exclude);
-    }
 
     if ((!sourceDirectory.equals("")) && (!sourceDirectory.equals("NULL"))) {
       try (Stream<Path> walk = Files.walk(Paths.get(sourceDirectory))) {
@@ -274,6 +259,25 @@ class CustomSenceTransformer extends SceneTransformer {
         // Fail to retrieve project class list, ignore the list.
         projectClassList = new LinkedList<String>();
       }
+    }
+
+    for (String include : includePrefix.split(":")) {
+      if (!include.equals("")) {
+        includeList.add(include);
+      }
+    }
+    includeList.add(entryClassStr);
+
+    if (projectClassList.size() == 0) {
+      for (String exclude : excludePrefix.split(":")) {
+        if (!exclude.equals("")) {
+          excludeList.add(exclude);
+        }
+      }
+    }
+
+    for (String exclude : excludeMethodStr.split(":")) {
+      excludeMethodList.add(exclude);
     }
 
     sinkMethodMap = new HashMap<String, Set<String>>();
