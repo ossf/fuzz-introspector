@@ -69,7 +69,12 @@ class FuzzAnnotatedCFG(analysis.AnalysisInterface):
                     dst_fd = self.get_profile_sourcefile(
                         profile, callsite.dst_function_name)
                     if dst_fd is None:
-                        continue
+                        dst_fd = self.get_profile_sourcefile(
+                            profile,
+                            "[%s].%s" % (callsite.dst_function_source_file,
+                                         callsite.dst_function_name))
+                        if dst_fd is None:
+                            continue
                     if callsite.depth == 0:
                         src_file = dst_fd.function_source_file
                     else:
