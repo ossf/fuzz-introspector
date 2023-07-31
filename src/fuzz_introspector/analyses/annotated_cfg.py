@@ -16,7 +16,7 @@
 import logging
 import json
 
-from typing import List
+from typing import (Any, Dict, List)
 
 from fuzz_introspector import analysis
 from fuzz_introspector import utils
