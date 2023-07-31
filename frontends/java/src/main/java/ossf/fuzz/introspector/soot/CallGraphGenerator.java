@@ -268,7 +268,7 @@ class CustomSenceTransformer extends SceneTransformer {
     }
     includeList.add(entryClassStr);
 
-    if (projectClassList.size() == 0 ) {
+    if (projectClassList.size() == 0) {
       for (String exclude : excludePrefix.split(":")) {
         if (!exclude.equals("")) {
           excludeList.add(exclude);
