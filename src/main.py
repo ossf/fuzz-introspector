@@ -53,7 +53,8 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
             "RuntimeCoverageAnalysis",
             "FuzzEngineInputAnalysis",
             "FilePathAnalyser",
-            "MetadataAnalysis"
+            "MetadataAnalysis",
+            "AnnotatedCFG"
         ],
         help="""
             Analyses to run. Available options:
