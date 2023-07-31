@@ -124,7 +124,7 @@ RUN unzip maven.zip -d $SRC/maven && rm ./maven.zip
 RUN unzip gradle.zip -d $SRC/gradle && rm ./gradle.zip
 RUN mkdir -p $SRC/protoc
 RUN unzip protoc.zip -d $SRC/protoc && rm ./protoc.zip
-ENV ANT $SRC/ant/apache-ant-1.9.16/bin/ant
+ENV ANT $SRC/ant/apache-ant-1.10.13/bin/ant
 ENV MVN $SRC/maven/apache-maven-3.6.3/bin/mvn
 ENV GRADLE_HOME $SRC/gradle/gradle-7.4.2
 ENV JAVA_HOME="$SRC/%s"
@@ -225,7 +225,7 @@ cd $BASEDIR
 JARFILE_LIST=
 for JARFILE in $(find ./  -name *.jar)
 do
-  if [[ "$JARFILE" == *"target/"* ]] || [[ "$JARFILE" == *"build/"* ]]
+  if [[ "$JARFILE" == *"target/"* ]] || [[ "$JARFILE" == *"build/"* ]] || [[ "$JARFILE" == *"dist/"* ]]
   then
     if [[ "$JARFILE" != *sources.jar ]] && [[ "$JARFILE" != *javadoc.jar ]] && [[ "$JARFILE" != *tests.jar ]]
     then

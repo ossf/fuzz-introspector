@@ -28,7 +28,7 @@ JDK_URL = {
     "jdk8":
     "https://download.java.net/openjdk/jdk8u43/ri/openjdk-8u43-linux-x64.tar.gz"
 }
-ANT_URL = "https://dlcdn.apache.org//ant/binaries/apache-ant-1.9.16-bin.zip"
+ANT_URL = "https://dlcdn.apache.org//ant/binaries/apache-ant-1.10.13-bin.zip"
 MAVEN_URL = "https://archive.apache.org/dist/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.zip"
 GRADLE_URL = "https://services.gradle.org/distributions/gradle-7.4.2-bin.zip"
 PROTOC_URL = "https://github.com/protocolbuffers/protobuf/releases/download/v3.15.8/protoc-3.15.8-linux-x86_64.zip"
@@ -39,7 +39,7 @@ JDK_HOME = {
     "jdk11": "jdk-11.0.0.1",
     "jdk8": "java-se-8u43-ri"
 }
-ANT_PATH = "apache-ant-1.9.16/bin"
+ANT_PATH = "apache-ant-1.10.13/bin"
 MAVEN_PATH = "apache-maven-3.6.3/bin"
 GRADLE_HOME = "gradle-7.4.2"
 GRADLE_PATH = f"{GRADLE_HOME}/bin"

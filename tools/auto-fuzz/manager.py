@@ -535,10 +535,21 @@ def run_static_analysis_jvm(git_repo, basedir, project_name):
     jarfiles_no_dependency.extend(jarfiles)
     jarfiles.append("%s/lib/*.jar" % jardir)
     if project_type == "ant":
-        for file in os.listdir(os.path.join(builddir, "build", "jar")):
-            if file.endswith(".jar"):
-                shutil.copyfile(os.path.join(builddir, "build", "jar", file),
-                                os.path.join(jardir, file))
+        if os.path.isdir(os.path.join(builddir, "build", "jar")):
+            for file in os.listdir(os.path.join(builddir, "build", "jar")):
+                if file.endswith(
+                        ".jar"
+                ) and "test" not in file and "sources" not in file and "javadoc" not in file:
+                    shutil.copyfile(
+                        os.path.join(builddir, "build", "jar", file),
+                        os.path.join(jardir, file))
+        if os.path.isdir(os.path.join(builddir, "dist")):
+            for file in os.listdir(os.path.join(builddir, "dist")):
+                if file.endswith(
+                        ".jar"
+                ) and "test" not in file and "sources" not in file and "javadoc" not in file:
+                    shutil.copyfile(os.path.join(builddir, "dist", file),
+                                    os.path.join(jardir, file))
     else:
         os.makedirs("%s/lib" % jardir, exist_ok=True)
         for root, _, files in os.walk(builddir):
@@ -660,7 +671,7 @@ def cleanup_base_directory(base_dir, project_name):
         'work/jazzer.tar.gz', 'work/jazzer_standalone.jar'
     ]
     dir_to_clean = [
-        'apache-maven-3.6.3', 'apache-ant-1.9.16', 'gradle-7.4.2',
+        'apache-maven-3.6.3', 'apache-ant-1.10.13', 'gradle-7.4.2',
         'jdk-15.0.2', 'jdk-17', 'jdk-11.0.0.1', 'java-se-8u43-ri', 'protoc',
         project_name, 'work/jar', 'work/proj'
     ]
