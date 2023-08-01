@@ -87,8 +87,9 @@ def find_fuzz_targets(path):
               os.rename(full_path, os.path.join(path, class_location))
             class_file_list.append(class_location)
 
-  # Create relevant .jar file for all loose class files
-  subprocess.check_call("jar cvf package.jar %s" %  " ".join(class_file_list), shell=True, cwd=path)
+  # Create relevant .jar file for all loose class files if there are any
+  if len(class_file_list) > 0:
+    subprocess.check_call("jar cvf package.jar %s" %  " ".join(class_file_list), shell=True, cwd=path)
 
   return targets
 
