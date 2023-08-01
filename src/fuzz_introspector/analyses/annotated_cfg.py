@@ -78,8 +78,6 @@ class FuzzAnnotatedCFG(analysis.AnalysisInterface):
                     if callsite.depth == 0:
                         src_file = dst_fd.function_source_file
                     else:
-                        if dst_fd.function_source_file == "":
-                            continue
                         destinations.append({
                             'function-name':
                             dst_fd.function_name,
