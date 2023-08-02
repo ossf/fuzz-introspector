@@ -73,6 +73,7 @@ def find_fuzz_targets(path):
       # If wrapper script exists, retrieve the java class with package name
       classname = content.split("--target_class=")[1].split(" ")[0]
       targets.append(classname)
+      print("Found fuzz-target %s" % classname)
 
       # If classfile exists, pack it to jar file
       for root, _, files in os.walk(path):
