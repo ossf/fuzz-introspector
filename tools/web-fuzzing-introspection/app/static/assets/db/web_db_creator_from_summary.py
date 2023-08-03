@@ -357,7 +357,8 @@ def extract_project_data(project_name, date_str, should_include_details,
                 # are not such keys, so skip them.
                 if key == 'analyses':
                     if 'AnnotatedCFG' in introspector_report[key]:
-                        annotated_cfg = introspector_report['analyses']['AnnotatedCFG']
+                        annotated_cfg = introspector_report['analyses'][
+                            'AnnotatedCFG']
 
                 if key == "MergedProjectProfile" or key == 'analyses':
                     continue
@@ -697,7 +698,7 @@ def analyse_set_of_dates(dates, projects_to_analyse, output_directory):
 
         # Is this the last date to analyse?
         is_end = idx == len(dates)
-        print("Is end: %s"%(is_end))
+        print("Is end: %s" % (is_end))
 
         # Increment counter. Must happen after our is_end check.
         idx += 1
