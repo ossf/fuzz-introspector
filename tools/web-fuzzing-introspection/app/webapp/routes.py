@@ -248,6 +248,7 @@ def indexing_overview():
 def about():
     return render_template('about.html', gtag=gtag)
 
+
 @blueprint.route('/api/annotated-cfg')
 def api_annotated_cfg():
     project_name = request.args.get('project', None)
@@ -275,6 +276,7 @@ def api_annotated_cfg():
         return {'result': 'error', 'msg': 'Found no annotated CFG data.'}
     except TypeError:
         return {'result': 'error', 'msg': 'Found no introspector data.'}
+
 
 @blueprint.route('/api/project-summary')
 def api_project_summary():
