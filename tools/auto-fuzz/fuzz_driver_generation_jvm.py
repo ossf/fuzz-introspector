@@ -340,9 +340,9 @@ def _handle_argument(argType,
         return ["data.consumeFloat()"]
     elif argType == "char" or argType == "java.lang.Character":
         return ["data.consumeCharNoSurrogates()"]
-    elif argType == "java.lang.String":
+    elif argType == "java.lang.String" or argType == "java.lang.CharSequence":
         return ["data.consumeString(100)"]
-    elif argType == "java.lang.String[]":
+    elif argType == "java.lang.String[]" or argType == "java.lang.CharSequence[]":
         return ["new java.lang.String[]{data.consumeString(100)}"]
 
     if argType == "java.io.File":
