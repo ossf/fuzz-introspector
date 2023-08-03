@@ -1067,9 +1067,37 @@ FuzzerFunctionWrapper FuzzIntrospector::wrapFunction(Function *F) {
   FuncWrap.ReturnType = resolveTypeName(F->getReturnType());
 
   // Arguments
+  // errs() << "Function:\n";
+  // errs() << FuncWrap.FunctionName << "\n";
   for (auto &A : F->args()) {
     FuncWrap.ArgTypes.push_back(resolveTypeName(A.getType()));
-    FuncWrap.ArgNames.push_back(A.getName().str());
+    //FuncWrap.ArgNames.push_back(A.getName().str());
+    if (A.getName().str().empty()) {
+      const DILocalVariable* Var = NULL;
+      bool FoundArg = false;
+      for (auto &BB : *F) {
+        for (auto &I : BB) {
+          if (const DbgDeclareInst* DbgDeclare = dyn_cast<DbgDeclareInst>(&I)) {
+            if (auto DLV = dyn_cast<DILocalVariable>(DbgDeclare->getVariable())) {
+              if (  DLV->getArg() == A.getArgNo() + 1 &&
+                    !DLV->getName().empty() &&
+                     DLV->getScope()->getSubprogram() == F->getSubprogram()) {
+                //errs() << "--" << DLV->getName().str() << "\n";
+                FuncWrap.ArgNames.push_back(DLV->getName().str());
+                FoundArg = true;
+              }
+            }
+          }
+        }
+      }
+      if (FoundArg == false) {
+        FuncWrap.ArgNames.push_back("");
+      }
+    }
+    else {
+      // It's non empty, we just push that.
+      FuncWrap.ArgNames.push_back(A.getName().str());
+    }
   }
 
   // Log the amount of basic blocks, instruction count and cyclomatic

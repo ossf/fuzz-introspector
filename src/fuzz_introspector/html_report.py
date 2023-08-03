@@ -136,6 +136,7 @@ def create_all_function_table(
         json_copy = row_element.copy()
         json_copy['Func name'] = demangled_func_name
         json_copy['Args'] = str(fd.arg_types)
+        json_copy['ArgNames'] = fd.arg_names
         json_copy['Reached by Fuzzers'] = fd.reached_by_fuzzers
         json_copy['return_type'] = fd.return_type
         json_copy['raw-function-name'] = fd.raw_function_name
