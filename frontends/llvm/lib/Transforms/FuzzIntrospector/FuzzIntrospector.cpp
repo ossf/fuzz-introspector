@@ -1100,7 +1100,6 @@ FuzzerFunctionWrapper FuzzIntrospector::wrapFunction(Function *F) {
     }
   }
 
-
   // Log the amount of basic blocks, instruction count and cyclomatic
   // complexity of the function.
   FuncWrap.BBCount = 0;
