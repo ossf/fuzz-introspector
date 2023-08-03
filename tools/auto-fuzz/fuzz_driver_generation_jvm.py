@@ -976,9 +976,10 @@ def _extract_method(yaml_dict,
                 method_list, static_method_list, max_count, calldepth_filter)
 
         # Still too many method after filtering, return the current result set
-        if len(static_method_list) > max_method or len(
-                method_list) > max_method:
-            return init_dict, method_list, instance_method_list, static_method_list
+        if not calldepth_filter:
+            if len(static_method_list) > max_method or len(
+                    method_list) > max_method:
+                return init_dict, method_list, instance_method_list, static_method_list, True
 
         # Skip method belongs to non public or non concrete class
         if not func_elem['JavaMethodInfo']['classPublic']:
@@ -1037,7 +1038,7 @@ def _extract_method(yaml_dict,
                                                      max_count,
                                                      calldepth_filter)
 
-    return init_dict, method_list, instance_method_list, static_method_list
+    return init_dict, method_list, instance_method_list, static_method_list, False
 
 
 def _extract_super_exceptions(exceptions):
@@ -1957,6 +1958,16 @@ def _generate_heuristics(yaml_dict,
                                    max_count=20,
                                    calldepth_filter=calldepth_filter)
 
+    # Extract and remove the halting flag from the method_tuple result
+    method_extraction_halted = method_tuple[-1]
+    last = len(method_tuple) - 1
+    method_tuple = method_tuple[:last]
+
+    # Check if the method extraction is halted because it requires filteirng
+    if method_extraction_halted and not calldepth_filter:
+        return None, True
+
+    # Start generating possible targets with different heuristics
     possible_targets = []
     temp_targets = []
     _generate_heuristic_1(method_tuple, temp_targets, max_target)
@@ -1989,7 +2000,7 @@ def _generate_heuristics(yaml_dict,
     _generate_heuristic_11(method_tuple, temp_targets, max_target)
     possible_targets.extend(temp_targets)
 
-    return possible_targets
+    return possible_targets, False
 
 
 def generate_possible_targets(proj_folder, class_list, max_target,
@@ -2012,9 +2023,9 @@ def generate_possible_targets(proj_folder, class_list, max_target,
 
     max_fuzzer = constants.MAX_FUZZERS_PER_PROJECT
 
-    possible_targets = _generate_heuristics(yaml_dict, max_target, max_fuzzer,
-                                            False)
-    if len(possible_targets) > max_fuzzer:
-        possible_targets = _generate_heuristics(yaml_dict, max_target, True)
+    possible_targets, need_calldepth_filter = _generate_heuristics(
+        yaml_dict, max_target, max_fuzzer, False)
+    if need_calldepth_filter or len(possible_targets) > max_fuzzer:
+        possible_targets, _ = _generate_heuristics(yaml_dict, max_target, True)
 
     return possible_targets
