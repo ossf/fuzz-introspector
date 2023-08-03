@@ -976,9 +976,9 @@ def _extract_method(yaml_dict,
                 method_list, static_method_list, max_count, calldepth_filter)
 
         # Still too many method after filtering, return the current result set
-        if len(static_method_list) > max_method or len(
-                method_list) > max_method:
-            return init_dict, method_list, instance_method_list, static_method_list, True
+        if not calldepth_filter:
+            if len(static_method_list) > max_method or len(method_list) > max_method:
+                return init_dict, method_list, instance_method_list, static_method_list, True
 
         # Skip method belongs to non public or non concrete class
         if not func_elem['JavaMethodInfo']['classPublic']:
