@@ -249,6 +249,35 @@ def about():
     return render_template('about.html', gtag=gtag)
 
 
+@blueprint.route('/api/annotated-cfg')
+def api_annotated_cfg():
+    project_name = request.args.get('project', None)
+    if project_name == None:
+        return {'result': 'error', 'msg': 'Please provide project name'}
+
+    target_project = None
+    all_projects = data_storage.get_projects()
+    for project in all_projects:
+        if project.name == project_name:
+            target_project = project
+            break
+    if target_project is None:
+        return {'result': 'error', 'msg': 'Project not in the database'}
+
+    try:
+        return {
+            'result': 'success',
+            'project': {
+                'name': project_name,
+                'annotated-cfg': project.introspector_data['annotated_cfg'],
+            }
+        }
+    except KeyError:
+        return {'result': 'error', 'msg': 'Found no annotated CFG data.'}
+    except TypeError:
+        return {'result': 'error', 'msg': 'Found no introspector data.'}
+
+
 @blueprint.route('/api/project-summary')
 def api_project_summary():
     project_name = request.args.get('project', None)

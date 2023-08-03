@@ -350,11 +350,17 @@ def extract_project_data(project_name, date_str, should_include_details,
 
         # Get all branch blockers
         branch_pairs = list()
+        annotated_cfg = dict()
         if should_include_details:
             for key in introspector_report:
                 # We look for dicts with fuzzer-specific content. The following two
                 # are not such keys, so skip them.
-                if key == "analyses" or key == "MergedProjectProfile":
+                if key == 'analyses':
+                    if 'AnnotatedCFG' in introspector_report[key]:
+                        annotated_cfg = introspector_report['analyses'][
+                            'AnnotatedCFG']
+
+                if key == "MergedProjectProfile" or key == 'analyses':
                     continue
 
                 # Fuzzer-specific dictionary, get the contents of it.
@@ -385,6 +391,7 @@ def extract_project_data(project_name, date_str, should_include_details,
                         'blocked-runtime-coverage':
                         blocked_unique_not_covered_complexity
                     })
+
         introspector_data_dict = {
             "introspector_report_url": introspector_report_url,
             "coverage_lines":
@@ -396,6 +403,7 @@ def extract_project_data(project_name, date_str, should_include_details,
             "functions_covered_estimate": functions_covered_estimate,
             'refined_proj_list': refined_proj_list,
             'branch_pairs': branch_pairs,
+            'annotated_cfg': annotated_cfg,
         }
 
     # Extract data from the code coverage reports
@@ -687,12 +695,15 @@ def analyse_set_of_dates(dates, projects_to_analyse, output_directory):
         current_time = datetime.datetime.now().strftime("%H:%M:%S")
         logger.info("Analysing date %s -- [%d of %d] -- %s" %
                     (date, idx, dates_to_analyse, current_time))
-        idx += 1
-        # if idx > 5:
-        #     break
-        is_end = idx == len(dates)
 
-        # Check if it's not the last date and the data is in the cache
+        # Is this the last date to analyse?
+        is_end = idx == len(dates)
+        print("Is end: %s" % (is_end))
+
+        # Increment counter. Must happen after our is_end check.
+        idx += 1
+
+        # If it's not the last date and we have cached data, use the cache.
         if is_end == False and is_date_in_db(date, output_directory):
             logger.info("Date already analysed, skipping")
             continue
