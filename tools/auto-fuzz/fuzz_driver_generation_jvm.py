@@ -972,7 +972,8 @@ def _extract_method(yaml_dict,
         # If calldepth filter is not on and too much method target is found
         # Then return and restart the process with calldepth filter on
         if not calldepth_filter:
-            if len(static_method_list) > max_method or len(method_list) > max_method:
+            if len(static_method_list) > max_method or len(
+                    method_list) > max_method:
                 return {}, [], [], [], True
 
         # Skip method belongs to non public or non concrete class
