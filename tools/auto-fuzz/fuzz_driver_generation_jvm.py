@@ -969,17 +969,12 @@ def _extract_method(yaml_dict,
     instance_method_list = []
     static_method_list = []
     for func_elem in yaml_dict['All functions']['Elements']:
-        # Check and filter method if too many methods in the result method list
-        if len(method_list) > max_method or len(
-                static_method_list) > max_method:
-            method_list, static_method_list = _filter_method(
-                method_list, static_method_list, max_count, calldepth_filter)
-
-        # Still too many method after filtering, return the current result set
+        # If calldepth filter is not on and too much method target is found
+        # Then return and restart the process with calldepth filter on
         if not calldepth_filter:
             if len(static_method_list) > max_method or len(
                     method_list) > max_method:
-                return init_dict, method_list, instance_method_list, static_method_list, True
+                return {}, [], [], [], True
 
         # Skip method belongs to non public or non concrete class
         if not func_elem['JavaMethodInfo']['classPublic']:
@@ -1958,6 +1953,8 @@ def _generate_heuristics(yaml_dict,
                                    max_count=20,
                                    calldepth_filter=calldepth_filter)
 
+    possible_targets = []
+
     # Extract and remove the halting flag from the method_tuple result
     method_extraction_halted = method_tuple[-1]
     last = len(method_tuple) - 1
@@ -1965,10 +1962,9 @@ def _generate_heuristics(yaml_dict,
 
     # Check if the method extraction is halted because it requires filteirng
     if method_extraction_halted and not calldepth_filter:
-        return None, True
+        return possible_targets, True
 
     # Start generating possible targets with different heuristics
-    possible_targets = []
     temp_targets = []
     _generate_heuristic_1(method_tuple, temp_targets, max_target)
     possible_targets.extend(temp_targets)
