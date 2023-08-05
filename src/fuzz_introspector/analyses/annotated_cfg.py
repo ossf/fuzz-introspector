@@ -66,11 +66,11 @@ class FuzzAnnotatedCFG(analysis.AnalysisInterface):
             for callsite in cfg_load.extract_all_callsites(
                     profile.fuzzer_callsite_calltree):
                 if callsite.depth < 2:
-                    dst_fd = self.get_profile_sourcefile(
-                        profile, callsite.dst_function_name)
+                    dst_fd = self.get_profile_sourcefile_merged(
+                        proj_profile, callsite.dst_function_name)
                     if dst_fd is None:
-                        dst_fd = self.get_profile_sourcefile(
-                            profile,
+                        dst_fd = self.get_profile_sourcefile_merged(
+                            proj_profile,
                             "[%s].%s" % (callsite.dst_function_source_file,
                                          callsite.dst_function_name))
                         if dst_fd is None:
@@ -81,6 +81,8 @@ class FuzzAnnotatedCFG(analysis.AnalysisInterface):
                         destinations.append({
                             'function-name':
                             dst_fd.function_name,
+                            'raw-function-name':
+                            dst_fd.raw_function_name,
                             'source-file':
                             dst_fd.function_source_file,
                             'cyclomatic-complexity':
@@ -89,8 +91,10 @@ class FuzzAnnotatedCFG(analysis.AnalysisInterface):
                             dst_fd.total_cyclomatic_complexity,
                             'return-type':
                             dst_fd.return_type,
-                            'arg-list':
-                            dst_fd.arg_types
+                            'arg-types':
+                            dst_fd.arg_types,
+                            'arg-names':
+                            dst_fd.arg_names,
                         })
             self.json_results[profile.identifier] = {
                 'destinations': destinations,
@@ -109,6 +113,18 @@ class FuzzAnnotatedCFG(analysis.AnalysisInterface):
         ]
         for dst in dst_options:
             for fd_k, fd in profile.all_class_functions.items():
+                if (fd.function_name == dst or utils.normalise_str(
+                        fd.function_name) == utils.normalise_str(dst)):
+                    return fd
+        return None
+
+    def get_profile_sourcefile_merged(self, merged_profile, func_name):
+        dst_options = [
+            func_name,
+            utils.demangle_cpp_func(func_name),
+        ]
+        for dst in dst_options:
+            for fd_k, fd in merged_profile.all_functions.items():
                 if (fd.function_name == dst or utils.normalise_str(
                         fd.function_name) == utils.normalise_str(dst)):
                     return fd
