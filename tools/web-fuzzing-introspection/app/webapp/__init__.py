@@ -70,7 +70,9 @@ def load_db():
                     'accumulated_cyclomatic_complexity'],
                 undiscovered_complexity=func['undiscovered-complexity'],
                 function_arguments=func['function-arguments'],
-                return_type=func['return-type']))
+                return_type=func['return-type'],
+                function_argument_names=func['function-argument-names'],
+                raw_function_name=func['raw-function-name']))
 
     print("Loadded %d functions" % (idx))
     print("Len %d" % (len(data_storage.FUNCTIONS)))
