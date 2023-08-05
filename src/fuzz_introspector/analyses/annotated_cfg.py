@@ -91,8 +91,10 @@ class FuzzAnnotatedCFG(analysis.AnalysisInterface):
                             dst_fd.total_cyclomatic_complexity,
                             'return-type':
                             dst_fd.return_type,
-                            'arg-list':
-                            dst_fd.arg_types
+                            'arg-types':
+                            dst_fd.arg_types,
+                            'arg-names':
+                            dst_fd.arg_names,
                         })
             self.json_results[profile.identifier] = {
                 'destinations': destinations,
