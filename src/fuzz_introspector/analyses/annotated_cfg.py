@@ -102,8 +102,10 @@ class FuzzAnnotatedCFG(analysis.AnalysisInterface):
 
                 # To be a top level target a callsite should:
                 # 1.0) Not be in the fuzzer source file and one of the following:
-                #    1a) have parent callsite be in the fuzzer, i.e. transition from files.
-                #    1b) Have calldepth 1 (i.e. directly from LLVMFuzzerTestOneInput), since we know parent then is in fuzzer source file.
+                #    1a) have parent callsite be in the fuzzer, i.e. transition
+                #        from files.
+                #    1b) Have calldepth 1 (i.e. directly from LLVMFuzzerTestOneInput),
+                #        since we know parent then is in fuzzer source file.
                 cond1 = dst_fd is not None and dst_fd.function_source_file != src_file
                 cond2 = (par_fd is not None and par_fd.function_source_file
                          == src_file) or callsite.depth == 1
