@@ -135,7 +135,7 @@ def create_all_function_table(
         # Overwrite some fields to have raw text and not HTML-formatted text.
         json_copy = row_element.copy()
         json_copy['Func name'] = demangled_func_name
-        json_copy['Args'] = str(fd.arg_types)
+        json_copy['Args'] = fd.arg_types
         json_copy['ArgNames'] = fd.arg_names
         json_copy['Reached by Fuzzers'] = fd.reached_by_fuzzers
         json_copy['return_type'] = fd.return_type
