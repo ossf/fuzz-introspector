@@ -608,8 +608,14 @@ std::string FuzzIntrospector::resolveTypeName(Type *T) {
   }
   if (T->isIntegerTy()) {
     switch (T->getIntegerBitWidth()) {
+    case 1:
+      RetType += "bool";
+      break;
     case 8:
       RetType += "char";
+      break;
+    case 16:
+      RetType += "short";
       break;
     case 32:
       RetType += "int";
@@ -627,8 +633,20 @@ std::string FuzzIntrospector::resolveTypeName(Type *T) {
   } else if (T->isFunctionTy()) {
     RetType += "func_type";
   }
+  else if (T->isFloatTy()) {
+    RetType += "float";
+  }
+  else if (T->isDoubleTy()) {
+    RetType += "double";
+  }
+  else if (T->isVoidTy()) {
+    RetType += "void";
+  }
   if (RetType == "") {
     return "N/A";
+  }
+  if (RetSuffix.empty()) {
+    return RetType;
   }
   return RetType + " " + RetSuffix;
 }
