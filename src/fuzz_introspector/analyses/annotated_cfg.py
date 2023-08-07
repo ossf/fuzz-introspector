@@ -63,39 +63,72 @@ class FuzzAnnotatedCFG(analysis.AnalysisInterface):
             logger.info("Analysing: %s" % (profile.identifier))
             destinations = []
             src_file = None
+            is_first = True
+            # We must haev a high number here initially, to trigger the first
+            # catch.
+            callsite_stack = dict()
             for callsite in cfg_load.extract_all_callsites(
                     profile.fuzzer_callsite_calltree):
-                if callsite.depth < 2:
+
+                # Set the stack
+                callsite_stack[callsite.depth] = callsite
+
+                if is_first:
+                    src_file_fd = self.get_profile_sourcefile(
+                        profile, callsite.dst_function_name)
+                    if src_file_fd is not None:
+                        src_file = src_file_fd.function_source_file
+                        is_first = False
+                        continue
+                    continue
+
+                parent_callsite = callsite_stack[callsite.depth - 1]
+
+                dst_fd = self.get_profile_sourcefile_merged(
+                    proj_profile, callsite.dst_function_name)
+                if dst_fd is None:
                     dst_fd = self.get_profile_sourcefile_merged(
-                        proj_profile, callsite.dst_function_name)
-                    if dst_fd is None:
-                        dst_fd = self.get_profile_sourcefile_merged(
-                            proj_profile,
-                            "[%s].%s" % (callsite.dst_function_source_file,
-                                         callsite.dst_function_name))
-                        if dst_fd is None:
-                            continue
-                    if callsite.depth == 0:
-                        src_file = dst_fd.function_source_file
-                    else:
-                        destinations.append({
-                            'function-name':
-                            dst_fd.function_name,
-                            'raw-function-name':
-                            dst_fd.raw_function_name,
-                            'source-file':
-                            dst_fd.function_source_file,
-                            'cyclomatic-complexity':
-                            dst_fd.cyclomatic_complexity,
-                            'accummulated-cyclomatic-complexity':
-                            dst_fd.total_cyclomatic_complexity,
-                            'return-type':
-                            dst_fd.return_type,
-                            'arg-types':
-                            dst_fd.arg_types,
-                            'arg-names':
-                            dst_fd.arg_names,
-                        })
+                        proj_profile,
+                        "[%s].%s" % (callsite.dst_function_source_file,
+                                     callsite.dst_function_name))
+
+                par_fd = self.get_profile_sourcefile_merged(
+                    proj_profile, parent_callsite.dst_function_name)
+                if par_fd is None:
+                    par_fd = self.get_profile_sourcefile_merged(
+                        proj_profile,
+                        "[%s].%s" % (parent_callsite.dst_function_source_file,
+                                     parent_callsite.dst_function_name))
+
+                # To be a top level target a callsite should:
+                # 1.0) Not be in the fuzzer source file and one of the following:
+                #    1a) have parent callsite be in the fuzzer, i.e. transition
+                #        from files.
+                #    1b) Have calldepth 1 (i.e. directly from LLVMFuzzerTestOneInput),
+                #        since we know parent then is in fuzzer source file.
+                cond1 = dst_fd is not None and dst_fd.function_source_file != src_file
+                cond2 = (par_fd is not None and par_fd.function_source_file
+                         == src_file) or callsite.depth == 1
+                if (cond1 and cond2):
+                    destinations.append({
+                        'function-name':
+                        dst_fd.function_name,
+                        'raw-function-name':
+                        dst_fd.raw_function_name,
+                        'source-file':
+                        dst_fd.function_source_file,
+                        'cyclomatic-complexity':
+                        dst_fd.cyclomatic_complexity,
+                        'accummulated-cyclomatic-complexity':
+                        dst_fd.total_cyclomatic_complexity,
+                        'return-type':
+                        dst_fd.return_type,
+                        'arg-types':
+                        dst_fd.arg_types,
+                        'arg-names':
+                        dst_fd.arg_names,
+                    })
+
             self.json_results[profile.identifier] = {
                 'destinations': destinations,
                 'src_file': src_file
