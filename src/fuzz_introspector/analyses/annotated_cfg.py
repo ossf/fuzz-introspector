@@ -13,6 +13,7 @@
 # limitations under the License.
 """Creates an annotated CFG, focusing on only a subset of the CFG atm."""
 
+import os
 import logging
 import json
 
@@ -116,7 +117,7 @@ class FuzzAnnotatedCFG(analysis.AnalysisInterface):
                         'raw-function-name':
                         dst_fd.raw_function_name,
                         'source-file':
-                        dst_fd.function_source_file,
+                        os.path.normpath(dst_fd.function_source_file),
                         'cyclomatic-complexity':
                         dst_fd.cyclomatic_complexity,
                         'accummulated-cyclomatic-complexity':
@@ -131,7 +132,7 @@ class FuzzAnnotatedCFG(analysis.AnalysisInterface):
 
             self.json_results[profile.identifier] = {
                 'destinations': destinations,
-                'src_file': src_file
+                'src_file': os.path.normpath(src_file)
             }
 
         # Write the results to the json report
