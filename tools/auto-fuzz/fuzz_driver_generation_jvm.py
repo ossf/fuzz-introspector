@@ -2022,6 +2022,7 @@ def generate_possible_targets(proj_folder, class_list, max_target,
     possible_targets, need_calldepth_filter = _generate_heuristics(
         yaml_dict, max_target, max_fuzzer, False)
     if need_calldepth_filter:
-        possible_targets, _ = _generate_heuristics(yaml_dict, max_target, max_fuzzer, True)
+        possible_targets, _ = _generate_heuristics(yaml_dict, max_target,
+                                                   max_fuzzer, True)
 
     return possible_targets
