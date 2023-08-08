@@ -350,12 +350,16 @@ def _gradle_build_project(basedir, projectdir, jdk_dir):
     # Build project with gradle wrapper of the project
     cmd = [
         "rm -rf $HOME/.gradle/caches/", "chmod +x ./gradlew",
-        """if ./gradlew tasks --all | grep -qw "^spotlessCheck";
+        "EXCLUDE_SPOTLESS_CHECK=",
+        """if ./gradlew tasks --all | grep -qw "^spotlessCheck"
         then
-          ./gradlew clean build -x test -x javadoc -x sources -x spotlessCheck;
-        else
-          ./gradlew clean build -x test -x javadoc -x sources;
-        fi""", "./gradlew --stop"
+          EXCLUDE_SPOTLESS_CHECK="-x spotlessCheck "
+        fi
+        ./gradlew clean build -x test -x javadoc -x sources \
+        $EXCLUDE_SPOTLESS_CHECK\
+        -Porg.gradle.java.installations.auto-detect=false \
+        -Porg.gradle.java.installations.auto-download=false \
+        -Porg.gradle.java.installations.paths=$JAVA_HOME""", "./gradlew --stop"
     ]
     try:
         subprocess.check_call(" && ".join(cmd),
