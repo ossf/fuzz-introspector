@@ -1950,7 +1950,7 @@ def _generate_heuristics(yaml_dict,
                          calldepth_filter=False):
     method_tuple = _extract_method(yaml_dict,
                                    max_method,
-                                   max_count=20,
+                                   max_count=100,
                                    calldepth_filter=calldepth_filter)
 
     possible_targets = []
@@ -1961,7 +1961,7 @@ def _generate_heuristics(yaml_dict,
     method_tuple = method_tuple[:last]
 
     # Check if the method extraction is halted because it requires filteirng
-    if method_extraction_halted and not calldepth_filter:
+    if not calldepth_filter and method_extraction_halted:
         return possible_targets, True
 
     # Start generating possible targets with different heuristics
@@ -1996,7 +1996,7 @@ def _generate_heuristics(yaml_dict,
     _generate_heuristic_11(method_tuple, temp_targets, max_target)
     possible_targets.extend(temp_targets)
 
-    return possible_targets, False
+    return possible_targets, (len(possible_targets) > max_method)
 
 
 def generate_possible_targets(proj_folder, class_list, max_target,
@@ -2021,7 +2021,8 @@ def generate_possible_targets(proj_folder, class_list, max_target,
 
     possible_targets, need_calldepth_filter = _generate_heuristics(
         yaml_dict, max_target, max_fuzzer, False)
-    if need_calldepth_filter or len(possible_targets) > max_fuzzer:
-        possible_targets, _ = _generate_heuristics(yaml_dict, max_target, True)
+    if need_calldepth_filter:
+        possible_targets, _ = _generate_heuristics(yaml_dict, max_target,
+                                                   max_fuzzer, True)
 
     return possible_targets
