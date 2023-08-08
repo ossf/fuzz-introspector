@@ -359,8 +359,7 @@ def _gradle_build_project(basedir, projectdir, jdk_dir):
         $EXCLUDE_SPOTLESS_CHECK\
         -Porg.gradle.java.installations.auto-detect=false \
         -Porg.gradle.java.installations.auto-download=false \
-        -Porg.gradle.java.installations.paths=$JAVA_HOME""",
-        "./gradlew --stop"
+        -Porg.gradle.java.installations.paths=$JAVA_HOME""", "./gradlew --stop"
     ]
     try:
         subprocess.check_call(" && ".join(cmd),
