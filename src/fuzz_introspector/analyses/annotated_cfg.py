@@ -130,6 +130,8 @@ class FuzzAnnotatedCFG(analysis.AnalysisInterface):
                         dst_fd.arg_names,
                     })
 
+            if src_file is None:
+                src_file = "Did-not-find-sourcefile"
             self.json_results[profile.identifier] = {
                 'destinations': destinations,
                 'src_file': os.path.normpath(src_file)
