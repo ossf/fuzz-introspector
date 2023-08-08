@@ -199,12 +199,16 @@ do
     then
       rm -rf $HOME/.gradle/caches/
       chmod +x ./gradlew
+      EXCLUDE_SPOTLESS_CHECK=
       if ./gradlew tasks --all | grep -qw "^spotlessCheck"
       then
-        ./gradlew clean build -x test -x javadoc -x sources -x spotlessCheck
-      else
-        ./gradlew clean build -x test -x javadoc -x sources
+        EXCLUDE_SPOTLESS_CHECK="-x spotlessCheck "
       fi
+      ./gradlew clean build -x test -x javadoc -x sources \
+      $EXCLUDE_SPOTLESS_CHECK\
+      -Porg.gradle.java.installations.auto-detect=false \
+      -Porg.gradle.java.installations.auto-download=false \
+      -Porg.gradle.java.installations.paths=$JAVA_HOME
       ./gradlew --stop
       SUCCESS=true
       break
@@ -276,14 +280,17 @@ do
     mem_settings='-Xmx2048m:-Xss1024k'
   fi
 
-  LD_LIBRARY_PATH=\"$JVM_LD_LIBRARY_PATH\":\$this_dir JAVA_HOME=\$this_dir/$(basename $JAVA_HOME) \
-    PATH=$JAVA_HOME/bin:$PATH
-    \$this_dir/jazzer_driver --agent_path=\$this_dir/jazzer_agent_deploy.jar \
-    --cp=$RUNTIME_CLASSPATH \
-    --target_class=$fuzzer_basename \
-    --jvm_args=\"\$mem_settings\" \
-    \$@" > $OUT/$fuzzer_basename
-    chmod u+x $OUT/$fuzzer_basename
+  export JAVA_HOME=\$this_dir/$(basename $JAVA_HOME)
+  export LD_LIBRARY_PATH=\"\$JAVA_HOME/lib/server\":\$this_dir
+  export PATH=\$JAVA_HOME/bin:\$PATH
+
+  \$this_dir/jazzer_driver --agent_path=\$this_dir/jazzer_agent_deploy.jar \
+  --cp=$RUNTIME_CLASSPATH \
+  --target_class=$fuzzer_basename \
+  --jvm_args=\"\$mem_settings\" \
+  \$@" > $OUT/$fuzzer_basename
+
+  chmod u+x $OUT/$fuzzer_basename
 done"""
 
     return BUILD_LICENSE + "\n" + BUILD_SCRIPT
