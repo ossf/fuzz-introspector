@@ -18,6 +18,8 @@ import logging
 import os
 import sys
 
+sys.setrecursionlimit(10000)
+
 from fuzz_introspector import commands, constants
 
 logger = logging.getLogger(name=__name__)
