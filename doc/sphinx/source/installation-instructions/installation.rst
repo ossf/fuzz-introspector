@@ -49,7 +49,7 @@ do to this:
     cd llvm-project/
 
     # Patch Clang to run fuzz introspector
-    ../../frontends/llvm/patch_llvm.sh
+    ../../frontends/llvm/patch-llvm.sh
     cp -rf ../../frontends/llvm/include/llvm/Transforms/FuzzIntrospector/ \
            ./llvm/include/llvm/Transforms/FuzzIntrospector
     cp -rf ../../frontends/llvm/lib/Transforms/FuzzIntrospector \
