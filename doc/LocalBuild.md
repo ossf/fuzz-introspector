@@ -77,6 +77,7 @@ cd ../
 mkdir llvm-build
 cd llvm-build
 cmake -G "Unix Makefiles" -DLLVM_ENABLE_PROJECTS="clang;compiler-rt"  \
+      -DCMAKE_BUILD_TYPE=Debug \
       -DLLVM_BINUTILS_INCDIR=../binutils/include \
       -DLLVM_TARGETS_TO_BUILD="X86" ../llvm-project/llvm/
 make llvm-headers
