@@ -47,6 +47,7 @@ do to this:
     # Build LLVM and Clang
     git clone https://github.com/llvm/llvm-project/
     cd llvm-project/
+    git checkout release/15.x
 
     # Patch Clang to run fuzz introspector
     ../../frontends/llvm/patch-llvm.sh
