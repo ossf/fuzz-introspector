@@ -47,9 +47,10 @@ do to this:
     # Build LLVM and Clang
     git clone https://github.com/llvm/llvm-project/
     cd llvm-project/
+    git checkout release/15.x
 
     # Patch Clang to run fuzz introspector
-    ../../frontends/llvm/patch_llvm.sh
+    ../../frontends/llvm/patch-llvm.sh
     cp -rf ../../frontends/llvm/include/llvm/Transforms/FuzzIntrospector/ \
            ./llvm/include/llvm/Transforms/FuzzIntrospector
     cp -rf ../../frontends/llvm/lib/Transforms/FuzzIntrospector \
@@ -60,6 +61,7 @@ do to this:
     mkdir llvm-build
     cd llvm-build
     cmake -G "Unix Makefiles" -DLLVM_ENABLE_PROJECTS="clang;compiler-rt"  \
+          -DCMAKE_BUILD_TYPE=Debug \
           -DLLVM_BINUTILS_INCDIR=../binutils/include \
           -DLLVM_TARGETS_TO_BUILD="X86" ../llvm-project/llvm/
     make llvm-headers
