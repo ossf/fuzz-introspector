@@ -67,12 +67,9 @@ def copy_and_introspect_project(src_folder, oss_fuzz_base, log_dir=None):
         os.path.join(oss_fuzz_base, "infra/helper.py"), "introspector",
         project_name, "--seconds=20"
     ]
-    code, out, err = run(cmd)
+    code, _, err = run(cmd)
     # Write build output to log diretory.
-    out_log = os.path.join(log_dir, "oss-fuzz.out")
     err_log = os.path.join(log_dir, "oss-fuzz.err")
-    with open(out_log, "wb") as f:
-        f.write(out)
     with open(err_log, "wb") as f:
         f.write(err)
     return True
