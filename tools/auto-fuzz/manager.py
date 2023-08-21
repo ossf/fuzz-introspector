@@ -1060,6 +1060,8 @@ def autofuzz_project_from_github(github_url,
             #                             parallelise=False,
             #                             dump_files=False)
         else:
+            cleanup_base_directory(base_oss_fuzz_project_dir,
+                                   oss_fuzz_base_project.project_name)
             return False
 
     # Check basic fuzzer and clean it afterwards
@@ -1069,6 +1071,8 @@ def autofuzz_project_from_github(github_url,
         log_dir=base_oss_fuzz_project_dir,
         base_autofuzz=True)
     if not res:
+        cleanup_base_directory(base_oss_fuzz_project_dir,
+                               oss_fuzz_base_project.project_name)
         return False
 
     # Generate all possible targets
