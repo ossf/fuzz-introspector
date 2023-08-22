@@ -44,6 +44,7 @@ def read_fuzzer_data_file_to_profile(
         return None
 
     data_dict_yaml = utils.data_file_read_yaml(cfg_file + ".yaml")
+    logger.info(f"Finished loading {cfg_file}")
 
     # Must be  dictionary
     if data_dict_yaml is None or not isinstance(data_dict_yaml, dict):
@@ -54,15 +55,21 @@ def read_fuzzer_data_file_to_profile(
     if not profile.has_entry_point():
         logger.info("Found no entrypoints")
         return None
-
+    logger.info("Returning profile")
     return profile
 
 
-def _load_profile(data_file: str, language: str, manager):
+def _load_profile(data_file: str, language: str, manager, semaphore=None):
     """Internal function used for multithreaded profile loading"""
+    if semaphore is not None:
+        semaphore.acquire()
+
     profile = read_fuzzer_data_file_to_profile(data_file, language)
     if profile is not None:
         manager[data_file] = profile
+
+    if semaphore is not None:
+        semaphore.release()
 
 
 def load_all_profiles(
@@ -83,12 +90,13 @@ def load_all_profiles(
     logger.info(f" - found {len(data_files)} profiles to load")
     if parallelise:
         manager = multiprocessing.Manager()
+        semaphore = multiprocessing.Semaphore(10)
         return_dict = manager.dict()
         jobs = []
         for data_file in data_files:
             p = multiprocessing.Process(target=_load_profile,
-                                        args=(data_file, language,
-                                              return_dict))
+                                        args=(data_file, language, return_dict,
+                                              semaphore))
             jobs.append(p)
             p.start()
         for proc in jobs:
@@ -99,7 +107,7 @@ def load_all_profiles(
     else:
         return_dict_gen: Dict[Any, Any] = dict()
         for data_file in data_files:
-            _load_profile(data_file, language, return_dict_gen)
+            _load_profile(data_file, language, return_dict_gen, None)
         for k, v in return_dict_gen.items():
             profiles.append(v)
 

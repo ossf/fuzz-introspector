@@ -259,10 +259,14 @@ class FuzzerProfile:
             self.all_class_functions[func].functions_reached = list(visited)
             self.all_class_functions[func].function_depth = max_depth
 
-    def accummulate_profile(self, target_folder: str) -> None:
+    def accummulate_profile(self, target_folder: str, return_dict: None,
+                            uniq_id: None, semaphore: None) -> None:
         """Triggers various analyses on the data of the fuzzer. This is used
         after a profile has been initialised to generate more interesting data.
         """
+        if semaphore is not None:
+            semaphore.acquire()
+
         self._propagate_functions_reached()
         self._set_all_reached_functions()
         self._set_all_unreached_functions()
@@ -270,6 +274,11 @@ class FuzzerProfile:
         self._set_file_targets()
         self._set_total_basic_blocks()
         self._set_total_cyclomatic_complexity()
+
+        if return_dict is not None:
+            return_dict[uniq_id] = self
+        if semaphore is not None:
+            semaphore.release()
 
     def get_cov_uncovered_reachable_funcs(self) -> List[str]:
         """Gets all functions that are statically reachable but are not

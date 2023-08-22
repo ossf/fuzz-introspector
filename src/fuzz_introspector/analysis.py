@@ -15,6 +15,7 @@
 
 import abc
 import logging
+import multiprocessing
 import os
 
 from typing import (
@@ -71,8 +72,29 @@ class IntrospectionProject():
                 profile.correlate_executable_name(correlation_dict)
 
         logger.info("[+] Accummulating profiles")
+        logger.info("Accummulating using multiprocessing")
+        manager = multiprocessing.Manager()
+        semaphore = multiprocessing.Semaphore(10)
+
+        return_dict = manager.dict()
+
+        jobs = []
+        idx = 0
         for profile in self.profiles:
-            profile.accummulate_profile(self.base_folder)
+            p = multiprocessing.Process(
+                target=fuzzer_profile.FuzzerProfile.accummulate_profile,
+                args=(profile, self.base_folder, return_dict,
+                      "uniq-%s" % (idx), semaphore))
+            jobs.append(p)
+            idx += 1
+            p.start()
+        for proc in jobs:
+            proc.join()
+
+        new_profiles = []
+        for idx in return_dict:
+            new_profiles.append(return_dict[idx])
+        self.profiles = new_profiles
 
         logger.info("[+] Creating project profile")
         self.proj_profile = project_profile.MergedProjectProfile(self.profiles)
