@@ -59,7 +59,7 @@ def read_fuzzer_data_file_to_profile(
     return profile
 
 
-def _load_profile(data_file: str, language: str, manager, semaphore: None):
+def _load_profile(data_file: str, language: str, manager, semaphore=None):
     """Internal function used for multithreaded profile loading"""
     if semaphore is not None:
         semaphore.acquire()
@@ -105,7 +105,7 @@ def load_all_profiles(
     else:
         return_dict_gen: Dict[Any, Any] = dict()
         for data_file in data_files:
-            _load_profile(data_file, language, return_dict_gen)
+            _load_profile(data_file, language, return_dict_gen, None)
         for k, v in return_dict_gen.items():
             profiles.append(v)
 

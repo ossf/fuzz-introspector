@@ -277,8 +277,8 @@ class FuzzerProfile:
 
         if return_dict is not None:
             return_dict[uniq_id] = self
-
-        semaphore.release()
+        if semaphore is not None:
+            semaphore.release()
 
     def get_cov_uncovered_reachable_funcs(self) -> List[str]:
         """Gets all functions that are statically reachable but are not
