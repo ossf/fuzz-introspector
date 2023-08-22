@@ -448,28 +448,24 @@ void FuzzIntrospector::extractAllFunctionDetailsToYaml(std::string nextYamlName,
   logPrintf(L1, "Logging next yaml tile to %s\n", nextYamlName.c_str());
   logPrintf(L1, "Wrapping all functions\n");
 
+  FuzzerFunctionList ListWrapper;
+  ListWrapper.ListName = "All functions";
   for (auto &F : M) {
-    FuzzerFunctionList ListWrapper;
-    ListWrapper.ListName = "All functions";
-
     logPrintf(L3, "Wrapping function %s\n", F.getName().str().c_str());
     if (shouldAvoidFunction(&F)) {
       logPrintf(L3, "Skipping this function\n");
       continue;
     }
     ListWrapper.Functions.push_back(wrapFunction(&F));
-
-    // Write the data
-    auto YamlStream = std::make_unique<raw_fd_ostream>(
-      nextYamlName, EC, llvm::sys::fs::OpenFlags::OF_Append);
-    yaml::Output YamlOut(*YamlStream);
-
-    FuzzerModuleIntrospection fmi(FuzzerCalltree.FileName, ListWrapper);
-
-    YamlOut << fmi;
-
   }
   logPrintf(L1, "Ended wrapping all functions\n");
+  // Write the data
+  auto YamlStream = std::make_unique<raw_fd_ostream>(
+      nextYamlName, EC, llvm::sys::fs::OpenFlags::OF_Append);
+  yaml::Output YamlOut(*YamlStream);
+
+  FuzzerModuleIntrospection fmi(FuzzerCalltree.FileName, ListWrapper);
+  YamlOut << fmi;
 
   //return ListWrapper;
 
