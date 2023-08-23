@@ -70,6 +70,8 @@ import soot.jimple.toolkits.annotation.logic.LoopFinder;
 import soot.jimple.toolkits.callgraph.CallGraph;
 import soot.jimple.toolkits.callgraph.Edge;
 import soot.options.Options;
+import soot.tagkit.AnnotationTag;
+import soot.tagkit.VisibilityAnnotationTag;
 import soot.toolkits.graph.Block;
 import soot.toolkits.graph.BlockGraph;
 import soot.toolkits.graph.BriefBlockGraph;
@@ -119,7 +121,6 @@ public class CallGraphGenerator {
             sinkMethod,
             sourceDirectory,
             isAutoFuzz);
-    PackManager.v().getPack("wjtp").add(new Transform("wjtp.custom", custom));
 
     // Set basic settings for the call graph generation
     Options.v().set_process_dir(jarFiles);
@@ -147,13 +148,37 @@ public class CallGraphGenerator {
     c.setApplicationClass();
 
     // Load and set custom entry point
-    SootMethod entryPoint;
+    SootMethod entryPoint = null;
     try {
       entryPoint = c.getMethodByName(entryMethod);
     } catch (RuntimeException e) {
-      System.out.println("Cannot find method: " + entryMethod + "from class: " + entryClass + ".");
+      // Default entry method not found. Try retrieve entry method by annotation.
+      outer:
+      for (SootMethod method : c.getMethods()) {
+        if (method.hasTag("VisibilityAnnotationTag")) {
+          VisibilityAnnotationTag tag =
+              (VisibilityAnnotationTag) method.getTag("VisibilityAnnotationTag");
+          for (AnnotationTag annotation : tag.getAnnotations()) {
+            if (annotation.getType().equals("Lcom/code_intelligence/jazzer/junit/FuzzTest;")) {
+              entryPoint = method;
+              break outer;
+            }
+          }
+        }
+      }
+    }
+
+    if (entryPoint == null) {
+      System.out.println(
+          "Cannot find method: "
+              + entryMethod
+              + " or methods with @FuzzTest annotation from class: "
+              + entryClass
+              + ".");
       return;
     }
+    custom.setEntryMethodStr(entryPoint.getName());
+
     List<SootMethod> entryPoints = new LinkedList<SootMethod>();
     entryPoints.add(entryPoint);
     Scene.v().setEntryPoints(entryPoints);
@@ -164,6 +189,7 @@ public class CallGraphGenerator {
 
     try {
       // Start the generation
+      PackManager.v().getPack("wjtp").add(new Transform("wjtp.custom", custom));
       PackManager.v().runPacks();
     } catch (RuntimeException e) {
       if (!custom.isAnalyseFinished()) {
@@ -1176,5 +1202,9 @@ class CustomSenceTransformer extends SceneTransformer {
 
   public Boolean isAnalyseFinished() {
     return this.analyseFinished;
+  }
+
+  public void setEntryMethodStr(String entryMethodStr) {
+    this.entryMethodStr = entryMethodStr;
   }
 }
