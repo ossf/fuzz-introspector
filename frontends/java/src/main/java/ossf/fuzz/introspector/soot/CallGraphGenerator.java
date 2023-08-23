@@ -52,8 +52,6 @@ import soot.SceneTransformer;
 import soot.SootClass;
 import soot.SootField;
 import soot.SootMethod;
-import soot.tagkit.AnnotationTag;
-import soot.tagkit.VisibilityAnnotationTag;
 import soot.Transform;
 import soot.Unit;
 import soot.Value;
@@ -72,6 +70,8 @@ import soot.jimple.toolkits.annotation.logic.LoopFinder;
 import soot.jimple.toolkits.callgraph.CallGraph;
 import soot.jimple.toolkits.callgraph.Edge;
 import soot.options.Options;
+import soot.tagkit.AnnotationTag;
+import soot.tagkit.VisibilityAnnotationTag;
 import soot.toolkits.graph.Block;
 import soot.toolkits.graph.BlockGraph;
 import soot.toolkits.graph.BriefBlockGraph;
@@ -156,7 +156,8 @@ public class CallGraphGenerator {
       outer:
       for (SootMethod method : c.getMethods()) {
         if (method.hasTag("VisibilityAnnotationTag")) {
-          VisibilityAnnotationTag tag = (VisibilityAnnotationTag) method.getTag("VisibilityAnnotationTag");
+          VisibilityAnnotationTag tag =
+              (VisibilityAnnotationTag) method.getTag("VisibilityAnnotationTag");
           for (AnnotationTag annotation : tag.getAnnotations()) {
             if (annotation.getType().equals("Lcom/code_intelligence/jazzer/junit/FuzzTest;")) {
               entryPoint = method;
@@ -168,7 +169,12 @@ public class CallGraphGenerator {
     }
 
     if (entryPoint == null) {
-      System.out.println("Cannot find method: " + entryMethod + " or methods with @FuzzTest annotation from class: " + entryClass + ".");
+      System.out.println(
+          "Cannot find method: "
+              + entryMethod
+              + " or methods with @FuzzTest annotation from class: "
+              + entryClass
+              + ".");
       return;
     }
     custom.setEntryMethodStr(entryPoint.getName());
