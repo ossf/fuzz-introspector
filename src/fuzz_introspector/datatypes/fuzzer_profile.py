@@ -50,7 +50,8 @@ class FuzzerProfile:
         self.all_class_functions: Dict[
             str, function_profile.FunctionProfile] = dict()
         self.branch_blockers: List[Any] = []
-        self.dst_to_fd_cache: Dict[str, function_profile.FunctionProfile] = dict()
+        self.dst_to_fd_cache: Dict[
+            str, function_profile.FunctionProfile] = dict()
         self.dst_to_fd_cache_set: bool = False
 
         self._target_lang = target_lang
