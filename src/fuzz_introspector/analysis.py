@@ -308,7 +308,7 @@ def get_url_to_cov_report(profile, node, target_coverage_url):
 
 def get_parent_callsite_link(node, callstack, profile, target_coverage_url):
     """Gets the coverage callsite link of a given node."""
-    if profile.dst_to_fd_cache_set == False:
+    if profile.dst_to_fd_cache_set is False:
         for fd_k, fd in profile.all_class_functions.items():
             profile.dst_to_fd_cache[utils.demangle_jvm_func(
                 fd.function_source_file, fd.function_name)] = fd
