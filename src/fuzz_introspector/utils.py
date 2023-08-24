@@ -84,9 +84,9 @@ def data_file_read_yaml(filename: str) -> Optional[Dict[Any, Any]]:
         return None
 
     try:
-        yaml.SafeLoader = yaml.CSafeLoader
+        yaml.SafeLoader = yaml.CSafeLoader  # type: ignore[assignment]
         logger.info("Set base loader to use CSafeLoader")
-    except:
+    except Exception:
         logger.info("Could not set CSafeLoader as base loader")
 
     try:
