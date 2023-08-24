@@ -84,8 +84,15 @@ def data_file_read_yaml(filename: str) -> Optional[Dict[Any, Any]]:
         return None
 
     try:
+        yaml.SafeLoader = yaml.CSafeLoader  # type: ignore[assignment, misc]
+        logger.info("Set base loader to use CSafeLoader")
+    except Exception:
+        logger.info("Could not set CSafeLoader as base loader")
+
+    try:
         with open(filename, 'r') as stream:
             data_dict: Dict[Any, Any] = yaml.safe_load(stream)
+            logger.info("Loaded single yaml module")
             return data_dict
     except Exception:
         # YAML library does not completely wrap exceptions, so unless
