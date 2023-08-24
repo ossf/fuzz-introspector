@@ -23,6 +23,7 @@ from fuzz_introspector import commands, constants
 sys.setrecursionlimit(10000)
 
 logger = logging.getLogger(name=__name__)
+LOG_FMT = '%(asctime)s.%(msecs)03d %(levelname)s %(module)s - %(funcName)s: %(message)s'
 
 
 def get_cmdline_parser() -> argparse.ArgumentParser:
@@ -108,22 +109,19 @@ def set_logging_level() -> None:
         if level == "debug":
             logging.basicConfig(
                 level=logging.DEBUG,
-                format=
-                '%(asctime)s.%(msecs)03d %(levelname)s %(module)s - %(funcName)s: %(message)s',
+                format=LOG_FMT,
                 datefmt='%Y-%m-%d %H:%M:%S',
             )
         else:
             logging.basicConfig(
                 level=logging.INFO,
-                format=
-                '%(asctime)s.%(msecs)03d %(levelname)s %(module)s - %(funcName)s: %(message)s',
+                format=LOG_FMT,
                 datefmt='%Y-%m-%d %H:%M:%S',
             )
     else:
         logging.basicConfig(
             level=logging.INFO,
-            format=
-            '%(asctime)s.%(msecs)03d %(levelname)s %(module)s - %(funcName)s: %(message)s',
+            format=LOG_FMT,
             datefmt='%Y-%m-%d %H:%M:%S',
         )
     logger.debug("Logging level set")
