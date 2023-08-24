@@ -23,6 +23,7 @@ from fuzz_introspector import commands, constants
 sys.setrecursionlimit(10000)
 
 logger = logging.getLogger(name=__name__)
+LOG_FMT = '%(asctime)s.%(msecs)03d %(levelname)s %(module)s - %(funcName)s: %(message)s'
 
 
 def get_cmdline_parser() -> argparse.ArgumentParser:
@@ -35,97 +36,69 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
         "report",
         help="generate fuzz-introspector HTML report",
     )
-    report_parser.add_argument(
-        "--target_dir",
-        type=str,
-        help="Directory where the data files are",
-        required=True
-    )
-    report_parser.add_argument(
-        "--coverage_url",
-        type=str,
-        help="URL with coverage information",
-        default="/covreport/linux"
-    )
-    report_parser.add_argument(
-        "--analyses",
-        nargs="+",
-        default=[
-            "OptimalTargets",
-            "RuntimeCoverageAnalysis",
-            "FuzzEngineInputAnalysis",
-            "FilePathAnalyser",
-            "MetadataAnalysis",
-            "AnnotatedCFG"
-        ],
-        help="""
+    report_parser.add_argument("--target_dir",
+                               type=str,
+                               help="Directory where the data files are",
+                               required=True)
+    report_parser.add_argument("--coverage_url",
+                               type=str,
+                               help="URL with coverage information",
+                               default="/covreport/linux")
+    report_parser.add_argument("--analyses",
+                               nargs="+",
+                               default=[
+                                   "OptimalTargets", "RuntimeCoverageAnalysis",
+                                   "FuzzEngineInputAnalysis",
+                                   "FilePathAnalyser", "MetadataAnalysis",
+                                   "AnnotatedCFG"
+                               ],
+                               help="""
             Analyses to run. Available options:
             OptimalTargets, FuzzEngineInput, ThirdPartyAPICoverageAnalyser
-        """
-    )
-    report_parser.add_argument(
-        "--enable-all-analyses",
-        action='store_true',
-        default=False,
-        help="Enables all analyses"
-    )
-    report_parser.add_argument(
-        "--correlation_file",
-        type=str,
-        default="",
-        help="File with correlation data"
-    )
-    report_parser.add_argument(
-        "--name",
-        type=str,
-        default="",
-        help="Name of project"
-    )
-    report_parser.add_argument(
-        "--language",
-        type=str,
-        default="c-cpp",
-        help="Language of project"
-    )
+        """)
+    report_parser.add_argument("--enable-all-analyses",
+                               action='store_true',
+                               default=False,
+                               help="Enables all analyses")
+    report_parser.add_argument("--correlation_file",
+                               type=str,
+                               default="",
+                               help="File with correlation data")
+    report_parser.add_argument("--name",
+                               type=str,
+                               default="",
+                               help="Name of project")
+    report_parser.add_argument("--language",
+                               type=str,
+                               default="c-cpp",
+                               help="Language of project")
     report_parser.add_argument(
         "--output-json",
         nargs="+",
-        default=[
-            "SinkCoverageAnalyser",
-            "FuzzEngineInputAnalysis"
-        ],
-        help="State which analysis requires separate json report output"
-    )
+        default=["SinkCoverageAnalyser", "FuzzEngineInputAnalysis"],
+        help="State which analysis requires separate json report output")
 
     # Command for correlating binary files to fuzzerLog files
     correlate_parser = subparsers.add_parser(
         "correlate",
-        help="correlate executable files to fuzzer introspector logs"
-    )
+        help="correlate executable files to fuzzer introspector logs")
     correlate_parser.add_argument(
         "--binaries_dir",
         type=str,
         required=True,
-        help="Directory with binaries to scan for Fuzz introspector tags"
-    )
+        help="Directory with binaries to scan for Fuzz introspector tags")
 
     # Command for diffing two Fuzz Introspector reports
     diff_parser = subparsers.add_parser(
-        'diff',
-        help='Diff two reports to identify improvements/regressions'
-    )
-    diff_parser.add_argument(
-        '--report1',
-        type=str,
-        required=True,
-        help='Path to the first report'
-    )
-    diff_parser.add_argument(
-        '--report2',
-        type=str,
-        required=True,
-        help='Path to the second report'
-    )
+        'diff', help='Diff two reports to identify improvements/regressions')
+    diff_parser.add_argument('--report1',
+                             type=str,
+                             required=True,
+                             help='Path to the first report')
+    diff_parser.add_argument('--report2',
+                             type=str,
+                             required=True,
+                             help='Path to the second report')
 
     return parser
 
@@ -134,11 +107,23 @@ def set_logging_level() -> None:
     if os.environ.get("FUZZ_LOGLEVEL"):
         level = os.environ.get("FUZZ_LOGLEVEL")
         if level == "debug":
-            logging.basicConfig(level=logging.DEBUG)
+            logging.basicConfig(
+                level=logging.DEBUG,
+                format=LOG_FMT,
+                datefmt='%Y-%m-%d %H:%M:%S',
+            )
         else:
-            logging.basicConfig(level=logging.INFO)
+            logging.basicConfig(
+                level=logging.INFO,
+                format=LOG_FMT,
+                datefmt='%Y-%m-%d %H:%M:%S',
+            )
     else:
-        logging.basicConfig(level=logging.INFO)
+        logging.basicConfig(
+            level=logging.INFO,
+            format=LOG_FMT,
+            datefmt='%Y-%m-%d %H:%M:%S',
+        )
     logger.debug("Logging level set")
 
 
@@ -151,15 +136,9 @@ def main() -> int:
     logger.info("Running fuzz introspector post-processing")
     if args.command == 'report':
         return_code = commands.run_analysis_on_dir(
-            args.target_dir,
-            args.coverage_url,
-            args.analyses,
-            args.correlation_file,
-            args.enable_all_analyses,
-            args.name,
-            args.language,
-            args.output_json
-        )
+            args.target_dir, args.coverage_url, args.analyses,
+            args.correlation_file, args.enable_all_analyses, args.name,
+            args.language, args.output_json)
         logger.info("Ending fuzz introspector report generation")
     elif args.command == 'correlate':
         return_code = commands.correlate_binaries_to_logs(args.binaries_dir)
