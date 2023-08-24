@@ -22,6 +22,7 @@ the OSS-Fuzz environment. The steps taken are:
 """
 
 import os
+import threading
 import subprocess
 
 FI_JVM_BASE="/fuzz-introspector/frontends/java"
@@ -146,6 +147,14 @@ com.apple.*:apple.awt.*===[java.lang.Runtime].exec:[javax.xml.xpath.XPath].compi
   print("Running command: [%s]" % " ".join(cmd))
   subprocess.check_call(" ".join(cmd), shell=True)
 
+def wrap_introspetor_executor(target, jar_files, semaphore):
+  semaphore.acquire()
+  try:
+    run_introspector_frontend(target, jar_files)
+  except:
+    pass
+  semaphore.release()
+
 
 def run_analysis(path):
   if not build_jvm_frontend():
@@ -157,8 +166,16 @@ def run_analysis(path):
   targets = find_fuzz_targets(path)
   jar_files = get_all_jar_files(path)
 
+  
+  thread_jobs = []
+  sem = threading.Semaphore(4)
   for target in targets:
-    run_introspector_frontend(target, jar_files)
+    t = threading.Thread(target = wrap_introspetor_executor, args=(target, jar_files, sem))
+    t.start()
+    #run_introspector_frontend(target, jar_files)
+  for job in thread_jobs:
+      job.join()
+
   os.chdir(currwd)
 
 if __name__ == "__main__":
