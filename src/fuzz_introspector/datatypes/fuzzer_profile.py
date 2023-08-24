@@ -47,11 +47,11 @@ class FuzzerProfile:
         self.binary_executable: str = ""
         self.file_targets: Dict[str, Set[str]] = dict()
         self.coverage: Optional[code_coverage.CoverageProfile] = None
-        self.all_class_functions: Dict[
-            str, function_profile.FunctionProfile] = dict()
+        self.all_class_functions: Dict[str,
+                                       function_profile.FunctionProfile] = dict()
         self.branch_blockers: List[Any] = []
-        self.dst_to_fd_cache: Dict[
-            str, function_profile.FunctionProfile] = dict()
+        self.dst_to_fd_cache: Dict[str,
+                                   function_profile.FunctionProfile] = dict()
         self.dst_to_fd_cache_set: bool = False
 
         self._target_lang = target_lang
