@@ -242,8 +242,8 @@ class OptimalTargets(analysis.AnalysisInterface):
         # Determine number of fuzzers to create
         drivers_to_create = 10
         count_ranges = [
-            (20000, 1),
-            (10000, 5),
+            (10000, 1),
+            (5000, 3),
             (2000, 7),
         ]
         for top, count in count_ranges:
@@ -253,22 +253,19 @@ class OptimalTargets(analysis.AnalysisInterface):
         logger.info(f"Getting {drivers_to_create} optimal targets")
         while len(optimal_functions_targeted) < drivers_to_create:
             logger.info("  - sorting by unreached complexity. ")
-            sorted_by_undiscovered_complexity = list(
-                sorted(target_fds,
-                       key=lambda x: int(x.new_unreached_complexity),
-                       reverse=True))
-            logger.info(
-                f". Done - length of the list: {len(sorted_by_undiscovered_complexity)}"
-            )
-            if len(sorted_by_undiscovered_complexity) == 0:
+            if len(target_fds) == 0:
                 break
+            optimal_target_fd = target_fds[0]
+            for potential_target in target_fds:
+                if int(potential_target.new_unreached_complexity) > int(
+                        optimal_target_fd.new_unreached_complexity):
+                    optimal_target_fd = potential_target
 
             # Add function to optimal targets
-            optimal_func = sorted_by_undiscovered_complexity[0]
-            optimal_functions_targeted.append(optimal_func)
+            optimal_functions_targeted.append(optimal_target_fd)
 
             new_merged_profile = add_func_to_reached_and_clone(
-                new_merged_profile, optimal_func)
+                new_merged_profile, optimal_target_fd)
 
             # Update the optimal targets. We only need to do this
             # if more drivers need to be created.
