@@ -62,13 +62,16 @@ def read_fuzzer_data_file_to_profile(
 def _load_profile(data_file: str, language: str, manager, semaphore=None):
     """Internal function used for multithreaded profile loading"""
     if semaphore is not None:
+        logger.info("Acquiring semaphore")
         semaphore.acquire()
 
+    logger.info("Doing the work")
     profile = read_fuzzer_data_file_to_profile(data_file, language)
     if profile is not None:
         manager[data_file] = profile
 
     if semaphore is not None:
+        logger.info("Releasing the semaphore")
         semaphore.release()
 
 
