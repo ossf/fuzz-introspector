@@ -242,8 +242,8 @@ class OptimalTargets(analysis.AnalysisInterface):
         # Determine number of fuzzers to create
         drivers_to_create = 10
         count_ranges = [
-            (20000, 1),
-            (10000, 5),
+            (10000, 1),
+            (5000, 3),
             (2000, 7),
         ]
         for top, count in count_ranges:
