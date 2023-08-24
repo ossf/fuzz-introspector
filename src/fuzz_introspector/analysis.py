@@ -97,6 +97,7 @@ class IntrospectionProject():
         self.profiles = new_profiles
 
         logger.info("[+] Creating project profile")
+
         self.proj_profile = project_profile.MergedProjectProfile(self.profiles)
         self.proj_profile.coverage_url = self.coverage_url
 
@@ -242,16 +243,16 @@ def get_node_coverage_hitcount(demangled_name: str, callstack: Dict[int, str],
         is_first = False
     elif callstack_has_parent(node, callstack):
         # Find the parent function and check coverage of the node
-        logger.debug("Extracting data")
-        logger.debug(f"Getting hit details {node.dst_function_name} -- "
-                     f"{node.cov_ct_idx} -- {node.src_linenumber}")
+        # logger.debug("Extracting data")
+        # logger.debug(f"Getting hit details {node.dst_function_name} -- "
+        #             f"{node.cov_ct_idx} -- {node.src_linenumber}")
 
         if profile.target_lang == "c-cpp":
             coverage_data = profile.coverage.get_hit_details(
                 callstack_get_parent(node, callstack))
             for (n_line_number, hit_count_cov) in coverage_data:
-                logger.debug(
-                    f"  - iterating {n_line_number} : {hit_count_cov}")
+                # logger.debug(
+                #     f"  - iterating {n_line_number} : {hit_count_cov}")
                 if n_line_number == node.src_linenumber and hit_count_cov > 0:
                     node_hitcount = hit_count_cov
         elif profile.target_lang == "python":
@@ -264,8 +265,8 @@ def get_node_coverage_hitcount(demangled_name: str, callstack: Dict[int, str],
             coverage_data = profile.coverage.get_hit_details(
                 callstack_get_parent(node, callstack))
             for (n_line_number, hit_count_cov) in coverage_data:
-                logger.debug(
-                    f"  - iterating {n_line_number} : {hit_count_cov}")
+                # logger.debug(
+                #     f"  - iterating {n_line_number} : {hit_count_cov}")
                 if n_line_number == node.src_linenumber and hit_count_cov > 0:
                     node_hitcount = hit_count_cov
         node.cov_parent = callstack_get_parent(node, callstack)
@@ -307,20 +308,35 @@ def get_url_to_cov_report(profile, node, target_coverage_url):
 
 def get_parent_callsite_link(node, callstack, profile, target_coverage_url):
     """Gets the coverage callsite link of a given node."""
+    if profile.dst_to_fd_cache_set == False:
+        for fd_k, fd in profile.all_class_functions.items():
+            profile.dst_to_fd_cache[utils.demangle_jvm_func(
+                fd.function_source_file, fd.function_name)] = fd
+            profile.dst_to_fd_cache[utils.normalise_str(fd.function_name)] = fd
+        profile.dst_to_fd_cache_set = True
+
     if callstack_has_parent(node, callstack):
         parent_fname = callstack_get_parent(node, callstack)
         dst_options = [parent_fname, utils.demangle_cpp_func(parent_fname)]
         for dst in dst_options:
-            for fd_k, fd in profile.all_class_functions.items():
-                if (utils.demangle_jvm_func(fd.function_source_file,
-                                            fd.function_name) == dst
-                        or utils.normalise_str(
-                            fd.function_name) == utils.normalise_str(dst)):
-                    callsite_link = profile.resolve_coverage_link(
-                        target_coverage_url, fd.function_source_file,
-                        node.src_linenumber, fd.function_name)
-                    return callsite_link
+            # First try the cache
+            try:
+                fd = profile.dst_to_fd_cache[dst]
+                callsite_link = profile.resolve_coverage_link(
+                    target_coverage_url, fd.function_source_file,
+                    node.src_linenumber, fd.function_name)
+                return callsite_link
+            except KeyError:
+                pass
 
+            try:
+                fd = profile.dst_to_fd_cache[utils.normalise_str(dst)]
+                callsite_link = profile.resolve_coverage_link(
+                    target_coverage_url, fd.function_source_file,
+                    node.src_linenumber, fd.function_name)
+                return callsite_link
+            except KeyError:
+                pass
     return "#"
 
 
@@ -347,6 +363,7 @@ def overlay_calltree_with_coverage(
         coverage_url, target_name, profile.target_lang)
     logger.info(f"Using coverage url: {target_coverage_url}")
 
+    logger.info("Overlaying 1")
     for node in cfg_load.extract_all_callsites(
             profile.fuzzer_callsite_calltree):
         node.cov_ct_idx = ct_idx
@@ -361,7 +378,7 @@ def overlay_calltree_with_coverage(
         # Add to callstack
         callstack_set_curr_node(node, demangled_name, callstack)
 
-        logger.debug(f"Checking callsite: { demangled_name}")
+        # logger.debug(f"Checking callsite: { demangled_name}")
 
         # Get hitcount for this node
         node.cov_hitcount = get_node_coverage_hitcount(demangled_name,
@@ -376,6 +393,7 @@ def overlay_calltree_with_coverage(
             node, callstack, profile, target_coverage_url)
     # For python, do a hack where we check if any node is covered, and, if so,
     # ensure the entrypoint is covered.
+    logger.info("Overlaying 2")
     all_nodes = cfg_load.extract_all_callsites(
         profile.fuzzer_callsite_calltree)
     if len(all_nodes) > 0:
@@ -387,6 +405,7 @@ def overlay_calltree_with_coverage(
                 break
 
     # Extract data about which nodes unlocks data
+    logger.info("Overlaying 3")
     all_callsites = cfg_load.extract_all_callsites(
         profile.fuzzer_callsite_calltree)
     prev_end = -1
@@ -433,6 +452,7 @@ def overlay_calltree_with_coverage(
         n1.cov_forward_reds = forward_red
         n1.cov_largest_blocked_func = largest_blocked_name
 
+    logger.info("Updating branch complexities")
     update_branch_complexities(proj_profile.all_functions, profile.coverage)
     profile.branch_blockers = detect_branch_level_blockers(
         proj_profile.all_functions, profile, target_coverage_url)
