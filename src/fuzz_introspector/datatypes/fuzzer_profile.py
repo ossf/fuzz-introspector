@@ -236,12 +236,15 @@ class FuzzerProfile:
         """Accummulates all functions reached by a given fuzzer. This is
         achieved by iterating the outgoing edges of each function recursively
         """
+        new_all_class_functions: Dict[
+            str, function_profile.FunctionProfile] = dict()
+
         for func in self.all_class_functions:
             worklist = []
             max_depth = 0
             for func_reached in self.all_class_functions[
                     func].functions_reached:
-                worklist.append((func_reached, 0))
+                worklist.append((func_reached, 1))
             visited = set()
 
             while len(worklist) > 0:
@@ -253,13 +256,29 @@ class FuzzerProfile:
                     continue
                 visited.add(elem)
 
-                if elem in self.all_class_functions:
+                # Check if we have done this function already.
+                try:
+                    fd = new_all_class_functions[elem]
+                    visited.update(set(fd.functions_reached))
+                    tmp_depth = fd.function_depth + depth
+                    max_depth = max(max_depth, tmp_depth)
+                    continue
+                except KeyError:
+                    pass
+
+                # Otherwise traverse the functions reached.
+                try:
                     for func_reached2 in self.all_class_functions[
                             elem].functions_reached:
                         worklist.append((func_reached2, depth + 1))
+                except KeyError:
+                    pass
 
-            self.all_class_functions[func].functions_reached = list(visited)
-            self.all_class_functions[func].function_depth = max_depth
+            # Save the work
+            new_all_class_functions[func] = self.all_class_functions[func]
+            new_all_class_functions[func].functions_reached = list(visited)
+            new_all_class_functions[func].function_depth = max_depth
+        self.all_class_functions = new_all_class_functions
 
     def _set_fd_cache(self):
         for fd_k, fd in self.all_class_functions.items():
