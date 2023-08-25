@@ -236,7 +236,8 @@ class FuzzerProfile:
         """Accummulates all functions reached by a given fuzzer. This is
         achieved by iterating the outgoing edges of each function recursively
         """
-        new_all_class_functions = dict()
+        new_all_class_functions: Dict[
+            str, function_profile.FunctionProfile] = dict()
 
         for func in self.all_class_functions:
             worklist = []
