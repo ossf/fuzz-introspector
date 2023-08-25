@@ -45,6 +45,8 @@ class MergedProjectProfile:
         self.unreached_functions = set()
         self.functions_reached = set()
         self.coverage_url = "#"
+        self.dst_to_fd_cache: Dict[str,
+                                   function_profile.FunctionProfile] = dict()
 
         logger.info(
             f"Creating merged profile of {len(self.profiles)} profiles")
@@ -151,6 +153,7 @@ class MergedProjectProfile:
             # TODO (navidem): will need to merge branch coverages (branch_cov_map) if we need to
             # identify blockers based on all fuzz targets coverage
         self._set_basefolder()
+        self._set_fd_cache()
         logger.info("Completed creationg of merged profile")
 
     def get_all_runtime_covered_functions(self) -> List[str]:
@@ -481,3 +484,8 @@ class MergedProjectProfile:
         except Exception:
             hit_percentage = 0.0
         return hit_percentage
+
+    def _set_fd_cache(self):
+        for fd_k, fd in self.all_functions.items():
+            self.dst_to_fd_cache[utils.demangle_cpp_func(
+                fd.function_name)] = fd
