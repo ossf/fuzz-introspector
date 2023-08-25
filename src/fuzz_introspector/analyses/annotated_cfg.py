@@ -148,10 +148,16 @@ class FuzzAnnotatedCFG(analysis.AnalysisInterface):
             utils.demangle_cpp_func(func_name),
         ]
         for dst in dst_options:
-            for fd_k, fd in profile.all_class_functions.items():
-                if (fd.function_name == dst or utils.normalise_str(
-                        fd.function_name) == utils.normalise_str(dst)):
-                    return fd
+            try:
+                fd = profile.dst_to_fd_cache[dst]
+                return fd
+            except KeyError:
+                pass
+            try:
+                fd = profile.dst_to_fd_cache[utils.normalise_str(dst)]
+                return fd
+            except KeyError:
+                pass
         return None
 
     def get_profile_sourcefile_merged(self, merged_profile, func_name):
@@ -160,8 +166,14 @@ class FuzzAnnotatedCFG(analysis.AnalysisInterface):
             utils.demangle_cpp_func(func_name),
         ]
         for dst in dst_options:
-            for fd_k, fd in merged_profile.all_functions.items():
-                if (fd.function_name == dst or utils.normalise_str(
-                        fd.function_name) == utils.normalise_str(dst)):
-                    return fd
+            try:
+                fd = merged_profile.dst_to_fd_cache[dst]
+                return fd
+            except KeyError:
+                pass
+            try:
+                fd = merged_profile.dst_to_fd_cache[utils.normalise_str(dst)]
+                return fd
+            except KeyError:
+                pass
         return None
