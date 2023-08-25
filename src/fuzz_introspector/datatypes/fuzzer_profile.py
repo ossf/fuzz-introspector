@@ -233,6 +233,54 @@ class FuzzerProfile:
 
         return self.fuzzer_source_file
 
+    def _propagate_functions_reached_fast(self) -> None:
+        """Accummulates all functions reached by a given fuzzer. This is
+        achieved by iterating the outgoing edges of each function recursively
+        """
+        new_all_class_functions = dict()
+
+        for func in self.all_class_functions:
+            worklist = []
+            max_depth = 0
+            for func_reached in self.all_class_functions[
+                    func].functions_reached:
+                worklist.append((func_reached, 0))
+            visited = set()
+
+            while len(worklist) > 0:
+                elem, depth = worklist.pop()
+                if depth > max_depth:
+                    max_depth = depth
+
+                if elem in visited:
+                    continue
+                visited.add(elem)
+
+                # Check if we have done this function already.
+                try:
+                    fd = new_all_class_functions[elem]
+                    visited.update(set(fd.functions_reached))
+                    tmp_depth = fd.function_depth
+                    max_depth = max(max_depth, tmp_depth)
+                except KeyError:
+                    pass
+
+                # Otherwise traverse the functions reached.
+                try:
+                    for func_reached2 in self.all_class_functions[
+                            elem].functions_reached:
+                        worklist.append((func_reached2, depth + 1))
+                except KeyError:
+                    pass
+
+            # Save the work
+            new_all_class_functions[func] = self.all_class_functions[func]
+            new_all_class_functions[func].functions_reached = list(visited)
+            new_all_class_functions[func].function_depth = max_depth
+            #self.all_class_functions[func].functions_reached = list(visited)
+            #self.all_class_functions[func].function_depth = max_depth
+        self.all_class_functions = new_all_class_functions
+
     def _propagate_functions_reached(self) -> None:
         """Accummulates all functions reached by a given fuzzer. This is
         achieved by iterating the outgoing edges of each function recursively
@@ -273,7 +321,8 @@ class FuzzerProfile:
             semaphore.acquire()
 
         logger.info("%s: propagating functions reached" % (self.identifier))
-        self._propagate_functions_reached()
+        #self._propagate_functions_reached()
+        self._propagate_functions_reached_fast()
         logger.info("%s: setting reached funcs" % (self.identifier))
         self._set_all_reached_functions()
         logger.info("%s: setting unreached funcs" % (self.identifier))

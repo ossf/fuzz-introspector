@@ -289,6 +289,12 @@ def get_hit_count_color(hit_count: int) -> str:
 
 def get_url_to_cov_report(profile, node, target_coverage_url):
     """ Get URL to coverage report for the node. """
+    if profile.dst_to_fd_cache_set is False:
+        for fd_k, fd in profile.all_class_functions.items():
+            profile.dst_to_fd_cache[utils.demangle_jvm_func(
+                fd.function_source_file, fd.function_name)] = fd
+            profile.dst_to_fd_cache[utils.normalise_str(fd.function_name)] = fd
+        profile.dst_to_fd_cache_set = True
     dst_options = [
         node.dst_function_name,
         utils.demangle_cpp_func(node.dst_function_name),
@@ -296,13 +302,23 @@ def get_url_to_cov_report(profile, node, target_coverage_url):
                                 node.dst_function_name)
     ]
     for dst in dst_options:
-        for fd_k, fd in profile.all_class_functions.items():
-            if (fd.function_name == dst or utils.normalise_str(
-                    fd.function_name) == utils.normalise_str(dst)):
-                return profile.resolve_coverage_link(target_coverage_url,
-                                                     fd.function_source_file,
-                                                     fd.function_linenumber,
-                                                     fd.function_name)
+        try:
+            fd = profile.dst_to_fd_cache[dst]
+            return profile.resolve_coverage_link(target_coverage_url,
+                                                 fd.function_source_file,
+                                                 fd.function_linenumber,
+                                                 fd.function_name)
+        except KeyError:
+            pass
+
+        try:
+            fd = profile.dst_to_fd_cache[utils.normalise_str(dst)]
+            return profile.resolve_coverage_link(target_coverage_url,
+                                                 fd.function_source_file,
+                                                 fd.function_linenumber,
+                                                 fd.function_name)
+        except KeyError:
+            pass
     return "#"
 
 
@@ -405,6 +421,7 @@ def overlay_calltree_with_coverage(
                 break
 
     # Extract data about which nodes unlocks data
+    # FIX this loop
     logger.info("Overlaying 3")
     if proj_profile.dst_to_fd_cache_set is False:
         for fd_k, fd in proj_profile.all_functions.items():
