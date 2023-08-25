@@ -261,6 +261,7 @@ class FuzzerProfile:
                     visited.update(set(fd.functions_reached))
                     tmp_depth = fd.function_depth + depth
                     max_depth = max(max_depth, tmp_depth)
+                    continue
                 except KeyError:
                     pass
 
