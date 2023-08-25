@@ -78,11 +78,12 @@ def load_all_profiles(
         parallelise: bool = True) -> List[fuzzer_profile.FuzzerProfile]:
     """Loads all profiles in target_folder in a multi-threaded manner"""
 
-    # Disable multiprocessing for jvm profiles as it will result in
-    # recursion error easily because java data.yaml file are generally
-    # large
     if language == "jvm":
-        parallelise = False
+        # Java targets tend to be quite large, so we try to avoid memory
+        # exhaustion here.
+        semaphore_count = 3
+    else:
+        semaphore_count = 6
 
     profiles = []
     data_files = utils.get_all_files_in_tree_with_regex(
@@ -90,7 +91,7 @@ def load_all_profiles(
     logger.info(f" - found {len(data_files)} profiles to load")
     if parallelise:
         manager = multiprocessing.Manager()
-        semaphore = multiprocessing.Semaphore(10)
+        semaphore = multiprocessing.Semaphore(semaphore_count)
         return_dict = manager.dict()
         jobs = []
         for data_file in data_files:
