@@ -71,7 +71,8 @@ def process_mapping(map_str):
         # "test8",
         # "test9",
         # "test10",
-        "test11"
+        "test11",
+        "test12"
     ]
 )
 def test_full_jvm_report_generation(tmpdir, testcase):
@@ -88,6 +89,7 @@ def test_full_jvm_report_generation(tmpdir, testcase):
     unreached = safe_split(config.get('test', 'unreached'), ":")
     files_reached = process_mapping(config.get('test', 'filereached'))
     files_covered = process_mapping(config.get('test', 'filecovered'))
+    fuzzing_method = config.get('test', 'fuzzingmethod')
 
     for file in os.listdir(result_dir):
         shutil.copy(os.path.join(result_dir, file), tmpdir)
@@ -123,7 +125,7 @@ def test_full_jvm_report_generation(tmpdir, testcase):
     files = os.listdir(tmpdir)
 
     check_essential_files(files, class_name)
-    check_calltree_view(tmpdir, files, class_name)
+    check_calltree_view(tmpdir, files, class_name, fuzzing_method)
     check_function_list(tmpdir, optimal_reached, optimal_unreached, 'analysis_1.js')
     check_function_list(tmpdir, reached, unreached, 'all_functions.js')
     check_fuzz_report(tmpdir, class_name, files_reached, files_covered, reached, unreached)
@@ -149,7 +151,7 @@ def check_essential_files(files, class_name):
         assert file in files
 
 
-def check_calltree_view(report_dir, files, class_name):
+def check_calltree_view(report_dir, files, class_name, fuzzing_method):
     """Check all calltree_view_*.html"""
     for file in [f for f in files if f.startswith('calltree_view_')]:
         with open(os.path.join(report_dir, file)) as f:
@@ -173,7 +175,7 @@ def check_calltree_view(report_dir, files, class_name):
 
         actual_line = retrieve_tag_content(first_line.find_class('language-clike')[0])
         assert actual_line == f"[{actual_class}]." + \
-            "fuzzerTestOneInput(com.code_intelligence.jazzer.api.FuzzedDataProvider)"
+            f"{fuzzing_method}(com.code_intelligence.jazzer.api.FuzzedDataProvider)"
 
         # Check last line of call tree
         last_line = elements[len(elements) - 1]
