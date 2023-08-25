@@ -267,12 +267,19 @@ class FuzzerProfile:
         if semaphore is not None:
             semaphore.acquire()
 
+        logger.info("%s: propagating functions reached" % (self.identifier))
         self._propagate_functions_reached()
+        logger.info("%s: setting reached funcs" % (self.identifier))
         self._set_all_reached_functions()
+        logger.info("%s: setting unreached funcs" % (self.identifier))
         self._set_all_unreached_functions()
+        logger.info("%s: loading coverage" % (self.identifier))
         self._load_coverage(target_folder)
+        logger.info("%s: setting file targets" % (self.identifier))
         self._set_file_targets()
+        logger.info("%s: setting total basic blocks" % (self.identifier))
         self._set_total_basic_blocks()
+        logger.info("%s: setting cyclomatic complexity" % (self.identifier))
         self._set_total_cyclomatic_complexity()
 
         if return_dict is not None:

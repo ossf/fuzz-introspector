@@ -346,7 +346,7 @@ def overlay_calltree_with_coverage(
     target_coverage_url = utils.get_target_coverage_url(
         coverage_url, target_name, profile.target_lang)
     logger.info(f"Using coverage url: {target_coverage_url}")
-
+    logger.info("Overlaying 1")
     for node in cfg_load.extract_all_callsites(
             profile.fuzzer_callsite_calltree):
         node.cov_ct_idx = ct_idx
@@ -376,6 +376,7 @@ def overlay_calltree_with_coverage(
             node, callstack, profile, target_coverage_url)
     # For python, do a hack where we check if any node is covered, and, if so,
     # ensure the entrypoint is covered.
+    logger.info("Overlaying 2")
     all_nodes = cfg_load.extract_all_callsites(
         profile.fuzzer_callsite_calltree)
     if len(all_nodes) > 0:
@@ -387,6 +388,7 @@ def overlay_calltree_with_coverage(
                 break
 
     # Extract data about which nodes unlocks data
+    logger.info("Overlaying 3")
     all_callsites = cfg_load.extract_all_callsites(
         profile.fuzzer_callsite_calltree)
     prev_end = -1
@@ -433,6 +435,7 @@ def overlay_calltree_with_coverage(
         n1.cov_forward_reds = forward_red
         n1.cov_largest_blocked_func = largest_blocked_name
 
+    logger.info("Updating branch complexities")
     update_branch_complexities(proj_profile.all_functions, profile.coverage)
     profile.branch_blockers = detect_branch_level_blockers(
         proj_profile.all_functions, profile, target_coverage_url)
