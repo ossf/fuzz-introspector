@@ -438,14 +438,13 @@ def overlay_calltree_with_coverage(
             if n2.cov_hitcount != 0:
                 break
 
-            for fd_k, fd in proj_profile.all_functions.items():
-                if (utils.demangle_cpp_func(
-                        fd.function_name) == n2.dst_function_name
-                        and fd.total_cyclomatic_complexity >
-                        largest_blocked_count):
+            try:
+                fd = proj_profile.dst_to_fd_cache[n2.dst_function_name]
+                if fd.total_cyclomatic_complexity > largest_blocked_count:
                     largest_blocked_count = fd.total_cyclomatic_complexity
                     largest_blocked_name = n2.dst_function_name
-                    break
+            except KeyError:
+                pass
 
             forward_red += 1
             idx2 += 1
