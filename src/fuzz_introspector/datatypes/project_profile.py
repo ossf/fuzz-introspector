@@ -487,4 +487,5 @@ class MergedProjectProfile:
 
     def _set_fd_cache(self):
         for fd_k, fd in self.all_functions.items():
-            self.dst_to_fd_cache[utils.demangle_cpp_func(fd.function_name)] = fd
+            self.dst_to_fd_cache[utils.demangle_cpp_func(
+                fd.function_name)] = fd
