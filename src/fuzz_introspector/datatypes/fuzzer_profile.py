@@ -244,7 +244,7 @@ class FuzzerProfile:
             max_depth = 0
             for func_reached in self.all_class_functions[
                     func].functions_reached:
-                worklist.append((func_reached, 0))
+                worklist.append((func_reached, 1))
             visited = set()
 
             while len(worklist) > 0:
