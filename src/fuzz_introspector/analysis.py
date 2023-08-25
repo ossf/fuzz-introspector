@@ -408,7 +408,8 @@ def overlay_calltree_with_coverage(
     logger.info("Overlaying 3")
     if proj_profile.dst_to_fd_cache_set is False:
         for fd_k, fd in proj_profile.all_functions.items():
-            proj_profile.dst_to_fd_cache[utils.demangle_cpp_func(fd.function_name)] = fd
+            proj_profile.dst_to_fd_cache[utils.demangle_cpp_func(
+                fd.function_name)] = fd
         proj_profile.dst_to_fd_cache_set = True
 
     all_callsites = cfg_load.extract_all_callsites(

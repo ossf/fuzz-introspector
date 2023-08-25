@@ -45,7 +45,8 @@ class MergedProjectProfile:
         self.unreached_functions = set()
         self.functions_reached = set()
         self.dst_to_fd_cache_set = False
-        self.dst_to_fd_cache = dict()
+        self.dst_to_fd_cache: Dict[str,
+                                   function_profile.FunctionProfile] = dict()
         self.coverage_url = "#"
 
         logger.info(
