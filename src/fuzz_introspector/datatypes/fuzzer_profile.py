@@ -70,6 +70,8 @@ class FuzzerProfile:
             self.entrypoint_mod = frontend_yaml['ep']['module']
 
         self._set_function_list(frontend_yaml)
+        self.dst_to_fd_cache: Dict[str,
+                                   function_profile.FunctionProfile] = dict()
 
     @property
     def target_lang(self):
@@ -259,6 +261,12 @@ class FuzzerProfile:
             self.all_class_functions[func].functions_reached = list(visited)
             self.all_class_functions[func].function_depth = max_depth
 
+    def _set_fd_cache(self):
+        for fd_k, fd in self.all_class_functions.items():
+            self.dst_to_fd_cache[utils.demangle_jvm_func(
+                fd.function_source_file, fd.function_name)] = fd
+            self.dst_to_fd_cache[utils.normalise_str(fd.function_name)] = fd
+
     def accummulate_profile(self, target_folder: str, return_dict: None,
                             uniq_id: None, semaphore: None) -> None:
         """Triggers various analyses on the data of the fuzzer. This is used
@@ -281,7 +289,9 @@ class FuzzerProfile:
         self._set_total_basic_blocks()
         logger.info("%s: setting cyclomatic complexity" % (self.identifier))
         self._set_total_cyclomatic_complexity()
-
+        logger.info("%s: setting fd cache" % (self.identifier))
+        self._set_fd_cache()
+        logger.info("%s: finished accummulating profile" % (self.identifier))
         if return_dict is not None:
             return_dict[uniq_id] = self
         if semaphore is not None:
