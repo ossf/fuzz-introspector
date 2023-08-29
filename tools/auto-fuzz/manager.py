@@ -315,7 +315,7 @@ def _maven_build_project(basedir, projectdir, jdk_dir):
 
     # Build project with maven with default jdk
     cmd = [
-        "chmod +x %s" % os.path.join(basedir, constants.MAVEN_PATH), "&&",
+        "chmod +x %s" % os.path.join(basedir, constants.MAVEN_PATH, "mvn"), "&&",
         "mvn clean package dependency:copy-dependencies", "-DskipTests",
         "-Dmaven.javadoc.skip=true", "--update-snapshots",
         "-DoutputDirectory=lib", "-Dpmd.skip=true", "-Dencoding=UTF-8",
