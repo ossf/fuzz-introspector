@@ -266,7 +266,7 @@ def _maven_build_project(basedir, projectdir, jdk_dir):
                 basedir, constants.PROTOC_PATH) + ":" + env_var['PATH']
 
     # Prepare maven toolchains location
-    if not os.path.exists(os.path.expanduser('~'), ".m2")):
+    if not os.path.exists(os.path.expanduser('~'), ".m2"):
         os.mkdir(os.path.join(os.path.expanduser('~'), ".m2"))
     with open(os.path.join(os.path.expanduser('~'), ".m2", "toolchains.xml"),
               "w") as file:
