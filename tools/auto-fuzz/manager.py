@@ -229,8 +229,9 @@ def _ant_build_project(basedir, projectdir, jdk_dir):
     env_var = os.environ.copy()
     env_var['JAVA_HOME'] = os.path.join(basedir, jdk_dir)
     env_var['PATH'] = os.path.join(
-        basedir, constants.ANT_PATH) + ":" + os.path.join(
-            basedir, constants.PROTOC_PATH) + ":" + env_var['PATH']
+        basedir, jdk_dir, "bin") + ":" + os.path.join(
+            basedir, constants.ANT_PATH) + ":" + os.path.join(
+                basedir, constants.PROTOC_PATH) + ":" + env_var['PATH']
 
     # Build project with ant
     cmd = "chmod +x %s/ant && ant" % os.path.join(basedir, constants.ANT_PATH)
@@ -260,8 +261,9 @@ def _maven_build_project(basedir, projectdir, jdk_dir):
     env_var = os.environ.copy()
     env_var['JAVA_HOME'] = os.path.join(basedir, jdk_dir)
     env_var['PATH'] = os.path.join(
-        basedir, constants.MAVEN_PATH) + ":" + os.path.join(
-            basedir, constants.PROTOC_PATH) + ":" + env_var['PATH']
+        basedir, jdk_dir, "bin") + ":" + os.path.join(
+            basedir, constants.MAVEN_PATH) + ":" + os.path.join(
+                basedir, constants.PROTOC_PATH) + ":" + env_var['PATH']
 
     # Prepare maven toolchains location
     with open(os.path.join(os.path.expanduser('~'), ".m2", "toolchains.xml"),
@@ -344,8 +346,9 @@ def _gradle_build_project(basedir, projectdir, jdk_dir):
     env_var['JAVA_HOME'] = os.path.join(basedir, jdk_dir)
     env_var['GRADLE_OPTS'] = "-Dfile.encoding=utf-8"
     env_var['PATH'] = os.path.join(
-        basedir, constants.GRADLE_PATH) + ":" + os.path.join(
-            basedir, constants.PROTOC_PATH) + ":" + env_var['PATH']
+        basedir, jdk_dir, "bin") + ":" + os.path.join(
+            basedir, constants.GRADLE_PATH) + ":" + os.path.join(
+                basedir, constants.PROTOC_PATH) + ":" + env_var['PATH']
 
     # Build project with gradle wrapper of the project
     cmd = [
