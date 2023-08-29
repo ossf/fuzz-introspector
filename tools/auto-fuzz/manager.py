@@ -617,8 +617,9 @@ def run_static_analysis_jvm(git_repo, basedir, project_name):
     # Prepare environment variable for found version of JDK
     env_var = os.environ.copy()
     env_var['JAVA_HOME'] = os.path.join(basedir, jdk_base)
-    env_var['PATH'] = os.path.join(basedir, jdk_base,
-                                   "bin") + ":" + env_var['PATH']
+    env_var['PATH'] = os.path.join(
+        basedir, jdk_base, "bin") + ":" + os.path.join(
+            basedir, constants.MAVEN_PATH) + ":" + env_var['PATH']
 
     # Compile and package fuzzer to jar file
     cmd = [
