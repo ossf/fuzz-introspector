@@ -221,7 +221,7 @@ def run_static_analysis_python(git_repo, basedir, project_name):
 def _ant_build_project(basedir, projectdir, jdk_dir):
     """Helper method to build project using ant"""
     # Prepare ant
-    cmd = "unzip -n ant.zip"
+    cmd = "unzip -n %s -d %s" % (os.path.join(basedir, "ant.zip"), basedir)
     try:
         subprocess.check_call(cmd,
                               shell=True,
@@ -263,7 +263,7 @@ def _ant_build_project(basedir, projectdir, jdk_dir):
 def _maven_build_project(basedir, projectdir, jdk_dir):
     """Helper method to build project using maven"""
     # Prepare maven
-    cmd = "unzip -n maven.zip"
+    cmd = "unzip -n %s -d %s" % (os.path.join(basedir, "maven.zip"), basedir)
     try:
         subprocess.check_call(cmd,
                               shell=True,
@@ -285,7 +285,7 @@ def _maven_build_project(basedir, projectdir, jdk_dir):
                 basedir, constants.PROTOC_PATH) + ":" + env_var['PATH']
 
     # Prepare maven toolchains location
-    if not os.path.exists(os.path.expanduser('~'), ".m2"):
+    if not os.path.exists(os.path.join(os.path.expanduser('~'), ".m2")):
         os.mkdir(os.path.join(os.path.expanduser('~'), ".m2"))
     with open(os.path.join(os.path.expanduser('~'), ".m2", "toolchains.xml"),
               "w") as file:
@@ -334,8 +334,7 @@ def _maven_build_project(basedir, projectdir, jdk_dir):
 
     # Build project with maven with default jdk
     cmd = [
-        "chmod +x %s" % os.path.join(basedir, constants.MAVEN_PATH, "mvn"),
-        "&&", "mvn clean package dependency:copy-dependencies", "-DskipTests",
+        "mvn clean package dependency:copy-dependencies", "-DskipTests",
         "-Dmaven.javadoc.skip=true", "--update-snapshots",
         "-DoutputDirectory=lib", "-Dpmd.skip=true", "-Dencoding=UTF-8",
         "-Dmaven.antrun.skip=true", "-Dcheckstyle.skip=true"
@@ -359,7 +358,7 @@ def _maven_build_project(basedir, projectdir, jdk_dir):
 def _gradle_build_project(basedir, projectdir, jdk_dir):
     """Helper method to build project using maven"""
     # Prepare gradle
-    cmd = "unzip -n gradle.zip"
+    cmd = "unzip -n %s -d %s" % (os.path.join(basedir, "gradle.zip"), basedir)
     try:
         subprocess.check_call(cmd,
                               shell=True,
@@ -480,7 +479,8 @@ def build_jvm_project(basedir, projectdir, proj_name):
 
     # Prepare protoc
     os.makedirs(os.path.join(basedir, "protoc"), exist_ok=True)
-    cmd = "unzip -n protoc.zip"
+    cmd = "unzip -n %s -d %s" % (os.path.join(
+        basedir, "protoc.zip"), os.path.join(basedir, "protoc"))
     try:
         subprocess.check_call(cmd,
                               shell=True,
