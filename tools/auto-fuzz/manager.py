@@ -24,7 +24,6 @@ import requests
 import shlex
 import argparse
 import tarfile
-import zipfile
 import threading
 try:
     import tqdm
@@ -222,8 +221,18 @@ def run_static_analysis_python(git_repo, basedir, project_name):
 def _ant_build_project(basedir, projectdir, jdk_dir):
     """Helper method to build project using ant"""
     # Prepare ant
-    with zipfile.ZipFile(os.path.join(basedir, "ant.zip"), "r") as af:
-        af.extractall(basedir)
+    cmd = "unzip ant.zip"
+    try:
+        subprocess.check_call(cmd,
+                              shell=True,
+                              timeout=1800,
+                              stdout=subprocess.DEVNULL,
+                              stderr=subprocess.DEVNULL,
+                              cwd=basedir)
+    except subprocess.TimeoutExpired:
+        return False
+    except subprocess.CalledProcessError:
+        return False
 
     # Set environment variable
     env_var = os.environ.copy()
@@ -254,8 +263,18 @@ def _ant_build_project(basedir, projectdir, jdk_dir):
 def _maven_build_project(basedir, projectdir, jdk_dir):
     """Helper method to build project using maven"""
     # Prepare maven
-    with zipfile.ZipFile(os.path.join(basedir, "maven.zip"), "r") as mf:
-        mf.extractall(basedir)
+    cmd = "unzip maven.zip"
+    try:
+        subprocess.check_call(cmd,
+                              shell=True,
+                              timeout=1800,
+                              stdout=subprocess.DEVNULL,
+                              stderr=subprocess.DEVNULL,
+                              cwd=basedir)
+    except subprocess.TimeoutExpired:
+        return False
+    except subprocess.CalledProcessError:
+        return False
 
     # Set environment variable
     env_var = os.environ.copy()
@@ -340,8 +359,18 @@ def _maven_build_project(basedir, projectdir, jdk_dir):
 def _gradle_build_project(basedir, projectdir, jdk_dir):
     """Helper method to build project using maven"""
     # Prepare gradle
-    with zipfile.ZipFile(os.path.join(basedir, "gradle.zip"), "r") as gf:
-        gf.extractall(basedir)
+    cmd = "unzip gradle.zip"
+    try:
+        subprocess.check_call(cmd,
+                              shell=True,
+                              timeout=1800,
+                              stdout=subprocess.DEVNULL,
+                              stderr=subprocess.DEVNULL,
+                              cwd=basedir)
+    except subprocess.TimeoutExpired:
+        return False
+    except subprocess.CalledProcessError:
+        return False
 
     # Set environment variable
     env_var = os.environ.copy()
@@ -451,8 +480,18 @@ def build_jvm_project(basedir, projectdir, proj_name):
 
     # Prepare protoc
     os.makedirs(os.path.join(basedir, "protoc"), exist_ok=True)
-    with zipfile.ZipFile(os.path.join(basedir, "protoc.zip"), "r") as pf:
-        pf.extractall(os.path.join(basedir, "protoc"))
+    cmd = "unzip protoc.zip"
+    try:
+        subprocess.check_call(cmd,
+                              shell=True,
+                              timeout=1800,
+                              stdout=subprocess.DEVNULL,
+                              stderr=subprocess.DEVNULL,
+                              cwd=basedir)
+    except subprocess.TimeoutExpired:
+        return False
+    except subprocess.CalledProcessError:
+        return False
     protoc_executable = os.path.join(basedir, "protoc", "bin", "protoc")
     base_stat = os.stat(protoc_executable)
     os.chmod(os.path.join(basedir, "protoc", "bin", "protoc"),
