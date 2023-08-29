@@ -266,6 +266,8 @@ def _maven_build_project(basedir, projectdir, jdk_dir):
                 basedir, constants.PROTOC_PATH) + ":" + env_var['PATH']
 
     # Prepare maven toolchains location
+    if not os.path.exists(os.path.expanduser('~'), ".m2"):
+        os.mkdir(os.path.join(os.path.expanduser('~'), ".m2"))
     with open(os.path.join(os.path.expanduser('~'), ".m2", "toolchains.xml"),
               "w") as file:
         file.write(
@@ -313,6 +315,7 @@ def _maven_build_project(basedir, projectdir, jdk_dir):
 
     # Build project with maven with default jdk
     cmd = [
+        "chmod +x %s" % os.path.join(basedir, constants.MAVEN_PATH, "mvn"), "&&",
         "mvn clean package dependency:copy-dependencies", "-DskipTests",
         "-Dmaven.javadoc.skip=true", "--update-snapshots",
         "-DoutputDirectory=lib", "-Dpmd.skip=true", "-Dencoding=UTF-8",
@@ -455,7 +458,7 @@ def build_jvm_project(basedir, projectdir, proj_name):
     os.chmod(os.path.join(basedir, "protoc", "bin", "protoc"),
              base_stat.st_mode | stat.S_IEXEC)
 
-    type = None
+    project_type = None
     build_ret = False
     jarfiles = None
     jdk_base = None
@@ -467,14 +470,14 @@ def build_jvm_project(basedir, projectdir, proj_name):
             if os.path.exists(os.path.join(builddir, "pom.xml")):
                 # Maven project
                 build_ret = _maven_build_project(basedir, builddir, jdk_dir)
-                type = "maven"
+                project_type = "maven"
                 jarfiles = []
             elif os.path.exists(os.path.join(
                     builddir, "build.gradle")) or os.path.exists(
                         os.path.join(builddir, "build.gradle.kts")):
                 # Gradle project
                 build_ret = _gradle_build_project(basedir, builddir, jdk_dir)
-                type = "gradle"
+                project_type = "gradle"
                 if os.path.exists(os.path.join(builddir, "proj.jar")):
                     jarfiles = [os.path.join(builddir, "proj.jar")]
                 else:
@@ -482,7 +485,7 @@ def build_jvm_project(basedir, projectdir, proj_name):
             elif os.path.exists(os.path.join(builddir, "build.xml")):
                 # Ant project
                 build_ret = _ant_build_project(basedir, builddir, jdk_dir)
-                type = "ant"
+                project_type = "ant"
                 jarfiles = []
 
             # Check if the build success with the current JDK version
@@ -491,7 +494,7 @@ def build_jvm_project(basedir, projectdir, proj_name):
                 jdk_base = jdk_dir
                 break
 
-    return (type, build_ret, builddir, jarfiles, jdk_base)
+    return (project_type, build_ret, builddir, jarfiles, jdk_base)
 
 
 def run_static_analysis_jvm(git_repo, basedir, project_name):
