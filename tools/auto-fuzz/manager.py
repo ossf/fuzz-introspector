@@ -221,7 +221,7 @@ def run_static_analysis_python(git_repo, basedir, project_name):
 def _ant_build_project(basedir, projectdir, jdk_dir):
     """Helper method to build project using ant"""
     # Prepare ant
-    cmd = "unzip -n %s -d %s" % (os.path.join(basedir, "ant.zip"), basedir)
+    cmd = "unzip -n %s" % (os.path.join(basedir, "ant.zip"))
     try:
         subprocess.check_call(cmd,
                               shell=True,
@@ -263,7 +263,7 @@ def _ant_build_project(basedir, projectdir, jdk_dir):
 def _maven_build_project(basedir, projectdir, jdk_dir):
     """Helper method to build project using maven"""
     # Prepare maven
-    cmd = "unzip -n %s -d %s" % (os.path.join(basedir, "maven.zip"), basedir)
+    cmd = "unzip -n %s" % (os.path.join(basedir, "maven.zip"))
     try:
         subprocess.check_call(cmd,
                               shell=True,
@@ -358,7 +358,7 @@ def _maven_build_project(basedir, projectdir, jdk_dir):
 def _gradle_build_project(basedir, projectdir, jdk_dir):
     """Helper method to build project using maven"""
     # Prepare gradle
-    cmd = "unzip -n %s -d %s" % (os.path.join(basedir, "gradle.zip"), basedir)
+    cmd = "unzip -n %s" % (os.path.join(basedir, "gradle.zip"))
     try:
         subprocess.check_call(cmd,
                               shell=True,
