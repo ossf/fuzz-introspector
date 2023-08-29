@@ -19,6 +19,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class FuzzerConfig {
   private String filename;
+  private String entryMethod;
   private FunctionConfig functionConfig;
 
   @JsonProperty("Fuzzer filename")
@@ -28,6 +29,15 @@ public class FuzzerConfig {
 
   public void setFilename(String filename) {
     this.filename = filename;
+  }
+
+  @JsonProperty("Fuzzing method")
+  public String getEntryMethod() {
+    return entryMethod;
+  }
+
+  public void setEntryMethod(String entryMethod) {
+    this.entryMethod = entryMethod;
   }
 
   @JsonProperty("All functions")

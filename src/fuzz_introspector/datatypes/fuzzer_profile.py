@@ -69,6 +69,10 @@ class FuzzerProfile:
             self.entrypoint_fun = frontend_yaml['ep']['func_name']
             self.entrypoint_mod = frontend_yaml['ep']['module']
 
+        # Read entrypoint of fuzzer if this is a jvm module
+        if target_lang == "jvm":
+            self.entrypoint_method = frontend_yaml['Fuzzing method']
+
         self._set_function_list(frontend_yaml)
         self.dst_to_fd_cache: Dict[str,
                                    function_profile.FunctionProfile] = dict()
@@ -87,7 +91,8 @@ class FuzzerProfile:
             return self.entrypoint_fun
         elif self.target_lang == "jvm":
             cname = self.fuzzer_source_file
-            return f"[{cname}].fuzzerTestOneInput"
+            mname = self.entrypoint_method
+            return f"[{cname}].{mname}"
         else:
             return None
 

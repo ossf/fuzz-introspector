@@ -137,6 +137,7 @@ refers to the executable that will be the fuzzer.
 The yaml file has the following format:
 ```
 Fuzzer filename: string
+Fuzzing method: string # To specify the fuzzing method (JVM only)
 All functions:
   Function list name: All functions
   Elements:
@@ -191,6 +192,7 @@ Callsites:             list of call site         # A list of callsites of functi
 The following represents the program-wide data file for the example fuzzer.
 ```yaml
 Fuzzer filename: '/src/introspector_example.c'
+Fuzzing method: fuzzerTestOneInput # For JVM only
 All functions:
   Function list name: All functions
   Elements:

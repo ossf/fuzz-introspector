@@ -40,7 +40,7 @@ then
   done
 else
   # Run all test cases
-  for i in {1..11}
+  for i in {1..12}
   do
     $ROOT/runTest.sh test$i
   done

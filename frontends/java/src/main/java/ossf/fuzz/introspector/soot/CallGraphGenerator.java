@@ -600,6 +600,7 @@ class CustomSenceTransformer extends SceneTransformer {
       fw = new FileWriter(file);
       FuzzerConfig config = new FuzzerConfig();
       config.setFilename(this.entryClassStr);
+      config.setEntryMethod(this.entryMethodStr);
       config.setFunctionConfig(methodList);
       fw.write(om.writeValueAsString(config));
       fw.close();
