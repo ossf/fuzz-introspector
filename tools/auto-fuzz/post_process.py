@@ -87,8 +87,11 @@ def get_code_cov_from_trial(dirname):
     cov_data = []
     for line in oss_run_out.split("\n"):
         if "cov: " in line:
-            line_cov = int(line.split("cov:")[1].lstrip().split(" ")[0])
-            cov_data.append(line_cov)
+            try:
+                line_cov = int(line.split("cov:")[1].lstrip().split(" ")[0])
+                cov_data.append(line_cov)
+            except:
+                continue
 
     return cov_data
 
