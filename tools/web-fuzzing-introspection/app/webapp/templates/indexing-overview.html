@@ -21,6 +21,35 @@
               </div>
             </div>
             <div class="database__body">
+	      <!-- Language stats -->
+              <h3>Language stats</h3>
+              <div>
+                <table id="overallStatsTable">
+                  <thead>
+                    <tr>
+                      <td>Language</td>
+                      <td>Projects</td>
+                      <td>Fuzz builds</td>
+                      <td>Coverage builds</td>
+                      <td>Introspector builds</td>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for bs, bv in languages_summarised.items() %}
+                      <tr>
+                        <td> {{ bs }} </td>
+                        <td> {{ bv.all }} </td>
+                        <td> {{ bv.fuzz_build }} </td>
+                        <td> {{ bv.cov_build }} </td>
+                        <td> {{ bv.introspector_build }} </td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+	      <!-- projects overview table -->
+              <h3>Project stats</h3>
+              <div>
               <table id="projectOverviewTable">
                 <thead>
                   <tr>
@@ -71,6 +100,7 @@
                 </tbody>
               </table>
             </div>
+            </div>
           </div>
         </div>
       </section>
@@ -79,7 +109,9 @@
     <!-- end main content -->
  <script>
   $( document ).ready(function() {
-    $('#projectOverviewTable').dataTable({'pageLength': 1000})
+    $('#projectOverviewTable').dataTable({'pageLength': 1000});
+
+    $('#overallStatsTable').dataTable();
   });
  </script> 
 {% endblock %}

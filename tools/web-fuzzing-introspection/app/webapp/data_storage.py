@@ -1,5 +1,8 @@
 # Auto-generated
 #from app.site.models import *
+
+from typing import List
+
 from .models import *
 
 PROJECT_TIMESTAMPS = []
@@ -12,7 +15,7 @@ FUNCTIONS = []
 
 BLOCKERS = []
 
-BUILD_STATUS = []
+BUILD_STATUS: List[BuildStatus] = []
 
 
 def get_projects():
@@ -27,5 +30,5 @@ def get_blockers():
     return BLOCKERS
 
 
-def get_build_status():
+def get_build_status() -> List[BuildStatus]:
     return BUILD_STATUS
