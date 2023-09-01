@@ -246,23 +246,24 @@ def indexing_overview():
         if bs.language not in languages_summarised:
             languages_summarised[bs.language] = {
                 'all': 0,
-                'fuzz-build': 0,
-                'cov-build': 0,
-                'introspector-build': 0
+                'fuzz_build': 0,
+                'cov_build': 0,
+                'introspector_build': 0
             }
         languages_summarised[bs.language]['all'] += 1
         languages_summarised[bs.language][
-            'fuzz-build'] += 1 if bs.fuzz_build_status == True else 0
+            'fuzz_build'] += 1 if bs.fuzz_build_status == True else 0
         languages_summarised[bs.language][
-            'cov-build'] += 1 if bs.coverage_build_status == True else 0
+            'cov_build'] += 1 if bs.coverage_build_status == True else 0
         languages_summarised[bs.language][
-            'introspector-build'] += 1 if bs.introspector_build_status == True else 0
+            'introspector_build'] += 1 if bs.introspector_build_status == True else 0
 
     print(json.dumps(languages_summarised))
 
     return render_template('indexing-overview.html',
                            gtag=gtag,
-                           all_build_status=build_status)
+                           all_build_status=build_status,
+                           languages_summarised=languages_summarised)
 
 
 @blueprint.route('/about')
