@@ -219,6 +219,7 @@ def run_on_all_dirs(args):
             except:
                 continue
     print("Max idx number: %d" % (max_idx_number))
+    projects_to_display = []
     for idx in range(max_idx_number):
         autofuzz_project_dir = "autofuzz-%d" % (idx)
         if os.path.isdir(autofuzz_project_dir):
@@ -231,10 +232,17 @@ def run_on_all_dirs(args):
             top_run = get_top_trial_run(trial_runs, args.rankdiff)
             if top_run is None:
                 continue
-            _print_summary_of_trial_run(trial_runs[top_run],
-                                        proj_yaml['main_repo'],
-                                        autofuzz_project_dir,
-                                        print_in_ci=args.ci)
+            projects_to_display.append((
+                trial_runs[top_run],
+                proj_yaml['main_repo'],
+                autofuzz_project_dir,
+            ))
+    if args.sort_by_top:
+        projects_to_display = sorted(
+            projects_to_display,
+            key=lambda x: x[0]['max_cov'] - x[0]['min_cov'])
+    for a1, a2, a3 in projects_to_display:
+        _print_summary_of_trial_run(a1, a2, a3, print_in_ci=args.ci)
 
 
 def csv_for_all_dirs():
@@ -427,6 +435,9 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
     all_parser.add_argument("--ci",
                             action="store_true",
                             help=("Makes the output pretty in the CI"))
+    all_parser.add_argument("--sort_by_top",
+                            action="store_true",
+                            help=("sort by top performers"))
 
     csv_parser = subparsers.add_parser(
         'csv', help="Gets csv result for all auto-fuzz runs.")
