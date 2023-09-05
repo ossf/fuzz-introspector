@@ -255,13 +255,8 @@ def csv_for_all_dirs():
                 autofuzz_project_dir)
             if proj_yaml is None:
                 continue
-            if not os.path.isfile(
-                    os.path.join(autofuzz_project_dir, "base-autofuzz",
-                                 "oss-fuzz.out")):
-                print("%s,No,No,No" % (proj_yaml['main_repo']))
-                continue
             if len(trial_runs) == 0:
-                print("%s,Yes,No,No" % (proj_yaml['main_repo']))
+                print("%s,No,No,No" % (proj_yaml['main_repo']))
                 continue
             top_run = get_top_trial_run(trial_runs, True)
             if top_run is None:
