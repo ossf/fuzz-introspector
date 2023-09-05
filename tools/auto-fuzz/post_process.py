@@ -157,8 +157,9 @@ def _print_summary_of_trial_run(trial_run,
         fuzz_path = jvm_fuzz_path
 
     if print_in_ci:
-        if len(proj_name) < 50:
-            proj_name = proj_name + " " * (50 - len(proj_name))
+        PROJ_LEN_WIDTH = 65
+        if len(proj_name) < PROJ_LEN_WIDTH:
+            proj_name = proj_name + " " * (PROJ_LEN_WIDTH - len(proj_name))
         if len(trial_name) < 21:
             trial_name = trial_name + " " * (21 - len(trial_name))
 
@@ -208,7 +209,7 @@ def get_cov_ranked_trial_runs(trial_runs):
     return ranked_runs
 
 
-def run_on_all_dirs(rank_cov_diff):
+def run_on_all_dirs(args):
     max_idx_number = 0
     for autofuzz_project_dir in os.listdir("."):
         if "autofuzz-" in autofuzz_project_dir:
@@ -227,12 +228,13 @@ def run_on_all_dirs(rank_cov_diff):
                 continue
             if len(trial_runs) == 0:
                 continue
-            top_run = get_top_trial_run(trial_runs, rank_cov_diff)
+            top_run = get_top_trial_run(trial_runs, args.rankdiff)
             if top_run is None:
                 continue
             _print_summary_of_trial_run(trial_runs[top_run],
                                         proj_yaml['main_repo'],
-                                        autofuzz_project_dir)
+                                        autofuzz_project_dir,
+                                        print_in_ci=args.ci)
 
 
 def csv_for_all_dirs():
@@ -422,6 +424,9 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
         action="store_true",
         help=("If set, the trial run will be ranked by"
               "coverage difference instead of max coverage."))
+    all_parser.add_argument("--ci",
+                            action="store_true",
+                            help=("Makes the output pretty in the CI"))
 
     csv_parser = subparsers.add_parser(
         'csv', help="Gets csv result for all auto-fuzz runs.")
@@ -619,7 +624,7 @@ def main():
     args = parser.parse_args()
 
     if args.command == 'all':
-        run_on_all_dirs(args.rankdiff)
+        run_on_all_dirs(args)
     elif args.command == 'csv':
         csv_for_all_dirs()
     elif args.command == 'run':
