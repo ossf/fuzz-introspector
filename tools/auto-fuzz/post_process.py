@@ -237,10 +237,6 @@ def run_on_all_dirs(args):
                 proj_yaml['main_repo'],
                 autofuzz_project_dir,
             ))
-            #_print_summary_of_trial_run(trial_runs[top_run],
-            #                            proj_yaml['main_repo'],
-            #                            autofuzz_project_dir,
-            #                            print_in_ci=args.ci)
     if args.sort_by_top:
         projects_to_display = sorted(
             projects_to_display,
