@@ -6,7 +6,7 @@ python3 -m virtualenv .venv
 pip3 install -r ./requirements.txt
 
 cd app/static/assets/db/
-python3 python3 ./web_db_creator_from_summary.py --max-projects=50
+python3 ./web_db_creator_from_summary.py --max-projects=50
 cd ../../../
 python3 ./main.py
 ```
