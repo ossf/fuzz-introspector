@@ -75,8 +75,6 @@ import soot.tagkit.VisibilityAnnotationTag;
 import soot.toolkits.graph.Block;
 import soot.toolkits.graph.BlockGraph;
 import soot.toolkits.graph.BriefBlockGraph;
-import soot.toolkits.graph.BriefUnitGraph;
-import soot.toolkits.graph.UnitGraph;
 
 public class CallGraphGenerator {
   public static void main(String[] args) {
@@ -566,8 +564,7 @@ class CustomSenceTransformer extends SceneTransformer {
         element.setiCount(iCount);
 
         // Calculate method cyclomatic complexity from method unit graph
-        UnitGraph unitGraph = new BriefUnitGraph(methodBody);
-        element.setCyclomaticComplexity(calculateCyclomaticComplexity(unitGraph));
+        element.setCyclomaticComplexity(calculateCyclomaticComplexity(blockGraph));
 
         this.addMethodElement(element);
       }
@@ -877,31 +874,19 @@ class CustomSenceTransformer extends SceneTransformer {
     return depth;
   }
 
-  private Integer calculateCyclomaticComplexity(UnitGraph unitGraph) {
-    Integer complexity = 1;
+  private Integer calculateCyclomaticComplexity(BlockGraph blockGraph) {
+    Integer nodes = blockGraph.size();
+    Integer edges = 0;
 
-    Iterator<Unit> it = unitGraph.iterator();
-    if (it.hasNext()) {
-      Unit unit = it.next();
-
-      if (unit instanceof IfStmt || unit instanceof GotoStmt || unit instanceof ThrowStmt) {
-        complexity++;
-      } else if (it.hasNext() && (unit instanceof ReturnStmt || unit instanceof ReturnVoidStmt)) {
-        complexity++;
-      } else if (unit instanceof LookupSwitchStmt) {
-        complexity += ((LookupSwitchStmt) unit).getTargetCount();
-      }
-
-      for (ValueBox box : unit.getUseAndDefBoxes()) {
-        Value value = box.getValue();
-        if (value instanceof AndExpr || value instanceof OrExpr) {
-          complexity++;
-        }
-      }
+    // Count edges of the blockGraph
+    for (Block block : blockGraph.getBlocks()) {
+      edges += blockGraph.getSuccsOf(block).size();
     }
 
-    complexity += (new LoopFinder().getLoops(unitGraph)).size();
-
+    Integer complexity = edges - nodes + 2;
+    if (complexity < 1) {
+      complexity = 1;
+    }
     return complexity;
   }
 
