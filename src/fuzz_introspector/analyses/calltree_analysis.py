@@ -15,6 +15,7 @@
 
 import os
 import logging
+import html
 import json
 import random
 import string
@@ -75,7 +76,7 @@ class FuzzCalltreeAnalysis(analysis.AnalysisInterface):
         data-paddingleft="{indentation}" style="padding-left: {indentation}">
             <span class="node-depth-wrapper">{node.depth}</span>
             <code class="language-clike">
-                {demangled_name}
+                {html.escape(demangled_name)}
             </code>
             <span class="coverage-line-filename">
                 {func_href}
