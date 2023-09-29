@@ -52,7 +52,10 @@ def get_frontpage_summary_stats():
         'swift': 0
     }
     for project in all_projects:
-        language_count[project.language] += 1
+        try:
+            language_count[project.language] += 1
+        except KeyError:
+            continue
 
     # wrap it in a DBSummary
     db_summary = models.DBSummary(all_projects, total_number_of_projects,
