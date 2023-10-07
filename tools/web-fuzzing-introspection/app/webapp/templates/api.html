@@ -1,0 +1,434 @@
+{% extends "base.html" %}
+{% block content %}
+    <!-- main content -->
+    <main>
+      <!-- hero area -->
+      <section class="hero__area">
+        <div class="container">
+          <div class="hero__wrapper">
+            <h1 class="section__title">
+              API
+            </h1>
+            <p>
+                We provide an API for accessing the data stored on this website. The primary goal is to enable
+                tool development for external parties and make it easier to query the state of open source fuzzing.
+            </p>
+            <p>
+              We are always interested in hearing ideas for new APIs to get certain data exposed and we are happy
+              to maintain a large set of APIs. In the event you have ideas or requests for certain data, then
+              please reach out on <a href="https://github.com/ossf/fuzz-introspector/issues">Fuzz Introspector's issues</a>
+              or <a href="https://github.com/google/oss-fuzz/issues">OSS-Fuzz's issues</a>.
+            </p>
+        </div>
+      </section>
+
+      <section class="overview">
+        <div class="container">
+          <div class="overview__wrapper">
+            <h2 class="section__title">APIs</h2>
+            <div style="padding-top: 5px; margin-left: 35px; margin-right: 35px">
+              The following APIs are provided:
+              <ul>
+                <li><a href="#api-annotated-cfg">- /api/annotated-cfg</a></li>
+                <li><a href="#api-far-reach-but-low-coverage">- /api/far-reach-but-low-coverage</a></li>
+                <li><a href="#api-project-summary">- /api/project-summary</a></li>
+                <li><a href="#api-branch-blockers">- /api/branch-blockers</a></li>
+              </ul>
+            </div>
+
+            <!-- /api/annotated-cfg -->
+            </div>
+              <div style="padding-top: 25px; margin-left: 35px; margin-right: 35px">
+                <p>
+                  <left>
+                    <h3 id="api-annotated-cfg">/api/annotated-cfg?project={project_name}</h3>
+                    <p>
+                      Gets the functions targeted by a specific fuzzer in the target code. Specifically, this is used to identify
+                      the main entrypoints into the target code that is being fuzzed.
+                    </p>
+                    <p>
+                      <b>Example</b>
+                      Extracting the data of the main <a href="https://github.com/google/oss-fuzz/tree/master/projects/json-c">json-c</a> project which has a single fuzzer <a href="https://github.com/google/oss-fuzz/blob/11a8e488a3df14079a48934b9c21cc752717eb18/projects/json-c/tokener_parse_ex_fuzzer.cc#L1-L13">tokener_parser_ex</a> fuzzer
+                      using the URL: <a href="https://introspector.oss-fuzz.com/api/annotated-cfg?project=json-c">https://introspector.oss-fuzz.com/api/annotated-cfg?project=json-c</a>:
+                    </p>
+                  </left>
+                </p>
+                  <div class="card card-body">
+                                        <pre>$ curl -L https://introspector.oss-fuzz.com/api/annotated-cfg?project=json-c | python3 -m json.tool
+{
+    "project": {
+        "annotated-cfg": {
+            "tokener_parse_ex_fuzzer": {
+                "destinations": [
+                    {
+                        "accummulated-cyclomatic-complexity": 51,
+                        "arg-names": [],
+                        "arg-types": [],
+                        "cyclomatic-complexity": 2,
+                        "function-name": "json_tokener_new",
+                        "raw-function-name": "json_tokener_new",
+                        "return-type": "struct.json_tokener *",
+                        "source-file": "/src/json-c/json_tokener.c"
+                    },
+                    {
+                        "accummulated-cyclomatic-complexity": 688,
+                        "arg-names": [
+                            "tok",
+                            "str",
+                            "len"
+                        ],
+                        "arg-types": [
+                            "struct.json_tokener *",
+                            "char *",
+                            "int"
+                        ],
+                        "cyclomatic-complexity": 280,
+                        "function-name": "json_tokener_parse_ex",
+                        "raw-function-name": "json_tokener_parse_ex",
+                        "return-type": "struct.json_object *",
+                        "source-file": "/src/json-c/json_tokener.c"
+                    },
+                    {
+                        "accummulated-cyclomatic-complexity": 32,
+                        "arg-names": [
+                            "jso"
+                        ],
+                        "arg-types": [
+                            "struct.json_object *"
+                        ],
+                        "cyclomatic-complexity": 4,
+                        "function-name": "json_object_put",
+                        "raw-function-name": "json_object_put",
+                        "return-type": "int",
+                        "source-file": "/src/json-c/json_object.c"
+                    },
+                    {
+                        "accummulated-cyclomatic-complexity": 41,
+                        "arg-names": [
+                            "tok"
+                        ],
+                        "arg-types": [
+                            "struct.json_tokener *"
+                        ],
+                        "cyclomatic-complexity": 3,
+                        "function-name": "json_tokener_free",
+                        "raw-function-name": "json_tokener_free",
+                        "return-type": "void",
+                        "source-file": "/src/json-c/json_tokener.c"
+                    }
+                ],
+                "src_file": "/src/tokener_parse_ex_fuzzer.cc"
+            }
+        },
+        "name": "json-c"
+    },
+    "result": "success"
+}
+                  </pre>
+                  </div>
+            </div>
+
+<!-- /api/far-reach-but-low-coverage -->
+<div style="padding-top: 25px; margin-left: 35px; margin-right: 35px">
+  <p>
+    <left>
+      <h3 id="api-far-reach-but-low-coverage">/api/far-reach-but-low-coverage?project={project_name}</h3>
+      <p>
+        Gets the functions in the target project that has a lot of complexity but has low code coverage. The main point behind this data point is that it shows 
+        promising new functions to hit for a given target.
+      </p>
+      <p>
+        <b>Example</b>
+        Extracting the data of the main <a href="https://github.com/google/oss-fuzz/tree/master/projects/json-c">json-c</a> project which has a single fuzzer <a href="https://github.com/google/oss-fuzz/blob/11a8e488a3df14079a48934b9c21cc752717eb18/projects/json-c/tokener_parse_ex_fuzzer.cc#L1-L13">tokener_parser_ex</a> fuzzer
+        using the URL: <a href="https://introspector.oss-fuzz.com/api/far-reach-but-low-coverage?project=json-c">https://introspector.oss-fuzz.com/api/far-reach-but-low-coverage?project=json-c</a>:
+      </p>
+    </left>
+  </p>
+  <div class="card card-body">
+    <pre>
+$ curl -L https://introspector.oss-fuzz.com/api/far-reach-but-low-coverage?project=json-c | python3 -m json.tool                                                                                        
+{
+  "functions": [
+      {
+          "accummulated-complexity": 746,
+          "function-argument-names": [
+              "filename"
+          ],
+          "function-arguments": [
+              "char *"
+          ],
+          "function-name": "json_object_from_file",
+          "function_filename": "/src/json-c/json_util.c",
+          "is-reached": false,
+          "raw-function-name": "json_object_from_file",
+          "reached-by-fuzzers": [],
+          "return-type": "struct.json_object *",
+          "runtime-coverage-percent": 0.0
+      },
+      {
+          "accummulated-complexity": 739,
+          "function-argument-names": [
+              "fd"
+          ],
+          "function-arguments": [
+              "int"
+          ],
+          "function-name": "json_object_from_fd",
+          "function_filename": "/src/json-c/json_util.c",
+          "is-reached": false,
+          "raw-function-name": "json_object_from_fd",
+          "reached-by-fuzzers": [],
+          "return-type": "struct.json_object *",
+          "runtime-coverage-percent": 0.0
+      },
+      {
+          "accummulated-complexity": 737,
+          "function-argument-names": [
+              "fd",
+              "in_depth"
+          ],
+          "function-arguments": [
+              "int",
+              "int"
+          ],
+          "function-name": "json_object_from_fd_ex",
+          "function_filename": "/src/json-c/json_util.c",
+          "is-reached": false,
+          "raw-function-name": "json_object_from_fd_ex",
+          "reached-by-fuzzers": [],
+          "return-type": "struct.json_object *",
+          "runtime-coverage-percent": 0.0
+      },
+      {
+          "accummulated-complexity": 713,
+          "function-argument-names": [
+              "str"
+          ],
+          "function-arguments": [
+              "char *"
+          ],
+          "function-name": "json_tokener_parse",
+          "function_filename": "/src/json-c/json_tokener.c",
+          "is-reached": false,
+          "raw-function-name": "json_tokener_parse",
+          "reached-by-fuzzers": [],
+          "return-type": "struct.json_object *",
+          "runtime-coverage-percent": 0.0
+      },
+      {
+        "accummulated-complexity": 711,
+        "function-argument-names": [
+            "str",
+            "error"
+        ],
+        "function-arguments": [
+            "char *",
+            "int *"
+        ],
+        "function-name": "json_tokener_parse_verbose",
+        "function_filename": "/src/json-c/json_tokener.c",
+        "is-reached": false,
+        "raw-function-name": "json_tokener_parse_verbose",
+        "reached-by-fuzzers": [],
+        "return-type": "struct.json_object *",
+        "runtime-coverage-percent": 0.0
+    },
+    ...
+    ...
+  ],
+  "result": "succes"
+}      
+    </pre>
+  </div>
+</div>
+
+
+
+            <!-- /api/project-summary -->
+            <div style="padding-top: 25px; margin-left: 35px; margin-right: 35px">
+              <p>
+                <left>
+                  <h3 id="api-project-summary">/api/project-summary?project={project_name}</h3>
+                  <p>
+                    Extracts a summary of a given project, including:
+                    <ol>
+                      <li>- Runtime code coverage stats</li>
+                      <li>- Stats about the project, e.g. fuzzer count and function count</li>
+                      <li>- Stats about static reachability achieved</li>
+                      <li>- A list of fuzz-blockers definedby Branch-blockers, including the specific functions blocked</li>
+                      <li>- The annotated CFG (similar to output by /api/annotated-cfg</li>
+                    </ol>
+                  </p>
+                  <p>
+                    <b>Example</b>
+                    Extracting the data of the main <a href="https://github.com/google/oss-fuzz/tree/master/projects/json-c">json-c</a> project which has a single fuzzer <a href="https://github.com/google/oss-fuzz/blob/11a8e488a3df14079a48934b9c21cc752717eb18/projects/json-c/tokener_parse_ex_fuzzer.cc#L1-L13">tokener_parser_ex</a> fuzzer
+                    using the URL: <a href="https://introspector.oss-fuzz.com/api/project-summary?project=json-c">https://introspector.oss-fuzz.com/api/project-summary?project=json-c</a>:
+                  </p>
+                </left>
+              </p>
+              <div class="card card-body">
+                <pre>
+$ curl -L https://introspector.oss-fuzz.com/api/project-summary?project=json-c | python3 -m json.tool                    
+{                                                                                                     
+    "project": {                                                                                      
+        "introspector-data": {                                                                        
+            "annotated_cfg": {                                                                        
+                "tokener_parse_ex_fuzzer": {                                                          
+                    "destinations": [                                                                 
+                        {                                                                             
+                            "accummulated-cyclomatic-complexity": 51,                                 
+                            "arg-names": [],                                                          
+                            "arg-types": [],                                                          
+                            "cyclomatic-complexity": 2,                                               
+                            "function-name": "json_tokener_new",                                      
+                            "raw-function-name": "json_tokener_new",                                  
+                            "return-type": "struct.json_tokener *",                                   
+                            "source-file": "/src/json-c/json_tokener.c"                               
+                        },                                                                            
+                        {                                                                             
+                            "accummulated-cyclomatic-complexity": 688,                                
+                            "arg-names": [                                                            
+                                "tok",                                                                
+                                "str",                                                                
+                                "len"                                                                 
+                            ],                                                                        
+                            "arg-types": [                                                            
+                                "struct.json_tokener *",                                              
+                                "char *",                                                             
+                                "int"                                                                 
+                            ],                                                                        
+                            "cyclomatic-complexity": 280,                                             
+                            "function-name": "json_tokener_parse_ex",                                 
+                            "raw-function-name": "json_tokener_parse_ex",                             
+                            "return-type": "struct.json_object *",                                    
+                            "source-file": "/src/json-c/json_tokener.c"                               
+                        },                                                                            
+                        ....
+                        ....                                                                                                                                                                                  
+                    ],                                                                                
+                    "src_file": "/src/tokener_parse_ex_fuzzer.cc"                                     
+                }                                                                                                                                                                                            
+            },                                                                                                                                                                                               
+            "branch_pairs": [                                                                                                                                                                                
+                {                                                                                     
+                    "blocked-runtime-coverage": 35,                                                   
+                    "function-name": "json_c_get_random_seed",                                        
+                    "project": "json-c"                                                               
+                },                                                                                    
+                {                                                                                     
+                    "blocked-runtime-coverage": 19,                                                   
+                    "function-name": "get_getrandom_seed",                                            
+                    "project": "json-c"                                                               
+                },                                                                                    
+                ....
+                ....                                                                                
+          ],                                                                                        
+          "coverage_lines": 37.0,                                                                   
+          "function_count": 182,                                                                    
+          "functions_covered_estimate": 37.0,                                                       
+          "fuzzer_count": 1,                                                                        
+          "introspector_report_url": "https://storage.googleapis.com/oss-fuzz-introspector/json-c/inspector-report/20231005/fuzz_report.html",
+          "static_reachability": 63.40996168582376                                                  
+      },                                                                                            
+      "name": "json-c",                                                                             
+      "runtime-coverage-data": {                                                                    
+          "coverage_url": "https://storage.googleapis.com/oss-fuzz-coverage/json-c/reports/20231005/linux/report.html",
+          "line_coverage": {                                                                        
+              "count": 3150,                                                                        
+              "covered": 1314,                                                                                                                                                                             
+              "percent": 41.71                                                                      
+          }                                                                                         
+      }                                                                                             
+  },                                                                                                
+  "result": "success"                                                                                                                                                                                      
+}   
+                </pre>
+              </div>
+          </div>
+
+
+<!-- /api/branch-blockers -->
+<div style="padding-top: 25px; margin-left: 35px; margin-right: 35px">
+  <p>
+    <left>
+      <h3 id="api-branch-blockers">/api/branch-blockers?project={project_name}</h3>
+      <p>
+        Extracts the branch blockerse identified for a given project:
+      </p>
+      <p>
+        <b>Example</b>
+        Extracting the data of the main <a href="https://github.com/google/oss-fuzz/tree/master/projects/json-c">json-c</a> project which has a single fuzzer <a href="https://github.com/google/oss-fuzz/blob/11a8e488a3df14079a48934b9c21cc752717eb18/projects/json-c/tokener_parse_ex_fuzzer.cc#L1-L13">tokener_parser_ex</a> fuzzer
+        using the URL: <a href="https://introspector.oss-fuzz.com/api/branch-blockers?project=json-c">https://introspector.oss-fuzz.com/api/branch-blockers?project=json-c</a>:
+      </p>
+    </left>
+  </p>
+  <div class="card card-body">
+    <pre>
+$ curl -L https://introspector.oss-fuzz.com/api/branch-blockers?project=json-c | python3 -m json.tool                                                                                        
+  {                                                                           
+      "project-blockers": [                                                   
+          {                                                                   
+              "function-name": "json_c_get_random_seed",                      
+              "project-name": "json-c",                                       
+              "unique_blocked_coverage": 35                                   
+          },                                                                  
+          {                                                                   
+              "function-name": "get_getrandom_seed",                          
+              "project-name": "json-c",                                       
+              "unique_blocked_coverage": 19                                   
+          },                                                                  
+          {                                                                   
+              "function-name": "json_object_array_shrink",                    
+              "project-name": "json-c",                                       
+              "unique_blocked_coverage": 7                                    
+          },                                                                  
+          {                                                                   
+              "function-name": "printbuf_memappend",                          
+              "project-name": "json-c",                                       
+              "unique_blocked_coverage": 2                                    
+          },                                                                  
+          {                                                                   
+              "function-name": "printbuf_extend",                             
+              "project-name": "json-c",                                       
+              "unique_blocked_coverage": 2                                    
+          },                                                                  
+          {                                                                   
+              "function-name": "array_list_shrink",                           
+              "project-name": "json-c",                                       
+              "unique_blocked_coverage": 0                                    
+          },                                                                  
+          {                                                                   
+              "function-name": "json_tokener_parse_ex",                       
+              "project-name": "json-c",                                       
+              "unique_blocked_coverage": 0                                    
+          },                                                                  
+          {                                                                   
+              "function-name": "json_tokener_parse_ex",                       
+              "project-name": "json-c",                                       
+              "unique_blocked_coverage": 0                                    
+          },                                                                  
+          {                                                                   
+              "function-name": "json_object_new_double_s",                    
+              "project-name": "json-c",                                       
+              "unique_blocked_coverage": 0                                    
+          },                                                                  
+          {                                                                   
+            "function-name": "get_getrandom_seed",                          
+            "project-name": "json-c",                                       
+            "unique_blocked_coverage": 0                                    
+        }                                                                   
+    ],                                                                      
+    "result": "success"                                                     
+}           
+    </pre>
+  </div>
+</div>
+
+          </div>
+        </div>
+      </section>
+      <!-- end hero area -->
+      <!-- end database overview -->
+    </main>
+    <!-- end main content -->
+{% endblock %}
