@@ -273,9 +273,11 @@ def indexing_overview():
 def about():
     return render_template('about.html', gtag=gtag)
 
+
 @blueprint.route('/api')
 def api():
     return render_template('api.html', gtag=gtag)
+
 
 @blueprint.route('/api/annotated-cfg')
 def api_annotated_cfg():
