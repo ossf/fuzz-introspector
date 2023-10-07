@@ -10,7 +10,7 @@
             <div class="pr__profile-header">
               <h2>Project: <a href="https://github.com/google/oss-fuzz/tree/master/projects/{{project.name}}"> {{ project.name }}</a></h2>
             </div>
-            <div class="profile__table" style="max-width: 300px">
+            <div class="profile__table" style="max-width: 450px">
               <table>
                 <tbody>
                   <tr>
@@ -21,6 +21,38 @@
                     <td>OSS-Fuzz project</td>
                     <td><a href="https://github.com/google/oss-fuzz/tree/master/projects/{{project.name}}">link</a></td>
                   </tr>
+                  <tr>
+                    <td>Build status: Fuzzers</td>
+                    <td>
+                    {% if project_build_status.fuzz_build_status == false %}
+                      failing:
+                    {% else %}
+                      succeeding:
+                    {% endif %}
+                    <a href="{{project_build_status.fuzz_build_log}}">Build log</a>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Build status: Code coverage</td>
+                    <td>
+                      {% if project_build_status.coverage_build_status == false %}
+                        failing:
+                      {% else %}
+                        succeeding:
+                      {% endif %}
+                      <a href="{{project_build_status.coverage_build_log}}">Build log</a>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Build status: Fuzz Introspector</td>
+                    <td>
+                      {% if project_build_status.introspector_build_status == false %}
+                        failing:
+                      {% else %}
+                        succeeding:
+                      {% endif %}
+                      <a href="{{project_build_status.introspector_build_log}}">Build log</a></td>
+                  </tr>                                    
                   <tr>
                     <td>Fuzzer count</td>
                       <td> {{ project.fuzzer_count }}</td>
