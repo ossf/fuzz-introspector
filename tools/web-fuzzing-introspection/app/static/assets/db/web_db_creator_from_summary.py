@@ -382,6 +382,8 @@ def extract_project_data(project_name, date_str, should_include_details,
                         'function_name', None)
                     blocked_unique_not_covered_complexity = branch_blocker.get(
                         'blocked_unique_not_covered_complexity', None)
+                    if blocked_unique_not_covered_complexity < 5:
+                        continue
                     if function_blocked == None:
                         continue
                     if blocked_unique_not_covered_complexity == None:
@@ -393,7 +395,13 @@ def extract_project_data(project_name, date_str, should_include_details,
                         'function-name':
                         function_blocked,
                         'blocked-runtime-coverage':
-                        blocked_unique_not_covered_complexity
+                        blocked_unique_not_covered_complexity,
+                        'source-file':
+                        branch_blocker.get('source_file', "N/A"),
+                        'linenumber':
+                        branch_blocker.get('branch_line_number', -1),
+                        'blocked-unique-functions':
+                        branch_blocker.get('blocked_unique_functions', [])
                     })
 
         introspector_data_dict = {

@@ -113,10 +113,14 @@ class Function:
 
 class BranchBlocker:
 
-    def __init__(self, project_name, function_name, unique_blocked_coverage):
+    def __init__(self, project_name, function_name, unique_blocked_coverage,
+                 source_file, blocked_unique_functions, src_linenumber):
         self.project_name = project_name
         self.function_name = function_name
         self.unique_blocked_coverage = unique_blocked_coverage
+        self.blocked_unique_functions = blocked_unique_functions
+        self.source_file = source_file
+        self.src_linenumber = src_linenumber
 
 
 class BuildStatus:
