@@ -52,20 +52,21 @@ JVM_LICENSE = """// Copyright 2023 Google LLC
 def gen_dockerfile(github_url,
                    project_name,
                    language="python",
-                   jdk_version="jdk15"):
+                   jdk_version="jdk15",
+                   build_project=True):
     if language == "python":
         return gen_dockerfile_python(github_url, project_name)
     elif language == "jvm":
-        return gen_dockerfile_jvm(github_url, project_name, jdk_version)
+        return gen_dockerfile_jvm(github_url, project_name, jdk_version, build_project)
     else:
         return None
 
 
-def gen_builder_1(language="python"):
+def gen_builder_1(language="python", project_type=None):
     if language == "python":
         return gen_builder_1_python()
     elif language == "jvm":
-        return gen_builder_1_jvm()
+        return gen_builder_1_jvm(project_type)
     else:
         return None
 
@@ -108,7 +109,11 @@ WORKDIR $SRC/%s
     return DOCKER_LICENSE + "\n" + DOCKER_STEPS
 
 
-def gen_dockerfile_jvm(github_url, project_name, jdk_version="jdk15"):
+def gen_dockerfile_jvm(github_url, project_name, jdk_version="jdk15", build_project=True):
+    if build_project:
+        build_jar_copy = ""
+    else:
+        build_jar_copy = "RUN mkdir -p $SRC/build_jar \nCOPY *.jar $SRC/build_jar/"
     DOCKER_STEPS = """FROM gcr.io/oss-fuzz-base/base-builder-jvm
 #RUN curl -L %s -o ant.zip && unzip ant.zip -d $SRC/ant && rm -rf ant.zip
 #RUN curl -L %s -o maven.zip && unzip maven.zip -d $SRC/maven && rm -rf maven.zip
@@ -133,11 +138,12 @@ ENV PATH="$JAVA_HOME/bin:$SRC/gradle/gradle-7.4.2/bin:$SRC/protoc/bin:$PATH"
 #RUN git clone --depth 1 %s %s
 COPY %s %s
 COPY *.sh *.java $SRC/
+%s
 WORKDIR $SRC/%s
 """ % (constants.ANT_URL, constants.MAVEN_URL, constants.GRADLE_URL,
        constants.PROTOC_URL, constants.JDK_URL[jdk_version],
        constants.JDK_HOME[jdk_version], github_url, project_name, project_name,
-       project_name, project_name)
+       project_name, build_jar_copy, project_name)
 
     return BASH_LICENSE + "\n" + DOCKER_STEPS
 
@@ -153,84 +159,51 @@ done"""
     return BUILD_LICENSE + "\n" + BUILD_SCRIPT
 
 
-def gen_builder_1_jvm():
+def gen_builder_1_jvm(project_type):
     BUILD_LICENSE = "#!/bin/bash -eu\n" + BASH_LICENSE
-    BUILD_SCRIPT = """SUCCESS=false
-BASEDIR=$(pwd)
-for dir in $(ls -R)
-do
-  cd $BASEDIR
-  if [[ $dir == *: ]]
-  then
-    dir=${dir%*:}
-    cd $dir
-    chmod +x $SRC/protoc/bin/protoc
-    if test -f "pom.xml"
-    then
-      find ./ -name pom.xml -exec sed -i 's/compilerVersion>1.5</compilerVersion>1.8</g' {} \;
-      find ./ -name pom.xml -exec sed -i 's/compilerVersion>1.6</compilerVersion>1.8</g' {} \;
-      find ./ -name pom.xml -exec sed -i 's/source>1.5</source>1.8</g' {} \;
-      find ./ -name pom.xml -exec sed -i 's/source>1.6</source>1.8</g' {} \;
-      find ./ -name pom.xml -exec sed -i 's/target>1.5</target>1.8</g' {} \;
-      find ./ -name pom.xml -exec sed -i 's/target>1.6</target>1.8</g' {} \;
-      find ./ -name pom.xml -exec sed -i 's/java15/java18/g' {} \;
-      find ./ -name pom.xml -exec sed -i 's/java16/java18/g' {} \;
-      find ./ -name pom.xml -exec sed -i 's/java-1.5/java-1.8/g' {} \;
-      find ./ -name pom.xml -exec sed -i 's/java-1.6/java-1.8/g' {} \;
-      mkdir -p ~/.m2
-      echo "<toolchains><toolchain><type>jdk</type><provides><version>1.8</version></provides>" > ~/.m2/toolchains.xml
-      echo "<configuration><jdkHome>\${env.JAVA_HOME}</jdkHome></configuration></toolchain>" >> ~/.m2/toolchains.xml
-      echo "<toolchain><type>jdk</type><provides><version>8</version></provides>" >> ~/.m2/toolchains.xml
-      echo "<configuration><jdkHome>\${env.JAVA_HOME}</jdkHome></configuration></toolchain>" >> ~/.m2/toolchains.xml
-      echo "<toolchain><type>jdk</type><provides><version>11</version></provides>" >> ~/.m2/toolchains.xml
-      echo "<configuration><jdkHome>\${env.JAVA_HOME}</jdkHome></configuration></toolchain>" >> ~/.m2/toolchains.xml
-      echo "<toolchain><type>jdk</type><provides><version>14</version></provides>" >> ~/.m2/toolchains.xml
-      echo "<configuration><jdkHome>\${env.JAVA_HOME}</jdkHome></configuration></toolchain>" >> ~/.m2/toolchains.xml
-      echo "<toolchain><type>jdk</type><provides><version>15</version></provides>" >> ~/.m2/toolchains.xml
-      echo "<configuration><jdkHome>\${env.JAVA_HOME}</jdkHome></configuration></toolchain>" >> ~/.m2/toolchains.xml
-      echo "<toolchain><type>jdk</type><provides><version>17</version></provides>" >> ~/.m2/toolchains.xml
-      echo "<configuration><jdkHome>\${env.JAVA_HOME}</jdkHome></configuration></toolchain>" >> ~/.m2/toolchains.xml
-      echo "</toolchains>" >> ~/.m2/toolchains.xml
-      $MVN clean package -Dmaven.javadoc.skip=true -DskipTests=true -Dpmd.skip=true -Dencoding=UTF-8 \
-      -Dmaven.antrun.skip=true -Dcheckstyle.skip=true dependency:copy-dependencies
-      SUCCESS=true
-      break
-    elif test -f "build.gradle" || test -f "build.gradle.kts"
-    then
-      rm -rf $HOME/.gradle/caches/
-      chmod +x ./gradlew
-      EXCLUDE_SPOTLESS_CHECK=
-      if ./gradlew tasks --all | grep -qw "^spotlessCheck"
-      then
-        EXCLUDE_SPOTLESS_CHECK="-x spotlessCheck "
-      fi
-      ./gradlew clean build -x test -x javadoc -x sources \
-      $EXCLUDE_SPOTLESS_CHECK\
-      -Porg.gradle.java.installations.auto-detect=false \
-      -Porg.gradle.java.installations.auto-download=false \
-      -Porg.gradle.java.installations.paths=$JAVA_HOME
-      ./gradlew --stop
-      SUCCESS=true
-      break
-    elif test -f "build.xml"
-    then
-      $ANT
-      SUCCESS=true
-      break
-    fi
-  fi
-done
-
-if [ "$SUCCESS" = false ]
+    BUILD_SCRIPT_MAVEN = """chmod +x $SRC/protoc/bin/protoc
+find ./ -name pom.xml -exec sed -i 's/compilerVersion>1.5</compilerVersion>1.8</g' {} \;
+find ./ -name pom.xml -exec sed -i 's/compilerVersion>1.6</compilerVersion>1.8</g' {} \;
+find ./ -name pom.xml -exec sed -i 's/source>1.5</source>1.8</g' {} \;
+find ./ -name pom.xml -exec sed -i 's/source>1.6</source>1.8</g' {} \;
+find ./ -name pom.xml -exec sed -i 's/target>1.5</target>1.8</g' {} \;
+find ./ -name pom.xml -exec sed -i 's/target>1.6</target>1.8</g' {} \;
+find ./ -name pom.xml -exec sed -i 's/java15/java18/g' {} \;
+find ./ -name pom.xml -exec sed -i 's/java16/java18/g' {} \;
+find ./ -name pom.xml -exec sed -i 's/java-1.5/java-1.8/g' {} \;
+find ./ -name pom.xml -exec sed -i 's/java-1.6/java-1.8/g' {} \;
+mkdir -p ~/.m2
+echo "<toolchains><toolchain><type>jdk</type><provides><version>1.8</version></provides>" > ~/.m2/toolchains.xml
+echo "<configuration><jdkHome>\${env.JAVA_HOME}</jdkHome></configuration></toolchain>" >> ~/.m2/toolchains.xml
+echo "<toolchain><type>jdk</type><provides><version>8</version></provides>" >> ~/.m2/toolchains.xml
+echo "<configuration><jdkHome>\${env.JAVA_HOME}</jdkHome></configuration></toolchain>" >> ~/.m2/toolchains.xml
+echo "<toolchain><type>jdk</type><provides><version>11</version></provides>" >> ~/.m2/toolchains.xml
+echo "<configuration><jdkHome>\${env.JAVA_HOME}</jdkHome></configuration></toolchain>" >> ~/.m2/toolchains.xml
+echo "<toolchain><type>jdk</type><provides><version>14</version></provides>" >> ~/.m2/toolchains.xml
+echo "<configuration><jdkHome>\${env.JAVA_HOME}</jdkHome></configuration></toolchain>" >> ~/.m2/toolchains.xml
+echo "<toolchain><type>jdk</type><provides><version>15</version></provides>" >> ~/.m2/toolchains.xml
+echo "<configuration><jdkHome>\${env.JAVA_HOME}</jdkHome></configuration></toolchain>" >> ~/.m2/toolchains.xml
+echo "<toolchain><type>jdk</type><provides><version>17</version></provides>" >> ~/.m2/toolchains.xml
+echo "<configuration><jdkHome>\${env.JAVA_HOME}</jdkHome></configuration></toolchain>" >> ~/.m2/toolchains.xml
+echo "</toolchains>" >> ~/.m2/toolchains.xml
+$MVN clean package -Dmaven.javadoc.skip=true -DskipTests=true -Dpmd.skip=true -Dencoding=UTF-8 \
+-Dmaven.antrun.skip=true -Dcheckstyle.skip=true dependency:copy-dependencies"""
+    BUILD_SCRIPT_GRADLE = """rm -rf $HOME/.gradle/caches/
+chmod +x ./gradlew
+EXCLUDE_SPOTLESS_CHECK=
+if ./gradlew tasks --all | grep -qw "^spotlessCheck"
 then
-  echo "Unknown project type"
-  exit 127
+  EXCLUDE_SPOTLESS_CHECK="-x spotlessCheck "
 fi
-
-cd $BASEDIR
-
-JARFILE_LIST=
-for JARFILE in $(find ./  -name *.jar)
+./gradlew clean build -x test -x javadoc -x sources \
+$EXCLUDE_SPOTLESS_CHECK\
+-Porg.gradle.java.installations.auto-detect=false \
+-Porg.gradle.java.installations.auto-download=false \
+-Porg.gradle.java.installations.paths=$JAVA_HOME
+./gradlew --stop"""
+    BUILD_SCRIPT_ANT = "$ANT"
+    BUILD_SCRIPT_COPY_JAR = """JARFILE_LIST=
+for JARFILE in $(find ./  -name "*.jar")
 do
   if [[ "$JARFILE" == *"target/"* ]] || [[ "$JARFILE" == *"build/"* ]] || [[ "$JARFILE" == *"dist/"* ]]
   then
@@ -240,9 +213,14 @@ do
       JARFILE_LIST="$JARFILE_LIST$(basename $JARFILE) "
     fi
   fi
-done
-
-curr_dir=$(pwd)
+done"""
+    BUILD_SCRIPT_NO_BUILD = """JARFILE_LIST=
+for JARFILE in `ls $SRC/build_jar/*.jar`
+do
+  cp $JARFILE $OUT/
+  JARFILE_LIST="$JARFILE_LIST$(basename $JARFILE) "
+done"""
+    BUILD_SCRIPT_BASE = """curr_dir=$(pwd)
 rm -rf $OUT/jar_temp
 mkdir $OUT/jar_temp
 cd $OUT/jar_temp
@@ -293,7 +271,16 @@ do
   chmod u+x $OUT/$fuzzer_basename
 done"""
 
-    return BUILD_LICENSE + "\n" + BUILD_SCRIPT
+    if project_type == "maven":
+      BUILD_SCRIPT = BUILD_SCRIPT_MAVEN + "\n" + BUILD_SCRIPT_COPY_JAR
+    elif project_type == "gradle":
+      BUILD_SCRIPT = BUILD_SCRIPT_GRADLE + "\n" + BUILD_SCRIPT_COPY_JAR
+    elif project_type == "ant":
+      BUILD_SCRIPT = BUILD_SCRIPT_ANT + "\n" + BUILD_SCRIPT_COPY_JAR
+    else:
+      BUILD_SCRIPT = BUILD_SCRIPT_NO_BUILD
+
+    return BUILD_LICENSE + "\n" + BUILD_SCRIPT + "\n" + BUILD_SCRIPT_BASE
 
 
 def gen_base_fuzzer_python():

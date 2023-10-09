@@ -151,11 +151,11 @@ class OSS_FUZZ_PROJECT:
                 base_files.gen_dockerfile(self.github_url, self.project_name,
                                           self.language))
 
-    def change_jvm_dockerfile(self, jdk_version):
+    def change_jvm_dockerfile(self, jdk_version, build_project):
         with open(self.dockerfile, "w") as dfile:
             dfile.write(
                 base_files.gen_dockerfile(self.github_url, self.project_name,
-                                          self.language, jdk_version))
+                                          self.language, jdk_version, build_project))
 
 
 def get_next_project_folder(base_dir):
@@ -462,6 +462,14 @@ def find_project_build_folder(dir, proj_name):
     return None
 
 
+def find_jdk_version(jdk_base):
+    """Find jdk version from jdk base path"""
+    for key in constants.JDK_HOME:
+        if constants.JDK_HOME[key] == jdk_base:
+            return key
+    return None
+
+
 def build_jvm_project(basedir, projectdir, proj_name):
     # Find project subfolder if build properties not in the outtermost
     # directory
@@ -626,6 +634,7 @@ def run_static_analysis_jvm(git_repo, basedir, project_name):
         "javac -cp jazzer_standalone.jar:commons-lang3.jar:%s ../Fuzz.java" %
         ":".join(jarfiles), "jar cvf ../Fuzz.jar ../Fuzz.class"
     ]
+
     try:
         subprocess.check_call(" && ".join(cmd),
                               shell=True,
@@ -677,7 +686,7 @@ def run_static_analysis_jvm(git_repo, basedir, project_name):
         ret = False
 
     os.chdir(curr_dir)
-    return ret, jdk_base
+    return ret, jdk_base, project_type, jarfiles
 
 
 def copy_core_oss_fuzz_project_files(src_oss_project, dst_oss_project):
@@ -744,6 +753,9 @@ def build_and_test_single_possible_target(idx_folder,
                                           possible_targets,
                                           language,
                                           benchmark,
+                                          jar_files,
+                                          jdk_base,
+                                          project_type,
                                           should_run_checks=True):
     """Builds and tests a given FuzzTarget.
 
@@ -784,6 +796,7 @@ def build_and_test_single_possible_target(idx_folder,
         shutil.copy(maven_path, maven_dst)
         shutil.copy(gradle_path, gradle_dst)
         shutil.copy(protoc_path, protoc_dst)
+        copy_build_jar(jar_files, dst_oss_fuzz_project)
 
     copy_oss_fuzz_project_source(oss_fuzz_base_project, dst_oss_fuzz_project)
 
@@ -847,6 +860,7 @@ def build_and_test_single_possible_target(idx_folder,
         if not os.path.isdir(full_path):
             continue
 
+        # Clean up java build files
         files_to_cleanup = ['ant.zip', 'maven.zip', 'gradle.zip', 'protoc.zip']
         for filename in files_to_cleanup:
             # Auto-fuzz path
@@ -861,10 +875,29 @@ def build_and_test_single_possible_target(idx_folder,
             if os.path.isfile(ossfuzz_filename_path):
                 os.remove(ossfuzz_filename_path)
 
+        # Clean up pre-built jar files for java project
+        for file in os.listdir(auto_fuzz_proj_dir):
+            jarfile = os.path.join(auto_fuzz_proj_dir, file)
+            if os.path.isfile(jarfile) and jarfile.endswith(".jar"):
+                os.remove(jarfile)
+
         if dst_oss_fuzz_project.project_name not in src_dir:
             continue
 
-        # Clean drectory in auto-fuzz dir
+        # Replace Dockerfile and build.sh with the correct one for java project
+        if language == "jvm":
+            dockerfile = os.path.join(auto_fuzz_proj_dir, "Dockerfile")
+            build_script = os.path.join(auto_fuzz_proj_dir, "build.sh")
+            with open(dockerfile, "w") as dfile:
+                jdk_version = find_jdk_version(jdk_base)
+                dfile.write(
+                    base_files.gen_dockerfile(dst_oss_fuzz_project.github_url,
+                                              dst_oss_fuzz_project.project_name,
+                                              language, jdk_version, True))
+            with open(build_script, "w") as bfile:
+                bfile.write(base_files.gen_builder_1(language, project_type))
+
+        # Clean directory in auto-fuzz dir
         shutil.rmtree(full_path)
 
         # Clean up the directory in oss-fuzz
@@ -883,7 +916,10 @@ def run_builder_pool(autofuzz_base_workdir,
                      possible_targets,
                      max_targets_to_analyse,
                      language,
-                     benchmark=False):
+                     benchmark=False,
+                     jar_files=None,
+                     jdk_base=None,
+                     project_type=None):
     """Runs a set of possible oss-fuzz targets in `possible_targets` in a
     multithreaded manner using ThreadPools.
     """
@@ -898,7 +934,8 @@ def run_builder_pool(autofuzz_base_workdir,
         if idx > max_targets_to_analyse:
             continue
         arg_list.append((idx_folder, idx, oss_fuzz_base_project,
-                         possible_targets, language, benchmark))
+                         possible_targets, language, benchmark,
+                         jar_files, jdk_base, project_type))
 
     print("Launching multi-threaded processing")
     print("Jobs completed:")
@@ -972,6 +1009,24 @@ def extract_class_list(projectdir):
                 project_class_list.append(path)
 
     return project_class_list
+
+
+def copy_build_jar(jar_files, oss_fuzz_base_project):
+    """Copy build jar files to avoid rebuild project"""
+    for jar_file in jar_files:
+        filename = os.path.basename(jar_file)
+        dirname = os.path.dirname(jar_file)
+        if filename == "*.jar":
+            for file in os.listdir(dirname):
+                dst_filename = os.path.basename(file)
+                src = os.path.join(dirname, dst_filename)
+                dst = os.path.join(oss_fuzz_base_project.project_folder, dst_filename)
+                if not os.path.exists(dst) and os.path.isfile(src):
+                    shutil.copy(src, dst)
+        else:
+            dst = os.path.join(oss_fuzz_base_project.project_folder, filename)
+            if not os.path.exists(dst):
+                shutil.copy(jar_file, dst)
 
 
 def autofuzz_project_from_github(github_url,
@@ -1075,6 +1130,8 @@ def autofuzz_project_from_github(github_url,
 
     static_res = None
     jdk_base = None
+    project_type = None
+    jar_files = None
     if do_static_analysis:
         print("Running static analysis on %s" % (github_url))
         if language == "python":
@@ -1082,15 +1139,13 @@ def autofuzz_project_from_github(github_url,
                 github_url, oss_fuzz_base_project.project_folder,
                 oss_fuzz_base_project.project_name)
         elif language == "jvm":
-            static_res, jdk_base = run_static_analysis_jvm(
+            static_res, jdk_base, project_type, jar_files = run_static_analysis_jvm(
                 github_url, oss_fuzz_base_project.project_folder,
                 oss_fuzz_base_project.project_name)
 
             # Overwrite dockerfile with correct jdk version
-            for key in constants.JDK_HOME:
-                if constants.JDK_HOME[key] == jdk_base:
-                    oss_fuzz_base_project.change_jvm_dockerfile(key)
-                    break
+            version = find_jdk_version(jdk_base)
+            oss_fuzz_base_project.change_jvm_dockerfile(version, False)
 
         if static_res:
             workdir = os.path.join(oss_fuzz_base_project.project_folder,
@@ -1109,6 +1164,10 @@ def autofuzz_project_from_github(github_url,
             cleanup_base_directory(base_oss_fuzz_project_dir,
                                    oss_fuzz_base_project.project_name)
             return False
+
+    # Copy jar files to avoid rebuild project
+    if language == "jvm":
+        copy_build_jar(jar_files, oss_fuzz_base_project)
 
     # Check basic fuzzer and clean it afterwards
     res = oss_fuzz_manager.copy_and_build_project(
@@ -1143,7 +1202,7 @@ def autofuzz_project_from_github(github_url,
         constants.MAX_FUZZERS_PER_PROJECT, len(possible_targets)), github_url))
     run_builder_pool(autofuzz_base_workdir, oss_fuzz_base_project,
                      possible_targets, constants.MAX_FUZZERS_PER_PROJECT,
-                     language, benchmark)
+                     language, benchmark, jar_files, jdk_base, project_type)
 
     if to_merge:
         merged_directory = post_process.merge_run(autofuzz_base_workdir,
