@@ -364,62 +364,44 @@ $ curl -L https://introspector.oss-fuzz.com/api/project-summary?project=json-c |
   </p>
   <div class="card card-body">
     <pre>
-$ curl -L https://introspector.oss-fuzz.com/api/branch-blockers?project=json-c | python3 -m json.tool                                                                                        
-  {                                                                           
-      "project-blockers": [                                                   
-          {                                                                   
-              "function-name": "json_c_get_random_seed",                      
-              "project-name": "json-c",                                       
-              "unique_blocked_coverage": 35                                   
-          },                                                                  
-          {                                                                   
-              "function-name": "get_getrandom_seed",                          
-              "project-name": "json-c",                                       
-              "unique_blocked_coverage": 19                                   
-          },                                                                  
-          {                                                                   
-              "function-name": "json_object_array_shrink",                    
-              "project-name": "json-c",                                       
-              "unique_blocked_coverage": 7                                    
-          },                                                                  
-          {                                                                   
-              "function-name": "printbuf_memappend",                          
-              "project-name": "json-c",                                       
-              "unique_blocked_coverage": 2                                    
-          },                                                                  
-          {                                                                   
-              "function-name": "printbuf_extend",                             
-              "project-name": "json-c",                                       
-              "unique_blocked_coverage": 2                                    
-          },                                                                  
-          {                                                                   
-              "function-name": "array_list_shrink",                           
-              "project-name": "json-c",                                       
-              "unique_blocked_coverage": 0                                    
-          },                                                                  
-          {                                                                   
-              "function-name": "json_tokener_parse_ex",                       
-              "project-name": "json-c",                                       
-              "unique_blocked_coverage": 0                                    
-          },                                                                  
-          {                                                                   
-              "function-name": "json_tokener_parse_ex",                       
-              "project-name": "json-c",                                       
-              "unique_blocked_coverage": 0                                    
-          },                                                                  
-          {                                                                   
-              "function-name": "json_object_new_double_s",                    
-              "project-name": "json-c",                                       
-              "unique_blocked_coverage": 0                                    
-          },                                                                  
-          {                                                                   
-            "function-name": "get_getrandom_seed",                          
-            "project-name": "json-c",                                       
-            "unique_blocked_coverage": 0                                    
-        }                                                                   
-    ],                                                                      
-    "result": "success"                                                     
-}           
+$ curl -L https://introspector.oss-fuzz.com/api/branch-blockers?project=json-c | python3 -m json.tool
+{
+    "project-blockers": [
+        {
+            "blocked_unique_functions": [
+                "get_dev_random_seed",
+                "get_time_seed"
+            ],
+            "function-name": "json_c_get_random_seed",
+            "project-name": "json-c",
+            "source_file": "/src/json-c/random_seed.c",
+            "src_linenumber": "336",
+            "unique_blocked_coverage": 35
+        },
+        {
+            "blocked_unique_functions": [
+                "__errno_location",
+                "_json_c_strerror"
+            ],
+            "function-name": "get_getrandom_seed",
+            "project-name": "json-c",
+            "source_file": "/src/json-c/random_seed.c",
+            "src_linenumber": "190",
+            "unique_blocked_coverage": 19
+        },
+        {
+            "blocked_unique_functions": [
+                "json_abort"
+            ],
+            "function-name": "json_object_array_shrink",
+            "project-name": "json-c",
+            "source_file": "/src/json-c/json_object.c",
+            "src_linenumber": "1566",
+            "unique_blocked_coverage": 7
+        }
+    ],
+    "result": "success"
+}
     </pre>
   </div>
 </div>
