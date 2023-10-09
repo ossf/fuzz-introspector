@@ -155,7 +155,8 @@ class OSS_FUZZ_PROJECT:
         with open(self.dockerfile, "w") as dfile:
             dfile.write(
                 base_files.gen_dockerfile(self.github_url, self.project_name,
-                                          self.language, jdk_version, build_project))
+                                          self.language, jdk_version,
+                                          build_project))
 
 
 def get_next_project_folder(base_dir):
@@ -891,9 +892,10 @@ def build_and_test_single_possible_target(idx_folder,
             with open(dockerfile, "w") as dfile:
                 jdk_version = find_jdk_version(jdk_base)
                 dfile.write(
-                    base_files.gen_dockerfile(dst_oss_fuzz_project.github_url,
-                                              dst_oss_fuzz_project.project_name,
-                                              language, jdk_version, True))
+                    base_files.gen_dockerfile(
+                        dst_oss_fuzz_project.github_url,
+                        dst_oss_fuzz_project.project_name, language,
+                        jdk_version, True))
             with open(build_script, "w") as bfile:
                 bfile.write(base_files.gen_builder_1(language, project_type))
 
@@ -933,9 +935,9 @@ def run_builder_pool(autofuzz_base_workdir,
     for idx in range(len(possible_targets)):
         if idx > max_targets_to_analyse:
             continue
-        arg_list.append((idx_folder, idx, oss_fuzz_base_project,
-                         possible_targets, language, benchmark,
-                         jar_files, jdk_base, project_type))
+        arg_list.append(
+            (idx_folder, idx, oss_fuzz_base_project, possible_targets,
+             language, benchmark, jar_files, jdk_base, project_type))
 
     print("Launching multi-threaded processing")
     print("Jobs completed:")
@@ -1020,7 +1022,8 @@ def copy_build_jar(jar_files, oss_fuzz_base_project):
             for file in os.listdir(dirname):
                 dst_filename = os.path.basename(file)
                 src = os.path.join(dirname, dst_filename)
-                dst = os.path.join(oss_fuzz_base_project.project_folder, dst_filename)
+                dst = os.path.join(oss_fuzz_base_project.project_folder,
+                                   dst_filename)
                 if not os.path.exists(dst) and os.path.isfile(src):
                     shutil.copy(src, dst)
         else:

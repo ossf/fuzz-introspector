@@ -57,7 +57,8 @@ def gen_dockerfile(github_url,
     if language == "python":
         return gen_dockerfile_python(github_url, project_name)
     elif language == "jvm":
-        return gen_dockerfile_jvm(github_url, project_name, jdk_version, build_project)
+        return gen_dockerfile_jvm(github_url, project_name, jdk_version,
+                                  build_project)
     else:
         return None
 
@@ -109,7 +110,10 @@ WORKDIR $SRC/%s
     return DOCKER_LICENSE + "\n" + DOCKER_STEPS
 
 
-def gen_dockerfile_jvm(github_url, project_name, jdk_version="jdk15", build_project=True):
+def gen_dockerfile_jvm(github_url,
+                       project_name,
+                       jdk_version="jdk15",
+                       build_project=True):
     if build_project:
         build_jar_copy = ""
     else:
@@ -272,13 +276,13 @@ do
 done"""
 
     if project_type == "maven":
-      BUILD_SCRIPT = BUILD_SCRIPT_MAVEN + "\n" + BUILD_SCRIPT_COPY_JAR
+        BUILD_SCRIPT = BUILD_SCRIPT_MAVEN + "\n" + BUILD_SCRIPT_COPY_JAR
     elif project_type == "gradle":
-      BUILD_SCRIPT = BUILD_SCRIPT_GRADLE + "\n" + BUILD_SCRIPT_COPY_JAR
+        BUILD_SCRIPT = BUILD_SCRIPT_GRADLE + "\n" + BUILD_SCRIPT_COPY_JAR
     elif project_type == "ant":
-      BUILD_SCRIPT = BUILD_SCRIPT_ANT + "\n" + BUILD_SCRIPT_COPY_JAR
+        BUILD_SCRIPT = BUILD_SCRIPT_ANT + "\n" + BUILD_SCRIPT_COPY_JAR
     else:
-      BUILD_SCRIPT = BUILD_SCRIPT_NO_BUILD
+        BUILD_SCRIPT = BUILD_SCRIPT_NO_BUILD
 
     return BUILD_LICENSE + "\n" + BUILD_SCRIPT + "\n" + BUILD_SCRIPT_BASE
 
