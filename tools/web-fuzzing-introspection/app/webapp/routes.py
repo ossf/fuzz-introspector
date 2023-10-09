@@ -372,7 +372,13 @@ def branch_blockers():
                 'function-name':
                 blocker.function_name,
                 'unique_blocked_coverage':
-                blocker.unique_blocked_coverage
+                blocker.unique_blocked_coverage,
+                'source_file':
+                blocker.source_file,
+                'src_linenumber':
+                blocker.src_linenumber,
+                'blocked_unique_functions':
+                blocker.blocked_unique_functions
             })
     return {'result': 'success', 'project-blockers': project_blockers}
 
