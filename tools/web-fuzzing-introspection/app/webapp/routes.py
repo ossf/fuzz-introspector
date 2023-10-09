@@ -144,9 +144,18 @@ def function_profile():
 @blueprint.route('/project-profile', methods=['GET'])
 def project_profile():
     #print(request.args.get('project', 'none'))
+
     target_project_name = request.args.get('project', 'none')
     project = get_project_with_name(target_project_name)
     if project != None:
+        # Get the build status of the project
+        all_build_status = data_storage.get_build_status()
+        project_build_status = dict()
+        for build_status in all_build_status:
+            if build_status.project_name == project.name:
+                project_build_status = build_status
+                break
+
         project_statistics = data_storage.PROJECT_TIMESTAMPS
         real_stats = []
         for ps in project_statistics:
@@ -157,24 +166,29 @@ def project_profile():
                                gtag=gtag,
                                project=project,
                                project_statistics=real_stats,
-                               has_project_details=True)
+                               has_project_details=True,
+                               project_build_status=project_build_status)
 
     # Either this is a wrong project or we only have a build status for it
     all_build_status = data_storage.get_build_status()
     for build_status in all_build_status:
         if build_status.project_name == target_project_name:
-            project = models.Project(name=build_status.project_name,
-                                     language=build_status.language,
-                                     date="",
-                                     fuzzer_count=0,
-                                     coverage_data=None,
-                                     introspector_data=None)
+
+            project = models.Project(
+                name=build_status.project_name,
+                language=build_status.language,
+                date="",
+                fuzzer_count=0,
+                coverage_data=None,
+                introspector_data=None,
+            )
 
             return render_template('project-profile.html',
                                    gtag=gtag,
                                    project=project,
                                    project_statistics=None,
-                                   has_project_details=False)
+                                   has_project_details=False,
+                                   project_build_status=build_status)
     print("Nothing to do. We shuold probably have a 404")
     return redirect("/")
 
