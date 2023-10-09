@@ -33,6 +33,7 @@
                 <li><a href="#api-far-reach-but-low-coverage">- /api/far-reach-but-low-coverage</a></li>
                 <li><a href="#api-project-summary">- /api/project-summary</a></li>
                 <li><a href="#api-branch-blockers">- /api/branch-blockers</a></li>
+                <li><a href="#api-all-functions">- /api/all-functions</a></li>
               </ul>
             </div>
 
@@ -401,6 +402,80 @@ $ curl -L https://introspector.oss-fuzz.com/api/branch-blockers?project=json-c |
         }
     ],
     "result": "success"
+}
+    </pre>
+  </div>
+</div>
+
+
+
+<!-- /api/all-functions -->
+<div style="padding-top: 25px; margin-left: 35px; margin-right: 35px">
+  <p>
+    <left>
+      <h3 id="api-all-functions">/api/all-functions?project={project_name}</h3>
+      <p>
+        Returns a json representation of all the functions in a given project:
+      </p>
+      <p>
+        <b>Example</b>
+        Using this on <a href="https://github.com/google/oss-fuzz/tree/master/projects/ada-url">ada-url</a>: <a href="https://introspector.oss-fuzz.com/api/all-functions?project=ada-url">https://introspector.oss-fuzz.com/api/all-functions?project=ada-url</a>:
+      </p>
+    </left>
+  </p>
+  <div class="card card-body">
+    <pre>
+$ curl -L https://introspector.oss-fuzz.com/api/all-functions?project=ada-url | python3 -m json.tool
+{
+  "functions": [
+      {
+          "accummulated-complexity": 6,
+          "function-argument-names": [
+              "buffer",
+              "t",
+              "args",
+              "args",
+              "",
+              ""
+          ],
+          "function-arguments": [
+              "class.std::__1::basic_string.8 *",
+              "char *",
+              "size_t",
+              "char *",
+              "char *",
+              "size_t"
+          ],
+          "function-filename": "/src/ada-url/build/singleheader/ada.h",
+          "function-name": "voidada::helpers::inner_concat<std::__1::basic_string_view<char,std::__1::char_traits<char>>,charconst*,std::__1::basic_string_view<char,std::__1::char_traits<char>>>(std::__1::basic_string<char,std::__1::char_traits<char>,std::__1::allocator<char>>&,std::__1::basic_string_view<char,std::__1::char_traits<char>>,charconst*,std::__1::basic_string_view<char,std::__1::char_traits<char>>)",
+          "is-reached": false,
+          "raw-function-name": "_ZN3ada7helpers12inner_concatINSt3__117basic_string_viewIcNS2_11char_traitsIcEEEEJPKcS6_EEEvRNS2_12basic_stringIcS5_NS2_9allocatorIcEEEET_DpT0_",
+          "reached-by-fuzzers": [],
+          "return-type": "void",
+          "runtime-coverage-percent": 100.0
+      },
+...
+...
+      {
+          "accummulated-complexity": 6,
+          "function-argument-names": [
+              "input",
+              "length"
+          ],
+          "function-arguments": [
+              "char *",
+              "size_t"
+          ],
+          "function-filename": "/src/ada-url/build/singleheader/ada.cpp",
+          "function-name": "ada::idna::ascii_has_upper_case(char*,unsignedlong)",
+          "is-reached": false,
+          "raw-function-name": "_ZN3ada4idna20ascii_has_upper_caseEPcm",
+          "reached-by-fuzzers": [],
+          "return-type": "bool",
+          "runtime-coverage-percent": 0.0
+      }
+  ],
+  "result": "succes"
 }
     </pre>
   </div>
