@@ -140,22 +140,29 @@ class OSS_FUZZ_PROJECT:
             bfile.write(base_files.gen_builder_1(self.language, project_type))
 
         with open(self.base_fuzzer, "w") as ffile:
-            ffile.write(base_files.gen_base_fuzzer(self.language, project_type))
+            ffile.write(base_files.gen_base_fuzzer(self.language,
+                                                   project_type))
 
         with open(self.project_yaml, "w") as yfile:
             yfile.write(
-                base_files.gen_project_yaml(self.github_url, self.language, project_type))
+                base_files.gen_project_yaml(self.github_url, self.language,
+                                            project_type))
 
         with open(self.dockerfile, "w") as dfile:
             dfile.write(
-                base_files.gen_dockerfile(self.github_url, self.project_name,
-                                          self.language, project_type=project_type))
+                base_files.gen_dockerfile(self.github_url,
+                                          self.project_name,
+                                          self.language,
+                                          project_type=project_type))
 
     def change_jvm_dockerfile(self, jdk_version, project_type):
         with open(self.dockerfile, "w") as dfile:
             dfile.write(
-                base_files.gen_dockerfile(self.github_url, self.project_name,
-                                          self.language, jdk_version, project_type=project_type))
+                base_files.gen_dockerfile(self.github_url,
+                                          self.project_name,
+                                          self.language,
+                                          jdk_version,
+                                          project_type=project_type))
 
 
 def get_next_project_folder(base_dir):
@@ -447,7 +454,7 @@ def find_project_type(dir):
     if os.path.exists(os.path.join(dir, "pom.xml")):
         return "maven"
     elif os.path.exists(os.path.join(dir, "build.gradle")) or os.path.exists(
-                        os.path.join(dir, "build.gradle.kts")):
+            os.path.join(dir, "build.gradle.kts")):
         return "gradle"
     elif os.path.exists(os.path.join(dir, "build.xml")):
         return "ant"
@@ -559,10 +566,12 @@ def run_static_analysis_jvm(git_repo, basedir, project_name):
     projectdir = os.path.join(basedir, "work", "proj")
 
     # Find project subfolder if build properties not in the outtermost directory
-    builddir, project_type = find_project_build_folder(projectdir, project_name)
+    builddir, project_type = find_project_build_folder(projectdir,
+                                                       project_name)
 
-    build_ret, jarfiles, jdk_base = build_jvm_project(
-        basedir, projectdir, project_name, builddir, project_type)
+    build_ret, jarfiles, jdk_base = build_jvm_project(basedir, projectdir,
+                                                      project_name, builddir,
+                                                      project_type)
 
     if not build_ret:
         print("Unknown project type or project build fail.\n")
@@ -1077,8 +1086,8 @@ def autofuzz_project_from_github(github_url,
         java_class_list = extract_class_list(projectdir)
 
         # Find project type
-        _, project_type = find_project_build_folder(projectdir,
-                                                    oss_fuzz_base_project.project_name)
+        _, project_type = find_project_build_folder(
+            projectdir, oss_fuzz_base_project.project_name)
 
         if project_type:
             # Generate the base Dockerfile, build.sh, project.yaml and Fuzz.java
@@ -1107,7 +1116,8 @@ def autofuzz_project_from_github(github_url,
             # Overwrite dockerfile with correct jdk version
             for key in constants.JDK_HOME:
                 if constants.JDK_HOME[key] == jdk_base:
-                    oss_fuzz_base_project.change_jvm_dockerfile(key, project_type)
+                    oss_fuzz_base_project.change_jvm_dockerfile(
+                        key, project_type)
                     break
 
         if static_res:

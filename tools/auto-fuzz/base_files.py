@@ -51,7 +51,9 @@ def gen_builder_1(language="python", project_type=None, build_project=True):
         return ""
 
 
-def gen_base_fuzzer(language="python", project_type=None, need_base_import=True):
+def gen_base_fuzzer(language="python",
+                    project_type=None,
+                    need_base_import=True):
     template_dir = _get_template_directory(language, project_type)
 
     if not template_dir:
@@ -79,23 +81,24 @@ def gen_project_yaml(github_url, language="python", project_type=None):
 
 def _gen_dockerfile_python(github_url, project_name, template_dir):
     with open(os.path.join(template_dir, "Dockerfile"), "r") as file:
-        BASE_DOCKERFILE = file.read() % (github_url, project_name,
-                                         project_name, project_name,
-                                         project_name)
+        BASE_DOCKERFILE = file.read() % (
+            github_url, project_name, project_name, project_name, project_name)
 
     return BASE_DOCKERFILE
 
 
-def _gen_dockerfile_jvm(github_url, project_name, jdk_version, build_project, template_dir, project_type):
+def _gen_dockerfile_jvm(github_url, project_name, jdk_version, build_project,
+                        template_dir, project_type):
     if build_project:
         comment = "#"
     else:
         comment = ""
 
     with open(os.path.join(template_dir, "Dockerfile"), "r") as file:
-        BASE_DOCKERFILE = file.read() % ("%s", constants.PROTOC_URL, constants.JDK_URL[jdk_version],
-                                         constants.JDK_HOME[jdk_version], github_url, project_name,
-                                         project_name, project_name, comment, comment, project_name)
+        BASE_DOCKERFILE = file.read() % (
+            "%s", constants.PROTOC_URL, constants.JDK_URL[jdk_version],
+            constants.JDK_HOME[jdk_version], github_url, project_name,
+            project_name, project_name, comment, comment, project_name)
 
     if project_type == "ant":
         return BASE_DOCKERFILE % (constants.ANT_URL)
