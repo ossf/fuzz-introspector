@@ -136,21 +136,21 @@ class OSS_FUZZ_PROJECT:
                 return self.github_url.split("/")[1]
 
     def write_basefiles(self, project_build_type=None):
-        with open(self.build_script, "w") as bfile:
-            bfile.write(
+        with open(self.build_script, "w") as builder_file:
+            builder_file.write(
                 base_files.gen_builder_1(self.language, project_build_type))
 
-        with open(self.base_fuzzer, "w") as ffile:
-            ffile.write(
+        with open(self.base_fuzzer, "w") as fuzzer_file:
+            fuzzer_file.write(
                 base_files.gen_base_fuzzer(self.language, project_build_type))
 
-        with open(self.project_yaml, "w") as yfile:
-            yfile.write(
+        with open(self.project_yaml, "w") as yaml_file:
+            yaml_file.write(
                 base_files.gen_project_yaml(self.github_url, self.language,
                                             project_build_type))
 
-        with open(self.dockerfile, "w") as dfile:
-            dfile.write(
+        with open(self.dockerfile, "w") as docker_file:
+            docker_file.write(
                 base_files.gen_dockerfile(
                     self.github_url,
                     self.project_name,
@@ -158,8 +158,8 @@ class OSS_FUZZ_PROJECT:
                     project_build_type=project_build_type))
 
     def change_jvm_dockerfile(self, jdk_version, project_build_type):
-        with open(self.dockerfile, "w") as dfile:
-            dfile.write(
+        with open(self.dockerfile, "w") as docker_file:
+            docker_file.write(
                 base_files.gen_dockerfile(
                     self.github_url,
                     self.project_name,
@@ -586,19 +586,19 @@ def run_static_analysis_jvm(git_repo, basedir, project_name):
     # Retrieve Jazzer package for building fuzzer
     jazzer_url = "https://github.com/CodeIntelligenceTesting/jazzer/releases/download/v0.15.0/jazzer-linux.tar.gz"
     response = requests.get(jazzer_url)
-    with open("./jazzer.tar.gz", "wb") as f:
-        f.write(response.content)
+    with open("./jazzer.tar.gz", "wb") as file:
+        file.write(response.content)
 
-    with tarfile.open("./jazzer.tar.gz") as f:
-        f.extractall("./")
+    with tarfile.open("./jazzer.tar.gz") as file:
+        file.extractall("./")
 
     # Retrieve Apache Common Lang3 package
     # This library provides method to translate primitive type arrays to
     # their respective class object arrays to avoid compilation error.
     apache_url = "https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar"
     response = requests.get(apache_url)
-    with open("./commons-lang3.jar", "wb") as f:
-        f.write(response.content)
+    with open("./commons-lang3.jar", "wb") as file:
+        file.write(response.content)
 
     # Retrieve path of all jar files
     jarfiles.append(os.path.abspath("../Fuzz.jar"))
@@ -816,8 +816,8 @@ def build_and_test_single_possible_target(idx_folder,
     possible_target = possible_targets[idx]
     fuzzer_source = possible_target.generate_patched_fuzzer(
         oss_fuzz_base_project.base_fuzzer)
-    with open(dst_oss_fuzz_project.base_fuzzer, "w") as fl:
-        fl.write(fuzzer_source)
+    with open(dst_oss_fuzz_project.base_fuzzer, "w") as file:
+        file.write(fuzzer_source)
 
     if not should_run_checks:
         tick_tqdm_tracker()

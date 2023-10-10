@@ -151,7 +151,7 @@ import org.apache.commons.lang3.ArrayUtils;"""
 
 
 def _get_template_directory(language, project_build_type):
-    base_path = os.path.join(os.getcwd(), "template")
+    base_path = os.path.join(os.getcwd(), "templates")
 
     if project_build_type:
         path = os.path.join(base_path, language + "-" + project_build_type)
