@@ -14,33 +14,59 @@
 #
 ##########################################################################
 %s
-chmod +x $SRC/protoc/bin/protoc
-find ./ -name pom.xml -exec sed -i 's/compilerVersion>1.5</compilerVersion>1.8</g' {} \;
-find ./ -name pom.xml -exec sed -i 's/compilerVersion>1.6</compilerVersion>1.8</g' {} \;
-find ./ -name pom.xml -exec sed -i 's/source>1.5</source>1.8</g' {} \;
-find ./ -name pom.xml -exec sed -i 's/source>1.6</source>1.8</g' {} \;
-find ./ -name pom.xml -exec sed -i 's/target>1.5</target>1.8</g' {} \;
-find ./ -name pom.xml -exec sed -i 's/target>1.6</target>1.8</g' {} \;
-find ./ -name pom.xml -exec sed -i 's/java15/java18/g' {} \;
-find ./ -name pom.xml -exec sed -i 's/java16/java18/g' {} \;
-find ./ -name pom.xml -exec sed -i 's/java-1.5/java-1.8/g' {} \;
-find ./ -name pom.xml -exec sed -i 's/java-1.6/java-1.8/g' {} \;
-mkdir -p ~/.m2
-echo "<toolchains><toolchain><type>jdk</type><provides><version>1.8</version></provides>" > ~/.m2/toolchains.xml
-echo "<configuration><jdkHome>\${env.JAVA_HOME}</jdkHome></configuration></toolchain>" >> ~/.m2/toolchains.xml
-echo "<toolchain><type>jdk</type><provides><version>8</version></provides>" >> ~/.m2/toolchains.xml
-echo "<configuration><jdkHome>\${env.JAVA_HOME}</jdkHome></configuration></toolchain>" >> ~/.m2/toolchains.xml
-echo "<toolchain><type>jdk</type><provides><version>11</version></provides>" >> ~/.m2/toolchains.xml
-echo "<configuration><jdkHome>\${env.JAVA_HOME}</jdkHome></configuration></toolchain>" >> ~/.m2/toolchains.xml
-echo "<toolchain><type>jdk</type><provides><version>14</version></provides>" >> ~/.m2/toolchains.xml
-echo "<configuration><jdkHome>\${env.JAVA_HOME}</jdkHome></configuration></toolchain>" >> ~/.m2/toolchains.xml
-echo "<toolchain><type>jdk</type><provides><version>15</version></provides>" >> ~/.m2/toolchains.xml
-echo "<configuration><jdkHome>\${env.JAVA_HOME}</jdkHome></configuration></toolchain>" >> ~/.m2/toolchains.xml
-echo "<toolchain><type>jdk</type><provides><version>17</version></provides>" >> ~/.m2/toolchains.xml
-echo "<configuration><jdkHome>\${env.JAVA_HOME}</jdkHome></configuration></toolchain>" >> ~/.m2/toolchains.xml
-echo "</toolchains>" >> ~/.m2/toolchains.xml
-$MVN clean package -Dmaven.javadoc.skip=true -DskipTests=true -Dpmd.skip=true -Dencoding=UTF-8 \
--Dmaven.antrun.skip=true -Dcheckstyle.skip=true dependency:copy-dependencies
+SUCCESS=false
+BASEDIR=$(pwd)
+for dir in $(ls -R)
+do
+  cd $BASEDIR
+  if [[ $dir == *: ]]
+  then
+    dir=${dir%%*:}
+    cd $dir
+    if test -f "build.xml"
+    then
+      chmod +x $SRC/protoc/bin/protoc
+
+      find ./ -name pom.xml -exec sed -i 's/compilerVersion>1.5</compilerVersion>1.8</g' {} \;
+      find ./ -name pom.xml -exec sed -i 's/compilerVersion>1.6</compilerVersion>1.8</g' {} \;
+      find ./ -name pom.xml -exec sed -i 's/source>1.5</source>1.8</g' {} \;
+      find ./ -name pom.xml -exec sed -i 's/source>1.6</source>1.8</g' {} \;
+      find ./ -name pom.xml -exec sed -i 's/target>1.5</target>1.8</g' {} \;
+      find ./ -name pom.xml -exec sed -i 's/target>1.6</target>1.8</g' {} \;
+      find ./ -name pom.xml -exec sed -i 's/java15/java18/g' {} \;
+      find ./ -name pom.xml -exec sed -i 's/java16/java18/g' {} \;
+      find ./ -name pom.xml -exec sed -i 's/java-1.5/java-1.8/g' {} \;
+      find ./ -name pom.xml -exec sed -i 's/java-1.6/java-1.8/g' {} \;
+
+      mkdir -p ~/.m2
+      echo "<toolchains><toolchain><type>jdk</type><provides><version>1.8</version></provides>" > ~/.m2/toolchains.xml
+      echo "<configuration><jdkHome>\${env.JAVA_HOME}</jdkHome></configuration></toolchain>" >> ~/.m2/toolchains.xml
+      echo "<toolchain><type>jdk</type><provides><version>8</version></provides>" >> ~/.m2/toolchains.xml
+      echo "<configuration><jdkHome>\${env.JAVA_HOME}</jdkHome></configuration></toolchain>" >> ~/.m2/toolchains.xml
+      echo "<toolchain><type>jdk</type><provides><version>11</version></provides>" >> ~/.m2/toolchains.xml
+      echo "<configuration><jdkHome>\${env.JAVA_HOME}</jdkHome></configuration></toolchain>" >> ~/.m2/toolchains.xml
+      echo "<toolchain><type>jdk</type><provides><version>14</version></provides>" >> ~/.m2/toolchains.xml
+      echo "<configuration><jdkHome>\${env.JAVA_HOME}</jdkHome></configuration></toolchain>" >> ~/.m2/toolchains.xml
+      echo "<toolchain><type>jdk</type><provides><version>15</version></provides>" >> ~/.m2/toolchains.xml
+      echo "<configuration><jdkHome>\${env.JAVA_HOME}</jdkHome></configuration></toolchain>" >> ~/.m2/toolchains.xml
+      echo "<toolchain><type>jdk</type><provides><version>17</version></provides>" >> ~/.m2/toolchains.xml
+      echo "<configuration><jdkHome>\${env.JAVA_HOME}</jdkHome></configuration></toolchain>" >> ~/.m2/toolchains.xml
+      echo "</toolchains>" >> ~/.m2/toolchains.xml
+      
+      $MVN clean package -Dmaven.javadoc.skip=true -DskipTests=true -Dpmd.skip=true -Dencoding=UTF-8 \
+      -Dmaven.antrun.skip=true -Dcheckstyle.skip=true dependency:copy-dependencies
+
+      SUCCESS=true 
+      break
+    fi
+  fi
+done
+
+if [ "$SUCCESS" = false ]
+then
+  echo "Unknown project type"
+  exit 127
+fi
 
 JARFILE_LIST=
 for JARFILE in $(find ./  -name "*.jar")

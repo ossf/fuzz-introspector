@@ -14,7 +14,34 @@
 #
 ##########################################################################
 %s
-$ANT
+SUCCESS=false
+BASEDIR=$(pwd)
+for dir in $(ls -R)
+do
+  cd $BASEDIR
+  if [[ $dir == *: ]]
+  then
+    dir=${dir%%*:}
+    cd $dir
+    if test -f "build.xml"
+    then
+      chmod +x $SRC/protoc/bin/protoc
+
+      $ANT
+
+      SUCCESS=true
+      break
+    fi
+  fi
+done
+
+if [ "$SUCCESS" = false ]
+then
+  echo "Unknown project type"
+  exit 127
+fi
+
+cd $BASEDIR
 
 JARFILE_LIST=
 for JARFILE in $(find ./  -name "*.jar")

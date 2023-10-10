@@ -14,19 +14,47 @@
 #
 ##########################################################################
 %s
-rm -rf $HOME/.gradle/caches/
-chmod +x ./gradlew
-EXCLUDE_SPOTLESS_CHECK=
-if ./gradlew tasks --all | grep -qw "^spotlessCheck"
+SUCCESS=false
+BASEDIR=$(pwd)
+for dir in $(ls -R)
+do
+  cd $BASEDIR
+  if [[ $dir == *: ]]
+  then
+    dir=${dir%%*:}
+    cd $dir
+    if test -f "build.xml"
+    then
+      chmod +x $SRC/protoc/bin/protoc
+
+      rm -rf $HOME/.gradle/caches/
+      chmod +x ./gradlew
+
+      EXCLUDE_SPOTLESS_CHECK=
+      if ./gradlew tasks --all | grep -qw "^spotlessCheck"
+      then
+        EXCLUDE_SPOTLESS_CHECK="-x spotlessCheck "
+      fi
+
+      ./gradlew clean build -x test -x javadoc -x sources \
+      $EXCLUDE_SPOTLESS_CHECK\
+      -Porg.gradle.java.installations.auto-detect=false \
+      -Porg.gradle.java.installations.auto-download=false \
+      -Porg.gradle.java.installations.paths=$JAVA_HOME
+      ./gradlew --stop
+
+      SUCCESS=true 
+      break
+    fi
+  fi
+done
+
+if [ "$SUCCESS" = false ]
 then
-  EXCLUDE_SPOTLESS_CHECK="-x spotlessCheck "
+  echo "Unknown project type"
+  exit 127
 fi
-./gradlew clean build -x test -x javadoc -x sources \
-$EXCLUDE_SPOTLESS_CHECK\
--Porg.gradle.java.installations.auto-detect=false \
--Porg.gradle.java.installations.auto-download=false \
--Porg.gradle.java.installations.paths=$JAVA_HOME
-./gradlew --stop
+
 
 JARFILE_LIST=
 for JARFILE in $(find ./  -name "*.jar")
