@@ -22,8 +22,8 @@ def gen_dockerfile(github_url,
                    language="python",
                    jdk_version="jdk15",
                    build_project=True,
-                   project_type=None):
-    template_dir = _get_template_directory(language, project_type)
+                   project_build_type=None):
+    template_dir = _get_template_directory(language, project_build_type)
 
     if not template_dir:
         return ""
@@ -32,13 +32,13 @@ def gen_dockerfile(github_url,
         return _gen_dockerfile_python(github_url, project_name, template_dir)
     elif language == "jvm":
         return _gen_dockerfile_jvm(github_url, project_name, jdk_version,
-                                   build_project, template_dir, project_type)
+                                   build_project, template_dir, project_build_type)
     else:
         return ""
 
 
-def gen_builder_1(language="python", project_type=None, build_project=True):
-    template_dir = _get_template_directory(language, project_type)
+def gen_builder_1(language="python", project_build_type=None, build_project=True):
+    template_dir = _get_template_directory(language, project_build_type)
 
     if not template_dir:
         return ""
@@ -52,9 +52,9 @@ def gen_builder_1(language="python", project_type=None, build_project=True):
 
 
 def gen_base_fuzzer(language="python",
-                    project_type=None,
+                    project_build_type=None,
                     need_base_import=True):
-    template_dir = _get_template_directory(language, project_type)
+    template_dir = _get_template_directory(language, project_build_type)
 
     if not template_dir:
         return ""
@@ -67,8 +67,8 @@ def gen_base_fuzzer(language="python",
         return ""
 
 
-def gen_project_yaml(github_url, language="python", project_type=None):
-    template_dir = _get_template_directory(language, project_type)
+def gen_project_yaml(github_url, language="python", project_build_type=None):
+    template_dir = _get_template_directory(language, project_build_type)
 
     if not template_dir:
         return ""
@@ -88,7 +88,7 @@ def _gen_dockerfile_python(github_url, project_name, template_dir):
 
 
 def _gen_dockerfile_jvm(github_url, project_name, jdk_version, build_project,
-                        template_dir, project_type):
+                        template_dir, project_build_type):
     if build_project:
         comment = "#"
     else:
@@ -100,11 +100,11 @@ def _gen_dockerfile_jvm(github_url, project_name, jdk_version, build_project,
             constants.JDK_HOME[jdk_version], github_url, project_name,
             project_name, project_name, comment, comment, project_name)
 
-    if project_type == "ant":
+    if project_build_type == "ant":
         return BASE_DOCKERFILE % (constants.ANT_URL)
-    elif project_type == "maven":
+    elif project_build_type == "maven":
         return BASE_DOCKERFILE % (constants.MAVEN_URL)
-    elif project_type == "gradle":
+    elif project_build_type == "gradle":
         return BASE_DOCKERFILE % (constants.GRADLE_URL)
     else:
         return ""
@@ -147,11 +147,11 @@ import org.apache.commons.lang3.ArrayUtils;"""
         return BASE_FUZZER % ("")
 
 
-def _get_template_directory(language, project_type):
+def _get_template_directory(language, project_build_type):
     base_path = os.path.join(os.getcwd(), "template")
 
-    if project_type:
-        path = os.path.join(base_path, language + "-" + project_type)
+    if project_build_type:
+        path = os.path.join(base_path, language + "-" + project_build_type)
     else:
         path = os.path.join(base_path, language)
 
