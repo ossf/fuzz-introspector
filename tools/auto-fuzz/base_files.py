@@ -80,7 +80,7 @@ def gen_project_yaml(github_url, language="python", project_type=None):
 
 
 def _gen_dockerfile_python(github_url, project_name, template_dir):
-    with open(os.path.join(template_dir, "Dockerfile"), "r") as file:
+    with open(os.path.join(template_dir, "Dockerfile-template"), "r") as file:
         BASE_DOCKERFILE = file.read() % (
             github_url, project_name, project_name, project_name, project_name)
 
@@ -94,7 +94,7 @@ def _gen_dockerfile_jvm(github_url, project_name, jdk_version, build_project,
     else:
         comment = ""
 
-    with open(os.path.join(template_dir, "Dockerfile"), "r") as file:
+    with open(os.path.join(template_dir, "Dockerfile-template"), "r") as file:
         BASE_DOCKERFILE = file.read() % (
             "%s", constants.PROTOC_URL, constants.JDK_URL[jdk_version],
             constants.JDK_HOME[jdk_version], github_url, project_name,
@@ -111,14 +111,14 @@ def _gen_dockerfile_jvm(github_url, project_name, jdk_version, build_project,
 
 
 def _gen_builder_1_python(template_dir):
-    with open(os.path.join(template_dir, "build.sh"), "r") as file:
+    with open(os.path.join(template_dir, "build.sh-template"), "r") as file:
         BASE_BUILDER = file.read()
 
     return BASE_BUILDER
 
 
 def _gen_builder_1_jvm(template_dir, build_project):
-    with open(os.path.join(template_dir, "build.sh"), "r") as file:
+    with open(os.path.join(template_dir, "build.sh-template"), "r") as file:
         BASE_BUILDER = file.read()
 
     if build_project:
