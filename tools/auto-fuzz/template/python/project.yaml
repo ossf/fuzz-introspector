@@ -1,0 +1,9 @@
+homepage: %s
+main_repo: %s
+language: python
+fuzzing_engines:
+- libfuzzer
+sanitizers:
+- address
+- undefined
+primary_contacts: autofuzz@fuzz-introspector.com

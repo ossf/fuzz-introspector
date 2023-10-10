@@ -1,0 +1,8 @@
+homepage: %s
+main_repo: %s
+language: jvm
+fuzzing_engines:
+- libfuzzer
+sanitizers:
+- address
+primary_contacts: autofuzz@fuzz-introspector.com
