@@ -112,14 +112,14 @@ def _gen_dockerfile_jvm(github_url, project_name, jdk_version, build_project,
 
 def _gen_builder_1_python(template_dir):
     with open(os.path.join(template_dir, "build.sh-template"), "r") as file:
-        BASE_BUILDER = file.read()
+        BASE_BUILDER = "#!/bin/bash -eu\n" + file.read()
 
     return BASE_BUILDER
 
 
 def _gen_builder_1_jvm(template_dir, build_project):
     with open(os.path.join(template_dir, "build.sh-template"), "r") as file:
-        BASE_BUILDER = file.read()
+        BASE_BUILDER = "#!/bin/bash -eu\n" + file.read()
 
     if build_project:
         return BASE_BUILDER % ("", "", ": << COMMENT", "COMMENT")
