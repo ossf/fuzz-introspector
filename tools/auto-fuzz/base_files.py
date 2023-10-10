@@ -14,334 +14,151 @@
 
 # License for bash script or python file
 import constants
-
-BASH_LICENSE = """# Copyright 2023 Google LLC
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-##########################################################################"""
-
-# License for java file
-JVM_LICENSE = """// Copyright 2023 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-//
-///////////////////////////////////////////////////////////////////////////"""
+import os
 
 
 def gen_dockerfile(github_url,
                    project_name,
                    language="python",
-                   jdk_version="jdk15"):
+                   jdk_version="jdk15",
+                   build_project=True,
+                   project_build_type=None):
+    template_dir = _get_template_directory(language, project_build_type)
+
+    if not template_dir:
+        return ""
+
     if language == "python":
-        return gen_dockerfile_python(github_url, project_name)
+        return _gen_dockerfile_python(github_url, project_name, template_dir)
     elif language == "jvm":
-        return gen_dockerfile_jvm(github_url, project_name, jdk_version)
+        return _gen_dockerfile_jvm(github_url, project_name, jdk_version,
+                                   build_project, template_dir,
+                                   project_build_type)
     else:
-        return None
+        return ""
 
 
-def gen_builder_1(language="python"):
+def gen_builder_1(language="python",
+                  project_build_type=None,
+                  build_project=True):
+    template_dir = _get_template_directory(language, project_build_type)
+
+    if not template_dir:
+        return ""
+
     if language == "python":
-        return gen_builder_1_python()
+        return _gen_builder_1_python(template_dir)
     elif language == "jvm":
-        return gen_builder_1_jvm()
+        return _gen_builder_1_jvm(template_dir, build_project)
     else:
-        return None
+        return ""
 
 
-def gen_base_fuzzer(language="python"):
+def gen_base_fuzzer(language="python",
+                    project_build_type=None,
+                    need_base_import=True):
+    template_dir = _get_template_directory(language, project_build_type)
+
+    if not template_dir:
+        return ""
+
     if language == "python":
-        return gen_base_fuzzer_python()
+        return _gen_base_fuzzer_python(template_dir)
     elif language == "jvm":
-        return gen_base_fuzzer_jvm()
+        return _gen_base_fuzzer_jvm(template_dir, need_base_import)
     else:
-        return None
+        return ""
 
 
-def gen_project_yaml(github_url, language="python"):
-    undefined = "\n- undefined" if language == "python" else ""
+def gen_project_yaml(github_url, language="python", project_build_type=None):
+    template_dir = _get_template_directory(language, project_build_type)
 
-    BASE_YAML = """homepage: %s
-main_repo: %s
-language: %s
-fuzzing_engines:
-- libfuzzer
-sanitizers:
-- address%s
-primary_contacts: autofuzz@fuzz-introspector.com""" % (github_url, github_url,
-                                                       language, undefined)
+    if not template_dir:
+        return ""
+
+    with open(os.path.join(template_dir, "project.yaml"), "r") as file:
+        BASE_YAML = file.read() % (github_url, github_url)
 
     return BASE_YAML
 
 
-def gen_dockerfile_python(github_url, project_name):
-    DOCKER_LICENSE = "#!/usr/bin/python3\n" + BASH_LICENSE
-    DOCKER_STEPS = """FROM gcr.io/oss-fuzz-base/base-builder-python
-#RUN pip3 install --upgrade pip && pip3 install cython
-#RUN git clone %s %s
-COPY %s %s
-COPY *.sh *py $SRC/
-WORKDIR $SRC/%s
-""" % (github_url, project_name, project_name, project_name, project_name)
+def _gen_dockerfile_python(github_url, project_name, template_dir):
+    with open(os.path.join(template_dir, "Dockerfile-template"), "r") as file:
+        BASE_DOCKERFILE = file.read() % (
+            github_url, project_name, project_name, project_name, project_name)
 
-    return DOCKER_LICENSE + "\n" + DOCKER_STEPS
+    return BASE_DOCKERFILE
 
 
-def gen_dockerfile_jvm(github_url, project_name, jdk_version="jdk15"):
-    DOCKER_STEPS = """FROM gcr.io/oss-fuzz-base/base-builder-jvm
-#RUN curl -L %s -o ant.zip && unzip ant.zip -d $SRC/ant && rm -rf ant.zip
-#RUN curl -L %s -o maven.zip && unzip maven.zip -d $SRC/maven && rm -rf maven.zip
-#RUN curl -L %s -o gradle.zip && unzip gradle.zip -d $SRC/gradle && rm -rf gradle.zip
-#RUN curl -L %s -o protoc.zip && mkdir -p $SRC/protoc && unzip protoc.zip -d $SRC/protoc && rm -rf protoc.zip
-RUN curl -L %s -o jdk.tar.gz && tar zxf jdk.tar.gz && rm -rf jdk.tar.gz
-COPY ant.zip $SRC/ant.zip
-COPY maven.zip $SRC/maven.zip
-COPY gradle.zip $SRC/gradle.zip
-COPY protoc.zip $SRC/protoc.zip
-RUN unzip ant.zip -d $SRC/ant && rm ./ant.zip
-RUN unzip maven.zip -d $SRC/maven && rm ./maven.zip
-RUN unzip gradle.zip -d $SRC/gradle && rm ./gradle.zip
-RUN mkdir -p $SRC/protoc
-RUN unzip protoc.zip -d $SRC/protoc && rm ./protoc.zip
-ENV ANT $SRC/ant/apache-ant-1.10.13/bin/ant
-ENV MVN $SRC/maven/apache-maven-3.6.3/bin/mvn
-ENV GRADLE_HOME $SRC/gradle/gradle-7.4.2
-ENV GRADLE_OPTS="-Dfile.encoding=utf-8"
-ENV JAVA_HOME="$SRC/%s"
-ENV PATH="$JAVA_HOME/bin:$SRC/gradle/gradle-7.4.2/bin:$SRC/protoc/bin:$PATH"
-#RUN git clone --depth 1 %s %s
-COPY %s %s
-COPY *.sh *.java $SRC/
-WORKDIR $SRC/%s
-""" % (constants.ANT_URL, constants.MAVEN_URL, constants.GRADLE_URL,
-       constants.PROTOC_URL, constants.JDK_URL[jdk_version],
-       constants.JDK_HOME[jdk_version], github_url, project_name, project_name,
-       project_name, project_name)
+def _gen_dockerfile_jvm(github_url, project_name, jdk_version, build_project,
+                        template_dir, project_build_type):
+    if build_project:
+        comment = "#"
+    else:
+        comment = ""
 
-    return BASH_LICENSE + "\n" + DOCKER_STEPS
+    with open(os.path.join(template_dir, "Dockerfile-template"), "r") as file:
+        BASE_DOCKERFILE = file.read() % (
+            "%s", constants.PROTOC_URL, constants.JDK_URL[jdk_version],
+            constants.JDK_HOME[jdk_version], github_url, project_name,
+            project_name, project_name, comment, comment, project_name)
+
+    if project_build_type == "ant":
+        return BASE_DOCKERFILE % (constants.ANT_URL)
+    elif project_build_type == "maven":
+        return BASE_DOCKERFILE % (constants.MAVEN_URL)
+    elif project_build_type == "gradle":
+        return BASE_DOCKERFILE % (constants.GRADLE_URL)
+    else:
+        return ""
 
 
-def gen_builder_1_python():
-    BUILD_LICENSE = "#!/bin/bash -eu\n" + BASH_LICENSE
-    BUILD_SCRIPT = """pip3 install .
-# Build fuzzers in $OUT.
-for fuzzer in $(find $SRC -name 'fuzz_*.py'); do
-  compile_python_fuzzer $fuzzer
-done"""
+def _gen_builder_1_python(template_dir):
+    with open(os.path.join(template_dir, "build.sh-template"), "r") as file:
+        BASE_BUILDER = "#!/bin/bash -eu\n" + file.read()
 
-    return BUILD_LICENSE + "\n" + BUILD_SCRIPT
+    return BASE_BUILDER
 
 
-def gen_builder_1_jvm():
-    BUILD_LICENSE = "#!/bin/bash -eu\n" + BASH_LICENSE
-    BUILD_SCRIPT = """SUCCESS=false
-BASEDIR=$(pwd)
-for dir in $(ls -R)
-do
-  cd $BASEDIR
-  if [[ $dir == *: ]]
-  then
-    dir=${dir%*:}
-    cd $dir
-    chmod +x $SRC/protoc/bin/protoc
-    if test -f "pom.xml"
-    then
-      find ./ -name pom.xml -exec sed -i 's/compilerVersion>1.5</compilerVersion>1.8</g' {} \;
-      find ./ -name pom.xml -exec sed -i 's/compilerVersion>1.6</compilerVersion>1.8</g' {} \;
-      find ./ -name pom.xml -exec sed -i 's/source>1.5</source>1.8</g' {} \;
-      find ./ -name pom.xml -exec sed -i 's/source>1.6</source>1.8</g' {} \;
-      find ./ -name pom.xml -exec sed -i 's/target>1.5</target>1.8</g' {} \;
-      find ./ -name pom.xml -exec sed -i 's/target>1.6</target>1.8</g' {} \;
-      find ./ -name pom.xml -exec sed -i 's/java15/java18/g' {} \;
-      find ./ -name pom.xml -exec sed -i 's/java16/java18/g' {} \;
-      find ./ -name pom.xml -exec sed -i 's/java-1.5/java-1.8/g' {} \;
-      find ./ -name pom.xml -exec sed -i 's/java-1.6/java-1.8/g' {} \;
-      mkdir -p ~/.m2
-      echo "<toolchains><toolchain><type>jdk</type><provides><version>1.8</version></provides>" > ~/.m2/toolchains.xml
-      echo "<configuration><jdkHome>\${env.JAVA_HOME}</jdkHome></configuration></toolchain>" >> ~/.m2/toolchains.xml
-      echo "<toolchain><type>jdk</type><provides><version>8</version></provides>" >> ~/.m2/toolchains.xml
-      echo "<configuration><jdkHome>\${env.JAVA_HOME}</jdkHome></configuration></toolchain>" >> ~/.m2/toolchains.xml
-      echo "<toolchain><type>jdk</type><provides><version>11</version></provides>" >> ~/.m2/toolchains.xml
-      echo "<configuration><jdkHome>\${env.JAVA_HOME}</jdkHome></configuration></toolchain>" >> ~/.m2/toolchains.xml
-      echo "<toolchain><type>jdk</type><provides><version>14</version></provides>" >> ~/.m2/toolchains.xml
-      echo "<configuration><jdkHome>\${env.JAVA_HOME}</jdkHome></configuration></toolchain>" >> ~/.m2/toolchains.xml
-      echo "<toolchain><type>jdk</type><provides><version>15</version></provides>" >> ~/.m2/toolchains.xml
-      echo "<configuration><jdkHome>\${env.JAVA_HOME}</jdkHome></configuration></toolchain>" >> ~/.m2/toolchains.xml
-      echo "<toolchain><type>jdk</type><provides><version>17</version></provides>" >> ~/.m2/toolchains.xml
-      echo "<configuration><jdkHome>\${env.JAVA_HOME}</jdkHome></configuration></toolchain>" >> ~/.m2/toolchains.xml
-      echo "</toolchains>" >> ~/.m2/toolchains.xml
-      $MVN clean package -Dmaven.javadoc.skip=true -DskipTests=true -Dpmd.skip=true -Dencoding=UTF-8 \
-      -Dmaven.antrun.skip=true -Dcheckstyle.skip=true dependency:copy-dependencies
-      SUCCESS=true
-      break
-    elif test -f "build.gradle" || test -f "build.gradle.kts"
-    then
-      rm -rf $HOME/.gradle/caches/
-      chmod +x ./gradlew
-      EXCLUDE_SPOTLESS_CHECK=
-      if ./gradlew tasks --all | grep -qw "^spotlessCheck"
-      then
-        EXCLUDE_SPOTLESS_CHECK="-x spotlessCheck "
-      fi
-      ./gradlew clean build -x test -x javadoc -x sources \
-      $EXCLUDE_SPOTLESS_CHECK\
-      -Porg.gradle.java.installations.auto-detect=false \
-      -Porg.gradle.java.installations.auto-download=false \
-      -Porg.gradle.java.installations.paths=$JAVA_HOME
-      ./gradlew --stop
-      SUCCESS=true
-      break
-    elif test -f "build.xml"
-    then
-      $ANT
-      SUCCESS=true
-      break
-    fi
-  fi
-done
+def _gen_builder_1_jvm(template_dir, build_project):
+    with open(os.path.join(template_dir, "build.sh-template"), "r") as file:
+        BASE_BUILDER = "#!/bin/bash -eu\n" + file.read()
 
-if [ "$SUCCESS" = false ]
-then
-  echo "Unknown project type"
-  exit 127
-fi
-
-cd $BASEDIR
-
-JARFILE_LIST=
-for JARFILE in $(find ./  -name *.jar)
-do
-  if [[ "$JARFILE" == *"target/"* ]] || [[ "$JARFILE" == *"build/"* ]] || [[ "$JARFILE" == *"dist/"* ]]
-  then
-    if [[ "$JARFILE" != *sources.jar ]] && [[ "$JARFILE" != *javadoc.jar ]] && [[ "$JARFILE" != *tests.jar ]]
-    then
-      cp $JARFILE $OUT/
-      JARFILE_LIST="$JARFILE_LIST$(basename $JARFILE) "
-    fi
-  fi
-done
-
-curr_dir=$(pwd)
-rm -rf $OUT/jar_temp
-mkdir $OUT/jar_temp
-cd $OUT/jar_temp
-for JARFILE in $JARFILE_LIST
-do
-  jar -xf $OUT/$JARFILE
-done
-cd $curr_dir
-
-cp -r $JAVA_HOME $OUT/
-
-# Retrieve apache-common-lang3 library
-# This library provides method to translate primitive type arrays to
-# their respective class object arrays to avoid compilation error.
-wget -P $OUT/ https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar
-
-BUILD_CLASSPATH=$JAZZER_API_PATH:$OUT/jar_temp:$OUT/commons-lang3-3.12.0.jar
-RUNTIME_CLASSPATH=\$this_dir/jar_temp:\$this_dir/commons-lang3-3.12.0.jar:\$this_dir
-
-for fuzzer in $(find $SRC -name 'Fuzz.java')
-do
-  fuzzer_basename=$(basename -s .java $fuzzer)
-  $JAVA_HOME/bin/javac -cp $BUILD_CLASSPATH $fuzzer
-  cp $SRC/$fuzzer_basename.class $OUT/
-
-  # Create an execution wrapper that executes Jazzer with the correct arguments.
-  echo "#!/bin/bash
-
-  # LLVMFuzzerTestOneInput for fuzzer detection.
-  this_dir=\$(dirname \"\$0\")
-  if [[ \"\$@\" =~ (^| )-runs=[0-9]+($| ) ]]
-  then
-    mem_settings='-Xmx1900m:-Xss900k'
-  else
-    mem_settings='-Xmx2048m:-Xss1024k'
-  fi
-
-  export JAVA_HOME=\$this_dir/$(basename $JAVA_HOME)
-  export LD_LIBRARY_PATH=\"\$JAVA_HOME/lib/server\":\$this_dir
-  export PATH=\$JAVA_HOME/bin:\$PATH
-
-  \$this_dir/jazzer_driver --agent_path=\$this_dir/jazzer_agent_deploy.jar \
-  --cp=$RUNTIME_CLASSPATH \
-  --target_class=$fuzzer_basename \
-  --jvm_args=\"\$mem_settings\" \
-  \$@" > $OUT/$fuzzer_basename
-
-  chmod u+x $OUT/$fuzzer_basename
-done"""
-
-    return BUILD_LICENSE + "\n" + BUILD_SCRIPT
+    if build_project:
+        return BASE_BUILDER % ("", "", ": << COMMENT", "COMMENT")
+    else:
+        return BASE_BUILDER % (": << COMMENT", "COMMENT", "", "")
 
 
-def gen_base_fuzzer_python():
-    BASE_LICENSE = "#!/usr/bin/python3\n" + BASH_LICENSE
-    BASE_FUZZER = """import sys
-import atheris
+def _gen_base_fuzzer_python(template_dir):
+    with open(os.path.join(template_dir, "fuzz_1.py"), "r") as file:
+        BASE_FUZZER = file.read()
+
+    return BASE_FUZZER
 
 
-@atheris.instrument_func
-def TestOneInput(data):
-  fdp = atheris.FuzzedDataProvider(data)
-
-
-def main():
-  atheris.instrument_all()
-  atheris.Setup(sys.argv, TestOneInput)
-  atheris.Fuzz()
-
-
-if __name__ == "__main__":
-  main()"""
-
-    return BASE_LICENSE + "\n" + BASE_FUZZER
-
-
-def gen_base_fuzzer_jvm(need_base_import=True):
+def _gen_base_fuzzer_jvm(template_dir, need_base_import):
     BASE_IMPORT = """import com.code_intelligence.jazzer.api.FuzzedDataProvider;
 import org.apache.commons.lang3.ArrayUtils;"""
-    BASE_FUZZER = """/*IMPORTS*/
-public class Fuzz/*COUNTER*/ {
-/*PRIVATE_FIELD*/
 
-  public static void fuzzerInitialize() {
-/*FUZZER_INITIALIZE*/
-  }
-
-  public static void fuzzerTearDown() {
-/*FUZZER_TEAR_DOWN*/
-  }
-
-  public static void fuzzerTestOneInput(FuzzedDataProvider data) {
-/*STATIC_OBJECT_CHOICE*/
-/*FILE_PREPERATION*/
-/*CODE*/
-  }
-}"""
+    with open(os.path.join(template_dir, "Fuzz.java"), "r") as file:
+        BASE_FUZZER = file.read()
 
     if need_base_import:
-        return JVM_LICENSE + "\n" + BASE_IMPORT + BASE_FUZZER
+        return BASE_FUZZER % (BASE_IMPORT)
     else:
-        return JVM_LICENSE + "\n" + BASE_FUZZER
+        return BASE_FUZZER % ("")
+
+
+def _get_template_directory(language, project_build_type):
+    base_path = os.path.join(os.getcwd(), "templates")
+
+    if project_build_type:
+        path = os.path.join(base_path, language + "-" + project_build_type)
+    else:
+        path = os.path.join(base_path, language)
+
+    if os.path.isdir(path):
+        return os.path.abspath(path)
+    else:
+        return None

@@ -135,27 +135,37 @@ class OSS_FUZZ_PROJECT:
             else:
                 return self.github_url.split("/")[1]
 
-    def write_basefiles(self):
-        with open(self.build_script, "w") as bfile:
-            bfile.write(base_files.gen_builder_1(self.language))
+    def write_basefiles(self, project_build_type=None):
+        with open(self.build_script, "w") as builder_file:
+            builder_file.write(
+                base_files.gen_builder_1(self.language, project_build_type))
 
-        with open(self.base_fuzzer, "w") as ffile:
-            ffile.write(base_files.gen_base_fuzzer(self.language))
+        with open(self.base_fuzzer, "w") as fuzzer_file:
+            fuzzer_file.write(
+                base_files.gen_base_fuzzer(self.language, project_build_type))
 
-        with open(self.project_yaml, "w") as yfile:
-            yfile.write(
-                base_files.gen_project_yaml(self.github_url, self.language))
+        with open(self.project_yaml, "w") as yaml_file:
+            yaml_file.write(
+                base_files.gen_project_yaml(self.github_url, self.language,
+                                            project_build_type))
 
-        with open(self.dockerfile, "w") as dfile:
-            dfile.write(
-                base_files.gen_dockerfile(self.github_url, self.project_name,
-                                          self.language))
+        with open(self.dockerfile, "w") as docker_file:
+            docker_file.write(
+                base_files.gen_dockerfile(
+                    self.github_url,
+                    self.project_name,
+                    self.language,
+                    project_build_type=project_build_type))
 
-    def change_jvm_dockerfile(self, jdk_version):
-        with open(self.dockerfile, "w") as dfile:
-            dfile.write(
-                base_files.gen_dockerfile(self.github_url, self.project_name,
-                                          self.language, jdk_version))
+    def change_jvm_dockerfile(self, jdk_version, project_build_type):
+        with open(self.dockerfile, "w") as docker_file:
+            docker_file.write(
+                base_files.gen_dockerfile(
+                    self.github_url,
+                    self.project_name,
+                    self.language,
+                    jdk_version,
+                    project_build_type=project_build_type))
 
 
 def get_next_project_folder(base_dir):
@@ -441,32 +451,46 @@ def _gradle_build_project(basedir, projectdir, jdk_dir):
     return True
 
 
+def find_project_build_type(dir):
+    """Determine the java build project type of the directory"""
+
+    if os.path.exists(os.path.join(dir, "pom.xml")):
+        return "maven"
+    elif os.path.exists(os.path.join(dir, "build.gradle")) or os.path.exists(
+            os.path.join(dir, "build.gradle.kts")):
+        return "gradle"
+    elif os.path.exists(os.path.join(dir, "build.xml")):
+        return "ant"
+    else:
+        return None
+
+
 def find_project_build_folder(dir, proj_name):
     # Search for current directory first
-    currdir = os.listdir(dir)
-    if "pom.xml" in currdir or "build.gradle" in currdir or "build.xml" in currdir or "build.gradle.kts" in currdir:
-        return os.path.abspath(dir)
+    project_build_type = find_project_build_type(dir)
+    if project_build_type:
+        return os.path.abspath(dir), project_build_type
 
     # Search for sub directory with name same as project name
-    for subdir in currdir:
+    for subdir in os.listdir(dir):
         if os.path.isdir(os.path.join(dir, subdir)) and subdir == proj_name:
-            subdir_list = os.listdir(os.path.join(dir, subdir))
-            if "pom.xml" in subdir_list or "build.gradle" in subdir_list or "build.xml" in subdir_list or "build.gradle.kts" in currdir:
-                return os.path.abspath(os.path.join(dir, subdir))
+            project_build_type = find_project_build_type(
+                os.path.join(dir, subdir))
+            if project_build_type:
+                return os.path.abspath(os.path.join(
+                    dir, subdir)), project_build_type
 
     # Recursively look for subdirectory that contains build property file
     for root, _, files in os.walk(dir):
-        if "pom.xml" in files or "build.gradle" in files or "build.xml" in files or "build.gradle.kts" in files:
-            return os.path.abspath(root)
+        project_build_type = find_project_build_type(root)
+        if project_build_type:
+            return os.path.abspath(root), project_build_type
 
-    return None
+    return None, None
 
 
-def build_jvm_project(basedir, projectdir, proj_name):
-    # Find project subfolder if build properties not in the outtermost
-    # directory
-    builddir = find_project_build_folder(projectdir, proj_name)
-
+def build_jvm_project(basedir, projectdir, proj_name, builddir,
+                      project_build_type):
     # Prepare OpenJDK
     with tarfile.open(os.path.join(basedir, "jdk8.tar.gz"), "r:gz") as jf:
         jf.extractall(os.path.join(basedir))
@@ -497,7 +521,6 @@ def build_jvm_project(basedir, projectdir, proj_name):
     os.chmod(os.path.join(basedir, "protoc", "bin", "protoc"),
              base_stat.st_mode | stat.S_IEXEC)
 
-    project_type = None
     build_ret = False
     jarfiles = None
     jdk_base = None
@@ -506,25 +529,17 @@ def build_jvm_project(basedir, projectdir, proj_name):
         # Order JDK15 (oss-fuzz default) -> JDK17 -> JDK11 -> JDK8
         for jdk in constants.JDK_HOME:
             jdk_dir = constants.JDK_HOME[jdk]
-            if os.path.exists(os.path.join(builddir, "pom.xml")):
-                # Maven project
+            if project_build_type == "maven":
                 build_ret = _maven_build_project(basedir, builddir, jdk_dir)
-                project_type = "maven"
                 jarfiles = []
-            elif os.path.exists(os.path.join(
-                    builddir, "build.gradle")) or os.path.exists(
-                        os.path.join(builddir, "build.gradle.kts")):
-                # Gradle project
+            elif project_build_type == "gradle":
                 build_ret = _gradle_build_project(basedir, builddir, jdk_dir)
-                project_type = "gradle"
                 if os.path.exists(os.path.join(builddir, "proj.jar")):
                     jarfiles = [os.path.join(builddir, "proj.jar")]
                 else:
                     jarfiles = []
-            elif os.path.exists(os.path.join(builddir, "build.xml")):
-                # Ant project
+            elif project_build_type == "ant":
                 build_ret = _ant_build_project(basedir, builddir, jdk_dir)
-                project_type = "ant"
                 jarfiles = []
 
             # Check if the build success with the current JDK version
@@ -533,7 +548,7 @@ def build_jvm_project(basedir, projectdir, proj_name):
                 jdk_base = jdk_dir
                 break
 
-    return (project_type, build_ret, builddir, jarfiles, jdk_base)
+    return (build_ret, jarfiles, jdk_base)
 
 
 def run_static_analysis_jvm(git_repo, basedir, project_name):
@@ -556,8 +571,13 @@ def run_static_analysis_jvm(git_repo, basedir, project_name):
     jardir = os.path.join(basedir, "work", "jar")
     projectdir = os.path.join(basedir, "work", "proj")
 
-    project_type, build_ret, builddir, jarfiles, jdk_base = build_jvm_project(
-        basedir, projectdir, project_name)
+    # Find project subfolder if build properties not in the outtermost directory
+    builddir, project_build_type = find_project_build_folder(
+        projectdir, project_name)
+
+    build_ret, jarfiles, jdk_base = build_jvm_project(basedir, projectdir,
+                                                      project_name, builddir,
+                                                      project_build_type)
 
     if not build_ret:
         print("Unknown project type or project build fail.\n")
@@ -566,19 +586,19 @@ def run_static_analysis_jvm(git_repo, basedir, project_name):
     # Retrieve Jazzer package for building fuzzer
     jazzer_url = "https://github.com/CodeIntelligenceTesting/jazzer/releases/download/v0.15.0/jazzer-linux.tar.gz"
     response = requests.get(jazzer_url)
-    with open("./jazzer.tar.gz", "wb") as f:
-        f.write(response.content)
+    with open("./jazzer.tar.gz", "wb") as file:
+        file.write(response.content)
 
-    with tarfile.open("./jazzer.tar.gz") as f:
-        f.extractall("./")
+    with tarfile.open("./jazzer.tar.gz") as file:
+        file.extractall("./")
 
     # Retrieve Apache Common Lang3 package
     # This library provides method to translate primitive type arrays to
     # their respective class object arrays to avoid compilation error.
     apache_url = "https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar"
     response = requests.get(apache_url)
-    with open("./commons-lang3.jar", "wb") as f:
-        f.write(response.content)
+    with open("./commons-lang3.jar", "wb") as file:
+        file.write(response.content)
 
     # Retrieve path of all jar files
     jarfiles.append(os.path.abspath("../Fuzz.jar"))
@@ -586,7 +606,7 @@ def run_static_analysis_jvm(git_repo, basedir, project_name):
     jarfiles_no_dependency = []
     jarfiles_no_dependency.extend(jarfiles)
     jarfiles.append("%s/lib/*.jar" % jardir)
-    if project_type == "ant":
+    if project_build_type == "ant":
         if os.path.isdir(os.path.join(builddir, "build", "jar")):
             for file in os.listdir(os.path.join(builddir, "build", "jar")):
                 if file.endswith(
@@ -796,8 +816,8 @@ def build_and_test_single_possible_target(idx_folder,
     possible_target = possible_targets[idx]
     fuzzer_source = possible_target.generate_patched_fuzzer(
         oss_fuzz_base_project.base_fuzzer)
-    with open(dst_oss_fuzz_project.base_fuzzer, "w") as fl:
-        fl.write(fuzzer_source)
+    with open(dst_oss_fuzz_project.base_fuzzer, "w") as file:
+        file.write(fuzzer_source)
 
     if not should_run_checks:
         tick_tqdm_tracker()
@@ -1065,13 +1085,26 @@ def autofuzz_project_from_github(github_url,
         with open(target_protoc_path, 'wb') as gf:
             gf.write(requests.get(constants.PROTOC_URL).content)
 
-        # Extract class list for the target project
-        java_class_list = extract_class_list(
-            os.path.join(oss_fuzz_base_project.project_folder,
-                         oss_fuzz_base_project.project_name))
+        projectdir = os.path.join(oss_fuzz_base_project.project_folder,
+                                  oss_fuzz_base_project.project_name)
 
-    # Generate the base Dockerfile, build.sh, project.yaml and fuzz_1.py
-    oss_fuzz_base_project.write_basefiles()
+        # Extract class list for the target project
+        java_class_list = extract_class_list(projectdir)
+
+        # Find project type
+        _, project_build_type = find_project_build_folder(
+            projectdir, oss_fuzz_base_project.project_name)
+
+        if project_build_type:
+            # Generate the base Dockerfile, build.sh, project.yaml and Fuzz.java
+            oss_fuzz_base_project.write_basefiles(project_build_type)
+        else:
+            return False
+    elif language == "python":
+        # Generate the base Dockerfile, build.sh, project.yaml and fuzz_1.py
+        oss_fuzz_base_project.write_basefiles()
+    else:
+        return False
 
     static_res = None
     jdk_base = None
@@ -1089,7 +1122,8 @@ def autofuzz_project_from_github(github_url,
             # Overwrite dockerfile with correct jdk version
             for key in constants.JDK_HOME:
                 if constants.JDK_HOME[key] == jdk_base:
-                    oss_fuzz_base_project.change_jvm_dockerfile(key)
+                    oss_fuzz_base_project.change_jvm_dockerfile(
+                        key, project_build_type)
                     break
 
         if static_res:
