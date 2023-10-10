@@ -78,7 +78,6 @@ def copy_and_introspect_project(src_folder, oss_fuzz_base, log_dir=None):
 def copy_and_build_project(src_folder,
                            oss_fuzz_base,
                            log_dir=None,
-                           base_autofuzz=False,
                            log_build=False):
     """Copies src_folder into the oss-fuzz located at oss_fuzz_base project's
     folder and runs the oss-fuzz command:
@@ -114,9 +113,6 @@ def copy_and_build_project(src_folder,
     err_log = os.path.join(log_dir, "oss-fuzz.err")
     with open(err_log, "wb") as f:
         f.write(err)
-
-    if base_autofuzz:
-        cleanup_project("base-autofuzz", oss_fuzz_base)
 
     if b"Building fuzzers failed" in err:
         return False

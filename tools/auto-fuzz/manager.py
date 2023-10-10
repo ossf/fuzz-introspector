@@ -199,7 +199,10 @@ def run_cmd(cmd, timeout_sec):
     return no_timeout
 
 
-def run_static_analysis_python(git_repo, basedir, project_name):
+def run_static_analysis_python(git_repo, oss_fuzz_base_project, base_oss_fuzz_project_dir):
+    basedir = oss_fuzz_base_project.project_folder
+    project_name = oss_fuzz_base_project.project_name
+
     possible_imports = set()
     curr_dir = os.getcwd()
     os.chdir(basedir)
@@ -228,230 +231,7 @@ def run_static_analysis_python(git_repo, basedir, project_name):
     return ret
 
 
-def _ant_build_project(basedir, projectdir, jdk_dir):
-    """Helper method to build project using ant"""
-    # Prepare ant
-    cmd = "unzip -n %s" % (os.path.join(basedir, "ant.zip"))
-    try:
-        subprocess.check_call(cmd,
-                              shell=True,
-                              timeout=1800,
-                              stdout=subprocess.DEVNULL,
-                              stderr=subprocess.DEVNULL,
-                              cwd=basedir)
-    except subprocess.TimeoutExpired:
-        return False
-    except subprocess.CalledProcessError:
-        return False
-
-    # Set environment variable
-    env_var = os.environ.copy()
-    env_var['JAVA_HOME'] = os.path.join(basedir, jdk_dir)
-    env_var['PATH'] = os.path.join(
-        basedir, jdk_dir, "bin") + ":" + os.path.join(
-            basedir, constants.ANT_PATH) + ":" + os.path.join(
-                basedir, constants.PROTOC_PATH) + ":" + env_var['PATH']
-
-    # Build project with ant
-    cmd = "chmod +x %s/ant && ant" % os.path.join(basedir, constants.ANT_PATH)
-    try:
-        subprocess.check_call(cmd,
-                              shell=True,
-                              timeout=1800,
-                              stdout=subprocess.DEVNULL,
-                              stderr=subprocess.DEVNULL,
-                              env=env_var,
-                              cwd=projectdir)
-    except subprocess.TimeoutExpired:
-        return False
-    except subprocess.CalledProcessError:
-        return False
-
-    return True
-
-
-def _maven_build_project(basedir, projectdir, jdk_dir):
-    """Helper method to build project using maven"""
-    # Prepare maven
-    cmd = "unzip -n %s" % (os.path.join(basedir, "maven.zip"))
-    try:
-        subprocess.check_call(cmd,
-                              shell=True,
-                              timeout=1800,
-                              stdout=subprocess.DEVNULL,
-                              stderr=subprocess.DEVNULL,
-                              cwd=basedir)
-    except subprocess.TimeoutExpired:
-        return False
-    except subprocess.CalledProcessError:
-        return False
-
-    # Set environment variable
-    env_var = os.environ.copy()
-    env_var['JAVA_HOME'] = os.path.join(basedir, jdk_dir)
-    env_var['PATH'] = os.path.join(
-        basedir, jdk_dir, "bin") + ":" + os.path.join(
-            basedir, constants.MAVEN_PATH) + ":" + os.path.join(
-                basedir, constants.PROTOC_PATH) + ":" + env_var['PATH']
-
-    # Prepare maven toolchains location
-    if not os.path.exists(os.path.join(os.path.expanduser('~'), ".m2")):
-        os.mkdir(os.path.join(os.path.expanduser('~'), ".m2"))
-    with open(os.path.join(os.path.expanduser('~'), ".m2", "toolchains.xml"),
-              "w") as file:
-        file.write(
-            """<toolchains><toolchain><type>jdk</type><provides><version>1.8</version></provides>
-                    <configuration><jdkHome>${env.JAVA_HOME}</jdkHome></configuration></toolchain>
-                    <toolchain><type>jdk</type><provides><version>8</version></provides>
-                    <configuration><jdkHome>${env.JAVA_HOME}</jdkHome></configuration></toolchain>
-                    <toolchain><type>jdk</type><provides><version>11</version></provides>
-                    <configuration><jdkHome>${env.JAVA_HOME}</jdkHome></configuration></toolchain>
-                    <toolchain><type>jdk</type><provides><version>14</version></provides>
-                    <configuration><jdkHome>${env.JAVA_HOME}</jdkHome></configuration></toolchain>
-                    <toolchain><type>jdk</type><provides><version>15</version></provides>
-                    <configuration><jdkHome>${env.JAVA_HOME}</jdkHome></configuration></toolchain>
-                    <toolchain><type>jdk</type><provides><version>17</version></provides>
-                    <configuration><jdkHome>${env.JAVA_HOME}</jdkHome></configuration></toolchain>
-                    <toolchain><type>jdk</type><provides><version>19</version></provides>
-                    <configuration><jdkHome>${env.JAVA_HOME}</jdkHome></configuration></toolchain></toolchains>"""
-        )
-
-    # Patch pom.xml to use at least jdk 1.8
-    cmd = [
-        "find ./ -name pom.xml -exec sed -i 's/compilerVersion>1.5</compilerVersion>1.8</g' {} \;",
-        "find ./ -name pom.xml -exec sed -i 's/compilerVersion>1.6</compilerVersion>1.8</g' {} \;",
-        "find ./ -name pom.xml -exec sed -i 's/source>1.5</source>1.8</g' {} \;",
-        "find ./ -name pom.xml -exec sed -i 's/source>1.6</source>1.8</g' {} \;",
-        "find ./ -name pom.xml -exec sed -i 's/target>1.5</target>1.8</g' {} \;",
-        "find ./ -name pom.xml -exec sed -i 's/target>1.6</target>1.8</g' {} \;",
-        "find ./ -name pom.xml -exec sed -i 's/java15/java18/g' {} \;",
-        "find ./ -name pom.xml -exec sed -i 's/java16/java18/g' {} \;",
-        "find ./ -name pom.xml -exec sed -i 's/java-1.5/java-1.8/g' {} \;",
-        "find ./ -name pom.xml -exec sed -i 's/java-1.6/java-1.8/g' {} \;"
-    ]
-    try:
-        subprocess.check_call(";".join(cmd),
-                              shell=True,
-                              timeout=1800,
-                              stdout=subprocess.DEVNULL,
-                              stderr=subprocess.DEVNULL,
-                              env=env_var,
-                              cwd=projectdir)
-    except subprocess.TimeoutExpired:
-        return False
-    except subprocess.CalledProcessError:
-        return False
-
-    # Build project with maven with default jdk
-    cmd = [
-        "mvn clean package dependency:copy-dependencies", "-DskipTests",
-        "-Dmaven.javadoc.skip=true", "--update-snapshots",
-        "-DoutputDirectory=lib", "-Dpmd.skip=true", "-Dencoding=UTF-8",
-        "-Dmaven.antrun.skip=true", "-Dcheckstyle.skip=true"
-    ]
-    try:
-        subprocess.check_call(" ".join(cmd),
-                              shell=True,
-                              timeout=1800,
-                              stdout=subprocess.DEVNULL,
-                              stderr=subprocess.DEVNULL,
-                              env=env_var,
-                              cwd=projectdir)
-    except subprocess.TimeoutExpired:
-        return False
-    except subprocess.CalledProcessError:
-        return False
-
-    return True
-
-
-def _gradle_build_project(basedir, projectdir, jdk_dir):
-    """Helper method to build project using maven"""
-    # Prepare gradle
-    cmd = "unzip -n %s" % (os.path.join(basedir, "gradle.zip"))
-    try:
-        subprocess.check_call(cmd,
-                              shell=True,
-                              timeout=1800,
-                              stdout=subprocess.DEVNULL,
-                              stderr=subprocess.DEVNULL,
-                              cwd=basedir)
-    except subprocess.TimeoutExpired:
-        return False
-    except subprocess.CalledProcessError:
-        return False
-
-    # Set environment variable
-    env_var = os.environ.copy()
-    env_var['GRADLE_HOME'] = os.path.join(basedir, constants.GRADLE_HOME)
-    env_var['JAVA_HOME'] = os.path.join(basedir, jdk_dir)
-    env_var['GRADLE_OPTS'] = "-Dfile.encoding=utf-8"
-    env_var['PATH'] = os.path.join(
-        basedir, jdk_dir, "bin") + ":" + os.path.join(
-            basedir, constants.GRADLE_PATH) + ":" + os.path.join(
-                basedir, constants.PROTOC_PATH) + ":" + env_var['PATH']
-
-    # Build project with gradle wrapper of the project
-    cmd = [
-        "rm -rf $HOME/.gradle/caches/", "chmod +x ./gradlew",
-        "EXCLUDE_SPOTLESS_CHECK=",
-        """if ./gradlew tasks --all | grep -qw "^spotlessCheck"
-        then
-          EXCLUDE_SPOTLESS_CHECK="-x spotlessCheck "
-        fi
-        ./gradlew clean build -x test -x javadoc -x sources \
-        $EXCLUDE_SPOTLESS_CHECK\
-        -Porg.gradle.java.installations.auto-detect=false \
-        -Porg.gradle.java.installations.auto-download=false \
-        -Porg.gradle.java.installations.paths=$JAVA_HOME""", "./gradlew --stop"
-    ]
-    try:
-        subprocess.check_call(" && ".join(cmd),
-                              shell=True,
-                              timeout=1800,
-                              stdout=subprocess.DEVNULL,
-                              stderr=subprocess.DEVNULL,
-                              env=env_var,
-                              cwd=projectdir)
-    except subprocess.TimeoutExpired:
-        return False
-    except subprocess.CalledProcessError:
-        return False
-
-    # Search for possible classes location
-    possible_build_path = []
-    for root, dirs, _ in os.walk("."):
-        for dir in dirs:
-            build_path = os.path.join(root, dir, "build", "classes", "java",
-                                      "main")
-            jar_path = os.path.join(root, dir, "build", "libs")
-            if os.path.exists(build_path) and not os.path.exists(jar_path):
-                possible_build_path.append(os.path.abspath(build_path))
-
-    # Add in jar packing command for all possible build path
-    cmd = []
-    for build_path in possible_build_path:
-        if os.path.exists("proj.jar"):
-            cmd.append("jar uvf proj.jar -C %s ." % build_path)
-        else:
-            cmd.append("jar cvf proj.jar -C %s ." % build_path)
-    try:
-        if cmd:
-            subprocess.check_call(" && ".join(cmd),
-                                  shell=True,
-                                  timeout=1800,
-                                  stdout=subprocess.DEVNULL,
-                                  stderr=subprocess.DEVNULL,
-                                  cwd=projectdir)
-    except subprocess.TimeoutExpired:
-        return False
-    except subprocess.CalledProcessError as e:
-        return False
-
-    return True
-
-
-def find_project_build_type(dir):
+def find_dir_build_type(dir):
     """Determine the java build project type of the directory"""
 
     if os.path.exists(os.path.join(dir, "pom.xml")):
@@ -465,174 +245,81 @@ def find_project_build_type(dir):
         return None
 
 
-def find_project_build_folder(dir, proj_name):
+def find_project_build_type(dir, proj_name):
     # Search for current directory first
-    project_build_type = find_project_build_type(dir)
+    project_build_type = find_dir_build_type(dir)
     if project_build_type:
-        return os.path.abspath(dir), project_build_type
+        return project_build_type
 
     # Search for sub directory with name same as project name
     for subdir in os.listdir(dir):
         if os.path.isdir(os.path.join(dir, subdir)) and subdir == proj_name:
-            project_build_type = find_project_build_type(
+            project_build_type = find_dir_build_type(
                 os.path.join(dir, subdir))
             if project_build_type:
-                return os.path.abspath(os.path.join(
-                    dir, subdir)), project_build_type
+                return project_build_type
 
     # Recursively look for subdirectory that contains build property file
     for root, _, files in os.walk(dir):
-        project_build_type = find_project_build_type(root)
+        project_build_type = find_dir_build_type(root)
         if project_build_type:
-            return os.path.abspath(root), project_build_type
+            return project_build_type
 
     return None, None
 
 
-def build_jvm_project(basedir, projectdir, proj_name, builddir,
-                      project_build_type):
-    # Prepare OpenJDK
-    with tarfile.open(os.path.join(basedir, "jdk8.tar.gz"), "r:gz") as jf:
-        jf.extractall(os.path.join(basedir))
-    with tarfile.open(os.path.join(basedir, "jdk11.tar.gz"), "r:gz") as jf:
-        jf.extractall(os.path.join(basedir))
-    with tarfile.open(os.path.join(basedir, "jdk15.tar.gz"), "r:gz") as jf:
-        jf.extractall(os.path.join(basedir))
-    with tarfile.open(os.path.join(basedir, "jdk17.tar.gz"), "r:gz") as jf:
-        jf.extractall(os.path.join(basedir))
-
-    # Prepare protoc
-    os.makedirs(os.path.join(basedir, "protoc"), exist_ok=True)
-    cmd = "unzip -n %s -d %s" % (os.path.join(
-        basedir, "protoc.zip"), os.path.join(basedir, "protoc"))
-    try:
-        subprocess.check_call(cmd,
-                              shell=True,
-                              timeout=1800,
-                              stdout=subprocess.DEVNULL,
-                              stderr=subprocess.DEVNULL,
-                              cwd=basedir)
-    except subprocess.TimeoutExpired:
-        return False
-    except subprocess.CalledProcessError:
-        return False
-    protoc_executable = os.path.join(basedir, "protoc", "bin", "protoc")
-    base_stat = os.stat(protoc_executable)
-    os.chmod(os.path.join(basedir, "protoc", "bin", "protoc"),
-             base_stat.st_mode | stat.S_IEXEC)
-
+def build_jvm_project(oss_fuzz_base_project, base_oss_fuzz_project_dir, project_type):
+    basedir = oss_fuzz_base_project.project_folder
     build_ret = False
     jarfiles = None
     jdk_base = None
-    if builddir:
+    if basedir:
         # Loop and use each JDK version in order in the previous failed.
         # Order JDK15 (oss-fuzz default) -> JDK17 -> JDK11 -> JDK8
         for jdk in constants.JDK_HOME:
             jdk_dir = constants.JDK_HOME[jdk]
-            if project_build_type == "maven":
-                build_ret = _maven_build_project(basedir, builddir, jdk_dir)
-                jarfiles = []
-            elif project_build_type == "gradle":
-                build_ret = _gradle_build_project(basedir, builddir, jdk_dir)
-                if os.path.exists(os.path.join(builddir, "proj.jar")):
-                    jarfiles = [os.path.join(builddir, "proj.jar")]
-                else:
-                    jarfiles = []
-            elif project_build_type == "ant":
-                build_ret = _ant_build_project(basedir, builddir, jdk_dir)
-                jarfiles = []
+            oss_fuzz_base_project.change_jvm_dockerfile(jdk, project_type)
 
+            build_ret = oss_fuzz_manager.copy_and_build_project(
+                basedir,
+                OSS_FUZZ_BASE,
+                log_dir=base_oss_fuzz_project_dir)
+            print(build_ret)
+            print(jdk)
             # Check if the build success with the current JDK version
             # and record that for future process and oss-fuzz test
+            # Also copied built jar files for static analysis
             if build_ret:
+                jarfiles = []
+                jardir = os.path.join(basedir, "built-jar")
+                if not os.path.exists(jardir):
+                    os.mkdir(jardir)
+
+                project_name = os.path.basename(basedir)
+                out_dir = os.path.join(OSS_FUZZ_BASE, "build", "out", project_name)
+                for file in os.listdir(out_dir):
+                    if file.endswith(".jar") and not os.path.exists(os.path.join(jardir, file)):
+                        shutil.copy(os.path.join(out_dir, file), jardir)
+                        jarfiles.append(os.path.join(jardir, file))
                 jdk_base = jdk_dir
                 break
 
+    oss_fuzz_manager.cleanup_project("base-autofuzz", OSS_FUZZ_BASE)
     return (build_ret, jarfiles, jdk_base)
 
 
-def run_static_analysis_jvm(git_repo, basedir, project_name):
+def run_static_analysis_jvm(git_repo, oss_fuzz_base_project, base_oss_fuzz_project_dir, project_type):
+    basedir = oss_fuzz_base_project.project_folder
+    project_name = oss_fuzz_base_project.project_name
+
     possible_imports = set()
     curr_dir = os.getcwd()
-    os.chdir(basedir)
-    os.mkdir("work")
-    os.chdir("work")
-    os.mkdir("jar")
 
-    # Copy the project directory from the basedir
-    try:
-        shutil.copytree(os.path.join(basedir, project_name),
-                        os.path.join(os.getcwd(), "proj"),
-                        symlinks=True)
-    except:
-        print("Fail to retrieve github directory.")
-        return False, None
-
-    jardir = os.path.join(basedir, "work", "jar")
-    projectdir = os.path.join(basedir, "work", "proj")
-
-    # Find project subfolder if build properties not in the outtermost directory
-    builddir, project_build_type = find_project_build_folder(
-        projectdir, project_name)
-
-    build_ret, jarfiles, jdk_base = build_jvm_project(basedir, projectdir,
-                                                      project_name, builddir,
-                                                      project_build_type)
+    build_ret, jarfiles, jdk_base = build_jvm_project(oss_fuzz_base_project, base_oss_fuzz_project_dir, project_type)
 
     if not build_ret:
         print("Unknown project type or project build fail.\n")
         return False, None
-
-    # Retrieve Jazzer package for building fuzzer
-    jazzer_url = "https://github.com/CodeIntelligenceTesting/jazzer/releases/download/v0.15.0/jazzer-linux.tar.gz"
-    response = requests.get(jazzer_url)
-    with open("./jazzer.tar.gz", "wb") as file:
-        file.write(response.content)
-
-    with tarfile.open("./jazzer.tar.gz") as file:
-        file.extractall("./")
-
-    # Retrieve Apache Common Lang3 package
-    # This library provides method to translate primitive type arrays to
-    # their respective class object arrays to avoid compilation error.
-    apache_url = "https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar"
-    response = requests.get(apache_url)
-    with open("./commons-lang3.jar", "wb") as file:
-        file.write(response.content)
-
-    # Retrieve path of all jar files
-    jarfiles.append(os.path.abspath("../Fuzz.jar"))
-    jarfiles.append("%s/*.jar" % jardir)
-    jarfiles_no_dependency = []
-    jarfiles_no_dependency.extend(jarfiles)
-    jarfiles.append("%s/lib/*.jar" % jardir)
-    if project_build_type == "ant":
-        if os.path.isdir(os.path.join(builddir, "build", "jar")):
-            for file in os.listdir(os.path.join(builddir, "build", "jar")):
-                if file.endswith(
-                        ".jar"
-                ) and "test" not in file and "sources" not in file and "javadoc" not in file:
-                    shutil.copyfile(
-                        os.path.join(builddir, "build", "jar", file),
-                        os.path.join(jardir, file))
-        if os.path.isdir(os.path.join(builddir, "dist")):
-            for file in os.listdir(os.path.join(builddir, "dist")):
-                if file.endswith(
-                        ".jar"
-                ) and "test" not in file and "sources" not in file and "javadoc" not in file:
-                    shutil.copyfile(os.path.join(builddir, "dist", file),
-                                    os.path.join(jardir, file))
-    else:
-        os.makedirs("%s/lib" % jardir, exist_ok=True)
-        for root, _, files in os.walk(builddir):
-            for file in [file for file in files if file.endswith(".jar")]:
-                if "test" not in file and "sources" not in file:
-                    if root.endswith("lib"):
-                        dst_path = os.path.join(jardir, "lib", file)
-                    else:
-                        dst_path = os.path.join(jardir, file)
-                    shutil.copyfile(os.path.abspath(os.path.join(root, file)),
-                                    dst_path)
 
     # Prepare environment variable for found version of JDK
     env_var = os.environ.copy()
@@ -1092,7 +779,7 @@ def autofuzz_project_from_github(github_url,
         java_class_list = extract_class_list(projectdir)
 
         # Find project type
-        _, project_build_type = find_project_build_folder(
+        project_build_type = find_project_build_type(
             projectdir, oss_fuzz_base_project.project_name)
 
         if project_build_type:
@@ -1112,12 +799,12 @@ def autofuzz_project_from_github(github_url,
         print("Running static analysis on %s" % (github_url))
         if language == "python":
             static_res = run_static_analysis_python(
-                github_url, oss_fuzz_base_project.project_folder,
-                oss_fuzz_base_project.project_name)
+                github_url, oss_fuzz_base_project,
+                base_oss_fuzz_project_dir)
         elif language == "jvm":
             static_res, jdk_base = run_static_analysis_jvm(
-                github_url, oss_fuzz_base_project.project_folder,
-                oss_fuzz_base_project.project_name)
+                github_url, oss_fuzz_base_project,
+                base_oss_fuzz_project_dir, project_build_type)
 
             # Overwrite dockerfile with correct jdk version
             for key in constants.JDK_HOME:
