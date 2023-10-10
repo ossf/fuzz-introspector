@@ -32,12 +32,15 @@ def gen_dockerfile(github_url,
         return _gen_dockerfile_python(github_url, project_name, template_dir)
     elif language == "jvm":
         return _gen_dockerfile_jvm(github_url, project_name, jdk_version,
-                                   build_project, template_dir, project_build_type)
+                                   build_project, template_dir,
+                                   project_build_type)
     else:
         return ""
 
 
-def gen_builder_1(language="python", project_build_type=None, build_project=True):
+def gen_builder_1(language="python",
+                  project_build_type=None,
+                  build_project=True):
     template_dir = _get_template_directory(language, project_build_type)
 
     if not template_dir:
