@@ -137,11 +137,12 @@ class OSS_FUZZ_PROJECT:
 
     def write_basefiles(self, project_build_type=None):
         with open(self.build_script, "w") as bfile:
-            bfile.write(base_files.gen_builder_1(self.language, project_build_type))
+            bfile.write(
+                base_files.gen_builder_1(self.language, project_build_type))
 
         with open(self.base_fuzzer, "w") as ffile:
-            ffile.write(base_files.gen_base_fuzzer(self.language,
-                                                   project_build_type))
+            ffile.write(
+                base_files.gen_base_fuzzer(self.language, project_build_type))
 
         with open(self.project_yaml, "w") as yfile:
             yfile.write(
@@ -150,19 +151,21 @@ class OSS_FUZZ_PROJECT:
 
         with open(self.dockerfile, "w") as dfile:
             dfile.write(
-                base_files.gen_dockerfile(self.github_url,
-                                          self.project_name,
-                                          self.language,
-                                          project_build_type=project_build_type))
+                base_files.gen_dockerfile(
+                    self.github_url,
+                    self.project_name,
+                    self.language,
+                    project_build_type=project_build_type))
 
     def change_jvm_dockerfile(self, jdk_version, project_build_type):
         with open(self.dockerfile, "w") as dfile:
             dfile.write(
-                base_files.gen_dockerfile(self.github_url,
-                                          self.project_name,
-                                          self.language,
-                                          jdk_version,
-                                          project_build_type=project_build_type))
+                base_files.gen_dockerfile(
+                    self.github_url,
+                    self.project_name,
+                    self.language,
+                    jdk_version,
+                    project_build_type=project_build_type))
 
 
 def get_next_project_folder(base_dir):
@@ -471,9 +474,11 @@ def find_project_build_folder(dir, proj_name):
     # Search for sub directory with name same as project name
     for subdir in os.listdir(dir):
         if os.path.isdir(os.path.join(dir, subdir)) and subdir == proj_name:
-            project_build_type = find_project_build_type(os.path.join(dir, subdir))
+            project_build_type = find_project_build_type(
+                os.path.join(dir, subdir))
             if project_build_type:
-                return os.path.abspath(os.path.join(dir, subdir)), project_build_type
+                return os.path.abspath(os.path.join(
+                    dir, subdir)), project_build_type
 
     # Recursively look for subdirectory that contains build property file
     for root, _, files in os.walk(dir):
@@ -484,7 +489,8 @@ def find_project_build_folder(dir, proj_name):
     return None, None
 
 
-def build_jvm_project(basedir, projectdir, proj_name, builddir, project_build_type):
+def build_jvm_project(basedir, projectdir, proj_name, builddir,
+                      project_build_type):
     # Prepare OpenJDK
     with tarfile.open(os.path.join(basedir, "jdk8.tar.gz"), "r:gz") as jf:
         jf.extractall(os.path.join(basedir))
@@ -566,8 +572,8 @@ def run_static_analysis_jvm(git_repo, basedir, project_name):
     projectdir = os.path.join(basedir, "work", "proj")
 
     # Find project subfolder if build properties not in the outtermost directory
-    builddir, project_build_type = find_project_build_folder(projectdir,
-                                                       project_name)
+    builddir, project_build_type = find_project_build_folder(
+        projectdir, project_name)
 
     build_ret, jarfiles, jdk_base = build_jvm_project(basedir, projectdir,
                                                       project_name, builddir,
