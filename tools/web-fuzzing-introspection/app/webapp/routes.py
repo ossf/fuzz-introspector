@@ -383,6 +383,48 @@ def branch_blockers():
     return {'result': 'success', 'project-blockers': project_blockers}
 
 
+@blueprint.route('/api/all-functions')
+def api_project_all_functions():
+    """Returns a json representation of all the functions in a given project"""
+    project_name = request.args.get('project', None)
+    if project_name == None:
+        return {'result': 'error', 'msg': 'Please provide a project name'}
+
+    # Get all of the functions
+    all_functions = data_storage.get_functions()
+    project_functions = []
+    for function in all_functions:
+        if function.project == project_name:
+            project_functions.append(function)
+
+    # Convert it to something we can return
+    functions_to_return = list()
+    for function in project_functions:
+        functions_to_return.append({
+            'function-name':
+            function.name,
+            'function-filename':
+            function.function_filename,
+            'runtime-coverage-percent':
+            function.runtime_code_coverage,
+            'accummulated-complexity':
+            function.accummulated_cyclomatic_complexity,
+            'function-arguments':
+            function.function_arguments,
+            'function-argument-names':
+            function.function_argument_names,
+            'return-type':
+            function.return_type,
+            'is-reached':
+            function.is_reached,
+            'reached-by-fuzzers':
+            function.reached_by_fuzzers,
+            'raw-function-name':
+            function.raw_function_name,
+        })
+    return {'result': 'succes', 'functions': functions_to_return}
+
+
 @blueprint.route('/api/far-reach-but-low-coverage')
 def far_reach_but_low_coverage():
     project_name = request.args.get('project', None)
