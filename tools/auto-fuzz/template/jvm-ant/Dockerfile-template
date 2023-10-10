@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 # Copyright 2023 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,18 +14,17 @@
 #
 ##########################################################################
 FROM gcr.io/oss-fuzz-base/base-builder-jvm
-#RUN curl -L %s -o gradle.zip && unzip gradle.zip -d $SRC/gradle && rm -rf gradle.zip
+#RUN curl -L %s -o ant.zip && unzip ant.zip -d $SRC/ant && rm -rf ant.zip
 #RUN curl -L %s -o protoc.zip && mkdir -p $SRC/protoc && unzip protoc.zip -d $SRC/protoc && rm -rf protoc.zip
 RUN curl -L %s -o jdk.tar.gz && tar zxf jdk.tar.gz && rm -rf jdk.tar.gz
-COPY gradle.zip $SRC/gradle.zip
+COPY ant.zip $SRC/ant.zip
 COPY protoc.zip $SRC/protoc.zip
-RUN unzip gradle.zip -d $SRC/gradle && rm ./gradle.zip
+RUN unzip ant.zip -d $SRC/ant && rm ./ant.zip
 RUN mkdir -p $SRC/protoc
 RUN unzip protoc.zip -d $SRC/protoc && rm ./protoc.zip
-ENV GRADLE_HOME $SRC/gradle/gradle-7.4.2
-ENV GRADLE_OPTS="-Dfile.encoding=utf-8"
+ENV ANT $SRC/ant/apache-ant-1.10.13/bin/ant
 ENV JAVA_HOME="$SRC/%s"
-ENV PATH="$JAVA_HOME/bin:$SRC/gradle/gradle-7.4.2/bin:$SRC/protoc/bin:$PATH"
+ENV PATH="$JAVA_HOME/bin:$SRC/protoc/bin:$PATH"
 #RUN git clone --depth 1 %s %s
 COPY %s %s
 COPY *.sh *.java $SRC/
