@@ -23,7 +23,7 @@ do
   then
     dir=${dir%%*:}
     cd $dir
-    if test -f "build.xml"
+    if test -f "pom.xml"
     then
       chmod +x $SRC/protoc/bin/protoc
 

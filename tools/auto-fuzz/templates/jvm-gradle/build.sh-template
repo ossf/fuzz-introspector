@@ -23,7 +23,7 @@ do
   then
     dir=${dir%%*:}
     cd $dir
-    if test -f "build.xml"
+    if test -f "build.gradle" || test -f "build.gradle.kts"
     then
       chmod +x $SRC/protoc/bin/protoc
 

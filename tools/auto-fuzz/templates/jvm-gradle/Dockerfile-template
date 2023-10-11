@@ -30,5 +30,5 @@ ENV PATH="$JAVA_HOME/bin:$SRC/gradle/gradle-7.4.2/bin:$SRC/protoc/bin:$PATH"
 COPY %s %s
 COPY *.sh *.java $SRC/
 %sRUN mkdir -p $SRC/build_jar
-%sCOPY *.jar $SRC/build_jar/
+%sCOPY build-jar/*.jar $SRC/build_jar/
 WORKDIR $SRC/%s
