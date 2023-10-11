@@ -41,7 +41,7 @@ import fuzz_driver_generation_python
 import fuzz_driver_generation_jvm
 import post_process
 import utils
-from classes import OSS_FUZZ_PROJECT
+from oss_fuzz_project import OSS_FUZZ_PROJECT
 
 from io import BytesIO
 from typing import List, Any
