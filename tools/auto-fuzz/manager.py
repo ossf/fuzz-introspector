@@ -199,7 +199,8 @@ def run_cmd(cmd, timeout_sec):
     return no_timeout
 
 
-def run_static_analysis_python(git_repo, oss_fuzz_base_project, base_oss_fuzz_project_dir):
+def run_static_analysis_python(git_repo, oss_fuzz_base_project,
+                               base_oss_fuzz_project_dir):
     basedir = oss_fuzz_base_project.project_folder
     project_name = oss_fuzz_base_project.project_name
 
@@ -254,8 +255,7 @@ def find_project_build_type(dir, proj_name):
     # Search for sub directory with name same as project name
     for subdir in os.listdir(dir):
         if os.path.isdir(os.path.join(dir, subdir)) and subdir == proj_name:
-            project_build_type = find_dir_build_type(
-                os.path.join(dir, subdir))
+            project_build_type = find_dir_build_type(os.path.join(dir, subdir))
             if project_build_type:
                 return project_build_type
 
@@ -268,7 +268,8 @@ def find_project_build_type(dir, proj_name):
     return None, None
 
 
-def build_jvm_project(oss_fuzz_base_project, base_oss_fuzz_project_dir, project_type):
+def build_jvm_project(oss_fuzz_base_project, base_oss_fuzz_project_dir,
+                      project_type):
     basedir = oss_fuzz_base_project.project_folder
     build_ret = False
     jarfiles = None
@@ -281,9 +282,7 @@ def build_jvm_project(oss_fuzz_base_project, base_oss_fuzz_project_dir, project_
             oss_fuzz_base_project.change_jvm_dockerfile(jdk, project_type)
 
             build_ret = oss_fuzz_manager.copy_and_build_project(
-                basedir,
-                OSS_FUZZ_BASE,
-                log_dir=base_oss_fuzz_project_dir)
+                basedir, OSS_FUZZ_BASE, log_dir=base_oss_fuzz_project_dir)
             print(build_ret)
             print(jdk)
             # Check if the build success with the current JDK version
@@ -296,9 +295,11 @@ def build_jvm_project(oss_fuzz_base_project, base_oss_fuzz_project_dir, project_
                     os.mkdir(jardir)
 
                 project_name = os.path.basename(basedir)
-                out_dir = os.path.join(OSS_FUZZ_BASE, "build", "out", project_name)
+                out_dir = os.path.join(OSS_FUZZ_BASE, "build", "out",
+                                       project_name)
                 for file in os.listdir(out_dir):
-                    if file.endswith(".jar") and not os.path.exists(os.path.join(jardir, file)):
+                    if file.endswith(".jar") and not os.path.exists(
+                            os.path.join(jardir, file)):
                         shutil.copy(os.path.join(out_dir, file), jardir)
                         jarfiles.append(os.path.join(jardir, file))
                 jdk_base = jdk_dir
@@ -308,14 +309,16 @@ def build_jvm_project(oss_fuzz_base_project, base_oss_fuzz_project_dir, project_
     return (build_ret, jarfiles, jdk_base)
 
 
-def run_static_analysis_jvm(git_repo, oss_fuzz_base_project, base_oss_fuzz_project_dir, project_type):
+def run_static_analysis_jvm(git_repo, oss_fuzz_base_project,
+                            base_oss_fuzz_project_dir, project_type):
     basedir = oss_fuzz_base_project.project_folder
     project_name = oss_fuzz_base_project.project_name
 
     possible_imports = set()
     curr_dir = os.getcwd()
 
-    build_ret, jarfiles, jdk_base = build_jvm_project(oss_fuzz_base_project, base_oss_fuzz_project_dir, project_type)
+    build_ret, jarfiles, jdk_base = build_jvm_project(
+        oss_fuzz_base_project, base_oss_fuzz_project_dir, project_type)
 
     if not build_ret:
         print("Unknown project type or project build fail.\n")
@@ -798,13 +801,13 @@ def autofuzz_project_from_github(github_url,
     if do_static_analysis:
         print("Running static analysis on %s" % (github_url))
         if language == "python":
-            static_res = run_static_analysis_python(
-                github_url, oss_fuzz_base_project,
-                base_oss_fuzz_project_dir)
+            static_res = run_static_analysis_python(github_url,
+                                                    oss_fuzz_base_project,
+                                                    base_oss_fuzz_project_dir)
         elif language == "jvm":
             static_res, jdk_base = run_static_analysis_jvm(
-                github_url, oss_fuzz_base_project,
-                base_oss_fuzz_project_dir, project_build_type)
+                github_url, oss_fuzz_base_project, base_oss_fuzz_project_dir,
+                project_build_type)
 
             # Overwrite dockerfile with correct jdk version
             for key in constants.JDK_HOME:
