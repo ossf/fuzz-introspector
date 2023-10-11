@@ -40,6 +40,8 @@ import oss_fuzz_manager
 import fuzz_driver_generation_python
 import fuzz_driver_generation_jvm
 import post_process
+import utils
+from oss_fuzz_project import OSS_FUZZ_PROJECT
 
 from io import BytesIO
 from typing import List, Any
@@ -68,147 +70,6 @@ if not os.path.isdir(OSS_FUZZ_BASE):
     raise Exception("Could not find OSS-Fuzz directory")
 
 
-class OSS_FUZZ_PROJECT:
-    """Abstraction of OSS-Fuzz project.
-
-    Provides helper methods for easily managing files and folders and
-    operations on a given OSS-Fuzz project.
-    """
-
-    def __init__(self, project_folder, github_url, language, benchmark=False):
-        self.project_folder = project_folder
-        self.github_url = github_url
-        self.language = language
-        self.benchmark = benchmark
-
-    @property
-    def build_script(self):
-        return self.project_folder + "/build.sh"
-
-    @property
-    def dockerfile(self):
-        return self.project_folder + "/Dockerfile"
-
-    @property
-    def project_yaml(self):
-        return self.project_folder + "/project.yaml"
-
-    @property
-    def base_fuzzer(self):
-        if self.language == "python":
-            return self.project_folder + "/fuzz_1.py"
-        elif self.language == "jvm":
-            return self.project_folder + "/Fuzz.java"
-        else:
-            # Temporary fail safe logic
-            return self.project_folder + "/fuzz_1.py"
-
-    @property
-    def oss_fuzz_project_name(self):
-        return os.path.basename(self.project_folder)
-
-    @property
-    def oss_fuzz_fuzzer_namer(self):
-        if self.language == "python":
-            return os.path.basename(self.base_fuzzer).replace(".py", "")
-        elif self.language == "jvm":
-            return os.path.basename(self.base_fuzzer).replace(".java", "")
-        else:
-            # Temporary fail safe logic
-            return os.path.basename(self.base_fuzzer).replace(".py", "")
-
-    @property
-    def project_name(self):
-        if self.benchmark:
-            return "%s-%s" % (self.language, self.github_url)
-        else:
-            # Simplify url by cutting https out, then assume what we have left is:
-            # HTTP Type
-            # github.com/{user}/{proj_name}
-            # or
-            # SSH Type
-            # git@github.com:{user}/{proj_name}
-            if self.github_url.startswith("https://"):
-                return self.github_url.replace("https://", "").split("/")[2]
-            elif self.github_url.startswith("http://"):
-                return self.github_url.replace("http://", "").split("/")[2]
-            else:
-                return self.github_url.split("/")[1]
-
-    def write_basefiles(self, project_build_type=None):
-        with open(self.build_script, "w") as builder_file:
-            builder_file.write(
-                base_files.gen_builder_1(self.language, project_build_type))
-
-        with open(self.base_fuzzer, "w") as fuzzer_file:
-            fuzzer_file.write(
-                base_files.gen_base_fuzzer(self.language, project_build_type))
-
-        with open(self.project_yaml, "w") as yaml_file:
-            yaml_file.write(
-                base_files.gen_project_yaml(self.github_url, self.language,
-                                            project_build_type))
-
-        with open(self.dockerfile, "w") as docker_file:
-            docker_file.write(
-                base_files.gen_dockerfile(
-                    self.github_url,
-                    self.project_name,
-                    self.language,
-                    project_build_type=project_build_type))
-
-    def change_jvm_dockerfile(self,
-                              jdk_version,
-                              project_build_type,
-                              build_project=True):
-        with open(self.dockerfile, "w") as docker_file:
-            docker_file.write(
-                base_files.gen_dockerfile(
-                    self.github_url,
-                    self.project_name,
-                    self.language,
-                    jdk_version,
-                    build_project,
-                    project_build_type=project_build_type))
-
-    def change_build_script(self, project_build_type, build_project=True):
-        with open(self.build_script, "w") as builder_file:
-            builder_file.write(
-                base_files.gen_builder_1(self.language, project_build_type,
-                                         build_project))
-
-
-def get_next_project_folder(base_dir):
-    AUTOFUZZDIR = "autofuzz-"
-    max_idx = -1
-    for dirname in os.listdir(base_dir):
-        try:
-            idx = int(dirname.replace("autofuzz-", ""))
-            if idx > max_idx:
-                max_idx = idx
-        except:
-            pass
-    return os.path.join(base_dir, AUTOFUZZDIR + str(max_idx + 1))
-
-
-def run_cmd(cmd, timeout_sec):
-    #print("Running command %s" % (cmd))
-    proc = subprocess.Popen(shlex.split(cmd),
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE)
-    timer = threading.Timer(timeout_sec, proc.kill)
-    try:
-        timer.start()
-        stdout, stderr = proc.communicate()
-        #print(stdout)
-        #print("---------")
-        #print(stderr)
-    finally:
-        no_timeout = timer.is_alive()
-        timer.cancel()
-    return no_timeout
-
-
 def run_static_analysis_python(git_repo, oss_fuzz_base_project,
                                base_oss_fuzz_project_dir):
     basedir = oss_fuzz_base_project.project_folder
@@ -233,49 +94,13 @@ def run_static_analysis_python(git_repo, oss_fuzz_base_project,
         "python3", FUZZ_INTRO_MAIN["python"], "--fuzzer", "../fuzz_1.py",
         "--package=%s" % (os.getcwd())
     ]
-    ret = run_cmd(" ".join(cmd), 1800)
+    ret = utils.run_cmd(" ".join(cmd), 1800)
     if not os.path.isfile("fuzzerLogFile-fuzz_1.data.yaml"):
         ret = False
     ret = True
 
     os.chdir(curr_dir)
     return ret
-
-
-def find_dir_build_type(dir):
-    """Determine the java build project type of the directory"""
-
-    if os.path.exists(os.path.join(dir, "pom.xml")):
-        return "maven"
-    elif os.path.exists(os.path.join(dir, "build.gradle")) or os.path.exists(
-            os.path.join(dir, "build.gradle.kts")):
-        return "gradle"
-    elif os.path.exists(os.path.join(dir, "build.xml")):
-        return "ant"
-    else:
-        return None
-
-
-def find_project_build_type(dir, proj_name):
-    # Search for current directory first
-    project_build_type = find_dir_build_type(dir)
-    if project_build_type:
-        return project_build_type
-
-    # Search for sub directory with name same as project name
-    for subdir in os.listdir(dir):
-        if os.path.isdir(os.path.join(dir, subdir)) and subdir == proj_name:
-            project_build_type = find_dir_build_type(os.path.join(dir, subdir))
-            if project_build_type:
-                return project_build_type
-
-    # Recursively look for subdirectory that contains build property file
-    for root, _, files in os.walk(dir):
-        project_build_type = find_dir_build_type(root)
-        if project_build_type:
-            return project_build_type
-
-    return None, None
 
 
 def build_jvm_project(oss_fuzz_base_project, base_oss_fuzz_project_dir,
@@ -428,61 +253,12 @@ def run_static_analysis_jvm(git_repo, oss_fuzz_base_project,
     return ret, jdk_base
 
 
-def copy_core_oss_fuzz_project_files(src_oss_project, dst_oss_project):
-    shutil.copy(src_oss_project.build_script, dst_oss_project.build_script)
-    shutil.copy(src_oss_project.project_yaml, dst_oss_project.project_yaml)
-    shutil.copy(src_oss_project.dockerfile, dst_oss_project.dockerfile)
-
-
-def copy_oss_fuzz_project_source(src_oss_project, dst_oss_project):
-    shutil.copytree(
-        os.path.join(src_oss_project.project_folder,
-                     src_oss_project.project_name),
-        os.path.join(dst_oss_project.project_folder,
-                     dst_oss_project.project_name))
-
-
 def tick_tqdm_tracker():
     global tqdm_tracker
     try:
         tqdm_tracker.update(1)
     except:
         return
-
-
-def cleanup_build_cache():
-    """Cleans up Docker build cache. This is needed becaus auto-fuzz builds
-    up a large docker build cache, which can take up hundreds of GBs on a
-    small run.
-    """
-    subprocess.check_call('docker builder prune --force',
-                          shell=True,
-                          stdout=subprocess.DEVNULL,
-                          stderr=subprocess.DEVNULL)
-
-
-def cleanup_base_directory(base_dir, project_name):
-    """Cleans up the base directory, removing unnecessary files after
-    the fuzzers auto-generation and checking process.
-    """
-    file_to_clean = [
-        'Fuzz.jar', 'Fuzz.class', 'ant.zip', 'gradle.zip', 'maven.zip',
-        'protoc.zip', 'jdk15.tar.gz', 'jdk17.tar.gz', 'jdk11.tar.gz',
-        'jdk8.tar.gz'
-    ]
-    dir_to_clean = [
-        'apache-maven-3.6.3', 'apache-ant-1.10.13', 'gradle-7.4.2',
-        'jdk-15.0.2', 'jdk-17', 'jdk-11.0.0.1', 'java-se-8u43-ri', 'protoc',
-        project_name, 'work/jar', 'work/proj', 'build-jar'
-    ]
-
-    for file in file_to_clean:
-        if os.path.isfile(os.path.join(base_dir, file)):
-            os.remove(os.path.join(base_dir, file))
-
-    for dir in dir_to_clean:
-        if os.path.isdir(os.path.join(base_dir, dir)):
-            shutil.rmtree(os.path.join(base_dir, dir))
 
 
 def build_and_test_single_possible_target(idx_folder,
@@ -511,8 +287,8 @@ def build_and_test_single_possible_target(idx_folder,
                                             language, benchmark)
 
     # Copy files from base OSS-Fuzz project
-    copy_core_oss_fuzz_project_files(oss_fuzz_base_project,
-                                     dst_oss_fuzz_project)
+    utils.copy_core_oss_fuzz_project_files(oss_fuzz_base_project,
+                                           dst_oss_fuzz_project)
     if language == "jvm":
         ant_path = os.path.join(oss_fuzz_base_project.project_folder,
                                 "ant.zip")
@@ -539,7 +315,8 @@ def build_and_test_single_possible_target(idx_folder,
         shutil.copy(protoc_path, protoc_dst)
         shutil.copytree(build_jar_path, build_jar_dst)
 
-    copy_oss_fuzz_project_source(oss_fuzz_base_project, dst_oss_fuzz_project)
+    utils.copy_oss_fuzz_project_source(oss_fuzz_base_project,
+                                       dst_oss_fuzz_project)
 
     # Log dir
     idx_logdir = os.path.join(auto_fuzz_proj_dir, "autofuzz-log")
@@ -683,57 +460,12 @@ def run_builder_pool(autofuzz_base_workdir,
         pool.join()
 
         # Cleanup docker
-        cleanup_build_cache()
+        utils.cleanup_build_cache()
 
     try:
         tqdm_tracker.close()
     except:
         pass
-
-
-def copy_benchmark_project(base_dir, benchmark, language, destination):
-    shutil.copytree(os.path.join(base_dir, "benchmark", language, benchmark),
-                    destination)
-    return True
-
-
-def git_clone_project(github_url, destination):
-    cmd = ["git clone", github_url, destination]
-    try:
-        subprocess.check_call(" ".join(cmd),
-                              shell=True,
-                              timeout=600,
-                              stdout=subprocess.DEVNULL,
-                              stderr=subprocess.DEVNULL)
-    except subprocess.TimeoutExpired:
-        return False
-    except subprocess.CalledProcessError:
-        return False
-    return True
-
-
-def extract_class_list(projectdir):
-    """Extract a list of path for all java files exist in the project directory"""
-    project_class_list = []
-
-    for root, _, files in os.walk(projectdir):
-        for file in [file for file in files if file.endswith(".java")]:
-            path = os.path.join(root, file)
-            path = path.replace("%s/" % projectdir, "")
-            path = path.replace(".java", "").replace("/", ".")
-
-            # Filter some unrelated class
-            if "module-info" in path or "package-info" in path:
-                continue
-            if "test" in path or "Test" in path:
-                continue
-            if path.endswith("Exception"):
-                continue
-
-            if path not in project_class_list:
-                project_class_list.append(path)
-
-    return project_class_list
 
 
 def autofuzz_project_from_github(github_url,
@@ -748,7 +480,7 @@ def autofuzz_project_from_github(github_url,
     """
     print("Running autofuzz on %s" % (github_url))
     base_dir = os.getcwd()
-    autofuzz_base_workdir = get_next_project_folder(base_dir=base_dir)
+    autofuzz_base_workdir = utils.get_next_project_folder(base_dir=base_dir)
     os.mkdir(autofuzz_base_workdir)
 
     #autofuzz_data_dir = os.path.join(autofuzz_base_workdir, "base-autofuzz")
@@ -768,13 +500,13 @@ def autofuzz_project_from_github(github_url,
     # If benchmark option is true, instead of cloning the project from github,
     # copy the local benchmark directory of the chosen language instead.
     if benchmark:
-        if not copy_benchmark_project(
+        if not utils.copy_benchmark_project(
                 base_dir, github_url, language,
                 os.path.join(oss_fuzz_base_project.project_folder,
                              oss_fuzz_base_project.project_name)):
             return False
     else:
-        if not git_clone_project(
+        if not utils.git_clone_project(
                 github_url,
                 os.path.join(oss_fuzz_base_project.project_folder,
                              oss_fuzz_base_project.project_name)):
@@ -831,10 +563,10 @@ def autofuzz_project_from_github(github_url,
                                   oss_fuzz_base_project.project_name)
 
         # Extract class list for the target project
-        java_class_list = extract_class_list(projectdir)
+        java_class_list = utils.extract_class_list(projectdir)
 
         # Find project type
-        project_build_type = find_project_build_type(
+        project_build_type = utils.find_project_build_type(
             projectdir, oss_fuzz_base_project.project_name)
 
         if project_build_type:
@@ -889,8 +621,8 @@ def autofuzz_project_from_github(github_url,
             #                             parallelise=False,
             #                             dump_files=False)
         else:
-            cleanup_base_directory(base_oss_fuzz_project_dir,
-                                   oss_fuzz_base_project.project_name)
+            utils.cleanup_base_directory(base_oss_fuzz_project_dir,
+                                         oss_fuzz_base_project.project_name)
             return False
 
     # Check basic fuzzer and clean it afterwards
@@ -899,8 +631,8 @@ def autofuzz_project_from_github(github_url,
         OSS_FUZZ_BASE,
         log_dir=base_oss_fuzz_project_dir)
     if not res:
-        cleanup_base_directory(base_oss_fuzz_project_dir,
-                               oss_fuzz_base_project.project_name)
+        utils.cleanup_base_directory(base_oss_fuzz_project_dir,
+                                     oss_fuzz_base_project.project_name)
         return False
 
     # Generate all possible targets
@@ -948,8 +680,8 @@ def autofuzz_project_from_github(github_url,
 
     # Clean base directory for the project
     print("Cleaning base directory for %s" % (github_url))
-    cleanup_base_directory(base_oss_fuzz_project_dir,
-                           oss_fuzz_base_project.project_name)
+    utils.cleanup_base_directory(base_oss_fuzz_project_dir,
+                                 oss_fuzz_base_project.project_name)
 
     return True
 
@@ -1040,16 +772,6 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def get_target_repos(targets, language):
-    if targets == "constants":
-        return constants.git_repos[language]
-    github_projects = []
-    with open(args.targets, 'r') as f:
-        for line in f:
-            github_projects.append(line.replace("\n", "").strip())
-    return github_projects
-
-
 if __name__ == "__main__":
     parser = get_cmdline_parser()
     args = parser.parse_args()
@@ -1058,14 +780,14 @@ if __name__ == "__main__":
         if (args.benchmark):
             print("Benchmarking for python is not supported yet")
         else:
-            github_projects = get_target_repos(args.targets, 'python')
+            github_projects = utils.get_target_repos(args.targets, 'python')
             run_on_projects("python", github_projects, args.merge)
     elif args.language == 'java':
         if (args.benchmark):
             benchmark_projects = constants.benchmark['jvm']
             benchmark_on_projects("jvm", benchmark_projects, args.merge)
         else:
-            github_projects = get_target_repos(args.targets, 'jvm')
+            github_projects = utils.get_target_repos(args.targets, 'jvm')
             run_on_projects("jvm", github_projects, args.merge,
                             args.param_combination)
     else:
