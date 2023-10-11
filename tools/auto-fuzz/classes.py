@@ -15,6 +15,7 @@
 import os
 import base_files
 
+
 class OSS_FUZZ_PROJECT:
     """Abstraction of OSS-Fuzz project.
 

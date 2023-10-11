@@ -315,7 +315,8 @@ def build_and_test_single_possible_target(idx_folder,
         shutil.copy(protoc_path, protoc_dst)
         shutil.copytree(build_jar_path, build_jar_dst)
 
-    utils.copy_oss_fuzz_project_source(oss_fuzz_base_project, dst_oss_fuzz_project)
+    utils.copy_oss_fuzz_project_source(oss_fuzz_base_project,
+                                       dst_oss_fuzz_project)
 
     # Log dir
     idx_logdir = os.path.join(auto_fuzz_proj_dir, "autofuzz-log")

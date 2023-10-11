@@ -94,7 +94,8 @@ def find_project_build_type(dir, proj_name):
     # Search for sub directory with name same as project name
     for subdir in os.listdir(dir):
         if os.path.isdir(os.path.join(dir, subdir)) and subdir == proj_name:
-            project_build_type = _find_dir_build_type(os.path.join(dir, subdir))
+            project_build_type = _find_dir_build_type(os.path.join(
+                dir, subdir))
             if project_build_type:
                 return project_build_type
 
@@ -147,6 +148,7 @@ def copy_oss_fuzz_project_source(src_oss_project, dst_oss_project):
                      src_oss_project.project_name),
         os.path.join(dst_oss_project.project_folder,
                      dst_oss_project.project_name))
+
 
 # Project cleaning utils
 ########################
