@@ -157,7 +157,10 @@ class OSS_FUZZ_PROJECT:
                     self.language,
                     project_build_type=project_build_type))
 
-    def change_jvm_dockerfile(self, jdk_version, project_build_type, build_project=True):
+    def change_jvm_dockerfile(self,
+                              jdk_version,
+                              project_build_type,
+                              build_project=True):
         with open(self.dockerfile, "w") as docker_file:
             docker_file.write(
                 base_files.gen_dockerfile(
@@ -171,7 +174,8 @@ class OSS_FUZZ_PROJECT:
     def change_build_script(self, project_build_type, build_project=True):
         with open(self.build_script, "w") as builder_file:
             builder_file.write(
-                base_files.gen_builder_1(self.language, project_build_type, build_project))
+                base_files.gen_builder_1(self.language, project_build_type,
+                                         build_project))
 
 
 def get_next_project_folder(base_dir):
@@ -380,10 +384,9 @@ def run_static_analysis_jvm(git_repo, oss_fuzz_base_project,
         if os.path.isfile(file) and file.startswith("jazzer"):
             os.remove(os.path.join(basedir, "build-jar", file))
     cmd = [
-        "./run.sh", "--jarfile", ":".join(jarfiles),
-        "--entryclass", "Fuzz", "--src",
-        os.path.join(basedir, oss_fuzz_base_project.project_name),
-        "--autofuzz"
+        "./run.sh", "--jarfile", ":".join(jarfiles), "--entryclass", "Fuzz",
+        "--src",
+        os.path.join(basedir, oss_fuzz_base_project.project_name), "--autofuzz"
     ]
     try:
         subprocess.check_call(" ".join(cmd),
@@ -655,9 +658,9 @@ def run_builder_pool(autofuzz_base_workdir,
     for idx in range(len(possible_targets)):
         if idx > max_targets_to_analyse:
             continue
-        arg_list.append((idx_folder, idx, oss_fuzz_base_project,
-                         possible_targets, language, benchmark,
-                         project_build_type, jdk))
+        arg_list.append(
+            (idx_folder, idx, oss_fuzz_base_project, possible_targets,
+             language, benchmark, project_build_type, jdk))
 
     print("Launching multi-threaded processing")
     print("Jobs completed:")
@@ -869,7 +872,8 @@ def autofuzz_project_from_github(github_url,
                     break
 
             # Change build.sh to avoid rebuild of project
-            oss_fuzz_base_project.change_build_script(project_build_type, False)
+            oss_fuzz_base_project.change_build_script(project_build_type,
+                                                      False)
 
         if static_res:
             workdir = os.path.join(oss_fuzz_base_project.project_folder,
