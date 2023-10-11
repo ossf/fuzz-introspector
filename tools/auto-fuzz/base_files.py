@@ -125,9 +125,9 @@ def _gen_builder_1_jvm(template_dir, build_project):
         BASE_BUILDER = "#!/bin/bash -eu\n" + file.read()
 
     if build_project:
-        return BASE_BUILDER % ("", "", ": << COMMENT", "COMMENT")
+        return BASE_BUILDER % ("", "", ": <<'COMMENT'", "COMMENT")
     else:
-        return BASE_BUILDER % (": << COMMENT", "COMMENT", "", "")
+        return BASE_BUILDER % (": <<'COMMENT'", "COMMENT", "", "")
 
 
 def _gen_base_fuzzer_python(template_dir):
