@@ -773,7 +773,7 @@ if __name__ == "__main__":
         else:
             projects = utils.get_target_repos(args.targets, 'jvm')
             benchmark = False
-        run_on_projects("jvm", projects, args.merge,
-                        args.param_combination, benchmark)
+        run_on_projects("jvm", projects, args.merge, args.param_combination,
+                        benchmark)
     else:
         print("Language not supported")
