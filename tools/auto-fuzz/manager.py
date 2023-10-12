@@ -169,11 +169,10 @@ def run_static_analysis_jvm(git_repo, oss_fuzz_base_project,
 
     # Run the java frontend static analysis
     cmd = [
-        "./run.sh", "--jarfile", jarfiles, "--entryclass", "Fuzz",
+        "./run.sh", "--jarfile", '"' + ":".join(jarfiles) + '"', "--entryclass", "Fuzz",
         "--src",
         os.path.join(basedir, oss_fuzz_base_project.project_name), "--autofuzz"
     ]
-    print(cmd)
     try:
         subprocess.check_call(" ".join(cmd),
                               shell=True,
