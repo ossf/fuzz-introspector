@@ -29,6 +29,23 @@ blueprint = Blueprint('site', __name__, template_folder='templates')
 gtag = None
 
 
+def get_functions_of_interest(project_name):
+    all_functions = data_storage.get_functions()
+    project_functions = []
+    for function in all_functions:
+        if function.project == project_name:
+            if function.runtime_code_coverage < 20.0:
+                project_functions.append(function)
+
+    # Filter based on accummulated cyclomatic complexity and low coverage
+    sorted_functions_of_interest = sorted(
+        project_functions,
+        key=lambda x:
+        (-x.accummulated_cyclomatic_complexity, -x.runtime_code_coverage))
+
+    return sorted_functions_of_interest
+
+
 def get_frontpage_summary_stats():
     # Get total number of projects
     all_projects = data_storage.get_projects()
@@ -146,6 +163,7 @@ def project_profile():
     #print(request.args.get('project', 'none'))
 
     target_project_name = request.args.get('project', 'none')
+
     project = get_project_with_name(target_project_name)
     if project != None:
         # Get the build status of the project
@@ -156,18 +174,41 @@ def project_profile():
                 project_build_status = build_status
                 break
 
+        # Get statistics of the project
         project_statistics = data_storage.PROJECT_TIMESTAMPS
         real_stats = []
         for ps in project_statistics:
             if ps.project_name == project.name:
                 real_stats.append(ps)
 
+        # Get functions of interest for the project
+        # Display a maximum of 10 functions of interest. Down the line, this
+        # should be more carefully constructed, perhaps based on a variety of
+        # heuristics.
+        functions_of_interest = list()
+        functions_of_interest_all = get_functions_of_interest(project.name)
+        for i in range(min(10, len(functions_of_interest_all))):
+            func_of_interest = functions_of_interest_all[i]
+            functions_of_interest.append({
+                'function_name':
+                func_of_interest.name,
+                'src_file':
+                func_of_interest.function_filename,
+                'complexity':
+                func_of_interest.accummulated_cyclomatic_complexity,
+                'code_coverage':
+                func_of_interest.runtime_code_coverage,
+                'code_coverage_url':
+                func_of_interest.code_coverage_url,
+            })
+
         return render_template('project-profile.html',
                                gtag=gtag,
                                project=project,
                                project_statistics=real_stats,
                                has_project_details=True,
-                               project_build_status=project_build_status)
+                               project_build_status=project_build_status,
+                               functions_of_interest=functions_of_interest)
 
     # Either this is a wrong project or we only have a build status for it
     all_build_status = data_storage.get_build_status()
@@ -188,7 +229,8 @@ def project_profile():
                                    project=project,
                                    project_statistics=None,
                                    has_project_details=False,
-                                   project_build_status=build_status)
+                                   project_build_status=build_status,
+                                   functions_of_interest=[])
     print("Nothing to do. We shuold probably have a 404")
     return redirect("/")
 
@@ -440,18 +482,8 @@ def far_reach_but_low_coverage():
     if target_project is None:
         return {'result': 'error', 'msg': 'Project not in the database'}
 
-    all_functions = data_storage.get_functions()
-    project_functions = []
-    for function in all_functions:
-        if function.project == project_name:
-            if function.runtime_code_coverage < 20.0:
-                project_functions.append(function)
-
-    # Filter based on accummulated cyclomatic complexity and low coverage
-    sorted_functions_of_interest = sorted(
-        project_functions,
-        key=lambda x:
-        (-x.accummulated_cyclomatic_complexity, -x.runtime_code_coverage))
+    # Get functions of interest
+    sorted_functions_of_interest = get_functions_of_interest(project_name)
 
     max_functions_to_show = 1000
     functions_to_return = list()
