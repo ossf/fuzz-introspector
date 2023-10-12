@@ -878,7 +878,7 @@ def create_db(max_projects, days_to_analyse, output_directory, input_directory,
         today = datetime.date.today()
         delta = today - start_date
         days_to_analyse = delta.days - 1
-        day_offset = 1
+        day_offset = 0
 
     date_range = create_date_range(day_offset, days_to_analyse)
     print(date_range)
