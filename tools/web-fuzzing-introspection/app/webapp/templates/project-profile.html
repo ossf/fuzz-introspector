@@ -151,16 +151,79 @@
               </p>
             </p>
           {% endif %}
-          </div> <!-- project progress -->
+          </div> <!-- project historical progress -->
         </div>
       </section>
+
+      <!-- Functions of interest forthe given project -->
+      {% if project.has_introspector() %}
+      <div class="container">
+        <div class="search__hero-wrapper">
+          <h1 class="section__title">
+            Functions of interest to fuzz
+          </h1>
+          <p>
+            This section outlines functions that may be of interest to fuzz.
+            They are based on ranking functions that has a lot of complexity but currently
+            exhibits low code coverage. The complexity is calculated based on the function itself
+            as well as the functions called by the given function, i.e. the tree of code
+            that the function triggers.
+          </p>
+          <br>
+          <p>
+            This is only a minor amount of introspection information available for this project. Please
+            consult the <a href="{{ project.introspector_data.introspector_report_url }}">Fuzz Introspector</a> report
+            for more information, e.g. the introspection table of all functions in the target
+            project <a href="{{ project.introspector_data.introspector_report_url }}#Project-functions-overview">available here</a>.
+          </p>
+        </div>
+        <div class="database overviewBody">
+  
+          <div class="database__body">
+            <div>
+              <table id="functionOfInterestTable">
+                <thead>
+                  <tr>
+                    <td>Function name</td>
+                    <td>Function source file</td>
+                    <td>Cyclomatic complexity</td>
+                    <td>Code coverage</td>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for func_of_interest in functions_of_interest %}
+                    <tr>
+                      <td>  <a href="{{func_of_interest.code_coverage_url}}">{{func_of_interest.function_name}}</a></td>
+                      <td>  {{func_of_interest.src_file}}</td>
+                      <td>  {{func_of_interest.complexity}}</td>
+                      <td>  {{func_of_interest.code_coverage}}%</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+      <!-- End functions of interest -->
+
     </main>
     <!-- end main content -->
     <!-- footer -->
 {% if has_project_details %}    
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-<script>
 
+    <!-- end main content -->
+    {% if project.has_introspector() %}
+ <script>
+  $( document ).ready(function() {
+    $('#functionOfInterestTable').dataTable({'pageLength': 1000})
+  });
+ </script>
+ {% endif %}
+
+<script>
 // Plot for code coverage in terms of lines over time
 const code_coverage_lines_x = [];
 const code_coverage_lines_y = [];
