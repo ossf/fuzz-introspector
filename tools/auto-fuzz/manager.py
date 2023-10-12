@@ -686,28 +686,11 @@ def autofuzz_project_from_github(github_url,
     return True
 
 
-def benchmark_on_projects(language,
-                          benchmarks_to_target,
-                          to_merge=False,
-                          param_combination=False):
-    """Run autofuzz generation on a list of local benchmark."""
-    home_dir = os.getcwd()
-    for benchmark in benchmarks_to_target:
-        os.chdir(home_dir)
-        autofuzz_project_from_github(benchmark,
-                                     language,
-                                     do_static_analysis=True,
-                                     to_merge=to_merge,
-                                     param_combination=param_combination,
-                                     benchmark=True)
-    print("Completed auto-fuzz generation on %d benchmarks" %
-          len(benchmarks_to_target))
-
-
 def run_on_projects(language,
                     repos_to_target,
                     to_merge=False,
-                    param_combination=False):
+                    param_combination=False,
+                    benchmark=False):
     """Run autofuzz generation on a list of Github projects."""
     home_dir = os.getcwd()
     for repo in repos_to_target:
@@ -716,7 +699,8 @@ def run_on_projects(language,
                                      language,
                                      do_static_analysis=True,
                                      to_merge=to_merge,
-                                     param_combination=param_combination)
+                                     param_combination=param_combination,
+                                     benchmark=benchmark)
     print("Completed auto-fuzz generation on %d projects" %
           len(repos_to_target))
 
@@ -784,11 +768,12 @@ if __name__ == "__main__":
             run_on_projects("python", github_projects, args.merge)
     elif args.language == 'java':
         if (args.benchmark):
-            benchmark_projects = constants.benchmark['jvm']
-            benchmark_on_projects("jvm", benchmark_projects, args.merge)
+            projects = constants.benchmark['jvm']
+            benchmark = True
         else:
-            github_projects = utils.get_target_repos(args.targets, 'jvm')
-            run_on_projects("jvm", github_projects, args.merge,
-                            args.param_combination)
+            projects = utils.get_target_repos(args.targets, 'jvm')
+            benchmark = False
+        run_on_projects("jvm", projects, args.merge, args.param_combination,
+                        benchmark)
     else:
         print("Language not supported")
