@@ -106,9 +106,9 @@ class OSS_FUZZ_PROJECT:
                     project_build_type=project_build_type))
 
     def change_java_dockerfile(self,
-                              jdk_version,
-                              project_build_type,
-                              build_project=True):
+                               jdk_version,
+                               project_build_type,
+                               build_project=True):
         with open(self.dockerfile, "w") as docker_file:
             docker_file.write(
                 base_files.gen_dockerfile(

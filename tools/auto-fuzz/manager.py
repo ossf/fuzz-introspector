@@ -104,7 +104,7 @@ def run_static_analysis_python(git_repo, oss_fuzz_base_project,
 
 
 def build_java_project(oss_fuzz_base_project, base_oss_fuzz_project_dir,
-                      project_type):
+                       project_type):
     basedir = oss_fuzz_base_project.project_folder
     build_ret = False
     jarfiles = None
@@ -146,7 +146,7 @@ def build_java_project(oss_fuzz_base_project, base_oss_fuzz_project_dir,
 
 
 def run_static_analysis_java(git_repo, oss_fuzz_base_project,
-                            base_oss_fuzz_project_dir, project_type):
+                             base_oss_fuzz_project_dir, project_type):
     basedir = oss_fuzz_base_project.project_folder
     project_name = oss_fuzz_base_project.project_name
 
@@ -720,7 +720,8 @@ if __name__ == "__main__":
     parser = get_cmdline_parser()
     args = parser.parse_args()
 
-    projects = utils.get_target_repos(args.targets, args.language, args.benchmark)
+    projects = utils.get_target_repos(args.targets, args.language,
+                                      args.benchmark)
 
     if projects:
         run_on_projects(args.language, projects, args.merge,

@@ -32,8 +32,8 @@ def gen_dockerfile(github_url,
         return _gen_dockerfile_python(github_url, project_name, template_dir)
     elif language == "java":
         return _gen_dockerfile_java(github_url, project_name, jdk_version,
-                                   build_project, template_dir,
-                                   project_build_type)
+                                    build_project, template_dir,
+                                    project_build_type)
     else:
         return ""
 
@@ -91,7 +91,7 @@ def _gen_dockerfile_python(github_url, project_name, template_dir):
 
 
 def _gen_dockerfile_java(github_url, project_name, jdk_version, build_project,
-                        template_dir, project_build_type):
+                         template_dir, project_build_type):
     if build_project:
         comment = "#"
     else:
