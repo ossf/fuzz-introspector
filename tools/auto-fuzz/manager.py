@@ -179,7 +179,7 @@ def run_static_analysis_java(git_repo, oss_fuzz_base_project,
 
     # Prepare environment variable for found version of JDK
     target_jdk_path = os.path.join(oss_fuzz_base_project.project_folder,
-                                       "jdk.tar.gz")
+                                   "jdk.tar.gz")
     with open(target_jdk_path, 'wb') as jdkfile:
         jdkfile.write(requests.get(constants.JDK_URL[jdk_key]).content)
     with tarfile.open(os.path.join(basedir, "jdk.tar.gz"), "r:gz") as jdkfile:

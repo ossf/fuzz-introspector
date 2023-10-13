@@ -62,13 +62,16 @@ JAVA_IGNORE_OBJECT_METHOD = True
 
 FILE_TO_PREPARE = {
     'java': {
-        'ant': "https://dlcdn.apache.org//ant/binaries/apache-ant-1.10.13-bin.zip",
-        'maven': "https://archive.apache.org/dist/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.zip",
-        'gradle': "https://services.gradle.org/distributions/gradle-7.4.2-bin.zip",
-        'protoc':  "https://github.com/protocolbuffers/protobuf/releases/download/v3.15.8/protoc-3.15.8-linux-x86_64.zip"
+        'ant':
+        "https://dlcdn.apache.org//ant/binaries/apache-ant-1.10.13-bin.zip",
+        'maven':
+        "https://archive.apache.org/dist/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.zip",
+        'gradle':
+        "https://services.gradle.org/distributions/gradle-7.4.2-bin.zip",
+        'protoc':
+        "https://github.com/protocolbuffers/protobuf/releases/download/v3.15.8/protoc-3.15.8-linux-x86_64.zip"
     },
-    'python': {
-    }
+    'python': {}
 }
 
 git_repos = {
