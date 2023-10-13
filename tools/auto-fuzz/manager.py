@@ -160,26 +160,6 @@ def run_static_analysis_jvm(git_repo, oss_fuzz_base_project,
         print("Unknown project type or project build fail.\n")
         return False, None
 
-    jarfiles_compile = jarfiles
-
-    # Retrieve Jazzer package for building fuzzer
-    jazzer_url = "https://github.com/CodeIntelligenceTesting/jazzer/releases/download/v0.15.0/jazzer-linux.tar.gz"
-    response = requests.get(jazzer_url)
-    with open(os.path.join(basedir, "jazzer.tar.gz"), "wb") as file:
-        file.write(response.content)
-    with tarfile.open(os.path.join(basedir, "jazzer.tar.gz")) as file:
-        file.extractall(basedir)
-    jarfiles_compile.append(os.path.join(basedir, "jazzer_standalone.jar"))
-
-    # Retrieve Apache Common Lang3 package
-    # This library provides method to translate primitive type arrays to
-    # their respective class object arrays to avoid compilation error.
-    apache_url = "https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar"
-    response = requests.get(apache_url)
-    with open(os.path.join(basedir, "commons-lang3.jar"), "wb") as file:
-        file.write(response.content)
-    jarfiles_compile.append(os.path.join(basedir, "commons-lang3.jar"))
-
     # Prepare environment variable for found version of JDK
     env_var = os.environ.copy()
     env_var['JAVA_HOME'] = os.path.join(basedir, jdk_base)
@@ -187,30 +167,10 @@ def run_static_analysis_jvm(git_repo, oss_fuzz_base_project,
         basedir, jdk_base, "bin") + ":" + os.path.join(
             basedir, constants.MAVEN_PATH) + ":" + env_var['PATH']
 
-    # Compile and package fuzzer to jar file
-    cmd = [
-        'javac -cp "%s" %s/Fuzz.java' % (':'.join(jarfiles_compile), basedir),
-        'jar cvf %s/Fuzz.jar -C %s Fuzz.class' % (basedir, basedir)
-    ]
-    try:
-        subprocess.check_call(" && ".join(cmd),
-                              shell=True,
-                              timeout=600,
-                              env=env_var,
-                              stdout=subprocess.DEVNULL,
-                              stderr=subprocess.DEVNULL)
-    except subprocess.TimeoutExpired:
-        print("Fail to compile Fuzz.java.\n")
-        return False, None
-
     # Run the java frontend static analysis
-    jarfiles.append(os.path.join(basedir, "Fuzz.jar"))
-    for file in os.listdir(os.path.join(basedir, "build-jar")):
-        if os.path.isfile(file) and file.startswith("jazzer"):
-            os.remove(os.path.join(basedir, "build-jar", file))
     cmd = [
-        "./run.sh", "--jarfile", ":".join(jarfiles), "--entryclass", "Fuzz",
-        "--src",
+        "./run.sh", "--jarfile", '"' + ":".join(jarfiles) + '"',
+        "--entryclass", "Fuzz", "--src",
         os.path.join(basedir, oss_fuzz_base_project.project_name), "--autofuzz"
     ]
     try:
