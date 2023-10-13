@@ -64,7 +64,7 @@ class FuzzTarget:
             self.fuzzer_init_source_code = orig.fuzzer_init_source_code
             self.fuzzer_tear_down_source_code = orig.fuzzer_tear_down_source_code
         elif func_elem:
-            # Method name in .data.yaml for jvm: [className].methodName(methodParameterList)
+            # Method name in .data.yaml for java: [className].methodName(methodParameterList)
             self.function_name = func_elem['functionName'].split(
                 '].')[1].split('(')[0]
             self.function_target = get_target_method_statement(func_elem)
@@ -435,7 +435,7 @@ def _search_static_factory_method(classname,
         possible_target.imports_to_add.update(_handle_import(func_elem))
 
         # Remove [] character and argument list from function name
-        # Method name in .data.yaml for jvm: [className].methodName(methodParameterList)
+        # Method name in .data.yaml for java: [className].methodName(methodParameterList)
         call = func_elem['functionName'].split('(')[0]
         call = call.replace('[', '').replace(']', '')
 
@@ -1073,7 +1073,7 @@ def _generate_heuristic_1(method_tuple, possible_targets, max_target):
     Will also add proper exception handling based on the exception list
     provided by the frontend code.
     """
-    HEURISTIC_NAME = "jvm-autofuzz-heuristics-1"
+    HEURISTIC_NAME = "java-autofuzz-heuristics-1"
 
     _, _, _, static_method_list = method_tuple
 
@@ -1139,7 +1139,7 @@ def _generate_heuristic_2(method_tuple, possible_targets, max_target):
     Will also add proper exception handling based on the exception list
     provided by the frontend code.
     """
-    HEURISTIC_NAME = "jvm-autofuzz-heuristics-2"
+    HEURISTIC_NAME = "java-autofuzz-heuristics-2"
 
     init_dict, method_list, _, _ = method_tuple
 
@@ -1221,7 +1221,7 @@ def _generate_heuristic_3(method_tuple, possible_targets, max_target):
     Will also add proper exception handling based on the exception list
     provided by the frontend code.
     """
-    HEURISTIC_NAME = "jvm-autofuzz-heuristics-3"
+    HEURISTIC_NAME = "java-autofuzz-heuristics-3"
 
     init_dict, method_list, _, static_method_list = method_tuple
     for func_elem in method_list:
@@ -1297,7 +1297,7 @@ def _generate_heuristic_4(method_tuple, possible_targets, max_target):
     Will also add proper exception handling based on the exception list
     provided by the frontend code.
     """
-    HEURISTIC_NAME = "jvm-autofuzz-heuristics-4"
+    HEURISTIC_NAME = "java-autofuzz-heuristics-4"
 
     init_dict, method_list, instance_method_list, static_method_list = method_tuple
     for func_elem in method_list:
@@ -1370,7 +1370,7 @@ def _generate_heuristic_6(method_tuple, possible_targets, max_target):
     Will also add proper exception handling based on the exception list
     provided by the frontend code.
     """
-    HEURISTIC_NAME = "jvm-autofuzz-heuristics-6"
+    HEURISTIC_NAME = "java-autofuzz-heuristics-6"
 
     init_dict, method_list, instance_method_list, static_method_list = method_tuple
     for func_elem in method_list:
@@ -1458,7 +1458,7 @@ def _generate_heuristic_7(method_tuple, possible_targets, max_target):
     Will also add proper exception handling based on the exception list
     provided by the frontend code.
     """
-    HEURISTIC_NAME = "jvm-autofuzz-heuristics-7"
+    HEURISTIC_NAME = "java-autofuzz-heuristics-7"
 
     init_dict, method_list, instance_method_list, static_method_list = method_tuple
     for func_elem in method_list + static_method_list:
@@ -1577,7 +1577,7 @@ def _generate_heuristic_8(method_tuple, possible_targets, max_target):
     Will also add proper exception handling based on the exception list
     provided by the frontend code.
     """
-    HEURISTIC_NAME = "jvm-autofuzz-heuristics-8"
+    HEURISTIC_NAME = "java-autofuzz-heuristics-8"
 
     init_dict, method_list, instance_method_list, static_method_list = method_tuple
     for func_elem in method_list:
@@ -1667,7 +1667,7 @@ def _generate_heuristic_9(method_tuple, possible_targets, max_target):
     Will also add proper exception handling based on the exception list
     provided by the frontend code.
     """
-    HEURISTIC_NAME = "jvm-autofuzz-heuristics-9"
+    HEURISTIC_NAME = "java-autofuzz-heuristics-9"
 
     init_dict, method_list, instance_method_list, static_method_list = method_tuple
     for func_elem in method_list:
@@ -1759,7 +1759,7 @@ def _generate_heuristic_10(method_tuple, possible_targets, max_target):
     Will also add proper exception handling based on the exception list
     provided by the frontend code.
     """
-    HEURISTIC_NAME = "jvm-autofuzz-heuristics-10"
+    HEURISTIC_NAME = "java-autofuzz-heuristics-10"
 
     global need_param_combination
     init_dict, method_list, instance_method_list, static_method_list = method_tuple
@@ -1875,7 +1875,7 @@ def _generate_heuristic_11(method_tuple, possible_targets, max_target):
     Will also add proper exception handling based on the exception list
     provided by the frontend code.
     """
-    HEURISTIC_NAME = "jvm-autofuzz-heuristics-11"
+    HEURISTIC_NAME = "java-autofuzz-heuristics-11"
 
     init_dict, method_list, instance_method_list, static_method_list = method_tuple
 

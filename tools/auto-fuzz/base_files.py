@@ -30,10 +30,10 @@ def gen_dockerfile(github_url,
 
     if language == "python":
         return _gen_dockerfile_python(github_url, project_name, template_dir)
-    elif language == "jvm":
-        return _gen_dockerfile_jvm(github_url, project_name, jdk_version,
-                                   build_project, template_dir,
-                                   project_build_type)
+    elif language == "java":
+        return _gen_dockerfile_java(github_url, project_name, jdk_version,
+                                    build_project, template_dir,
+                                    project_build_type)
     else:
         return ""
 
@@ -48,8 +48,8 @@ def gen_builder_1(language="python",
 
     if language == "python":
         return _gen_builder_1_python(template_dir)
-    elif language == "jvm":
-        return _gen_builder_1_jvm(template_dir, build_project)
+    elif language == "java":
+        return _gen_builder_1_java(template_dir, build_project)
     else:
         return ""
 
@@ -64,8 +64,8 @@ def gen_base_fuzzer(language="python",
 
     if language == "python":
         return _gen_base_fuzzer_python(template_dir)
-    elif language == "jvm":
-        return _gen_base_fuzzer_jvm(template_dir, need_base_import)
+    elif language == "java":
+        return _gen_base_fuzzer_java(template_dir, need_base_import)
     else:
         return ""
 
@@ -90,8 +90,8 @@ def _gen_dockerfile_python(github_url, project_name, template_dir):
     return BASE_DOCKERFILE
 
 
-def _gen_dockerfile_jvm(github_url, project_name, jdk_version, build_project,
-                        template_dir, project_build_type):
+def _gen_dockerfile_java(github_url, project_name, jdk_version, build_project,
+                         template_dir, project_build_type):
     if build_project:
         comment = "#"
     else:
@@ -120,7 +120,7 @@ def _gen_builder_1_python(template_dir):
     return BASE_BUILDER
 
 
-def _gen_builder_1_jvm(template_dir, build_project):
+def _gen_builder_1_java(template_dir, build_project):
     with open(os.path.join(template_dir, "build.sh-template"), "r") as file:
         BASE_BUILDER = "#!/bin/bash -eu\n" + file.read()
 
@@ -137,7 +137,7 @@ def _gen_base_fuzzer_python(template_dir):
     return BASE_FUZZER
 
 
-def _gen_base_fuzzer_jvm(template_dir, need_base_import):
+def _gen_base_fuzzer_java(template_dir, need_base_import):
     BASE_IMPORT = """import com.code_intelligence.jazzer.api.FuzzedDataProvider;
 import org.apache.commons.lang3.ArrayUtils;"""
 

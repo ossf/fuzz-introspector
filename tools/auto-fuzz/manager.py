@@ -38,7 +38,7 @@ from fuzz_introspector import commands
 import base_files
 import oss_fuzz_manager
 import fuzz_driver_generation_python
-import fuzz_driver_generation_jvm
+import fuzz_driver_generation_java
 import post_process
 import utils
 from oss_fuzz_project import OSS_FUZZ_PROJECT
@@ -54,7 +54,7 @@ FUZZ_INTRO_BASE = basedir + "/../../"
 OSS_FUZZ_BASE = basedir + "/../../../oss-fuzz"
 FUZZ_INTRO_MAIN = {
     "python": os.path.join(FUZZ_INTRO_BASE, "frontends", "python", "main.py"),
-    "jvm": os.path.join(FUZZ_INTRO_BASE, "frontends", "java", "run.sh")
+    "java": os.path.join(FUZZ_INTRO_BASE, "frontends", "java", "run.sh")
 }
 
 if not os.path.isdir(FUZZ_INTRO_BASE):
@@ -63,7 +63,7 @@ if not os.path.isdir(FUZZ_INTRO_BASE):
 if not os.path.isfile(FUZZ_INTRO_MAIN["python"]):
     raise Exception("Could not find fuzz introspector runner for python")
 
-if not os.path.isfile(FUZZ_INTRO_MAIN["jvm"]):
+if not os.path.isfile(FUZZ_INTRO_MAIN["java"]):
     raise Exception("Could not find fuzz introspector runner for java")
 
 if not os.path.isdir(OSS_FUZZ_BASE):
@@ -103,8 +103,8 @@ def run_static_analysis_python(git_repo, oss_fuzz_base_project,
     return ret
 
 
-def build_jvm_project(oss_fuzz_base_project, base_oss_fuzz_project_dir,
-                      project_type):
+def build_java_project(oss_fuzz_base_project, base_oss_fuzz_project_dir,
+                       project_type):
     basedir = oss_fuzz_base_project.project_folder
     build_ret = False
     jarfiles = None
@@ -114,7 +114,7 @@ def build_jvm_project(oss_fuzz_base_project, base_oss_fuzz_project_dir,
         # Order JDK15 (oss-fuzz default) -> JDK17 -> JDK11 -> JDK8
         for jdk in constants.JDK_HOME:
             jdk_dir = constants.JDK_HOME[jdk]
-            oss_fuzz_base_project.change_jvm_dockerfile(jdk, project_type)
+            oss_fuzz_base_project.change_java_dockerfile(jdk, project_type)
 
             build_ret = oss_fuzz_manager.copy_and_build_project(
                 basedir, OSS_FUZZ_BASE, log_dir=base_oss_fuzz_project_dir)
@@ -145,15 +145,15 @@ def build_jvm_project(oss_fuzz_base_project, base_oss_fuzz_project_dir,
     return (build_ret, jarfiles, jdk_base)
 
 
-def run_static_analysis_jvm(git_repo, oss_fuzz_base_project,
-                            base_oss_fuzz_project_dir, project_type):
+def run_static_analysis_java(git_repo, oss_fuzz_base_project,
+                             base_oss_fuzz_project_dir, project_type):
     basedir = oss_fuzz_base_project.project_folder
     project_name = oss_fuzz_base_project.project_name
 
     possible_imports = set()
     curr_dir = os.getcwd()
 
-    build_ret, jarfiles, jdk_base = build_jvm_project(
+    build_ret, jarfiles, jdk_base = build_java_project(
         oss_fuzz_base_project, base_oss_fuzz_project_dir, project_type)
 
     if not build_ret:
@@ -180,7 +180,7 @@ def run_static_analysis_jvm(git_repo, oss_fuzz_base_project,
                               env=env_var,
                               stdout=subprocess.DEVNULL,
                               stderr=subprocess.DEVNULL,
-                              cwd=os.path.dirname(FUZZ_INTRO_MAIN["jvm"]))
+                              cwd=os.path.dirname(FUZZ_INTRO_MAIN["java"]))
     except subprocess.TimeoutExpired:
         print("Fail to execute java frontend code.\n")
         return False, None
@@ -191,9 +191,9 @@ def run_static_analysis_jvm(git_repo, oss_fuzz_base_project,
     # Move data and data.yaml to working directory
     if not os.path.exists(os.path.join(basedir, "work")):
         os.mkdir(os.path.join(basedir, "work"))
-    data_src = os.path.join(os.path.dirname(FUZZ_INTRO_MAIN["jvm"]),
+    data_src = os.path.join(os.path.dirname(FUZZ_INTRO_MAIN["java"]),
                             "fuzzerLogFile-Fuzz.data")
-    yaml_src = os.path.join(os.path.dirname(FUZZ_INTRO_MAIN["jvm"]),
+    yaml_src = os.path.join(os.path.dirname(FUZZ_INTRO_MAIN["java"]),
                             "fuzzerLogFile-Fuzz.data.yaml")
     data_dst = os.path.join(basedir, "work", "fuzzerLogFile-Fuzz.data")
     yaml_dst = os.path.join(basedir, "work", "fuzzerLogFile-Fuzz.data.yaml")
@@ -249,7 +249,7 @@ def build_and_test_single_possible_target(idx_folder,
     # Copy files from base OSS-Fuzz project
     utils.copy_core_oss_fuzz_project_files(oss_fuzz_base_project,
                                            dst_oss_fuzz_project)
-    if language == "jvm":
+    if language == "java":
         ant_path = os.path.join(oss_fuzz_base_project.project_folder,
                                 "ant.zip")
         ant_dst = os.path.join(dst_oss_fuzz_project.project_folder, "ant.zip")
@@ -328,9 +328,9 @@ def build_and_test_single_possible_target(idx_folder,
               "w") as summary_file:
         json.dump(summary, summary_file)
 
-    if language == "jvm":
+    if language == "java":
         # Change build.sh and Dockerfile back to normal
-        dst_oss_fuzz_project.change_jvm_dockerfile(jdk, project_build_type)
+        dst_oss_fuzz_project.change_java_dockerfile(jdk, project_build_type)
         dst_oss_fuzz_project.change_build_script(project_build_type)
 
     # Cleanup oss-fuzz artifacts
@@ -472,12 +472,12 @@ def autofuzz_project_from_github(github_url,
                              oss_fuzz_base_project.project_name)):
             return False
 
-    # If this is a jvm target download ant, maven and gradle once so we don't
+    # If this is a java target download ant, maven and gradle once so we don't
     # have to do it for each proejct. Also extract a class_list for java classes
     # in the repository before building the project. This class_list is used for
     # target method filtering in the target generation stage. Some project requires
     # protoc to generate java code, so protoc is also downloaded here.
-    if language == "jvm":
+    if language == "java":
         # Download OpenJDK:
         target_jdk_path = os.path.join(oss_fuzz_base_project.project_folder,
                                        "jdk15.tar.gz")
@@ -549,8 +549,8 @@ def autofuzz_project_from_github(github_url,
             static_res = run_static_analysis_python(github_url,
                                                     oss_fuzz_base_project,
                                                     base_oss_fuzz_project_dir)
-        elif language == "jvm":
-            static_res, jdk_base = run_static_analysis_jvm(
+        elif language == "java":
+            static_res, jdk_base = run_static_analysis_java(
                 github_url, oss_fuzz_base_project, base_oss_fuzz_project_dir,
                 project_build_type)
 
@@ -558,7 +558,7 @@ def autofuzz_project_from_github(github_url,
             # and avoid rebuild of project
             for key in constants.JDK_HOME:
                 if constants.JDK_HOME[key] == jdk_base:
-                    oss_fuzz_base_project.change_jvm_dockerfile(
+                    oss_fuzz_base_project.change_java_dockerfile(
                         key, project_build_type, False)
                     jdk = key
                     break
@@ -603,8 +603,8 @@ def autofuzz_project_from_github(github_url,
             if language == "python":
                 possible_targets = fuzz_driver_generation_python.generate_possible_targets(
                     oss_fuzz_base_project.project_folder)
-            elif language == "jvm":
-                possible_targets = fuzz_driver_generation_jvm.generate_possible_targets(
+            elif language == "java":
+                possible_targets = fuzz_driver_generation_java.generate_possible_targets(
                     oss_fuzz_base_project.project_folder, java_class_list,
                     constants.MAX_TARGET_PER_PROJECT_HEURISTIC,
                     param_combination)
@@ -720,20 +720,11 @@ if __name__ == "__main__":
     parser = get_cmdline_parser()
     args = parser.parse_args()
 
-    if args.language == 'python':
-        if (args.benchmark):
-            print("Benchmarking for python is not supported yet")
-        else:
-            github_projects = utils.get_target_repos(args.targets, 'python')
-            run_on_projects("python", github_projects, args.merge)
-    elif args.language == 'java':
-        if (args.benchmark):
-            projects = constants.benchmark['jvm']
-            benchmark = True
-        else:
-            projects = utils.get_target_repos(args.targets, 'jvm')
-            benchmark = False
-        run_on_projects("jvm", projects, args.merge, args.param_combination,
-                        benchmark)
+    projects = utils.get_target_repos(args.targets, args.language,
+                                      args.benchmark)
+
+    if projects:
+        run_on_projects(args.language, projects, args.merge,
+                        args.param_combination, args.benchmark)
     else:
         print("Language not supported")

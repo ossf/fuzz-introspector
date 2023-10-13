@@ -45,7 +45,7 @@ class OSS_FUZZ_PROJECT:
     def base_fuzzer(self):
         if self.language == "python":
             return self.project_folder + "/fuzz_1.py"
-        elif self.language == "jvm":
+        elif self.language == "java":
             return self.project_folder + "/Fuzz.java"
         else:
             # Temporary fail safe logic
@@ -59,7 +59,7 @@ class OSS_FUZZ_PROJECT:
     def oss_fuzz_fuzzer_namer(self):
         if self.language == "python":
             return os.path.basename(self.base_fuzzer).replace(".py", "")
-        elif self.language == "jvm":
+        elif self.language == "java":
             return os.path.basename(self.base_fuzzer).replace(".java", "")
         else:
             # Temporary fail safe logic
@@ -105,10 +105,10 @@ class OSS_FUZZ_PROJECT:
                     self.language,
                     project_build_type=project_build_type))
 
-    def change_jvm_dockerfile(self,
-                              jdk_version,
-                              project_build_type,
-                              build_project=True):
+    def change_java_dockerfile(self,
+                               jdk_version,
+                               project_build_type,
+                               build_project=True):
         with open(self.dockerfile, "w") as docker_file:
             docker_file.write(
                 base_files.gen_dockerfile(
