@@ -43,8 +43,14 @@ def git_clone_project(github_url, destination):
     return True
 
 
-def get_target_repos(targets, language):
+def get_target_repos(targets, language, is_benchmark):
     """Retrieve list of target proejct url"""
+    if language not in constants.git_repos:
+        return None
+
+    if is_benchmark:
+        return constants.benchmark[language]
+
     if targets == "constants":
         return constants.git_repos[language]
     github_projects = []
@@ -68,8 +74,8 @@ def get_next_project_folder(base_dir):
     return os.path.join(base_dir, AUTOFUZZDIR + str(max_idx + 1))
 
 
-# JVM Project discovery utils
-#############################
+# Java Project discovery utils
+##############################
 def _find_dir_build_type(dir):
     """Determine the java build project type of the directory"""
 
