@@ -175,8 +175,7 @@ def cleanup_base_directory(base_dir, project_name):
     """
     file_to_clean = [
         'Fuzz.jar', 'Fuzz.class', 'ant.zip', 'gradle.zip', 'maven.zip',
-        'protoc.zip', 'jdk15.tar.gz', 'jdk17.tar.gz', 'jdk11.tar.gz',
-        'jdk8.tar.gz'
+        'protoc.zip', 'jdk.tar.gz'
     ]
     dir_to_clean = [
         'apache-maven-3.6.3', 'apache-ant-1.10.13', 'gradle-7.4.2',
