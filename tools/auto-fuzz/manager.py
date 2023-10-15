@@ -72,6 +72,9 @@ if not os.path.isdir(OSS_FUZZ_BASE):
 
 def run_static_analysis_python(git_repo, oss_fuzz_base_project,
                                base_oss_fuzz_project_dir):
+    # Generate the base Dockerfile, build.sh, project.yaml and fuzz_1.py
+    oss_fuzz_base_project.write_basefiles()
+
     basedir = oss_fuzz_base_project.project_folder
     project_name = oss_fuzz_base_project.project_name
 
@@ -108,7 +111,7 @@ def build_java_project(oss_fuzz_base_project, base_oss_fuzz_project_dir,
     basedir = oss_fuzz_base_project.project_folder
     build_ret = False
     jarfiles = None
-    jdk_base = None
+    jdk_key = None
     if basedir:
         # Loop and use each JDK version in order in the previous failed.
         # Order JDK15 (oss-fuzz default) -> JDK17 -> JDK11 -> JDK8
@@ -138,29 +141,49 @@ def build_java_project(oss_fuzz_base_project, base_oss_fuzz_project_dir,
                         have_jar = True
                 if have_jar:
                     jarfiles = [os.path.join(jardir, "*.jar")]
-                jdk_base = jdk_dir
+                jdk_key = jdk
                 break
 
     oss_fuzz_manager.cleanup_project("base-autofuzz", OSS_FUZZ_BASE)
-    return (build_ret, jarfiles, jdk_base)
+    return (build_ret, jarfiles, jdk_key)
 
 
 def run_static_analysis_java(git_repo, oss_fuzz_base_project,
-                             base_oss_fuzz_project_dir, project_type):
+                             base_oss_fuzz_project_dir):
+
+    # Get project_dir
+    projectdir = os.path.join(oss_fuzz_base_project.project_folder,
+                              oss_fuzz_base_project.project_name)
+
+    # Find project type
+    project_build_type = utils.find_project_build_type(
+        projectdir, oss_fuzz_base_project.project_name)
+
+    if project_build_type:
+        # Generate the base Dockerfile, build.sh, project.yaml and Fuzz.java
+        oss_fuzz_base_project.write_basefiles(project_build_type)
+
     basedir = oss_fuzz_base_project.project_folder
     project_name = oss_fuzz_base_project.project_name
 
     possible_imports = set()
     curr_dir = os.getcwd()
 
-    build_ret, jarfiles, jdk_base = build_java_project(
-        oss_fuzz_base_project, base_oss_fuzz_project_dir, project_type)
+    build_ret, jarfiles, jdk_key = build_java_project(
+        oss_fuzz_base_project, base_oss_fuzz_project_dir, project_build_type)
+    jdk_base = constants.JDK_HOME[jdk_key]
 
     if not build_ret:
         print("Unknown project type or project build fail.\n")
-        return False, None
+        return False, None, None
 
     # Prepare environment variable for found version of JDK
+    target_jdk_path = os.path.join(oss_fuzz_base_project.project_folder,
+                                   "jdk.tar.gz")
+    with open(target_jdk_path, 'wb') as jdkfile:
+        jdkfile.write(requests.get(constants.JDK_URL[jdk_key]).content)
+    with tarfile.open(os.path.join(basedir, "jdk.tar.gz"), "r:gz") as jdkfile:
+        jdkfile.extractall(os.path.join(basedir))
     env_var = os.environ.copy()
     env_var['JAVA_HOME'] = os.path.join(basedir, jdk_base)
     env_var['PATH'] = os.path.join(
@@ -183,10 +206,10 @@ def run_static_analysis_java(git_repo, oss_fuzz_base_project,
                               cwd=os.path.dirname(FUZZ_INTRO_MAIN["java"]))
     except subprocess.TimeoutExpired:
         print("Fail to execute java frontend code.\n")
-        return False, None
+        return False, None, None
     except subprocess.CalledProcessError:
         print("Fail to execute java frontend code.\n")
-        return False, None
+        return False, None, None
 
     # Move data and data.yaml to working directory
     if not os.path.exists(os.path.join(basedir, "work")):
@@ -210,7 +233,7 @@ def run_static_analysis_java(git_repo, oss_fuzz_base_project,
         ret = False
 
     os.chdir(curr_dir)
-    return ret, jdk_base
+    return ret, jdk_base, project_build_type
 
 
 def tick_tqdm_tracker():
@@ -472,73 +495,13 @@ def autofuzz_project_from_github(github_url,
                              oss_fuzz_base_project.project_name)):
             return False
 
-    # If this is a java target download ant, maven and gradle once so we don't
-    # have to do it for each proejct. Also extract a class_list for java classes
-    # in the repository before building the project. This class_list is used for
-    # target method filtering in the target generation stage. Some project requires
-    # protoc to generate java code, so protoc is also downloaded here.
-    if language == "java":
-        # Download OpenJDK:
-        target_jdk_path = os.path.join(oss_fuzz_base_project.project_folder,
-                                       "jdk15.tar.gz")
-        with open(target_jdk_path, 'wb') as jf:
-            jf.write(requests.get(constants.JDK_URL["jdk15"]).content)
-        target_jdk_path = os.path.join(oss_fuzz_base_project.project_folder,
-                                       "jdk17.tar.gz")
-        with open(target_jdk_path, 'wb') as jf:
-            jf.write(requests.get(constants.JDK_URL["jdk17"]).content)
-        target_jdk_path = os.path.join(oss_fuzz_base_project.project_folder,
-                                       "jdk11.tar.gz")
-        with open(target_jdk_path, 'wb') as jf:
-            jf.write(requests.get(constants.JDK_URL["jdk11"]).content)
-        target_jdk_path = os.path.join(oss_fuzz_base_project.project_folder,
-                                       "jdk8.tar.gz")
-        with open(target_jdk_path, 'wb') as jf:
-            jf.write(requests.get(constants.JDK_URL["jdk8"]).content)
-        # Download Ant
+    # Download required files so we don't have to do it for each project.
+    for file in constants.FILE_TO_PREPARE[language]:
+        url = constants.FILE_TO_PREPARE[language][file]
         target_ant_path = os.path.join(oss_fuzz_base_project.project_folder,
-                                       "ant.zip")
-        with open(target_ant_path, 'wb') as mf:
-            mf.write(requests.get(constants.ANT_URL).content)
-
-        # Download Maven
-        target_maven_path = os.path.join(oss_fuzz_base_project.project_folder,
-                                         "maven.zip")
-        with open(target_maven_path, 'wb') as mf:
-            mf.write(requests.get(constants.MAVEN_URL).content)
-
-        # Download Gradle
-        target_gradle_path = os.path.join(oss_fuzz_base_project.project_folder,
-                                          "gradle.zip")
-        with open(target_gradle_path, 'wb') as gf:
-            gf.write(requests.get(constants.GRADLE_URL).content)
-
-        # Download protoc
-        target_protoc_path = os.path.join(oss_fuzz_base_project.project_folder,
-                                          "protoc.zip")
-        with open(target_protoc_path, 'wb') as gf:
-            gf.write(requests.get(constants.PROTOC_URL).content)
-
-        projectdir = os.path.join(oss_fuzz_base_project.project_folder,
-                                  oss_fuzz_base_project.project_name)
-
-        # Extract class list for the target project
-        java_class_list = utils.extract_class_list(projectdir)
-
-        # Find project type
-        project_build_type = utils.find_project_build_type(
-            projectdir, oss_fuzz_base_project.project_name)
-
-        if project_build_type:
-            # Generate the base Dockerfile, build.sh, project.yaml and Fuzz.java
-            oss_fuzz_base_project.write_basefiles(project_build_type)
-        else:
-            return False
-    elif language == "python":
-        # Generate the base Dockerfile, build.sh, project.yaml and fuzz_1.py
-        oss_fuzz_base_project.write_basefiles()
-    else:
-        return False
+                                       "%s.zip" % file)
+        with open(target_ant_path, 'wb') as zip_file:
+            zip_file.write(requests.get(url).content)
 
     static_res = None
     jdk_base = None
@@ -550,9 +513,8 @@ def autofuzz_project_from_github(github_url,
                                                     oss_fuzz_base_project,
                                                     base_oss_fuzz_project_dir)
         elif language == "java":
-            static_res, jdk_base = run_static_analysis_java(
-                github_url, oss_fuzz_base_project, base_oss_fuzz_project_dir,
-                project_build_type)
+            static_res, jdk_base, project_build_type = run_static_analysis_java(
+                github_url, oss_fuzz_base_project, base_oss_fuzz_project_dir)
 
             # Overwrite dockerfile with correct jdk version
             # and avoid rebuild of project
@@ -604,6 +566,9 @@ def autofuzz_project_from_github(github_url,
                 possible_targets = fuzz_driver_generation_python.generate_possible_targets(
                     oss_fuzz_base_project.project_folder)
             elif language == "java":
+                projectdir = os.path.join(oss_fuzz_base_project.project_folder,
+                                          oss_fuzz_base_project.project_name)
+                java_class_list = utils.extract_class_list(projectdir)
                 possible_targets = fuzz_driver_generation_java.generate_possible_targets(
                     oss_fuzz_base_project.project_folder, java_class_list,
                     constants.MAX_TARGET_PER_PROJECT_HEURISTIC,

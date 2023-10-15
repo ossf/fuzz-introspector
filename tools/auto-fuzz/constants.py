@@ -28,10 +28,6 @@ JDK_URL = {
     "jdk8":
     "https://download.java.net/openjdk/jdk8u43/ri/openjdk-8u43-linux-x64.tar.gz"
 }
-ANT_URL = "https://dlcdn.apache.org//ant/binaries/apache-ant-1.10.13-bin.zip"
-MAVEN_URL = "https://archive.apache.org/dist/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.zip"
-GRADLE_URL = "https://services.gradle.org/distributions/gradle-7.4.2-bin.zip"
-PROTOC_URL = "https://github.com/protocolbuffers/protobuf/releases/download/v3.15.8/protoc-3.15.8-linux-x86_64.zip"
 
 JDK_HOME = {
     "jdk15": "jdk-15.0.2",
@@ -64,13 +60,27 @@ JAVA_IGNORE_PLAIN_METHOD = True
 JAVA_IGNORE_TEST_METHOD = True
 JAVA_IGNORE_OBJECT_METHOD = True
 
+FILE_TO_PREPARE = {
+    'java': {
+        'ant':
+        "https://dlcdn.apache.org//ant/binaries/apache-ant-1.10.13-bin.zip",
+        'maven':
+        "https://archive.apache.org/dist/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.zip",
+        'gradle':
+        "https://services.gradle.org/distributions/gradle-7.4.2-bin.zip",
+        'protoc':
+        "https://github.com/protocolbuffers/protobuf/releases/download/v3.15.8/protoc-3.15.8-linux-x86_64.zip"
+    },
+    'python': {}
+}
+
 git_repos = {
     'python': [
         # 'https://github.com/davidhalter/parso',
         'https://github.com/nvawda/bz2file',
         # 'https://github.com/executablebooks/markdown-it-py'
     ],
-    'jvm': [
+    'java': [
         # 'https://github.com/eclipse-ee4j/angus-mail',
         # 'https://github.com/jboss-javassist/javassist'
         'https://github.com/tukaani-project/xz-java'
@@ -78,8 +88,9 @@ git_repos = {
 }
 
 benchmark = {
-    'jvm': [
+    'java': [
         'benchmark1', 'benchmark2', 'benchmark3', 'benchmark4', 'benchmark5',
         'benchmark6', 'benchmark7', 'benchmark8'
-    ]
+    ],
+    'python': []
 }

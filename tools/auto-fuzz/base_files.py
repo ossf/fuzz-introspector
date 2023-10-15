@@ -99,16 +99,14 @@ def _gen_dockerfile_java(github_url, project_name, jdk_version, build_project,
 
     with open(os.path.join(template_dir, "Dockerfile-template"), "r") as file:
         BASE_DOCKERFILE = file.read() % (
-            "%s", constants.PROTOC_URL, constants.JDK_URL[jdk_version],
-            constants.JDK_HOME[jdk_version], github_url, project_name,
-            project_name, project_name, comment, comment, project_name)
+            "%s", constants.FILE_TO_PREPARE['java']['protoc'],
+            constants.JDK_URL[jdk_version], constants.JDK_HOME[jdk_version],
+            github_url, project_name, project_name, project_name, comment,
+            comment, project_name)
 
-    if project_build_type == "ant":
-        return BASE_DOCKERFILE % (constants.ANT_URL)
-    elif project_build_type == "maven":
-        return BASE_DOCKERFILE % (constants.MAVEN_URL)
-    elif project_build_type == "gradle":
-        return BASE_DOCKERFILE % (constants.GRADLE_URL)
+    if project_build_type in constants.FILE_TO_PREPARE['java']:
+        return BASE_DOCKERFILE % (
+            constants.FILE_TO_PREPARE['java'][project_build_type])
     else:
         return ""
 
