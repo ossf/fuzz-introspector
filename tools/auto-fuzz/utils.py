@@ -161,7 +161,11 @@ def copy_oss_fuzz_project_source(src_oss_project, dst_oss_project):
 #################################
 def gen_introspector_dockerfile(dir, language):
     with open(os.path.join(dir, "Dockerfile"), "w") as file:
-        file.write(base_files.gen_dockerfile(None, None, language, project_build_type="introspector"))
+        file.write(
+            base_files.gen_dockerfile(None,
+                                      None,
+                                      language,
+                                      project_build_type="introspector"))
 
 
 def gen_introspector_build_script(dir, language):

@@ -170,8 +170,9 @@ def run_static_analysis_java(git_repo, oss_fuzz_base_project,
     possible_imports = set()
     curr_dir = os.getcwd()
 
-    build_ret, jardir, jdk_key = build_java_project(
-        oss_fuzz_base_project, base_oss_fuzz_project_dir, project_build_type)
+    build_ret, jardir, jdk_key = build_java_project(oss_fuzz_base_project,
+                                                    base_oss_fuzz_project_dir,
+                                                    project_build_type)
     jdk_base = constants.JDK_HOME[jdk_key]
 
     if not build_ret:
@@ -192,8 +193,7 @@ def run_static_analysis_java(git_repo, oss_fuzz_base_project,
     maven_dst = os.path.join(introspector_dir, "maven.zip")
     shutil.copy(maven_path, maven_dst)
     if jardir:
-        shutil.copytree(jardir,
-                        os.path.join(introspector_dir, "build-jar"))
+        shutil.copytree(jardir, os.path.join(introspector_dir, "build-jar"))
 
     introspector_ret = oss_fuzz_manager.copy_and_build_project(
         introspector_dir, OSS_FUZZ_BASE, log_dir=base_oss_fuzz_project_dir)

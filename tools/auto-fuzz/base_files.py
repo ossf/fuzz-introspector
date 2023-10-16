@@ -49,7 +49,8 @@ def gen_builder_1(language="python",
     if language == "python":
         return _gen_builder_1_python(template_dir)
     elif language == "java":
-        return _gen_builder_1_java(template_dir, build_project, project_build_type)
+        return _gen_builder_1_java(template_dir, build_project,
+                                   project_build_type)
     else:
         return ""
 
@@ -101,9 +102,9 @@ def _gen_dockerfile_java(github_url, project_name, jdk_version, build_project,
         BASE_DOCKERFILE = file.read()
 
     if project_build_type == "introspector":
-        return BASE_DOCKERFILE % (
-            constants.FILE_TO_PREPARE['java']['maven'],
-            constants.JDK_URL[jdk_version], constants.JDK_HOME[jdk_version])
+        return BASE_DOCKERFILE % (constants.FILE_TO_PREPARE['java']['maven'],
+                                  constants.JDK_URL[jdk_version],
+                                  constants.JDK_HOME[jdk_version])
 
     if project_build_type in constants.FILE_TO_PREPARE['java']:
         return BASE_DOCKERFILE % (
