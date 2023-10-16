@@ -20,10 +20,9 @@ COPY maven.zip $SRC/maven.zip
 RUN unzip maven.zip -d $SRC/maven && rm ./maven.zip
 ENV JAVA_HOME="$SRC/%s"
 ENV PATH="$JAVA_HOME/bin:$SRC/maven/apache-maven-3.6.3/bin:$PATH"
-RUN git clone --depth 1 https://github.com/ossf/fuzz-introspector introspector
 RUN mkdir -p $SRC/build-jar
 COPY build-jar/*.jar $SRC/build-jar/
 RUN mkdir -p $SRC/proj
 COPY proj/* $SRC/proj/
 COPY build.sh $SRC/
-WORKDIR $SRC/introspector/frontends/java
+WORKDIR /fuzz-introspector/frontends/java
