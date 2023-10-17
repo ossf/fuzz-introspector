@@ -110,7 +110,7 @@ def build_java_project(oss_fuzz_base_project, base_oss_fuzz_project_dir,
                        project_type):
     basedir = oss_fuzz_base_project.project_folder
     build_ret = False
-    jarfiles = None
+    jardir = None
     jdk_key = None
     if basedir:
         # Loop and use each JDK version in order in the previous failed.
@@ -139,13 +139,14 @@ def build_java_project(oss_fuzz_base_project, base_oss_fuzz_project_dir,
                             os.path.join(jardir, file)):
                         shutil.copy(os.path.join(out_dir, file), jardir)
                         have_jar = True
-                if have_jar:
-                    jarfiles = [os.path.join(jardir, "*.jar")]
+                if not have_jar:
+                    jardir = None
+
                 jdk_key = jdk
                 break
 
     oss_fuzz_manager.cleanup_project("base-autofuzz", OSS_FUZZ_BASE)
-    return (build_ret, jarfiles, jdk_key)
+    return (build_ret, jardir, jdk_key)
 
 
 def run_static_analysis_java(git_repo, oss_fuzz_base_project,
@@ -169,55 +170,44 @@ def run_static_analysis_java(git_repo, oss_fuzz_base_project,
     possible_imports = set()
     curr_dir = os.getcwd()
 
-    build_ret, jarfiles, jdk_key = build_java_project(
-        oss_fuzz_base_project, base_oss_fuzz_project_dir, project_build_type)
+    build_ret, jardir, jdk_key = build_java_project(oss_fuzz_base_project,
+                                                    base_oss_fuzz_project_dir,
+                                                    project_build_type)
     jdk_base = constants.JDK_HOME[jdk_key]
 
     if not build_ret:
         print("Unknown project type or project build fail.\n")
         return False, None, None
 
-    # Prepare environment variable for found version of JDK
-    target_jdk_path = os.path.join(oss_fuzz_base_project.project_folder,
-                                   "jdk.tar.gz")
-    with open(target_jdk_path, 'wb') as jdkfile:
-        jdkfile.write(requests.get(constants.JDK_URL[jdk_key]).content)
-    with tarfile.open(os.path.join(basedir, "jdk.tar.gz"), "r:gz") as jdkfile:
-        jdkfile.extractall(os.path.join(basedir))
-    env_var = os.environ.copy()
-    env_var['JAVA_HOME'] = os.path.join(basedir, jdk_base)
-    env_var['PATH'] = os.path.join(
-        basedir, jdk_base, "bin") + ":" + os.path.join(
-            basedir, constants.MAVEN_PATH) + ":" + env_var['PATH']
+    # Prepare OSS-Fuzz folder for static analysis
+    introspector_dir = os.path.join(basedir, "introspector")
+    if not os.path.exists(introspector_dir):
+        os.mkdir(introspector_dir)
 
-    # Run the java frontend static analysis
-    cmd = [
-        "./run.sh", "--jarfile", '"' + ":".join(jarfiles) + '"',
-        "--entryclass", "Fuzz", "--src",
-        os.path.join(basedir, oss_fuzz_base_project.project_name), "--autofuzz"
-    ]
-    try:
-        subprocess.check_call(" ".join(cmd),
-                              shell=True,
-                              timeout=1800,
-                              env=env_var,
-                              stdout=subprocess.DEVNULL,
-                              stderr=subprocess.DEVNULL,
-                              cwd=os.path.dirname(FUZZ_INTRO_MAIN["java"]))
-    except subprocess.TimeoutExpired:
+    utils.gen_introspector_dockerfile(introspector_dir, "java")
+    utils.gen_introspector_build_script(introspector_dir, "java")
+    shutil.copytree(os.path.join(basedir, project_name),
+                    os.path.join(introspector_dir, "proj"))
+    maven_path = os.path.join(oss_fuzz_base_project.project_folder,
+                              "maven.zip")
+    maven_dst = os.path.join(introspector_dir, "maven.zip")
+    shutil.copy(maven_path, maven_dst)
+    if jardir:
+        shutil.copytree(jardir, os.path.join(introspector_dir, "build-jar"))
+
+    introspector_ret = oss_fuzz_manager.copy_and_build_project(
+        introspector_dir, OSS_FUZZ_BASE, log_dir=base_oss_fuzz_project_dir)
+
+    if not introspector_ret:
         print("Fail to execute java frontend code.\n")
-        return False, None, None
-    except subprocess.CalledProcessError:
-        print("Fail to execute java frontend code.\n")
-        return False, None, None
+        ret = False
 
     # Move data and data.yaml to working directory
     if not os.path.exists(os.path.join(basedir, "work")):
         os.mkdir(os.path.join(basedir, "work"))
-    data_src = os.path.join(os.path.dirname(FUZZ_INTRO_MAIN["java"]),
-                            "fuzzerLogFile-Fuzz.data")
-    yaml_src = os.path.join(os.path.dirname(FUZZ_INTRO_MAIN["java"]),
-                            "fuzzerLogFile-Fuzz.data.yaml")
+    out_dir = os.path.join(OSS_FUZZ_BASE, "build", "out", "introspector")
+    data_src = os.path.join(out_dir, "fuzzerLogFile-Fuzz.data")
+    yaml_src = os.path.join(out_dir, "fuzzerLogFile-Fuzz.data.yaml")
     data_dst = os.path.join(basedir, "work", "fuzzerLogFile-Fuzz.data")
     yaml_dst = os.path.join(basedir, "work", "fuzzerLogFile-Fuzz.data.yaml")
     if os.path.isfile(data_src) and os.path.isfile(yaml_src):
@@ -231,6 +221,14 @@ def run_static_analysis_java(git_repo, oss_fuzz_base_project,
     else:
         print("Fail to execute java frontend code.\n")
         ret = False
+
+    # Clean introspector directory
+    try:
+        shutil.rmtree(introspector_dir)
+        oss_fuzz_manager.cleanup_project("introspector", OSS_FUZZ_BASE)
+    except:
+        # Ignore error for directory cleaning
+        pass
 
     os.chdir(curr_dir)
     return ret, jdk_base, project_build_type

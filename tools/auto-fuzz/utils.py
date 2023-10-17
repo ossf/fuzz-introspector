@@ -16,6 +16,7 @@ import constants
 import os
 import shutil
 import subprocess
+import base_files
 
 
 # Project preparation utils
@@ -154,6 +155,22 @@ def copy_oss_fuzz_project_source(src_oss_project, dst_oss_project):
                      src_oss_project.project_name),
         os.path.join(dst_oss_project.project_folder,
                      dst_oss_project.project_name))
+
+
+# Static anaylsis base file utils
+#################################
+def gen_introspector_dockerfile(dir, language):
+    with open(os.path.join(dir, "Dockerfile"), "w") as file:
+        file.write(
+            base_files.gen_dockerfile(None,
+                                      None,
+                                      language,
+                                      project_build_type="introspector"))
+
+
+def gen_introspector_build_script(dir, language):
+    with open(os.path.join(dir, "build.sh"), "w") as file:
+        file.write(base_files.gen_builder_1(language, "introspector"))
 
 
 # Project cleaning utils
