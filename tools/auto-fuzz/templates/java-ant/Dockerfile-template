@@ -25,9 +25,10 @@ RUN unzip protoc.zip -d $SRC/protoc && rm ./protoc.zip
 ENV ANT $SRC/ant/apache-ant-1.10.13/bin/ant
 ENV JAVA_HOME="$SRC/%s"
 ENV PATH="$JAVA_HOME/bin:$SRC/protoc/bin:$PATH"
-#RUN git clone --depth 1 %s %s
-COPY %s %s
+#RUN git clone --depth 1 %s proj
+COPY %s proj
 COPY *.sh *.java $SRC/
 %sRUN mkdir -p $SRC/build_jar
 %sCOPY build-jar/*.jar $SRC/build_jar/
-WORKDIR $SRC/%s
+%s
+WORKDIR $SRC/proj

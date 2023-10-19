@@ -116,3 +116,5 @@ do
 
   chmod u+x $OUT/$fuzzer_basename
 done
+
+%s

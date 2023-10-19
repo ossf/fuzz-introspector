@@ -26,9 +26,10 @@ ENV GRADLE_HOME $SRC/gradle/gradle-7.4.2
 ENV GRADLE_OPTS="-Dfile.encoding=utf-8"
 ENV JAVA_HOME="$SRC/%s"
 ENV PATH="$JAVA_HOME/bin:$SRC/gradle/gradle-7.4.2/bin:$SRC/protoc/bin:$PATH"
-#RUN git clone --depth 1 %s %s
-COPY %s %s
+#RUN git clone --depth 1 %s proj
+COPY %s proj
 COPY *.sh *.java $SRC/
 %sRUN mkdir -p $SRC/build_jar
 %sCOPY build-jar/*.jar $SRC/build_jar/
-WORKDIR $SRC/%s
+%s
+WORKDIR $SRC/proj
