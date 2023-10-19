@@ -107,7 +107,7 @@ def run_static_analysis_python(git_repo, oss_fuzz_base_project,
 
 
 def build_java_project(oss_fuzz_base_project, base_oss_fuzz_project_dir,
-                       project_type):
+                       project_build_type):
     basedir = oss_fuzz_base_project.project_folder
     build_ret = False
     jardir = None
@@ -117,7 +117,10 @@ def build_java_project(oss_fuzz_base_project, base_oss_fuzz_project_dir,
         # Order JDK15 (oss-fuzz default) -> JDK17 -> JDK11 -> JDK8
         for jdk in constants.JDK_HOME:
             jdk_dir = constants.JDK_HOME[jdk]
-            oss_fuzz_base_project.change_java_dockerfile(jdk, project_type)
+
+            oss_fuzz_base_project.change_java_dockerfile(
+                jdk, project_build_type)
+            oss_fuzz_base_project.change_build_script(project_build_type)
 
             build_ret = oss_fuzz_manager.copy_and_build_project(
                 basedir, OSS_FUZZ_BASE, log_dir=base_oss_fuzz_project_dir)
@@ -134,6 +137,30 @@ def build_java_project(oss_fuzz_base_project, base_oss_fuzz_project_dir,
                 project_name = os.path.basename(basedir)
                 out_dir = os.path.join(OSS_FUZZ_BASE, "build", "out",
                                        project_name)
+
+                # Check and copy data and data.yaml files
+                if not os.path.exists(os.path.join(basedir, "work")):
+                    os.mkdir(os.path.join(basedir, "work"))
+
+                data_src = os.path.join(out_dir, "fuzzerLogFile-Fuzz.data")
+                yaml_src = os.path.join(out_dir,
+                                        "fuzzerLogFile-Fuzz.data.yaml")
+                data_dst = os.path.join(basedir, "work",
+                                        "fuzzerLogFile-Fuzz.data")
+                yaml_dst = os.path.join(basedir, "work",
+                                        "fuzzerLogFile-Fuzz.data.yaml")
+                if os.path.isfile(data_src) and os.path.isfile(yaml_src):
+                    try:
+                        shutil.copy(data_src, data_dst)
+                        shutil.copy(yaml_src, yaml_dst)
+                    except:
+                        pass
+                if not os.path.isfile(data_dst) or not os.path.isfile(
+                        yaml_dst):
+                    build_ret = False
+                    break
+
+                # Check and copy build jar files
                 for file in os.listdir(out_dir):
                     if file.endswith(".jar") and not os.path.exists(
                             os.path.join(jardir, file)):
@@ -163,6 +190,9 @@ def run_static_analysis_java(git_repo, oss_fuzz_base_project,
     if project_build_type:
         # Generate the base Dockerfile, build.sh, project.yaml and Fuzz.java
         oss_fuzz_base_project.write_basefiles(project_build_type)
+    else:
+        print("Unknown project build type.\n")
+        return False, None, None
 
     basedir = oss_fuzz_base_project.project_folder
     project_name = oss_fuzz_base_project.project_name
@@ -176,62 +206,11 @@ def run_static_analysis_java(git_repo, oss_fuzz_base_project,
     jdk_base = constants.JDK_HOME[jdk_key]
 
     if not build_ret:
-        print("Unknown project type or project build fail.\n")
+        print("Project build fail or static analysis fail.\n")
         return False, None, None
 
-    # Prepare OSS-Fuzz folder for static analysis
-    introspector_dir = os.path.join(basedir, "introspector")
-    if not os.path.exists(introspector_dir):
-        os.mkdir(introspector_dir)
-
-    utils.gen_introspector_dockerfile(introspector_dir, "java")
-    utils.gen_introspector_build_script(introspector_dir, "java")
-    shutil.copytree(os.path.join(basedir, project_name),
-                    os.path.join(introspector_dir, "proj"))
-    maven_path = os.path.join(oss_fuzz_base_project.project_folder,
-                              "maven.zip")
-    maven_dst = os.path.join(introspector_dir, "maven.zip")
-    shutil.copy(maven_path, maven_dst)
-    if jardir:
-        shutil.copytree(jardir, os.path.join(introspector_dir, "build-jar"))
-
-    introspector_ret = oss_fuzz_manager.copy_and_build_project(
-        introspector_dir, OSS_FUZZ_BASE, log_dir=base_oss_fuzz_project_dir)
-
-    if not introspector_ret:
-        print("Fail to execute java frontend code.\n")
-        ret = False
-
-    # Move data and data.yaml to working directory
-    if not os.path.exists(os.path.join(basedir, "work")):
-        os.mkdir(os.path.join(basedir, "work"))
-    out_dir = os.path.join(OSS_FUZZ_BASE, "build", "out", "introspector")
-    data_src = os.path.join(out_dir, "fuzzerLogFile-Fuzz.data")
-    yaml_src = os.path.join(out_dir, "fuzzerLogFile-Fuzz.data.yaml")
-    data_dst = os.path.join(basedir, "work", "fuzzerLogFile-Fuzz.data")
-    yaml_dst = os.path.join(basedir, "work", "fuzzerLogFile-Fuzz.data.yaml")
-    if os.path.isfile(data_src) and os.path.isfile(yaml_src):
-        ret = True
-        try:
-            shutil.copy(data_src, data_dst)
-            shutil.copy(yaml_src, yaml_dst)
-        except:
-            print("Fail to execute java frontend code.\n")
-            ret = False
-    else:
-        print("Fail to execute java frontend code.\n")
-        ret = False
-
-    # Clean introspector directory
-    try:
-        shutil.rmtree(introspector_dir)
-        oss_fuzz_manager.cleanup_project("introspector", OSS_FUZZ_BASE)
-    except:
-        # Ignore error for directory cleaning
-        pass
-
     os.chdir(curr_dir)
-    return ret, jdk_base, project_build_type
+    return build_ret, jdk_base, project_build_type
 
 
 def tick_tqdm_tracker():
