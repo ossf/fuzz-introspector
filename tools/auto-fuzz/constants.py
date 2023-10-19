@@ -74,6 +74,21 @@ FILE_TO_PREPARE = {
     'python': {}
 }
 
+STATIC_ANALYSIS_FILE = {
+    'java': ['fuzzerLogFile-Fuzz.data', 'fuzzerLogFile-Fuzz.data.yaml'],
+    'python': ['fuzzerLogFile-fuzz_1.data.yaml']
+}
+
+BUILD_FILE_PROPERTY = {
+    'java': [
+        {
+            'src_file': '.jar',
+            'dst_dir': 'build-jar'
+        },
+    ],
+    'python': []
+}
+
 git_repos = {
     'python': [
         # 'https://github.com/davidhalter/parso',
