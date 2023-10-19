@@ -29,7 +29,8 @@ def gen_dockerfile(github_url,
         return ""
 
     if language == "python":
-        return _gen_dockerfile_python(github_url, project_name, template_dir)
+        return _gen_dockerfile_python(github_url, project_name, template_dir,
+                                      project_build_type)
     elif language == "java":
         return _gen_dockerfile_java(github_url, project_name, jdk_version,
                                     build_project, template_dir,
@@ -83,12 +84,16 @@ def gen_project_yaml(github_url, language="python", project_build_type=None):
     return BASE_YAML
 
 
-def _gen_dockerfile_python(github_url, project_name, template_dir):
+def _gen_dockerfile_python(github_url, project_name, template_dir,
+                           project_build_type):
     with open(os.path.join(template_dir, "Dockerfile-template"), "r") as file:
-        BASE_DOCKERFILE = file.read() % (
-            github_url, project_name, project_name, project_name, project_name)
+        BASE_DOCKERFILE = file.read()
 
-    return BASE_DOCKERFILE
+    if project_build_type == "introspector":
+        return BASE_DOCKERFILE % (project_name)
+    else:
+        return BASE_DOCKERFILE % (github_url, project_name, project_name,
+                                  project_name, project_name)
 
 
 def _gen_dockerfile_java(github_url, project_name, jdk_version, build_project,

@@ -13,14 +13,5 @@
 # limitations under the License.
 #
 ##########################################################################
-FROM gcr.io/oss-fuzz-base/base-builder-python
-RUN apt-get install -y python3.9 python3.9-dev && \
-    ln --force -s /usr/bin/python3.9 /usr/local/bin/python3 && \
-    apt-get install -y python3-pip && \
-    python3 -m pip install cython virtualenv
-RUN python3 -m pip install --upgrade pip setuptools meson ninja numpy pybind11 cython pythran setuptools_scm
-RUN python3 -m pip install -r /fuzz-introspector/requirements.txt
-RUN python3 -m pip install /fuzz-introspector/frontends/python/PyCG
-COPY %s proj
-COPY *.sh *.py $SRC/
-WORKDIR /fuzz-introspector/frontends/python
+python3 main.py --fuzzer $SRC/fuzz_1.py --package=$SRC/proj
+cp ./fuzzerLogFile-fuzz_1.data.yaml $OUT/
