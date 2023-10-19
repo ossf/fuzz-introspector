@@ -163,7 +163,7 @@ def write_base_file(oss_fuzz_base_project, projectdir, language):
     """Retrieve and create base file for static analysis"""
     if language == "python":
         project_build_type = "introspector"
-    elif language =="java":
+    elif language == "java":
         project_build_type = _find_project_build_type(
             projectdir, oss_fuzz_base_project.project_name)
     else:

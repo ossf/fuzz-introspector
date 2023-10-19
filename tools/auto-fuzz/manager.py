@@ -112,7 +112,8 @@ def run_static_analysis(oss_fuzz_base_project, base_oss_fuzz_project_dir):
 
     language = oss_fuzz_base_project.language
 
-    project_build_type = utils.write_base_file(oss_fuzz_base_project, project_dir, language)
+    project_build_type = utils.write_base_file(oss_fuzz_base_project,
+                                               project_dir, language)
     if not project_build_type:
         print("Fail to generate base files\n")
         return False, None, None
@@ -133,7 +134,8 @@ def run_static_analysis(oss_fuzz_base_project, base_oss_fuzz_project_dir):
         print("Project build fail or static analysis fail.\n")
         return False, None, None
 
-    static_ret = utils.check_and_copy_static_analysis_file(OSS_FUZZ_BASE, basedir, language)
+    static_ret = utils.check_and_copy_static_analysis_file(
+        OSS_FUZZ_BASE, basedir, language)
 
     if not static_ret:
         print("Static analysis fail.\n")
@@ -424,8 +426,8 @@ def autofuzz_project_from_github(github_url,
             oss_fuzz_base_project, base_oss_fuzz_project_dir)
 
         # Clean static analysis oss-fuzz directory
-#        oss_fuzz_manager.cleanup_project(
-#            os.path.basename(oss_fuzz_base_project.project_folder), OSS_FUZZ_BASE)
+        #        oss_fuzz_manager.cleanup_project(
+        #            os.path.basename(oss_fuzz_base_project.project_folder), OSS_FUZZ_BASE)
 
         if jdk_base:
             # Overwrite dockerfile with correct jdk version
