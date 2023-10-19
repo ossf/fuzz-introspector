@@ -118,7 +118,8 @@ def build_java_project(oss_fuzz_base_project, base_oss_fuzz_project_dir,
         for jdk in constants.JDK_HOME:
             jdk_dir = constants.JDK_HOME[jdk]
 
-            oss_fuzz_base_project.change_java_dockerfile(jdk, project_build_type)
+            oss_fuzz_base_project.change_java_dockerfile(
+                jdk, project_build_type)
             oss_fuzz_base_project.change_build_script(project_build_type)
 
             build_ret = oss_fuzz_manager.copy_and_build_project(
@@ -142,16 +143,20 @@ def build_java_project(oss_fuzz_base_project, base_oss_fuzz_project_dir,
                     os.mkdir(os.path.join(basedir, "work"))
 
                 data_src = os.path.join(out_dir, "fuzzerLogFile-Fuzz.data")
-                yaml_src = os.path.join(out_dir, "fuzzerLogFile-Fuzz.data.yaml")
-                data_dst = os.path.join(basedir, "work", "fuzzerLogFile-Fuzz.data")
-                yaml_dst = os.path.join(basedir, "work", "fuzzerLogFile-Fuzz.data.yaml")
+                yaml_src = os.path.join(out_dir,
+                                        "fuzzerLogFile-Fuzz.data.yaml")
+                data_dst = os.path.join(basedir, "work",
+                                        "fuzzerLogFile-Fuzz.data")
+                yaml_dst = os.path.join(basedir, "work",
+                                        "fuzzerLogFile-Fuzz.data.yaml")
                 if os.path.isfile(data_src) and os.path.isfile(yaml_src):
                     try:
                         shutil.copy(data_src, data_dst)
                         shutil.copy(yaml_src, yaml_dst)
                     except:
                         pass
-                if not os.path.isfile(data_dst) or not os.path.isfile(yaml_dst):
+                if not os.path.isfile(data_dst) or not os.path.isfile(
+                        yaml_dst):
                     build_ret = False
                     break
 

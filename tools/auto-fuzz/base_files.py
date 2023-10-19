@@ -99,20 +99,24 @@ def _gen_dockerfile_java(github_url, project_name, jdk_version, build_project,
     if project_build_type in constants.FILE_TO_PREPARE['java']:
         if build_project:
             introspector_dir = _get_template_directory("java", "introspector")
-            with open(os.path.join(introspector_dir, "Dockerfile-template"), "r") as file:
-                INTROSPECTOR_DOCKERFILE = file.read() % constants.FILE_TO_PREPARE['java']['maven']
+            with open(os.path.join(introspector_dir, "Dockerfile-template"),
+                      "r") as file:
+                INTROSPECTOR_DOCKERFILE = file.read(
+                ) % constants.FILE_TO_PREPARE['java']['maven']
 
             return BASE_DOCKERFILE % (
                 constants.FILE_TO_PREPARE['java'][project_build_type],
                 constants.FILE_TO_PREPARE['java']['protoc'],
-                constants.JDK_URL[jdk_version], constants.JDK_HOME[jdk_version],
-                github_url, project_name, "#", "#", INTROSPECTOR_DOCKERFILE)
+                constants.JDK_URL[jdk_version],
+                constants.JDK_HOME[jdk_version], github_url, project_name, "#",
+                "#", INTROSPECTOR_DOCKERFILE)
         else:
             return BASE_DOCKERFILE % (
                 constants.FILE_TO_PREPARE['java'][project_build_type],
                 constants.FILE_TO_PREPARE['java']['protoc'],
-                constants.JDK_URL[jdk_version], constants.JDK_HOME[jdk_version],
-                github_url, project_name, "", "", "")
+                constants.JDK_URL[jdk_version],
+                constants.JDK_HOME[jdk_version], github_url, project_name, "",
+                "", "")
 
     else:
         return ""
@@ -134,10 +138,12 @@ def _gen_builder_1_java(template_dir, build_project, project_build_type):
 
     if build_project:
         introspector_dir = _get_template_directory("java", "introspector")
-        with open(os.path.join(introspector_dir, "build.sh-template"), "r") as file:
+        with open(os.path.join(introspector_dir, "build.sh-template"),
+                  "r") as file:
             INTROSPECTOR_BUILDER = file.read()
 
-        return BASE_BUILDER % ("", "", ": <<'COMMENT'", "COMMENT", INTROSPECTOR_BUILDER)
+        return BASE_BUILDER % ("", "", ": <<'COMMENT'", "COMMENT",
+                               INTROSPECTOR_BUILDER)
     else:
         return BASE_BUILDER % (": <<'COMMENT'", "COMMENT", "", "", "")
 
