@@ -95,6 +95,11 @@ def build_project(oss_fuzz_base_project, base_oss_fuzz_project_dir,
                 if build_ret:
                     jdk_key = jdk
                     break
+                else:
+                    # Clean static analysis oss-fuzz directory
+                    folder = oss_fuzz_base_project.project_folder
+                    oss_fuzz_manager.cleanup_project(os.path.basename(folder),
+                                                     OSS_FUZZ_BASE)
         elif language == "python":
             build_ret = oss_fuzz_manager.copy_and_build_project(
                 basedir, OSS_FUZZ_BASE, log_dir=base_oss_fuzz_project_dir)
@@ -426,8 +431,9 @@ def autofuzz_project_from_github(github_url,
             oss_fuzz_base_project, base_oss_fuzz_project_dir)
 
         # Clean static analysis oss-fuzz directory
-        #        oss_fuzz_manager.cleanup_project(
-        #            os.path.basename(oss_fuzz_base_project.project_folder), OSS_FUZZ_BASE)
+        oss_fuzz_manager.cleanup_project(
+            os.path.basename(oss_fuzz_base_project.project_folder),
+            OSS_FUZZ_BASE)
 
         if jdk_base:
             # Overwrite dockerfile with correct jdk version
