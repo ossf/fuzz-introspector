@@ -35,13 +35,13 @@ sys.path.insert(0, '../../src/')
 from fuzz_introspector import commands
 
 # Auto-fuzz modules
-import base_files
 import oss_fuzz_manager
-import fuzz_driver_generation_python
-import fuzz_driver_generation_java
 import post_process
 import utils
-from oss_fuzz_project import OSS_FUZZ_PROJECT
+from fuzzer_generator import fuzz_driver_generation_python
+from fuzzer_generator import fuzz_driver_generation_java
+from templates import base_files
+from objects.oss_fuzz_project import OSS_FUZZ_PROJECT
 
 from io import BytesIO
 from typing import List, Any
