@@ -91,7 +91,7 @@ def _find_dir_build_type(dir):
         return None
 
 
-def find_project_build_type(dir, proj_name):
+def _find_project_build_type(dir, proj_name):
     """Search for base project directory to detect project build type"""
     # Search for current directory first
     project_build_type = _find_dir_build_type(dir)
@@ -157,20 +157,66 @@ def copy_oss_fuzz_project_source(src_oss_project, dst_oss_project):
                      dst_oss_project.project_name))
 
 
-# Static anaylsis base file utils
-#################################
-def gen_introspector_dockerfile(dir, language):
-    with open(os.path.join(dir, "Dockerfile"), "w") as file:
-        file.write(
-            base_files.gen_dockerfile(None,
-                                      None,
-                                      language,
-                                      project_build_type="introspector"))
+# Static anaylsis preprocessing and postprocessing utils
+########################################################
+def write_base_file(oss_fuzz_base_project, projectdir, language):
+    """Retrieve and create base file for static analysis"""
+    if language == "python":
+        project_build_type = "introspector"
+    elif language == "java":
+        project_build_type = _find_project_build_type(
+            projectdir, oss_fuzz_base_project.project_name)
+    else:
+        return None
+
+    oss_fuzz_base_project.write_basefiles(project_build_type)
+    return project_build_type
 
 
-def gen_introspector_build_script(dir, language):
-    with open(os.path.join(dir, "build.sh"), "w") as file:
-        file.write(base_files.gen_builder_1(language, "introspector"))
+def check_and_copy_static_analysis_file(OSS_FUZZ_BASE, basedir, language):
+    """Check and copy static analysis output files to working directory"""
+    project_name = os.path.basename(basedir)
+    out_dir = os.path.join(OSS_FUZZ_BASE, "build", "out", project_name)
+    work_dir = os.path.join(basedir, "work")
+
+    if not os.path.exists(work_dir):
+        os.mkdir(work_dir)
+
+    for file in constants.STATIC_ANALYSIS_FILE[language]:
+        src_file = os.path.join(out_dir, file)
+        dst_file = os.path.join(work_dir, file)
+
+        try:
+            shutil.copy(src_file, dst_file)
+        except:
+            pass
+        if not os.path.isfile(dst_file):
+            return False
+
+    return True
+
+
+def copy_build_file(OSS_FUZZ_BASE, basedir, language):
+    """Copy build files to correct location for reuse"""
+    project_name = os.path.basename(basedir)
+    out_dir = os.path.join(OSS_FUZZ_BASE, "build", "out", project_name)
+
+    for build_file_property in constants.BUILD_FILE_PROPERTY[language]:
+        src_file = build_file_property['src_file']
+        dst_dir = os.path.join(basedir, build_file_property['dst_dir'])
+
+        if not os.path.exists(dst_dir):
+            os.mkdir(dst_dir)
+
+        for file in os.listdir(out_dir):
+            if file.endswith(src_file) and not os.path.exists(
+                    os.path.join(dst_dir, file)):
+                try:
+                    shutil.copy(os.path.join(out_dir, file), dst_dir)
+                except:
+                    return False
+
+    return True
 
 
 # Project cleaning utils
@@ -207,24 +253,3 @@ def cleanup_base_directory(base_dir, project_name):
     for dir in dir_to_clean:
         if os.path.isdir(os.path.join(base_dir, dir)):
             shutil.rmtree(os.path.join(base_dir, dir))
-
-
-# Local command execution
-#########################
-def run_cmd(cmd, timeout_sec):
-    """Execute script in the local environment"""
-    #print("Running command %s" % (cmd))
-    proc = subprocess.Popen(shlex.split(cmd),
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE)
-    timer = threading.Timer(timeout_sec, proc.kill)
-    try:
-        timer.start()
-        stdout, stderr = proc.communicate()
-        #print(stdout)
-        #print("---------")
-        #print(stderr)
-    finally:
-        no_timeout = timer.is_alive()
-        timer.cancel()
-    return no_timeout

@@ -70,146 +70,83 @@ if not os.path.isdir(OSS_FUZZ_BASE):
     raise Exception("Could not find OSS-Fuzz directory")
 
 
-def run_static_analysis_python(git_repo, oss_fuzz_base_project,
-                               base_oss_fuzz_project_dir):
-    # Generate the base Dockerfile, build.sh, project.yaml and fuzz_1.py
-    oss_fuzz_base_project.write_basefiles()
-
+def build_project(oss_fuzz_base_project, base_oss_fuzz_project_dir,
+                  project_build_type):
     basedir = oss_fuzz_base_project.project_folder
-    project_name = oss_fuzz_base_project.project_name
-
-    possible_imports = set()
-    curr_dir = os.getcwd()
-    os.chdir(basedir)
-    os.mkdir("work")
-    os.chdir("work")
-
-    # Copy the project directory from the basedir
-    try:
-        shutil.copytree(os.path.join(basedir, project_name),
-                        os.path.join(os.getcwd(), project_name),
-                        symlinks=True)
-    except:
-        print("Fail to retrieve github directory.")
-        return False
-
-    cmd = [
-        "python3", FUZZ_INTRO_MAIN["python"], "--fuzzer", "../fuzz_1.py",
-        "--package=%s" % (os.getcwd())
-    ]
-    ret = utils.run_cmd(" ".join(cmd), 1800)
-    if not os.path.isfile("fuzzerLogFile-fuzz_1.data.yaml"):
-        ret = False
-    ret = True
-
-    os.chdir(curr_dir)
-    return ret
-
-
-def build_java_project(oss_fuzz_base_project, base_oss_fuzz_project_dir,
-                       project_build_type):
-    basedir = oss_fuzz_base_project.project_folder
+    language = oss_fuzz_base_project.language
     build_ret = False
-    jardir = None
     jdk_key = None
     if basedir:
-        # Loop and use each JDK version in order in the previous failed.
-        # Order JDK15 (oss-fuzz default) -> JDK17 -> JDK11 -> JDK8
-        for jdk in constants.JDK_HOME:
-            jdk_dir = constants.JDK_HOME[jdk]
+        if language == "java":
+            # Loop and use each JDK version in order in the previous failed.
+            # Order JDK15 (oss-fuzz default) -> JDK17 -> JDK11 -> JDK8
+            for jdk in constants.JDK_HOME:
+                jdk_dir = constants.JDK_HOME[jdk]
 
-            oss_fuzz_base_project.change_java_dockerfile(
-                jdk, project_build_type)
-            oss_fuzz_base_project.change_build_script(project_build_type)
+                oss_fuzz_base_project.change_java_dockerfile(
+                    jdk, project_build_type)
+                oss_fuzz_base_project.change_build_script(project_build_type)
 
+                build_ret = oss_fuzz_manager.copy_and_build_project(
+                    basedir, OSS_FUZZ_BASE, log_dir=base_oss_fuzz_project_dir)
+
+                # Check if the build success with the current JDK version
+                # and record that for future process and oss-fuzz test
+                if build_ret:
+                    jdk_key = jdk
+                    break
+        elif language == "python":
             build_ret = oss_fuzz_manager.copy_and_build_project(
                 basedir, OSS_FUZZ_BASE, log_dir=base_oss_fuzz_project_dir)
+        else:
+            return (False, None)
 
-            # Check if the build success with the current JDK version
-            # and record that for future process and oss-fuzz test
-            # Also copied built jar files for static analysis
-            if build_ret:
-                have_jar = False
-                jardir = os.path.join(basedir, "build-jar")
-                if not os.path.exists(jardir):
-                    os.mkdir(jardir)
-
-                project_name = os.path.basename(basedir)
-                out_dir = os.path.join(OSS_FUZZ_BASE, "build", "out",
-                                       project_name)
-
-                # Check and copy data and data.yaml files
-                if not os.path.exists(os.path.join(basedir, "work")):
-                    os.mkdir(os.path.join(basedir, "work"))
-
-                data_src = os.path.join(out_dir, "fuzzerLogFile-Fuzz.data")
-                yaml_src = os.path.join(out_dir,
-                                        "fuzzerLogFile-Fuzz.data.yaml")
-                data_dst = os.path.join(basedir, "work",
-                                        "fuzzerLogFile-Fuzz.data")
-                yaml_dst = os.path.join(basedir, "work",
-                                        "fuzzerLogFile-Fuzz.data.yaml")
-                if os.path.isfile(data_src) and os.path.isfile(yaml_src):
-                    try:
-                        shutil.copy(data_src, data_dst)
-                        shutil.copy(yaml_src, yaml_dst)
-                    except:
-                        pass
-                if not os.path.isfile(data_dst) or not os.path.isfile(
-                        yaml_dst):
-                    build_ret = False
-                    break
-
-                # Check and copy build jar files
-                for file in os.listdir(out_dir):
-                    if file.endswith(".jar") and not os.path.exists(
-                            os.path.join(jardir, file)):
-                        shutil.copy(os.path.join(out_dir, file), jardir)
-                        have_jar = True
-                if not have_jar:
-                    jardir = None
-
-                jdk_key = jdk
-                break
-
-    oss_fuzz_manager.cleanup_project("base-autofuzz", OSS_FUZZ_BASE)
-    return (build_ret, jardir, jdk_key)
+    return (build_ret, jdk_key)
 
 
-def run_static_analysis_java(git_repo, oss_fuzz_base_project,
-                             base_oss_fuzz_project_dir):
+def run_static_analysis(oss_fuzz_base_project, base_oss_fuzz_project_dir):
 
     # Get project_dir
-    projectdir = os.path.join(oss_fuzz_base_project.project_folder,
-                              oss_fuzz_base_project.project_name)
+    project_dir = os.path.join(oss_fuzz_base_project.project_folder,
+                               oss_fuzz_base_project.project_name)
 
-    # Find project type
-    project_build_type = utils.find_project_build_type(
-        projectdir, oss_fuzz_base_project.project_name)
+    language = oss_fuzz_base_project.language
 
-    if project_build_type:
-        # Generate the base Dockerfile, build.sh, project.yaml and Fuzz.java
-        oss_fuzz_base_project.write_basefiles(project_build_type)
-    else:
-        print("Unknown project build type.\n")
+    project_build_type = utils.write_base_file(oss_fuzz_base_project,
+                                               project_dir, language)
+    if not project_build_type:
+        print("Fail to generate base files\n")
         return False, None, None
 
     basedir = oss_fuzz_base_project.project_folder
     project_name = oss_fuzz_base_project.project_name
 
-    possible_imports = set()
-    curr_dir = os.getcwd()
+    build_ret, jdk_key = build_project(oss_fuzz_base_project,
+                                       base_oss_fuzz_project_dir,
+                                       project_build_type)
 
-    build_ret, jardir, jdk_key = build_java_project(oss_fuzz_base_project,
-                                                    base_oss_fuzz_project_dir,
-                                                    project_build_type)
-    jdk_base = constants.JDK_HOME[jdk_key]
+    if jdk_key:
+        jdk_base = constants.JDK_HOME[jdk_key]
+    else:
+        jdk_base = None
 
     if not build_ret:
         print("Project build fail or static analysis fail.\n")
         return False, None, None
 
-    os.chdir(curr_dir)
+    static_ret = utils.check_and_copy_static_analysis_file(
+        OSS_FUZZ_BASE, basedir, language)
+
+    if not static_ret:
+        print("Static analysis fail.\n")
+        return False, None, None
+
+    copy_ret = utils.copy_build_file(OSS_FUZZ_BASE, basedir, language)
+
+    if not static_ret:
+        print("Project build file copy fail.\n")
+        return False, None, None
+
     return build_ret, jdk_base, project_build_type
 
 
@@ -485,14 +422,14 @@ def autofuzz_project_from_github(github_url,
     jdk = "jdk15"
     if do_static_analysis:
         print("Running static analysis on %s" % (github_url))
-        if language == "python":
-            static_res = run_static_analysis_python(github_url,
-                                                    oss_fuzz_base_project,
-                                                    base_oss_fuzz_project_dir)
-        elif language == "java":
-            static_res, jdk_base, project_build_type = run_static_analysis_java(
-                github_url, oss_fuzz_base_project, base_oss_fuzz_project_dir)
+        static_res, jdk_base, project_build_type = run_static_analysis(
+            oss_fuzz_base_project, base_oss_fuzz_project_dir)
 
+        # Clean static analysis oss-fuzz directory
+        #        oss_fuzz_manager.cleanup_project(
+        #            os.path.basename(oss_fuzz_base_project.project_folder), OSS_FUZZ_BASE)
+
+        if jdk_base:
             # Overwrite dockerfile with correct jdk version
             # and avoid rebuild of project
             for key in constants.JDK_HOME:
