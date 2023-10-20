@@ -13,8 +13,10 @@
 # limitations under the License.
 import os
 import sys
+
 sys.path.append('..')
 import constants
+
 
 def gen_dockerfile(github_url,
                    project_name,

@@ -331,7 +331,8 @@ def extract_target_method(target_dir):
 
 
 def print_benchmark_summary(target_dir, trial_runs, language, project_name):
-    benchmark_methods = constants.benchmark_target_method[language][project_name]
+    benchmark_methods = constants.benchmark_target_method[language][
+        project_name]
     benchmark_map = dict()
     redundant_map = dict()
     for benchmark_method in benchmark_methods:
