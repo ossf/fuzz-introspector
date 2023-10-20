@@ -100,6 +100,7 @@ BUILD_FILE_PROPERTY = {
     'python': []
 }
 
+# Constant repository urls for different languages
 git_repos = {
     'python': [
         # 'https://github.com/davidhalter/parso',
@@ -113,10 +114,49 @@ git_repos = {
     ]
 }
 
+# Benchmark directories name for different languages
 benchmark = {
     'java': [
         'benchmark1', 'benchmark2', 'benchmark3', 'benchmark4', 'benchmark5',
         'benchmark6', 'benchmark7', 'benchmark8'
     ],
     'python': []
+}
+
+# List of expected method results for benchmarks of different languages
+benchmark_target_method = {
+    'java': {
+        'benchmark1': [
+            'public static java.lang.Boolean parseData(java.lang.String,java.lang.Integer,java.lang.Integer) throws autofuzz.benchmark.object.AutoFuzzException'
+        ],
+        'benchmark2': [
+            'public static java.lang.Boolean parseData(java.lang.String,java.lang.Integer,java.lang.Integer) throws autofuzz.benchmark.object.AutoFuzzException'
+        ],
+        'benchmark3': [
+            'public static java.lang.Boolean parseData(java.lang.String,java.lang.Integer,java.lang.Integer,java.lang.String) throws autofuzz.benchmark.object.AutoFuzzException'
+        ],
+        'benchmark4': [
+            'public static java.lang.Boolean parseData(java.lang.String,java.lang.Integer) throws autofuzz.benchmark.object.AutoFuzzException',
+            'public static java.lang.Boolean parseData(java.lang.String,java.lang.Integer,java.lang.Integer,java.lang.Integer) throws autofuzz.benchmark.object.AutoFuzzException'
+        ],
+        'benchmark5': [
+            'public void parseAlphabetic(java.lang.String) throws autofuzz.benchmark.object.AutoFuzzException',
+            'public void parseInteger(java.lang.String) throws autofuzz.benchmark.object.AutoFuzzException',
+            'public void parseFloat(java.lang.String) throws autofuzz.benchmark.object.AutoFuzzException'
+        ],
+        'benchmark6': [
+            'public void parseData(java.lang.String[]) throws autofuzz.benchmark.object.AutoFuzzException'
+        ],
+        'benchmark7': [
+            'public java.lang.Boolean processClass(java.lang.Class,java.lang.String,java.lang.Integer) throws autofuzz.benchmark.object.AutoFuzzException'
+        ],
+        'benchmark8': [
+            'public void entry1(java.lang.String) throws autofuzz.benchmark.object.AutoFuzzException',
+            'public void entry2(java.lang.String) throws autofuzz.benchmark.object.AutoFuzzException',
+            'public void entry3(java.lang.String) throws autofuzz.benchmark.object.AutoFuzzException',
+            'public void entry4(java.lang.String) throws autofuzz.benchmark.object.AutoFuzzException',
+            'public void entry5(java.lang.String) throws autofuzz.benchmark.object.AutoFuzzException'
+        ]
+    },
+    'python': {}
 }

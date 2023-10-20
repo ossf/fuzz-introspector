@@ -13,7 +13,10 @@
 # limitations under the License.
 
 import os
-import base_files
+import sys
+
+sys.path.append('..')
+from templates import base_files
 
 
 class OSS_FUZZ_PROJECT:

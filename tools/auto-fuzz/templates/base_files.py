@@ -11,10 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-# License for bash script or python file
-import constants
 import os
+import sys
+
+sys.path.append('..')
+import constants
 
 
 def gen_dockerfile(github_url,

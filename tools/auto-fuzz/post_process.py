@@ -20,9 +20,8 @@ import json
 import argparse
 import shutil
 
-import base_files
+from templates import base_files
 import constants
-import benchmark_target
 
 
 def get_result_json(dirname):
@@ -332,7 +331,8 @@ def extract_target_method(target_dir):
 
 
 def print_benchmark_summary(target_dir, trial_runs, language, project_name):
-    benchmark_methods = benchmark_target.TARGET_METHOD[language][project_name]
+    benchmark_methods = constants.benchmark_target_method[language][
+        project_name]
     benchmark_map = dict()
     redundant_map = dict()
     for benchmark_method in benchmark_methods:

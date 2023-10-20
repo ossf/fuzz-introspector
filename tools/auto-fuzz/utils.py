@@ -16,7 +16,7 @@ import constants
 import os
 import shutil
 import subprocess
-import base_files
+from templates import base_files
 
 
 # Project preparation utils
