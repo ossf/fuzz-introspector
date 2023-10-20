@@ -55,7 +55,7 @@ def get_target_repos(targets, language, is_benchmark):
     if targets == "constants":
         return constants.git_repos[language]
     github_projects = []
-    with open(args.targets, 'r') as f:
+    with open(targets, 'r') as f:
         for line in f:
             github_projects.append(line.replace("\n", "").strip())
     return github_projects
