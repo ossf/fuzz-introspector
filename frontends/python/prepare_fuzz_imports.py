@@ -141,7 +141,7 @@ class FuzzerVisitor(ast.NodeVisitor):
                                 ("/usr/local/lib/" in elem or "/usr/lib/" in elem)
                                 and "site-packages" not in elem
                             ):
-                                # skip packages that are builtin packacges
+                                # Skip packages that are builtin packages
                                 # Check if we can refine
                                 if elem.count(".") > 1:
                                     print("Has such a count")
