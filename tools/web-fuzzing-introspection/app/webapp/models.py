@@ -100,7 +100,6 @@ class Function:
         self.is_reached = is_reached
         self.runtime_code_coverage = runtime_code_coverage
         self.reached_by_fuzzers = reached_by_fuzzers
-        self.coverage_by_fuzzers = 3
         self.code_coverage_url = code_coverage_url
         self.accummulated_cyclomatic_complexity = accummulated_cyclomatic_complexity
         self.llvm_instruction_count = llvm_instruction_count
