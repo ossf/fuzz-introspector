@@ -3,6 +3,6 @@ Flask==2.2.5
 itsdangerous==2.1.2
 Jinja2==3.1.2
 MarkupSafe==2.1.2
-Werkzeug==2.2.3
+Werkzeug==3.0.1
 requests==2.31.0
 pyyaml==6.0
