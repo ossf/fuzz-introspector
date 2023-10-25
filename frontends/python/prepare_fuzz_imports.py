@@ -20,6 +20,7 @@ import importlib.util
 
 
 class FuzzerVisitor(ast.NodeVisitor):
+
     def __init__(self, ast_content):
         print("Hello")
         self.ast_content = ast_content
@@ -137,11 +138,11 @@ class FuzzerVisitor(ast.NodeVisitor):
                     if specs.submodule_search_locations:
                         for elem in specs.submodule_search_locations:
                             print("Checking --- %s" % (elem))
-                            if (
-                                ("/usr/local/lib/" in elem or "/usr/lib/" in elem)
-                                and "site-packages" not in elem
-                            ):
-                                # Skip packages that are builtin packages
+                            if (("/usr/local/lib/" in elem
+                                 or "/usr/lib/" in elem)
+                                    and "site-packages" not in elem
+                                    and "dist-packages" not in elem):
+                                # skip packages that are builtin packacges
                                 # Check if we can refine
                                 if elem.count(".") > 1:
                                     print("Has such a count")
