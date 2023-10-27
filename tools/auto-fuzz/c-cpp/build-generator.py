@@ -14,7 +14,26 @@
 
 import os
 import sys
+import yaml
+import shutil
+import cxxfilt
 import subprocess
+
+CPP_BASE_TEMPLATE = """#include <stdint.h>
+#include <iostream>
+
+extern "C" int 
+LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
+{
+    std::string input(reinterpret_cast<const char*>(data), size);
+
+    // Insert fuzzer contents here 
+    // input string contains fuzz input.
+
+    // end of fuzzer contents
+
+    return 0;
+}"""
 
 
 class AutoBuildContainer:
@@ -171,7 +190,8 @@ class CMakeScanner:
         # - options related to shared libraries.
         # - options related to which packags need installing.
         cmds_to_exec_from_root = [
-            "mkdir fuzz-build", "cd fuzz-build", "cmake ../", "make"
+            "mkdir fuzz-build", "cd fuzz-build",
+            "cmake -DCMAKE_VERBOSE_MAKEFILE=ON ../", "make V=1 || true"
         ]
         abc = AutoBuildContainer()
         abc.list_of_commands = cmds_to_exec_from_root
@@ -181,7 +201,7 @@ class CMakeScanner:
         opt1 = [
             "mkdir fuzz-build", "cd fuzz-build",
             "cmake -DCMAKE_CXX_COMPILER=$CXX -DCMAKE_CXX_FLAGS=\"$CXXFLAGS\" ../",
-            "make"
+            "make || true"
         ]
         abc1 = AutoBuildContainer()
         abc1.list_of_commands = opt1
@@ -279,7 +299,7 @@ def find_possible_build_systems(abspath_of_target):
 
 
 def create_setup(test_dir, abc, abspath_of_target):
-    build_script = "#!/bin/bash -eu\n"
+    build_script = "#!/bin/bash\n"
     build_script += "rm -rf /%s\n" % (test_dir)
     build_script += "cp -rf %s %s\n" % (abspath_of_target, test_dir)
     build_script += "cd %s\n" % (test_dir)
@@ -288,7 +308,7 @@ def create_setup(test_dir, abc, abspath_of_target):
     return build_script
 
 
-def setup(github_url, test_build_scripts=True):
+def setup(github_url, test_build_scripts=True, build_fuzzer=True):
     dst_folder = github_url.split("/")[-1]
 
     # clone the base project into a dedicated folder
@@ -358,6 +378,307 @@ def setup(github_url, test_build_scripts=True):
         print("%s : %s : %s" %
               (results[test_dir]['auto-build-setup'][2].heuristic_id, test_dir,
                results[test_dir]['executables-build']['static-libs']))
+
+    if build_fuzzer == False:
+        return
+    # For each of the successful builds, try to link
+    # an empty fuzzer against the build libraies.
+    for test_dir in results:
+        refined_static_list = []
+
+        libs_to_avoid = {
+            "libgtest.a", "libgmock.a", "libgmock_main.a", "libgtest_main.a"
+        }
+        for static_lib in results[test_dir]['executables-build'][
+                'static-libs']:
+            if any(
+                    os.path.basename(static_lib) in lib_to_avoid
+                    for lib_to_avoid in libs_to_avoid):
+                continue
+            refined_static_list.append(static_lib)
+
+        results[test_dir]['refined-static-libs'] = refined_static_list
+
+    for test_dir in results:
+        print("Test dir: %s :: %s" %
+              (test_dir, str(results[test_dir]['refined-static-libs'])))
+
+        if len(results[test_dir]['refined-static-libs']) == 0:
+            continue
+
+        print("Trying to link in an empty fuzzer")
+
+        empty_fuzzer_file = '/src/empty-fuzzer.cpp'
+        with open(empty_fuzzer_file, "w") as f:
+            f.write(CPP_BASE_TEMPLATE)
+
+        # Try to link the fuzzer to the static libs
+        cmd = [
+            "clang++", "-fsanitize=fuzzer", "-fsanitize=address",
+            empty_fuzzer_file
+        ]
+        for refined_static_lib in results[test_dir]['refined-static-libs']:
+            cmd.append(os.path.join(test_dir, refined_static_lib))
+
+        print("Command [%s]" % (" ".join(cmd)))
+
+        try:
+            subprocess.check_call(" ".join(cmd), shell=True)
+            base_fuzz_build = True
+        except subprocess.CalledProcessError:
+            base_fuzz_build = False
+
+        print("Base fuzz build: %s" % (str(base_fuzz_build)))
+
+        results[test_dir]['base-fuzz-build'] = base_fuzz_build
+
+    # We now know for which versions we can generate a base fuzzer.
+    # Let's run an introspector build
+    for test_dir in results:
+        if results[test_dir]['base-fuzz-build'] == False:
+            continue
+
+        introspector_vanilla_build_script = results[test_dir]['build-script']
+
+        empty_fuzzer_file = '/src/empty-fuzzer.cpp'
+        with open(empty_fuzzer_file, "w") as f:
+            f.write(CPP_BASE_TEMPLATE)
+
+        # Try to link the fuzzer to the static libs
+        cmd = ["$CXX", "$CXXFLAGS", "$LIB_FUZZING_ENGINE", empty_fuzzer_file]
+        for refined_static_lib in results[test_dir]['refined-static-libs']:
+            cmd.append(os.path.join(test_dir, refined_static_lib))
+
+        introspector_vanilla_build_script += "\n%s" % (" ".join(cmd))
+
+        with open("/src/build.sh", "w") as bs:
+            bs.write(introspector_vanilla_build_script)
+
+        modified_env = os.environ
+        modified_env['SANITIZER'] = 'introspector'
+        modified_env['FUZZ_INTROSPECTOR_AUTO_FUZZ'] = "1"
+        modified_env['PROJECT_NAME'] = 'auto-fuzz-proj'
+        modified_env['FUZZINTRO_OUTDIR'] = test_dir
+        try:
+
+            subprocess.check_call("compile", shell=True, env=modified_env)
+            build_returned_error = False
+        except subprocess.CalledProcessError:
+            build_returned_error = True
+        print("Introspector build: %s" % (str(build_returned_error)))
+
+        # Now scan the diretory for relevant yaml files
+        print("Introspection files found")
+        all_files = get_all_files_in_path(test_dir)
+        introspection_files_found = []
+        all_header_files = []
+        for yaml_file in all_files:
+            if "allFunctionsWithMain" in yaml_file:
+                print(yaml_file)
+                introspection_files_found.append(yaml_file)
+            if yaml_file.endswith(".h"):
+                all_header_files.append(yaml_file)
+
+        all_functions_in_project = []
+        for fi_yaml_file in introspection_files_found:
+            with open(fi_yaml_file, "r") as file:
+                yaml_content = yaml.safe_load(file)
+
+            for elem in yaml_content['All functions']['Elements']:
+                all_functions_in_project.append(elem)
+
+        print("Found a total of %d functions" %
+              (len(all_functions_in_project)))
+        for func in all_functions_in_project:
+            try:
+                demangled = cxxfilt.demangle(func['functionName'])
+            except:
+                demangled = func['functionName']
+
+            src_file = func['functionSourceFile']
+            if src_file.strip() == "":
+                continue
+            discarded_paths = {
+                "googletest",
+                "usr/local/bin",
+            }
+            to_cont = True
+            for discarded_path in discarded_paths:
+                if discarded_path in src_file:
+                    to_cont = False
+                    break
+            if not to_cont:
+                continue
+            #print("{%s :: %s :: [%s] :: [%s]}"%(
+            #    demangled,
+            #    func['functionSourceFile'],
+            #    str(func['argNames']),
+            #    str(func['argTypes'])))
+
+        # Identify easy heuristics
+        print("Functions that we want to target")
+        results_to_run = []
+        for func in all_functions_in_project:
+            valid_targets = 0
+            for arg in func['argNames']:
+                if arg == "":
+                    continue
+                valid_targets += 1
+            if valid_targets > 2 or valid_targets == 0:
+                continue
+
+            #if len(func['argNames']) > valid_targets:
+            func['refinedArgNames'] = func['argNames'][:valid_targets]
+            func['refinedArgTypes'] = func['argTypes'][len(func['argTypes']) -
+                                                       valid_targets:]
+
+            # Target functions that only accept strings as arguments
+            #for argType in func['refinedArgTypes']:
+            #    if 'basic_string' not in argType:
+            #        toCont = False
+
+            # Check argType
+            #if "basic_string" not in func['argTypes'][0]:
+            #    continue
+            if "this" in func['argNames'][0]:
+                continue
+            try:
+                demangled = cxxfilt.demangle(func['functionName'])
+            except:
+                demangled = func['functionName']
+            if "googletest" in func['functionSourceFile']:
+                continue
+            ##if "/usr/local/bin/" in func['functionSourceFile']:
+            #    continue
+            if "parse" not in demangled:
+                continue
+            #print("{%s :: %s :: [%s] :: [%s]}"%(
+            #    demangled,
+            #    func['functionSourceFile'],
+            #    str(func['argNames']),
+            #    str(func['argTypes'])))
+
+            #print("Refined arguments:")
+            #print("[[%s] :: [%s]]"%(str(func['refinedArgNames']), str(func['refinedArgTypes'])))
+
+            # Generate a fuzz target
+            fuzzerArgNames = []
+            fuzzerArgDefs = []
+            idx = 0
+            for argType in func['refinedArgTypes']:
+                if 'basic_string' in argType:
+                    fuzzerArgNames.append('a%d' % (idx))
+                    fuzzerArgDefs.append(
+                        'auto a%d = fdp.ConsumeRandomLengthString()' % (idx))
+                idx += 1
+
+            fuzzerTargetCall = '%s' % (demangled.split("(")[0])
+            fuzzerTargetCall += '('
+            for idx2 in range(len(fuzzerArgDefs)):
+                fuzzerTargetCall += fuzzerArgNames[idx2]
+                if idx2 < (len(fuzzerArgDefs) - 1):
+                    fuzzerTargetCall += ","
+            fuzzerTargetCall += ')'
+
+            print("Fuzzer target call: %s" % (fuzzerTargetCall))
+
+            fuzzer_entrypoint_func = """
+extern "C" int 
+LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
+  FuzzedDataProvider fdp(data, size);
+            """
+            fuzzer_entrypoint_func += "\n"
+            for fuzzerArgDef in fuzzerArgDefs:
+                fuzzer_entrypoint_func += fuzzerArgDef + ";\n"
+            fuzzer_entrypoint_func += fuzzerTargetCall + ";\n"
+            fuzzer_entrypoint_func += "return 0;\n"
+            fuzzer_entrypoint_func += "}\n"
+
+            print(fuzzer_entrypoint_func)
+
+            fuzzerImports = """#include <iostream>
+#include <stdlib.h>
+#include <fuzzer/FuzzedDataProvider.h>
+"""
+
+            headers_to_include = set()
+            header_paths_to_include = set()
+            for header_file in all_header_files:
+                #print("- %s"%(header_file))
+                if "/test/" in header_file:
+                    continue
+                if "googletest" in header_file:
+                    continue
+                headers_to_include.add(os.path.basename(header_file))
+                header_paths_to_include.add("/".join(
+                    header_file.split("/")[1:-1]))
+
+            fuzzerImports += "\n"
+            for header_to_include in headers_to_include:
+                fuzzerImports += "#include <%s>\n" % (header_to_include)
+
+            build_command_includes = ""
+            for header_path_to_include in header_paths_to_include:
+                build_command_includes += "-I" + os.path.join(
+                    test_dir, header_path_to_include) + " "
+
+            full_fuzzer_source = fuzzerImports + "\n" + fuzzer_entrypoint_func
+
+            print(">>>>")
+            print(full_fuzzer_source)
+            print("<<<<")
+            print("Build command includes: %s" % (build_command_includes))
+
+            # Compile ASAN fuzzer
+            final_asan_build_script = results[test_dir]['build-script']
+
+            fuzzer_to_run = '/src/empty-fuzzer.cpp'
+            #with open(fuzzer_to_run, "w") as f:
+            #    f.write(CPP_BASE_TEMPLATE)
+
+            # Try to link the fuzzer to the static libs
+            cmd = ["$CXX", "$CXXFLAGS", "$LIB_FUZZING_ENGINE", fuzzer_to_run]
+            for refined_static_lib in results[test_dir]['refined-static-libs']:
+                cmd.append(os.path.join(test_dir, refined_static_lib))
+
+            fuzzer_out = '/src/generated-fuzzer'
+            final_asan_build_script += "\n%s %s -o %s" % (
+                " ".join(cmd), build_command_includes, fuzzer_out)
+
+            results_to_run.append({
+                'build-script': final_asan_build_script,
+                'source': full_fuzzer_source,
+                'fuzzer-file': fuzzer_to_run,
+                'fuzzer-out': fuzzer_out
+            })
+
+        idx = 0
+        for res in results_to_run:
+            print("Build script:")
+            print(res['build-script'])
+            print("-" * 45)
+            print("Source:")
+            print(res['source'])
+            print("-" * 45)
+
+            with open(res['fuzzer-file'], 'w') as f:
+                f.write(res['source'])
+            with open('/src/build.sh', 'w') as f:
+                f.write(res['build-script'])
+
+            modified_env = os.environ
+            modified_env['SANITIZER'] = 'address'
+            try:
+
+                subprocess.check_call("compile", shell=True, env=modified_env)
+                build_returned_error = False
+            except subprocess.CalledProcessError:
+                build_returned_error = True
+
+            if build_returned_error == False:
+                shutil.copy(res['fuzzer-out'],
+                            '/src/fuzzer-generated-%d' % (idx))
+                idx += 1
 
 
 if __name__ == "__main__":

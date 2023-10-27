@@ -1350,6 +1350,24 @@ bool FuzzIntrospector::shouldRunIntrospector(Module &M) {
               "library, and thus we do not care about it. We only want to "
               "study the "
               "actual fuzzers. Exiting this run.\n");
+
+    if (getenv("FUZZ_INTROSPECTOR_AUTO_FUZZ")) {
+      logPrintf(L1, "Forcing analysis of all functions. This in auto-fuzz mode");
+
+      std::string TargetLogName;
+      std::string RandomStr = GenRandom(10);
+      int Idx = 0;
+      std::string prefix = "";
+      if (getenv("FUZZINTRO_OUTDIR")) {
+        prefix = std::string(getenv("FUZZINTRO_OUTDIR")) + "/";
+      }
+      do {
+        TargetLogName = formatv("{0}allFunctionsWithMain-{1}-{2}.yaml", prefix,
+                                std::to_string(Idx++), RandomStr);
+      } while (llvm::sys::fs::exists(TargetLogName));
+
+      extractAllFunctionDetailsToYaml(TargetLogName, M);
+    }
     return false;
   }
 
