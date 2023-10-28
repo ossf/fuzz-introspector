@@ -518,6 +518,7 @@ def setup(github_url, test_build_scripts=True, build_fuzzer=True):
         # Identify easy heuristics
         print("Functions that we want to target")
         results_to_run = []
+        functions_to_target = []
         for func in all_functions_in_project:
             valid_targets = 0
             for arg in func['argNames']:
@@ -552,16 +553,22 @@ def setup(github_url, test_build_scripts=True, build_fuzzer=True):
             #    continue
             if "parse" not in demangled:
                 continue
+            func['demangled-name'] = demangled
             #print("{%s :: %s :: [%s] :: [%s]}"%(
             #    demangled,
             #    func['functionSourceFile'],
             #    str(func['argNames']),
             #    str(func['argTypes'])))
-
+            functions_to_target.append(func)
             #print("Refined arguments:")
             #print("[[%s] :: [%s]]"%(str(func['refinedArgNames']), str(func['refinedArgTypes'])))
 
+        print("Found %d targets" % (len(functions_to_target)))
+
+        # Create the source code as well as build scripts
+        for func in functions_to_target:
             # Generate a fuzz target
+            # Create the string for the variables seeded with fuzz data.
             fuzzerArgNames = []
             fuzzerArgDefs = []
             idx = 0
@@ -572,7 +579,8 @@ def setup(github_url, test_build_scripts=True, build_fuzzer=True):
                         'auto a%d = fdp.ConsumeRandomLengthString()' % (idx))
                 idx += 1
 
-            fuzzerTargetCall = '%s' % (demangled.split("(")[0])
+            # Create the string for the function call into the target
+            fuzzerTargetCall = '%s' % (func['demangled-name'].split("(")[0])
             fuzzerTargetCall += '('
             for idx2 in range(len(fuzzerArgDefs)):
                 fuzzerTargetCall += fuzzerArgNames[idx2]
@@ -580,27 +588,33 @@ def setup(github_url, test_build_scripts=True, build_fuzzer=True):
                     fuzzerTargetCall += ","
             fuzzerTargetCall += ')'
 
+            # Generate the string for LLVMFuzzerTestOneInput
             print("Fuzzer target call: %s" % (fuzzerTargetCall))
-
             fuzzer_entrypoint_func = """
 extern "C" int 
 LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   FuzzedDataProvider fdp(data, size);
             """
             fuzzer_entrypoint_func += "\n"
+            # Fuzzer variable declarations
             for fuzzerArgDef in fuzzerArgDefs:
-                fuzzer_entrypoint_func += fuzzerArgDef + ";\n"
-            fuzzer_entrypoint_func += fuzzerTargetCall + ";\n"
-            fuzzer_entrypoint_func += "return 0;\n"
+                fuzzer_entrypoint_func += "  " + fuzzerArgDef + ";\n"
+
+            # Function call into the target
+            fuzzer_entrypoint_func += "  " + fuzzerTargetCall + ";\n"
+            fuzzer_entrypoint_func += "  return 0;\n"
             fuzzer_entrypoint_func += "}\n"
 
             print(fuzzer_entrypoint_func)
 
+            # Generate string for importing relevant headers
             fuzzerImports = """#include <iostream>
 #include <stdlib.h>
 #include <fuzzer/FuzzedDataProvider.h>
 """
 
+            # Identify which headers to include based on the files
+            # in the source code folder.
             headers_to_include = set()
             header_paths_to_include = set()
             for header_file in all_header_files:
@@ -613,15 +627,19 @@ LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
                 header_paths_to_include.add("/".join(
                     header_file.split("/")[1:-1]))
 
+            # Generate strings for "#include" statements, to be used in the fuzzer
+            # source code.
             fuzzerImports += "\n"
             for header_to_include in headers_to_include:
                 fuzzerImports += "#include <%s>\n" % (header_to_include)
 
+            # Generate -I strings to be used in the build command.
             build_command_includes = ""
             for header_path_to_include in header_paths_to_include:
                 build_command_includes += "-I" + os.path.join(
                     test_dir, header_path_to_include) + " "
 
+            # Assemble full fuzzer source code
             full_fuzzer_source = fuzzerImports + "\n" + fuzzer_entrypoint_func
 
             print(">>>>")
@@ -629,30 +647,23 @@ LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
             print("<<<<")
             print("Build command includes: %s" % (build_command_includes))
 
-            # Compile ASAN fuzzer
+            # Generate the script for compiling things with ASAN.
             final_asan_build_script = results[test_dir]['build-script']
-
-            fuzzer_to_run = '/src/empty-fuzzer.cpp'
-            #with open(fuzzer_to_run, "w") as f:
-            #    f.write(CPP_BASE_TEMPLATE)
-
-            # Try to link the fuzzer to the static libs
-            cmd = ["$CXX", "$CXXFLAGS", "$LIB_FUZZING_ENGINE", fuzzer_to_run]
-            for refined_static_lib in results[test_dir]['refined-static-libs']:
-                cmd.append(os.path.join(test_dir, refined_static_lib))
-
             fuzzer_out = '/src/generated-fuzzer'
             final_asan_build_script += "\n%s %s -o %s" % (
                 " ".join(cmd), build_command_includes, fuzzer_out)
 
+            # Wrap all the parts we need for building and running the fuzzer.
             results_to_run.append({
                 'build-script': final_asan_build_script,
                 'source': full_fuzzer_source,
-                'fuzzer-file': fuzzer_to_run,
+                'fuzzer-file': '/src/empty-fuzzer.cpp',
                 'fuzzer-out': fuzzer_out
             })
 
+        # Build the fuzzer for each project
         idx = 0
+        print("RESULTS TO ANALYSE: %d" % (len(results_to_run)))
         for res in results_to_run:
             print("Build script:")
             print(res['build-script'])
@@ -676,8 +687,10 @@ LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
                 build_returned_error = True
 
             if build_returned_error == False:
-                shutil.copy(res['fuzzer-out'],
-                            '/src/fuzzer-generated-%d' % (idx))
+                shutil.copy(
+                    res['fuzzer-out'],
+                    os.path.basename(test_dir) + '-fuzzer-generated-%d' %
+                    (idx))
                 idx += 1
 
 
