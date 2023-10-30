@@ -308,6 +308,120 @@ def create_setup(test_dir, abc, abspath_of_target):
     return build_script
 
 
+class FuzzerGenHeuristic1:
+
+    def __init__(self, all_functions_in_project, all_header_files, test_dir):
+        self.all_functions_in_project = all_functions_in_project
+        self.all_header_files = all_header_files
+        self.test_dir = test_dir
+
+    def get_fuzzing_targets(self):
+        results_to_run = []
+        functions_to_target = []
+        for func in self.all_functions_in_project:
+            valid_targets = 0
+            for arg in func['argNames']:
+                if arg == "":
+                    continue
+                valid_targets += 1
+            if valid_targets > 2 or valid_targets == 0:
+                continue
+
+            func['refinedArgNames'] = func['argNames'][:valid_targets]
+            func['refinedArgTypes'] = func['argTypes'][len(func['argTypes']) -
+                                                       valid_targets:]
+
+            # Target functions that only accept strings as arguments
+            #for argType in func['refinedArgTypes']:
+            #    if 'basic_string' not in argType:
+            #        toCont = False
+
+            # Check argType
+            if "this" in func['argNames'][0]:
+                continue
+            if "parse" not in func['demangled-name']:
+                continue
+            functions_to_target.append(func)
+        return functions_to_target
+
+    def get_fuzzer_intrinsics(self, func):
+        # Generate a fuzz target
+        # Create the string for the variables seeded with fuzz data.
+        fuzzerArgNames = []
+        fuzzerArgDefs = []
+        idx = 0
+        for argType in func['refinedArgTypes']:
+            if 'basic_string' in argType:
+                fuzzerArgNames.append('a%d' % (idx))
+                fuzzerArgDefs.append(
+                    'auto a%d = fdp.ConsumeRandomLengthString()' % (idx))
+            idx += 1
+
+        # Create the string for the function call into the target
+        fuzzerTargetCall = '%s' % (func['demangled-name'].split("(")[0])
+        fuzzerTargetCall += '('
+        for idx2 in range(len(fuzzerArgDefs)):
+            fuzzerTargetCall += fuzzerArgNames[idx2]
+            if idx2 < (len(fuzzerArgDefs) - 1):
+                fuzzerTargetCall += ","
+        fuzzerTargetCall += ')'
+
+        # Generate the string for LLVMFuzzerTestOneInput
+        print("Fuzzer target call: %s" % (fuzzerTargetCall))
+        fuzzer_entrypoint_func = """
+extern "C" int 
+LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
+FuzzedDataProvider fdp(data, size);
+        """
+        fuzzer_entrypoint_func += "\n"
+        # Fuzzer variable declarations
+        for fuzzerArgDef in fuzzerArgDefs:
+            fuzzer_entrypoint_func += "  " + fuzzerArgDef + ";\n"
+
+        # Function call into the target
+        fuzzer_entrypoint_func += "  " + fuzzerTargetCall + ";\n"
+        fuzzer_entrypoint_func += "  return 0;\n"
+        fuzzer_entrypoint_func += "}\n"
+
+        print(fuzzer_entrypoint_func)
+
+        # Generate string for importing relevant headers
+        fuzzerImports = """#include <iostream>
+#include <stdlib.h>
+#include <fuzzer/FuzzedDataProvider.h>
+"""
+
+        # Identify which headers to include based on the files
+        # in the source code folder.
+        headers_to_include = set()
+        header_paths_to_include = set()
+        for header_file in self.all_header_files:
+            #print("- %s"%(header_file))
+            if "/test/" in header_file:
+                continue
+            if "googletest" in header_file:
+                continue
+            headers_to_include.add(os.path.basename(header_file))
+            header_paths_to_include.add("/".join(header_file.split("/")[1:-1]))
+
+        # Generate strings for "#include" statements, to be used in the fuzzer
+        # source code.
+        fuzzerImports += "\n"
+        for header_to_include in headers_to_include:
+            fuzzerImports += "#include <%s>\n" % (header_to_include)
+
+        # Generate -I strings to be used in the build command.
+        build_command_includes = ""
+        for header_path_to_include in header_paths_to_include:
+            build_command_includes += "-I" + os.path.join(
+                self.test_dir, header_path_to_include) + " "
+
+        # Assemble full fuzzer source code
+        full_fuzzer_source = fuzzerImports + "\n" + fuzzer_entrypoint_func
+
+        return full_fuzzer_source, build_command_includes
+
+
 def setup(github_url, test_build_scripts=True, build_fuzzer=True):
     dst_folder = github_url.split("/")[-1]
 
@@ -543,110 +657,19 @@ def setup(github_url, test_build_scripts=True, build_fuzzer=True):
         print("Functions that we want to target: %d" %
               (len(first_refined_functions_in_project)))
         results_to_run = []
-        functions_to_target = []
-        for func in first_refined_functions_in_project:
-            valid_targets = 0
-            for arg in func['argNames']:
-                if arg == "":
-                    continue
-                valid_targets += 1
-            if valid_targets > 2 or valid_targets == 0:
-                continue
 
-            func['refinedArgNames'] = func['argNames'][:valid_targets]
-            func['refinedArgTypes'] = func['argTypes'][len(func['argTypes']) -
-                                                       valid_targets:]
-
-            # Target functions that only accept strings as arguments
-            #for argType in func['refinedArgTypes']:
-            #    if 'basic_string' not in argType:
-            #        toCont = False
-
-            # Check argType
-            if "this" in func['argNames'][0]:
-                continue
-            if "parse" not in func['demangled-name']:
-                continue
-            functions_to_target.append(func)
+        # Generate the fuzzing intrisics for a given heuristic.
+        heuristic = FuzzerGenHeuristic1(first_refined_functions_in_project,
+                                        all_header_files, test_dir)
+        functions_to_target = heuristic.get_fuzzing_targets()
         print("Found %d targets" % (len(functions_to_target)))
 
         # Create the source code as well as build scripts
         for func in functions_to_target:
-            # Generate a fuzz target
-            # Create the string for the variables seeded with fuzz data.
-            fuzzerArgNames = []
-            fuzzerArgDefs = []
-            idx = 0
-            for argType in func['refinedArgTypes']:
-                if 'basic_string' in argType:
-                    fuzzerArgNames.append('a%d' % (idx))
-                    fuzzerArgDefs.append(
-                        'auto a%d = fdp.ConsumeRandomLengthString()' % (idx))
-                idx += 1
-
-            # Create the string for the function call into the target
-            fuzzerTargetCall = '%s' % (func['demangled-name'].split("(")[0])
-            fuzzerTargetCall += '('
-            for idx2 in range(len(fuzzerArgDefs)):
-                fuzzerTargetCall += fuzzerArgNames[idx2]
-                if idx2 < (len(fuzzerArgDefs) - 1):
-                    fuzzerTargetCall += ","
-            fuzzerTargetCall += ')'
-
-            # Generate the string for LLVMFuzzerTestOneInput
-            print("Fuzzer target call: %s" % (fuzzerTargetCall))
-            fuzzer_entrypoint_func = """
-extern "C" int 
-LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
-  FuzzedDataProvider fdp(data, size);
-            """
-            fuzzer_entrypoint_func += "\n"
-            # Fuzzer variable declarations
-            for fuzzerArgDef in fuzzerArgDefs:
-                fuzzer_entrypoint_func += "  " + fuzzerArgDef + ";\n"
-
-            # Function call into the target
-            fuzzer_entrypoint_func += "  " + fuzzerTargetCall + ";\n"
-            fuzzer_entrypoint_func += "  return 0;\n"
-            fuzzer_entrypoint_func += "}\n"
-
-            print(fuzzer_entrypoint_func)
-
-            # Generate string for importing relevant headers
-            fuzzerImports = """#include <iostream>
-#include <stdlib.h>
-#include <fuzzer/FuzzedDataProvider.h>
-"""
-
-            # Identify which headers to include based on the files
-            # in the source code folder.
-            headers_to_include = set()
-            header_paths_to_include = set()
-            for header_file in all_header_files:
-                #print("- %s"%(header_file))
-                if "/test/" in header_file:
-                    continue
-                if "googletest" in header_file:
-                    continue
-                headers_to_include.add(os.path.basename(header_file))
-                header_paths_to_include.add("/".join(
-                    header_file.split("/")[1:-1]))
-
-            # Generate strings for "#include" statements, to be used in the fuzzer
-            # source code.
-            fuzzerImports += "\n"
-            for header_to_include in headers_to_include:
-                fuzzerImports += "#include <%s>\n" % (header_to_include)
-
-            # Generate -I strings to be used in the build command.
-            build_command_includes = ""
-            for header_path_to_include in header_paths_to_include:
-                build_command_includes += "-I" + os.path.join(
-                    test_dir, header_path_to_include) + " "
-
-            # Assemble full fuzzer source code
-            full_fuzzer_source = fuzzerImports + "\n" + fuzzer_entrypoint_func
-
+            # Get the fuzzer entrypoint (LLVMFuzzerTestOneInput) function.
+            #fuzzer_entrypoint_func = heuristic.get_fuzzing_entrypoint_func(func)
+            full_fuzzer_source, build_command_includes = heuristic.get_fuzzer_intrinsics(
+                func)
             print(">>>>")
             print(full_fuzzer_source)
             print("<<<<")
