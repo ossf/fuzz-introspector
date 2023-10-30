@@ -381,8 +381,9 @@ def setup(github_url, test_build_scripts=True, build_fuzzer=True):
 
     if build_fuzzer == False:
         return
-    # For each of the successful builds, try to link
-    # an empty fuzzer against the build libraies.
+
+    # For each of the auto generated build scripts identify the
+    # static libraries resulting from the build.
     for test_dir in results:
         refined_static_list = []
 
@@ -399,6 +400,8 @@ def setup(github_url, test_build_scripts=True, build_fuzzer=True):
 
         results[test_dir]['refined-static-libs'] = refined_static_list
 
+    # For each of the auto generated build scripts try to link
+    # the resulting static libraries against an empty fuzzer.
     for test_dir in results:
         print("Test dir: %s :: %s" %
               (test_dir, str(results[test_dir]['refined-static-libs'])))
@@ -433,7 +436,14 @@ def setup(github_url, test_build_scripts=True, build_fuzzer=True):
         results[test_dir]['base-fuzz-build'] = base_fuzz_build
 
     # We now know for which versions we can generate a base fuzzer.
-    # Let's run an introspector build
+    # Continue by runnig an introspector build using the auto-generated
+    # build scripts but fuzz introspector as the sanitier. The introspector
+    # build will analyze all code build in the project, meaning we will
+    # extract build data for code linked in e.g. samples and more during
+    # the build. The consequence is we will have a lot more data than if
+    # we only were to build the base fuzzer using introspector builds.
+    # Then, proceed to use the generated program analysis data as arguments
+    # to heuristics which will generate fuzzers.
     for test_dir in results:
         if results[test_dir]['base-fuzz-build'] == False:
             continue
@@ -460,7 +470,6 @@ def setup(github_url, test_build_scripts=True, build_fuzzer=True):
         modified_env['PROJECT_NAME'] = 'auto-fuzz-proj'
         modified_env['FUZZINTRO_OUTDIR'] = test_dir
         try:
-
             subprocess.check_call("compile", shell=True, env=modified_env)
             build_returned_error = False
         except subprocess.CalledProcessError:
@@ -489,6 +498,12 @@ def setup(github_url, test_build_scripts=True, build_fuzzer=True):
 
         print("Found a total of %d functions" %
               (len(all_functions_in_project)))
+
+        # Get all functions from the generated yaml files and demangle
+        # the names. Also discard functions from paths that do not
+        # look to be part of the project, e.g. from well-known testing
+        # libraries and system directories.
+        first_refined_functions_in_project = []
         for func in all_functions_in_project:
             try:
                 demangled = cxxfilt.demangle(func['functionName'])
@@ -507,19 +522,29 @@ def setup(github_url, test_build_scripts=True, build_fuzzer=True):
                 if discarded_path in src_file:
                     to_cont = False
                     break
+
             if not to_cont:
                 continue
-            #print("{%s :: %s :: [%s] :: [%s]}"%(
-            #    demangled,
-            #    func['functionSourceFile'],
-            #    str(func['argNames']),
-            #    str(func['argTypes'])))
+            func['demangled-name'] = demangled
+            first_refined_functions_in_project.append(func)
 
-        # Identify easy heuristics
-        print("Functions that we want to target")
+        # Print the functions we have now.
+        for func in first_refined_functions_in_project:
+            print("{%s :: %s :: [%s] :: [%s]}" %
+                  (func['demangled-name'], func['functionSourceFile'],
+                   str(func['argNames']), str(func['argTypes'])))
+
+        # At this point we have:
+        # - A list of functions from the introspector analyses
+        # - A list of build scripts that can auto-build the project
+        # - A list of the static libraries created during the compilation process
+        # We can now proceed to apply heuristics that use this data to generate
+        # fuzzing harnesses and build scripts for these harnesses.
+        print("Functions that we want to target: %d" %
+              (len(first_refined_functions_in_project)))
         results_to_run = []
         functions_to_target = []
-        for func in all_functions_in_project:
+        for func in first_refined_functions_in_project:
             valid_targets = 0
             for arg in func['argNames']:
                 if arg == "":
@@ -528,7 +553,6 @@ def setup(github_url, test_build_scripts=True, build_fuzzer=True):
             if valid_targets > 2 or valid_targets == 0:
                 continue
 
-            #if len(func['argNames']) > valid_targets:
             func['refinedArgNames'] = func['argNames'][:valid_targets]
             func['refinedArgTypes'] = func['argTypes'][len(func['argTypes']) -
                                                        valid_targets:]
@@ -539,30 +563,11 @@ def setup(github_url, test_build_scripts=True, build_fuzzer=True):
             #        toCont = False
 
             # Check argType
-            #if "basic_string" not in func['argTypes'][0]:
-            #    continue
             if "this" in func['argNames'][0]:
                 continue
-            try:
-                demangled = cxxfilt.demangle(func['functionName'])
-            except:
-                demangled = func['functionName']
-            if "googletest" in func['functionSourceFile']:
+            if "parse" not in func['demangled-name']:
                 continue
-            ##if "/usr/local/bin/" in func['functionSourceFile']:
-            #    continue
-            if "parse" not in demangled:
-                continue
-            func['demangled-name'] = demangled
-            #print("{%s :: %s :: [%s] :: [%s]}"%(
-            #    demangled,
-            #    func['functionSourceFile'],
-            #    str(func['argNames']),
-            #    str(func['argTypes'])))
             functions_to_target.append(func)
-            #print("Refined arguments:")
-            #print("[[%s] :: [%s]]"%(str(func['refinedArgNames']), str(func['refinedArgTypes'])))
-
         print("Found %d targets" % (len(functions_to_target)))
 
         # Create the source code as well as build scripts
