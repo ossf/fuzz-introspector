@@ -319,6 +319,147 @@ def get_all_functions_in_project(introspection_files_found):
     return all_functions_in_project
 
 
+class FuzzerGenHeuristic2:
+
+    def __init__(self, all_functions_in_project, all_header_files, test_dir):
+        self.all_functions_in_project = all_functions_in_project
+        self.all_header_files = all_header_files
+        self.test_dir = test_dir
+
+    def get_fuzzing_targets(self):
+        # Identify all classes
+        classes_with_empty_constructors = []
+        for func in self.all_functions_in_project:
+            tmp = func['demangled-name'].split("(")[0]
+            demangled_components = tmp.split("::")
+
+            # Example: Namespace::Classname::FunctionName
+            try:
+                if demangled_components[-1] != demangled_components[-2]:
+                    continue
+            except IndexError:
+                continue
+
+            # This is an empty constructor
+            classes_with_empty_constructors.append(func)
+
+        results_to_target = []
+        for func in classes_with_empty_constructors:
+            #print("Empty class constructor: %s"%(func['demangled-name']))
+            tmp = func['demangled-name'].split("(")[0]
+            # Ensure there's no arguments
+            #print("## %s"%(str(func['argTypes'])))
+            #print("-- %d"%(len(func['argTypes'])))
+            # Empty class constructors will have one (pointer) argument.
+            if len(func['argTypes']) > 1:
+                continue
+
+            demangled_components = tmp.split("::")
+            class_name = demangled_components[-2]
+
+            # Find the functions in this class that are useful
+            for func2 in self.all_functions_in_project:
+                if func2['demangled-name'] == func['demangled-name']:
+                    continue
+
+                tmp2 = func2['demangled-name'].split("(")[0]
+                dc2 = tmp2.replace("(", "").replace(")", "").split("::")
+                if len(dc2) < 3:
+                    continue
+                if dc2[-2] != class_name:
+                    continue
+
+                # It must be a pure string argument and the first must be a "this" pointer
+                if len(func2['argTypes']) != 2:
+                    continue
+
+                if "this" != func2['argNames'][0]:
+                    continue
+                if "string" not in func2['argTypes'][1]:
+                    continue
+                if "operator" in func2['demangled-name']:
+                    continue
+                if dc2[-1] == dc2[-2]:
+                    continue
+
+                print("Potential candidate: %s" % (func2['demangled-name']))
+                print(">> %s" % (func2['argTypes']))
+                print(">>> %s" % (func2['argNames']))
+                results_to_target.append({
+                    'constructor': func,
+                    'class-func': func2
+                })
+
+        return results_to_target
+
+    def get_fuzzer_intrinsics(self, fuzz_target):
+        print("Hitting: %s" % (fuzz_target['class-func']['demangled-name']))
+        constructor_func = fuzz_target['constructor']
+        target_func = fuzz_target['class-func']
+        fuzzer_entrypoint_func = """
+extern "C" int 
+LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
+  FuzzedDataProvider fdp(data, size);
+  auto a1 = fdp.ConsumeRandomLengthString();
+        """
+        fuzzer_entrypoint_func += "\n"
+        fuzzer_entrypoint_func += "  %s %s;// = %s;\n" % (
+            "::".join(constructor_func['demangled-name'].split("(")[0].split(
+                "::")[:-1]),
+            'fuzz_obj',
+            constructor_func['demangled-name'],
+        )
+
+        fuzzer_entrypoint_func += """  try {
+    fuzz_obj.%s(a1);
+  } catch(...) {}""" % (
+            target_func['demangled-name'].split("(")[0].split("::")[-1])
+        fuzzer_entrypoint_func += "\n"
+        fuzzer_entrypoint_func += "  return 0;\n}"
+        print("Fuzzer entrypoint function")
+        print(fuzzer_entrypoint_func)
+        print("-" * 35)
+
+        for header_file in self.all_header_files:
+            print("- header file: %s" % (header_file))
+
+        # Identify which headers to include based on the files
+        # in the source code folder.
+        headers_to_include = set()
+        header_paths_to_include = set()
+        for header_file in self.all_header_files:
+            #print("- %s"%(header_file))
+            if "/test/" in header_file:
+                continue
+            if "googletest" in header_file:
+                continue
+            headers_to_include.add(os.path.basename(header_file))
+            header_paths_to_include.add("/".join(header_file.split("/")[1:-1]))
+
+        # Generate strings for "#include" statements, to be used in the fuzzer
+        # source code.
+        fuzzerImports = """#include <iostream>
+#include <stdlib.h>
+#include <fuzzer/FuzzedDataProvider.h>
+"""
+        fuzzerImports += "\n"
+        for header_to_include in headers_to_include:
+            fuzzerImports += "#include <%s>\n" % (header_to_include)
+
+        # Generate -I strings to be used in the build command.
+        build_command_includes = ""
+        for header_path_to_include in header_paths_to_include:
+            build_command_includes += "-I" + os.path.join(
+                self.test_dir, header_path_to_include) + " "
+
+        print("Fuzzer imports: %s" % (str(header_paths_to_include)))
+
+        # Assemble full fuzzer source code
+        full_fuzzer_source = fuzzerImports + "\n" + fuzzer_entrypoint_func
+
+        return full_fuzzer_source, build_command_includes
+
+
 class FuzzerGenHeuristic1:
 
     def __init__(self, all_functions_in_project, all_header_files, test_dir):
@@ -436,10 +577,17 @@ LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
 def filter_basic_functions_out(all_functions_in_project):
     first_refined_functions_in_project = []
     for func in all_functions_in_project:
+        to_cont = True
         try:
             demangled = cxxfilt.demangle(func['functionName'])
         except:
             demangled = func['functionName']
+
+        discarded_function_names = {'cxx_global_var_init'}
+        for funcname in discarded_function_names:
+            if funcname in demangled:
+                to_cont = False
+                break
 
         src_file = func['functionSourceFile']
         if src_file.strip() == "":
@@ -448,14 +596,16 @@ def filter_basic_functions_out(all_functions_in_project):
             "googletest",
             "usr/local/bin",
         }
-        to_cont = True
+
         for discarded_path in discarded_paths:
             if discarded_path in src_file:
                 to_cont = False
                 break
 
+        # Exit if we need to.
         if not to_cont:
             continue
+
         func['demangled-name'] = demangled
         first_refined_functions_in_project.append(func)
     return first_refined_functions_in_project
@@ -666,10 +816,10 @@ def setup(github_url, test_build_scripts=True, build_fuzzer=True):
         # libraries and system directories.
         first_refined_functions_in_project = filter_basic_functions_out(
             all_functions_in_project)
-        for func in first_refined_functions_in_project:
-            print("{%s :: %s :: [%s] :: [%s]}" %
-                  (func['demangled-name'], func['functionSourceFile'],
-                   str(func['argNames']), str(func['argTypes'])))
+        #for func in first_refined_functions_in_project:
+        #    print("{%s :: %s :: [%s] :: [%s]}" %
+        #          (func['demangled-name'], func['functionSourceFile'],
+        #           str(func['argNames']), str(func['argTypes'])))
 
         # At this point we have:
         # - A list of functions from the introspector analyses
@@ -679,22 +829,25 @@ def setup(github_url, test_build_scripts=True, build_fuzzer=True):
         # fuzzing harnesses and build scripts for these harnesses.
         print("Functions that we want to target: %d" %
               (len(first_refined_functions_in_project)))
-        results_to_run = []
 
         # Generate the fuzzing intrisics for a given heuristic.
-        heuristics_to_apply = [FuzzerGenHeuristic1]
+        heuristics_to_apply = [FuzzerGenHeuristic1, FuzzerGenHeuristic2]
         for heuristic_class in heuristics_to_apply:
+            results_to_run = []
             heuristic = heuristic_class(first_refined_functions_in_project,
                                         all_header_files, test_dir)
-            #heuristic = FuzzerGenHeuristic1(first_refined_functions_in_project,
-            #                                all_header_files, test_dir)
-            functions_to_target = heuristic.get_fuzzing_targets()
-            print("Found %d targets" % (len(functions_to_target)))
+            fuzzer_targets = heuristic.get_fuzzing_targets()
+            print("Found %d fuzzer targets" % (len(fuzzer_targets)))
 
             # Create the source code as well as build scripts
-            for func in functions_to_target:
-                full_fuzzer_source, build_command_includes = heuristic.get_fuzzer_intrinsics(
-                    func)
+            for fuzz_target in fuzzer_targets:
+                fuzzer_intrinsics = heuristic.get_fuzzer_intrinsics(
+                    fuzz_target)
+                if fuzzer_intrinsics == None:
+                    continue
+
+                full_fuzzer_source, build_command_includes = fuzzer_intrinsics
+
                 print(">>>>")
                 print(full_fuzzer_source)
                 print("<<<<")
