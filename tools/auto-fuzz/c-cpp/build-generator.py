@@ -308,6 +308,17 @@ def create_setup(test_dir, abc, abspath_of_target):
     return build_script
 
 
+def get_all_functions_in_project(introspection_files_found):
+    all_functions_in_project = []
+    for fi_yaml_file in introspection_files_found:
+        with open(fi_yaml_file, "r") as file:
+            yaml_content = yaml.safe_load(file)
+        for elem in yaml_content['All functions']['Elements']:
+            all_functions_in_project.append(elem)
+
+    return all_functions_in_project
+
+
 class FuzzerGenHeuristic1:
 
     def __init__(self, all_functions_in_project, all_header_files, test_dir):
@@ -371,7 +382,7 @@ class FuzzerGenHeuristic1:
         fuzzer_entrypoint_func = """
 extern "C" int 
 LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
-FuzzedDataProvider fdp(data, size);
+  FuzzedDataProvider fdp(data, size);
         """
         fuzzer_entrypoint_func += "\n"
         # Fuzzer variable declarations
@@ -420,6 +431,51 @@ FuzzedDataProvider fdp(data, size);
         full_fuzzer_source = fuzzerImports + "\n" + fuzzer_entrypoint_func
 
         return full_fuzzer_source, build_command_includes
+
+
+def filter_basic_functions_out(all_functions_in_project):
+    first_refined_functions_in_project = []
+    for func in all_functions_in_project:
+        try:
+            demangled = cxxfilt.demangle(func['functionName'])
+        except:
+            demangled = func['functionName']
+
+        src_file = func['functionSourceFile']
+        if src_file.strip() == "":
+            continue
+        discarded_paths = {
+            "googletest",
+            "usr/local/bin",
+        }
+        to_cont = True
+        for discarded_path in discarded_paths:
+            if discarded_path in src_file:
+                to_cont = False
+                break
+
+        if not to_cont:
+            continue
+        func['demangled-name'] = demangled
+        first_refined_functions_in_project.append(func)
+    return first_refined_functions_in_project
+
+
+def get_all_header_files(all_files):
+    all_header_files = []
+    for yaml_file in all_files:
+        if yaml_file.endswith(".h"):
+            all_header_files.append(yaml_file)
+    return all_header_files
+
+
+def get_all_introspector_files(all_files):
+    introspection_files_found = []
+    for yaml_file in all_files:
+        if "allFunctionsWithMain" in yaml_file:
+            #print(yaml_file)
+            introspection_files_found.append(yaml_file)
+    return introspection_files_found
 
 
 def setup(github_url, test_build_scripts=True, build_fuzzer=True):
@@ -593,23 +649,14 @@ def setup(github_url, test_build_scripts=True, build_fuzzer=True):
         # Now scan the diretory for relevant yaml files
         print("Introspection files found")
         all_files = get_all_files_in_path(test_dir)
-        introspection_files_found = []
-        all_header_files = []
-        for yaml_file in all_files:
-            if "allFunctionsWithMain" in yaml_file:
-                print(yaml_file)
-                introspection_files_found.append(yaml_file)
-            if yaml_file.endswith(".h"):
-                all_header_files.append(yaml_file)
 
-        all_functions_in_project = []
-        for fi_yaml_file in introspection_files_found:
-            with open(fi_yaml_file, "r") as file:
-                yaml_content = yaml.safe_load(file)
+        # Extrct specific files we need for further analysis.
+        introspection_files_found = get_all_introspector_files(all_files)
+        all_header_files = get_all_header_files(all_files)
 
-            for elem in yaml_content['All functions']['Elements']:
-                all_functions_in_project.append(elem)
-
+        # Get all functions in project
+        all_functions_in_project = get_all_functions_in_project(
+            introspection_files_found)
         print("Found a total of %d functions" %
               (len(all_functions_in_project)))
 
@@ -617,32 +664,8 @@ def setup(github_url, test_build_scripts=True, build_fuzzer=True):
         # the names. Also discard functions from paths that do not
         # look to be part of the project, e.g. from well-known testing
         # libraries and system directories.
-        first_refined_functions_in_project = []
-        for func in all_functions_in_project:
-            try:
-                demangled = cxxfilt.demangle(func['functionName'])
-            except:
-                demangled = func['functionName']
-
-            src_file = func['functionSourceFile']
-            if src_file.strip() == "":
-                continue
-            discarded_paths = {
-                "googletest",
-                "usr/local/bin",
-            }
-            to_cont = True
-            for discarded_path in discarded_paths:
-                if discarded_path in src_file:
-                    to_cont = False
-                    break
-
-            if not to_cont:
-                continue
-            func['demangled-name'] = demangled
-            first_refined_functions_in_project.append(func)
-
-        # Print the functions we have now.
+        first_refined_functions_in_project = filter_basic_functions_out(
+            all_functions_in_project)
         for func in first_refined_functions_in_project:
             print("{%s :: %s :: [%s] :: [%s]}" %
                   (func['demangled-name'], func['functionSourceFile'],
@@ -659,67 +682,87 @@ def setup(github_url, test_build_scripts=True, build_fuzzer=True):
         results_to_run = []
 
         # Generate the fuzzing intrisics for a given heuristic.
-        heuristic = FuzzerGenHeuristic1(first_refined_functions_in_project,
+        heuristics_to_apply = [FuzzerGenHeuristic1]
+        for heuristic_class in heuristics_to_apply:
+            heuristic = heuristic_class(first_refined_functions_in_project,
                                         all_header_files, test_dir)
-        functions_to_target = heuristic.get_fuzzing_targets()
-        print("Found %d targets" % (len(functions_to_target)))
+            #heuristic = FuzzerGenHeuristic1(first_refined_functions_in_project,
+            #                                all_header_files, test_dir)
+            functions_to_target = heuristic.get_fuzzing_targets()
+            print("Found %d targets" % (len(functions_to_target)))
 
-        # Create the source code as well as build scripts
-        for func in functions_to_target:
-            # Get the fuzzer entrypoint (LLVMFuzzerTestOneInput) function.
-            #fuzzer_entrypoint_func = heuristic.get_fuzzing_entrypoint_func(func)
-            full_fuzzer_source, build_command_includes = heuristic.get_fuzzer_intrinsics(
-                func)
-            print(">>>>")
-            print(full_fuzzer_source)
-            print("<<<<")
-            print("Build command includes: %s" % (build_command_includes))
+            # Create the source code as well as build scripts
+            for func in functions_to_target:
+                full_fuzzer_source, build_command_includes = heuristic.get_fuzzer_intrinsics(
+                    func)
+                print(">>>>")
+                print(full_fuzzer_source)
+                print("<<<<")
+                print("Build command includes: %s" % (build_command_includes))
 
-            # Generate the script for compiling things with ASAN.
-            final_asan_build_script = results[test_dir]['build-script']
-            fuzzer_out = '/src/generated-fuzzer'
-            final_asan_build_script += "\n%s %s -o %s" % (
-                " ".join(cmd), build_command_includes, fuzzer_out)
+                # Generate the script for compiling things with ASAN.
+                final_asan_build_script = results[test_dir]['build-script']
+                fuzzer_out = '/src/generated-fuzzer'
+                final_asan_build_script += "\n%s %s -o %s" % (
+                    " ".join(cmd), build_command_includes, fuzzer_out)
 
-            # Wrap all the parts we need for building and running the fuzzer.
-            results_to_run.append({
-                'build-script': final_asan_build_script,
-                'source': full_fuzzer_source,
-                'fuzzer-file': '/src/empty-fuzzer.cpp',
-                'fuzzer-out': fuzzer_out
-            })
+                # Wrap all the parts we need for building and running the fuzzer.
+                results_to_run.append({
+                    'build-script': final_asan_build_script,
+                    'source': full_fuzzer_source,
+                    'fuzzer-file': '/src/empty-fuzzer.cpp',
+                    'fuzzer-out': fuzzer_out
+                })
 
-        # Build the fuzzer for each project
-        idx = 0
-        print("RESULTS TO ANALYSE: %d" % (len(results_to_run)))
-        for res in results_to_run:
-            print("Build script:")
-            print(res['build-script'])
-            print("-" * 45)
-            print("Source:")
-            print(res['source'])
-            print("-" * 45)
+            # Build the fuzzer for each project
+            idx = 0
+            print("RESULTS TO ANALYSE: %d" % (len(results_to_run)))
+            for res in results_to_run:
+                print("Build script:")
+                print(res['build-script'])
+                print("-" * 45)
+                print("Source:")
+                print(res['source'])
+                print("-" * 45)
 
-            with open(res['fuzzer-file'], 'w') as f:
-                f.write(res['source'])
-            with open('/src/build.sh', 'w') as f:
-                f.write(res['build-script'])
+                # Make a directory and store artifacts there
+                fuzzer_gen_dir = os.path.join(
+                    '/src/',
+                    os.path.basename(test_dir) + "-fuzzgen-%d" % (idx))
+                if os.path.isdir(fuzzer_gen_dir):
+                    shutil.rmtree(fuzzer_gen_dir)
 
-            modified_env = os.environ
-            modified_env['SANITIZER'] = 'address'
-            try:
+                os.mkdir(fuzzer_gen_dir)
+                with open(os.path.join(fuzzer_gen_dir, 'build.sh'), 'w') as f:
+                    f.write(res['build-script'])
+                with open(os.path.join(fuzzer_gen_dir, 'empty-fuzzer.cpp'),
+                          'w') as f:
+                    f.write(res['source'])
 
-                subprocess.check_call("compile", shell=True, env=modified_env)
-                build_returned_error = False
-            except subprocess.CalledProcessError:
-                build_returned_error = True
+                # Now build the fuzzer
+                with open(res['fuzzer-file'], 'w') as f:
+                    f.write(res['source'])
+                with open('/src/build.sh', 'w') as f:
+                    f.write(res['build-script'])
 
-            if build_returned_error == False:
-                shutil.copy(
-                    res['fuzzer-out'],
-                    os.path.basename(test_dir) + '-fuzzer-generated-%d' %
-                    (idx))
-                idx += 1
+                modified_env = os.environ
+                modified_env['SANITIZER'] = 'address'
+                try:
+                    subprocess.check_call("compile",
+                                          shell=True,
+                                          env=modified_env)
+                    build_returned_error = False
+                except subprocess.CalledProcessError:
+                    build_returned_error = True
+
+                if build_returned_error == False:
+                    shutil.copy(
+                        res['fuzzer-out'],
+                        os.path.join(
+                            fuzzer_gen_dir,
+                            os.path.basename(test_dir) +
+                            '-fuzzer-generated-%d' % (idx)))
+                    idx += 1
 
 
 if __name__ == "__main__":
