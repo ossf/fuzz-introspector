@@ -307,6 +307,7 @@ def create_setup(test_dir, abc, abspath_of_target):
 
     return build_script
 
+
 def get_all_functions_in_project(introspection_files_found):
     all_functions_in_project = []
     for fi_yaml_file in introspection_files_found:
@@ -316,6 +317,7 @@ def get_all_functions_in_project(introspection_files_found):
             all_functions_in_project.append(elem)
 
     return all_functions_in_project
+
 
 class FuzzerGenHeuristic1:
 
@@ -653,7 +655,8 @@ def setup(github_url, test_build_scripts=True, build_fuzzer=True):
         all_header_files = get_all_header_files(all_files)
 
         # Get all functions in project
-        all_functions_in_project = get_all_functions_in_project(introspection_files_found)
+        all_functions_in_project = get_all_functions_in_project(
+            introspection_files_found)
         print("Found a total of %d functions" %
               (len(all_functions_in_project)))
 
@@ -661,7 +664,8 @@ def setup(github_url, test_build_scripts=True, build_fuzzer=True):
         # the names. Also discard functions from paths that do not
         # look to be part of the project, e.g. from well-known testing
         # libraries and system directories.
-        first_refined_functions_in_project = filter_basic_functions_out(all_functions_in_project)
+        first_refined_functions_in_project = filter_basic_functions_out(
+            all_functions_in_project)
         for func in first_refined_functions_in_project:
             print("{%s :: %s :: [%s] :: [%s]}" %
                   (func['demangled-name'], func['functionSourceFile'],
@@ -678,9 +682,7 @@ def setup(github_url, test_build_scripts=True, build_fuzzer=True):
         results_to_run = []
 
         # Generate the fuzzing intrisics for a given heuristic.
-        heuristics_to_apply = [
-            FuzzerGenHeuristic1
-        ]
+        heuristics_to_apply = [FuzzerGenHeuristic1]
         for heuristic_class in heuristics_to_apply:
             heuristic = heuristic_class(first_refined_functions_in_project,
                                         all_header_files, test_dir)
@@ -724,14 +726,17 @@ def setup(github_url, test_build_scripts=True, build_fuzzer=True):
                 print("-" * 45)
 
                 # Make a directory and store artifacts there
-                fuzzer_gen_dir = os.path.join('/src/', os.path.basename(test_dir)+"-fuzzgen-%d"%(idx))
+                fuzzer_gen_dir = os.path.join(
+                    '/src/',
+                    os.path.basename(test_dir) + "-fuzzgen-%d" % (idx))
                 if os.path.isdir(fuzzer_gen_dir):
                     shutil.rmtree(fuzzer_gen_dir)
 
                 os.mkdir(fuzzer_gen_dir)
                 with open(os.path.join(fuzzer_gen_dir, 'build.sh'), 'w') as f:
                     f.write(res['build-script'])
-                with open(os.path.join(fuzzer_gen_dir, 'empty-fuzzer.cpp'), 'w') as f:
+                with open(os.path.join(fuzzer_gen_dir, 'empty-fuzzer.cpp'),
+                          'w') as f:
                     f.write(res['source'])
 
                 # Now build the fuzzer
@@ -743,7 +748,9 @@ def setup(github_url, test_build_scripts=True, build_fuzzer=True):
                 modified_env = os.environ
                 modified_env['SANITIZER'] = 'address'
                 try:
-                    subprocess.check_call("compile", shell=True, env=modified_env)
+                    subprocess.check_call("compile",
+                                          shell=True,
+                                          env=modified_env)
                     build_returned_error = False
                 except subprocess.CalledProcessError:
                     build_returned_error = True
@@ -751,8 +758,10 @@ def setup(github_url, test_build_scripts=True, build_fuzzer=True):
                 if build_returned_error == False:
                     shutil.copy(
                         res['fuzzer-out'],
-                        os.path.join(fuzzer_gen_dir, os.path.basename(test_dir) + '-fuzzer-generated-%d' %
-                        (idx)))
+                        os.path.join(
+                            fuzzer_gen_dir,
+                            os.path.basename(test_dir) +
+                            '-fuzzer-generated-%d' % (idx)))
                     idx += 1
 
 
