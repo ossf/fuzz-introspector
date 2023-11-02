@@ -108,7 +108,8 @@ class OSS_FUZZ_PROJECT:
                     self.language,
                     project_build_type=project_build_type))
 
-    def change_dockerfile(self, jdk_version=None,
+    def change_dockerfile(self,
+                          jdk_version=None,
                           project_build_type=None,
                           build_project=True):
         with open(self.dockerfile, "w") as docker_file:

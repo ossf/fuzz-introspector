@@ -484,7 +484,8 @@ def autofuzz_project_from_github(github_url,
             if language == "python":
                 # Change build.sh and Dockerfile
                 project_build_type = None
-                oss_fuzz_base_project.change_dockerfile(jdk, project_build_type)
+                oss_fuzz_base_project.change_dockerfile(
+                    jdk, project_build_type)
                 oss_fuzz_base_project.change_build_script(project_build_type)
                 possible_targets = fuzz_driver_generation_python.generate_possible_targets(
                     oss_fuzz_base_project.project_folder)

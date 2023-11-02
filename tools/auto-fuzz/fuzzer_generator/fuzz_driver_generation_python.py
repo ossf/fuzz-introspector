@@ -290,7 +290,8 @@ def _generate_heuristic_2(yaml_dict, possible_targets):
             fuzzer_source_code += "  try:\n"
             fuzzer_source_code += "    %s(val_1)\n" % (r_fuzz_target)
             fuzzer_source_code += "  except ("
-            fuzzer_source_code += ",".join(possible_target.exceptions_to_handle)
+            fuzzer_source_code += ",".join(
+                possible_target.exceptions_to_handle)
             fuzzer_source_code += "):\n    pass\n"
             possible_target.fuzzer_source_code = fuzzer_source_code
 
@@ -352,7 +353,8 @@ def _generate_heuristic_3(yaml_dict, possible_targets):
             fuzzer_source_code += "  try:\n"
             fuzzer_source_code += "    %s(val_1)\n" % (func_name)
             fuzzer_source_code += "  except ("
-            fuzzer_source_code += ",".join(possible_target.exceptions_to_handle)
+            fuzzer_source_code += ",".join(
+                possible_target.exceptions_to_handle)
             fuzzer_source_code += "):\n    pass\n"
             possible_target.fuzzer_source_code = fuzzer_source_code
 
