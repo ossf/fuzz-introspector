@@ -317,6 +317,7 @@ class FuzzerGenHeuristic2:
         self.all_functions_in_project = all_functions_in_project
         self.all_header_files = all_header_files
         self.test_dir = test_dir
+        self.name = 'FuzzerGenHeuristic2'
 
     def get_fuzzing_targets(self):
         # Identify all classes
@@ -449,7 +450,16 @@ LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         # Assemble full fuzzer source code
         full_fuzzer_source = fuzzerImports + "\n" + fuzzer_entrypoint_func
 
-        return full_fuzzer_source, build_command_includes
+        fuzzer_intrinsics = {
+            'full-source-code':
+            full_fuzzer_source,
+            'build-command-includes':
+            build_command_includes,
+            'autogen-id':
+            '%s-%s-%s' % (self.name, constructor_func['demangled-name'],
+                          target_func['demangled-name']),
+        }
+        return fuzzer_intrinsics
 
 
 class FuzzerGenHeuristic1:
@@ -458,6 +468,7 @@ class FuzzerGenHeuristic1:
         self.all_functions_in_project = all_functions_in_project
         self.all_header_files = all_header_files
         self.test_dir = test_dir
+        self.name = 'FuzzerGenHeuristic1'
 
     def get_fuzzing_targets(self):
         results_to_run = []
@@ -563,7 +574,12 @@ LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         # Assemble full fuzzer source code
         full_fuzzer_source = fuzzerImports + "\n" + fuzzer_entrypoint_func
 
-        return full_fuzzer_source, build_command_includes
+        fuzzer_intrinsics = {
+            'full-source-code': full_fuzzer_source,
+            'build-command-includes': build_command_includes,
+            'autogen-id': '%s-%s' % (self.name, fuzzerTargetCall),
+        }
+        return fuzzer_intrinsics
 
 
 def filter_basic_functions_out(all_functions_in_project):
@@ -778,6 +794,7 @@ def auto_generate(github_url,
     # we only were to build the base fuzzer using introspector builds.
     # Then, proceed to use the generated program analysis data as arguments
     # to heuristics which will generate fuzzers.
+    heuristics_passed = dict()
     for test_dir in results:
         if results[test_dir]['base-fuzz-build'] == False:
             continue
@@ -860,8 +877,9 @@ def auto_generate(github_url,
                     fuzz_target)
                 if fuzzer_intrinsics == None:
                     continue
-
-                full_fuzzer_source, build_command_includes = fuzzer_intrinsics
+                full_fuzzer_source = fuzzer_intrinsics['full-source-code']
+                build_command_includes = fuzzer_intrinsics[
+                    'build-command-includes']
 
                 print(">>>>")
                 print(full_fuzzer_source)
@@ -879,7 +897,8 @@ def auto_generate(github_url,
                     'build-script': final_asan_build_script,
                     'source': full_fuzzer_source,
                     'fuzzer-file': '/src/empty-fuzzer.cpp',
-                    'fuzzer-out': fuzzer_out
+                    'fuzzer-out': fuzzer_out,
+                    'fuzzer-intrinsics': fuzzer_intrinsics,
                 })
 
             # Build the fuzzer for each project
@@ -891,6 +910,7 @@ def auto_generate(github_url,
                 print("Source:")
                 print(res['source'])
                 print("-" * 45)
+                fuzzer_intrinsics = res['fuzzer-intrinsics']
                 idx_to_use = idx
                 idx += 1
                 # Make a directory and store artifacts there
@@ -916,6 +936,12 @@ def auto_generate(github_url,
                 if disable_fuzz_build_and_test:
                     continue
 
+                # If there is an existing successful build of this heuristic,
+                # then do not continue.
+                if heuristics_passed.get(fuzzer_intrinsics['autogen-id'],
+                                         False) == True:
+                    continue
+
                 modified_env = os.environ
                 modified_env['SANITIZER'] = 'address'
                 try:
@@ -927,12 +953,17 @@ def auto_generate(github_url,
                     build_returned_error = True
 
                 if build_returned_error == False:
+                    heuristics_passed[fuzzer_intrinsics['autogen-id']] = True
                     shutil.copy(
                         res['fuzzer-out'],
                         os.path.join(
                             fuzzer_gen_dir,
                             os.path.basename(test_dir) +
                             '-fuzzer-generated-%d' % (idx_to_use)))
+
+    # Show those that succeeded.
+    for hp in heuristics_passed:
+        print("Success: %s" % (hp))
 
 
 def parse_commandline():
