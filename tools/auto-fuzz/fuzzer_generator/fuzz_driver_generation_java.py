@@ -1085,16 +1085,25 @@ def _generate_heuristic_2(method_tuple, possible_targets, max_target):
         - have between 1-20 arguments
         - do not have "test" or "demo" in the function name or class name
     The fuzz target is simply one that calls into the target function with
-    seeded fuzz data. It will create the object with the class constructor
-    before calling the function. Primitive type will be passed with the seeded
-    fuzz data.
+    seeded fuzz data.
+
+    This heuristic creates the needed object with either one of the following ways:
+        - Using class constructor of the needed object
+        - Using static method in all available classes that returns the needed object
+        - Using non-static method in all avilable classes that returns the needed object
+
+    The constructors and methods used to create the needed object must statisfy all:
+        - public method (or constructor) which are not abstract
+        - have less than 20 arguments
+        - do not have "test" or "demo" in the function name or class name
+        - return an object of the needed class
 
     Will also add proper exception handling based on the exception list
     provided by the frontend code.
     """
     HEURISTIC_NAME = "java-autofuzz-heuristics-2"
 
-    init_dict, method_list, _, _ = method_tuple
+    init_dict, method_list, instance_method_list, static_method_list = method_tuple
 
     for func_elem in method_list:
         if len(possible_targets) > max_target:
@@ -1115,13 +1124,20 @@ def _generate_heuristic_2(method_tuple, possible_targets, max_target):
         if len(possible_target.variables_to_add) != len(func_elem['argTypes']):
             continue
 
-        # Get all object creation statement for each possible concrete classes of the object
-        object_creation_list = _handle_object_creation(func_class, init_dict,
-                                                       possible_target,
-                                                       max_target, [])
+        # Retrieve list of factory method or constructor for the target object
+        object_creation_list = _search_factory_method(
+            func_class, static_method_list, method_list + instance_method_list,
+            possible_target, init_dict, max_target)
+        object_creation_list.extend(
+            _search_static_factory_method(func_class, static_method_list,
+                                          possible_target, max_target))
+        object_creation_list.extend(
+            _handle_object_creation(func_class, init_dict, possible_target,
+                                    max_target, []))
 
         for object_creation_item in list(set(object_creation_list)):
-            # Create possible target for all possible object creation statement
+            # Create possible target for all possible object creation
+            # statements and factory methods
             # Clone the base target object
             cloned_possible_target = copy.deepcopy(possible_target)
             exception_set = set(cloned_possible_target.exceptions_to_handle)
@@ -1133,164 +1149,7 @@ def _generate_heuristic_2(method_tuple, possible_targets, max_target):
             fuzzer_source_code += "  %s obj = %s;\n" % (func_class,
                                                         object_creation_item)
             fuzzer_source_code += "  obj.%s($VARIABLE$);\n" % (func_name)
-            if len(exception_set) > 0:
-                fuzzer_source_code = "  try {\n" + fuzzer_source_code
-                fuzzer_source_code += "  }\n"
-                counter = 1
 
-                exceptions, super_exceptions = _extract_super_exceptions(
-                    exception_set)
-                for exc in list(exceptions) + list(super_exceptions):
-                    fuzzer_source_code += "  catch (%s e%d) {}\n" % (exc,
-                                                                     counter)
-                    counter += 1
-
-            cloned_possible_target.fuzzer_source_code = fuzzer_source_code
-            if HEURISTIC_NAME not in cloned_possible_target.heuristics_used:
-                cloned_possible_target.heuristics_used.append(HEURISTIC_NAME)
-
-            possible_targets.append(cloned_possible_target)
-
-
-def _generate_heuristic_3(method_tuple, possible_targets, max_target):
-    """Heuristic 3.
-    Creates a JavaFuzzTarget for each method that satisfy all:
-        - public object method which are not abstract or found in JDK library
-        - have between 1-20 arguments
-        - do not have "test" or "demo" in the function name or class name
-    and Object creation method that satisfy all:
-        - public static method which are not abstract
-        - have less than 20 primitive arguments
-        - do not have "test" or "demo" in the function name or class name
-        - return an object of the needed class
-    Similar to Heuristic 2, the fuzz target is simply one that calls into the
-    target function with seeded fuzz data. But it create the object differently
-    comparing to Heuristic 2. Instead of calling constructor, it will search
-    for static method in all class with primitive parameters that return the needed
-    object. This approach assume those static method are factory creator of
-    the needed object which is a common way to retrieve singleton object or
-    provide some hidden initialization of object after creation.
-
-    Will also add proper exception handling based on the exception list
-    provided by the frontend code.
-    """
-    HEURISTIC_NAME = "java-autofuzz-heuristics-3"
-
-    init_dict, method_list, _, static_method_list = method_tuple
-    for func_elem in method_list:
-        if len(possible_targets) > max_target:
-            return
-
-        # Initialize base possible_target object
-        possible_target = JavaFuzzTarget(func_elem)
-        func_name = possible_target.function_name
-        func_class = possible_target.function_class
-        target_method_name = possible_target.function_target
-
-        # Store function parameter list
-        for argType in func_elem['argTypes']:
-            arg_list = _handle_argument(argType.replace('$', '.'), None,
-                                        possible_target, max_target, [])
-            if arg_list:
-                possible_target.variables_to_add.append(arg_list[0])
-        if len(possible_target.variables_to_add) != len(func_elem['argTypes']):
-            continue
-
-        # Retrieve list of factory method for the target object
-        factory_method_list = _search_static_factory_method(
-            func_class, static_method_list, possible_target, max_target)
-
-        for factory_method in list(set(factory_method_list)):
-            # Create possible target for all possible factory method
-            # Clone the base target object
-            cloned_possible_target = copy.deepcopy(possible_target)
-
-            # Create the actual source
-            fuzzer_source_code = "  // Heuristic name: %s\n" % (HEURISTIC_NAME)
-            fuzzer_source_code += "  // Target method: %s\n" % (
-                target_method_name)
-            fuzzer_source_code += "  %s obj = %s;\n" % (func_class,
-                                                        factory_method)
-            fuzzer_source_code += "  obj.%s($VARIABLE$);\n" % (func_name)
-
-            exception_set = set(cloned_possible_target.exceptions_to_handle)
-            if len(exception_set) > 0:
-                fuzzer_source_code = "  try {\n" + fuzzer_source_code
-                fuzzer_source_code += "  }\n"
-                counter = 1
-
-                exceptions, super_exceptions = _extract_super_exceptions(
-                    exception_set)
-                for exc in list(exceptions) + list(super_exceptions):
-                    fuzzer_source_code += "  catch (%s e%d) {}\n" % (exc,
-                                                                     counter)
-                    counter += 1
-
-            cloned_possible_target.fuzzer_source_code = fuzzer_source_code
-            if HEURISTIC_NAME not in cloned_possible_target.heuristics_used:
-                cloned_possible_target.heuristics_used.append(HEURISTIC_NAME)
-
-            possible_targets.append(cloned_possible_target)
-
-
-def _generate_heuristic_4(method_tuple, possible_targets, max_target):
-    """Heuristic 4.
-    Creates a JavaFuzzTarget for each method that satisfy all:
-        - public object method which are not abstract or found in JDK library
-        - have between 1-20 arguments
-        - do not have "test" or "demo" in the function name or class name
-    and Object creation method that satisfy all:
-        - public non-static method which are not abstract
-        - have less than 20 arguments
-        - do not have "test" or "demo" in the function name or class name
-        - return an object of the needed class
-    Similar to Heuristic 3, instead of static factory method, it will find
-    non-static factory method instead.
-
-    Will also add proper exception handling based on the exception list
-    provided by the frontend code.
-    """
-    HEURISTIC_NAME = "java-autofuzz-heuristics-4"
-
-    init_dict, method_list, instance_method_list, static_method_list = method_tuple
-    for func_elem in method_list:
-        if len(possible_targets) > max_target:
-            return
-
-        # Initialize base possible_target object
-        possible_target = JavaFuzzTarget(func_elem)
-        func_name = possible_target.function_name
-        func_class = possible_target.function_class
-        target_method_name = possible_target.function_target
-
-        # Store function parameter list
-        for argType in func_elem['argTypes']:
-            arg_list = _handle_argument(argType.replace('$', '.'), None,
-                                        possible_target, max_target, [])
-            if arg_list:
-                possible_target.variables_to_add.append(arg_list[0])
-        if len(possible_target.variables_to_add) != len(func_elem['argTypes']):
-            continue
-
-        # Retrieve list of factory method for the target object
-        factory_method_list = _search_factory_method(
-            func_class, static_method_list, method_list + instance_method_list,
-            possible_target, init_dict, max_target)
-
-        for factory_method in list(set(factory_method_list)):
-            # Create possible target for all possible factory method
-            # Clone the base target object
-            cloned_possible_target = copy.deepcopy(possible_target)
-
-            # Create the actual source
-            fuzzer_source_code = "  // Heuristic name: %s\n" % (HEURISTIC_NAME)
-            fuzzer_source_code += "  // Target method: %s\n" % (
-                target_method_name)
-            fuzzer_source_code += "  %s obj = %s;\n" % (func_class,
-                                                        factory_method)
-            fuzzer_source_code += "  obj.%s($VARIABLE$);\n" % (func_name)
-
-            exception_set = set(cloned_possible_target.exceptions_to_handle)
             if len(exception_set) > 0:
                 fuzzer_source_code = "  try {\n" + fuzzer_source_code
                 fuzzer_source_code += "  }\n"
@@ -1923,12 +1782,6 @@ def _generate_heuristics(yaml_dict,
     possible_targets.extend(temp_targets)
     temp_targets = []
     _generate_heuristic_2(method_tuple, temp_targets, max_target)
-    possible_targets.extend(temp_targets)
-    temp_targets = []
-    _generate_heuristic_3(method_tuple, temp_targets, max_target)
-    possible_targets.extend(temp_targets)
-    temp_targets = []
-    _generate_heuristic_4(method_tuple, temp_targets, max_target)
     possible_targets.extend(temp_targets)
     temp_targets = []
     _generate_heuristic_6(method_tuple, temp_targets, max_target)
