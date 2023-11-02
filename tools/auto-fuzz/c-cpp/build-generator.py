@@ -461,8 +461,6 @@ LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         }
         return fuzzer_intrinsics
 
-        #return full_fuzzer_source, build_command_includes
-
 
 class FuzzerGenHeuristic1:
 
