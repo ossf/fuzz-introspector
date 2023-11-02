@@ -36,8 +36,9 @@ class PythonFuzzTarget(FuzzTarget):
 
         # Generate lines for importing necessary modules.
         import_to_add = "# Imports by the generated code\n"
-        for fuzz_import in self.imports_to_add:
-            import_to_add += "%s\n" % (fuzz_import)
+        for fuzz_import in set(self.imports_to_add):
+            if fuzz_import != "import ":
+                import_to_add += "%s\n" % (fuzz_import)
 
         # Open the base fuzzer and patch while reading through the file.
         with open(filename, "r") as f:
@@ -58,21 +59,21 @@ class PythonFuzzTarget(FuzzTarget):
                     # First add the variables that should be seeded with fuzz data.
                     for var_name, var_type in self.variables_to_add:
                         if var_type == "str":
-                            content += f"  {var_name} = fdp.ConsumeUnicodeNoSurrogates(24)\n"
+                            content += f"    {var_name} = fdp.ConsumeUnicodeNoSurrogates(24)\n"
                         if var_type == "filename-b":
                             content += (
-                                f"  {var_name} = '/tmp/random_file.txt'\n"
-                                f"  with open({var_name}, 'wb') as f:\n"
-                                f"    f.write(fdp.ConsumeBytes(1024))\n")
+                                f"    {var_name} = '/tmp/random_file.txt'\n"
+                                f"    with open({var_name}, 'wb') as f:\n"
+                                f"        f.write(fdp.ConsumeBytes(1024))\n")
                         if var_type == "random-dict":
                             content += (
-                                f"  {var_name} = dict()\n"
-                                f"  {var_name}[fdp.ConsumeUnicodeNoSurrogates(12)] = fdp.ConsumeUnicodeNoSurrogates(24)\n"
-                                f"  {var_name}[fdp.ConsumeUnicodeNoSurrogates(12)] = fdp.ConsumeUnicodeNoSurrogates(24)\n"
-                                f"  {var_name}[fdp.ConsumeUnicodeNoSurrogates(12)] = fdp.ConsumeUnicodeNoSurrogates(24)\n"
-                                f"  {var_name}[fdp.ConsumeUnicodeNoSurrogates(12)] = [fdp.ConsumeUnicodeNoSurrogates(24), 2]\n"
-                                f"  {var_name}[fdp.ConsumeUnicodeNoSurrogates(12)] = 3\n"
-                                f"  {var_name}[fdp.ConsumeUnicodeNoSurrogates(12)] = fdp.ConsumeIntInRange(1, 10)\n"
+                                f"    {var_name} = dict()\n"
+                                f"    {var_name}[fdp.ConsumeUnicodeNoSurrogates(12)] = fdp.ConsumeUnicodeNoSurrogates(24)\n"
+                                f"    {var_name}[fdp.ConsumeUnicodeNoSurrogates(12)] = fdp.ConsumeUnicodeNoSurrogates(24)\n"
+                                f"    {var_name}[fdp.ConsumeUnicodeNoSurrogates(12)] = fdp.ConsumeUnicodeNoSurrogates(24)\n"
+                                f"    {var_name}[fdp.ConsumeUnicodeNoSurrogates(12)] = [fdp.ConsumeUnicodeNoSurrogates(24), 2]\n"
+                                f"    {var_name}[fdp.ConsumeUnicodeNoSurrogates(12)] = 3\n"
+                                f"    {var_name}[fdp.ConsumeUnicodeNoSurrogates(12)] = fdp.ConsumeIntInRange(1, 10)\n"
                             )
                         content += "\n"
 
@@ -162,11 +163,11 @@ def cleanup_import(import_str):
 def give_right_path(import_str):
     split_import_str = import_str.split(".")
     try:
-        if split_import_str[1] == "src":
-            return ".".join(split_import_str[2:])
+        if split_import_str[0] == "src":
+            return ".".join(split_import_str[1:])
     except:
         pass
-    return ".".join(split_import_str[1:])
+    return ".".join(split_import_str)
 
 
 def get_arguments_to_provide(func_elem):
@@ -221,12 +222,12 @@ def _generate_heuristic_1(yaml_dict, possible_targets):
 
                 # Create the actual source
                 fuzzer_source_code = ""
-                fuzzer_source_code += "  try:\n"
-                fuzzer_source_code += "    %s(val_1)\n" % (func_name)
-                fuzzer_source_code += "  except ("
+                fuzzer_source_code += "    try:\n"
+                fuzzer_source_code += "        %s(val_1)\n" % (func_name)
+                fuzzer_source_code += "    except ("
                 for exc in possible_target.exceptions_to_handle:
                     fuzzer_source_code += exc + ","
-                fuzzer_source_code += "):\n    pass\n"
+                fuzzer_source_code += "):\n        pass\n"
                 possible_target.fuzzer_source_code = fuzzer_source_code
 
                 # Set free variables and their types.
@@ -286,12 +287,12 @@ def _generate_heuristic_2(yaml_dict, possible_targets):
 
             # Create the actual source
             fuzzer_source_code = ""
-            fuzzer_source_code += "  try:\n"
-            fuzzer_source_code += "    %s(val_1)\n" % (r_fuzz_target)
-            fuzzer_source_code += "  except ("
-            for exc in possible_target.exceptions_to_handle:
-                fuzzer_source_code += exc + ","
-            fuzzer_source_code += "):\n    pass\n"
+            fuzzer_source_code += "    try:\n"
+            fuzzer_source_code += "        %s(val_1)\n" % (r_fuzz_target)
+            fuzzer_source_code += "    except ("
+            fuzzer_source_code += ",".join(
+                possible_target.exceptions_to_handle)
+            fuzzer_source_code += "):\n        pass\n"
             possible_target.fuzzer_source_code = fuzzer_source_code
 
             # Set free variables and their types.
@@ -349,12 +350,12 @@ def _generate_heuristic_3(yaml_dict, possible_targets):
 
             # Create the actual source
             fuzzer_source_code = ""
-            fuzzer_source_code += "  try:\n"
-            fuzzer_source_code += "    %s(val_1)\n" % (func_name)
-            fuzzer_source_code += "  except ("
-            for exc in possible_target.exceptions_to_handle:
-                fuzzer_source_code += exc + ","
-            fuzzer_source_code += "):\n    pass\n"
+            fuzzer_source_code += "    try:\n"
+            fuzzer_source_code += "        %s(val_1)\n" % (func_name)
+            fuzzer_source_code += "    except ("
+            fuzzer_source_code += ",".join(
+                possible_target.exceptions_to_handle)
+            fuzzer_source_code += "):\n        pass\n"
             possible_target.fuzzer_source_code = fuzzer_source_code
 
             # Set free variables and their types.
@@ -407,15 +408,14 @@ def _generate_heuristic_4(yaml_dict, possible_targets):
             possible_class_target_name = elem['functionName'].split(".")[-1]
 
             fuzzer_source_code = "  # Class target.\n"
-            fuzzer_source_code += "  try:\n"
-            fuzzer_source_code += "    c1 = %s()\n" % (class_path)
-            fuzzer_source_code += "    c1.%s(val_1)\n" % (
+            fuzzer_source_code += "    try:\n"
+            fuzzer_source_code += "        c1 = %s()\n" % (class_path)
+            fuzzer_source_code += "        c1.%s(val_1)\n" % (
                 possible_class_target_name)
-            fuzzer_source_code += "  except("
-            for exc in exceptions_thrown:
-                fuzzer_source_code += exc + ","
+            fuzzer_source_code += "    except("
+            fuzzer_source_code += ",".join(exceptions_thrown)
             fuzzer_source_code += "):\n"
-            fuzzer_source_code += "    pass\n"
+            fuzzer_source_code += "        pass\n"
 
             possible_target.fuzzer_source_code = fuzzer_source_code
             possible_target.imports_to_add.append("import %s" %
@@ -435,15 +435,14 @@ def _generate_heuristic_4(yaml_dict, possible_targets):
             possible_class_target_name = elem['functionName'].split(".")[-1]
 
             fuzzer_source_code = "  # Class target.\n"
-            fuzzer_source_code += "  try:\n"
-            fuzzer_source_code += "    c1 = %s(val_1)\n" % (class_path)
-            fuzzer_source_code += "    c1.%s(val_2)\n" % (
+            fuzzer_source_code += "    try:\n"
+            fuzzer_source_code += "        c1 = %s(val_1)\n" % (class_path)
+            fuzzer_source_code += "        c1.%s(val_2)\n" % (
                 possible_class_target_name)
-            fuzzer_source_code += "  except("
-            for exc in exceptions_thrown:
-                fuzzer_source_code += exc + ","
+            fuzzer_source_code += "    except("
+            fuzzer_source_code += ",".join(exceptions_thrown)
             fuzzer_source_code += "):\n"
-            fuzzer_source_code += "    pass\n"
+            fuzzer_source_code += "        pass\n"
 
             possible_target3.fuzzer_source_code = fuzzer_source_code
             possible_target3.imports_to_add.append(
@@ -465,15 +464,14 @@ def _generate_heuristic_4(yaml_dict, possible_targets):
             fuzzer_source_code2 = "  # Class target.\n"
             fuzzer_source_code2 += "  # Heuristic name: %s .1\n" % (
                 HEURISTIC_NAME)
-            fuzzer_source_code2 += "  try:\n"
-            fuzzer_source_code2 += "    c1 = %s(val_1)\n" % (class_path)
-            fuzzer_source_code2 += "    c1.%s()\n" % (
+            fuzzer_source_code2 += "    try:\n"
+            fuzzer_source_code2 += "        c1 = %s(val_1)\n" % (class_path)
+            fuzzer_source_code2 += "        c1.%s()\n" % (
                 possible_class_target_name)
-            fuzzer_source_code2 += "  except("
-            for exc in exceptions_thrown:
-                fuzzer_source_code2 += exc + ","
+            fuzzer_source_code2 += "    except("
+            fuzzer_source_code2 += ",".join(exceptions_thrown)
             fuzzer_source_code2 += "):\n"
-            fuzzer_source_code2 += "    pass\n"
+            fuzzer_source_code2 += "        pass\n"
             possible_target2.fuzzer_source_code = fuzzer_source_code2
             possible_target2.function_target = "%s.%s" % (
                 class_path, possible_class_target_name)
@@ -498,23 +496,22 @@ def impl_merge_heuristic_41(runs_to_merge):
             imports_to_add.add(im)
 
     fuzzer_source_code = "  # Class target.\n"
-    fuzzer_source_code += "  try:\n"
-    fuzzer_source_code += "    c1 = %s()\n" % (class_path)
+    fuzzer_source_code += "    try:\n"
+    fuzzer_source_code += "        c1 = %s()\n" % (class_path)
 
     # Add all functions
     variables_to_add = list()
     for func_to_hit in functions_to_hit:
         variable_to_add = ("val_%d" % (len(variables_to_add)), "str")
         variables_to_add.append(variable_to_add)
-        fuzzer_source_code += "    c1.%s(%s)\n" % (func_to_hit,
-                                                   variable_to_add[0])
+        fuzzer_source_code += "        c1.%s(%s)\n" % (func_to_hit,
+                                                       variable_to_add[0])
 
     # Add exceptions
-    fuzzer_source_code += "  except("
-    for exc in exceptions_thrown:
-        fuzzer_source_code += exc + ","
+    fuzzer_source_code += "    except("
+    fuzzer_source_code += ",".join(exceptions_thrown)
     fuzzer_source_code += "):\n"
-    fuzzer_source_code += "    pass\n"
+    fuzzer_source_code += "        pass\n"
 
     print("=" * 60)
     print(fuzzer_source_code)

@@ -83,7 +83,7 @@ def build_project(oss_fuzz_base_project, base_oss_fuzz_project_dir,
             for jdk in constants.JDK_HOME:
                 jdk_dir = constants.JDK_HOME[jdk]
 
-                oss_fuzz_base_project.change_java_dockerfile(
+                oss_fuzz_base_project.change_dockerfile(
                     jdk, project_build_type)
                 oss_fuzz_base_project.change_build_script(project_build_type)
 
@@ -270,10 +270,9 @@ def build_and_test_single_possible_target(idx_folder,
               "w") as summary_file:
         json.dump(summary, summary_file)
 
-    if language == "java":
-        # Change build.sh and Dockerfile back to normal
-        dst_oss_fuzz_project.change_java_dockerfile(jdk, project_build_type)
-        dst_oss_fuzz_project.change_build_script(project_build_type)
+    # Change build.sh and Dockerfile back to normal
+    dst_oss_fuzz_project.change_dockerfile(jdk, project_build_type)
+    dst_oss_fuzz_project.change_build_script(project_build_type)
 
     # Cleanup oss-fuzz artifacts
     oss_fuzz_manager.cleanup_project(os.path.basename(auto_fuzz_proj_dir),
@@ -440,7 +439,7 @@ def autofuzz_project_from_github(github_url,
             # and avoid rebuild of project
             for key in constants.JDK_HOME:
                 if constants.JDK_HOME[key] == jdk_base:
-                    oss_fuzz_base_project.change_java_dockerfile(
+                    oss_fuzz_base_project.change_dockerfile(
                         key, project_build_type, False)
                     jdk = key
                     break
@@ -483,6 +482,11 @@ def autofuzz_project_from_github(github_url,
         if do_static_analysis and static_res:
             print("Generating fuzzers for %s" % (github_url))
             if language == "python":
+                # Change build.sh and Dockerfile
+                project_build_type = None
+                oss_fuzz_base_project.change_dockerfile(
+                    jdk, project_build_type)
+                oss_fuzz_base_project.change_build_script(project_build_type)
                 possible_targets = fuzz_driver_generation_python.generate_possible_targets(
                     oss_fuzz_base_project.project_folder)
             elif language == "java":
