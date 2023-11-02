@@ -16,27 +16,46 @@ import os
 import yaml
 import itertools
 
-from typing import List, Any
+from typing import List, TypedDict, Any
 
+
+class ExtraSourceCode(TypedDict):
+    private_field: str
+    fuzzer_file_prepare: str
+    fuzzer_init: str
+    fuzzer_tear_down: str
 
 class FuzzTarget:
+    function_class: str
+    function_name: str
+    fuzzer_source_code: str
     function_target: str
     exceptions_to_handle: List[str]
-    fuzzer_source_code: str
     variables_to_add: List[Any]
     imports_to_add: List[str]
     heuristics_used: List[str]
+    class_field_list: List[str]
+    extra_source_code: ExtraSourceCode
 
     def __init__(self):
+        self.function_class = ""
+        self.function_name = ""
+        self.fuzzer_source_code = ""
         self.function_target = ""
         self.exceptions_to_handle = []
-        self.fuzzer_source_code = ""
         self.variables_to_add = []
         self.imports_to_add = []
         self.heuristics_used = []
+        self.class_field_list = []
+        self.extra_source_code = {
+            "private_field": "",
+            "fuzzer_file_prepare": "",
+            "fuzzer_init": "",
+            "fuzzer_tear_down": ""
+        }
 
-    def __dict__(self):
-        return {"function": self.function_target}
+#    def __dict__(self):
+#        return {"function": self.function_target}
 
     def to_json(self):
         return self.function_target

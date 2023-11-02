@@ -17,15 +17,10 @@ import yaml
 import itertools
 import sys
 
-from typing import List, Any
-
 sys.path.append('..')
 from objects.fuzz_target import FuzzTarget
 
 class PythonFuzzTarget(FuzzTarget):
-    def __init__(self):
-        super().__init__()
-
     def generate_patched_fuzzer(self, filename):
         """Patches the fuzzer in `filename`.
         Performs three actions:
