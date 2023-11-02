@@ -18,6 +18,7 @@ import yaml
 import shutil
 import cxxfilt
 import subprocess
+import argparse
 
 CPP_BASE_TEMPLATE = """#include <stdint.h>
 #include <iostream>
@@ -237,14 +238,6 @@ class CMakeScanner:
         return "cmake"
 
 
-def gen_build_script(commands_to_exec):
-    build_script = ""
-    for cmd in commands_to_exec:
-        build_script += cmd + "\n"
-
-    return build_script
-
-
 def get_all_files_in_path(path, path_to_subtract=None):
     all_files = []
     if path_to_subtract == None:
@@ -260,7 +253,7 @@ def get_all_files_in_path(path, path_to_subtract=None):
     return all_files
 
 
-def extract_build_files(path):
+def get_all_binary_files_from_folder(path):
     all_files = get_all_files_in_path(path, path)
 
     executable_files = {
@@ -278,7 +271,7 @@ def extract_build_files(path):
     return executable_files
 
 
-def find_possible_build_systems(abspath_of_target):
+def match_build_heuristics_on_folder(abspath_of_target):
     all_files = get_all_files_in_path(abspath_of_target)
     all_checks = [
         PureMakefileScanner(),
@@ -293,17 +286,16 @@ def find_possible_build_systems(abspath_of_target):
             print("Matched: %s" % (scanner.name))
             for auto_build_gen in scanner.steps_to_build():
                 print("Build script: ")
-                #print(gen_build_script(cmds_to_exec))
-
                 yield auto_build_gen
 
 
-def create_setup(test_dir, abc, abspath_of_target):
+def wrap_build_script(test_dir, abc, abspath_of_target):
     build_script = "#!/bin/bash\n"
     build_script += "rm -rf /%s\n" % (test_dir)
     build_script += "cp -rf %s %s\n" % (abspath_of_target, test_dir)
     build_script += "cd %s\n" % (test_dir)
-    build_script += gen_build_script(abc.list_of_commands)
+    for cmd in abc.list_of_commands:
+        build_script += cmd + "\n"
 
     return build_script
 
@@ -628,7 +620,35 @@ def get_all_introspector_files(all_files):
     return introspection_files_found
 
 
-def setup(github_url, test_build_scripts=True, build_fuzzer=True):
+def convert_build_heuristics_to_scripts(all_build_suggestions,
+                                        testing_base_dir, abspath_of_target):
+    all_build_scripts = []
+    for idx in range(len(all_build_suggestions)):
+        test_dir = os.path.abspath(
+            os.path.join(os.getcwd(), testing_base_dir + str(idx)))
+        build_suggestion = all_build_suggestions[idx]
+        build_script = wrap_build_script(test_dir, build_suggestion,
+                                         abspath_of_target)
+        all_build_scripts.append((build_script, test_dir, build_suggestion))
+    return all_build_scripts
+
+
+def extract_build_suggestions(target_dir, testing_base_dir):
+    # Get all of the build heuristics
+    all_build_suggestions = list(match_build_heuristics_on_folder(target_dir))
+    print("Found %d possible build suggestions" % (len(all_build_suggestions)))
+
+    # Convert the build heuristics into build scripts
+    all_build_scripts = convert_build_heuristics_to_scripts(
+        all_build_suggestions, testing_base_dir, target_dir)
+    return all_build_scripts
+
+
+def auto_generate(github_url,
+                  disable_testing_build_scripts=False,
+                  disable_fuzzgen=False,
+                  disable_fuzz_build_and_test=False):
+    """Autogenerates build scripts and fuzzer harnesses for a given GitHub repository."""
     dst_folder = github_url.split("/")[-1]
 
     # clone the base project into a dedicated folder
@@ -637,29 +657,18 @@ def setup(github_url, test_build_scripts=True, build_fuzzer=True):
                               (github_url, dst_folder),
                               shell=True)
 
-    initial_executable_files = extract_build_files(
+    # Stage 1: Build script generation
+
+    initial_executable_files = get_all_binary_files_from_folder(
         os.path.abspath(os.path.join(os.getcwd(), dst_folder)))
 
     # record the path
-    base_workdir = os.getcwd()
     abspath_of_target = os.path.join(os.getcwd(), dst_folder)
-
-    all_build_suggestions = list(
-        find_possible_build_systems(abspath_of_target))
-    print("Found %d possible build suggestions" % (len(all_build_suggestions)))
-    testing_base_dir = "test-fuzz-build-"
-
-    all_build_scripts = []
-    for idx in range(len(all_build_suggestions)):
-        test_dir = os.path.abspath(
-            os.path.join(os.getcwd(), testing_base_dir + str(idx)))
-        build_suggestion = all_build_suggestions[idx]
-        build_script = create_setup(test_dir, build_suggestion,
-                                    abspath_of_target)
-        all_build_scripts.append((build_script, test_dir, build_suggestion))
+    all_build_scripts = extract_build_suggestions(abspath_of_target,
+                                                  "test-fuzz-build-")
 
     # return now if we don't need to test build scripts
-    if test_build_scripts == False:
+    if disable_testing_build_scripts == True:
         return
 
     # Check each of the build scripts.
@@ -675,7 +684,7 @@ def setup(github_url, test_build_scripts=True, build_fuzzer=True):
 
         # We still check if we build any artifacts, as there is a change
         # we got the libraries we need even if the build threw an error.
-        binary_files_build = extract_build_files(test_dir)
+        binary_files_build = get_all_binary_files_from_folder(test_dir)
 
         new_binary_files = {
             'static-libs': [],
@@ -699,7 +708,7 @@ def setup(github_url, test_build_scripts=True, build_fuzzer=True):
               (results[test_dir]['auto-build-setup'][2].heuristic_id, test_dir,
                results[test_dir]['executables-build']['static-libs']))
 
-    if build_fuzzer == False:
+    if disable_fuzzgen == True:
         return
 
     # For each of the auto generated build scripts identify the
@@ -719,6 +728,9 @@ def setup(github_url, test_build_scripts=True, build_fuzzer=True):
             refined_static_list.append(static_lib)
 
         results[test_dir]['refined-static-libs'] = refined_static_list
+
+    # Stage 2: perform program analysis to extract data to be used for
+    # harness generation.
 
     # For each of the auto generated build scripts try to link
     # the resulting static libraries against an empty fuzzer.
@@ -754,6 +766,8 @@ def setup(github_url, test_build_scripts=True, build_fuzzer=True):
         print("Base fuzz build: %s" % (str(base_fuzz_build)))
 
         results[test_dir]['base-fuzz-build'] = base_fuzz_build
+
+    # Stage 3: Harness generation and harness testing.
 
     # We now know for which versions we can generate a base fuzzer.
     # Continue by runnig an introspector build using the auto-generated
@@ -832,6 +846,7 @@ def setup(github_url, test_build_scripts=True, build_fuzzer=True):
 
         # Generate the fuzzing intrisics for a given heuristic.
         heuristics_to_apply = [FuzzerGenHeuristic1, FuzzerGenHeuristic2]
+        idx = 0
         for heuristic_class in heuristics_to_apply:
             results_to_run = []
             heuristic = heuristic_class(first_refined_functions_in_project,
@@ -868,7 +883,6 @@ def setup(github_url, test_build_scripts=True, build_fuzzer=True):
                 })
 
             # Build the fuzzer for each project
-            idx = 0
             print("RESULTS TO ANALYSE: %d" % (len(results_to_run)))
             for res in results_to_run:
                 print("Build script:")
@@ -877,11 +891,12 @@ def setup(github_url, test_build_scripts=True, build_fuzzer=True):
                 print("Source:")
                 print(res['source'])
                 print("-" * 45)
-
+                idx_to_use = idx
+                idx += 1
                 # Make a directory and store artifacts there
                 fuzzer_gen_dir = os.path.join(
                     '/src/',
-                    os.path.basename(test_dir) + "-fuzzgen-%d" % (idx))
+                    os.path.basename(test_dir) + "-fuzzgen-%d" % (idx_to_use))
                 if os.path.isdir(fuzzer_gen_dir):
                     shutil.rmtree(fuzzer_gen_dir)
 
@@ -897,6 +912,9 @@ def setup(github_url, test_build_scripts=True, build_fuzzer=True):
                     f.write(res['source'])
                 with open('/src/build.sh', 'w') as f:
                     f.write(res['build-script'])
+
+                if disable_fuzz_build_and_test:
+                    continue
 
                 modified_env = os.environ
                 modified_env['SANITIZER'] = 'address'
@@ -914,9 +932,35 @@ def setup(github_url, test_build_scripts=True, build_fuzzer=True):
                         os.path.join(
                             fuzzer_gen_dir,
                             os.path.basename(test_dir) +
-                            '-fuzzer-generated-%d' % (idx)))
-                    idx += 1
+                            '-fuzzer-generated-%d' % (idx_to_use)))
+
+
+def parse_commandline():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('repo', help="Github url of target")
+    parser.add_argument('--disable-build-test',
+                        action='store_true',
+                        help='disables')
+    parser.add_argument(
+        '--disable-fuzzgen',
+        action='store_true',
+        help='disables auto generation of fuzzers, only build will run.')
+    parser.add_argument('--disable-fuzz-build-and-test',
+                        action='store_true',
+                        help='disables building and testing of fuzzers')
+    return parser
+
+
+def main():
+    parser = parse_commandline()
+    args = parser.parse_args()
+
+    # print("Args:")
+    # print(str(args))
+    # print("-"*30)
+    auto_generate(args.repo, args.disable_build_test, args.disable_fuzzgen,
+                  args.disable_fuzz_build_and_test)
 
 
 if __name__ == "__main__":
-    setup(sys.argv[1])
+    main()
