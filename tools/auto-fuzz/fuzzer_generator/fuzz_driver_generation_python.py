@@ -15,37 +15,13 @@
 import os
 import yaml
 import itertools
+import sys
 
-from typing import List, Any
+sys.path.append('..')
+from objects.fuzz_target import FuzzTarget
 
 
-class FuzzTarget:
-    function_target: str
-    exceptions_to_handle: List[str]
-    fuzzer_source_code: str
-    variables_to_add: List[Any]
-    imports_to_add: List[str]
-    heuristics_used: List[str]
-
-    def __init__(self):
-        self.function_target = ""
-        self.exceptions_to_handle = []
-        self.fuzzer_source_code = ""
-        self.variables_to_add = []
-        self.imports_to_add = []
-        self.heuristics_used = []
-
-    def __dict__(self):
-        return {"function": self.function_target}
-
-    def to_json(self):
-        return self.function_target
-
-    def __str__(self):
-        return self.function_target
-
-    def __name__(self):
-        return "function"
+class PythonFuzzTarget(FuzzTarget):
 
     def generate_patched_fuzzer(self, filename):
         """Patches the fuzzer in `filename`.
@@ -227,7 +203,7 @@ def _generate_heuristic_1(yaml_dict, possible_targets):
 
             # Create the possible target
             for type_to_use in ["str", "random-dict"]:
-                possible_target = FuzzTarget()
+                possible_target = PythonFuzzTarget()
                 possible_target.function_target = func_name
                 possible_target.heuristics_used.append(HEURISTIC_NAME)
 
@@ -288,7 +264,7 @@ def _generate_heuristic_2(yaml_dict, possible_targets):
             func_name = give_right_path(func_name)
 
             # Create the possible target
-            possible_target = FuzzTarget()
+            possible_target = PythonFuzzTarget()
             possible_target.function_target = func_name
             possible_target.heuristics_used.append(HEURISTIC_NAME)
 
@@ -353,7 +329,7 @@ def _generate_heuristic_3(yaml_dict, possible_targets):
                 pass
 
             # Create the possible target
-            possible_target = FuzzTarget()
+            possible_target = PythonFuzzTarget()
             possible_target.function_target = func_name
             possible_target.heuristics_used.append(HEURISTIC_NAME)
 
@@ -424,7 +400,7 @@ def _generate_heuristic_4(yaml_dict, possible_targets):
             exceptions_thrown = get_exception_imports(exceptions_thrown,
                                                       yaml_dict['All classes'],
                                                       yaml_dict['Inheritance'])
-            possible_target = FuzzTarget()
+            possible_target = PythonFuzzTarget()
             HEURISTIC_NAME = "py-autofuzz-heuristics-4.1"
             possible_target.exceptions_to_handle = exceptions_thrown
             possible_target.heuristics_used.append(HEURISTIC_NAME)
@@ -452,7 +428,7 @@ def _generate_heuristic_4(yaml_dict, possible_targets):
             possible_targets.append(possible_target)
 
             # Another target
-            possible_target3 = FuzzTarget()
+            possible_target3 = PythonFuzzTarget()
             HEURISTIC_NAME = "py-autofuzz-heuristics-4.1.1"
             possible_target3.exceptions_to_handle = exceptions_thrown
             possible_target3.heuristics_used.append(HEURISTIC_NAME)
@@ -481,7 +457,7 @@ def _generate_heuristic_4(yaml_dict, possible_targets):
             possible_targets.append(possible_target3)
 
             # Make second one
-            possible_target2 = FuzzTarget()
+            possible_target2 = PythonFuzzTarget()
             possible_target2.imports_to_add = possible_target.imports_to_add
             HEURISTIC_NAME = "py-autofuzz-heuristics-4.2"
             possible_target2.heuristics_used.append(HEURISTIC_NAME)
@@ -543,7 +519,7 @@ def impl_merge_heuristic_41(runs_to_merge):
     print("=" * 60)
     print(fuzzer_source_code)
 
-    possible_target = FuzzTarget()
+    possible_target = PythonFuzzTarget()
     possible_target.fuzzer_source_code = fuzzer_source_code
     possible_target.imports_to_add = list(imports_to_add)
     possible_target.variables_to_add = variables_to_add

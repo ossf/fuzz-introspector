@@ -16,75 +16,26 @@ import os
 import yaml
 import constants
 import itertools
+import sys
+import copy
 
-from typing import List, Set, Any
+sys.path.append('..')
+from objects.fuzz_target import FuzzTarget
 
 
-class FuzzTarget:
-    function_name: str
-    function_target: str
-    function_class: str
-    exceptions_to_handle: Set[str]
-    fuzzer_source_code: str
-    variables_to_add: List[Any]
-    imports_to_add: Set[str]
-    heuristics_used: List[str]
-    class_field_list: List[str]
-    private_field_source_code: str
-    fuzzer_file_prepare_source_code: str
-    fuzzer_init_source_code: str
-    fuzzer_tear_down_source_code: str
+class JavaFuzzTarget(FuzzTarget):
 
-    def __init__(self, orig=None, func_elem=None):
-        self.function_name = ""
-        self.function_target = ""
-        self.function_class = ""
-        self.exceptions_to_handle = set()
-        self.fuzzer_source_code = ""
-        self.variables_to_add = []
-        self.imports_to_add = set()
-        self.heuristics_used = []
-        self.class_field_list = []
-        self.private_field_source_code = ""
-        self.fuzzer_file_prepare_source_code = ""
-        self.fuzzer_init_source_code = ""
-        self.fuzzer_tear_down_source_code = ""
-        if orig:
-            self.function_name = orig.function_name
-            self.function_target = orig.function_target
-            self.function_class = orig.function_class
-            self.exceptions_to_handle.update(orig.exceptions_to_handle)
-            self.fuzzer_source_code = orig.fuzzer_source_code
-            self.variables_to_add.extend(orig.variables_to_add)
-            self.imports_to_add.update(orig.imports_to_add)
-            self.heuristics_used.extend(list(set(orig.heuristics_used)))
-            self.class_field_list.extend(orig.class_field_list)
-            self.private_field_source_code = orig.private_field_source_code
-            self.fuzzer_file_prepare_source_code = orig.fuzzer_file_prepare_source_code
-            self.fuzzer_init_source_code = orig.fuzzer_init_source_code
-            self.fuzzer_tear_down_source_code = orig.fuzzer_tear_down_source_code
-        elif func_elem:
-            # Method name in .data.yaml for java: [className].methodName(methodParameterList)
-            self.function_name = func_elem['functionName'].split(
-                '].')[1].split('(')[0]
-            self.function_target = get_target_method_statement(func_elem)
-            self.function_class = func_elem['functionSourceFile'].replace(
-                '$', '.')
-            self.exceptions_to_handle.update(
-                func_elem['JavaMethodInfo']['exceptions'])
-            self.imports_to_add.update(_handle_import(func_elem))
+    def __init__(self, func_elem):
+        super().__init__()
 
-    def __dict__(self):
-        return {"function": self.function_target}
-
-    def to_json(self):
-        return self.function_target
-
-    def __str__(self):
-        return self.function_target
-
-    def __name__(self):
-        return "function"
+        # Method name in .data.yaml for java: [className].methodName(methodParameterList)
+        self.function_name = func_elem['functionName'].split('].')[1].split(
+            '(')[0]
+        self.function_target = get_target_method_statement(func_elem)
+        self.function_class = func_elem['functionSourceFile'].replace('$', '.')
+        self.exceptions_to_handle.extend(
+            func_elem['JavaMethodInfo']['exceptions'])
+        self.imports_to_add.extend(_handle_import(func_elem))
 
     def generate_patched_fuzzer(self, filename):
         """Patches the fuzzer in `filename`.
@@ -103,7 +54,7 @@ class FuzzTarget:
             for line in f:
                 if "/*IMPORTS*/" in line:
                     # Insert Java class import statement
-                    content += "".join(self.imports_to_add)
+                    content += "".join(sorted(set(self.imports_to_add)))
                     content += "\n// "
                     content += ",".join(self.heuristics_used)
                     content += "\n"
@@ -118,16 +69,16 @@ class FuzzTarget:
                         content += item
                 elif "/*PRIVATE_FIELD*/" in line:
                     # Insert fuzzer class field
-                    content += self.private_field_source_code
+                    content += self.extra_source_code["private_field"]
                 elif "/*FUZZER_INITIALIZE*/" in line:
                     # Insert fuzzer initialize code
-                    content += self.fuzzer_init_source_code
+                    content += self.extra_source_code["fuzzer_init"]
                 elif "/*FUZZER_TEAR_DOWN*/" in line:
                     # Insert fuzzer tear down code
-                    content += self.fuzzer_tear_down_source_code
+                    content += self.extra_source_code["fuzzer_tear_down"]
                 elif "/*FILE_PREPERATION*/" in line:
                     # Insert file preparation code
-                    content += self.fuzzer_file_prepare_source_code
+                    content += self.extra_source_code["fuzzer_file_prepare"]
                 else:
                     # Copy other lines from the base fuzzer
                     content += line
@@ -430,9 +381,9 @@ def _search_static_factory_method(classname,
             continue
 
         # Handle exceptions and import
-        possible_target.exceptions_to_handle.update(
+        possible_target.exceptions_to_handle.extend(
             func_elem['JavaMethodInfo']['exceptions'])
-        possible_target.imports_to_add.update(_handle_import(func_elem))
+        possible_target.imports_to_add.extend(_handle_import(func_elem))
 
         # Remove [] character and argument list from function name
         # Method name in .data.yaml for java: [className].methodName(methodParameterList)
@@ -540,9 +491,9 @@ def _search_factory_method(classname,
                     break
 
         # Handle exceptions and import
-        possible_target.exceptions_to_handle.update(
+        possible_target.exceptions_to_handle.extend(
             func_elem['JavaMethodInfo']['exceptions'])
-        possible_target.imports_to_add.update(_handle_import(func_elem))
+        possible_target.imports_to_add.extend(_handle_import(func_elem))
 
     return result_list
 
@@ -668,26 +619,28 @@ def _handle_file_object(possible_target, is_path):
     Prepare a random file for any parameters
     needing a file or file path to process.
     """
-    possible_target.imports_to_add.add("import java.io.File;")
-    possible_target.imports_to_add.add("import java.io.FileWriter;")
-    possible_target.imports_to_add.add("import java.io.IOException;")
-    possible_target.imports_to_add.add("import java.io.PrintWriter;")
-    possible_target.imports_to_add.add("import java.nio.file.Files;")
+    possible_target.imports_to_add.append("import java.io.File;")
+    possible_target.imports_to_add.append("import java.io.FileWriter;")
+    possible_target.imports_to_add.append("import java.io.IOException;")
+    possible_target.imports_to_add.append("import java.io.PrintWriter;")
+    possible_target.imports_to_add.append("import java.nio.file.Files;")
 
-    possible_target.private_field_source_code = """  private static File tempDirectory;
+    possible_target.extra_source_code[
+        "private_field"] = """  private static File tempDirectory;
   private static File tempFile;"""
 
-    possible_target.fuzzer_init_source_code = """  try {
+    possible_target.extra_source_code["fuzzer_init"] = """  try {
       tempDirectory = Files.createTempDirectory("oss-fuzz").toFile().getAbsoluteFile();
       tempFile = new File(tempDirectory, "oss-fuzz-temp").getAbsoluteFile();
     } catch (IOException e) {
       // Known exception
     }"""
 
-    possible_target.fuzzer_tear_down_source_code = """  tempFile.delete();
+    possible_target.extra_source_code[
+        "fuzzer_tear_down"] = """  tempFile.delete();
     tempDirectory.delete();"""
 
-    possible_target.fuzzer_file_prepare_source_code = """  try {
+    possible_target.extra_source_code["fuzzer_file_prepare"] = """  try {
       PrintWriter printWriter = new PrintWriter(new FileWriter(tempFile));
       printWriter.print(data.consumeString(data.remainingBytes() / 2));
       printWriter.close();
@@ -851,9 +804,9 @@ def _handle_object_creation(classname,
                             arg_list.append(arg)
                     if len(arg_list) != len(elem['argTypes']):
                         continue
-                    possible_target.exceptions_to_handle.update(
+                    possible_target.exceptions_to_handle.extend(
                         elem['JavaMethodInfo']['exceptions'])
-                    possible_target.imports_to_add.update(
+                    possible_target.imports_to_add.extend(
                         _handle_import(func_elem))
                     for args_item in list(itertools.product(*arg_list)):
                         statement = "new " + elem_classname.replace("$", ".")
@@ -1063,7 +1016,7 @@ def _extract_super_exceptions(exceptions):
 
 def _generate_heuristic_1(method_tuple, possible_targets, max_target):
     """Heuristic 1.
-    Creates FuzzTarget for each method that satisfy all:
+    Creates JavaFuzzTarget for each method that satisfy all:
         - public class method which are not abstract or found in JDK library
         - have between 1-20 arguments
         - do not have "test" or "Demo" in the function name or class name
@@ -1085,7 +1038,7 @@ def _generate_heuristic_1(method_tuple, possible_targets, max_target):
             return
 
         # Initialize base possible_target object
-        possible_target = FuzzTarget(func_elem=func_elem)
+        possible_target = JavaFuzzTarget(func_elem)
         func_name = possible_target.function_name
         func_class = possible_target.function_class
         target_method_name = possible_target.function_target
@@ -1127,7 +1080,7 @@ def _generate_heuristic_1(method_tuple, possible_targets, max_target):
 
 def _generate_heuristic_2(method_tuple, possible_targets, max_target):
     """Heuristic 2.
-    Creates a FuzzTarget for each method that satisfy all:
+    Creates a JavaFuzzTarget for each method that satisfy all:
         - public object method which are not abstract or found in JDK library
         - have between 1-20 arguments
         - do not have "test" or "demo" in the function name or class name
@@ -1148,7 +1101,7 @@ def _generate_heuristic_2(method_tuple, possible_targets, max_target):
             return
 
         # Initialize base possible_target object
-        possible_target = FuzzTarget(func_elem=func_elem)
+        possible_target = JavaFuzzTarget(func_elem)
         func_name = possible_target.function_name
         func_class = possible_target.function_class
         target_method_name = possible_target.function_target
@@ -1170,7 +1123,7 @@ def _generate_heuristic_2(method_tuple, possible_targets, max_target):
         for object_creation_item in list(set(object_creation_list)):
             # Create possible target for all possible object creation statement
             # Clone the base target object
-            cloned_possible_target = FuzzTarget(orig=possible_target)
+            cloned_possible_target = copy.deepcopy(possible_target)
             exception_set = set(cloned_possible_target.exceptions_to_handle)
 
             # Create the actual source
@@ -1201,7 +1154,7 @@ def _generate_heuristic_2(method_tuple, possible_targets, max_target):
 
 def _generate_heuristic_3(method_tuple, possible_targets, max_target):
     """Heuristic 3.
-    Creates a FuzzTarget for each method that satisfy all:
+    Creates a JavaFuzzTarget for each method that satisfy all:
         - public object method which are not abstract or found in JDK library
         - have between 1-20 arguments
         - do not have "test" or "demo" in the function name or class name
@@ -1229,7 +1182,7 @@ def _generate_heuristic_3(method_tuple, possible_targets, max_target):
             return
 
         # Initialize base possible_target object
-        possible_target = FuzzTarget(func_elem=func_elem)
+        possible_target = JavaFuzzTarget(func_elem)
         func_name = possible_target.function_name
         func_class = possible_target.function_class
         target_method_name = possible_target.function_target
@@ -1250,7 +1203,7 @@ def _generate_heuristic_3(method_tuple, possible_targets, max_target):
         for factory_method in list(set(factory_method_list)):
             # Create possible target for all possible factory method
             # Clone the base target object
-            cloned_possible_target = FuzzTarget(orig=possible_target)
+            cloned_possible_target = copy.deepcopy(possible_target)
 
             # Create the actual source
             fuzzer_source_code = "  // Heuristic name: %s\n" % (HEURISTIC_NAME)
@@ -1282,7 +1235,7 @@ def _generate_heuristic_3(method_tuple, possible_targets, max_target):
 
 def _generate_heuristic_4(method_tuple, possible_targets, max_target):
     """Heuristic 4.
-    Creates a FuzzTarget for each method that satisfy all:
+    Creates a JavaFuzzTarget for each method that satisfy all:
         - public object method which are not abstract or found in JDK library
         - have between 1-20 arguments
         - do not have "test" or "demo" in the function name or class name
@@ -1305,7 +1258,7 @@ def _generate_heuristic_4(method_tuple, possible_targets, max_target):
             return
 
         # Initialize base possible_target object
-        possible_target = FuzzTarget(func_elem=func_elem)
+        possible_target = JavaFuzzTarget(func_elem)
         func_name = possible_target.function_name
         func_class = possible_target.function_class
         target_method_name = possible_target.function_target
@@ -1327,7 +1280,7 @@ def _generate_heuristic_4(method_tuple, possible_targets, max_target):
         for factory_method in list(set(factory_method_list)):
             # Create possible target for all possible factory method
             # Clone the base target object
-            cloned_possible_target = FuzzTarget(orig=possible_target)
+            cloned_possible_target = copy.deepcopy(possible_target)
 
             # Create the actual source
             fuzzer_source_code = "  // Heuristic name: %s\n" % (HEURISTIC_NAME)
@@ -1359,7 +1312,7 @@ def _generate_heuristic_4(method_tuple, possible_targets, max_target):
 
 def _generate_heuristic_6(method_tuple, possible_targets, max_target):
     """Heuristic 6.
-    Creates a FuzzTarget for each method that satisfy all:
+    Creates a JavaFuzzTarget for each method that satisfy all:
         - public object method which are not abstract or found in JDK library
         - have between 1-20 arguments
         - do not have "test" or "demo" in the function name or class name
@@ -1378,7 +1331,7 @@ def _generate_heuristic_6(method_tuple, possible_targets, max_target):
             return
 
         # Initialize base possible_target object
-        possible_target = FuzzTarget(func_elem=func_elem)
+        possible_target = JavaFuzzTarget(func_elem)
         func_name = possible_target.function_name
         func_class = possible_target.function_class
         target_method_name = possible_target.function_target
@@ -1409,7 +1362,7 @@ def _generate_heuristic_6(method_tuple, possible_targets, max_target):
         for object_creation in list(set(object_creation_list)):
             # Create possible target for all possible factory method
             # Clone the base target object
-            cloned_possible_target = FuzzTarget(orig=possible_target)
+            cloned_possible_target = copy.deepcopy(possible_target)
 
             # Create the actual source
             fuzzer_source_code = "  // Heuristic name: %s\n" % (HEURISTIC_NAME)
@@ -1445,7 +1398,7 @@ def _generate_heuristic_6(method_tuple, possible_targets, max_target):
 
 def _generate_heuristic_7(method_tuple, possible_targets, max_target):
     """Heuristic 7.
-    Creates a FuzzTarget for each method that satisfy all:
+    Creates a JavaFuzzTarget for each method that satisfy all:
         - public static or object method which are not abstract or found in JDK library
         - have between 1-20 arguments
         - do not have "test" or "demo" in the function name or class name
@@ -1477,7 +1430,7 @@ def _generate_heuristic_7(method_tuple, possible_targets, max_target):
             static = True
 
         # Initialize base possible_target object
-        possible_target = FuzzTarget(func_elem=func_elem)
+        possible_target = JavaFuzzTarget(func_elem)
         func_name = possible_target.function_name
         func_class = possible_target.function_class
         target_method_name = possible_target.function_target
@@ -1512,7 +1465,7 @@ def _generate_heuristic_7(method_tuple, possible_targets, max_target):
         for object_creation in list(set(object_creation_list)):
             # Create possible target for all possible factory method
             # Clone the base target object
-            cloned_possible_target = FuzzTarget(orig=possible_target)
+            cloned_possible_target = copy.deepcopy(possible_target)
 
             # Create the actual source
             fuzzer_source_code = "  // Heuristic name: %s\n" % (HEURISTIC_NAME)
@@ -1568,7 +1521,7 @@ def _generate_heuristic_7(method_tuple, possible_targets, max_target):
 
 def _generate_heuristic_8(method_tuple, possible_targets, max_target):
     """Heuristic 8.
-    Creates a FuzzTarget for each method that satisfy all:
+    Creates a JavaFuzzTarget for each method that satisfy all:
         - public object method which are not abstract or found in JDK library
         - have between 1-20 arguments
         - do not have "test" or "demo" in the function name or class name
@@ -1585,7 +1538,7 @@ def _generate_heuristic_8(method_tuple, possible_targets, max_target):
             return
 
         # Initialize base possible_target object
-        possible_target = FuzzTarget(func_elem=func_elem)
+        possible_target = JavaFuzzTarget(func_elem)
         func_name = possible_target.function_name
         func_class = possible_target.function_class
         target_method_name = possible_target.function_target
@@ -1624,7 +1577,7 @@ def _generate_heuristic_8(method_tuple, possible_targets, max_target):
         for object_creation in list(set(object_creation_list)):
             # Create possible target for all possible factory method
             # Clone the base target object
-            cloned_possible_target = FuzzTarget(orig=possible_target)
+            cloned_possible_target = copy.deepcopy(possible_target)
 
             # Create the actual source
             fuzzer_source_code = "  // Heuristic name: %s\n" % (HEURISTIC_NAME)
@@ -1656,7 +1609,7 @@ def _generate_heuristic_8(method_tuple, possible_targets, max_target):
 
 def _generate_heuristic_9(method_tuple, possible_targets, max_target):
     """Heuristic 9.
-    Creates a FuzzTarget for each method that satisfy all:
+    Creates a JavaFuzzTarget for each method that satisfy all:
         - public object method which are not abstract or found in JDK library
         - have between 1-20 arguments
         - do not have "test" or "demo" in the function name or class name
@@ -1675,7 +1628,7 @@ def _generate_heuristic_9(method_tuple, possible_targets, max_target):
             return
 
         # Initialize base possible_target object
-        possible_target = FuzzTarget(func_elem=func_elem)
+        possible_target = JavaFuzzTarget(func_elem)
         func_name = possible_target.function_name
         func_class = possible_target.function_class
         target_method_name = possible_target.function_target
@@ -1718,7 +1671,7 @@ def _generate_heuristic_9(method_tuple, possible_targets, max_target):
         for object_creation in list(set(object_creation_list)):
             # Create possible target for all possible factory method
             # Clone the base target object
-            cloned_possible_target = FuzzTarget(orig=possible_target)
+            cloned_possible_target = copy.deepcopy(possible_target)
 
             # Create the actual source
             fuzzer_source_code = "  // Heuristic name: %s\n" % (HEURISTIC_NAME)
@@ -1750,7 +1703,7 @@ def _generate_heuristic_9(method_tuple, possible_targets, max_target):
 
 def _generate_heuristic_10(method_tuple, possible_targets, max_target):
     """Heuristic 10.
-    Creates a FuzzTarget for each method that satisfy all:
+    Creates a JavaFuzzTarget for each method that satisfy all:
         - public object or static method which are not abstract or found in JDK library
         - have between 1-20 arguments
         - do not have "test" or "demo" in the function name or class name
@@ -1772,7 +1725,7 @@ def _generate_heuristic_10(method_tuple, possible_targets, max_target):
             continue
 
         # Initialize base possible_target object
-        possible_target = FuzzTarget(func_elem=func_elem)
+        possible_target = JavaFuzzTarget(func_elem)
         func_name = possible_target.function_name
         func_class = possible_target.function_class
         target_method_name = possible_target.function_target
@@ -1828,7 +1781,7 @@ def _generate_heuristic_10(method_tuple, possible_targets, max_target):
         for object_creation in list(set(object_creation_list)):
             # Create possible target for all possible factory method
             # Clone the base target object
-            cloned_possible_target = FuzzTarget(orig=possible_target)
+            cloned_possible_target = copy.deepcopy(possible_target)
 
             # Create the actual source
             fuzzer_source_code = "  // Heuristic name: %s\n" % (HEURISTIC_NAME)
@@ -1856,8 +1809,8 @@ def _generate_heuristic_10(method_tuple, possible_targets, max_target):
                 cloned_possible_target.heuristics_used.append(HEURISTIC_NAME)
 
             for arg_list in list(itertools.product(*arg_lists)):
-                cross_product_possible_target = FuzzTarget(
-                    orig=cloned_possible_target)
+                cross_product_possible_target = copy.deepcopy(
+                    cloned_possible_target)
                 cross_product_possible_target.variables_to_add = arg_list
                 possible_targets.append(cross_product_possible_target)
                 if not need_param_combination:
@@ -1866,7 +1819,7 @@ def _generate_heuristic_10(method_tuple, possible_targets, max_target):
 
 def _generate_heuristic_11(method_tuple, possible_targets, max_target):
     """Heuristic 11.
-    Creates FuzzTarget for each constructor that satisfy all:
+    Creates JavaFuzzTarget for each constructor that satisfy all:
         - public constructor of public concrete class
         - have between 1-20 arguments
     The fuzz target is simply one that calls into the target constructor
@@ -1897,7 +1850,7 @@ def _generate_heuristic_11(method_tuple, possible_targets, max_target):
                 continue
 
             # Initialize base possible_target object
-            possible_target = FuzzTarget(func_elem=func_elem)
+            possible_target = JavaFuzzTarget(func_elem)
             func_name = possible_target.function_name
             func_class = possible_target.function_class
             target_method_name = possible_target.function_target
