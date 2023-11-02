@@ -1182,10 +1182,12 @@ def _generate_heuristic_2(method_tuple, possible_targets, max_target):
             # and create versions with and without setting methods
             if setting_source_code:
                 setting_possible_target = copy.deepcopy(cloned_possible_target)
-                setting_possible_target.fuzzer_source_code = fuzzer_source_code.replace("%SETTINGS%", setting_source_code)
+                setting_possible_target.fuzzer_source_code = fuzzer_source_code.replace(
+                    "%SETTINGS%", setting_source_code)
                 possible_targets.append(setting_possible_target)
 
-            cloned_possible_target.fuzzer_source_code = fuzzer_source_code.replace("%SETTINGS%", "")
+            cloned_possible_target.fuzzer_source_code = fuzzer_source_code.replace(
+                "%SETTINGS%", "")
             possible_targets.append(cloned_possible_target)
 
 
