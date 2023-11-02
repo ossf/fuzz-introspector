@@ -660,91 +660,7 @@ def extract_build_suggestions(target_dir, testing_base_dir):
     return all_build_scripts
 
 
-def auto_generate(github_url,
-                  disable_testing_build_scripts=False,
-                  disable_fuzzgen=False,
-                  disable_fuzz_build_and_test=False):
-    """Autogenerates build scripts and fuzzer harnesses for a given GitHub repository."""
-    dst_folder = github_url.split("/")[-1]
-
-    # clone the base project into a dedicated folder
-    if not os.path.isdir(dst_folder):
-        subprocess.check_call("git clone --recurse-submodules %s %s" %
-                              (github_url, dst_folder),
-                              shell=True)
-
-    # Stage 1: Build script generation
-
-    initial_executable_files = get_all_binary_files_from_folder(
-        os.path.abspath(os.path.join(os.getcwd(), dst_folder)))
-
-    # record the path
-    abspath_of_target = os.path.join(os.getcwd(), dst_folder)
-    all_build_scripts = extract_build_suggestions(abspath_of_target,
-                                                  "test-fuzz-build-")
-
-    # return now if we don't need to test build scripts
-    if disable_testing_build_scripts == True:
-        return
-
-    # Check each of the build scripts.
-    results = dict()
-    for build_script, test_dir, build_suggestion in all_build_scripts:
-        with open("/src/build.sh", "w") as bf:
-            bf.write(build_script)
-        try:
-            subprocess.check_call("compile", shell=True)
-            build_returned_error = False
-        except subprocess.CalledProcessError:
-            build_returned_error = True
-
-        # We still check if we build any artifacts, as there is a change
-        # we got the libraries we need even if the build threw an error.
-        binary_files_build = get_all_binary_files_from_folder(test_dir)
-
-        new_binary_files = {
-            'static-libs': [],
-            'dynamic-libs': [],
-            'object-files': []
-        }
-        for key in binary_files_build:
-            for bfile in binary_files_build[key]:
-                if bfile not in initial_executable_files[key]:
-                    new_binary_files[key].append(bfile)
-
-        print(binary_files_build['static-libs'])
-        results[test_dir] = {
-            'build-script': build_script,
-            'executables-build': binary_files_build,
-            'auto-build-setup': (build_script, test_dir, build_suggestion)
-        }
-
-    for test_dir in results:
-        print("%s : %s : %s" %
-              (results[test_dir]['auto-build-setup'][2].heuristic_id, test_dir,
-               results[test_dir]['executables-build']['static-libs']))
-
-    if disable_fuzzgen == True:
-        return
-
-    # For each of the auto generated build scripts identify the
-    # static libraries resulting from the build.
-    for test_dir in results:
-        refined_static_list = []
-
-        libs_to_avoid = {
-            "libgtest.a", "libgmock.a", "libgmock_main.a", "libgtest_main.a"
-        }
-        for static_lib in results[test_dir]['executables-build'][
-                'static-libs']:
-            if any(
-                    os.path.basename(static_lib) in lib_to_avoid
-                    for lib_to_avoid in libs_to_avoid):
-                continue
-            refined_static_list.append(static_lib)
-
-        results[test_dir]['refined-static-libs'] = refined_static_list
-
+def build_empty_fuzzers(results):
     # Stage 2: perform program analysis to extract data to be used for
     # harness generation.
 
@@ -780,8 +696,254 @@ def auto_generate(github_url,
             base_fuzz_build = False
 
         print("Base fuzz build: %s" % (str(base_fuzz_build)))
-
         results[test_dir]['base-fuzz-build'] = base_fuzz_build
+
+
+def refine_static_libs(results):
+    for test_dir in results:
+        refined_static_list = []
+        libs_to_avoid = {
+            "libgtest.a", "libgmock.a", "libgmock_main.a", "libgtest_main.a"
+        }
+        for static_lib in results[test_dir]['executables-build'][
+                'static-libs']:
+            if any(
+                    os.path.basename(static_lib) in lib_to_avoid
+                    for lib_to_avoid in libs_to_avoid):
+                continue
+            refined_static_list.append(static_lib)
+
+        results[test_dir]['refined-static-libs'] = refined_static_list
+
+
+def raw_build_evaluation(all_build_scripts, initial_executable_files):
+    # Check each of the build scripts.
+    results = dict()
+    for build_script, test_dir, build_suggestion in all_build_scripts:
+        with open("/src/build.sh", "w") as bf:
+            bf.write(build_script)
+        try:
+            subprocess.check_call("compile", shell=True)
+            build_returned_error = False
+        except subprocess.CalledProcessError:
+            build_returned_error = True
+
+        # We still check if we build any artifacts, as there is a change
+        # we got the libraries we need even if the build threw an error.
+        binary_files_build = get_all_binary_files_from_folder(test_dir)
+
+        new_binary_files = {
+            'static-libs': [],
+            'dynamic-libs': [],
+            'object-files': []
+        }
+        for key in binary_files_build:
+            for bfile in binary_files_build[key]:
+                if bfile not in initial_executable_files[key]:
+                    new_binary_files[key].append(bfile)
+
+        print(binary_files_build['static-libs'])
+        results[test_dir] = {
+            'build-script': build_script,
+            'executables-build': binary_files_build,
+            'auto-build-setup': (build_script, test_dir, build_suggestion)
+        }
+    return results
+
+
+def run_introspector_on_dir(results, test_dir):
+    """Runs Fuzz Introspector on a target directory with the ability
+    to analyse code without having fuzzers (FUZZ_INTROSPECTOR_AUTO_FUZZ=1)
+    """
+    introspector_vanilla_build_script = results[test_dir]['build-script']
+
+    empty_fuzzer_file = '/src/empty-fuzzer.cpp'
+    with open(empty_fuzzer_file, "w") as f:
+        f.write(CPP_BASE_TEMPLATE)
+
+    # Try to link the fuzzer to the static libs
+    cmd = ["$CXX", "$CXXFLAGS", "$LIB_FUZZING_ENGINE", empty_fuzzer_file]
+    for refined_static_lib in results[test_dir]['refined-static-libs']:
+        cmd.append(os.path.join(test_dir, refined_static_lib))
+
+    introspector_vanilla_build_script += "\n%s" % (" ".join(cmd))
+
+    with open("/src/build.sh", "w") as bs:
+        bs.write(introspector_vanilla_build_script)
+
+    modified_env = os.environ
+    modified_env['SANITIZER'] = 'introspector'
+    modified_env['FUZZ_INTROSPECTOR_AUTO_FUZZ'] = "1"
+    modified_env['PROJECT_NAME'] = 'auto-fuzz-proj'
+    modified_env['FUZZINTRO_OUTDIR'] = test_dir
+    try:
+        subprocess.check_call("compile", shell=True, env=modified_env)
+        build_returned_error = False
+    except subprocess.CalledProcessError:
+        build_returned_error = True
+    print("Introspector build: %s" % (str(build_returned_error)))
+    return build_returned_error, cmd
+
+
+#def get_all_header_files(target_dir):
+#    all_files = get_all_files_in_path(target_dir)
+#    all_header_files = get_all_header_files(all_files)
+#    return all_header_files
+
+
+def extract_introspector_insights(test_dir):
+    # Now scan the diretory for relevant yaml files
+    print("Introspection files found")
+    all_files = get_all_files_in_path(test_dir)
+
+    # Extrct specific files we need for further analysis.
+    introspection_files_found = get_all_introspector_files(all_files)
+
+    # Get all functions in project
+    all_functions_in_project = get_all_functions_in_project(
+        introspection_files_found)
+    print("Found a total of %d functions" % (len(all_functions_in_project)))
+
+    # Get all functions from the generated yaml files and demangle
+    # the names. Also discard functions from paths that do not
+    # look to be part of the project, e.g. from well-known testing
+    # libraries and system directories.
+    first_refined_functions_in_project = filter_basic_functions_out(
+        all_functions_in_project)
+    #for func in first_refined_functions_in_project:
+    #    print("{%s :: %s :: [%s] :: [%s]}" %
+    #          (func['demangled-name'], func['functionSourceFile'],
+    #           str(func['argNames']), str(func['argTypes'])))
+    return first_refined_functions_in_project
+
+
+def generate_harness_intrinsics(heuristic, results, test_dir, cmd):
+    fuzzer_targets = heuristic.get_fuzzing_targets()
+    print("Found %d fuzzer targets" % (len(fuzzer_targets)))
+
+    results_to_run = []
+    # Create the source code as well as build scripts
+    for fuzz_target in fuzzer_targets:
+        fuzzer_intrinsics = heuristic.get_fuzzer_intrinsics(fuzz_target)
+        if fuzzer_intrinsics == None:
+            continue
+        full_fuzzer_source = fuzzer_intrinsics['full-source-code']
+        build_command_includes = fuzzer_intrinsics['build-command-includes']
+
+        print(">>>>")
+        print(full_fuzzer_source)
+        print("<<<<")
+        print("Build command includes: %s" % (build_command_includes))
+
+        # Generate the script for compiling things with ASAN.
+        final_asan_build_script = results[test_dir]['build-script']
+        fuzzer_out = '/src/generated-fuzzer'
+        final_asan_build_script += "\n%s %s -o %s" % (
+            " ".join(cmd), build_command_includes, fuzzer_out)
+
+        # Wrap all the parts we need for building and running the fuzzer.
+        results_to_run.append({
+            'build-script': final_asan_build_script,
+            'source': full_fuzzer_source,
+            'fuzzer-file': '/src/empty-fuzzer.cpp',
+            'fuzzer-out': fuzzer_out,
+            'fuzzer-intrinsics': fuzzer_intrinsics,
+        })
+    return results_to_run
+
+
+def evaluate_heuristic(test_dir, res, fuzzer_intrinsics, heuristics_passed,
+                       idx_to_use, disable_fuzz_build_and_test):
+    fuzzer_gen_dir = os.path.join(
+        '/src/',
+        os.path.basename(test_dir) + "-fuzzgen-%d" % (idx_to_use))
+    if os.path.isdir(fuzzer_gen_dir):
+        shutil.rmtree(fuzzer_gen_dir)
+    os.mkdir(fuzzer_gen_dir)
+
+    # Write the fuzzer in the directory where we store the source code, just
+    # for covenience so we can easily see later.
+    with open(os.path.join(fuzzer_gen_dir, 'build.sh'), 'w') as f:
+        f.write(res['build-script'])
+    with open(os.path.join(fuzzer_gen_dir, 'empty-fuzzer.cpp'), 'w') as f:
+        f.write(res['source'])
+
+    # Write the build/fuzzer files as used by oss-fuzz and the build script.
+    with open(res['fuzzer-file'], 'w') as f:
+        f.write(res['source'])
+    with open('/src/build.sh', 'w') as f:
+        f.write(res['build-script'])
+
+    if disable_fuzz_build_and_test:
+        return
+
+    # If there is an existing successful build of this heuristic,
+    # then do not continue.
+    if heuristics_passed.get(fuzzer_intrinsics['autogen-id'], False) == True:
+        return
+
+    modified_env = os.environ
+    modified_env['SANITIZER'] = 'address'
+    try:
+        subprocess.check_call("compile", shell=True, env=modified_env)
+        build_returned_error = False
+    except subprocess.CalledProcessError:
+        build_returned_error = True
+
+    if build_returned_error == False:
+        heuristics_passed[fuzzer_intrinsics['autogen-id']] = True
+        shutil.copy(
+            res['fuzzer-out'],
+            os.path.join(
+                fuzzer_gen_dir,
+                os.path.basename(test_dir) + '-fuzzer-generated-%d' %
+                (idx_to_use)))
+
+
+def auto_generate(github_url,
+                  disable_testing_build_scripts=False,
+                  disable_fuzzgen=False,
+                  disable_fuzz_build_and_test=False):
+    """Autogenerates build scripts and fuzzer harnesses for a given GitHub repository."""
+    dst_folder = github_url.split("/")[-1]
+
+    # clone the base project into a dedicated folder
+    if not os.path.isdir(dst_folder):
+        subprocess.check_call("git clone --recurse-submodules %s %s" %
+                              (github_url, dst_folder),
+                              shell=True)
+
+    # Stage 1: Build script generation
+
+    initial_executable_files = get_all_binary_files_from_folder(
+        os.path.abspath(os.path.join(os.getcwd(), dst_folder)))
+
+    # record the path
+    abspath_of_target = os.path.join(os.getcwd(), dst_folder)
+    all_build_scripts = extract_build_suggestions(abspath_of_target,
+                                                  "test-fuzz-build-")
+
+    # return now if we don't need to test build scripts
+    if disable_testing_build_scripts == True:
+        return
+
+    # Check each of the build scripts.
+    results = raw_build_evaluation(all_build_scripts, initial_executable_files)
+    for test_dir in results:
+        print("%s : %s : %s" %
+              (results[test_dir]['auto-build-setup'][2].heuristic_id, test_dir,
+               results[test_dir]['executables-build']['static-libs']))
+
+    if disable_fuzzgen == True:
+        return
+
+    # For each of the auto generated build scripts identify the
+    # static libraries resulting from the build.
+    refine_static_libs(results)
+
+    # Stage 2: perform program analysis to extract data to be used for
+    # harness generation.
+    build_empty_fuzzers(results)
 
     # Stage 3: Harness generation and harness testing.
 
@@ -794,63 +956,25 @@ def auto_generate(github_url,
     # we only were to build the base fuzzer using introspector builds.
     # Then, proceed to use the generated program analysis data as arguments
     # to heuristics which will generate fuzzers.
+    # We need to run introspector per build, because we're essentially not
+    # sure if the produced binary files are the same. We could maybe optimize
+    # this to check if there are differences in build output.
     heuristics_passed = dict()
     for test_dir in results:
-        if results[test_dir]['base-fuzz-build'] == False:
+        # Skip if build suggestion did not work with an empty fuzzer.
+        if results[test_dir].get('base-fuzz-build', False) == False:
             continue
 
-        introspector_vanilla_build_script = results[test_dir]['build-script']
+        # Run Fuzz Introspector on the target
+        _, cmd = run_introspector_on_dir(results, test_dir)
 
-        empty_fuzzer_file = '/src/empty-fuzzer.cpp'
-        with open(empty_fuzzer_file, "w") as f:
-            f.write(CPP_BASE_TEMPLATE)
+        # Identify the relevant functions
+        first_refined_functions_in_project = extract_introspector_insights(
+            test_dir)
 
-        # Try to link the fuzzer to the static libs
-        cmd = ["$CXX", "$CXXFLAGS", "$LIB_FUZZING_ENGINE", empty_fuzzer_file]
-        for refined_static_lib in results[test_dir]['refined-static-libs']:
-            cmd.append(os.path.join(test_dir, refined_static_lib))
-
-        introspector_vanilla_build_script += "\n%s" % (" ".join(cmd))
-
-        with open("/src/build.sh", "w") as bs:
-            bs.write(introspector_vanilla_build_script)
-
-        modified_env = os.environ
-        modified_env['SANITIZER'] = 'introspector'
-        modified_env['FUZZ_INTROSPECTOR_AUTO_FUZZ'] = "1"
-        modified_env['PROJECT_NAME'] = 'auto-fuzz-proj'
-        modified_env['FUZZINTRO_OUTDIR'] = test_dir
-        try:
-            subprocess.check_call("compile", shell=True, env=modified_env)
-            build_returned_error = False
-        except subprocess.CalledProcessError:
-            build_returned_error = True
-        print("Introspector build: %s" % (str(build_returned_error)))
-
-        # Now scan the diretory for relevant yaml files
-        print("Introspection files found")
-        all_files = get_all_files_in_path(test_dir)
-
-        # Extrct specific files we need for further analysis.
-        introspection_files_found = get_all_introspector_files(all_files)
-        all_header_files = get_all_header_files(all_files)
-
-        # Get all functions in project
-        all_functions_in_project = get_all_functions_in_project(
-            introspection_files_found)
-        print("Found a total of %d functions" %
-              (len(all_functions_in_project)))
-
-        # Get all functions from the generated yaml files and demangle
-        # the names. Also discard functions from paths that do not
-        # look to be part of the project, e.g. from well-known testing
-        # libraries and system directories.
-        first_refined_functions_in_project = filter_basic_functions_out(
-            all_functions_in_project)
-        #for func in first_refined_functions_in_project:
-        #    print("{%s :: %s :: [%s] :: [%s]}" %
-        #          (func['demangled-name'], func['functionSourceFile'],
-        #           str(func['argNames']), str(func['argTypes'])))
+        print("Test dir: %s" % (str(test_dir)))
+        all_header_files = get_all_header_files(
+            get_all_files_in_path(test_dir))
 
         # At this point we have:
         # - A list of functions from the introspector analyses
@@ -865,101 +989,24 @@ def auto_generate(github_url,
         heuristics_to_apply = [FuzzerGenHeuristic1, FuzzerGenHeuristic2]
         idx = 0
         for heuristic_class in heuristics_to_apply:
-            results_to_run = []
+
+            # Initialize heuristic with the fuzz introspector data
             heuristic = heuristic_class(first_refined_functions_in_project,
                                         all_header_files, test_dir)
-            fuzzer_targets = heuristic.get_fuzzing_targets()
-            print("Found %d fuzzer targets" % (len(fuzzer_targets)))
 
-            # Create the source code as well as build scripts
-            for fuzz_target in fuzzer_targets:
-                fuzzer_intrinsics = heuristic.get_fuzzer_intrinsics(
-                    fuzz_target)
-                if fuzzer_intrinsics == None:
-                    continue
-                full_fuzzer_source = fuzzer_intrinsics['full-source-code']
-                build_command_includes = fuzzer_intrinsics[
-                    'build-command-includes']
-
-                print(">>>>")
-                print(full_fuzzer_source)
-                print("<<<<")
-                print("Build command includes: %s" % (build_command_includes))
-
-                # Generate the script for compiling things with ASAN.
-                final_asan_build_script = results[test_dir]['build-script']
-                fuzzer_out = '/src/generated-fuzzer'
-                final_asan_build_script += "\n%s %s -o %s" % (
-                    " ".join(cmd), build_command_includes, fuzzer_out)
-
-                # Wrap all the parts we need for building and running the fuzzer.
-                results_to_run.append({
-                    'build-script': final_asan_build_script,
-                    'source': full_fuzzer_source,
-                    'fuzzer-file': '/src/empty-fuzzer.cpp',
-                    'fuzzer-out': fuzzer_out,
-                    'fuzzer-intrinsics': fuzzer_intrinsics,
-                })
+            results_to_run = generate_harness_intrinsics(
+                heuristic, results, test_dir, cmd)
 
             # Build the fuzzer for each project
             print("RESULTS TO ANALYSE: %d" % (len(results_to_run)))
             for res in results_to_run:
-                print("Build script:")
-                print(res['build-script'])
-                print("-" * 45)
-                print("Source:")
-                print(res['source'])
-                print("-" * 45)
                 fuzzer_intrinsics = res['fuzzer-intrinsics']
                 idx_to_use = idx
                 idx += 1
                 # Make a directory and store artifacts there
-                fuzzer_gen_dir = os.path.join(
-                    '/src/',
-                    os.path.basename(test_dir) + "-fuzzgen-%d" % (idx_to_use))
-                if os.path.isdir(fuzzer_gen_dir):
-                    shutil.rmtree(fuzzer_gen_dir)
-
-                os.mkdir(fuzzer_gen_dir)
-                with open(os.path.join(fuzzer_gen_dir, 'build.sh'), 'w') as f:
-                    f.write(res['build-script'])
-                with open(os.path.join(fuzzer_gen_dir, 'empty-fuzzer.cpp'),
-                          'w') as f:
-                    f.write(res['source'])
-
-                # Now build the fuzzer
-                with open(res['fuzzer-file'], 'w') as f:
-                    f.write(res['source'])
-                with open('/src/build.sh', 'w') as f:
-                    f.write(res['build-script'])
-
-                if disable_fuzz_build_and_test:
-                    continue
-
-                # If there is an existing successful build of this heuristic,
-                # then do not continue.
-                if heuristics_passed.get(fuzzer_intrinsics['autogen-id'],
-                                         False) == True:
-                    continue
-
-                modified_env = os.environ
-                modified_env['SANITIZER'] = 'address'
-                try:
-                    subprocess.check_call("compile",
-                                          shell=True,
-                                          env=modified_env)
-                    build_returned_error = False
-                except subprocess.CalledProcessError:
-                    build_returned_error = True
-
-                if build_returned_error == False:
-                    heuristics_passed[fuzzer_intrinsics['autogen-id']] = True
-                    shutil.copy(
-                        res['fuzzer-out'],
-                        os.path.join(
-                            fuzzer_gen_dir,
-                            os.path.basename(test_dir) +
-                            '-fuzzer-generated-%d' % (idx_to_use)))
+                evaluate_heuristic(test_dir, res, fuzzer_intrinsics,
+                                   heuristics_passed, idx_to_use,
+                                   disable_fuzz_build_and_test)
 
     # Show those that succeeded.
     for hp in heuristics_passed:
