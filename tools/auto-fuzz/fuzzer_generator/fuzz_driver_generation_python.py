@@ -20,7 +20,9 @@ import sys
 sys.path.append('..')
 from objects.fuzz_target import FuzzTarget
 
+
 class PythonFuzzTarget(FuzzTarget):
+
     def generate_patched_fuzzer(self, filename):
         """Patches the fuzzer in `filename`.
         Performs three actions:

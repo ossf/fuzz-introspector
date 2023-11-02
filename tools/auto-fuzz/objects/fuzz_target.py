@@ -25,6 +25,7 @@ class ExtraSourceCode(TypedDict):
     fuzzer_init: str
     fuzzer_tear_down: str
 
+
 class FuzzTarget:
     function_class: str
     function_name: str
@@ -53,6 +54,7 @@ class FuzzTarget:
             "fuzzer_init": "",
             "fuzzer_tear_down": ""
         }
+
 
 #    def __dict__(self):
 #        return {"function": self.function_target}

@@ -22,16 +22,17 @@ import copy
 sys.path.append('..')
 from objects.fuzz_target import FuzzTarget
 
+
 class JavaFuzzTarget(FuzzTarget):
+
     def __init__(self, func_elem):
         super().__init__()
 
         # Method name in .data.yaml for java: [className].methodName(methodParameterList)
-        self.function_name = func_elem['functionName'].split(
-            '].')[1].split('(')[0]
+        self.function_name = func_elem['functionName'].split('].')[1].split(
+            '(')[0]
         self.function_target = get_target_method_statement(func_elem)
-        self.function_class = func_elem['functionSourceFile'].replace(
-            '$', '.')
+        self.function_class = func_elem['functionSourceFile'].replace('$', '.')
         self.exceptions_to_handle.extend(
             func_elem['JavaMethodInfo']['exceptions'])
         self.imports_to_add.extend(_handle_import(func_elem))
@@ -82,6 +83,7 @@ class JavaFuzzTarget(FuzzTarget):
                     # Copy other lines from the base fuzzer
                     content += line
         return content
+
 
 def _is_enum_class(init_dict, classname):
     """Check if the method's class is an enum type"""
@@ -623,7 +625,8 @@ def _handle_file_object(possible_target, is_path):
     possible_target.imports_to_add.append("import java.io.PrintWriter;")
     possible_target.imports_to_add.append("import java.nio.file.Files;")
 
-    possible_target.extra_source_code["private_field"] = """  private static File tempDirectory;
+    possible_target.extra_source_code[
+        "private_field"] = """  private static File tempDirectory;
   private static File tempFile;"""
 
     possible_target.extra_source_code["fuzzer_init"] = """  try {
@@ -633,7 +636,8 @@ def _handle_file_object(possible_target, is_path):
       // Known exception
     }"""
 
-    possible_target.extra_source_code["fuzzer_tear_down"] = """  tempFile.delete();
+    possible_target.extra_source_code[
+        "fuzzer_tear_down"] = """  tempFile.delete();
     tempDirectory.delete();"""
 
     possible_target.extra_source_code["fuzzer_file_prepare"] = """  try {
@@ -1805,7 +1809,8 @@ def _generate_heuristic_10(method_tuple, possible_targets, max_target):
                 cloned_possible_target.heuristics_used.append(HEURISTIC_NAME)
 
             for arg_list in list(itertools.product(*arg_lists)):
-                cross_product_possible_target = copy.deepcopy(cloned_possible_target)
+                cross_product_possible_target = copy.deepcopy(
+                    cloned_possible_target)
                 cross_product_possible_target.variables_to_add = arg_list
                 possible_targets.append(cross_product_possible_target)
                 if not need_param_combination:
