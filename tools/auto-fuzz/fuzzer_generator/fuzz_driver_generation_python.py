@@ -36,8 +36,9 @@ class PythonFuzzTarget(FuzzTarget):
 
         # Generate lines for importing necessary modules.
         import_to_add = "# Imports by the generated code\n"
-        for fuzz_import in self.imports_to_add:
-            import_to_add += "%s\n" % (fuzz_import)
+        for fuzz_import in set(self.imports_to_add):
+            if fuzz_import != "import ":
+                import_to_add += "%s\n" % (fuzz_import)
 
         # Open the base fuzzer and patch while reading through the file.
         with open(filename, "r") as f:
@@ -162,11 +163,11 @@ def cleanup_import(import_str):
 def give_right_path(import_str):
     split_import_str = import_str.split(".")
     try:
-        if split_import_str[1] == "src":
-            return ".".join(split_import_str[2:])
+        if split_import_str[0] == "src":
+            return ".".join(split_import_str[1:])
     except:
         pass
-    return ".".join(split_import_str[1:])
+    return ".".join(split_import_str)
 
 
 def get_arguments_to_provide(func_elem):
@@ -289,8 +290,7 @@ def _generate_heuristic_2(yaml_dict, possible_targets):
             fuzzer_source_code += "  try:\n"
             fuzzer_source_code += "    %s(val_1)\n" % (r_fuzz_target)
             fuzzer_source_code += "  except ("
-            for exc in possible_target.exceptions_to_handle:
-                fuzzer_source_code += exc + ","
+            fuzzer_source_code += ",".join(possible_target.exceptions_to_handle)
             fuzzer_source_code += "):\n    pass\n"
             possible_target.fuzzer_source_code = fuzzer_source_code
 
@@ -352,8 +352,7 @@ def _generate_heuristic_3(yaml_dict, possible_targets):
             fuzzer_source_code += "  try:\n"
             fuzzer_source_code += "    %s(val_1)\n" % (func_name)
             fuzzer_source_code += "  except ("
-            for exc in possible_target.exceptions_to_handle:
-                fuzzer_source_code += exc + ","
+            fuzzer_source_code += ",".join(possible_target.exceptions_to_handle)
             fuzzer_source_code += "):\n    pass\n"
             possible_target.fuzzer_source_code = fuzzer_source_code
 
@@ -412,8 +411,7 @@ def _generate_heuristic_4(yaml_dict, possible_targets):
             fuzzer_source_code += "    c1.%s(val_1)\n" % (
                 possible_class_target_name)
             fuzzer_source_code += "  except("
-            for exc in exceptions_thrown:
-                fuzzer_source_code += exc + ","
+            fuzzer_source_code += ",".join(exceptions_thrown)
             fuzzer_source_code += "):\n"
             fuzzer_source_code += "    pass\n"
 
@@ -440,8 +438,7 @@ def _generate_heuristic_4(yaml_dict, possible_targets):
             fuzzer_source_code += "    c1.%s(val_2)\n" % (
                 possible_class_target_name)
             fuzzer_source_code += "  except("
-            for exc in exceptions_thrown:
-                fuzzer_source_code += exc + ","
+            fuzzer_source_code += ",".join(exceptions_thrown)
             fuzzer_source_code += "):\n"
             fuzzer_source_code += "    pass\n"
 
@@ -470,8 +467,7 @@ def _generate_heuristic_4(yaml_dict, possible_targets):
             fuzzer_source_code2 += "    c1.%s()\n" % (
                 possible_class_target_name)
             fuzzer_source_code2 += "  except("
-            for exc in exceptions_thrown:
-                fuzzer_source_code2 += exc + ","
+            fuzzer_source_code2 += ",".join(exceptions_thrown)
             fuzzer_source_code2 += "):\n"
             fuzzer_source_code2 += "    pass\n"
             possible_target2.fuzzer_source_code = fuzzer_source_code2
@@ -511,8 +507,7 @@ def impl_merge_heuristic_41(runs_to_merge):
 
     # Add exceptions
     fuzzer_source_code += "  except("
-    for exc in exceptions_thrown:
-        fuzzer_source_code += exc + ","
+    fuzzer_source_code += ",".join(exceptions_thrown)
     fuzzer_source_code += "):\n"
     fuzzer_source_code += "    pass\n"
 
