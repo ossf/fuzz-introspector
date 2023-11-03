@@ -1056,6 +1056,10 @@ def _generate_heuristic_1(method_tuple, possible_targets, max_target):
         if len(arg_tuple_list) != len(func_elem['argTypes']):
             continue
 
+        # Create the actual source
+        fuzzer_source_code = "  // Heuristic name: %s\n" % (HEURISTIC_NAME)
+        fuzzer_source_code += "  // Target method: %s\n" % (target_method_name)
+
         # Create fix parameters from random data
         arg_counter = 1
         for arg_tuple in arg_tuple_list:
@@ -1064,9 +1068,6 @@ def _generate_heuristic_1(method_tuple, possible_targets, max_target):
             possible_target.variables_to_add.append("arg%d" % arg_counter)
             arg_counter += 1
 
-        # Create the actual source
-        fuzzer_source_code = "  // Heuristic name: %s\n" % (HEURISTIC_NAME)
-        fuzzer_source_code += "  // Target method: %s\n" % (target_method_name)
         fuzzer_source_code += "%METHODCALL1%"
         fuzzer_source_code += "%METHODCALL2%"
         fuzzer_source_code += "%ASSERT%"
@@ -1091,12 +1092,19 @@ def _generate_heuristic_1(method_tuple, possible_targets, max_target):
         if func_return_type and func_return_type != "void":
             assert_possible_target = copy.deepcopy(possible_target)
             assert_possible_target.fuzzer_source_code = fuzzer_source_code.replace(
-                "%METHODCALL1%", "  %s result1 = %s.%s($VARIABLE$);\n" % (func_return_type, func_class, func_name)).replace(
-                "%METHODCALL2%", "  %s result2 = %s.%s($VARIABLE$);\n" % (func_return_type, func_class, func_name)).replace(
-                "%ASSERT%", '  assert result1.equals(result2) : "Result not match.";\n')
+                "%METHODCALL1%", "  %s result1 = %s.%s($VARIABLE$);\n" %
+                (func_return_type, func_class, func_name)).replace(
+                    "%METHODCALL2%", "  %s result2 = %s.%s($VARIABLE$);\n" %
+                    (func_return_type, func_class, func_name)
+                ).replace(
+                    "%ASSERT%",
+                    '  assert result1.equals(result2) : "Result not match.";\n'
+                )
             possible_targets.append(assert_possible_target)
 
-        possible_target.fuzzer_source_code = fuzzer_source_code.replace("%METHODCALL1%", "").replace("%METHODCALL2%", "").replace("%ASSERT%", "")
+        possible_target.fuzzer_source_code = fuzzer_source_code.replace(
+            "%METHODCALL1%", "").replace("%METHODCALL2%",
+                                         "").replace("%ASSERT%", "")
         possible_targets.append(possible_target)
 
 
@@ -1152,8 +1160,10 @@ def _generate_heuristic_2(method_tuple, possible_targets, max_target):
         # Get all possible argument lists with different possible object creation combination
         arg_tuple_list = []
         for argType in func_elem['argTypes']:
-            arg_list = _handle_argument(argType.replace('$', '.'), init_dict,
-                                        possible_target, max_target, [],
+            arg_list = _handle_argument(argType.replace('$', '.'),
+                                        init_dict,
+                                        possible_target,
+                                        max_target, [],
                                         enum_object=True)
             if arg_list:
                 arg_tuple_list.append((argType.replace('$', '.'), arg_list[0]))
@@ -1226,8 +1236,10 @@ def _generate_heuristic_2(method_tuple, possible_targets, max_target):
             if setting_source_code:
                 setting_possible_target = copy.deepcopy(cloned_possible_target)
                 setting_possible_target.fuzzer_source_code = fuzzer_source_code.replace(
-                    "%SETTINGS%", setting_source_code).replace("%METHODCALL1%", "  obj.%s($VARIABLE$)" % (func_name)).replace(
-                    "%METHODCALL2%", "").replace("%ASSERT%", "")
+                    "%SETTINGS%", setting_source_code).replace(
+                        "%METHODCALL1%",
+                        "  obj.%s($VARIABLE$)" % (func_name)).replace(
+                            "%METHODCALL2%", "").replace("%ASSERT%", "")
                 possible_targets.append(setting_possible_target)
 
             # If target method have valid reutrn type, duplicate the possible
@@ -1235,13 +1247,24 @@ def _generate_heuristic_2(method_tuple, possible_targets, max_target):
             if func_return_type and func_return_type != "void":
                 assert_possible_target = copy.deepcopy(cloned_possible_target)
                 assert_possible_target.fuzzer_source_code = fuzzer_source_code.replace(
-                    "%SETTINGS%", "").replace("%METHODCALL1%", "  %s result1 = obj.%s($VARIABLE$);\n" % (
-                    func_return_type, func_name)).replace("%METHODCALL2%", "  %s result2 = obj.%s($VARIABLE$);\n" % (
-                    func_return_type, func_name)).replace("%ASSERT%", '  assert result1.equals(result2) : "Result not match.";\n')
+                    "%SETTINGS%", ""
+                ).replace(
+                    "%METHODCALL1%", "  %s result1 = obj.%s($VARIABLE$);\n" %
+                    (func_return_type, func_name)
+                ).replace(
+                    "%METHODCALL2%", "  %s result2 = obj.%s($VARIABLE$);\n" %
+                    (func_return_type, func_name)
+                ).replace(
+                    "%ASSERT%",
+                    '  assert result1.equals(result2) : "Result not match.";\n'
+                )
                 possible_targets.append(assert_possible_target)
 
             cloned_possible_target.fuzzer_source_code = fuzzer_source_code.replace(
-                "%SETTINGS%", "").replace("%METHODCALL1%", "  obj.%s($VARIABLE$)" % (func_name)).replace("%METHODCALL2%", "").replace("%ASSERT%", "")
+                "%SETTINGS%",
+                "").replace("%METHODCALL1%",
+                            "  obj.%s($VARIABLE$)" % (func_name)).replace(
+                                "%METHODCALL2%", "").replace("%ASSERT%", "")
             possible_targets.append(cloned_possible_target)
 
 
@@ -1649,9 +1672,6 @@ def _generate_heuristics(yaml_dict,
     possible_targets.extend(temp_targets)
     temp_targets = []
     _generate_heuristic_2(method_tuple, temp_targets, max_target)
-    possible_targets.extend(temp_targets)
-    temp_targets = []
-    _generate_heuristic_7(method_tuple, temp_targets, max_target)
     possible_targets.extend(temp_targets)
     temp_targets = []
     _generate_heuristic_8(method_tuple, temp_targets, max_target)
