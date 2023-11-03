@@ -1043,21 +1043,33 @@ def _generate_heuristic_1(method_tuple, possible_targets, max_target):
         func_class = possible_target.function_class
         target_method_name = possible_target.function_target
 
+        # Determine return type of the target method
+        func_return_type = func_elem['returnType'].replace('$', '.')
+
         # Store function parameter list
-        variable_list = []
+        arg_tuple_list = []
         for argType in func_elem['argTypes']:
             arg_list = _handle_argument(argType.replace('$', '.'), None,
                                         possible_target, max_target, [])
             if arg_list:
-                variable_list.append(arg_list[0])
-        if len(variable_list) != len(func_elem['argTypes']):
+                arg_tuple_list.append((argType.replace('$', '.'), arg_list[0]))
+        if len(arg_tuple_list) != len(func_elem['argTypes']):
             continue
+
+        # Create fix parameters from random data
+        arg_counter = 1
+        for arg_tuple in arg_tuple_list:
+            fuzzer_source_code += "  %s arg%d = %s;\n" % (
+                arg_tuple[0], arg_counter, arg_tuple[1])
+            possible_target.variables_to_add.append("arg%d" % arg_counter)
+            arg_counter += 1
 
         # Create the actual source
         fuzzer_source_code = "  // Heuristic name: %s\n" % (HEURISTIC_NAME)
         fuzzer_source_code += "  // Target method: %s\n" % (target_method_name)
-        fuzzer_source_code += "  %s.%s(%s);\n" % (func_class, func_name,
-                                                  ",".join(variable_list))
+        fuzzer_source_code += "%METHODCALL1%"
+        fuzzer_source_code += "%METHODCALL2%"
+        fuzzer_source_code += "%ASSERT%"
 
         exception_set = set(possible_target.exceptions_to_handle)
         if len(exception_set) > 0:
@@ -1071,10 +1083,20 @@ def _generate_heuristic_1(method_tuple, possible_targets, max_target):
                 fuzzer_source_code += "  catch (%s e%d) {}\n" % (exc, counter)
                 counter += 1
 
-        possible_target.fuzzer_source_code = fuzzer_source_code
         if HEURISTIC_NAME not in possible_target.heuristics_used:
             possible_target.heuristics_used.append(HEURISTIC_NAME)
 
+        # If target method have valid reutrn type, duplicate the possible
+        # target and create versions to assert the method result
+        if func_return_type and func_return_type != "void":
+            assert_possible_target = copy.deepcopy(possible_target)
+            assert_possible_target.fuzzer_source_code = fuzzer_source_code.replace(
+                "%METHODCALL1%", "  %s result1 = %s.%s($VARIABLE$);\n" % (func_return_type, func_class, func_name)).replace(
+                "%METHODCALL2%", "  %s result2 = %s.%s($VARIABLE$);\n" % (func_return_type, func_class, func_name)).replace(
+                "%ASSERT%", '  assert result1.equals(result2) : "Result not match.";\n')
+            possible_targets.append(assert_possible_target)
+
+        possible_target.fuzzer_source_code = fuzzer_source_code.replace("%METHODCALL1%", "").replace("%METHODCALL2%", "").replace("%ASSERT%", "")
         possible_targets.append(possible_target)
 
 
@@ -1103,6 +1125,10 @@ def _generate_heuristic_2(method_tuple, possible_targets, max_target):
     will create two versions of possible target for the same target method with or without
     pre-setting methods called before calling the target method.
 
+    If the target method have return value, this heuristic will add another versions of
+    the possible target which call the target method twice with same parameters and assert
+    that the return values of both calls are the same.
+
     Will also add proper exception handling based on the exception list
     provided by the frontend code.
     """
@@ -1120,13 +1146,19 @@ def _generate_heuristic_2(method_tuple, possible_targets, max_target):
         func_class = possible_target.function_class
         target_method_name = possible_target.function_target
 
+        # Determine return type of the target method
+        func_return_type = func_elem['returnType'].replace('$', '.')
+
         # Get all possible argument lists with different possible object creation combination
+        arg_tuple_list = []
         for argType in func_elem['argTypes']:
             arg_list = _handle_argument(argType.replace('$', '.'), init_dict,
-                                        possible_target, max_target, [])
+                                        possible_target, max_target, [],
+                                        enum_object=True)
             if arg_list:
-                possible_target.variables_to_add.append(arg_list[0])
-        if len(possible_target.variables_to_add) != len(func_elem['argTypes']):
+                arg_tuple_list.append((argType.replace('$', '.'), arg_list[0]))
+
+        if len(arg_tuple_list) != len(func_elem['argTypes']):
             continue
 
         # Retrieve list of factory method or constructor for the target object
@@ -1153,8 +1185,19 @@ def _generate_heuristic_2(method_tuple, possible_targets, max_target):
                 target_method_name)
             fuzzer_source_code += "  %s obj = %s;\n" % (func_class,
                                                         object_creation_item)
+
+            # Create fix parameters from random data
+            arg_counter = 1
+            for arg_tuple in arg_tuple_list:
+                fuzzer_source_code += "  %s arg%d = %s;\n" % (
+                    arg_tuple[0], arg_counter, arg_tuple[1])
+                possible_target.variables_to_add.append("arg%d" % arg_counter)
+                arg_counter += 1
+
             fuzzer_source_code += "%SETTINGS%"
-            fuzzer_source_code += "  obj.%s($VARIABLE$);\n" % (func_name)
+            fuzzer_source_code += "%METHODCALL1%"
+            fuzzer_source_code += "%METHODCALL2%"
+            fuzzer_source_code += "%ASSERT%"
 
             if len(exception_set) > 0:
                 fuzzer_source_code = "  try {\n" + fuzzer_source_code
@@ -1183,134 +1226,22 @@ def _generate_heuristic_2(method_tuple, possible_targets, max_target):
             if setting_source_code:
                 setting_possible_target = copy.deepcopy(cloned_possible_target)
                 setting_possible_target.fuzzer_source_code = fuzzer_source_code.replace(
-                    "%SETTINGS%", setting_source_code)
+                    "%SETTINGS%", setting_source_code).replace("%METHODCALL1%", "  obj.%s($VARIABLE$)" % (func_name)).replace(
+                    "%METHODCALL2%", "").replace("%ASSERT%", "")
                 possible_targets.append(setting_possible_target)
 
+            # If target method have valid reutrn type, duplicate the possible
+            # target and create versions to assert the method result
+            if func_return_type and func_return_type != "void":
+                assert_possible_target = copy.deepcopy(cloned_possible_target)
+                assert_possible_target.fuzzer_source_code = fuzzer_source_code.replace(
+                    "%SETTINGS%", "").replace("%METHODCALL1%", "  %s result1 = obj.%s($VARIABLE$);\n" % (
+                    func_return_type, func_name)).replace("%METHODCALL2%", "  %s result2 = obj.%s($VARIABLE$);\n" % (
+                    func_return_type, func_name)).replace("%ASSERT%", '  assert result1.equals(result2) : "Result not match.";\n')
+                possible_targets.append(assert_possible_target)
+
             cloned_possible_target.fuzzer_source_code = fuzzer_source_code.replace(
-                "%SETTINGS%", "")
-            possible_targets.append(cloned_possible_target)
-
-
-def _generate_heuristic_7(method_tuple, possible_targets, max_target):
-    """Heuristic 7.
-    Creates a JavaFuzzTarget for each method that satisfy all:
-        - public static or object method which are not abstract or found in JDK library
-        - have between 1-20 arguments
-        - do not have "test" or "demo" in the function name or class name
-        - have return value
-
-    This heuristic adds in assert logic to confirm the consistency of method call. That
-    is using the same set of parameters to invoke a method will always return the same
-    result.
-
-    Will also add proper exception handling based on the exception list
-    provided by the frontend code.
-    """
-    HEURISTIC_NAME = "java-autofuzz-heuristics-7"
-
-    init_dict, method_list, instance_method_list, static_method_list = method_tuple
-    for func_elem in method_list + static_method_list:
-        if len(possible_targets) > max_target:
-            return
-
-        # Skip method with no return value
-        func_return_type = func_elem['returnType'].replace('$', '.')
-        if not func_return_type or func_return_type == "void":
-            continue
-
-        # Distinguish static or object method
-        if func_elem in method_list:
-            static = False
-        else:
-            static = True
-
-        # Initialize base possible_target object
-        possible_target = JavaFuzzTarget(func_elem)
-        func_name = possible_target.function_name
-        func_class = possible_target.function_class
-        target_method_name = possible_target.function_target
-
-        # Store function parameter list
-        # Skip this method if it does not take at least one
-        # enum object as parameter
-        arg_tuple_list = []
-        for argType in func_elem['argTypes']:
-            arg_list = _handle_argument(argType.replace('$', '.'),
-                                        init_dict,
-                                        possible_target,
-                                        max_target, [],
-                                        enum_object=True)
-            if arg_list:
-                arg_tuple_list.append((argType.replace('$', '.'), arg_list[0]))
-
-        if len(arg_tuple_list) != len(func_elem['argTypes']):
-            continue
-
-        # Retrieve list of factory method for the target object
-        object_creation_list = _search_factory_method(
-            func_class, static_method_list, method_list + instance_method_list,
-            possible_target, init_dict, max_target)
-        object_creation_list.extend(
-            _search_static_factory_method(func_class, static_method_list,
-                                          possible_target, max_target))
-        object_creation_list.extend(
-            _handle_object_creation(func_class, init_dict, possible_target,
-                                    max_target, []))
-
-        for object_creation in list(set(object_creation_list)):
-            # Create possible target for all possible factory method
-            # Clone the base target object
-            cloned_possible_target = copy.deepcopy(possible_target)
-
-            # Create the actual source
-            fuzzer_source_code = "  // Heuristic name: %s\n" % (HEURISTIC_NAME)
-            fuzzer_source_code += "  // Target method: %s\n" % (
-                target_method_name)
-
-            # Create fix parameters from random data
-            arg_counter = 1
-            variable_list = []
-            for arg_tuple in arg_tuple_list:
-                fuzzer_source_code += "  %s arg%d = %s;\n" % (
-                    arg_tuple[0], arg_counter, arg_tuple[1])
-                variable_list.append("arg%d" % arg_counter)
-                arg_counter += 1
-
-            # Invoke static or object method with fixed parameters (from random data)
-            # and assert for consistency
-            if static:
-                fuzzer_source_code += "  %s result1 = %s.%s(%s);\n" % (
-                    func_return_type, func_class, func_name,
-                    ",".join(variable_list))
-                fuzzer_source_code += "  %s result2 = %s.%s(%s);\n" % (
-                    func_return_type, func_class, func_name,
-                    ",".join(variable_list))
-            else:
-                fuzzer_source_code += "  %s obj = %s;\n" % (func_class,
-                                                            object_creation)
-                fuzzer_source_code += "  %s result1 = obj.%s(%s);\n" % (
-                    func_return_type, func_name, ",".join(variable_list))
-                fuzzer_source_code += "  %s result2 = obj.%s(%s);\n" % (
-                    func_return_type, func_name, ",".join(variable_list))
-            fuzzer_source_code += '  assert result1.equals(result2) : "Result not match.";\n'
-
-            exception_set = set(cloned_possible_target.exceptions_to_handle)
-            if len(exception_set) > 0:
-                fuzzer_source_code = "  try {\n" + fuzzer_source_code
-                fuzzer_source_code += "  }\n"
-                counter = 1
-
-                exceptions, super_exceptions = _extract_super_exceptions(
-                    exception_set)
-                for exc in list(exceptions) + list(super_exceptions):
-                    fuzzer_source_code += "  catch (%s e%d) {}\n" % (exc,
-                                                                     counter)
-                    counter += 1
-
-            cloned_possible_target.fuzzer_source_code = fuzzer_source_code
-            if HEURISTIC_NAME not in cloned_possible_target.heuristics_used:
-                cloned_possible_target.heuristics_used.append(HEURISTIC_NAME)
-
+                "%SETTINGS%", "").replace("%METHODCALL1%", "  obj.%s($VARIABLE$)" % (func_name)).replace("%METHODCALL2%", "").replace("%ASSERT%", "")
             possible_targets.append(cloned_possible_target)
 
 
