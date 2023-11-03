@@ -15,5 +15,9 @@ jobs:
         with:
           args: "--replace"
           skip-commit: true
+          files:
+            - 'frontends/java/**'
+            - '.github/workflows/google-java.yml'
+            - 'tools/auto-fuzz/benchmark/jvm/**'
       - name: Print diffs
         run: git --no-pager diff --exit-code
