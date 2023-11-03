@@ -316,10 +316,8 @@ def _handle_argument(argType,
         return []
 
 
-def _search_static_factory_method(classname,
-                                  static_method_list,
-                                  possible_target,
-                                  max_target):
+def _search_static_factory_method(classname, static_method_list,
+                                  possible_target, max_target):
     """
     Search for all factory methods of the target class that statisfy all:
         - Public
@@ -361,11 +359,8 @@ def _search_static_factory_method(classname,
         arg_list = []
         for argType in func_elem['argTypes']:
             arg_list.extend(
-                _handle_argument(argType.replace('$', '.'),
-                                 None,
-                                 possible_target,
-                                 max_target, [],
-                                 False))
+                _handle_argument(argType.replace('$', '.'), None,
+                                 possible_target, max_target, [], False))
 
         # Error in some parameters
         if len(arg_list) != len(func_elem['argTypes']):
@@ -752,11 +747,8 @@ def _handle_object_creation(classname,
                     handled.append(elem)
                     for argType in elem['argTypes']:
                         arg = _handle_argument(argType.replace('$', '.'),
-                                               init_dict,
-                                               possible_target,
-                                               max_target,
-                                               handled,
-                                               True)
+                                               init_dict, possible_target,
+                                               max_target, handled, True)
                         if arg:
                             arg_list.append(arg)
                     if len(arg_list) != len(elem['argTypes']):
@@ -1137,8 +1129,11 @@ def _generate_heuristic_2(method_tuple, possible_targets, max_target):
             _search_static_factory_method(func_class, static_method_list,
                                           possible_target, max_target))
         object_creation_list.extend(
-            _handle_object_creation(func_class, init_dict, possible_target,
-                                    max_target, [], class_field=True))
+            _handle_object_creation(func_class,
+                                    init_dict,
+                                    possible_target,
+                                    max_target, [],
+                                    class_field=True))
 
         for object_creation_item in list(set(object_creation_list)):
             # Create possible target for all possible object creation
