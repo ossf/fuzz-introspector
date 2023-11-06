@@ -36,18 +36,18 @@ import soot.toolkits.graph.Block;
 
 public class BlockGraphInfoUtils {
   /**
-   * The method retrieves the invocation body of a statement if existed. Then it determines the
-   * information of the method invoked and stores them in the result to record the callsite
+   * The method retrieves the invocation body of a statement if exists. Then it determines the
+   * information on the method invoked and stores them in the result to record the call site
    * information of the invoked method in its parent method.
    *
    * @param stmt the statement to handle
    * @param sourceFilePath the file path for the parent method
    * @param isAutoFuzz a boolean value to indicate if this run is initiated by AutoFuzz
-   * @param sinkMethodMap a map to store a set of sink methods name grouped by their containing
+   * @param sinkMethodMap a map to store a set of sink methods names grouped by their containing
    *     classes
-   * @param reachedSinkMethodList a list of sink method which are reachable by the given entry
+   * @param reachedSinkMethodList a list of sink methods which are reachable by the given entry
    *     method
-   * @param excludeMethodList a list to store all excluded method name for this run
+   * @param excludeMethodList a list to store all excluded method names for this run
    * @return the callsite object to store in the output yaml file, return null if Soot fails to
    *     resolve the invocation
    */
@@ -98,9 +98,8 @@ public class BlockGraphInfoUtils {
    * @param blocks a list of all code blocks
    * @param unit the Unit object that contains the if statement block
    * @param cname the name of the class where the target code block belongs
-   * @param functionLineMap a map object to store starting line number of known methods
-   * @return the callsite object to store in the output yaml file, return null if Soot fails to
-   *     resolve the invocation
+   * @param functionLineMap a map object to store the starting line number of known methods
+   * @return the BranchProfile object with all the source information for the if statement
    */
   public static BranchProfile handleIfStatement(
       List<Block> blocks, Unit unit, String cname, Map<String, Integer> functionLineMap) {
