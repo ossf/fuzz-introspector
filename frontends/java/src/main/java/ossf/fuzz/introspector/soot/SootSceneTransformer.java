@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import ossf.fuzz.introspector.soot.utils.CalculationUtils;
 import ossf.fuzz.introspector.soot.utils.CalltreeUtils;
 import ossf.fuzz.introspector.soot.utils.MergeUtils;
 import ossf.fuzz.introspector.soot.yaml.BranchProfile;
@@ -388,7 +389,7 @@ public class SootSceneTransformer extends SceneTransformer {
         }
 
         element.setCountInformation(
-            blockGraph.size(), iCount, calculateCyclomaticComplexity(blockGraph));
+            blockGraph.size(), iCount, CalculationUtils.calculateCyclomaticComplexity(blockGraph));
 
         this.methodList.addFunctionElement(element);
       }
@@ -399,7 +400,7 @@ public class SootSceneTransformer extends SceneTransformer {
             "No method in analysing scope, consider relaxing the exclude constraint.");
       }
 
-      this.calculateAllCallDepth();
+      CalculationUtils.calculateAllCallDepth(this.methodList);
       if (!isAutoFuzz) {
         CalltreeUtils.addSinkMethods(this.methodList, this.reachedSinkMethodList, this.isAutoFuzz);
       }
@@ -436,89 +437,6 @@ public class SootSceneTransformer extends SceneTransformer {
     }
     System.out.println("Finish processing for fuzzer: " + this.entryClassStr);
     analyseFinished = true;
-  }
-
-  private void calculateAllCallDepth() {
-    List<FunctionElement> newMethodList = new LinkedList<FunctionElement>();
-
-    for (FunctionElement element : this.methodList.getFunctionElements()) {
-      if (!element.getFunctionName().contains("init>")) {
-        this.calculateCallDepth(element, null);
-        if (this.depthHandled != null) {
-          for (FunctionElement handledElement : this.depthHandled) {
-            newMethodList.add(handledElement);
-          }
-        }
-      } else {
-        newMethodList.add(element);
-      }
-    }
-
-    this.methodList.setFunctionElements(newMethodList);
-  }
-
-  private Integer calculateCallDepth(FunctionElement element, List<FunctionElement> handled) {
-    if (handled == null) {
-      handled = new LinkedList<FunctionElement>();
-    }
-
-    List<String> handledName = new LinkedList<String>();
-    for (FunctionElement handledElement : handled) {
-      handledName.add(handledElement.getFunctionName());
-    }
-
-    Integer depth = element.getFunctionDepth();
-    if (!handledName.contains(element.getFunctionName())) {
-      handled.add(element);
-      if (depth == 0) {
-        for (Callsite callsite : element.getCallsites()) {
-          String callerName = callsite.getMethodName();
-          FunctionElement caller = methodList.searchElement(callerName);
-          if (caller != null) {
-            Integer newDepth = this.calculateCallDepth(caller, handled) + 1;
-            depth = (newDepth > depth) ? newDepth : depth;
-          }
-        }
-      }
-      element.setFunctionDepth(depth);
-    }
-    depthHandled = handled;
-
-    return depth;
-  }
-
-  private Integer calculateCyclomaticComplexity(BlockGraph blockGraph) {
-    Integer nodes = blockGraph.size();
-    Integer edges = 0;
-
-    // Count edges of the blockGraph
-    for (Block block : blockGraph.getBlocks()) {
-      edges += blockGraph.getSuccsOf(block).size();
-    }
-
-    Integer complexity = edges - nodes + 2;
-    if (complexity < 1) {
-      complexity = 1;
-    }
-    return complexity;
-  }
-
-  private Integer calculateConditionComplexity(Value value, Integer complexity) {
-    List<ValueBox> boxList = value.getUseBoxes();
-
-    if (boxList.size() == 0) {
-      if (value instanceof AndExpr || value instanceof OrExpr) {
-        return 1;
-      } else {
-        return 0;
-      }
-    }
-
-    for (ValueBox box : boxList) {
-      complexity += this.calculateConditionComplexity(box.getValue(), complexity);
-    }
-
-    return complexity;
   }
 
   private Map<String, Integer> getBlockStartEndLineWithLineNumber(
