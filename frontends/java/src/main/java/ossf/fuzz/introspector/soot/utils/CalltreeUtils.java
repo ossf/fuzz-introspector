@@ -15,62 +15,43 @@
 
 package ossf.fuzz.introspector.soot.utils;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
-import ossf.fuzz.introspector.soot.yaml.BranchProfile;
-import ossf.fuzz.introspector.soot.yaml.BranchSide;
-import ossf.fuzz.introspector.soot.yaml.Callsite;
-import ossf.fuzz.introspector.soot.yaml.ClassField;
-import ossf.fuzz.introspector.soot.yaml.FunctionConfig;
 import ossf.fuzz.introspector.soot.yaml.FunctionElement;
-import ossf.fuzz.introspector.soot.yaml.FuzzerConfig;
-import ossf.fuzz.introspector.soot.yaml.JavaMethodInfo;
-import soot.Body;
-import soot.PackManager;
-import soot.ResolutionFailedException;
-import soot.Scene;
-import soot.SceneTransformer;
 import soot.SootClass;
-import soot.SootField;
 import soot.SootMethod;
-import soot.Transform;
-import soot.Unit;
-import soot.Value;
-import soot.ValueBox;
-import soot.jimple.AndExpr;
-import soot.jimple.IfStmt;
-import soot.jimple.InvokeExpr;
-import soot.jimple.OrExpr;
-import soot.jimple.Stmt;
 import soot.jimple.toolkits.callgraph.CallGraph;
 import soot.jimple.toolkits.callgraph.Edge;
-import soot.options.Options;
-import soot.tagkit.AnnotationTag;
-import soot.tagkit.VisibilityAnnotationTag;
-import soot.toolkits.graph.Block;
-import soot.toolkits.graph.BlockGraph;
-import soot.toolkits.graph.BriefBlockGraph;
 
 public class CalltreeUtils {
+  private static List<String> includeList;
+  private static List<String> excludeList;
+  private static List<String> excludeMethodList;
+  private static Map<String, Set<String>> edgeClassMap;
+  private static Map<String, Set<String>> sinkMethodMap;
+
+  // Save base data for calltree generation
+  public static void setBaseData(
+      List<String> includeList,
+      List<String> excludeList,
+      List<String> excludeMethodList,
+      Map<String, Set<String>> edgeClassMap,
+      Map<String, Set<String>> sinkMethodMap) {
+    CalltreeUtils.includeList = includeList;
+    CalltreeUtils.excludeList = excludeList;
+    CalltreeUtils.excludeMethodList = excludeMethodList;
+    CalltreeUtils.edgeClassMap = edgeClassMap;
+    CalltreeUtils.sinkMethodMap = sinkMethodMap;
+  }
+
   // Utils to get a list of FunctionElement for all constructors of sootClass
   public static List<FunctionElement> getConstructorList(SootClass sootClass) {
     List<FunctionElement> eList = new LinkedList<FunctionElement>();
@@ -93,7 +74,8 @@ public class CalltreeUtils {
   }
 
   // Utils to get a list of FunctionElement of all reached sink methods
-  public static List<FunctionElement> getSinkMethodList(List<SootMethod> reachedSinkMethodList, Boolean isAutoFuzz) {
+  public static List<FunctionElement> getSinkMethodList(
+      List<SootMethod> reachedSinkMethodList, Boolean isAutoFuzz) {
     List<FunctionElement> eList = new LinkedList<FunctionElement>();
 
     for (SootMethod method : reachedSinkMethodList) {
@@ -110,5 +92,109 @@ public class CalltreeUtils {
     }
 
     return eList;
+  }
+
+  // Shorthand for extractCallTree from top
+  public static void extractCallTree(
+      FileWriter fw, CallGraph cg, SootMethod method, Integer depth, Integer line)
+      throws IOException {
+    fw.write("Call tree\n");
+    extractCallTree(fw, cg, method, depth, line, new LinkedList<SootMethod>(), null);
+  }
+
+  // Recursively extract calltree from stored method relationship, ignoring loops
+  // and write to the output data file
+  private static void extractCallTree(
+      FileWriter fw,
+      CallGraph cg,
+      SootMethod method,
+      Integer depth,
+      Integer line,
+      List<SootMethod> handled,
+      String callerClass)
+      throws IOException {
+    StringBuilder callTree = new StringBuilder();
+
+    if (excludeMethodList.contains(method.getName())) {
+      return;
+    }
+
+    String className = "";
+    if (callerClass != null) {
+      Set<String> classNameSet =
+          new HashSet<String>(
+              edgeClassMap.getOrDefault(
+                  callerClass + ":" + method.getName() + ":" + line, Collections.emptySet()));
+      className = MergeUtils.mergeClassName(classNameSet);
+      boolean merged = false;
+      for (String name : className.split(":")) {
+        if (name.equals(method.getDeclaringClass().getName())) {
+          merged = true;
+          break;
+        }
+      }
+      if (!merged) {
+        className = method.getDeclaringClass().getName();
+      }
+    } else {
+      className = method.getDeclaringClass().getName();
+    }
+    String methodName = method.getSubSignature().split(" ")[1];
+    String calltreeLine =
+        StringUtils.leftPad("", depth * 2)
+            + methodName
+            + " "
+            + className
+            + " linenumber="
+            + line
+            + "\n";
+
+    boolean excluded = false;
+    boolean sink = false;
+    checkExclusionLoop:
+    for (String cl : className.split(":")) {
+      for (String prefix : excludeList) {
+        if (cl.startsWith(prefix.replace("*", ""))) {
+          if (sinkMethodMap.getOrDefault(cl, Collections.emptySet()).contains(method.getName())) {
+            sink = true;
+          }
+          excluded = true;
+          break checkExclusionLoop;
+        }
+      }
+    }
+
+    if (excluded) {
+      if (sink) {
+        fw.write(calltreeLine);
+      }
+      return;
+    } else {
+      fw.write(calltreeLine);
+    }
+
+    if (!handled.contains(method)) {
+      handled.add(method);
+      Iterator<Edge> outEdges =
+          MergeUtils.mergePolymorphism(
+              cg, cg.edgesOutOf(method), includeList, excludeList, edgeClassMap);
+      while (outEdges.hasNext()) {
+        Edge edge = outEdges.next();
+        SootMethod tgt = edge.tgt();
+
+        if (tgt.equals(edge.src())) {
+          continue;
+        }
+
+        extractCallTree(
+            fw,
+            cg,
+            tgt,
+            depth + 1,
+            (edge.srcStmt() == null) ? -1 : edge.srcStmt().getJavaSourceStartLineNumber(),
+            handled,
+            edge.src().getDeclaringClass().getName());
+      }
+    }
   }
 }

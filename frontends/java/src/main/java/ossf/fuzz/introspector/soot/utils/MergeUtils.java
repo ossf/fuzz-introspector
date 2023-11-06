@@ -15,63 +15,24 @@
 
 package ossf.fuzz.introspector.soot.utils;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import org.apache.commons.lang3.StringUtils;
-import ossf.fuzz.introspector.soot.yaml.BranchProfile;
-import ossf.fuzz.introspector.soot.yaml.BranchSide;
-import ossf.fuzz.introspector.soot.yaml.Callsite;
-import ossf.fuzz.introspector.soot.yaml.ClassField;
-import ossf.fuzz.introspector.soot.yaml.FunctionConfig;
-import ossf.fuzz.introspector.soot.yaml.FunctionElement;
-import ossf.fuzz.introspector.soot.yaml.FuzzerConfig;
-import ossf.fuzz.introspector.soot.yaml.JavaMethodInfo;
-import soot.Body;
-import soot.PackManager;
-import soot.ResolutionFailedException;
-import soot.Scene;
-import soot.SceneTransformer;
-import soot.SootClass;
-import soot.SootField;
-import soot.SootMethod;
-import soot.Transform;
-import soot.Unit;
-import soot.Value;
-import soot.ValueBox;
-import soot.jimple.AndExpr;
-import soot.jimple.IfStmt;
-import soot.jimple.InvokeExpr;
-import soot.jimple.OrExpr;
-import soot.jimple.Stmt;
 import soot.jimple.toolkits.callgraph.CallGraph;
 import soot.jimple.toolkits.callgraph.Edge;
-import soot.options.Options;
-import soot.tagkit.AnnotationTag;
-import soot.tagkit.VisibilityAnnotationTag;
-import soot.toolkits.graph.Block;
-import soot.toolkits.graph.BlockGraph;
-import soot.toolkits.graph.BriefBlockGraph;
 
 public class MergeUtils {
-  public static Iterator<Edge> mergePolymorphism(CallGraph cg, Iterator<Edge> it, List<String> excludeList, List<String> includeList, Map<String, Set<String>> edgeClassMap) {
+  public static Iterator<Edge> mergePolymorphism(
+      CallGraph cg,
+      Iterator<Edge> it,
+      List<String> excludeList,
+      List<String> includeList,
+      Map<String, Set<String>> edgeClassMap) {
     List<Edge> edgeList = new LinkedList<Edge>();
     List<Edge> processingEdgeList = new LinkedList<Edge>();
     Edge previous = null;
