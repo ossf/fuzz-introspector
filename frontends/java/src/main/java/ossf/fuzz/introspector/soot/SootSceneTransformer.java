@@ -307,27 +307,9 @@ public class SootSceneTransformer extends SceneTransformer {
         }
 
         element.setFunctionName("[" + c.getFilePath() + "]." + m.getSubSignature().split(" ")[1]);
-        element.setFunctionSourceFile(c.getFilePath());
-        element.setFunctionLinenumber(m.getJavaSourceStartLineNumber());
-        element.setReturnType(m.getReturnType().toString());
-        element.setFunctionDepth(0);
-        element.setArgCount(m.getParameterCount());
-        for (soot.Type type : m.getParameterTypes()) {
-          element.addArgType(type.toString());
-        }
+        element.setBaseInformation(m);
         if (isAutoFuzz) {
-          JavaMethodInfo methodInfo = new JavaMethodInfo();
-          methodInfo.setIsConcrete(m.isConcrete());
-          methodInfo.setIsJavaLibraryMethod(m.isJavaLibraryMethod());
-          methodInfo.setIsPublic(m.isPublic());
-          methodInfo.setIsStatic(m.isStatic());
-          methodInfo.setIsClassEnum(c.isEnum());
-          methodInfo.setIsClassPublic(c.isPublic());
-          methodInfo.setIsClassConcrete(c.isConcrete());
-          for (SootClass exception : m.getExceptions()) {
-            methodInfo.addException(exception.getFilePath());
-          }
-          element.setJavaMethodInfo(methodInfo);
+          element.setJavaMethodInfo(m);
         }
 
         // Identify in / out edges of each method.
@@ -383,17 +365,12 @@ public class SootSceneTransformer extends SceneTransformer {
         try {
           methodBody = m.retrieveActiveBody();
         } catch (Exception e) {
-          // Source code not provided for this method.
-          element.setBBCount(0);
-          element.setiCount(0);
-          element.setCyclomaticComplexity(0);
           this.addMethodElement(element);
           // System.err.println("Source code for " + m + " not found.");
           continue;
         }
         BlockGraph blockGraph = new BriefBlockGraph(methodBody);
 
-        element.setBBCount(blockGraph.size());
         int iCount = 0;
         for (Block block : blockGraph.getBlocks()) {
           Iterator<Unit> blockIt = block.iterator();
@@ -414,10 +391,8 @@ public class SootSceneTransformer extends SceneTransformer {
             iCount++;
           }
         }
-        element.setiCount(iCount);
 
-        // Calculate method cyclomatic complexity from method unit graph
-        element.setCyclomaticComplexity(calculateCyclomaticComplexity(blockGraph));
+        element.setCountInformation(blockGraph.size(), iCount, calculateCyclomaticComplexity(blockGraph));
 
         this.addMethodElement(element);
       }
