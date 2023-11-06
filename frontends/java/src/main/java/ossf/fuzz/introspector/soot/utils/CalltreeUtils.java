@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
+import ossf.fuzz.introspector.soot.yaml.FunctionConfig;
 import ossf.fuzz.introspector.soot.yaml.FunctionElement;
 import soot.SootClass;
 import soot.SootMethod;
@@ -53,7 +54,7 @@ public class CalltreeUtils {
   }
 
   // Utils to get a list of FunctionElement for all constructors of sootClass
-  public static List<FunctionElement> getConstructorList(SootClass sootClass) {
+  public static void addConstructors(FunctionConfig methodList, SootClass sootClass) {
     List<FunctionElement> eList = new LinkedList<FunctionElement>();
 
     List<SootMethod> mList = new LinkedList<SootMethod>(sootClass.getMethods());
@@ -70,12 +71,12 @@ public class CalltreeUtils {
       }
     }
 
-    return eList;
+    methodList.addFunctionElements(eList);
   }
 
   // Utils to get a list of FunctionElement of all reached sink methods
-  public static List<FunctionElement> getSinkMethodList(
-      List<SootMethod> reachedSinkMethodList, Boolean isAutoFuzz) {
+  public static void addSinkMethods(
+      FunctionConfig methodList, List<SootMethod> reachedSinkMethodList, Boolean isAutoFuzz) {
     List<FunctionElement> eList = new LinkedList<FunctionElement>();
 
     for (SootMethod method : reachedSinkMethodList) {
@@ -91,7 +92,7 @@ public class CalltreeUtils {
       eList.add(element);
     }
 
-    return eList;
+    methodList.addFunctionElements(eList);
   }
 
   // Shorthand for extractCallTree from top
