@@ -38,7 +38,7 @@
                       <td> <a href="/project-profile?project={{project.name}}">{{ project.name }}</a> </td>
                       <td> {{ project.language }} </td>
                       <td> {{ project.fuzzer_count }} </td>
-                      <td> {{ '%0.2f' % project.coverage_data.line_coverage.percent |float }} </td>
+                      <td> {{ '%0.2f' % project.coverage_data.line_coverage.percent |float }}% </td>
                       <td> {{ project.coverage_data.line_coverage.count }}</td>
                       <td> {{ project.coverage_data.line_coverage.covered }}</td>
                   </tr>
