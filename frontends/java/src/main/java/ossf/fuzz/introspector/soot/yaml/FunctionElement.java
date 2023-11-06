@@ -17,7 +17,12 @@ package ossf.fuzz.introspector.soot.yaml;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import soot.SootClass;
+import soot.SootField;
+import soot.SootMethod;
+import soot.Type;
 
 public class FunctionElement {
   private String functionName;
@@ -47,6 +52,13 @@ public class FunctionElement {
     this.functionsReached = new ArrayList<String>();
     this.branchProfiles = new ArrayList<BranchProfile>();
     this.callsites = new ArrayList<Callsite>();
+
+    this.functionDepth = 0;
+    this.functionUses = 0;
+    this.edgeCount = 0;
+    this.BBCount = 0;
+    this.iCount = 0;
+    this.CyclomaticComplexity = 0;
   }
 
   public String getFunctionName() {
@@ -237,7 +249,66 @@ public class FunctionElement {
     return this.javaMethodInfo;
   }
 
-  public void setJavaMethodInfo(JavaMethodInfo javaMethodInfo) {
-    this.javaMethodInfo = javaMethodInfo;
+  public void setJavaMethodInfo(SootMethod m) {
+    JavaMethodInfo methodInfo = new JavaMethodInfo();
+    SootClass c = m.getDeclaringClass();
+
+    // Base java method information
+    methodInfo.setIsConcrete(m.isConcrete());
+    methodInfo.setIsJavaLibraryMethod(m.isJavaLibraryMethod());
+    methodInfo.setIsPublic(m.isPublic());
+    methodInfo.setIsStatic(m.isStatic());
+    methodInfo.setIsClassEnum(c.isEnum());
+    methodInfo.setIsClassPublic(c.isPublic());
+    methodInfo.setIsClassConcrete(c.isConcrete());
+    for (SootClass exception : m.getExceptions()) {
+      methodInfo.addException(exception.getFilePath());
+    }
+
+    // Extra class information for constructors
+    if (m.getName().equals("<init>")) {
+      if (c.hasSuperclass()) {
+        methodInfo.setSuperClass(c.getSuperclass().getName());
+      }
+      Iterator<SootClass> interfaces = c.getInterfaces().snapshotIterator();
+      while (interfaces.hasNext()) {
+        methodInfo.addInterface(interfaces.next().getName());
+      }
+      Iterator<SootField> fields = c.getFields().snapshotIterator();
+      while (fields.hasNext()) {
+        SootField field = fields.next();
+        ClassField classField = new ClassField();
+
+        classField.setFieldName(field.getName());
+        classField.setFieldType(field.getType().toString());
+        classField.setIsConcrete(field.isDeclared());
+        classField.setIsPublic(field.isPublic());
+        classField.setIsStatic(field.isStatic());
+        classField.setIsFinal(field.isFinal());
+
+        methodInfo.addClassField(classField);
+      }
+    }
+
+    this.javaMethodInfo = methodInfo;
+  }
+
+  public void setBaseInformation(SootMethod m) {
+    SootClass c = m.getDeclaringClass();
+
+    this.setFunctionSourceFile(c.getFilePath());
+    this.setFunctionLinenumber(m.getJavaSourceStartLineNumber());
+    this.setReturnType(m.getReturnType().toString());
+    this.setFunctionDepth(0);
+    this.setArgCount(m.getParameterCount());
+    for (Type type : m.getParameterTypes()) {
+      this.addArgType(type.toString());
+    }
+  }
+
+  public void setCountInformation(Integer bbCount, Integer iCount, Integer complexity) {
+    this.setBBCount(bbCount);
+    this.setiCount(iCount);
+    this.setCyclomaticComplexity(complexity);
   }
 }

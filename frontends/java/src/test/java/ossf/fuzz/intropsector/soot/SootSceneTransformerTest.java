@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 import soot.SceneTransformer;
 
-public class CustomSenceTransformerTest {
+public class SootSceneTransformerTest {
   @Test
   public void testNoException() {
     assertDoesNotThrow(() -> {});
@@ -16,18 +16,18 @@ public class CustomSenceTransformerTest {
 
   @Test
   public void testBasic() {
-    CustomSenceTransformer custom =
-        new CustomSenceTransformer("", "", "ALL", "", "", "", "", "NULL", false);
+    SootSceneTransformer custom =
+        new SootSceneTransformer("", "", "ALL", "", "", "", "", "NULL", false);
     assertTrue(custom instanceof SceneTransformer);
-    assertTrue(custom instanceof CustomSenceTransformer);
+    assertTrue(custom instanceof SootSceneTransformer);
     assertEquals(custom.getIncludeList().size(), 1);
     assertEquals(custom.getExcludeList().size(), 0);
   }
 
   @Test
   public void testExcludePrefix() {
-    CustomSenceTransformer custom =
-        new CustomSenceTransformer(
+    SootSceneTransformer custom =
+        new SootSceneTransformer(
             "", "", "ALL", "", "abc:def:ghi", "jkl:mno:pqr", "", "NULL", false);
     assertEquals(custom.getIncludeList().size(), 4);
     assertEquals(custom.getExcludeList().size(), 3);
