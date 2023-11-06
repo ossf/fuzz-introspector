@@ -110,6 +110,40 @@ class AutoRefConfScanner:
         return "autogen"
 
 
+class RawMake:
+
+    def __init__(self):
+        self.matches_found = {
+            'Makefile': [],
+        }
+
+    def match_files(self, file_list):
+        for fi in file_list:
+            base_file = os.path.basename(fi)
+            for key in self.matches_found:
+                if base_file == key:
+                    self.matches_found[key].append(fi)
+
+    def is_matched(self):
+        for file_to_match in self.matches_found:
+            matches = self.matches_found[file_to_match]
+            if len(matches) == 0:
+                return False
+        return True
+
+    def steps_to_build(self):
+        cmds_to_exec_from_root = ["make"]
+        #yield cmds_to_exec_from_root
+        abc = AutoBuildContainer()
+        abc.list_of_commands = cmds_to_exec_from_root
+        abc.heuristic_id = self.name + "1"
+        yield abc
+
+    @property
+    def name(self):
+        return "RawMake"
+
+
 class AutogenScanner:
 
     def __init__(self):
@@ -191,8 +225,10 @@ class CMakeScanner:
         # - options related to shared libraries.
         # - options related to which packags need installing.
         cmds_to_exec_from_root = [
-            "mkdir fuzz-build", "cd fuzz-build",
-            "cmake -DCMAKE_VERBOSE_MAKEFILE=ON ../", "make V=1 || true"
+            "mkdir fuzz-build",
+            "cd fuzz-build",
+            "cmake -DCMAKE_VERBOSE_MAKEFILE=ON ../",
+            "make V=1 || true",
         ]
         abc = AutoBuildContainer()
         abc.list_of_commands = cmds_to_exec_from_root
@@ -200,9 +236,10 @@ class CMakeScanner:
         yield abc
 
         opt1 = [
-            "mkdir fuzz-build", "cd fuzz-build",
-            "cmake -DCMAKE_CXX_COMPILER=$CXX -DCMAKE_CXX_FLAGS=\"$CXXFLAGS\" ../",
-            "make || true"
+            "mkdir fuzz-build",
+            "cd fuzz-build",
+            "cmake -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_CXX_COMPILER=$CXX -DCMAKE_CXX_FLAGS=\"$CXXFLAGS\" ../",
+            "make V=1 || true",
         ]
         abc1 = AutoBuildContainer()
         abc1.list_of_commands = opt1
@@ -224,9 +261,40 @@ class CMakeScanner:
         if len(option_values) > 0:
             option_string = " ".join(option_values)
             bopt = [
-                "mkdir fuzz-build", "cd fuzz-build",
-                "cmake -DCMAKE_CXX_COMPILER=$CXX -DCMAKE_CXX_FLAGS=\"$CXXFLAGS\" %s ../"
-                % (option_string), "make"
+                "mkdir fuzz-build",
+                "cd fuzz-build",
+                "cmake -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_CXX_COMPILER=$CXX -DCMAKE_CXX_FLAGS=\"$CXXFLAGS\" %s ../"
+                % (option_string),
+                "make V=1",
+            ]
+            abc2 = AutoBuildContainer()
+            abc2.list_of_commands = bopt
+            abc2.heuristic_id = self.name + "3"
+            yield abc2
+
+        # Build tests in-case
+        # Look for a heristic that is often used for disabling dynamic shared libraries.
+        option_values = []
+        for option in self.cmake_options:
+            if "BUILD_SHARED_LIBS" == option:
+                option_values.append("-D%s=OFF" % (option))
+            elif "BUILD_STATIC" == option:
+                option_values.append("-D%s=ON" % (option))
+            elif "BUILD_SHARED" == option:
+                option_values.append("-D%s=OFF" % (option))
+            elif "ENABLE_STATIC" == option:
+                option_values.append("-D%s=ON" % (option))
+            elif "BUILD_TESTS" in option:
+                option_values.append("-D%s=ON" % (option))
+
+        if len(option_values) > 0:
+            option_string = " ".join(option_values)
+            bopt = [
+                "mkdir fuzz-build",
+                "cd fuzz-build",
+                "cmake -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_CXX_COMPILER=$CXX -DCMAKE_CXX_FLAGS=\"$CXXFLAGS\" %s ../"
+                % (option_string),
+                "make V=1",
             ]
             abc2 = AutoBuildContainer()
             abc2.list_of_commands = bopt
@@ -278,6 +346,7 @@ def match_build_heuristics_on_folder(abspath_of_target):
         AutogenScanner(),
         AutoRefConfScanner(),
         CMakeScanner(),
+        RawMake(),
     ]
 
     for scanner in all_checks:
