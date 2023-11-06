@@ -265,7 +265,7 @@ public class SootSceneTransformer extends SceneTransformer {
         //        System.out.println("[Callgraph] [SKIP] class: " + cname);
       }
       if (isAutoFuzz && !isAutoFuzzIgnore) {
-        this.addMethodElements(CalltreeUtils.getConstructorList(c));
+        CalltreeUtils.addConstructors(this.methodList, c);
       }
     }
     System.out.println("[Callgraph] Finished going through classes");
@@ -360,7 +360,7 @@ public class SootSceneTransformer extends SceneTransformer {
         try {
           methodBody = m.retrieveActiveBody();
         } catch (Exception e) {
-          this.addMethodElement(element);
+          this.methodList.addFunctionElement(element);
           // System.err.println("Source code for " + m + " not found.");
           continue;
         }
@@ -390,7 +390,7 @@ public class SootSceneTransformer extends SceneTransformer {
         element.setCountInformation(
             blockGraph.size(), iCount, calculateCyclomaticComplexity(blockGraph));
 
-        this.addMethodElement(element);
+        this.methodList.addFunctionElement(element);
       }
     }
     try {
@@ -401,8 +401,7 @@ public class SootSceneTransformer extends SceneTransformer {
 
       this.calculateAllCallDepth();
       if (!isAutoFuzz) {
-        this.addMethodElements(
-            CalltreeUtils.getSinkMethodList(this.reachedSinkMethodList, this.isAutoFuzz));
+        CalltreeUtils.addSinkMethods(this.methodList, this.reachedSinkMethodList, this.isAutoFuzz);
       }
 
       // Extract call tree and write to .data
@@ -437,30 +436,6 @@ public class SootSceneTransformer extends SceneTransformer {
     }
     System.out.println("Finish processing for fuzzer: " + this.entryClassStr);
     analyseFinished = true;
-  }
-
-  private FunctionElement searchElement(String functionName) {
-    for (FunctionElement element : methodList.getFunctionElements()) {
-      if (element.getFunctionName().equals(functionName)) {
-        return element;
-      }
-    }
-    return null;
-  }
-
-  // Add method element to the method list
-  private void addMethodElement(FunctionElement newElement) {
-    FunctionElement oldElement = this.searchElement(newElement.getFunctionName());
-    if (oldElement == null) {
-      this.methodList.addFunctionElement(newElement);
-    }
-  }
-
-  // Add a list of method elements to the method list
-  private void addMethodElements(List<FunctionElement> newElementList) {
-    for (FunctionElement element : newElementList) {
-      this.addMethodElement(element);
-    }
   }
 
   private void calculateAllCallDepth() {
@@ -498,7 +473,7 @@ public class SootSceneTransformer extends SceneTransformer {
       if (depth == 0) {
         for (Callsite callsite : element.getCallsites()) {
           String callerName = callsite.getMethodName();
-          FunctionElement caller = this.searchElement(callerName);
+          FunctionElement caller = methodList.searchElement(callerName);
           if (caller != null) {
             Integer newDepth = this.calculateCallDepth(caller, handled) + 1;
             depth = (newDepth > depth) ? newDepth : depth;

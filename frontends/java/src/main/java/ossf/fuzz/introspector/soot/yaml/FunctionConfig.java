@@ -41,11 +41,29 @@ public class FunctionConfig {
     return functionElements;
   }
 
-  public void addFunctionElement(FunctionElement functionElement) {
-    this.functionElements.add(functionElement);
-  }
-
   public void setFunctionElements(List<FunctionElement> functionElements) {
     this.functionElements = functionElements;
+  }
+
+  public void addFunctionElement(FunctionElement newElement) {
+    FunctionElement oldElement = this.searchElement(newElement.getFunctionName());
+    if (oldElement == null) {
+      this.functionElements.add(newElement);
+    }
+  }
+
+  public void addFunctionElements(List<FunctionElement> newElementList) {
+    for (FunctionElement element : newElementList) {
+      this.addFunctionElement(element);
+    }
+  }
+
+  public FunctionElement searchElement(String functionName) {
+    for (FunctionElement element : this.getFunctionElements()) {
+      if (element.getFunctionName().equals(functionName)) {
+        return element;
+      }
+    }
+    return null;
   }
 }
