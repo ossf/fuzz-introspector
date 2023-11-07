@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -36,7 +35,7 @@ import java.util.stream.Stream;
 import ossf.fuzz.introspector.soot.utils.BlockGraphInfoUtils;
 import ossf.fuzz.introspector.soot.utils.CalculationUtils;
 import ossf.fuzz.introspector.soot.utils.CalltreeUtils;
-import ossf.fuzz.introspector.soot.utils.MergeUtils;
+import ossf.fuzz.introspector.soot.utils.EdgeUtils;
 import ossf.fuzz.introspector.soot.yaml.Callsite;
 import ossf.fuzz.introspector.soot.yaml.FunctionConfig;
 import ossf.fuzz.introspector.soot.yaml.FunctionElement;
@@ -50,7 +49,6 @@ import soot.Unit;
 import soot.jimple.IfStmt;
 import soot.jimple.Stmt;
 import soot.jimple.toolkits.callgraph.CallGraph;
-import soot.jimple.toolkits.callgraph.Edge;
 import soot.toolkits.graph.Block;
 import soot.toolkits.graph.BlockGraph;
 import soot.toolkits.graph.BriefBlockGraph;
@@ -166,7 +164,8 @@ public class SootSceneTransformer extends SceneTransformer {
     System.out.println("[Callgraph] Internal transform init");
     System.out.println("[Callgraph] Determining classes to use for analysis.");
 
-    Map<SootClass, List<SootMethod>> classMethodMap = this.generateClassMethodMap(Scene.v().getClasses().snapshotIterator());
+    Map<SootClass, List<SootMethod>> classMethodMap =
+        this.generateClassMethodMap(Scene.v().getClasses().snapshotIterator());
 
     System.out.println("[Callgraph] Finished going through classes");
 
@@ -200,7 +199,8 @@ public class SootSceneTransformer extends SceneTransformer {
       fw.close();
 
       // Extract other info and write to .data.yaml
-      System.out.println("[Callgraph] Generating fuzzerLogFile-" + this.entryClassStr + ".data.yaml");
+      System.out.println(
+          "[Callgraph] Generating fuzzerLogFile-" + this.entryClassStr + ".data.yaml");
       ObjectMapper om = new ObjectMapper(new YAMLFactory());
       file = new File("fuzzerLogFile-" + this.entryClassStr + ".data.yaml");
       file.createNewFile();
@@ -218,7 +218,8 @@ public class SootSceneTransformer extends SceneTransformer {
     analyseFinished = true;
   }
 
-  private Map<SootClass, List<SootMethod>> generateClassMethodMap(Iterator<SootClass> classIterator) {
+  private Map<SootClass, List<SootMethod>> generateClassMethodMap(
+      Iterator<SootClass> classIterator) {
     Map<SootClass, List<SootMethod>> classMethodMap = new HashMap<SootClass, List<SootMethod>>();
 
     while (classIterator.hasNext()) {
@@ -321,7 +322,8 @@ public class SootSceneTransformer extends SceneTransformer {
     return classMethodMap;
   }
 
-  private void processMethods(Map<SootClass, List<SootMethod>> classMethodMap, CallGraph callGraph) {
+  private void processMethods(
+      Map<SootClass, List<SootMethod>> classMethodMap, CallGraph callGraph) {
     for (SootClass c : classMethodMap.keySet()) {
       // Skip sink method classes
       if (this.sinkMethodMap.containsKey(c.getName())) {
@@ -352,59 +354,17 @@ public class SootSceneTransformer extends SceneTransformer {
           element.setJavaMethodInfo(m);
         }
 
-        // Identify in / out edges of each method.
-        int methodEdges = 0;
-        Iterator<Edge> outEdges =
-            MergeUtils.mergePolymorphism(
-                callGraph,
-                callGraph.edgesOutOf(m),
-                this.excludeList,
-                this.getIncludeList(),
-                this.edgeClassMap);
-        Iterator<Edge> inEdges = callGraph.edgesInto(m);
-        while (inEdges.hasNext()) {
-          methodEdges++;
-          inEdges.next();
-        }
-        element.setFunctionUses(methodEdges);
-        methodEdges = 0;
-        for (; outEdges.hasNext(); methodEdges++) {
-          Edge edge = outEdges.next();
-          SootMethod tgt = edge.tgt();
-          if (this.excludeMethodList.contains(tgt.getName())) {
-            methodEdges--;
-            continue;
-          }
-          String callerClass = edge.src().getDeclaringClass().getName();
-          String className = "";
-          Set<String> classNameSet =
-              new HashSet<String>(
-                  this.edgeClassMap.getOrDefault(
-                      callerClass
-                          + ":"
-                          + tgt.getName()
-                          + ":"
-                          + ((edge.srcStmt() == null)
-                              ? -1
-                              : edge.srcStmt().getJavaSourceStartLineNumber()),
-                      Collections.emptySet()));
-          className = MergeUtils.mergeClassName(classNameSet);
-          boolean merged = false;
-          for (String name : className.split(":")) {
-            if (name.equals(tgt.getDeclaringClass().getName())) {
-              merged = true;
-              break;
-            }
-          }
-          if (!merged) {
-            className = tgt.getDeclaringClass().getName();
-          }
-          element.addFunctionsReached("[" + className + "]." + tgt.getSubSignature().split(" ")[1]);
-          functionLineMap.put(
-              tgt.getSubSignature().split(" ")[1],
-              (edge.srcStmt() == null) ? -1 : edge.srcStmt().getJavaSourceStartLineNumber());
-        }
-        element.setEdgeCount(methodEdges);
+        // Retrieve and update incoming and outgoing edges of the target method
+        EdgeUtils.updateIncomingEdges(callGraph, m, element);
+        EdgeUtils.updateOutgoingEdges(
+            callGraph,
+            m,
+            element,
+            this.includeList,
+            this.excludeList,
+            this.excludeMethodList,
+            this.edgeClassMap,
+            functionLineMap);
 
         // Identify blocks information
         Body methodBody;
