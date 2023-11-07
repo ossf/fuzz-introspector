@@ -26,6 +26,13 @@ import soot.toolkits.graph.BlockGraph;
 public class CalculationUtils {
   private static List<FunctionElement> depthHandled;
 
+  /**
+   * The method calculates the cyclomatic complexity of a target method by analysing the BlockGraph
+   * objects that contain all blocks code for the target method.
+   *
+   * @param blockGraph the BlockGraph object of the target method
+   * @return the cyclomatic complexity of the target method
+   */
   public static Integer calculateCyclomaticComplexity(BlockGraph blockGraph) {
     Integer nodes = blockGraph.size();
     Integer edges = 0;
@@ -42,6 +49,12 @@ public class CalculationUtils {
     return complexity;
   }
 
+  /**
+   * The method calculates and updates the method call depth value for every FunctionElement in the
+   * provided FunctionConfig object
+   *
+   * @param methodList the FunctionConfig object that contains every methods for this run
+   */
   public static void calculateAllCallDepth(FunctionConfig methodList) {
     List<FunctionElement> newMethodList = new LinkedList<FunctionElement>();
     depthHandled = new LinkedList<FunctionElement>();
