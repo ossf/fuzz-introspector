@@ -25,6 +25,7 @@ public class FunctionConfig {
 
   public FunctionConfig() {
     this.functionElements = new ArrayList<FunctionElement>();
+    this.listName = "All functions";
   }
 
   @JsonProperty("Function list name")

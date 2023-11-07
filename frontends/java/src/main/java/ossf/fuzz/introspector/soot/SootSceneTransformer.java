@@ -98,6 +98,7 @@ public class SootSceneTransformer extends SceneTransformer {
     methodList = new FunctionConfig();
     analyseFinished = false;
 
+    // Process the target package prefix string
     if (!targetPackagePrefix.equals("ALL")) {
       for (String targetPackage : targetPackagePrefix.split(":")) {
         if (!targetPackage.equals("")) {
@@ -106,6 +107,7 @@ public class SootSceneTransformer extends SceneTransformer {
       }
     }
 
+    // Retrieve a list of class for the target project source directory
     if ((!sourceDirectory.equals("")) && (!sourceDirectory.equals("NULL"))) {
       try (Stream<Path> walk = Files.walk(Paths.get(sourceDirectory))) {
         List<String> sourceList =
@@ -121,6 +123,7 @@ public class SootSceneTransformer extends SceneTransformer {
       }
     }
 
+    // Process the whitelist of class prefix
     for (String include : includePrefix.split(":")) {
       if (!include.equals("")) {
         includeList.add(include);
@@ -128,6 +131,7 @@ public class SootSceneTransformer extends SceneTransformer {
     }
     includeList.add(entryClassStr);
 
+    // Process the blacklist of class prefix
     if (projectClassList.size() == 0) {
       for (String exclude : excludePrefix.split(":")) {
         if (!exclude.equals("")) {
@@ -136,10 +140,12 @@ public class SootSceneTransformer extends SceneTransformer {
       }
     }
 
+    // Process the blacklist of method
     for (String exclude : excludeMethodStr.split(":")) {
       excludeMethodList.add(exclude);
     }
 
+    // Gather a list of possible sink methods in Java
     sinkMethodMap = new HashMap<String, Set<String>>();
     for (String sink : sinkMethod.split(":")) {
       if (!sink.equals("")) {
@@ -155,14 +161,66 @@ public class SootSceneTransformer extends SceneTransformer {
 
   @Override
   protected void internalTransform(String phaseName, Map<String, String> options) {
-    Map<SootClass, List<SootMethod>> classMethodMap = new HashMap<SootClass, List<SootMethod>>();
-    methodList.setListName("All functions");
+    CallGraph callGraph = Scene.v().getCallGraph();
 
     System.out.println("[Callgraph] Internal transform init");
-    // Extract Callgraph for the included Java Class
     System.out.println("[Callgraph] Determining classes to use for analysis.");
-    CallGraph callGraph = Scene.v().getCallGraph();
-    Iterator<SootClass> classIterator = Scene.v().getClasses().snapshotIterator();
+
+    Map<SootClass, List<SootMethod>> classMethodMap = this.generateClassMethodMap(Scene.v().getClasses().snapshotIterator());
+
+    System.out.println("[Callgraph] Finished going through classes");
+
+    this.processMethods(classMethodMap, callGraph);
+
+    if (methodList.getFunctionElements().size() == 0) {
+      throw new RuntimeException(
+          "No method in analysing scope, consider relaxing the exclude constraint.");
+    }
+
+    try {
+      CalculationUtils.calculateAllCallDepth(this.methodList);
+
+      if (!isAutoFuzz) {
+        CalltreeUtils.addSinkMethods(this.methodList, this.reachedSinkMethodList, this.isAutoFuzz);
+      }
+
+      // Extract call tree and write to .data
+      System.out.println("[Callgraph] Generating fuzzerLogFile-" + this.entryClassStr + ".data");
+      File file = new File("fuzzerLogFile-" + this.entryClassStr + ".data");
+      file.createNewFile();
+      FileWriter fw = new FileWriter(file);
+      this.edgeClassMap = new HashMap<String, Set<String>>();
+      CalltreeUtils.setBaseData(
+          this.includeList,
+          this.excludeList,
+          this.excludeMethodList,
+          this.edgeClassMap,
+          this.sinkMethodMap);
+      CalltreeUtils.extractCallTree(fw, callGraph, this.entryMethod, 0, -1);
+      fw.close();
+
+      // Extract other info and write to .data.yaml
+      System.out.println("[Callgraph] Generating fuzzerLogFile-" + this.entryClassStr + ".data.yaml");
+      ObjectMapper om = new ObjectMapper(new YAMLFactory());
+      file = new File("fuzzerLogFile-" + this.entryClassStr + ".data.yaml");
+      file.createNewFile();
+      fw = new FileWriter(file);
+      FuzzerConfig config = new FuzzerConfig();
+      config.setFilename(this.entryClassStr);
+      config.setEntryMethod(this.entryMethodStr);
+      config.setFunctionConfig(methodList);
+      fw.write(om.writeValueAsString(config));
+      fw.close();
+    } catch (IOException e) {
+      System.err.println(e);
+    }
+    System.out.println("Finish processing for fuzzer: " + this.entryClassStr);
+    analyseFinished = true;
+  }
+
+  private Map<SootClass, List<SootMethod>> generateClassMethodMap(Iterator<SootClass> classIterator) {
+    Map<SootClass, List<SootMethod>> classMethodMap = new HashMap<SootClass, List<SootMethod>>();
+
     while (classIterator.hasNext()) {
       boolean isInclude = false;
       boolean isIgnore = false;
@@ -240,7 +298,6 @@ public class SootSceneTransformer extends SceneTransformer {
       }
 
       if (!isIgnore) {
-        //        System.out.println("[Callgraph] [USE] class: " + cname);
         List<SootMethod> mList = new LinkedList<SootMethod>();
 
         if (isSinkClass) {
@@ -255,31 +312,31 @@ public class SootSceneTransformer extends SceneTransformer {
         }
 
         classMethodMap.put(c, mList);
-      } else {
-        //        System.out.println("[Callgraph] [SKIP] class: " + cname);
       }
       if (isAutoFuzz && !isAutoFuzzIgnore) {
         CalltreeUtils.addConstructors(this.methodList, c);
       }
     }
-    System.out.println("[Callgraph] Finished going through classes");
 
+    return classMethodMap;
+  }
+
+  private void processMethods(Map<SootClass, List<SootMethod>> classMethodMap, CallGraph callGraph) {
     for (SootClass c : classMethodMap.keySet()) {
+      // Skip sink method classes
+      if (this.sinkMethodMap.containsKey(c.getName())) {
+        continue;
+      }
+
       System.out.println("Inspecting class: " + c.getName());
+
       // Loop through each methods in the class
-      boolean isSinkClass = this.sinkMethodMap.containsKey(c.getName());
       List<SootMethod> mList = new LinkedList<SootMethod>();
       mList.addAll(classMethodMap.get(c));
       for (SootMethod m : mList) {
         if (this.excludeMethodList.contains(m.getName())) {
-          // System.out.println("[Callgraph] Skipping method: " + m.getName());
           continue;
         }
-        if (isSinkClass) {
-          // System.out.println("[Callgraph] Skipping sink method: " + m.getName());
-          continue;
-        }
-        // System.out.println("[Callgraph] Analysing method: " + m.getName());
 
         // Discover method related information
         FunctionElement element = new FunctionElement();
@@ -394,49 +451,6 @@ public class SootSceneTransformer extends SceneTransformer {
         this.methodList.addFunctionElement(element);
       }
     }
-    try {
-      if (methodList.getFunctionElements().size() == 0) {
-        throw new RuntimeException(
-            "No method in analysing scope, consider relaxing the exclude constraint.");
-      }
-
-      CalculationUtils.calculateAllCallDepth(this.methodList);
-      if (!isAutoFuzz) {
-        CalltreeUtils.addSinkMethods(this.methodList, this.reachedSinkMethodList, this.isAutoFuzz);
-      }
-
-      // Extract call tree and write to .data
-      System.out.println("Generating fuzzerLogFile-" + this.entryClassStr + ".data");
-      File file = new File("fuzzerLogFile-" + this.entryClassStr + ".data");
-      file.createNewFile();
-      FileWriter fw = new FileWriter(file);
-      this.edgeClassMap = new HashMap<String, Set<String>>();
-      CalltreeUtils.setBaseData(
-          this.includeList,
-          this.excludeList,
-          this.excludeMethodList,
-          this.edgeClassMap,
-          this.sinkMethodMap);
-      CalltreeUtils.extractCallTree(fw, callGraph, this.entryMethod, 0, -1);
-      fw.close();
-
-      // Extract other info and write to .data.yaml
-      System.out.println("Generating fuzzerLogFile-" + this.entryClassStr + ".data.yaml");
-      ObjectMapper om = new ObjectMapper(new YAMLFactory());
-      file = new File("fuzzerLogFile-" + this.entryClassStr + ".data.yaml");
-      file.createNewFile();
-      fw = new FileWriter(file);
-      FuzzerConfig config = new FuzzerConfig();
-      config.setFilename(this.entryClassStr);
-      config.setEntryMethod(this.entryMethodStr);
-      config.setFunctionConfig(methodList);
-      fw.write(om.writeValueAsString(config));
-      fw.close();
-    } catch (IOException e) {
-      System.err.println(e);
-    }
-    System.out.println("Finish processing for fuzzer: " + this.entryClassStr);
-    analyseFinished = true;
   }
 
   public Boolean hasTargetPackage() {
