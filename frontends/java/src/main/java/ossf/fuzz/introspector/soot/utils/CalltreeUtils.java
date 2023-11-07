@@ -39,7 +39,16 @@ public class CalltreeUtils {
   private static Map<String, Set<String>> edgeClassMap;
   private static Map<String, Set<String>> sinkMethodMap;
 
-  // Save base data for calltree generation
+  /**
+   * The method stores all the base data as static variables for the calltree generation process
+   *
+   * @param includeList a list to store all whitelist class names for this run
+   * @param excludeList a list to store all blacklist class names for this run
+   * @param excludeMethodList a list to store all backlist method names for this run
+   * @param edgeClassMap a map to store class names with polymorphism methods that are merged
+   * @param sinkMethodMap a map to store a set of sink methods names grouped by their containing
+   *     classes
+   */
   public static void setBaseData(
       List<String> includeList,
       List<String> excludeList,
@@ -53,7 +62,13 @@ public class CalltreeUtils {
     CalltreeUtils.sinkMethodMap = sinkMethodMap;
   }
 
-  // Utils to get a list of FunctionElement for all constructors of sootClass
+  /**
+   * The method interprets and adds all constructors of the provided SootClass object as
+   * FunctionElement objects into the provided FunctionConfig object.
+   *
+   * @param methodList the FunctionConfig object that stores all the methods of this run
+   * @param sootClass the target SootClass object to process
+   */
   public static void addConstructors(FunctionConfig methodList, SootClass sootClass) {
     List<FunctionElement> eList = new LinkedList<FunctionElement>();
 
@@ -74,7 +89,14 @@ public class CalltreeUtils {
     methodList.addFunctionElements(eList);
   }
 
-  // Utils to get a list of FunctionElement of all reached sink methods
+  /**
+   * The method interprets and adds all sink methods reached in the run as FunctionElement objects
+   * into the provided FunctionConfig object.
+   *
+   * @param methodList the FunctionConfig object that stores all the methods of this run
+   * @param reachedSinkMethodList the list of sink methods that are reachable in this run
+   * @param isAutoFuzz a boolean value indicates if this run is initiated by Auto-Fuzz
+   */
   public static void addSinkMethods(
       FunctionConfig methodList, List<SootMethod> reachedSinkMethodList, Boolean isAutoFuzz) {
     List<FunctionElement> eList = new LinkedList<FunctionElement>();
@@ -95,7 +117,16 @@ public class CalltreeUtils {
     methodList.addFunctionElements(eList);
   }
 
-  // Shorthand for extractCallTree from top
+  /**
+   * The method recursively extracts the call tree from the provided CallGraph object and pipes to
+   * the provided FileWriter object.
+   *
+   * @param fw the FileWriter object that receives and processes the extracted call tree
+   * @param cg the CallGraph object describing the method relation of the target
+   * @param method the SootMethod object of the entry class for this run
+   * @param depth the integer value storing the current method depth level
+   * @param line the integer value storing the line number of method invocation
+   */
   public static void extractCallTree(
       FileWriter fw, CallGraph cg, SootMethod method, Integer depth, Integer line)
       throws IOException {
@@ -103,8 +134,6 @@ public class CalltreeUtils {
     extractCallTree(fw, cg, method, depth, line, new LinkedList<SootMethod>(), null);
   }
 
-  // Recursively extract calltree from stored method relationship, ignoring loops
-  // and write to the output data file
   private static void extractCallTree(
       FileWriter fw,
       CallGraph cg,
@@ -120,6 +149,7 @@ public class CalltreeUtils {
       return;
     }
 
+    // Interpret the class name to be printed
     String className = "";
     if (callerClass != null) {
       Set<String> classNameSet =
@@ -140,6 +170,8 @@ public class CalltreeUtils {
     } else {
       className = method.getDeclaringClass().getName();
     }
+
+    // Add the line of the current method
     String methodName = method.getSubSignature().split(" ")[1];
     String calltreeLine =
         StringUtils.leftPad("", depth * 2)
@@ -150,6 +182,7 @@ public class CalltreeUtils {
             + line
             + "\n";
 
+    // Handle excluded or sink methods
     boolean excluded = false;
     boolean sink = false;
     checkExclusionLoop:
@@ -165,6 +198,7 @@ public class CalltreeUtils {
       }
     }
 
+    // Write the method line to the FileWriter object
     if (excluded) {
       if (sink) {
         fw.write(calltreeLine);
@@ -174,6 +208,7 @@ public class CalltreeUtils {
       fw.write(calltreeLine);
     }
 
+    // Recursively calculate and process the methods called by the current method
     if (!handled.contains(method)) {
       handled.add(method);
       Iterator<Edge> outEdges =
