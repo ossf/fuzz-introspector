@@ -33,28 +33,21 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import ossf.fuzz.introspector.soot.utils.BlockGraphInfoUtils;
 import ossf.fuzz.introspector.soot.utils.CalculationUtils;
 import ossf.fuzz.introspector.soot.utils.CalltreeUtils;
 import ossf.fuzz.introspector.soot.utils.MergeUtils;
-import ossf.fuzz.introspector.soot.yaml.BranchProfile;
-import ossf.fuzz.introspector.soot.yaml.BranchSide;
 import ossf.fuzz.introspector.soot.yaml.Callsite;
 import ossf.fuzz.introspector.soot.yaml.FunctionConfig;
 import ossf.fuzz.introspector.soot.yaml.FunctionElement;
 import ossf.fuzz.introspector.soot.yaml.FuzzerConfig;
 import soot.Body;
-import soot.ResolutionFailedException;
 import soot.Scene;
 import soot.SceneTransformer;
 import soot.SootClass;
 import soot.SootMethod;
 import soot.Unit;
-import soot.Value;
-import soot.ValueBox;
-import soot.jimple.AndExpr;
 import soot.jimple.IfStmt;
-import soot.jimple.InvokeExpr;
-import soot.jimple.OrExpr;
 import soot.jimple.Stmt;
 import soot.jimple.toolkits.callgraph.CallGraph;
 import soot.jimple.toolkits.callgraph.Edge;
@@ -375,13 +368,20 @@ public class SootSceneTransformer extends SceneTransformer {
             Unit unit = blockIt.next();
             if (unit instanceof Stmt) {
               Callsite callsite =
-                  handleMethodInvocationInStatement((Stmt) unit, c.getFilePath(), isAutoFuzz);
+                  BlockGraphInfoUtils.handleMethodInvocationInStatement(
+                      (Stmt) unit,
+                      c.getFilePath(),
+                      this.isAutoFuzz,
+                      this.sinkMethodMap,
+                      this.reachedSinkMethodList,
+                      this.excludeMethodList);
               if (callsite != null) {
                 element.addCallsite(callsite);
               }
               if (unit instanceof IfStmt) {
                 element.addBranchProfile(
-                    handleIfStatement(blockGraph.getBlocks(), unit, c.getName(), functionLineMap));
+                    BlockGraphInfoUtils.handleIfStatement(
+                        blockGraph.getBlocks(), unit, c.getName(), functionLineMap));
               }
             }
             iCount++;
@@ -437,137 +437,6 @@ public class SootSceneTransformer extends SceneTransformer {
     }
     System.out.println("Finish processing for fuzzer: " + this.entryClassStr);
     analyseFinished = true;
-  }
-
-  private Map<String, Integer> getBlockStartEndLineWithLineNumber(
-      List<Block> blocks, Integer lineNumber) {
-    Integer startLine;
-    Integer endLine;
-
-    for (Block block : blocks) {
-      Iterator<Unit> it = block.iterator();
-      startLine = -1;
-      endLine = -1;
-      while (it.hasNext()) {
-        Unit unit = it.next();
-        if (startLine == -1) {
-          startLine = unit.getJavaSourceStartLineNumber();
-        }
-        endLine = unit.getJavaSourceStartLineNumber();
-      }
-      if (lineNumber >= startLine && lineNumber <= endLine) {
-        Map<String, Integer> line = new HashMap<String, Integer>();
-        line.put("start", startLine);
-        line.put("end", endLine);
-        return line;
-      }
-    }
-
-    return Collections.emptyMap();
-  }
-
-  private List<String> getFunctionCallInTargetLine(
-      Map<String, Integer> functionLineMap, Integer startLine, Integer endLine) {
-    List<String> targetFunctionList = new LinkedList<String>();
-
-    for (String key : functionLineMap.keySet()) {
-      Integer lineNumber = functionLineMap.get(key);
-      if (lineNumber >= startLine && lineNumber <= endLine) {
-        targetFunctionList.add(key);
-      }
-    }
-
-    return targetFunctionList;
-  }
-
-  /**
-   * The method retrieves the invocation body of a statement if existed. Then it determines the
-   * information of the method invoked and stores them in the result to record the callsite
-   * information of the invoked method in its parent method.
-   *
-   * @param stmt the statement to handle
-   * @param sourceFilePath the file path for the parent method
-   * @return the callsite object to store in the output yaml file, return null if Soot fails to
-   *     resolve the invocation
-   */
-  private Callsite handleMethodInvocationInStatement(
-      Stmt stmt, String sourceFilePath, Boolean isAutoFuzz) {
-    // Handle statements of a method
-    try {
-      if ((stmt.containsInvokeExpr()) && (sourceFilePath != null)) {
-        InvokeExpr expr = stmt.getInvokeExpr();
-        Callsite callsite = new Callsite();
-        SootMethod target = expr.getMethod();
-        SootClass tClass = target.getDeclaringClass();
-        Set<String> sink =
-            this.sinkMethodMap.getOrDefault(tClass.getName(), Collections.emptySet());
-        if (sink.contains(target.getName())) {
-          this.reachedSinkMethodList.add(target);
-        }
-        if (!this.excludeMethodList.contains(target.getName())) {
-          callsite.setSource(sourceFilePath + ":" + stmt.getJavaSourceStartLineNumber() + ",1");
-          if (isAutoFuzz) {
-            callsite.setMethodName(
-                "[" + tClass.getName() + "]." + target.getSubSignature().split(" ")[1]);
-          } else {
-            callsite.setMethodName("[" + tClass.getName() + "]." + target.getName());
-          }
-          return callsite;
-        }
-      }
-    } catch (ResolutionFailedException e) {
-      // Some project may invoke method in a non-traditional way, for example
-      // invoking class static method within an object instance of that class.
-      // These invocation could cause ResolutionFailedException and they are skipped
-      // as the normal static invocation is handled in other location. So do nothing here.
-    }
-
-    return null;
-  }
-
-  private BranchProfile handleIfStatement(
-      List<Block> blocks, Unit unit, String cname, Map<String, Integer> functionLineMap) {
-    // Handle if branch
-    BranchProfile branchProfile = new BranchProfile();
-
-    Integer trueBlockLineNumber = unit.getJavaSourceStartLineNumber() + 1;
-    Integer falseBlockLineNumber =
-        ((IfStmt) unit).getUnitBoxes().get(0).getUnit().getJavaSourceStartLineNumber();
-
-    Map<String, Integer> trueBlockLine =
-        getBlockStartEndLineWithLineNumber(blocks, trueBlockLineNumber);
-    Map<String, Integer> falseBlockLine =
-        getBlockStartEndLineWithLineNumber(blocks, falseBlockLineNumber);
-
-    // True branch
-    if (!trueBlockLine.isEmpty()) {
-      Integer start = falseBlockLine.get("start");
-      branchProfile.addBranchSides(
-          processBranch(trueBlockLine, cname + ":" + start, functionLineMap));
-    }
-
-    // False branch
-    if (!falseBlockLine.isEmpty()) {
-      Integer start = falseBlockLine.get("start");
-      branchProfile.addBranchSides(
-          processBranch(falseBlockLine, cname + ":" + (start - 1), functionLineMap));
-    }
-
-    branchProfile.setBranchString(cname + ":" + unit.getJavaSourceStartLineNumber());
-
-    return branchProfile;
-  }
-
-  private BranchSide processBranch(
-      Map<String, Integer> blockLine, String cname, Map<String, Integer> functionLineMap) {
-    BranchSide branchSide = new BranchSide();
-
-    Integer start = blockLine.get("start");
-    Integer end = blockLine.get("end");
-    branchSide.setBranchSideStr(cname);
-    branchSide.setBranchSideFuncs(getFunctionCallInTargetLine(functionLineMap, start, end));
-
-    return branchSide;
   }
 
   public Boolean hasTargetPackage() {
