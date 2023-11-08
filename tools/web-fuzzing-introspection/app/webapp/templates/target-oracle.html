@@ -1,0 +1,86 @@
+{% extends "base.html" %}                                                       
+{% block content %}        
+<!-- main content -->
+    <main>
+      <!-- hero area -->
+      <section class="search__hero overview__hero">
+        <div class="container">
+          <div class="search__hero-wrapper">
+            <h1 class="section__title">
+              Target oracle
+            </h1>
+          </div>
+              <div class="alert alert-info" role="alert">
+This page shows functions across the entire OSS-Fuzz database that are determined to be likely interesting targets. This suggestion comes from various heuristics that often encapsulate functions that are likely good to fuzz or are, perhaps, easy to fuzz. For each suggestion a justification is included as to why this target is interesting, by way of referencing a given heuristic.
+              </div>          
+          <div class="database overviewBody">
+            <div class="database__header">
+              <div class="database__header-right">
+                <button type="button" class="btn__table" onclick="location.href='https://github.com/ossf/fuzz-introspector'">
+                  Fuzz Introspector
+                </button>
+                <button type="button" class="btn__table" onclick="location.href='https://github.com/ossf/fuzz-introspector/issues'">Suggest ideas</button>
+                <button type="button" class="btn__table" onclick="location.href='https://github.com/ossf/fuzz-introspector/issues'">Report issues</button>
+              </div>
+            </div>
+            <div class="database__body">
+              <table id="projectOverviewTable">
+                <thead>
+                  <tr>
+                    <td>Function name</td>
+                    <td>Project</td>
+                    <td>Language</td>
+                    <td>Reason</td>
+                    <td>Coverage link</td>
+                  </tr>
+                </thead>
+                <tbody>
+                {% for target_func in functions_to_display %}
+                  <tr>
+                      <td> <a href="/function-profile?function={{target_func.name | urlencode}}&project={{target_func.project | urlencode}}">{{ target_func.name }}</a> </td>
+                      <td> {{ target_func.project }} </td>
+                      <td> {{func_to_lang[target_func.name]}} </td>
+                      <td> <a href="#heuristic-1">heuristic 1</a></td>
+                      <td> <a href="{{target_func.code_coverage_url}}">coverage link</a></td>
+                  </tr>
+                {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+      <!-- end hero area -->
+      <section class="overview">
+        <div class="container">
+          <div class="overview__wrapper">
+            <h2 class="section__title">Heuristics</h2>
+            <!-- /api/annotated-cfg -->
+          </div>
+          <div style="padding-top: 25px; margin-left: 35px; margin-right: 35px">
+            <p>
+              <left>
+                <h3 id="heuristic-1">Heuristic 1</h3>
+                <p>
+                  This is the heuristic highlights functions that has all of the following attributes:
+                  <ul>
+                    <li>- Has "parse" in its function name.</li>
+                    <li>- Has zero percentage code coverage.</li>
+                    <li>- Has accummulated cyclomatic complexity larger than 200.</li>
+                    <li>- Is in a project written in C or C++.</li>
+                  </ul>
+                </p>
+              </left>
+            </p>
+          </div>
+        </div>
+      </section>
+
+    </main>
+    <!-- end main content -->
+ <script>
+  $( document ).ready(function() {
+    $('#projectOverviewTable').dataTable({'pageLength': 1000})
+  });
+ </script> 
+{% endblock %}
