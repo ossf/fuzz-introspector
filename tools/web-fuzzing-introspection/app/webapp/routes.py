@@ -296,6 +296,60 @@ def projects_overview():
                            all_projects=projects_to_use)
 
 
+def oracle_1(all_functions, all_projects):
+    tmp_list = []
+    project_count = dict()
+    for function in all_functions:
+        if "parse" not in function.name:
+            continue
+
+        if (function.runtime_code_coverage == 0.0
+                and project_count.get(function.project, 0) < 5
+                and function.accummulated_cyclomatic_complexity > 200):
+
+            to_continue = False
+            for proj in all_projects:
+                if proj.name == function.project and proj.language in {
+                        'c', 'c++'
+                }:
+                    to_continue = True
+            if not to_continue:
+                continue
+            tmp_list.append(function)
+            current_count = project_count.get(function.project, 0)
+            current_count += 1
+            project_count[function.project] = current_count
+
+    functions_to_display = tmp_list
+    funcs_max_to_display = 4000
+    total_matches = len(functions_to_display)
+    if total_matches >= funcs_max_to_display:
+        functions_to_display = functions_to_display[:funcs_max_to_display]
+
+    return functions_to_display
+
+
+@blueprint.route('/target_oracle')
+def target_oracle():
+    all_projects = data_storage.get_projects()
+    all_functions = data_storage.get_functions()
+    functions_to_display = oracle_1(all_functions, all_projects)
+
+    func_to_lang = dict()
+    for func in functions_to_display:
+        language = 'c'
+        for proj in all_projects:
+            if proj.name == func.project:
+                language = proj.language
+                break
+
+        func_to_lang[func.name] = language
+    return render_template('target-oracle.html',
+                           gtag=gtag,
+                           functions_to_display=functions_to_display,
+                           func_to_lang=func_to_lang)
+
+
 @blueprint.route('/indexing-overview')
 def indexing_overview():
     build_status = data_storage.get_build_status()
