@@ -31,10 +31,11 @@ class JavaFuzzTarget(FuzzTarget):
 
         if func_elem:
             # Method name in .data.yaml for java: [className].methodName(methodParameterList)
-            self.function_name = func_elem['functionName'].split('].')[1].split(
-                '(')[0]
+            self.function_name = func_elem['functionName'].split(
+                '].')[1].split('(')[0]
             self.function_target = get_target_method_statement(func_elem)
-            self.function_class = func_elem['functionSourceFile'].replace('$', '.')
+            self.function_class = func_elem['functionSourceFile'].replace(
+                '$', '.')
             self.exceptions_to_handle.extend(
                 func_elem['JavaMethodInfo']['exceptions'])
             self.imports_to_add.extend(_handle_import(func_elem))
