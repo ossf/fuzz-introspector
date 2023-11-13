@@ -35,12 +35,12 @@ This page shows functions across the entire OSS-Fuzz database that are determine
                   </tr>
                 </thead>
                 <tbody>
-                {% for target_func in functions_to_display %}
+                {% for target_func, heuristic in functions_to_display %}
                   <tr>
                       <td> <a href="/function-profile?function={{target_func.name | urlencode}}&project={{target_func.project | urlencode}}">{{ target_func.name }}</a> </td>
                       <td> {{ target_func.project }} </td>
                       <td> {{func_to_lang[target_func.name]}} </td>
-                      <td> <a href="#heuristic-1">heuristic 1</a></td>
+                      <td> <a href="#heuristic-1">{{heuristic}}</a></td>
                       <td> <a href="{{target_func.code_coverage_url}}">coverage link</a></td>
                   </tr>
                 {% endfor %}
@@ -68,6 +68,18 @@ This page shows functions across the entire OSS-Fuzz database that are determine
                     <li>- Has zero percentage code coverage.</li>
                     <li>- Has accummulated cyclomatic complexity larger than 200.</li>
                     <li>- Is in a project written in C or C++.</li>
+                  </ul>
+                </p>
+              </left>
+              <left>
+                <h3 id="heuristic-2">Heuristic 2</h3>
+                <p>
+                  This is the heuristic highlights functions that has all of the following attributes:
+                  <ul>
+                    <li>- Has two arguments.</li>
+                    <li>- First argument has type "char *".</li>
+                    <li>- Second argument has type "int".</li>
+                    <li>- Has accummulated cyclomatic complexity larger than 150</li>
                   </ul>
                 </p>
               </left>
