@@ -30,6 +30,8 @@ def copy_benchmark_project(base_dir, benchmark, language, destination):
 
 def git_clone_project(github_url, destination):
     """Clone project from github url to destination"""
+    if os.path.isdir(destination):
+        shutil.rmtree(destination)
     cmd = ["git clone", github_url, destination]
     try:
         subprocess.check_call(" ".join(cmd),
@@ -219,6 +221,59 @@ def copy_build_file(OSS_FUZZ_BASE, basedir, language):
     return True
 
 
+# Fuzzer generator utils
+########################
+def run_fuzzer_generator_in_docker(language, project_dir):
+    """Build docker image and run the fuzzer generator in the build docker
+       container. Storing the possible targets list as json string in
+       {project_dir}/possible_targets
+    """
+    docker_dir = constants.DOCKER_DIR
+    work_dir = os.path.join(project_dir, 'work')
+    docker_work_dir = os.path.join(docker_dir, 'work')
+    out_dir = os.path.join(docker_dir, 'out')
+
+    # Copy project directory to docker_dir
+    shutil.rmtree(docker_work_dir, True)
+    shutil.rmtree(out_dir, True)
+    shutil.copytree(work_dir, docker_work_dir)
+
+    # Build docker image
+    cmd = ['docker', 'build', '-t', 'auto-fuzz', '--progress=plain',
+           '--no-cache', '--file', os.path.join(docker_dir, 'Dockerfile'),
+           docker_dir]
+
+    try:
+        subprocess.check_call(' '.join(cmd),
+                              shell=True,
+                              stdout=subprocess.DEVNULL,
+                              stderr=subprocess.DEVNULL)
+    except:
+        return False
+
+    # Run fuzzer generation in docker
+    cmd = ["docker", "run", "-v", "%s:/out" % (os.path.abspath(out_dir)),
+           "auto-fuzz", "ls", "."]
+
+    try:
+        subprocess.check_call(' '.join(cmd),
+                              shell=True)
+#                              stdout=subprocess.DEVNULL,
+#                              stderr=subprocess.DEVNULL)
+    except:
+        return False
+
+    # Copy generated possible_targets list to {project_dir}
+    src_file = os.path.join(out_dir, 'possible_targets')
+    dst_file = os.path.join(project_dir, 'possible_targets')
+    if os.path.isfile(src_file):
+        shutil.move(src_file, dst_file)
+
+    shutil.rmtree(docker_work_dir, True)
+    shutil.rmtree(out_dir, True)
+
+    return dst_file
+
 # Project cleaning utils
 ########################
 def cleanup_build_cache():
@@ -246,6 +301,8 @@ def cleanup_base_directory(base_dir, project_name):
         project_name, 'work/jar', 'work/proj', 'build-jar'
     ]
 
+    docker_to_clean = ['work', 'fuzz-introspector']
+
     for file in file_to_clean:
         if os.path.isfile(os.path.join(base_dir, file)):
             os.remove(os.path.join(base_dir, file))
@@ -253,3 +310,7 @@ def cleanup_base_directory(base_dir, project_name):
     for dir in dir_to_clean:
         if os.path.isdir(os.path.join(base_dir, dir)):
             shutil.rmtree(os.path.join(base_dir, dir))
+
+    for dir in docker_to_clean:
+        if os.path.isdir(os.path.join(constants.DOCKER_DIR, dir)):
+            shutil.rmtree(os.path.join(constants.DOCKER_DIR, dir))
