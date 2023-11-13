@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import os
+import json
 import yaml
 import itertools
 
@@ -55,12 +56,32 @@ class FuzzTarget:
             "fuzzer_tear_down": ""
         }
 
-
-#    def __dict__(self):
-#        return {"function": self.function_target}
-
     def to_json(self):
-        return self.function_target
+        return json.dumps({
+            "function_class": self.function_class,
+            "function_name": self.function_name,
+            "fuzzer_source_code": self.fuzzer_source_code,
+            "function_target": self.function_target,
+            "exceptions_to_handle": self.exceptions_to_handle,
+            "variables_to_add": self.variables_to_add,
+            "imports_to_add": self.imports_to_add,
+            "heuristics_used": self.heuristics_used,
+            "class_field_list": self.class_field_list,
+            "extra_source_code": self.extra_source_code
+        })
+
+    def from_json(self, json_str):
+        obj = json.loads(json_str)
+        self.function_class = obj['function_class']
+        self.function_name = obj['function_name']
+        self.fuzzer_source_code = obj['fuzzer_source_code']
+        self.function_target = obj['function_target']
+        self.exceptions_to_handle = obj['exceptions_to_handle']
+        self.variables_to_add = obj['variables_to_add']
+        self.imports_to_add = obj['imports_to_add']
+        self.heuristics_used = obj['heuristics_used']
+        self.class_field_list = obj['class_field_list']
+        self.extra_source_code = obj['extra_source_code']
 
     def __str__(self):
         return self.function_target

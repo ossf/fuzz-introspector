@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import os
+import json
 import yaml
 import constants
 import itertools
@@ -25,17 +26,19 @@ from objects.fuzz_target import FuzzTarget
 
 class JavaFuzzTarget(FuzzTarget):
 
-    def __init__(self, func_elem):
+    def __init__(self, func_elem=None):
         super().__init__()
 
-        # Method name in .data.yaml for java: [className].methodName(methodParameterList)
-        self.function_name = func_elem['functionName'].split('].')[1].split(
-            '(')[0]
-        self.function_target = get_target_method_statement(func_elem)
-        self.function_class = func_elem['functionSourceFile'].replace('$', '.')
-        self.exceptions_to_handle.extend(
-            func_elem['JavaMethodInfo']['exceptions'])
-        self.imports_to_add.extend(_handle_import(func_elem))
+        if func_elem:
+            # Method name in .data.yaml for java: [className].methodName(methodParameterList)
+            self.function_name = func_elem['functionName'].split(
+                '].')[1].split('(')[0]
+            self.function_target = get_target_method_statement(func_elem)
+            self.function_class = func_elem['functionSourceFile'].replace(
+                '$', '.')
+            self.exceptions_to_handle.extend(
+                func_elem['JavaMethodInfo']['exceptions'])
+            self.imports_to_add.extend(_handle_import(func_elem))
 
     def generate_patched_fuzzer(self, filename):
         """Patches the fuzzer in `filename`.
@@ -1360,4 +1363,11 @@ def generate_possible_targets(proj_folder, class_list, max_target,
         possible_targets, _ = _generate_heuristics(yaml_dict, max_target,
                                                    max_fuzzer, True)
 
-    return possible_targets
+    possible_targets_json_list = []
+    possible_targets_json_file = os.path.join(proj_folder, "possible_targets")
+    for possible_target in possible_targets:
+        possible_targets_json_list.append(possible_target.to_json())
+    with open(possible_targets_json_file, "w") as f:
+        f.write(json.dumps(possible_targets_json_list))
+
+    return possible_targets_json_file

@@ -612,4 +612,11 @@ def generate_possible_targets(proj_folder):
     _generate_heuristic_3(yaml_dict, possible_targets)
     _generate_heuristic_4(yaml_dict, possible_targets)
 
-    return possible_targets
+    possible_targets_json_list = []
+    possible_targets_json_file = os.path.join(proj_folder, "possible_targets")
+    for possible_target in possible_targets:
+        possible_targets_json_list.append(possible_target.to_json())
+    with open(possible_targets_json_file, "w") as f:
+        f.write(json.dumps(possible_targets_json_list))
+
+    return possible_targets_json_file
