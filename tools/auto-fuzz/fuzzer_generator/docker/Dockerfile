@@ -11,23 +11,21 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+##########################################################################
 FROM ubuntu:22.04
 
-RUN apt-get update && apt-get install git pip curl -y
+RUN apt-get update && apt-get install pip -y
 
-RUN curl -sSL https://get.docker.com/ | sh
-RUN git clone https://github.com/ossf/fuzz-introspector fuzz-introspector
+COPY fuzz-introspector yaml $SRC/
 
 WORKDIR $SRC/fuzz-introspector
 RUN git submodule init
 RUN git submodule update
 
 RUN pip3 install --upgrade pip
-RUN pip3 install -r ./requirements.txt
+RUN pip3 install -r $SRC/requirements.txt
+
 WORKDIR $SRC/fuzz-introspector/frontends/python/PyCG
 RUN pip3 install .
 
-COPY proj $SRC/
-
-WORKDIR $SRC/fuzz-introspector/tools/auto-fuzz/
+WORKDIR $SRC/fuzz-introspector/tools/auto-fuzz/fuzzer_generator/docker
