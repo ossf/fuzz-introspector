@@ -239,9 +239,11 @@ def run_fuzzer_generator_in_docker(language, project_dir):
     shutil.copytree(work_dir, docker_work_dir)
 
     # Build docker image
-    cmd = ['docker', 'build', '-t', 'auto-fuzz', '--progress=plain',
-           '--no-cache', '--file', os.path.join(docker_dir, 'Dockerfile'),
-           docker_dir]
+    cmd = [
+        'docker', 'build', '-t', 'auto-fuzz', '--progress=plain', '--no-cache',
+        '--file',
+        os.path.join(docker_dir, 'Dockerfile'), docker_dir
+    ]
 
     try:
         subprocess.check_call(' '.join(cmd),
@@ -251,13 +253,14 @@ def run_fuzzer_generator_in_docker(language, project_dir):
     except:
         return False
 
-    # Run fuzzer generation in docker
-    cmd = ["docker", "run", "-v", "%s:/out" % (os.path.abspath(out_dir)),
-           "auto-fuzz", "ls", "."]
+    # Run fuzzer generation in docker (TODO: call fuzzer generator instead)
+    cmd = [
+        "docker", "run", "-v",
+        "%s:/out" % (os.path.abspath(out_dir)), "auto-fuzz", "ls", "."
+    ]
 
     try:
-        subprocess.check_call(' '.join(cmd),
-                              shell=True)
+        subprocess.check_call(' '.join(cmd), shell=True)
 #                              stdout=subprocess.DEVNULL,
 #                              stderr=subprocess.DEVNULL)
     except:
@@ -273,6 +276,7 @@ def run_fuzzer_generator_in_docker(language, project_dir):
     shutil.rmtree(out_dir, True)
 
     return dst_file
+
 
 # Project cleaning utils
 ########################

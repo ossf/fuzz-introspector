@@ -481,7 +481,8 @@ def autofuzz_project_from_github(github_url,
         possible_targets = []
         if do_static_analysis and static_res:
             print("Generating fuzzers for %s" % (github_url))
-            utils.run_fuzzer_generator_in_docker(language, oss_fuzz_base_project.project_folder)
+            utils.run_fuzzer_generator_in_docker(
+                language, oss_fuzz_base_project.project_folder)
             if language == "python":
                 # Change build.sh and Dockerfile
                 project_build_type = None
@@ -546,10 +547,10 @@ def run_on_projects(language,
 
     # Clone fresh copy of fuzz-introspector for fuzzer generators
     if not utils.git_clone_project(
-        constants.FUZZ_INTROSPECTOR_URL,
-        os.path.join(constants.DOCKER_DIR, 'fuzz-introspector')):
-            print("Fail to obtain fuzz-introspector")
-            return False
+            constants.FUZZ_INTROSPECTOR_URL,
+            os.path.join(constants.DOCKER_DIR, 'fuzz-introspector')):
+        print("Fail to obtain fuzz-introspector")
+        return False
 
     for repo in repos_to_target:
         os.chdir(home_dir)
