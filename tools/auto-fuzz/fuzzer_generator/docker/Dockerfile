@@ -14,6 +14,12 @@
 ##########################################################################
 FROM ubuntu:22.04@sha256:2b7412e6465c3c7fc5bb21d3e6f1917c167358449fecac8176c6e496e5c1f05f
 
+ENV SRC /src
+ENV OUT /out
+
+RUN mkdir -p $SRC
+RUN mkdir -p $OUT
+
 RUN apt-get update && apt-get install pip git -y
 
 COPY fuzz-introspector work $SRC/
@@ -21,10 +27,6 @@ COPY fuzz-introspector work $SRC/
 WORKDIR $SRC/fuzz-introspector
 RUN git submodule init
 RUN git submodule update
-
 RUN pip3 install -r $SRC/requirements.txt
-
-WORKDIR $SRC/fuzz-introspector/frontends/python/PyCG
-RUN pip3 install .
 
 WORKDIR $SRC/fuzz-introspector/tools/auto-fuzz
