@@ -12,20 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ##########################################################################
-FROM ubuntu:22.04
+FROM ubuntu:22.04@sha256:2b7412e6465c3c7fc5bb21d3e6f1917c167358449fecac8176c6e496e5c1f05f
 
-RUN apt-get update && apt-get install pip -y
+RUN apt-get update && apt-get install pip git -y
 
-COPY fuzz-introspector yaml $SRC/
+COPY fuzz-introspector work $SRC/
 
 WORKDIR $SRC/fuzz-introspector
 RUN git submodule init
 RUN git submodule update
 
-RUN pip3 install --upgrade pip
 RUN pip3 install -r $SRC/requirements.txt
 
 WORKDIR $SRC/fuzz-introspector/frontends/python/PyCG
 RUN pip3 install .
 
-WORKDIR $SRC/fuzz-introspector/tools/auto-fuzz/fuzzer_generator/docker
+WORKDIR $SRC/fuzz-introspector/tools/auto-fuzz
