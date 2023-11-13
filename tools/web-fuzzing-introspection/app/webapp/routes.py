@@ -329,21 +329,62 @@ def oracle_1(all_functions, all_projects):
     return functions_to_display
 
 
+def oracle_2(all_functions, all_projects):
+    tmp_list = []
+    project_count = dict()
+    for function in all_functions:
+        if len(function.function_arguments) != 2:
+            continue
+
+        if (function.function_arguments[0] != 'char *'
+                or function.function_arguments[1] != "int"):
+            continue
+
+        if function.accummulated_cyclomatic_complexity < 150:
+            continue
+
+        tmp_list.append(function)
+        current_count = project_count.get(function.project, 0)
+        current_count += 1
+        project_count[function.project] = current_count
+
+    functions_to_display = tmp_list
+    funcs_max_to_display = 4000
+    total_matches = len(functions_to_display)
+    if total_matches >= funcs_max_to_display:
+        functions_to_display = functions_to_display[:funcs_max_to_display]
+
+    return functions_to_display
+
+
 @blueprint.route('/target_oracle')
 def target_oracle():
     all_projects = data_storage.get_projects()
     all_functions = data_storage.get_functions()
-    functions_to_display = oracle_1(all_functions, all_projects)
+
+    functions_to_display = []
+
+    total_funcs = set()
+    oracle_pairs = [(oracle_1, "heuristic 1"), (oracle_2, "heuristic 2")]
+    for oracle, heuristic_name in oracle_pairs:
+        func_targets = oracle(all_functions, all_projects)
+        for func in func_targets:
+            if func in total_funcs:
+                continue
+            total_funcs.add(func)
+            functions_to_display.append((func, heuristic_name))
 
     func_to_lang = dict()
-    for func in functions_to_display:
+    for func, heuristic in functions_to_display:
         language = 'c'
         for proj in all_projects:
             if proj.name == func.project:
                 language = proj.language
                 break
-
+        # We may overwrite here, and in that case we just use the new
+        # heuristic for labeling.
         func_to_lang[func.name] = language
+
     return render_template('target-oracle.html',
                            gtag=gtag,
                            functions_to_display=functions_to_display,
