@@ -58,6 +58,7 @@ done
 %s
 %s
 JARFILE_LIST=
+rm -f $SRC/build_jar/Fuzz.jar
 for JARFILE in `ls $SRC/build_jar/*.jar`
 do
   cp $JARFILE $OUT/
