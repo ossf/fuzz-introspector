@@ -1,0 +1,10 @@
+homepage: https://github.com/ossf/fuzz-introspector
+main_repo: https://github.com/ossf/fuzz-introspector
+language: python
+fuzzing_engines:
+- libfuzzer
+sanitizers:
+- address
+- undefined
+primary_contacts: autofuzz@fuzz-introspector.com
+%s%s
