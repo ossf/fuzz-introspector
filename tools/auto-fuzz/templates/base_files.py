@@ -36,13 +36,23 @@ def gen_dockerfile(github_url,
         return _gen_dockerfile_java(github_url, project_name, jdk_version,
                                     build_project, template_dir,
                                     project_build_type)
+    elif language == "fuzzer-generator":
+        return _gen_dockerfile_generator(template_dir)
     else:
         return ""
 
 
 def gen_builder_1(language="python",
                   project_build_type=None,
-                  build_project=True):
+                  build_project=True,
+                  fuzzer_generator=False,
+                  class_list=[],
+                  param_combination=False):
+    if fuzzer_generator:
+        template_dir = _get_template_directory("fuzzer-generator", None)
+        return _gen_builder_1_generator(template_dir, language, class_list,
+                                        param_combination)
+
     template_dir = _get_template_directory(language, project_build_type)
 
     if not template_dir:
@@ -128,6 +138,11 @@ def _gen_dockerfile_java(github_url, project_name, jdk_version, build_project,
         return ""
 
 
+def _gen_dockerfile_generator(template_dir):
+    with open(os.path.join(template_dir, "Dockerfile-template"), "r") as file:
+        return file.read()
+
+
 def _gen_builder_1_python(template_dir):
     with open(os.path.join(template_dir, "build.sh-template"), "r") as file:
         BASE_BUILDER = "#!/bin/bash -eu\n" + file.read()
@@ -152,6 +167,14 @@ def _gen_builder_1_java(template_dir, build_project, project_build_type):
                                INTROSPECTOR_BUILDER)
     else:
         return BASE_BUILDER % (": <<'COMMENT'", "COMMENT", "", "", "")
+
+
+def _gen_builder_1_generator(template_dir, language, class_list,
+                             param_combination):
+    with open(os.path.join(template_dir, "build.py-template"), "r") as file:
+        BASE_BUILDER = "#!/usr/bin/python3\n" + file.read()
+
+    return BASE_BUILDER % (language, ",".join(class_list), param_combination)
 
 
 def _gen_base_fuzzer_python(template_dir):

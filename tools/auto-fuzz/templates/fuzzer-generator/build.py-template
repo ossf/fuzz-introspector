@@ -1,4 +1,4 @@
-# Copyright 2023 Fuzz Introspector Authors
+# Copyright 2023 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,24 +11,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
 ##########################################################################
-FROM ubuntu:22.04@sha256:2b7412e6465c3c7fc5bb21d3e6f1917c167358449fecac8176c6e496e5c1f05f
+import fuzz_driver_generation_%s as generator
+import shutil
+import sys
+import os
 
-RUN apt-get update && \
-    apt-get install pip git -y
+sys.path.append('..')
+import constants
 
-ENV SRC /src
-ENV OUT /out
-
-RUN mkdir -p $SRC && \
-    mkdir -p $OUT
-
-COPY fuzz-introspector $SRC/fuzz-introspector
-COPY work $SRC/work
-
-RUN cd $SRC/fuzz-introspector && \
-    git submodule init && \
-    git submodule update && \
-    pip3 install -r ./requirements.txt
-
-WORKDIR $SRC/fuzz-introspector/tools/auto-fuzz
+class_list_str = "%s"
+project_dir = os.getenv("SRC")
+generator.generate_possible_targets(project_dir, class_list_str.split(","), constants.MAX_TARGET_PER_PROJECT_HEURISTIC, %s)
+shutil.copy(os.path.join(project_dir, "possible_targets"), os.getenv("OUT"))
