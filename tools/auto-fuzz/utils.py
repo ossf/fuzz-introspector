@@ -222,7 +222,8 @@ def copy_build_file(OSS_FUZZ_BASE, basedir, language):
 
 # Fuzzer generator utils
 ########################
-def generate_possible_targets(auto_fuzz_base, oss_fuzz_base, language, project_dir, class_list, param_combination):
+def generate_possible_targets(auto_fuzz_base, oss_fuzz_base, language,
+                              project_dir, class_list, param_combination):
     """Generator possible targets by calling fuzzer generator of different
     languages in a OSS-Fuzz docker container. The json serialised possible
     target list is stored in $OUT/possible_targets and is copied back to
@@ -238,17 +239,25 @@ def generate_possible_targets(auto_fuzz_base, oss_fuzz_base, language, project_d
         f.write(base_files.gen_dockerfile("", "", "fuzzer-generator"))
 
     with open(os.path.join(temp_dir, "build.py"), "w") as f:
-        f.write(base_files.gen_builder_1(language, fuzzer_generator=True, class_list=class_list, param_combination=param_combination))
+        f.write(
+            base_files.gen_builder_1(language,
+                                     fuzzer_generator=True,
+                                     class_list=class_list,
+                                     param_combination=param_combination))
 
     with open(os.path.join(temp_dir, "project.yaml"), "w") as f:
         f.write(base_files.gen_project_yaml("", "fuzzer-generator"))
 
     # Copy needed files for fuzzer generation
     copy_files = {
-        os.path.join(auto_fuzz_base, "fuzzer_generator") : os.path.join(temp_dir, "fuzzer_generator"),
-        os.path.join(auto_fuzz_base, "objects") : os.path.join(temp_dir, "objects"),
-        os.path.join(auto_fuzz_base, "constants.py") : os.path.join(temp_dir, "constants.py"),
-        os.path.join(project_dir, "work") : os.path.join(temp_dir, "work")
+        os.path.join(auto_fuzz_base, "fuzzer_generator"):
+        os.path.join(temp_dir, "fuzzer_generator"),
+        os.path.join(auto_fuzz_base, "objects"):
+        os.path.join(temp_dir, "objects"),
+        os.path.join(auto_fuzz_base, "constants.py"):
+        os.path.join(temp_dir, "constants.py"),
+        os.path.join(project_dir, "work"):
+        os.path.join(temp_dir, "work")
     }
     for src_file in copy_files:
         if os.path.isdir(src_file):
@@ -260,7 +269,8 @@ def generate_possible_targets(auto_fuzz_base, oss_fuzz_base, language, project_d
     oss_fuzz_manager.copy_and_build_project(temp_dir, oss_fuzz_base)
 
     # Copy $OUT/possible_targets to {project_dir}
-    out_dir = os.path.join(oss_fuzz_base, "build", "out", "temp-fuzzer-generator")
+    out_dir = os.path.join(oss_fuzz_base, "build", "out",
+                           "temp-fuzzer-generator")
     src_file = os.path.join(out_dir, "possible_targets")
     dst_file = os.path.join(project_dir, "possible_targets")
     try:
@@ -271,7 +281,8 @@ def generate_possible_targets(auto_fuzz_base, oss_fuzz_base, language, project_d
     # Clean temp_dir and directory in OSS-Fuzz
     try:
         shutil.rmtree(temp_dir)
-        shutil.rmtree(os.path.join(oss_fuzz_base, "projects", "temp-fuzzer-generator"))
+        shutil.rmtree(
+            os.path.join(oss_fuzz_base, "projects", "temp-fuzzer-generator"))
         oss_fuzz_manager.clean_project("temp-fuzzer-generator", oss_fuzz_base)
     except:
         pass
