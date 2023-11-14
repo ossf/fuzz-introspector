@@ -110,9 +110,9 @@ def copy_and_build_project(src_folder,
         with open(out_log, "wb") as f:
             f.write(out)
 
-    err_log = os.path.join(log_dir, "oss-fuzz.err")
-    with open(err_log, "wb") as f:
-        f.write(err)
+        err_log = os.path.join(log_dir, "oss-fuzz.err")
+        with open(err_log, "wb") as f:
+            f.write(err)
 
     if b"Building fuzzers failed" in err:
         return False
