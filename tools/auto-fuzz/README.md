@@ -18,16 +18,6 @@ cd $WORKDIR
 git clone https://github.com/google/oss-fuzz
 git clone https://github.com/ossf/fuzz-introspector
 
-cd fuzz-introspector
-git submodule init
-git submodule update
-
-python3 -m virtualenv .venv
-. .venv/bin/activate
-pip3 install -r ./requirements.txt
-cd frontends/python/PyCG
-pip3 install .
-
 # Go into auto-fuzz
 cd ../../../tools/auto-fuzz/
 

@@ -15,13 +15,13 @@
 import os
 import json
 import yaml
-import constants
 import itertools
 import sys
 import copy
 
 sys.path.append('..')
 from objects.fuzz_target import FuzzTarget
+import constants
 
 
 class JavaFuzzTarget(FuzzTarget):

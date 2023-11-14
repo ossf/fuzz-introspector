@@ -594,7 +594,8 @@ def merge_stage_one_targets(target_runs):
     return []
 
 
-def generate_possible_targets(proj_folder):
+def generate_possible_targets(proj_folder, class_list, max_target,
+                              param_combination):
     """Generate all possible targets for a given project folder"""
 
     # Read the Fuzz Introspector generated data

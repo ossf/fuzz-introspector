@@ -488,24 +488,25 @@ def autofuzz_project_from_github(github_url,
                 oss_fuzz_base_project.change_dockerfile(
                     jdk, project_build_type)
                 oss_fuzz_base_project.change_build_script(project_build_type)
-                possible_targets_json_file = fuzz_driver_generation_python.generate_possible_targets(
-                    oss_fuzz_base_project.project_folder)
                 base_object = fuzz_driver_generation_python.PythonFuzzTarget()
             elif language == "java":
-                projectdir = os.path.join(oss_fuzz_base_project.project_folder,
-                                          oss_fuzz_base_project.project_name)
-                java_class_list = utils.extract_class_list(projectdir)
-                possible_targets_json_file = fuzz_driver_generation_java.generate_possible_targets(
-                    oss_fuzz_base_project.project_folder, java_class_list,
-                    constants.MAX_TARGET_PER_PROJECT_HEURISTIC,
-                    param_combination)
                 base_object = fuzz_driver_generation_java.JavaFuzzTarget()
 
-    with open(possible_targets_json_file, "r") as f:
-        for possible_target_str in json.loads(f.read()):
-            possible_target = copy.deepcopy(base_object)
-            possible_target.from_json(possible_target_str)
-            possible_targets.append(possible_target)
+            projectdir = os.path.join(oss_fuzz_base_project.project_folder,
+                                      oss_fuzz_base_project.project_name)
+            class_list = utils.extract_class_list(projectdir)
+            possible_targets_json_file = utils.generate_possible_targets(
+                basedir, OSS_FUZZ_BASE, language,
+                oss_fuzz_base_project.project_folder, class_list,
+                param_combination)
+
+    if possible_targets_json_file:
+        with open(possible_targets_json_file, "r") as f:
+            for possible_target_str in json.loads(f.read()):
+                possible_target = copy.deepcopy(base_object)
+
+                possible_target.from_json(possible_target_str)
+                possible_targets.append(possible_target)
 
     print("Generated %d possible targets for %s." %
           (len(possible_targets), github_url))
