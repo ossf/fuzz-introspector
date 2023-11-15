@@ -57,6 +57,7 @@ fi
 
 
 JARFILE_LIST=
+rm -f $SRC/build_jar/Fuzz.jar
 for JARFILE in $(find ./  -name "*.jar")
 do
   if [[ "$JARFILE" == *"target/"* ]] || [[ "$JARFILE" == *"build/"* ]] || [[ "$JARFILE" == *"dist/"* ]]
