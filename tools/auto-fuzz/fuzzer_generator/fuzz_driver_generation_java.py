@@ -1194,7 +1194,7 @@ def _generate_heuristic_2(method_tuple, possible_targets, max_target):
                 setting_possible_target.fuzzer_source_code = fuzzer_source_code.replace(
                     "%SETTINGS%", setting_source_code).replace(
                         "%METHODCALL1%",
-                        "  obj.%s($VARIABLE$)" % (func_name)).replace(
+                        "  obj.%s($VARIABLE$);\n" % (func_name)).replace(
                             "%METHODCALL2%", "").replace("%ASSERT%", "")
                 possible_targets.append(setting_possible_target)
 
@@ -1219,7 +1219,7 @@ def _generate_heuristic_2(method_tuple, possible_targets, max_target):
             cloned_possible_target.fuzzer_source_code = fuzzer_source_code.replace(
                 "%SETTINGS%",
                 "").replace("%METHODCALL1%",
-                            "  obj.%s($VARIABLE$)" % (func_name)).replace(
+                            "  obj.%s($VARIABLE$);\n" % (func_name)).replace(
                                 "%METHODCALL2%", "").replace("%ASSERT%", "")
             possible_targets.append(cloned_possible_target)
 
