@@ -278,6 +278,8 @@ def build_and_test_single_possible_target(idx_folder,
     # Cleanup oss-fuzz artifacts
     oss_fuzz_manager.cleanup_project(os.path.basename(auto_fuzz_proj_dir),
                                      OSS_FUZZ_BASE)
+    utils.cleanup_base_directory(auto_fuzz_proj_dir,
+                                 os.path.basename(auto_fuzz_proj_dir))
 
     # Cleanup source code folders in auto fuzz dir and in oss-fuzz dir.
     for src_dir in os.listdir(auto_fuzz_proj_dir):

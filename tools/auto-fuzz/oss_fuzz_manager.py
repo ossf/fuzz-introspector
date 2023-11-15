@@ -136,7 +136,9 @@ def cleanup_project(proj_name, oss_fuzz_base):
 
     oss_fuzz_docker_cmd.extend(oss_fuzz_project_docker_args)
     try:
-        subprocess.check_call(oss_fuzz_docker_cmd)
+        subprocess.check_call(oss_fuzz_docker_cmd,
+                              stderr=subprocess.DEVNULL,
+                              stdout=subprocess.DEVNULL)
     except subprocess.CalledProcessError:
         pass
 
@@ -151,7 +153,7 @@ def cleanup_project(proj_name, oss_fuzz_base):
 
     try:
         shutil.rmtree(os.path.join(oss_fuzz_base, "projects", proj_name))
-    except shutil.Error:
+    except:
         pass
 
     return True
