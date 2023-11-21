@@ -538,25 +538,25 @@ def api_project_all_functions():
     functions_to_return = list()
     for function in project_functions:
         functions_to_return.append({
-            'function-name':
+            'function_name':
             function.name,
-            'function-filename':
+            'function_filename':
             function.function_filename,
-            'raw-function-name':
+            'raw_function_name':
             function.raw_function_name,
-            'is-reached':
+            'is_reached':
             function.is_reached,
-            'accummulated-complexity':
+            'accummulated_complexity':
             function.accummulated_cyclomatic_complexity,
-            'function-argument-names':
+            'function_argument_names':
             function.function_argument_names,
-            'function-arguments':
+            'function_arguments':
             function.function_arguments,
-            'reached-by-fuzzers':
+            'reached_by_fuzzers':
             function.reached_by_fuzzers,
-            'return-type':
+            'return_type':
             function.return_type,
-            'runtime-coverage-percent':
+            'runtime_coverage_percent':
             function.runtime_code_coverage,
         })
     return {'result': 'success', 'functions': functions_to_return}
@@ -588,26 +588,26 @@ def far_reach_but_low_coverage():
             break
         idx += 1
         functions_to_return.append({
-            'function-name':
+            'function_name':
             function.name,
             'function_filename':
             function.function_filename,
-            'runtime-coverage-percent':
+            'runtime_coverage_percent':
             function.runtime_code_coverage,
-            'accummulated-complexity':
+            'accummulated_complexity':
             function.accummulated_cyclomatic_complexity,
-            'function-arguments':
+            'function_arguments':
             function.function_arguments,
-            'function-argument-names':
+            'function_argument_names':
             function.function_argument_names,
-            'return-type':
+            'return_type':
             function.return_type,
-            'is-reached':
+            'is_reached':
             function.is_reached,
-            'reached-by-fuzzers':
+            'reached_by_fuzzers':
             function.reached_by_fuzzers,
-            'raw-function-name':
+            'raw_function_name':
             function.raw_function_name,
         })
 
-    return {'result': 'succes', 'functions': functions_to_return}
+    return {'result': 'success', 'functions': functions_to_return}

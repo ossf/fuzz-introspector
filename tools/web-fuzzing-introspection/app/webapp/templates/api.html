@@ -54,30 +54,24 @@
   </p>
   <div class="card card-body">
     <pre>{
-    "project": {
-      "name": string,
-      "annotated_cfg": {
-        [
-          {
-              "fuzzer-name": string,
-              "destinations": [
-                  {
-                      "accummulated-cyclomatic-complexity": integer,
-                      "arg-names": [string],
-                      "arg-types": [string],
-                      "cyclomatic-complexity": integer,
-                      "function-name": string,
-                      "raw-function-name": string,
-                      "return-type": string,
-                      "source-file": string,
-                  },
-              ],
-              "src_file": string,
-          }
-        ]
-      },
-    },
-    "result": string
+  "project": {
+    "name": string,
+    "annotated_cfg": [ {
+          "fuzzer-name": string,
+          "destinations": [ {
+                  "accummulated-cyclomatic-complexity": integer,
+                  "arg-names": [string],
+                  "arg-types": [string],
+                  "cyclomatic-complexity": integer,
+                  "function-name": string,
+                  "raw-function-name": string,
+                  "return-type": string,
+                  "source-file": string,
+          } ],
+          "src_file": string,
+    } ],
+  },
+  "result": string
 }</pre>
   </div>
   <p>
@@ -178,24 +172,18 @@
 </p>
 <div class="card card-body">
   <pre>{
-  "functions": [
-      {
-          "accummulated-complexity": integer,
-          "function-argument-names": [
-              string
-          ],
-          "function-arguments": [
-              string
-          ],
-          "function-name": string,
-          "function_filename": string,
-          "is-reached": boolean,
-          "raw-function-name": string,
-          "reached-by-fuzzers": [],
-          "return-type": string,
-          "runtime-coverage-percent": number
-      },
-  ],
+  "functions": [ {
+    "accummulated_complexity": integer,
+    "function_argument_names": [ string ],
+    "function_arguments": [ string ],
+    "function_name": string,
+    "function_filename": string,
+    "is_reached": boolean,
+    "raw_function_name": string,
+    "reached_by_fuzzers": [],
+    "return_type": string,
+    "runtime_coverage_percent": number
+  } ],
   "result": string
 }</pre>
 </div>
@@ -329,34 +317,25 @@ $ curl -L https://introspector.oss-fuzz.com/api/far-reach-but-low-coverage?proje
   <pre>{
   "project": {
     "introspector-data": {
-        "annotated_cfg": {
-          [
-            {
-                "fuzzer-name": string,
-                "destinations": [
-                    {
-                        "accummulated-cyclomatic-complexity": integer,
-                        "arg-names": [string],
-                        "arg-types": [string],
-                        "cyclomatic-complexity": integer,
-                        "function-name": string,
-                        "raw-function-name": string,
-                        "return-type": string,
-                        "source-file": string,
-                    },
-                ],
-                "src_file": string,
-            }
-          ]
-
-        },
-        "branch_pairs": [
-            {
-                "blocked-runtime-coverage": integer,
-                "function-name": string,
-                "project": string,
-            }
-        ],
+    "annotated_cfg": [ {
+        "fuzzer-name": string,
+        "destinations": [ {
+          "accummulated-cyclomatic-complexity": integer,
+          "arg-names": [string],
+          "arg-types": [string],
+          "cyclomatic-complexity": integer,
+          "function-name": string,
+          "raw-function-name": string,
+          "return-type": string,
+          "source-file": string,
+        } ],
+        "src_file": string,
+      } ],
+      "branch_pairs": [ {
+        "blocked-runtime-coverage": integer,
+        "function-name": string,
+        "project": string,
+      } ],
       "coverage_lines": number,
       "function_count": integer,
       "functions_covered_estimate": nubber,
@@ -478,16 +457,14 @@ $ curl -L https://introspector.oss-fuzz.com/api/project-summary?project=json-c |
   <b>JSON Schema</b>
   <div class="card card-body">
     <pre>{
-  "project-blockers": [
-    {
+  "project-blockers": [ {
       "project_name": string,
       "function_name": string,
       "source_file": string,
       "src_linenumber": string,
       "unique_blocked_coverage": integer,
       "blocked_unique_functions": [string],
-    }
-  ],
+    } ],
   "result": string,
 }</pre>
 </div>
@@ -557,20 +534,18 @@ $ curl -L https://introspector.oss-fuzz.com/api/branch-blockers?project=json-c |
   <b>JSON Schema</b>
   <div class="card card-body">
     <pre>{
-  "functions": [
-    {
-      "function-name": string,
-      "function-filename": string,
-      "raw-function-name": string,
-      "is-reached": boolean,
-      "accummulated-complexity": integer,
-      "function-argument-names": [string],
-      "function-arguments": [string],
-      "reached-by-fuzzers": [string],
-      "return-type": string,
-      "runtime-coverage-percent": number,
-    }
-  ],
+  "functions": [ {
+      "function_name": string,
+      "function_filename": string,
+      "raw_function_name": string,
+      "is_reached": boolean,
+      "accummulated_complexity": integer,
+      "function_argument_names": [string],
+      "function_arguments": [string],
+      "reached_by_fuzzers": [string],
+      "return_type": string,
+      "runtime_coverage_percent": number,
+  }],
   "result": string,
 }</pre>
   </div>
