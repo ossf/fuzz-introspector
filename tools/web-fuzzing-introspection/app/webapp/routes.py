@@ -542,24 +542,24 @@ def api_project_all_functions():
             function.name,
             'function-filename':
             function.function_filename,
-            'runtime-coverage-percent':
-            function.runtime_code_coverage,
-            'accummulated-complexity':
-            function.accummulated_cyclomatic_complexity,
-            'function-arguments':
-            function.function_arguments,
-            'function-argument-names':
-            function.function_argument_names,
-            'return-type':
-            function.return_type,
-            'is-reached':
-            function.is_reached,
-            'reached-by-fuzzers':
-            function.reached_by_fuzzers,
             'raw-function-name':
             function.raw_function_name,
+            'is-reached':
+            function.is_reached,
+            'accummulated-complexity':
+            function.accummulated_cyclomatic_complexity,
+            'function-argument-names':
+            function.function_argument_names,
+            'function-arguments':
+            function.function_arguments,
+            'reached-by-fuzzers':
+            function.reached_by_fuzzers,
+            'return-type':
+            function.return_type,
+            'runtime-coverage-percent':
+            function.runtime_code_coverage,
         })
-    return {'result': 'succes', 'functions': functions_to_return}
+    return {'result': 'success', 'functions': functions_to_return}
 
 
 @blueprint.route('/api/far-reach-but-low-coverage')
