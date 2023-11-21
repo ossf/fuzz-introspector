@@ -504,16 +504,16 @@ def branch_blockers():
     for blocker in all_branch_blockers:
         if blocker.project_name == project_name:
             project_blockers.append({
-                'project-name':
+                'project_name':
                 blocker.project_name,
-                'function-name':
+                'function_name':
                 blocker.function_name,
-                'unique_blocked_coverage':
-                blocker.unique_blocked_coverage,
                 'source_file':
                 blocker.source_file,
                 'src_linenumber':
                 blocker.src_linenumber,
+                'unique_blocked_coverage':
+                blocker.unique_blocked_coverage,
                 'blocked_unique_functions':
                 blocker.blocked_unique_functions
             })
@@ -538,28 +538,28 @@ def api_project_all_functions():
     functions_to_return = list()
     for function in project_functions:
         functions_to_return.append({
-            'function-name':
+            'function_name':
             function.name,
-            'function-filename':
+            'function_filename':
             function.function_filename,
-            'runtime-coverage-percent':
-            function.runtime_code_coverage,
-            'accummulated-complexity':
-            function.accummulated_cyclomatic_complexity,
-            'function-arguments':
-            function.function_arguments,
-            'function-argument-names':
-            function.function_argument_names,
-            'return-type':
-            function.return_type,
-            'is-reached':
-            function.is_reached,
-            'reached-by-fuzzers':
-            function.reached_by_fuzzers,
-            'raw-function-name':
+            'raw_function_name':
             function.raw_function_name,
+            'is_reached':
+            function.is_reached,
+            'accummulated_complexity':
+            function.accummulated_cyclomatic_complexity,
+            'function_argument_names':
+            function.function_argument_names,
+            'function_arguments':
+            function.function_arguments,
+            'reached_by_fuzzers':
+            function.reached_by_fuzzers,
+            'return_type':
+            function.return_type,
+            'runtime_coverage_percent':
+            function.runtime_code_coverage,
         })
-    return {'result': 'succes', 'functions': functions_to_return}
+    return {'result': 'success', 'functions': functions_to_return}
 
 
 @blueprint.route('/api/far-reach-but-low-coverage')
@@ -588,26 +588,26 @@ def far_reach_but_low_coverage():
             break
         idx += 1
         functions_to_return.append({
-            'function-name':
+            'function_name':
             function.name,
             'function_filename':
             function.function_filename,
-            'runtime-coverage-percent':
+            'runtime_coverage_percent':
             function.runtime_code_coverage,
-            'accummulated-complexity':
+            'accummulated_complexity':
             function.accummulated_cyclomatic_complexity,
-            'function-arguments':
+            'function_arguments':
             function.function_arguments,
-            'function-argument-names':
+            'function_argument_names':
             function.function_argument_names,
-            'return-type':
+            'return_type':
             function.return_type,
-            'is-reached':
+            'is_reached':
             function.is_reached,
-            'reached-by-fuzzers':
+            'reached_by_fuzzers':
             function.reached_by_fuzzers,
-            'raw-function-name':
+            'raw_function_name':
             function.raw_function_name,
         })
 
-    return {'result': 'succes', 'functions': functions_to_return}
+    return {'result': 'success', 'functions': functions_to_return}

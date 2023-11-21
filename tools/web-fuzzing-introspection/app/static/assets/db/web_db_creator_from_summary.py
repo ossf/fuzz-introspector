@@ -247,6 +247,25 @@ def extract_introspector_report(project_name, date_str):
     return introspector_report
 
 
+def rename_annotated_cfg(original_annotated_cfg):
+    """Renames an annotated CFG as it is from introspector."""
+    new_annotated_cfg = list()
+    for fuzzer_name in original_annotated_cfg:
+        elem = {
+            'fuzzer-name': fuzzer_name,
+            'src_file': original_annotated_cfg[fuzzer_name]['src_file'],
+            'destinations': []
+        }
+        for dest_elem in original_annotated_cfg[fuzzer_name]['destinations']:
+            refined_dest_elem = dict()
+            for k, v in dest_elem.items():
+                refined_dest_elem[k.replace("-", "_")] = v
+            elem['destinations'].append(refined_dest_elem)
+
+        new_annotated_cfg.append(elem)
+    return new_annotated_cfg
+
+
 def extract_project_data(project_name, date_str, should_include_details,
                          manager_return_dict):
     """
@@ -361,8 +380,8 @@ def extract_project_data(project_name, date_str, should_include_details,
                 # are not such keys, so skip them.
                 if key == 'analyses':
                     if 'AnnotatedCFG' in introspector_report[key]:
-                        annotated_cfg = introspector_report['analyses'][
-                            'AnnotatedCFG']
+                        annotated_cfg = rename_annotated_cfg(
+                            introspector_report['analyses']['AnnotatedCFG'])
 
                 if key == "MergedProjectProfile" or key == 'analyses':
                     continue
@@ -392,15 +411,15 @@ def extract_project_data(project_name, date_str, should_include_details,
                     branch_pairs.append({
                         'project':
                         project_name,
-                        'function-name':
+                        'function_name':
                         function_blocked,
-                        'blocked-runtime-coverage':
+                        'blocked_runtime_coverage':
                         blocked_unique_not_covered_complexity,
-                        'source-file':
+                        'source_file':
                         branch_blocker.get('source_file', "N/A"),
                         'linenumber':
                         branch_blocker.get('branch_line_number', -1),
-                        'blocked-unique-functions':
+                        'blocked_unique_functions':
                         branch_blocker.get('blocked_unique_functions', [])
                     })
 

@@ -84,12 +84,12 @@ def load_db():
         data_storage.BLOCKERS.append(
             models.BranchBlocker(project_name=json_bb.get('project', ''),
                                  function_name=json_bb.get(
-                                     'function-name', ''),
+                                     'function_name', ''),
                                  unique_blocked_coverage=json_bb.get(
-                                     'blocked-runtime-coverage'),
-                                 source_file=json_bb.get('source-file'),
+                                     'blocked_runtime_coverage'),
+                                 source_file=json_bb.get('source_file'),
                                  blocked_unique_functions=json_bb.get(
-                                     'blocked-unique-functions'),
+                                     'blocked_unique_functions'),
                                  src_linenumber=json_bb.get('linenumber')))
 
     with open(project_timestamps_file, 'r') as f:
