@@ -480,12 +480,12 @@ $ curl -L https://introspector.oss-fuzz.com/api/project-summary?project=json-c |
     <pre>{
   "project-blockers": [
     {
-      "blocked_unique_functions": [string],
-      "function-name": string,
-      "project-name": string,
+      "project_name": string,
+      "function_name": string,
       "source_file": string,
       "src_linenumber": string,
-      "unique_blocked_coverage": 35
+      "unique_blocked_coverage": integer,
+      "blocked_unique_functions": [string],
     }
   ],
   "result": string,

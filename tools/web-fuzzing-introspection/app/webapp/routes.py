@@ -504,16 +504,16 @@ def branch_blockers():
     for blocker in all_branch_blockers:
         if blocker.project_name == project_name:
             project_blockers.append({
-                'project-name':
+                'project_name':
                 blocker.project_name,
-                'function-name':
+                'function_name':
                 blocker.function_name,
-                'unique_blocked_coverage':
-                blocker.unique_blocked_coverage,
                 'source_file':
                 blocker.source_file,
                 'src_linenumber':
                 blocker.src_linenumber,
+                'unique_blocked_coverage':
+                blocker.unique_blocked_coverage,
                 'blocked_unique_functions':
                 blocker.blocked_unique_functions
             })
