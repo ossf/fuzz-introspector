@@ -37,23 +37,56 @@
               </ul>
             </div>
 
-            <!-- /api/annotated-cfg -->
-            </div>
-              <div style="padding-top: 25px; margin-left: 35px; margin-right: 35px">
-                <p>
-                  <left>
-                    <h3 id="api-annotated-cfg">/api/annotated-cfg?project={project_name}</h3>
-                    <p>
-                      Gets the functions targeted by a specific fuzzer in the target code. Specifically, this is used to identify
-                      the main entrypoints into the target code that is being fuzzed.
-                    </p>
-                    <p>
-                      <b>Example</b>
-                      Extracting the data of the main <a href="https://github.com/google/oss-fuzz/tree/master/projects/json-c">json-c</a> project which has a single fuzzer <a href="https://github.com/google/oss-fuzz/blob/11a8e488a3df14079a48934b9c21cc752717eb18/projects/json-c/tokener_parse_ex_fuzzer.cc#L1-L13">tokener_parser_ex</a> fuzzer
-                      using the URL: <a href="https://introspector.oss-fuzz.com/api/annotated-cfg?project=json-c">https://introspector.oss-fuzz.com/api/annotated-cfg?project=json-c</a>:
-                    </p>
-                  </left>
-                </p>
+<!-- /api/annotated-cfg -->
+</div>
+<div style="padding-top: 25px; margin-left: 35px; margin-right: 35px">
+  <p>
+    <left>
+      <h3 id="api-annotated-cfg">/api/annotated-cfg?project={project_name}</h3>
+    </left>
+  </p>
+  <p>
+    Gets the functions targeted by a specific fuzzer in the target code. Specifically, this is used to identify
+    the main entrypoints into the target code that is being fuzzed.
+  </p>
+  <p>
+    <b>JSON Schema</b>
+  </p>
+  <div class="card card-body">
+    <pre>{
+    "project": {
+      "name": string,
+      "annotated_cfg": {
+        [
+          {
+              "fuzzer-name": string,
+              "destinations": [
+                  {
+                      "accummulated-cyclomatic-complexity": integer,
+                      "arg-names": [string],
+                      "arg-types": [string],
+                      "cyclomatic-complexity": integer,
+                      "function-name": string,
+                      "raw-function-name": string,
+                      "return-type": string,
+                      "source-file": string,
+                  },
+              ],
+              "src_file": string,
+          }
+        ]
+      },
+    },
+    "result": string
+}</pre>
+  </div>
+  <p>
+    <b>Example</b>
+      Extracting the data of the main <a href="https://github.com/google/oss-fuzz/tree/master/projects/json-c">json-c</a> project which has a single fuzzer <a href="https://github.com/google/oss-fuzz/blob/11a8e488a3df14079a48934b9c21cc752717eb18/projects/json-c/tokener_parse_ex_fuzzer.cc#L1-L13">tokener_parser_ex</a> fuzzer
+      using the URL: <a href="https://introspector.oss-fuzz.com/api/annotated-cfg?project=json-c">https://introspector.oss-fuzz.com/api/annotated-cfg?project=json-c</a>:
+  </p>
+
+
                   <div class="card card-body">
                                         <pre>$ curl -L https://introspector.oss-fuzz.com/api/annotated-cfg?project=json-c | python3 -m json.tool
 {
@@ -131,20 +164,47 @@
 
 <!-- /api/far-reach-but-low-coverage -->
 <div style="padding-top: 25px; margin-left: 35px; margin-right: 35px">
-  <p>
-    <left>
-      <h3 id="api-far-reach-but-low-coverage">/api/far-reach-but-low-coverage?project={project_name}</h3>
-      <p>
-        Gets the functions in the target project that has a lot of complexity but has low code coverage. The main point behind this data point is that it shows 
-        promising new functions to hit for a given target.
-      </p>
-      <p>
-        <b>Example</b>
-        Extracting the data of the main <a href="https://github.com/google/oss-fuzz/tree/master/projects/json-c">json-c</a> project which has a single fuzzer <a href="https://github.com/google/oss-fuzz/blob/11a8e488a3df14079a48934b9c21cc752717eb18/projects/json-c/tokener_parse_ex_fuzzer.cc#L1-L13">tokener_parser_ex</a> fuzzer
-        using the URL: <a href="https://introspector.oss-fuzz.com/api/far-reach-but-low-coverage?project=json-c">https://introspector.oss-fuzz.com/api/far-reach-but-low-coverage?project=json-c</a>:
-      </p>
-    </left>
-  </p>
+<p>
+  <left>
+    <h3 id="api-far-reach-but-low-coverage">/api/far-reach-but-low-coverage?project={project_name}</h3>
+  </left>
+</p>
+<p>
+  Gets the functions in the target project that has a lot of complexity but has low code coverage. The main point behind this data point is that it shows 
+  promising new functions to hit for a given target.
+</p>
+<p>
+  <b>JSON Schema</b>
+</p>
+<div class="card card-body">
+  <pre>{
+  "functions": [
+      {
+          "accummulated-complexity": integer,
+          "function-argument-names": [
+              string
+          ],
+          "function-arguments": [
+              string
+          ],
+          "function-name": string,
+          "function_filename": string,
+          "is-reached": boolean,
+          "raw-function-name": string,
+          "reached-by-fuzzers": [],
+          "return-type": string,
+          "runtime-coverage-percent": number
+      },
+  ],
+  "result": string
+}</pre>
+</div>
+<p>
+  <b>Example</b>
+  Extracting the data of the main <a href="https://github.com/google/oss-fuzz/tree/master/projects/json-c">json-c</a> project which has a single fuzzer <a href="https://github.com/google/oss-fuzz/blob/11a8e488a3df14079a48934b9c21cc752717eb18/projects/json-c/tokener_parse_ex_fuzzer.cc#L1-L13">tokener_parser_ex</a> fuzzer
+  using the URL: <a href="https://introspector.oss-fuzz.com/api/far-reach-but-low-coverage?project=json-c">https://introspector.oss-fuzz.com/api/far-reach-but-low-coverage?project=json-c</a>:
+</p>
+  
   <div class="card card-body">
     <pre>
 $ curl -L https://introspector.oss-fuzz.com/api/far-reach-but-low-coverage?project=json-c | python3 -m json.tool                                                                                        
@@ -245,30 +305,87 @@ $ curl -L https://introspector.oss-fuzz.com/api/far-reach-but-low-coverage?proje
 
 
 
-            <!-- /api/project-summary -->
-            <div style="padding-top: 25px; margin-left: 35px; margin-right: 35px">
-              <p>
-                <left>
-                  <h3 id="api-project-summary">/api/project-summary?project={project_name}</h3>
-                  <p>
-                    Extracts a summary of a given project, including:
-                    <ol>
-                      <li>- Runtime code coverage stats</li>
-                      <li>- Stats about the project, e.g. fuzzer count and function count</li>
-                      <li>- Stats about static reachability achieved</li>
-                      <li>- A list of fuzz-blockers definedby Branch-blockers, including the specific functions blocked</li>
-                      <li>- The annotated CFG (similar to output by /api/annotated-cfg</li>
-                    </ol>
-                  </p>
-                  <p>
-                    <b>Example</b>
-                    Extracting the data of the main <a href="https://github.com/google/oss-fuzz/tree/master/projects/json-c">json-c</a> project which has a single fuzzer <a href="https://github.com/google/oss-fuzz/blob/11a8e488a3df14079a48934b9c21cc752717eb18/projects/json-c/tokener_parse_ex_fuzzer.cc#L1-L13">tokener_parser_ex</a> fuzzer
-                    using the URL: <a href="https://introspector.oss-fuzz.com/api/project-summary?project=json-c">https://introspector.oss-fuzz.com/api/project-summary?project=json-c</a>:
-                  </p>
-                </left>
-              </p>
-              <div class="card card-body">
-                <pre>
+<!-- /api/project-summary -->
+<div style="padding-top: 25px; margin-left: 35px; margin-right: 35px">
+  <p>
+    <left>
+      <h3 id="api-project-summary">/api/project-summary?project={project_name}</h3>
+    </left>
+  </p>
+  <p>
+    Extracts a summary of a given project, including:
+    <ol>
+      <li>- Runtime code coverage stats</li>
+      <li>- Stats about the project, e.g. fuzzer count and function count</li>
+      <li>- Stats about static reachability achieved</li>
+      <li>- A list of fuzz-blockers definedby Branch-blockers, including the specific functions blocked</li>
+      <li>- The annotated CFG (similar to output by /api/annotated-cfg</li>
+    </ol>
+  </p>
+<p>
+  <b>JSON Schema</b>
+</p>
+<div class="card card-body">
+  <pre>{
+  "project": {
+    "introspector-data": {
+        "annotated_cfg": {
+          [
+            {
+                "fuzzer-name": string,
+                "destinations": [
+                    {
+                        "accummulated-cyclomatic-complexity": integer,
+                        "arg-names": [string],
+                        "arg-types": [string],
+                        "cyclomatic-complexity": integer,
+                        "function-name": string,
+                        "raw-function-name": string,
+                        "return-type": string,
+                        "source-file": string,
+                    },
+                ],
+                "src_file": string,
+            }
+          ]
+
+        },
+        "branch_pairs": [
+            {
+                "blocked-runtime-coverage": integer,
+                "function-name": string,
+                "project": string,
+            }
+        ],
+      "coverage_lines": number,
+      "function_count": integer,
+      "functions_covered_estimate": nubber,
+      "fuzzer_count": integer,
+      "introspector_report_url": string,
+      "static_reachability": number
+  },
+  "name": string,
+  "runtime-coverage-data": {
+      "coverage_url": string,
+      "line_coverage": {
+          "count": integer,
+          "covered": integer,
+          "percent": number
+      }
+  }
+},
+"result": "success"
+}</pre>
+</div>
+
+<p>
+  <b>Example</b>
+  Extracting the data of the main <a href="https://github.com/google/oss-fuzz/tree/master/projects/json-c">json-c</a> project which has a single fuzzer <a href="https://github.com/google/oss-fuzz/blob/11a8e488a3df14079a48934b9c21cc752717eb18/projects/json-c/tokener_parse_ex_fuzzer.cc#L1-L13">tokener_parser_ex</a> fuzzer
+  using the URL: <a href="https://introspector.oss-fuzz.com/api/project-summary?project=json-c">https://introspector.oss-fuzz.com/api/project-summary?project=json-c</a>:
+</p>
+</p>
+<div class="card card-body">
+  <pre>
 $ curl -L https://introspector.oss-fuzz.com/api/project-summary?project=json-c | python3 -m json.tool                    
 {                                                                                                     
     "project": {                                                                                      
@@ -353,15 +470,34 @@ $ curl -L https://introspector.oss-fuzz.com/api/project-summary?project=json-c |
   <p>
     <left>
       <h3 id="api-branch-blockers">/api/branch-blockers?project={project_name}</h3>
-      <p>
-        Extracts the branch blockers identified for a given project:
-      </p>
-      <p>
-        <b>Example</b>
-        Extracting the data of the main <a href="https://github.com/google/oss-fuzz/tree/master/projects/json-c">json-c</a> project which has a single fuzzer <a href="https://github.com/google/oss-fuzz/blob/11a8e488a3df14079a48934b9c21cc752717eb18/projects/json-c/tokener_parse_ex_fuzzer.cc#L1-L13">tokener_parser_ex</a> fuzzer
-        using the URL: <a href="https://introspector.oss-fuzz.com/api/branch-blockers?project=json-c">https://introspector.oss-fuzz.com/api/branch-blockers?project=json-c</a>:
-      </p>
     </left>
+  </p>  
+  <p>
+    Extracts the branch blockers identified for a given project:
+  </p>
+  <b>JSON Schema</b>
+  <div class="card card-body">
+    <pre>{
+  "project-blockers": [
+    {
+      "blocked_unique_functions": [string],
+      "function-name": string,
+      "project-name": string,
+      "source_file": string,
+      "src_linenumber": string,
+      "unique_blocked_coverage": 35
+    }
+  ],
+  "result": string,
+}</pre>
+</div>
+  
+
+  <b>Example</b>
+  <p>
+  Extracting the data of the main <a href="https://github.com/google/oss-fuzz/tree/master/projects/json-c">json-c</a> project which has a single fuzzer <a href="https://github.com/google/oss-fuzz/blob/11a8e488a3df14079a48934b9c21cc752717eb18/projects/json-c/tokener_parse_ex_fuzzer.cc#L1-L13">tokener_parser_ex</a> fuzzer
+  using the URL: <a href="https://introspector.oss-fuzz.com/api/branch-blockers?project=json-c">https://introspector.oss-fuzz.com/api/branch-blockers?project=json-c</a>:
+  </p>
   </p>
   <div class="card card-body">
     <pre>
@@ -402,8 +538,7 @@ $ curl -L https://introspector.oss-fuzz.com/api/branch-blockers?project=json-c |
         }
     ],
     "result": "success"
-}
-    </pre>
+}</pre>
   </div>
 </div>
 
@@ -414,14 +549,36 @@ $ curl -L https://introspector.oss-fuzz.com/api/branch-blockers?project=json-c |
   <p>
     <left>
       <h3 id="api-all-functions">/api/all-functions?project={project_name}</h3>
-      <p>
-        Returns a json representation of all the functions in a given project:
-      </p>
-      <p>
-        <b>Example</b>
-        Using this on <a href="https://github.com/google/oss-fuzz/tree/master/projects/ada-url">ada-url</a>: <a href="https://introspector.oss-fuzz.com/api/all-functions?project=ada-url">https://introspector.oss-fuzz.com/api/all-functions?project=ada-url</a>:
-      </p>
     </left>
+  </p>
+  <p>
+    Returns a json representation of all the functions in a given project:
+  </p>
+  <b>JSON Schema</b>
+  <div class="card card-body">
+    <pre>{
+  "functions": [
+    {
+      "function-name": string,
+      "function-filename": string,
+      "raw-function-name": string,
+      "is-reached": boolean,
+      "accummulated-complexity": integer,
+      "function-argument-names": [string],
+      "function-arguments": [string],
+      "reached-by-fuzzers": [string],
+      "return-type": string,
+      "runtime-coverage-percent": number,
+    }
+  ],
+  "result": string,
+}</pre>
+  </div>
+
+  <b>Example</b>
+  <p>
+  Using this on <a href="https://github.com/google/oss-fuzz/tree/master/projects/ada-url">ada-url</a>: <a href="https://introspector.oss-fuzz.com/api/all-functions?project=ada-url">https://introspector.oss-fuzz.com/api/all-functions?project=ada-url</a>:
+  </p>
   </p>
   <div class="card card-body">
     <pre>
