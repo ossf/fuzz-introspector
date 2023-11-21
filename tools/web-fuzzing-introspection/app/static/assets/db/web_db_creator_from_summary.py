@@ -417,7 +417,7 @@ def extract_project_data(project_name, date_str, should_include_details,
                         branch_blocker.get('source_file', "N/A"),
                         'linenumber':
                         branch_blocker.get('branch_line_number', -1),
-                        'blocked_unique-functions':
+                        'blocked_unique_functions':
                         branch_blocker.get('blocked_unique_functions', [])
                     })
 
