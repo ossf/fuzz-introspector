@@ -246,6 +246,7 @@ def extract_introspector_report(project_name, date_str):
 
     return introspector_report
 
+
 def rename_annotated_cfg(original_annotated_cfg):
     """Renames an annotated CFG as it is from introspector."""
     new_annotated_cfg = list()
@@ -263,6 +264,7 @@ def rename_annotated_cfg(original_annotated_cfg):
 
         new_annotated_cfg.append(elem)
     return new_annotated_cfg
+
 
 def extract_project_data(project_name, date_str, should_include_details,
                          manager_return_dict):
@@ -378,8 +380,8 @@ def extract_project_data(project_name, date_str, should_include_details,
                 # are not such keys, so skip them.
                 if key == 'analyses':
                     if 'AnnotatedCFG' in introspector_report[key]:
-                        annotated_cfg = rename_annotated_cfg(introspector_report['analyses'][
-                            'AnnotatedCFG'])
+                        annotated_cfg = rename_annotated_cfg(
+                            introspector_report['analyses']['AnnotatedCFG'])
 
                 if key == "MergedProjectProfile" or key == 'analyses':
                     continue
