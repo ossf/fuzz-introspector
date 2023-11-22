@@ -85,7 +85,7 @@
 <pre>$ curl -L https://introspector.oss-fuzz.com/api/annotated-cfg?project=json-c | python3 -m json.tool
 {
     "project": {
-        "annotated-cfg": [
+        "annotated_cfg": [
             {
                 "destinations": [
                     {
@@ -145,7 +145,7 @@
                         "source_file": "/src/json-c/json_tokener.c"
                     }
                 ],
-                "fuzzer-name": "tokener_parse_ex_fuzzer",
+                "fuzzer_name": "tokener_parse_ex_fuzzer",
                 "src_file": "/src/tokener_parse_ex_fuzzer.cc"
             }
         ],
@@ -284,7 +284,7 @@ $ curl -L https://introspector.oss-fuzz.com/api/far-reach-but-low-coverage?proje
   "project": {
     "introspector-data": {
     "annotated_cfg": [ {
-      "fuzzer-name": string,
+      "fuzzer_name": string,
       "destinations": [ {
         "accummulated_cyclomatic_complexity": integer,
         "arg_names": [string],
@@ -368,7 +368,7 @@ $ curl -L https://introspector.oss-fuzz.com/api/project-summary?project=json-c |
                       },                                                                                                                                            {
                        ...
                   ],
-                  "fuzzer-name": "tokener_parse_ex_fuzzer",
+                  "fuzzer_name": "tokener_parse_ex_fuzzer",
                   "src_file": "/src/tokener_parse_ex_fuzzer.cc"
               }
           ],
@@ -423,7 +423,7 @@ $ curl -L https://introspector.oss-fuzz.com/api/project-summary?project=json-c |
   <b>JSON Schema</b>
   <div class="card card-body">
     <pre>{
-  "project-blockers": [ {
+  "project_blockers": [ {
     "project_name": string,
     "function_name": string,
     "source_file": string,
@@ -446,7 +446,7 @@ $ curl -L https://introspector.oss-fuzz.com/api/project-summary?project=json-c |
     <pre>
 $ curl -L https://introspector.oss-fuzz.com/api/branch-blockers?project=json-c | python3 -m json.tool
 {
-  "project-blockers": [
+  "project_blockers": [
       {
           "blocked_unique_functions": [
               "get_dev_random_seed",
