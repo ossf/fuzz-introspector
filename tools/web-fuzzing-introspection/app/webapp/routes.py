@@ -450,7 +450,7 @@ def api_annotated_cfg():
             'result': 'success',
             'project': {
                 'name': project_name,
-                'annotated-cfg': project.introspector_data['annotated_cfg'],
+                'annotated_cfg': project.introspector_data['annotated_cfg'],
             }
         }
     except KeyError:
@@ -517,7 +517,7 @@ def branch_blockers():
                 'blocked_unique_functions':
                 blocker.blocked_unique_functions
             })
-    return {'result': 'success', 'project-blockers': project_blockers}
+    return {'result': 'success', 'project_blockers': project_blockers}
 
 
 @blueprint.route('/api/all-functions')

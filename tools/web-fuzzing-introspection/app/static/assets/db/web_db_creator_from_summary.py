@@ -252,7 +252,7 @@ def rename_annotated_cfg(original_annotated_cfg):
     new_annotated_cfg = list()
     for fuzzer_name in original_annotated_cfg:
         elem = {
-            'fuzzer-name': fuzzer_name,
+            'fuzzer_name': fuzzer_name,
             'src_file': original_annotated_cfg[fuzzer_name]['src_file'],
             'destinations': []
         }
