@@ -38,7 +38,7 @@ This page shows functions across the entire OSS-Fuzz database that are determine
                 {% for target_func, heuristic in functions_to_display %}
                   <tr>
                       <td> <a href="/function-profile?function={{target_func.name | urlencode}}&project={{target_func.project | urlencode}}">{{ target_func.name }}</a> </td>
-                      <td> {{ target_func.project }} </td>
+                      <td> <a href="/project-profile?project={{ target_func.project }}">{{ target_func.project }}</a> </td>
                       <td> {{func_to_lang[target_func.name]}} </td>
                       <td> <a href="#heuristic-1">{{heuristic}}</a></td>
                       <td> <a href="{{target_func.code_coverage_url}}">coverage link</a></td>
