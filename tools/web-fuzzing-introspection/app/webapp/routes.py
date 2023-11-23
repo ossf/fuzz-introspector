@@ -477,8 +477,8 @@ def api_project_summary():
         'result': 'success',
         'project': {
             'name': project_name,
-            'runtime-coverage-data': project.coverage_data,
-            'introspector-data': project.introspector_data
+            'runtime_coverage_data': project.coverage_data,
+            'introspector_data': project.introspector_data
         }
     }
 
