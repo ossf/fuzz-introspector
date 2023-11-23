@@ -282,7 +282,7 @@ $ curl -L https://introspector.oss-fuzz.com/api/far-reach-but-low-coverage?proje
 <div class="card card-body">
   <pre>{
   "project": {
-    "introspector-data": {
+    "introspector_data": {
     "annotated_cfg": [ {
       "fuzzer_name": string,
       "destinations": [ {
@@ -298,7 +298,7 @@ $ curl -L https://introspector.oss-fuzz.com/api/far-reach-but-low-coverage?proje
       "src_file": string,
     } ],
     "branch_pairs": [ {
-      "blocked_runtime-coverage": integer,
+      "blocked_runtime_coverage": integer,
       "function_name": string,
       "project": string,
     } ],
@@ -310,7 +310,7 @@ $ curl -L https://introspector.oss-fuzz.com/api/far-reach-but-low-coverage?proje
     "static_reachability": number
   },
   "name": string,
-  "runtime-coverage-data": {
+  "runtime_coverage_data": {
       "coverage_url": string,
       "line_coverage": {
           "count": integer,
@@ -394,7 +394,7 @@ $ curl -L https://introspector.oss-fuzz.com/api/project-summary?project=json-c |
           "static_reachability": 63.40996168582376
       },
       "name": "json-c",
-      "runtime-coverage-data": {
+      "runtime_coverage_data": {
           "coverage_url": "https://storage.googleapis.com/oss-fuzz-coverage/json-c/reports/20231120/linux/report.html",
           "line_coverage": {
               "count": 3150,
