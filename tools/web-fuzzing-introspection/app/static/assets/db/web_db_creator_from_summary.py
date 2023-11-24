@@ -32,6 +32,7 @@ DB_JSON_ALL_FUNCTIONS = 'all-functions-db.json'
 DB_JSON_ALL_CURRENT_FUNCS = 'all-project-current.json'
 DB_JSON_ALL_BRANCH_BLOCKERS = 'all-branch-blockers.json'
 DB_BUILD_STATUS_JSON = 'build-status.json'
+DB_RAW_INTROSPECTOR_REPORTS = 'raw-introspector-reports'
 
 ALL_JSON_FILES = [
     DB_JSON_DB_TIMESTAMP,
@@ -266,6 +267,16 @@ def rename_annotated_cfg(original_annotated_cfg):
     return new_annotated_cfg
 
 
+def save_fuzz_introspector_report(introspector_report, project_name, date_str):
+    if not os.path.isdir(DB_RAW_INTROSPECTOR_REPORTS):
+        os.mkdir(DB_RAW_INTROSPECTOR_REPORTS)
+
+    report_dst = os.path.join(DB_RAW_INTROSPECTOR_REPORTS,
+                              '%s-%s.json' % (project_name, date_str))
+    with open(report_dst, 'w') as report_fd:
+        json.dump(introspector_report, report_fd)
+
+
 def extract_project_data(project_name, date_str, should_include_details,
                          manager_return_dict):
     """
@@ -306,6 +317,9 @@ def extract_project_data(project_name, date_str, should_include_details,
     introspector_report = extract_introspector_report(project_name, date_str)
     introspector_report_url = get_introspector_report_url_report(
         project_name, date_str.replace("-", ""))
+
+    # Save the report
+    save_fuzz_introspector_report(introspector_report, project_name, date_str)
 
     # Currently, we fail if any of code_coverage_summary of introspector_report is
     # None. This should later be adjusted such that we can continue if we only
@@ -690,6 +704,14 @@ def update_db_files(db_timestamp, project_timestamps, function_list,
                                           DB_JSON_ALL_PROJECT_TIMESTAMP),
                              DB_JSON_ALL_PROJECT_TIMESTAMP,
                              compress_type=zipfile.ZIP_DEFLATED)
+
+        # ZIP the archived introspector reports
+        shutil.make_archive(DB_RAW_INTROSPECTOR_REPORTS, 'zip',
+                            DB_RAW_INTROSPECTOR_REPORTS)
+
+    # Cleanup DB_RAW_INTROSPECTOR_REPORTS
+    if os.path.isdir(DB_RAW_INTROSPECTOR_REPORTS):
+        shutil.rmtree(DB_RAW_INTROSPECTOR_REPORTS)
 
 
 def update_build_status(build_dict):
