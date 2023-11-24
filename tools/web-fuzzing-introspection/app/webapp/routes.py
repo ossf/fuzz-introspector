@@ -192,7 +192,7 @@ def project_profile():
             functions_of_interest.append({
                 'function_name':
                 func_of_interest.name,
-                'src_file':
+                'source_file':
                 func_of_interest.function_filename,
                 'complexity':
                 func_of_interest.accummulated_cyclomatic_complexity,
