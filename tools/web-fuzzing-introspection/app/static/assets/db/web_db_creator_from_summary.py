@@ -268,8 +268,7 @@ def rename_annotated_cfg(original_annotated_cfg):
 
 
 def save_fuzz_introspector_report(introspector_report, project_name, date_str):
-    if not os.path.isdir(DB_RAW_INTROSPECTOR_REPORTS):
-        os.mkdir(DB_RAW_INTROSPECTOR_REPORTS)
+    os.makedirs(DB_RAW_INTROSPECTOR_REPORTS, exist_ok=True)
 
     report_dst = os.path.join(DB_RAW_INTROSPECTOR_REPORTS,
                               '%s-%s.json' % (project_name, date_str))
