@@ -966,7 +966,7 @@ def get_cmdline_parser():
     parser.add_argument("--cleanup", action="store_true")
     parser.add_argument("--debug", action="store_true")
     parser.add_argument("--use_gh_cache", action="store_false")
-    parser.add_argument("--use_webapp_cache", action="store_false")
+    parser.add_argument("--use_webapp_cache", action="store_true")
     return parser
 
 
