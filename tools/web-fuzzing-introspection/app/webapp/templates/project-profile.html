@@ -89,6 +89,8 @@
                     <td>Code coverage report</td>
                       {% if has_project_details %}
                         <td><a href="{{ project.coverage_data.coverage_url }}">Report link</a></td>
+                      {% elif latest_coverage_report != None %}
+                      <td>(Latest report from {{coverage_date}}) <a href="{{ latest_coverage_report }}">Report link</a></td>
                       {% else %}
                         <td>N/A</td>
                       {% endif %}
