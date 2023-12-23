@@ -211,7 +211,7 @@
     </main>
     <!-- end main content -->
     <!-- footer -->
-{% if has_project_details %}    
+
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 
     <!-- end main content -->
@@ -223,7 +223,12 @@
  </script>
  {% endif %}
 
+
+
+
+
 <script>
+{% if has_project_stats %}
 // Plot for code coverage in terms of lines over time
 const code_coverage_lines_x = [];
 const code_coverage_lines_y = [];
@@ -231,6 +236,7 @@ const code_coverage_functions_y = [];
 const code_reachability_y = [];
 const fuzzer_count_y = [];
 max_fuzzer_count = 0;
+
 
 {% for project_timestamp in project_statistics %}
   code_coverage_lines_x.push("{{project_timestamp.date}}");
@@ -273,6 +279,8 @@ const fuzzer_count_layout = {
 };
 Plotly.newPlot("fuzzerCountOverTimePlot", fuzzer_count_data, fuzzer_count_layout);
 
+{% endif %} // has_project_stats
+
 {% if project.has_introspector() %}
 // Plots dependend on Fuzz Introspector
 // Plot for code coverage in terms of functions over time
@@ -307,6 +315,5 @@ Plotly.newPlot("staticReachabilityOverTimePlot", code_reachability_data, code_re
 
 
 </script>
-{% endif %}
 
 {% endblock %}
