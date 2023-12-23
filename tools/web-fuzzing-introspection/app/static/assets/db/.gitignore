@@ -4,3 +4,4 @@ outdir*
 oss-fuzz-clone
 db-archive.zip
 raw-introspector-reports.zip
+github_cache
