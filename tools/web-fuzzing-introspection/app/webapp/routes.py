@@ -165,6 +165,7 @@ def project_profile():
     target_project_name = request.args.get('project', 'none')
 
     project = get_project_with_name(target_project_name)
+
     if project != None:
         # Get the build status of the project
         all_build_status = data_storage.get_build_status()
@@ -207,6 +208,7 @@ def project_profile():
                                project=project,
                                project_statistics=real_stats,
                                has_project_details=True,
+                               has_project_stats=True,
                                project_build_status=project_build_status,
                                functions_of_interest=functions_of_interest)
 
@@ -214,7 +216,6 @@ def project_profile():
     all_build_status = data_storage.get_build_status()
     for build_status in all_build_status:
         if build_status.project_name == target_project_name:
-
             project = models.Project(
                 name=build_status.project_name,
                 language=build_status.language,
@@ -223,12 +224,19 @@ def project_profile():
                 coverage_data=None,
                 introspector_data=None,
             )
+            # Get statistics of the project
+            project_statistics = data_storage.PROJECT_TIMESTAMPS
+            real_stats = []
+            for ps in project_statistics:
+                if ps.project_name == project.name:
+                    real_stats.append(ps)
 
             return render_template('project-profile.html',
                                    gtag=gtag,
                                    project=project,
-                                   project_statistics=None,
+                                   project_statistics=real_stats,
                                    has_project_details=False,
+                                   has_project_stats=len(real_stats) > 0,
                                    project_build_status=build_status,
                                    functions_of_interest=[])
     print("Nothing to do. We shuold probably have a 404")
