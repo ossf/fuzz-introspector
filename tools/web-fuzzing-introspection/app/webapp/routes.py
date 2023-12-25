@@ -189,9 +189,11 @@ def project_profile():
         # Get statistics of the project
         project_statistics = data_storage.PROJECT_TIMESTAMPS
         real_stats = []
+        latest_statistics = None
         for ps in project_statistics:
             if ps.project_name == project.name:
                 real_stats.append(ps)
+                latest_statistics = ps
 
         # Get functions of interest for the project
         # Display a maximum of 10 functions of interest. Down the line, this
@@ -222,7 +224,8 @@ def project_profile():
                                has_project_stats=True,
                                project_build_status=project_build_status,
                                functions_of_interest=functions_of_interest,
-                               latest_coverage_report=None)
+                               latest_coverage_report=None,
+                               latest_statistics=latest_statistics)
 
     # Either this is a wrong project or we only have a build status for it
     all_build_status = data_storage.get_build_status()
@@ -236,14 +239,17 @@ def project_profile():
                 coverage_data=None,
                 introspector_data=None,
             )
+
             # Get statistics of the project
             project_statistics = data_storage.PROJECT_TIMESTAMPS
             real_stats = []
             datestr = None
+            latest_statistics = None
             for ps in project_statistics:
                 if ps.project_name == project.name:
                     real_stats.append(ps)
                     datestr = ps.date
+                    latest_statistics = ps
 
             if len(real_stats) > 0:
                 latest_coverage_report = get_coverage_report_url(
@@ -260,7 +266,8 @@ def project_profile():
                 project_build_status=build_status,
                 functions_of_interest=[],
                 latest_coverage_report=latest_coverage_report,
-                coverage_date=datestr)
+                coverage_date=datestr,
+                latest_statistics=latest_statistics)
     print("Nothing to do. We shuold probably have a 404")
     return redirect("/")
 
@@ -315,15 +322,17 @@ def function_search():
 
 @blueprint.route('/projects-overview')
 def projects_overview():
-    all_projects = data_storage.get_projects()
-    projects_to_use = []
-    # Only include fuzz introspector projects
-    for project in all_projects:
-        #if project.introspector_data != None:
-        projects_to_use.append(project)
+    # Get statistics of the project
+    project_statistics = data_storage.PROJECT_TIMESTAMPS
+    latest_coverage_profiles = dict()
+    real_stats = []
+    latest_statistics = None
+    for ps in project_statistics:
+        latest_coverage_profiles[ps.project_name] = ps
+
     return render_template('projects-overview.html',
                            gtag=gtag,
-                           all_projects=projects_to_use)
+                           all_projects=latest_coverage_profiles.values())
 
 
 def oracle_1(all_functions, all_projects):
