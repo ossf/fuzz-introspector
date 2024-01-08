@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 import datetime
 
 
@@ -108,6 +109,22 @@ class Function:
         self.function_argument_names = function_argument_names
         self.return_type = return_type
         self.raw_function_name = raw_function_name
+
+    def __dict__(self):
+        return {
+            'function_name': self.name,
+            'function_arguments': self.function_arguments,
+            'project': self.project,
+            'runtime_code_coverage': self.runtime_code_coverage,
+            'return_type': self.return_type,
+            'function_argument_names': self.function_argument_names,
+            'function_arguments': self.function_arguments,
+            'raw_function_name': self.raw_function_name,
+            'accummulated_cyclomatic_complexity':
+            self.accummulated_cyclomatic_complexity,
+            'undiscovered_complexity': self.undiscovered_complexity,
+            'function_filename': self.function_filename
+        }
 
 
 class BranchBlocker:

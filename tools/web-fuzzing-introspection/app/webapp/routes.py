@@ -650,3 +650,55 @@ def far_reach_but_low_coverage():
         })
 
     return {'result': 'success', 'functions': functions_to_return}
+
+
+@blueprint.route('/api/function-target-oracle')
+def api_all_interesting_function_targets():
+    """Returns a list of function targets based on analysis of all functions in all
+    OSS-Fuzz projects (assuming they have introspetor builds) using several different
+    heuristics."""
+    result_dict = dict()
+
+    # Get the list of all oracles that we have
+    all_projects = data_storage.get_projects()
+    all_functions = data_storage.get_functions()
+
+    # Extract all of the data needed for each function target
+    functions_to_display = []
+
+    total_funcs = set()
+    oracle_pairs = [(oracle_1, "heuristic 1"), (oracle_2, "heuristic 2")]
+    for oracle, heuristic_name in oracle_pairs:
+        func_targets = oracle(all_functions, all_projects)
+        for func in func_targets:
+            if func in total_funcs:
+                continue
+            total_funcs.add(func)
+            functions_to_display.append((func, heuristic_name))
+
+    func_to_lang = dict()
+    for func, heuristic in functions_to_display:
+        language = 'c'
+        for proj in all_projects:
+            if proj.name == func.project:
+                language = proj.language
+                break
+        # We may overwrite here, and in that case we just use the new
+        # heuristic for labeling.
+        func_to_lang[func.name] = language
+
+    result_dict['result'] = 'success'
+
+    # Rewrite list
+    list_of_targets = []
+    for func, heuristic_name in functions_to_display:
+        dict_to_use = func.__dict__()
+
+        list_of_targets.append({
+            'function_target': dict_to_use,
+            'heuristic': heuristic_name,
+            'language': func_to_lang[func.name]
+        })
+    result_dict['function_targets'] = list_of_targets
+
+    return result_dict
