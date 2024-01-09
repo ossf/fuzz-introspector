@@ -335,6 +335,61 @@ def projects_overview():
                            all_projects=latest_coverage_profiles.values())
 
 
+def oracle_3(all_functions, all_projects):
+    """Filters fucntions that:
+    - "have far reach but low coverage and are likely easy to trigger"
+
+    More technically, functions with:
+        - a low code coevrage percent in the function itself;
+        - a high accummulated cyclomatic complexity;
+        - less than a certain number of arguments (3 or below);
+        - at least one argument.
+    """
+    all_functions = data_storage.get_functions()
+    functions_of_interest = []
+    projects_added = dict()
+
+    for function in all_functions:
+        if (function.runtime_code_coverage < 20.0
+                and function.accummulated_cyclomatic_complexity > 200
+                and len(function.function_argument_names) <= 3
+                and len(function.function_argument_names) > 0):
+
+            # Skip non c/c++
+            to_continue = False
+            for proj in all_projects:
+                if proj.name == function.project and proj.language in {
+                        'c', 'c++'
+                }:
+                    to_continue = True
+            if not to_continue:
+                continue
+
+            # If there is only a single argument then we want it to be something that is "fuzzable", i.e.
+            # either a string or a char pointer.
+            if len(function.function_arguments) == 1 and (
+                    "str" not in function.function_arguments[0]
+                    or "char" not in function.function_arguments):
+                continue
+
+            if function.project not in projects_added:
+                projects_added[function.project] = []
+
+            current_list = projects_added[function.project]
+            if len(current_list) < 5:
+                current_list.append(function)
+            else:
+                for idx in range(len(current_list)):
+                    if current_list[
+                            idx].accummulated_cyclomatic_complexity < function.accummulated_cyclomatic_complexity:
+                        current_list[idx] = function
+                        break
+
+    for project_name, functions in projects_added.items():
+        functions_of_interest += functions
+    return functions_of_interest
+
+
 def oracle_1(all_functions, all_projects):
     tmp_list = []
     project_count = dict()
@@ -404,7 +459,8 @@ def target_oracle():
     functions_to_display = []
 
     total_funcs = set()
-    oracle_pairs = [(oracle_1, "heuristic 1"), (oracle_2, "heuristic 2")]
+    oracle_pairs = [(oracle_1, "heuristic 1"), (oracle_2, "heuristic 2"),
+                    (oracle_3, "heuristic 3")]
     for oracle, heuristic_name in oracle_pairs:
         func_targets = oracle(all_functions, all_projects)
         for func in func_targets:
@@ -667,7 +723,8 @@ def api_all_interesting_function_targets():
     functions_to_display = []
 
     total_funcs = set()
-    oracle_pairs = [(oracle_1, "heuristic 1"), (oracle_2, "heuristic 2")]
+    oracle_pairs = [(oracle_1, "heuristic 1"), (oracle_2, "heuristic 2"),
+                    (oracle_3, "heuristic 3")]
     for oracle, heuristic_name in oracle_pairs:
         func_targets = oracle(all_functions, all_projects)
         for func in func_targets:
