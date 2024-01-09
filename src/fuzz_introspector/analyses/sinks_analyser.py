@@ -196,7 +196,8 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
 
     def _filter_function_list(
             self, functions: List[function_profile.FunctionProfile],
-            target_lang: str, target_cwe: str) -> List[function_profile.FunctionProfile]:
+            target_lang: str,
+            target_cwe: str) -> List[function_profile.FunctionProfile]:
         """
         Filter out target list of functions which are considered
         as sinks for separate langauge which is the major
