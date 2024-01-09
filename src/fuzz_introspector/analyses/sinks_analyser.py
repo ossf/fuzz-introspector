@@ -31,8 +31,8 @@ from fuzz_introspector.datatypes import (project_profile, fuzzer_profile,
 logger = logging.getLogger(name=__name__)
 
 # List of sink functions for different CWE
-SINK_FUNCTION = cwe_data.SINK_FUNCTION
-ALL_CWE = list(SINK_FUNCTION)
+SINKS = cwe_data.SINK_FUNCTION
+CWES = list(SINKS)
 
 
 class SinkCoverageAnalyser(analysis.AnalysisInterface):
@@ -226,7 +226,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
                 continue
 
             # Add the function profile to the result list if it matches one of the target
-            if (package, func_name) in SINK_FUNCTION[target_cwe][target_lang]:
+            if (package, func_name) in SINKS[target_cwe][target_lang]:
                 function_list.append(fd)
 
         return function_list

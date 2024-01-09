@@ -12,7 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-SINK_FUNCTION = {
+from typing import Any, Dict
+
+SINK_FUNCTION: Dict[str, Dict[str, Any]] = {
     'CWE79': {
         'c-cpp': [
             ('', 'system'),
