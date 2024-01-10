@@ -479,11 +479,9 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
 
             if self.display_html:
                 row = html_helpers.html_table_add_row([
-                    f"{fd.function_name}",
-                    f"{str(fd.reached_by_fuzzers)}",
+                    f"{fd.function_name}", f"{str(fd.reached_by_fuzzers)}",
                     self._handle_callpath_dict(callpath_dict, proj_profile,
-                                               fd.function_name),
-                    f"{blocker}"
+                                               fd.function_name), f"{blocker}"
                 ])
 
                 if blocker != "N/A":
