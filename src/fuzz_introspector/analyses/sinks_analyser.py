@@ -227,7 +227,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
                 continue
 
             # Add the function profile to the result list if it matches one of the target
-            if (package, func_name) in SINKS[target_cwe][target_lang]:
+            if (package, func_name) in SINKS[target_cwe]['sink'][target_lang]:
                 function_list.append(fd)
 
         return function_list
@@ -459,7 +459,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
         html_string = ""
         json_list = []
 
-        for fd in self._filter_function_list(functions, target_lang, 'CWE78'):
+        for fd in self._filter_function_list(functions, target_lang, 'CWE79'):
             json_dict: Dict[str, Any] = {}
             parent_list, parent_name_list = proj_profile.get_direct_parent_list(
                 fd)
