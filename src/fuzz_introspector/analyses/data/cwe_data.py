@@ -74,46 +74,46 @@ SINK_FUNCTION: Dict[str, Dict[str, Any]] = {
     'CWE78': {
         'c-cpp': [],
         'python': [],
-        'java': []
+        'jvm': []
     },
     'CWE787': {
         'c-cpp': [],
         'python': [],
-        'java': []
+        'jvm': []
     },
     'CWE89': {
         'c-cpp': [],
         'python': [],
-        'java': []
+        'jvm': []
     },
     'CWE416': {
         'c-cpp': [],
         'python': [],
-        'java': []
+        'jvm': []
     },
     'CWE20': {
         'c-cpp': [],
         'python': [],
-        'java': []
+        'jvm': []
     },
     'CWE125': {
         'c-cpp': [],
         'python': [],
-        'java': []
+        'jvm': []
     },
     'CWE22': {
         'c-cpp': [],
         'python': [],
-        'java': []
+        'jvm': []
     },
     'CWE352': {
         'c-cpp': [],
         'python': [],
-        'java': []
+        'jvm': []
     },
     'CWE434': {
         'c-cpp': [],
         'python': [],
-        'java': []
+        'jvm': []
     },
 }
