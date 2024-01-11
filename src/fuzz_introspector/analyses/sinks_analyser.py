@@ -448,9 +448,10 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
             self, functions: List[function_profile.FunctionProfile],
             proj_profile: project_profile.MergedProjectProfile,
             target_lang: str, func_callsites: Dict[str, List[str]],
-            coverage: code_coverage.CoverageProfile, cwe: str) -> Tuple[str, str]:
+            coverage: code_coverage.CoverageProfile,
+            cwe: str) -> Tuple[str, str]:
         """
-        Retrieve the content for this analyser for a specific cwe 
+        Retrieve the content for this analyser for a specific cwe
         in two formats. One in normal html table rows string and the
         other is in json string for generating separate json report
         for sink coverage that could be readable by external analyser.
@@ -596,8 +597,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
             # Retrieve table content rows
             html_rows, json_row = self._retrieve_content_rows(
                 function_list, proj_profile, profiles[0].target_lang,
-                function_callsite_dict, proj_profile.runtime_coverage,
-                cwe)
+                function_callsite_dict, proj_profile.runtime_coverage, cwe)
 
             self.set_json_string_result(json_row)
             json_report.add_analysis_json_str_as_dict_to_report(
@@ -608,8 +608,8 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
                 return ""
 
             html_string += html_helpers.html_add_header_with_link(
-                f"Sink functions/methods found for {cwe}", html_helpers.HTML_HEADING.H2,
-                table_of_contents)
+                f"Sink functions/methods found for {cwe}",
+                html_helpers.HTML_HEADING.H2, table_of_contents)
 
             # Third party function calls table
             tables.append(f"myTable{len(tables)}")
