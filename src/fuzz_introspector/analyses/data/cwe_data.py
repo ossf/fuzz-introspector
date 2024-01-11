@@ -73,7 +73,7 @@ SINK_FUNCTION: Dict[str, Dict[str, Dict[str, Any]]] = {
         'sink': {
             'c-cpp': [
                 ('', 'put'), ('', 'puts'), ('', 'getenv'),
-                ('', 'putc'),('', 'fputc'), ('', 'putchar')],
+                ('', 'putc'), ('', 'fputc'), ('', 'putchar')],
             'python': [('jinja2.Environment', 'get_template'),
                        ('jinja2.Environment', 'from_string'),
                        ('jinja2.Template', 'render'),
@@ -168,9 +168,9 @@ SINK_FUNCTION: Dict[str, Dict[str, Dict[str, Any]]] = {
                       ('', 'sscanf'), ('', 'scanf_s'), ('', 'fscanf_s'),
                       ('', 'sscanf_s'), ('', 'vscanf'), ('', 'vfscanf'),
                       ('', 'vsscanf'), ('', 'vscanf_s'), ('', 'vfscanf_s'),
-                      ('', 'vsscanf_s'),('', 'wscanf'), ('', 'fwscanf'),
+                      ('', 'vsscanf_s'), ('', 'wscanf'), ('', 'fwscanf'),
                       ('', 'swscanf'), ('', 'wscanf_s'), ('', 'fwscanf_s'),
-                      ('', 'swscanf_s'),('', 'vwscanf'), ('', 'vfwscanf'),
+                      ('', 'swscanf_s'), ('', 'vwscanf'), ('', 'vfwscanf'),
                       ('', 'vswscanf'), ('', 'vwscanf_s'), ('', 'vfwscanf_s'),
                       ('', 'vswscanf_s')],
             'python': [('re', 'compile'), ('re.Pattern', 'match'),
@@ -324,18 +324,19 @@ SINK_FUNCTION: Dict[str, Dict[str, Dict[str, Any]]] = {
             'c-cpp': [],
             'python': [],
             'jvm': [('javax.servlet.http.HttpServletRequest', 'getContentType'),
-                ('javax.servlet.http.HttpServletRequest', 'getParameter'),
-                ('javax.servlet.http.HttpServletRequest', 'getParameterMap'),
-                ('javax.servlet.http.HttpServletRequest', 'getParameterNames'),
-                ('javax.servlet.http.HttpServletRequest', 'getParameterValues'),
-                ('javax.servlet.http.HttpServletRequest', 'getPart'),
-                ('javax.servlet.http.HttpServletRequest', 'getParts'),
-                ('java.io.InputStream', 'read'), ('java.io.BufferedReader', 'read'),
-                ('java.io.BufferedReader', 'readLine'), ('java.io.BufferedWriter', 'write'),
-                ('java.io.OutputStream', 'write'), ('java.lang.System', 'getenv'),
-                ('java.lang.System', 'getProperties'), ('java.lang.System', 'getProperty'),
-                ('java.lang.System', 'load'), ('java.lang.System', 'loadLibrary'),
-                ('java.lang.System', 'getSecurityManager')]
+                    ('javax.servlet.http.HttpServletRequest', 'getParameter'),
+                    ('javax.servlet.http.HttpServletRequest', 'getParameterMap'),
+                    ('javax.servlet.http.HttpServletRequest', 'getParameterNames'),
+                    ('javax.servlet.http.HttpServletRequest', 'getParameterValues'),
+                    ('javax.servlet.http.HttpServletRequest', 'getPart'),
+                    ('javax.servlet.http.HttpServletRequest', 'getParts'),
+                    ('java.io.InputStream', 'read'), ('java.io.BufferedReader', 'read'),
+                    ('java.io.BufferedReader', 'readLine'),
+                    ('java.io.BufferedWriter', 'write'), ('java.io.OutputStream', 'write'),
+                    ('java.lang.System', 'getenv'), ('java.lang.System', 'getProperties'),
+                    ('java.lang.System', 'getProperty'), ('java.lang.System', 'load'),
+                    ('java.lang.System', 'loadLibrary'),
+                    ('java.lang.System', 'getSecurityManager')]
         }
     }
 }
