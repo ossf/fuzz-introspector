@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Analysis plugin for introspection sink functions of interest"""
+"""Analysis plugin for introspection sink functions of interest for different CWE"""
 
 import json
 import logging
@@ -23,68 +23,16 @@ from typing import (Any, List, Tuple, Dict)
 from fuzz_introspector import (analysis, code_coverage, cfg_load, html_helpers,
                                json_report, utils)
 
+from fuzz_introspector.analyses.data import (cwe_data)
+
 from fuzz_introspector.datatypes import (project_profile, fuzzer_profile,
                                          function_profile)
 
 logger = logging.getLogger(name=__name__)
 
-# Common sink functions / methods for different language implementation
-SINK_FUNCTION = {
-    'c-cpp': [
-        ('', 'system'),
-        ('', 'execl'),
-        ('', 'execlp'),
-        ('', 'execle'),
-        ('', 'execv'),
-        ('', 'execvp'),
-        ('', 'execve'),
-        ('', 'wordexp'),
-        ('', 'popen'),
-    ],
-    'python': [('<builtin>', 'exec'), ('<builtin>', 'eval'),
-               ('subprocess', 'call'), ('subprocess', 'run'),
-               ('subprocess', 'Popen'), ('subprocess', 'check_output'),
-               ('os', 'system'), ('os', 'popen'), ('os', 'spawn'),
-               ('os', 'spawnl'), ('os', 'spawnle'), ('os', 'spawnlp'),
-               ('os', 'spawnlpe'), ('os', 'spawnv'), ('os', 'spawnvp'),
-               ('os', 'spawnve'), ('os', 'spawnvpe'), ('os', 'exec'),
-               ('os', 'execl'), ('os', 'execle'), ('os', 'execlp'),
-               ('os', 'execlpe'), ('os', 'execv'), ('os', 'execve'),
-               ('os', 'execvp'), ('os', 'execlpe'),
-               ('asyncio', 'create_subprocess_shell'),
-               ('asyncio', 'create_subprocess_exec'), ('asyncio', 'run'),
-               ('asyncio', 'sleep'), ('logging.config', 'listen'),
-               ('code.InteractiveInterpreter', 'runsource'),
-               ('code.InteractiveInterpreter', 'runcode'),
-               ('code.InteractiveInterpreter', 'write'),
-               ('code.InteractiveConsole', 'push'),
-               ('code.InteractiveConsole', 'interact'),
-               ('code.InteractiveConsole', 'raw_input'), ('code', 'interact'),
-               ('code', 'compile_command')],
-    'jvm': [('java.lang.Runtime', 'exec'),
-            ('javax.xml.xpath.XPath', 'compile'),
-            ('javax.xml.xpath.XPath', 'evaluate'), ('java.lang.Thread', 'run'),
-            ('java.lang.Runnable', 'run'),
-            ('java.util.concurrent.Executor', 'execute'),
-            ('java.util.concurrent.Callable', 'call'),
-            ('java.lang.System', 'console'), ('java.lang.System', 'load'),
-            ('java.lang.System', 'loadLibrary'),
-            ('java.lang.System', 'mapLibraryName'),
-            ('java.lang.System', 'runFinalization'),
-            ('java.lang.System', 'setErr'), ('java.lang.System', 'setIn'),
-            ('java.lang.System', 'setOut'),
-            ('java.lang.System', 'setProperties'),
-            ('java.lang.System', 'setProperty'),
-            ('java.lang.System', 'setSecurityManager'),
-            ('java.lang.ProcessBuilder', 'directory'),
-            ('java.lang.ProcessBuilder', 'inheritIO'),
-            ('java.lang.ProcessBuilder', 'command'),
-            ('java.lang.ProcessBuilder', 'redirectError'),
-            ('java.lang.ProcessBuilder', 'redirectErrorStream'),
-            ('java.lang.ProcessBuilder', 'redirectInput'),
-            ('java.lang.ProcessBuilder', 'redirectOutput'),
-            ('java.lang.ProcessBuilder', 'start')]
-}
+# List of sink functions for different CWE
+SINKS = cwe_data.SINK_FUNCTION
+CWES = list(SINKS)
 
 
 class SinkCoverageAnalyser(analysis.AnalysisInterface):
@@ -114,7 +62,6 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
 
     def __init__(self) -> None:
         self.json_string_result = "[]"
-        #        self.display_html = False
         self.display_html = True
         self.index = 0
 
@@ -148,7 +95,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
 
     def _get_source_file(self, callsite) -> str:
         """
-        Dig up the callsitecalltree of a function
+        Dig up the callsite calltree of a function
         call and get its source file path.
         """
         src_file = callsite.src_function_source_file
@@ -162,7 +109,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
 
     def _get_parent_func_name(self, callsite) -> str:
         """
-        Dig up the callsitecalltree of a function
+        Dig up the callsite calltree of a function
         call and get its parent function name.
         """
         func_file = callsite.src_function_source_file
@@ -248,7 +195,8 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
 
     def _filter_function_list(
             self, functions: List[function_profile.FunctionProfile],
-            target_lang: str) -> List[function_profile.FunctionProfile]:
+            target_lang: str,
+            target_cwe: str) -> List[function_profile.FunctionProfile]:
         """
         Filter out target list of functions which are considered
         as sinks for separate langauge which is the major
@@ -278,7 +226,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
                 continue
 
             # Add the function profile to the result list if it matches one of the target
-            if (package, func_name) in SINK_FUNCTION[target_lang]:
+            if (package, func_name) in SINKS[target_cwe]['sink'][target_lang]:
                 function_list.append(fd)
 
         return function_list
@@ -510,7 +458,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
         html_string = ""
         json_list = []
 
-        for fd in self._filter_function_list(functions, target_lang):
+        for fd in self._filter_function_list(functions, target_lang, 'CWE79'):
             json_dict: Dict[str, Any] = {}
             parent_list, parent_name_list = proj_profile.get_direct_parent_list(
                 fd)
@@ -528,57 +476,26 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
             else:
                 blocker = "N/A"
 
-            # Loop through the list of calledlocation for this function
-            if len(func_callsites[fd.function_name]) == 0:
-                if self.display_html:
-                    row = html_helpers.html_table_add_row([
-                        f"{fd.function_name}",
-                        "Not in fuzzer provided call tree",
-                        f"{str(fd.reached_by_fuzzers)}",
-                        self._handle_callpath_dict(callpath_dict, proj_profile,
-                                                   fd.function_name),
-                        f"{fuzzer_cover_count}", f"{blocker}"
-                    ])
+            if self.display_html:
+                row = html_helpers.html_table_add_row([
+                    f"{fd.function_name}", f"{str(fd.reached_by_fuzzers)}",
+                    self._handle_callpath_dict(callpath_dict, proj_profile,
+                                               fd.function_name), f"{blocker}"
+                ])
 
-                    if blocker != "N/A":
-                        row_split = row.rsplit('<td><table>', 1)
-                        row = f'{row_split[0]}<td style="max-width: 600px"><table>{row_split[1]}'
-                        html_string += row
+                if blocker != "N/A":
+                    row_split = row.rsplit('<td><table>', 1)
+                    row = f'{row_split[0]}<td style="max-width: 600px"><table>{row_split[1]}'
+                    html_string += row
 
-                json_dict['func_name'] = fd.function_name
-                json_dict['call_loc'] = "Not in fuzzer provided call tree"
-                json_dict['fuzzer_reach'] = fd.reached_by_fuzzers
-                json_dict['parent_func'] = parent_name_list
-                json_dict['callpaths'] = callpath_name_dict
-                json_dict['fuzzer_cover'] = f"{fuzzer_cover_count}"
-                json_dict['blocker'] = blocker
-                json_list.append(json_dict)
+            json_dict['func_name'] = fd.function_name
+            json_dict['fuzzer_reach'] = fd.reached_by_fuzzers
+            json_dict['parent_func'] = parent_name_list
+            json_dict['callpaths'] = callpath_name_dict
+            json_dict['blocker'] = blocker
+            json_list.append(json_dict)
 
-                continue
-
-            for called_location in func_callsites[fd.function_name]:
-                if self.display_html:
-                    row = html_helpers.html_table_add_row([
-                        f"{fd.function_name}", f"{called_location}",
-                        f"{str(fd.reached_by_fuzzers)}",
-                        self._handle_callpath_dict(callpath_dict, proj_profile,
-                                                   fd.function_name),
-                        f"{fuzzer_cover_count}", f"{blocker}"
-                    ])
-
-                    if blocker != "N/A":
-                        row_split = row.rsplit('<td><table>', 1)
-                        row = f'{row_split[0]}<td style="max-width: 600px"><table>{row_split[1]}'
-                        html_string += row
-
-                json_dict['func_name'] = fd.function_name
-                json_dict['call_loc'] = called_location
-                json_dict['fuzzer_reach'] = fd.reached_by_fuzzers
-                json_dict['parent_func'] = parent_name_list
-                json_dict['callpaths'] = callpath_name_dict
-                json_dict['fuzzer_cover'] = f"{fuzzer_cover_count}"
-                json_dict['blocker'] = blocker
-                json_list.append(json_dict)
+            continue
 
         return (html_string, json.dumps(json_list))
 
@@ -692,17 +609,12 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
         html_string += html_helpers.html_create_table_head(
             tables[-1],
             [("Target sink", ""),
-             ("Callsite location",
-              "Source file, line number and parent function of sink function call. "
-              "Based on static analysis and provided by .data calltree."),
              ("Reached by fuzzer",
               "Is this code reachable by any fuzzer functions? "
               "Based on static analysis."),
              ("Function call path",
               "All call path of the project calling to each sink function. "
               "Group by functions directly calling the sink function."),
-             ("Covered by fuzzer",
-              "Number of fuzzers covering this sink function during runtime."),
              ("Possible branch blockers",
               "Determine which branch blockers avoid fuzzers to cover the"
               "sink function during runtime and its information")])
