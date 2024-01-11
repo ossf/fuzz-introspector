@@ -72,7 +72,7 @@ SINK_FUNCTION: Dict[str, Dict[str, Dict[str, Any]]] = {
         },
         'sink': {
             'c-cpp': [
-                ('', 'put'), ('', 'puts'), ('', 'getenv')
+                ('', 'put'), ('', 'puts'), ('', 'getenv'),
                 ('', 'putc'),('', 'fputc'), ('', 'putchar')],
             'python': [('jinja2.Environment', 'get_template'),
                        ('jinja2.Environment', 'from_string'),
@@ -105,7 +105,7 @@ SINK_FUNCTION: Dict[str, Dict[str, Dict[str, Any]]] = {
                 ('', 'fputc'), ('', 'putchar'), ('', 'puts'),
                 ('', 'put'), ('', 'fwrite'), ('', 'ungetc'),
                 ('', 'fputwc'), ('', 'putwc'), ('', 'fputws'),
-                ('', 'putwchar', ('', 'ungetwc')],
+                ('', 'putwchar'), ('', 'ungetwc')],
             'python': [],
             'jvm': []
         }
@@ -229,7 +229,7 @@ SINK_FUNCTION: Dict[str, Dict[str, Dict[str, Any]]] = {
                       ('', 'absolute'), ('', 'canonical'), ('', 'relative'),
                       ('', 'create_directory'), ('', 'create_directories'),
                       ('', 'creatE_hard_link'), ('', 'create_symlink'),
-                      ('', 'create_directory_symlink', ('', 'remove'),
+                      ('', 'create_directory_symlink'), ('', 'remove'),
                       ('', 'remove_all'), ('', 'rename'), ('', 'resize_file'),
                       ('', 'opendir'), ('', 'readdir'), ('', 'readdir_r'),
                       ('', 'fopen')],
