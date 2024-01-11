@@ -62,7 +62,6 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
 
     def __init__(self) -> None:
         self.json_string_result = "[]"
-        self.display_html = False
         self.display_html = True
         self.index = 0
 
