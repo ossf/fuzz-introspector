@@ -117,8 +117,8 @@
                   </tr>
                   <tr>
                     <td>Fuzz Introspector report</td>
-                    {% if project.has_introspector() %}
-                      <td><a href="{{ project.introspector_data.introspector_report_url }}">Report link</a></td>
+                    {% if latest_fuzz_introspector_report %}
+                    <td><a href="{{ latest_fuzz_introspector_report }}">Report link (from {{ latest_introspector_datestr }})</a></td>
                     {% else %}
                       <td>N/A</td>
                     {% endif %}

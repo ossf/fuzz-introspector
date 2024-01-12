@@ -29,6 +29,17 @@ blueprint = Blueprint('site', __name__, template_folder='templates')
 gtag = None
 
 
+def get_introspector_report_url_base(project_name, datestr):
+    base_url = 'https://storage.googleapis.com/oss-fuzz-introspector/{0}/inspector-report/{1}/'
+    project_url = base_url.format(project_name, datestr.replace("-", ""))
+    return project_url
+
+
+def get_introspector_url(project_name, datestr):
+    return get_introspector_report_url_base(project_name,
+                                            datestr) + "fuzz_report.html"
+
+
 def get_coverage_report_url(project_name, datestr, language):
     if language == 'java' or language == 'python' or language == 'go':
         file_report = "index.html"
@@ -189,11 +200,22 @@ def project_profile():
         # Get statistics of the project
         project_statistics = data_storage.PROJECT_TIMESTAMPS
         real_stats = []
+        datestr = None
         latest_statistics = None
+        latest_coverage_report = None
+        latest_fuzz_introspector_report = None
+        latest_introspector_datestr = ""
         for ps in project_statistics:
             if ps.project_name == project.name:
                 real_stats.append(ps)
+                datestr = ps.date
                 latest_statistics = ps
+                latest_coverage_report = get_coverage_report_url(
+                    build_status.project_name, datestr, build_status.language)
+                if ps.introspector_data != None:
+                    latest_fuzz_introspector_report = get_introspector_url(
+                        build_status.project_name, datestr)
+                    latest_introspector_datestr = datestr
 
         # Get functions of interest for the project
         # Display a maximum of 10 functions of interest. Down the line, this
@@ -216,16 +238,19 @@ def project_profile():
                 func_of_interest.code_coverage_url,
             })
 
-        return render_template('project-profile.html',
-                               gtag=gtag,
-                               project=project,
-                               project_statistics=real_stats,
-                               has_project_details=True,
-                               has_project_stats=True,
-                               project_build_status=project_build_status,
-                               functions_of_interest=functions_of_interest,
-                               latest_coverage_report=None,
-                               latest_statistics=latest_statistics)
+        return render_template(
+            'project-profile.html',
+            gtag=gtag,
+            project=project,
+            project_statistics=real_stats,
+            has_project_details=True,
+            has_project_stats=True,
+            project_build_status=project_build_status,
+            functions_of_interest=functions_of_interest,
+            latest_coverage_report=None,
+            latest_statistics=latest_statistics,
+            latest_fuzz_introspector_report=latest_fuzz_introspector_report,
+            latest_introspector_datestr=latest_introspector_datestr)
 
     # Either this is a wrong project or we only have a build status for it
     all_build_status = data_storage.get_build_status()
@@ -245,11 +270,21 @@ def project_profile():
             real_stats = []
             datestr = None
             latest_statistics = None
+            latest_coverage_report = None
+            latest_fuzz_introspector_report = None
+            latest_introspector_datestr = ""
             for ps in project_statistics:
                 if ps.project_name == project.name:
                     real_stats.append(ps)
                     datestr = ps.date
                     latest_statistics = ps
+                    latest_coverage_report = get_coverage_report_url(
+                        build_status.project_name, datestr,
+                        build_status.language)
+                    if ps.introspector_data != None:
+                        latest_fuzz_introspector_report = get_introspector_url(
+                            build_status.project_name, datestr)
+                        latest_introspector_datestr = datestr
 
             if len(real_stats) > 0:
                 latest_coverage_report = get_coverage_report_url(
@@ -267,7 +302,8 @@ def project_profile():
                 functions_of_interest=[],
                 latest_coverage_report=latest_coverage_report,
                 coverage_date=datestr,
-                latest_statistics=latest_statistics)
+                latest_statistics=latest_statistics,
+                latest_introspector_datestr=latest_introspector_datestr)
     print("Nothing to do. We shuold probably have a 404")
     return redirect("/")
 
