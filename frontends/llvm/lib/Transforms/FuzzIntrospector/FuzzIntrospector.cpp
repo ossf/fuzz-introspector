@@ -96,6 +96,7 @@ typedef struct fuzzFuncWrapper {
   std::string FunctionSourceFile;
   std::string LinkageType;
   int FunctionLinenumber;
+  unsigned int FunctionLinenumberEnd;
   size_t FunctionDepth;
   std::string ReturnType;
   size_t ArgCount;
@@ -151,6 +152,7 @@ template <> struct yaml::MappingTraits<FuzzerFunctionWrapper> {
     io.mapRequired("functionSourceFile", Func.FunctionSourceFile);
     io.mapRequired("linkageType", Func.LinkageType);
     io.mapRequired("functionLinenumber", Func.FunctionLinenumber);
+    io.mapRequired("functionLinenumberEnd", Func.FunctionLinenumberEnd);
     io.mapRequired("functionDepth", Func.FunctionDepth);
     io.mapRequired("returnType", Func.ReturnType);
     io.mapRequired("argCount", Func.ArgCount);
@@ -276,7 +278,8 @@ struct FuzzIntrospector : public ModulePass {
 
 //  FuzzerFunctionList wrapAllFunctions(Module &M);
   std::string getFunctionFilename(Function *F);
-  int getFunctionLinenumber(Function *F);
+  int getFunctionLinenumberBeginning(Function *F);
+  unsigned int getFunctionLinenumberEnd(Function *F);
   std::string resolveTypeName(Type *t);
   Function *value2Func(Value *Val);
   bool isFunctionPointerType(Type *type);
@@ -549,7 +552,7 @@ StringRef FuzzIntrospector::removeDecSuffixFromName(StringRef FuncName) {
   return FuncNameBeforeLastPeriod;
 }
 
-int FuzzIntrospector::getFunctionLinenumber(Function *F) {
+int FuzzIntrospector::getFunctionLinenumberBeginning(Function *F) {
   for (auto &I : instructions(*F)) {
     const llvm::DebugLoc &DebugInfo = I.getDebugLoc();
     if (DebugInfo) {
@@ -557,6 +560,20 @@ int FuzzIntrospector::getFunctionLinenumber(Function *F) {
     }
   }
   return -1;
+}
+
+unsigned int FuzzIntrospector::getFunctionLinenumberEnd(Function *F) {
+  unsigned int MaxLineNumber = 0;
+
+  for (auto &I : instructions(*F)) {
+    const llvm::DebugLoc &DebugInfo = I.getDebugLoc();
+    if (DebugInfo) {
+      if (DebugInfo.getLine() > MaxLineNumber) {
+        MaxLineNumber = DebugInfo.getLine();
+      }
+    }
+  }
+  return MaxLineNumber;
 }
 
 // Return the path as a string to the file in which
@@ -1014,7 +1031,8 @@ FuzzerFunctionWrapper FuzzIntrospector::wrapFunction(Function *F) {
 
   FuncWrap.FunctionName = removeDecSuffixFromName(F->getName());
   FuncWrap.FunctionSourceFile = getFunctionFilename(F);
-  FuncWrap.FunctionLinenumber = getFunctionLinenumber(F);
+  FuncWrap.FunctionLinenumber = getFunctionLinenumberBeginning(F);
+  FuncWrap.FunctionLinenumberEnd = getFunctionLinenumberEnd(F);
   FuncWrap.FunctionUses = 0;
   for (User *U : F->users()) {
     if (Instruction *Inst = dyn_cast<Instruction>(U)) {
