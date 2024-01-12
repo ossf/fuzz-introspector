@@ -375,7 +375,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
             callpath_dict: Dict[function_profile.FunctionProfile,
                                 List[List[function_profile.FunctionProfile]]],
             proj_profile: project_profile.MergedProjectProfile,
-            target_name: str) -> str:
+            target_func: function_profile.FunctionProfile) -> str:
         """
         Pretty print index of callpath and generate
         also generate separate html page for displaying
@@ -384,21 +384,13 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
         if len(callpath_dict.keys()) == 0:
             return "N/A"
 
-        html = "<table><thead>"
-        html += "<th bgcolor='#282A36'>Parent functions</th>"
-        html += "<th bgcolor='#282A36'>Callpaths</th>"
-        html += "</thead><tbody>"
+        html = ""
+        count = 0
 
         for parent_func in callpath_dict.keys():
             func_link, line = self._retrieve_function_link(
-                parent_func, proj_profile, target_name)
+                parent_func, proj_profile, target_func.function_name)
             callpath_list = callpath_dict[parent_func]
-            html += "<tr><td style='max-width: 150px'>"
-            html += f"{parent_func.function_name}<br/>"
-            html += f"in <a href='{func_link}'>"
-            html += f"{parent_func.function_source_file}:{line}</a>"
-            html += "</td><td>"
-            count = 0
 
             # Sort callpath by its depth, assuming shallowest depth is
             # the function call closest to the target function
@@ -407,13 +399,11 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
             for callpath in callpath_list:
                 count += 1
                 self.index += 1
+                callpath.append(target_func)
                 callpath_link = self._generate_callpath_page(
                     callpath, proj_profile)
                 if count <= 20:
                     html += f"<a href='{callpath_link}'>Path {count}</a><br/>"
-            html += "</td></tr>"
-
-        html += "</tbody></table>"
 
         return html
 
@@ -461,42 +451,47 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
 
         for fd in self._filter_function_list(functions, target_lang, cwe):
             json_dict: Dict[str, Any] = {}
-            parent_list, parent_name_list = proj_profile.get_direct_parent_list(
-                fd)
             callpath_list, callpath_name_list = proj_profile.get_function_callpaths(
                 fd, [])
             callpath_dict = utils.group_path_list_by_target(callpath_list)
             callpath_name_dict = utils.group_path_list_by_target(
                 callpath_name_list)
 
-            fuzzer_cover_count = self._retrieve_fuzzer_hitcount(fd, coverage)
-            if fuzzer_cover_count == 0:
-                blocker_list = self._determine_branch_blocker(
-                    callpath_list, proj_profile)
-                blocker = self._print_blocker_list(blocker_list, proj_profile)
-            else:
+            if len(fd.reached_by_fuzzers) == 0:
+                fuzzer_callpath = self._handle_callpath_dict(
+                    callpath_dict, proj_profile, fd)
                 blocker = "N/A"
+            else:
+                fuzzer_callpath = "N/A"
+
+                # There are fuzzers statically reach the target functions
+                # Check if any fuzzers dynamically reached the target functions
+                # If not, determine blockers of the sink functions
+                if self._retrieve_fuzzer_hitcount(fd, coverage) == 0:
+                    blocker_list = self._determine_branch_blocker(
+                        callpath_list, proj_profile)
+                    blocker = self._print_blocker_list(blocker_list,
+                                                       proj_profile)
+                else:
+                    blocker = "N/A"
 
             if self.display_html:
                 row = html_helpers.html_table_add_row([
                     f"{fd.function_name}", f"{str(fd.reached_by_fuzzers)}",
-                    self._handle_callpath_dict(callpath_dict, proj_profile,
-                                               fd.function_name), f"{blocker}"
+                    fuzzer_callpath, f"{blocker}"
                 ])
 
                 if blocker != "N/A":
                     row_split = row.rsplit('<td><table>', 1)
                     row = f'{row_split[0]}<td style="max-width: 600px"><table>{row_split[1]}'
-                    html_string += row
+
+                html_string += row
 
             json_dict['func_name'] = fd.function_name
             json_dict['fuzzer_reach'] = fd.reached_by_fuzzers
-            json_dict['parent_func'] = parent_name_list
             json_dict['callpaths'] = callpath_name_dict
             json_dict['blocker'] = blocker
             json_list.append(json_dict)
-
-            continue
 
         cwe_json: Dict[str, Any] = {}
         cwe_json[cwe] = json_list
@@ -575,20 +570,22 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
         html_string += "<div class=\"collapsible\">"
         html_string += (
             "<p>"
-            "This section contains multiple tables, each table contains "
-            "list of sink functions/methods found in the project for one "
-            "of the CWE supported by the sink analyser, together with "
-            "information likes which fuzzers statically reach the sink "
-            "functions/methods and possible call path to that sink "
-            "fucntions/methods if it is not statically reached by any "
-            "fuzzers. Column 1 is the function/method name of the sink "
-            "functions/methods found in the project. Column 2 lists all  "
-            "fuzzers (or no fuzzers at all) that have covered that particular "
-            "function method statically. Column 3 shows list of possible callpath "
-            "to reach the specific function/method call if none of the fuzzers "
-            "cover the target function/method calls. Lastly, column 4 shows possible "
-            "fuzzer blockers that avoid an existing fuzzer reaching the target sink "
-            "functions/methods dynamically."
+            "This section contains multiple tables, each table "
+            "contains a list of sink functions/methods found in "
+            "the project for one of the CWE supported by the sink "
+            "analyser, together with information like which fuzzers "
+            "statically reach the sink functions/methods and possible "
+            "call path to that sink functions/methods if it is not "
+            "statically reached by any fuzzers. Column 1 is the "
+            "function/method name of the sink functions/methods found "
+            "in the project. Column 2 lists all fuzzers (or no fuzzers "
+            "at all) that have covered that particular function method "
+            "statically. Column 3 shows a list of possible call paths "
+            "to reach the specific function/method call if none of the "
+            "fuzzers cover the target function/method calls. Lastly, "
+            "column 4 shows possible fuzzer blockers that prevent an "
+            "existing fuzzer from reaching the target sink functions/methods "
+            "dynamically."
             "</p>")
 
         for cwe in CWES:
@@ -620,11 +617,14 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
                   "Is this code reachable by any fuzzer functions? "
                   "Based on static analysis."),
                  ("Function call path",
-                  "All call path of the project calling to each sink function. "
-                  "Group by functions directly calling the sink function."),
+                  "All call paths of the project calling to each sink function. "
+                  "This column is only shown if no fuzzer statically reached "
+                  "the target sink function."),
                  ("Possible branch blockers",
                   "Determine which branch blockers avoid fuzzers to cover the"
-                  "sink function during runtime and its information")])
+                  "sink function during runtime and its information. This column "
+                  "is only shown if there is fuzzer statically reached the "
+                  "target sink function but failed to reach it dynamically.")])
 
             html_string += html_rows
             html_string += "</table>"
