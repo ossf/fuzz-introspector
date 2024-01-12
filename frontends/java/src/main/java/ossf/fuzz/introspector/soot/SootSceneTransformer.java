@@ -397,7 +397,6 @@ public class SootSceneTransformer extends SceneTransformer {
                   BlockGraphInfoUtils.handleMethodInvocationInStatement(
                       (Stmt) unit,
                       c.getFilePath(),
-                      this.isAutoFuzz,
                       this.sinkMethodMap,
                       this.reachedSinkMethodList,
                       this.excludeMethodList);

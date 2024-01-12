@@ -194,7 +194,9 @@ public class FunctionElement {
   }
 
   public void addFunctionsReached(String functionsReached) {
-    this.functionsReached.add(functionsReached);
+    if (!this.functionsReached.contains(functionsReached)) {
+      this.functionsReached.add(functionsReached);
+    }
   }
 
   public void setFunctionsReached(List<String> functionsReached) {
@@ -228,6 +230,8 @@ public class FunctionElement {
   }
 
   public void addCallsite(Callsite callsite) {
+    this.addFunctionsReached(callsite.getMethodName());
+
     Boolean duplicate = false;
     for (Callsite item : this.callsites) {
       if (item.equals(callsite)) {
