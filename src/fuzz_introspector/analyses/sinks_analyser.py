@@ -448,17 +448,18 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
             self, functions: List[function_profile.FunctionProfile],
             proj_profile: project_profile.MergedProjectProfile,
             target_lang: str, func_callsites: Dict[str, List[str]],
-            coverage: code_coverage.CoverageProfile) -> Tuple[str, str]:
+            coverage: code_coverage.CoverageProfile,
+            cwe: str) -> Tuple[str, str]:
         """
-        Retrieve the content for this analyser in two formats. One in
-        normal html table rows string and the other is in json string
-        for generating separate json report for sink coverage that
-        could be readable by external analyser.
+        Retrieve the content for this analyser for a specific cwe
+        in two formats. One in normal html table rows string and the
+        other is in json string for generating separate json report
+        for sink coverage that could be readable by external analyser.
         """
         html_string = ""
         json_list = []
 
-        for fd in self._filter_function_list(functions, target_lang, 'CWE79'):
+        for fd in self._filter_function_list(functions, target_lang, cwe):
             json_dict: Dict[str, Any] = {}
             parent_list, parent_name_list = proj_profile.get_direct_parent_list(
                 fd)
@@ -497,7 +498,10 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
 
             continue
 
-        return (html_string, json.dumps(json_list))
+        cwe_json: Dict[str, Any] = {}
+        cwe_json[cwe] = json_list
+
+        return (html_string, json.dumps(cwe_json))
 
     def analysis_func(self,
                       table_of_contents: html_helpers.HtmlTableOfContents,
@@ -560,67 +564,71 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
         function_callsite_dict = self._map_function_callsite(
             function_list, callsite_list)
 
-        # Retrieve table content rows
-        html_rows, json_row = self._retrieve_content_rows(
-            function_list, proj_profile, profiles[0].target_lang,
-            function_callsite_dict, proj_profile.runtime_coverage)
-
-        self.set_json_string_result(json_row)
-        json_report.add_analysis_json_str_as_dict_to_report(
-            self.get_name(), self.get_json_string_result())
-
-        # If no html, this is our job done
-        if not self.display_html:
-            return ""
-
         html_string = ""
         html_string += "<div class=\"report-box\">"
 
         html_string += html_helpers.html_add_header_with_link(
-            "Function call coverage", html_helpers.HTML_HEADING.H1,
+            "Sink analyser for CWEs", html_helpers.HTML_HEADING.H1,
             table_of_contents)
 
         # Table with all function calls for each files
         html_string += "<div class=\"collapsible\">"
         html_string += (
             "<p>"
-            "This section shows a chosen list of functions / methods "
-            "calls and their relative coverage information. By static "
-            "analysis of the target project code, all of these function "
-            "call and their caller information, including the source file "
-            "or class and line number that initiate the call are captured. "
-            "Column 1 is the function name of that selected functions or "
-            "methods. Column 2 of each row indicate if the target function "
-            "covered by any fuzzer calltree information. Column 3 lists all "
-            "fuzzers (or no fuzzers at all) that have coered that particular "
-            "function call dynamically. Column 4 shows list of parent function "
-            "for the specific function call, while column 5 shows possible blocker "
-            "functions that make the fuzzers fail to reach the specific functions. "
-            "Both column 4 and 5 will only show information if none of the fuzzers "
-            "cover the target function calls."
+            "This section contains multiple tables, each table contains "
+            "list of sink functions/methods found in the project for one "
+            "of the CWE supported by the sink analyser, together with "
+            "information likes which fuzzers statically reach the sink "
+            "functions/methods and possible call path to that sink "
+            "fucntions/methods if it is not statically reached by any "
+            "fuzzers. Column 1 is the function/method name of the sink "
+            "functions/methods found in the project. Column 2 lists all  "
+            "fuzzers (or no fuzzers at all) that have covered that particular "
+            "function method statically. Column 3 shows list of possible callpath "
+            "to reach the specific function/method call if none of the fuzzers "
+            "cover the target function/method calls. Lastly, column 4 shows possible "
+            "fuzzer blockers that avoid an existing fuzzer reaching the target sink "
+            "functions/methods dynamically."
             "</p>")
 
-        html_string += html_helpers.html_add_header_with_link(
-            "Function in each files in report", html_helpers.HTML_HEADING.H2,
-            table_of_contents)
+        for cwe in CWES:
+            logger.info(f" - Running analysis {self.get_name()} for {cwe}")
 
-        # Third party function calls table
-        tables.append(f"myTable{len(tables)}")
-        html_string += html_helpers.html_create_table_head(
-            tables[-1],
-            [("Target sink", ""),
-             ("Reached by fuzzer",
-              "Is this code reachable by any fuzzer functions? "
-              "Based on static analysis."),
-             ("Function call path",
-              "All call path of the project calling to each sink function. "
-              "Group by functions directly calling the sink function."),
-             ("Possible branch blockers",
-              "Determine which branch blockers avoid fuzzers to cover the"
-              "sink function during runtime and its information")])
+            # Retrieve table content rows
+            html_rows, json_row = self._retrieve_content_rows(
+                function_list, proj_profile, profiles[0].target_lang,
+                function_callsite_dict, proj_profile.runtime_coverage, cwe)
 
-        html_string += html_rows
-        html_string += "</table>"
+            self.set_json_string_result(json_row)
+            json_report.add_analysis_json_str_as_dict_to_report(
+                self.get_name(), self.get_json_string_result())
+
+            # If no html, this is our job done
+            if not self.display_html:
+                return ""
+
+            html_string += html_helpers.html_add_header_with_link(
+                f"Sink functions/methods found for {cwe}",
+                html_helpers.HTML_HEADING.H2, table_of_contents)
+
+            # Third party function calls table
+            tables.append(f"myTable{len(tables)}")
+            html_string += html_helpers.html_create_table_head(
+                tables[-1],
+                [("Target sink", ""),
+                 ("Reached by fuzzer",
+                  "Is this code reachable by any fuzzer functions? "
+                  "Based on static analysis."),
+                 ("Function call path",
+                  "All call path of the project calling to each sink function. "
+                  "Group by functions directly calling the sink function."),
+                 ("Possible branch blockers",
+                  "Determine which branch blockers avoid fuzzers to cover the"
+                  "sink function during runtime and its information")])
+
+            html_string += html_rows
+            html_string += "</table>"
+
         html_string += "</div>"  # .collapsible
         html_string += "</div>"  # report-box
 
