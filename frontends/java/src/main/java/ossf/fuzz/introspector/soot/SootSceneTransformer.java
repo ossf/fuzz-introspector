@@ -36,6 +36,7 @@ import ossf.fuzz.introspector.soot.utils.BlockGraphInfoUtils;
 import ossf.fuzz.introspector.soot.utils.CalculationUtils;
 import ossf.fuzz.introspector.soot.utils.CalltreeUtils;
 import ossf.fuzz.introspector.soot.utils.EdgeUtils;
+import ossf.fuzz.introspector.soot.utils.SinkDiscoveryUtils;
 import ossf.fuzz.introspector.soot.yaml.Callsite;
 import ossf.fuzz.introspector.soot.yaml.FunctionConfig;
 import ossf.fuzz.introspector.soot.yaml.FunctionElement;
@@ -60,9 +61,11 @@ public class SootSceneTransformer extends SceneTransformer {
   private List<String> excludeMethodList;
   private List<String> projectClassList;
   private List<SootMethod> reachedSinkMethodList;
+  private List<SootMethod> fullSinkMethodList;
   private List<FunctionElement> depthHandled;
   private Map<String, Set<String>> edgeClassMap;
   private Map<String, Set<String>> sinkMethodMap;
+  private Map<SootClass, List<SootMethod>> projectClassMethodMap;
   private String entryClassStr;
   private String entryMethodStr;
   private SootMethod entryMethod;
@@ -91,8 +94,10 @@ public class SootSceneTransformer extends SceneTransformer {
     excludeMethodList = new LinkedList<String>();
     projectClassList = new LinkedList<String>();
     reachedSinkMethodList = new LinkedList<SootMethod>();
+    fullSinkMethodList = new LinkedList<SootMethod>();
     edgeClassMap = new HashMap<String, Set<String>>();
     sinkMethodMap = new HashMap<String, Set<String>>();
+    projectClassMethodMap = new HashMap<SootClass, List<SootMethod>>();
     methodList = new FunctionConfig();
     analyseFinished = false;
 
@@ -180,6 +185,7 @@ public class SootSceneTransformer extends SceneTransformer {
       CalculationUtils.calculateAllCallDepth(this.methodList);
 
       if (!isAutoFuzz) {
+        fullSinkMethodList = SinkDiscoveryUtils.discoverAllSinks(sinkMethodMap, projectClassMethodMap);
         CalltreeUtils.addSinkMethods(this.methodList, this.reachedSinkMethodList, this.isAutoFuzz);
       }
 
@@ -229,6 +235,9 @@ public class SootSceneTransformer extends SceneTransformer {
       boolean isAutoFuzzIgnore = false;
       SootClass c = classIterator.next();
       String cname = c.getName();
+
+      // Add data for the full project class method map
+      this.projectClassMethodMap.put(c, c.getMethods());
 
       // Check for a list of classes of prefixes that must handled
       for (String prefix : includeList) {
