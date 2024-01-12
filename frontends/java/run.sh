@@ -108,7 +108,7 @@ fi
 if [ -z $SINKMETHOD ]
 then
     echo "No sink method list defined, using default sink method list"
-    SINKMETHOD="[java.lang.Runtime].exec:[javax.xml.xpath.XPath].compile:[javax.xml.xpath.XPath].evaluate:[java.lang.Thread].run:[java.lang.Runnable].run:[java.util.concurrent.Executor].execute:[java.util.concurrent.Callable].call:[java.lang.System].console:[java.lang.System].load:[java.lang.System].loadLibrary:[java.lang.System].apLibraryName:[java.lang.System].runFinalization:[java.lang.System].setErr:[java.lang.System].setIn:[java.lang.System].setOut:[java.lang.System].setProperties:[java.lang.System].setProperty:[java.lang.System].setSecurityManager:[java.lang.ProcessBuilder].directory:[java.lang.ProcessBuilder].inheritIO:[java.lang.ProcessBuilder].command:[java.lang.ProcessBuilder].redirectError:[java.lang.ProcessBuilder].redirectErrorStream:[java.lang.ProcessBuilder].redirectInput:[java.lang.ProcessBuilder].redirectOutput:[java.lang.ProcessBuilder].start"
+    SINKMETHOD="DEFAULT"
 fi
 if [ -z $PACKAGEPREFIX ]
 then

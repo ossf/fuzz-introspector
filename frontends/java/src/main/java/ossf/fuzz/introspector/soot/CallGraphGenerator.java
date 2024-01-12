@@ -16,6 +16,8 @@
 package ossf.fuzz.introspector.soot;
 
 import java.io.File;
+import java.io.InputStream;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -52,6 +54,16 @@ public class CallGraphGenerator {
       includePrefix = args[7].split("===")[0];
       excludePrefix = args[7].split("===")[1];
       sinkMethod = args[7].split("===")[2];
+
+      // Retrieve default sink methods
+      if (sinkMethod.equals("DEFAULT")) {
+        try {
+          InputStream is = CallGraphGenerator.class.getResourceAsStream("/java_sinks");
+          sinkMethod = new String(is.readAllBytes());
+        } catch (IOException e) {
+          sinkMethod = "";
+        }
+      }
     }
     if (jarFiles.size() < 1) {
       System.err.println("Invalid jarFiles");
