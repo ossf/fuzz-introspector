@@ -381,7 +381,9 @@ def extract_project_data(project_name, date_str, should_include_details,
                     'return-type':
                     func.get('return_type', 'N/A'),
                     'raw-function-name':
-                    func.get('raw-function-name', 'N/A')
+                    func.get('raw-function-name', 'N/A'),
+                    'date-str':
+                    date_str
                 })
 
         # Get all branch blockers
@@ -676,6 +678,32 @@ def extend_db_json_files(project_timestamps, output_directory):
         json.dump(project_timestamps, f)
 
 
+def extend_func_db(function_list, output_directory):
+    if os.path.isfile(os.path.join(output_directory, DB_JSON_ALL_FUNCTIONS)):
+        with open(os.path.join(output_directory, DB_JSON_ALL_FUNCTIONS),
+                  'r') as f:
+            existing_function_list = json.load(f)
+    else:
+        existing_function_list = []
+
+    # We should update data on all projects where we have function data, and
+    # for those we do not have updated information on we will use the old data.
+    projects_that_need_updating = set()
+    for elem in function_list:
+        projects_that_need_updating.add(elem['project'])
+
+    functions_to_keep = []
+    for func in existing_function_list:
+        if func['project'] not in projects_that_need_updating:
+            functions_to_keep.append(func)
+
+    # Add new functions
+    all_functions = functions_to_keep + function_list
+
+    with open(os.path.join(output_directory, DB_JSON_ALL_FUNCTIONS), 'w') as f:
+        json.dump(all_functions, f)
+
+
 def update_db_files(db_timestamp, project_timestamps, function_list,
                     fuzz_branch_blocker_list, output_directory,
                     should_include_details):
@@ -683,9 +711,8 @@ def update_db_files(db_timestamp, project_timestamps, function_list,
         "Updating the database with DB snapshot. Number of functions in total: %d"
         % (db_timestamp['function_count']))
     if should_include_details:
-        with open(os.path.join(output_directory, DB_JSON_ALL_FUNCTIONS),
-                  'w') as f:
-            json.dump(function_list, f)
+        extend_func_db(function_list, output_directory)
+
         with open(os.path.join(output_directory, DB_JSON_ALL_BRANCH_BLOCKERS),
                   'w') as f:
             json.dump(fuzz_branch_blocker_list, f)
@@ -737,7 +764,8 @@ def is_date_in_db(date, output_directory):
     return in_db
 
 
-def analyse_set_of_dates(dates, projects_to_analyse, output_directory):
+def analyse_set_of_dates(dates, projects_to_analyse, output_directory,
+                         force_creation):
     """Pe/rforms analysis of all projects in the projects_to_analyse argument for
     the given set of dates. DB .json files are stored in output_directory.
     """
@@ -756,10 +784,13 @@ def analyse_set_of_dates(dates, projects_to_analyse, output_directory):
         idx += 1
 
         # If it's not the last date and we have cached data, use the cache.
-        if is_end == False and is_date_in_db(date, output_directory):
+        if not force_creation and is_end == False and is_date_in_db(
+                date, output_directory):
             logger.info("Date already analysed, skipping")
             continue
 
+        if force_creation:
+            is_end = True
         function_list, fuzz_branch_blocker_list, project_timestamps, db_timestamp = analyse_list_of_projects(
             date, projects_to_analyse, should_include_details=is_end)
         update_db_files(db_timestamp,
@@ -870,7 +901,7 @@ def setup_webapp_cache():
 
 def create_db(max_projects, days_to_analyse, output_directory, input_directory,
               day_offset, to_cleanup, since_date, use_github_cache,
-              use_webapp_cache):
+              use_webapp_cache, force_creation):
     got_cache = False
     if use_webapp_cache:
         try:
@@ -934,7 +965,8 @@ def create_db(max_projects, days_to_analyse, output_directory, input_directory,
 
     print("Starting analysis of max %d projects" % (len(projects_to_analyse)))
 
-    analyse_set_of_dates(date_range, projects_to_analyse, output_directory)
+    analyse_set_of_dates(date_range, projects_to_analyse, output_directory,
+                         force_creation)
 
 
 def get_cmdline_parser():
@@ -967,6 +999,7 @@ def get_cmdline_parser():
     parser.add_argument("--debug", action="store_true")
     parser.add_argument("--use_gh_cache", action="store_false")
     parser.add_argument("--use_webapp_cache", action="store_true")
+    parser.add_argument("--force-creation", action="store_true")
     return parser
 
 
@@ -979,7 +1012,7 @@ def main():
         logging.basicConfig(level=logging.INFO)
     create_db(args.max_projects, args.days_to_analyse, args.output_dir,
               args.input_dir, args.base_offset, args.cleanup, args.since_date,
-              args.use_gh_cache, args.use_webapp_cache)
+              args.use_gh_cache, args.use_webapp_cache, args.force_creation)
 
 
 if __name__ == "__main__":
