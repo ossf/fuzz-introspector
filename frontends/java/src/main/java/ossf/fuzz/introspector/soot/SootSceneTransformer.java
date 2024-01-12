@@ -63,6 +63,7 @@ public class SootSceneTransformer extends SceneTransformer {
   private List<FunctionElement> depthHandled;
   private Map<String, Set<String>> edgeClassMap;
   private Map<String, Set<String>> sinkMethodMap;
+  private Map<SootClass, List<SootMethod>> projectClassMethodMap;
   private String entryClassStr;
   private String entryMethodStr;
   private SootMethod entryMethod;
@@ -93,6 +94,7 @@ public class SootSceneTransformer extends SceneTransformer {
     reachedSinkMethodList = new LinkedList<SootMethod>();
     edgeClassMap = new HashMap<String, Set<String>>();
     sinkMethodMap = new HashMap<String, Set<String>>();
+    projectClassMethodMap = new HashMap<SootClass, List<SootMethod>>();
     methodList = new FunctionConfig();
     analyseFinished = false;
 
@@ -229,6 +231,9 @@ public class SootSceneTransformer extends SceneTransformer {
       boolean isAutoFuzzIgnore = false;
       SootClass c = classIterator.next();
       String cname = c.getName();
+
+      // Add data for the full project class method map
+      this.projectClassMethodMap.put(c, c.getMethods());
 
       // Check for a list of classes of prefixes that must handled
       for (String prefix : includeList) {
