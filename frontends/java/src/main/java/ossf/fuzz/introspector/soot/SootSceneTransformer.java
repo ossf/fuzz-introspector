@@ -36,6 +36,7 @@ import ossf.fuzz.introspector.soot.utils.BlockGraphInfoUtils;
 import ossf.fuzz.introspector.soot.utils.CalculationUtils;
 import ossf.fuzz.introspector.soot.utils.CalltreeUtils;
 import ossf.fuzz.introspector.soot.utils.EdgeUtils;
+import ossf.fuzz.introspector.soot.utils.SinkDiscoveryUtils;
 import ossf.fuzz.introspector.soot.yaml.Callsite;
 import ossf.fuzz.introspector.soot.yaml.FunctionConfig;
 import ossf.fuzz.introspector.soot.yaml.FunctionElement;
@@ -60,6 +61,7 @@ public class SootSceneTransformer extends SceneTransformer {
   private List<String> excludeMethodList;
   private List<String> projectClassList;
   private List<SootMethod> reachedSinkMethodList;
+  private List<SootMethod> fullSinkMethodList;
   private List<FunctionElement> depthHandled;
   private Map<String, Set<String>> edgeClassMap;
   private Map<String, Set<String>> sinkMethodMap;
@@ -92,6 +94,7 @@ public class SootSceneTransformer extends SceneTransformer {
     excludeMethodList = new LinkedList<String>();
     projectClassList = new LinkedList<String>();
     reachedSinkMethodList = new LinkedList<SootMethod>();
+    fullSinkMethodList = new LinkedList<SootMethod>();
     edgeClassMap = new HashMap<String, Set<String>>();
     sinkMethodMap = new HashMap<String, Set<String>>();
     projectClassMethodMap = new HashMap<SootClass, List<SootMethod>>();
@@ -182,6 +185,7 @@ public class SootSceneTransformer extends SceneTransformer {
       CalculationUtils.calculateAllCallDepth(this.methodList);
 
       if (!isAutoFuzz) {
+        fullSinkMethodList = SinkDiscoveryUtils.discoverAllSinks(sinkMethodMap, projectClassMethodMap);
         CalltreeUtils.addSinkMethods(this.methodList, this.reachedSinkMethodList, this.isAutoFuzz);
       }
 
