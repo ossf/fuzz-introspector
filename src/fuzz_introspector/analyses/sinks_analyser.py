@@ -458,7 +458,8 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
                 callpath_name_list)
 
             if len(fd.reached_by_fuzzers) == 0:
-                fuzzer_callpath = self._handle_callpath_dict(callpath_dict, proj_profile, fd)
+                fuzzer_callpath = self._handle_callpath_dict(
+                    callpath_dict, proj_profile, fd)
                 blocker = "N/A"
             else:
                 fuzzer_callpath = "N/A"
@@ -469,7 +470,8 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
                 if self._retrieve_fuzzer_hitcount(fd, coverage) == 0:
                     blocker_list = self._determine_branch_blocker(
                         callpath_list, proj_profile)
-                    blocker = self._print_blocker_list(blocker_list, proj_profile)
+                    blocker = self._print_blocker_list(blocker_list,
+                                                       proj_profile)
                 else:
                     blocker = "N/A"
 
@@ -482,7 +484,8 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
                 if blocker != "N/A":
                     row_split = row.rsplit('<td><table>', 1)
                     row = f'{row_split[0]}<td style="max-width: 600px"><table>{row_split[1]}'
-                    html_string += row
+
+                html_string += row
 
             json_dict['func_name'] = fd.function_name
             json_dict['fuzzer_reach'] = fd.reached_by_fuzzers
