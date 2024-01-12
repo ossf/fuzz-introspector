@@ -473,7 +473,6 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
                 else:
                     blocker = "N/A"
 
-
             if self.display_html:
                 row = html_helpers.html_table_add_row([
                     f"{fd.function_name}", f"{str(fd.reached_by_fuzzers)}",
