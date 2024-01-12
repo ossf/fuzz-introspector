@@ -94,7 +94,8 @@ class Function:
                  function_arguments=[],
                  return_type="",
                  function_argument_names=[],
-                 raw_function_name=""):
+                 raw_function_name="",
+                 date_str=""):
         self.name = name
         self.function_filename = function_filename
         self.project = project
@@ -109,6 +110,7 @@ class Function:
         self.function_argument_names = function_argument_names
         self.return_type = return_type
         self.raw_function_name = raw_function_name
+        self.date_str = date_str
 
     def __dict__(self):
         return {

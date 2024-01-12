@@ -72,7 +72,8 @@ def load_db():
                 function_arguments=func['function-arguments'],
                 return_type=func['return-type'],
                 function_argument_names=func['function-argument-names'],
-                raw_function_name=func['raw-function-name']))
+                raw_function_name=func['raw-function-name'],
+                date_str=func.get('date-str', '')))
 
     print("Loadded %d functions" % (idx))
     print("Len %d" % (len(data_storage.FUNCTIONS)))
