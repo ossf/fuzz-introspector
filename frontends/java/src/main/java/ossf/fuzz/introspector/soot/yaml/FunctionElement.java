@@ -253,7 +253,7 @@ public class FunctionElement {
     return this.javaMethodInfo;
   }
 
-  public void setJavaMethodInfo(SootMethod m) {
+  public void setJavaMethodInfo(SootMethod m, boolean isAutoFuzz) {
     JavaMethodInfo methodInfo = new JavaMethodInfo();
     SootClass c = m.getDeclaringClass();
 
@@ -265,32 +265,36 @@ public class FunctionElement {
     methodInfo.setIsClassEnum(c.isEnum());
     methodInfo.setIsClassPublic(c.isPublic());
     methodInfo.setIsClassConcrete(c.isConcrete());
-    for (SootClass exception : m.getExceptions()) {
-      methodInfo.addException(exception.getFilePath());
-    }
 
-    // Extra class information for constructors
-    if (m.getName().equals("<init>")) {
-      if (c.hasSuperclass()) {
-        methodInfo.setSuperClass(c.getSuperclass().getName());
+    // Additional information for auto-fuzz process
+    if (isAutoFuzz) {
+      for (SootClass exception : m.getExceptions()) {
+        methodInfo.addException(exception.getFilePath());
       }
-      Iterator<SootClass> interfaces = c.getInterfaces().snapshotIterator();
-      while (interfaces.hasNext()) {
-        methodInfo.addInterface(interfaces.next().getName());
-      }
-      Iterator<SootField> fields = c.getFields().snapshotIterator();
-      while (fields.hasNext()) {
-        SootField field = fields.next();
-        ClassField classField = new ClassField();
 
-        classField.setFieldName(field.getName());
-        classField.setFieldType(field.getType().toString());
-        classField.setIsConcrete(field.isDeclared());
-        classField.setIsPublic(field.isPublic());
-        classField.setIsStatic(field.isStatic());
-        classField.setIsFinal(field.isFinal());
+      // Extra class information for constructors
+      if (m.getName().equals("<init>")) {
+        if (c.hasSuperclass()) {
+          methodInfo.setSuperClass(c.getSuperclass().getName());
+        }
+        Iterator<SootClass> interfaces = c.getInterfaces().snapshotIterator();
+        while (interfaces.hasNext()) {
+          methodInfo.addInterface(interfaces.next().getName());
+        }
+        Iterator<SootField> fields = c.getFields().snapshotIterator();
+        while (fields.hasNext()) {
+          SootField field = fields.next();
+          ClassField classField = new ClassField();
 
-        methodInfo.addClassField(classField);
+          classField.setFieldName(field.getName());
+          classField.setFieldType(field.getType().toString());
+          classField.setIsConcrete(field.isDeclared());
+          classField.setIsPublic(field.isPublic());
+          classField.setIsStatic(field.isStatic());
+          classField.setIsFinal(field.isFinal());
+
+          methodInfo.addClassField(classField);
+        }
       }
     }
 

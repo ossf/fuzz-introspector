@@ -80,7 +80,7 @@ public class CalltreeUtils {
         FunctionElement element = new FunctionElement();
         element.setFunctionName(name);
         element.setBaseInformation(method);
-        element.setJavaMethodInfo(method);
+        element.setJavaMethodInfo(method, true);
 
         eList.add(element);
       }
@@ -107,9 +107,7 @@ public class CalltreeUtils {
       FunctionElement element = new FunctionElement();
       element.setFunctionName("[" + cl.getName() + "]." + method.getSubSignature().split(" ")[1]);
       element.setBaseInformation(method);
-      if (isAutoFuzz) {
-        element.setJavaMethodInfo(method);
-      }
+      element.setJavaMethodInfo(method, isAutoFuzz);
 
       eList.add(element);
     }
