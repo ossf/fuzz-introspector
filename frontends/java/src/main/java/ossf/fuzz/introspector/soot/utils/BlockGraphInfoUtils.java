@@ -42,7 +42,6 @@ public class BlockGraphInfoUtils {
    *
    * @param stmt the statement to handle
    * @param sourceFilePath the file path for the parent method
-   * @param isAutoFuzz a boolean value to indicate if this run is initiated by AutoFuzz
    * @param sinkMethodMap a map to store a set of sink methods names grouped by their containing
    *     classes
    * @param reachedSinkMethodList a list of sink methods which are reachable by the given entry
@@ -54,7 +53,6 @@ public class BlockGraphInfoUtils {
   public static Callsite handleMethodInvocationInStatement(
       Stmt stmt,
       String sourceFilePath,
-      Boolean isAutoFuzz,
       Map<String, Set<String>> sinkMethodMap,
       List<SootMethod> reachedSinkMethodList,
       List<String> excludeMethodList) {
@@ -71,12 +69,9 @@ public class BlockGraphInfoUtils {
         }
         if (!excludeMethodList.contains(target.getName())) {
           callsite.setSource(sourceFilePath + ":" + stmt.getJavaSourceStartLineNumber() + ",1");
-          if (isAutoFuzz) {
-            callsite.setMethodName(
-                "[" + tClass.getName() + "]." + target.getSubSignature().split(" ")[1]);
-          } else {
-            callsite.setMethodName("[" + tClass.getName() + "]." + target.getName());
-          }
+          callsite.setMethodName(
+              "[" + tClass.getName() + "]." + target.getSubSignature().split(" ")[1]);
+
           return callsite;
         }
       }
