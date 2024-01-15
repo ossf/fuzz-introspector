@@ -120,7 +120,7 @@ class FunctionProfile:
 
     def is_function_acccessible(self, elem: Dict[Any, Any]) -> bool:
         # Currently only support jvm which accessible information is available
-        if "JavaMethodInfo" in elem and len(elem['JavaMethodInfo']) > 0:
+        if "JavaMethodInfo" in elem and elem['JavaMethodInfo']:
             if elem['JavaMethodInfo']['javaLibraryMethod']:
                 return False
             if elem['JavaMethodInfo']['classEnum']:

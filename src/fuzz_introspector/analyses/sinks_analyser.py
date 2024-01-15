@@ -419,7 +419,8 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
             # Filter inaccessible callpaths and sort them
             # by their depth, assuming shallowest depth is
             # the function call closest to the target function
-            callpath_list = self._filter_inaccessible_callpath(callpath_list, target_lang)
+            callpath_list = self._filter_inaccessible_callpath(
+                callpath_list, target_lang)
             callpath_list.sort(key=len)
 
             if len(callpath_list) == 0:
