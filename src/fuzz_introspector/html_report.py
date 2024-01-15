@@ -636,7 +636,7 @@ def create_section_optional_analyses(table_of_contents, analyses_to_run,
             analysis_instance.dump_files = dump_files
 
             # Set display_html flag for the analysis_instance
-            analysis_instance.set_display_html = analysis_name in analyses_to_run
+            analysis_instance.set_display_html(analysis_name in analyses_to_run)
 
             html_string = analysis_instance.analysis_func(
                 table_of_contents, tables, proj_profile, profiles, basefolder,
