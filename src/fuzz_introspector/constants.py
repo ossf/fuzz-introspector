@@ -56,3 +56,9 @@ COLOR_CONSTANTS = [(0, 1, "red", "#ff0000"), (1, 10, "gold", "#ffd700"),
 
 BLOCKLISTED_FUNCTION_NAMES = re.compile(
     r'^__sanitizer|^llvm\.|^__assert|.*printf$')
+
+# Use by SinkCoverageAnaylser in analyses/sink_analyser.py
+# Integer constants to limit the maximum number of callpaths
+# generated for each of the unreachable sink functions found
+# in the target project.
+SINK_FUNCTION_CALLPATH_MAX_COUNT = 2
