@@ -61,8 +61,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
     name: str = "SinkCoverageAnalyser"
 
     def __init__(self) -> None:
-        self.json_string_result = "[]"
-        self.display_html = True
+        self.json_string_result = ""
         self.index = 0
 
     @classmethod
@@ -81,7 +80,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
             by this analyser
         :rtype: str
         """
-        return self.json_string_result
+        return f"[{self.json_string_result}]"
 
     def set_json_string_result(self, json_string):
         """Store the result of this analyser as json string result
@@ -91,7 +90,9 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
             processing result of the analyser for future use
         :type json_string: str
         """
-        self.json_string_result = json_string
+        if len(self.json_string_result) > 0:
+            self.json_string_result = self.json_string_result + ", "
+        self.json_string_result = self.json_string_result + json_string
 
     def _get_source_file(self, callsite) -> str:
         """
@@ -597,12 +598,10 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
                 function_callsite_dict, proj_profile.runtime_coverage, cwe)
 
             self.set_json_string_result(json_row)
-            json_report.add_analysis_json_str_as_dict_to_report(
-                self.get_name(), self.get_json_string_result())
 
-            # If no html, this is our job done
+            # If no html, this is our job done for this cwe
             if not self.display_html:
-                return ""
+                continue
 
             html_string += html_helpers.html_add_header_with_link(
                 f"Sink functions/methods found for {cwe}",
@@ -632,5 +631,12 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
         html_string += "</div>"  # .collapsible
         html_string += "</div>"  # report-box
 
+        json_report.add_analysis_json_str_as_dict_to_report(
+            self.get_name(), self.get_json_string_result())
+
         logger.info(f" - Finish running analysis {self.get_name()}")
-        return html_string
+
+        if self.display_html:
+            return html_string
+        else:
+            return ""

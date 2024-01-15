@@ -112,6 +112,7 @@ class IntrospectionProject():
 class AnalysisInterface(abc.ABC):
     name: str = ""
     json_string_result: str = ""
+    display_html: bool = False
 
     @abc.abstractmethod
     def analysis_func(self,
@@ -166,8 +167,12 @@ class AnalysisInterface(abc.ABC):
 
     @abc.abstractmethod
     def set_json_string_result(self, string):
-        """Return json_string_result"""
+        """Set json_string_result"""
         pass
+
+    def set_display_html(self, is_display_html):
+        """Set display_html"""
+        self.display_html = is_display_html
 
 
 def instantiate_analysis_interface(cls: Type[AnalysisInterface]):

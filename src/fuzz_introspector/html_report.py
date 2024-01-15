@@ -629,17 +629,23 @@ def create_section_optional_analyses(table_of_contents, analyses_to_run,
         x for x in output_json if x not in analyses_to_run
     ]
     for analysis_interface in analysis.get_all_analyses():
-        if analysis_interface.get_name() in combined_analyses:
+        analysis_name = analysis_interface.get_name()
+        if analysis_name in combined_analyses:
             analysis_instance = analysis.instantiate_analysis_interface(
                 analysis_interface)
             analysis_instance.dump_files = dump_files
+
+            # Set display_html flag for the analysis_instance
+            analysis_instance.set_display_html(
+                analysis_name in analyses_to_run)
+
             html_string = analysis_instance.analysis_func(
                 table_of_contents, tables, proj_profile, profiles, basefolder,
                 coverage_url, conclusions)
 
             # Only add the HTML content if it's an analysis that we want
             # the non-json output from.
-            if analysis_interface.get_name() in analyses_to_run:
+            if analysis_name in analyses_to_run:
                 html_report_core += html_string
     html_report_core += "</div>"  # .collapsible
     html_report_core += "</div>"  # report box
