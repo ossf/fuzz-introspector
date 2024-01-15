@@ -62,7 +62,6 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
 
     def __init__(self) -> None:
         self.json_string_result = ""
-        self.display_html = False
         self.index = 0
 
     @classmethod
@@ -81,7 +80,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
             by this analyser
         :rtype: str
         """
-        return self.json_string_result
+        return f"[{self.json_string_result}]"
 
     def set_json_string_result(self, json_string):
         """Store the result of this analyser as json string result
