@@ -359,9 +359,7 @@ public class SootSceneTransformer extends SceneTransformer {
 
         element.setFunctionName("[" + c.getFilePath() + "]." + m.getSubSignature().split(" ")[1]);
         element.setBaseInformation(m);
-        if (isAutoFuzz) {
-          element.setJavaMethodInfo(m);
-        }
+        element.setJavaMethodInfo(m, isAutoFuzz);
 
         // Retrieve and update incoming and outgoing edges of the target method
         EdgeUtils.updateIncomingEdges(callGraph, m, element);
