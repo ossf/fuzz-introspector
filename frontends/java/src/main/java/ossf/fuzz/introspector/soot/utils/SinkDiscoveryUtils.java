@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Set;
 import soot.SootClass;
 import soot.SootMethod;
+import soot.jimple.toolkits.callgraph.CallGraph;
 
 public class SinkDiscoveryUtils {
   /**
@@ -29,9 +30,10 @@ public class SinkDiscoveryUtils {
    *
    * @param sinkMethodMap the sink methods and classes to look for
    * @param projectClassMethodMap all methods and classes in the project
+   * @param cg the full project call graph
    * @return a list of sink methods exist in the project
    */
-  public static List<SootMethod> discoverAllSinks(Map<String, Set<String>> sinkMethodMap, Map<SootClass, List<SootMethod>> projectClassMethodMap) {
+  public static List<SootMethod> discoverAllSinks(Map<String, Set<String>> sinkMethodMap, Map<SootClass, List<SootMethod>> projectClassMethodMap, CallGraph cg) {
     List<SootMethod> sinkMethods = new LinkedList<SootMethod>();
 
     // Loop through all classes and methods of the project
@@ -43,8 +45,9 @@ public class SinkDiscoveryUtils {
         mList.addAll(projectClassMethodMap.get(c));
         for (SootMethod m : mList) {
           if (sinkMethodMap.get(c.getName()).contains(m.getName())) {
-            // Add the found sink method to the result list
-            sinkMethods.add(m);
+            // Retrieve all the direct and indirect parents
+            // of the found sink methods to the result list
+            CalltreeUtils.getAllParents(cg, m, sinkMethods);
           }
         }
       }

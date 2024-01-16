@@ -44,8 +44,6 @@ public class BlockGraphInfoUtils {
    * @param sourceFilePath the file path for the parent method
    * @param sinkMethodMap a map to store a set of sink methods names grouped by their containing
    *     classes
-   * @param reachedSinkMethodList a list of sink methods which are reachable by the given entry
-   *     method
    * @param excludeMethodList a list to store all excluded method names for this run
    * @return the callsite object to store in the output yaml file, return null if Soot fails to
    *     resolve the invocation
@@ -54,7 +52,6 @@ public class BlockGraphInfoUtils {
       Stmt stmt,
       String sourceFilePath,
       Map<String, Set<String>> sinkMethodMap,
-      List<SootMethod> reachedSinkMethodList,
       List<String> excludeMethodList) {
     // Handle statements of a method
     try {
@@ -64,9 +61,6 @@ public class BlockGraphInfoUtils {
         SootMethod target = expr.getMethod();
         SootClass tClass = target.getDeclaringClass();
         Set<String> sink = sinkMethodMap.getOrDefault(tClass.getName(), Collections.emptySet());
-        if (sink.contains(target.getName())) {
-          reachedSinkMethodList.add(target);
-        }
         if (!excludeMethodList.contains(target.getName())) {
           callsite.setSource(sourceFilePath + ":" + stmt.getJavaSourceStartLineNumber() + ",1");
           callsite.setMethodName(
