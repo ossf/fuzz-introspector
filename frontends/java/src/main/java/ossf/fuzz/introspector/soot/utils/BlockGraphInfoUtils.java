@@ -33,8 +33,50 @@ import soot.jimple.IfStmt;
 import soot.jimple.InvokeExpr;
 import soot.jimple.Stmt;
 import soot.toolkits.graph.Block;
+import soot.toolkits.graph.BlockGraph;
+import soot.toolkits.graph.BriefBlockGraph;
 
 public class BlockGraphInfoUtils {
+  /**
+   * The method retrieves a map of all methods and its invoked methods.
+   *
+   * @param projectClassMethodMap a map of all project methods by project classes
+   * @return the map to store all the parent methods of all methods in the project
+   */
+  public static Map<SootMethod, List<SootMethod>> getAllMethodParents(
+      Map<SootClass, List<SootMethod>> projectClassMethodMap) {
+    Map<SootMethod, List<SootMethod>> map = new HashMap<SootMethod, List<SootMethod>>();
+
+    for (List<SootMethod> methods : projectClassMethodMap.values()) {
+      for (SootMethod method : methods) {
+        try{
+          BlockGraph blockGraph = new BriefBlockGraph(method.retrieveActiveBody());
+
+          for (Block block : blockGraph.getBlocks()) {
+            Iterator<Unit> blockIt = block.iterator();
+            while (blockIt.hasNext()) {
+              Unit unit = blockIt.next();
+              if (unit instanceof Stmt) {
+                SootMethod target = ((Stmt) unit).getInvokeExpr().getMethod();
+                if (projectClassMethodMap.keySet().contains(target.getDeclaringClass())) {
+                  List<SootMethod> parents = map.getOrDefault(target, new LinkedList<SootMethod>());
+                  if (!parents.contains(target)) {
+                    parents.add(target);
+                    map.put(target, parents);
+                  }
+                }
+              }
+            }
+          }
+        } catch (Exception e) {
+          // Source code not found for the project, skiping this method.
+        }
+      }
+    }
+
+    return map;
+  }
+
   /**
    * The method retrieves the invocation body of a statement if exists. Then it determines the
    * information on the method invoked and stores them in the result to record the call site
