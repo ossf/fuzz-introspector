@@ -63,7 +63,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
     def __init__(self) -> None:
         self.json_string_result = ""
         self.index = 0
-        self.handled_sink = {}
+        self.handled_sink: Dict[str, str] = {}
 
     @classmethod
     def get_name(cls):
