@@ -119,16 +119,27 @@ public class CalltreeUtils {
    * invoke the target method from the provided project callgraph.
    *
    * @param parentMap the list of parent methods mapped by all existing methods
+   * @param cg the full project call graph
    * @param target the SootMethod target object to look for
    * @param parentList the list of resulting SootMethod object
    */
-  public static void getAllParents(Map<SootMethod, List<SootMethod>> parentMap, SootMethod target, List<SootMethod> parentList) {
+  public static void getAllParents(Map<SootMethod, List<SootMethod>> parentMap, CallGraph cg, SootMethod target, List<SootMethod> parentList) {
     List<SootMethod> parents = parentMap.getOrDefault(target, Collections.emptyList());
 
     for (SootMethod parent : parents) {
       if (!parentList.contains(parent)) {
         parentList.add(parent);
-        getAllParents(parentMap, parent, parentList);
+        getAllParents(parentMap, cg, parent, parentList);
+      }
+    }
+
+    Iterator<Edge> iter = cg.edgesInto(target);
+
+    while (iter.hasNext()) {
+      SootMethod parent = iter.next().tgt();
+      if (!parentList.contains(parent)) {
+        parentList.add(parent);
+        getAllParents(parentMap, cg, parent, parentList);
       }
     }
 

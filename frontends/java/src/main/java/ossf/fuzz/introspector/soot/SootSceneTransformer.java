@@ -183,7 +183,7 @@ public class SootSceneTransformer extends SceneTransformer {
       CalculationUtils.calculateAllCallDepth(this.methodList);
 
       if (!isAutoFuzz) {
-        fullSinkMethodList = SinkDiscoveryUtils.discoverAllSinks(sinkMethodMap, projectClassMethodMap);
+        fullSinkMethodList = SinkDiscoveryUtils.discoverAllSinks(sinkMethodMap, projectClassMethodMap, callGraph);
         CalltreeUtils.addSinkMethods(this.methodList, this.fullSinkMethodList, this.isAutoFuzz);
       }
 
