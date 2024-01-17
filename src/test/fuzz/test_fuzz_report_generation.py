@@ -44,8 +44,10 @@ def test_TestOneInput(data: bytes):
     fdp = atheris.FuzzedDataProvider(data)
 
     report_dir = "/tmp/fuzzreport"
-    if not os.path.isdir(report_dir):
+    try:
         os.makedirs(report_dir)
+    except FileExistsError:
+        pass
 
     correlation_file = os.path.join(report_dir, "correlation_file.txt")
     with open(correlation_file, "wb") as f:
