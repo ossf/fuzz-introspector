@@ -18,6 +18,7 @@
 class B
 {
 public:
+  int value1;
   virtual void bar();
   virtual void qux();
 };
