@@ -61,6 +61,9 @@ class FunctionProfile:
         self.functions_called = utils.load_func_names(elem['functionsReached'],
                                                       False)
 
+        # Check if this function is accessible
+        self.accessible = self.is_function_acccessible(elem)
+
         # Temporary handle for unreadable library method (JVM)
         # (jar missing or purposely ignored)
         if not self.cyclomatic_complexity:
@@ -114,3 +117,21 @@ class FunctionProfile:
             cs_loaded.update({callsite['Dst']: callsite_list})
 
         return cs_loaded
+
+    def is_function_acccessible(self, elem: Dict[Any, Any]) -> bool:
+        # Currently only support jvm which accessible information is available
+        if "JavaMethodInfo" in elem and elem['JavaMethodInfo']:
+            if elem['JavaMethodInfo']['javaLibraryMethod']:
+                return False
+            if elem['JavaMethodInfo']['classEnum']:
+                return False
+            if not elem['JavaMethodInfo']['public']:
+                return False
+            if not elem['JavaMethodInfo']['classPublic']:
+                return False
+            if not elem['JavaMethodInfo']['concrete']:
+                return False
+            if not elem['JavaMethodInfo']['classConcrete']:
+                return False
+
+        return True

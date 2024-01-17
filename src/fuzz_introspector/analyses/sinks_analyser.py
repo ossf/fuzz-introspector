@@ -20,8 +20,8 @@ from bs4 import BeautifulSoup as bs
 
 from typing import (Any, List, Tuple, Dict)
 
-from fuzz_introspector import (analysis, code_coverage, cfg_load, html_helpers,
-                               json_report, utils)
+from fuzz_introspector import (analysis, code_coverage, constants, cfg_load,
+                               html_helpers, json_report, utils)
 
 from fuzz_introspector.analyses.data import (cwe_data)
 
@@ -371,19 +371,42 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
 
         return filename
 
+    def _filter_inaccessible_callpath(
+            self, callpath_list: List[List[function_profile.FunctionProfile]],
+            target_lang: str) -> List[List[function_profile.FunctionProfile]]:
+        """
+        If the target language of this project is jvm, use
+        the class and method information to filter out
+        call path that is not accessible. Other language
+        is not supported yet.
+        """
+        if target_lang == "jvm":
+            result = []
+
+            # Loop through the list of callpaths and
+            # filter out inaccessbile callpths
+            for callpath in callpath_list:
+                if callpath[0].accessible:
+                    result.append(callpath)
+
+            return result
+        else:
+            return callpath_list
+
     def _handle_callpath_dict(
             self,
             callpath_dict: Dict[function_profile.FunctionProfile,
                                 List[List[function_profile.FunctionProfile]]],
             proj_profile: project_profile.MergedProjectProfile,
-            target_func: function_profile.FunctionProfile) -> str:
+            target_func: function_profile.FunctionProfile,
+            target_lang: str) -> str:
         """
         Pretty print index of callpath and generate
         also generate separate html page for displaying
         callpath and add the links to the index.
         """
         if len(callpath_dict.keys()) == 0:
-            return "N/A"
+            return "No accessible call path found"
 
         html = ""
         count = 0
@@ -393,9 +416,15 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
                 parent_func, proj_profile, target_func.function_name)
             callpath_list = callpath_dict[parent_func]
 
-            # Sort callpath by its depth, assuming shallowest depth is
+            # Filter inaccessible callpaths and sort them
+            # by their depth, assuming shallowest depth is
             # the function call closest to the target function
+            callpath_list = self._filter_inaccessible_callpath(
+                callpath_list, target_lang)
             callpath_list.sort(key=len)
+
+            if len(callpath_list) == 0:
+                return "No accessible call path found"
 
             for callpath in callpath_list:
                 count += 1
@@ -403,7 +432,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
                 callpath.append(target_func)
                 callpath_link = self._generate_callpath_page(
                     callpath, proj_profile)
-                if count <= 20:
+                if count <= constants.SINK_FUNCTION_CALLPATH_MAX_COUNT:
                     html += f"<a href='{callpath_link}'>Path {count}</a><br/>"
 
         return html
@@ -460,7 +489,8 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
 
             if len(fd.reached_by_fuzzers) == 0:
                 fuzzer_callpath = self._handle_callpath_dict(
-                    callpath_dict, proj_profile, fd)
+                    callpath_dict, proj_profile, fd, target_lang)
+
                 blocker = "N/A"
             else:
                 fuzzer_callpath = "N/A"
