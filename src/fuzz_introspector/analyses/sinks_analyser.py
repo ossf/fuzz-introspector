@@ -18,7 +18,7 @@ import logging
 
 from bs4 import BeautifulSoup as bs
 
-from typing import (Any, List, Tuple, Dict)
+from typing import (Any, List, Tuple, Dict, Optional)
 
 from fuzz_introspector import (analysis, code_coverage, constants, cfg_load,
                                html_helpers, json_report, utils)
@@ -63,6 +63,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
     def __init__(self) -> None:
         self.json_string_result = ""
         self.index = 0
+        self.handled_sink: Dict[str, str] = {}
 
     @classmethod
     def get_name(cls):
@@ -399,43 +400,49 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
                                 List[List[function_profile.FunctionProfile]]],
             proj_profile: project_profile.MergedProjectProfile,
             target_func: function_profile.FunctionProfile,
-            target_lang: str) -> str:
+            target_lang: str) -> Optional[str]:
         """
         Pretty print index of callpath and generate
         also generate separate html page for displaying
         callpath and add the links to the index.
         """
-        if len(callpath_dict.keys()) == 0:
-            return "No accessible call path found"
 
-        html = ""
-        count = 0
+        if target_func.function_name in self.handled_sink.keys():
+            return self.handled_sink[target_func.function_name]
+        else:
+            html = ""
+            count = 0
 
-        for parent_func in callpath_dict.keys():
-            func_link, line = self._retrieve_function_link(
-                parent_func, proj_profile, target_func.function_name)
-            callpath_list = callpath_dict[parent_func]
+            for parent_func in callpath_dict.keys():
+                func_link, line = self._retrieve_function_link(
+                    parent_func, proj_profile, target_func.function_name)
+                callpath_list = callpath_dict[parent_func]
 
-            # Filter inaccessible callpaths and sort them
-            # by their depth, assuming shallowest depth is
-            # the function call closest to the target function
-            callpath_list = self._filter_inaccessible_callpath(
-                callpath_list, target_lang)
-            callpath_list.sort(key=len)
+                # Filter inaccessible callpaths and sort them
+                # by their depth, assuming shallowest depth is
+                # the function call closest to the target function
+                callpath_list = self._filter_inaccessible_callpath(
+                    callpath_list, target_lang)
+                callpath_list.sort(key=len)
 
-            if len(callpath_list) == 0:
-                return "No accessible call path found"
+                for callpath in callpath_list:
+                    count += 1
+                    if count <= constants.SINK_FUNCTION_CALLPATH_MAX_COUNT:
+                        callpath.append(target_func)
+                        self.index += 1
+                        callpath_link = self._generate_callpath_page(
+                            callpath, proj_profile)
+                        html += f"<a href='{callpath_link}'>Path {count}</a><br/>"
+                    else:
+                        break
+                if count > constants.SINK_FUNCTION_CALLPATH_MAX_COUNT:
+                    break
 
-            for callpath in callpath_list:
-                count += 1
-                self.index += 1
-                callpath.append(target_func)
-                callpath_link = self._generate_callpath_page(
-                    callpath, proj_profile)
-                if count <= constants.SINK_FUNCTION_CALLPATH_MAX_COUNT:
-                    html += f"<a href='{callpath_link}'>Path {count}</a><br/>"
-
-        return html
+            if html:
+                self.handled_sink[target_func.function_name] = html
+                return html
+            else:
+                return None
 
     def _print_blocker_list(
             self, blocker_list: List[function_profile.FunctionProfile],
@@ -490,6 +497,11 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
             if len(fd.reached_by_fuzzers) == 0:
                 fuzzer_callpath = self._handle_callpath_dict(
                     callpath_dict, proj_profile, fd, target_lang)
+
+                if not fuzzer_callpath:
+                    # No reachable call path found for this sink
+                    # functions, possibly false positive, skipping it
+                    continue
 
                 blocker = "N/A"
             else:
