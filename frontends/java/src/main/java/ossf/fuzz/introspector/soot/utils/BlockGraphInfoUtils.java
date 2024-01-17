@@ -33,8 +33,50 @@ import soot.jimple.IfStmt;
 import soot.jimple.InvokeExpr;
 import soot.jimple.Stmt;
 import soot.toolkits.graph.Block;
+import soot.toolkits.graph.BlockGraph;
+import soot.toolkits.graph.BriefBlockGraph;
 
 public class BlockGraphInfoUtils {
+  /**
+   * The method retrieves a map of all methods and its invoked methods.
+   *
+   * @param projectClassMethodMap a map of all project methods by project classes
+   * @return the map to store all the parent methods of all methods in the project
+   */
+  public static Map<SootMethod, List<SootMethod>> getAllMethodParents(
+      Map<SootClass, List<SootMethod>> projectClassMethodMap) {
+    Map<SootMethod, List<SootMethod>> map = new HashMap<SootMethod, List<SootMethod>>();
+
+    for (List<SootMethod> methods : projectClassMethodMap.values()) {
+      for (SootMethod method : methods) {
+        try{
+          BlockGraph blockGraph = new BriefBlockGraph(method.retrieveActiveBody());
+
+          for (Block block : blockGraph.getBlocks()) {
+            Iterator<Unit> blockIt = block.iterator();
+            while (blockIt.hasNext()) {
+              Unit unit = blockIt.next();
+              if (unit instanceof Stmt) {
+                SootMethod target = ((Stmt) unit).getInvokeExpr().getMethod();
+                if (projectClassMethodMap.keySet().contains(target.getDeclaringClass())) {
+                  List<SootMethod> parents = map.getOrDefault(target, new LinkedList<SootMethod>());
+                  if (!parents.contains(target)) {
+                    parents.add(target);
+                    map.put(target, parents);
+                  }
+                }
+              }
+            }
+          }
+        } catch (Exception e) {
+          // Source code not found for the project, skiping this method.
+        }
+      }
+    }
+
+    return map;
+  }
+
   /**
    * The method retrieves the invocation body of a statement if exists. Then it determines the
    * information on the method invoked and stores them in the result to record the call site
@@ -44,8 +86,6 @@ public class BlockGraphInfoUtils {
    * @param sourceFilePath the file path for the parent method
    * @param sinkMethodMap a map to store a set of sink methods names grouped by their containing
    *     classes
-   * @param reachedSinkMethodList a list of sink methods which are reachable by the given entry
-   *     method
    * @param excludeMethodList a list to store all excluded method names for this run
    * @return the callsite object to store in the output yaml file, return null if Soot fails to
    *     resolve the invocation
@@ -54,7 +94,6 @@ public class BlockGraphInfoUtils {
       Stmt stmt,
       String sourceFilePath,
       Map<String, Set<String>> sinkMethodMap,
-      List<SootMethod> reachedSinkMethodList,
       List<String> excludeMethodList) {
     // Handle statements of a method
     try {
@@ -64,9 +103,6 @@ public class BlockGraphInfoUtils {
         SootMethod target = expr.getMethod();
         SootClass tClass = target.getDeclaringClass();
         Set<String> sink = sinkMethodMap.getOrDefault(tClass.getName(), Collections.emptySet());
-        if (sink.contains(target.getName())) {
-          reachedSinkMethodList.add(target);
-        }
         if (!excludeMethodList.contains(target.getName())) {
           callsite.setSource(sourceFilePath + ":" + stmt.getJavaSourceStartLineNumber() + ",1");
           callsite.setMethodName(

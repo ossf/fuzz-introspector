@@ -60,7 +60,6 @@ public class SootSceneTransformer extends SceneTransformer {
   private List<String> excludeList;
   private List<String> excludeMethodList;
   private List<String> projectClassList;
-  private List<SootMethod> reachedSinkMethodList;
   private List<SootMethod> fullSinkMethodList;
   private List<FunctionElement> depthHandled;
   private Map<String, Set<String>> edgeClassMap;
@@ -93,7 +92,6 @@ public class SootSceneTransformer extends SceneTransformer {
     excludeList = new LinkedList<String>();
     excludeMethodList = new LinkedList<String>();
     projectClassList = new LinkedList<String>();
-    reachedSinkMethodList = new LinkedList<SootMethod>();
     fullSinkMethodList = new LinkedList<SootMethod>();
     edgeClassMap = new HashMap<String, Set<String>>();
     sinkMethodMap = new HashMap<String, Set<String>>();
@@ -185,8 +183,8 @@ public class SootSceneTransformer extends SceneTransformer {
       CalculationUtils.calculateAllCallDepth(this.methodList);
 
       if (!isAutoFuzz) {
-        fullSinkMethodList = SinkDiscoveryUtils.discoverAllSinks(sinkMethodMap, projectClassMethodMap);
-        CalltreeUtils.addSinkMethods(this.methodList, this.reachedSinkMethodList, this.isAutoFuzz);
+        fullSinkMethodList = SinkDiscoveryUtils.discoverAllSinks(sinkMethodMap, projectClassMethodMap, callGraph);
+        CalltreeUtils.addSinkMethods(this.methodList, this.fullSinkMethodList, this.isAutoFuzz);
       }
 
       // Extract call tree and write to .data
@@ -396,7 +394,6 @@ public class SootSceneTransformer extends SceneTransformer {
                       (Stmt) unit,
                       c.getFilePath(),
                       this.sinkMethodMap,
-                      this.reachedSinkMethodList,
                       this.excludeMethodList);
               if (callsite != null) {
                 element.addCallsite(callsite);

@@ -94,14 +94,14 @@ public class CalltreeUtils {
    * into the provided FunctionConfig object.
    *
    * @param methodList the FunctionConfig object that stores all the methods of this run
-   * @param reachedSinkMethodList the list of sink methods that are reachable in this run
+   * @param reachedMethodList the list of sink methods and parents that are reachable in this run
    * @param isAutoFuzz a boolean value indicates if this run is initiated by Auto-Fuzz
    */
   public static void addSinkMethods(
-      FunctionConfig methodList, List<SootMethod> reachedSinkMethodList, Boolean isAutoFuzz) {
+      FunctionConfig methodList, List<SootMethod> reachedMethodList, Boolean isAutoFuzz) {
     List<FunctionElement> eList = new LinkedList<FunctionElement>();
 
-    for (SootMethod method : reachedSinkMethodList) {
+    for (SootMethod method : reachedMethodList) {
       SootClass cl = method.getDeclaringClass();
 
       FunctionElement element = new FunctionElement();
@@ -113,6 +113,39 @@ public class CalltreeUtils {
     }
 
     methodList.addFunctionElements(eList);
+  }
+  /**
+   * The method recursively retrieves all methods that directlt or indirectly
+   * invoke the target method from the provided project callgraph.
+   *
+   * @param parentMap the list of parent methods mapped by all existing methods
+   * @param cg the full project call graph
+   * @param target the SootMethod target object to look for
+   * @param parentList the list of resulting SootMethod object
+   */
+  public static void getAllParents(Map<SootMethod, List<SootMethod>> parentMap, CallGraph cg, SootMethod target, List<SootMethod> parentList) {
+    List<SootMethod> parents = parentMap.getOrDefault(target, Collections.emptyList());
+
+    for (SootMethod parent : parents) {
+      if (!parentList.contains(parent)) {
+        parentList.add(parent);
+        getAllParents(parentMap, cg, parent, parentList);
+      }
+    }
+
+    Iterator<Edge> iter = cg.edgesInto(target);
+
+    while (iter.hasNext()) {
+      SootMethod parent = iter.next().tgt();
+      if (!parentList.contains(parent)) {
+        parentList.add(parent);
+        getAllParents(parentMap, cg, parent, parentList);
+      }
+    }
+
+    if (!parentList.contains(target)) {
+      parentList.add(target);
+    }
   }
 
   /**
