@@ -14,6 +14,8 @@
 #
 ################################################################################
 
+export FUZZ_INTROSPECTOR=1
+
 rm -rf ./work
 mkdir work
 cd work
