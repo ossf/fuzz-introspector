@@ -453,6 +453,8 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
         if len(blocker_list) == 0:
             return "N/A"
 
+        handled: List[str] = []
+
         html = "<table><thead>"
         html += "<th bgcolor='#282A36'>Blocker function</th>"
         html += "<th bgcolor='#282A36'>Arguments type</th>"
@@ -460,6 +462,10 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
         html += "<th bgcolor='#282A36'>Constants touched</th>"
         html += "</thead><tbody>"
         for blocker in blocker_list:
+            if "$lambda" in blocker.function_name or blocker.function_name in handled:
+                # Skip repeat blockers
+                continue
+            handled.append(blocker.function_name)
             link, line = self._retrieve_function_link(blocker, proj_profile)
             html += f"<tr><td style='max-width: 150px'>{blocker.function_name}<br/>"
             html += f"in <a href='{link}'>"
