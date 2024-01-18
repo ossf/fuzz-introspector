@@ -618,35 +618,16 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
         function_callsite_dict = self._map_function_callsite(
             function_list, callsite_list)
 
-        html_string = ""
-        html_string += "<div class=\"report-box\">"
+        # Generate html section header for sink analyser
+        html_string = "<div class=\"report-box\">"
 
         html_string += html_helpers.html_add_header_with_link(
             "Sink analyser for CWEs", html_helpers.HTML_HEADING.H1,
             table_of_contents)
-
-        # Table with all function calls for each files
         html_string += "<div class=\"collapsible\">"
-        html_string += (
-            "<p>"
-            "This section contains multiple tables, each table "
-            "contains a list of sink functions/methods found in "
-            "the project for one of the CWE supported by the sink "
-            "analyser, together with information like which fuzzers "
-            "statically reach the sink functions/methods and possible "
-            "call path to that sink functions/methods if it is not "
-            "statically reached by any fuzzers. Column 1 is the "
-            "function/method name of the sink functions/methods found "
-            "in the project. Column 2 lists all fuzzers (or no fuzzers "
-            "at all) that have covered that particular function method "
-            "statically. Column 3 shows a list of possible call paths "
-            "to reach the specific function/method call if none of the "
-            "fuzzers cover the target function/method calls. Lastly, "
-            "column 4 shows possible fuzzer blockers that prevent an "
-            "existing fuzzer from reaching the target sink functions/methods "
-            "dynamically."
-            "</p>")
 
+        # Generate tables for each CWEs
+        cwe_html_string = ""
         for cwe in CWES:
             logger.info(f" - Running analysis {self.get_name()} for {cwe}")
 
@@ -657,17 +638,18 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
 
             self.set_json_string_result(json_row)
 
-            # If no html, this is our job done for this cwe
-            if not self.display_html:
+            # If no html or no sink functions are found,
+            # this is our job done for this cwe
+            if not self.display_html or not html_rows:
                 continue
 
-            html_string += html_helpers.html_add_header_with_link(
+            cwe_html_string += html_helpers.html_add_header_with_link(
                 f"Sink functions/methods found for {cwe}",
                 html_helpers.HTML_HEADING.H2, table_of_contents)
 
             # Third party function calls table
             tables.append(f"myTable{len(tables)}")
-            html_string += html_helpers.html_create_table_head(
+            cwe_html_string += html_helpers.html_create_table_head(
                 tables[-1],
                 [("Target sink", ""),
                  ("Reached by fuzzer",
@@ -683,8 +665,38 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
                   "is only shown if there is fuzzer statically reached the "
                   "target sink function but failed to reach it dynamically.")])
 
-            html_string += html_rows
-            html_string += "</table>"
+            cwe_html_string += html_rows
+            cwe_html_string += "</table>"
+
+        # Add cwe tables into the html report
+        if cwe_html_string:
+            # At least one sink functions/methods found
+            html_string += (
+                "<p>"
+                "This section contains multiple tables, each table "
+                "contains a list of sink functions/methods found in "
+                "the project for one of the CWE supported by the sink "
+                "analyser, together with information like which fuzzers "
+                "statically reach the sink functions/methods and possible "
+                "call path to that sink functions/methods if it is not "
+                "statically reached by any fuzzers. Column 1 is the "
+                "function/method name of the sink functions/methods found "
+                "in the project. Column 2 lists all fuzzers (or no fuzzers "
+                "at all) that have covered that particular function method "
+                "statically. Column 3 shows a list of possible call paths "
+                "to reach the specific function/method call if none of the "
+                "fuzzers cover the target function/method calls. Lastly, "
+                "column 4 shows possible fuzzer blockers that prevent an "
+                "existing fuzzer from reaching the target sink functions/methods "
+                "dynamically."
+                "</p>")
+            html_string += cwe_html_string
+        else:
+            # No sink functions/methods found
+            html_string += (
+                "<p>"
+                "No sink functions/methods found in the target project."
+                "</p>")
 
         html_string += "</div>"  # .collapsible
         html_string += "</div>"  # report-box
