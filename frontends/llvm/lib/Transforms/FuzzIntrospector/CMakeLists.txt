@@ -6,4 +6,5 @@ add_llvm_component_library( LLVMFuzzIntrospector
 
   DEPENDS
   intrinsics_gen
+  LLVMBinaryFormat
   )
