@@ -33,6 +33,7 @@
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/FormatVariadic.h"
 #include "llvm/Support/Regex.h"
+#include "llvm/BinaryFormat/Dwarf.h"
 #include "llvm/Support/YAMLParser.h"
 #include "llvm/Support/YAMLTraits.h"
 #include "llvm/Support/raw_ostream.h"
@@ -292,6 +293,16 @@ struct FuzzIntrospector : public ModulePass {
   void logPrintf(int LogLevel, const char *Fmt, ...);
   bool runOnModule(Module &M) override;
 
+  // Debug related dumping
+  void dumpDebugInformation(Module &M, std::string outputFile);
+  void printFile(std::ofstream &, StringRef, StringRef, unsigned Line);
+  void dumpDIType(std::ofstream &O, DIType *T);
+  void recurseDerivedType(std::ofstream &O, DIDerivedType *T);
+  void dumpDebugCompileUnits(std::ofstream &O, DebugInfoFinder &Finder);
+  void dumpDebugFunctionsDebugInformation(std::ofstream &O, DebugInfoFinder &Finder);
+  void dumpDebugAllTypes(std::ofstream &O, DebugInfoFinder &Finder);
+  void dumpDebugAllGlobalVariables(std::ofstream &O, DebugInfoFinder &Finder);
+
   // void branchProfiler(Module &M);
   std::vector<BranchProfileEntry> branchProfiler(Function *);
   SmallPtrSet<BasicBlock *, 32> findReachables(BasicBlock *);
@@ -360,6 +371,247 @@ void FuzzIntrospector::readConfig() {
     }
   }
 }
+
+
+void FuzzIntrospector::printFile(std::ofstream &O, StringRef Filename, StringRef Directory, unsigned Line = 0) {
+  if (Filename.empty())
+    return;
+  O << " from ";
+  if (!Directory.empty())
+    O << Directory.str() << "/";
+  O << Filename.str();
+  if (Line)
+    O << ":" << Line;
+}
+
+void FuzzIntrospector::dumpDebugCompileUnits(std::ofstream &O, DebugInfoFinder &Finder) {
+  for (DICompileUnit *CU : Finder.compile_units()) {
+    O << "Compile unit: ";
+    auto Lang = dwarf::LanguageString(CU->getSourceLanguage());
+    if (!Lang.empty())
+      O << Lang.str();
+    else
+      O << "unknown-language(" << CU->getSourceLanguage() << ")";
+    printFile(O, CU->getFilename(), CU->getDirectory());
+    O << '\n';
+  }
+
+}
+
+
+void FuzzIntrospector::recurseDerivedType(std::ofstream &O, DIDerivedType *T) {
+  if (T == NULL) {
+    return;
+  }
+  auto Tag = dwarf::TagString(T->getTag());
+  if (!Tag.empty())
+    O << Tag.str() << ", ";
+  else
+    O << "unknown-tag(" << T->getTag() << ")";
+
+
+    if (!T->getName().empty()) {
+        O << ' ' << T->getName().str();
+    }
+    else if (T->getBaseType() != NULL) {
+        if (auto *T2 = dyn_cast<DIDerivedType>(T->getBaseType())) {
+            return recurseDerivedType(O, T2);
+        }
+        else if (auto *BT = dyn_cast<DIBasicType>(T->getBaseType())) {
+            if (!BT->getName().empty()) {
+                O << ' ' << BT->getName().str();
+            }
+
+        }
+    }
+    else {
+        return;
+    }
+
+}
+
+void FuzzIntrospector::dumpDIType(std::ofstream &O, DIType *T) {
+    if (T == NULL) {
+        return;
+    }
+
+    // Skip the type if we don't have the identifier
+    if (!T->getName().empty()) {
+        O << "Name: { ";
+        O << ' ' << T->getName().str();
+        O << "}";
+
+    }
+
+    O << "Type: ";
+    //if (!T->getName().empty())
+    printFile(O, T->getFilename(), T->getDirectory(), T->getLine());
+    if (auto *BT = dyn_cast<DIBasicType>(T)) {
+      O << " ";
+      auto Encoding = dwarf::AttributeEncodingString(BT->getEncoding());
+      if (!Encoding.empty())
+        O << Encoding.str();
+      else
+        O << "unknown-encoding(" << BT->getEncoding() << ')';
+    }
+    else if (auto *DerivedT = dyn_cast<DIDerivedType>(T)){
+        recurseDerivedType(O, DerivedT);
+    } else {
+      O << ' ';
+
+      auto Tag = dwarf::TagString(T->getTag());
+      if (!Tag.empty())
+        O << Tag.str();
+      else
+        O << "unknown-tag(" << T->getTag() << ")";
+    }
+    if (auto *CT = dyn_cast<DICompositeType>(T)) {
+      O << " Composite type\n";
+      if (auto *S = CT->getRawIdentifier()) {
+        O << " (identifier: '" << S->getString().str() << "')";
+      }
+      DINodeArray Elements = CT->getElements();
+      O << "Elements: " << Elements.size() << "\n";
+      for (uint32_t I = 0; I < Elements.size(); I++) {
+        O << "  Elem " << I << "{ ";
+        if (auto *TE = dyn_cast<DIType>(Elements[I])) {
+            if (!TE->getName().empty())
+              O << ' ' << TE->getName().str();
+            printFile(O, TE->getFilename(), TE->getDirectory(), TE->getLine());
+        }
+        if (auto *DE = dyn_cast<DISubprogram>(Elements[I])) {
+            O << "Subprogram: " << DE->getName().str();
+        }
+        if (auto *DENUM = dyn_cast<DIEnumerator>(Elements[I])) {
+            O << DENUM->getName().str();
+        }
+        O << " }\n";
+      }
+    }
+}
+
+void FuzzIntrospector::dumpDebugFunctionsDebugInformation(std::ofstream &O, DebugInfoFinder &Finder) {
+  O << "## Functions defined in module\n";
+  for (DISubprogram *S : Finder.subprograms()) {
+    O << "Subprogram: " << S->getName().str() << "\n";
+    printFile(O, S->getFilename(), S->getDirectory(), S->getLine());
+
+    if (!S->getLinkageName().empty())
+      O << " ('" << S->getLinkageName().str() << "')";
+    O << "\n";
+    if (auto *FuncType = dyn_cast<DISubroutineType>(S->getType())) {
+        if (auto *Types = FuncType->getRawTypeArray()) {
+            for (Metadata *Ty : FuncType->getTypeArray()->operands()) {
+               O << " - Operand Type: ";
+               if (Ty == NULL) {
+                    O << "void";
+                    O << "\n";
+                    continue;
+               }
+               if (auto DT = dyn_cast<DIType>(Ty)) {
+                    dumpDIType(O, DT);
+               }
+               O << "\n";
+            }
+        }
+    }
+    else {
+        O << "No subroutine type\n";
+    }
+    O << '\n';
+  }
+}
+
+void FuzzIntrospector::dumpDebugAllTypes(std::ofstream &O, DebugInfoFinder &Finder) {
+  O << "## Types defined in module\n";
+  for (const DIType *T : Finder.types()) {
+    // Skip the type if we don't have the identifier
+    if (T->getName().empty())
+      continue;
+
+    O << "Type: ";
+    //if (!T->getName().empty())
+    O << "Name: { ";
+    O << ' ' << T->getName().str();
+    O << "}";
+    printFile(O, T->getFilename(), T->getDirectory(), T->getLine());
+    if (auto *BT = dyn_cast<DIBasicType>(T)) {
+      O << " ";
+      auto Encoding = dwarf::AttributeEncodingString(BT->getEncoding());
+      if (!Encoding.empty())
+        O << Encoding.str();
+      else
+        O << "unknown-encoding(" << BT->getEncoding() << ')';
+    } else {
+      O << ' ';
+      auto Tag = dwarf::TagString(T->getTag());
+      if (!Tag.empty())
+        O << Tag.str();
+      else
+        O << "unknown-tag(" << T->getTag() << ")";
+    }
+    if (auto *CT = dyn_cast<DICompositeType>(T)) {
+      O << " Composite type\n";
+      if (auto *S = CT->getRawIdentifier()) {
+        O << " (identifier: '" << S->getString().str() << "')";
+      }
+      DINodeArray Elements = CT->getElements();
+      O << " - Elements: " << Elements.size() << "\n";
+      for (uint32_t I = 0; I < Elements.size(); I++) {
+        O << " - Elem " << I << "{ ";
+        if (auto *TE = dyn_cast<DIType>(Elements[I])) {
+            if (!TE->getName().empty())
+              O << ' ' << TE->getName().str();
+            printFile(O, TE->getFilename(), TE->getDirectory(), TE->getLine());
+        }
+        if (auto *DE = dyn_cast<DISubprogram>(Elements[I])) {
+            O << "Subprogram: " << DE->getName().str();
+        }
+        if (auto *DENUM = dyn_cast<DIEnumerator>(Elements[I])) {
+            O << DENUM->getName().str();
+        }
+        O << " }\n";
+      }
+    }
+    O << '\n';
+  }
+}
+
+void FuzzIntrospector::dumpDebugAllGlobalVariables(std::ofstream &O, DebugInfoFinder &Finder) {
+  O << "## Global variables in module\n";
+  for (auto *GVU : Finder.global_variables()) {
+    const auto *GV = GVU->getVariable();
+    O << "Global variable: " << GV->getName().str();
+    printFile(O, GV->getFilename(), GV->getDirectory(), GV->getLine());
+    if (!GV->getLinkageName().empty())
+      O << " ('" << GV->getLinkageName().str() << "')";
+    O << '\n';
+  }
+}
+
+/*
+ * Dumps a lot of debug information from the module in a user-friendly manner.
+ * Also applies some reasoning to it, e.g. dump additional information that is
+ * related to functions, e.g. it's operands and alike.
+ */
+void FuzzIntrospector::dumpDebugInformation(Module &M, std::string outputFile) {
+  std::ofstream O;
+  O.open(outputFile);
+  O << "<--- Debug Information for Module 2.0 --->\n";
+
+  DebugInfoFinder Finder;
+  Finder.processModule(M);
+
+  dumpDebugCompileUnits(O, Finder);
+  O << "\n";
+  dumpDebugFunctionsDebugInformation(O, Finder);
+  O << "\n";
+  dumpDebugAllGlobalVariables(O, Finder);
+  O << "\n";
+  dumpDebugAllTypes(O, Finder);
+  O.close();
+}
+
 
 void FuzzIntrospector::makeDefaultConfig() {
   logPrintf(L2, "Using default configuration\n");
@@ -439,6 +691,11 @@ bool FuzzIntrospector::runOnModule(Module &M) {
   // if (getenv("FI_BRANCH_PROFILE")) {
   //   branchProfiler(M);
   // }
+  //
+  //
+  /* Extract debugging information */
+  std::string nextDebugFile = nextCalltreeFile + ".debug_info";
+  dumpDebugInformation(M, nextDebugFile);
 
   logPrintf(L1, "Finished introspector module\n");
   return true;
