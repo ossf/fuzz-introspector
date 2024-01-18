@@ -127,8 +127,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
         self, proj_profile: project_profile.MergedProjectProfile,
         profiles: List[fuzzer_profile.FuzzerProfile]
     ) -> Tuple[List[cfg_load.CalltreeCallsite],
-               List[function_profile.FunctionProfile],
-               List[str]]:
+               List[function_profile.FunctionProfile], List[str]]:
         """
         Retrieve and return full list of call sites, functions
         and fuzzer names from all fuzzers profile for this project
@@ -298,9 +297,9 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
             return ("#", linenumber)
 
     def _determine_branch_blocker(
-        self, callpath_list: List[List[function_profile.FunctionProfile]],
-        proj_profile: project_profile.MergedProjectProfile,
-        fuzzer_name_list: List[str]
+            self, callpath_list: List[List[function_profile.FunctionProfile]],
+            proj_profile: project_profile.MergedProjectProfile,
+            fuzzer_name_list: List[str]
     ) -> List[function_profile.FunctionProfile]:
         """
         Determine the branch blocker list that affect the runtime
@@ -329,7 +328,8 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
             result_list.append(parent_fd)
 
         # Filter out invalid blockers from fuzzers
-        result_list = self._filter_fuzzer_blockers(result_list, fuzzer_name_list)
+        result_list = self._filter_fuzzer_blockers(result_list,
+                                                   fuzzer_name_list)
 
         return result_list
 
@@ -416,8 +416,9 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
             return callpath_list
 
     def _filter_fuzzer_functions(
-            self, callpath_list: List[List[function_profile.FunctionProfile]],
-            fuzzer_name_list: List[str]) -> List[List[function_profile.FunctionProfile]]:
+        self, callpath_list: List[List[function_profile.FunctionProfile]],
+        fuzzer_name_list: List[str]
+    ) -> List[List[function_profile.FunctionProfile]]:
         """
         Filter invalid call paths that are initiated
         from any fuzzer source files
@@ -428,7 +429,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
             is_valid = True
             for func in callpath:
                 for fuzzer_name in fuzzer_name_list:
-                    if fuzzer_name in func.function_source_file :
+                    if fuzzer_name in func.function_source_file:
                         is_valid = False
                         break
                 if not is_valid:
@@ -440,7 +441,8 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
 
     def _filter_fuzzer_blockers(
             self, blocker_functions: List[function_profile.FunctionProfile],
-            fuzzer_name_list: List[str]) -> List[function_profile.FunctionProfile]:
+            fuzzer_name_list: List[str]
+    ) -> List[function_profile.FunctionProfile]:
         """
         Filter invalid blocker functions that are located
         in any fuzzer source files
@@ -453,7 +455,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
 
             is_valid = True
             for fuzzer_name in fuzzer_name_list:
-                if fuzzer_name in func.function_source_file :
+                if fuzzer_name in func.function_source_file:
                     is_valid = False
                     break
             if is_valid:
@@ -466,8 +468,8 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
             callpath_dict: Dict[function_profile.FunctionProfile,
                                 List[List[function_profile.FunctionProfile]]],
             proj_profile: project_profile.MergedProjectProfile,
-            target_func: function_profile.FunctionProfile,
-            target_lang: str, fuzzer_name_list: List[str]) -> Optional[str]:
+            target_func: function_profile.FunctionProfile, target_lang: str,
+            fuzzer_name_list: List[str]) -> Optional[str]:
         """
         Pretty print index of callpath and generate
         also generate separate html page for displaying
@@ -550,8 +552,8 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
             self, functions: List[function_profile.FunctionProfile],
             proj_profile: project_profile.MergedProjectProfile,
             target_lang: str, func_callsites: Dict[str, List[str]],
-            coverage: code_coverage.CoverageProfile,
-            cwe: str, fuzzer_name_list: List[str]) -> Tuple[str, str]:
+            coverage: code_coverage.CoverageProfile, cwe: str,
+            fuzzer_name_list: List[str]) -> Tuple[str, str]:
         """
         Retrieve the content for this analyser for a specific cwe
         in two formats. One in normal html table rows string and the
@@ -571,7 +573,8 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
 
             if len(fd.reached_by_fuzzers) == 0:
                 fuzzer_callpath = self._handle_callpath_dict(
-                    callpath_dict, proj_profile, fd, target_lang, fuzzer_name_list)
+                    callpath_dict, proj_profile, fd, target_lang,
+                    fuzzer_name_list)
 
                 if not fuzzer_callpath:
                     # No reachable call path found for this sink
@@ -689,7 +692,6 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
         function_callsite_dict = self._map_function_callsite(
             function_list, callsite_list)
 
-
         # Generate html section header for sink analyser
         html_string = "<div class=\"report-box\">"
 
@@ -706,8 +708,8 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
             # Retrieve table content rows
             html_rows, json_row = self._retrieve_content_rows(
                 function_list, proj_profile, profiles[0].target_lang,
-                function_callsite_dict, proj_profile.runtime_coverage,
-                cwe, fuzzer_name_list)
+                function_callsite_dict, proj_profile.runtime_coverage, cwe,
+                fuzzer_name_list)
 
             self.set_json_string_result(json_row)
 
