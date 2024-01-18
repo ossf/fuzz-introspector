@@ -19,6 +19,8 @@ import shutil
 import atheris
 import pytest
 
+import tempfile
+
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../")
 
 # Import certain modules here to avoid instrumenting them
@@ -43,9 +45,7 @@ lang_list = ["c-cpp", "python", "jvm"]
 def test_TestOneInput(data: bytes):
     fdp = atheris.FuzzedDataProvider(data)
 
-    report_dir = "/tmp/fuzzreport"
-    if not os.path.isdir(report_dir):
-        os.makedirs(report_dir)
+    report_dir = tempfile.mkdtemp()
 
     correlation_file = os.path.join(report_dir, "correlation_file.txt")
     with open(correlation_file, "wb") as f:
