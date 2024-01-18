@@ -454,7 +454,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
             return "N/A"
 
         html = "<table><thead>"
-        html += "<th bgcolor='#282A36' >Blocker function</th>"
+        html += "<th bgcolor='#282A36'>Blocker function</th>"
         html += "<th bgcolor='#282A36'>Arguments type</th>"
         html += "<th bgcolor='#282A36'>Return type</th>"
         html += "<th bgcolor='#282A36'>Constants touched</th>"
@@ -550,25 +550,35 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
                       conclusions: List[html_helpers.HTMLConclusion]) -> str:
         """
         Performs an analysis based on the sink function discovery and analysis.
-        Show all possible sensitive sink functions / methods in the project and display
-        if any fuzzers statically or dynamically reached them. If not, display the parent
-        functions that invoked the sink functions and possible callpath that could reach
-        that specific parent function. Also, possible blocking functions stopping the
-        fuzzer to reach the sink functions in runtime will also be displayed, together
-        with its information to help the developer to update their fuzzers.
-        Simple processing flow of the sink analyser is shown below.
-
-        1) Loop through the all function list of the project and see if any of the sink
-           functions exists.
-        2) Shows if each of those functions is statically reachable.
-        3) Analyse and show the parent functions that invoked the target sink functions.
-        4) Discover and display callpath tree to reach each of the parent functions if
-           that sink function is not statically reached by any fuzzers.
-        5) Analyse the fuzzer report to determine if each of those statically reachable
-           sink functions / methods has been dynamically covered by any of the fuzzers
-        6) Provide blocker information for those sink functions that are not dynamically
-           covered to help the developer to update their fuzzers.
-        Remark: json report will be generated, and html report will only be generated
+        Show all possible sensitive sink functions/methods for each supported
+        CWE found in the project and display if any fuzzers statically or
+        dynamically reached them. If no fuzzers statically reach the specific
+        sink function and it does exist in the project, display the possible
+        call path that could reach that sink function. For each sink function
+        found, it may have more than one accessible call path, the maximum
+        number of call paths generated is configurable by the variable
+        SINK_FUNCTION_CALLPATH_MAX_COUNT in constants.py. If there exist
+        fuzzers that statically reach a specific sink function but no dynamical
+        reaching path is found, then the possible blocking functions together
+        with their information are displayed to help the developer to update
+        their fuzzers. Currently, The OWASP top 10 CWEs are supported on
+        c-cpp/python/java language. All the possible sink functions for each
+        CWE are stored in data/cwe_data.py. Support for more CWEs or refining
+        the sink functions for each CWE could be done by modifying the
+        cwe_data.py. A simple processing flow of the sink analyser for each
+        supported CWE is shown below.
+            1) Loop through the all functions list of the project and see if
+               any of the sink functions exist.
+            2) Show, if any, fuzzers statically reach the target sink function
+            3) Discover and display the call path tree to reach each of the
+               sink functions if it is not statically reached by any fuzzers.
+               For each of the sink functions, only display the top few call
+               paths that are publicly accessible. The number of call paths
+               displayed is configurable in constants.py.
+            4) Provide blocker information for those sink functions that are
+               statically covered but not dynamically covered to help the
+               developer to update their fuzzers.
+        Remark: JSON report will be generated, and HTML report will only be generated
         if the display_html variable of this analyser is set to True.
         Please also refer to :class:`calltree_analysis.FuzzCalltreeAnalysis`
 
