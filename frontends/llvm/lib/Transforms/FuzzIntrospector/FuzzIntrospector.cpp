@@ -16,6 +16,7 @@
 #include "llvm/Transforms/FuzzIntrospector/FuzzIntrospector.h"
 
 #include "llvm/ADT/StringExtras.h"
+#include "llvm/BinaryFormat/Dwarf.h"
 #include "llvm/IR/DebugInfo.h"
 #include "llvm/IR/DebugInfoMetadata.h"
 #include "llvm/IR/DebugLoc.h"
@@ -33,7 +34,6 @@
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/FormatVariadic.h"
 #include "llvm/Support/Regex.h"
-#include "llvm/BinaryFormat/Dwarf.h"
 #include "llvm/Support/YAMLParser.h"
 #include "llvm/Support/YAMLTraits.h"
 #include "llvm/Support/raw_ostream.h"
@@ -277,7 +277,7 @@ struct FuzzIntrospector : public ModulePass {
   std::string getNextLogFile();
   bool shouldRunIntrospector(Module &M);
 
-//  FuzzerFunctionList wrapAllFunctions(Module &M);
+  //  FuzzerFunctionList wrapAllFunctions(Module &M);
   std::string getFunctionFilename(Function *F);
   int getFunctionLinenumberBeginning(Function *F);
   unsigned int getFunctionLinenumberEnd(Function *F);
@@ -299,7 +299,8 @@ struct FuzzIntrospector : public ModulePass {
   void dumpDIType(std::ofstream &O, DIType *T);
   void recurseDerivedType(std::ofstream &O, DIDerivedType *T);
   void dumpDebugCompileUnits(std::ofstream &O, DebugInfoFinder &Finder);
-  void dumpDebugFunctionsDebugInformation(std::ofstream &O, DebugInfoFinder &Finder);
+  void dumpDebugFunctionsDebugInformation(std::ofstream &O,
+                                          DebugInfoFinder &Finder);
   void dumpDebugAllTypes(std::ofstream &O, DebugInfoFinder &Finder);
   void dumpDebugAllGlobalVariables(std::ofstream &O, DebugInfoFinder &Finder);
 
@@ -372,8 +373,8 @@ void FuzzIntrospector::readConfig() {
   }
 }
 
-
-void FuzzIntrospector::printFile(std::ofstream &O, StringRef Filename, StringRef Directory, unsigned Line = 0) {
+void FuzzIntrospector::printFile(std::ofstream &O, StringRef Filename,
+                                 StringRef Directory, unsigned Line = 0) {
   if (Filename.empty())
     return;
   O << " from ";
@@ -384,7 +385,8 @@ void FuzzIntrospector::printFile(std::ofstream &O, StringRef Filename, StringRef
     O << ":" << Line;
 }
 
-void FuzzIntrospector::dumpDebugCompileUnits(std::ofstream &O, DebugInfoFinder &Finder) {
+void FuzzIntrospector::dumpDebugCompileUnits(std::ofstream &O,
+                                             DebugInfoFinder &Finder) {
   for (DICompileUnit *CU : Finder.compile_units()) {
     O << "Compile unit: ";
     auto Lang = dwarf::LanguageString(CU->getSourceLanguage());
@@ -395,9 +397,7 @@ void FuzzIntrospector::dumpDebugCompileUnits(std::ofstream &O, DebugInfoFinder &
     printFile(O, CU->getFilename(), CU->getDirectory());
     O << '\n';
   }
-
 }
-
 
 void FuzzIntrospector::recurseDerivedType(std::ofstream &O, DIDerivedType *T) {
   if (T == NULL) {
@@ -409,88 +409,81 @@ void FuzzIntrospector::recurseDerivedType(std::ofstream &O, DIDerivedType *T) {
   else
     O << "unknown-tag(" << T->getTag() << ")";
 
-
-    if (!T->getName().empty()) {
-        O << ' ' << T->getName().str();
+  if (!T->getName().empty()) {
+    O << ' ' << T->getName().str();
+  } else if (T->getBaseType() != NULL) {
+    if (auto *T2 = dyn_cast<DIDerivedType>(T->getBaseType())) {
+      return recurseDerivedType(O, T2);
+    } else if (auto *BT = dyn_cast<DIBasicType>(T->getBaseType())) {
+      if (!BT->getName().empty()) {
+        O << ' ' << BT->getName().str();
+      }
     }
-    else if (T->getBaseType() != NULL) {
-        if (auto *T2 = dyn_cast<DIDerivedType>(T->getBaseType())) {
-            return recurseDerivedType(O, T2);
-        }
-        else if (auto *BT = dyn_cast<DIBasicType>(T->getBaseType())) {
-            if (!BT->getName().empty()) {
-                O << ' ' << BT->getName().str();
-            }
-
-        }
-    }
-    else {
-        return;
-    }
-
+  } else {
+    return;
+  }
 }
 
 void FuzzIntrospector::dumpDIType(std::ofstream &O, DIType *T) {
-    if (T == NULL) {
-        return;
-    }
+  if (T == NULL) {
+    return;
+  }
 
-    // Skip the type if we don't have the identifier
-    if (!T->getName().empty()) {
-        O << "Name: { ";
-        O << ' ' << T->getName().str();
-        O << "}";
+  // Skip the type if we don't have the identifier
+  if (!T->getName().empty()) {
+    O << "Name: { ";
+    O << ' ' << T->getName().str();
+    O << "}";
+  }
 
-    }
+  O << "Type: ";
+  // if (!T->getName().empty())
+  printFile(O, T->getFilename(), T->getDirectory(), T->getLine());
+  if (auto *BT = dyn_cast<DIBasicType>(T)) {
+    O << " ";
+    auto Encoding = dwarf::AttributeEncodingString(BT->getEncoding());
+    if (!Encoding.empty())
+      O << Encoding.str();
+    else
+      O << "unknown-encoding(" << BT->getEncoding() << ')';
+  } else if (auto *DerivedT = dyn_cast<DIDerivedType>(T)) {
+    recurseDerivedType(O, DerivedT);
+  } else {
+    O << ' ';
 
-    O << "Type: ";
-    //if (!T->getName().empty())
-    printFile(O, T->getFilename(), T->getDirectory(), T->getLine());
-    if (auto *BT = dyn_cast<DIBasicType>(T)) {
-      O << " ";
-      auto Encoding = dwarf::AttributeEncodingString(BT->getEncoding());
-      if (!Encoding.empty())
-        O << Encoding.str();
-      else
-        O << "unknown-encoding(" << BT->getEncoding() << ')';
+    auto Tag = dwarf::TagString(T->getTag());
+    if (!Tag.empty())
+      O << Tag.str();
+    else
+      O << "unknown-tag(" << T->getTag() << ")";
+  }
+  if (auto *CT = dyn_cast<DICompositeType>(T)) {
+    O << " Composite type\n";
+    if (auto *S = CT->getRawIdentifier()) {
+      O << " (identifier: '" << S->getString().str() << "')";
     }
-    else if (auto *DerivedT = dyn_cast<DIDerivedType>(T)){
-        recurseDerivedType(O, DerivedT);
-    } else {
-      O << ' ';
-
-      auto Tag = dwarf::TagString(T->getTag());
-      if (!Tag.empty())
-        O << Tag.str();
-      else
-        O << "unknown-tag(" << T->getTag() << ")";
-    }
-    if (auto *CT = dyn_cast<DICompositeType>(T)) {
-      O << " Composite type\n";
-      if (auto *S = CT->getRawIdentifier()) {
-        O << " (identifier: '" << S->getString().str() << "')";
+    DINodeArray Elements = CT->getElements();
+    O << "Elements: " << Elements.size() << "\n";
+    for (uint32_t I = 0; I < Elements.size(); I++) {
+      O << "  Elem " << I << "{ ";
+      if (auto *TE = dyn_cast<DIType>(Elements[I])) {
+        if (!TE->getName().empty())
+          O << ' ' << TE->getName().str();
+        printFile(O, TE->getFilename(), TE->getDirectory(), TE->getLine());
       }
-      DINodeArray Elements = CT->getElements();
-      O << "Elements: " << Elements.size() << "\n";
-      for (uint32_t I = 0; I < Elements.size(); I++) {
-        O << "  Elem " << I << "{ ";
-        if (auto *TE = dyn_cast<DIType>(Elements[I])) {
-            if (!TE->getName().empty())
-              O << ' ' << TE->getName().str();
-            printFile(O, TE->getFilename(), TE->getDirectory(), TE->getLine());
-        }
-        if (auto *DE = dyn_cast<DISubprogram>(Elements[I])) {
-            O << "Subprogram: " << DE->getName().str();
-        }
-        if (auto *DENUM = dyn_cast<DIEnumerator>(Elements[I])) {
-            O << DENUM->getName().str();
-        }
-        O << " }\n";
+      if (auto *DE = dyn_cast<DISubprogram>(Elements[I])) {
+        O << "Subprogram: " << DE->getName().str();
       }
+      if (auto *DENUM = dyn_cast<DIEnumerator>(Elements[I])) {
+        O << DENUM->getName().str();
+      }
+      O << " }\n";
     }
+  }
 }
 
-void FuzzIntrospector::dumpDebugFunctionsDebugInformation(std::ofstream &O, DebugInfoFinder &Finder) {
+void FuzzIntrospector::dumpDebugFunctionsDebugInformation(
+    std::ofstream &O, DebugInfoFinder &Finder) {
   O << "## Functions defined in module\n";
   for (DISubprogram *S : Finder.subprograms()) {
     O << "Subprogram: " << S->getName().str() << "\n";
@@ -500,29 +493,29 @@ void FuzzIntrospector::dumpDebugFunctionsDebugInformation(std::ofstream &O, Debu
       O << " ('" << S->getLinkageName().str() << "')";
     O << "\n";
     if (auto *FuncType = dyn_cast<DISubroutineType>(S->getType())) {
-        if (auto *Types = FuncType->getRawTypeArray()) {
-            for (Metadata *Ty : FuncType->getTypeArray()->operands()) {
-               O << " - Operand Type: ";
-               if (Ty == NULL) {
-                    O << "void";
-                    O << "\n";
-                    continue;
-               }
-               if (auto DT = dyn_cast<DIType>(Ty)) {
-                    dumpDIType(O, DT);
-               }
-               O << "\n";
-            }
+      if (auto *Types = FuncType->getRawTypeArray()) {
+        for (Metadata *Ty : FuncType->getTypeArray()->operands()) {
+          O << " - Operand Type: ";
+          if (Ty == NULL) {
+            O << "void";
+            O << "\n";
+            continue;
+          }
+          if (auto DT = dyn_cast<DIType>(Ty)) {
+            dumpDIType(O, DT);
+          }
+          O << "\n";
         }
-    }
-    else {
-        O << "No subroutine type\n";
+      }
+    } else {
+      O << "No subroutine type\n";
     }
     O << '\n';
   }
 }
 
-void FuzzIntrospector::dumpDebugAllTypes(std::ofstream &O, DebugInfoFinder &Finder) {
+void FuzzIntrospector::dumpDebugAllTypes(std::ofstream &O,
+                                         DebugInfoFinder &Finder) {
   O << "## Types defined in module\n";
   for (const DIType *T : Finder.types()) {
     // Skip the type if we don't have the identifier
@@ -530,7 +523,7 @@ void FuzzIntrospector::dumpDebugAllTypes(std::ofstream &O, DebugInfoFinder &Find
       continue;
 
     O << "Type: ";
-    //if (!T->getName().empty())
+    // if (!T->getName().empty())
     O << "Name: { ";
     O << ' ' << T->getName().str();
     O << "}";
@@ -560,15 +553,15 @@ void FuzzIntrospector::dumpDebugAllTypes(std::ofstream &O, DebugInfoFinder &Find
       for (uint32_t I = 0; I < Elements.size(); I++) {
         O << " - Elem " << I << "{ ";
         if (auto *TE = dyn_cast<DIType>(Elements[I])) {
-            if (!TE->getName().empty())
-              O << ' ' << TE->getName().str();
-            printFile(O, TE->getFilename(), TE->getDirectory(), TE->getLine());
+          if (!TE->getName().empty())
+            O << ' ' << TE->getName().str();
+          printFile(O, TE->getFilename(), TE->getDirectory(), TE->getLine());
         }
         if (auto *DE = dyn_cast<DISubprogram>(Elements[I])) {
-            O << "Subprogram: " << DE->getName().str();
+          O << "Subprogram: " << DE->getName().str();
         }
         if (auto *DENUM = dyn_cast<DIEnumerator>(Elements[I])) {
-            O << DENUM->getName().str();
+          O << DENUM->getName().str();
         }
         O << " }\n";
       }
@@ -577,7 +570,8 @@ void FuzzIntrospector::dumpDebugAllTypes(std::ofstream &O, DebugInfoFinder &Find
   }
 }
 
-void FuzzIntrospector::dumpDebugAllGlobalVariables(std::ofstream &O, DebugInfoFinder &Finder) {
+void FuzzIntrospector::dumpDebugAllGlobalVariables(std::ofstream &O,
+                                                   DebugInfoFinder &Finder) {
   O << "## Global variables in module\n";
   for (auto *GVU : Finder.global_variables()) {
     const auto *GV = GVU->getVariable();
@@ -611,7 +605,6 @@ void FuzzIntrospector::dumpDebugInformation(Module &M, std::string outputFile) {
   dumpDebugAllTypes(O, Finder);
   O.close();
 }
-
 
 void FuzzIntrospector::makeDefaultConfig() {
   logPrintf(L2, "Using default configuration\n");
@@ -727,10 +720,10 @@ void FuzzIntrospector::extractAllFunctionDetailsToYaml(std::string nextYamlName,
   FuzzerModuleIntrospection fmi(FuzzerCalltree.FileName, ListWrapper);
   YamlOut << fmi;
 
-  //return ListWrapper;
+  // return ListWrapper;
 
-  //FuzzerModuleIntrospection fmi(FuzzerCalltree.FileName, wrapAllFunctions(M));
-  //YamlOut << fmi;
+  // FuzzerModuleIntrospection fmi(FuzzerCalltree.FileName,
+  // wrapAllFunctions(M)); YamlOut << fmi;
 }
 
 /*
@@ -902,14 +895,11 @@ std::string FuzzIntrospector::resolveTypeName(Type *T) {
     }
   } else if (T->isFunctionTy()) {
     RetType += "func_type";
-  }
-  else if (T->isFloatTy()) {
+  } else if (T->isFloatTy()) {
     RetType += "float";
-  }
-  else if (T->isDoubleTy()) {
+  } else if (T->isDoubleTy()) {
     RetType += "double";
-  }
-  else if (T->isVoidTy()) {
+  } else if (T->isVoidTy()) {
     RetType += "void";
   }
   if (RetType == "") {
@@ -1272,8 +1262,8 @@ int FuzzIntrospector::extractCalltree(
       Calltree->Outgoings.push_back(OutEdge);
     }
     if (toRecurse) {
-      int OutEdgeDepth =
-          1 + extractCalltree(OutEdge->CallsiteDst, OutEdge, allNodesInTree, toRecurse);
+      int OutEdgeDepth = 1 + extractCalltree(OutEdge->CallsiteDst, OutEdge,
+                                             allNodesInTree, toRecurse);
       MaxDepthOfEdges = std::max(MaxDepthOfEdges, OutEdgeDepth);
     }
   }
@@ -1360,18 +1350,19 @@ FuzzerFunctionWrapper FuzzIntrospector::wrapFunction(Function *F) {
   // errs() << FuncWrap.FunctionName << "\n";
   for (auto &A : F->args()) {
     FuncWrap.ArgTypes.push_back(resolveTypeName(A.getType()));
-    //FuncWrap.ArgNames.push_back(A.getName().str());
+    // FuncWrap.ArgNames.push_back(A.getName().str());
     if (A.getName().str().empty()) {
-      const DILocalVariable* Var = NULL;
+      const DILocalVariable *Var = NULL;
       bool FoundArg = false;
       for (auto &BB : *F) {
         for (auto &I : BB) {
-          if (const DbgDeclareInst* DbgDeclare = dyn_cast<DbgDeclareInst>(&I)) {
-            if (auto DLV = dyn_cast<DILocalVariable>(DbgDeclare->getVariable())) {
-              if (  DLV->getArg() == A.getArgNo() + 1 &&
-                    !DLV->getName().empty() &&
-                     DLV->getScope()->getSubprogram() == F->getSubprogram()) {
-                //errs() << "--" << DLV->getName().str() << "\n";
+          if (const DbgDeclareInst *DbgDeclare = dyn_cast<DbgDeclareInst>(&I)) {
+            if (auto DLV =
+                    dyn_cast<DILocalVariable>(DbgDeclare->getVariable())) {
+              if (DLV->getArg() == A.getArgNo() + 1 &&
+                  !DLV->getName().empty() &&
+                  DLV->getScope()->getSubprogram() == F->getSubprogram()) {
+                // errs() << "--" << DLV->getName().str() << "\n";
                 FuncWrap.ArgNames.push_back(DLV->getName().str());
                 FoundArg = true;
               }
@@ -1382,8 +1373,7 @@ FuzzerFunctionWrapper FuzzIntrospector::wrapFunction(Function *F) {
       if (FoundArg == false) {
         FuncWrap.ArgNames.push_back("");
       }
-    }
-    else {
+    } else {
       // It's non empty, we just push that.
       FuncWrap.ArgNames.push_back(A.getName().str());
     }
@@ -1401,7 +1391,6 @@ FuzzerFunctionWrapper FuzzIntrospector::wrapFunction(Function *F) {
       if (BranchInst *BI = dyn_cast<BranchInst>(&I)) {
         FuncWrap.EdgeCount += BI->isConditional() ? 2 : 1;
       }
-
 
       // Handle branch instructions. Log src information (source code location)
       // and destination function name.
@@ -1455,22 +1444,18 @@ FuzzerFunctionWrapper FuzzIntrospector::wrapFunction(Function *F) {
           if (llvm::DebugLoc InlinedAtDL = debugInfo.getInlinedAt()) {
             DILocation *DLoc = InlinedAtDL.get();
 
-            SrcInfo = DLoc->getFilename().str() +
-                      ":" +
-                      std::to_string(InlinedAtDL.getLine()) +
-                      "," +
+            SrcInfo = DLoc->getFilename().str() + ":" +
+                      std::to_string(InlinedAtDL.getLine()) + "," +
                       std::to_string(InlinedAtDL.getCol());
-          }
-          else {
+          } else {
             DILocation *DLoc = debugInfo.get();
-            SrcInfo = DLoc->getFilename().str() +
-                      ":" +
-                      std::to_string(debugInfo.getLine()) +
-                      "," +
+            SrcInfo = DLoc->getFilename().str() + ":" +
+                      std::to_string(debugInfo.getLine()) + "," +
                       std::to_string(debugInfo.getCol());
           }
 
-          StringRef NormalisedDstName = removeDecSuffixFromName(CSElem->getName());
+          StringRef NormalisedDstName =
+              removeDecSuffixFromName(CSElem->getName());
           CSite cs;
           cs.src = SrcInfo;
           cs.dst = NormalisedDstName;
@@ -1583,7 +1568,7 @@ FuzzerFunctionWrapper FuzzIntrospector::wrapFunction(Function *F) {
   for (auto cNode : Nodes) {
     delete cNode;
   }
-  
+
   if (getenv("FI_BRANCH_PROFILE")) {
     FuncWrap.BranchProfiles = branchProfiler(F);
   }
@@ -1627,7 +1612,8 @@ bool FuzzIntrospector::shouldRunIntrospector(Module &M) {
               "actual fuzzers. Exiting this run.\n");
 
     if (getenv("FUZZ_INTROSPECTOR_AUTO_FUZZ")) {
-      logPrintf(L1, "Forcing analysis of all functions. This in auto-fuzz mode");
+      logPrintf(L1,
+                "Forcing analysis of all functions. This in auto-fuzz mode");
 
       std::string TargetLogName;
       std::string RandomStr = GenRandom(10);
@@ -1702,111 +1688,112 @@ std::vector<BranchProfileEntry> FuzzIntrospector::branchProfiler(Function *F) {
   // logPrintf(L1, "We are in branch profiler.\n");
 
   // for (const auto &F : M) {
-    // Skip declarations or the functions that are not wrapped e.g. not
-    // reachable from entry point
-    // if (F.isDeclaration() ||
-    //     FuncComplexityMap.find(&F) == FuncComplexityMap.end()) {
-    //   continue;
-    // }
-    auto fName = F->getName().str();
-    logPrintf(L3, "We are in branch profiler for %s\n", fName.c_str());
+  // Skip declarations or the functions that are not wrapped e.g. not
+  // reachable from entry point
+  // if (F.isDeclaration() ||
+  //     FuncComplexityMap.find(&F) == FuncComplexityMap.end()) {
+  //   continue;
+  // }
+  auto fName = F->getName().str();
+  logPrintf(L3, "We are in branch profiler for %s\n", fName.c_str());
 
-    // This map is function level
-    std::map<BasicBlock *, size_t> BBComplexityMap;
+  // This map is function level
+  std::map<BasicBlock *, size_t> BBComplexityMap;
 
-    for (const auto &BB : *F) {
-      auto TI = BB.getTerminator();
-      auto BI = dyn_cast<BranchInst>(TI);
-      if (BI && BI->isConditional()) {
-        auto Side0 = BI->getSuccessor(0);
-        auto Side1 = BI->getSuccessor(1);
-        auto BILoc = BI->getDebugLoc();
+  for (const auto &BB : *F) {
+    auto TI = BB.getTerminator();
+    auto BI = dyn_cast<BranchInst>(TI);
+    if (BI && BI->isConditional()) {
+      auto Side0 = BI->getSuccessor(0);
+      auto Side1 = BI->getSuccessor(1);
+      auto BILoc = BI->getDebugLoc();
 
-        auto ReachableFuncs0 = findReachableFuncs(Side0);
-        auto ReachableFuncs1 = findReachableFuncs(Side1);
+      auto ReachableFuncs0 = findReachableFuncs(Side0);
+      auto ReachableFuncs1 = findReachableFuncs(Side1);
 
-        // std::pair<size_t, size_t> Complexities =
-        //     findComplexities(Reachable0, Reachable1, BBComplexityMap);
+      // std::pair<size_t, size_t> Complexities =
+      //     findComplexities(Reachable0, Reachable1, BBComplexityMap);
 
-        // auto Side0Comp = Complexities.first;
-        // auto Side1Comp = Complexities.second;
+      // auto Side0Comp = Complexities.first;
+      // auto Side1Comp = Complexities.second;
 
-        std::pair<std::string, std::string> DbgExtracts;
-        DbgExtracts = getInsnDebugInfo((Instruction *)BI);
-        std::string BRstring = DbgExtracts.first;
-        if (BRstring.length() == 0) {
-          continue; // Failed to get debug info
-        }
-        DbgExtracts = getBBDebugInfo(Side0, BILoc);
-        std::string Side0String = DbgExtracts.first;
-        if (Side0String.length() == 0)
-          continue;
-        auto Side0Line = std::stoi(DbgExtracts.second);
-        DbgExtracts = getBBDebugInfo(Side1, BILoc);
-        std::string Side1String = DbgExtracts.first;
-        if (Side1String.length() == 0)
-          continue;
-        auto Side1Line = std::stoi(DbgExtracts.second);
-
-        // Invariant: side line numbers are ascending.
-        std::string TmpString;
-        std::vector<StringRef> *TmpFuncs;
-        if (Side0Line > Side1Line) {
-          TmpString = Side1String;
-          TmpFuncs = &ReachableFuncs1;
-          Side1String = Side0String;
-          ReachableFuncs1 = ReachableFuncs0;
-          Side0String = TmpString;
-          ReachableFuncs0 = *TmpFuncs;
-        }
-
-        // BranchSidesComplexity Entry_val(TrueSideString, *TrueSideFuncs,
-        //                                 FalseSideString, *FalseSideFuncs);
-        BranchSide BranchSide0Val = {Side0String, ReachableFuncs0};
-        BranchSide BranchSide1Val = {Side1String, ReachableFuncs1};
-        BranchProfileEntry Entry = {BRstring, {BranchSide0Val, BranchSide1Val}};
-        FuncBranchProfile.push_back(Entry);
+      std::pair<std::string, std::string> DbgExtracts;
+      DbgExtracts = getInsnDebugInfo((Instruction *)BI);
+      std::string BRstring = DbgExtracts.first;
+      if (BRstring.length() == 0) {
+        continue; // Failed to get debug info
       }
-      // Check for switch statements.
-      // IR syntax: switch <intty> <value>, label <defaultdest> [ <intty> <val>, label <dest> ... ]
-      // Default dest is operand(1).
-      auto SI = dyn_cast<SwitchInst>(TI);
-      if (SI) {
-        auto SILoc = SI->getDebugLoc();
-        std::pair<std::string, std::string> DbgExtracts;
-        DbgExtracts = getInsnDebugInfo((Instruction *)SI);
-        std::string BRstring = DbgExtracts.first;
-        std::vector<std::pair<BasicBlock *, int>> Dest_pairs;
-        std::map<BasicBlock *, std::string> DestStringsMap;
+      DbgExtracts = getBBDebugInfo(Side0, BILoc);
+      std::string Side0String = DbgExtracts.first;
+      if (Side0String.length() == 0)
+        continue;
+      auto Side0Line = std::stoi(DbgExtracts.second);
+      DbgExtracts = getBBDebugInfo(Side1, BILoc);
+      std::string Side1String = DbgExtracts.first;
+      if (Side1String.length() == 0)
+        continue;
+      auto Side1Line = std::stoi(DbgExtracts.second);
 
-        for (unsigned i = 0, NSucc = SI->getNumSuccessors(); i < NSucc; ++i) {
-          // This should take care of default dest as well.
-          auto Dest = SI->getSuccessor(i);
-          DbgExtracts = getBBDebugInfo(Dest, SILoc);
-          std::string DestString = DbgExtracts.first;
-          if (DestString.length() == 0)
-            continue;   // No debug info.
-          DestStringsMap[Dest] = DestString;
-          auto DestLine = std::stoi(DbgExtracts.second);
-
-          Dest_pairs.push_back(make_pair(Dest, DestLine));
-        }
-        // Sort destinations based on line number.
-        std::sort(Dest_pairs.begin(), Dest_pairs.end(),
-                  [](const pair<BasicBlock *, int> &a, const pair<BasicBlock *, int> &b)
-                  { return a.second < b.second; });
-
-        std::vector<BranchSide> SwitchBranchSides;
-        for (auto &pr : Dest_pairs) {
-          auto CurrDest = pr.first;
-          auto CurrFuncs = findReachableFuncs(CurrDest);
-          auto CurrDestString = DestStringsMap[CurrDest];
-          SwitchBranchSides.push_back({CurrDestString, CurrFuncs});
-        }
-        BranchProfileEntry Entry = {BRstring, SwitchBranchSides};
-        FuncBranchProfile.push_back(Entry);        
+      // Invariant: side line numbers are ascending.
+      std::string TmpString;
+      std::vector<StringRef> *TmpFuncs;
+      if (Side0Line > Side1Line) {
+        TmpString = Side1String;
+        TmpFuncs = &ReachableFuncs1;
+        Side1String = Side0String;
+        ReachableFuncs1 = ReachableFuncs0;
+        Side0String = TmpString;
+        ReachableFuncs0 = *TmpFuncs;
       }
+
+      // BranchSidesComplexity Entry_val(TrueSideString, *TrueSideFuncs,
+      //                                 FalseSideString, *FalseSideFuncs);
+      BranchSide BranchSide0Val = {Side0String, ReachableFuncs0};
+      BranchSide BranchSide1Val = {Side1String, ReachableFuncs1};
+      BranchProfileEntry Entry = {BRstring, {BranchSide0Val, BranchSide1Val}};
+      FuncBranchProfile.push_back(Entry);
     }
+    // Check for switch statements.
+    // IR syntax: switch <intty> <value>, label <defaultdest> [ <intty> <val>,
+    // label <dest> ... ] Default dest is operand(1).
+    auto SI = dyn_cast<SwitchInst>(TI);
+    if (SI) {
+      auto SILoc = SI->getDebugLoc();
+      std::pair<std::string, std::string> DbgExtracts;
+      DbgExtracts = getInsnDebugInfo((Instruction *)SI);
+      std::string BRstring = DbgExtracts.first;
+      std::vector<std::pair<BasicBlock *, int>> Dest_pairs;
+      std::map<BasicBlock *, std::string> DestStringsMap;
+
+      for (unsigned i = 0, NSucc = SI->getNumSuccessors(); i < NSucc; ++i) {
+        // This should take care of default dest as well.
+        auto Dest = SI->getSuccessor(i);
+        DbgExtracts = getBBDebugInfo(Dest, SILoc);
+        std::string DestString = DbgExtracts.first;
+        if (DestString.length() == 0)
+          continue; // No debug info.
+        DestStringsMap[Dest] = DestString;
+        auto DestLine = std::stoi(DbgExtracts.second);
+
+        Dest_pairs.push_back(make_pair(Dest, DestLine));
+      }
+      // Sort destinations based on line number.
+      std::sort(
+          Dest_pairs.begin(), Dest_pairs.end(),
+          [](const pair<BasicBlock *, int> &a,
+             const pair<BasicBlock *, int> &b) { return a.second < b.second; });
+
+      std::vector<BranchSide> SwitchBranchSides;
+      for (auto &pr : Dest_pairs) {
+        auto CurrDest = pr.first;
+        auto CurrFuncs = findReachableFuncs(CurrDest);
+        auto CurrDestString = DestStringsMap[CurrDest];
+        SwitchBranchSides.push_back({CurrDestString, CurrFuncs});
+      }
+      BranchProfileEntry Entry = {BRstring, SwitchBranchSides};
+      FuncBranchProfile.push_back(Entry);
+    }
+  }
 
   // } // End of loop over M
   // writeOutMap(OutMap, OutFileName);
@@ -1840,7 +1827,8 @@ FuzzIntrospector::findReachables(BasicBlock *Src) {
   return AllReachables;
 }
 
-// Traverse intra-procedural CFG starting from Src and list all called functions.
+// Traverse intra-procedural CFG starting from Src and list all called
+// functions.
 vector<StringRef> FuzzIntrospector::findReachableFuncs(BasicBlock *Src) {
   SmallVector<BasicBlock *, 32> Worklist;
   SmallPtrSet<BasicBlock *, 32> AllReachables;
@@ -1857,7 +1845,7 @@ vector<StringRef> FuzzIntrospector::findReachableFuncs(BasicBlock *Src) {
       continue;
     }
 
-    for (auto &I: *CurrBB) {
+    for (auto &I : *CurrBB) {
       // Skip debugging insns
       if (isa<DbgInfoIntrinsic>(&I)) {
         continue;
@@ -1965,7 +1953,7 @@ FuzzIntrospector::getBBDebugInfo(BasicBlock *BB, DILocation *PrevLoc) {
   } while (CurrLoc == PrevLoc);
 
   // To skip the return BB in optimized CFG.
-  if (dyn_cast<ReturnInst>(CurrTI)){
+  if (dyn_cast<ReturnInst>(CurrTI)) {
     CurrI = BB->getFirstNonPHIOrDbgOrLifetime(true);
   }
   if (CurrI)
