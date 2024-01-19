@@ -1,0 +1,7 @@
+fuzzerLogFile*
+fuzzer
+work
+*.o
+*.bc
+*.ll
+*.yaml
