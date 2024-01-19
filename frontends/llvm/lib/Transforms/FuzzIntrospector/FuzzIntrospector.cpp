@@ -259,6 +259,7 @@ struct FuzzIntrospector : public ModulePass {
   CalltreeNode FuzzerCalltree;
 
   std::vector<string> ConfigFuncsToAvoid;
+  std::vector<string> ConfigFuncsToAvoid2;
   std::vector<string> ConfigFilesToAvoid;
 
   // Function defs
@@ -289,6 +290,7 @@ struct FuzzIntrospector : public ModulePass {
   void readConfig();
   void makeDefaultConfig();
   bool shouldAvoidFunction(Function *Func);
+  bool shouldAvoidFunctionDst(std::string targetName);
 
   void logPrintf(int LogLevel, const char *Fmt, ...);
   bool runOnModule(Module &M) override;
@@ -629,6 +631,16 @@ void FuzzIntrospector::makeDefaultConfig() {
   std::vector<string> *current = &ConfigFuncsToAvoid;
   for (auto &s : FuncsToAvoid) {
     current->push_back(s);
+  }
+
+  std::vector<std::string> FuncsToAvoid2 = {
+      "llvm[.]*",
+      "__sanitizer_cov*",
+      "*sancov[.]module*",
+  };
+  std::vector<string> *current2 = &ConfigFuncsToAvoid2;
+  for (auto &s : FuncsToAvoid2) {
+    current2->push_back(s);
   }
 }
 
@@ -1242,6 +1254,20 @@ bool FuzzIntrospector::shouldAvoidFunction(Function *Func) {
   return false;
 }
 
+bool FuzzIntrospector::shouldAvoidFunctionDst(std::string DstName) {
+  // Avoid by function name
+  for (auto &FuncToAvoidRegex : ConfigFuncsToAvoid2) {
+    Regex Re(FuncToAvoidRegex);
+    if (Re.isValid()) {
+      if (Re.match(DstName)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
 // Collects all functions reachable by the target function. This
 // is an approximation, e.g. we make few efforts into resolving
 // indirect calls.
@@ -1456,6 +1482,10 @@ FuzzerFunctionWrapper FuzzIntrospector::wrapFunction(Function *F) {
 
           StringRef NormalisedDstName =
               removeDecSuffixFromName(CSElem->getName());
+
+          if (shouldAvoidFunctionDst(NormalisedDstName.str())) {
+              continue;
+          }
           CSite cs;
           cs.src = SrcInfo;
           cs.dst = NormalisedDstName;
