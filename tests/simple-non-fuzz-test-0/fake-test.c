@@ -32,11 +32,11 @@ int obvious_fuzzer_entrypoint(const char *data, size_t size) {
 }
 
 void test1() {
-    fuzz_entry("lorem ipsum dolor sit amet", 123);
+    obvious_fuzzer_entrypoint("lorem ipsum dolor sit amet", 123);
 }
 
 void test2() {
-    fuzz_entry("lorem amet", 12);
+    obvious_fuzzer_entrypoint("lorem amet", 12);
 }
 
 int main() {
