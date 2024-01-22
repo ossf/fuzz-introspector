@@ -1890,7 +1890,11 @@ vector<StringRef> FuzzIntrospector::findReachableFuncs(BasicBlock *Src) {
           Callee = value2Func(II->getCalledOperand());
         }
 
+
         if (Callee) {
+          if (shouldAvoidFunctionDst(Callee->getName().str())) {
+            continue;
+          }
           ReachedFuncs.push_back(Callee->getName());
         }
       }
