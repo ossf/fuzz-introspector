@@ -295,6 +295,10 @@ struct FuzzIntrospector : public ModulePass {
   void logPrintf(int LogLevel, const char *Fmt, ...);
   bool runOnModule(Module &M) override;
 
+  // Fuzz Introspector analysis for non-fuzzer binaries
+  void runIntrospectorOnNonFuzzerBinary(Module &M);
+
+
   // Debug related dumping
   void dumpDebugInformation(Module &M, std::string outputFile);
   void printFile(std::ofstream &, StringRef, StringRef, unsigned Line);
@@ -644,6 +648,26 @@ void FuzzIntrospector::makeDefaultConfig() {
   }
 }
 
+void FuzzIntrospector::runIntrospectorOnNonFuzzerBinary(Module &M) {
+  if (getenv("FUZZ_INTROSPECTOR_AUTO_FUZZ")) {
+    logPrintf(L1,
+              "Forcing analysis of all functions. This in auto-fuzz mode");
+
+    std::string TargetLogName;
+    std::string RandomStr = GenRandom(10);
+    int Idx = 0;
+    std::string prefix = "";
+    if (getenv("FUZZINTRO_OUTDIR")) {
+      prefix = std::string(getenv("FUZZINTRO_OUTDIR")) + "/";
+    }
+    do {
+      TargetLogName = formatv("{0}allFunctionsWithMain-{1}-{2}.yaml", prefix,
+                            std::to_string(Idx++), RandomStr);
+    } while (llvm::sys::fs::exists(TargetLogName));
+    extractAllFunctionDetailsToYaml(TargetLogName, M);
+  }
+}
+
 // Function entrypoint.
 bool FuzzIntrospector::runOnModule(Module &M) {
   // Require that FUZZ_INTROSPECTOR environment variable is set
@@ -662,6 +686,8 @@ bool FuzzIntrospector::runOnModule(Module &M) {
 
   logPrintf(L1, "Running introspector on %s\n", M.getName());
   if (shouldRunIntrospector(M) == false) {
+    // Run the analysis on a non-fuzzer binary.
+    runIntrospectorOnNonFuzzerBinary(M);
     return false;
   }
   // init randomness
@@ -1642,24 +1668,6 @@ bool FuzzIntrospector::shouldRunIntrospector(Module &M) {
               "study the "
               "actual fuzzers. Exiting this run.\n");
 
-    if (getenv("FUZZ_INTROSPECTOR_AUTO_FUZZ")) {
-      logPrintf(L1,
-                "Forcing analysis of all functions. This in auto-fuzz mode");
-
-      std::string TargetLogName;
-      std::string RandomStr = GenRandom(10);
-      int Idx = 0;
-      std::string prefix = "";
-      if (getenv("FUZZINTRO_OUTDIR")) {
-        prefix = std::string(getenv("FUZZINTRO_OUTDIR")) + "/";
-      }
-      do {
-        TargetLogName = formatv("{0}allFunctionsWithMain-{1}-{2}.yaml", prefix,
-                                std::to_string(Idx++), RandomStr);
-      } while (llvm::sys::fs::exists(TargetLogName));
-
-      extractAllFunctionDetailsToYaml(TargetLogName, M);
-    }
     return false;
   }
 
