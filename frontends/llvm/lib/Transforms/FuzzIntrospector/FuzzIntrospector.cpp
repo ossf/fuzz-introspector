@@ -634,9 +634,9 @@ void FuzzIntrospector::makeDefaultConfig() {
   }
 
   std::vector<std::string> FuncsToAvoid2 = {
-      "llvm[.]*",
-      "__sanitizer_cov*",
-      "*sancov[.]module*",
+      "llvm[.].*",
+      "^(__sanitizer_cov)",
+      "*sancov[.]module.*",
   };
   std::vector<string> *current2 = &ConfigFuncsToAvoid2;
   for (auto &s : FuncsToAvoid2) {
@@ -651,6 +651,9 @@ bool FuzzIntrospector::runOnModule(Module &M) {
     return false;
   }
   logPrintf(L1, "Fuzz introspector is running\n");
+  if (!getenv("FUZZ_INTROSPECTOR_CONFIG_NO_DEFAULT")) {
+    makeDefaultConfig();
+  }
 
   // Set log level if indicated.
   if (getenv("FUZZ_INTROSPECTOR_LOG_LEVEL")) {
@@ -668,9 +671,6 @@ bool FuzzIntrospector::runOnModule(Module &M) {
   if (getenv("FUZZ_INTROSPECTOR_CONFIG")) {
     logPrintf(L1, "Reading fuzz introspector config file\n");
     readConfig();
-  }
-  if (!getenv("FUZZ_INTROSPECTOR_CONFIG_NO_DEFAULT")) {
-    makeDefaultConfig();
   }
 
   // Extract and log reachability graph
@@ -1489,6 +1489,7 @@ FuzzerFunctionWrapper FuzzIntrospector::wrapFunction(Function *F) {
           CSite cs;
           cs.src = SrcInfo;
           cs.dst = NormalisedDstName;
+
           FuncWrap.Callsites.push_back(cs);
         }
       }
