@@ -295,6 +295,8 @@ struct FuzzIntrospector : public ModulePass {
   void logPrintf(int LogLevel, const char *Fmt, ...);
   bool runOnModule(Module &M) override;
 
+
+  void getCurrentWorkingDirectory();
   // Fuzz Introspector analysis for non-fuzzer binaries
   void runIntrospectorOnNonFuzzerBinary(Module &M);
 
@@ -665,7 +667,20 @@ void FuzzIntrospector::runIntrospectorOnNonFuzzerBinary(Module &M) {
                             std::to_string(Idx++), RandomStr);
     } while (llvm::sys::fs::exists(TargetLogName));
     extractAllFunctionDetailsToYaml(TargetLogName, M);
+
+    /* Extract debugging information */
+    std::string nextDebugFile = TargetLogName + ".debug_info";
+    dumpDebugInformation(M, nextDebugFile);
   }
+}
+
+void FuzzIntrospector::getCurrentWorkingDirectory() {
+    SmallString<128> Dir;
+    if (std::error_code EC = llvm::sys::fs::current_path(Dir)) {
+        logPrintf(L1, "Could not get the current path\n");
+    }
+
+    logPrintf(L1, "Curret WD: %s\n", Dir.str().str().c_str());
 }
 
 // Function entrypoint.
@@ -674,6 +689,9 @@ bool FuzzIntrospector::runOnModule(Module &M) {
   if (!getenv("FUZZ_INTROSPECTOR")) {
     return false;
   }
+
+  getCurrentWorkingDirectory();
+
   logPrintf(L1, "Fuzz introspector is running\n");
   if (!getenv("FUZZ_INTROSPECTOR_CONFIG_NO_DEFAULT")) {
     makeDefaultConfig();
