@@ -18,6 +18,7 @@ import logging
 import multiprocessing
 import os
 import json
+import shutil
 
 from typing import (
     Dict,
@@ -140,6 +141,15 @@ class IntrospectionProject():
                             'source_file': split_line[-1],
                             'language': split_line[2]
                         }
+
+                        # TODO: (David) remove this hack to frontend
+                        # LLVM may combine two absolute paths, which causes the
+                        # filepath to be erroneus.
+                        # Fix this here
+                        if '//' in file_dict['source_file']:
+                            logger.info(line)
+                            file_dict['source_file'] = '/' + file_dict[
+                                'source_file'].split('//')[-1]
                         all_files_in_debug_info[
                             file_dict['source_file']] = file_dict
                     # Functions defined in the module
@@ -175,7 +185,10 @@ class IntrospectionProject():
                                 location = line.split(
                                     "from")[-1].strip().split(" ")[0]
                                 source_file = location.split(":")[0]
-                                source_line = location.split(":")[1]
+                                try:
+                                    source_line = location.split(":")[1]
+                                except IndexError:
+                                    source_line = "-1"
                                 current_struct = {
                                     'type': 'struct',
                                     'name': struct_name,
@@ -191,7 +204,10 @@ class IntrospectionProject():
                                 location = line.split(" from ")[-1].split(
                                     " ")[0]
                                 source_file = location.split(":")[0]
-                                source_line = location.split(":")[1]
+                                try:
+                                    source_line = location.split(":")[1]
+                                except IndexError:
+                                    source_line = "-1"
                                 current_type = {
                                     'type': 'typedef',
                                     'name': name,
@@ -212,7 +228,10 @@ class IntrospectionProject():
                                 location = line.split(
                                     "from")[-1].strip().split(" ")[0]
                                 source_file = location.split(":")[0]
-                                source_line = location.split(":")[1]
+                                try:
+                                    source_line = location.split(":")[1]
+                                except IndexError:
+                                    source_line = "-1"
 
                                 current_struct['elements'].append({
                                     'name': elem_name,
@@ -228,7 +247,10 @@ class IntrospectionProject():
                         global_variable_name = sline[0]
                         location = sline[-1]
                         source_file = location.split(":")[0]
-                        source_line = location.split(":")[1]
+                        try:
+                            source_line = location.split(":")[1]
+                        except IndexError:
+                            source_line = "-1"
                         all_global_variables[source_file + source_line] = {
                             'name': global_variable_name,
                             'source': {
@@ -254,8 +276,11 @@ class IntrospectionProject():
                             current_function['name'] = function_name
                         if ' from ' in line and ":" in line and "- Operand" not in line:
                             location = line.split(" from ")[-1]
-                            source_file = line.split(":")[0]
-                            source_line = line.split(":")[-1]
+                            source_file = location.split(":")[0].strip()
+                            try:
+                                source_line = line.split(":")[-1]
+                            except IndexError:
+                                source_line = "-1"
                             current_function['source'] = {
                                 'source_file': source_file,
                                 'source_line': source_line,
@@ -297,6 +322,15 @@ class IntrospectionProject():
             'all_global_variables': list(all_global_variables.values()),
             'all_types': list(all_types.values())
         }
+
+        # Extract all files
+        if not os.path.isdir(constants.SAVED_SOURCE_FOLDER):
+            os.mkdir(constants.SAVED_SOURCE_FOLDER)
+
+        for file_elem in report_dict['all_files_in_project']:
+            dst = constants.SAVED_SOURCE_FOLDER + '/' + file_elem['source_file']
+            os.makedirs(os.path.dirname(dst), exist_ok=True)
+            shutil.copy(file_elem['source_file'], dst)
 
         with open(constants.DEBUG_INFO_DUMP, 'w') as debug_dump:
             debug_dump.write(json.dumps(report_dict))
