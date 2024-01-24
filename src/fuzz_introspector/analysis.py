@@ -17,6 +17,7 @@ import abc
 import logging
 import multiprocessing
 import os
+import json
 
 from typing import (
     Dict,
@@ -107,6 +108,198 @@ class IntrospectionProject():
         for profile in self.profiles:
             overlay_calltree_with_coverage(profile, self.proj_profile,
                                            self.coverage_url, self.base_folder)
+        # Load all debug files
+        self.debug_files = data_loader.load_all_debug_files(self.base_folder)
+
+    def dump_debug_files(self):
+        all_files_in_debug_info = dict()
+        current_function = None
+        all_functions_in_debug = list()
+        all_global_variables = dict()
+        all_types = dict()
+
+        current_type = None
+        current_struct = None
+
+        for debug_file in self.debug_files:
+            with open(debug_file, 'r') as debug_f:
+                content = debug_f.read()
+
+                function_identifier = "## Functions defined in module"
+                read_functions = False
+                global_variable_identifier = "## Global variables in module"
+                types_identifier = "## Types defined in module"
+                read_types = False
+
+                for line in content.split("\n"):
+                    logger.info(line)
+                    # Source code files
+                    if "Compile unit:" in line:
+                        split_line = line.split(" ")
+                        file_dict = {
+                            'source_file': split_line[-1],
+                            'language': split_line[2]
+                        }
+                        all_files_in_debug_info[
+                            file_dict['source_file']] = file_dict
+                    # Functions defined in the module
+                    if function_identifier in line:
+                        read_functions = True
+                    if global_variable_identifier in line:
+                        if current_function is not None:
+                            # Adjust args such that arg0 is set to the return type
+                            current_args = current_function.get('args', [])
+                            if len(current_args) > 0:
+                                return_type = current_args[0]
+                                current_args = current_args[1:]
+                                current_function['args'] = current_args
+                                current_function['return_type'] = return_type
+                            all_functions_in_debug.append(current_function)
+                        read_functions = False
+
+                    if types_identifier in line:
+                        read_types = True
+
+                    if read_types:
+                        if "Type: Name:" in line:
+                            if current_struct is not None:
+                                hashkey = current_struct['source'][
+                                    'source_file'] + current_struct['source'][
+                                        'source_line']
+                                all_types[hashkey] = current_struct
+                                current_struct = None
+                            if "DW_TAG_structure" in line:
+                                current_struct = dict()
+                                struct_name = line.split("{")[-1].split(
+                                    "}")[0].strip()
+                                location = line.split(
+                                    "from")[-1].strip().split(" ")[0]
+                                source_file = location.split(":")[0]
+                                source_line = location.split(":")[1]
+                                current_struct = {
+                                    'type': 'struct',
+                                    'name': struct_name,
+                                    'source': {
+                                        'source_file': source_file,
+                                        'source_line': source_line
+                                    },
+                                    'elements': []
+                                }
+                            if "DW_TAG_typedef" in line:
+                                name = line.split("{")[-1].strip().split(
+                                    "}")[0]
+                                location = line.split(" from ")[-1].split(
+                                    " ")[0]
+                                source_file = location.split(":")[0]
+                                source_line = location.split(":")[1]
+                                current_type = {
+                                    'type': 'typedef',
+                                    'name': name,
+                                    'source': {
+                                        'source_file': source_file,
+                                        'source_line': source_line
+                                    }
+                                }
+                                hashkey = current_type['source'][
+                                    'source_file'] + current_type['source'][
+                                        'source_line']
+                                all_types[hashkey] = current_type
+                        if "- Elem " in line:
+                            # Ensure we have a strcuct
+                            if current_struct is not None:
+                                elem_name = line.split("{")[-1].strip().split(
+                                    " ")[0]
+                                location = line.split(
+                                    "from")[-1].strip().split(" ")[0]
+                                source_file = location.split(":")[0]
+                                source_line = location.split(":")[1]
+
+                                current_struct['elements'].append({
+                                    'name': elem_name,
+                                    'source': {
+                                        'source_file': source_file,
+                                        'source_line': source_line,
+                                    }
+                                })
+
+                    if "Global variable: " in line:
+                        sline = line.replace("Global variable: ",
+                                             "").split(" from ")
+                        global_variable_name = sline[0]
+                        location = sline[-1]
+                        source_file = location.split(":")[0]
+                        source_line = location.split(":")[1]
+                        all_global_variables[source_file + source_line] = {
+                            'name': global_variable_name,
+                            'source': {
+                                'source_file': source_file,
+                                'source_line': source_line
+                            }
+                        }
+
+                    if read_functions:
+                        if "Subprogram:" in line:
+                            if current_function is not None:
+                                # Adjust args such that arg0 is set to the return type
+                                current_args = current_function.get('args', [])
+                                if len(current_args) > 0:
+                                    return_type = current_args[0]
+                                    current_args = current_args[1:]
+                                    current_function['args'] = current_args
+                                    current_function[
+                                        'return_type'] = return_type
+                                all_functions_in_debug.append(current_function)
+                            current_function = dict()
+                            function_name = line.split(" ")[-1]
+                            current_function['name'] = function_name
+                        if ' from ' in line and ":" in line and "- Operand" not in line:
+                            location = line.split(" from ")[-1]
+                            source_file = line.split(":")[0]
+                            source_line = line.split(":")[-1]
+                            current_function['source'] = {
+                                'source_file': source_file,
+                                'source_line': source_line,
+                            }
+                        if ' - Operand' in line:
+
+                            # Decipher type
+                            current_args = current_function.get('args', [])
+                            if "Name: {" not in line:
+                                l1 = line.replace("Operand Type:", "").replace(
+                                    "Type: ", "").replace("-", "")
+                                pointer_count = 0
+                                const_count = 0
+                                for arg_type in l1.split(","):
+                                    if "DW_TAG_pointer_type" in arg_type:
+                                        pointer_count += 1
+                                    if "DW_TAG_const_type" in arg_type:
+                                        const_count += 1
+                                base_type = l1.split(",")[-1].strip()
+                                end_type = ""
+                                if const_count > 0:
+                                    end_type += "const "
+                                end_type += base_type
+                                if pointer_count > 0:
+                                    end_type += " "
+                                    end_type += "*" * pointer_count
+
+                                current_args.append(end_type)
+                            elif "Name: " in line:
+                                current_args.append(
+                                    line.split("{")[-1].split("}")[0].strip())
+                            else:
+                                current_args.append(line)
+                            current_function['args'] = current_args
+
+        report_dict = {
+            'all_files_in_project': list(all_files_in_debug_info.values()),
+            'all_functions_in_project': all_functions_in_debug,
+            'all_global_variables': list(all_global_variables.values()),
+            'all_types': list(all_types.values())
+        }
+
+        with open(constants.DEBUG_INFO_DUMP, 'w') as debug_dump:
+            debug_dump.write(json.dumps(report_dict))
 
 
 class AnalysisInterface(abc.ABC):
