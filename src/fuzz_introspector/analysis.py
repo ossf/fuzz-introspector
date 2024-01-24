@@ -147,7 +147,8 @@ class IntrospectionProject():
                         # Fix this here
                         if '//' in file_dict['source_file']:
                             logger.info(line)
-                            file_dict['source_file'] = '/' + file_dict['source_file'].split('//')[-1]
+                            file_dict['source_file'] = '/' + file_dict[
+                                'source_file'].split('//')[-1]
                         all_files_in_debug_info[
                             file_dict['source_file']] = file_dict
                     # Functions defined in the module
@@ -321,7 +322,6 @@ class IntrospectionProject():
             'all_types': list(all_types.values())
         }
 
-
         # Extract all files
         if not os.path.isdir(constants.SAVED_SOURCE_FOLDER):
             os.mkdir(constants.SAVED_SOURCE_FOLDER)
@@ -330,7 +330,6 @@ class IntrospectionProject():
             dst = constants.SAVED_SOURCE_FOLDER + '/' + file_elem['source_file']
             os.makedirs(os.path.dirname(dst), exist_ok=True)
             shutil.copy(file_elem['source_file'], dst)
-
 
         with open(constants.DEBUG_INFO_DUMP, 'w') as debug_dump:
             debug_dump.write(json.dumps(report_dict))
