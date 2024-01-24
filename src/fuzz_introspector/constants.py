@@ -22,6 +22,8 @@ SUMMARY_FILE = "summary.json"
 
 HTML_REPORT = "fuzz_report.html"
 
+DEBUG_INFO_DUMP = "all_debug_info.json"
+
 # Holds data about all functions in javascript, to ease loading of static
 # website.
 ALL_FUNCTION_JS = "all_functions.js"

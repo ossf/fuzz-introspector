@@ -756,3 +756,5 @@ def create_html_report(introspection_proj: analysis.IntrospectionProject,
     if dump_files:
         write_content_to_html_files(html_full_doc, all_functions_json_html,
                                     fuzzer_table_data)
+
+        introspection_proj.dump_debug_files()
