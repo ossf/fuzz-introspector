@@ -122,8 +122,6 @@ class IntrospectionProject():
         current_struct = None
 
         for debug_file in self.debug_files:
-            dump_debug_json = dict()
-
             with open(debug_file, 'r') as debug_f:
                 content = debug_f.read()
 
@@ -148,7 +146,7 @@ class IntrospectionProject():
                     if function_identifier in line:
                         read_functions = True
                     if global_variable_identifier in line:
-                        if current_function != None:
+                        if current_function is not None:
                             # Adjust args such that arg0 is set to the return type
                             current_args = current_function.get('args', [])
                             if len(current_args) > 0:
@@ -164,7 +162,7 @@ class IntrospectionProject():
 
                     if read_types:
                         if "Type: Name:" in line:
-                            if current_struct != None:
+                            if current_struct is not None:
                                 hashkey = current_struct['source'][
                                     'source_file'] + current_struct['source'][
                                         'source_line']
@@ -206,11 +204,9 @@ class IntrospectionProject():
                                     'source_file'] + current_type['source'][
                                         'source_line']
                                 all_types[hashkey] = current_type
-
-                            #all_types[line] = line
                         if "- Elem " in line:
                             # Ensure we have a strcuct
-                            if current_struct != None:
+                            if current_struct is not None:
                                 elem_name = line.split("{")[-1].strip().split(
                                     " ")[0]
                                 location = line.split(
@@ -243,7 +239,7 @@ class IntrospectionProject():
 
                     if read_functions:
                         if "Subprogram:" in line:
-                            if current_function != None:
+                            if current_function is not None:
                                 # Adjust args such that arg0 is set to the return type
                                 current_args = current_function.get('args', [])
                                 if len(current_args) > 0:
