@@ -115,7 +115,7 @@ class IntrospectionProject():
     def dump_debug_files(self):
         all_files_in_debug_info = dict()
         current_function = None
-        all_functions_in_debug = list()
+        all_functions_in_debug = dict()
         all_global_variables = dict()
         all_types = dict()
 
@@ -164,7 +164,20 @@ class IntrospectionProject():
                                 current_args = current_args[1:]
                                 current_function['args'] = current_args
                                 current_function['return_type'] = return_type
-                            all_functions_in_debug.append(current_function)
+
+                            try:
+                                hashkey = current_function['source'][
+                                    'source_file'] + current_function[
+                                        'source']['source_line']
+                            except KeyError:
+                                hashkey = None
+
+                            if hashkey is not None:
+                                all_functions_in_debug[
+                                    hashkey] = current_function
+                            else:
+                                # Something went wrong, abandon.
+                                current_function = None
                         read_functions = False
 
                     if types_identifier in line:
@@ -270,7 +283,19 @@ class IntrospectionProject():
                                     current_function['args'] = current_args
                                     current_function[
                                         'return_type'] = return_type
-                                all_functions_in_debug.append(current_function)
+                                try:
+                                    hashkey = current_function['source'][
+                                        'source_file'] + current_function[
+                                            'source']['source_line']
+                                except KeyError:
+                                    hashkey = None
+
+                                if hashkey is not None:
+                                    all_functions_in_debug[
+                                        hashkey] = current_function
+                                else:
+                                    # Something went wrong, abandon.
+                                    current_function = None
                             current_function = dict()
                             function_name = line.split(" ")[-1]
                             current_function['name'] = function_name
@@ -318,7 +343,7 @@ class IntrospectionProject():
 
         report_dict = {
             'all_files_in_project': list(all_files_in_debug_info.values()),
-            'all_functions_in_project': all_functions_in_debug,
+            'all_functions_in_project': list(all_functions_in_debug.values()),
             'all_global_variables': list(all_global_variables.values()),
             'all_types': list(all_types.values())
         }
