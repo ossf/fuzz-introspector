@@ -143,7 +143,8 @@ class IntrospectionProject():
                         }
 
                         # TODO: (David) remove this hack to frontend
-                        # LLVM may combine two absolute paths, which causes the filepath to be erroneus.
+                        # LLVM may combine two absolute paths, which causes the
+                        # filepath to be erroneus.
                         # Fix this here
                         if '//' in file_dict['source_file']:
                             logger.info(line)
