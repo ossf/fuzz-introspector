@@ -146,9 +146,9 @@ class IntrospectionProject():
                         # filepath to be erroneus.
                         # Fix this here
                         if '//' in file_dict['source_file']:
-                            logger.info(line)
-                            file_dict['source_file'] = '/' + file_dict[
-                                'source_file'].split('//')[-1]
+                            file_dict['source_file'] = '/' + '/'.join(
+                                file_dict['source_file'].split('//')[1:])
+
                         all_files_in_debug_info[
                             file_dict['source_file']] = file_dict
                     # Functions defined in the module
