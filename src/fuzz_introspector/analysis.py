@@ -302,7 +302,9 @@ class IntrospectionProject():
                             location = line.split(" from ")[-1]
                             source_file = location.split(":")[0].strip()
                             try:
-                                source_line = line.split(":")[-1]
+                                source_line = line.split(":")[-1].strip()
+                                if len(source_line.split(" ")) > 0:
+                                    source_line = source_line.split(" ")[0]
                             except IndexError:
                                 source_line = "-1"
                             current_function['source'] = {
