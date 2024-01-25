@@ -133,7 +133,6 @@ class IntrospectionProject():
                 read_types = False
 
                 for line in content.split("\n"):
-                    logger.info(line)
                     # Source code files
                     if "Compile unit:" in line:
                         split_line = line.split(" ")
