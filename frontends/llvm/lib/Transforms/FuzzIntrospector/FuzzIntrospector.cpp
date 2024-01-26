@@ -425,7 +425,13 @@ void FuzzIntrospector::recurseDerivedType(std::ofstream &O, DIDerivedType *T) {
         O << ' ' << BT->getName().str();
       }
     }
+    else if (auto *BC = dyn_cast<DICompositeType>(T->getBaseType())) {
+      if (!BC->getName().empty()) {
+        O << ' ' << BC->getName().str();
+      }
+    }
   } else {
+    O << " void";
     return;
   }
 }
