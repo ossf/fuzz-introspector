@@ -354,6 +354,9 @@ class IntrospectionProject():
             os.mkdir(constants.SAVED_SOURCE_FOLDER)
 
         for file_elem in report_dict['all_files_in_project']:
+            if not os.path.isfile(file_elem['source_file']):
+                logger.info("No such file: %s" % (file_elem['source_file']))
+                continue
             dst = constants.SAVED_SOURCE_FOLDER + '/' + file_elem['source_file']
             os.makedirs(os.path.dirname(dst), exist_ok=True)
             shutil.copy(file_elem['source_file'], dst)
