@@ -38,6 +38,7 @@ class FunctionProfile:
         self.function_source_file = elem['functionSourceFile']
         self.linkage_type = elem['linkageType']
         self.function_linenumber = elem['functionLinenumber']
+        self.function_line_number_end = elem.get('functionLinenumberEnd', -1)
         self.return_type = elem['returnType']
         self.arg_count = elem['argCount']
         self.arg_types = elem['argTypes']
