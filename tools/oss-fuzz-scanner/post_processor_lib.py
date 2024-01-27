@@ -85,6 +85,7 @@ def extract_introspector_report(project_name, date_str):
 def extract_introspector_debug_info(project_name, date_str):
     introspector_summary_url = get_introspector_report_url_debug_info(
         project_name, date_str.replace("-", ""))
+    print("Getting: %s"%(introspector_summary_url))
 
     # Read the introspector atifact
     try:
@@ -137,47 +138,27 @@ def extract_lines_from_source_code(project_name, date_str, target_file, line_beg
 def get_source_of_func(funcname, debug_info, project_name, date_str):
     if debug_info is None:
         return
-    for k in debug_info:
-        print(k)
     for func in debug_info['all_functions_in_project']:
         if func['name'] == funcname:
             print("%s -- {%s:%s}" %
                   (func['name'], func['source']['source_file'],
                    func['source']['source_line']))
 
-            raw_source = extract_introspector_raw_source_code(
-                project_name, date_str, func['source']['source_file'])
-            if raw_source is None:
-                print("Could not get source")
-                return
-            lines = raw_source.split("\n")
-            start_line = int(func['source']['source_line']) - 1
-            for idx in range(10):
-                print(lines[start_line + idx])
+            function_line = int(func['source']['source_line']) - 1
+            src_file = func['source']['source_file']
+            function_source = extract_lines_from_source_code(project_name, date_str, src_file, function_line, function_line+30)
+            print(function_source)
 
 
 def get_source_of_type(typename, debug_info, project_name, date_str):
     if debug_info is None:
         return
-    for k in debug_info:
-        print(k)
     for typestruct in debug_info['all_types']:
         if typename in typestruct['name']:
             src_file = os.path.abspath(typestruct['source']['source_file'])
             src_line = int(typestruct['source']['source_line'])
-            #print("%s -- %s -- %d" % (typestruct['name'], src_file, src_line))
-            #print(json.dumps(typestruct))
-
-            raw_source = extract_introspector_raw_source_code(
-                project_name, date_str, src_file)
-            if raw_source is None:
-                print("Could not get source")
-                return
-
-            lines = raw_source.split("\n")
-            start_line = src_line - 10
-            for idx in range(20):
-                print(lines[start_line + idx])
+            type_source = extract_lines_from_source_code(project_name, date_str, src_file, src_line-10, src_line+10)
+            print(type_source)
 
 
 def find_all_cross_references_to_function(target_func, all_function_list,
@@ -215,42 +196,74 @@ def find_all_cross_references_to_function(target_func, all_function_list,
                     print(source_code)
 
 
-def get_function_source(project_name, date_str):
+def get_introspector_data(project_name, date_str):
     introspector_summary_url = get_introspector_report_url_summary(
         project_name, date_str.replace("-", ""))
 
     print(introspector_summary_url)
     introspector_report = extract_introspector_report(project_name, date_str)
-
     introspector_debug_info = extract_introspector_debug_info(
         project_name, date_str)
 
-    if introspector_report is None:
-        return
+    return introspector_report, introspector_debug_info
+
+
+def get_function_signature(target_function, introspector_debug_info):
+    all_funcs = introspector_debug_info['all_functions_in_project']
+    for func in all_funcs:
+        if func['name'] == target_function:
+            function_signature = ""
+            function_signature += func['return_type'] + ' '
+            function_signature += func['name'] + '('
+            for idx in range(len(func['args'])):
+                function_signature += func['args'][idx]
+                if idx < len(func['args'])-1:
+                    function_signature += ', '
+            function_signature += ')'
+            return function_signature
+    return None
+
+
+def function_inspector(project_name, date_str, introspector_report, introspector_debug_info, target_func):
+    print("Inspecting function details for: %s"%(target_func))
 
     all_function_list = introspector_report['MergedProjectProfile'][
         'all-functions']
 
-    type_name = 'auth_token'
-    print("Printing the type struct of: %s"%(type_name))
-    get_source_of_type(type_name, introspector_debug_info, project_name,
-                       date_str)
-
     function_to_print = 'cram_gamma_decode_init'
-    print("Printing the source of: %s"%(function_to_print))
+    func_signature = get_function_signature(function_to_print, introspector_debug_info)
+    if func_signature is not None:
+        print('Function signature: [%s]'%(func_signature))
+
+    print("Source code of function: %s"%(function_to_print))
     get_source_of_func(function_to_print, introspector_debug_info,
                        project_name, date_str)
 
     cross_reference_source = 'sam_hrecs_find_key'
-    print("Printing cross reference information about: %s"%(cross_reference_source))
     find_all_cross_references_to_function(cross_reference_source,
                                           all_function_list, project_name,
                                           date_str)
 
 
+def type_inspector(project_name, date_str, introspector_debug_info, type_name):
+    #type_name = 'auth_token'
+    print("Printing the type struct of: %s"%(type_name))
+    get_source_of_type(type_name, introspector_debug_info, project_name,
+                       date_str)
+
 def main():
     day_range = create_date_range(-1, 2)
-    get_function_source("htslib", day_range[0])
+    date_str = day_range[0]
+    target_project = 'htslib'
+    introspector_report, introspector_debug_info = get_introspector_data(target_project, date_str)
+
+    target_func = 'sam_hrecs_find_key'
+    function_inspector(target_project, date_str, introspector_report, introspector_debug_info, target_func)
+
+    target_type = 'auth_token'
+    type_inspector(target_project, date_str, introspector_debug_info, target_type)
+
+    #get_function_source("htslib", day_range[0])
 
 
 if __name__ == "__main__":
