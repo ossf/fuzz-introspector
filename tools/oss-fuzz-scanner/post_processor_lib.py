@@ -155,7 +155,8 @@ def get_source_of_func(funcname, debug_info, project_name, date_str):
             function_source = extract_lines_from_source_code(
                 project_name, date_str, src_file, function_line,
                 function_line + 30)
-            print(function_source)
+            return function_source
+    return None
 
 
 def get_source_of_type(typename, debug_info, project_name, date_str):
@@ -165,12 +166,13 @@ def get_source_of_type(typename, debug_info, project_name, date_str):
         if typename in typestruct['name']:
             src_file = os.path.abspath(typestruct['source']['source_file'])
             src_line = int(typestruct['source']['source_line'])
+            print("Type source location: %s : %d"%(src_file, src_line))
             type_source = extract_lines_from_source_code(
                 project_name, date_str, src_file, src_line - 10, src_line + 10)
             print(type_source)
 
 
-def find_all_cross_references_to_function(target_func, all_function_list,
+def print_all_cross_references_to_function(target_func, all_function_list,
                                           project_name, date_str):
     print("Cross-refereces for %s" % (target_func))
     all_funcs = []
@@ -252,18 +254,19 @@ def function_inspector(project_name, date_str, introspector_report,
 
     print("-" * 45)
     print("Source code of function: %s" % (function_to_print))
-    get_source_of_func(function_to_print, introspector_debug_info,
+    function_source = get_source_of_func(function_to_print, introspector_debug_info,
                        project_name, date_str)
+    if function_source is not None:
+        print(function_source)
 
     print("-" * 45)
     cross_reference_source = 'sam_hrecs_find_key'
-    find_all_cross_references_to_function(cross_reference_source,
+    print_all_cross_references_to_function(cross_reference_source,
                                           all_function_list, project_name,
                                           date_str)
 
 
 def type_inspector(project_name, date_str, introspector_debug_info, type_name):
-    #type_name = 'auth_token'
     print("-" * 45)
     print("Printing the type struct of: %s" % (type_name))
     get_source_of_type(type_name, introspector_debug_info, project_name,
@@ -284,8 +287,6 @@ def main():
     target_type = 'auth_token'
     type_inspector(target_project, date_str, introspector_debug_info,
                    target_type)
-
-    #get_function_source("htslib", day_range[0])
 
 
 if __name__ == "__main__":
