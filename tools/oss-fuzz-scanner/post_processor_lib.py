@@ -174,7 +174,7 @@ def get_source_of_type(typename, debug_info, project_name, date_str):
 
 def print_all_cross_references_to_function(target_func, all_function_list,
                                            project_name, date_str):
-    print("Cross-refereces for %s" % (target_func))
+    print("Cross-references for %s" % (target_func))
     all_funcs = []
     all_xrefs = set()
     for func in all_function_list:
