@@ -85,7 +85,7 @@ def extract_introspector_report(project_name, date_str):
 def extract_introspector_debug_info(project_name, date_str):
     introspector_summary_url = get_introspector_report_url_debug_info(
         project_name, date_str.replace("-", ""))
-    print("Getting: %s" % (introspector_summary_url))
+    #print("Getting: %s" % (introspector_summary_url))
 
     # Read the introspector atifact
     try:
@@ -166,14 +166,14 @@ def get_source_of_type(typename, debug_info, project_name, date_str):
         if typename in typestruct['name']:
             src_file = os.path.abspath(typestruct['source']['source_file'])
             src_line = int(typestruct['source']['source_line'])
-            print("Type source location: %s : %d"%(src_file, src_line))
+            print("Type source location: %s : %d" % (src_file, src_line))
             type_source = extract_lines_from_source_code(
                 project_name, date_str, src_file, src_line - 10, src_line + 10)
             print(type_source)
 
 
 def print_all_cross_references_to_function(target_func, all_function_list,
-                                          project_name, date_str):
+                                           project_name, date_str):
     print("Cross-refereces for %s" % (target_func))
     all_funcs = []
     all_xrefs = set()
@@ -213,7 +213,7 @@ def get_introspector_data(project_name, date_str):
     introspector_summary_url = get_introspector_report_url_summary(
         project_name, date_str.replace("-", ""))
 
-    print(introspector_summary_url)
+    #print(introspector_summary_url)
     introspector_report = extract_introspector_report(project_name, date_str)
     introspector_debug_info = extract_introspector_debug_info(
         project_name, date_str)
@@ -245,25 +245,24 @@ def function_inspector(project_name, date_str, introspector_report,
     all_function_list = introspector_report['MergedProjectProfile'][
         'all-functions']
 
-    function_to_print = 'cram_gamma_decode_init'
-    func_signature = get_function_signature(function_to_print,
+    func_signature = get_function_signature(target_func,
                                             introspector_debug_info)
     if func_signature is not None:
         print("-" * 45)
         print('Function signature: [%s]' % (func_signature))
 
     print("-" * 45)
-    print("Source code of function: %s" % (function_to_print))
-    function_source = get_source_of_func(function_to_print, introspector_debug_info,
-                       project_name, date_str)
+    print("Source code of function: %s" % (target_func))
+    function_source = get_source_of_func(target_func, introspector_debug_info,
+                                         project_name, date_str)
     if function_source is not None:
         print(function_source)
 
     print("-" * 45)
     cross_reference_source = 'sam_hrecs_find_key'
     print_all_cross_references_to_function(cross_reference_source,
-                                          all_function_list, project_name,
-                                          date_str)
+                                           all_function_list, project_name,
+                                           date_str)
 
 
 def type_inspector(project_name, date_str, introspector_debug_info, type_name):
