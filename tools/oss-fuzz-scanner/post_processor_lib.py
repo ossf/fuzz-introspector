@@ -66,7 +66,7 @@ def extract_introspector_report(project_name, date_str):
     introspector_summary_url = get_introspector_report_url_summary(
         project_name, date_str.replace("-", ""))
 
-    print("Getting: %s" % (introspector_summary_url))
+    #print("Getting: %s" % (introspector_summary_url))
 
     # Read the introspector atifact
     try:
@@ -100,10 +100,10 @@ def extract_introspector_debug_info(project_name, date_str):
     return introspector_report
 
 
-def extract_introspector_source_code(project_name, date_str, target_file):
+def extract_introspector_raw_source_code(project_name, date_str, target_file):
     introspector_summary_url = get_introspector_report_url_source_base(
         project_name, date_str.replace("-", "")) + target_file
-    print("Getting: %s" % (introspector_summary_url))
+    #print("Getting: %s" % (introspector_summary_url))
 
     # Read the introspector atifact
     try:
@@ -112,6 +112,26 @@ def extract_introspector_source_code(project_name, date_str, target_file):
         return None
 
     return raw_source
+
+def extract_lines_from_source_code(project_name, date_str, target_file, line_begin, line_end, print_line_numbers = True):
+    raw_source = extract_introspector_raw_source_code(project_name, date_str, target_file)
+    if raw_source is None:
+        return raw_source
+
+    source_lines = raw_source.split("\n")
+
+    return_source = ""
+    max_length = len(str(line_end))
+    for line_num in range(line_begin, line_end):
+        if line_num >= len(source_lines):
+            continue
+
+        if print_line_numbers:
+            line_num_str = " "*( max_length - len(str(line_num)))
+            return_source += "%s%d "%(line_num_str, line_num)
+        return_source += source_lines[line_num] + "\n"
+    return return_source
+    
 
 
 def get_source_of_func(funcname, debug_info, project_name, date_str):
@@ -125,7 +145,7 @@ def get_source_of_func(funcname, debug_info, project_name, date_str):
                   (func['name'], func['source']['source_file'],
                    func['source']['source_line']))
 
-            raw_source = extract_introspector_source_code(
+            raw_source = extract_introspector_raw_source_code(
                 project_name, date_str, func['source']['source_file'])
             if raw_source is None:
                 print("Could not get source")
@@ -145,10 +165,10 @@ def get_source_of_type(typename, debug_info, project_name, date_str):
         if typename in typestruct['name']:
             src_file = os.path.abspath(typestruct['source']['source_file'])
             src_line = int(typestruct['source']['source_line'])
-            print("%s -- %s -- %d" % (typestruct['name'], src_file, src_line))
-            print(json.dumps(typestruct))
+            #print("%s -- %s -- %d" % (typestruct['name'], src_file, src_line))
+            #print(json.dumps(typestruct))
 
-            raw_source = extract_introspector_source_code(
+            raw_source = extract_introspector_raw_source_code(
                 project_name, date_str, src_file)
             if raw_source is None:
                 print("Could not get source")
@@ -162,6 +182,7 @@ def get_source_of_type(typename, debug_info, project_name, date_str):
 
 def find_all_cross_references_to_function(target_func, all_function_list,
                                           project_name, date_str):
+    print("Cross-refereces for %s"%(target_func))
     all_funcs = []
     all_xrefs = set()
     for func in all_function_list:
@@ -174,27 +195,24 @@ def find_all_cross_references_to_function(target_func, all_function_list,
         if to_add:
             all_funcs.append(func)
 
-    print("xrefs:")
     #for xref in all_xrefs:
     #    print("- %s"%(xref))
     for func in all_funcs:
-        print("xref: %s" % (func['Func name']))
+        print("xref %s --> %s" % (func['Func name'], target_func))
         for callsite_dst in func['callsites']:
             if callsite_dst == target_func:
                 all_locations = func['callsites'][callsite_dst]
                 for loc in all_locations:
                     filename = loc.split('#')[0]
-                    cs_linenumber = loc.split(':')[-1]
+                    cs_linenumber = int(loc.split(':')[-1])
 
-                    print("Loc: %s -- %d" %
+                    print("xref location: %s : %d" %
                           (func['Functions filename'], int(cs_linenumber)))
                     target_file = func['Functions filename']
 
-                    raw_source = extract_introspector_source_code(
-                        project_name, date_str, target_file)
-                    split_source = raw_source.split("\n")
-                    for i in range(-1, 2):
-                        print(split_source[int(cs_linenumber) + i])
+                    print("xref source code:")
+                    source_code = extract_lines_from_source_code(project_name, date_str, target_file, cs_linenumber-2, cs_linenumber + 2)
+                    print(source_code)
 
 
 def get_function_source(project_name, date_str):
@@ -208,53 +226,24 @@ def get_function_source(project_name, date_str):
         project_name, date_str)
 
     if introspector_report is None:
-        print("None")
         return
 
     all_function_list = introspector_report['MergedProjectProfile'][
         'all-functions']
-    refined_proj_list = []
-    for func in all_function_list:
-        refined_proj_list.append({
-            'name':
-            func['Func name'],
-            'code_coverage_url':
-            func['func_url'],
-            'function_filename':
-            func['Functions filename'],
-            'runtime_code_coverage':
-            float(func['Func lines hit %'].replace("%", "")),
-            'is_reached':
-            len(func['Reached by Fuzzers']) > 0,
-            'reached-by-fuzzers':
-            func['Reached by Fuzzers'],
-            'project':
-            project_name,
-            'accumulated_cyclomatic_complexity':
-            func['Accumulated cyclomatic complexity'],
-            'llvm-instruction-count':
-            func['I Count'],
-            'undiscovered-complexity':
-            func['Undiscovered complexity'],
-            'function-arguments':
-            func['Args'],
-            'function-argument-names':
-            func.get('ArgNames', ['Did not find arguments']),
-            'return-type':
-            func.get('return_type', 'N/A'),
-            'raw-function-name':
-            func.get('raw-function-name', 'N/A'),
-            'date-str':
-            date_str
-        })
 
-    get_source_of_type('auth_token', introspector_debug_info, project_name,
+    type_name = 'auth_token'
+    print("Printing the type struct of: %s"%(type_name))
+    get_source_of_type(type_name, introspector_debug_info, project_name,
                        date_str)
-    get_source_of_func('cram_gamma_decode_init', introspector_debug_info,
+
+    function_to_print = 'cram_gamma_decode_init'
+    print("Printing the source of: %s"%(function_to_print))
+    get_source_of_func(function_to_print, introspector_debug_info,
                        project_name, date_str)
 
-    print("Finding")
-    find_all_cross_references_to_function('sam_hrecs_find_key',
+    cross_reference_source = 'sam_hrecs_find_key'
+    print("Printing cross reference information about: %s"%(cross_reference_source))
+    find_all_cross_references_to_function(cross_reference_source,
                                           all_function_list, project_name,
                                           date_str)
 
