@@ -66,6 +66,8 @@ def extract_introspector_report(project_name, date_str):
     introspector_summary_url = get_introspector_report_url_summary(
         project_name, date_str.replace("-", ""))
 
+    print("Getting: %s" % (introspector_summary_url))
+
     # Read the introspector atifact
     try:
         raw_introspector_json_request = requests.get(introspector_summary_url,
@@ -158,6 +160,43 @@ def get_source_of_type(typename, debug_info, project_name, date_str):
                 print(lines[start_line + idx])
 
 
+def find_all_cross_references_to_function(target_func, all_function_list,
+                                          project_name, date_str):
+    all_funcs = []
+    all_xrefs = set()
+    for func in all_function_list:
+        to_add = False
+        for callsite_dst in func['callsites']:
+            if callsite_dst == target_func:
+                # key vaues pairs, the key is a string the value is list
+                all_xrefs.add(func['Func name'])
+                to_add = True
+        if to_add:
+            all_funcs.append(func)
+
+    print("xrefs:")
+    #for xref in all_xrefs:
+    #    print("- %s"%(xref))
+    for func in all_funcs:
+        print("xref: %s" % (func['Func name']))
+        for callsite_dst in func['callsites']:
+            if callsite_dst == target_func:
+                all_locations = func['callsites'][callsite_dst]
+                for loc in all_locations:
+                    filename = loc.split('#')[0]
+                    cs_linenumber = loc.split(':')[-1]
+
+                    print("Loc: %s -- %d" %
+                          (func['Functions filename'], int(cs_linenumber)))
+                    target_file = func['Functions filename']
+
+                    raw_source = extract_introspector_source_code(
+                        project_name, date_str, target_file)
+                    split_source = raw_source.split("\n")
+                    for i in range(-1, 2):
+                        print(split_source[int(cs_linenumber) + i])
+
+
 def get_function_source(project_name, date_str):
     introspector_summary_url = get_introspector_report_url_summary(
         project_name, date_str.replace("-", ""))
@@ -214,9 +253,14 @@ def get_function_source(project_name, date_str):
     get_source_of_func('cram_gamma_decode_init', introspector_debug_info,
                        project_name, date_str)
 
+    print("Finding")
+    find_all_cross_references_to_function('sam_hrecs_find_key',
+                                          all_function_list, project_name,
+                                          date_str)
+
 
 def main():
-    day_range = create_date_range(-1, 1)
+    day_range = create_date_range(-1, 2)
     get_function_source("htslib", day_range[0])
 
 
