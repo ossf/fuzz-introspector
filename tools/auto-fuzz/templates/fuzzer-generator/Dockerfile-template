@@ -19,6 +19,7 @@ RUN pip3 install --upgrade pip && pip3 install cython
 
 RUN rm -rf /fuzz-introspector/tools/auto-fuzz/fuzzer_generator
 RUN rm -rf /fuzz-introspector/tools/auto-fuzz/objects
+RUN echo "[]" > $OUT/possible_targets
 COPY fuzzer_generator /fuzz-introspector/tools/auto-fuzz/fuzzer_generator
 COPY objects /fuzz-introspector/tools/auto-fuzz/objects
 COPY constants.py /fuzz-introspector/tools/auto-fuzz
