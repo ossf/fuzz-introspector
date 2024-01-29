@@ -148,7 +148,7 @@ def _print_summary_of_trial_run(trial_run,
     python_fuzz_path = os.path.join(autofuzz_project_dir, trial_run['name'],
                                     "fuzz_1.py")
     java_fuzz_path = os.path.join(autofuzz_project_dir, trial_run['name'],
-                                 "Fuzz.java")
+                                  "Fuzz.java")
     fuzz_path = ""
     if os.path.isfile(python_fuzz_path):
         fuzz_path = python_fuzz_path
@@ -543,7 +543,7 @@ def _merge_runs(trial_dir, successful_runs, language):
     # Writing the merged code into a single Fuzz.java
     if language == "java":
         # Process the merged java code
-        base_java = base_files.gen_base_fuzzer('java','maven',False)
+        base_java = base_files.gen_base_fuzzer('java', 'maven', False)
         base_java = base_java.replace("/*IMPORTS*/", "".join(java_import_stmt))
         base_java = base_java.replace("/*COUNTER*/", "")
         base_java = base_java.replace("/*STATIC_OBJECT_CHOICE*/", "")
@@ -645,10 +645,8 @@ def main():
     elif args.command == 'benchmark-summary':
         benchmark_summary(args.language)
     elif args.command == 'merge':
-        if args.language == 'python':
-            merge_run(args.dir, 'python')
-        elif args.language == 'java':
-            merge_run(args.dir, 'java')
+        if args.language == 'python' or args.language == 'java':
+            merge_run(args.dir, args.language)
         else:
             print('Unsupported language: %s' % args.language)
 
