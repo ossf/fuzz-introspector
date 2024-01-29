@@ -19,7 +19,7 @@ git clone https://github.com/google/oss-fuzz
 git clone https://github.com/ossf/fuzz-introspector
 
 # Go into auto-fuzz
-cd ../../../tools/auto-fuzz/
+cd fuzz-introspector/tools/auto-fuzz/
 
 # Run a small experiment (it's set to being small by default)
 # Currently, only java or python supported for the language option
@@ -27,7 +27,7 @@ python3 ./manager.py --language=<language> --targets=constants
 
 # Once it's finished, let's inspect the results.
 # Identify the best targets per project
-python3 ./post-process.py
+python3 ./post-process.py all
 ```
 
 # Some settings
@@ -112,7 +112,7 @@ python3 ./manager.py --language=<language> --benchmark
 
 To validate the result
 ```
-python3 ./post_processing.py benchmark_summary <language>
+python3 ./post-process.py benchmark-summary <language>
 ```
 
 

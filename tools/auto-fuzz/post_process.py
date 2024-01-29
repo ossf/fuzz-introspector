@@ -425,7 +425,7 @@ def extract_ranked(target_dir, runs_to_rank=20):
 
 def get_cmdline_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
-    subparsers = parser.add_subparsers(dest='command')
+    subparsers = parser.add_subparsers(dest='command', required=True)
 
     all_parser = subparsers.add_parser(
         'all', help="Gets the max performer in all auto-fuzz runs.")
