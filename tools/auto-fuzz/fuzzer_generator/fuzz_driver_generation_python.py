@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import os
+import json
 import yaml
 import itertools
 import sys
