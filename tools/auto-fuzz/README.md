@@ -27,7 +27,7 @@ python3 ./manager.py --language=<language> --targets=constants
 
 # Once it's finished, let's inspect the results.
 # Identify the best targets per project
-python3 ./post-process.py
+python3 ./post-process.py all
 ```
 
 # Some settings
@@ -112,7 +112,7 @@ python3 ./manager.py --language=<language> --benchmark
 
 To validate the result
 ```
-python3 ./post_processing.py benchmark_summary <language>
+python3 ./post-process.py benchmark-summary <language>
 ```
 
 
