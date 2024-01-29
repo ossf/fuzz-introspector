@@ -21,31 +21,31 @@ BATCH_SIZE_BEFORE_DOCKER_CLEAN = 40
 JDK_URL = {
     "jdk15":
     "https://download.java.net/java/GA/jdk15.0.2/0d1cfde4252546c6931946de8db48ee2/7/GPL/openjdk-15.0.2_linux-x64_bin.tar.gz",
-	"jdk21":
+    "jdk21":
     "https://download.java.net/java/GA/jdk21/fd2272bbf8e04c3dbaee13770090416c/35/GPL/openjdk-21_linux-x64_bin.tar.gz",
-	"jdk20":
+    "jdk20":
     "https://download.java.net/java/GA/jdk20/bdc68b4b9cbc4ebcb30745c85038d91d/36/GPL/openjdk-20_linux-x64_bin.tar.gz",
-	"jdk19":
+    "jdk19":
     "https://download.java.net/java/GA/jdk19/877d6127e982470ba2a7faa31cc93d04/36/GPL/openjdk-19_linux-x64_bin.tar.gz",
-	"jdk18":
+    "jdk18":
     "https://download.java.net/java/GA/jdk18/43f95e8614114aeaa8e8a5fcf20a682d/36/GPL/openjdk-18_linux-x64_bin.tar.gz",
-	"jdk17":
+    "jdk17":
     "https://download.java.net/java/GA/jdk17/0d483333a00540d886896bac774ff48b/35/GPL/openjdk-17_linux-x64_bin.tar.gz",
-	"jdk16":
+    "jdk16":
     "https://download.java.net/java/GA/jdk16/7863447f0ab643c585b9bdebf67c69db/36/GPL/openjdk-16_linux-x64_bin.tar.gz",
-	"jdk14":
+    "jdk14":
     "https://download.java.net/java/GA/jdk14/076bab302c7b4508975440c56f6cc26a/36/GPL/openjdk-14_linux-x64_bin.tar.gz",
-	"jdk13":
+    "jdk13":
     "https://download.java.net/java/GA/jdk13/5b8a42f3905b406298b72d750b6919f6/33/GPL/openjdk-13_linux-x64_bin.tar.gz",
-	"jdk12":
+    "jdk12":
     "https://download.java.net/java/GA/jdk12/33/GPL/openjdk-12_linux-x64_bin.tar.gz",
-	"jdk11":
+    "jdk11":
     "https://download.java.net/java/ga/jdk11/openjdk-11_linux-x64_bin.tar.gz",
-	"jdk10":
+    "jdk10":
     "https://download.java.net/java/GA/jdk10/10/binaries/openjdk-10_linux-x64_bin.tar.gz",
-	"jdk9":
+    "jdk9":
     "https://download.java.net/java/GA/jdk9/9/binaries/openjdk-9_linux-x64_bin.tar.gz",
-	"jdk8":
+    "jdk8":
     "https://download.java.net/openjdk/jdk8u43/ri/openjdk-8u43-linux-x64.tar.gz",
 }
 
