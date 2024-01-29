@@ -21,19 +21,49 @@ BATCH_SIZE_BEFORE_DOCKER_CLEAN = 40
 JDK_URL = {
     "jdk15":
     "https://download.java.net/java/GA/jdk15.0.2/0d1cfde4252546c6931946de8db48ee2/7/GPL/openjdk-15.0.2_linux-x64_bin.tar.gz",
+    "jdk21":
+    "https://download.java.net/java/GA/jdk21/fd2272bbf8e04c3dbaee13770090416c/35/GPL/openjdk-21_linux-x64_bin.tar.gz",
+    "jdk20":
+    "https://download.java.net/java/GA/jdk20/bdc68b4b9cbc4ebcb30745c85038d91d/36/GPL/openjdk-20_linux-x64_bin.tar.gz",
+    "jdk19":
+    "https://download.java.net/java/GA/jdk19/877d6127e982470ba2a7faa31cc93d04/36/GPL/openjdk-19_linux-x64_bin.tar.gz",
+    "jdk18":
+    "https://download.java.net/java/GA/jdk18/43f95e8614114aeaa8e8a5fcf20a682d/36/GPL/openjdk-18_linux-x64_bin.tar.gz",
     "jdk17":
-    "https://download.java.net/openjdk/jdk17/ri/openjdk-17+35_linux-x64_bin.tar.gz",
+    "https://download.java.net/java/GA/jdk17/0d483333a00540d886896bac774ff48b/35/GPL/openjdk-17_linux-x64_bin.tar.gz",
+    "jdk16":
+    "https://download.java.net/java/GA/jdk16/7863447f0ab643c585b9bdebf67c69db/36/GPL/openjdk-16_linux-x64_bin.tar.gz",
+    "jdk14":
+    "https://download.java.net/java/GA/jdk14/076bab302c7b4508975440c56f6cc26a/36/GPL/openjdk-14_linux-x64_bin.tar.gz",
+    "jdk13":
+    "https://download.java.net/java/GA/jdk13/5b8a42f3905b406298b72d750b6919f6/33/GPL/openjdk-13_linux-x64_bin.tar.gz",
+    "jdk12":
+    "https://download.java.net/java/GA/jdk12/33/GPL/openjdk-12_linux-x64_bin.tar.gz",
     "jdk11":
-    "https://download.java.net/openjdk/jdk11.0.0.1/ri/openjdk-11.0.0.1_linux-x64_bin.tar.gz",
+    "https://download.java.net/java/ga/jdk11/openjdk-11_linux-x64_bin.tar.gz",
+    "jdk10":
+    "https://download.java.net/java/GA/jdk10/10/binaries/openjdk-10_linux-x64_bin.tar.gz",
+    "jdk9":
+    "https://download.java.net/java/GA/jdk9/9/binaries/openjdk-9_linux-x64_bin.tar.gz",
     "jdk8":
-    "https://download.java.net/openjdk/jdk8u43/ri/openjdk-8u43-linux-x64.tar.gz"
+    "https://download.java.net/openjdk/jdk8u43/ri/openjdk-8u43-linux-x64.tar.gz",
 }
 
 JDK_HOME = {
     "jdk15": "jdk-15.0.2",
+    "jdk21": "jdk-21",
+    "jdk20": "jdk-20",
+    "jdk19": "jdk-19",
+    "jdk18": "jdk-18",
     "jdk17": "jdk-17",
-    "jdk11": "jdk-11.0.0.1",
-    "jdk8": "java-se-8u43-ri"
+    "jdk16": "jdk-16",
+    "jdk14": "jdk-14",
+    "jdk13": "jdk-13",
+    "jdk12": "jdk-12",
+    "jdk11": "jdk-11",
+    "jdk10": "jdk-10",
+    "jdk9": "jdk-9",
+    "jdk8": "java-se-8u43-ri",
 }
 ANT_PATH = "apache-ant-1.10.13/bin"
 MAVEN_PATH = "apache-maven-3.6.3/bin"
