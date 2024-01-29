@@ -19,7 +19,7 @@ git clone https://github.com/google/oss-fuzz
 git clone https://github.com/ossf/fuzz-introspector
 
 # Go into auto-fuzz
-cd ../../../tools/auto-fuzz/
+cd fuzz-introspector/tools/auto-fuzz/
 
 # Run a small experiment (it's set to being small by default)
 # Currently, only java or python supported for the language option
