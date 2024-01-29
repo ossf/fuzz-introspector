@@ -210,6 +210,7 @@ def get_cov_ranked_trial_runs(trial_runs):
 
 def run_on_all_dirs(args):
     max_idx_number = 0
+    have_result = False
     for autofuzz_project_dir in os.listdir("."):
         if "autofuzz-" in autofuzz_project_dir:
             try:
@@ -217,9 +218,15 @@ def run_on_all_dirs(args):
                 max_idx_number = max(idx_number, max_idx_number)
             except:
                 continue
+            have_result = True
+
+    # Skip the process if no result directory is found
+    if not have_result:
+        return
+
     print("Max idx number: %d" % (max_idx_number))
     projects_to_display = []
-    for idx in range(max_idx_number):
+    for idx in range(max_idx_number + 1):
         autofuzz_project_dir = "autofuzz-%d" % (idx)
         if os.path.isdir(autofuzz_project_dir):
             proj_yaml, trial_runs = interpret_autofuzz_run(
