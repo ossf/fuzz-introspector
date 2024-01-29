@@ -147,13 +147,13 @@ def _print_summary_of_trial_run(trial_run,
     trial_name = trial_run['name']
     python_fuzz_path = os.path.join(autofuzz_project_dir, trial_run['name'],
                                     "fuzz_1.py")
-    jvm_fuzz_path = os.path.join(autofuzz_project_dir, trial_run['name'],
-                                 "Fuzz1.java")
+    java_fuzz_path = os.path.join(autofuzz_project_dir, trial_run['name'],
+                                  "Fuzz.java")
     fuzz_path = ""
     if os.path.isfile(python_fuzz_path):
         fuzz_path = python_fuzz_path
-    elif os.path.isfile(jvm_fuzz_path):
-        fuzz_path = jvm_fuzz_path
+    elif os.path.isfile(java_fuzz_path):
+        fuzz_path = java_fuzz_path
 
     if print_in_ci:
         PROJ_LEN_WIDTH = 65
@@ -387,6 +387,11 @@ def print_benchmark_summary(target_dir, trial_runs, language, project_name):
 
 def benchmark_summary(language):
     """Print a list of benchmark target methods and fuzzers that covers them"""
+    # Currently, only java benchmarking is supported
+    if not language == 'java':
+        print('Unsupported language: %s' % language)
+        return
+
     for autofuzz_project_dir in os.listdir("."):
         if "autofuzz-" in autofuzz_project_dir:
             proj_yaml, trial_runs = interpret_autofuzz_run(
@@ -505,7 +510,7 @@ def _merge_runs(trial_dir, successful_runs, language):
             dst_file = os.path.join(next_merged_dir, "fuzz_%d.py" % (idx))
             idx += 1
             shutil.copyfile(src_file, dst_file)
-        elif language == "jvm":
+        elif language == "java":
             # Extract import statement and main code from original Fuzz.java
             src_file = os.path.join(trial_dir, run['name'], "Fuzz.java")
             with open(src_file, "r") as fin:
@@ -543,9 +548,9 @@ def _merge_runs(trial_dir, successful_runs, language):
             java_main_code += "\n"
 
     # Writing the merged code into a single Fuzz.java
-    if language == "jvm":
+    if language == "java":
         # Process the merged java code
-        base_java = base_files.gen_base_fuzzer_jvm(False)
+        base_java = base_files.gen_base_fuzzer('java', 'maven', False)
         base_java = base_java.replace("/*IMPORTS*/", "".join(java_import_stmt))
         base_java = base_java.replace("/*COUNTER*/", "")
         base_java = base_java.replace("/*STATIC_OBJECT_CHOICE*/", "")
@@ -566,7 +571,7 @@ def _merge_runs(trial_dir, successful_runs, language):
     shutil.copy(project_yaml, next_merged_dir)
 
     # For java project, also copy the build bundle
-    if language == "jvm":
+    if language == "java":
         ant_path = os.path.join(base_autofuzz, "ant.zip")
         ant_dst = os.path.join(next_merged_dir, "ant.zip")
         maven_path = os.path.join(base_autofuzz, "maven.zip")
@@ -586,13 +591,13 @@ def _merge_runs(trial_dir, successful_runs, language):
                             os.path.join(next_merged_dir, ld))
 
     # Output heuristic ratio
-    if language == "jvm":
+    if language == "java":
         max_heuristic_target = constants.MAX_TARGET_PER_PROJECT_HEURISTIC
         print("\nHeuristic generation summary:")
         for i in range(10):
             if i == 4:
                 continue
-            heuristic = 'jvm-autofuzz-heuristics-%d' % (i + 1)
+            heuristic = 'java-autofuzz-heuristics-%d' % (i + 1)
             if heuristic in java_heuristic_count:
                 print("%s: %d / %s" %
                       (heuristic, java_heuristic_count[heuristic],
@@ -625,7 +630,7 @@ def merge_run(target_directory, language="python"):
     # Merge operation for different language or
     # None if language not supported
     merged_project_dir = None
-    if language == "python" or language == "jvm":
+    if language == "python" or language == "java":
         merged_project_dir = _merge_runs(target_directory, successful_runs,
                                          language)
 
@@ -645,15 +650,10 @@ def main():
     elif args.command == 'heuristics-summary':
         heuristics_summary()
     elif args.command == 'benchmark-summary':
-        if args.language == 'java':
-            benchmark_summary('jvm')
-        else:
-            print('Unsupported language: %s' % args.language)
+        benchmark_summary(args.language)
     elif args.command == 'merge':
-        if args.language == 'python':
-            merge_run(args.dir, 'python')
-        elif args.language == 'java':
-            merge_run(args.dir, 'jvm')
+        if args.language == 'python' or args.language == 'java':
+            merge_run(args.dir, args.language)
         else:
             print('Unsupported language: %s' % args.language)
 
