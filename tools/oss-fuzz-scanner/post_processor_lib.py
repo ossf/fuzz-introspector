@@ -332,7 +332,7 @@ def type_inspector(project_name, date_str, introspector_debug_info, type_name):
 
 
 def main():
-    day_range = create_date_range(-1, 1)
+    day_range = create_date_range(-1, 2)
     date_str = day_range[0]
     print("Date str: %s" % (date_str))
     target_project = 'htslib'
