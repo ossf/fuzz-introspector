@@ -693,11 +693,26 @@ def api_project_all_functions():
     return {'result': 'success', 'functions': functions_to_return}
 
 
+def get_build_status_of_project(project_name):
+    build_status = data_storage.get_build_status()
+
+    languages_summarised = dict()
+    for bs in build_status:
+        if bs.project_name == project_name:
+            return bs
+
+    return None
+
+
 @blueprint.route('/api/far-reach-but-low-coverage')
 def far_reach_but_low_coverage():
+    err_msgs = list()
     project_name = request.args.get('project', None)
     if project_name == None:
-        return {'result': 'error', 'msg': 'Please provide project name'}  ##
+        return {
+            'result': 'error',
+            'extended_msgs': ['Please provide project name']
+        }
 
     target_project = None
     all_projects = data_storage.get_projects()
@@ -706,7 +721,39 @@ def far_reach_but_low_coverage():
             target_project = project
             break
     if target_project is None:
-        return {'result': 'error', 'msg': 'Project not in the database'}
+        # Is the project a ghost project: a project that no longer
+        # exists in OSS-Fuzz but is present on the ClusterFuzz instance.
+        bs = get_build_status_of_project(project_name)
+
+        if bs == None:
+            return {
+                'result':
+                'error',
+                'extended_msgs': [
+                    'Project not in OSS-Fuzz (likely only contains a project.yaml file).'
+                ]
+            }
+        err_msgs.append('Missing a recent introspector build.')
+
+        # Check that builds are failing
+        if bs.introspector_build_status is False:
+            err_msgs.append(
+                'No successful builds historically recently: introspector.')
+        if bs.coverage_build_status is False:
+            err_msgs.append('No successful builds: coverage.')
+        if bs.fuzz_build_status is False:
+            err_msgs.append('Build status failing: fuzzing.')
+        if bs.introspector_build_status is False and bs.coverage_build_status is False and bs.fuzz_build_status is False:
+            err_msgs.append('All builds failing.')
+        elif bs.introspector_build_status is False and bs.coverage_build_status is False:
+            err_msgs.append(
+                'No data as no history of coverage or introspector builds.')
+
+        if bs.language == 'N/A':
+            err_msgs.append(
+                'Project is a ghost (no longer in OSS-Fuzz repo, but in ClusterFuzz instance).'
+            )
+        return {'result': 'error', 'extended_msgs': err_msgs}
 
     # Get functions of interest
     sorted_functions_of_interest = get_functions_of_interest(project_name)
@@ -741,7 +788,29 @@ def far_reach_but_low_coverage():
             function.raw_function_name,
         })
 
-    return {'result': 'success', 'functions': functions_to_return}
+    # Assess if this worked well, and if not, provide a reason
+    if len(functions_to_return) == 0:
+        result_status = 'error'
+        err_msgs.append('No functions found.')
+        bs = get_build_status_of_project(project_name)
+
+        # Check that builds are failing
+        if bs.introspector_build_status is False:
+            err_msgs.append('No successful build: introspector.')
+        if bs.coverage_build_status is False:
+            err_msgs.append('Build status failing: coverage.')
+        if bs.fuzz_build_status is False:
+            err_msgs.append('Build status failing: fuzzing.')
+        if bs.introspector_build_status is False and bs.coverage_build_status is False and bs.fuzz_build_status is False:
+            err_msgs.append('All builds failing.')
+    else:
+        result_status = 'success'
+
+    return {
+        'result': result_status,
+        'extended_msgs': err_msgs,
+        'functions': functions_to_return
+    }
 
 
 @blueprint.route('/api/function-target-oracle')
