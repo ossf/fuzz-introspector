@@ -792,7 +792,6 @@ def far_reach_but_low_coverage():
     if len(functions_to_return) == 0:
         result_status = 'error'
         err_msgs.append('No functions found.')
-        # Debug why it wen't wrong. Is there a successful
         bs = get_build_status_of_project(project_name)
 
         # Check that builds are failing
