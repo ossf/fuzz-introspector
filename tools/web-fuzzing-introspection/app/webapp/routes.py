@@ -779,6 +779,50 @@ def api_project_all_functions():
     return {'result': 'success', 'functions': functions_to_return}
 
 
+@blueprint.route('/api/project-source-code')
+def api_project_source_code():
+    """Returns a json representation of all the functions in a given project"""
+    project_name = request.args.get('project', None)
+    if project_name == None:
+        return {'result': 'error', 'msg': 'Please provide a project name'}
+    filepath = request.args.get('filepath', None)
+    if filepath == None:
+        return {'result': 'error', 'msg': 'No filepath provided'}
+
+    begin_line = request.args.get('begin_line', None)
+    if begin_line == None:
+        return {'result': 'error', 'msg': 'No begin line provided'}
+
+    end_line = request.args.get('end_line', None)
+    if end_line == None:
+        return {'result': 'error', 'msg': 'No end line provided'}
+
+    all_build_status = data_storage.get_build_status()
+    latest_introspector_datestr = None
+    for build_status in all_build_status:
+        if build_status.project_name == project_name:
+
+            # Get statistics of the project
+            project_statistics = data_storage.PROJECT_TIMESTAMPS
+            for ps in project_statistics:
+                if ps.project_name == project_name:
+                    datestr = ps.date
+                    if ps.introspector_data != None:
+                        latest_introspector_datestr = datestr
+
+    if latest_introspector_datestr == None:
+        return {'result': 'error', 'msg': 'No introspector builds.'}
+
+    source_code = extract_lines_from_source_code(project_name,
+                                                 latest_introspector_datestr,
+                                                 filepath, int(begin_line),
+                                                 int(end_line))
+    if source_code == None:
+        return {'result': 'error', 'msg': 'no source code'}
+
+    return {'result': 'success', 'source_code': source_code}
+
+
 @blueprint.route('/api/function-source-code')
 def api_function_source_code():
     """Returns a json representation of all the functions in a given project"""
