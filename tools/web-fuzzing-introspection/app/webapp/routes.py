@@ -699,6 +699,44 @@ def branch_blockers():
     return {'result': 'success', 'project_blockers': project_blockers}
 
 
+@blueprint.route('/api/all-cross-references')
+def api_cross_references():
+    """Returns a json representation of all the functions in a given project"""
+    project_name = request.args.get('project', None)
+    if project_name == None:
+        return {'result': 'error', 'msg': 'Please provide a project name'}
+
+    function_name = request.args.get('function', None)
+    if function_name == None:
+        return {'result': 'error', 'msg': 'No function name provided'}
+
+    # Get all of the functions
+    all_functions = data_storage.get_functions()
+    project_functions = []
+    for function in all_functions:
+        if function.project == project_name:
+            project_functions.append(function)
+
+    func_xrefs = []
+    xrefs = []
+    for function in project_functions:
+        callsites = function.callsites
+        for cs_dst in callsites:
+            if cs_dst == function_name:
+                func_xrefs.append(function)
+                all_locations = function.callsites[cs_dst]
+                for loc in all_locations:
+                    filename = loc.split('#')[0]
+                    cs_linenumber = int(loc.split(':')[-1])
+                    xrefs.append({
+                        'filename': function.function_filename,
+                        'cs_linenumber': cs_linenumber,
+                        'src_func': function.name,
+                        'dst_func': function_name
+                    })
+    return {'result': 'success', 'callsites': xrefs}
+
+
 @blueprint.route('/api/all-functions')
 def api_project_all_functions():
     """Returns a json representation of all the functions in a given project"""

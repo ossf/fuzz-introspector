@@ -387,7 +387,9 @@ def extract_project_data(project_name, date_str, should_include_details,
                     'source_line_begin':
                     func.get('source_line_begin', 'N/A'),
                     'source_line_end':
-                    func.get('source_line_end', 'N/A')
+                    func.get('source_line_end', 'N/A'),
+                    'callsites':
+                    func.get('callsites', [])
                 })
 
         # Get all branch blockers

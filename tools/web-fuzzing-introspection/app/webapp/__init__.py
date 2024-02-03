@@ -75,7 +75,8 @@ def load_db():
                 raw_function_name=func['raw-function-name'],
                 date_str=func.get('date-str', ''),
                 source_line_begin=func.get('source_line_begin', '-1'),
-                source_line_end=func.get('source_line_end', '-1')))
+                source_line_end=func.get('source_line_end', '-1'),
+                callsites=func.get('callsites', [])))
 
     print("Loadded %d functions" % (idx))
     print("Len %d" % (len(data_storage.FUNCTIONS)))
