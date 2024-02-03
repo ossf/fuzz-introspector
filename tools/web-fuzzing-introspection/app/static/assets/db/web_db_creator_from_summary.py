@@ -383,7 +383,11 @@ def extract_project_data(project_name, date_str, should_include_details,
                     'raw-function-name':
                     func.get('raw-function-name', 'N/A'),
                     'date-str':
-                    date_str
+                    date_str,
+                    'source_line_begin':
+                    func.get('source_line_begin', 'N/A'),
+                    'source_line_end':
+                    func.get('source_line_end', 'N/A')
                 })
 
         # Get all branch blockers
