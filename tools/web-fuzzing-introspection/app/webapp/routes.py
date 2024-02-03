@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import random
+import requests
 import json
 
 from flask import Blueprint, render_template, request, redirect
@@ -35,6 +36,11 @@ def get_introspector_report_url_base(project_name, datestr):
     return project_url
 
 
+def get_introspector_report_url_source_base(project_name, datestr):
+    return get_introspector_report_url_base(project_name,
+                                            datestr) + "source-code"
+
+
 def get_introspector_url(project_name, datestr):
     return get_introspector_report_url_base(project_name,
                                             datestr) + "fuzz_report.html"
@@ -49,6 +55,48 @@ def get_coverage_report_url(project_name, datestr, language):
     project_url = base_url.format(project_name, datestr.replace("-", ""),
                                   file_report)
     return project_url
+
+
+def extract_introspector_raw_source_code(project_name, date_str, target_file):
+    introspector_summary_url = get_introspector_report_url_source_base(
+        project_name, date_str.replace("-", "")) + target_file
+
+    print("URL: %s" % (introspector_summary_url))
+    # Read the introspector atifact
+    try:
+        raw_source = requests.get(introspector_summary_url, timeout=10).text
+    except:
+        return None
+
+    return raw_source
+
+
+def extract_lines_from_source_code(project_name,
+                                   date_str,
+                                   target_file,
+                                   line_begin,
+                                   line_end,
+                                   print_line_numbers=False):
+    print("Getting source")
+    raw_source = extract_introspector_raw_source_code(project_name, date_str,
+                                                      target_file)
+    if raw_source is None:
+        print("Raw source is None")
+        return raw_source
+
+    source_lines = raw_source.split("\n")
+
+    return_source = ""
+    max_length = len(str(line_end))
+    for line_num in range(line_begin, line_end):
+        if line_num >= len(source_lines):
+            continue
+
+        if print_line_numbers:
+            line_num_str = " " * (max_length - len(str(line_num)))
+            return_source += "%s%d " % (line_num_str, line_num)
+        return_source += source_lines[line_num] + "\n"
+    return return_source
 
 
 def get_functions_of_interest(project_name):
@@ -691,6 +739,59 @@ def api_project_all_functions():
             function.runtime_code_coverage,
         })
     return {'result': 'success', 'functions': functions_to_return}
+
+
+@blueprint.route('/api/function-source-code')
+def api_function_source_code():
+    """Returns a json representation of all the functions in a given project"""
+    project_name = request.args.get('project', None)
+    if project_name == None:
+        return {'result': 'error', 'msg': 'Please provide a project name'}
+    function_name = request.args.get('function', None)
+    if function_name == None:
+        return {'result': 'error', 'msg': 'No function name provided'}
+
+    # Get all of the function
+    all_functions = data_storage.get_functions()
+    project_functions = []
+    for function in all_functions:
+        if function.project == project_name:
+            project_functions.append(function)
+
+    all_build_status = data_storage.get_build_status()
+    latest_introspector_datestr = None
+    for build_status in all_build_status:
+        if build_status.project_name == project_name:
+
+            # Get statistics of the project
+            project_statistics = data_storage.PROJECT_TIMESTAMPS
+            for ps in project_statistics:
+                if ps.project_name == project_name:
+                    datestr = ps.date
+                    if ps.introspector_data != None:
+                        latest_introspector_datestr = datestr
+
+    if latest_introspector_datestr == None:
+        return {'result': 'error', 'msg': 'No introspector builds.'}
+
+    for function in project_functions:
+        if function.name == function_name or function.raw_function_name == function_name:
+            src_begin = function.source_line_begin
+            src_end = function.source_line_end
+            src_file = function.function_filename
+            source_code = extract_lines_from_source_code(
+                project_name, latest_introspector_datestr, src_file, src_begin,
+                src_end)
+            if source_code == None:
+                return {'result': 'error', 'msg': 'No source code'}
+            return {
+                'result': 'succes',
+                'source': source_code,
+                'filepath': src_file,
+                'src_begin': src_begin,
+                'src_end': src_begin
+            }
+    return {'result': 'error', 'msg': 'did not find function'}
 
 
 def get_build_status_of_project(project_name):
