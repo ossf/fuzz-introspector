@@ -218,6 +218,29 @@ def get_coverage_report_url(project_name, datestr, language):
     return project_url
 
 
+def get_introspector_report_url_debug_info(project_name, datestr):
+    return get_introspector_report_url_base(project_name,
+                                            datestr) + "all_debug_info.json"
+
+
+def extract_introspector_debug_info(project_name, date_str):
+    debug_data_url = get_introspector_report_url_debug_info(
+        project_name, date_str.replace("-", ""))
+    #print("Getting: %s" % (introspector_summary_url))
+    # Read the introspector atifact
+    try:
+        raw_introspector_json_request = requests.get(debug_data_url,
+                                                     timeout=10)
+    except:
+        return dict()
+    try:
+        debug_report = json.loads(raw_introspector_json_request.text)
+    except:
+        return dict()
+
+    return debug_report
+
+
 def get_code_coverage_summary(project_name, datestr):
     cov_summary_url = get_code_coverage_summary_url(project_name, datestr)
     try:
@@ -322,6 +345,9 @@ def extract_project_data(project_name, date_str, should_include_details,
 
     # Save the report
     save_fuzz_introspector_report(introspector_report, project_name, date_str)
+
+    # Get debug data
+    debug_report = extract_introspector_debug_info(project_name, date_str)
 
     # Currently, we fail if any of code_coverage_summary of introspector_report is
     # None. This should later be adjusted such that we can continue if we only
@@ -459,6 +485,7 @@ def extract_project_data(project_name, date_str, should_include_details,
             'refined_proj_list': refined_proj_list,
             'branch_pairs': branch_pairs,
             'annotated_cfg': annotated_cfg,
+            'debug_report': debug_report,
         }
 
     # Extract data from the code coverage reports
@@ -943,6 +970,10 @@ def create_db(max_projects, days_to_analyse, output_directory, input_directory,
     if max_projects > 0 and len(projects_to_analyse) > max_projects:
         tmp_dictionary = dict()
         idx = 0
+        for k in projects_to_analyse:
+            if 'htslib' in k:
+                tmp_dictionary[k] = projects_to_analyse[k]
+
         for k in projects_to_analyse:
             if idx > max_projects:
                 break
