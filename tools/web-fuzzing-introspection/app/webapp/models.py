@@ -161,3 +161,14 @@ class BuildStatus:
         self.introspector_build_log = introspector_build_log
         self.coverage_build_log = coverage_build_log
         self.fuzz_build_log = fuzz_build_log
+
+
+class DebugStatus:
+
+    def __init__(self, project_name, all_files_in_project,
+                 all_functions_in_project, all_global_variables, all_types):
+        self.project_name = project_name
+        self.all_files_in_project = all_files_in_project
+        self.all_functions_in_project = all_functions_in_project
+        self.all_global_variables = all_global_variables
+        self.all_types = all_types

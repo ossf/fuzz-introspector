@@ -17,6 +17,8 @@ BLOCKERS = []
 
 BUILD_STATUS: List[BuildStatus] = []
 
+PROJECT_DEBUG_DATA = []
+
 
 def get_projects():
     return PROJECTS
@@ -32,3 +34,7 @@ def get_blockers():
 
 def get_build_status() -> List[BuildStatus]:
     return BUILD_STATUS
+
+
+def get_debug_data():
+    return PROJECT_DEBUG_DATA

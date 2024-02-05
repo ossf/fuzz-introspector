@@ -111,6 +111,7 @@ def load_db():
     # Load all profiles
     with open(project_currents, 'r') as f:
         project_currents_json = json.load(f)
+
     for project_timestamp in project_currents_json:
         data_storage.PROJECTS.append(
             models.Project(
@@ -120,6 +121,30 @@ def load_db():
                 coverage_data=project_timestamp['coverage-data'],
                 introspector_data=project_timestamp['introspector-data'],
                 fuzzer_count=project_timestamp['fuzzer-count']))
+
+        debug_report = project_timestamp.get('introspector-data',
+                                             {}).get('debug_report', None)
+        if debug_report is None:
+            print("Adding empty %s" % (project_timestamp['project_name']))
+            data_storage.PROJECT_DEBUG_DATA.append(
+                models.DebugStatus(
+                    project_name=project_timestamp['project_name'],
+                    all_files_in_project=[],
+                    all_functions_in_project=[],
+                    all_global_variables=[],
+                    all_types=[]))
+        else:
+            print("Adding non-empty %s" % (project_timestamp['project_name']))
+            data_storage.PROJECT_DEBUG_DATA.append(
+                models.DebugStatus(
+                    project_name=project_timestamp['project_name'],
+                    all_files_in_project=debug_report.get(
+                        'all_files_in_project', []),
+                    all_functions_in_project=debug_report.get(
+                        'all_functions_in_project', []),
+                    all_global_variables=debug_report.get(
+                        'all_global_variables,', []),
+                    all_types=debug_report.get('all_types', [])))
 
     if os.path.isfile(projects_build_status):
         # Read the builds

@@ -823,6 +823,36 @@ def api_project_source_code():
     return {'result': 'success', 'source_code': source_code}
 
 
+@blueprint.route('/api/function-signature')
+def api_function_signature():
+    """Returns a json representation of all the functions in a given project"""
+    project_name = request.args.get('project', None)
+    if project_name == None:
+        return {'result': 'error', 'msg': 'Please provide a project name'}
+    function_name = request.args.get('function', None)
+    if function_name == None:
+        return {'result': 'error', 'msg': 'No function name provided'}
+
+    for debug_info in data_storage.get_debug_data():
+        if debug_info.project_name == project_name:
+            for function in debug_info.all_functions_in_project:
+                if function.get('name', '') == function_name:
+                    func_signature = function['return_type'] + ' '
+                    func_signature += function['name']
+                    func_signature += '('
+                    for idx in range(len(function['args'])):
+                        func_signature += function['args'][idx]
+                        if idx < len(function['args']) - 1:
+                            func_signature += ' '
+                    func_signature += ')'
+                    return {
+                        'result': 'success',
+                        'signature': func_signature,
+                        'raw_data': function
+                    }
+    return {'result': 'failed', 'msg': 'could not find specified function'}
+
+
 @blueprint.route('/api/function-source-code')
 def api_function_source_code():
     """Returns a json representation of all the functions in a given project"""
