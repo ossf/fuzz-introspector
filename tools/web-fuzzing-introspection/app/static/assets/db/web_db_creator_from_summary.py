@@ -26,7 +26,7 @@ import subprocess
 import zipfile
 from threading import Thread
 
-DB_DIR = 'db-dir'
+
 DB_JSON_DB_TIMESTAMP = 'db-timestamps.json'
 DB_JSON_ALL_PROJECT_TIMESTAMP = 'all-project-timestamps.json'
 DB_JSON_ALL_FUNCTIONS = 'all-functions-db.json'
