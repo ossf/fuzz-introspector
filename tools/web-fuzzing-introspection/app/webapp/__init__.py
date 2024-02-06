@@ -122,8 +122,12 @@ def load_db():
                 introspector_data=project_timestamp['introspector-data'],
                 fuzzer_count=project_timestamp['fuzzer-count']))
 
-        debug_report = project_timestamp.get('introspector-data',
-                                             {}).get('debug_report', None)
+        introspector_data = project_timestamp.get('introspector-data', None)
+        if introspector_data is None:
+            debug_report = None
+        else:
+            debug_report = introspector_data.get('debug_report', None)
+
         if debug_report is None:
             print("Adding empty %s" % (project_timestamp['project_name']))
             data_storage.PROJECT_DEBUG_DATA.append(
