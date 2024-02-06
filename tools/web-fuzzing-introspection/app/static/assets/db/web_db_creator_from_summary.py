@@ -805,16 +805,15 @@ def analyse_set_of_dates(dates, projects_to_analyse, output_directory,
     """Pe/rforms analysis of all projects in the projects_to_analyse argument for
     the given set of dates. DB .json files are stored in output_directory.
     """
-    dates_to_analyse = len(dates)
     idx = 1
     for date in dates:
         current_time = datetime.datetime.now().strftime("%H:%M:%S")
         logger.info("Analysing date %s -- [%d of %d] -- %s" %
-                    (date, idx, dates_to_analyse, current_time))
+                    (date, idx, len(dates), current_time))
 
         # Is this the last date to analyse?
         is_end = idx == len(dates)
-        print("Is end: %s" % (is_end))
+        logger.info("Is this the last date: %s" % (is_end))
 
         # Increment counter. Must happen after our is_end check.
         idx += 1
@@ -827,6 +826,7 @@ def analyse_set_of_dates(dates, projects_to_analyse, output_directory,
 
         if force_creation:
             is_end = True
+
         function_list, fuzz_branch_blocker_list, project_timestamps, db_timestamp = analyse_list_of_projects(
             date, projects_to_analyse, should_include_details=is_end)
         update_db_files(db_timestamp,
@@ -935,38 +935,7 @@ def setup_webapp_cache():
     # If we get to here it all went well.
 
 
-def create_db(max_projects, days_to_analyse, output_directory, input_directory,
-              day_offset, to_cleanup, since_date, use_github_cache,
-              use_webapp_cache, force_creation):
-    got_cache = False
-    if use_webapp_cache:
-        try:
-            setup_webapp_cache()
-            # If we got to here, that means the cache download went well.
-            got_cache = True
-        except:
-            got_cache = False
-
-    if use_github_cache and not got_cache:
-        setup_github_cache()
-        input_directory = "github_cache"
-
-    setup_folders(input_directory, output_directory)
-
-    # Extract fuzz/coverage/introspector build status of each project and extract
-    projects_list_build_status = extract_oss_fuzz_build_status(
-        output_directory)
-    projects_to_analyse = dict()
-    for p in projects_list_build_status:
-        #if projects_list_build_status[p][
-        #        'introspector-build'] == True or projects_list_build_status[
-        #            p]['cov-build'] == True:
-        #if projects_list_build_status[p]['cov-build'] == True:
-        projects_to_analyse[p] = projects_list_build_status[p]
-    #for project_name in projects_list_build_status:
-    #    print("project: %s"%(project_name))
-
-    # Reduce the amount of projects if needed.
+def reduce_projects_to_analyse(projects_to_analyse, max_projects):
     if max_projects > 0 and len(projects_to_analyse) > max_projects:
         tmp_dictionary = dict()
         idx = 0
@@ -980,19 +949,66 @@ def create_db(max_projects, days_to_analyse, output_directory, input_directory,
             tmp_dictionary[k] = projects_to_analyse[k]
             idx += 1
         projects_to_analyse = tmp_dictionary
+    return projects_to_analyse
 
-    if to_cleanup:
-        cleanup(output_directory)
 
+def create_cache(use_webapp_cache, use_github_cache, input_directory,
+                 output_directory):
+    got_cache = False
+    if use_webapp_cache:
+        try:
+            setup_webapp_cache()
+            # If we got to here, that means the cache download went well.
+            got_cache = True
+        except:
+            got_cache = False
+
+    if use_github_cache and not got_cache:
+        setup_github_cache()
+        input_directory = "github_cache"
+
+    # Create folders we will
+    setup_folders(input_directory, output_directory)
+
+    return input_directory
+
+
+def get_dates_to_analyse(since_date, days_to_analyse, day_offset):
     if since_date != None:
         start_date = datetime.datetime.strptime(since_date, "%d-%m-%Y").date()
         today = datetime.date.today()
         delta = today - start_date
         days_to_analyse = delta.days - 1
         day_offset = 0
-
     date_range = create_date_range(day_offset, days_to_analyse)
-    print(date_range)
+
+    return date_range
+
+
+def create_db(max_projects, days_to_analyse, output_directory, input_directory,
+              day_offset, to_cleanup, since_date, use_github_cache,
+              use_webapp_cache, force_creation):
+
+    # Set up cache and input/output directory
+    input_directory = create_cache(use_webapp_cache, use_github_cache,
+                                   input_directory, output_directory)
+
+    # Get latest build statuses from OSS-Fuzz and use this to guide which
+    # projects to analyze.
+    projects_list_build_status = extract_oss_fuzz_build_status(
+        output_directory)
+    projects_to_analyse = dict()
+    for p in projects_list_build_status:
+        projects_to_analyse[p] = projects_list_build_status[p]
+
+    # Reduce the amount of projects if needed.
+    projects_to_analyse = reduce_projects_to_analyse(projects_to_analyse,
+                                                     max_projects)
+
+    if to_cleanup:
+        cleanup(output_directory)
+
+    date_range = get_dates_to_analyse(since_date, days_to_analyse, day_offset)
     logger.info("Creating a DB with the specifications:")
     logger.info("- Date range: [%s : %s]" %
                 (str(date_range[0]), str(date_range[-1])))
