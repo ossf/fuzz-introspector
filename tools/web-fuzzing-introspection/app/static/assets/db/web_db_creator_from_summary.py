@@ -44,14 +44,6 @@ ALL_JSON_FILES = [
     DB_JSON_ALL_CURRENT_FUNCS,
 ]
 
-OSS_FUZZ_BUILD_STATUS_URL = 'https://oss-fuzz-build-logs.storage.googleapis.com'
-INTROSPECTOR_BUILD_JSON = 'status-introspector.json'
-COVERAGE_BUILD_JSON = 'status-coverage.json'
-FUZZ_BUILD_JSON = 'status.json'
-OSS_FUZZ_BUILD_LOG_BASE = 'https://oss-fuzz-build-logs.storage.googleapis.com/log-'
-
-#OSS_FUZZ_CLONE = ""
-
 INTROSPECTOR_WEBAPP_ZIP = 'https://introspector.oss-fuzz.com/static/assets/db/db-archive.zip'
 
 logging.getLogger("requests").setLevel(logging.WARNING)
@@ -343,8 +335,6 @@ def extract_project_data(project_name, date_str, should_include_details,
 
     dictionary_key = '%s###%s' % (project_name, date_str)
     manager_return_dict[dictionary_key] = {
-        #'refined_proj_list': refined_proj_list,
-        #'branch_pairs': branch_pairs,
         'project_timestamp': project_timestamp,
         "introspector-data-dict": introspector_data_dict,
         "coverage-data-dict": code_coverage_data_dict,
@@ -676,18 +666,14 @@ def setup_folders(input_directory, output_directory):
 
 def extract_oss_fuzz_build_status(output_directory):
     """Extracts fuzz/coverage/introspector build status from OSS-Fuzz stats."""
-    #global OSS_FUZZ_CLONE
-
     # Extract the build status of all OSS-Fuzz projects
     # Create a local clone of OSS-Fuzz. This is used for checking language of a project easily.
     oss_fuzz_local_clone = os.path.join(output_directory,
                                         constants.OSS_FUZZ_CLONE)
     if os.path.isdir(oss_fuzz_local_clone):
         shutil.rmtree(oss_fuzz_local_clone)
-    git_clone_project("https://github.com/google/oss-fuzz",
-                      oss_fuzz_local_clone)
+    git_clone_project(constants.OSS_FUZZ_REPO, oss_fuzz_local_clone)
 
-    #OSS_FUZZ_CLONE = oss_fuzz_local_clone
     build_status_dict = oss_fuzz.get_projects_build_status()
     update_build_status(build_status_dict)
     return build_status_dict
@@ -705,9 +691,7 @@ def setup_github_cache():
     if os.path.isdir("github_cache"):
         shutil.rmtree("github_cache")
 
-    git_clone_project(
-        "https://github.com/DavidKorczynski/oss-fuzz-db-fuzzintro",
-        "github_cache")
+    git_clone_project(constants.OSS_FUZZ_GITHUB_BACKUP_REPO, "github_cache")
     if not os.path.isdir("github_cache"):
         return False
     db_zipfile = os.path.join("github_cache", "db-stamp.zip")

@@ -16,11 +16,7 @@
 import json
 import requests
 
-OSS_FUZZ_BUILD_STATUS_URL = 'https://oss-fuzz-build-logs.storage.googleapis.com'
-INTROSPECTOR_BUILD_JSON = 'status-introspector.json'
-COVERAGE_BUILD_JSON = 'status-coverage.json'
-FUZZ_BUILD_JSON = 'status.json'
-OSS_FUZZ_BUILD_LOG_BASE = 'https://oss-fuzz-build-logs.storage.googleapis.com/log-'
+import constants
 
 
 def get_introspector_report_url_base(project_name, datestr):
@@ -127,9 +123,9 @@ def extract_introspector_report(project_name, date_str):
 
 
 def get_projects_build_status():
-    fuzz_build_url = OSS_FUZZ_BUILD_STATUS_URL + '/' + FUZZ_BUILD_JSON
-    coverage_build_url = OSS_FUZZ_BUILD_STATUS_URL + '/' + COVERAGE_BUILD_JSON
-    introspector_build_url = OSS_FUZZ_BUILD_STATUS_URL + '/' + INTROSPECTOR_BUILD_JSON
+    fuzz_build_url = constants.OSS_FUZZ_BUILD_STATUS_URL + '/' + constants.FUZZ_BUILD_JSON
+    coverage_build_url = constants.OSS_FUZZ_BUILD_STATUS_URL + '/' + constants.COVERAGE_BUILD_JSON
+    introspector_build_url = constants.OSS_FUZZ_BUILD_STATUS_URL + '/' + constants.INTROSPECTOR_BUILD_JSON
 
     fuzz_build_raw = requests.get(fuzz_build_url, timeout=20).text
     coverage_build_raw = requests.get(coverage_build_url, timeout=20).text
@@ -144,20 +140,21 @@ def get_projects_build_status():
     for p in fuzz_build_json['projects']:
         project_dict = build_status_dict.get(p['name'], dict())
         project_dict['fuzz-build'] = p['history'][0]['success']
-        project_dict['fuzz-build-log'] = OSS_FUZZ_BUILD_LOG_BASE + p[
+        project_dict['fuzz-build-log'] = constants.OSS_FUZZ_BUILD_LOG_BASE + p[
             'history'][0]['build_id'] + '.txt'
         build_status_dict[p['name']] = project_dict
     for p in cov_build_json['projects']:
         project_dict = build_status_dict.get(p['name'], dict())
         project_dict['cov-build'] = p['history'][0]['success']
-        project_dict['cov-build-log'] = OSS_FUZZ_BUILD_LOG_BASE + p['history'][
-            0]['build_id'] + '.txt'
+        project_dict['cov-build-log'] = constants.OSS_FUZZ_BUILD_LOG_BASE + p[
+            'history'][0]['build_id'] + '.txt'
         build_status_dict[p['name']] = project_dict
     for p in introspector_build_json['projects']:
         project_dict = build_status_dict.get(p['name'], dict())
         project_dict['introspector-build'] = p['history'][0]['success']
-        project_dict['introspector-build-log'] = OSS_FUZZ_BUILD_LOG_BASE + p[
-            'history'][0]['build_id'] + '.txt'
+        project_dict[
+            'introspector-build-log'] = constants.OSS_FUZZ_BUILD_LOG_BASE + p[
+                'history'][0]['build_id'] + '.txt'
         build_status_dict[p['name']] = project_dict
 
     # Ensure all fields are set in each dictionary
