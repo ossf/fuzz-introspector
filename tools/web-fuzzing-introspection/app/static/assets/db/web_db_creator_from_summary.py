@@ -26,6 +26,9 @@ import subprocess
 import zipfile
 from threading import Thread
 
+import constants
+import oss_fuzz
+
 DB_JSON_DB_TIMESTAMP = 'db-timestamps.json'
 DB_JSON_ALL_PROJECT_TIMESTAMP = 'all-project-timestamps.json'
 DB_JSON_ALL_FUNCTIONS = 'all-functions-db.json'
@@ -40,14 +43,6 @@ ALL_JSON_FILES = [
     DB_JSON_ALL_FUNCTIONS,
     DB_JSON_ALL_CURRENT_FUNCS,
 ]
-
-OSS_FUZZ_BUILD_STATUS_URL = 'https://oss-fuzz-build-logs.storage.googleapis.com'
-INTROSPECTOR_BUILD_JSON = 'status-introspector.json'
-COVERAGE_BUILD_JSON = 'status-coverage.json'
-FUZZ_BUILD_JSON = 'status.json'
-OSS_FUZZ_BUILD_LOG_BASE = 'https://oss-fuzz-build-logs.storage.googleapis.com/log-'
-
-OSS_FUZZ_CLONE = ""
 
 INTROSPECTOR_WEBAPP_ZIP = 'https://introspector.oss-fuzz.com/static/assets/db/db-archive.zip'
 
@@ -70,208 +65,6 @@ def git_clone_project(github_url, destination):
     except subprocess.CalledProcessError:
         return False
     return True
-
-
-def get_projects_build_status():
-    fuzz_build_url = OSS_FUZZ_BUILD_STATUS_URL + '/' + FUZZ_BUILD_JSON
-    coverage_build_url = OSS_FUZZ_BUILD_STATUS_URL + '/' + COVERAGE_BUILD_JSON
-    introspector_build_url = OSS_FUZZ_BUILD_STATUS_URL + '/' + INTROSPECTOR_BUILD_JSON
-
-    fuzz_build_raw = requests.get(fuzz_build_url, timeout=20).text
-    coverage_build_raw = requests.get(coverage_build_url, timeout=20).text
-    introspector_build_raw = requests.get(introspector_build_url,
-                                          timeout=20).text
-
-    fuzz_build_json = json.loads(fuzz_build_raw)
-    cov_build_json = json.loads(coverage_build_raw)
-    introspector_build_json = json.loads(introspector_build_raw)
-
-    build_status_dict = dict()
-    for p in fuzz_build_json['projects']:
-        project_dict = build_status_dict.get(p['name'], dict())
-        project_dict['fuzz-build'] = p['history'][0]['success']
-        project_dict['fuzz-build-log'] = OSS_FUZZ_BUILD_LOG_BASE + p[
-            'history'][0]['build_id'] + '.txt'
-        build_status_dict[p['name']] = project_dict
-    for p in cov_build_json['projects']:
-        project_dict = build_status_dict.get(p['name'], dict())
-        project_dict['cov-build'] = p['history'][0]['success']
-        project_dict['cov-build-log'] = OSS_FUZZ_BUILD_LOG_BASE + p['history'][
-            0]['build_id'] + '.txt'
-        build_status_dict[p['name']] = project_dict
-    for p in introspector_build_json['projects']:
-        project_dict = build_status_dict.get(p['name'], dict())
-        project_dict['introspector-build'] = p['history'][0]['success']
-        project_dict['introspector-build-log'] = OSS_FUZZ_BUILD_LOG_BASE + p[
-            'history'][0]['build_id'] + '.txt'
-        build_status_dict[p['name']] = project_dict
-
-    # Ensure all fields are set in each dictionary
-    needed_keys = [
-        'introspector-build', 'fuzz-build', 'cov-build',
-        'introspector-build-log', 'cov-build-log', 'fuzz-build-log'
-    ]
-    for project_name in build_status_dict:
-        project_dict = build_status_dict[project_name]
-        for needed_key in needed_keys:
-            if needed_key not in project_dict:
-                project_dict[needed_key] = 'N/A'
-
-    print("Going through all of the projects")
-    for project_name in build_status_dict:
-        try:
-            project_language = try_to_get_project_language(project_name)
-        except:
-            project_language = 'N/A'
-        build_status_dict[project_name]['language'] = project_language
-    print("Number of projects: %d" % (len(build_status_dict)))
-    return build_status_dict
-
-
-def get_introspector_summary():
-    introspector_summary_url = OSS_FUZZ_BUILD_STATUS_URL + '/' + INTROSPECTOR_BUILD_JSON
-    r = requests.get(introspector_summary_url, timeout=20)
-    return json.loads(r.text)
-
-
-def get_all_valid_projects(introspector_summary):
-    successfull_projects = list()
-    for project in introspector_summary['projects']:
-        if project['history'][0]['success'] == True:
-            successfull_projects.append(project['name'])
-    return successfull_projects
-
-
-def get_latest_valid_reports():
-    try:
-        introspector_summary = get_introspector_summary()
-    except:
-        return []
-    successfull_projects = get_all_valid_projects(introspector_summary)
-    return successfull_projects
-
-
-def try_to_get_project_language(project_name):
-    if os.path.isdir(OSS_FUZZ_CLONE):
-        local_project_path = os.path.join(OSS_FUZZ_CLONE, "projects",
-                                          project_name)
-        if os.path.isdir(local_project_path):
-            project_yaml_path = os.path.join(local_project_path,
-                                             "project.yaml")
-            if os.path.isfile(project_yaml_path):
-                with open(project_yaml_path, "r") as f:
-                    project_yaml = yaml.safe_load(f.read())
-                    return project_yaml['language']
-    else:
-        proj_yaml_url = 'https://raw.githubusercontent.com/google/oss-fuzz/master/projects/%s/project.yaml' % (
-            project_name)
-        r = requests.get(proj_yaml_url, timeout=10)
-        project_yaml = yaml.safe_load(r.text)
-        return project_yaml['language']
-    return "N/A"
-
-
-def get_introspector_report_url_base(project_name, datestr):
-    base_url = 'https://storage.googleapis.com/oss-fuzz-introspector/{0}/inspector-report/{1}/'
-    project_url = base_url.format(project_name, datestr)
-    return project_url
-
-
-def get_introspector_report_url_summary(project_name, datestr):
-    return get_introspector_report_url_base(project_name,
-                                            datestr) + "summary.json"
-
-
-def get_introspector_report_url_report(project_name, datestr):
-    return get_introspector_report_url_base(project_name,
-                                            datestr) + "fuzz_report.html"
-
-
-def get_fuzzer_stats_fuzz_count_url(project_name, date_str):
-    base_url = 'https://storage.googleapis.com/oss-fuzz-coverage/{0}/fuzzer_stats/{1}/coverage_targets.txt'
-    coverage_targets = base_url.format(project_name, date_str)
-    return coverage_targets
-
-
-def get_fuzzer_stats_fuzz_count(project_name, date_str):
-    coverage_stats_url = get_fuzzer_stats_fuzz_count_url(
-        project_name, date_str)
-    coverage_summary_raw = requests.get(coverage_stats_url, timeout=20).text
-    if "The specified key does not exist" in coverage_summary_raw:
-        return None
-    return coverage_summary_raw
-
-
-def get_code_coverage_summary_url(project_name, datestr):
-    base_url = 'https://storage.googleapis.com/oss-fuzz-coverage/{0}/reports/{1}/linux/summary.json'
-    project_url = base_url.format(project_name, datestr)
-    return project_url
-
-
-def get_coverage_report_url(project_name, datestr, language):
-    if language == 'java' or language == 'python' or language == 'go':
-        file_report = "index.html"
-    else:
-        file_report = "report.html"
-    base_url = 'https://storage.googleapis.com/oss-fuzz-coverage/{0}/reports/{1}/linux/{2}'
-    project_url = base_url.format(project_name, datestr, file_report)
-    return project_url
-
-
-def get_introspector_report_url_debug_info(project_name, datestr):
-    return get_introspector_report_url_base(project_name,
-                                            datestr) + "all_debug_info.json"
-
-
-def extract_introspector_debug_info(project_name, date_str):
-    debug_data_url = get_introspector_report_url_debug_info(
-        project_name, date_str.replace("-", ""))
-    #print("Getting: %s" % (introspector_summary_url))
-    # Read the introspector atifact
-    try:
-        raw_introspector_json_request = requests.get(debug_data_url,
-                                                     timeout=10)
-    except:
-        return dict()
-    try:
-        debug_report = json.loads(raw_introspector_json_request.text)
-    except:
-        return dict()
-
-    return debug_report
-
-
-def get_code_coverage_summary(project_name, datestr):
-    cov_summary_url = get_code_coverage_summary_url(project_name, datestr)
-    try:
-        coverage_summary_raw = requests.get(cov_summary_url, timeout=20).text
-    except:
-        return None
-    try:
-        json_dict = json.loads(coverage_summary_raw)
-        return json_dict
-    except:
-        return None
-
-
-def extract_introspector_report(project_name, date_str):
-    introspector_summary_url = get_introspector_report_url_summary(
-        project_name, date_str.replace("-", ""))
-    introspector_report_url = get_introspector_report_url_report(
-        project_name, date_str.replace("-", ""))
-
-    # Read the introspector atifact
-    try:
-        raw_introspector_json_request = requests.get(introspector_summary_url,
-                                                     timeout=10)
-    except:
-        return None
-    try:
-        introspector_report = json.loads(raw_introspector_json_request.text)
-    except:
-        return None
-
-    return introspector_report
 
 
 def rename_annotated_cfg(original_annotated_cfg):
@@ -327,7 +120,7 @@ def extract_project_data(project_name, date_str, should_include_details,
     # The previous techniques we used to set language was quite heuristically.
     # Here, we make a more precise effort by reading the project yaml file.
     try:
-        project_language = try_to_get_project_language(project_name)
+        project_language = oss_fuzz.try_to_get_project_language(project_name)
         if project_language == 'jvm':
             project_language = 'java'
     except:
@@ -335,19 +128,21 @@ def extract_project_data(project_name, date_str, should_include_details,
         project_language = 'c++'
 
     # Extract code coverage and introspector reports.
-    code_coverage_summary = get_code_coverage_summary(
+    code_coverage_summary = oss_fuzz.get_code_coverage_summary(
         project_name, date_str.replace("-", ""))
-    cov_fuzz_stats = get_fuzzer_stats_fuzz_count(project_name,
-                                                 date_str.replace("-", ""))
-    introspector_report = extract_introspector_report(project_name, date_str)
-    introspector_report_url = get_introspector_report_url_report(
+    cov_fuzz_stats = oss_fuzz.get_fuzzer_stats_fuzz_count(
+        project_name, date_str.replace("-", ""))
+    introspector_report = oss_fuzz.extract_introspector_report(
+        project_name, date_str)
+    introspector_report_url = oss_fuzz.get_introspector_report_url_report(
         project_name, date_str.replace("-", ""))
 
     # Save the report
     save_fuzz_introspector_report(introspector_report, project_name, date_str)
 
     # Get debug data
-    debug_report = extract_introspector_debug_info(project_name, date_str)
+    debug_report = oss_fuzz.extract_introspector_debug_info(
+        project_name, date_str)
 
     # Currently, we fail if any of code_coverage_summary of introspector_report is
     # None. This should later be adjusted such that we can continue if we only
@@ -516,9 +311,8 @@ def extract_project_data(project_name, date_str, should_include_details,
                 'percent': 0,
             }
 
-        coverage_url = get_coverage_report_url(project_name,
-                                               date_str.replace("-", ""),
-                                               project_language)
+        coverage_url = oss_fuzz.get_coverage_report_url(
+            project_name, date_str.replace("-", ""), project_language)
         code_coverage_data_dict = {
             'coverage_url': coverage_url,
             'line_coverage': line_total_summary
@@ -541,8 +335,6 @@ def extract_project_data(project_name, date_str, should_include_details,
 
     dictionary_key = '%s###%s' % (project_name, date_str)
     manager_return_dict[dictionary_key] = {
-        #'refined_proj_list': refined_proj_list,
-        #'branch_pairs': branch_pairs,
         'project_timestamp': project_timestamp,
         "introspector-data-dict": introspector_data_dict,
         "coverage-data-dict": code_coverage_data_dict,
@@ -874,18 +666,15 @@ def setup_folders(input_directory, output_directory):
 
 def extract_oss_fuzz_build_status(output_directory):
     """Extracts fuzz/coverage/introspector build status from OSS-Fuzz stats."""
-    global OSS_FUZZ_CLONE
-
     # Extract the build status of all OSS-Fuzz projects
     # Create a local clone of OSS-Fuzz. This is used for checking language of a project easily.
-    oss_fuzz_local_clone = os.path.join(output_directory, "oss-fuzz-clone")
+    oss_fuzz_local_clone = os.path.join(output_directory,
+                                        constants.OSS_FUZZ_CLONE)
     if os.path.isdir(oss_fuzz_local_clone):
         shutil.rmtree(oss_fuzz_local_clone)
-    git_clone_project("https://github.com/google/oss-fuzz",
-                      oss_fuzz_local_clone)
+    git_clone_project(constants.OSS_FUZZ_REPO, oss_fuzz_local_clone)
 
-    OSS_FUZZ_CLONE = oss_fuzz_local_clone
-    build_status_dict = get_projects_build_status()
+    build_status_dict = oss_fuzz.get_projects_build_status()
     update_build_status(build_status_dict)
     return build_status_dict
 
@@ -902,9 +691,7 @@ def setup_github_cache():
     if os.path.isdir("github_cache"):
         shutil.rmtree("github_cache")
 
-    git_clone_project(
-        "https://github.com/DavidKorczynski/oss-fuzz-db-fuzzintro",
-        "github_cache")
+    git_clone_project(constants.OSS_FUZZ_GITHUB_BACKUP_REPO, "github_cache")
     if not os.path.isdir("github_cache"):
         return False
     db_zipfile = os.path.join("github_cache", "db-stamp.zip")
