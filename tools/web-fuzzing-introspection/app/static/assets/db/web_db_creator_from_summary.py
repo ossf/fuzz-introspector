@@ -104,6 +104,15 @@ def save_debug_report(debug_report, project_name):
         json.dump(debug_report, report_fd)
 
 
+def save_branch_blockers(branch_blockers, project_name):
+    project_db_dir = os.path.join(constants.DB_PROJECT_DIR, project_name)
+    os.makedirs(project_db_dir, exist_ok=True)
+
+    report_dst = os.path.join(project_db_dir, 'branch_blockers.json')
+    with open(report_dst, 'w') as report_fd:
+        json.dump(branch_blockers, report_fd)
+
+
 def extract_project_data(project_name, date_str, should_include_details,
                          manager_return_dict):
     """
@@ -278,6 +287,8 @@ def extract_project_data(project_name, date_str, should_include_details,
                         branch_blocker.get('blocked_unique_functions', [])
                     })
 
+        save_branch_blockers(branch_pairs, project_name)
+
         introspector_data_dict = {
             "introspector_report_url": introspector_report_url,
             "coverage_lines":
@@ -288,7 +299,6 @@ def extract_project_data(project_name, date_str, should_include_details,
             "function_count": len(all_function_list),
             "functions_covered_estimate": functions_covered_estimate,
             'refined_proj_list': refined_proj_list,
-            'branch_pairs': branch_pairs,
             'annotated_cfg': annotated_cfg,
         }
 
@@ -364,7 +374,6 @@ def analyse_list_of_projects(date, projects_to_analyse,
 
     """
     function_list = list()
-    fuzz_branch_blocker_list = list()
     project_timestamps = list()
     accummulated_fuzzer_count = 0
     accummulated_function_count = 0
@@ -424,7 +433,6 @@ def analyse_list_of_projects(date, projects_to_analyse,
             function_list += introspector_dictionary['refined_proj_list']
             # Remove the function list because we don't want it anymore.
             introspector_dictionary.pop('refined_proj_list')
-            fuzz_branch_blocker_list += introspector_dictionary['branch_pairs']
 
             # Accummulate various stats for the DB timestamp.
             db_timestamp['function_count'] += introspector_dictionary[
@@ -450,7 +458,7 @@ def analyse_list_of_projects(date, projects_to_analyse,
     # - all branch blockers
     # - a list of project timestamps
     # - the DB timestamp
-    return function_list, fuzz_branch_blocker_list, project_timestamps, db_timestamp
+    return function_list, project_timestamps, db_timestamp
 
 
 def extend_db_timestamps(db_timestamp, output_directory):
@@ -542,17 +550,13 @@ def extend_func_db(function_list, output_directory):
 
 
 def update_db_files(db_timestamp, project_timestamps, function_list,
-                    fuzz_branch_blocker_list, output_directory,
-                    should_include_details):
+                    output_directory, should_include_details):
     logger.info(
         "Updating the database with DB snapshot. Number of functions in total: %d"
         % (db_timestamp['function_count']))
     if should_include_details:
         extend_func_db(function_list, output_directory)
 
-        with open(os.path.join(output_directory, DB_JSON_ALL_BRANCH_BLOCKERS),
-                  'w') as f:
-            json.dump(fuzz_branch_blocker_list, f)
     extend_db_json_files(project_timestamps, output_directory)
     extend_db_timestamps(db_timestamp, output_directory)
 
@@ -628,12 +632,11 @@ def analyse_set_of_dates(dates, projects_to_analyse, output_directory,
         if force_creation:
             is_end = True
 
-        function_list, fuzz_branch_blocker_list, project_timestamps, db_timestamp = analyse_list_of_projects(
+        function_list, project_timestamps, db_timestamp = analyse_list_of_projects(
             date, projects_to_analyse, should_include_details=is_end)
         update_db_files(db_timestamp,
                         project_timestamps,
                         function_list,
-                        fuzz_branch_blocker_list,
                         output_directory,
                         should_include_details=is_end)
 

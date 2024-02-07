@@ -677,7 +677,8 @@ def branch_blockers():
     if target_project is None:
         return {'result': 'error', 'msg': 'Project not in the database'}
 
-    all_branch_blockers = data_storage.get_blockers()
+    all_branch_blockers = data_storage.get_project_branch_blockers(
+        target_project.name)
 
     project_blockers = []
     for blocker in all_branch_blockers:
