@@ -433,7 +433,6 @@ def analyse_list_of_projects(date, projects_to_analyse,
             function_list += introspector_dictionary['refined_proj_list']
             # Remove the function list because we don't want it anymore.
             introspector_dictionary.pop('refined_proj_list')
-            #fuzz_branch_blocker_list += introspector_dictionary['branch_pairs']
 
             # Accummulate various stats for the DB timestamp.
             db_timestamp['function_count'] += introspector_dictionary[
