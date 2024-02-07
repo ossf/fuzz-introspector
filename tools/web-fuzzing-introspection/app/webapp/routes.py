@@ -833,23 +833,26 @@ def api_function_signature():
     if function_name == None:
         return {'result': 'error', 'msg': 'No function name provided'}
 
-    for debug_info in data_storage.get_debug_data():
-        if debug_info.project_name == project_name:
-            for function in debug_info.all_functions_in_project:
-                if function.get('name', '') == function_name:
-                    func_signature = function['return_type'] + ' '
-                    func_signature += function['name']
-                    func_signature += '('
-                    for idx in range(len(function['args'])):
-                        func_signature += function['args'][idx]
-                        if idx < len(function['args']) - 1:
-                            func_signature += ' '
-                    func_signature += ')'
-                    return {
-                        'result': 'success',
-                        'signature': func_signature,
-                        'raw_data': function
-                    }
+    debug_info = data_storage.get_project_debug_report(project_name)
+
+    print("Got debug info")
+    if debug_info != None:
+        print("Yes")
+        for function in debug_info.all_functions_in_project:
+            if function.get('name', '') == function_name:
+                func_signature = function['return_type'] + ' '
+                func_signature += function['name']
+                func_signature += '('
+                for idx in range(len(function['args'])):
+                    func_signature += function['args'][idx]
+                    if idx < len(function['args']) - 1:
+                        func_signature += ' '
+                func_signature += ')'
+                return {
+                    'result': 'success',
+                    'signature': func_signature,
+                    'raw_data': function
+                }
     return {'result': 'failed', 'msg': 'could not find specified function'}
 
 

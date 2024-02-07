@@ -95,6 +95,15 @@ def save_fuzz_introspector_report(introspector_report, project_name, date_str):
         json.dump(introspector_report, report_fd)
 
 
+def save_debug_report(debug_report, project_name):
+    project_db_dir = os.path.join(constants.DB_PROJECT_DIR, project_name)
+    os.makedirs(project_db_dir, exist_ok=True)
+
+    report_dst = os.path.join(project_db_dir, 'debug_report.json')
+    with open(report_dst, 'w') as report_fd:
+        json.dump(debug_report, report_fd)
+
+
 def extract_project_data(project_name, date_str, should_include_details,
                          manager_return_dict):
     """
@@ -143,6 +152,7 @@ def extract_project_data(project_name, date_str, should_include_details,
     # Get debug data
     debug_report = oss_fuzz.extract_introspector_debug_info(
         project_name, date_str)
+    save_debug_report(debug_report, project_name)
 
     # Currently, we fail if any of code_coverage_summary of introspector_report is
     # None. This should later be adjusted such that we can continue if we only
@@ -280,7 +290,6 @@ def extract_project_data(project_name, date_str, should_include_details,
             'refined_proj_list': refined_proj_list,
             'branch_pairs': branch_pairs,
             'annotated_cfg': annotated_cfg,
-            'debug_report': debug_report,
         }
 
     # Extract data from the code coverage reports

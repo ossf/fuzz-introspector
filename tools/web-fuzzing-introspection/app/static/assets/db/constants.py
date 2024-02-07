@@ -22,3 +22,5 @@ FUZZ_BUILD_JSON = 'status.json'
 OSS_FUZZ_BUILD_LOG_BASE = 'https://oss-fuzz-build-logs.storage.googleapis.com/log-'
 
 OSS_FUZZ_GITHUB_BACKUP_REPO = 'https://github.com/DavidKorczynski/oss-fuzz-db-fuzzintro'
+
+DB_PROJECT_DIR = 'db-projects'
