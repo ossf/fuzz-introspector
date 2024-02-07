@@ -113,6 +113,139 @@ def save_branch_blockers(branch_blockers, project_name):
         json.dump(branch_blockers, report_fd)
 
 
+def extract_and_refine_branch_blockers(introspector_report, project_name):
+    branch_pairs = list()
+    for key in introspector_report:
+        if key == "MergedProjectProfile" or key == 'analyses':
+            continue
+
+        # Fuzzer-specific dictionary, get the contents of it.
+        val = introspector_report[key]
+        if not isinstance(val, dict):
+            continue
+
+        branch_blockers = val.get('branch_blockers', None)
+        if branch_blockers == None or not isinstance(branch_blockers, list):
+            continue
+
+        for branch_blocker in branch_blockers:
+            function_blocked = branch_blocker.get('function_name', None)
+            blocked_unique_not_covered_complexity = branch_blocker.get(
+                'blocked_unique_not_covered_complexity', None)
+            if blocked_unique_not_covered_complexity < 5:
+                continue
+            if function_blocked == None:
+                continue
+            if blocked_unique_not_covered_complexity == None:
+                continue
+
+            branch_pairs.append({
+                'project':
+                project_name,
+                'function_name':
+                function_blocked,
+                'blocked_runtime_coverage':
+                blocked_unique_not_covered_complexity,
+                'source_file':
+                branch_blocker.get('source_file', "N/A"),
+                'linenumber':
+                branch_blocker.get('branch_line_number', -1),
+                'blocked_unique_functions':
+                branch_blocker.get('blocked_unique_functions', [])
+            })
+    return branch_pairs
+
+
+def extract_and_refine_annotated_cfg(introspector_report):
+    annotated_cfg = dict()
+    for key in introspector_report:
+        # We look for dicts with fuzzer-specific content. The following two
+        # are not such keys, so skip them.
+        if key == 'analyses':
+            if 'AnnotatedCFG' in introspector_report[key]:
+                annotated_cfg = rename_annotated_cfg(
+                    introspector_report['analyses']['AnnotatedCFG'])
+    return annotated_cfg
+
+
+def extract_and_refine_functions(all_function_list, project_name, date_str):
+    refined_proj_list = []
+
+    for func in all_function_list:
+        refined_proj_list.append({
+            'name':
+            func['Func name'],
+            'code_coverage_url':
+            func['func_url'],
+            'function_filename':
+            func['Functions filename'],
+            'runtime_code_coverage':
+            float(func['Func lines hit %'].replace("%", "")),
+            'is_reached':
+            len(func['Reached by Fuzzers']) > 0,
+            'reached-by-fuzzers':
+            func['Reached by Fuzzers'],
+            'project':
+            project_name,
+            'accumulated_cyclomatic_complexity':
+            func['Accumulated cyclomatic complexity'],
+            'llvm-instruction-count':
+            func['I Count'],
+            'undiscovered-complexity':
+            func['Undiscovered complexity'],
+            'function-arguments':
+            func['Args'],
+            'function-argument-names':
+            func.get('ArgNames', ['Did not find arguments']),
+            'return-type':
+            func.get('return_type', 'N/A'),
+            'raw-function-name':
+            func.get('raw-function-name', 'N/A'),
+            'date-str':
+            date_str,
+            'source_line_begin':
+            func.get('source_line_begin', 'N/A'),
+            'source_line_end':
+            func.get('source_line_end', 'N/A'),
+            'callsites':
+            func.get('callsites', [])
+        })
+    return refined_proj_list
+
+
+def extract_code_coverage_data(code_coverage_summary, project_name, date_str,
+                               project_language):
+    # Extract data from the code coverage reports
+    if code_coverage_summary == None:
+        return None
+
+    try:
+        line_total_summary = code_coverage_summary['data'][0]['totals'][
+            'lines']
+    except KeyError:
+        # This can happen in Python, where the correct code formatting was only done
+        # May 3rd 2023: https://github.com/google/oss-fuzz/pull/10201
+        return None
+    #line_total_summary['percent']
+    # For the sake of consistency, we re-calculate the percentage. This is because
+    # some of the implentations have a value 0 <= p <= 1 and some have 0 <= p <= 100.
+    try:
+        line_total_summary['percent'] = round(
+            100.0 * (float(line_total_summary['covered']) /
+                     float(line_total_summary['count'])), 2)
+    except:
+        pass
+
+    coverage_url = oss_fuzz.get_coverage_report_url(project_name,
+                                                    date_str.replace("-", ""),
+                                                    project_language)
+    code_coverage_data_dict = {
+        'coverage_url': coverage_url,
+        'line_coverage': line_total_summary
+    }
+    return code_coverage_data_dict
+
+
 def extract_project_data(project_name, date_str, should_include_details,
                          manager_return_dict):
     """
@@ -193,100 +326,20 @@ def extract_project_data(project_name, date_str, should_include_details,
 
         functions_covered_estimate = project_stats[
             'code-coverage-function-percentage']
-        refined_proj_list = list()
-        if should_include_details:
-            for func in all_function_list:
-                refined_proj_list.append({
-                    'name':
-                    func['Func name'],
-                    'code_coverage_url':
-                    func['func_url'],
-                    'function_filename':
-                    func['Functions filename'],
-                    'runtime_code_coverage':
-                    float(func['Func lines hit %'].replace("%", "")),
-                    'is_reached':
-                    len(func['Reached by Fuzzers']) > 0,
-                    'reached-by-fuzzers':
-                    func['Reached by Fuzzers'],
-                    'project':
-                    project_name,
-                    'accumulated_cyclomatic_complexity':
-                    func['Accumulated cyclomatic complexity'],
-                    'llvm-instruction-count':
-                    func['I Count'],
-                    'undiscovered-complexity':
-                    func['Undiscovered complexity'],
-                    'function-arguments':
-                    func['Args'],
-                    'function-argument-names':
-                    func.get('ArgNames', ['Did not find arguments']),
-                    'return-type':
-                    func.get('return_type', 'N/A'),
-                    'raw-function-name':
-                    func.get('raw-function-name', 'N/A'),
-                    'date-str':
-                    date_str,
-                    'source_line_begin':
-                    func.get('source_line_begin', 'N/A'),
-                    'source_line_end':
-                    func.get('source_line_end', 'N/A'),
-                    'callsites':
-                    func.get('callsites', [])
-                })
 
-        # Get all branch blockers
+        # Get details if needed and otherwise leave empty
+        refined_proj_list = list()
         branch_pairs = list()
         annotated_cfg = dict()
         if should_include_details:
-            for key in introspector_report:
-                # We look for dicts with fuzzer-specific content. The following two
-                # are not such keys, so skip them.
-                if key == 'analyses':
-                    if 'AnnotatedCFG' in introspector_report[key]:
-                        annotated_cfg = rename_annotated_cfg(
-                            introspector_report['analyses']['AnnotatedCFG'])
+            refined_proj_list = extract_and_refine_functions(
+                all_function_list, project_name, date_str)
+            annotated_cfg = extract_and_refine_annotated_cfg(
+                introspector_report)
+            branch_pairs = extract_and_refine_branch_blockers(
+                introspector_report, project_name)
 
-                if key == "MergedProjectProfile" or key == 'analyses':
-                    continue
-
-                # Fuzzer-specific dictionary, get the contents of it.
-                val = introspector_report[key]
-                if not isinstance(val, dict):
-                    continue
-
-                branch_blockers = val.get('branch_blockers', None)
-                if branch_blockers == None or not isinstance(
-                        branch_blockers, list):
-                    continue
-
-                for branch_blocker in branch_blockers:
-                    function_blocked = branch_blocker.get(
-                        'function_name', None)
-                    blocked_unique_not_covered_complexity = branch_blocker.get(
-                        'blocked_unique_not_covered_complexity', None)
-                    if blocked_unique_not_covered_complexity < 5:
-                        continue
-                    if function_blocked == None:
-                        continue
-                    if blocked_unique_not_covered_complexity == None:
-                        continue
-
-                    branch_pairs.append({
-                        'project':
-                        project_name,
-                        'function_name':
-                        function_blocked,
-                        'blocked_runtime_coverage':
-                        blocked_unique_not_covered_complexity,
-                        'source_file':
-                        branch_blocker.get('source_file', "N/A"),
-                        'linenumber':
-                        branch_blocker.get('branch_line_number', -1),
-                        'blocked_unique_functions':
-                        branch_blocker.get('blocked_unique_functions', [])
-                    })
-
+        # Dump things we dont want to accummulate.
         save_branch_blockers(branch_pairs, project_name)
 
         introspector_data_dict = {
@@ -302,40 +355,8 @@ def extract_project_data(project_name, date_str, should_include_details,
             'annotated_cfg': annotated_cfg,
         }
 
-    # Extract data from the code coverage reports
-    if code_coverage_summary == None:
-        code_coverage_data_dict = None
-    else:
-        if code_coverage_summary != None:
-            try:
-                line_total_summary = code_coverage_summary['data'][0][
-                    'totals']['lines']
-            except KeyError:
-                # This can happen in Python, where the correct code formatting was only done
-                # May 3rd 2023: https://github.com/google/oss-fuzz/pull/10201
-                return
-            #line_total_summary['percent']
-            # For the sake of consistency, we re-calculate the percentage. This is because
-            # some of the implentations have a value 0 <= p <= 1 and some have 0 <= p <= 100.
-            try:
-                line_total_summary['percent'] = round(
-                    100.0 * (float(line_total_summary['covered']) /
-                             float(line_total_summary['count'])), 2)
-            except:
-                pass
-        else:
-            line_total_summary = {
-                'count': 0,
-                'covered': 0,
-                'percent': 0,
-            }
-
-        coverage_url = oss_fuzz.get_coverage_report_url(
-            project_name, date_str.replace("-", ""), project_language)
-        code_coverage_data_dict = {
-            'coverage_url': coverage_url,
-            'line_coverage': line_total_summary
-        }
+    code_coverage_data_dict = extract_code_coverage_data(
+        code_coverage_summary, project_name, date_str, project_language)
 
     if cov_fuzz_stats != None:
         all_fuzzers = cov_fuzz_stats.split("\n")
