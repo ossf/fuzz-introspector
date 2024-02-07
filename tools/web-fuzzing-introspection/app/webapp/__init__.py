@@ -23,9 +23,6 @@ def load_db():
         os.path.dirname(__file__), "../static/assets/db/db-timestamps.json")
     all_functions_file = os.path.join(
         os.path.dirname(__file__), "../static/assets/db/all-functions-db.json")
-    all_branch_blockers_file = os.path.join(
-        os.path.dirname(__file__),
-        "../static/assets/db/all-branch-blockers.json")
     project_timestamps_file = os.path.join(
         os.path.dirname(__file__),
         "../static/assets/db/all-project-timestamps.json")
@@ -80,21 +77,6 @@ def load_db():
 
     print("Loadded %d functions" % (idx))
     print("Len %d" % (len(data_storage.FUNCTIONS)))
-
-    with open(all_branch_blockers_file, 'r') as f:
-        all_branch_blockers = json.load(f)
-
-    for json_bb in all_branch_blockers:
-        data_storage.BLOCKERS.append(
-            models.BranchBlocker(project_name=json_bb.get('project', ''),
-                                 function_name=json_bb.get(
-                                     'function_name', ''),
-                                 unique_blocked_coverage=json_bb.get(
-                                     'blocked_runtime_coverage'),
-                                 source_file=json_bb.get('source_file'),
-                                 blocked_unique_functions=json_bb.get(
-                                     'blocked_unique_functions'),
-                                 src_linenumber=json_bb.get('linenumber')))
 
     with open(project_timestamps_file, 'r') as f:
         project_timestamps_json = json.load(f)
