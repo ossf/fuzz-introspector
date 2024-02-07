@@ -13,7 +13,9 @@
 # limitations under the License.
 """Utilities for getting data from OSS-Fuzz"""
 
+import os
 import json
+import yaml
 import requests
 
 import constants
@@ -170,18 +172,15 @@ def get_projects_build_status():
 
     print("Going through all of the projects")
     for project_name in build_status_dict:
-        try:
-            project_language = try_to_get_project_language(project_name)
-        except:
-            project_language = 'N/A'
+        project_language = try_to_get_project_language(project_name)
         build_status_dict[project_name]['language'] = project_language
     print("Number of projects: %d" % (len(build_status_dict)))
     return build_status_dict
 
 
 def try_to_get_project_language(project_name):
-    if os.path.isdir(OSS_FUZZ_CLONE):
-        local_project_path = os.path.join(OSS_FUZZ_CLONE, "projects",
+    if os.path.isdir(constants.OSS_FUZZ_CLONE):
+        local_project_path = os.path.join(constants.OSS_FUZZ_CLONE, "projects",
                                           project_name)
         if os.path.isdir(local_project_path):
             project_yaml_path = os.path.join(local_project_path,
@@ -193,7 +192,10 @@ def try_to_get_project_language(project_name):
     else:
         proj_yaml_url = 'https://raw.githubusercontent.com/google/oss-fuzz/master/projects/%s/project.yaml' % (
             project_name)
-        r = requests.get(proj_yaml_url, timeout=10)
+        try:
+            r = requests.get(proj_yaml_url, timeout=10)
+        except:
+            return "N/A"
         project_yaml = yaml.safe_load(r.text)
         return project_yaml['language']
     return "N/A"
