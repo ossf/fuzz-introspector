@@ -228,17 +228,8 @@ def extract_introspector_debug_info(project_name, date_str):
         project_name, date_str.replace("-", ""))
     #print("Getting: %s" % (introspector_summary_url))
     # Read the introspector atifact
-    try:
-        raw_introspector_json_request = requests.get(debug_data_url,
-                                                     timeout=10)
-    except:
-        return dict()
-    try:
-        debug_report = json.loads(raw_introspector_json_request.text)
-    except:
-        return dict()
-
-    return debug_report
+    # Quick fix to reduce memory consumption
+    return dict()
 
 
 def get_code_coverage_summary(project_name, datestr):
