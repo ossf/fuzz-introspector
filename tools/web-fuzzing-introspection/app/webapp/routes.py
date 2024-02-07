@@ -835,12 +835,10 @@ def api_function_signature():
         return {'result': 'error', 'msg': 'No function name provided'}
 
     print("Function name: %s" % (function_name))
-
     debug_info = data_storage.get_project_debug_report(project_name)
-
-    print("Got debug info")
     if debug_info != None:
-        print("Yes")
+
+        # Match the function purely based on name
         for function in debug_info.all_functions_in_project:
             if function.get('name', '') == function_name:
                 func_signature = function['return_type'] + ' '
@@ -858,11 +856,11 @@ def api_function_signature():
                 }
 
         # The function signature was not found based on name matching.
-        # Try and match by way of file location
+        # Try and match by way of file location.
         all_functions = data_storage.get_functions()
         project_functions = []
-        print("Going through")
         func_to_match = None
+        print("Iterating through all functions to match raw function name")
         for function in all_functions:
             if function.project == project_name:
                 if function.raw_function_name == function_name:
@@ -877,7 +875,6 @@ def api_function_signature():
             target_minimum = 999999
             tfunc_signature = None
             for dfunction in debug_info.all_functions_in_project:
-                #print(json.dumps(dfunction))
                 try:
                     dline = int(dfunction['source'].get('source_line', '-1'))
                 except ValueError:
@@ -890,7 +887,6 @@ def api_function_signature():
                     # signatur start (as from frunc_to_match) and the lines of code of the first
                     # instruction.
                     distance_between_beginnings = func_to_match.source_line_begin - dline
-                    #print("Distance: %d"%(distance_between_beginnings))
 
                     if distance_between_beginnings == 0 and dline != 0:
                         func_signature = dfunction['return_type'] + ' '
