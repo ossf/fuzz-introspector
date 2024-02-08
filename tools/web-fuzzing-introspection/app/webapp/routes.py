@@ -824,6 +824,25 @@ def api_project_source_code():
     return {'result': 'success', 'source_code': source_code}
 
 
+@blueprint.route('/api/type-info')
+def api_type_info():
+    """Returns a json representation of all the functions in a given project"""
+    project_name = request.args.get('project', None)
+    if project_name == None:
+        return {'result': 'error', 'msg': 'Please provide a project name'}
+    type_name = request.args.get('name', None)
+    if type_name == None:
+        return {'result': 'error', 'msg': 'No function name provided'}
+
+    print("Type name: %s" % (type_name))
+    debug_info = data_storage.get_project_debug_report(project_name)
+    if debug_info != None:
+        for elem_type in debug_info.all_types:
+            if elem_type.get('name') == type_name:
+                return {'result': 'success', 'type_data': elem_type}
+    return {'result': 'error', 'msg': 'Could not find type'}
+
+
 @blueprint.route('/api/function-signature')
 def api_function_signature():
     """Returns a json representation of all the functions in a given project"""
