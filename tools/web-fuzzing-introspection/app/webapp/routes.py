@@ -837,7 +837,7 @@ def api_type_info():
     print("Type name: %s" % (type_name))
     debug_info = data_storage.get_project_debug_report(project_name)
     if debug_info != None:
-       for elem_type in debug_info.all_types:
+        for elem_type in debug_info.all_types:
             if elem_type.get('name') == type_name:
                 return {'result': 'success', 'type_data': elem_type}
     return {'result': 'error', 'msg': 'Could not find type'}
