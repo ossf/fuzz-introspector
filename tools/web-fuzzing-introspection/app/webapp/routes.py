@@ -706,6 +706,7 @@ def get_function_from_func_signature(func_signature, project_name):
     for function in all_functions:
         if function.project == project_name and function.func_signature == func_signature:
             return function
+    return None
 
 
 @blueprint.route('/api/all-cross-references')
@@ -962,22 +963,22 @@ def api_function_source_code():
     project_name = request.args.get('project', None)
     if project_name == None:
         return {'result': 'error', 'msg': 'Please provide a project name'}
-    function_name = request.args.get('function', None)
-    if function_name == None:
-        return {'result': 'error', 'msg': 'No function name provided'}
 
-    # Get all of the function
-    all_functions = data_storage.get_functions()
-    project_functions = []
-    for function in all_functions:
-        if function.project == project_name:
-            project_functions.append(function)
+    function_signature = request.args.get('function_signature', None)
+    if function_signature == None:
+        return {'result': 'error', 'msg': 'No function signature provided'}
 
+    # Get function from function signature
+    target_function = get_function_from_func_signature(function_signature,
+                                                       project_name)
+    if target_function is None:
+        return {'result': 'error', 'msg': 'Could not find function'}
+
+    # Find latest introspector date
     all_build_status = data_storage.get_build_status()
     latest_introspector_datestr = None
     for build_status in all_build_status:
         if build_status.project_name == project_name:
-
             # Get statistics of the project
             project_statistics = data_storage.PROJECT_TIMESTAMPS
             for ps in project_statistics:
@@ -989,24 +990,21 @@ def api_function_source_code():
     if latest_introspector_datestr == None:
         return {'result': 'error', 'msg': 'No introspector builds.'}
 
-    for function in project_functions:
-        if function.name == function_name or function.raw_function_name == function_name:
-            src_begin = function.source_line_begin
-            src_end = function.source_line_end
-            src_file = function.function_filename
-            source_code = extract_lines_from_source_code(
-                project_name, latest_introspector_datestr, src_file, src_begin,
-                src_end)
-            if source_code == None:
-                return {'result': 'error', 'msg': 'No source code'}
-            return {
-                'result': 'succes',
-                'source': source_code,
-                'filepath': src_file,
-                'src_begin': src_begin,
-                'src_end': src_begin
-            }
-    return {'result': 'error', 'msg': 'did not find function'}
+    src_begin = target_function.source_line_begin
+    src_end = target_function.source_line_end
+    src_file = target_function.function_filename
+    source_code = extract_lines_from_source_code(project_name,
+                                                 latest_introspector_datestr,
+                                                 src_file, src_begin, src_end)
+    if source_code == None:
+        return {'result': 'error', 'msg': 'No source code'}
+    return {
+        'result': 'succes',
+        'source': source_code,
+        'filepath': src_file,
+        'src_begin': src_begin,
+        'src_end': src_begin
+    }
 
 
 def get_build_status_of_project(project_name):
