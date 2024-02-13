@@ -73,7 +73,10 @@ def load_db():
                 date_str=func.get('date-str', ''),
                 source_line_begin=func.get('source_line_begin', '-1'),
                 source_line_end=func.get('source_line_end', '-1'),
-                callsites=func.get('callsites', [])))
+                callsites=func.get('callsites', []),
+                func_signature=func.get('function-signature', 'N/A'),
+                debug_data=func.get('debug-function', 'N/A'),
+            ))
 
     print("Loadded %d functions" % (idx))
     print("Len %d" % (len(data_storage.FUNCTIONS)))
