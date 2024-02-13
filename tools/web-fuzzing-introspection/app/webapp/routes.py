@@ -700,6 +700,14 @@ def branch_blockers():
     return {'result': 'success', 'project_blockers': project_blockers}
 
 
+def get_function_from_func_signature(func_signature, project_name):
+    all_functions = data_storage.get_functions()
+    project_functions = []
+    for function in all_functions:
+        if function.project == project_name and function.func_signature == func_signature:
+            return function
+
+
 @blueprint.route('/api/all-cross-references')
 def api_cross_references():
     """Returns a json representation of all the functions in a given project"""
@@ -707,9 +715,14 @@ def api_cross_references():
     if project_name == None:
         return {'result': 'error', 'msg': 'Please provide a project name'}
 
-    function_name = request.args.get('function', None)
-    if function_name == None:
-        return {'result': 'error', 'msg': 'No function name provided'}
+    function_signature = request.args.get('function_signature', None)
+    if function_signature == None:
+        return {'result': 'error', 'msg': 'No function signature provided'}
+
+    # Get function from function signature
+    target_function = get_function_from_func_signature(function_signature,
+                                                       project_name)
+    function_name = target_function.raw_function_name
 
     # Get all of the functions
     all_functions = data_storage.get_functions()
@@ -1061,27 +1074,41 @@ def far_reach_but_low_coverage():
     # Get functions of interest
     sorted_functions_of_interest = get_functions_of_interest(project_name)
 
-    max_functions_to_show = 1000
+    max_functions_to_show = 100
     functions_to_return = list()
     idx = 0
     for function in sorted_functions_of_interest:
         if idx >= max_functions_to_show:
             break
         idx += 1
+
         functions_to_return.append({
-            'function_name': function.name,
-            'function_filename': function.function_filename,
-            'runtime_coverage_percent': function.runtime_code_coverage,
+            'function_name':
+            function.name,
+            'function_filename':
+            function.function_filename,
+            'runtime_coverage_percent':
+            function.runtime_code_coverage,
             'accummulated_complexity':
             function.accummulated_cyclomatic_complexity,
-            'function_arguments': function.function_arguments,
-            'function_argument_names': function.function_argument_names,
-            'return_type': function.return_type,
-            'is_reached': function.is_reached,
-            'reached_by_fuzzers': function.reached_by_fuzzers,
-            'raw_function_name': function.raw_function_name,
-            'source_line_begin': function.source_line_begin,
-            'source_line_end': function.source_line_end
+            'function_arguments':
+            function.function_arguments,
+            'function_argument_names':
+            function.function_argument_names,
+            'return_type':
+            function.return_type,
+            'is_reached':
+            function.is_reached,
+            'reached_by_fuzzers':
+            function.reached_by_fuzzers,
+            'raw_function_name':
+            function.raw_function_name,
+            'source_line_begin':
+            function.source_line_begin,
+            'source_line_end':
+            function.source_line_end,
+            'function_signature':
+            function.func_signature,
         })
 
     # Assess if this worked well, and if not, provide a reason

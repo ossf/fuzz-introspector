@@ -98,7 +98,9 @@ class Function:
                  date_str="",
                  source_line_begin=-1,
                  source_line_end=-1,
-                 callsites=[]):
+                 callsites=[],
+                 func_signature='',
+                 debug_data=dict()):
         self.name = name
         self.function_filename = function_filename
         self.project = project
@@ -117,6 +119,8 @@ class Function:
         self.source_line_begin = source_line_begin
         self.source_line_end = source_line_end
         self.callsites = callsites
+        self.func_signature = func_signature
+        self.debug_data = debug_data
 
     def __dict__(self):
         return {
