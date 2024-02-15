@@ -210,6 +210,12 @@ class IntrospectionProject():
                                     },
                                     'elements': []
                                 }
+                                # Add the file to all files in project
+                                if source_file not in all_files_in_debug_info:
+                                    all_files_in_debug_info[source_file] = {
+                                        'source_file': source_file,
+                                        'language': 'N/A'
+                                    }
                             if "DW_TAG_typedef" in line:
                                 name = line.split("{")[-1].strip().split(
                                     "}")[0]
@@ -232,6 +238,12 @@ class IntrospectionProject():
                                     'source_file'] + current_type['source'][
                                         'source_line']
                                 all_types[hashkey] = current_type
+                                # Add the file to all files in project
+                                if source_file not in all_files_in_debug_info:
+                                    all_files_in_debug_info[source_file] = {
+                                        'source_file': source_file,
+                                        'language': 'N/A'
+                                    }
                         if "- Elem " in line:
                             # Ensure we have a strcuct
                             if current_struct is not None:
@@ -252,6 +264,12 @@ class IntrospectionProject():
                                         'source_line': source_line,
                                     }
                                 })
+                                # Add the file to all files in project
+                                if source_file not in all_files_in_debug_info:
+                                    all_files_in_debug_info[source_file] = {
+                                        'source_file': source_file,
+                                        'language': 'N/A'
+                                    }
 
                     if "Global variable: " in line:
                         sline = line.replace("Global variable: ",
@@ -270,6 +288,12 @@ class IntrospectionProject():
                                 'source_line': source_line
                             }
                         }
+                        # Add the file to all files in project
+                        if source_file not in all_files_in_debug_info:
+                            all_files_in_debug_info[source_file] = {
+                                'source_file': source_file,
+                                'language': 'N/A'
+                            }
 
                     if read_functions:
                         if "Subprogram:" in line:
@@ -311,6 +335,12 @@ class IntrospectionProject():
                                 'source_file': source_file,
                                 'source_line': source_line,
                             }
+                            # Add the file to all files in project
+                            if source_file not in all_files_in_debug_info:
+                                all_files_in_debug_info[source_file] = {
+                                    'source_file': source_file,
+                                    'language': 'N/A'
+                                }
                         if ' - Operand' in line:
 
                             # Decipher type
