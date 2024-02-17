@@ -686,10 +686,9 @@ def extract_namespace(mangled_function_name):
     logger.info("Demangling: %s" % (mangled_function_name))
     demangled_func_name = utils.demangle_cpp_func(mangled_function_name)
     logger.info("Demangled name: %s" % (demangled_func_name))
-    if not "::" in demangled_func_name:
+    if "::" not in demangled_func_name:
         return []
 
-    #before_parens = demangled_func_name.split("(")[0]
     split_namespace = demangled_func_name.split("::")
     name_spaces = []
     for elem in split_namespace:
