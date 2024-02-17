@@ -218,7 +218,9 @@ def extract_all_functions_in_debug_info(content, all_functions_in_debug,
                         hashkey = None
 
                     if hashkey is not None:
-                        # print("Actually adding 2: %s :: to %s"%(current_function['name'], hashkey))
+                        # print(
+                        #  "Actually adding 2: %s :: to %s"%(current_function['name'], hashkey)
+                        # )
                         all_functions_in_debug[hashkey] = current_function
                     else:
                         # Something went wrong, abandon.
