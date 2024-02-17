@@ -17,8 +17,6 @@ import abc
 import logging
 import multiprocessing
 import os
-import json
-import shutil
 
 from typing import (
     Dict,
@@ -117,7 +115,7 @@ class IntrospectionProject():
         self.debug_report = debug_info.load_debug_report(self.debug_files)
 
     def dump_debug_report(self):
-        if self.debug_report != None:
+        if self.debug_report is not None:
             debug_info.dump_debug_report(self.debug_report)
 
 
@@ -687,7 +685,7 @@ def detect_branch_level_blockers(
 def convert_debug_info_to_signature(function, introspector_func):
     try:
         func_signature = function['return_type'] + ' '
-    except:
+    except KeyError:
         return 'N/A'
 
     # Assess if there is a namespace and if we have more args than what there
@@ -775,10 +773,10 @@ def correlate_introspection_functions_to_debug_info(all_functions_json_report,
     # goal is to provide function signature for each function based on debug
     # information.
     for if_func in all_functions_json_report:
-        function_signature, correlated_debug_function = correlate_introspector_func_to_debug_information(
+        func_sig, correlated_debug_function = correlate_introspector_func_to_debug_information(
             if_func, all_debug_functions)
-        if function_signature is not None:
-            if_func['function_signature'] = function_signature
+        if func_sig is not None:
+            if_func['function_signature'] = func_sig
             if_func['debug_function_info'] = correlated_debug_function
         else:
             if_func['function_signature'] = 'N/A'

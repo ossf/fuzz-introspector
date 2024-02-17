@@ -13,15 +13,12 @@
 # limitations under the License.
 """Module for handling debug information from LLVM """
 
-import abc
 import logging
-import multiprocessing
 import os
 import json
 import shutil
 
-from fuzz_introspector import (cfg_load, code_coverage, constants, data_loader,
-                               debug_info, html_helpers, json_report, utils)
+from fuzz_introspector import constants
 
 logger = logging.getLogger(name=__name__)
 
@@ -279,7 +276,6 @@ def extract_all_functions_in_debug_info(content, all_functions_in_debug,
 
 def load_debug_report(debug_files):
     all_files_in_debug_info = dict()
-    current_function = None
     all_functions_in_debug = dict()
     all_global_variables = dict()
     all_types = dict()
