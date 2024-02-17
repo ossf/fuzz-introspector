@@ -750,6 +750,14 @@ def create_html_report(introspection_proj: analysis.IntrospectionProject,
                      html_report_core + html_body_end + html_content_end +
                      html_footer)
 
+    # Load debug informaiton because it will be correlated to the introspector
+    # functions.
+    introspection_proj.load_debug_report()
+
+    # Correlate debug info to introspector functions
+    analysis.correlate_introspection_functions_to_debug_info(
+        all_functions_json_report, introspection_proj.debug_report)
+
     # Write various stats and all-functions data to summary.json
     proj_profile.write_stats_to_summary_file()
     json_report.add_project_key_value_to_report("all-functions",
@@ -759,4 +767,4 @@ def create_html_report(introspection_proj: analysis.IntrospectionProject,
         write_content_to_html_files(html_full_doc, all_functions_json_html,
                                     fuzzer_table_data)
 
-        introspection_proj.dump_debug_files()
+        introspection_proj.dump_debug_report()

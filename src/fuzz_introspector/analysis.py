@@ -17,8 +17,6 @@ import abc
 import logging
 import multiprocessing
 import os
-import json
-import shutil
 
 from typing import (
     Dict,
@@ -27,7 +25,7 @@ from typing import (
 )
 
 from fuzz_introspector import (cfg_load, code_coverage, constants, data_loader,
-                               html_helpers, json_report, utils)
+                               debug_info, html_helpers, json_report, utils)
 
 from fuzz_introspector.datatypes import (
     project_profile,
@@ -50,6 +48,7 @@ class IntrospectionProject():
     """
 
     def __init__(self, language, target_folder, coverage_url):
+        self.debug_report = None
         self.language = language
         self.base_folder = target_folder
         self.coverage_url = coverage_url
@@ -112,287 +111,12 @@ class IntrospectionProject():
         # Load all debug files
         self.debug_files = data_loader.load_all_debug_files(self.base_folder)
 
-    def dump_debug_files(self):
-        all_files_in_debug_info = dict()
-        current_function = None
-        all_functions_in_debug = dict()
-        all_global_variables = dict()
-        all_types = dict()
+    def load_debug_report(self):
+        self.debug_report = debug_info.load_debug_report(self.debug_files)
 
-        current_type = None
-        current_struct = None
-
-        for debug_file in self.debug_files:
-            with open(debug_file, 'r') as debug_f:
-                content = debug_f.read()
-
-                function_identifier = "## Functions defined in module"
-                read_functions = False
-                global_variable_identifier = "## Global variables in module"
-                types_identifier = "## Types defined in module"
-                read_types = False
-
-                for line in content.split("\n"):
-                    # Source code files
-                    if "Compile unit:" in line:
-                        split_line = line.split(" ")
-                        file_dict = {
-                            'source_file': split_line[-1],
-                            'language': split_line[2]
-                        }
-
-                        # TODO: (David) remove this hack to frontend
-                        # LLVM may combine two absolute paths, which causes the
-                        # filepath to be erroneus.
-                        # Fix this here
-                        if '//' in file_dict['source_file']:
-                            file_dict['source_file'] = '/' + '/'.join(
-                                file_dict['source_file'].split('//')[1:])
-
-                        all_files_in_debug_info[
-                            file_dict['source_file']] = file_dict
-                    # Functions defined in the module
-                    if function_identifier in line:
-                        read_functions = True
-                    if global_variable_identifier in line:
-                        if current_function is not None:
-                            # Adjust args such that arg0 is set to the return type
-                            current_args = current_function.get('args', [])
-                            if len(current_args) > 0:
-                                return_type = current_args[0]
-                                current_args = current_args[1:]
-                                current_function['args'] = current_args
-                                current_function['return_type'] = return_type
-
-                            try:
-                                hashkey = current_function['source'][
-                                    'source_file'] + current_function[
-                                        'source']['source_line']
-                            except KeyError:
-                                hashkey = None
-
-                            if hashkey is not None:
-                                all_functions_in_debug[
-                                    hashkey] = current_function
-                            else:
-                                # Something went wrong, abandon.
-                                current_function = None
-                        read_functions = False
-
-                    if types_identifier in line:
-                        read_types = True
-
-                    if read_types:
-                        if "Type: Name:" in line:
-                            if current_struct is not None:
-                                hashkey = current_struct['source'][
-                                    'source_file'] + current_struct['source'][
-                                        'source_line']
-                                all_types[hashkey] = current_struct
-                                current_struct = None
-                            if "DW_TAG_structure" in line:
-                                current_struct = dict()
-                                struct_name = line.split("{")[-1].split(
-                                    "}")[0].strip()
-                                location = line.split(
-                                    "from")[-1].strip().split(" ")[0]
-                                source_file = location.split(":")[0]
-                                try:
-                                    source_line = location.split(":")[1]
-                                except IndexError:
-                                    source_line = "-1"
-                                current_struct = {
-                                    'type': 'struct',
-                                    'name': struct_name,
-                                    'source': {
-                                        'source_file': source_file,
-                                        'source_line': source_line
-                                    },
-                                    'elements': []
-                                }
-                                # Add the file to all files in project
-                                if source_file not in all_files_in_debug_info:
-                                    all_files_in_debug_info[source_file] = {
-                                        'source_file': source_file,
-                                        'language': 'N/A'
-                                    }
-                            if "DW_TAG_typedef" in line:
-                                name = line.split("{")[-1].strip().split(
-                                    "}")[0]
-                                location = line.split(" from ")[-1].split(
-                                    " ")[0]
-                                source_file = location.split(":")[0]
-                                try:
-                                    source_line = location.split(":")[1]
-                                except IndexError:
-                                    source_line = "-1"
-                                current_type = {
-                                    'type': 'typedef',
-                                    'name': name,
-                                    'source': {
-                                        'source_file': source_file,
-                                        'source_line': source_line
-                                    }
-                                }
-                                hashkey = current_type['source'][
-                                    'source_file'] + current_type['source'][
-                                        'source_line']
-                                all_types[hashkey] = current_type
-                                # Add the file to all files in project
-                                if source_file not in all_files_in_debug_info:
-                                    all_files_in_debug_info[source_file] = {
-                                        'source_file': source_file,
-                                        'language': 'N/A'
-                                    }
-                        if "- Elem " in line:
-                            # Ensure we have a strcuct
-                            if current_struct is not None:
-                                elem_name = line.split("{")[-1].strip().split(
-                                    " ")[0]
-                                location = line.split(
-                                    "from")[-1].strip().split(" ")[0]
-                                source_file = location.split(":")[0]
-                                try:
-                                    source_line = location.split(":")[1]
-                                except IndexError:
-                                    source_line = "-1"
-
-                                current_struct['elements'].append({
-                                    'name': elem_name,
-                                    'source': {
-                                        'source_file': source_file,
-                                        'source_line': source_line,
-                                    }
-                                })
-                                # Add the file to all files in project
-                                if source_file not in all_files_in_debug_info:
-                                    all_files_in_debug_info[source_file] = {
-                                        'source_file': source_file,
-                                        'language': 'N/A'
-                                    }
-
-                    if "Global variable: " in line:
-                        sline = line.replace("Global variable: ",
-                                             "").split(" from ")
-                        global_variable_name = sline[0]
-                        location = sline[-1]
-                        source_file = location.split(":")[0]
-                        try:
-                            source_line = location.split(":")[1]
-                        except IndexError:
-                            source_line = "-1"
-                        all_global_variables[source_file + source_line] = {
-                            'name': global_variable_name,
-                            'source': {
-                                'source_file': source_file,
-                                'source_line': source_line
-                            }
-                        }
-                        # Add the file to all files in project
-                        if source_file not in all_files_in_debug_info:
-                            all_files_in_debug_info[source_file] = {
-                                'source_file': source_file,
-                                'language': 'N/A'
-                            }
-
-                    if read_functions:
-                        if "Subprogram:" in line:
-                            if current_function is not None:
-                                # Adjust args such that arg0 is set to the return type
-                                current_args = current_function.get('args', [])
-                                if len(current_args) > 0:
-                                    return_type = current_args[0]
-                                    current_args = current_args[1:]
-                                    current_function['args'] = current_args
-                                    current_function[
-                                        'return_type'] = return_type
-                                try:
-                                    hashkey = current_function['source'][
-                                        'source_file'] + current_function[
-                                            'source']['source_line']
-                                except KeyError:
-                                    hashkey = None
-
-                                if hashkey is not None:
-                                    all_functions_in_debug[
-                                        hashkey] = current_function
-                                else:
-                                    # Something went wrong, abandon.
-                                    current_function = None
-                            current_function = dict()
-                            function_name = line.split(" ")[-1]
-                            current_function['name'] = function_name
-                        if ' from ' in line and ":" in line and "- Operand" not in line:
-                            location = line.split(" from ")[-1]
-                            source_file = location.split(":")[0].strip()
-                            try:
-                                source_line = line.split(":")[-1].strip()
-                                if len(source_line.split(" ")) > 0:
-                                    source_line = source_line.split(" ")[0]
-                            except IndexError:
-                                source_line = "-1"
-                            current_function['source'] = {
-                                'source_file': source_file,
-                                'source_line': source_line,
-                            }
-                            # Add the file to all files in project
-                            if source_file not in all_files_in_debug_info:
-                                all_files_in_debug_info[source_file] = {
-                                    'source_file': source_file,
-                                    'language': 'N/A'
-                                }
-                        if ' - Operand' in line:
-
-                            # Decipher type
-                            current_args = current_function.get('args', [])
-                            if "Name: {" not in line:
-                                l1 = line.replace("Operand Type:", "").replace(
-                                    "Type: ", "").replace("-", "")
-                                pointer_count = 0
-                                const_count = 0
-                                for arg_type in l1.split(","):
-                                    if "DW_TAG_pointer_type" in arg_type:
-                                        pointer_count += 1
-                                    if "DW_TAG_const_type" in arg_type:
-                                        const_count += 1
-                                base_type = l1.split(",")[-1].strip()
-                                end_type = ""
-                                if const_count > 0:
-                                    end_type += "const "
-                                end_type += base_type
-                                if pointer_count > 0:
-                                    end_type += " "
-                                    end_type += "*" * pointer_count
-
-                                current_args.append(end_type)
-                            elif "Name: " in line:
-                                current_args.append(
-                                    line.split("{")[-1].split("}")[0].strip())
-                            else:
-                                current_args.append(line)
-                            current_function['args'] = current_args
-
-        report_dict = {
-            'all_files_in_project': list(all_files_in_debug_info.values()),
-            'all_functions_in_project': list(all_functions_in_debug.values()),
-            'all_global_variables': list(all_global_variables.values()),
-            'all_types': list(all_types.values())
-        }
-
-        # Extract all files
-        if not os.path.isdir(constants.SAVED_SOURCE_FOLDER):
-            os.mkdir(constants.SAVED_SOURCE_FOLDER)
-
-        for file_elem in report_dict['all_files_in_project']:
-            if not os.path.isfile(file_elem['source_file']):
-                logger.info("No such file: %s" % (file_elem['source_file']))
-                continue
-            dst = constants.SAVED_SOURCE_FOLDER + '/' + file_elem['source_file']
-            os.makedirs(os.path.dirname(dst), exist_ok=True)
-            shutil.copy(file_elem['source_file'], dst)
-
-        with open(constants.DEBUG_INFO_DUMP, 'w') as debug_dump:
-            debug_dump.write(json.dumps(report_dict))
+    def dump_debug_report(self):
+        if self.debug_report is not None:
+            debug_info.dump_debug_report(self.debug_report)
 
 
 class AnalysisInterface(abc.ABC):
@@ -956,3 +680,104 @@ def detect_branch_level_blockers(
         ])
 
     return fuzz_blockers
+
+
+def convert_debug_info_to_signature(function, introspector_func):
+    try:
+        func_signature = function['return_type'] + ' '
+    except KeyError:
+        return 'N/A'
+
+    # Assess if there is a namespace and if we have more args than what there
+    # should be, e.g. if this is a method on an object. We need to identify
+    # this because we want the function signature to be equal to what developers
+    # see.
+    func_name = ''
+    param_idx = 0
+    if len(function['args']) > 0 and len(
+            introspector_func['ArgNames']
+    ) > 0 and introspector_func['ArgNames'][0] == 'this':
+        func_name += function['args'][0].replace("*", '').strip() + "::"
+        param_idx += 1
+
+    func_name += function['name']
+
+    func_signature += func_name
+    func_signature += '('
+    for idx in range(param_idx, len(function['args'])):
+        func_signature += function['args'][idx]
+        if idx < len(function['args']) - 1:
+            func_signature += ', '
+    func_signature += ')'
+    return func_signature
+
+
+def correlate_introspector_func_to_debug_information(if_func,
+                                                     all_debug_functions):
+    # Check if name matches. If so, this one is easy.
+    for debug_function in all_debug_functions:
+        if debug_function.get('name', '') == if_func['Func name']:
+            func_signature = convert_debug_info_to_signature(
+                debug_function, if_func)
+            return func_signature, debug_function
+
+    # We could not find the right one, let's search more broadly for it.
+    target_minimum = 999999
+    tfunc_signature = None
+    most_likely_func = None
+    for dfunction in all_debug_functions:
+        try:
+            dline = int(dfunction['source'].get('source_line', '-1'))
+        except ValueError:
+            continue
+
+        if dfunction['source'].get('source_file',
+                                   '') == if_func['Functions filename']:
+
+            # Match based on containment, as there can be discrepancies between function
+            # signatur start (as from frunc_to_match) and the lines of code of the first
+            # instruction.
+            distance_between_beginnings = int(
+                if_func['source_line_begin']) - dline
+
+            if distance_between_beginnings == 0 and dline != 0:
+                func_signature = convert_debug_info_to_signature(
+                    dfunction, if_func)
+                return func_signature, dfunction
+
+            elif distance_between_beginnings > 0 and distance_between_beginnings < target_minimum:
+                tfunc_signature = convert_debug_info_to_signature(
+                    dfunction, if_func)
+                most_likely_func = dfunction
+                target_minimum = distance_between_beginnings
+
+    if most_likely_func is not None:
+        return tfunc_signature, most_likely_func
+
+    # Could not find the relevant stuff
+    return None, None
+
+
+def correlate_introspection_functions_to_debug_info(all_functions_json_report,
+                                                    debug_report):
+    if debug_report is None:
+        logger.info("No debug report")
+        return
+
+    all_debug_functions = debug_report.get('all_functions_in_project', [])
+    if len(all_debug_functions) == 0:
+        logger.info("No debug functions")
+        return
+
+    # Correlate each debug function information with introspection data. The
+    # goal is to provide function signature for each function based on debug
+    # information.
+    for if_func in all_functions_json_report:
+        func_sig, correlated_debug_function = correlate_introspector_func_to_debug_information(
+            if_func, all_debug_functions)
+        if func_sig is not None:
+            if_func['function_signature'] = func_sig
+            if_func['debug_function_info'] = correlated_debug_function
+        else:
+            if_func['function_signature'] = 'N/A'
+            if_func['dbeug_function_info'] = dict()
