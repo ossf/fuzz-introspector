@@ -682,6 +682,30 @@ def detect_branch_level_blockers(
     return fuzz_blockers
 
 
+def extract_namespace(mangled_function_name):
+    logger.info("Demangling: %s" % (mangled_function_name))
+    demangled_func_name = utils.demangle_cpp_func(mangled_function_name)
+    logger.info("Demangled name: %s" % (demangled_func_name))
+    if "::" not in demangled_func_name:
+        return []
+
+    split_namespace = demangled_func_name.split("::")
+    name_spaces = []
+    for elem in split_namespace:
+        if len(elem) > 0:
+            # Check: (anonymous namespace)
+            if elem[0] == '(':
+                name_spaces.append(elem)
+            elif '(' in elem:
+                name_spaces.append(elem.split("(")[0])
+                break
+            else:
+                name_spaces.append(elem)
+
+    logger.info("split namespace: %s" % (str(name_spaces)))
+    return name_spaces
+
+
 def convert_debug_info_to_signature(function, introspector_func):
     try:
         func_signature = function['return_type'] + ' '
@@ -692,13 +716,41 @@ def convert_debug_info_to_signature(function, introspector_func):
     # should be, e.g. if this is a method on an object. We need to identify
     # this because we want the function signature to be equal to what developers
     # see.
+
+    # First step: Identify namespae
+    # 1) demangle raw name
+    # 2) identify namespace
+    # 3) identify if namespace last part matches first argument
+    # 4) assemble
+    namespace = extract_namespace(introspector_func['raw-function-name'])
+
     func_name = ''
     param_idx = 0
-    if len(function['args']) > 0 and len(
-            introspector_func['ArgNames']
-    ) > 0 and introspector_func['ArgNames'][0] == 'this':
-        func_name += function['args'][0].replace("*", '').strip() + "::"
-        param_idx += 1
+
+    logger.info("Namespace: %s" % (str(namespace)))
+    # Is this a class function?
+    if len(function['args']) > 0:
+        if len(namespace) > 1:
+            # Constructor handling
+            if namespace[-1] == function['args'][0].replace(" *", ""):
+                logger.info("Option 1")
+                func_name = "::".join(namespace[0:-1]) + "::"
+                param_idx += 1
+            # Destructor handling
+            elif "~" in namespace[-1] and namespace[-1].replace(
+                    "~", "") == function['args'][0].replace(" *", ""):
+                logger.info("Option 2")
+                func_name = "::".join(namespace[0:-1]) + "::"
+
+                if not function['name'][0] == '~':
+                    function['name'] = '~' + function['name']
+                param_idx += 1
+            # Class object handling
+            elif namespace[-2] == function['args'][0].replace(
+                    " *", "").replace("const ", ""):
+                logger.info("Option 3")
+                func_name = "::".join(namespace[0:-1]) + "::"
+                param_idx += 1
 
     func_name += function['name']
 
