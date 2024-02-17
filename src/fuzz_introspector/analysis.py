@@ -686,9 +686,10 @@ def extract_namespace(mangled_function_name, return_type=None):
     logger.info("Demangling: %s" % (mangled_function_name))
     demangled_func_name = utils.demangle_cpp_func(mangled_function_name)
     logger.info("Demangled name: %s" % (demangled_func_name))
-    if return_type is not None and demangled_func_name.startswith(f"{return_type} "):
-        demangled_func_name = demangled_func_name[len(return_type)+1:]
-        logger.info("Removed function type: %s"%(demangled_func_name))
+    if return_type is not None and demangled_func_name.startswith(
+            f"{return_type} "):
+        demangled_func_name = demangled_func_name[len(return_type) + 1:]
+        logger.info("Removed function type: %s" % (demangled_func_name))
     if "::" not in demangled_func_name:
         return []
 
@@ -725,7 +726,8 @@ def convert_debug_info_to_signature(function, introspector_func):
     # 2) identify namespace
     # 3) identify if namespace last part matches first argument
     # 4) assemble
-    namespace = extract_namespace(introspector_func['raw-function-name'], function['return_type'])
+    namespace = extract_namespace(introspector_func['raw-function-name'],
+                                  function['return_type'])
 
     func_name = ''
     param_idx = 0
