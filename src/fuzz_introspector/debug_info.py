@@ -169,6 +169,7 @@ def extract_all_functions_in_debug_info(content, all_functions_in_debug,
     read_functions = False
     current_function = None
     global_variable_identifier = "## Global variables in module"
+    logger.info("Extracting functions")
 
     for line in content.split("\n"):
         if function_identifier in line:
@@ -191,6 +192,7 @@ def extract_all_functions_in_debug_info(content, all_functions_in_debug,
                     hashkey = None
 
                 if hashkey is not None:
+                    # print("Actually adding 1: %s"%(current_function['name']))
                     all_functions_in_debug[hashkey] = current_function
                 else:
                     # Something went wrong, abandon.
@@ -198,7 +200,8 @@ def extract_all_functions_in_debug_info(content, all_functions_in_debug,
             read_functions = False
 
         if read_functions:
-            if "Subprogram:" in line:
+            if line.startswith("Subprogram: "):
+                # print("Subprogram line: %s"%(line))
                 if current_function is not None:
                     # Adjust args such that arg0 is set to the return type
                     current_args = current_function.get('args', [])
@@ -215,14 +218,18 @@ def extract_all_functions_in_debug_info(content, all_functions_in_debug,
                         hashkey = None
 
                     if hashkey is not None:
+                        # print(
+                        #  "Actually adding 2: %s :: to %s"%(current_function['name'], hashkey)
+                        # )
                         all_functions_in_debug[hashkey] = current_function
                     else:
                         # Something went wrong, abandon.
                         current_function = None
                 current_function = dict()
-                function_name = line.split(" ")[-1]
+                function_name = " ".join(line.split(" ")[1:])
+                # print("Adding function: %s"%(function_name))
                 current_function['name'] = function_name
-            if ' from ' in line and ":" in line and "- Operand" not in line:
+            if ' from ' in line and ":" in line and "- Operand" not in line and "Elem " not in line:
                 location = line.split(" from ")[-1]
                 source_file = location.split(":")[0].strip()
                 try:
@@ -279,6 +286,7 @@ def load_debug_report(debug_files):
     all_functions_in_debug = dict()
     all_global_variables = dict()
     all_types = dict()
+    print("Loading report:")
 
     # Extract all of the details
     for debug_file in debug_files:
@@ -317,3 +325,10 @@ def dump_debug_report(report_dict):
 
     with open(constants.DEBUG_INFO_DUMP, 'w') as debug_dump:
         debug_dump.write(json.dumps(report_dict))
+
+
+if __name__ in "__main__":
+    import sys
+    print("Main")
+    debug_files = [sys.argv[1]]
+    load_debug_report(debug_files)
