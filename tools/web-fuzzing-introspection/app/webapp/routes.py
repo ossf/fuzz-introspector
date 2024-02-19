@@ -910,7 +910,6 @@ def api_function_signature():
                     'signature': function.func_signature,
                     'raw_data': function.debug_data,
                 }
-                return function.func_signature
 
     return {'result': 'failed', 'msg': 'could not find specified function'}
 
