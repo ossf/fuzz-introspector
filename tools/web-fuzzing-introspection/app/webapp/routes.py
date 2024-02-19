@@ -898,91 +898,17 @@ def api_function_signature():
     if function_name == None:
         return {'result': 'error', 'msg': 'No function name provided'}
 
-    print("Function name: %s" % (function_name))
-    debug_info = data_storage.get_project_debug_report(project_name)
-    if debug_info != None:
-
-        # Match the function purely based on name
-        for function in debug_info.all_functions_in_project:
-            if function.get('name', '') == function_name:
-                func_signature = function['return_type'] + ' '
-                func_signature += function['name']
-                func_signature += '('
-                for idx in range(len(function['args'])):
-                    func_signature += function['args'][idx]
-                    if idx < len(function['args']) - 1:
-                        func_signature += ' '
-                func_signature += ')'
+    all_functions = data_storage.get_functions()
+    project_functions = []
+    func_to_match = None
+    print("Iterating through all functions to match raw function name")
+    for function in all_functions:
+        if function.project == project_name:
+            if function.raw_function_name == function_name:
                 return {
                     'result': 'success',
-                    'signature': func_signature,
-                    'raw_data': function
-                }
-
-        # The function signature was not found based on name matching.
-        # Try and match by way of file location.
-        all_functions = data_storage.get_functions()
-        project_functions = []
-        func_to_match = None
-        print("Iterating through all functions to match raw function name")
-        for function in all_functions:
-            if function.project == project_name:
-                if function.raw_function_name == function_name:
-                    print("Found matcher")
-                    func_to_match = function
-                    break
-        if func_to_match != None:
-            print("Function: %s :: %d" % (func_to_match.function_filename,
-                                          func_to_match.source_line_begin))
-
-            target_function = None
-            target_minimum = 999999
-            tfunc_signature = None
-            for dfunction in debug_info.all_functions_in_project:
-                try:
-                    dline = int(dfunction['source'].get('source_line', '-1'))
-                except ValueError:
-                    continue
-
-                if dfunction['source'].get(
-                        'source_file', '') == func_to_match.function_filename:
-
-                    # Match based on containment, as there can be discrepancies between function
-                    # signatur start (as from frunc_to_match) and the lines of code of the first
-                    # instruction.
-                    distance_between_beginnings = func_to_match.source_line_begin - dline
-
-                    if distance_between_beginnings == 0 and dline != 0:
-                        func_signature = dfunction['return_type'] + ' '
-                        func_signature += dfunction['name']
-                        func_signature += '('
-                        for idx in range(len(dfunction['args'])):
-                            func_signature += dfunction['args'][idx]
-                            if idx < len(dfunction['args']) - 1:
-                                func_signature += ', '
-                        func_signature += ')'
-                        return {
-                            'result': 'success',
-                            'signature': func_signature,
-                            'raw_data': dfunction
-                        }
-                    elif distance_between_beginnings > 0 and distance_between_beginnings < target_minimum:
-                        tfunc_signature = dfunction['return_type'] + ' '
-                        tfunc_signature += dfunction['name']
-                        tfunc_signature += '('
-                        for idx in range(len(dfunction['args'])):
-                            tfunc_signature += dfunction['args'][idx]
-                            if idx < len(dfunction['args']) - 1:
-                                tfunc_signature += ', '
-                        tfunc_signature += ')'
-                        target_function = dfunction
-                        target_minimum = distance_between_beginnings
-
-            if target_function is not None:
-                return {
-                    'result': 'success',
-                    'signature': tfunc_signature,
-                    'raw_data': dfunction
+                    'signature': function.func_signature,
+                    'raw_data': function.debug_data,
                 }
 
     return {'result': 'failed', 'msg': 'could not find specified function'}
