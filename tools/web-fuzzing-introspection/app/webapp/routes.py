@@ -115,7 +115,7 @@ def extract_lines_from_source_code(project_name,
         if not found_end_braces:
             # Check the lines after max length
             tmp_ending = ""
-            for nl in range(line_end, line_end+10):
+            for nl in range(line_end, line_end + 10):
                 if nl >= len(source_lines):
                     continue
                 tmp_ending += source_lines[nl] + '\n'
@@ -1032,11 +1032,13 @@ def api_function_source_code():
         if source_line != -1:
             src_begin = source_line
 
-
-    source_code = extract_lines_from_source_code(project_name,
-                                                 latest_introspector_datestr,
-                                                 src_file, src_begin, src_end,
-                                                 sanity_check_function_end=True)
+    source_code = extract_lines_from_source_code(
+        project_name,
+        latest_introspector_datestr,
+        src_file,
+        src_begin,
+        src_end,
+        sanity_check_function_end=True)
     if source_code == None:
         return {'result': 'error', 'msg': 'No source code'}
     return {
