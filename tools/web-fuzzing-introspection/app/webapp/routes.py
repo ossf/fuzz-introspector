@@ -76,18 +76,22 @@ def extract_lines_from_source_code(project_name,
                                    target_file,
                                    line_begin,
                                    line_end,
-                                   print_line_numbers=False):
-    print("Getting source")
+                                   print_line_numbers=False,
+                                   sanity_check_function_end=False):
     raw_source = extract_introspector_raw_source_code(project_name, date_str,
                                                       target_file)
     if raw_source is None:
-        print("Raw source is None")
         return raw_source
 
     source_lines = raw_source.split("\n")
 
     return_source = ""
+
+    # Source line numbers start from 1
+    line_begin -= 1
+
     max_length = len(str(line_end))
+    function_lines = []
     for line_num in range(line_begin, line_end):
         if line_num >= len(source_lines):
             continue
@@ -96,6 +100,33 @@ def extract_lines_from_source_code(project_name,
             line_num_str = " " * (max_length - len(str(line_num)))
             return_source += "%s%d " % (line_num_str, line_num)
         return_source += source_lines[line_num] + "\n"
+        function_lines.append(source_lines[line_num])
+
+    if sanity_check_function_end:
+        found_end_braces = False
+
+        if len(function_lines) > 0:
+            if '}' in function_lines[-1]:
+                found_end_braces = True
+        if not found_end_braces and len(function_lines) > 1:
+            if '}' in function_lines[-2] and function_lines[-1].strip() == '':
+                found_end_braces = True
+
+        if not found_end_braces:
+            # Check the lines after max length
+            tmp_ending = ""
+            for nl in range(line_end, line_end + 10):
+                if nl >= len(source_lines):
+                    continue
+                tmp_ending += source_lines[nl] + '\n'
+                if '{' in source_lines[nl]:
+                    break
+                if '}' in source_lines[nl]:
+                    found_end_braces = True
+                    break
+            if found_end_braces:
+                return_source += tmp_ending
+
     return return_source
 
 
@@ -993,9 +1024,21 @@ def api_function_source_code():
     src_begin = target_function.source_line_begin
     src_end = target_function.source_line_end
     src_file = target_function.function_filename
-    source_code = extract_lines_from_source_code(project_name,
-                                                 latest_introspector_datestr,
-                                                 src_file, src_begin, src_end)
+
+    # Check if we have accompanying debug info
+    debug_source_dict = target_function.debug_data.get('source', None)
+    if debug_source_dict:
+        source_line = int(debug_source_dict.get('source_line', -1))
+        if source_line != -1:
+            src_begin = source_line
+
+    source_code = extract_lines_from_source_code(
+        project_name,
+        latest_introspector_datestr,
+        src_file,
+        src_begin,
+        src_end,
+        sanity_check_function_end=True)
     if source_code == None:
         return {'result': 'error', 'msg': 'No source code'}
     return {
