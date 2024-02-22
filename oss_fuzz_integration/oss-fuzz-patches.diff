@@ -1,5 +1,5 @@
 diff --git a/infra/base-images/base-builder/Dockerfile b/infra/base-images/base-builder/Dockerfile
-index a9757a603..7515bbb7c 100644
+index 8dcbdce6c..583427556 100644
 --- a/infra/base-images/base-builder/Dockerfile
 +++ b/infra/base-images/base-builder/Dockerfile
 @@ -176,5 +176,9 @@ RUN chmod +x /usr/local/bin/clang-jcc && chmod +x /usr/local/bin/clang++-jcc
@@ -13,8 +13,27 @@ index a9757a603..7515bbb7c 100644
  
  CMD ["compile"]
 \ No newline at end of file
+diff --git a/infra/base-images/base-builder/compile b/infra/base-images/base-builder/compile
+index 04ac1cc84..6db4134b4 100755
+--- a/infra/base-images/base-builder/compile
++++ b/infra/base-images/base-builder/compile
+@@ -19,10 +19,10 @@ echo "---------------------------------------------------------------"
+ 
+ OSS_FUZZ_ON_DEMAND="${OSS_FUZZ_ON_DEMAND:-0}"
+ 
+-# This is a temporary fix: fall back to LLVM14's old pass manager
+-if [ -n "${OLD_LLVMPASS-}" ]; then
+-  export SANITIZER_FLAGS_introspector=$(echo $SANITIZER_FLAGS_introspector | sed -r 's/-O0/-flegacy-pass-manager/')
+-fi
++## This is a temporary fix: fall back to LLVM14's old pass manager
++#if [ -n "${OLD_LLVMPASS-}" ]; then
++#  export SANITIZER_FLAGS_introspector=$(echo $SANITIZER_FLAGS_introspector | sed -r 's/-O0/-flegacy-pass-manager/')
++#fi
+ 
+ if [ "$FUZZING_LANGUAGE" = "jvm" ]; then
+   if [ "$FUZZING_ENGINE" != "libfuzzer" ] && [ "$FUZZING_ENGINE" != "wycheproof" ]; then
 diff --git a/infra/base-images/base-clang/Dockerfile b/infra/base-images/base-clang/Dockerfile
-index 7b22e0def..33dead533 100644
+index 0dd919813..65fb899cb 100644
 --- a/infra/base-images/base-clang/Dockerfile
 +++ b/infra/base-images/base-clang/Dockerfile
 @@ -45,6 +45,8 @@ RUN apt-get update && apt-get install -y git && \
