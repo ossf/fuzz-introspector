@@ -909,9 +909,12 @@ std::string FuzzIntrospector::getFunctionFilename(Function *F) {
 std::string FuzzIntrospector::resolveTypeName(Type *T) {
   std::string RetType = "";
   std::string RetSuffix = "";
-  while (T->isPointerTy()) {
+  //while (T->isPointerTy()) {
+  if (T->isPointerTy()) {
     RetSuffix += "*";
+#if LLVM_VERSION_MAJOR < 16
     T = T->getPointerElementType();
+#endif
   }
   if (T->isIntegerTy()) {
     switch (T->getIntegerBitWidth()) {
@@ -997,6 +1000,7 @@ Function *FuzzIntrospector::value2Func(Value *Val) {
 
 // Recursively resolve a type and check if it is a function.
 bool FuzzIntrospector::isFunctionPointerType(Type *T) {
+#if LLVM_VERSION_MAJOR < 18
   if (PointerType *pointerType = dyn_cast<PointerType>(T)) {
 #if LLVM_VERSION_MAJOR >= 15
     if (!pointerType->isOpaque()) {
@@ -1007,6 +1011,7 @@ bool FuzzIntrospector::isFunctionPointerType(Type *T) {
     return isFunctionPointerType(pointerType->getPointerElementType());
 #endif
   }
+#endif
   return T->isFunctionTy();
 }
 
@@ -1099,6 +1104,10 @@ Function *FuzzIntrospector::extractVTableIndirectCall(Function *F,
     return nullptr;
   }
 
+#if LLVM_VERSION_MAJOR >= 18
+  return nullptr;
+#else
+
 #if LLVM_VERSION_MAJOR >= 15
   if (pointerType3->isOpaque()) {
     return nullptr;
@@ -1110,6 +1119,7 @@ Function *FuzzIntrospector::extractVTableIndirectCall(Function *F,
 #else
   Type *v13 = pointerType3->getPointerElementType();
 #endif
+
 
   if (!v13->isStructTy()) {
     return nullptr;
@@ -1163,6 +1173,7 @@ Function *FuzzIntrospector::extractVTableIndirectCall(Function *F,
               VTableTargetFunc->getName().str().c_str());
   }
   return VTableTargetFunc;
+#endif
 }
 
 // Resolve all outgoing edges in a Function and populate
