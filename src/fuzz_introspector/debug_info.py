@@ -70,8 +70,7 @@ def extract_global_variables(content, global_variables, source_files):
                 }
 
 
-def extract_types(content, global_variables, all_files_in_debug_info):
-    all_types = dict()
+def extract_types(content, all_types, all_files_in_debug_info):
     current_type = None
     current_struct = None
     types_identifier = "## Types defined in module"
