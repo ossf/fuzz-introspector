@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 
 int unreached_target2(const uint8_t *data) {
         return 5;
@@ -50,7 +51,7 @@ int unreached_target3(const uint8_t *data, size_t *theval) {
     return 5;
 }
 
-char *d = {0x12};
+char *d = "sf";
 int target2(const uint8_t *data) {
 	if (data[0] == 0x41) return 1;
     unreached_target1(d);
