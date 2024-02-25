@@ -226,6 +226,30 @@ template <> struct yaml::MappingTraits<CSite> {
 };
 LLVM_YAML_IS_SEQUENCE_VECTOR(CSite)
 
+typedef struct TypeWrapperS {
+  uint32_t typeIdx;
+  std::string tag;
+  std::string name;
+  std::string fileLocation;
+  uint64_t addr;
+  uint64_t baseTypeAddr;
+  std::string baseTypeString;
+  std::string llvmType; // Composite/Derived/Basic
+  uint64_t scope;
+} TypeWrapper;
+template <> struct yaml::MappingTraits<TypeWrapper> {
+  static void mapping(IO &io, TypeWrapper &tp) {
+    io.mapRequired("tag", tp.tag);
+    io.mapRequired("name", tp.name);
+    io.mapRequired("file_location", tp.fileLocation);
+    io.mapRequired("type_idx", tp.typeIdx);
+    io.mapRequired("addr", tp.addr);
+    io.mapRequired("base_type_addr", tp.baseTypeAddr);
+    io.mapRequired("base_type_string", tp.baseTypeString);
+    io.mapRequired("scope", tp.scope);
+  }
+};
+LLVM_YAML_IS_SEQUENCE_VECTOR(TypeWrapper)
 // end of YAML mappings
 
 namespace {
@@ -300,14 +324,14 @@ struct FuzzIntrospector : public ModulePass {
 
 
   // Debug related dumping
-  void dumpDebugInformation(Module &M, std::string outputFile);
+  void dumpDebugInformation(Module &M, std::string outputFile, std::string nextAllTypesFile);
   void printFile(std::ofstream &, StringRef, StringRef, unsigned Line);
   void dumpDIType(std::ofstream &O, DIType *T);
   void recurseDerivedType(std::ofstream &O, DIDerivedType *T);
   void dumpDebugCompileUnits(std::ofstream &O, DebugInfoFinder &Finder);
   void dumpDebugFunctionsDebugInformation(std::ofstream &O,
                                           DebugInfoFinder &Finder);
-  void dumpDebugAllTypes(std::ofstream &O, DebugInfoFinder &Finder);
+  void dumpDebugAllTypes(std::ofstream &O, DebugInfoFinder &Finder, std::string);
   void dumpDebugAllGlobalVariables(std::ofstream &O, DebugInfoFinder &Finder);
 
   // void branchProfiler(Module &M);
@@ -527,9 +551,52 @@ void FuzzIntrospector::dumpDebugFunctionsDebugInformation(
 }
 
 void FuzzIntrospector::dumpDebugAllTypes(std::ofstream &O,
-                                         DebugInfoFinder &Finder) {
+                                         DebugInfoFinder &Finder, std::string allTypesYamlFile) {
   O << "## Types defined in module\n";
+  std::vector<TypeWrapper> allTypesInModule;
+
+  uint32_t currentTypeIdx = 0;
   for (const DIType *T : Finder.types()) {
+
+    currentTypeIdx += 1;
+
+    TypeWrapper tp;
+    tp.name = T->getName();
+    tp.baseTypeString = "";
+    tp.tag = dwarf::TagString(T->getTag());
+    //tp.fileLocation = getFileLocation(T->getFilename(), T->getDirectory(), T->getLine());
+    tp.fileLocation = "";
+    //std::string s1;
+    if (!T->getDirectory().empty())
+      tp.fileLocation += T->getDirectory().str() + "/";
+
+    tp.fileLocation += T->getFilename().str();
+    if (T->getLine())
+      tp.fileLocation += ":" + to_string(T->getLine());
+
+    tp.typeIdx = currentTypeIdx;
+    tp.addr = (uint64_t)T;
+
+    if (auto *DerivedT = dyn_cast<DIDerivedType>(T)) {
+      tp.baseTypeAddr = (uint64_t)DerivedT->getBaseType();
+      std::cout << DerivedT->getBaseType() << "\n";
+
+      if (DerivedT->getBaseType()) {
+        if (auto *BT = dyn_cast<DIBasicType>(DerivedT->getBaseType())) {
+          if (!BT->getName().empty()) {
+              tp.baseTypeString = BT->getName().str();
+          }
+        }
+      }
+
+      if (DerivedT->getScope()) {
+        tp.scope = (uint64_t)DerivedT->getScope();
+      }
+    }
+
+    allTypesInModule.push_back(tp);
+
+
     // Skip the type if we don't have the identifier
     if (T->getName().empty())
       continue;
@@ -580,6 +647,12 @@ void FuzzIntrospector::dumpDebugAllTypes(std::ofstream &O,
     }
     O << '\n';
   }
+
+  std::error_code EC;
+  auto YamlStream = std::make_unique<raw_fd_ostream>(
+      allTypesYamlFile, EC, llvm::sys::fs::OpenFlags::OF_Append);
+  yaml::Output YamlOut(*YamlStream);
+  YamlOut << allTypesInModule;
 }
 
 void FuzzIntrospector::dumpDebugAllGlobalVariables(std::ofstream &O,
@@ -600,7 +673,7 @@ void FuzzIntrospector::dumpDebugAllGlobalVariables(std::ofstream &O,
  * Also applies some reasoning to it, e.g. dump additional information that is
  * related to functions, e.g. it's operands and alike.
  */
-void FuzzIntrospector::dumpDebugInformation(Module &M, std::string outputFile) {
+void FuzzIntrospector::dumpDebugInformation(Module &M, std::string outputFile, std::string nextAllTypesFile) {
   std::ofstream O;
   O.open(outputFile);
   O << "<--- Debug Information for Module 2.0 --->\n";
@@ -614,7 +687,7 @@ void FuzzIntrospector::dumpDebugInformation(Module &M, std::string outputFile) {
   O << "\n";
   dumpDebugAllGlobalVariables(O, Finder);
   O << "\n";
-  dumpDebugAllTypes(O, Finder);
+  dumpDebugAllTypes(O, Finder, nextAllTypesFile);
   O.close();
 }
 
@@ -732,7 +805,8 @@ bool FuzzIntrospector::runOnModule(Module &M) {
   //
   /* Extract debugging information */
   std::string nextDebugFile = nextCalltreeFile + ".debug_info";
-  dumpDebugInformation(M, nextDebugFile);
+  std::string nextYamlAllTypes = nextCalltreeFile + ".debug_all_types";
+  dumpDebugInformation(M, nextDebugFile, nextYamlAllTypes);
 
   logPrintf(L1, "Finished introspector module\n");
   return true;
