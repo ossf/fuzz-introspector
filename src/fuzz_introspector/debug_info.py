@@ -340,5 +340,4 @@ if __name__ in "__main__":
     import sys
     print("Main")
     debug_files = [sys.argv[1]]
-    #load_debug_report(debug_files)
     load_debug_all_types_files(debug_files)
