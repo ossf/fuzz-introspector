@@ -110,9 +110,13 @@ class IntrospectionProject():
                                            self.coverage_url, self.base_folder)
         # Load all debug files
         self.debug_files = data_loader.load_all_debug_files(self.base_folder)
+        self.debug_type_files = data_loader.find_all_debug_all_types_files(
+            self.base_folder)
 
     def load_debug_report(self):
         self.debug_report = debug_info.load_debug_report(self.debug_files)
+        self.debug_all_types = debug_info.load_debug_all_types_files(
+            self.debug_type_files)
 
     def dump_debug_report(self):
         if self.debug_report is not None:
