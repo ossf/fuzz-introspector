@@ -385,7 +385,10 @@ def extract_func_sig_friendly_type_tags(target_type, all_debug_types):
 
 
 def extract_debugged_function_signature(dfunc, all_debug_types):
-    return_type = extract_func_sig_friendly_type_tags(dfunc['type_arguments'][0], all_debug_types)
+    try:
+        return_type = extract_func_sig_friendly_type_tags(dfunc['type_arguments'][0], all_debug_types)
+    except IndexError:
+        return_type = 'N/A'
     params = []
 
     if len(dfunc['type_arguments']) > 1:
