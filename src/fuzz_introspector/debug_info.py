@@ -17,6 +17,7 @@ import logging
 import os
 import json
 import shutil
+import yaml
 
 from fuzz_introspector import constants
 
@@ -326,8 +327,17 @@ def dump_debug_report(report_dict):
         debug_dump.write(json.dumps(report_dict))
 
 
+def load_debug_all_types_files(debug_all_types_files):
+    types_list = []
+    yaml.SafeLoader = yaml.CSafeLoader  # type: ignore[assignment, misc]
+    for filename in debug_all_types_files:
+        with open(filename, 'r') as yaml_f:
+            file_list = yaml.safe_load(yaml_f.read())
+            types_list += file_list
+
+
 if __name__ in "__main__":
     import sys
     print("Main")
     debug_files = [sys.argv[1]]
-    load_debug_report(debug_files)
+    load_debug_all_types_files(debug_files)
