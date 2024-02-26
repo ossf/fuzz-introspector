@@ -846,4 +846,4 @@ def correlate_introspection_functions_to_debug_info(all_functions_json_report,
             if_func['debug_function_info'] = correlated_debug_function
         else:
             if_func['function_signature'] = 'N/A'
-            if_func['dbeug_function_info'] = dict()
+            if_func['debug_function_info'] = dict()
