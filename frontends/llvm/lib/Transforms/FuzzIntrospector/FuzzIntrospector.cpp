@@ -250,6 +250,28 @@ template <> struct yaml::MappingTraits<TypeWrapper> {
   }
 };
 LLVM_YAML_IS_SEQUENCE_VECTOR(TypeWrapper)
+
+
+typedef struct FunctionDebugWrapperS {
+  std::string funcName;
+  std::string fileLocation;
+  std::string rawName;
+  std::vector<uintptr_t> argTypes;
+  uint8_t isPrivate;
+  uint8_t isPublic;
+} FunctionDebugWrapper;
+
+template <> struct yaml::MappingTraits<FunctionDebugWrapper> {
+  static void mapping(IO &io, FunctionDebugWrapper &fw) {
+    io.mapRequired("name", fw.funcName);
+    io.mapRequired("file_location", fw.fileLocation);
+    io.mapRequired("type_arguments", fw.argTypes);
+    io.mapRequired("raw_name", fw.rawName);
+    io.mapRequired("is_public", fw.isPublic);
+    io.mapRequired("is_private", fw.isPrivate);
+  }
+};
+LLVM_YAML_IS_SEQUENCE_VECTOR(FunctionDebugWrapper)
 // end of YAML mappings
 
 namespace {
@@ -324,13 +346,13 @@ struct FuzzIntrospector : public ModulePass {
 
 
   // Debug related dumping
-  void dumpDebugInformation(Module &M, std::string outputFile, std::string nextAllTypesFile);
+  void dumpDebugInformation(Module &M, std::string outputFile, std::string);
   void printFile(std::ofstream &, StringRef, StringRef, unsigned Line);
   void dumpDIType(std::ofstream &O, DIType *T);
   void recurseDerivedType(std::ofstream &O, DIDerivedType *T);
   void dumpDebugCompileUnits(std::ofstream &O, DebugInfoFinder &Finder);
   void dumpDebugFunctionsDebugInformation(std::ofstream &O,
-                                          DebugInfoFinder &Finder);
+                                          DebugInfoFinder &Finder, std::string yamlTarget);
   void dumpDebugAllTypes(std::ofstream &O, DebugInfoFinder &Finder, std::string);
   void dumpDebugAllGlobalVariables(std::ofstream &O, DebugInfoFinder &Finder);
 
@@ -519,9 +541,42 @@ void FuzzIntrospector::dumpDIType(std::ofstream &O, DIType *T) {
 }
 
 void FuzzIntrospector::dumpDebugFunctionsDebugInformation(
-    std::ofstream &O, DebugInfoFinder &Finder) {
+    std::ofstream &O, DebugInfoFinder &Finder, std::string yamlTarget) {
+
+  std::vector<FunctionDebugWrapper> allDebugFunctions;
+
   O << "## Functions defined in module\n";
   for (DISubprogram *S : Finder.subprograms()) {
+    FunctionDebugWrapper fdw;
+    fdw.funcName = S->getName().str();
+
+    if (auto *FuncType = dyn_cast<DISubroutineType>(S->getType())) {
+      if (auto *Types = FuncType->getRawTypeArray()) {
+        for (Metadata *Ty : FuncType->getTypeArray()->operands()) {
+            fdw.argTypes.push_back((uintptr_t)Ty);
+        }
+      }
+    }
+    if (S->getRawName()) {
+        if (!(S->getRawName()->getString().empty())) {
+            fdw.rawName = S->getRawName()->getString().str();
+        }
+    }
+    fdw.isPrivate = S->isPrivate();
+    fdw.isPublic = S->isPublic();
+
+    fdw.fileLocation = "";
+    //std::string s1;
+    if (!S->getDirectory().empty())
+      fdw.fileLocation += S->getDirectory().str() + "/";
+
+    fdw.fileLocation += S->getFilename().str();
+    if (S->getLine())
+      fdw.fileLocation += ":" + to_string(S->getLine());
+
+    allDebugFunctions.push_back(fdw);
+    // End of structured YAML
+
     O << "Subprogram: " << S->getName().str() << "\n";
     printFile(O, S->getFilename(), S->getDirectory(), S->getLine());
 
@@ -548,6 +603,12 @@ void FuzzIntrospector::dumpDebugFunctionsDebugInformation(
     }
     O << '\n';
   }
+
+  std::error_code EC;
+  auto YamlStream = std::make_unique<raw_fd_ostream>(
+      yamlTarget, EC, llvm::sys::fs::OpenFlags::OF_Append);
+  yaml::Output YamlOut(*YamlStream);
+  YamlOut << allDebugFunctions;
 }
 
 void FuzzIntrospector::dumpDebugAllTypes(std::ofstream &O,
@@ -673,7 +734,7 @@ void FuzzIntrospector::dumpDebugAllGlobalVariables(std::ofstream &O,
  * Also applies some reasoning to it, e.g. dump additional information that is
  * related to functions, e.g. it's operands and alike.
  */
-void FuzzIntrospector::dumpDebugInformation(Module &M, std::string outputFile, std::string nextAllTypesFile) {
+void FuzzIntrospector::dumpDebugInformation(Module &M, std::string outputFile, std::string nextCalltreeFile) {
   std::ofstream O;
   O.open(outputFile);
   O << "<--- Debug Information for Module 2.0 --->\n";
@@ -683,11 +744,13 @@ void FuzzIntrospector::dumpDebugInformation(Module &M, std::string outputFile, s
 
   dumpDebugCompileUnits(O, Finder);
   O << "\n";
-  dumpDebugFunctionsDebugInformation(O, Finder);
+  std::string nextYamlAllDebugFunctions = nextCalltreeFile + ".debug_all_functions";
+  dumpDebugFunctionsDebugInformation(O, Finder, nextYamlAllDebugFunctions);
   O << "\n";
   dumpDebugAllGlobalVariables(O, Finder);
   O << "\n";
-  dumpDebugAllTypes(O, Finder, nextAllTypesFile);
+  std::string nextYamlAllTypes = nextCalltreeFile + ".debug_all_types";
+  dumpDebugAllTypes(O, Finder, nextYamlAllTypes);
   O.close();
 }
 
@@ -805,8 +868,7 @@ bool FuzzIntrospector::runOnModule(Module &M) {
   //
   /* Extract debugging information */
   std::string nextDebugFile = nextCalltreeFile + ".debug_info";
-  std::string nextYamlAllTypes = nextCalltreeFile + ".debug_all_types";
-  dumpDebugInformation(M, nextDebugFile, nextYamlAllTypes);
+  dumpDebugInformation(M, nextDebugFile, nextCalltreeFile);
 
   logPrintf(L1, "Finished introspector module\n");
   return true;
