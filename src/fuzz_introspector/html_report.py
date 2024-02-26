@@ -758,6 +758,9 @@ def create_html_report(introspection_proj: analysis.IntrospectionProject,
     analysis.correlate_introspection_functions_to_debug_info(
         all_functions_json_report, introspection_proj.debug_report)
 
+    analysis.correlate_introspection_functions_to_debug_info_v2(
+        all_functions_json_report, introspection_proj.debug_all_functions)
+
     # Write various stats and all-functions data to summary.json
     proj_profile.write_stats_to_summary_file()
     json_report.add_project_key_value_to_report("all-functions",
