@@ -170,92 +170,6 @@ def extract_and_refine_annotated_cfg(introspector_report):
     return annotated_cfg
 
 
-def convert_debug_info_to_signature(function, introspector_func):
-    try:
-        func_signature = function['return_type'] + ' '
-    except:
-        return 'N/A'
-
-    func_name = ''
-    param_idx = 0
-    if len(function['args']) > 0 and len(
-            introspector_func['function-argument-names']
-    ) > 0 and introspector_func['function-argument-names'][0] == 'this':
-        func_name += function['args'][0].replace("*", '').strip() + "::"
-        param_idx += 1
-
-    func_name += function['name']
-
-    func_signature += func_name
-    func_signature += '('
-    for idx in range(param_idx, len(function['args'])):
-        func_signature += function['args'][idx]
-        if idx < len(function['args']) - 1:
-            func_signature += ', '
-    func_signature += ')'
-    return func_signature
-
-
-def match_compiler_generated_func_to_debug_function_signature(
-        target_function, project_name, debug_info=None):
-    """
-    Combines the debug information of a project and the data extracted from
-    the compiler IR in order to:
-    - Find the debug information function matching the compiler-level info,
-      and use this to extract a function signature.
-    - If a match is found, will also return the raw function debug information.
-    If a successful match if found, the function returns a tuple with the items:
-      (function signature, function debug dictionary)
-    If no match is found, the function returns:
-     (None, None)
-     """
-
-    all_debug_functions = debug_info.get('all_functions_in_project', [])
-    if len(all_debug_functions) == 0:
-        return None, None
-
-    # Match the function purely based on name
-    for function in all_debug_functions:
-        if function.get('name', '') == target_function['name']:
-            func_signature = convert_debug_info_to_signature(
-                function, target_function)
-            return func_signature, function
-
-    target_minimum = 999999
-    tfunc_signature = None
-    most_likely_func = None
-    for dfunction in all_debug_functions:
-        try:
-            dline = int(dfunction['source'].get('source_line', '-1'))
-        except ValueError:
-            continue
-
-        if dfunction['source'].get('source_file',
-                                   '') == target_function['function_filename']:
-
-            # Match based on containment, as there can be discrepancies between function
-            # signatur start (as from frunc_to_match) and the lines of code of the first
-            # instruction.
-            distance_between_beginnings = int(
-                target_function['source_line_begin']) - dline
-
-            if distance_between_beginnings == 0 and dline != 0:
-                func_signature = convert_debug_info_to_signature(
-                    dfunction, target_function)
-                return func_signature, dfunction
-
-            elif distance_between_beginnings > 0 and distance_between_beginnings < target_minimum:
-                tfunc_signature = convert_debug_info_to_signature(
-                    dfunction, target_function)
-                most_likely_func = dfunction
-                target_minimum = distance_between_beginnings
-
-    if most_likely_func is not None:
-        return tfunc_signature, most_likely_func
-
-    return None, None
-
-
 def extract_and_refine_functions(all_function_list, project_name, date_str,
                                  debug_report):
     refined_proj_list = []
@@ -299,14 +213,11 @@ def extract_and_refine_functions(all_function_list, project_name, date_str,
             'callsites':
             func.get('callsites', [])
         }
-        function_signature, debug_function = match_compiler_generated_func_to_debug_function_signature(
-            introspector_func, project_name, debug_report)
-        if function_signature is None:
-            function_signature = 'N/A'
-            debug_function = dict()
 
-        introspector_func['function-signature'] = function_signature
-        introspector_func['debug-function'] = debug_function
+        introspector_func['function-signature'] = func.get(
+            'function_signature', 'N/A')
+        introspector_func['debug-function'] = func.get('debug_function_info',
+                                                       dict())
 
         refined_proj_list.append(introspector_func)
     return refined_proj_list
