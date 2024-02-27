@@ -407,13 +407,10 @@ def extract_debugged_function_signature(dfunc, all_debug_types):
     function_signature_elements = {
         'return_type': return_type,
         'params': params,
-        'source_location': {
-            'file': source_file,
-            'line': source_line
-        }
     }
+    source_location = {'source_file': source_file, 'source_line': source_line}
 
-    return function_signature_elements
+    return function_signature_elements, source_location
 
 
 def clean_extract_raw_all_debugged_function_signatures(all_debug_types,
@@ -421,9 +418,10 @@ def clean_extract_raw_all_debugged_function_signatures(all_debug_types,
     print("Correlating")
     for dfunc in all_debug_functions:
 
-        func_signature_elems = extract_debugged_function_signature(
+        func_signature_elems, source_location = extract_debugged_function_signature(
             dfunc, all_debug_types)
         dfunc['func_signature_elems'] = func_signature_elems
+        dfunc['source'] = source_location
 
 
 if __name__ in "__main__":
