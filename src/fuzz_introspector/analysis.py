@@ -925,7 +925,6 @@ def convert_debug_info_to_signature_v2(function, introspector_func):
         param_string = convert_param_list_to_str_v2(
             function['func_signature_elems']['params'][idx])
         func_signature += param_string
-        #func_signature += " ".join(function['func_signature_elems']['params'][idx])
         if idx < len(function['func_signature_elems']['params']) - 1:
             func_signature += ', '
     func_signature += ')'

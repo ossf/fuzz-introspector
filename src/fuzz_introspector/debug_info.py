@@ -425,10 +425,6 @@ def clean_extract_raw_all_debugged_function_signatures(all_debug_types,
             dfunc, all_debug_types)
         dfunc['func_signature_elems'] = func_signature_elems
 
-        #print(dfunc['name'])
-        #print(json.dumps(dfunc['func_signature_elems'], indent=2))
-        #print(json.dumps(dfunc, indent=2))
-
 
 if __name__ in "__main__":
     import sys
@@ -439,5 +435,3 @@ if __name__ in "__main__":
     ]
     all_types = load_debug_all_yaml_files(type_debug_files)
     all_funcs = load_debug_all_yaml_files(functions_debug_files)
-
-    #correlate_debug_information(all_types, all_funcs)
