@@ -622,9 +622,18 @@ void FuzzIntrospector::dumpDebugAllTypes(std::ofstream &O,
     currentTypeIdx += 1;
 
     TypeWrapper tp;
-    tp.name = T->getName();
+    if (T->getName().empty()) {
+        tp.name = "";
+    } else {
+        tp.name = T->getName().str();
+    }
     tp.baseTypeString = "";
-    tp.tag = dwarf::TagString(T->getTag());
+
+    if (dwarf::TagString(T->getTag()).empty()) {
+        tp.tag = "";
+    } else {
+        tp.tag = dwarf::TagString(T->getTag()).str();
+    }
     //tp.fileLocation = getFileLocation(T->getFilename(), T->getDirectory(), T->getLine());
     tp.fileLocation = "";
     //std::string s1;
