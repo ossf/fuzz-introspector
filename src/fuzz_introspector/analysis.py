@@ -851,17 +851,20 @@ def correlate_introspection_functions_to_debug_info(all_functions_json_report,
         func_sig, correlated_debug_function = correlate_introspector_func_to_debug_information(
             if_func, all_debug_functions)
         if func_sig is not None:
-            if_func['function_signature'] = func_sig
-            if_func['debug_function_info'] = correlated_debug_function
+            if_func['function_signature_v1'] = func_sig
+            if_func['debug_function_info_v1'] = correlated_debug_function
         else:
-            if_func['function_signature'] = 'N/A'
-            if_func['debug_function_info'] = dict()
+            if_func['function_signature_v1'] = 'N/A'
+            if_func['debug_function_info_v1'] = dict()
 
 
 def convert_debug_info_to_signature_v2(function, introspector_func):
+    function['return_type'] = 'N/A'
+    function['args'] = []
     try:
         return_type = convert_param_list_to_str_v2(
             function['func_signature_elems']['return_type'])
+        function['return_type'] = return_type
         func_signature = return_type + " "
     except KeyError:
         return 'N/A'
@@ -924,6 +927,7 @@ def convert_debug_info_to_signature_v2(function, introspector_func):
                      len(function['func_signature_elems']['params'])):
         param_string = convert_param_list_to_str_v2(
             function['func_signature_elems']['params'][idx])
+        function['args'].append(param_string)
         func_signature += param_string
         if idx < len(function['func_signature_elems']['params']) - 1:
             func_signature += ', '
@@ -972,14 +976,12 @@ def correlate_introspector_func_to_debug_information_v2(
     most_likely_func = None
     for dfunction in all_debug_functions:
         try:
-            dline = int(
-                dfunction['func_signature_elems']['source_location'].get(
-                    'line', '-1'))
+            dline = int(dfunction['source'].get('source_line', '-1'))
         except ValueError:
             continue
 
-        if dfunction['func_signature_elems']['source_location'].get(
-                'file', '') == if_func['Functions filename']:
+        if dfunction['source'].get('source_file',
+                                   '') == if_func['Functions filename']:
 
             # Match based on containment, as there can be discrepancies between function
             # signatur start (as from frunc_to_match) and the lines of code of the first
@@ -1012,8 +1014,8 @@ def correlate_introspection_functions_to_debug_info_v2(
             if_func, debug_all_functions)
 
         if func_sig is not None:
-            if_func['function_signature_v2'] = func_sig
-            if_func['debug_function_info_v2'] = correlated_debug_function
+            if_func['function_signature'] = func_sig
+            if_func['debug_function_info'] = correlated_debug_function
         else:
-            if_func['function_signature_v2'] = 'N/A'
-            if_func['debug_function_info_v2'] = dict()
+            if_func['function_signature'] = 'N/A'
+            if_func['debug_function_info'] = dict()
