@@ -327,17 +327,111 @@ def dump_debug_report(report_dict):
         debug_dump.write(json.dumps(report_dict))
 
 
-def load_debug_all_types_files(debug_all_types_files):
-    types_list = []
+def load_debug_all_yaml_files(debug_all_types_files):
+    elem_list = []
     yaml.SafeLoader = yaml.CSafeLoader  # type: ignore[assignment, misc]
     for filename in debug_all_types_files:
         with open(filename, 'r') as yaml_f:
             file_list = yaml.safe_load(yaml_f.read())
-            types_list += file_list
+            elem_list += file_list
+    return elem_list
+
+
+def find_type_with_addr(target_type, all_debug_types):
+    for debug_type in all_debug_types:
+        if int(debug_type['addr']) == int(target_type):
+            return debug_type
+    return None
+
+
+def extract_func_sig_friendly_type_tags(target_type, all_debug_types):
+    if int(target_type) == 0:
+        return ['void']
+
+    tags = []
+    type_to_query = target_type
+    addresses_visited = set()
+    while True:
+        if type_to_query in addresses_visited:
+            tags.append("Infinite loop")
+            break
+
+        target_type = find_type_with_addr(type_to_query, all_debug_types)
+        if target_type is None:
+            tags.append("N/A")
+            break
+
+        # Provide the tag
+        tags.append(target_type['tag'])
+
+        name = target_type.get("name", "")
+        if name != "":
+            tags.append(name)
+            break
+
+        base_type_string = target_type.get("base_type_string", "")
+        if base_type_string != "":
+            tags.append(base_type_string)
+            break
+
+        addresses_visited.add(type_to_query)
+
+        type_to_query = target_type.get('base_type_addr', '')
+        if int(type_to_query) == 0:
+            tags.append("void")
+            break
+
+    return tags
+
+
+def extract_debugged_function_signature(dfunc, all_debug_types):
+    try:
+        return_type = extract_func_sig_friendly_type_tags(
+            dfunc['type_arguments'][0], all_debug_types)
+    except IndexError:
+        return_type = 'N/A'
+    params = []
+
+    if len(dfunc['type_arguments']) > 1:
+        for i in range(1, len(dfunc['type_arguments'])):
+            params.append(
+                extract_func_sig_friendly_type_tags(dfunc['type_arguments'][i],
+                                                    all_debug_types))
+
+    source_file = dfunc['file_location'].split(":")[0]
+    try:
+        source_line = dfunc['file_location'].split(":")[1]
+    except IndexError:
+        source_line = "-1"
+
+    function_signature_elements = {
+        'return_type': return_type,
+        'params': params,
+        'source_location': {
+            'file': source_file,
+            'line': source_line
+        }
+    }
+
+    return function_signature_elements
+
+
+def clean_extract_raw_all_debugged_function_signatures(all_debug_types,
+                                                       all_debug_functions):
+    print("Correlating")
+    for dfunc in all_debug_functions:
+
+        func_signature_elems = extract_debugged_function_signature(
+            dfunc, all_debug_types)
+        dfunc['func_signature_elems'] = func_signature_elems
 
 
 if __name__ in "__main__":
     import sys
     print("Main")
-    debug_files = [sys.argv[1]]
-    load_debug_all_types_files(debug_files)
+    type_debug_files = [sys.argv[1]]
+    functions_debug_files = [
+        sys.argv[1].replace("debug_all_types", "debug_all_functions")
+    ]
+    all_types = load_debug_all_yaml_files(type_debug_files)
+    all_funcs = load_debug_all_yaml_files(functions_debug_files)

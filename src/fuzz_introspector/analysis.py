@@ -112,11 +112,20 @@ class IntrospectionProject():
         self.debug_files = data_loader.load_all_debug_files(self.base_folder)
         self.debug_type_files = data_loader.find_all_debug_all_types_files(
             self.base_folder)
+        self.debug_function_files = data_loader.find_all_debug_function_files(
+            self.base_folder)
 
     def load_debug_report(self):
         self.debug_report = debug_info.load_debug_report(self.debug_files)
-        self.debug_all_types = debug_info.load_debug_all_types_files(
+        self.debug_all_types = debug_info.load_debug_all_yaml_files(
             self.debug_type_files)
+        self.debug_all_functions = debug_info.load_debug_all_yaml_files(
+            self.debug_function_files)
+
+        # Extract the raw function signature. This propagates types into all of
+        # the debug functions.
+        debug_info.clean_extract_raw_all_debugged_function_signatures(
+            self.debug_all_types, self.debug_all_functions)
 
     def dump_debug_report(self):
         if self.debug_report is not None:
@@ -847,3 +856,164 @@ def correlate_introspection_functions_to_debug_info(all_functions_json_report,
         else:
             if_func['function_signature'] = 'N/A'
             if_func['debug_function_info'] = dict()
+
+
+def convert_debug_info_to_signature_v2(function, introspector_func):
+    try:
+        return_type = convert_param_list_to_str_v2(
+            function['func_signature_elems']['return_type'])
+        func_signature = return_type + " "
+    except KeyError:
+        return 'N/A'
+
+    # Assess if there is a namespace and if we have more args than what there
+    # should be, e.g. if this is a method on an object. We need to identify
+    # this because we want the function signature to be equal to what developers
+    # see.
+
+    # First step: Identify namespae
+    # 1) demangle raw name
+    # 2) identify namespace
+    # 3) identify if namespace last part matches first argument
+    # 4) assemble
+    namespace = extract_namespace(introspector_func['raw-function-name'],
+                                  return_type)
+
+    func_name = ''
+    param_idx = 0
+    logger.info("Namespace: %s" % (str(namespace)))
+    # Is this a class function?
+    if len(function['func_signature_elems']['params']) > 0:
+        if len(namespace) > 1:
+            # Constructor handling
+            if namespace[-1] == convert_param_list_to_str_v2(
+                    function['func_signature_elems']['params'][0]).replace(
+                        " *", ""):
+                logger.info("Option 1")
+                func_name = "::".join(namespace[0:-1]) + "::"
+                param_idx += 1
+            # Destructor handling
+            elif "~" in namespace[-1] and namespace[-1].replace(
+                    "~", "") == convert_param_list_to_str_v2(
+                        function['func_signature_elems']['params'][0]).replace(
+                            " *", ""):
+                logger.info("Option 2")
+                func_name = "::".join(namespace[0:-1]) + "::"
+
+                if not convert_param_list_to_str_v2(
+                        function['func_signature_elems']['params'][0]) == '~':
+                    function['name'] = '~' + function['name']
+                param_idx += 1
+            # Class object handling
+            elif namespace[-2] == convert_param_list_to_str_v2(
+                    function['func_signature_elems']['params'][0]).replace(
+                        " *", "").replace("const ", ""):
+                logger.info("Option 3")
+                func_name = "::".join(namespace[0:-1]) + "::"
+                param_idx += 1
+            else:
+                # Simple function in namespace but not in a class
+                # No increasae in param_idx, since we don't eat the object
+                # instance pointer.
+                func_name = "::".join(namespace[0:-1]) + "::"
+    func_name += function['name']
+
+    func_signature += func_name
+    func_signature += '('
+    for idx in range(param_idx,
+                     len(function['func_signature_elems']['params'])):
+        param_string = convert_param_list_to_str_v2(
+            function['func_signature_elems']['params'][idx])
+        func_signature += param_string
+        if idx < len(function['func_signature_elems']['params']) - 1:
+            func_signature += ', '
+    func_signature += ')'
+    return func_signature
+
+
+def convert_param_list_to_str_v2(param_list):
+    pre = ""
+    med = ""
+    post = ""
+    for param in param_list:
+        if param == "DW_TAG_pointer_type":
+            post += "*"
+        elif param == 'DW_TAG_reference_type':
+            post += '&'
+        elif param == 'DW_TAG_structure_type':
+            continue
+        elif param == "DW_TAG_base_type":
+            continue
+        elif param == "DW_TAG_typedef":
+            continue
+        elif param == 'DW_TAG_class_type':
+            continue
+        elif param == "DW_TAG_const_type":
+            pre += "const "
+        else:
+            med += param
+
+    raw_sig = pre.strip() + " " + med + " " + post
+    return raw_sig.strip()
+
+
+def correlate_introspector_func_to_debug_information_v2(
+        if_func, all_debug_functions):
+    # Check if name matches. If so, this one is easy.
+    for debug_function in all_debug_functions:
+        if debug_function.get('name', '') == if_func['Func name']:
+            func_signature = convert_debug_info_to_signature_v2(
+                debug_function, if_func)
+            return func_signature, debug_function
+
+    # We could not find the right one, let's search more broadly for it.
+    target_minimum = 999999
+    tfunc_signature = None
+    most_likely_func = None
+    for dfunction in all_debug_functions:
+        try:
+            dline = int(
+                dfunction['func_signature_elems']['source_location'].get(
+                    'line', '-1'))
+        except ValueError:
+            continue
+
+        if dfunction['func_signature_elems']['source_location'].get(
+                'file', '') == if_func['Functions filename']:
+
+            # Match based on containment, as there can be discrepancies between function
+            # signatur start (as from frunc_to_match) and the lines of code of the first
+            # instruction.
+            distance_between_beginnings = int(
+                if_func['source_line_begin']) - dline
+
+            if distance_between_beginnings == 0 and dline != 0:
+                func_signature = convert_debug_info_to_signature_v2(
+                    dfunction, if_func)
+                return func_signature, dfunction
+
+            elif distance_between_beginnings > 0 and distance_between_beginnings < target_minimum:
+                tfunc_signature = convert_debug_info_to_signature_v2(
+                    dfunction, if_func)
+                most_likely_func = dfunction
+                target_minimum = distance_between_beginnings
+
+    if most_likely_func is not None:
+        return tfunc_signature, most_likely_func
+
+    # Could not find the relevant stuff
+    return None, None
+
+
+def correlate_introspection_functions_to_debug_info_v2(
+        all_functions_json_report, debug_all_functions):
+    for if_func in all_functions_json_report:
+        func_sig, correlated_debug_function = correlate_introspector_func_to_debug_information_v2(
+            if_func, debug_all_functions)
+
+        if func_sig is not None:
+            if_func['function_signature_v2'] = func_sig
+            if_func['debug_function_info_v2'] = correlated_debug_function
+        else:
+            if_func['function_signature_v2'] = 'N/A'
+            if_func['debug_function_info_v2'] = dict()

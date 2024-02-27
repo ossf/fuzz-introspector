@@ -90,6 +90,15 @@ def find_all_debug_all_types_files(target_folder: str):
     return debug_info_files
 
 
+def find_all_debug_function_files(target_folder: str):
+    """Loads all debug_all_functions files"""
+    debug_info_files = utils.get_all_files_in_tree_with_regex(
+        target_folder, ".*debug_all_functions$")
+    for file in debug_info_files:
+        print("debug info file: %s" % (file))
+    return debug_info_files
+
+
 def load_all_profiles(
         target_folder: str,
         language: str,
