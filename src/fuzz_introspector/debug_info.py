@@ -347,7 +347,7 @@ def find_type_with_addr(target_type, all_debug_types):
 def extract_func_sig_friendly_type_tags(target_type, all_debug_types):
     if int(target_type) == 0:
         return ['void']
-    
+
     tags = []
     type_to_query = target_type
     addresses_visited = set()
@@ -364,7 +364,7 @@ def extract_func_sig_friendly_type_tags(target_type, all_debug_types):
         # Provide the tag
         tags.append(target_type['tag'])
 
-        name= target_type.get("name", "")
+        name = target_type.get("name", "")
         if name != "":
             tags.append(name)
             break
@@ -380,20 +380,23 @@ def extract_func_sig_friendly_type_tags(target_type, all_debug_types):
         if int(type_to_query) == 0:
             tags.append("void")
             break
-    
+
     return tags
 
 
 def extract_debugged_function_signature(dfunc, all_debug_types):
     try:
-        return_type = extract_func_sig_friendly_type_tags(dfunc['type_arguments'][0], all_debug_types)
+        return_type = extract_func_sig_friendly_type_tags(
+            dfunc['type_arguments'][0], all_debug_types)
     except IndexError:
         return_type = 'N/A'
     params = []
 
     if len(dfunc['type_arguments']) > 1:
         for i in range(1, len(dfunc['type_arguments'])):
-            params.append(extract_func_sig_friendly_type_tags(dfunc['type_arguments'][i], all_debug_types))
+            params.append(
+                extract_func_sig_friendly_type_tags(dfunc['type_arguments'][i],
+                                                    all_debug_types))
 
     source_file = dfunc['file_location'].split(":")[0]
     try:
@@ -413,11 +416,13 @@ def extract_debugged_function_signature(dfunc, all_debug_types):
     return function_signature_elements
 
 
-def clean_extract_raw_all_debugged_function_signatures(all_debug_types, all_debug_functions):
+def clean_extract_raw_all_debugged_function_signatures(all_debug_types,
+                                                       all_debug_functions):
     print("Correlating")
     for dfunc in all_debug_functions:
-        
-        func_signature_elems = extract_debugged_function_signature(dfunc, all_debug_types)
+
+        func_signature_elems = extract_debugged_function_signature(
+            dfunc, all_debug_types)
         dfunc['func_signature_elems'] = func_signature_elems
 
         #print(dfunc['name'])
@@ -429,7 +434,9 @@ if __name__ in "__main__":
     import sys
     print("Main")
     type_debug_files = [sys.argv[1]]
-    functions_debug_files = [sys.argv[1].replace("debug_all_types", "debug_all_functions")]
+    functions_debug_files = [
+        sys.argv[1].replace("debug_all_types", "debug_all_functions")
+    ]
     all_types = load_debug_all_yaml_files(type_debug_files)
     all_funcs = load_debug_all_yaml_files(functions_debug_files)
 

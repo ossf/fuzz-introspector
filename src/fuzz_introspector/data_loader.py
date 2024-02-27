@@ -99,7 +99,6 @@ def find_all_debug_function_files(target_folder: str):
     return debug_info_files
 
 
-
 def load_all_profiles(
         target_folder: str,
         language: str,

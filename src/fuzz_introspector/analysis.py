@@ -112,17 +112,20 @@ class IntrospectionProject():
         self.debug_files = data_loader.load_all_debug_files(self.base_folder)
         self.debug_type_files = data_loader.find_all_debug_all_types_files(
             self.base_folder)
-        self.debug_function_files = data_loader.find_all_debug_function_files(self.base_folder)
+        self.debug_function_files = data_loader.find_all_debug_function_files(
+            self.base_folder)
 
     def load_debug_report(self):
         self.debug_report = debug_info.load_debug_report(self.debug_files)
         self.debug_all_types = debug_info.load_debug_all_yaml_files(
             self.debug_type_files)
-        self.debug_all_functions = debug_info.load_debug_all_yaml_files(self.debug_function_files)
+        self.debug_all_functions = debug_info.load_debug_all_yaml_files(
+            self.debug_function_files)
 
         # Extract the raw function signature. This propagates types into all of
         # the debug functions.
-        debug_info.clean_extract_raw_all_debugged_function_signatures(self.debug_all_types, self.debug_all_functions)
+        debug_info.clean_extract_raw_all_debugged_function_signatures(
+            self.debug_all_types, self.debug_all_functions)
 
     def dump_debug_report(self):
         if self.debug_report is not None:
@@ -855,19 +858,10 @@ def correlate_introspection_functions_to_debug_info(all_functions_json_report,
             if_func['debug_function_info'] = dict()
 
 
-
-
-
-
-
-
-
-
-
-
 def convert_debug_info_to_signature_v2(function, introspector_func):
     try:
-        return_type = convert_param_list_to_str_v2(function['func_signature_elems']['return_type'])
+        return_type = convert_param_list_to_str_v2(
+            function['func_signature_elems']['return_type'])
         func_signature = return_type + " "
     except KeyError:
         return 'N/A'
@@ -892,22 +886,28 @@ def convert_debug_info_to_signature_v2(function, introspector_func):
     if len(function['func_signature_elems']['params']) > 0:
         if len(namespace) > 1:
             # Constructor handling
-            if namespace[-1] == convert_param_list_to_str_v2(function['func_signature_elems']['params'][0]).replace(" *", ""):
+            if namespace[-1] == convert_param_list_to_str_v2(
+                    function['func_signature_elems']['params'][0]).replace(
+                        " *", ""):
                 logger.info("Option 1")
                 func_name = "::".join(namespace[0:-1]) + "::"
                 param_idx += 1
             # Destructor handling
             elif "~" in namespace[-1] and namespace[-1].replace(
-                    "~", "") == convert_param_list_to_str_v2(function['func_signature_elems']['params'][0]).replace(" *", ""):
+                    "~", "") == convert_param_list_to_str_v2(
+                        function['func_signature_elems']['params'][0]).replace(
+                            " *", ""):
                 logger.info("Option 2")
                 func_name = "::".join(namespace[0:-1]) + "::"
 
-                if not convert_param_list_to_str_v2(function['func_signature_elems']['params'][0]) == '~':
+                if not convert_param_list_to_str_v2(
+                        function['func_signature_elems']['params'][0]) == '~':
                     function['name'] = '~' + function['name']
                 param_idx += 1
             # Class object handling
-            elif namespace[-2] == convert_param_list_to_str_v2(function['func_signature_elems']['params'][0]).replace(
-                    " *", "").replace("const ", ""):
+            elif namespace[-2] == convert_param_list_to_str_v2(
+                    function['func_signature_elems']['params'][0]).replace(
+                        " *", "").replace("const ", ""):
                 logger.info("Option 3")
                 func_name = "::".join(namespace[0:-1]) + "::"
                 param_idx += 1
@@ -920,8 +920,10 @@ def convert_debug_info_to_signature_v2(function, introspector_func):
 
     func_signature += func_name
     func_signature += '('
-    for idx in range(param_idx, len(function['func_signature_elems']['params'])):
-        param_string = convert_param_list_to_str_v2(function['func_signature_elems']['params'][idx]) 
+    for idx in range(param_idx,
+                     len(function['func_signature_elems']['params'])):
+        param_string = convert_param_list_to_str_v2(
+            function['func_signature_elems']['params'][idx])
         func_signature += param_string
         #func_signature += " ".join(function['func_signature_elems']['params'][idx])
         if idx < len(function['func_signature_elems']['params']) - 1:
@@ -956,9 +958,8 @@ def convert_param_list_to_str_v2(param_list):
     return raw_sig.strip()
 
 
-
-def correlate_introspector_func_to_debug_information_v2(if_func,
-                                                     all_debug_functions):
+def correlate_introspector_func_to_debug_information_v2(
+        if_func, all_debug_functions):
     # Check if name matches. If so, this one is easy.
     for debug_function in all_debug_functions:
         if debug_function.get('name', '') == if_func['Func name']:
@@ -972,11 +973,14 @@ def correlate_introspector_func_to_debug_information_v2(if_func,
     most_likely_func = None
     for dfunction in all_debug_functions:
         try:
-            dline = int(dfunction['func_signature_elems']['source_location'].get('line', '-1'))
+            dline = int(
+                dfunction['func_signature_elems']['source_location'].get(
+                    'line', '-1'))
         except ValueError:
             continue
 
-        if dfunction['func_signature_elems']['source_location'].get('file', '') == if_func['Functions filename']:
+        if dfunction['func_signature_elems']['source_location'].get(
+                'file', '') == if_func['Functions filename']:
 
             # Match based on containment, as there can be discrepancies between function
             # signatur start (as from frunc_to_match) and the lines of code of the first
@@ -1001,7 +1005,9 @@ def correlate_introspector_func_to_debug_information_v2(if_func,
     # Could not find the relevant stuff
     return None, None
 
-def correlate_introspection_functions_to_debug_info_v2(all_functions_json_report, debug_all_functions):
+
+def correlate_introspection_functions_to_debug_info_v2(
+        all_functions_json_report, debug_all_functions):
     for if_func in all_functions_json_report:
         func_sig, correlated_debug_function = correlate_introspector_func_to_debug_information_v2(
             if_func, debug_all_functions)
@@ -1012,4 +1018,3 @@ def correlate_introspection_functions_to_debug_info_v2(all_functions_json_report
         else:
             if_func['function_signature_v2'] = 'N/A'
             if_func['debug_function_info_v2'] = dict()
-
