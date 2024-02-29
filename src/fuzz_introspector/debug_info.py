@@ -329,7 +329,12 @@ def dump_debug_report(report_dict):
 
 def load_debug_all_yaml_files(debug_all_types_files):
     elem_list = []
-    yaml.SafeLoader = yaml.CSafeLoader  # type: ignore[assignment, misc]
+    try:
+        yaml.SafeLoader = yaml.CSafeLoader  # type: ignore[assignment, misc]
+        logger.info("Set base loader to use CSafeLoader")
+    except Exception:
+        logger.info("Could not set the CSafeLoader as base loader")
+
     for filename in debug_all_types_files:
         with open(filename, 'r') as yaml_f:
             file_list = yaml.safe_load(yaml_f.read())
