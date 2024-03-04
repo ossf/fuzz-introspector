@@ -755,9 +755,6 @@ def create_html_report(introspection_proj: analysis.IntrospectionProject,
     introspection_proj.load_debug_report()
 
     # Correlate debug info to introspector functions
-    analysis.correlate_introspection_functions_to_debug_info(
-        all_functions_json_report, introspection_proj.debug_report)
-
     analysis.correlate_introspection_functions_to_debug_info_v2(
         all_functions_json_report, introspection_proj.debug_all_functions)
 
