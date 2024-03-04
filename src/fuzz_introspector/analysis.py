@@ -843,7 +843,6 @@ def correlate_introspector_func_to_debug_information_v2(
     # Check if name matches. If so, this one is easy.
     same_name_dfs = debug_dict_by_name.get(if_func['Func name'], [])
 
-    #for debug_function in all_debug_functions:
     for debug_function in same_name_dfs:
         if debug_function.get('name', '') == if_func['Func name']:
             func_signature = convert_debug_info_to_signature_v2(
