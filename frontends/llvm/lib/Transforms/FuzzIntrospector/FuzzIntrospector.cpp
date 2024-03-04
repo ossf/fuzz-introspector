@@ -649,7 +649,6 @@ void FuzzIntrospector::dumpDebugAllTypes(std::ofstream &O,
 
     if (auto *DerivedT = dyn_cast<DIDerivedType>(T)) {
       tp.baseTypeAddr = (uint64_t)DerivedT->getBaseType();
-      std::cout << DerivedT->getBaseType() << "\n";
 
       if (DerivedT->getBaseType()) {
         if (auto *BT = dyn_cast<DIBasicType>(DerivedT->getBaseType())) {
