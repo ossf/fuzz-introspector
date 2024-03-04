@@ -342,13 +342,6 @@ def load_debug_all_yaml_files(debug_all_types_files):
     return elem_list
 
 
-def find_type_with_addr(target_type, all_debug_types):
-    for debug_type in all_debug_types:
-        if int(debug_type['addr']) == int(target_type):
-            return debug_type
-    return None
-
-
 def extract_func_sig_friendly_type_tags(target_type, all_debug_types,
                                         debug_type_dictionary):
     if int(target_type) == 0:
@@ -363,8 +356,6 @@ def extract_func_sig_friendly_type_tags(target_type, all_debug_types,
             break
 
         target_type = debug_type_dictionary.get(int(type_to_query), None)
-
-        #target_type = find_type_with_addr(type_to_query, all_debug_types)
         if target_type is None:
             tags.append("N/A")
             break
