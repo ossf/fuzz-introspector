@@ -855,7 +855,6 @@ def correlate_introspector_func_to_debug_information_v2(
     tfunc_signature = None
     most_likely_func = None
 
-    #for dfunction in all_debug_functions:
     for dfunction in debug_dict_by_filename.get(if_func['Functions filename'],
                                                 []):
         try:
