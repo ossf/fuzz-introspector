@@ -14,10 +14,10 @@ index 8dcbdce6c..583427556 100644
  CMD ["compile"]
 \ No newline at end of file
 diff --git a/infra/base-images/base-builder/compile b/infra/base-images/base-builder/compile
-index 04ac1cc84..91c1222c9 100755
+index 69e132f1d..4c5965c08 100755
 --- a/infra/base-images/base-builder/compile
 +++ b/infra/base-images/base-builder/compile
-@@ -19,10 +19,10 @@ echo "---------------------------------------------------------------"
+@@ -19,11 +19,6 @@ echo "---------------------------------------------------------------"
  
  OSS_FUZZ_ON_DEMAND="${OSS_FUZZ_ON_DEMAND:-0}"
  
@@ -25,22 +25,10 @@ index 04ac1cc84..91c1222c9 100755
 -if [ -n "${OLD_LLVMPASS-}" ]; then
 -  export SANITIZER_FLAGS_introspector=$(echo $SANITIZER_FLAGS_introspector | sed -r 's/-O0/-flegacy-pass-manager/')
 -fi
-+## This is a temporary fix: fall back to LLVM14's old pass manager
-+#if [ -n "${OLD_LLVMPASS-}" ]; then
-+#  export SANITIZER_FLAGS_introspector=$(echo $SANITIZER_FLAGS_introspector | sed -r 's/-O0/-flegacy-pass-manager/')
-+#fi
- 
+-
  if [ "$FUZZING_LANGUAGE" = "jvm" ]; then
    if [ "$FUZZING_ENGINE" != "libfuzzer" ] && [ "$FUZZING_ENGINE" != "wycheproof" ]; then
-@@ -272,7 +272,7 @@ if [ "$SANITIZER" = "introspector" ]; then
-   mkdir -p $SRC/inspector
-   find $SRC/ -name "fuzzerLogFile-*.data" -exec cp {} $SRC/inspector/ \;
-   find $SRC/ -name "fuzzerLogFile-*.data.yaml" -exec cp {} $SRC/inspector/ \;
--  find $SRC/ -name "fuzzerLogFile-*.data.debug_info" -exec cp {} $SRC/inspector/ \;
-+  find $SRC/ -name "fuzzerLogFile-*.data.debug_*" -exec cp {} $SRC/inspector/ \;
-   find $SRC/ -name "allFunctionsWithMain-*.yaml" -exec cp {} $SRC/inspector/ \;
- 
-   # Move coverage report.
+     echo "ERROR: JVM projects can be fuzzed with libFuzzer or tested with wycheproof engines only."
 diff --git a/infra/base-images/base-builder/compile_libfuzzer b/infra/base-images/base-builder/compile_libfuzzer
 index 7962bd366..769bb8e73 100755
 --- a/infra/base-images/base-builder/compile_libfuzzer
@@ -81,7 +69,7 @@ index df6bb2b75..dd7f3d1eb 100755
  make clean
  # These CFLAGs match honggfuzz's default, with the exception of -mtune to
 diff --git a/infra/base-images/base-clang/Dockerfile b/infra/base-images/base-clang/Dockerfile
-index 0dd919813..155430185 100644
+index 465fe5d27..3fc890091 100644
 --- a/infra/base-images/base-clang/Dockerfile
 +++ b/infra/base-images/base-clang/Dockerfile
 @@ -42,9 +42,12 @@ RUN apt-get update && apt-get install -y git && \
