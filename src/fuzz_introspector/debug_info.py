@@ -342,14 +342,8 @@ def load_debug_all_yaml_files(debug_all_types_files):
     return elem_list
 
 
-def find_type_with_addr(target_type, all_debug_types):
-    for debug_type in all_debug_types:
-        if int(debug_type['addr']) == int(target_type):
-            return debug_type
-    return None
-
-
-def extract_func_sig_friendly_type_tags(target_type, all_debug_types):
+def extract_func_sig_friendly_type_tags(target_type, all_debug_types,
+                                        debug_type_dictionary):
     if int(target_type) == 0:
         return ['void']
 
@@ -361,7 +355,7 @@ def extract_func_sig_friendly_type_tags(target_type, all_debug_types):
             tags.append("Infinite loop")
             break
 
-        target_type = find_type_with_addr(type_to_query, all_debug_types)
+        target_type = debug_type_dictionary.get(int(type_to_query), None)
         if target_type is None:
             tags.append("N/A")
             break
@@ -389,10 +383,11 @@ def extract_func_sig_friendly_type_tags(target_type, all_debug_types):
     return tags
 
 
-def extract_debugged_function_signature(dfunc, all_debug_types):
+def extract_debugged_function_signature(dfunc, all_debug_types,
+                                        debug_type_dictionary):
     try:
         return_type = extract_func_sig_friendly_type_tags(
-            dfunc['type_arguments'][0], all_debug_types)
+            dfunc['type_arguments'][0], all_debug_types, debug_type_dictionary)
     except IndexError:
         return_type = 'N/A'
     params = []
@@ -401,7 +396,8 @@ def extract_debugged_function_signature(dfunc, all_debug_types):
         for i in range(1, len(dfunc['type_arguments'])):
             params.append(
                 extract_func_sig_friendly_type_tags(dfunc['type_arguments'][i],
-                                                    all_debug_types))
+                                                    all_debug_types,
+                                                    debug_type_dictionary))
 
     source_file = dfunc['file_location'].split(":")[0]
     try:
@@ -421,10 +417,17 @@ def extract_debugged_function_signature(dfunc, all_debug_types):
 def clean_extract_raw_all_debugged_function_signatures(all_debug_types,
                                                        all_debug_functions):
     print("Correlating")
-    for dfunc in all_debug_functions:
+    debug_type_dictionary = dict()
+    for debug_type in all_debug_types:
+        debug_type_dictionary[int(debug_type['addr'])] = debug_type
 
+    idx = 0
+    for dfunc in all_debug_functions:
+        logger.info("idx: %d" % (idx))
+        idx += 1
         func_signature_elems, source_location = extract_debugged_function_signature(
-            dfunc, all_debug_types)
+            dfunc, all_debug_types, debug_type_dictionary)
+
         dfunc['func_signature_elems'] = func_signature_elems
         dfunc['source'] = source_location
 

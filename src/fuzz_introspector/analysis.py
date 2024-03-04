@@ -122,6 +122,17 @@ class IntrospectionProject():
         self.debug_all_functions = debug_info.load_debug_all_yaml_files(
             self.debug_function_files)
 
+        tmp_debug_functions = dict()
+        no_path_debug_funcs = list()
+        for func in self.debug_all_functions:
+            if func['file_location'].strip() == '':
+                no_path_debug_funcs.append(func)
+            else:
+                tmp_debug_functions[func['file_location']] = func
+
+        self.debug_all_functions = no_path_debug_funcs + list(
+            tmp_debug_functions.values())
+
         # Extract the raw function signature. This propagates types into all of
         # the debug functions.
         debug_info.clean_extract_raw_all_debugged_function_signatures(
@@ -696,13 +707,13 @@ def detect_branch_level_blockers(
 
 
 def extract_namespace(mangled_function_name, return_type=None):
-    logger.info("Demangling: %s" % (mangled_function_name))
+    # logger.info("Demangling: %s" % (mangled_function_name))
     demangled_func_name = utils.demangle_cpp_func(mangled_function_name)
-    logger.info("Demangled name: %s" % (demangled_func_name))
+    # logger.info("Demangled name: %s" % (demangled_func_name))
     if return_type is not None and demangled_func_name.startswith(
             f"{return_type} "):
         demangled_func_name = demangled_func_name[len(return_type) + 1:]
-        logger.info("Removed function type: %s" % (demangled_func_name))
+        # logger.info("Removed function type: %s" % (demangled_func_name))
     if "::" not in demangled_func_name:
         return []
 
@@ -719,7 +730,7 @@ def extract_namespace(mangled_function_name, return_type=None):
             else:
                 name_spaces.append(elem)
 
-    logger.info("split namespace: %s" % (str(name_spaces)))
+    # logger.info("split namespace: %s" % (str(name_spaces)))
     return name_spaces
 
 
@@ -827,9 +838,12 @@ def convert_param_list_to_str_v2(param_list):
 
 
 def correlate_introspector_func_to_debug_information_v2(
-        if_func, all_debug_functions):
+        if_func, all_debug_functions, debug_dict_by_name,
+        debug_dict_by_filename):
     # Check if name matches. If so, this one is easy.
-    for debug_function in all_debug_functions:
+    same_name_dfs = debug_dict_by_name.get(if_func['Func name'], [])
+
+    for debug_function in same_name_dfs:
         if debug_function.get('name', '') == if_func['Func name']:
             func_signature = convert_debug_info_to_signature_v2(
                 debug_function, if_func)
@@ -839,7 +853,9 @@ def correlate_introspector_func_to_debug_information_v2(
     target_minimum = 999999
     tfunc_signature = None
     most_likely_func = None
-    for dfunction in all_debug_functions:
+
+    for dfunction in debug_dict_by_filename.get(if_func['Functions filename'],
+                                                []):
         try:
             dline = int(dfunction['source'].get('source_line', '-1'))
         except ValueError:
@@ -874,9 +890,27 @@ def correlate_introspector_func_to_debug_information_v2(
 
 def correlate_introspection_functions_to_debug_info_v2(
         all_functions_json_report, debug_all_functions):
+
+    debug_dict_by_name = dict()
+    debug_dict_by_filename = dict()
+    for df in debug_all_functions:
+        entry_list1 = debug_dict_by_name.get(df.get('name', ''), [])
+        entry_list1.append(df)
+        debug_dict_by_name[df.get('name', '')] = entry_list1
+
+        entry_list2 = debug_dict_by_filename.get(
+            df['source'].get('source_file', ''), [])
+        entry_list2.append(df)
+        debug_dict_by_filename[df['source'].get('source_file',
+                                                '')] = entry_list2
+
+    for dl3 in debug_dict_by_filename:
+        print("%s ------- %d" % (dl3, len(debug_dict_by_filename[dl3])))
+
     for if_func in all_functions_json_report:
         func_sig, correlated_debug_function = correlate_introspector_func_to_debug_information_v2(
-            if_func, debug_all_functions)
+            if_func, debug_all_functions, debug_dict_by_name,
+            debug_dict_by_filename)
 
         if func_sig is not None:
             if_func['function_signature'] = func_sig
