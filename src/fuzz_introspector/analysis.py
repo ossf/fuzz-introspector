@@ -854,15 +854,15 @@ def correlate_introspector_func_to_debug_information_v2(
     tfunc_signature = None
     most_likely_func = None
 
-    for dfunction in debug_dict_by_filename.get(if_func['Functions filename'],
-                                                []):
+    for dfunction in debug_dict_by_filename.get(
+            os.path.normpath(if_func['Functions filename']), []):
         try:
             dline = int(dfunction['source'].get('source_line', '-1'))
         except ValueError:
             continue
 
-        if dfunction['source'].get('source_file',
-                                   '') == if_func['Functions filename']:
+        if dfunction['source'].get('source_file', '') == os.path.normpath(
+                if_func['Functions filename']):
 
             # Match based on containment, as there can be discrepancies between function
             # signatur start (as from frunc_to_match) and the lines of code of the first
@@ -894,6 +894,10 @@ def correlate_introspection_functions_to_debug_info_v2(
     debug_dict_by_name = dict()
     debug_dict_by_filename = dict()
     for df in debug_all_functions:
+        # Normalize the source file
+        df['source']['source_file'] = os.path.normpath(df['source'].get(
+            'source_file', ''))
+
         entry_list1 = debug_dict_by_name.get(df.get('name', ''), [])
         entry_list1.append(df)
         debug_dict_by_name[df.get('name', '')] = entry_list1
