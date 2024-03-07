@@ -767,13 +767,22 @@ def setup_webapp_cache():
     # If we get to here it all went well.
 
 
-def reduce_projects_to_analyse(projects_to_analyse, max_projects):
+def reduce_projects_to_analyse(projects_to_analyse, max_projects,
+                               includes_file):
+    must_include = set()
+    if includes_file is not None:
+        with open(includes_file, "r") as f:
+            for line in f:
+                if line.strip():
+                    must_include.add(line.strip())
+
     if max_projects > 0 and len(projects_to_analyse) > max_projects:
         tmp_dictionary = dict()
         idx = 0
         for k in projects_to_analyse:
-            if 'htslib' in k or 'tinyxml2' in k or 'icu' in k:
-                tmp_dictionary[k] = projects_to_analyse[k]
+            for p in must_include:
+                if p in k:
+                    tmp_dictionary[k] = projects_to_analyse[k]
 
         for k in projects_to_analyse:
             if idx > max_projects:
@@ -781,6 +790,10 @@ def reduce_projects_to_analyse(projects_to_analyse, max_projects):
             tmp_dictionary[k] = projects_to_analyse[k]
             idx += 1
         projects_to_analyse = tmp_dictionary
+
+    print("Projects targeted in the DB creation")
+    for p in projects_to_analyse:
+        print("- %s" % (p))
     return projects_to_analyse
 
 
@@ -819,7 +832,7 @@ def get_dates_to_analyse(since_date, days_to_analyse, day_offset):
 
 def create_db(max_projects, days_to_analyse, output_directory, input_directory,
               day_offset, to_cleanup, since_date, use_github_cache,
-              use_webapp_cache, force_creation):
+              use_webapp_cache, force_creation, includes_file):
 
     # Set up cache and input/output directory
     input_directory = create_cache(use_webapp_cache, use_github_cache,
@@ -835,7 +848,8 @@ def create_db(max_projects, days_to_analyse, output_directory, input_directory,
 
     # Reduce the amount of projects if needed.
     projects_to_analyse = reduce_projects_to_analyse(projects_to_analyse,
-                                                     max_projects)
+                                                     max_projects,
+                                                     includes_file)
 
     if to_cleanup:
         cleanup(output_directory)
@@ -883,6 +897,11 @@ def get_cmdline_parser():
         "--since-date",
         help="Include data from this date an onwards, in format \"d-m-y\"",
         default=None)
+    parser.add_argument(
+        "--includes",
+        help=
+        "File with names of projects (line separated) that must be included in the DB",
+        default=None)
     parser.add_argument("--cleanup", action="store_true")
     parser.add_argument("--debug", action="store_true")
     parser.add_argument("--use_gh_cache", action="store_false")
@@ -900,7 +919,8 @@ def main():
         logging.basicConfig(level=logging.INFO)
     create_db(args.max_projects, args.days_to_analyse, args.output_dir,
               args.input_dir, args.base_offset, args.cleanup, args.since_date,
-              args.use_gh_cache, args.use_webapp_cache, args.force_creation)
+              args.use_gh_cache, args.use_webapp_cache, args.force_creation,
+              args.includes)
 
 
 if __name__ == "__main__":
