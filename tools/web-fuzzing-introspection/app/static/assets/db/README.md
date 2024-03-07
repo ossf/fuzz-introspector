@@ -21,7 +21,8 @@ To generate the DB you can use two scripts:
 - `launch_minor_oss_fuzz.sh`: this script generates a DB based on just a few
   OSS-Fuzz projects. It will select minimum 10 projects to include in the DB.
   To control the specific projects to include in the DB you can add/remove
-  project names from `must_include_small.config`.
+  project names from `must_include_small.config`. This script will take a few
+  minutes to complete.
 - `launch_full_oss_fuzz.sh`: this script will generate a full historical
   database of all OSS-Fuzz projects. This can take several hours (maximum 6-7)
   to complete.
