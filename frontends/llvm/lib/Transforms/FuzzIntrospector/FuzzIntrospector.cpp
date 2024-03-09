@@ -226,6 +226,7 @@ template <> struct yaml::MappingTraits<CSite> {
 };
 LLVM_YAML_IS_SEQUENCE_VECTOR(CSite)
 
+
 typedef struct TypeWrapperS {
   uint32_t typeIdx;
   std::string tag;
@@ -235,6 +236,7 @@ typedef struct TypeWrapperS {
   uint64_t baseTypeAddr;
   std::string baseTypeString;
   std::string llvmType; // Composite/Derived/Basic
+  std::vector<std::string> enumElems;
   uint64_t scope;
 } TypeWrapper;
 template <> struct yaml::MappingTraits<TypeWrapper> {
@@ -247,10 +249,10 @@ template <> struct yaml::MappingTraits<TypeWrapper> {
     io.mapRequired("base_type_addr", tp.baseTypeAddr);
     io.mapRequired("base_type_string", tp.baseTypeString);
     io.mapRequired("scope", tp.scope);
+    io.mapRequired("enum_elems", tp.enumElems);
   }
 };
 LLVM_YAML_IS_SEQUENCE_VECTOR(TypeWrapper)
-
 
 typedef struct FunctionDebugWrapperS {
   std::string funcName;
@@ -661,6 +663,20 @@ void FuzzIntrospector::dumpDebugAllTypes(std::ofstream &O,
       if (DerivedT->getScope()) {
         tp.scope = (uint64_t)DerivedT->getScope();
       }
+    }
+
+    // If this is an enum then we must dump the values, because the values in
+    // in the enum itself is not considered "types" so we can't find them
+    // by looking through all types.
+    if (auto *compositeType = dyn_cast<DICompositeType>(T)) {
+        if (compositeType == NULL) {
+            continue;
+        }
+        for (auto *elem2 : compositeType->getElements()) {
+            if (auto *enumVal = dyn_cast<DIEnumerator>(elem2)) {
+                tp.enumElems.push_back(enumVal->getName().str());
+            }
+        }
     }
 
     allTypesInModule.push_back(tp);
