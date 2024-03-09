@@ -468,7 +468,6 @@ def create_friendly_debug_types(debug_type_dictionary):
         # Collect elements
         structure_elems = []
         if is_struct(friendly_type):
-            struct_elems = []
             for elem_addr, elem_val in debug_type_dictionary.items():
                 if elem_val['tag'] == "DW_TAG_member" and int(
                         elem_val['scope']) == int(addr):
