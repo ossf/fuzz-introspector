@@ -485,12 +485,16 @@ def create_friendly_debug_types(debug_type_dictionary):
                     structure_elems.append(elem_dict)
 
         friendly_name_sig[addr] = {
-            'raw-types': friendly_type,
-            'string_type': convert_param_list_to_str_v2(friendly_type),
-            'is-struct': is_struct(friendly_type),
-            'struct-elems': structure_elems,
-            'is-enum': is_enumeration(friendly_type),
-            'enum-elems': debug_type_dictionary[addr].get('enum_elems', [])
+            'raw_debug_info': debug_type_dictionary[addr],
+            'friendly-info': {
+                'raw-types': friendly_type,
+                'string_type': convert_param_list_to_str_v2(friendly_type),
+                'is-struct': is_struct(friendly_type),
+                'struct-elems': structure_elems,
+                'is-enum': is_enumeration(friendly_type),
+                'enum-elems':
+                debug_type_dictionary[addr].get('enum_elems', [])
+            }
         }
 
     with open("all-friendly-debug-types.json", "w") as f:
