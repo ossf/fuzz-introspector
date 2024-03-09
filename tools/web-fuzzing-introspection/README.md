@@ -11,6 +11,13 @@ available through various APIs.
 
 ## Launching a local version
 
+To launch the web app locally you need to:
+
+1. Create a virtual environment and install dependencies.
+2. Create a local DB. This requires one command and takes a few minutes to
+   create a small DB with 10-20 OSS-Fuzz projects.
+3. Launch the web app.
+
 The following commands can be used to launch a version of the webapp using
 a subet of the projects on OSS-Fuzz.
 
@@ -22,7 +29,7 @@ cd tools/web-fuzzing-introspection
 # Create virtual environment
 python3 -m virtualenv .venv
 . .venv/bin/activate
-pip3 install -r ./requirements.txt
+python3 -m pip install -r ./requirements.txt
 
 
 # Create (small) DB
