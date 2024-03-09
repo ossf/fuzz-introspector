@@ -414,6 +414,93 @@ def extract_debugged_function_signature(dfunc, debug_type_dictionary):
     return function_signature_elements, source_location
 
 
+def convert_param_list_to_str_v2(param_list):
+    pre = ""
+    med = ""
+    post = ""
+    for param in param_list:
+        if param == "DW_TAG_pointer_type":
+            post += "*"
+        elif param == 'DW_TAG_reference_type':
+            post += '&'
+        elif param == 'DW_TAG_structure_type':
+            continue
+        elif param == "DW_TAG_base_type":
+            continue
+        elif param == "DW_TAG_typedef":
+            continue
+        elif param == 'DW_TAG_class_type':
+            continue
+        elif param == "DW_TAG_const_type":
+            pre += "const "
+        elif param == "DW_TAG_enumeration_type":
+            continue
+        else:
+            med += str(param)
+
+    raw_sig = pre.strip() + " " + med + " " + post
+    return raw_sig.strip()
+
+
+def is_struct(param_list):
+    for param in param_list:
+        if param == 'DW_TAG_structure_type':
+            return True
+    return False
+
+
+def is_enumeration(param_list):
+    for param in param_list:
+        if param == 'DW_TAG_enumeration_type':
+            return True
+    return False
+
+
+def create_friendly_debug_types(debug_type_dictionary):
+    """Create an address-indexed json dictionary. The goal is to use this for
+    fast iteration over types using e.g. recursive lookups."""
+    friendly_name_sig = dict()
+    for addr in debug_type_dictionary:
+        friendly_type = extract_func_sig_friendly_type_tags(
+            addr, debug_type_dictionary)
+
+        # is this a struct?
+        # Collect elements
+        structure_elems = []
+        if is_struct(friendly_type):
+            for elem_addr, elem_val in debug_type_dictionary.items():
+                if elem_val['tag'] == "DW_TAG_member" and int(
+                        elem_val['scope']) == int(addr):
+                    elem_dict = {
+                        'addr':
+                        elem_addr,
+                        'elem_name':
+                        elem_val['name'],
+                        'elem_friendly_type':
+                        convert_param_list_to_str_v2(
+                            extract_func_sig_friendly_type_tags(
+                                elem_val['base_type_addr'],
+                                debug_type_dictionary))
+                    }
+                    structure_elems.append(elem_dict)
+
+        friendly_name_sig[addr] = {
+            'raw_debug_info': debug_type_dictionary[addr],
+            'friendly-info': {
+                'raw-types': friendly_type,
+                'string_type': convert_param_list_to_str_v2(friendly_type),
+                'is-struct': is_struct(friendly_type),
+                'struct-elems': structure_elems,
+                'is-enum': is_enumeration(friendly_type),
+                'enum-elems':
+                debug_type_dictionary[addr].get('enum_elems', [])
+            }
+        }
+
+    with open("all-friendly-debug-types.json", "w") as f:
+        json.dump(friendly_name_sig, f)
+
+
 def correlate_debugged_function_to_debug_types(all_debug_types,
                                                all_debug_functions):
     """Correlate debug information about all functions and all types. The
@@ -427,6 +514,10 @@ def correlate_debugged_function_to_debug_types(all_debug_types,
     debug_type_dictionary = dict()
     for debug_type in all_debug_types:
         debug_type_dictionary[int(debug_type['addr'])] = debug_type
+
+    # Create json file with addresses as indexes for type information.
+    # This can be used to lookup types fast.
+    create_friendly_debug_types(debug_type_dictionary)
 
     idx = 0
     for dfunc in all_debug_functions:
