@@ -110,18 +110,28 @@ class IntrospectionProject():
                                            self.coverage_url, self.base_folder)
         # Load all debug files
         self.debug_files = data_loader.load_all_debug_files(self.base_folder)
+
+        # Find all relevant debug information yaml files.
         self.debug_type_files = data_loader.find_all_debug_all_types_files(
             self.base_folder)
         self.debug_function_files = data_loader.find_all_debug_function_files(
             self.base_folder)
 
     def load_debug_report(self):
+        """Load and digest debug information."""
         self.debug_report = debug_info.load_debug_report(self.debug_files)
+
+        # Load the yaml  content of debug files holding type information and
+        # function information.
         self.debug_all_types = debug_info.load_debug_all_yaml_files(
             self.debug_type_files)
         self.debug_all_functions = debug_info.load_debug_all_yaml_files(
             self.debug_function_files)
 
+        # Index the functions based on file locations. This is useful for
+        # quickly looking up debug function details based on their file
+        # locations, which we can get from the function data collected by
+        # the LLVM module.
         tmp_debug_functions = dict()
         no_path_debug_funcs = list()
         for func in self.debug_all_functions:
@@ -135,7 +145,7 @@ class IntrospectionProject():
 
         # Extract the raw function signature. This propagates types into all of
         # the debug functions.
-        debug_info.clean_extract_raw_all_debugged_function_signatures(
+        debug_info.correlate_debugged_function_to_debug_types(
             self.debug_all_types, self.debug_all_functions)
 
     def dump_debug_report(self):
@@ -837,9 +847,12 @@ def convert_param_list_to_str_v2(param_list):
     return raw_sig.strip()
 
 
-def correlate_introspector_func_to_debug_information_v2(
-        if_func, all_debug_functions, debug_dict_by_name,
-        debug_dict_by_filename):
+def correlate_introspector_func_to_debug_information(if_func,
+                                                     all_debug_functions,
+                                                     debug_dict_by_name,
+                                                     debug_dict_by_filename):
+    """Correlate a single LLVM-based function to a given function in the
+    collected debug information."""
     # Check if name matches. If so, this one is easy.
     same_name_dfs = debug_dict_by_name.get(if_func['Func name'], [])
 
@@ -888,9 +901,15 @@ def correlate_introspector_func_to_debug_information_v2(
     return None, None
 
 
-def correlate_introspection_functions_to_debug_info_v2(
-        all_functions_json_report, debug_all_functions):
+def correlate_introspection_functions_to_debug_info(all_functions_json_report,
+                                                    debug_all_functions):
+    """Correlates function data collected by debug information to function
+    data collected by LLVMs module, and uses the correlated data to generate
+    function signatures for each function based on debug information."""
 
+    # A lot of look-ups are needed when matching LLVM functions to debug
+    # functions. Start with creating two indexes to make these look-ups
+    # faster.
     debug_dict_by_name = dict()
     debug_dict_by_filename = dict()
     for df in debug_all_functions:
@@ -898,10 +917,12 @@ def correlate_introspection_functions_to_debug_info_v2(
         df['source']['source_file'] = os.path.normpath(df['source'].get(
             'source_file', ''))
 
+        # Append debug function to name-index.
         entry_list1 = debug_dict_by_name.get(df.get('name', ''), [])
         entry_list1.append(df)
         debug_dict_by_name[df.get('name', '')] = entry_list1
 
+        # Append debug function to file-index.
         entry_list2 = debug_dict_by_filename.get(
             df['source'].get('source_file', ''), [])
         entry_list2.append(df)
@@ -912,7 +933,7 @@ def correlate_introspection_functions_to_debug_info_v2(
         print("%s ------- %d" % (dl3, len(debug_dict_by_filename[dl3])))
 
     for if_func in all_functions_json_report:
-        func_sig, correlated_debug_function = correlate_introspector_func_to_debug_information_v2(
+        func_sig, correlated_debug_function = correlate_introspector_func_to_debug_information(
             if_func, debug_all_functions, debug_dict_by_name,
             debug_dict_by_filename)
 
