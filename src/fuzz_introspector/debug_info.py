@@ -342,8 +342,9 @@ def load_debug_all_yaml_files(debug_all_types_files):
     return elem_list
 
 
-def extract_func_sig_friendly_type_tags(target_type, all_debug_types,
-                                        debug_type_dictionary):
+def extract_func_sig_friendly_type_tags(target_type, debug_type_dictionary):
+    """Recursively iterates atomic type elements to construct a friendly
+    string representing the type."""
     if int(target_type) == 0:
         return ['void']
 
@@ -383,11 +384,11 @@ def extract_func_sig_friendly_type_tags(target_type, all_debug_types,
     return tags
 
 
-def extract_debugged_function_signature(dfunc, all_debug_types,
-                                        debug_type_dictionary):
+def extract_debugged_function_signature(dfunc, debug_type_dictionary):
+    """Extract the raw types used by a function."""
     try:
         return_type = extract_func_sig_friendly_type_tags(
-            dfunc['type_arguments'][0], all_debug_types, debug_type_dictionary)
+            dfunc['type_arguments'][0], debug_type_dictionary)
     except IndexError:
         return_type = 'N/A'
     params = []
@@ -396,7 +397,6 @@ def extract_debugged_function_signature(dfunc, all_debug_types,
         for i in range(1, len(dfunc['type_arguments'])):
             params.append(
                 extract_func_sig_friendly_type_tags(dfunc['type_arguments'][i],
-                                                    all_debug_types,
                                                     debug_type_dictionary))
 
     source_file = dfunc['file_location'].split(":")[0]
@@ -414,9 +414,16 @@ def extract_debugged_function_signature(dfunc, all_debug_types,
     return function_signature_elements, source_location
 
 
-def clean_extract_raw_all_debugged_function_signatures(all_debug_types,
-                                                       all_debug_functions):
+def correlate_debugged_function_to_debug_types(all_debug_types,
+                                               all_debug_functions):
+    """Correlate debug information about all functions and all types. The
+    result is a lot of atomic debug-information-extracted types are correlated
+    to the debug function."""
     print("Correlating")
+
+    # Index debug types by address. We need to do a lot of look ups when
+    # refining data types where the address is the key, so a fast
+    # look-up mechanism is useful here.
     debug_type_dictionary = dict()
     for debug_type in all_debug_types:
         debug_type_dictionary[int(debug_type['addr'])] = debug_type
@@ -426,7 +433,7 @@ def clean_extract_raw_all_debugged_function_signatures(all_debug_types,
         logger.info("idx: %d" % (idx))
         idx += 1
         func_signature_elems, source_location = extract_debugged_function_signature(
-            dfunc, all_debug_types, debug_type_dictionary)
+            dfunc, debug_type_dictionary)
 
         dfunc['func_signature_elems'] = func_signature_elems
         dfunc['source'] = source_location
