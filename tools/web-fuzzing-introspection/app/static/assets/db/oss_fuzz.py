@@ -26,6 +26,9 @@ def get_introspector_report_url_base(project_name, datestr):
     project_url = base_url.format(project_name, datestr)
     return project_url
 
+def get_introspector_type_map_url_summary(project_name, datestr):
+    return get_introspector_report_url_base(project_name,
+                                            datestr) + "all-friendly-debug-types.json"
 
 def get_introspector_report_url_summary(project_name, datestr):
     return get_introspector_report_url_base(project_name,
@@ -122,6 +125,24 @@ def extract_introspector_report(project_name, date_str):
         return None
 
     return introspector_report
+
+
+def get_introspector_type_map(project_name, date_str):
+    introspector_type_api_url = get_introspector_type_map_url_summary(
+        project_name, date_str.replace("-", ""))
+
+    # Read the introspector atifact
+    try:
+        raw_introspector_json_request = requests.get(introspector_type_api_url,
+                                                     timeout=10)
+    except:
+        return None
+    try:
+        introspector_type_map = json.loads(raw_introspector_json_request.text)
+    except:
+        return None
+
+    return introspector_type_map
 
 
 def get_projects_build_status():

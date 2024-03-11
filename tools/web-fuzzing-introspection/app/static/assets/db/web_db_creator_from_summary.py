@@ -106,6 +106,15 @@ def save_debug_report(debug_report, project_name):
         json.dump(debug_report, report_fd)
 
 
+def save_type_map(debug_report, project_name):
+    project_db_dir = os.path.join(constants.DB_PROJECT_DIR, project_name)
+    os.makedirs(project_db_dir, exist_ok=True)
+
+    report_dst = os.path.join(project_db_dir, 'type_map.json')
+    with open(report_dst, 'w') as report_fd:
+        json.dump(debug_report, report_fd)
+
+
 def save_branch_blockers(branch_blockers, project_name):
     project_db_dir = os.path.join(constants.DB_PROJECT_DIR, project_name)
     os.makedirs(project_db_dir, exist_ok=True)
@@ -297,6 +306,14 @@ def extract_project_data(project_name, date_str, should_include_details,
         project_name, date_str)
     introspector_report_url = oss_fuzz.get_introspector_report_url_report(
         project_name, date_str.replace("-", ""))
+    introspector_type_map = oss_fuzz.get_introspector_type_map(
+        project_name, date_str.replace("-", ""))
+
+    #print("Type mapping:")
+    if introspector_type_map:
+        save_type_map(introspector_type_map, project_name)
+    #    for addr in introspector_type_map:
+    #        print("Addr: %s"%(str(addr)))
 
     # Save the report
     save_fuzz_introspector_report(introspector_report, project_name, date_str)
@@ -825,7 +842,7 @@ def get_dates_to_analyse(since_date, days_to_analyse, day_offset):
         delta = today - start_date
         days_to_analyse = delta.days - 1
         day_offset = 0
-    date_range = create_date_range(day_offset, days_to_analyse)
+    date_range = create_date_range(-1, days_to_analyse)
 
     return date_range
 
@@ -892,7 +909,7 @@ def get_cmdline_parser():
     parser.add_argument("--base-offset",
                         help="Day offset",
                         type=int,
-                        default=1)
+                        default=0)
     parser.add_argument(
         "--since-date",
         help="Include data from this date an onwards, in format \"d-m-y\"",

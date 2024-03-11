@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 import random
 import requests
 import json
@@ -989,6 +990,41 @@ def get_build_status_of_project(project_name):
             return bs
 
     return None
+
+@blueprint.route('/api/type-at-addr')
+def type_at_addr():
+    project = request.args.get('project', None)
+    if project == None:
+        return {
+            'result': 'error',
+            'extended_msgs': ['Please provide project name']
+        }
+
+    addr = request.args.get('addr', None)
+    if addr == None:
+        return {
+            'result': 'error',
+            'extended_msgs': ['Please provide project name']
+        }
+
+    print("Opening type map")
+    type_map = os.path.join(
+        os.path.dirname(__file__),
+        f"../static/assets/db/db-projects/{project}/type_map.json")
+
+    with open(type_map, 'r') as f:
+        type_map_dict = json.load(f)
+    
+    print("Tring to find: [%s]"%(addr))
+    if addr in type_map_dict:
+        return {
+            'result': 'success',
+            'data': type_map_dict[addr]
+        }
+    for k in type_map:
+        print(k)
+    return {'result': 'error'}
+
 
 
 @blueprint.route('/api/far-reach-but-low-coverage')
