@@ -207,7 +207,7 @@
                 <tbody>
                   {% for func_of_interest in functions_of_interest %}
                     <tr>
-                      <td>  <a href="{{func_of_interest.code_coverage_url}}">{{func_of_interest.function_name}}</a></td>
+                      <td>  <a href="https://storage.googleapis.com/oss-fuzz-coverage/{{func_of_interest.code_coverage_url}}">{{func_of_interest.function_name}}</a></td>
                       <td>  {{func_of_interest.source_file}}</td>
                       <td>  {{func_of_interest.complexity}}</td>
                       <td>  {{func_of_interest.code_coverage}}%</td>

@@ -314,6 +314,7 @@ def project_profile():
                 'code_coverage':
                 func_of_interest.runtime_code_coverage,
                 'code_coverage_url':
+                'https://storage.googleapis.com/oss-fuzz-coverage/' +
                 func_of_interest.code_coverage_url,
             })
 
