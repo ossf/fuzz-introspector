@@ -702,9 +702,13 @@ def copy_input_to_output(input_dir, output_dir):
                             os.path.join(output_dir, f))
 
 
-def setup_folders(input_directory, output_directory):
+def prepare_output_folder(input_directory, output_directory):
+    """Makes output folder ready for analysis."""
+
+    # Copy input cache to output so analysis from current state.
     if input_directory is not None:
         copy_input_to_output(input_directory, output_directory)
+
     if not os.path.isdir(output_directory):
         os.mkdir(output_directory)
 
@@ -738,7 +742,7 @@ def setup_github_cache():
 
     git_clone_project(constants.OSS_FUZZ_GITHUB_BACKUP_REPO, "github_cache")
     if not os.path.isdir("github_cache"):
-        return False
+        return
     db_zipfile = os.path.join("github_cache", "db-stamp.zip")
     if os.path.isfile(db_zipfile):
         with zipfile.ZipFile(db_zipfile, 'r') as zip_ref:
@@ -813,7 +817,11 @@ def create_cache(use_webapp_cache, use_github_cache, input_directory,
         input_directory = "github_cache"
 
     # Create folders we will
-    setup_folders(input_directory, output_directory)
+    prepare_output_folder(input_directory, output_directory)
+
+    # Cleanup github
+    if os.path.isdir("github_cache"):
+        shutil.rmtree("github_cache")
 
     return input_directory
 
