@@ -179,10 +179,11 @@ def extract_and_refine_functions(all_function_list, project_name, date_str,
             'name':
             func['Func name'],
             'code_coverage_url':
-            func['func_url'],
-            'function_filename':
+            func['func_url'].replace(
+                "https://storage.googleapis.com/oss-fuzz-coverage/", ""),
+            'filename':
             func['Functions filename'],
-            'runtime_code_coverage':
+            'code_cov':
             float(func['Func lines hit %'].replace("%", "")),
             'is_reached':
             len(func['Reached by Fuzzers']) > 0,
@@ -190,11 +191,11 @@ def extract_and_refine_functions(all_function_list, project_name, date_str,
             func['Reached by Fuzzers'],
             'project':
             project_name,
-            'accumulated_cyclomatic_complexity':
+            'acc_cc':
             func['Accumulated cyclomatic complexity'],
-            'llvm-instruction-count':
+            'instr-count':
             func['I Count'],
-            'undiscovered-complexity':
+            'u-cc':
             func['Undiscovered complexity'],
             'function-arguments':
             func['Args'],

@@ -41,7 +41,7 @@ This page shows functions across the entire OSS-Fuzz database that are determine
                       <td> <a href="/project-profile?project={{ target_func.project }}">{{ target_func.project }}</a> </td>
                       <td> {{func_to_lang[target_func.name]}} </td>
                       <td> <a href="#heuristic-1">{{heuristic}}</a></td>
-                      <td> <a href="{{target_func.code_coverage_url}}">coverage link</a></td>
+                      <td> <a href="https://storage.googleapis.com/oss-fuzz-coverage/{{target_func.code_coverage_url}}">coverage link</a></td>
                   </tr>
                 {% endfor %}
                 </tbody>
