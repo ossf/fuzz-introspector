@@ -317,6 +317,13 @@ def extract_project_data(project_name, date_str, should_include_details,
         for addr, value in introspector_type_map.items():
             if 'friendly-info' in value:
                 del value['friendly-info']
+
+        # Remove the raw_debug_info from the type
+        for addr in introspector_type_map:
+            if 'raw_debug_info' in introspector_type_map[addr]:
+                introspector_type_map[addr] = introspector_type_map[addr][
+                    'raw_debug_info']
+
         save_type_map(introspector_type_map, project_name)
     #    for addr in introspector_type_map:
     #        print("Addr: %s"%(str(addr)))

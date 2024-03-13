@@ -1128,18 +1128,16 @@ def get_full_recursive_types(debug_type_dictionary, resulting_types,
         print(target_type)
 
         addresses_visited.add(type_to_query)
-        type_to_query = str(target_type['raw_debug_info'].get(
-            'base_type_addr', ''))
+        type_to_query = str(target_type.get('base_type_addr', ''))
 
         print("Type to query: " + type_to_query)
         if int(type_to_query) == 0:
             continue
 
-        if target_type['raw_debug_info']['tag'] == 'DW_TAG_structure_type':
+        if target_type['tag'] == 'DW_TAG_structure_type':
             for elem_addr, elem_val in debug_type_dictionary.items():
-                if elem_val['raw_debug_info']['tag'] == "DW_TAG_member" and int(
-                        elem_val['raw_debug_info']['scope']) == int(
-                            type_to_query):
+                if elem_val['tag'] == "DW_TAG_member" and int(
+                        elem_val['scope']) == int(type_to_query):
                     to_visit.add(str(elem_addr))
 
         to_visit.add(type_to_query)
