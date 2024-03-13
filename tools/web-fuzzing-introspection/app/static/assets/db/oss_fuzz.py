@@ -44,8 +44,8 @@ def get_fuzzer_stats_fuzz_count_url(project_name, date_str):
 
 
 def get_introspector_type_map_url_summary(project_name, datestr):
-    return get_introspector_report_url_base(project_name,
-                                            datestr) + "all-friendly-debug-types.json"
+    return get_introspector_report_url_base(
+        project_name, datestr) + "all-friendly-debug-types.json"
 
 
 def get_fuzzer_stats_fuzz_count(project_name, date_str):
@@ -127,6 +127,7 @@ def extract_introspector_report(project_name, date_str):
         return None
 
     return introspector_report
+
 
 def get_introspector_type_map(project_name, date_str):
     introspector_type_api_url = get_introspector_type_map_url_summary(
