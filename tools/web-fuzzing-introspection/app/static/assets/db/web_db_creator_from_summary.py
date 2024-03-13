@@ -311,7 +311,7 @@ def extract_project_data(project_name, date_str, should_include_details,
         project_name, date_str.replace("-", ""))
 
     #print("Type mapping:")
-    if introspector_type_map:
+    if should_include_details and introspector_type_map:
         # Remove the friendly types from the type map because they take up
         # too much space. Instead, extract this at runtime when it need to be used.
         for addr, value in introspector_type_map.items():
@@ -323,6 +323,11 @@ def extract_project_data(project_name, date_str, should_include_details,
             if 'raw_debug_info' in introspector_type_map[addr]:
                 introspector_type_map[addr] = introspector_type_map[addr][
                     'raw_debug_info']
+
+                if len(introspector_type_map[addr].get('enum_elems', [])) == 0:
+                    del introspector_type_map[addr]['enum_elems']
+                if 'type_idx' in introspector_type_map[addr]:
+                    del introspector_type_map[addr]['type_idx']
 
         save_type_map(introspector_type_map, project_name)
     #    for addr in introspector_type_map:
