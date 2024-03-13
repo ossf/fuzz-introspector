@@ -1056,32 +1056,20 @@ def far_reach_but_low_coverage():
         idx += 1
 
         functions_to_return.append({
-            'function_name':
-            function.name,
-            'function_filename':
-            function.function_filename,
-            'runtime_coverage_percent':
-            function.runtime_code_coverage,
+            'function_name': function.name,
+            'function_filename': function.function_filename,
+            'runtime_coverage_percent': function.runtime_code_coverage,
             'accummulated_complexity':
             function.accummulated_cyclomatic_complexity,
-            'function_arguments':
-            function.function_arguments,
-            'function_argument_names':
-            function.function_argument_names,
-            'return_type':
-            function.return_type,
-            'is_reached':
-            function.is_reached,
-            'reached_by_fuzzers':
-            function.reached_by_fuzzers,
-            'raw_function_name':
-            function.raw_function_name,
-            'source_line_begin':
-            function.source_line_begin,
-            'source_line_end':
-            function.source_line_end,
-            'function_signature':
-            function.func_signature,
+            'function_arguments': function.function_arguments,
+            'function_argument_names': function.function_argument_names,
+            'return_type': function.return_type,
+            'is_reached': function.is_reached,
+            'reached_by_fuzzers': function.reached_by_fuzzers,
+            'raw_function_name': function.raw_function_name,
+            'source_line_begin': function.source_line_begin,
+            'source_line_end': function.source_line_end,
+            'function_signature': function.func_signature,
             'debug_summary': function.debug_data,
         })
 
@@ -1110,10 +1098,11 @@ def far_reach_but_low_coverage():
     }
 
 
-def get_full_recursive_types(debug_type_dictionary, resulting_types, target_type):
+def get_full_recursive_types(debug_type_dictionary, resulting_types,
+                             target_type):
     """Recursively iterates atomic type elements to construct a friendly
     string representing the type."""
-    print("Target type: %s"%(str(target_type)))
+    print("Target type: %s" % (str(target_type)))
     if int(target_type) == 0:
         return ['void']
 
@@ -1139,17 +1128,18 @@ def get_full_recursive_types(debug_type_dictionary, resulting_types, target_type
         print(target_type)
 
         addresses_visited.add(type_to_query)
-        type_to_query = str(target_type['raw_debug_info'].get('base_type_addr', ''))
+        type_to_query = str(target_type['raw_debug_info'].get(
+            'base_type_addr', ''))
 
         print("Type to query: " + type_to_query)
         if int(type_to_query) == 0:
             continue
 
-
         if target_type['raw_debug_info']['tag'] == 'DW_TAG_structure_type':
             for elem_addr, elem_val in debug_type_dictionary.items():
                 if elem_val['raw_debug_info']['tag'] == "DW_TAG_member" and int(
-                        elem_val['raw_debug_info']['scope']) == int(type_to_query):
+                        elem_val['raw_debug_info']['scope']) == int(
+                            type_to_query):
                     to_visit.add(str(elem_addr))
 
         to_visit.add(type_to_query)
@@ -1183,7 +1173,7 @@ def type_at_addr():
     print("Getting types")
     get_full_recursive_types(type_map_dict, resulting_types, addr)
 
-    return {'result': 'success', 'dwarf-map': resulting_types};
+    return {'result': 'success', 'dwarf-map': resulting_types}
 
 
 @blueprint.route('/api/function-target-oracle')
