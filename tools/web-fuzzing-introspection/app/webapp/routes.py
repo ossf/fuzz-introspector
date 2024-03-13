@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 import random
 import requests
 import json
@@ -1055,32 +1056,21 @@ def far_reach_but_low_coverage():
         idx += 1
 
         functions_to_return.append({
-            'function_name':
-            function.name,
-            'function_filename':
-            function.function_filename,
-            'runtime_coverage_percent':
-            function.runtime_code_coverage,
+            'function_name': function.name,
+            'function_filename': function.function_filename,
+            'runtime_coverage_percent': function.runtime_code_coverage,
             'accummulated_complexity':
             function.accummulated_cyclomatic_complexity,
-            'function_arguments':
-            function.function_arguments,
-            'function_argument_names':
-            function.function_argument_names,
-            'return_type':
-            function.return_type,
-            'is_reached':
-            function.is_reached,
-            'reached_by_fuzzers':
-            function.reached_by_fuzzers,
-            'raw_function_name':
-            function.raw_function_name,
-            'source_line_begin':
-            function.source_line_begin,
-            'source_line_end':
-            function.source_line_end,
-            'function_signature':
-            function.func_signature,
+            'function_arguments': function.function_arguments,
+            'function_argument_names': function.function_argument_names,
+            'return_type': function.return_type,
+            'is_reached': function.is_reached,
+            'reached_by_fuzzers': function.reached_by_fuzzers,
+            'raw_function_name': function.raw_function_name,
+            'source_line_begin': function.source_line_begin,
+            'source_line_end': function.source_line_end,
+            'function_signature': function.func_signature,
+            'debug_summary': function.debug_data,
         })
 
     # Assess if this worked well, and if not, provide a reason
@@ -1106,6 +1096,84 @@ def far_reach_but_low_coverage():
         'extended_msgs': err_msgs,
         'functions': functions_to_return
     }
+
+
+def get_full_recursive_types(debug_type_dictionary, resulting_types,
+                             target_type):
+    """Recursively iterates atomic type elements to construct a friendly
+    string representing the type."""
+    print("Target type: %s" % (str(target_type)))
+    if int(target_type) == 0:
+        return ['void']
+
+    type_to_query = target_type
+    addresses_visited = set()
+    to_visit = set()
+    to_visit.add(type_to_query)
+
+    while len(to_visit) > 0:
+        type_to_query = to_visit.pop()
+
+        if type_to_query in addresses_visited:
+            continue
+        addresses_visited.add(type_to_query)
+
+        target_type = debug_type_dictionary.get(type_to_query, None)
+        if target_type is None:
+            print("Target is None")
+            continue
+
+        print("adding")
+        resulting_types[type_to_query] = target_type
+        print(target_type)
+
+        addresses_visited.add(type_to_query)
+        type_to_query = str(target_type['raw_debug_info'].get(
+            'base_type_addr', ''))
+
+        print("Type to query: " + type_to_query)
+        if int(type_to_query) == 0:
+            continue
+
+        if target_type['raw_debug_info']['tag'] == 'DW_TAG_structure_type':
+            for elem_addr, elem_val in debug_type_dictionary.items():
+                if elem_val['raw_debug_info']['tag'] == "DW_TAG_member" and int(
+                        elem_val['raw_debug_info']['scope']) == int(
+                            type_to_query):
+                    to_visit.add(str(elem_addr))
+
+        to_visit.add(type_to_query)
+
+
+@blueprint.route('/api/addr-to-recursive-dwarf-info')
+def type_at_addr():
+    project = request.args.get('project', None)
+    if project == None:
+        return {
+            'result': 'error',
+            'extended_msgs': ['Please provide project name']
+        }
+
+    addr = request.args.get('addr', None)
+    if addr == None:
+        return {
+            'result': 'error',
+            'extended_msgs': ['Please provide project name']
+        }
+
+    print("Opening type map")
+    type_map = os.path.join(
+        os.path.dirname(__file__),
+        f"../static/assets/db/db-projects/{project}/type_map.json")
+
+    with open(type_map, 'r') as f:
+        type_map_dict = json.load(f)
+
+    resulting_types = dict()
+    print("Getting types")
+    get_full_recursive_types(type_map_dict, resulting_types, addr)
+
+    return {'result': 'success', 'dwarf-map': resulting_types}
 
 
 @blueprint.route('/api/function-target-oracle')
