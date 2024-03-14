@@ -757,7 +757,10 @@ def api_cross_references():
     target_function = get_function_from_func_signature(function_signature,
                                                        project_name)
     if target_function == None:
-        return {'result': 'error', 'msg': 'Function signature could not be found'}
+        return {
+            'result': 'error',
+            'msg': 'Function signature could not be found'
+        }
     function_name = target_function.raw_function_name
 
     # Get all of the functions
