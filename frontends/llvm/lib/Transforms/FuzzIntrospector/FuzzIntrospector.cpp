@@ -851,11 +851,14 @@ bool FuzzIntrospector::runOnModule(Module &M) {
   }
 
   logPrintf(L1, "Running introspector on %s\n", M.getName());
-  if (shouldRunIntrospector(M) == false) {
-    // Run the analysis on a non-fuzzer binary.
-    runIntrospectorOnNonFuzzerBinary(M);
-    return false;
+  if (!getenv("FUZZ_INTROSPECTOR_FORCE_RUN")) {
+    if (shouldRunIntrospector(M) == false) {
+      // Run the analysis on a non-fuzzer binary.
+      runIntrospectorOnNonFuzzerBinary(M);
+      return false;
+    }
   }
+
   // init randomness
   srand((unsigned)time(NULL) * getpid());
 
