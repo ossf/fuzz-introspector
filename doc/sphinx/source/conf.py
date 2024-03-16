@@ -24,7 +24,7 @@ sys.path.insert(0, os.path.abspath('.') + "/../../../src/fuzz_introspector/datat
 # -- Project information -----------------------------------------------------
 
 project = 'Fuzz Introspector'
-copyright = '2022, Fuzz Introspector Authors'
+copyright = 'Fuzz Introspector a Series of LF Projects, LLC For web site terms of use, trademark policy and other project policies please see https://lfprojects.org.'
 author = 'Fuzz Introspector Authors'
 language = 'en'
 
