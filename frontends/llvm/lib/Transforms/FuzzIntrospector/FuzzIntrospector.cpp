@@ -256,6 +256,7 @@ typedef struct TypeWrapperS {
   std::string llvmType; // Composite/Derived/Basic
   std::vector<std::string> enumElems;
   uint64_t scope;
+  uint64_t constSize;
 } TypeWrapper;
 
 template <> struct yaml::MappingTraits<TypeWrapper> {
@@ -269,6 +270,7 @@ template <> struct yaml::MappingTraits<TypeWrapper> {
     io.mapRequired("base_type_string", tp.baseTypeString);
     io.mapRequired("scope", tp.scope);
     io.mapRequired("enum_elems", tp.enumElems);
+    io.mapRequired("const_size", tp.constSize);
   }
 };
 LLVM_YAML_IS_SEQUENCE_VECTOR(TypeWrapper)
@@ -643,6 +645,7 @@ void FuzzIntrospector::dumpDebugAllTypes(std::ofstream &O,
     currentTypeIdx += 1;
 
     TypeWrapper tp;
+    tp.constSize = 0;
     if (T->getName().empty()) {
         tp.name = "";
     } else {
@@ -691,10 +694,37 @@ void FuzzIntrospector::dumpDebugAllTypes(std::ofstream &O,
         if (compositeType == NULL) {
             continue;
         }
+        tp.baseTypeAddr = (uint64_t)compositeType->getBaseType();
+
         for (auto *elem2 : compositeType->getElements()) {
+            // For enums
             if (auto *enumVal = dyn_cast<DIEnumerator>(elem2)) {
                 tp.enumElems.push_back(enumVal->getName().str());
             }
+
+            // For arrays
+            if (auto *subRange = dyn_cast<DISubrange>(elem2)) {
+
+                DISubrange::BoundType Bound = subRange->getCount();
+                /*
+                if (auto *BV = dyn_cast_if_present<DIVariable *>(Bound)) {
+                   std::cout << "DIVariable \n";
+                }
+                else if (auto *BV = dyn_cast_if_present<DIExpression *>(Bound)) {
+                    std::cout << "DIExpression\n";
+                }
+                */
+                if (auto *BI = dyn_cast_if_present<ConstantInt *>(Bound)) {
+                    tp.constSize = BI->getSExtValue();
+                }
+            }
+        }
+        if (compositeType->getBaseType()) {
+          if (auto *BT = dyn_cast<DIBasicType>(compositeType->getBaseType())) {
+            if (!BT->getName().empty()) {
+                tp.baseTypeString = BT->getName().str();
+            }
+          }
         }
     }
 
