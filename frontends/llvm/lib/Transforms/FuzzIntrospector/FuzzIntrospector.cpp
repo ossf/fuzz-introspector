@@ -227,6 +227,24 @@ template <> struct yaml::MappingTraits<CSite> {
 LLVM_YAML_IS_SEQUENCE_VECTOR(CSite)
 
 
+typedef struct GlobalWrapperS {
+  std::string name;
+  std::string fileLocation;
+  std::string linkage;
+  uint64_t addr;
+} GlobalVarWrapper;
+
+template <> struct yaml::MappingTraits<GlobalVarWrapper> {
+  static void mapping(IO &io, GlobalVarWrapper &gw) {
+    io.mapRequired("name", gw.name);
+    io.mapRequired("file_location", gw.fileLocation);
+    io.mapRequired("linkage", gw.linkage);
+    io.mapRequired("addr", gw.addr);
+  }
+};
+LLVM_YAML_IS_SEQUENCE_VECTOR(GlobalVarWrapper)
+
+
 typedef struct TypeWrapperS {
   uint32_t typeIdx;
   std::string tag;
@@ -239,6 +257,7 @@ typedef struct TypeWrapperS {
   std::vector<std::string> enumElems;
   uint64_t scope;
 } TypeWrapper;
+
 template <> struct yaml::MappingTraits<TypeWrapper> {
   static void mapping(IO &io, TypeWrapper &tp) {
     io.mapRequired("tag", tp.tag);
@@ -356,7 +375,7 @@ struct FuzzIntrospector : public ModulePass {
   void dumpDebugFunctionsDebugInformation(std::ofstream &O,
                                           DebugInfoFinder &Finder, std::string yamlTarget);
   void dumpDebugAllTypes(std::ofstream &O, DebugInfoFinder &Finder, std::string);
-  void dumpDebugAllGlobalVariables(std::ofstream &O, DebugInfoFinder &Finder);
+  void dumpDebugAllGlobalVariables(std::ofstream &O, DebugInfoFinder &Finder, std::string yamlOutFile);
 
   // void branchProfiler(Module &M);
   std::vector<BranchProfileEntry> branchProfiler(Function *);
@@ -741,7 +760,10 @@ void FuzzIntrospector::dumpDebugAllTypes(std::ofstream &O,
 }
 
 void FuzzIntrospector::dumpDebugAllGlobalVariables(std::ofstream &O,
-                                                   DebugInfoFinder &Finder) {
+                                                   DebugInfoFinder &Finder,
+                                                   std::string yamlOutFile) {
+  std::vector<GlobalVarWrapper> allGlobalsInModule;
+
   O << "## Global variables in module\n";
   for (auto *GVU : Finder.global_variables()) {
     const auto *GV = GVU->getVariable();
@@ -750,7 +772,36 @@ void FuzzIntrospector::dumpDebugAllGlobalVariables(std::ofstream &O,
     if (!GV->getLinkageName().empty())
       O << " ('" << GV->getLinkageName().str() << "')";
     O << '\n';
+
+
+    // Create wrapper
+    GlobalVarWrapper g_wrapper;
+    g_wrapper.name = GV->getName().str();
+    g_wrapper.fileLocation = "";
+    if (!GV->getDirectory().empty())
+      g_wrapper.fileLocation += GV->getDirectory().str() + "/";
+
+    g_wrapper.fileLocation += GV->getFilename().str();
+    if (GV->getLine())
+      g_wrapper.fileLocation = g_wrapper.fileLocation += ":" + to_string(GV->getLine());
+
+    if (!GV->getLinkageName().empty()) {
+      g_wrapper.linkage = GV->getLinkageName().str();
+    }
+    else {
+      g_wrapper.linkage = "";
+    }
+
+    g_wrapper.addr = (uint64_t)GV->getType();
+
+    allGlobalsInModule.push_back(g_wrapper);
   }
+
+  std::error_code EC;
+  auto YamlStream = std::make_unique<raw_fd_ostream>(
+      yamlOutFile, EC, llvm::sys::fs::OpenFlags::OF_Append);
+  yaml::Output YamlOut(*YamlStream);
+  YamlOut << allGlobalsInModule;
 }
 
 /*
@@ -771,7 +822,8 @@ void FuzzIntrospector::dumpDebugInformation(Module &M, std::string outputFile, s
   std::string nextYamlAllDebugFunctions = nextCalltreeFile + ".debug_all_functions";
   dumpDebugFunctionsDebugInformation(O, Finder, nextYamlAllDebugFunctions);
   O << "\n";
-  dumpDebugAllGlobalVariables(O, Finder);
+  std::string nextYamlAllGlobals = nextCalltreeFile + ".debug_all_globals";
+  dumpDebugAllGlobalVariables(O, Finder, nextYamlAllGlobals);
   O << "\n";
   std::string nextYamlAllTypes = nextCalltreeFile + ".debug_all_types";
   dumpDebugAllTypes(O, Finder, nextYamlAllTypes);
