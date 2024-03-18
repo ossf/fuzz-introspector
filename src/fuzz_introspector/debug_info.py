@@ -561,6 +561,10 @@ def extract_syzkaller_type(param_list):
                 syzkaller_tag = 'int8'
             elif param == 'int':
                 syzkaller_tag = 'int32'
+            elif param == '__i32':
+                syzkaller_tag = 'int32'
+            elif param == '__u8':
+                syzkaller_tag = 'int8'
             else:
                 # This is a struct, so we name it appropriately
                 syzkaller_tag = param
@@ -605,14 +609,7 @@ def get_struct_members(addr, debug_type_dictionary):
     return structure_elems
 
 
-def create_syzkaller_description_for_type(addr, all_debug_types):
-    # Index debug types by address. We need to do a lot of look ups when
-    # refining data types where the address is the key, so a fast
-    # look-up mechanism is useful here.
-    debug_type_dictionary = dict()
-    for debug_type in all_debug_types:
-        debug_type_dictionary[int(debug_type['addr'])] = debug_type
-
+def create_syzkaller_description_for_type(addr, debug_type_dictionary):
     friendly_type = extract_func_sig_friendly_type_tags(
         addr, debug_type_dictionary)
 
@@ -632,14 +629,27 @@ def create_syzkaller_description_for_type(addr, all_debug_types):
     return None
 
 
+def syzkaller_get_type_implementation(typename, all_debug_types):
+    # Index debug types by address. We need to do a lot of look ups when
+    # refining data types where the address is the key, so a fast
+    # look-up mechanism is useful here.
+    debug_type_dictionary = dict()
+    for debug_type in all_debug_types:
+        debug_type_dictionary[int(debug_type['addr'])] = debug_type
+
+    for debug_addr, debug_type in debug_type_dictionary.items():
+        if debug_type['name'] == typename:
+            syzkaller_description = create_syzkaller_description_for_type(
+                debug_addr, debug_type_dictionary)
+            if syzkaller_description:
+                print('-' * 45)
+                print(syzkaller_description)
+
+
 if __name__ in "__main__":
     import sys
     type_debug_files = [sys.argv[1]]
-    all_types = load_debug_all_yaml_files(type_debug_files)
+    typename = sys.argv[2]
 
-    for ad in all_types:
-        syzkaller_description = create_syzkaller_description_for_type(
-            ad['addr'], all_types)
-        if syzkaller_description:
-            print("-" * 45)
-            print(syzkaller_description)
+    all_types = load_debug_all_yaml_files(type_debug_files)
+    syzkaller_get_type_implementation(typename, all_types)
