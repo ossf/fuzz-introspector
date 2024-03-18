@@ -598,10 +598,7 @@ def get_struct_members(addr, debug_type_dictionary):
                     'raw-types': friendly_type,
                     'string_type': convert_param_list_to_str_v2(friendly_type),
                     'is-struct': is_struct(friendly_type),
-                    #'struct-elems': structure_elems,
                     'is-enum': is_enumeration(friendly_type),
-                    #'enum-elems':
-                    #debug_type_dictionary[addr].get('enum_elems', [])
                 }
             }
             structure_elems.append(elem_dict)
