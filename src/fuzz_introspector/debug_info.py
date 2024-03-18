@@ -19,8 +19,6 @@ import json
 import shutil
 import yaml
 
-from fuzz_introspector import constants
-
 logger = logging.getLogger(name=__name__)
 
 
@@ -312,6 +310,9 @@ def load_debug_report(debug_files):
 
 def dump_debug_report(report_dict):
     # Extract all files
+    # Place this import here because it makes it easier to run this module
+    # as a main module.
+    from fuzz_introspector import constants
     if not os.path.isdir(constants.SAVED_SOURCE_FOLDER):
         os.mkdir(constants.SAVED_SOURCE_FOLDER)
 
@@ -424,6 +425,7 @@ def convert_param_list_to_str_v2(param_list):
         elif param == 'DW_TAG_reference_type':
             post += '&'
         elif param == 'DW_TAG_structure_type':
+            med += " struct "
             continue
         elif param == "DW_TAG_base_type":
             continue
@@ -530,12 +532,114 @@ def correlate_debugged_function_to_debug_types(all_debug_types,
         dfunc['source'] = source_location
 
 
+def extract_syzkaller_type(param_list):
+    """Converts the dwarf tag list to a syzkaller type."""
+    pre = ""
+    med = ""
+    post = ""
+    syzkaller_tag = ""
+    for param in reversed(param_list):
+        if param == "DW_TAG_pointer_type":
+            syzkaller_tag = 'ptr [in, %s]' % (syzkaller_tag)
+        elif param == 'DW_TAG_reference_type':
+            post += '&'
+        elif param == 'DW_TAG_structure_type':
+            continue
+        elif param == "DW_TAG_base_type":
+            continue
+        elif param == "DW_TAG_typedef":
+            continue
+        elif param == 'DW_TAG_class_type':
+            continue
+        elif param == "DW_TAG_const_type":
+            pre += "const "
+        elif param == "DW_TAG_enumeration_type":
+            continue
+        else:
+            # This is a type and we should convert it to the syzkaller type
+            if param == 'char':
+                syzkaller_tag = 'int8'
+            elif param == 'int':
+                syzkaller_tag = 'int32'
+            else:
+                # This is a struct, so we name it appropriately
+                syzkaller_tag = param
+
+            med += str(param)
+
+    return syzkaller_tag
+
+
+def get_struct_members(addr, debug_type_dictionary):
+    structure_elems = []
+    for elem_addr, elem_val in debug_type_dictionary.items():
+        if elem_val['tag'] == "DW_TAG_member" and int(
+                elem_val['scope']) == int(addr):
+
+            friendly_type = extract_func_sig_friendly_type_tags(
+                elem_val['base_type_addr'], debug_type_dictionary)
+
+            syzkaller_type = extract_syzkaller_type(friendly_type)
+
+            elem_dict = {
+                'addr':
+                elem_addr,
+                'syzkaller_type':
+                syzkaller_type,
+                'elem_name':
+                elem_val['name'],
+                'raw':
+                elem_val,
+                'elem_friendly_type':
+                convert_param_list_to_str_v2(
+                    extract_func_sig_friendly_type_tags(
+                        elem_val['base_type_addr'], debug_type_dictionary)),
+                'friendly-info': {
+                    'raw-types': friendly_type,
+                    'string_type': convert_param_list_to_str_v2(friendly_type),
+                    'is-struct': is_struct(friendly_type),
+                    'is-enum': is_enumeration(friendly_type),
+                }
+            }
+            structure_elems.append(elem_dict)
+    return structure_elems
+
+
+def create_syzkaller_description_for_type(addr, all_debug_types):
+    # Index debug types by address. We need to do a lot of look ups when
+    # refining data types where the address is the key, so a fast
+    # look-up mechanism is useful here.
+    debug_type_dictionary = dict()
+    for debug_type in all_debug_types:
+        debug_type_dictionary[int(debug_type['addr'])] = debug_type
+
+    friendly_type = extract_func_sig_friendly_type_tags(
+        addr, debug_type_dictionary)
+
+    if is_struct(friendly_type):
+        members = get_struct_members(addr, debug_type_dictionary)
+        if len(members) == 0:
+            return None
+
+        syzkaller_description = "%s {\n" % (friendly_type[-1])
+        for struct_mem in members:
+            syzkaller_description += ' ' * 2 + struct_mem['elem_name']
+            syzkaller_description += ' ' * 4
+            syzkaller_description += struct_mem['syzkaller_type']
+            syzkaller_description += '\n'
+        syzkaller_description += '}'
+        return syzkaller_description
+    return None
+
+
 if __name__ in "__main__":
     import sys
-    print("Main")
     type_debug_files = [sys.argv[1]]
-    functions_debug_files = [
-        sys.argv[1].replace("debug_all_types", "debug_all_functions")
-    ]
     all_types = load_debug_all_yaml_files(type_debug_files)
-    all_funcs = load_debug_all_yaml_files(functions_debug_files)
+
+    for ad in all_types:
+        syzkaller_description = create_syzkaller_description_for_type(
+            ad['addr'], all_types)
+        if syzkaller_description:
+            print("-" * 45)
+            print(syzkaller_description)
