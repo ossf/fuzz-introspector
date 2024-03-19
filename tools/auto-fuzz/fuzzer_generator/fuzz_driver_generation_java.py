@@ -19,6 +19,10 @@ import itertools
 import sys
 import copy
 
+import openai
+
+openai.api_key = os.getenv('OPENAI_API_KEY')
+
 sys.path.append('..')
 from objects.fuzz_target import FuzzTarget
 import constants
@@ -48,6 +52,9 @@ class JavaFuzzTarget(FuzzTarget):
         3) Adds the source code of the fuzzer.
         4) If there are class object list for random choice, create them.
         """
+
+        if self.is_openai:
+            return self.openai_source
 
         # Hold the source code of the ending fuzzer.
         content = ""
@@ -1303,10 +1310,71 @@ def _generate_heuristic_3(method_tuple, possible_targets, max_target):
             possible_targets.append(possible_target)
 
 
+def _generate_heuristic_10(method_tuple, possible_targets, max_target,
+                           github_url):
+    HEURISTIC_NAME = "java-autofuzz-heuristics-10"
+
+    init_dict, method_list, instance_method_list, static_method_list = method_tuple
+
+    if len(possible_targets) > max_target:
+        return
+
+    idx = 0
+    for class_name in init_dict:
+        for func_elem in init_dict[class_name]:
+            if len(possible_targets) > max_target:
+                return
+
+            # Skip excluded constructor
+            if len(func_elem['argTypes']) == 0:
+                continue
+            if len(func_elem['argTypes']) > 20:
+                continue
+            if not _is_project_class(
+                    func_elem['functionSourceFile'].split("$")[0]):
+                continue
+
+            idx += 1
+            if idx > 100:
+                continue
+            # Initialize base possible_target object
+            possible_target = JavaFuzzTarget(func_elem)
+            possible_target.is_openai = True
+            func_name = possible_target.function_name
+            func_class = possible_target.function_class
+            target_method_name = possible_target.function_target
+
+            prompt_template = """You're a world-class software security researcher that is writing fuzzing harnesses for Java projects. Could you please write a harness for the repository located at %s? The target function of the fuzzer must be %s.
+
+Please only show the code for the harness.
+
+Please write the fuzzer such that it uses the jazzer engine here https://github.com/CodeIntelligenceTesting/jazzer. Please only show the code for the harness in the reply, and wrap all in <code> tags.
+
+Finally, the harness should be in a class called `Fuzz`, whcih is particularly important because we need it to be like this for compilation purposes. The harness entrypoint function must be `fuzzerTestOneInput`. The harness should you `consumeRemainingAsString` for extracting data from `FuzzedDataProvider` and must *not* use `consumeRemainingBytes`.
+""" % (github_url, func_name)
+
+            completion = openai.ChatCompletion.create(model="gpt-3.5-turbo",
+                                                      messages=[
+                                                          {
+                                                              "role":
+                                                              "system",
+                                                              "content":
+                                                              prompt_template
+                                                          },
+                                                      ])
+            fuzzer_source = completion.choices[0].message.content.replace(
+                "<code>", "").replace("</code>",
+                                      "").replace("```java",
+                                                  "").replace("```", "")
+            possible_target.openai_source = fuzzer_source
+            possible_targets.append(possible_target)
+
+
 def _generate_heuristics(yaml_dict,
                          max_target,
                          max_method,
-                         calldepth_filter=False):
+                         calldepth_filter=False,
+                         github_url=None):
     method_tuple = _extract_method(yaml_dict,
                                    max_method,
                                    max_count=100,
@@ -1320,18 +1388,19 @@ def _generate_heuristics(yaml_dict,
     method_tuple = method_tuple[:last]
 
     # Check if the method extraction is halted because it requires filteirng
-    if not calldepth_filter and method_extraction_halted:
-        return possible_targets, True
+    #if not calldepth_filter and method_extraction_halted:
+    #    return possible_targets, True
 
     # Start generating possible targets with different heuristics
+    #temp_targets = []
+    #_generate_heuristic_1(method_tuple, temp_targets, max_target)
+    #possible_targets.extend(temp_targets)
+    #temp_targets = []
+    #_generate_heuristic_2(method_tuple, temp_targets, max_target)
+    #possible_targets.extend(temp_targets)
     temp_targets = []
-    _generate_heuristic_1(method_tuple, temp_targets, max_target)
-    possible_targets.extend(temp_targets)
-    temp_targets = []
-    _generate_heuristic_2(method_tuple, temp_targets, max_target)
-    possible_targets.extend(temp_targets)
-    temp_targets = []
-    _generate_heuristic_3(method_tuple, temp_targets, max_target)
+    #_generate_heuristic_3(method_tuple, temp_targets, max_target)
+    _generate_heuristic_10(method_tuple, temp_targets, max_target, github_url)
     possible_targets.extend(temp_targets)
 
     return possible_targets, (len(possible_targets) > max_method)
@@ -1358,10 +1427,11 @@ def generate_possible_targets(proj_folder, class_list, max_target,
     max_fuzzer = constants.MAX_FUZZERS_PER_PROJECT
 
     possible_targets, need_calldepth_filter = _generate_heuristics(
-        yaml_dict, max_target, max_fuzzer, False)
+        yaml_dict, max_target, max_fuzzer, False, github_url)
     if need_calldepth_filter:
         possible_targets, _ = _generate_heuristics(yaml_dict, max_target,
-                                                   max_fuzzer, True)
+                                                   max_fuzzer, True,
+                                                   github_url)
 
     possible_targets_json_list = []
     possible_targets_json_file = os.path.join(proj_folder, "possible_targets")

@@ -89,7 +89,10 @@ def build_project(oss_fuzz_base_project, base_oss_fuzz_project_dir,
                 oss_fuzz_base_project.change_build_script(project_build_type)
 
                 build_ret = oss_fuzz_manager.copy_and_build_project(
-                    basedir, OSS_FUZZ_BASE, log_dir=base_oss_fuzz_project_dir)
+                    basedir,
+                    OSS_FUZZ_BASE,
+                    log_dir=base_oss_fuzz_project_dir,
+                    log_build=True)
 
                 # Check if the build success with the current JDK version
                 # and record that for future process and oss-fuzz test
@@ -240,7 +243,8 @@ def build_and_test_single_possible_target(idx_folder,
     # Run OSS-Fuzz checks; first build then running fuzzers
     build_success = oss_fuzz_manager.copy_and_build_project(auto_fuzz_proj_dir,
                                                             OSS_FUZZ_BASE,
-                                                            log_dir=idx_logdir)
+                                                            log_dir=idx_logdir,
+                                                            log_build=True)
     oss_fuzz_manager.check_if_proj_runs(
         OSS_FUZZ_BASE, dst_oss_fuzz_project.oss_fuzz_project_name,
         dst_oss_fuzz_project.oss_fuzz_fuzzer_namer, idx_logdir)
@@ -478,7 +482,8 @@ def autofuzz_project_from_github(github_url,
     res = oss_fuzz_manager.copy_and_build_project(
         oss_fuzz_base_project.project_folder,
         OSS_FUZZ_BASE,
-        log_dir=base_oss_fuzz_project_dir)
+        log_dir=base_oss_fuzz_project_dir,
+        log_build=True)
     if not res:
         utils.cleanup_base_directory(base_oss_fuzz_project_dir,
                                      oss_fuzz_base_project.project_name)
