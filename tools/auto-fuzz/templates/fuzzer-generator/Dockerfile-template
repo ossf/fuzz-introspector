@@ -30,4 +30,7 @@ RUN cd /fuzz-introspector && \
     pip3 install -r ./requirements.txt && \
     echo "python3 /fuzz-introspector/tools/auto-fuzz/fuzzer_generator/build.py" > $SRC/build.sh
 
+RUN python3 -m pip install openai==0.27.8
+ENV OPENAI_API_KEY SET_API_KEY
+
 WORKDIR /fuzz-introspector/tools/auto-fuzz/fuzzer_generator

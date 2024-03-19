@@ -47,11 +47,15 @@ def gen_builder_1(language="python",
                   build_project=True,
                   fuzzer_generator=False,
                   class_list=[],
-                  param_combination=False):
+                  param_combination=False,
+                  github_url=""):
     if fuzzer_generator:
         template_dir = _get_template_directory("fuzzer-generator", None)
-        return _gen_builder_1_generator(template_dir, language, class_list,
-                                        param_combination)
+        return _gen_builder_1_generator(template_dir,
+                                        language,
+                                        class_list,
+                                        param_combination,
+                                        github_url=github_url)
 
     template_dir = _get_template_directory(language, project_build_type)
 
@@ -169,12 +173,16 @@ def _gen_builder_1_java(template_dir, build_project, project_build_type):
         return BASE_BUILDER % (": <<'COMMENT'", "COMMENT", "", "", "")
 
 
-def _gen_builder_1_generator(template_dir, language, class_list,
-                             param_combination):
+def _gen_builder_1_generator(template_dir,
+                             language,
+                             class_list,
+                             param_combination,
+                             github_url=""):
     with open(os.path.join(template_dir, "build.py-template"), "r") as file:
         BASE_BUILDER = "#!/usr/bin/python3\n" + file.read()
 
-    return BASE_BUILDER % (language, ",".join(class_list), param_combination)
+    return BASE_BUILDER % (language, ",".join(class_list), param_combination,
+                           github_url)
 
 
 def _gen_base_fuzzer_python(template_dir):

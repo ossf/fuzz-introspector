@@ -21,6 +21,10 @@ import sys
 sys.path.append('..')
 from objects.fuzz_target import FuzzTarget
 
+import openai
+
+openai.api_key = os.getenv('OPENAI_API_KEY')
+
 
 class PythonFuzzTarget(FuzzTarget):
 
@@ -31,6 +35,9 @@ class PythonFuzzTarget(FuzzTarget):
         2) Adds the variables that should be seeded with fuzzing data.
         3) Adds the source code of the fuzzer.
         """
+
+        if self.is_openai:
+            return self.openai_source
 
         # Hold the source code of the ending fuzzer.
         content = ""
@@ -595,8 +602,61 @@ def merge_stage_one_targets(target_runs):
     return []
 
 
+def _generate_heuristic_11(yaml_dict, possible_targets, github_repo):
+    """Heuristic 11.
+    Generates fuzz target based on openai LLM
+    """
+    idx = 0
+    HEURISTIC_NAME = "py-autofuzz-heuristics-1"
+    for func_elem in yaml_dict['All functions']['Elements']:
+        if func_elem['functionLinenumber'] != -1:
+            if get_arguments_to_provide(func_elem) > 5:
+                continue
+            if "test" in func_elem['functionName']:
+                continue
+            prompt_template = """Hi, I'm looking for your help to write a Python fuzzing harness for the %s Python project. The project is located at %s and I would like you to write a harness targeting this module. You should use the Python Atheris framework for writing the fuzzer. Could you please show me the source code for this harness?
+
+            The specific function you should target is %s and please wrap all code in <code> tags.
+
+			I only want the actual harness function that passes the fuzzer's data into the target function and not a whole Python module. This function should be called "fuzz_%s" and you should only show this code. Please do not show any other code.
+
+            The harness should handle any exceptions and must include the code:
+```
+  atheris.instrument_all()
+  atheris.Setup(sys.argv, TestOneInput)
+  atheris.Fuzz()
+```
+            There should be no call at all to `with atheris.instrumented_function()` and the harness function should not involve calls to functions the atheris module.
+
+			The function signature for the target is %s and please wrap all code in <code> tags.""" % (
+                github_repo.split("/")[-1], github_repo,
+                func_elem['functionName'], github_repo.split("/")[-1].replace(
+                    "-", "_"), func_elem['functionName'])
+            completion = openai.ChatCompletion.create(model="gpt-3.5-turbo",
+                                                      messages=[
+                                                          {
+                                                              "role":
+                                                              "system",
+                                                              "content":
+                                                              prompt_template
+                                                          },
+                                                      ])
+            fuzzer_source = completion.choices[0].message.content.replace(
+                "<code>", "").replace("</code>",
+                                      "").replace("```python",
+                                                  "").replace("```", "")
+            possible_target = PythonFuzzTarget()
+            possible_target.is_openai = True
+            possible_target.openai_source = fuzzer_source
+            possible_targets.append(possible_target)
+
+            if idx > 45:
+                break
+            idx += 1
+
+
 def generate_possible_targets(proj_folder, class_list, max_target,
-                              param_combination):
+                              param_combination, github_url):
     """Generate all possible targets for a given project folder"""
 
     # Read the Fuzz Introspector generated data
@@ -609,14 +669,16 @@ def generate_possible_targets(proj_folder, class_list, max_target,
         yaml_dict = yaml.safe_load(stream)
 
     possible_targets = []
-    _generate_heuristic_1(yaml_dict, possible_targets)
-    _generate_heuristic_2(yaml_dict, possible_targets)
-    _generate_heuristic_3(yaml_dict, possible_targets)
-    _generate_heuristic_4(yaml_dict, possible_targets)
+    #_generate_heuristic_1(yaml_dict, possible_targets)
+    #_generate_heuristic_2(yaml_dict, possible_targets)
+    #_generate_heuristic_3(yaml_dict, possible_targets)
+    #_generate_heuristic_4(yaml_dict, possible_targets)
+    _generate_heuristic_11(yaml_dict, possible_targets, github_url)
 
     possible_targets_json_list = []
     possible_targets_json_file = os.path.join(proj_folder, "possible_targets")
     for possible_target in possible_targets:
+        #possible_targets_json_list.append(possible_target.to_json())
         possible_targets_json_list.append(possible_target.to_json())
     with open(possible_targets_json_file, "w") as f:
         f.write(json.dumps(possible_targets_json_list))
