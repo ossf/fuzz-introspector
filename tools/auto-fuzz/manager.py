@@ -404,12 +404,14 @@ def autofuzz_project_from_github(github_url,
     # If benchmark option is true, instead of cloning the project from github,
     # copy the local benchmark directory of the chosen language instead.
     if benchmark:
+        print("This is a benchmark")
         if not utils.copy_benchmark_project(
                 base_dir, github_url, language,
                 os.path.join(oss_fuzz_base_project.project_folder,
                              oss_fuzz_base_project.project_name)):
             return False
     else:
+        print("Cloning repository from GitHub")
         if not utils.git_clone_project(
                 github_url,
                 os.path.join(oss_fuzz_base_project.project_folder,
@@ -468,8 +470,11 @@ def autofuzz_project_from_github(github_url,
             utils.cleanup_base_directory(base_oss_fuzz_project_dir,
                                          oss_fuzz_base_project.project_name)
             return False
+    else:
+        print("Skipping static analysis")
 
     # Check basic fuzzer and clean it afterwards
+    print("Check base fuzzer builds")
     res = oss_fuzz_manager.copy_and_build_project(
         oss_fuzz_base_project.project_folder,
         OSS_FUZZ_BASE,
@@ -480,6 +485,7 @@ def autofuzz_project_from_github(github_url,
         return False
 
     # Generate all possible targets
+    print("Generating targets")
     if possible_targets is None:
         possible_targets = []
         if do_static_analysis and static_res:
@@ -581,7 +587,7 @@ def run_stage_two(target_dir):
         possible_targets=possible_targets)
 
 
-def get_cmdline_parser() -> argparse.ArgumentParser:
+def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--language",
                         type=str,
@@ -616,18 +622,16 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
             "If set, the auto-fuzz process will be executed on the benchmark "
             "project instead of real project."))
 
-    return parser
+    return parser.parse_args()
 
 
 if __name__ == "__main__":
-    parser = get_cmdline_parser()
-    args = parser.parse_args()
+    args = parse_args()
+    target_github_repos = utils.get_target_repos(args.targets, args.language,
+                                                 args.benchmark)
 
-    projects = utils.get_target_repos(args.targets, args.language,
-                                      args.benchmark)
-
-    if projects:
-        run_on_projects(args.language, projects, args.merge,
+    if target_github_repos:
+        run_on_projects(args.language, target_github_repos, args.merge,
                         args.param_combination, args.benchmark)
     else:
         print("Language not supported")

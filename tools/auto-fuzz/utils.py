@@ -46,7 +46,7 @@ def git_clone_project(github_url, destination):
 
 
 def get_target_repos(targets, language, is_benchmark):
-    """Retrieve list of target proejct url"""
+    """Retrieve list of target GitHub repository URLs"""
     if language not in constants.git_repos:
         return None
 
@@ -55,6 +55,7 @@ def get_target_repos(targets, language, is_benchmark):
 
     if targets == "constants":
         return constants.git_repos[language]
+
     github_projects = []
     with open(targets, 'r') as f:
         for line in f:
@@ -275,6 +276,7 @@ def generate_possible_targets(auto_fuzz_base,
     print("Generating possible targets DAVID")
     oss_fuzz_manager.copy_and_build_project(temp_dir,
                                             oss_fuzz_base,
+                                            log_dir=os.getcwd(),
                                             log_build=True)
 
     # Copy $OUT/possible_targets to {project_dir}
