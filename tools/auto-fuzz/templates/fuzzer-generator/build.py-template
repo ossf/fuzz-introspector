@@ -23,5 +23,5 @@ import constants
 
 class_list_str = "%s"
 project_dir = os.getenv("SRC")
-generator.generate_possible_targets(project_dir, class_list_str.split(","), constants.MAX_TARGET_PER_PROJECT_HEURISTIC, %s)
+generator.generate_possible_targets(project_dir, class_list_str.split(","), constants.MAX_TARGET_PER_PROJECT_HEURISTIC, %s, "%s")
 shutil.copy(os.path.join(project_dir, "possible_targets"), os.getenv("OUT"))

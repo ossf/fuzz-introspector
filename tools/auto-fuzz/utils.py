@@ -222,8 +222,13 @@ def copy_build_file(OSS_FUZZ_BASE, basedir, language):
 
 # Fuzzer generator utils
 ########################
-def generate_possible_targets(auto_fuzz_base, oss_fuzz_base, language,
-                              project_dir, class_list, param_combination):
+def generate_possible_targets(auto_fuzz_base,
+                              oss_fuzz_base,
+                              language,
+                              project_dir,
+                              class_list,
+                              param_combination,
+                              github_url=""):
     """Generator possible targets by calling fuzzer generator of different
     languages in a OSS-Fuzz docker container. The json serialised possible
     target list is stored in $OUT/possible_targets and is copied back to
@@ -243,7 +248,8 @@ def generate_possible_targets(auto_fuzz_base, oss_fuzz_base, language,
             base_files.gen_builder_1(language,
                                      fuzzer_generator=True,
                                      class_list=class_list,
-                                     param_combination=param_combination))
+                                     param_combination=param_combination,
+                                     github_url=github_url))
 
     with open(os.path.join(temp_dir, "project.yaml"), "w") as f:
         f.write(base_files.gen_project_yaml("", "fuzzer-generator"))
@@ -266,7 +272,10 @@ def generate_possible_targets(auto_fuzz_base, oss_fuzz_base, language,
             shutil.copy(src_file, copy_files[src_file])
 
     # Copy and run the fuzzer generator in OSS-Fuzz docker container
-    oss_fuzz_manager.copy_and_build_project(temp_dir, oss_fuzz_base)
+    print("Generating possible targets DAVID")
+    oss_fuzz_manager.copy_and_build_project(temp_dir,
+                                            oss_fuzz_base,
+                                            log_build=True)
 
     # Copy $OUT/possible_targets to {project_dir}
     out_dir = os.path.join(oss_fuzz_base, "build", "out",

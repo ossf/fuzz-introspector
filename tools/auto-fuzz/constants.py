@@ -133,9 +133,16 @@ BUILD_FILE_PROPERTY = {
 # Constant repository urls for different languages
 git_repos = {
     'python': [
-        # 'https://github.com/davidhalter/parso',
-        'https://github.com/nvawda/bz2file',
-        # 'https://github.com/executablebooks/markdown-it-py'
+        'https://github.com/davidhalter/parso',
+        #'https://github.com/py-pdf/pypdf',
+        #'https://github.com/python-lz4/python-lz4',
+        #'https://github.com/eliben/pycparser',
+        #'https://github.com/derek73/python-nameparser',
+        #'http://github.com/matthewwithanm/python-markdownify',
+        #'https://github.com/dateutil/dateutil',
+        #'https://github.com/mpdavis/python-jose',
+        #'https://github.com/nvawda/bz2file',
+        #'https://github.com/executablebooks/markdown-it-py'
     ],
     'java': [
         # 'https://github.com/eclipse-ee4j/angus-mail',

@@ -55,8 +55,16 @@ class FuzzTarget:
             "fuzzer_init": "",
             "fuzzer_tear_down": ""
         }
+        self.is_openai = False
+        self.openai_source = ""
 
     def to_json(self):
+        if self.is_openai:
+            return json.dumps({
+                'source': self.openai_source,
+                'is_openai': True
+            })
+
         return json.dumps({
             "function_class": self.function_class,
             "function_name": self.function_name,
@@ -67,11 +75,18 @@ class FuzzTarget:
             "imports_to_add": self.imports_to_add,
             "heuristics_used": self.heuristics_used,
             "class_field_list": self.class_field_list,
-            "extra_source_code": self.extra_source_code
+            "extra_source_code": self.extra_source_code,
+            'is_openai': False
         })
 
     def from_json(self, json_str):
         obj = json.loads(json_str)
+        print("obj: %s" % (obj))
+        self.is_openai = obj['is_openai']
+        if self.is_openai:
+            self.openai_source = obj['source']
+            return
+
         self.function_class = obj['function_class']
         self.function_name = obj['function_name']
         self.fuzzer_source_code = obj['fuzzer_source_code']
