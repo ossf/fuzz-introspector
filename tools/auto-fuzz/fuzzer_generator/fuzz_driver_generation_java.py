@@ -1335,7 +1335,7 @@ def _generate_heuristic_10(method_tuple, possible_targets, max_target,
                 continue
 
             idx += 1
-            if idx > 100:
+            if idx > 200:
                 continue
             # Initialize base possible_target object
             possible_target = JavaFuzzTarget(func_elem)
@@ -1351,6 +1351,133 @@ Please only show the code for the harness.
 Please write the fuzzer such that it uses the jazzer engine here https://github.com/CodeIntelligenceTesting/jazzer. Please only show the code for the harness in the reply, and wrap all in <code> tags.
 
 Finally, the harness should be in a class called `Fuzz`, whcih is particularly important because we need it to be like this for compilation purposes. The harness entrypoint function must be `fuzzerTestOneInput`. The harness should you `consumeRemainingAsString` for extracting data from `FuzzedDataProvider` and must *not* use `consumeRemainingBytes`.
+""" % (github_url, func_name)
+
+            completion = openai.ChatCompletion.create(model="gpt-3.5-turbo",
+                                                      messages=[
+                                                          {
+                                                              "role":
+                                                              "system",
+                                                              "content":
+                                                              prompt_template
+                                                          },
+                                                      ])
+            fuzzer_source = completion.choices[0].message.content.replace(
+                "<code>", "").replace("</code>",
+                                      "").replace("```java",
+                                                  "").replace("```", "")
+            possible_target.openai_source = fuzzer_source
+            possible_targets.append(possible_target)
+
+
+def _generate_heuristic_11(method_tuple, possible_targets, max_target,
+                           github_url):
+    HEURISTIC_NAME = "java-autofuzz-heuristics-11"
+
+    init_dict, method_list, instance_method_list, static_method_list = method_tuple
+
+    if len(possible_targets) > max_target:
+        return
+
+    idx = 0
+    for class_name in init_dict:
+        for func_elem in init_dict[class_name]:
+            if len(possible_targets) > max_target:
+                return
+
+            # Skip excluded constructor
+            if len(func_elem['argTypes']) == 0:
+                continue
+            if len(func_elem['argTypes']) > 20:
+                continue
+            if not _is_project_class(
+                    func_elem['functionSourceFile'].split("$")[0]):
+                continue
+
+            idx += 1
+            if idx > 200:
+                continue
+            # Initialize base possible_target object
+            possible_target = JavaFuzzTarget(func_elem)
+            possible_target.is_openai = True
+            func_name = possible_target.function_name
+            func_class = possible_target.function_class
+            target_method_name = possible_target.function_target
+
+            prompt_template = """You're a world-class software security researcher that is writing fuzzing harnesses for Java projects. Could you please write a harness for the repository located at %s? The target function of the fuzzer must be %s.
+
+Please only show the code for the harness.
+
+Please write the fuzzer such that it uses the jazzer engine here https://github.com/CodeIntelligenceTesting/jazzer. Please only show the code for the harness in the reply, and wrap all in <code> tags.
+
+Finally, the harness should be in a class called `Fuzz`, whcih is particularly important because we need it to be like this for compilation purposes. The harness entrypoint function must be `fuzzerTestOneInput`. The harness should you `consumeRemainingAsString` for extracting data from `FuzzedDataProvider` and must *not* use `consumeRemainingBytes`.
+
+If you can come up with additional ideas for functions in the target repository that is meaningful to include in the fuzzer, then please do this.
+""" % (github_url, func_name)
+
+            completion = openai.ChatCompletion.create(model="gpt-3.5-turbo",
+                                                      messages=[
+                                                          {
+                                                              "role":
+                                                              "system",
+                                                              "content":
+                                                              prompt_template
+                                                          },
+                                                      ])
+            fuzzer_source = completion.choices[0].message.content.replace(
+                "<code>", "").replace("</code>",
+                                      "").replace("```java",
+                                                  "").replace("```", "")
+            possible_target.openai_source = fuzzer_source
+            possible_targets.append(possible_target)
+
+
+def _generate_heuristic_12(method_tuple, possible_targets, max_target,
+                           github_url):
+    HEURISTIC_NAME = "java-autofuzz-heuristics-12"
+    init_dict, method_list, instance_method_list, static_method_list = method_tuple
+
+    if len(possible_targets) > max_target:
+        return
+
+    idx = 0
+    for class_name in init_dict:
+        for func_elem in init_dict[class_name]:
+            if len(possible_targets) > max_target:
+                return
+
+            # Skip excluded constructor
+            if len(func_elem['argTypes']) == 0:
+                continue
+            if len(func_elem['argTypes']) > 20:
+                continue
+            if not _is_project_class(
+                    func_elem['functionSourceFile'].split("$")[0]):
+                continue
+
+            # Initialize base possible_target object
+            possible_target = JavaFuzzTarget(func_elem)
+            possible_target.is_openai = True
+            func_name = possible_target.function_name
+            func_class = possible_target.function_class
+            target_method_name = possible_target.function_target
+
+            if "parse" not in func_name and "Parse" not in func_name and "serialize" not in func_name and "Serialize" not in func_name:
+                continue
+
+            idx += 1
+            if idx > 200:
+                continue
+
+            prompt_template = """You're a world-class software security researcher that is writing fuzzing harnesses for Java projects. Could you please write a harness for the repository located at %s? The target function of the fuzzer must be %s.
+
+Please only show the code for the harness.
+
+Please write the fuzzer such that it uses the jazzer engine here https://github.com/CodeIntelligenceTesting/jazzer. Please only show the code for the harness in the reply, and wrap all in <code> tags.
+
+Finally, the harness should be in a class called `Fuzz`, whcih is particularly important because we need it to be like this for compilation purposes. The harness entrypoint function must be `fuzzerTestOneInput`. The harness should you `consumeRemainingAsString` for extracting data from `FuzzedDataProvider` and must *not* use `consumeRemainingBytes`.
+
+If you can come up with additional ideas for functions in the target repository that is meaningful to include in the fuzzer, then please do this.
 """ % (github_url, func_name)
 
             completion = openai.ChatCompletion.create(model="gpt-3.5-turbo",
@@ -1398,9 +1525,16 @@ def _generate_heuristics(yaml_dict,
     #temp_targets = []
     #_generate_heuristic_2(method_tuple, temp_targets, max_target)
     #possible_targets.extend(temp_targets)
-    temp_targets = []
+    #temp_targets = []
     #_generate_heuristic_3(method_tuple, temp_targets, max_target)
+    temp_targets = []
     _generate_heuristic_10(method_tuple, temp_targets, max_target, github_url)
+    possible_targets.extend(temp_targets)
+    temp_targets = []
+    _generate_heuristic_11(method_tuple, temp_targets, max_target, github_url)
+    possible_targets.extend(temp_targets)
+    temp_targets = []
+    _generate_heuristic_12(method_tuple, temp_targets, max_target, github_url)
     possible_targets.extend(temp_targets)
 
     return possible_targets, (len(possible_targets) > max_method)
