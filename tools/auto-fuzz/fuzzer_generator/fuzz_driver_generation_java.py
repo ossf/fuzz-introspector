@@ -1338,7 +1338,7 @@ def _generate_heuristics(yaml_dict,
 
 
 def generate_possible_targets(proj_folder, class_list, max_target,
-                              param_combination):
+                              param_combination, github_url):
     """Generate all possible targets for a given project folder"""
 
     # Set param_combination to global
