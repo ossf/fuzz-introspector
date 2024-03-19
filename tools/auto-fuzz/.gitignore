@@ -1,4 +1,3 @@
 autofuzz-*
 *.pyc
 *.swp
-*.txt
