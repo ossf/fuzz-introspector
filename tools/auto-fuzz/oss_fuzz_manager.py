@@ -105,7 +105,7 @@ def copy_and_build_project(src_folder,
     ]
     code, out, err = run(cmd)
     # Write build output to log diretory.
-    if log_build:
+    if log_build and log_dir:
         out_log = os.path.join(log_dir, "oss-fuzz.out")
         with open(out_log, "wb") as f:
             f.write(out)
