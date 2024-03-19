@@ -20,8 +20,8 @@ import sys
 import copy
 
 import openai
-openai.api_key = os.getenv('OPENAI_API_KEY')
 
+openai.api_key = os.getenv('OPENAI_API_KEY')
 
 sys.path.append('..')
 from objects.fuzz_target import FuzzTarget
@@ -52,7 +52,6 @@ class JavaFuzzTarget(FuzzTarget):
         3) Adds the source code of the fuzzer.
         4) If there are class object list for random choice, create them.
         """
-
 
         if self.is_openai:
             return self.openai_source
@@ -1311,7 +1310,8 @@ def _generate_heuristic_3(method_tuple, possible_targets, max_target):
             possible_targets.append(possible_target)
 
 
-def _generate_heuristic_10(method_tuple, possible_targets, max_target, github_url):
+def _generate_heuristic_10(method_tuple, possible_targets, max_target,
+                           github_url):
     HEURISTIC_NAME = "java-autofuzz-heuristics-10"
 
     init_dict, method_list, instance_method_list, static_method_list = method_tuple
@@ -1335,7 +1335,7 @@ def _generate_heuristic_10(method_tuple, possible_targets, max_target, github_ur
                 continue
 
             idx += 1
-            if idx > 10:
+            if idx > 100:
                 continue
             # Initialize base possible_target object
             possible_target = JavaFuzzTarget(func_elem)
@@ -1351,7 +1351,7 @@ Please only show the code for the harness.
 Please write the fuzzer such that it uses the jazzer engine here https://github.com/CodeIntelligenceTesting/jazzer. Please only show the code for the harness in the reply, and wrap all in <code> tags.
 
 Finally, the harness should be in a class called `Fuzz`, whcih is particularly important because we need it to be like this for compilation purposes. The harness entrypoint function must be `fuzzerTestOneInput`. The harness should you `consumeRemainingAsString` for extracting data from `FuzzedDataProvider` and must *not* use `consumeRemainingBytes`.
-"""%(github_url, func_name)
+""" % (github_url, func_name)
 
             completion = openai.ChatCompletion.create(model="gpt-3.5-turbo",
                                                       messages=[
@@ -1373,7 +1373,8 @@ Finally, the harness should be in a class called `Fuzz`, whcih is particularly i
 def _generate_heuristics(yaml_dict,
                          max_target,
                          max_method,
-                         calldepth_filter=False, github_url=None):
+                         calldepth_filter=False,
+                         github_url=None):
     method_tuple = _extract_method(yaml_dict,
                                    max_method,
                                    max_count=100,
@@ -1429,7 +1430,8 @@ def generate_possible_targets(proj_folder, class_list, max_target,
         yaml_dict, max_target, max_fuzzer, False, github_url)
     if need_calldepth_filter:
         possible_targets, _ = _generate_heuristics(yaml_dict, max_target,
-                                                   max_fuzzer, True, github_url)
+                                                   max_fuzzer, True,
+                                                   github_url)
 
     possible_targets_json_list = []
     possible_targets_json_file = os.path.join(proj_folder, "possible_targets")
