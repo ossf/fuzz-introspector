@@ -563,6 +563,12 @@ def extract_syzkaller_type(param_list):
                 syzkaller_tag = 'int32'
             elif param == '__i32':
                 syzkaller_tag = 'int32'
+            elif param == '__u32':
+                syzkaller_tag = 'int32'
+            elif param == '__s32':
+                syzkaller_tag = 'int32'
+            elif param == '__u64':
+                syzkaller_tag = 'int64'
             elif param == '__u8':
                 syzkaller_tag = 'int8'
             else:
