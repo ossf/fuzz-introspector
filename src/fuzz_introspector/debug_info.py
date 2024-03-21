@@ -641,7 +641,6 @@ def create_syzkaller_description_for_type(addr, debug_type_dictionary):
         return syzkaller_description
     if is_enumeration(friendly_type):
         raw_debug_type = debug_type_dictionary[addr]
-        enum_elems = raw_debug_type['enum_elems']
         enum_type = "%s = %s" % (raw_debug_type['name'], ', '.join(
             raw_debug_type['enum_elems']))
         return enum_type
