@@ -362,6 +362,9 @@ def extract_func_sig_friendly_type_tags(target_type, debug_type_dictionary):
             tags.append("N/A")
             break
 
+        if "array" in target_type['tag']:
+            print("Array size: %d" % (target_type['const_size']))
+
         # Provide the tag
         tags.append(target_type['tag'])
 
@@ -588,6 +591,9 @@ def get_struct_members(addr, debug_type_dictionary):
 
             friendly_type = extract_func_sig_friendly_type_tags(
                 elem_val['base_type_addr'], debug_type_dictionary)
+            print("name: %s" % (elem_val['name']))
+            print(friendly_type)
+            print(convert_param_list_to_str_v2(friendly_type))
 
             syzkaller_type = extract_syzkaller_type(friendly_type)
 
@@ -626,12 +632,36 @@ def create_syzkaller_description_for_type(addr, debug_type_dictionary):
 
         syzkaller_description = "%s {\n" % (friendly_type[-1])
         for struct_mem in members:
-            syzkaller_description += ' ' * 2 + struct_mem['elem_name']
+            syzkaller_description += ' ' * 2 + "{0: <25}".format(
+                struct_mem['elem_name'])
             syzkaller_description += ' ' * 4
             syzkaller_description += struct_mem['syzkaller_type']
             syzkaller_description += '\n'
         syzkaller_description += '}'
         return syzkaller_description
+    if is_enumeration(friendly_type):
+        raw_debug_type = debug_type_dictionary[addr]
+        enum_type = "%s = %s" % (raw_debug_type['name'], ', '.join(
+            raw_debug_type['enum_elems']))
+        return enum_type
+
+    return None
+
+
+def syzkaller_get_struct_type_elems(typename, all_debug_types):
+    debug_type_dictionary = dict()
+    for debug_type in all_debug_types:
+        debug_type_dictionary[int(debug_type['addr'])] = debug_type
+
+    for debug_addr, debug_type in debug_type_dictionary.items():
+        if debug_type['name'] == typename:
+            friendly_type = extract_func_sig_friendly_type_tags(
+                debug_addr, debug_type_dictionary)
+
+            if is_struct(friendly_type):
+                members = get_struct_members(debug_addr, debug_type_dictionary)
+                return members
+
     return None
 
 
@@ -650,6 +680,8 @@ def syzkaller_get_type_implementation(typename, all_debug_types):
             if syzkaller_description:
                 print('-' * 45)
                 print(syzkaller_description)
+                return syzkaller_description
+    return None
 
 
 if __name__ in "__main__":
