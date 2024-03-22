@@ -1,3 +1,4 @@
 [submodule "frontends/python/PyCG"]
 	path = frontends/python/PyCG
-	url = https://github.com/AdaLogics/PyCG/
+	url = https://github.com/gordonfierce/PyCG/
+	branch = importlib-imports
