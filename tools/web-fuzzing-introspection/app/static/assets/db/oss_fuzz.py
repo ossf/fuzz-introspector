@@ -51,7 +51,12 @@ def get_introspector_type_map_url_summary(project_name, datestr):
 def get_fuzzer_stats_fuzz_count(project_name, date_str):
     coverage_stats_url = get_fuzzer_stats_fuzz_count_url(
         project_name, date_str)
-    coverage_summary_raw = requests.get(coverage_stats_url, timeout=20).text
+    try:
+        coverage_summary_raw = requests.get(coverage_stats_url,
+                                            timeout=20).text
+    except:
+        return None
+
     if "The specified key does not exist" in coverage_summary_raw:
         return None
     return coverage_summary_raw
