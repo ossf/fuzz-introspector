@@ -179,8 +179,7 @@ def extract_and_refine_annotated_cfg(introspector_report):
     return annotated_cfg
 
 
-def extract_and_refine_functions(all_function_list, project_name, date_str,
-                                 debug_report):
+def extract_and_refine_functions(all_function_list, project_name, date_str):
     refined_proj_list = []
 
     for func in all_function_list:
@@ -298,17 +297,30 @@ def extract_project_data(project_name, date_str, should_include_details,
         # Default set to c++ as this is OSS-Fuzz's default.
         project_language = 'c++'
 
+    collect_debug_info = project_language in {'c', 'c++'}
+
     # Extract code coverage and introspector reports.
     code_coverage_summary = oss_fuzz.get_code_coverage_summary(
         project_name, date_str.replace("-", ""))
     cov_fuzz_stats = oss_fuzz.get_fuzzer_stats_fuzz_count(
         project_name, date_str.replace("-", ""))
-    introspector_report = oss_fuzz.extract_introspector_report(
-        project_name, date_str)
+
+    # Get introspector reports for languages with introspector support
+    if project_language in {'c', 'c++', 'python', 'java'}:
+        introspector_report = oss_fuzz.extract_introspector_report(
+            project_name, date_str)
+    else:
+        introspector_report = None
+
     introspector_report_url = oss_fuzz.get_introspector_report_url_report(
         project_name, date_str.replace("-", ""))
-    introspector_type_map = oss_fuzz.get_introspector_type_map(
-        project_name, date_str.replace("-", ""))
+
+    # Collet debug informaiton for languages with debug information
+    if collect_debug_info:
+        introspector_type_map = oss_fuzz.get_introspector_type_map(
+            project_name, date_str.replace("-", ""))
+    else:
+        introspector_type_map = None
 
     #print("Type mapping:")
     if should_include_details and introspector_type_map:
@@ -337,9 +349,12 @@ def extract_project_data(project_name, date_str, should_include_details,
     save_fuzz_introspector_report(introspector_report, project_name, date_str)
 
     # Get debug data
-    debug_report = oss_fuzz.extract_introspector_debug_info(
-        project_name, date_str)
-    save_debug_report(debug_report, project_name)
+    if collect_debug_info and should_include_details:
+        debug_report = oss_fuzz.extract_introspector_debug_info(
+            project_name, date_str)
+        save_debug_report(debug_report, project_name)
+    else:
+        debug_report = None
 
     # Currently, we fail if any of code_coverage_summary of introspector_report is
     # None. This should later be adjusted such that we can continue if we only
@@ -378,7 +393,7 @@ def extract_project_data(project_name, date_str, should_include_details,
         annotated_cfg = dict()
         if should_include_details:
             refined_proj_list = extract_and_refine_functions(
-                all_function_list, project_name, date_str, debug_report)
+                all_function_list, project_name, date_str)
             annotated_cfg = extract_and_refine_annotated_cfg(
                 introspector_report)
             branch_pairs = extract_and_refine_branch_blockers(
