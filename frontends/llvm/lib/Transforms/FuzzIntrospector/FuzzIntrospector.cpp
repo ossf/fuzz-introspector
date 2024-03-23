@@ -703,6 +703,7 @@ void FuzzIntrospector::dumpDebugAllTypes(std::ofstream &O,
             }
 
             // For arrays
+#if LLVM_VERSION_MAJOR > 16
             if (auto *subRange = dyn_cast<DISubrange>(elem2)) {
 
                 DISubrange::BoundType Bound = subRange->getCount();
@@ -718,6 +719,7 @@ void FuzzIntrospector::dumpDebugAllTypes(std::ofstream &O,
                     tp.constSize = BI->getSExtValue();
                 }
             }
+#endif
         }
         if (compositeType->getBaseType()) {
           if (auto *BT = dyn_cast<DIBasicType>(compositeType->getBaseType())) {
