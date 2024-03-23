@@ -507,16 +507,42 @@ def oracle_3(all_functions, all_projects):
     return functions_of_interest
 
 
-def oracle_1(all_functions, all_projects):
+def oracle_1(all_functions, all_projects, max_project_count=5):
     tmp_list = []
     project_count = dict()
     for function in all_functions:
-        if "parse" not in function.name:
+        interesting_fuzz_keywords = {
+            'deserialize',
+            'parse',
+            'parse_xml',
+            'read_file',
+            'read_json',
+            'read_xml',
+            'request',
+            'parse_header',
+            'parse_request',
+            'compress',
+            'file_read',
+            'read_message',
+            'load_image',
+        }
+
+        is_interesting_func = False
+        if any(fuzz_keyword in function.name.lower()
+               for fuzz_keyword in interesting_fuzz_keywords):
+            is_interesting_func = True
+
+        if any(
+                fuzz_keyword.replace("_", "") in function.name.lower()
+                for fuzz_keyword in interesting_fuzz_keywords):
+            is_interesting_func = True
+
+        if not is_interesting_func:
             continue
 
-        if (function.runtime_code_coverage == 0.0
-                and project_count.get(function.project, 0) < 5
-                and function.accummulated_cyclomatic_complexity > 200):
+        if (function.runtime_code_coverage < 60.0
+                and project_count.get(function.project, 0) < max_project_count
+                and function.accummulated_cyclomatic_complexity > 30):
 
             to_continue = False
             for proj in all_projects:
@@ -1018,7 +1044,7 @@ def api_oracle_1():
     all_functions = data_storage.get_functions()
     all_projects = [target_project]
 
-    raw_functions = oracle_1(all_functions, all_projects)
+    raw_functions = oracle_1(all_functions, all_projects, 100)
     functions_to_return = []
     for function in raw_functions:
         functions_to_return.append({
