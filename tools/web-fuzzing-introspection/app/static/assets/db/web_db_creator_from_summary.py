@@ -61,8 +61,10 @@ def git_clone_project(github_url, destination):
                               stdout=subprocess.DEVNULL,
                               stderr=subprocess.DEVNULL)
     except subprocess.TimeoutExpired:
+        logger.info("Timed out cloning %s" % (github_url))
         return False
     except subprocess.CalledProcessError:
+        logger.info("Error cloning %s" % (github_url))
         return False
     return True
 
@@ -740,6 +742,7 @@ def copy_input_to_output(input_dir, output_dir):
     if input_dir == output_dir:
         return
 
+    logger.info("The input dir: %s" % (input_dir))
     if not os.path.isdir(input_dir):
         raise Exception("No input directory, but specified")
 
@@ -792,15 +795,17 @@ def setup_github_cache():
 
     git_clone_project(constants.OSS_FUZZ_GITHUB_BACKUP_REPO, "github_cache")
     if not os.path.isdir("github_cache"):
-        return
+        return False
     db_zipfile = os.path.join("github_cache", "db-stamp.zip")
     if os.path.isfile(db_zipfile):
         with zipfile.ZipFile(db_zipfile, 'r') as zip_ref:
             zip_ref.extractall("github_cache")
+        return True
+    return False
 
 
 def setup_webapp_cache():
-    print("Getting the db archive")
+    logger.info("Getting the db archive")
     r = requests.get(INTROSPECTOR_WEBAPP_ZIP, stream=True)
     db_archive = zipfile.ZipFile(io.BytesIO(r.content))
 
@@ -809,7 +814,7 @@ def setup_webapp_cache():
     os.mkdir("extracted-db-archive")
 
     db_archive.extractall("extracted-db-archive")
-    print("Extracted it all")
+    logger.info("Extracted it all")
 
     # Copy over the files
     shutil.copyfile(os.path.join("extracted-db-archive", DB_JSON_DB_TIMESTAMP),
@@ -845,9 +850,9 @@ def reduce_projects_to_analyse(projects_to_analyse, max_projects,
             idx += 1
         projects_to_analyse = tmp_dictionary
 
-    print("Projects targeted in the DB creation")
+    logger.info("Projects targeted in the DB creation")
     for p in projects_to_analyse:
-        print("- %s" % (p))
+        logger.info("- %s" % (p))
     return projects_to_analyse
 
 
@@ -863,8 +868,10 @@ def create_cache(use_webapp_cache, use_github_cache, input_directory,
             got_cache = False
 
     if use_github_cache and not got_cache:
-        setup_github_cache()
-        input_directory = "github_cache"
+        if setup_github_cache():
+            input_directory = "github_cache"
+        else:
+            logger.info("Could not create Github cache")
 
     # Create folders we will
     prepare_output_folder(input_directory, output_directory)
@@ -923,7 +930,8 @@ def create_db(max_projects, days_to_analyse, output_directory, input_directory,
     else:
         logger.info("-Creating the DB from scratch")
 
-    print("Starting analysis of max %d projects" % (len(projects_to_analyse)))
+    logger.info("Starting analysis of max %d projects" %
+                (len(projects_to_analyse)))
 
     analyse_set_of_dates(date_range, projects_to_analyse, output_directory,
                          force_creation)
