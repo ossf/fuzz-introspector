@@ -566,6 +566,19 @@ def oracle_1(all_functions, all_projects, max_project_count=5):
     return functions_to_display
 
 
+def match_easy_fuzz_arguments(function):
+    if len(function.function_arguments) == 2 and \
+            (function.function_arguments[0] == 'char *' and
+            function.function_arguments[1] == "int"):
+        return True
+
+    if len(function.function_arguments) == 1 and \
+        "string" in function.func_signature:
+        return True
+
+    return False
+
+
 def oracle_2(all_functions, all_projects):
     tmp_list = []
     project_count = dict()
@@ -578,11 +591,7 @@ def oracle_2(all_functions, all_projects):
             if function.project != project_to_target.name:
                 continue
 
-        if len(function.function_arguments) != 2:
-            continue
-
-        if (function.function_arguments[0] != 'char *'
-                or function.function_arguments[1] != "int"):
+        if not match_easy_fuzz_arguments(function):
             continue
 
         if function.accummulated_cyclomatic_complexity < 150:
