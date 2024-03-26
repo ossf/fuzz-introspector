@@ -569,7 +569,15 @@ def oracle_1(all_functions, all_projects, max_project_count=5):
 def oracle_2(all_functions, all_projects):
     tmp_list = []
     project_count = dict()
+    if len(all_projects) == 1:
+        project_to_target = all_projects[0]
+    else:
+        project_to_target = None
     for function in all_functions:
+        if project_to_target:
+            if function.project != project_to_target.name:
+                continue
+
         if len(function.function_arguments) != 2:
             continue
 
@@ -1024,6 +1032,57 @@ def get_build_status_of_project(project_name):
     return None
 
 
+@blueprint.route('/api/easy-params-far-reach')
+def api_oracle_2():
+    """API for getting fuzz targets with easy fuzzable arguments."""
+    err_msgs = list()
+    project_name = request.args.get('project', None)
+    if project_name == None:
+        return {
+            'result': 'error',
+            'extended_msgs': ['Please provide project name']
+        }
+
+    target_project = None
+    all_projects = data_storage.get_projects()
+    for project in all_projects:
+        if project.name == project_name:
+            target_project = project
+            break
+
+    all_functions = data_storage.get_functions()
+    all_projects = [target_project]
+
+    raw_interesting_functions = oracle_2(all_functions, all_projects)
+
+    functions_to_return = []
+    for function in raw_interesting_functions:
+        functions_to_return.append({
+            'function_name': function.name,
+            'function_filename': function.function_filename,
+            'runtime_coverage_percent': function.runtime_code_coverage,
+            'accummulated_complexity':
+            function.accummulated_cyclomatic_complexity,
+            'function_arguments': function.function_arguments,
+            'function_argument_names': function.function_argument_names,
+            'return_type': function.return_type,
+            'is_reached': function.is_reached,
+            'reached_by_fuzzers': function.reached_by_fuzzers,
+            'raw_function_name': function.raw_function_name,
+            'source_line_begin': function.source_line_begin,
+            'source_line_end': function.source_line_end,
+            'function_signature': function.func_signature,
+            'debug_summary': function.debug_data,
+        })
+
+    result_status = 'success'
+    return {
+        'result': result_status,
+        'extended_msgs': err_msgs,
+        'functions': functions_to_return
+    }
+
+
 @blueprint.route('/api/far-reach-low-cov-fuzz-keyword')
 def api_oracle_1():
     err_msgs = list()
@@ -1043,7 +1102,6 @@ def api_oracle_1():
 
     all_functions = data_storage.get_functions()
     all_projects = [target_project]
-
     raw_functions = oracle_1(all_functions, all_projects, 100)
     functions_to_return = []
     for function in raw_functions:
