@@ -576,6 +576,14 @@ def match_easy_fuzz_arguments(function):
         "string" in function.func_signature:
         return True
 
+    if len(function.function_arguments) == 1 and \
+       "char *" in function.function_arguments[0]:
+        return True
+
+    if len(function.function_arguments) == 1 and \
+        function.accummulated_cyclomatic_complexity > 1000:
+        return True
+
     return False
 
 
