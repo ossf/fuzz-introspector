@@ -566,6 +566,27 @@ def oracle_1(all_functions, all_projects, max_project_count=5):
     return functions_to_display
 
 
+def match_easy_fuzz_arguments(function):
+    if len(function.function_arguments) == 1 and \
+        function.accummulated_cyclomatic_complexity > 1000:
+        return True
+
+    print(json.dumps(function.debug_data, indent=2))
+    debug_args = function.debug_data.get('args')
+    if len(debug_args
+           ) == 2 and 'char *' in debug_args[0] and 'int' in debug_args[1]:
+        return True
+
+    if len(debug_args) == 1:
+        if "string" in debug_args[0]:
+            return True
+
+        if "char *" in debug_args[0]:
+            return True
+
+    return False
+
+
 def oracle_2(all_functions, all_projects):
     tmp_list = []
     project_count = dict()
@@ -578,11 +599,7 @@ def oracle_2(all_functions, all_projects):
             if function.project != project_to_target.name:
                 continue
 
-        if len(function.function_arguments) != 2:
-            continue
-
-        if (function.function_arguments[0] != 'char *'
-                or function.function_arguments[1] != "int"):
+        if not match_easy_fuzz_arguments(function):
             continue
 
         if function.accummulated_cyclomatic_complexity < 150:
