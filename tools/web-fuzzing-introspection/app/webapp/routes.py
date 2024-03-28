@@ -567,22 +567,22 @@ def oracle_1(all_functions, all_projects, max_project_count=5):
 
 
 def match_easy_fuzz_arguments(function):
-    if len(function.function_arguments) == 2 and \
-            (function.function_arguments[0] == 'char *' and
-            function.function_arguments[1] == "int"):
-        return True
-
-    if len(function.function_arguments) == 1 and \
-        "string" in function.func_signature:
-        return True
-
-    if len(function.function_arguments) == 1 and \
-       "char *" in function.function_arguments[0]:
-        return True
-
     if len(function.function_arguments) == 1 and \
         function.accummulated_cyclomatic_complexity > 1000:
         return True
+
+    print(json.dumps(function.debug_data, indent=2))
+    debug_args = function.debug_data.get('args')
+    if len(debug_args
+           ) == 2 and 'char *' in debug_args[0] and 'int' in debug_args[1]:
+        return True
+
+    if len(debug_args) == 1:
+        if "string" in debug_args[0]:
+            return True
+
+        if "char *" in debug_args[0]:
+            return True
 
     return False
 
