@@ -25,6 +25,7 @@ from typing import (
 from fuzz_introspector import analysis
 from fuzz_introspector import constants
 from fuzz_introspector import html_report
+from fuzz_introspector import json_report
 from fuzz_introspector import html_helpers
 from fuzz_introspector import utils
 from fuzz_introspector.datatypes import (project_profile, fuzzer_profile,
@@ -323,6 +324,28 @@ class OptimalTargets(analysis.AnalysisInterface):
                 len(fd.incoming_references), fd.total_cyclomatic_complexity,
                 fd.new_unreached_complexity
             ])
+
+        json_dict = list()
+        for fd in optimal_target_functions:
+            json_dict.append({
+                'name':
+                fd.function_name,
+                'source_file':
+                fd.function_source_file,
+                'new-unreached-complexity':
+                fd.new_unreached_complexity,
+                'cyclomatic_complexity':
+                fd.cyclomatic_complexity,
+                'function_depth':
+                fd.function_depth,
+                'total_cyclomatic_complexity':
+                fd.total_cyclomatic_complexity
+            })
+
+        self.set_json_string_result(json.dumps(json_dict))
+
+        json_report.add_analysis_json_str_as_dict_to_report(
+            self.get_name(), self.get_json_string_result())
         html_string += ("</table>\n")
         return html_string
 
