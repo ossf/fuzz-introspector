@@ -325,7 +325,11 @@ def create_percentage_graph(title: str, numerator: int,
     """Creates a percentage tag within a <div> tag. This is used to show
     "how much X is of Y" for a {numerator, denominator} pair.
     """
-    percentage = round(float(numerator) / float(denominator), 2) * 100.0
+    try:
+        percentage = round(float(numerator) / float(denominator), 2) * 100.0
+    except ZeroDivisionError:
+        percentage = 0.0
+
     subtitle = f"{numerator} / {denominator}"
     return f"""<div style="flex:1; margin-right: 20px"class="report-box mt-0">
             <div style="font-weight: 600; text-align: center;">
