@@ -205,8 +205,11 @@ def create_boxed_top_summary_info(
                 title="No coverage data was found",
                 description=html_constants.WARNING_NO_COVERAGE))
     # Add coverage conclusion
-    coverage_percentage = float(
-        len(covered_funcs) / float(proj_profile.total_functions) * 100.0)
+    try:
+        coverage_percentage = float(
+            len(covered_funcs) / float(proj_profile.total_functions) * 100.0)
+    except ZeroDivisionError:
+        coverage_percentage = 0.0
     if coverage_percentage > 50.0:
         sentence = f"""Fuzzers reach {"%.5s%%"%(str(coverage_percentage))} code coverage."""
         conclusions.append(

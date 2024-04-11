@@ -183,10 +183,17 @@ class MergedProjectProfile:
         reached_func_count = self._get_total_reached_function_count()
         unreached_func_count = self._get_total_unreached_function_count()
         total_functions = reached_func_count + unreached_func_count
-        reached_percentage = (float(reached_func_count) /
-                              float(total_functions)) * 100
-        unreached_percentage = (float(unreached_func_count) /
-                                float(total_functions)) * 100
+        try:
+            reached_percentage = (float(reached_func_count) /
+                                  float(total_functions)) * 100
+        except ZeroDivisionError:
+            reached_percentage = 0.0
+
+        try:
+            unreached_percentage = (float(unreached_func_count) /
+                                    float(total_functions)) * 100
+        except ZeroDivisionError:
+            unreached_percentage = 0.0
         return (total_functions, reached_func_count, unreached_func_count,
                 reached_percentage, unreached_percentage)
 
@@ -273,8 +280,11 @@ class MergedProjectProfile:
         reached_func_count = self._get_total_reached_function_count()
         unreached_func_count = self._get_total_unreached_function_count()
         total_functions = reached_func_count + unreached_func_count
-        reached_percentage = (float(reached_func_count) /
-                              float(total_functions)) * 100
+        try:
+            reached_percentage = (float(reached_func_count) /
+                                  float(total_functions)) * 100
+        except ZeroDivisionError:
+            reached_percentage = 0.0
         return reached_percentage
 
     def get_profiles_coverage_files(self) -> List[str]:
@@ -377,7 +387,11 @@ class MergedProjectProfile:
          unreached_func_percentage) = self.get_function_summaries()
 
         covered_funcs = self.get_all_runtime_covered_functions()
-        cov_percentage = round(len(covered_funcs) / total_functions, 2) * 100.0
+        try:
+            cov_percentage = round(len(covered_funcs) / total_functions,
+                                   2) * 100.0
+        except ZeroDivisionError:
+            cov_percentage = 0.0
 
         json_report.add_project_key_value_to_report(
             "stats", {
@@ -410,6 +424,10 @@ class MergedProjectProfile:
             if "/usr/include/" in f.function_source_file:
                 continue
             all_strs.append(os.path.dirname(f.function_source_file))
+
+        if len(all_strs) == 0:
+            self.basefolder = ""
+            return
 
         self.basefolder = utils.longest_common_prefix(all_strs) + "/"
 
