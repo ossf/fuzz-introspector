@@ -573,6 +573,8 @@ def match_easy_fuzz_arguments(function):
 
     print(json.dumps(function.debug_data, indent=2))
     debug_args = function.debug_data.get('args')
+    if not debug_args:
+        return False
     if len(debug_args
            ) == 2 and 'char *' in debug_args[0] and 'int' in debug_args[1]:
         return True
