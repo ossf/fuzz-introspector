@@ -1576,6 +1576,9 @@ int FuzzIntrospector::extractCalltree(
   int MaxDepthOfEdges = 0;
   for (CalltreeNode *OutEdge : OutgoingEdges) {
     if (isNodeInVector(OutEdge, allNodesInTree)) {
+      if (getenv("FUZZ_INTROSPECTOR_CT_TARGET") && Calltree != nullptr) {
+        Calltree->Outgoings.push_back(OutEdge);
+      }
       continue;
     }
 
