@@ -337,7 +337,7 @@ struct FuzzIntrospector : public ModulePass {
   void dumpCalltree(CalltreeNode *, std::string);
   void getFunctionsInAllNodes(std::vector<CalltreeNode *> *,
                               std::set<StringRef> *);
-  void extractFuzzerReachabilityGraph(Module &M);
+  void extractFuzzerReachabilityGraph(Module &M, std::string TargetFunction);
   int extractCalltree(Function *F, CalltreeNode *callTree,
                       std::vector<CalltreeNode *> *allNodes, int toRecurse);
   void logCalltree(struct CalltreeNode *calltree, std::ofstream *, int Depth);
@@ -952,6 +952,12 @@ bool FuzzIntrospector::runOnModule(Module &M) {
     readConfig();
   }
 
+  if (getenv("FUZZ_INTROSPECTOR_CT_TARGET")) {
+    extractFuzzerReachabilityGraph(M, getenv("FUZZ_INTROSPECTOR_CT_TARGET"));
+    dumpCalltree(&FuzzerCalltree, "targetCalltree.txt");
+    return true;
+  }
+
   // Extract and log reachability graph
   std::string nextCalltreeFile = getNextLogFile();
 
@@ -965,7 +971,7 @@ bool FuzzIntrospector::runOnModule(Module &M) {
                          FuzzIntrospectorTag, "FuzzIntrospectorTag");
   GV->setInitializer(FuzzIntrospectorTag);
 
-  extractFuzzerReachabilityGraph(M);
+  extractFuzzerReachabilityGraph(M, "LLVMFuzzerTestOneInput");
   dumpCalltree(&FuzzerCalltree, nextCalltreeFile);
 
   // Log data about all functions in the module
@@ -1943,8 +1949,8 @@ bool FuzzIntrospector::shouldRunIntrospector(Module &M) {
   return true;
 }
 
-void FuzzIntrospector::extractFuzzerReachabilityGraph(Module &M) {
-  Function *FuzzEntryFunc = M.getFunction("LLVMFuzzerTestOneInput");
+void FuzzIntrospector::extractFuzzerReachabilityGraph(Module &M, std::string TargetFunction) {
+  Function *FuzzEntryFunc = M.getFunction(TargetFunction);
   if (FuzzEntryFunc == nullptr) {
     return;
   }
