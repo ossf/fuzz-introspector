@@ -1,0 +1,5 @@
+fuzzerLogFile*
+fuzzer
+*.o
+*.bc
+*.ll
