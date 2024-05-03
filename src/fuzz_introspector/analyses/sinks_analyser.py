@@ -408,7 +408,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
             # Loop through the list of callpaths and
             # filter out inaccessbile callpths
             for callpath in callpath_list:
-                if callpath[0].accessible:
+                if callpath[0].is_accessible and not callpath[0].is_jvm_library:
                     result.append(callpath)
 
             return result
