@@ -138,10 +138,10 @@ class FunctionProfile:
         if "JavaMethodInfo" in elem and elem['JavaMethodInfo']:
             return bool(elem['JavaMethodInfo']['javaLibraryMethod'])
 
-        return True
+        return False
 
     def _is_enum_class(self, elem: Dict[Any, Any]) -> bool:
         if "JavaMethodInfo" in elem and elem['JavaMethodInfo']:
             return bool(elem['JavaMethodInfo']['classEnum'])
 
-        return True
+        return False
