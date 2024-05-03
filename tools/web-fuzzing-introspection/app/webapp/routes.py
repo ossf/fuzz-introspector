@@ -136,7 +136,7 @@ def get_functions_of_interest(project_name):
     project_functions = []
     for function in all_functions:
         # Skipping non-related jvm methods and methods from enum classes
-        if not function.is_accessible or function.is_jvm_library or function.is_enum:
+        if not function.is_accessible or function.is_jvm_library or function.is_enum_class:
             continue
         if function.project == project_name:
             if function.runtime_code_coverage < 20.0:
