@@ -101,9 +101,9 @@ class Function:
                  callsites=[],
                  func_signature='',
                  debug_data=dict(),
-                 is_accessible = True,
-                 is_jvm_library = False,
-                 is_enum_class = False):
+                 is_accessible=True,
+                 is_jvm_library=False,
+                 is_enum_class=False):
         self.name = name
         self.function_filename = function_filename
         self.project = project
