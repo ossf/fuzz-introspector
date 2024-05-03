@@ -127,10 +127,10 @@ class FunctionProfile:
 
     def _is_function_acccessible(self, elem: Dict[Any, Any]) -> bool:
         if "JavaMethodInfo" in elem and elem['JavaMethodInfo']:
-            return (bool(elem['JavaMethodInfo']['public']) and
-                    bool(elem['JavaMethodInfo']['classPublic']) and
-                    bool(elem['JavaMethodInfo']['concrete']) and
-                    bool(elem['JavaMethodInfo']['classConcrete']))
+            return (bool(elem['JavaMethodInfo']['public'])
+                    and bool(elem['JavaMethodInfo']['classPublic'])
+                    and bool(elem['JavaMethodInfo']['concrete'])
+                    and bool(elem['JavaMethodInfo']['classConcrete']))
 
         return True
 
