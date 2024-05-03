@@ -143,6 +143,9 @@ def create_all_function_table(
         json_copy['callsites'] = fd.callsite
         json_copy['source_line_begin'] = fd.function_linenumber
         json_copy['source_line_end'] = fd.function_line_number_end
+        json_copy['is_accessible'] = fd.is_accessible
+        json_copy['is_jvm_library'] = fd.is_jvm_library
+        json_copy['is_enum_class'] = fd.is_enum
         table_rows_json_report.append(json_copy)
 
     logger.info("Assembled a total of %d entries" %
@@ -759,7 +762,8 @@ def create_html_report(introspection_proj: analysis.IntrospectionProject,
 
     # Correlate debug info to introspector functions
     analysis.correlate_introspection_functions_to_debug_info(
-        all_functions_json_report, introspection_proj.debug_all_functions)
+        all_functions_json_report, introspection_proj.debug_all_functions,
+        proj_profile.target_lang)
 
     # Write various stats and all-functions data to summary.json
     proj_profile.write_stats_to_summary_file()

@@ -902,7 +902,8 @@ def correlate_introspector_func_to_debug_information(if_func,
 
 
 def correlate_introspection_functions_to_debug_info(all_functions_json_report,
-                                                    debug_all_functions):
+                                                    debug_all_functions,
+                                                    proj_lang):
     """Correlates function data collected by debug information to function
     data collected by LLVMs module, and uses the correlated data to generate
     function signatures for each function based on debug information."""
@@ -941,5 +942,8 @@ def correlate_introspection_functions_to_debug_info(all_functions_json_report,
             if_func['function_signature'] = func_sig
             if_func['debug_function_info'] = correlated_debug_function
         else:
-            if_func['function_signature'] = 'N/A'
+            if proj_lang == 'jvm':
+                if_func['function_signature'] = if_func['Func name']
+            else:
+                if_func['function_signature'] = 'N/A'
             if_func['debug_function_info'] = dict()
