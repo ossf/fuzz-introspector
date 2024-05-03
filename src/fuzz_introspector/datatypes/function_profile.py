@@ -66,7 +66,7 @@ class FunctionProfile:
         # Currently, only JVM projects are using these parameters
         # All functions of non-JVM projects will always get True for these parameters
         self.is_accessible = self._is_function_acccessible(elem)
-        self.is_library = self._is_jvm_library(elem)
+        self.is_jvm_library = self._is_jvm_library(elem)
         self.is_enum = self._is_enum_class(elem)
 
         # Temporary handle for unreadable library method (JVM)
@@ -123,7 +123,7 @@ class FunctionProfile:
 
         return cs_loaded
 
-    ### Special functions for discovering accessibility and status for JVM methods. ###
+    # Special functions for discovering accessibility and status for JVM methods. #
 
     def _is_function_acccessible(self, elem: Dict[Any, Any]) -> bool:
         if "JavaMethodInfo" in elem and elem['JavaMethodInfo']:
