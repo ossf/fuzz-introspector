@@ -1,82 +1,25 @@
 diff --git a/infra/base-images/base-builder/Dockerfile b/infra/base-images/base-builder/Dockerfile
-index 8dcbdce6c..583427556 100644
+index 8dcbdce6c..de8f7b62f 100644
 --- a/infra/base-images/base-builder/Dockerfile
 +++ b/infra/base-images/base-builder/Dockerfile
-@@ -176,5 +176,9 @@ RUN chmod +x /usr/local/bin/clang-jcc && chmod +x /usr/local/bin/clang++-jcc
- COPY llvmsymbol.diff $SRC
+@@ -177,4 +177,10 @@ COPY llvmsymbol.diff $SRC
  COPY detect_repo.py /opt/cifuzz/
  COPY bazel.bazelrc /root/.bazelrc
+ 
+-CMD ["compile"]
+\ No newline at end of file
 +RUN rm -rf /fuzz-introspector/src
 +RUN rm -rf /fuzz-introspector/frontends
 +COPY src /fuzz-introspector/src
 +COPY frontends /fuzz-introspector/frontends
- 
- CMD ["compile"]
-\ No newline at end of file
-diff --git a/infra/base-images/base-builder/compile b/infra/base-images/base-builder/compile
-index 69e132f1d..4c5965c08 100755
---- a/infra/base-images/base-builder/compile
-+++ b/infra/base-images/base-builder/compile
-@@ -19,11 +19,6 @@ echo "---------------------------------------------------------------"
- 
- OSS_FUZZ_ON_DEMAND="${OSS_FUZZ_ON_DEMAND:-0}"
- 
--# This is a temporary fix: fall back to LLVM14's old pass manager
--if [ -n "${OLD_LLVMPASS-}" ]; then
--  export SANITIZER_FLAGS_introspector=$(echo $SANITIZER_FLAGS_introspector | sed -r 's/-O0/-flegacy-pass-manager/')
--fi
--
- if [ "$FUZZING_LANGUAGE" = "jvm" ]; then
-   if [ "$FUZZING_ENGINE" != "libfuzzer" ] && [ "$FUZZING_ENGINE" != "wycheproof" ]; then
-     echo "ERROR: JVM projects can be fuzzed with libFuzzer or tested with wycheproof engines only."
-diff --git a/infra/base-images/base-builder/compile_libfuzzer b/infra/base-images/base-builder/compile_libfuzzer
-index 7962bd366..769bb8e73 100755
---- a/infra/base-images/base-builder/compile_libfuzzer
-+++ b/infra/base-images/base-builder/compile_libfuzzer
-@@ -21,6 +21,6 @@ if [ "$FUZZING_LANGUAGE" = "go" ]; then
-     export LIB_FUZZING_ENGINE="$LIB_FUZZING_ENGINE $GOPATH/gosigfuzz/gosigfuzz.o"
- fi
- 
--cp /usr/local/lib/clang/*/lib/linux/libclang_rt.fuzzer-$ARCHITECTURE.a \
--  $LIB_FUZZING_ENGINE_DEPRECATED
-+#cp /usr/local/lib/clang/*/lib/linux/libclang_rt.fuzzer-$ARCHITECTURE.a \
-+#  $LIB_FUZZING_ENGINE_DEPRECATED
- echo " done."
-diff --git a/infra/base-images/base-builder/precompile_centipede b/infra/base-images/base-builder/precompile_centipede
-index 2abc1e9ff..63b90af50 100755
---- a/infra/base-images/base-builder/precompile_centipede
-+++ b/infra/base-images/base-builder/precompile_centipede
-@@ -16,7 +16,7 @@
- ################################################################################
- 
- echo -n "Precompiling centipede"
--
-+exit 0
- # Build Centipede with bazel.
- cd "$SRC/fuzztest/centipede/"
- apt-get update && apt-get install libssl-dev -y
-diff --git a/infra/base-images/base-builder/precompile_honggfuzz b/infra/base-images/base-builder/precompile_honggfuzz
-index df6bb2b75..dd7f3d1eb 100755
---- a/infra/base-images/base-builder/precompile_honggfuzz
-+++ b/infra/base-images/base-builder/precompile_honggfuzz
-@@ -28,6 +28,8 @@ PACKAGES=(
- 
- apt-get install -y ${PACKAGES[@]}
- 
-+exit 0
 +
- pushd $SRC/honggfuzz > /dev/null
- make clean
- # These CFLAGs match honggfuzz's default, with the exception of -mtune to
++
++CMD ["compile"]
 diff --git a/infra/base-images/base-clang/Dockerfile b/infra/base-images/base-clang/Dockerfile
-index 465fe5d27..3fc890091 100644
+index 8a00520a2..782683d81 100644
 --- a/infra/base-images/base-clang/Dockerfile
 +++ b/infra/base-images/base-clang/Dockerfile
-@@ -42,9 +42,12 @@ RUN apt-get update && apt-get install -y git && \
-     apt-get autoremove --purge -y git && \
-     rm -rf .git
- 
-+COPY llvm-project /src/llvm-project
+@@ -44,6 +44,8 @@ RUN apt-get update && apt-get install -y git && \
  COPY checkout_build_install_llvm.sh /root/
  # Keep all steps in the same script to decrease the number of intermediate
  # layes in docker file.
@@ -85,121 +28,16 @@ index 465fe5d27..3fc890091 100644
  RUN /root/checkout_build_install_llvm.sh
  RUN rm /root/checkout_build_install_llvm.sh
  
-@@ -57,5 +60,6 @@ ENV CCC "clang++"
- # https://llvm.org/docs/LibFuzzer.html#fuzzer-friendly-build-mode
- 
- ENV CFLAGS "-O1 -fno-omit-frame-pointer -gline-tables-only -DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION"
--ENV CXXFLAGS_EXTRA "-stdlib=libc++"
-+#ENV CXXFLAGS_EXTRA "-stdlib=libc++"
-+ENV CXXFLAGS_EXTRA ""
- ENV CXXFLAGS "$CFLAGS $CXXFLAGS_EXTRA"
-diff --git a/infra/base-images/base-clang/checkout_build_install_llvm.sh b/infra/base-images/base-clang/checkout_build_install_llvm.sh
-index 65f0ea554..549a190f6 100755
---- a/infra/base-images/base-clang/checkout_build_install_llvm.sh
-+++ b/infra/base-images/base-clang/checkout_build_install_llvm.sh
-@@ -50,14 +50,16 @@ LLVM_DEP_PACKAGES="build-essential make ninja-build git python3 python3-distutil
- apt-get update && apt-get install -y $LLVM_DEP_PACKAGES --no-install-recommends
- 
- # For manual bumping.
--OUR_LLVM_REVISION=llvmorg-15-init-1464-gbf7f8d6f
-+#OUR_LLVM_REVISION=llvmorg-15-init-1464-gbf7f8d6f
-+OUR_LLVM_REVISION=llvmorg-18-init-14420-gea3a3b25
- 
- mkdir $SRC/chromium_tools
- cd $SRC/chromium_tools
- git clone https://chromium.googlesource.com/chromium/src/tools/clang
- cd clang
- # Pin clang due to https://github.com/google/oss-fuzz/issues/7617
--git checkout 946a41a51f44207941b3729a0733dfc1e236644e
-+#git checkout 946a41a51f44207941b3729a0733dfc1e236644e
-+git checkout 9eb79319239629c1b23cf7a59e5ebb2bab319a34
- 
- # To allow for manual downgrades. Set to 0 to use Chrome's clang version (i.e.
- # *not* force a manual downgrade). Set to 1 to force a manual downgrade.
-@@ -89,15 +91,18 @@ function clone_with_retries {
-   set -e
-   return $CHECKOUT_RETURN_CODE
- }
--clone_with_retries https://github.com/llvm/llvm-project.git $LLVM_SRC
-+#COPY llvm-project $LLVM_SRC
-+#clone_with_retries https://github.com/llvm/llvm-project.git $LLVM_SRC
- 
--PROJECTS_TO_BUILD="libcxx;libcxxabi;compiler-rt;clang;lld"
-+#PROJECTS_TO_BUILD="libcxx;libcxxabi;compiler-rt;clang;lld"
-+PROJECTS_TO_BUILD="compiler-rt;clang;lld"
- function cmake_llvm {
-   extra_args="$@"
-   cmake -G "Ninja" \
-       -DLIBCXX_ENABLE_SHARED=OFF \
-       -DLIBCXX_ENABLE_STATIC_ABI_LIBRARY=ON \
-       -DLIBCXXABI_ENABLE_SHARED=OFF \
-+      -DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi;libunwind" \
-       -DCMAKE_BUILD_TYPE=Release \
-       -DLLVM_TARGETS_TO_BUILD="$TARGET_TO_BUILD" \
-       -DLLVM_ENABLE_PROJECTS="$PROJECTS_TO_BUILD" \
-@@ -213,20 +218,21 @@ then
-   # do not support MSAN nor do we care about i386.
-   exit 0
- fi
--
--function cmake_libcxx {
--  extra_args="$@"
--  cmake -G "Ninja" \
--      -DLIBCXX_ENABLE_SHARED=OFF \
--      -DLIBCXX_ENABLE_STATIC_ABI_LIBRARY=ON \
--      -DLIBCXXABI_ENABLE_SHARED=OFF \
-+free_disk_space
-+exit 0
-+#function cmake_libcxx {
-+#  extra_args="$@"
-+#  cmake -G "Ninja" \
-+#      -DLIBCXX_ENABLE_SHARED=OFF \
-+#      -DLIBCXX_ENABLE_STATIC_ABI_LIBRARY=ON \
-+#      -DLIBCXXABI_ENABLE_SHARED=OFF \
-       -DCMAKE_BUILD_TYPE=Release \
-       -DLLVM_TARGETS_TO_BUILD="$TARGET_TO_BUILD" \
--      -DLLVM_ENABLE_PROJECTS="libcxx;libcxxabi" \
-+#      -DLLVM_ENABLE_PROJECTS="libcxx;libcxxabi" \
-       -DLLVM_BINUTILS_INCDIR="/usr/include/" \
-       $extra_args \
-       $LLVM_SRC/llvm
--}
-+#}
- 
- # 32-bit libraries.
- mkdir -p $WORK/i386
 diff --git a/infra/base-images/base-runner/Dockerfile b/infra/base-images/base-runner/Dockerfile
-index 45c5e73b6..07bd1b9c0 100755
+index 45c5e73b6..05e196a34 100755
 --- a/infra/base-images/base-runner/Dockerfile
 +++ b/infra/base-images/base-runner/Dockerfile
-@@ -19,7 +19,7 @@
- FROM gcr.io/oss-fuzz-base/base-image as temp-runner-binary-builder
+@@ -45,7 +45,7 @@ RUN git clone https://chromium.googlesource.com/chromium/src/tools/code_coverage
+     pip3 install wheel && \
+     pip3 install -r requirements.txt && \
+     pip3 install MarkupSafe==0.23 && \
+-    pip3 install coverage
++    pip3 install coverage==6.3.2
  
- RUN apt-get update && apt-get install -y cargo
--RUN cargo install rustfilt
-+#RUN cargo install rustfilt
- 
- # Using multi-stage build to copy some LLVM binaries needed in the runner image.
- FROM gcr.io/oss-fuzz-base/base-clang AS base-clang
-@@ -27,7 +27,7 @@ FROM gcr.io/oss-fuzz-base/base-clang AS base-clang
- # Real image that will be used later.
- FROM gcr.io/oss-fuzz-base/base-image
- 
--COPY --from=temp-runner-binary-builder /root/.cargo/bin/rustfilt /usr/local/bin
-+#COPY --from=temp-runner-binary-builder /root/.cargo/bin/rustfilt /usr/local/bin
- 
- # Copy the binaries needed for code coverage and crash symbolization.
- COPY --from=base-clang /usr/local/bin/llvm-cov \
-diff --git a/projects/leveldb/fuzz_db.cc b/projects/leveldb/fuzz_db.cc
-index 0147c124f..5cb9f166a 100644
---- a/projects/leveldb/fuzz_db.cc
-+++ b/projects/leveldb/fuzz_db.cc
-@@ -40,7 +40,7 @@ class AutoDbDeleter {
-   AutoDbDeleter& operator=(const AutoDbDeleter&) = delete;
- 
-   ~AutoDbDeleter() {
--    std::__fs::filesystem::remove_all(kDbPath);
-+    //std::__fs::filesystem::remove_all(kDbPath);
-   }
- };
- 
+ # Default environment options for various sanitizers.
+ # Note that these match the settings used in ClusterFuzz and
