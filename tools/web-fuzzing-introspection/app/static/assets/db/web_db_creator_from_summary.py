@@ -229,6 +229,9 @@ def extract_and_refine_functions(all_function_list, project_name, date_str):
             'function_signature', 'N/A')
         introspector_func['debug-function'] = func.get('debug_function_info',
                                                        dict())
+        introspector_func['is_accessible'] = func.get('is_accessible', True)
+        introspector_func['is_jvm_library'] = func.get('is_jvm_library', False)
+        introspector_func['is_enum_class'] = func.get('is_enum_class', False)
 
         refined_proj_list.append(introspector_func)
     return refined_proj_list

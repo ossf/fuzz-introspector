@@ -75,7 +75,9 @@ def load_db():
                 callsites=func.get('callsites', []),
                 func_signature=func.get('function-signature', 'N/A'),
                 debug_data=func.get('debug-function', 'N/A'),
-            ))
+                is_accessible=func.get('is_accessible', True),
+                is_jvm_library=func.get('is_jvm_library', False),
+                is_enum_class=func.get('is_enum_class', False)))
 
     print("Loadded %d functions" % (idx))
     print("Len %d" % (len(data_storage.FUNCTIONS)))

@@ -100,7 +100,10 @@ class Function:
                  source_line_end=-1,
                  callsites=[],
                  func_signature='',
-                 debug_data=dict()):
+                 debug_data=dict(),
+                 is_accessible=True,
+                 is_jvm_library=False,
+                 is_enum_class=False):
         self.name = name
         self.function_filename = function_filename
         self.project = project
@@ -121,6 +124,9 @@ class Function:
         self.callsites = callsites
         self.func_signature = func_signature
         self.debug_data = debug_data
+        self.is_accessible = is_accessible
+        self.is_jvm_library = is_jvm_library
+        self.is_enum_class = is_enum_class
 
     def __dict__(self):
         return {
@@ -135,7 +141,10 @@ class Function:
             'accummulated_cyclomatic_complexity':
             self.accummulated_cyclomatic_complexity,
             'undiscovered_complexity': self.undiscovered_complexity,
-            'function_filename': self.function_filename
+            'function_filename': self.function_filename,
+            'is_accessible': self.is_accessible,
+            'is_jvm_library': self.is_jvm_library,
+            'is_enum_class': self.is_enum_class
         }
 
 

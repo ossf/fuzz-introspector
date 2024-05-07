@@ -62,8 +62,12 @@ class FunctionProfile:
         self.functions_called = utils.load_func_names(elem['functionsReached'],
                                                       False)
 
-        # Check if this function is accessible
-        self.accessible = self.is_function_acccessible(elem)
+        # Check if this function is accessible or contains special properties
+        # Currently, only JVM projects are using these parameters
+        # All functions of non-JVM projects will always get True for these parameters
+        self.is_accessible = self._is_function_acccessible(elem)
+        self.is_jvm_library = self._is_jvm_library(elem)
+        self.is_enum = self._is_enum_class(elem)
 
         # Temporary handle for unreadable library method (JVM)
         # (jar missing or purposely ignored)
@@ -119,20 +123,25 @@ class FunctionProfile:
 
         return cs_loaded
 
-    def is_function_acccessible(self, elem: Dict[Any, Any]) -> bool:
-        # Currently only support jvm which accessible information is available
+    # Special functions for discovering accessibility and status for JVM methods. #
+
+    def _is_function_acccessible(self, elem: Dict[Any, Any]) -> bool:
         if "JavaMethodInfo" in elem and elem['JavaMethodInfo']:
-            if elem['JavaMethodInfo']['javaLibraryMethod']:
-                return False
-            if elem['JavaMethodInfo']['classEnum']:
-                return False
-            if not elem['JavaMethodInfo']['public']:
-                return False
-            if not elem['JavaMethodInfo']['classPublic']:
-                return False
-            if not elem['JavaMethodInfo']['concrete']:
-                return False
-            if not elem['JavaMethodInfo']['classConcrete']:
-                return False
+            return (bool(elem['JavaMethodInfo']['public'])
+                    and bool(elem['JavaMethodInfo']['classPublic'])
+                    and bool(elem['JavaMethodInfo']['concrete'])
+                    and bool(elem['JavaMethodInfo']['classConcrete']))
 
         return True
+
+    def _is_jvm_library(self, elem: Dict[Any, Any]) -> bool:
+        if "JavaMethodInfo" in elem and elem['JavaMethodInfo']:
+            return bool(elem['JavaMethodInfo']['javaLibraryMethod'])
+
+        return False
+
+    def _is_enum_class(self, elem: Dict[Any, Any]) -> bool:
+        if "JavaMethodInfo" in elem and elem['JavaMethodInfo']:
+            return bool(elem['JavaMethodInfo']['classEnum'])
+
+        return False

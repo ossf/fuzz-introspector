@@ -135,6 +135,9 @@ def get_functions_of_interest(project_name):
     all_functions = data_storage.get_functions()
     project_functions = []
     for function in all_functions:
+        # Skipping non-related jvm methods and methods from enum classes
+        if not function.is_accessible or function.is_jvm_library or function.is_enum_class:
+            continue
         if function.project == project_name:
             if function.runtime_code_coverage < 20.0:
                 project_functions.append(function)
@@ -207,6 +210,9 @@ def get_all_related_functions(primary_function):
     all_functions = data_storage.get_functions()
     related_functions = []
     for function in all_functions:
+        # Skipping non-related jvm methods
+        if not function.is_accessible or function.is_jvm_library:
+            continue
         if function.name == primary_function.name and function.project != primary_function.project:
             related_functions.append(function)
     return related_functions
