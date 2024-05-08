@@ -26,6 +26,9 @@ def get_introspector_report_url_base(project_name, datestr):
     project_url = base_url.format(project_name, datestr)
     return project_url
 
+def get_introspector_type_map_url_summary(project_name, datestr):
+    return get_introspector_report_url_base(project_name,
+                                            datestr) + "all-friendly-debug-types.json"
 
 def get_introspector_report_url_summary(project_name, datestr):
     return get_introspector_report_url_base(project_name,
