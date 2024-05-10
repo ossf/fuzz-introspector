@@ -28,16 +28,3 @@ index 8a00520a2..782683d81 100644
  RUN /root/checkout_build_install_llvm.sh
  RUN rm /root/checkout_build_install_llvm.sh
  
-diff --git a/infra/base-images/base-runner/Dockerfile b/infra/base-images/base-runner/Dockerfile
-index 45c5e73b6..05e196a34 100755
---- a/infra/base-images/base-runner/Dockerfile
-+++ b/infra/base-images/base-runner/Dockerfile
-@@ -45,7 +45,7 @@ RUN git clone https://chromium.googlesource.com/chromium/src/tools/code_coverage
-     pip3 install wheel && \
-     pip3 install -r requirements.txt && \
-     pip3 install MarkupSafe==0.23 && \
--    pip3 install coverage
-+    pip3 install coverage==6.3.2
- 
- # Default environment options for various sanitizers.
- # Note that these match the settings used in ClusterFuzz and
