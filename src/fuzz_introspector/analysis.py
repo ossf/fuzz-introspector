@@ -825,13 +825,14 @@ def convert_param_list_to_str_v2(param_list):
     pre = ""
     med = ""
     post = ""
+    is_struct = False
     for param in param_list:
         if param == "DW_TAG_pointer_type":
             post += "*"
         elif param == 'DW_TAG_reference_type':
             post += '&'
         elif param == 'DW_TAG_structure_type':
-            continue
+            is_struct = True
         elif param == "DW_TAG_base_type":
             continue
         elif param == "DW_TAG_typedef":
@@ -842,6 +843,8 @@ def convert_param_list_to_str_v2(param_list):
             pre += "const "
         else:
             med += param
+            if is_struct:
+                med = 'struct ' + med
 
     raw_sig = pre.strip() + " " + med + " " + post
     return raw_sig.strip()
