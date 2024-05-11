@@ -140,6 +140,12 @@ class IntrospectionProject():
             else:
                 tmp_debug_functions[func['file_location']] = func
 
+        # Cleanup some debug values that we know have weird names and
+        # not the names fro the source.
+        for debug_type in self.debug_all_types:
+            if debug_type['name'] == '_Bool':
+                debug_type['name'] = 'bool'
+
         self.debug_all_functions = no_path_debug_funcs + list(
             tmp_debug_functions.values())
 
