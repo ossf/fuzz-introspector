@@ -44,7 +44,7 @@ class MergedProjectProfile:
         self.all_functions: Dict[str,
                                  function_profile.FunctionProfile] = dict()
         self.all_constructors: Dict[str,
-                                 function_profile.FunctionProfile] = dict()
+                                    function_profile.FunctionProfile] = dict()
         self.unreached_functions = set()
         self.functions_reached = set()
         self.coverage_url = "#"
