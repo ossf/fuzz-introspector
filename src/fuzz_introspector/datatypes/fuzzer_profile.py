@@ -49,6 +49,8 @@ class FuzzerProfile:
         self.coverage: Optional[code_coverage.CoverageProfile] = None
         self.all_class_functions: Dict[
             str, function_profile.FunctionProfile] = dict()
+        self.all_class_constructors: Dict[
+            str, function_profile.FunctionProfile] = dict()
         self.branch_blockers: List[Any] = []
 
         self._target_lang = target_lang
