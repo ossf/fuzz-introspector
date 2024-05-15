@@ -85,6 +85,11 @@ class FuzzerProfile:
     @property
     def entrypoint_function(self):
         """The name of the fuzzer entrypoint"""
+
+        # if set in the evironment use that
+        ep_env = os.environ.get('FI_ENTRYPOINT', None)
+        if ep_env:
+            return ep_env
         if self.target_lang == "c-cpp":
             return "LLVMFuzzerTestOneInput"
         elif self.target_lang == "python":
