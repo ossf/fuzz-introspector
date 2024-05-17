@@ -362,8 +362,8 @@ def extract_func_sig_friendly_type_tags(target_type, debug_type_dictionary):
             tags.append("N/A")
             break
 
-        if "array" in target_type['tag']:
-            print("Array size: %d" % (target_type['const_size']))
+        #if "array" in target_type['tag']:
+        #    print("Array size: %d" % (target_type['const_size']))
 
         # Provide the tag
         tags.append(target_type['tag'])
@@ -465,7 +465,12 @@ def create_friendly_debug_types(debug_type_dictionary):
     """Create an address-indexed json dictionary. The goal is to use this for
     fast iteration over types using e.g. recursive lookups."""
     friendly_name_sig = dict()
+    logging.info("Have to create for %d addresses"%(len(debug_type_dictionary)))
+    idx = 0
     for addr in debug_type_dictionary:
+        idx += 1
+        if idx % 2500 == 0:
+            logging.info("Idx: %d"%(idx))
         friendly_type = extract_func_sig_friendly_type_tags(
             addr, debug_type_dictionary)
 
@@ -522,11 +527,13 @@ def correlate_debugged_function_to_debug_types(all_debug_types,
 
     # Create json file with addresses as indexes for type information.
     # This can be used to lookup types fast.
+    logger.info("Creating dictionary")
     create_friendly_debug_types(debug_type_dictionary)
+    logger.info("Finished creating dictionary")
 
     idx = 0
     for dfunc in all_debug_functions:
-        logger.info("idx: %d" % (idx))
+        # logger.info("idx: %d" % (idx))
         idx += 1
         func_signature_elems, source_location = extract_debugged_function_signature(
             dfunc, debug_type_dictionary)
