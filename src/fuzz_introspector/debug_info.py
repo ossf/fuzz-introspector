@@ -362,9 +362,6 @@ def extract_func_sig_friendly_type_tags(target_type, debug_type_dictionary):
             tags.append("N/A")
             break
 
-        #if "array" in target_type['tag']:
-        #    print("Array size: %d" % (target_type['const_size']))
-
         # Provide the tag
         tags.append(target_type['tag'])
 
@@ -536,10 +533,7 @@ def correlate_debugged_function_to_debug_types(all_debug_types,
     create_friendly_debug_types(debug_type_dictionary)
     logger.info("Finished creating dictionary")
 
-    idx = 0
     for dfunc in all_debug_functions:
-        # logger.info("idx: %d" % (idx))
-        idx += 1
         func_signature_elems, source_location = extract_debugged_function_signature(
             dfunc, debug_type_dictionary)
 
