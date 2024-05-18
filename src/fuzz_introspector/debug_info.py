@@ -465,12 +465,31 @@ def create_friendly_debug_types(debug_type_dictionary):
     """Create an address-indexed json dictionary. The goal is to use this for
     fast iteration over types using e.g. recursive lookups."""
     friendly_name_sig = dict()
-    logging.info("Have to create for %d addresses"%(len(debug_type_dictionary)))
+    logging.info("Have to create for %d addresses" %
+                 (len(debug_type_dictionary)))
     idx = 0
+
+    addr_members = dict()
+    for elem_addr, elem_val in debug_type_dictionary.items():
+        if elem_val['tag'] == "DW_TAG_member":
+            current_members = addr_members.get(int(elem_val['scope']), [])
+            elem_dict = {
+                'addr':
+                elem_addr,
+                'elem_name':
+                elem_val['name'],
+                'elem_friendly_type':
+                convert_param_list_to_str_v2(
+                    extract_func_sig_friendly_type_tags(
+                        elem_val['base_type_addr'], debug_type_dictionary))
+            }
+            current_members.append(elem_dict)
+            addr_members[int(elem_val['scope'])] = current_members
+
     for addr in debug_type_dictionary:
         idx += 1
         if idx % 2500 == 0:
-            logging.info("Idx: %d"%(idx))
+            logging.info("Idx: %d" % (idx))
         friendly_type = extract_func_sig_friendly_type_tags(
             addr, debug_type_dictionary)
 
@@ -478,21 +497,7 @@ def create_friendly_debug_types(debug_type_dictionary):
         # Collect elements
         structure_elems = []
         if is_struct(friendly_type):
-            for elem_addr, elem_val in debug_type_dictionary.items():
-                if elem_val['tag'] == "DW_TAG_member" and int(
-                        elem_val['scope']) == int(addr):
-                    elem_dict = {
-                        'addr':
-                        elem_addr,
-                        'elem_name':
-                        elem_val['name'],
-                        'elem_friendly_type':
-                        convert_param_list_to_str_v2(
-                            extract_func_sig_friendly_type_tags(
-                                elem_val['base_type_addr'],
-                                debug_type_dictionary))
-                    }
-                    structure_elems.append(elem_dict)
+            structure_elems = addr_members.get(int(addr), [])
 
         friendly_name_sig[addr] = {
             'raw_debug_info': debug_type_dictionary[addr],
