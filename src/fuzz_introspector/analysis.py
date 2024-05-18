@@ -776,7 +776,6 @@ def convert_debug_info_to_signature_v2(function, introspector_func):
 
     func_name = ''
     param_idx = 0
-    logger.info("Namespace: %s" % (str(namespace)))
     # Is this a class function?
     if len(function['func_signature_elems']['params']) > 0:
         if len(namespace) > 1:
@@ -784,7 +783,6 @@ def convert_debug_info_to_signature_v2(function, introspector_func):
             if namespace[-1] == convert_param_list_to_str_v2(
                     function['func_signature_elems']['params'][0]).replace(
                         " *", ""):
-                logger.info("Option 1")
                 func_name = "::".join(namespace[0:-1]) + "::"
                 param_idx += 1
             # Destructor handling
@@ -792,7 +790,6 @@ def convert_debug_info_to_signature_v2(function, introspector_func):
                     "~", "") == convert_param_list_to_str_v2(
                         function['func_signature_elems']['params'][0]).replace(
                             " *", ""):
-                logger.info("Option 2")
                 func_name = "::".join(namespace[0:-1]) + "::"
 
                 if not convert_param_list_to_str_v2(
@@ -803,7 +800,6 @@ def convert_debug_info_to_signature_v2(function, introspector_func):
             elif namespace[-2] == convert_param_list_to_str_v2(
                     function['func_signature_elems']['params'][0]).replace(
                         " *", "").replace("const ", ""):
-                logger.info("Option 3")
                 func_name = "::".join(namespace[0:-1]) + "::"
                 param_idx += 1
             else:
