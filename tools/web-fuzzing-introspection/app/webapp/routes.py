@@ -289,7 +289,7 @@ def project_profile():
     if project != None:
         # Get the build status of the project
         all_build_status = data_storage.get_build_status()
-        project_build_status = dict()
+        project_build_status = None
         for build_status in all_build_status:
             if build_status.project_name == project.name:
                 project_build_status = build_status
@@ -308,12 +308,17 @@ def project_profile():
                 real_stats.append(ps)
                 datestr = ps.date
                 latest_statistics = ps
+
+                if project_build_status:
+                    project_language = project_build_status.language
+                else:
+                    project_language = 'c++'
+
                 latest_coverage_report = get_coverage_report_url(
-                    project_build_status.get('project_name', ''), datestr,
-                    project_build_status.get('language', ''))
+                    project.name, datestr, project_language)
                 if ps.introspector_data != None:
                     latest_fuzz_introspector_report = get_introspector_url(
-                        project_build_status.get('project_name', ''), datestr)
+                        project.name, datestr)
                     latest_introspector_datestr = datestr
 
         # Get functions of interest for the project
