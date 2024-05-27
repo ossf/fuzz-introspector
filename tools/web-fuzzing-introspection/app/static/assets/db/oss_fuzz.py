@@ -101,6 +101,31 @@ def extract_introspector_debug_info(project_name, date_str):
     return debug_report
 
 
+def extract_local_introspector_report(project_name, oss_fuzz_folder):
+    summary_json = os.path.join(oss_fuzz_folder, 'build', 'out', project_name,
+                                'inspector', 'summary.json')
+    with open(summary_json, 'r') as f:
+        json_dict = json.load(f)
+    return json_dict
+
+
+def get_local_code_coverage_summary(project_name, oss_fuzz_folder):
+    summary_json = os.path.join(oss_fuzz_folder, 'build', 'out', project_name,
+                                'report', 'linux', 'summary.json')
+    with open(summary_json, 'r') as f:
+        json_dict = json.load(f)
+    return json_dict
+
+
+def get_local_code_coverage_stats(project_name, oss_fuzz_folder):
+    coverage_targets = os.path.join(oss_fuzz_folder, 'build', 'out',
+                                    project_name, 'fuzzer_stats',
+                                    'coverage_targets.txt')
+    with open(coverage_targets, 'r') as f:
+        content = f.read()
+    return content
+
+
 def get_code_coverage_summary(project_name, datestr):
     cov_summary_url = get_code_coverage_summary_url(project_name, datestr)
     try:
@@ -132,6 +157,22 @@ def extract_introspector_report(project_name, date_str):
         return None
 
     return introspector_report
+
+
+def extract_local_introspector_debug_info(project_name, oss_fuzz_folder):
+    summary_json = os.path.join(oss_fuzz_folder, 'build', 'out', project_name,
+                                'inspector', 'all_debug_info.json')
+    with open(summary_json, 'r') as f:
+        json_dict = json.load(f)
+    return json_dict
+
+
+def get_local_introspector_type_map(project_name, oss_fuzz_folder):
+    summary_json = os.path.join(oss_fuzz_folder, 'build', 'out', project_name,
+                                'inspector', 'all-friendly-debug-types.json')
+    with open(summary_json, 'r') as f:
+        json_dict = json.load(f)
+    return json_dict
 
 
 def get_introspector_type_map(project_name, date_str):

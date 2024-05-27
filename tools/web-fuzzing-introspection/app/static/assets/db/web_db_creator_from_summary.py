@@ -270,6 +270,84 @@ def extract_code_coverage_data(code_coverage_summary, project_name, date_str,
     return code_coverage_data_dict
 
 
+def extract_local_project_data(project_name, oss_fuzz_path,
+                               manager_return_dict):
+    """Extracts data for a project using a local OSS-Fuzz output."""
+    print(f'Analysing {project_name}')
+    project_language = 'c++'
+
+    code_coverage_summary = oss_fuzz.get_local_code_coverage_summary(
+        project_name, oss_fuzz_path)
+    cov_fuzz_stats = oss_fuzz.get_local_code_coverage_stats(
+        project_name, oss_fuzz_path)
+    introspector_report = oss_fuzz.extract_local_introspector_report(
+        project_name, oss_fuzz_path)
+    introspector_type_map = oss_fuzz.get_local_introspector_type_map(
+        project_name, oss_fuzz_path)
+    debug_report = oss_fuzz.extract_local_introspector_debug_info(
+        project_name, oss_fuzz_path)
+
+    # Refine the data
+    all_function_list = introspector_report['MergedProjectProfile'][
+        'all-functions']
+    project_stats = introspector_report['MergedProjectProfile']['stats']
+    amount_of_fuzzers = len(introspector_report) - 2
+    number_of_functions = len(all_function_list)
+
+    functions_covered_estimate = project_stats[
+        'code-coverage-function-percentage']
+
+    # Get details if needed and otherwise leave empty
+    refined_proj_list = list()
+    branch_pairs = list()
+    annotated_cfg = dict()
+
+    refined_proj_list = extract_and_refine_functions(all_function_list,
+                                                     project_name, '')
+    annotated_cfg = extract_and_refine_annotated_cfg(introspector_report)
+    branch_pairs = extract_and_refine_branch_blockers(introspector_report,
+                                                      project_name)
+
+    # Dump things we dont want to accummulate.
+    #save_branch_blockers(branch_pairs, project_name)
+
+    introspector_data_dict = {
+        "introspector_report_url": 'introspector_url',
+        "coverage_lines": project_stats['code-coverage-function-percentage'],
+        "static_reachability": project_stats['reached-complexity-percentage'],
+        "fuzzer_count": amount_of_fuzzers,
+        "function_count": len(all_function_list),
+        "functions_covered_estimate": functions_covered_estimate,
+        'refined_proj_list': refined_proj_list,
+        'annotated_cfg': annotated_cfg,
+    }
+
+    code_coverage_data_dict = extract_code_coverage_data(
+        code_coverage_summary, project_name, '', project_language)
+
+    if cov_fuzz_stats != None:
+        all_fuzzers = cov_fuzz_stats.split("\n")
+        if all_fuzzers[-1] == '':
+            all_fuzzers = all_fuzzers[0:-1]
+        amount_of_fuzzers = len(all_fuzzers)
+
+    project_timestamp = {
+        "project_name": project_name,
+        "date": '',
+        'language': project_language,
+        'coverage-data': code_coverage_data_dict,
+        'introspector-data': introspector_data_dict,
+        'fuzzer-count': amount_of_fuzzers,
+    }
+
+    dictionary_key = '%s###%s' % (project_name, '')
+    manager_return_dict[dictionary_key] = {
+        'project_timestamp': project_timestamp,
+        "introspector-data-dict": introspector_data_dict,
+        "coverage-data-dict": code_coverage_data_dict,
+    }
+
+
 def extract_project_data(project_name, date_str, should_include_details,
                          manager_return_dict):
     """
@@ -898,6 +976,88 @@ def get_dates_to_analyse(since_date, days_to_analyse, day_offset):
     return date_range
 
 
+def create_local_db(oss_fuzz_path):
+    """Creates a database based of local runs."""
+    function_list = list()
+    project_timestamps = list()
+    accummulated_fuzzer_count = 0
+    accummulated_function_count = 0
+    accummulated_covered_functions = 0
+    accummulated_lines_total = 0
+    accummulated_lines_covered = 0
+
+    # Create a DB timestamp
+    db_timestamp = {
+        "date": '',
+        "project_count": -1,
+        "fuzzer_count": 0,
+        "function_count": 0,
+        "function_coverage_estimate": 0,
+        "accummulated_lines_total": 0,
+        "accummulated_lines_covered": 0,
+    }
+
+    idx = 0
+    jobs = []
+
+    oss_fuzz_build_path = os.path.join(oss_fuzz_path, 'build', 'out')
+
+    projects_to_analyse = []
+    for project_out in os.listdir(oss_fuzz_build_path):
+        # Ensure we have an introspector folder
+        introspector_out = os.path.join(oss_fuzz_build_path, project_out,
+                                        'inspector')
+        if not os.path.isdir(introspector_out):
+            continue
+        projects_to_analyse.append(project_out)
+
+    analyses_dictionary = dict()
+    for project in projects_to_analyse:
+        # Get the data
+        extract_local_project_data(project, oss_fuzz_path, analyses_dictionary)
+
+    # Accummulate the data from all the projects.
+    for project_key in analyses_dictionary:
+        # Append project timestamp to the list of timestamps
+        project_timestamp = analyses_dictionary[project_key][
+            'project_timestamp']
+        project_timestamps.append(project_timestamp)
+        db_timestamp['fuzzer_count'] += project_timestamp['fuzzer-count']
+
+        # Accummulate all function list and branch blockers
+        introspector_dictionary = project_timestamp.get(
+            'introspector-data', None)
+        if introspector_dictionary != None:
+            function_list += introspector_dictionary['refined_proj_list']
+            # Remove the function list because we don't want it anymore.
+            introspector_dictionary.pop('refined_proj_list')
+
+            # Accummulate various stats for the DB timestamp.
+            db_timestamp['function_count'] += introspector_dictionary[
+                'function_count']
+            db_timestamp[
+                'function_coverage_estimate'] += introspector_dictionary[
+                    'functions_covered_estimate']
+
+        coverage_dictionary = analyses_dictionary[project_key].get(
+            'coverage-data-dict', None)
+        if coverage_dictionary != None:
+            # Accummulate various stats for the DB timestamp.
+            db_timestamp["accummulated_lines_total"] += coverage_dictionary[
+                'line_coverage']['count']
+            db_timestamp["accummulated_lines_covered"] += coverage_dictionary[
+                'line_coverage']['covered']
+
+            # We include in project count if coverage is in here
+            db_timestamp["project_count"] += 1
+
+    update_db_files(db_timestamp,
+                    project_timestamps,
+                    function_list,
+                    os.getcwd(),
+                    should_include_details=True)
+
+
 def create_db(max_projects, days_to_analyse, output_directory, input_directory,
               day_offset, to_cleanup, since_date, use_github_cache,
               use_webapp_cache, force_creation, includes_file):
@@ -976,6 +1136,11 @@ def get_cmdline_parser():
     parser.add_argument("--use_gh_cache", action="store_false")
     parser.add_argument("--use_webapp_cache", action="store_true")
     parser.add_argument("--force-creation", action="store_true")
+    parser.add_argument(
+        "--local-oss-fuzz",
+        help=
+        'Sets local OSS-Fuzz directory. Forces DB to be created from this.',
+        default=None)
     return parser
 
 
@@ -986,10 +1151,15 @@ def main():
         logging.basicConfig(level=logging.DEBUG)
     else:
         logging.basicConfig(level=logging.INFO)
-    create_db(args.max_projects, args.days_to_analyse, args.output_dir,
-              args.input_dir, args.base_offset, args.cleanup, args.since_date,
-              args.use_gh_cache, args.use_webapp_cache, args.force_creation,
-              args.includes)
+
+    if args.local_oss_fuzz:
+        logging.info('Using local version of OSS-Fuzz.')
+        create_local_db(args.local_oss_fuzz)
+    else:
+        create_db(args.max_projects, args.days_to_analyse, args.output_dir,
+                  args.input_dir, args.base_offset, args.cleanup,
+                  args.since_date, args.use_gh_cache, args.use_webapp_cache,
+                  args.force_creation, args.includes)
 
 
 if __name__ == "__main__":
