@@ -29,6 +29,8 @@ from . import data_storage
 blueprint = Blueprint('site', __name__, template_folder='templates')
 
 gtag = None
+is_local = False
+local_oss_fuzz = ''
 
 
 def get_introspector_report_url_base(project_name, datestr):
@@ -59,6 +61,16 @@ def get_coverage_report_url(project_name, datestr, language):
 
 
 def extract_introspector_raw_source_code(project_name, date_str, target_file):
+
+    if is_local:
+        src_location = os.path.join(local_oss_fuzz, 'build', 'out',
+                                    project_name, 'inspector',
+                                    'source-code') + target_file
+        if not os.path.isfile(src_location):
+            return None
+        with open(src_location, 'r') as f:
+            return f.read()
+
     introspector_summary_url = get_introspector_report_url_source_base(
         project_name, date_str.replace("-", "")) + target_file
 
@@ -297,7 +309,8 @@ def project_profile():
                 datestr = ps.date
                 latest_statistics = ps
                 latest_coverage_report = get_coverage_report_url(
-                    project_build_status.get('project_name', ''), datestr, project_build_status.get('language', ''))
+                    project_build_status.get('project_name', ''), datestr,
+                    project_build_status.get('language', ''))
                 if ps.introspector_data != None:
                     latest_fuzz_introspector_report = get_introspector_url(
                         project_build_status.get('project_name', ''), datestr)
@@ -908,6 +921,16 @@ def api_project_source_code():
     end_line = request.args.get('end_line', None)
     if end_line == None:
         return {'result': 'error', 'msg': 'No end line provided'}
+
+    # If this is a local build do not look for project timestamps
+    if is_local:
+        source_code = extract_lines_from_source_code(project_name, '',
+                                                     filepath, int(begin_line),
+                                                     int(end_line))
+        if source_code == None:
+            return {'result': 'error', 'msg': 'no source code'}
+
+        return {'result': 'success', 'source_code': source_code}
 
     all_build_status = data_storage.get_build_status()
     latest_introspector_datestr = None

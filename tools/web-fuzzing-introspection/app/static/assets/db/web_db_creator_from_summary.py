@@ -270,16 +270,21 @@ def extract_code_coverage_data(code_coverage_summary, project_name, date_str,
     return code_coverage_data_dict
 
 
-def extract_local_project_data(project_name, oss_fuzz_path, manager_return_dict):
+def extract_local_project_data(project_name, oss_fuzz_path,
+                               manager_return_dict):
     print(f'Analysing {project_name}')
     project_language = 'c++'
 
-    code_coverage_summary = oss_fuzz.get_local_code_coverage_summary(project_name, oss_fuzz_path)
-    cov_fuzz_stats = oss_fuzz.get_local_code_coverage_stats(project_name, oss_fuzz_path)
-    introspector_report = oss_fuzz.extract_local_introspector_report(project_name, oss_fuzz_path)
-    introspector_type_map = oss_fuzz.get_local_introspector_type_map(project_name, oss_fuzz_path)
-    debug_report = oss_fuzz.extract_local_introspector_debug_info(project_name, oss_fuzz_path)
-
+    code_coverage_summary = oss_fuzz.get_local_code_coverage_summary(
+        project_name, oss_fuzz_path)
+    cov_fuzz_stats = oss_fuzz.get_local_code_coverage_stats(
+        project_name, oss_fuzz_path)
+    introspector_report = oss_fuzz.extract_local_introspector_report(
+        project_name, oss_fuzz_path)
+    introspector_type_map = oss_fuzz.get_local_introspector_type_map(
+        project_name, oss_fuzz_path)
+    debug_report = oss_fuzz.extract_local_introspector_debug_info(
+        project_name, oss_fuzz_path)
 
     # Refine the data
     all_function_list = introspector_report['MergedProjectProfile'][
@@ -296,22 +301,19 @@ def extract_local_project_data(project_name, oss_fuzz_path, manager_return_dict)
     branch_pairs = list()
     annotated_cfg = dict()
 
-    refined_proj_list = extract_and_refine_functions(
-        all_function_list, project_name, '')
-    annotated_cfg = extract_and_refine_annotated_cfg(
-        introspector_report)
-    branch_pairs = extract_and_refine_branch_blockers(
-        introspector_report, project_name)
+    refined_proj_list = extract_and_refine_functions(all_function_list,
+                                                     project_name, '')
+    annotated_cfg = extract_and_refine_annotated_cfg(introspector_report)
+    branch_pairs = extract_and_refine_branch_blockers(introspector_report,
+                                                      project_name)
 
     # Dump things we dont want to accummulate.
     #save_branch_blockers(branch_pairs, project_name)
 
     introspector_data_dict = {
         "introspector_report_url": 'introspector_url',
-        "coverage_lines":
-        project_stats['code-coverage-function-percentage'],
-        "static_reachability":
-        project_stats['reached-complexity-percentage'],
+        "coverage_lines": project_stats['code-coverage-function-percentage'],
+        "static_reachability": project_stats['reached-complexity-percentage'],
         "fuzzer_count": amount_of_fuzzers,
         "function_count": len(all_function_list),
         "functions_covered_estimate": functions_covered_estimate,
@@ -1002,11 +1004,11 @@ def create_local_db(oss_fuzz_path):
     projects_to_analyse = []
     for project_out in os.listdir(oss_fuzz_build_path):
         # Ensure we have an introspector folder
-        introspector_out = os.path.join(oss_fuzz_build_path, project_out, 'inspector')
+        introspector_out = os.path.join(oss_fuzz_build_path, project_out,
+                                        'inspector')
         if not os.path.isdir(introspector_out):
             continue
         projects_to_analyse.append(project_out)
-
 
     analyses_dictionary = dict()
     for project in projects_to_analyse:
@@ -1133,7 +1135,11 @@ def get_cmdline_parser():
     parser.add_argument("--use_gh_cache", action="store_false")
     parser.add_argument("--use_webapp_cache", action="store_true")
     parser.add_argument("--force-creation", action="store_true")
-    parser.add_argument("--local-oss-fuzz", help='Sets local OSS-Fuzz directory. Forces DB to be created from this.', default=None)
+    parser.add_argument(
+        "--local-oss-fuzz",
+        help=
+        'Sets local OSS-Fuzz directory. Forces DB to be created from this.',
+        default=None)
     return parser
 
 
@@ -1150,9 +1156,9 @@ def main():
         create_local_db(args.local_oss_fuzz)
     else:
         create_db(args.max_projects, args.days_to_analyse, args.output_dir,
-              args.input_dir, args.base_offset, args.cleanup, args.since_date,
-              args.use_gh_cache, args.use_webapp_cache, args.force_creation,
-              args.includes)
+                  args.input_dir, args.base_offset, args.cleanup,
+                  args.since_date, args.use_gh_cache, args.use_webapp_cache,
+                  args.force_creation, args.includes)
 
 
 if __name__ == "__main__":
