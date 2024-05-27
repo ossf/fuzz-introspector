@@ -297,10 +297,10 @@ def project_profile():
                 datestr = ps.date
                 latest_statistics = ps
                 latest_coverage_report = get_coverage_report_url(
-                    build_status.project_name, datestr, build_status.language)
+                    project_build_status.get('project_name', ''), datestr, project_build_status.get('language', ''))
                 if ps.introspector_data != None:
                     latest_fuzz_introspector_report = get_introspector_url(
-                        build_status.project_name, datestr)
+                        project_build_status.get('project_name', ''), datestr)
                     latest_introspector_datestr = datestr
 
         # Get functions of interest for the project
