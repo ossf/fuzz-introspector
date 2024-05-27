@@ -272,6 +272,7 @@ def extract_code_coverage_data(code_coverage_summary, project_name, date_str,
 
 def extract_local_project_data(project_name, oss_fuzz_path,
                                manager_return_dict):
+    """Extracts data for a project using a local OSS-Fuzz output."""
     print(f'Analysing {project_name}')
     project_language = 'c++'
 
