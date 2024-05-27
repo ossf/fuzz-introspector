@@ -4,5 +4,5 @@ itsdangerous==2.1.2
 Jinja2==3.1.4
 MarkupSafe==2.1.2
 Werkzeug==3.0.3
-requests==2.31.0
+requests==2.32.0
 pyyaml==6.0
