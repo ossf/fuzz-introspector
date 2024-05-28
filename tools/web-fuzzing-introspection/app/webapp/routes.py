@@ -13,9 +13,11 @@
 # limitations under the License.
 
 import os
+import sys
 import random
 import requests
 import json
+import signal
 
 from flask import Blueprint, render_template, request, redirect
 
@@ -1332,6 +1334,18 @@ def get_full_recursive_types(debug_type_dictionary, resulting_types,
                     to_visit.add(str(elem_addr))
 
         to_visit.add(type_to_query)
+
+
+@blueprint.route('/api/shutdown')
+def shutdown():
+    """Shuts down the server, only if it's local."""
+    if is_local:
+        sig = getattr(signal, "SIGKILL", signal.SIGTERM)
+        os.kill(os.getpid(), sig)
+        shutdown_server()
+        return {'result': 'success', 'msg': 'shutdown'}
+    else:
+        return {'result': 'failed', 'msg': 'not a local server'}
 
 
 @blueprint.route('/api/addr-to-recursive-dwarf-info')
