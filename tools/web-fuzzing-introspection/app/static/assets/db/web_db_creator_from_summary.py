@@ -907,16 +907,29 @@ def setup_webapp_cache():
     # If we get to here it all went well.
 
 
-def reduce_projects_to_analyse(projects_to_analyse, max_projects,
-                               includes_file):
+def extract_must_includes(must_include_arg):
     must_include = set()
-    if includes_file is not None:
-        with open(includes_file, "r") as f:
+    if os.path.isfile(must_include_arg):
+        with open(must_include_arg, "r") as f:
             for line in f:
                 if line.strip():
                     must_include.add(line.strip())
+    else:
+        for elem in must_include_arg.split(","):
+            must_include.add(elem.strip())
+    return must_include
 
-    if max_projects > 0 and len(projects_to_analyse) > max_projects:
+
+def reduce_projects_to_analyse(projects_to_analyse, max_projects,
+                               must_include):
+    if max_projects <= 0:
+        tmp_dictionary = dict()
+        for k in projects_to_analyse:
+            for p in must_include:
+                if p in k:
+                    tmp_dictionary[k] = projects_to_analyse[k]
+        projects_to_analyse = tmp_dictionary
+    elif max_projects > 0 and len(projects_to_analyse) > max_projects:
         tmp_dictionary = dict()
         idx = 0
         for k in projects_to_analyse:
@@ -1060,7 +1073,9 @@ def create_local_db(oss_fuzz_path):
 
 def create_db(max_projects, days_to_analyse, output_directory, input_directory,
               day_offset, to_cleanup, since_date, use_github_cache,
-              use_webapp_cache, force_creation, includes_file):
+              use_webapp_cache, force_creation, includes):
+
+    must_include = extract_must_includes(includes)
 
     # Set up cache and input/output directory
     input_directory = create_cache(use_webapp_cache, use_github_cache,
@@ -1077,7 +1092,7 @@ def create_db(max_projects, days_to_analyse, output_directory, input_directory,
     # Reduce the amount of projects if needed.
     projects_to_analyse = reduce_projects_to_analyse(projects_to_analyse,
                                                      max_projects,
-                                                     includes_file)
+                                                     must_include)
 
     if to_cleanup:
         cleanup(output_directory)
