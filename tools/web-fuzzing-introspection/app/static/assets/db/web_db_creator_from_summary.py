@@ -1145,7 +1145,7 @@ def get_cmdline_parser():
         "--includes",
         help=
         "File with names of projects (line separated) that must be included in the DB",
-        default=None)
+        default='')
     parser.add_argument("--cleanup", action="store_true")
     parser.add_argument("--debug", action="store_true")
     parser.add_argument("--use_gh_cache", action="store_false")
