@@ -399,14 +399,18 @@ def extract_project_data(project_name, date_str, should_include_details,
         project_name, date_str.replace("-", ""))
 
     # Collet debug informaiton for languages with debug information
-    if collect_debug_info:
+    # Disable dumping type map for now because it takes too much storage.
+    # TODO(David): find a better solution wrt storage here. Maybe download the
+    # files on the fly, or reduce the size significantly.
+    dump_type_map = False
+    if dump_type_map and collect_debug_info:
         introspector_type_map = oss_fuzz.get_introspector_type_map(
             project_name, date_str.replace("-", ""))
     else:
         introspector_type_map = None
 
     #print("Type mapping:")
-    if should_include_details and introspector_type_map:
+    if dump_type_map and should_include_details and introspector_type_map:
         # Remove the friendly types from the type map because they take up
         # too much space. Instead, extract this at runtime when it need to be used.
         for addr, value in introspector_type_map.items():
