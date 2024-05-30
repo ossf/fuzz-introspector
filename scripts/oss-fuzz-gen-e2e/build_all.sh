@@ -1,3 +1,4 @@
+#!/bin/bash -eux
 # Copyright 2024 Fuzz Introspector Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,25 +15,25 @@
 #
 ################################################################################
 
-mkdir workdir
+ROOT_FI=$PWD/../../
+mkdir -p workdir
 cd workdir
-BASE=$PWD
+WORKDIR=$PWD
 
 python3.11 -m virtualenv .venv
 . .venv/bin/activate
 
 
 # FI
-git clone https://github.com/ossf/fuzz-introspector
-cd fuzz-introspector
+#git clone https://github.com/ossf/fuzz-introspector
+#cd fuzz-introspector
+cd $ROOT_FI
 python3 -m pip install -r ./requirements.txt
-
 cd oss_fuzz_integration
 ./build_post_processing.sh
 
 # OSS-Fuzz-gen
-cd $BASE
+cd $WORKDIR
 git clone https://github.com/google/oss-fuzz-gen
 cd oss-fuzz-gen
 python3 -m pip install -r ./requirements.txt
-cd $BASE
