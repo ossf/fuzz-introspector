@@ -15,8 +15,9 @@
 #
 ################################################################################
 
+ROOT_FI=$PWD/../../
 BASE_DIR=$PWD/workdir
-FI_DIR=$BASE_DIR/fuzz-introspector/
+#FI_DIR=$BASE_DIR/fuzz-introspector/
 BENCHMARK_HEURISTICS="${VARIABLE:-far-reach-low-coverage}"
 OSS_FUZZ_GEN_MODEL=${MODEL}
 PROJECT=${@}
@@ -33,24 +34,24 @@ cd ${BASE_DIR}
 . .venv/bin/activate
 
 echo "[+] Creating introspector reports"
-cd $FI_DIR/oss_fuzz_integration/oss-fuzz                                        
+cd $ROOT_FI/oss_fuzz_integration/oss-fuzz                                        
 for project in ${PROJECT}; do
   python3 ../runner.py introspector $project 10 --disable-webserver
 done
                                                                                
 # Create webserver DB
 echo "[+] Creating the webapp DB"
-cd $FI_DIR/tools/web-fuzzing-introspection/app/static/assets/db/
+cd $ROOT_FI/tools/web-fuzzing-introspection/app/static/assets/db/
 python3 ./web_db_creator_from_summary.py \
-    --local-oss-fuzz $FI_DIR/oss_fuzz_integration/oss-fuzz                      
+    --local-oss-fuzz $ROOT_FI/oss_fuzz_integration/oss-fuzz                      
                                                                                
 # Start webserver DB                                                            
 echo "Shutting down server in case it's running"
 curl --silent http://localhost:8080/api/shutdown || true
 
 echo "[+] Launching FI webapp"
-cd $FI_DIR/tools/web-fuzzing-introspection/app/                                
-FUZZ_INTROSPECTOR_LOCAL_OSS_FUZZ=$FI_DIR/oss_fuzz_integration/oss-fuzz \
+cd $ROOT_FI/tools/web-fuzzing-introspection/app/                                
+FUZZ_INTROSPECTOR_LOCAL_OSS_FUZZ=$ROOT_FI/oss_fuzz_integration/oss-fuzz \
   python3 ./main.py >> /dev/null &
                                                                                
 SECONDS=5
