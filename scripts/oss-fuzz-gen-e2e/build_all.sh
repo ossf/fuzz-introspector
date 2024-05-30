@@ -35,3 +35,4 @@ cd $BASE
 git clone https://github.com/google/oss-fuzz-gen
 cd oss-fuzz-gen
 python3 -m pip install -r ./requirements.txt
+cd $BASE
