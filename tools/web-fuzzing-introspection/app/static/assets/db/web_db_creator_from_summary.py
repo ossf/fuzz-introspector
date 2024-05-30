@@ -566,7 +566,7 @@ def analyse_list_of_projects(date, projects_to_analyse,
 
     project_name_list = list(projects_to_analyse.keys())
 
-    batch_size = 20 if not should_include_details else 5
+    batch_size = 10 if not should_include_details else 2
     all_batches = [
         project_name_list[x:x + batch_size]
         for x in range(0, len(project_name_list), batch_size)
