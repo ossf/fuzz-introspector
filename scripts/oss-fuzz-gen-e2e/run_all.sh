@@ -17,7 +17,6 @@
 
 ROOT_FI=$PWD/../../
 BASE_DIR=$PWD/workdir
-#FI_DIR=$BASE_DIR/fuzz-introspector/
 BENCHMARK_HEURISTICS="${VARIABLE:-far-reach-low-coverage}"
 OSS_FUZZ_GEN_MODEL=${MODEL}
 PROJECT=${@}
