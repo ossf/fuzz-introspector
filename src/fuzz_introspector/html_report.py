@@ -767,9 +767,8 @@ def create_html_report(introspection_proj: analysis.IntrospectionProject,
 
     # Write various stats and all-functions data to summary.json
     proj_profile.write_stats_to_summary_file()
-    json_report.add_project_key_value_to_report("all-functions",
-                                                all_functions_json_report)
 
+    json_report.create_all_fi_functions_json(all_functions_json_report)
     if dump_files:
         write_content_to_html_files(html_full_doc, all_functions_json_html,
                                     fuzzer_table_data)

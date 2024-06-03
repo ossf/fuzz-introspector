@@ -32,6 +32,11 @@ def get_introspector_report_url_summary(project_name, datestr):
                                             datestr) + "summary.json"
 
 
+def get_introspector_report_url_all_functions(project_name, datestr):
+    return get_introspector_report_url_base(
+        project_name, datestr) + "all-fuzz-introspector-functions.json"
+
+
 def get_introspector_report_url_report(project_name, datestr):
     return get_introspector_report_url_base(project_name,
                                             datestr) + "fuzz_report.html"
@@ -101,6 +106,15 @@ def extract_introspector_debug_info(project_name, date_str):
     return debug_report
 
 
+def extract_local_introspector_function_list(project_name, oss_fuzz_folder):
+    summary_json = os.path.join(oss_fuzz_folder, 'build', 'out', project_name,
+                                'inspector',
+                                'all-fuzz-introspector-functions.json')
+    with open(summary_json, 'r') as f:
+        function_list = json.load(f)
+    return function_list
+
+
 def extract_local_introspector_report(project_name, oss_fuzz_folder):
     summary_json = os.path.join(oss_fuzz_folder, 'build', 'out', project_name,
                                 'inspector', 'summary.json')
@@ -137,6 +151,24 @@ def get_code_coverage_summary(project_name, datestr):
         return json_dict
     except:
         return None
+
+
+def extract_new_introspector_functions(project_name, date_str):
+    introspector_functions_url = get_introspector_report_url_all_functions(
+        project_name, date_str.replace("-", ""))
+
+    # Read the introspector atifact
+    try:
+        raw_introspector_json_request = requests.get(
+            introspector_functions_url, timeout=10)
+    except:
+        return None
+    try:
+        introspector_functions = json.loads(raw_introspector_json_request.text)
+    except:
+        return None
+
+    return introspector_functions
 
 
 def extract_introspector_report(project_name, date_str):
