@@ -75,7 +75,7 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
     report_parser.add_argument(
         "--output-json",
         nargs="+",
-        default=["SinkCoverageAnalyser", "FuzzEngineInputAnalysis"],
+        default=["FuzzEngineInputAnalysis"],
         help="State which analysis requires separate json report output")
 
     # Command for correlating binary files to fuzzerLog files
