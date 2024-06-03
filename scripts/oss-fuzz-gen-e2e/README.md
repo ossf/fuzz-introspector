@@ -42,3 +42,6 @@ cd workdir
 cd oss-fuzz-gen
 python3 -m report.web ./results/ 8012
 ```
+
+The above steps can be rerun once changes in the FI has been applied. As such,
+these steps are the recommended steps to use during testing and development.
