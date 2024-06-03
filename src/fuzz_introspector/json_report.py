@@ -101,3 +101,22 @@ def add_project_key_value_to_report(key: str, value: Any) -> None:
     contents[constants.JSON_REPORT_KEY_PROJECT][key] = value
 
     _overwrite_report_with_dict(contents)
+
+
+def create_all_fi_functions_json(functions_dict) -> None:
+    with open(constants.ALL_FUNCTIONS_JSON, 'w') as f:
+        json.dump(functions_dict, f)
+
+
+def add_branch_blocker_key_value_to_report(profile_identifier, key,
+                                           branch_blockers_list):
+    """Returns the current json report on disk as a dictionary."""
+    if not os.path.isfile(constants.BRANCH_BLOCKERS_FILE):
+        existing_contents = dict()
+    else:
+        with open(constants.BRANCH_BLOCKERS_FILE, "r") as report_fd:
+            existing_contents = json.load(report_fd)
+
+    existing_contents[profile_identifier] = branch_blockers_list
+    with open(constants.BRANCH_BLOCKERS_FILE, 'w') as branch_fd:
+        json.dump(existing_contents, branch_fd)

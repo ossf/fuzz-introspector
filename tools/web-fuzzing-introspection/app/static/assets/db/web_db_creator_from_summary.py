@@ -288,12 +288,11 @@ def extract_local_project_data(project_name, oss_fuzz_path,
         project_name, oss_fuzz_path)
 
     # Refine the data
-    all_function_list = introspector_report['MergedProjectProfile'][
-        'all-functions']
+    all_function_list = oss_fuzz.extract_local_introspector_function_list(
+        project_name, oss_fuzz_path)
     project_stats = introspector_report['MergedProjectProfile']['stats']
-    amount_of_fuzzers = len(introspector_report) - 2
-    number_of_functions = len(all_function_list)
-
+    amount_of_fuzzers = project_stats['harness-count']
+    number_of_functions = project_stats['total-functions']
     functions_covered_estimate = project_stats[
         'code-coverage-function-percentage']
 
@@ -465,11 +464,19 @@ def extract_project_data(project_name, date_str, should_include_details,
         introspector_data_dict = None
     else:
         # Access all functions
-        all_function_list = introspector_report['MergedProjectProfile'][
-            'all-functions']
         project_stats = introspector_report['MergedProjectProfile']['stats']
-        amount_of_fuzzers = len(introspector_report) - 2
-        number_of_functions = len(all_function_list)
+        if 'all-functions' in introspector_report['MergedProjectProfile']:
+            # Old style
+            print('Using old style function storage')
+            all_function_list = introspector_report['MergedProjectProfile'][
+                'all-functions']
+            amount_of_fuzzers = len(introspector_report) - 2
+            number_of_functions = len(all_function_list)
+        else:
+            print('Using new style of function storage')
+            amount_of_fuzzers = project_stats['harness-count']
+            number_of_functions = project_stats['total-functions']
+            all_function_list = None
 
         functions_covered_estimate = project_stats[
             'code-coverage-function-percentage']
@@ -479,6 +486,11 @@ def extract_project_data(project_name, date_str, should_include_details,
         branch_pairs = list()
         annotated_cfg = dict()
         if should_include_details:
+            # Extract all function list
+            if all_function_list is None:
+                oss_fuzz.extract_new_introspector_functions(
+                    project_name, date_str)
+
             refined_proj_list = extract_and_refine_functions(
                 all_function_list, project_name, date_str)
             annotated_cfg = extract_and_refine_annotated_cfg(
@@ -496,7 +508,7 @@ def extract_project_data(project_name, date_str, should_include_details,
             "static_reachability":
             project_stats['reached-complexity-percentage'],
             "fuzzer_count": amount_of_fuzzers,
-            "function_count": len(all_function_list),
+            "function_count": number_of_functions,
             "functions_covered_estimate": functions_covered_estimate,
             'refined_proj_list': refined_proj_list,
             'annotated_cfg': annotated_cfg,

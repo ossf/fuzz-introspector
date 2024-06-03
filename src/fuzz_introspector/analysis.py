@@ -539,9 +539,10 @@ def overlay_calltree_with_coverage(
             'function_name':
             blk.function_name
         })
-    json_report.add_fuzzer_key_value_to_report(profile.identifier,
-                                               'branch_blockers',
-                                               branch_blockers_list)
+
+    json_report.add_branch_blocker_key_value_to_report(profile.identifier,
+                                                       'branch_blockers',
+                                                       branch_blockers_list)
 
 
 def update_branch_complexities(
