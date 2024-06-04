@@ -39,6 +39,15 @@ def create_app():
         print('Using remote version of webapp')
         routes.is_local = False
 
+    if not routes.is_local:
+        try:
+            routes.allow_shutdown = bool(
+                os.environ['FUZZ_INTROSPECTOR_SHUTDOWN'])
+            print('Local webapp is set')
+        except KeyError:
+            print('Using remote version of webapp')
+            routes.allow_shutdown = False
+
     webapp.load_db()
 
     return app

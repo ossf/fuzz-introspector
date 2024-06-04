@@ -32,6 +32,7 @@ blueprint = Blueprint('site', __name__, template_folder='templates')
 
 gtag = None
 is_local = False
+allow_shutdown = False
 local_oss_fuzz = ''
 
 
@@ -1339,7 +1340,7 @@ def get_full_recursive_types(debug_type_dictionary, resulting_types,
 @blueprint.route('/api/shutdown')
 def shutdown():
     """Shuts down the server, only if it's local."""
-    if is_local:
+    if is_local or allow_shutdown:
         sig = getattr(signal, "SIGKILL", signal.SIGTERM)
         os.kill(os.getpid(), sig)
         shutdown_server()
