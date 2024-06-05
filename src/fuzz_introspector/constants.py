@@ -20,6 +20,7 @@ GIT_BRANCH_URL = f"{GIT_REPO}/blob/main"
 ENGINE_INPUT_FILE = "fuzz-introspector-engine-input.json"
 SUMMARY_FILE = "summary.json"
 ALL_FUNCTIONS_JSON = 'all-fuzz-introspector-functions.json'
+ALL_JVM_CONSTRUCTOR_JSON = 'all-fuzz-introspector-jvm-constructor.json'
 BRANCH_BLOCKERS_FILE = 'branch-blockers.json'
 
 HTML_REPORT = "fuzz_report.html"

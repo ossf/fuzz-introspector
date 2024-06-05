@@ -108,6 +108,11 @@ def create_all_fi_functions_json(functions_dict) -> None:
         json.dump(functions_dict, f)
 
 
+def create_all_jvm_constructor_json(functions_dict) -> None:
+    with open(constants.ALL_JVM_CONSTRUCTOR_JSON, 'w') as f:
+        json.dump(functions_dict, f)
+
+
 def add_branch_blocker_key_value_to_report(profile_identifier, key,
                                            branch_blockers_list):
     """Returns the current json report on disk as a dictionary."""
