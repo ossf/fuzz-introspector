@@ -190,7 +190,8 @@ def extract_new_introspector_constructors(project_name, date_str):
     try:
         raw_introspector_json_request = requests.get(
             introspector_functions_url, timeout=10)
-        introspector_constructors = json.loads(raw_introspector_json_request.text)
+        introspector_constructors = json.loads(
+            raw_introspector_json_request.text)
     except:
         return None
 

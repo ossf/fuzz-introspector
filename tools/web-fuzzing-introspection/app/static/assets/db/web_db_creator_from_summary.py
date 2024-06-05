@@ -307,8 +307,8 @@ def extract_local_project_data(project_name, oss_fuzz_path,
 
     refined_proj_list = extract_and_refine_functions(all_function_list,
                                                      project_name, '')
-    refined_constructor_list = extract_and_refine_functions(all_constructor_list,
-                                                     project_name, '')
+    refined_constructor_list = extract_and_refine_functions(
+        all_constructor_list, project_name, '')
     annotated_cfg = extract_and_refine_annotated_cfg(introspector_report)
     branch_pairs = extract_and_refine_branch_blockers(introspector_report,
                                                       project_name)
@@ -632,7 +632,8 @@ def analyse_list_of_projects(date, projects_to_analyse,
             introspector_dictionary.pop('refined_proj_list')
 
             # Constructors
-            constructor_list += introspector_dictionary['refined_constructor_list']
+            constructor_list += introspector_dictionary[
+                'refined_constructor_list']
             # Remove the function list because we don't want it anymore.
             introspector_dictionary.pop('refined_constructor_list')
 
@@ -727,8 +728,7 @@ def extend_db_json_files(project_timestamps, output_directory):
 
 def extend_func_db(function_list, output_directory, target):
     if os.path.isfile(os.path.join(output_directory, target)):
-        with open(os.path.join(output_directory, target),
-                  'r') as f:
+        with open(os.path.join(output_directory, target), 'r') as f:
             existing_function_list = json.load(f)
     else:
         existing_function_list = []
@@ -751,14 +751,16 @@ def extend_func_db(function_list, output_directory, target):
         json.dump(all_functions, f)
 
 
-def update_db_files(db_timestamp, project_timestamps, function_list, constructor_list,
-                    output_directory, should_include_details):
+def update_db_files(db_timestamp, project_timestamps, function_list,
+                    constructor_list, output_directory,
+                    should_include_details):
     logger.info(
         "Updating the database with DB snapshot. Number of functions in total: %d"
         % (db_timestamp['function_count']))
     if should_include_details:
         extend_func_db(function_list, output_directory, DB_JSON_ALL_FUNCTIONS)
-        extend_func_db(constructor_list, output_directory, DB_JSON_ALL_CONSTRUCTORS)
+        extend_func_db(constructor_list, output_directory,
+                       DB_JSON_ALL_CONSTRUCTORS)
 
     extend_db_json_files(project_timestamps, output_directory)
     extend_db_timestamps(db_timestamp, output_directory)
@@ -1088,7 +1090,8 @@ def create_local_db(oss_fuzz_path):
             introspector_dictionary.pop('refined_proj_list')
 
             # Constructors
-            constructor_list += introspector_dictionary['refined_constructor_list']
+            constructor_list += introspector_dictionary[
+                'refined_constructor_list']
             # Remove the function list because we don't want it anymore.
             introspector_dictionary.pop('refined_constructor_list')
 
