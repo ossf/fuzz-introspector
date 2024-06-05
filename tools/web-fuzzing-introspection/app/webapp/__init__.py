@@ -24,7 +24,8 @@ def load_db():
     all_functions_file = os.path.join(
         os.path.dirname(__file__), "../static/assets/db/all-functions-db.json")
     all_constructors_file = os.path.join(
-        os.path.dirname(__file__), "../static/assets/db/all-constructors-db.json")
+        os.path.dirname(__file__),
+        "../static/assets/db/all-constructors-db.json")
     project_timestamps_file = os.path.join(
         os.path.dirname(__file__),
         "../static/assets/db/all-project-timestamps.json")
