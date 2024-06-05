@@ -16,6 +16,8 @@ PROJECTS = []
 
 FUNCTIONS = []
 
+CONSTRUCTORS = []
+
 BLOCKERS = []
 
 BUILD_STATUS: List[BuildStatus] = []
@@ -29,6 +31,10 @@ def get_projects():
 
 def get_functions():
     return FUNCTIONS
+
+
+def get_constructors():
+    return CONSTRUCTORS
 
 
 def get_blockers():
