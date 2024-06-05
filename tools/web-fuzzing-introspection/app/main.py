@@ -31,6 +31,23 @@ def create_app():
         print("Not setting google tag")
         routes.gtag = None
 
+    try:
+        routes.is_local = bool(os.environ['FUZZ_INTROSPECTOR_LOCAL_OSS_FUZZ'])
+        routes.local_oss_fuzz = os.environ['FUZZ_INTROSPECTOR_LOCAL_OSS_FUZZ']
+        print('Local webapp is set')
+    except KeyError:
+        print('Using remote version of webapp')
+        routes.is_local = False
+
+    if not routes.is_local:
+        try:
+            routes.allow_shutdown = bool(
+                os.environ['FUZZ_INTROSPECTOR_SHUTDOWN'])
+            print('Local webapp is set')
+        except KeyError:
+            print('Using remote version of webapp')
+            routes.allow_shutdown = False
+
     webapp.load_db()
 
     return app

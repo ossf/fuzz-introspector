@@ -414,6 +414,7 @@ class MergedProjectProfile:
                 "unreached-complexity-percentage":
                 unreached_complexity_percentage,
                 'total-functions': total_functions,
+                'harness-count': len(self.profiles),
                 'reached-function-count': reached_func_count,
                 'unreached-function-count': unreached_func_count,
                 'reached-function-percentage': reached_func_percentage,

@@ -1,3 +1,4 @@
+#!/bin/bash -eux
 # Copyright 2024 Fuzz Introspector Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,8 +15,24 @@
 #
 ################################################################################
 
-python ./web_db_creator_from_summary.py \
-      --since-date=20-04-2023 \
-      --output-dir=$PWD \
-      --input-dir=$PWD \
-      --includes=must_include_small.config
+ROOT_FI=$PWD/../../
+mkdir -p workdir
+cd workdir
+WORKDIR=$PWD
+
+python3.11 -m virtualenv .venv
+. .venv/bin/activate
+
+
+# Build fuzz introspector virtual environment and run OSS-Fuzz base image
+# builder logic.
+cd $ROOT_FI
+python3 -m pip install -r ./requirements.txt
+cd oss_fuzz_integration
+./build_post_processing.sh
+
+# Set up OSS-Fuzz-gen
+cd $WORKDIR
+git clone https://github.com/google/oss-fuzz-gen
+cd oss-fuzz-gen
+python3 -m pip install -r ./requirements.txt

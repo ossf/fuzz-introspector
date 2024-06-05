@@ -15,7 +15,7 @@
 ################################################################################
 
 python ./web_db_creator_from_summary.py \
-      --since-date=20-04-2023 \
       --output-dir=$PWD \
       --input-dir=$PWD \
-      --includes=must_include_small.config
+      --days-to-analyse=1 \
+      --includes=${@}

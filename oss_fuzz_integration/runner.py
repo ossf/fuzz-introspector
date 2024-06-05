@@ -425,7 +425,8 @@ def introspector_run(
     corpus_dir: Optional[str],
     port: int,
     download_public_corpus: bool,
-    collect_coverage: bool
+    collect_coverage: bool,
+    start_webserver: bool = True
 ):
     if collect_coverage:
         complete_coverage_check(
@@ -480,9 +481,10 @@ def introspector_run(
         patch_jvm_source_dead_link(server_directory, "/covreport")
 
     # start webserver
-    cmd = "python3 -m http.server %d --directory %s" % (port, server_directory)
-    print("The following command is about to be run to start a webserver: %s"%(cmd))
-    subprocess.check_call(cmd, shell=True)
+    if start_webserver:
+        cmd = "python3 -m http.server %d --directory %s" % (port, server_directory)
+        print("The following command is about to be run to start a webserver: %s"%(cmd))
+        subprocess.check_call(cmd, shell=True)
 
 
 def get_single_cov(project, target, corpus_dir):
@@ -595,6 +597,11 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
         help="path to source",
         default=None
     )
+    introspector_parser.add_argument(
+        '--disable-webserver',
+        action='store_true',
+        help='Do not start webserver after running analysis'
+    )
 
     download_corpus_parser = subparsers.add_parser("download-corpus")
     download_corpus_parser.add_argument(
@@ -636,7 +643,8 @@ if __name__ == "__main__":
             args.corpus_dir,
             args.port,
             args.download_public_corpus,
-            not args.no_coverage
+            not args.no_coverage,
+            not args.disable_webserver
         )
     elif args.command == "download-corpus":
         download_full_public_corpus(args.project, args.corpus_dir)

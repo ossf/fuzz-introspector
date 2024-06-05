@@ -140,6 +140,12 @@ class IntrospectionProject():
             else:
                 tmp_debug_functions[func['file_location']] = func
 
+        # Cleanup some debug values that we know have weird names and
+        # not the names fro the source.
+        for debug_type in self.debug_all_types:
+            if debug_type['name'] == '_Bool':
+                debug_type['name'] = 'bool'
+
         self.debug_all_functions = no_path_debug_funcs + list(
             tmp_debug_functions.values())
 
@@ -533,9 +539,10 @@ def overlay_calltree_with_coverage(
             'function_name':
             blk.function_name
         })
-    json_report.add_fuzzer_key_value_to_report(profile.identifier,
-                                               'branch_blockers',
-                                               branch_blockers_list)
+
+    json_report.add_branch_blocker_key_value_to_report(profile.identifier,
+                                                       'branch_blockers',
+                                                       branch_blockers_list)
 
 
 def update_branch_complexities(
@@ -770,7 +777,6 @@ def convert_debug_info_to_signature_v2(function, introspector_func):
 
     func_name = ''
     param_idx = 0
-    logger.info("Namespace: %s" % (str(namespace)))
     # Is this a class function?
     if len(function['func_signature_elems']['params']) > 0:
         if len(namespace) > 1:
@@ -778,7 +784,6 @@ def convert_debug_info_to_signature_v2(function, introspector_func):
             if namespace[-1] == convert_param_list_to_str_v2(
                     function['func_signature_elems']['params'][0]).replace(
                         " *", ""):
-                logger.info("Option 1")
                 func_name = "::".join(namespace[0:-1]) + "::"
                 param_idx += 1
             # Destructor handling
@@ -786,7 +791,6 @@ def convert_debug_info_to_signature_v2(function, introspector_func):
                     "~", "") == convert_param_list_to_str_v2(
                         function['func_signature_elems']['params'][0]).replace(
                             " *", ""):
-                logger.info("Option 2")
                 func_name = "::".join(namespace[0:-1]) + "::"
 
                 if not convert_param_list_to_str_v2(
@@ -797,7 +801,6 @@ def convert_debug_info_to_signature_v2(function, introspector_func):
             elif namespace[-2] == convert_param_list_to_str_v2(
                     function['func_signature_elems']['params'][0]).replace(
                         " *", "").replace("const ", ""):
-                logger.info("Option 3")
                 func_name = "::".join(namespace[0:-1]) + "::"
                 param_idx += 1
             else:
