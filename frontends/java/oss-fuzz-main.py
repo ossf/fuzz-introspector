@@ -115,6 +115,14 @@ def run_introspector_frontend(target_class, jar_set):
   package_name = os.getenv("TARGET_PACKAGE_PREFIX")
   if not package_name:
     package_name = "ALL"
+
+  src_path = os.getenv("SRC", None)
+  out_path = os.getenv("OUT", None)
+  if src_path and out_path:
+    src_dir = os.path.join(out_path, src_path)
+  else:
+    src_dir = "NULL"
+
   cmd = [
       "java",
       "-Xmx6144M",
@@ -126,7 +134,7 @@ def run_introspector_frontend(target_class, jar_set):
       "fuzzerTestOneInput", # entry method
       package_name, # target package prefix
       "\"<clinit>:finalize:main\"", # exclude method list
-      "NULL", # source directory
+      src_dir, # source directory
       "False", # Auto-fuzz switch
       """===jdk.*:java.*:javax.*:sun.*:sunw.*:com.sun.*:com.ibm.*:\
 com.apple.*:apple.awt.*===DEFAULT""" # include prefix === exclude prefix === sink functions
