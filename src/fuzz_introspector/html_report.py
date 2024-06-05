@@ -791,7 +791,8 @@ def create_html_report(introspection_proj: analysis.IntrospectionProject,
             jvm_constructor_json_report.append(json_copy)
 
         if jvm_constructor_json_report:
-            json_report.create_all_jvm_constructor_json(jvm_constructor_json_report)
+            json_report.create_all_jvm_constructor_json(
+                jvm_constructor_json_report)
 
     if dump_files:
         write_content_to_html_files(html_full_doc, all_functions_json_html,
