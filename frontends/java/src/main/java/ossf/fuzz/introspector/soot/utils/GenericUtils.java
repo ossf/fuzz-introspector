@@ -62,14 +62,17 @@ public class GenericUtils {
     className = className.substring(className.lastIndexOf(".") + 1);
     if (sourcePaths.containsKey(className)) {
       try {
+        // Try read and parse the source file related to the class of the target method.
         InputStream is = new FileInputStream(sourcePaths.get(className).toFile());
         Optional<CompilationUnit> optional = new JavaParser().parse(is).getResult();
         if (optional.isPresent()) {
           for(MethodDeclaration md : optional.get().findAll(MethodDeclaration.class)) {
             if (md.getName().asString().equals(m.getName())) {
-              handleReturnTypeGeneric(md, element);
               if (handleArgumentGeneric(md, element)) {
-                break;
+                // There could be overloading method with the same name in the same class
+                // handleArgumentGeneric will return true if the the MethodDeclaration
+                // points to the correct method and handles it successfully.
+                handleReturnTypeGeneric(md, element);
               }
             }
           }
@@ -87,7 +90,12 @@ public class GenericUtils {
 
     if (!returnType.equals(realReturnType)) {
       if (containsGeneric(realReturnType)) {
-        element.setReturnTypeWithGeneric(realReturnType);
+        if (returnType.contains(".")) {
+          returnType = returnType.substring(0, returnType.lastIndexOf("."));
+          element.setReturnType(returnType + "." + realReturnType);
+        } else {
+          element.setReturnType(realReturnType);
+        }
       }
     }
   }
@@ -97,25 +105,39 @@ public class GenericUtils {
     List<Parameter> mdArgTypes = md.getParameters();
 
     if (argTypes.size() > 0 && argTypes.size() == mdArgTypes.size()) {
+      List<String> newArgTypes = new ArrayList<String>();
+      Boolean isGeneric = false;
       for (Integer i = 0; i < argTypes.size(); i++) {
         String mdArgType = mdArgTypes.get(i).getType().asString();
+        String argType = argTypes.get(i);
+
+        // Check equality of the two argument types to ensure
+        // it is the correct MethodDeclaration of the target method
+        if (!isSameArgType(argType, mdArgType)) {
+          return false;
+        }
+
+        // Add the arguments with or without generic to the function elements
         if (containsGeneric(mdArgType)) {
-          String argType = argTypes.get(i);
           if (argType.contains(".")) {
             argType = argType.substring(0, argType.lastIndexOf("."));
-            element.addArgTypeWithGeneric(argType + "." + mdArgType);
+            newArgTypes.add(argType + "." + mdArgType);
           } else {
-            element.addArgTypeWithGeneric(mdArgType);
+            newArgTypes.add(mdArgType);
           }
+          isGeneric = true;
         } else {
-          element.addArgTypeWithGeneric(argTypes.get(i));
+          newArgTypes.add(argTypes.get(i));
         }
       }
 
-      // Update method name
-      String functionName = element.getFunctionName().split("\\(")[0];
-      String argString = String.join(",", element.getArgTypesWithGeneric());
-      element.setFunctionNameWithGeneric(String.format("%s(%s)", functionName, argString));
+      // Save method name with generic
+      if (isGeneric) {
+        String functionName = element.getFunctionName().split("\\(")[0];
+        String argString = String.join(",", newArgTypes);
+        element.setFunctionName(String.format("%s(%s)", functionName, argString));
+        element.setArgTypes(newArgTypes);
+      }
 
       return true;
     }
@@ -128,5 +150,26 @@ public class GenericUtils {
     } else {
       return false;
     }
+  }
+
+  private static boolean isSameArgType(String argType, String mdArgType) {
+    String simpleArgType = null;
+    String simpleMdArgType = null;
+
+    // Simplify argType
+    if (argType.contains(".")) {
+      simpleArgType = argType.substring(argType.lastIndexOf(".") + 1);
+    } else {
+      simpleArgType = argType;
+    }
+
+    // Simplify mdArgType
+    if (containsGeneric(mdArgType)) {
+      simpleMdArgType = mdArgType.split("<")[0];
+    } else {
+      simpleMdArgType = mdArgType;
+    }
+
+    return simpleArgType.equals(simpleMdArgType);
   }
 }
