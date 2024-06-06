@@ -115,7 +115,7 @@ public class GenericUtils {
       // Update method name
       String functionName = element.getFunctionName().split("\\(")[0];
       String argString = String.join(",", element.getArgTypesWithGeneric());
-      element.setFunctionName(String.format("%s(%s)", functionName, argString));
+      element.setFunctionNameWithGeneric(String.format("%s(%s)", functionName, argString));
 
       return true;
     }

@@ -26,6 +26,7 @@ import soot.Type;
 
 public class FunctionElement {
   private String functionName;
+  private String functionNameWithGeneric;
   private String functionSourceFile;
   private String linkageType;
   private Integer functionLinenumber;
@@ -57,6 +58,7 @@ public class FunctionElement {
     this.callsites = new ArrayList<Callsite>();
 
     this.functionName = "";
+    this.functionNameWithGeneric = "";
     this.functionSourceFile = "";
     this.linkageType = "";
     this.returnType = "";
@@ -80,6 +82,14 @@ public class FunctionElement {
 
   public void setFunctionName(String functionName) {
     this.functionName = functionName;
+  }
+
+  public String getFunctionNameWithGeneric() {
+    return functionNameWithGeneric;
+  }
+
+  public void setFunctionNameWithGeneric(String functionName) {
+    this.functionNameWithGeneric = functionName;
   }
 
   public String getFunctionSourceFile() {
