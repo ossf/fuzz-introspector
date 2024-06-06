@@ -177,7 +177,7 @@ def extract_new_introspector_functions(project_name, date_str):
             introspector_functions_url, timeout=10)
         introspector_functions = json.loads(raw_introspector_json_request.text)
     except:
-        return None
+        return []
 
     return introspector_functions
 
@@ -193,7 +193,7 @@ def extract_new_introspector_constructors(project_name, date_str):
         introspector_constructors = json.loads(
             raw_introspector_json_request.text)
     except:
-        return None
+        return []
 
     return introspector_constructors
 
