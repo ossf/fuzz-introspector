@@ -490,6 +490,7 @@ def extract_project_data(project_name, date_str, should_include_details,
 
         # Get details if needed and otherwise leave empty
         refined_proj_list = list()
+        refined_constructor_list = list()
         branch_pairs = list()
         annotated_cfg = dict()
         if should_include_details:
