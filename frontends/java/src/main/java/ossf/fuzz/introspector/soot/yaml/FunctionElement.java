@@ -31,8 +31,10 @@ public class FunctionElement {
   private Integer functionLinenumber;
   private Integer functionDepth;
   private String returnType;
+  private String returnTypeWithGeneric;
   private Integer argCount;
   private List<String> argTypes;
+  private List<String> argTypesWithGeneric;
   private List<String> constantsTouched;
   private List<String> argNames;
   private Integer BBCount;
@@ -47,18 +49,29 @@ public class FunctionElement {
 
   public FunctionElement() {
     this.argTypes = new ArrayList<String>();
+    this.argTypesWithGeneric = new ArrayList<String>();
     this.constantsTouched = new ArrayList<String>();
     this.argNames = new ArrayList<String>();
     this.functionsReached = new ArrayList<String>();
     this.branchProfiles = new ArrayList<BranchProfile>();
     this.callsites = new ArrayList<Callsite>();
 
+    this.functionName = "";
+    this.functionSourceFile = "";
+    this.linkageType = "";
+    this.returnType = "";
+    this.returnTypeWithGeneric = "";
+
+    this.functionLinenumber = -1;
     this.functionDepth = 0;
-    this.functionUses = 0;
-    this.edgeCount = 0;
+    this.argCount = 0;
     this.BBCount = 0;
     this.iCount = 0;
+    this.edgeCount = 0;
     this.CyclomaticComplexity = 0;
+    this.functionUses = 0;
+
+    this.javaMethodInfo = new JavaMethodInfo();
   }
 
   public String getFunctionName() {
@@ -109,6 +122,14 @@ public class FunctionElement {
     this.returnType = type;
   }
 
+  public String getReturnTypeWithGeneric() {
+    return returnTypeWithGeneric;
+  }
+
+  public void setReturnTypeWithGeneric(String type) {
+    this.returnTypeWithGeneric = type;
+  }
+
   public Integer getArgCount() {
     return argCount;
   }
@@ -127,6 +148,18 @@ public class FunctionElement {
 
   public void setArgTypes(List<String> list) {
     this.argTypes = list;
+  }
+
+  public List<String> getArgTypesWithGeneric() {
+    return argTypesWithGeneric;
+  }
+
+  public void addArgTypeWithGeneric(String argType) {
+    this.argTypesWithGeneric.add(argType);
+  }
+
+  public void setArgTypesWithGeneric(List<String> list) {
+    this.argTypesWithGeneric = list;
   }
 
   public List<String> getConstantsTouched() {
