@@ -36,6 +36,7 @@ import ossf.fuzz.introspector.soot.utils.BlockGraphInfoUtils;
 import ossf.fuzz.introspector.soot.utils.CalculationUtils;
 import ossf.fuzz.introspector.soot.utils.CalltreeUtils;
 import ossf.fuzz.introspector.soot.utils.EdgeUtils;
+import ossf.fuzz.introspector.soot.utils.GenericUtils;
 import ossf.fuzz.introspector.soot.utils.SinkDiscoveryUtils;
 import ossf.fuzz.introspector.soot.yaml.Callsite;
 import ossf.fuzz.introspector.soot.yaml.FunctionConfig;
@@ -116,7 +117,9 @@ public class SootSceneTransformer extends SceneTransformer {
                 .filter(f -> f.endsWith(".java"))
                 .collect(Collectors.toList());
         for (String source : sourceList) {
-          projectClassList.add(source.substring(source.lastIndexOf("/") + 1).replace(".java", ""));
+          String sourceName = source.substring(source.lastIndexOf("/") + 1).replace(".java", "");
+          GenericUtils.addSourcePath(sourceName, Paths.get(source).toAbsolutePath());
+          projectClassList.add(sourceName);
         }
       } catch (IOException e) {
         // Fail to retrieve project class list, ignore the list.
@@ -410,6 +413,9 @@ public class SootSceneTransformer extends SceneTransformer {
 
         element.setCountInformation(
             blockGraph.size(), iCount, CalculationUtils.calculateCyclomaticComplexity(blockGraph));
+
+        // Update generic information for method return type and method arguments
+        GenericUtils.updateGenericTypes(m, element);
 
         this.methodList.addFunctionElement(element);
       }
