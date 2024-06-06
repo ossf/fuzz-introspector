@@ -49,6 +49,8 @@ class FuzzerProfile:
         self.coverage: Optional[code_coverage.CoverageProfile] = None
         self.all_class_functions: Dict[
             str, function_profile.FunctionProfile] = dict()
+        self.all_class_constructors: Dict[
+            str, function_profile.FunctionProfile] = dict()
         self.branch_blockers: List[Any] = []
 
         self._target_lang = target_lang
@@ -560,13 +562,17 @@ class FuzzerProfile:
                     f"May have non-normalised function: {elem['functionName']}"
                 )
 
-            if self.target_lang == "jvm" and "<init>" in elem['functionName']:
-                logger.debug("Skipping <init> method for JVM")
-                continue
-
             func_profile = function_profile.FunctionProfile(elem)
             logger.debug(f"Adding {func_profile.function_name}")
-            self.all_class_functions[func_profile.function_name] = func_profile
+
+            if self.target_lang == "jvm" and "<init>" in elem['functionName']:
+                # Store JVM constructor separately
+                self.all_class_constructors[
+                    func_profile.function_name] = func_profile
+            else:
+                # Store the functions
+                self.all_class_functions[
+                    func_profile.function_name] = func_profile
 
     def _is_func_name_missing_normalisation(self, func_name: str) -> bool:
         if "." in func_name:

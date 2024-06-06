@@ -42,6 +42,8 @@ class MergedProjectProfile:
         self.profiles = profiles
         self.all_functions: Dict[str,
                                  function_profile.FunctionProfile] = dict()
+        self.all_constructors: Dict[str,
+                                    function_profile.FunctionProfile] = dict()
         self.unreached_functions = set()
         self.functions_reached = set()
         self.coverage_url = "#"
@@ -68,6 +70,12 @@ class MergedProjectProfile:
         logger.info("Creating all_functions dictionary")
         excluded_functions = {"sanitizer", "llvm", "LLVMFuzzerTestOneInput"}
         for profile in profiles:
+            # Handles jvm constructors
+            for fd in profile.all_class_constructors.values():
+                if fd.function_name not in self.all_constructors:
+                    self.all_constructors[fd.function_name] = fd
+
+            # Handles normal functions
             for fd in profile.all_class_functions.values():
                 # continue if the function is to be excluded
                 if any(to_exclude in fd.function_name
@@ -85,12 +93,16 @@ class MergedProjectProfile:
         # Gather complexity information about each function
         logger.info(
             "Gathering complexity and incoming references of each function")
-        for fp_obj in self.all_functions.values():
+        for fp_obj in {**self.all_functions, **self.all_constructors}.values():
             total_cyclomatic_complexity = 0
             total_new_complexity = 0
 
             for reached_func_name in fp_obj.functions_reached:
-                if reached_func_name not in self.all_functions:
+                if reached_func_name in self.all_functions:
+                    reached_func_obj = self.all_functions[reached_func_name]
+                elif reached_func_name in self.all_constructors:
+                    reached_func_obj = self.all_constructors[reached_func_name]
+                else:
                     if profile.target_lang == "jvm":
                         logger.debug(
                             f"{reached_func_name} not provided within classpath"
@@ -99,7 +111,6 @@ class MergedProjectProfile:
                         logger.debug(
                             f"Mismatched function name: {reached_func_name}")
                     continue
-                reached_func_obj = self.all_functions[reached_func_name]
                 reached_func_obj.incoming_references.append(
                     fp_obj.function_name)
                 total_cyclomatic_complexity += reached_func_obj.cyclomatic_complexity
@@ -155,6 +166,7 @@ class MergedProjectProfile:
         self._set_basefolder()
         self._set_fd_cache()
         logger.info("Completed creationg of merged profile")
+        logger.info(self.all_functions)
 
     def get_all_runtime_covered_functions(self) -> List[str]:
         """Gets the name of all functions that are covered by runtime

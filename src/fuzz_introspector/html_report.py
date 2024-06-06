@@ -768,7 +768,32 @@ def create_html_report(introspection_proj: analysis.IntrospectionProject,
     # Write various stats and all-functions data to summary.json
     proj_profile.write_stats_to_summary_file()
 
+    # Write all functions to all-fuzz-introspector-functions.json
     json_report.create_all_fi_functions_json(all_functions_json_report)
+
+    # Write jvm constructor details to all-fuzz-introspector-jvm-constructor.json
+    if proj_profile.target_lang == 'jvm' and all_functions_json_report:
+        jvm_constructor_json_report = []
+        for fd in proj_profile.all_constructors.values():
+            json_copy = all_functions_json_report[-1].copy()
+            json_copy['Func name'] = fd.function_name
+            json_copy['Args'] = fd.arg_types
+            json_copy['ArgNames'] = fd.arg_names
+            json_copy['Reached by Fuzzers'] = fd.reached_by_fuzzers
+            json_copy['return_type'] = fd.return_type
+            json_copy['raw-function-name'] = fd.raw_function_name
+            json_copy['callsites'] = fd.callsite
+            json_copy['source_line_begin'] = fd.function_linenumber
+            json_copy['source_line_end'] = fd.function_line_number_end
+            json_copy['is_accessible'] = fd.is_accessible
+            json_copy['is_jvm_library'] = fd.is_jvm_library
+            json_copy['is_enum_class'] = fd.is_enum
+            jvm_constructor_json_report.append(json_copy)
+
+        if jvm_constructor_json_report:
+            json_report.create_all_jvm_constructor_json(
+                jvm_constructor_json_report)
+
     if dump_files:
         write_content_to_html_files(html_full_doc, all_functions_json_html,
                                     fuzzer_table_data)

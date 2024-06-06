@@ -23,6 +23,9 @@ def load_db():
         os.path.dirname(__file__), "../static/assets/db/db-timestamps.json")
     all_functions_file = os.path.join(
         os.path.dirname(__file__), "../static/assets/db/all-functions-db.json")
+    all_constructors_file = os.path.join(
+        os.path.dirname(__file__),
+        "../static/assets/db/all-constructors-db.json")
     project_timestamps_file = os.path.join(
         os.path.dirname(__file__),
         "../static/assets/db/all-project-timestamps.json")
@@ -48,39 +51,19 @@ def load_db():
                 accummulated_lines_total=ts['accummulated_lines_total'],
                 accummulated_lines_covered=ts['accummulated_lines_covered']))
 
+    # Load functions
     with open(all_functions_file, 'r') as f:
         all_function_list = json.load(f)
-    idx = 0
-    for func in all_function_list:
-        idx += 1
-        data_storage.FUNCTIONS.append(
-            models.Function(
-                name=func['name'],
-                project=func['project'],
-                runtime_code_coverage=func['code_cov'],
-                function_filename=func['filename'],
-                reached_by_fuzzers=func['reached-by-fuzzers'],
-                code_coverage_url=func['code_coverage_url'],
-                is_reached=func['is_reached'],
-                llvm_instruction_count=func['instr-count'],
-                accummulated_cyclomatic_complexity=func['acc_cc'],
-                undiscovered_complexity=func['u-cc'],
-                function_arguments=func['function-arguments'],
-                return_type=func['return-type'],
-                function_argument_names=func['function-argument-names'],
-                raw_function_name=func['raw-function-name'],
-                date_str=func.get('date-str', ''),
-                source_line_begin=func.get('source_line_begin', '-1'),
-                source_line_end=func.get('source_line_end', '-1'),
-                callsites=func.get('callsites', []),
-                func_signature=func.get('function-signature', 'N/A'),
-                debug_data=func.get('debug-function', 'N/A'),
-                is_accessible=func.get('is_accessible', True),
-                is_jvm_library=func.get('is_jvm_library', False),
-                is_enum_class=func.get('is_enum_class', False)))
-
-    print("Loadded %d functions" % (idx))
+    idx = load_functions(all_function_list, data_storage.FUNCTIONS)
+    print("Loaded %d functions" % (idx))
     print("Len %d" % (len(data_storage.FUNCTIONS)))
+
+    # Load constructors
+    with open(all_constructors_file, 'r') as f:
+        all_constructor_list = json.load(f)
+    idx = load_functions(all_constructor_list, data_storage.CONSTRUCTORS)
+    print("Loaded %d constructorss" % (idx))
+    print("Len %d" % (len(data_storage.CONSTRUCTORS)))
 
     with open(project_timestamps_file, 'r') as f:
         project_timestamps_json = json.load(f)
@@ -158,3 +141,37 @@ def load_db():
                     fuzz_build_log=project_dict['fuzz-build-log']))
 
     return
+
+
+def load_functions(function_list, target):
+    """Load functions or constructors into data storage"""
+    idx = 0
+    for func in function_list:
+        idx += 1
+        target.append(
+            models.Function(
+                name=func['name'],
+                project=func['project'],
+                runtime_code_coverage=func['code_cov'],
+                function_filename=func['filename'],
+                reached_by_fuzzers=func['reached-by-fuzzers'],
+                code_coverage_url=func['code_coverage_url'],
+                is_reached=func['is_reached'],
+                llvm_instruction_count=func['instr-count'],
+                accummulated_cyclomatic_complexity=func['acc_cc'],
+                undiscovered_complexity=func['u-cc'],
+                function_arguments=func['function-arguments'],
+                return_type=func['return-type'],
+                function_argument_names=func['function-argument-names'],
+                raw_function_name=func['raw-function-name'],
+                date_str=func.get('date-str', ''),
+                source_line_begin=func.get('source_line_begin', '-1'),
+                source_line_end=func.get('source_line_end', '-1'),
+                callsites=func.get('callsites', []),
+                func_signature=func.get('function-signature', 'N/A'),
+                debug_data=func.get('debug-function', 'N/A'),
+                is_accessible=func.get('is_accessible', True),
+                is_jvm_library=func.get('is_jvm_library', False),
+                is_enum_class=func.get('is_enum_class', False)))
+
+    return idx

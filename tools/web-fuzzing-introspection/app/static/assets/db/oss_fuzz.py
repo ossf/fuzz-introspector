@@ -37,6 +37,11 @@ def get_introspector_report_url_all_functions(project_name, datestr):
         project_name, datestr) + "all-fuzz-introspector-functions.json"
 
 
+def get_introspector_report_url_jvm_constructor(project_name, datestr):
+    return get_introspector_report_url_base(
+        project_name, datestr) + "all-fuzz-introspector-jvm-constructor.json"
+
+
 def get_introspector_report_url_report(project_name, datestr):
     return get_introspector_report_url_base(project_name,
                                             datestr) + "fuzz_report.html"
@@ -115,6 +120,15 @@ def extract_local_introspector_function_list(project_name, oss_fuzz_folder):
     return function_list
 
 
+def extract_local_introspector_constructor_list(project_name, oss_fuzz_folder):
+    summary_json = os.path.join(oss_fuzz_folder, 'build', 'out', project_name,
+                                'inspector',
+                                'all-fuzz-introspector-jvm-constructor.json')
+    with open(summary_json, 'r') as f:
+        function_list = json.load(f)
+    return function_list
+
+
 def extract_local_introspector_report(project_name, oss_fuzz_folder):
     summary_json = os.path.join(oss_fuzz_folder, 'build', 'out', project_name,
                                 'inspector', 'summary.json')
@@ -157,18 +171,31 @@ def extract_new_introspector_functions(project_name, date_str):
     introspector_functions_url = get_introspector_report_url_all_functions(
         project_name, date_str.replace("-", ""))
 
-    # Read the introspector atifact
+    # Read the introspector artifact
     try:
         raw_introspector_json_request = requests.get(
             introspector_functions_url, timeout=10)
-    except:
-        return None
-    try:
         introspector_functions = json.loads(raw_introspector_json_request.text)
     except:
-        return None
+        return []
 
     return introspector_functions
+
+
+def extract_new_introspector_constructors(project_name, date_str):
+    introspector_constructor_url = get_introspector_report_url_jvm_constructor(
+        project_name, date_str.replace("-", ""))
+
+    # Read the introspector artifact
+    try:
+        raw_introspector_json_request = requests.get(
+            introspector_functions_url, timeout=10)
+        introspector_constructors = json.loads(
+            raw_introspector_json_request.text)
+    except:
+        return []
+
+    return introspector_constructors
 
 
 def extract_introspector_report(project_name, date_str):
