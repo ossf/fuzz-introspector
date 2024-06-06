@@ -488,7 +488,7 @@ def extract_project_data(project_name, date_str, should_include_details,
         if should_include_details:
             # Extract all function list
             if all_function_list is None:
-                oss_fuzz.extract_new_introspector_functions(
+                all_function_list = oss_fuzz.extract_new_introspector_functions(
                     project_name, date_str)
 
             refined_proj_list = extract_and_refine_functions(
