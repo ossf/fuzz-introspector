@@ -69,7 +69,7 @@ done
 # Deactivate
 echo "[+] Running OSS-Fuzz-gen experiment"
 cd $BASE_DIR/oss-fuzz-gen
-./run_all_experiments.py \
+LLM_NUM_EVA=1 LLM_NUM_EXP=1 ./run_all_experiments.py \
     --model=$OSS_FUZZ_GEN_MODEL \
     -g ${BENCHMARK_HEURISTICS} \
     -gp ${comma_separated} \
