@@ -115,6 +115,7 @@ def extract_local_introspector_function_list(project_name, oss_fuzz_folder):
     summary_json = os.path.join(oss_fuzz_folder, 'build', 'out', project_name,
                                 'inspector',
                                 'all-fuzz-introspector-functions.json')
+
     with open(summary_json, 'r') as f:
         function_list = json.load(f)
     return function_list
@@ -124,6 +125,9 @@ def extract_local_introspector_constructor_list(project_name, oss_fuzz_folder):
     summary_json = os.path.join(oss_fuzz_folder, 'build', 'out', project_name,
                                 'inspector',
                                 'all-fuzz-introspector-jvm-constructor.json')
+    if not os.path.isfile(summary_json):
+        return []
+
     with open(summary_json, 'r') as f:
         function_list = json.load(f)
     return function_list
