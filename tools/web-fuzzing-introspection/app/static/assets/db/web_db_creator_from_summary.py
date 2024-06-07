@@ -289,6 +289,27 @@ def extract_local_project_data(project_name, oss_fuzz_path,
     debug_report = oss_fuzz.extract_local_introspector_debug_info(
         project_name, oss_fuzz_path)
 
+    if debug_report:
+        all_files_in_project = debug_report.get('all_files_in_project', [])
+        all_header_files_in_project = set()
+        for elem in all_files_in_project:
+            source_file = elem.get('source_file', '')
+            if source_file.endswith('.h'):
+                normalized_file = os.path.normpath(source_file)
+                if '/usr/local/' in normalized_file or '/usr/include/' in normalized_file:
+                    continue
+                all_header_files_in_project.add(normalized_file)
+
+        all_header_files = {
+            'project': project_name.split('###')[0],
+            'all-header-files': list(all_header_files_in_project)
+        }
+    else:
+        all_header_files = {
+            'project': project_name.split('###')[0],
+            'all-header-files': list()
+        }
+
     # Refine the data
     all_function_list = oss_fuzz.extract_local_introspector_function_list(
         project_name, oss_fuzz_path)
@@ -351,6 +372,7 @@ def extract_local_project_data(project_name, oss_fuzz_path,
         'project_timestamp': project_timestamp,
         "introspector-data-dict": introspector_data_dict,
         "coverage-data-dict": code_coverage_data_dict,
+        'all-header-files': all_header_files,
     }
 
 
@@ -448,6 +470,27 @@ def extract_project_data(project_name, date_str, should_include_details,
         save_debug_report(debug_report, project_name)
     else:
         debug_report = None
+
+    if debug_report:
+        all_files_in_project = debug_report.get('all_files_in_project', [])
+        all_header_files_in_project = set()
+        for elem in all_files_in_project:
+            source_file = elem.get('source_file', '')
+            if source_file.endswith('.h'):
+                normalized_file = os.path.normpath(source_file)
+                if '/usr/local/' in normalized_file or '/usr/include/' in normalized_file:
+                    continue
+                all_header_files_in_project.add(normalized_file)
+
+        all_header_files = {
+            'project': project_name.split('###')[0],
+            'all-header-files': list(all_header_files_in_project)
+        }
+    else:
+        all_header_files = {
+            'project': project_name.split('###')[0],
+            'all-header-files': list()
+        }
 
     # Currently, we fail if any of code_coverage_summary of introspector_report is
     # None. This should later be adjusted such that we can continue if we only
@@ -551,6 +594,7 @@ def extract_project_data(project_name, date_str, should_include_details,
         'project_timestamp': project_timestamp,
         "introspector-data-dict": introspector_data_dict,
         "coverage-data-dict": code_coverage_data_dict,
+        'all-header-files': all_header_files,
     }
     return
 
@@ -571,6 +615,7 @@ def analyse_list_of_projects(date, projects_to_analyse,
     function_list = list()
     constructor_list = list()
     project_timestamps = list()
+    all_header_files = list()
     accummulated_fuzzer_count = 0
     accummulated_function_count = 0
     accummulated_covered_functions = 0
@@ -645,6 +690,9 @@ def analyse_list_of_projects(date, projects_to_analyse,
                 'function_coverage_estimate'] += introspector_dictionary[
                     'functions_covered_estimate']
 
+            all_header_files.append(
+                analyses_dictionary[project_key]['all-header-files'])
+
         coverage_dictionary = analyses_dictionary[project_key].get(
             'coverage-data-dict', None)
         if coverage_dictionary != None:
@@ -662,7 +710,7 @@ def analyse_list_of_projects(date, projects_to_analyse,
     # - all constructors (maybe empty)
     # - a list of project timestamps
     # - the DB timestamp
-    return function_list, constructor_list, project_timestamps, db_timestamp
+    return function_list, constructor_list, project_timestamps, db_timestamp, all_header_files
 
 
 def extend_db_timestamps(db_timestamp, output_directory):
@@ -752,9 +800,13 @@ def extend_func_db(function_list, output_directory, target):
         json.dump(all_functions, f)
 
 
-def update_db_files(db_timestamp, project_timestamps, function_list,
-                    constructor_list, output_directory,
-                    should_include_details):
+def update_db_files(db_timestamp,
+                    project_timestamps,
+                    function_list,
+                    constructor_list,
+                    output_directory,
+                    should_include_details,
+                    all_header_files=dict()):
     logger.info(
         "Updating the database with DB snapshot. Number of functions in total: %d"
         % (db_timestamp['function_count']))
@@ -762,6 +814,9 @@ def update_db_files(db_timestamp, project_timestamps, function_list,
         extend_func_db(function_list, output_directory, DB_JSON_ALL_FUNCTIONS)
         extend_func_db(constructor_list, output_directory,
                        DB_JSON_ALL_CONSTRUCTORS)
+
+    with open('all-header-files.json', 'w') as f:
+        f.write(json.dumps(all_header_files))
 
     extend_db_json_files(project_timestamps, output_directory)
     extend_db_timestamps(db_timestamp, output_directory)
@@ -840,14 +895,15 @@ def analyse_set_of_dates(dates, projects_to_analyse, output_directory,
         if force_creation:
             is_end = True
 
-        function_list, constructor_list, project_timestamps, db_timestamp = analyse_list_of_projects(
+        function_list, constructor_list, project_timestamps, db_timestamp, all_header_files = analyse_list_of_projects(
             date, projects_to_analyse, should_include_details=is_end)
         update_db_files(db_timestamp,
                         project_timestamps,
                         function_list,
                         constructor_list,
                         output_directory,
-                        should_include_details=is_end)
+                        should_include_details=is_end,
+                        all_header_files=all_header_files)
 
 
 def get_date_at_offset_as_str(day_offset=-1):
@@ -1074,12 +1130,17 @@ def create_local_db(oss_fuzz_path):
         extract_local_project_data(project, oss_fuzz_path, analyses_dictionary)
 
     # Accummulate the data from all the projects.
+    all_header_files = []
     for project_key in analyses_dictionary:
         # Append project timestamp to the list of timestamps
         project_timestamp = analyses_dictionary[project_key][
             'project_timestamp']
         project_timestamps.append(project_timestamp)
         db_timestamp['fuzzer_count'] += project_timestamp['fuzzer-count']
+
+        # Extend all header files
+        all_header_files.append(
+            analyses_dictionary[project_key]['all-header-files'])
 
         # Accummulate all function list and branch blockers
         introspector_dictionary = project_timestamp.get(
@@ -1120,7 +1181,8 @@ def create_local_db(oss_fuzz_path):
                     function_list,
                     constructor_list,
                     os.getcwd(),
-                    should_include_details=True)
+                    should_include_details=True,
+                    all_header_files=all_header_files)
 
 
 def create_db(max_projects, days_to_analyse, output_directory, input_directory,

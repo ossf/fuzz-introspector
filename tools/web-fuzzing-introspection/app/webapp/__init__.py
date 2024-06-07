@@ -32,8 +32,11 @@ def load_db():
     project_currents = os.path.join(
         os.path.dirname(__file__),
         "../static/assets/db/all-project-current.json")
+
     projects_build_status = os.path.join(
         os.path.dirname(__file__), "../static/assets/db/build-status.json")
+    all_header_files_file = os.path.join(
+        os.path.dirname(__file__), "../static/assets/db/all-header-files.json")
 
     if len(data_storage.DB_TIMESTAMPS) > 0:
         return
@@ -139,6 +142,11 @@ def load_db():
                         'introspector-build-log'],
                     coverage_build_log=project_dict['cov-build-log'],
                     fuzz_build_log=project_dict['fuzz-build-log']))
+
+    if os.path.isfile(all_header_files_file):
+        with open(all_header_files_file, 'r') as f:
+            all_header_files = json.load(f)
+        data_storage.ALL_HEADER_FILES = all_header_files
 
     return
 

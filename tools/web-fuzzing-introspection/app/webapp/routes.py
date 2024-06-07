@@ -1351,6 +1351,25 @@ def shutdown():
         return {'result': 'failed', 'msg': 'not a local server'}
 
 
+@blueprint.route('/api/all-header-files')
+def all_project_header_files():
+    project = request.args.get('project', None)
+    if project == None:
+        return {
+            'result': 'error',
+            'extended_msgs': ['Please provide project name']
+        }
+
+    for elem in data_storage.ALL_HEADER_FILES:
+        if elem['project'] == project:
+            return {
+                'result': 'success',
+                'all-header-files': elem['all-header-files']
+            }
+
+    return {'result': 'failed', 'msg': 'did not find project'}
+
+
 @blueprint.route('/api/addr-to-recursive-dwarf-info')
 def type_at_addr():
     project = request.args.get('project', None)
