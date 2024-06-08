@@ -24,6 +24,8 @@ BUILD_STATUS: List[BuildStatus] = []
 
 PROJECT_DEBUG_DATA = []
 
+ALL_HEADER_FILES = []
+
 
 def get_projects():
     return PROJECTS
