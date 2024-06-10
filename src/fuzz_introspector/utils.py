@@ -40,7 +40,7 @@ def longest_common_prefix(strs: List[str]) -> str:
     """
     try:
         return os.path.commonpath(strs)
-    except:
+    except ValueError:
         return '/'
 
 
