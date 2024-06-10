@@ -22,6 +22,8 @@ public class JavaMethodInfo {
   private List<String> exceptions;
   private List<String> interfaces;
   private List<ClassField> classFields;
+  private List<String> argumentGenericTypes;
+  private String returnValueGenericType;
   private String superClass;
   private Integer methodStatus;
   private Boolean isConcrete;
@@ -36,6 +38,8 @@ public class JavaMethodInfo {
     this.exceptions = new ArrayList<String>();
     this.interfaces = new ArrayList<String>();
     this.classFields = new ArrayList<ClassField>();
+    this.argumentGenericTypes = new ArrayList<String>();
+    this.returnValueGenericType = "";
     this.superClass = "";
     this.isConcrete = true;
     this.isJavaLibraryMethod = false;
@@ -88,6 +92,22 @@ public class JavaMethodInfo {
 
   public void setClassFields(List<ClassField> classFields) {
     this.classFields = classFields;
+  }
+
+  public List<String> getArgumentGenericTypes() {
+    return this.argumentGenericTypes;
+  }
+
+  public void setArgumentGenericTypes(List<String> argumentGenericTypes) {
+    this.argumentGenericTypes = argumentGenericTypes;
+  }
+
+  public String getReturnValueGenericType() {
+    return this.returnValueGenericType;
+  }
+
+  public void setReturnValueGenericType(String returnValueGenericType) {
+    this.returnValueGenericType = returnValueGenericType;
   }
 
   public Boolean isConcrete() {

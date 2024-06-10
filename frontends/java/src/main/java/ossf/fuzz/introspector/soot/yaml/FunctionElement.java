@@ -53,12 +53,21 @@ public class FunctionElement {
     this.branchProfiles = new ArrayList<BranchProfile>();
     this.callsites = new ArrayList<Callsite>();
 
+    this.functionName = "";
+    this.functionSourceFile = "";
+    this.linkageType = "";
+    this.returnType = "";
+
+    this.functionLinenumber = -1;
     this.functionDepth = 0;
-    this.functionUses = 0;
-    this.edgeCount = 0;
+    this.argCount = 0;
     this.BBCount = 0;
     this.iCount = 0;
+    this.edgeCount = 0;
     this.CyclomaticComplexity = 0;
+    this.functionUses = 0;
+
+    this.javaMethodInfo = new JavaMethodInfo();
   }
 
   public String getFunctionName() {
