@@ -882,7 +882,7 @@ def api_project_all_functions():
     # Get all of the functions
     all_functions = data_storage.get_functions()
     project_functions = [
-        function if function.project == project_name for function in all_functions
+        function for function in all_functions if function.project == project_name
     ]
 
     list_to_return = _convert_function_return_list(project_functions)
@@ -899,7 +899,7 @@ def api_project_all_jvm_constructors():
     # Get all of the constructor
     all_constructors = data_storage.get_constructors()
     project_constructors = [
-        constr if constr.project == project_name for constr in all_constructors
+        constr for constr in all_constructors if constr.project == project_name
     ]
 
     list_to_return = _convert_function_return_list(project_constructors)
