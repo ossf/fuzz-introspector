@@ -38,7 +38,10 @@ def longest_common_prefix(strs: List[str]) -> str:
     Dummy wrapper function for os.path.commonpath(paths: List[str]) -> str
     Keeping for backward compactibility
     """
-    return os.path.commonpath(strs)
+    try:
+        return os.path.commonpath(strs)
+    except ValueError:
+        return '/'
 
 
 def normalise_str(s1: str) -> str:
