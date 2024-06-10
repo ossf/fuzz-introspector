@@ -882,7 +882,8 @@ def api_project_all_functions():
     # Get all of the functions
     all_functions = data_storage.get_functions()
     project_functions = [
-        function for function in all_functions if function.project == project_name
+        function for function in all_functions
+        if function.project == project_name
     ]
 
     list_to_return = _convert_function_return_list(project_functions)
