@@ -881,15 +881,37 @@ def api_project_all_functions():
 
     # Get all of the functions
     all_functions = data_storage.get_functions()
-    project_functions = []
-    for function in all_functions:
-        if function.project == project_name:
-            project_functions.append(function)
+    project_functions = [
+        function for function in all_functions
+        if function.project == project_name
+    ]
 
-    # Convert it to something we can return
-    functions_to_return = list()
+    list_to_return = _convert_function_return_list(project_functions)
+    return {'result': 'success', 'functions': list_to_return}
+
+
+@blueprint.route('/api/all-jvm-constructors')
+def api_project_all_jvm_constructors():
+    """Returns a json representation of all the functions in a given project"""
+    project_name = request.args.get('project', None)
+    if project_name == None:
+        return {'result': 'error', 'msg': 'Please provide a project name'}
+
+    # Get all of the constructor
+    all_constructors = data_storage.get_constructors()
+    project_constructors = [
+        constr for constr in all_constructors if constr.project == project_name
+    ]
+
+    list_to_return = _convert_function_return_list(project_constructors)
+    return {'result': 'success', 'functions': list_to_return}
+
+
+def _convert_function_return_list(project_functions):
+    """Convert a function list to something we can return"""
+    list_to_return = []
     for function in project_functions:
-        functions_to_return.append({
+        list_to_return.append({
             'function_name':
             function.name,
             'function_filename':
@@ -911,7 +933,7 @@ def api_project_all_functions():
             'runtime_coverage_percent':
             function.runtime_code_coverage,
         })
-    return {'result': 'success', 'functions': functions_to_return}
+    return list_to_return
 
 
 @blueprint.route('/api/project-source-code')
@@ -1002,6 +1024,7 @@ def api_function_signature():
         return {'result': 'error', 'msg': 'No function name provided'}
 
     all_functions = data_storage.get_functions()
+    all_functions.append(data_storage.get_constructors())
     project_functions = []
     func_to_match = None
     print("Iterating through all functions to match raw function name")
