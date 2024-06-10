@@ -1046,6 +1046,8 @@ def api_function_source_code():
                     datestr = ps.date
                     if ps.introspector_data != None:
                         latest_introspector_datestr = datestr
+    if is_local:
+        latest_introspector_datestr = "norelevant"
 
     if latest_introspector_datestr == None:
         return {'result': 'error', 'msg': 'No introspector builds.'}
