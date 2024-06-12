@@ -1,7 +1,7 @@
 # Auto-generated
 #from app.site.models import *
 
-from typing import List, Any
+from typing import List
 
 import os
 import json
@@ -24,7 +24,7 @@ BUILD_STATUS: List[BuildStatus] = []
 
 PROJECT_DEBUG_DATA: List[DebugStatus] = []
 
-ALL_HEADER_FILES: List[Any] = []
+ALL_HEADER_FILES: List[str] = []
 
 
 def get_projects():
