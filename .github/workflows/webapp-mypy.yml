@@ -1,0 +1,35 @@
+name: Mypy-Pyright-webapp
+
+on:
+  pull_request:
+    branches:
+      main
+    paths:
+      - 'tools/web-fuzzing-introspection/**'
+      - '.github/workflows/webapp-mypy.yml'
+permissions: read-all
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Mypy-Pyright-webapp
+    steps:
+    - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v2.4.0
+    - name: Set up Python 3.8
+      uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d # v3.0.0
+      with:
+        python-version: 3.8
+    - name: Install venv
+      run: sudo apt-get install python3-venv
+    - name: Set up venv
+      run: cd tools/web-fuzzing-introspection && python3 -m venv .venv
+    - name: Active venv dependencies
+      run: cd tools/web-fuzzing-introspection && source .venv/bin/activate && pip install -r ./requirements.txt
+    - name: Install Dependencies
+      run: |
+        pip install mypy types-PyYAML pyright types-requests
+    - name: mypy
+      run: |
+        cd tools/web-fuzzing-introspection && mypy --ignore-missing-imports --explicit-package-bases .
+    - name: pyright
+      run: |
+        cd tools/web-fuzzing-introspection && source .venv/bin/activate && pyright . --project=./.pyrightconfig.json --venvpath=./.venv
