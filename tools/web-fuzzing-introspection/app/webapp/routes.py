@@ -744,7 +744,8 @@ def api_annotated_cfg():
             'result': 'success',
             'project': {
                 'name': project_name,
-                'annotated_cfg': project.introspector_data['annotated_cfg'],
+                'annotated_cfg':
+                target_project.introspector_data['annotated_cfg'],
             }
         }
     except KeyError:
@@ -771,8 +772,8 @@ def api_project_summary():
         'result': 'success',
         'project': {
             'name': project_name,
-            'runtime_coverage_data': project.coverage_data,
-            'introspector_data': project.introspector_data
+            'runtime_coverage_data': target_project.coverage_data,
+            'introspector_data': target_project.introspector_data
         }
     }
 
