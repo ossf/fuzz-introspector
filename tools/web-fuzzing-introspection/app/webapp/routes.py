@@ -1394,7 +1394,6 @@ def shutdown():
     if is_local or allow_shutdown:
         sig = getattr(signal, "SIGKILL", signal.SIGTERM)
         os.kill(os.getpid(), sig)
-        shutdown_server()
         return {'result': 'success', 'msg': 'shutdown'}
     else:
         return {'result': 'failed', 'msg': 'not a local server'}

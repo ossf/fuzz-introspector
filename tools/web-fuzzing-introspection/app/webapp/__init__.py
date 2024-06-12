@@ -5,19 +5,9 @@ from . import data_storage
 from . import models
 
 
-def is_db_valid():
-    db_timestamps_file = os.path.join(
-        os.path.dirname(__file__), "../static/assets/db/db-timestamps.json")
-    if not os.path.isfile(db_timestamps_file):
-        return False
-    return True
-
-
 def load_db():
     """Loads the database"""
     print("Loading db")
-    if not is_db_valid():
-        update_db()
 
     db_timestamps_file = os.path.join(
         os.path.dirname(__file__), "../static/assets/db/db-timestamps.json")
