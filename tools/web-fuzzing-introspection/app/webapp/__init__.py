@@ -16,8 +16,6 @@ def is_db_valid():
 def load_db():
     """Loads the database"""
     print("Loading db")
-    if not is_db_valid():
-        update_db()
 
     db_timestamps_file = os.path.join(
         os.path.dirname(__file__), "../static/assets/db/db-timestamps.json")
