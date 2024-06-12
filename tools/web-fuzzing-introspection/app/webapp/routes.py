@@ -1214,6 +1214,30 @@ def api_oracle_1():
     }
 
 
+@blueprint.route('/api/project-repository')
+def project_repository():
+    err_msgs = list()
+    project_name = request.args.get('project', None)
+    if project_name == None:
+        return {
+            'result': 'error',
+            'extended_msgs': ['Please provide project name']
+        }
+
+    target_project = None
+    all_projects = data_storage.get_projects()
+    for project in all_projects:
+        if project.name == project_name:
+            target_project = project
+            break
+    if target_project is None:
+        return {'result': 'error', 'extended_msgs': ['Did not find project']}
+    return {
+        'result': 'success',
+        'project-repository': target_project.project_repository
+    }
+
+
 @blueprint.route('/api/far-reach-but-low-coverage')
 def far_reach_but_low_coverage():
     err_msgs = list()

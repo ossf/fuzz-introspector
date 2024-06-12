@@ -331,3 +331,26 @@ def try_to_get_project_language(project_name):
         project_yaml = yaml.safe_load(r.text)
         return project_yaml['language']
     return "N/A"
+
+
+def try_to_get_project_repository(project_name):
+    if os.path.isdir(constants.OSS_FUZZ_CLONE):
+        local_project_path = os.path.join(constants.OSS_FUZZ_CLONE, "projects",
+                                          project_name)
+        if os.path.isdir(local_project_path):
+            project_yaml_path = os.path.join(local_project_path,
+                                             "project.yaml")
+            if os.path.isfile(project_yaml_path):
+                with open(project_yaml_path, "r") as f:
+                    project_yaml = yaml.safe_load(f.read())
+                    return project_yaml['main_repo']
+    else:
+        proj_yaml_url = 'https://raw.githubusercontent.com/google/oss-fuzz/master/projects/%s/project.yaml' % (
+            project_name)
+        try:
+            r = requests.get(proj_yaml_url, timeout=10)
+        except:
+            return "N/A"
+        project_yaml = yaml.safe_load(r.text)
+        return project_yaml['main_repo']
+    return "N/A"

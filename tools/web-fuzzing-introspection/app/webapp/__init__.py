@@ -92,7 +92,8 @@ def load_db():
                 date=project_timestamp['date'],
                 coverage_data=project_timestamp['coverage-data'],
                 introspector_data=project_timestamp['introspector-data'],
-                fuzzer_count=project_timestamp['fuzzer-count']))
+                fuzzer_count=project_timestamp['fuzzer-count'],
+                project_repository=project_timestamp['project_repository']))
 
         introspector_data = project_timestamp.get('introspector-data', None)
         if introspector_data is None:
