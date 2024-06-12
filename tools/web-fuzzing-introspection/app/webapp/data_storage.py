@@ -1,30 +1,30 @@
 # Auto-generated
 #from app.site.models import *
 
-from typing import List
+from typing import List, Dict, Any
 
 import os
 import json
 
 from .models import *
 
-PROJECT_TIMESTAMPS = []
+PROJECT_TIMESTAMPS: List[ProjectTimestamp] = []
 
-DB_TIMESTAMPS = []
+DB_TIMESTAMPS: List[DBTimestamp] = []
 
-PROJECTS = []
+PROJECTS: List[Project] = []
 
-FUNCTIONS = []
+FUNCTIONS: List[Function] = []
 
-CONSTRUCTORS = []
+CONSTRUCTORS: List[Function] = []
 
-BLOCKERS = []
+BLOCKERS: List[BranchBlocker] = []
 
 BUILD_STATUS: List[BuildStatus] = []
 
-PROJECT_DEBUG_DATA = []
+PROJECT_DEBUG_DATA: List[DebugStatus] = []
 
-ALL_HEADER_FILES = []
+ALL_HEADER_FILES: List[Dict[str, Any]] = []
 
 
 def get_projects():
