@@ -1326,6 +1326,15 @@ def far_reach_but_low_coverage():
         err_msgs.append('No functions found.')
         bs = get_build_status_of_project(project_name)
 
+        if bs == None:
+            return {
+                'result':
+                'error',
+                'extended_msgs': [
+                    'Project not in OSS-Fuzz (likely only contains a project.yaml file).'
+                ]
+            }
+
         # Check that builds are failing
         if bs.introspector_build_status is False:
             err_msgs.append('No successful build: introspector.')
