@@ -1308,7 +1308,6 @@ def far_reach_but_low_coverage():
                     'Project not in OSS-Fuzz (likely only contains a project.yaml file).'
                 ]
             }
-        err_msgs.append('Missing a recent introspector build.')
 
         # Check that builds are failing
         if bs.introspector_build_status is False:
