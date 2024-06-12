@@ -148,7 +148,7 @@ def extract_lines_from_source_code(project_name,
 
 def get_functions_of_interest(project_name):
     all_functions = data_storage.get_functions()
-    all_functions.extend(data_storage.get_constructors())
+    all_functions = all_functions + data_storage.get_constructors()
 
     project_functions = []
     for function in all_functions:
@@ -1024,7 +1024,7 @@ def api_function_signature():
         return {'result': 'error', 'msg': 'No function name provided'}
 
     all_functions = data_storage.get_functions()
-    all_functions.append(data_storage.get_constructors())
+    all_functions = all_functions + data_storage.get_constructors()
     project_functions = []
     func_to_match = None
     print("Iterating through all functions to match raw function name")
