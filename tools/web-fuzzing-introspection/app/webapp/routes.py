@@ -1183,6 +1183,12 @@ def api_oracle_1():
             target_project = project
             break
 
+    if not target_project:
+        return {
+            'result': 'error',
+            'extended_msgs': ['Project not found']
+        }
+
     all_functions = data_storage.get_functions()
     all_projects = [target_project]
     raw_functions = oracle_1(all_functions, all_projects, 100)
