@@ -20,7 +20,7 @@ ROOT_FI=$PWD/../../
 BASE_DIR=$PWD/workdir
 BENCHMARK_HEURISTICS="${VARIABLE:-far-reach-low-coverage,low-cov-with-fuzz-keyword}"
 OSS_FUZZ_GEN_MODEL=${MODEL}
-VAR_HARNESSES_PER_ORACLE="${HARNESS_PER_ORACLE:-2}"
+VAR_HARNESSES_PER_ORACLE="${HARNESS_PER_ORACLE:-10}"
 VAR_LLM_FIX_LIMIT="${LLM_FIX_LIMIT:-1}"
 PROJECT=${@}
 
@@ -38,8 +38,12 @@ cd ${BASE_DIR}
 # Create webserver DB
 echo "[+] Creating the webapp DB"
 cd $ROOT_FI/tools/web-fuzzing-introspection/app/static/assets/db/
-python3 ./web_db_creator_from_summary.py --includes="${PROJECT}"
-#exit 0                                                                               
+python3 ./web_db_creator_from_summary.py \
+    --since-date=20-04-2023 \
+    --output-dir=$PWD \
+    --input-dir=$PWD \
+    --includes=${comma_separated}
+
 # Start webserver DB                                                            
 echo "Shutting down server in case it's running"
 curl --silent http://localhost:8080/api/shutdown || true
