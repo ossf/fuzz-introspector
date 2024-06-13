@@ -1,0 +1,8 @@
+{
+  "exclude": [
+    "venv/",
+    ".venv/",
+    "requirements.txt",
+    ".venv",
+  ]
+}
