@@ -129,7 +129,7 @@ class Function:
         self.is_jvm_library = is_jvm_library
         self.is_enum_class = is_enum_class
 
-    def __dict__(self):
+    def to_dict(self):
         return {
             'function_name': self.name,
             'function_arguments': self.function_arguments,

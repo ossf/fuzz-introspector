@@ -575,6 +575,7 @@ def oracle_1(all_functions, all_projects, max_project_count=5):
                 and function.accummulated_cyclomatic_complexity > 30):
 
             to_continue = False
+
             for proj in all_projects:
                 if proj.name == function.project and proj.language in {
                         'c', 'c++'
@@ -1503,7 +1504,7 @@ def api_all_interesting_function_targets():
     # Rewrite list
     list_of_targets = []
     for func, heuristic_name in functions_to_display:
-        dict_to_use = func.__dict__()
+        dict_to_use = func.to_dict()
 
         list_of_targets.append({
             'function_target': dict_to_use,
