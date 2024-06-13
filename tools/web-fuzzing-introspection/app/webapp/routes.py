@@ -367,14 +367,13 @@ def project_profile():
     all_build_status = data_storage.get_build_status()
     for build_status in all_build_status:
         if build_status.project_name == target_project_name:
-            project = models.Project(
-                name=build_status.project_name,
-                language=build_status.language,
-                date="",
-                fuzzer_count=0,
-                coverage_data=None,
-                introspector_data=None,
-            )
+            project = models.Project(name=build_status.project_name,
+                                     language=build_status.language,
+                                     date="",
+                                     fuzzer_count=0,
+                                     coverage_data=None,
+                                     introspector_data=None,
+                                     project_repository=None)
 
             # Get statistics of the project
             project_statistics = data_storage.PROJECT_TIMESTAMPS
