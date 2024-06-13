@@ -30,6 +30,8 @@ APIS = [
     '/api/all-header-files'
 ]
 BASE_URL = 'http://localhost:8080'
+EXCEPTIONS = []
+
 
 def _test_server_api(url):
   """Function for calling server API and check if the return code is 2XX or 3XX
@@ -39,7 +41,7 @@ def _test_server_api(url):
 
   if response.status_code >= 400 or response.status_code < 200:
     print(f'{url} failed with return code: {response.status_code}')
-    raise Exception(f'{url} failed with return code: {response.status_code}')
+    EXCEPTIONS.append(f'{url} failed with return code: {response.status_code}')
 
 
 if __name__ == "__main__":
@@ -47,7 +49,7 @@ if __name__ == "__main__":
 
   code = subprocess.call([os.path.join(ROOT_FI, '.github', 'helper', 'prepare_webapp')])
   if code:
-    raise Exception('Failed to prepare the webapp for testing.')
+    EXCEPTIONS.append('Failed to prepare the webapp for testing.')
 
   # A list of curl test to the webapp api
   for project in PROJECTS:
@@ -60,3 +62,6 @@ if __name__ == "__main__":
     requests.get('http://localhost:8080/api/shutdown')
   except:
     pass
+
+  if EXCEPTIONS:
+    raise Exception(f'Test error. Details: {EXCEPTIONS}')
