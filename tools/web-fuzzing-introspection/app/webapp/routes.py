@@ -959,7 +959,10 @@ def api_project_source_code():
         begin_line = int(begin_line)
         end_line = int(end_line)
     except ValueError:
-        return {'result': 'error', 'msg': 'begin line or end line are not valid integer'}
+        return {
+            'result': 'error',
+            'msg': 'begin line or end line are not valid integer'
+        }
 
     # If this is a local build do not look for project timestamps
     if is_local:
