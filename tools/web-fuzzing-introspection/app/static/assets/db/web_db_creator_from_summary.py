@@ -336,6 +336,11 @@ def extract_local_project_data(project_name, oss_fuzz_path,
 
     # Dump things we dont want to accummulate.
     #save_branch_blockers(branch_pairs, project_name)
+    try:
+        project_repository = oss_fuzz.try_to_get_project_repository(
+            project_name)
+    except:
+        project_repository = 'N/A'
 
     introspector_data_dict = {
         "introspector_report_url": 'introspector_url',
@@ -365,6 +370,7 @@ def extract_local_project_data(project_name, oss_fuzz_path,
         'coverage-data': code_coverage_data_dict,
         'introspector-data': introspector_data_dict,
         'fuzzer-count': amount_of_fuzzers,
+        'project_repository': project_repository,
     }
 
     dictionary_key = '%s###%s' % (project_name, '')
@@ -407,6 +413,12 @@ def extract_project_data(project_name, date_str, should_include_details,
     except:
         # Default set to c++ as this is OSS-Fuzz's default.
         project_language = 'c++'
+
+    try:
+        project_repository = oss_fuzz.try_to_get_project_repository(
+            project_name)
+    except:
+        project_repository = 'N/A'
 
     collect_debug_info = project_language in {'c', 'c++'}
 
@@ -587,6 +599,7 @@ def extract_project_data(project_name, date_str, should_include_details,
         'coverage-data': code_coverage_data_dict,
         'introspector-data': introspector_data_dict,
         'fuzzer-count': amount_of_fuzzers,
+        'project_repository': project_repository,
     }
 
     dictionary_key = '%s###%s' % (project_name, date_str)

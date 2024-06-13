@@ -97,6 +97,7 @@ def extract_lines_from_source_code(project_name,
     raw_source = extract_introspector_raw_source_code(project_name, date_str,
                                                       target_file)
     if raw_source is None:
+        print("Did not found source")
         return raw_source
 
     source_lines = raw_source.split("\n")
@@ -574,6 +575,7 @@ def oracle_1(all_functions, all_projects, max_project_count=5):
                 and function.accummulated_cyclomatic_complexity > 30):
 
             to_continue = False
+
             for proj in all_projects:
                 if proj.name == function.project and proj.language in {
                         'c', 'c++'
@@ -744,7 +746,8 @@ def api_annotated_cfg():
             'result': 'success',
             'project': {
                 'name': project_name,
-                'annotated_cfg': project.introspector_data['annotated_cfg'],
+                'annotated_cfg':
+                target_project.introspector_data['annotated_cfg'],
             }
         }
     except KeyError:
@@ -771,8 +774,8 @@ def api_project_summary():
         'result': 'success',
         'project': {
             'name': project_name,
-            'runtime_coverage_data': project.coverage_data,
-            'introspector_data': project.introspector_data
+            'runtime_coverage_data': target_project.coverage_data,
+            'introspector_data': target_project.introspector_data
         }
     }
 
@@ -1182,6 +1185,8 @@ def api_oracle_1():
         if project.name == project_name:
             target_project = project
             break
+    if not target_project:
+        return {'result': 'error', 'extended_msgs': ['Could not find project']}
 
     all_functions = data_storage.get_functions()
     all_projects = [target_project]
@@ -1211,6 +1216,30 @@ def api_oracle_1():
         'result': result_status,
         'extended_msgs': err_msgs,
         'functions': functions_to_return
+    }
+
+
+@blueprint.route('/api/project-repository')
+def project_repository():
+    err_msgs = list()
+    project_name = request.args.get('project', None)
+    if project_name == None:
+        return {
+            'result': 'error',
+            'extended_msgs': ['Please provide project name']
+        }
+
+    target_project = None
+    all_projects = data_storage.get_projects()
+    for project in all_projects:
+        if project.name == project_name:
+            target_project = project
+            break
+    if target_project is None:
+        return {'result': 'error', 'extended_msgs': ['Did not find project']}
+    return {
+        'result': 'success',
+        'project-repository': target_project.project_repository
     }
 
 
@@ -1300,6 +1329,15 @@ def far_reach_but_low_coverage():
         err_msgs.append('No functions found.')
         bs = get_build_status_of_project(project_name)
 
+        if bs == None:
+            return {
+                'result':
+                'error',
+                'extended_msgs': [
+                    'Project not in OSS-Fuzz (likely only contains a project.yaml file).'
+                ]
+            }
+
         # Check that builds are failing
         if bs.introspector_build_status is False:
             err_msgs.append('No successful build: introspector.')
@@ -1370,7 +1408,6 @@ def shutdown():
     if is_local or allow_shutdown:
         sig = getattr(signal, "SIGKILL", signal.SIGTERM)
         os.kill(os.getpid(), sig)
-        shutdown_server()
         return {'result': 'success', 'msg': 'shutdown'}
     else:
         return {'result': 'failed', 'msg': 'not a local server'}
@@ -1467,7 +1504,7 @@ def api_all_interesting_function_targets():
     # Rewrite list
     list_of_targets = []
     for func, heuristic_name in functions_to_display:
-        dict_to_use = func.__dict__()
+        dict_to_use = func.to_dict()
 
         list_of_targets.append({
             'function_target': dict_to_use,
@@ -1477,3 +1514,95 @@ def api_all_interesting_function_targets():
     result_dict['function_targets'] = list_of_targets
 
     return result_dict
+
+
+@blueprint.route('/api/sample-cross-references')
+def sample_cross_references():
+    """Returns a list of strings with functions that call into a given 
+    target function."""
+    project_name = request.args.get('project', None)
+    if project_name == None:
+        return {'result': 'error', 'msg': 'Please provide a project name'}
+
+    function_signature = request.args.get('function_signature', None)
+    if function_signature == None:
+        return {'result': 'error', 'msg': 'No function signature provided'}
+
+    # Get function from function signature
+    target_function = get_function_from_func_signature(function_signature,
+                                                       project_name)
+    if target_function == None:
+        return {
+            'result': 'error',
+            'msg': 'Function signature could not be found'
+        }
+    function_name = target_function.raw_function_name
+
+    # Get all of the functions
+    all_functions = data_storage.get_functions()
+    project_functions = []
+    for function in all_functions:
+        if function.project == project_name:
+            project_functions.append(function)
+
+    func_xrefs = []
+    xrefs = []
+    for function in project_functions:
+        callsites = function.callsites
+        for cs_dst in callsites:
+            if cs_dst == function_name:
+                func_xrefs.append(function)
+                all_locations = function.callsites[cs_dst]
+                for loc in all_locations:
+                    filename = loc.split('#')[0]
+                    cs_linenumber = int(loc.split(':')[-1])
+                    xrefs.append({
+                        'filename': function.function_filename,
+                        'cs_linenumber': cs_linenumber,
+                        'src_func': function.name,
+                        'dst_func': function_name
+                    })
+
+    if is_local:
+        latest_introspector_datestr = "notrelevant"
+    else:
+        all_build_status = data_storage.get_build_status()
+        latest_introspector_datestr = None
+        for build_status in all_build_status:
+            if build_status.project_name == project_name:
+
+                # Get statistics of the project
+                project_statistics = data_storage.PROJECT_TIMESTAMPS
+                for ps in project_statistics:
+                    if ps.project_name == project_name:
+                        datestr = ps.date
+                        if ps.introspector_data != None:
+                            latest_introspector_datestr = datestr
+
+        if latest_introspector_datestr == None:
+            return {'result': 'error', 'msg': 'No introspector builds.'}
+
+    source_code_xrefs = []
+    for target_function in func_xrefs:
+        src_begin = target_function.source_line_begin
+        src_end = target_function.source_line_end
+        src_file = target_function.function_filename
+
+        # Check if we have accompanying debug info
+        debug_source_dict = target_function.debug_data.get('source', None)
+        if debug_source_dict:
+            source_line = int(debug_source_dict.get('source_line', -1))
+            if source_line != -1:
+                src_begin = source_line
+
+        source_code = extract_lines_from_source_code(
+            project_name,
+            latest_introspector_datestr,
+            src_file,
+            src_begin,
+            src_end,
+            sanity_check_function_end=True)
+        if source_code:
+            source_code_xrefs.append(source_code)
+
+    return {'result': 'success', 'source-code-refs': source_code_xrefs}

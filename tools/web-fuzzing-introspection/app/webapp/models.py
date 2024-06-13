@@ -66,13 +66,14 @@ class ProjectTimestamp:
 class Project:
 
     def __init__(self, name, language, date, coverage_data, introspector_data,
-                 fuzzer_count):
+                 fuzzer_count, project_repository):
         self.name = name
         self.language = language
         self.date = date
         self.coverage_data = coverage_data
         self.introspector_data = introspector_data
         self.fuzzer_count = fuzzer_count
+        self.project_repository = project_repository
 
     def has_introspector(self) -> bool:
         return self.introspector_data != None
@@ -128,7 +129,7 @@ class Function:
         self.is_jvm_library = is_jvm_library
         self.is_enum_class = is_enum_class
 
-    def __dict__(self):
+    def to_dict(self):
         return {
             'function_name': self.name,
             'function_arguments': self.function_arguments,

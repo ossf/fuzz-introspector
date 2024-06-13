@@ -5,19 +5,9 @@ from . import data_storage
 from . import models
 
 
-def is_db_valid():
-    db_timestamps_file = os.path.join(
-        os.path.dirname(__file__), "../static/assets/db/db-timestamps.json")
-    if not os.path.isfile(db_timestamps_file):
-        return False
-    return True
-
-
 def load_db():
     """Loads the database"""
     print("Loading db")
-    if not is_db_valid():
-        update_db()
 
     db_timestamps_file = os.path.join(
         os.path.dirname(__file__), "../static/assets/db/db-timestamps.json")
@@ -92,7 +82,8 @@ def load_db():
                 date=project_timestamp['date'],
                 coverage_data=project_timestamp['coverage-data'],
                 introspector_data=project_timestamp['introspector-data'],
-                fuzzer_count=project_timestamp['fuzzer-count']))
+                fuzzer_count=project_timestamp['fuzzer-count'],
+                project_repository=project_timestamp['project_repository']))
 
         introspector_data = project_timestamp.get('introspector-data', None)
         if introspector_data is None:
