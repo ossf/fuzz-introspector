@@ -14,21 +14,116 @@
 # limitations under the License.
 #
 ################################################################################
+import itertools
 import os
 import requests
 import subprocess
+import urllib.parse
 
-PROJECTS = [
-    'wrong-project-name', 'htslib', 'icu', 'tinyxml2', 'leveldb',
-    'eigen', 'immer', 'fluent-bit', 'json-java', 'java-diff-utils'
-]
-APIS = [
-    '/api/annotated-cfg', '/api/project-summary', '/api/branch-blockers',
-    '/api/all-functions', '/api/all-jvm-constructors',
-    '/api/easy-params-far-reach', '/api/far-reach-low-cov-fuzz-keyword',
-    '/api/project-repository', '/api/far-reach-but-low-coverage',
-    '/api/all-header-files'
-]
+DATA = {
+    'project': [
+        '', 'wrong-project-name', 'htslib', 'icu', 'tinyxml2', 'leveldb',
+        'eigen', 'immer', 'fluent-bit', 'json-java', 'java-diff-utils',
+    ],
+    'function': [
+        '', 'wrong-function-name', 'hts_flush', 'u_formatMessage_76',
+        'tinyxml2::XMLElement::BoolText(bool)const', 'cb_trace'
+        'leveldb::(anonymousnamespace)::DBIter::Prev()',
+        'Eigen::Matrix<int,-1,1,0,-1,1>::~Matrix()',
+        '[org.json.JSONArray].toString()',
+        '[com.github.difflib.algorithm.Change].withEndOriginal(int)'
+    ],
+    'q': [
+        '', 'c', 'java', 'json', 'random'
+    ],
+    'function_signature': [
+        '', 'wrong-signature', 'hts_flush', 'u_formatMessage_76',
+        'tinyxml2::XMLElement::BoolText(bool)const', 'cb_trace'
+        'leveldb::(anonymousnamespace)::DBIter::Prev()',
+        'Eigen::Matrix<int,-1,1,0,-1,1>::~Matrix()',
+        '[org.json.JSONArray].toString()',
+        '[com.github.difflib.algorithm.Change].withEndOriginal(int)'
+    ]
+}
+
+
+APIS = {
+    '/': {
+        'args': []
+    },
+    '/function-profile': {
+        'args': ['project', 'function']
+    },
+    '/project-profile': {
+        'args': ['project']
+    },
+    '/function-search': {
+        'args': ['q']
+    },
+    '/projects-overview': {
+        'args': []
+    },
+    '/target_oracle': {
+        'args': []
+    },
+    '/indexing-overview': {
+        'args': []
+    },
+    '/about': {
+        'args': []
+    },
+    '/api': {
+        'args': []
+    },
+    '/api/annotated-cfg': {
+        'args': ['project']
+    },
+    '/api/project-summary': {
+        'args': ['project']
+    },
+    '/api/branch-blockers': {
+        'args': ['project']
+    },
+    '/api/all-cross-references': {
+        'args': ['project', 'function_signature']
+    },
+    '/api/all-functions': {
+        'args': ['project']
+    },
+    '/api/all-jvm-constructors': {
+        'args': ['project']
+    },
+    '/api/function-signature': {
+        'args': ['project', 'function']
+    },
+    '/api/function-source-code': {
+        'args': ['project', 'function_signature']
+    },
+    '/api/easy-params-far-reach': {
+        'args': ['project']
+    },
+    '/api/far-reach-low-cov-fuzz-keyword': {
+        'args': ['project']
+    },
+    '/api/project-repository': {
+        'args': ['project']
+    },
+    '/api/project-repository': {
+        'args': ['project']
+    },
+    '/api/far-reach-but-low-coverage': {
+        'args': ['project']
+    },
+    '/api/all-header-files': {
+        'args': ['project']
+    },
+    '/api/function-target-oracle': {
+        'args': []
+    },
+    '/api/sample-cross-references': {
+        'args': ['project', 'function_signature']
+    }
+}
 BASE_URL = 'http://localhost:8080'
 EXCEPTIONS = []
 
@@ -52,9 +147,26 @@ if __name__ == "__main__":
     EXCEPTIONS.append('Failed to prepare the webapp for testing.')
 
   # A list of curl test to the webapp api
-  for project in PROJECTS:
-    for api in APIS:
-      _test_server_api(f'{BASE_URL}{api}?project={project}')
+  for key in APIS:
+    data_dict = APIS[key]
+    url = f'{BASE_URL}{key}'
+
+    args = []
+    for arg in data_dict['args']:
+        values = []
+        for value in DATA[arg]:
+            values.append(f'{arg}={urllib.parse.quote_plus(value)}')
+        args.append(values)
+    if args:
+      arg_strs = list(map('&'.join, itertools.product(*args)))
+    else:
+      arg_strs = []
+
+    if len(arg_strs) > 0:
+      for arg_str in arg_strs:
+        _test_server_api(f'{url}?{arg_str}')
+    else:
+      _test_server_api(url)
 
   # Shutdown started webserver
   print("Shutting down started webserver")
