@@ -374,6 +374,7 @@ def project_profile():
                 fuzzer_count=0,
                 coverage_data=None,
                 introspector_data=None,
+                project_repository=None
             )
 
             # Get statistics of the project
