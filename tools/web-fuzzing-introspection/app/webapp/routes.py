@@ -1184,6 +1184,8 @@ def api_oracle_1():
         if project.name == project_name:
             target_project = project
             break
+    if not target_project:
+        return {'result': 'error', 'extended_msgs': ['Could not find project']}
 
     all_functions = data_storage.get_functions()
     all_projects = [target_project]
