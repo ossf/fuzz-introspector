@@ -1135,10 +1135,7 @@ def api_oracle_2():
             break
 
     if target_project == None:
-        return {
-            'result': 'error',
-            'extended_msgs': ['Project not found.']
-        }
+        return {'result': 'error', 'extended_msgs': ['Project not found.']}
 
     all_functions = data_storage.get_functions()
     all_projects = [target_project]
