@@ -4,5 +4,6 @@
     ".venv/",
     "requirements.txt",
     ".venv",
+    "app/static/",
   ]
 }

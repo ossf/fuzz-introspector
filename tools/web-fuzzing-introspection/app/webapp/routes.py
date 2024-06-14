@@ -149,7 +149,7 @@ def extract_lines_from_source_code(project_name,
 
 def get_functions_of_interest(project_name):
     all_functions = data_storage.get_functions()
-    all_functions = all_functions + data_storage.get_constructors()
+    all_functions = all_functions.append(data_storage.get_constructors())
 
     project_functions = []
     for function in all_functions:
