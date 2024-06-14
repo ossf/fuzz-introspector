@@ -1443,6 +1443,9 @@ def all_project_header_files():
 
 @blueprint.route('/api/addr-to-recursive-dwarf-info')
 def type_at_addr():
+    # Temporary disabling this API because of size limit.
+    # @arthurscchan 14/6/2024
+    return {'result': 'error', 'extended_msgs': ['Temporary disabled']}
     project = request.args.get('project', None)
     if project == None:
         return {
