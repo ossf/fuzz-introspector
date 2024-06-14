@@ -490,7 +490,6 @@ def oracle_3(all_functions, all_projects):
         - less than a certain number of arguments (3 or below);
         - at least one argument.
     """
-    all_functions = data_storage.get_functions()
     functions_of_interest = []
     projects_added = dict()
 
