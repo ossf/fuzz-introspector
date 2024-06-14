@@ -173,7 +173,7 @@ def get_frontpage_summary_stats():
     # Get total number of projects
     all_projects = data_storage.get_projects()
 
-    projects_to_use = []
+    #    projects_to_use = []
     # Only include fuzz introspector projects
     #for project in all_projects:
     #    if project.introspector_data != None:
@@ -470,7 +470,6 @@ def projects_overview():
     # Get statistics of the project
     project_statistics = data_storage.PROJECT_TIMESTAMPS
     latest_coverage_profiles = dict()
-    real_stats = []
     latest_statistics = None
     for ps in project_statistics:
         latest_coverage_profiles[ps.project_name] = ps
@@ -817,7 +816,6 @@ def branch_blockers():
 
 def get_function_from_func_signature(func_signature, project_name):
     all_functions = data_storage.get_functions()
-    project_functions = []
     for function in all_functions:
         if function.project == project_name and function.func_signature == func_signature:
             return function
@@ -1034,7 +1032,6 @@ def api_function_signature():
 
     all_functions = data_storage.get_functions()
     all_functions = all_functions + data_storage.get_constructors()
-    project_functions = []
     func_to_match = None
     print("Iterating through all functions to match raw function name")
     for function in all_functions:
@@ -1116,7 +1113,6 @@ def api_function_source_code():
 def get_build_status_of_project(project_name):
     build_status = data_storage.get_build_status()
 
-    languages_summarised = dict()
     for bs in build_status:
         if bs.project_name == project_name:
             return bs
@@ -1230,7 +1226,6 @@ def api_oracle_1():
 
 @blueprint.route('/api/project-repository')
 def project_repository():
-    err_msgs = list()
     project_name = request.args.get('project', None)
     if project_name == None:
         return {
