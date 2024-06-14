@@ -954,11 +954,20 @@ def api_project_source_code():
     if end_line == None:
         return {'result': 'error', 'msg': 'No end line provided'}
 
+    try:
+        begin_line = int(begin_line)
+        end_line = int(end_line)
+    except ValueError:
+        return {
+            'result': 'error',
+            'msg': 'begin line or end line are not valid integer'
+        }
+
     # If this is a local build do not look for project timestamps
     if is_local:
         source_code = extract_lines_from_source_code(project_name, '',
-                                                     filepath, int(begin_line),
-                                                     int(end_line))
+                                                     filepath, begin_line,
+                                                     end_line)
         if source_code == None:
             return {'result': 'error', 'msg': 'no source code'}
 
