@@ -1,8 +1,8 @@
 import os
 import json
+from typing import Dict, List, Any
 
-from . import data_storage
-from . import models
+from . import data_storage, models
 
 
 def load_db():
@@ -42,7 +42,9 @@ def load_db():
                 function_count=ts['function_count'],
                 function_coverage_estimate=ts['function_coverage_estimate'],
                 accummulated_lines_total=ts['accummulated_lines_total'],
-                accummulated_lines_covered=ts['accummulated_lines_covered']))
+                accummulated_lines_covered=ts['accummulated_lines_covered']
+            )
+        )
 
     # Load functions
     with open(all_functions_file, 'r') as f:
@@ -142,7 +144,7 @@ def load_db():
     return
 
 
-def load_functions(function_list, target):
+def load_functions(function_list: List[Dict[str, Any]], target: List[models.Function]) -> int:
     """Load functions or constructors into data storage"""
     idx = 0
     for func in function_list:
