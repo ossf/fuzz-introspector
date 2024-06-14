@@ -21,7 +21,7 @@ import signal
 
 from flask import Blueprint, render_template, request, redirect, BaseResponse
 
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Tuple, Any, Optional, Callable, Union
 
 from . import models, data_storage
 
@@ -291,7 +291,7 @@ def function_profile() -> str:
 
 
 @blueprint.route('/project-profile', methods=['GET'])
-def project_profile() -> str | BaseResponse:
+def project_profile() -> Union[str, BaseResponse]:
     #print(request.args.get('project', 'none'))
 
     target_project_name = request.args.get('project', 'none')
@@ -498,7 +498,7 @@ def oracle_3(all_functions: List[models.Function],
         - at least one argument.
     """
     functions_of_interest = []
-    projects_added = dict()
+    projects_added: Dict[str, List[models.Function]] = dict()
 
     for function in all_functions:
         if (function.runtime_code_coverage < 20.0
@@ -545,7 +545,7 @@ def oracle_1(all_functions: List[models.Function],
              all_projects: List[models.Project],
              max_project_count: int = 5) -> List[models.Function]:
     tmp_list = []
-    project_count = dict()
+    project_count: Dict[str, int] = dict()
     for function in all_functions:
         interesting_fuzz_keywords = {
             'deserialize',
@@ -629,7 +629,7 @@ def match_easy_fuzz_arguments(function: models.Function) -> bool:
 def oracle_2(all_functions: List[models.Function],
              all_projects: List[models.Project]) -> List[models.Function]:
     tmp_list = []
-    project_count = dict()
+    project_count: Dict[str, int] = dict()
     if len(all_projects) == 1:
         project_to_target = all_projects[0]
     else:
@@ -667,8 +667,9 @@ def target_oracle() -> str:
     functions_to_display = []
 
     total_funcs = set()
-    oracle_pairs = [(oracle_1, "heuristic 1"), (oracle_2, "heuristic 2"),
-                    (oracle_3, "heuristic 3")]
+    oracle_pairs: List[Tuple[Callable, str]] = [(oracle_1, "heuristic 1"),
+                                                (oracle_2, "heuristic 2"),
+                                                (oracle_3, "heuristic 3")]
     for oracle, heuristic_name in oracle_pairs:
         func_targets = oracle(all_functions, all_projects)
         for func in func_targets:
@@ -958,12 +959,14 @@ def api_project_source_code() -> Dict[str, Any]:
     if filepath == None:
         return {'result': 'error', 'msg': 'No filepath provided'}
 
-    begin_line = request.args.get('begin_line', None)
-    if begin_line == None:
+    begin_line = 0
+    begin_line_str = request.args.get('begin_line', None)
+    if begin_line_str == None:
         return {'result': 'error', 'msg': 'No begin line provided'}
 
-    end_line = request.args.get('end_line', None)
-    if end_line == None:
+    end_line = 0
+    end_line_str = request.args.get('end_line', None)
+    if end_line_str == None:
         return {'result': 'error', 'msg': 'No end line provided'}
 
     try:
@@ -1140,7 +1143,7 @@ def get_build_status_of_project(
 @blueprint.route('/api/easy-params-far-reach')
 def api_oracle_2() -> Dict[str, Any]:
     """API for getting fuzz targets with easy fuzzable arguments."""
-    err_msgs = list()
+    err_msgs: List[str] = list()
     project_name = request.args.get('project', None)
     if project_name == None:
         return {
@@ -1190,7 +1193,7 @@ def api_oracle_2() -> Dict[str, Any]:
 
 @blueprint.route('/api/far-reach-low-cov-fuzz-keyword')
 def api_oracle_1() -> Dict[str, Any]:
-    err_msgs = list()
+    err_msgs: List[str] = list()
     project_name = request.args.get('project', None)
     if project_name == None:
         return {
@@ -1475,7 +1478,7 @@ def type_at_addr() -> Dict[str, Any]:
     with open(type_map, 'r') as f:
         type_map_dict = json.load(f)
 
-    resulting_types = dict()
+    resulting_types: Dict[str, Any] = dict()
     print("Getting types")
     get_full_recursive_types(type_map_dict, resulting_types, addr)
 
@@ -1487,7 +1490,7 @@ def api_all_interesting_function_targets() -> Dict[str, Any]:
     """Returns a list of function targets based on analysis of all functions in all
     OSS-Fuzz projects (assuming they have introspetor builds) using several different
     heuristics."""
-    result_dict = dict()
+    result_dict: Dict[str, Any] = dict()
 
     # Get the list of all oracles that we have
     all_projects = data_storage.get_projects()
@@ -1497,8 +1500,9 @@ def api_all_interesting_function_targets() -> Dict[str, Any]:
     functions_to_display = []
 
     total_funcs = set()
-    oracle_pairs = [(oracle_1, "heuristic 1"), (oracle_2, "heuristic 2"),
-                    (oracle_3, "heuristic 3")]
+    oracle_pairs: List[Tuple[Callable, str]] = [(oracle_1, "heuristic 1"),
+                                                (oracle_2, "heuristic 2"),
+                                                (oracle_3, "heuristic 3")]
     for oracle, heuristic_name in oracle_pairs:
         func_targets = oracle(all_functions, all_projects)
         for func in func_targets:
