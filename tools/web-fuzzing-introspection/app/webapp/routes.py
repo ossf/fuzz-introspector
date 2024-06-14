@@ -173,7 +173,7 @@ def get_frontpage_summary_stats():
     # Get total number of projects
     all_projects = data_storage.get_projects()
 
-#    projects_to_use = []
+    #    projects_to_use = []
     # Only include fuzz introspector projects
     #for project in all_projects:
     #    if project.introspector_data != None:
