@@ -21,12 +21,11 @@ import signal
 
 from flask import Blueprint, render_template, request, redirect
 
-#from app.site import models
-from . import models
+from . import models, data_storage
+from helper import introspector_helper
 
 # Use these during testing.
 #from app.site import test_data
-from . import data_storage
 
 blueprint = Blueprint('site', __name__, template_folder='templates')
 
@@ -34,117 +33,6 @@ gtag = None
 is_local = False
 allow_shutdown = False
 local_oss_fuzz = ''
-
-
-def get_introspector_report_url_base(project_name, datestr):
-    base_url = 'https://storage.googleapis.com/oss-fuzz-introspector/{0}/inspector-report/{1}/'
-    project_url = base_url.format(project_name, datestr.replace("-", ""))
-    return project_url
-
-
-def get_introspector_report_url_source_base(project_name, datestr):
-    return get_introspector_report_url_base(project_name,
-                                            datestr) + "source-code"
-
-
-def get_introspector_url(project_name, datestr):
-    return get_introspector_report_url_base(project_name,
-                                            datestr) + "fuzz_report.html"
-
-
-def get_coverage_report_url(project_name, datestr, language):
-    if language == 'java' or language == 'python' or language == 'go':
-        file_report = "index.html"
-    else:
-        file_report = "report.html"
-    base_url = 'https://storage.googleapis.com/oss-fuzz-coverage/{0}/reports/{1}/linux/{2}'
-    project_url = base_url.format(project_name, datestr.replace("-", ""),
-                                  file_report)
-    return project_url
-
-
-def extract_introspector_raw_source_code(project_name, date_str, target_file):
-
-    if is_local:
-        src_location = os.path.join(local_oss_fuzz, 'build', 'out',
-                                    project_name, 'inspector',
-                                    'source-code') + target_file
-        if not os.path.isfile(src_location):
-            return None
-        with open(src_location, 'r') as f:
-            return f.read()
-
-    introspector_summary_url = get_introspector_report_url_source_base(
-        project_name, date_str.replace("-", "")) + target_file
-
-    print("URL: %s" % (introspector_summary_url))
-    # Read the introspector atifact
-    try:
-        raw_source = requests.get(introspector_summary_url, timeout=10).text
-    except:
-        return None
-
-    return raw_source
-
-
-def extract_lines_from_source_code(project_name,
-                                   date_str,
-                                   target_file,
-                                   line_begin,
-                                   line_end,
-                                   print_line_numbers=False,
-                                   sanity_check_function_end=False):
-    raw_source = extract_introspector_raw_source_code(project_name, date_str,
-                                                      target_file)
-    if raw_source is None:
-        print("Did not found source")
-        return raw_source
-
-    source_lines = raw_source.split("\n")
-
-    return_source = ""
-
-    # Source line numbers start from 1
-    line_begin -= 1
-
-    max_length = len(str(line_end))
-    function_lines = []
-    for line_num in range(line_begin, line_end):
-        if line_num >= len(source_lines):
-            continue
-
-        if print_line_numbers:
-            line_num_str = " " * (max_length - len(str(line_num)))
-            return_source += "%s%d " % (line_num_str, line_num)
-        return_source += source_lines[line_num] + "\n"
-        function_lines.append(source_lines[line_num])
-
-    if sanity_check_function_end:
-        found_end_braces = False
-
-        if len(function_lines) > 0:
-            if '}' in function_lines[-1]:
-                found_end_braces = True
-        if not found_end_braces and len(function_lines) > 1:
-            if '}' in function_lines[-2] and function_lines[-1].strip() == '':
-                found_end_braces = True
-
-        if not found_end_braces:
-            # Check the lines after max length
-            tmp_ending = ""
-            for nl in range(line_end, line_end + 10):
-                if nl >= len(source_lines):
-                    continue
-                tmp_ending += source_lines[nl] + '\n'
-                if '{' in source_lines[nl]:
-                    break
-                if '}' in source_lines[nl]:
-                    found_end_braces = True
-                    break
-            if found_end_braces:
-                return_source += tmp_ending
-
-    return return_source
 
 
 def get_functions_of_interest(project_name):
@@ -320,10 +208,10 @@ def project_profile():
                 else:
                     project_language = 'c++'
 
-                latest_coverage_report = get_coverage_report_url(
+                latest_coverage_report = introspector_helper.get_coverage_report_url(
                     project.name, datestr, project_language)
                 if ps.introspector_data != None:
-                    latest_fuzz_introspector_report = get_introspector_url(
+                    latest_fuzz_introspector_report = introspector_helper.get_introspector_url(
                         project.name, datestr)
                     latest_introspector_datestr = datestr
 
@@ -387,16 +275,16 @@ def project_profile():
                     real_stats.append(ps)
                     datestr = ps.date
                     latest_statistics = ps
-                    latest_coverage_report = get_coverage_report_url(
+                    latest_coverage_report = introspector_helper.get_coverage_report_url(
                         build_status.project_name, datestr,
                         build_status.language)
                     if ps.introspector_data != None:
-                        latest_fuzz_introspector_report = get_introspector_url(
+                        latest_fuzz_introspector_report = introspector_helper.get_introspector_url(
                             build_status.project_name, datestr)
                         latest_introspector_datestr = datestr
 
-            if len(real_stats) > 0:
-                latest_coverage_report = get_coverage_report_url(
+            if datestr and len(real_stats) > 0:
+                latest_coverage_report = introspector_helper.get_coverage_report_url(
                     build_status.project_name, datestr, build_status.language)
             else:
                 latest_coverage_report = None
@@ -957,9 +845,9 @@ def api_project_source_code():
 
     # If this is a local build do not look for project timestamps
     if is_local:
-        source_code = extract_lines_from_source_code(project_name, '',
-                                                     filepath, int(begin_line),
-                                                     int(end_line))
+        source_code = introspector_helper.extract_lines_from_source_code(
+            project_name, '', filepath, int(begin_line), int(end_line),
+            is_local, local_oss_fuzz)
         if source_code == None:
             return {'result': 'error', 'msg': 'no source code'}
 
@@ -981,10 +869,9 @@ def api_project_source_code():
     if latest_introspector_datestr == None:
         return {'result': 'error', 'msg': 'No introspector builds.'}
 
-    source_code = extract_lines_from_source_code(project_name,
-                                                 latest_introspector_datestr,
-                                                 filepath, int(begin_line),
-                                                 int(end_line))
+    source_code = introspector_helper.extract_lines_from_source_code(
+        project_name, latest_introspector_datestr, filepath, int(begin_line),
+        int(end_line), is_local, local_oss_fuzz)
     if source_code == None:
         return {'result': 'error', 'msg': 'no source code'}
 
@@ -1087,12 +974,14 @@ def api_function_source_code():
         if source_line != -1:
             src_begin = source_line
 
-    source_code = extract_lines_from_source_code(
+    source_code = introspector_helper.extract_lines_from_source_code(
         project_name,
         latest_introspector_datestr,
         src_file,
         src_begin,
         src_end,
+        is_local,
+        local_oss_fuzz,
         sanity_check_function_end=True)
     if source_code == None:
         return {'result': 'error', 'msg': 'No source code'}
@@ -1593,12 +1482,14 @@ def sample_cross_references():
             if source_line != -1:
                 src_begin = source_line
 
-        source_code = extract_lines_from_source_code(
+        source_code = introspector_helper.extract_lines_from_source_code(
             project_name,
             latest_introspector_datestr,
             src_file,
             src_begin,
             src_end,
+            is_local,
+            local_oss_fuzz,
             sanity_check_function_end=True)
         if source_code:
             source_code_xrefs.append(source_code)
