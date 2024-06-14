@@ -370,9 +370,9 @@ def project_profile():
                                      language=build_status.language,
                                      date="",
                                      fuzzer_count=0,
-                                     coverage_data=None,
-                                     introspector_data=None,
-                                     project_repository=None)
+                                     coverage_data={},
+                                     introspector_data={},
+                                     project_repository='')
 
             # Get statistics of the project
             project_statistics = data_storage.PROJECT_TIMESTAMPS
