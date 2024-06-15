@@ -598,7 +598,6 @@ def match_easy_fuzz_arguments(function):
         function.accummulated_cyclomatic_complexity > 1000:
         return True
 
-    print(json.dumps(function.debug_data, indent=2))
     debug_args = function.debug_data.get('args')
     if not debug_args:
         return False
@@ -616,14 +615,35 @@ def match_easy_fuzz_arguments(function):
     return False
 
 
-def oracle_2(all_functions, all_projects):
+def oracle_2(all_functions, all_projects, only_functions_with_xrefs=False):
     tmp_list = []
     project_count = dict()
     if len(all_projects) == 1:
         project_to_target = all_projects[0]
     else:
         project_to_target = None
-    for function in all_functions:
+
+    # If indicated only include functions with cross references
+    if only_functions_with_xrefs:
+        function_names_with_xref = set()
+        project_functions = []
+        for function in all_functions:
+            if project_to_target:
+                if function.project != project_to_target.name:
+                    continue
+            project_functions.append(function)
+            for cs_dst in function.callsites:
+                function_names_with_xref.add(cs_dst)
+
+        functions_with_xref = []
+        for function in project_functions:
+            if function.name in function_names_with_xref:
+                functions_with_xref.append(function)
+        functions_to_analyse = functions_with_xref
+    else:
+        functions_to_analyse = all_functions
+
+    for function in functions_to_analyse:
         if project_to_target:
             if function.project != project_to_target.name:
                 continue
