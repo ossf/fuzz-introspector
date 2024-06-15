@@ -147,6 +147,11 @@ def load_functions(function_list, target):
     idx = 0
     for func in function_list:
         idx += 1
+        try:
+            debug_argtypes = func['debug-function']['args']
+        except KeyError:
+            debug_argtypes = []
+
         target.append(
             models.Function(
                 name=func['name'],
@@ -160,6 +165,7 @@ def load_functions(function_list, target):
                 accummulated_cyclomatic_complexity=func['acc_cc'],
                 undiscovered_complexity=func['u-cc'],
                 function_arguments=func['function-arguments'],
+                function_debug_arguments=debug_argtypes,
                 return_type=func['return-type'],
                 function_argument_names=func['function-argument-names'],
                 raw_function_name=func['raw-function-name'],

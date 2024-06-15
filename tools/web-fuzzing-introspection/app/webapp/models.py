@@ -93,6 +93,7 @@ class Function:
                  llvm_instruction_count=0,
                  undiscovered_complexity=0,
                  function_arguments=[],
+                 function_debug_arguments=[],
                  return_type="",
                  function_argument_names=[],
                  raw_function_name="",
@@ -116,6 +117,7 @@ class Function:
         self.llvm_instruction_count = llvm_instruction_count
         self.undiscovered_complexity = undiscovered_complexity
         self.function_arguments = function_arguments
+        self.function_debug_arguments = function_debug_arguments
         self.function_argument_names = function_argument_names
         self.return_type = return_type
         self.raw_function_name = raw_function_name
