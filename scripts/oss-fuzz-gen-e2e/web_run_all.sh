@@ -18,10 +18,13 @@
 
 ROOT_FI=$PWD/../../
 BASE_DIR=$PWD/workdir
-BENCHMARK_HEURISTICS="${VARIABLE:-far-reach-low-coverage,low-cov-with-fuzz-keyword}"
+BENCHMARK_HEURISTICS="${VARIABLE:-far-reach-low-coverage,low-cov-with-fuzz-keyword,easy-params-far-reach}"
+#BENCHMARK_HEURISTICS="${VARIABLE:-easy-params-far-reach}"
+#OFG_HARNESS_GENERATOR="${HARNESS_GENERATOR:-CSpecific}
+OFG_HARNESS_GENERATOR="${HARNESS_GENERATOR:-Default}"
 OSS_FUZZ_GEN_MODEL=${MODEL}
-VAR_HARNESSES_PER_ORACLE="${HARNESS_PER_ORACLE:-10}"
-VAR_LLM_FIX_LIMIT="${LLM_FIX_LIMIT:-1}"
+VAR_HARNESSES_PER_ORACLE="${HARNESS_PER_ORACLE:-15}"
+VAR_LLM_FIX_LIMIT="${LLM_FIX_LIMIT:-2}"
 PROJECT=${@}
 
 comma_separated=""
@@ -38,6 +41,7 @@ cd ${BASE_DIR}
 # Create webserver DB
 echo "[+] Creating the webapp DB"
 cd $ROOT_FI/tools/web-fuzzing-introspection/app/static/assets/db/
+set -x
 python3 ./web_db_creator_from_summary.py \
     --since-date=20-04-2023 \
     --output-dir=$PWD \
@@ -74,6 +78,7 @@ cd $BASE_DIR/oss-fuzz-gen
     -g ${BENCHMARK_HEURISTICS} \
     -gp ${comma_separated} \
     -gm ${VAR_HARNESSES_PER_ORACLE} \
+    --prompt-builder ${OFG_HARNESS_GENERATOR} \
     -e http://127.0.0.1:8080/api
 
 echo "Shutting down started webserver"
