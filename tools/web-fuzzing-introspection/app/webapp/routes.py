@@ -594,10 +594,6 @@ def oracle_1(all_functions, all_projects, max_project_count=5):
 
 
 def match_easy_fuzz_arguments(function):
-    if len(function.function_arguments) == 1 and \
-        function.accummulated_cyclomatic_complexity > 1000:
-        return True
-
     debug_args = function.debug_data.get('args')
     if not debug_args:
         return False
