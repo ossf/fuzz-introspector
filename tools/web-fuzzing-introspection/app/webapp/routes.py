@@ -1045,7 +1045,7 @@ def function_debug_types():
 
 @blueprint.route('/api/function-signature')
 def api_function_signature():
-    """Returns a json representation of all the functions in a given project"""
+    """Returns a list of argument types extracted from debug information."""
     project_name = request.args.get('project', None)
     if project_name is None:
         return {'result': 'error', 'msg': 'Please provide a project name'}
