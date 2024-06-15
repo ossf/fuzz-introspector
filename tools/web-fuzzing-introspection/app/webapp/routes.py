@@ -176,7 +176,7 @@ def get_frontpage_summary_stats():
     #    projects_to_use = []
     # Only include fuzz introspector projects
     #for project in all_projects:
-    #    if project.introspector_data != None:
+    #    if project.introspector_data is not None:
     #        projects_to_use.append(project)
 
     total_number_of_projects = len(all_projects)
@@ -292,7 +292,7 @@ def project_profile():
 
     project = get_project_with_name(target_project_name)
 
-    if project != None:
+    if project is not None:
         # Get the build status of the project
         all_build_status = data_storage.get_build_status()
         project_build_status = None
@@ -322,7 +322,7 @@ def project_profile():
 
                 latest_coverage_report = get_coverage_report_url(
                     project.name, datestr, project_language)
-                if ps.introspector_data != None:
+                if ps.introspector_data is not None:
                     latest_fuzz_introspector_report = get_introspector_url(
                         project.name, datestr)
                     latest_introspector_datestr = datestr
@@ -390,7 +390,7 @@ def project_profile():
                     latest_coverage_report = get_coverage_report_url(
                         build_status.project_name, datestr,
                         build_status.language)
-                    if ps.introspector_data != None:
+                    if ps.introspector_data is not None:
                         latest_fuzz_introspector_report = get_introspector_url(
                             build_status.project_name, datestr)
                         latest_introspector_datestr = datestr
@@ -725,7 +725,7 @@ def api():
 @blueprint.route('/api/annotated-cfg')
 def api_annotated_cfg():
     project_name = request.args.get('project', None)
-    if project_name == None:
+    if project_name is None:
         return {'result': 'error', 'msg': 'Please provide project name'}
 
     target_project = None
@@ -755,7 +755,7 @@ def api_annotated_cfg():
 @blueprint.route('/api/project-summary')
 def api_project_summary():
     project_name = request.args.get('project', None)
-    if project_name == None:
+    if project_name is None:
         return {'result': 'error', 'msg': 'Please provide project name'}
     target_project = None
     all_projects = data_storage.get_projects()
@@ -779,7 +779,7 @@ def api_project_summary():
 @blueprint.route('/api/branch-blockers')
 def branch_blockers():
     project_name = request.args.get('project', None)
-    if project_name == None:
+    if project_name is None:
         return {'result': 'error', 'msg': 'Please provide project name'}
 
     target_project = None
@@ -826,17 +826,17 @@ def get_function_from_func_signature(func_signature, project_name):
 def api_cross_references():
     """Returns a json representation of all the functions in a given project"""
     project_name = request.args.get('project', None)
-    if project_name == None:
+    if project_name is None:
         return {'result': 'error', 'msg': 'Please provide a project name'}
 
     function_signature = request.args.get('function_signature', None)
-    if function_signature == None:
+    if function_signature is None:
         return {'result': 'error', 'msg': 'No function signature provided'}
 
     # Get function from function signature
     target_function = get_function_from_func_signature(function_signature,
                                                        project_name)
-    if target_function == None:
+    if target_function is None:
         return {
             'result': 'error',
             'msg': 'Function signature could not be found'
@@ -874,7 +874,7 @@ def api_cross_references():
 def api_project_all_functions():
     """Returns a json representation of all the functions in a given project"""
     project_name = request.args.get('project', None)
-    if project_name == None:
+    if project_name is None:
         return {'result': 'error', 'msg': 'Please provide a project name'}
 
     # Get all of the functions
@@ -892,7 +892,7 @@ def api_project_all_functions():
 def api_project_all_jvm_constructors():
     """Returns a json representation of all the functions in a given project"""
     project_name = request.args.get('project', None)
-    if project_name == None:
+    if project_name is None:
         return {'result': 'error', 'msg': 'Please provide a project name'}
 
     # Get all of the constructor
@@ -938,18 +938,18 @@ def _convert_function_return_list(project_functions):
 def api_project_source_code():
     """Returns a json representation of all the functions in a given project"""
     project_name = request.args.get('project', None)
-    if project_name == None:
+    if project_name is None:
         return {'result': 'error', 'msg': 'Please provide a project name'}
     filepath = request.args.get('filepath', None)
-    if filepath == None:
+    if filepath is None:
         return {'result': 'error', 'msg': 'No filepath provided'}
 
     begin_line = request.args.get('begin_line', None)
-    if begin_line == None:
+    if begin_line is None:
         return {'result': 'error', 'msg': 'No begin line provided'}
 
     end_line = request.args.get('end_line', None)
-    if end_line == None:
+    if end_line is None:
         return {'result': 'error', 'msg': 'No end line provided'}
 
     try:
@@ -966,7 +966,7 @@ def api_project_source_code():
         source_code = extract_lines_from_source_code(project_name, '',
                                                      filepath, begin_line,
                                                      end_line)
-        if source_code == None:
+        if source_code is None:
             return {'result': 'error', 'msg': 'no source code'}
 
         return {'result': 'success', 'source_code': source_code}
@@ -981,17 +981,17 @@ def api_project_source_code():
             for ps in project_statistics:
                 if ps.project_name == project_name:
                     datestr = ps.date
-                    if ps.introspector_data != None:
+                    if ps.introspector_data is not None:
                         latest_introspector_datestr = datestr
 
-    if latest_introspector_datestr == None:
+    if latest_introspector_datestr is None:
         return {'result': 'error', 'msg': 'No introspector builds.'}
 
     source_code = extract_lines_from_source_code(project_name,
                                                  latest_introspector_datestr,
                                                  filepath, int(begin_line),
                                                  int(end_line))
-    if source_code == None:
+    if source_code is None:
         return {'result': 'error', 'msg': 'no source code'}
 
     return {'result': 'success', 'source_code': source_code}
@@ -1001,16 +1001,16 @@ def api_project_source_code():
 def api_type_info():
     """Returns a json representation of all the functions in a given project"""
     project_name = request.args.get('project', None)
-    if project_name == None:
+    if project_name is None:
         return {'result': 'error', 'msg': 'Please provide a project name'}
     type_name = request.args.get('name', None)
-    if type_name == None:
+    if type_name is None:
         return {'result': 'error', 'msg': 'No function name provided'}
 
     print("Type name: %s" % (type_name))
     debug_info = data_storage.get_project_debug_report(project_name)
     return_elem = list()
-    if debug_info != None:
+    if debug_info is not None:
         for elem_type in debug_info.all_types:
             if elem_type.get('name') == type_name:
                 return_elem.append(elem_type)
@@ -1024,10 +1024,10 @@ def api_type_info():
 def api_function_signature():
     """Returns a json representation of all the functions in a given project"""
     project_name = request.args.get('project', None)
-    if project_name == None:
+    if project_name is None:
         return {'result': 'error', 'msg': 'Please provide a project name'}
     function_name = request.args.get('function', None)
-    if function_name == None:
+    if function_name is None:
         return {'result': 'error', 'msg': 'No function name provided'}
 
     all_functions = data_storage.get_functions()
@@ -1050,11 +1050,11 @@ def api_function_signature():
 def api_function_source_code():
     """Returns a json representation of all the functions in a given project"""
     project_name = request.args.get('project', None)
-    if project_name == None:
+    if project_name is None:
         return {'result': 'error', 'msg': 'Please provide a project name'}
 
     function_signature = request.args.get('function_signature', None)
-    if function_signature == None:
+    if function_signature is None:
         return {'result': 'error', 'msg': 'No function signature provided'}
 
     # Get function from function signature
@@ -1073,12 +1073,12 @@ def api_function_source_code():
             for ps in project_statistics:
                 if ps.project_name == project_name:
                     datestr = ps.date
-                    if ps.introspector_data != None:
+                    if ps.introspector_data is not None:
                         latest_introspector_datestr = datestr
     if is_local:
         latest_introspector_datestr = "norelevant"
 
-    if latest_introspector_datestr == None:
+    if latest_introspector_datestr is None:
         return {'result': 'error', 'msg': 'No introspector builds.'}
 
     src_begin = target_function.source_line_begin
@@ -1099,7 +1099,7 @@ def api_function_source_code():
         src_begin,
         src_end,
         sanity_check_function_end=True)
-    if source_code == None:
+    if source_code is None:
         return {'result': 'error', 'msg': 'No source code'}
     return {
         'result': 'succes',
@@ -1125,7 +1125,7 @@ def api_oracle_2():
     """API for getting fuzz targets with easy fuzzable arguments."""
     err_msgs = list()
     project_name = request.args.get('project', None)
-    if project_name == None:
+    if project_name is None:
         return {
             'result': 'error',
             'extended_msgs': ['Please provide project name']
@@ -1178,7 +1178,7 @@ def api_oracle_2():
 def api_oracle_1():
     err_msgs = list()
     project_name = request.args.get('project', None)
-    if project_name == None:
+    if project_name is None:
         return {
             'result': 'error',
             'extended_msgs': ['Please provide project name']
@@ -1227,7 +1227,7 @@ def api_oracle_1():
 @blueprint.route('/api/project-repository')
 def project_repository():
     project_name = request.args.get('project', None)
-    if project_name == None:
+    if project_name is None:
         return {
             'result': 'error',
             'extended_msgs': ['Please provide project name']
@@ -1251,7 +1251,7 @@ def project_repository():
 def far_reach_but_low_coverage():
     err_msgs = list()
     project_name = request.args.get('project', None)
-    if project_name == None:
+    if project_name is None:
         return {
             'result': 'error',
             'extended_msgs': ['Please provide project name']
@@ -1268,7 +1268,7 @@ def far_reach_but_low_coverage():
         # exists in OSS-Fuzz but is present on the ClusterFuzz instance.
         bs = get_build_status_of_project(project_name)
 
-        if bs == None:
+        if bs is None:
             return {
                 'result':
                 'error',
@@ -1333,7 +1333,7 @@ def far_reach_but_low_coverage():
         err_msgs.append('No functions found.')
         bs = get_build_status_of_project(project_name)
 
-        if bs == None:
+        if bs is None:
             return {
                 'result':
                 'error',
@@ -1420,7 +1420,7 @@ def shutdown():
 @blueprint.route('/api/all-header-files')
 def all_project_header_files():
     project = request.args.get('project', None)
-    if project == None:
+    if project is None:
         return {
             'result': 'error',
             'extended_msgs': ['Please provide project name']
@@ -1442,14 +1442,14 @@ def type_at_addr():
     # @arthurscchan 14/6/2024
     return {'result': 'error', 'extended_msgs': ['Temporary disabled']}
     project = request.args.get('project', None)
-    if project == None:
+    if project is None:
         return {
             'result': 'error',
             'extended_msgs': ['Please provide project name']
         }
 
     addr = request.args.get('addr', None)
-    if addr == None:
+    if addr is None:
         return {
             'result': 'error',
             'extended_msgs': ['Please provide project name']
@@ -1528,17 +1528,17 @@ def sample_cross_references():
     """Returns a list of strings with functions that call into a given 
     target function."""
     project_name = request.args.get('project', None)
-    if project_name == None:
+    if project_name is None:
         return {'result': 'error', 'msg': 'Please provide a project name'}
 
     function_signature = request.args.get('function_signature', None)
-    if function_signature == None:
+    if function_signature is None:
         return {'result': 'error', 'msg': 'No function signature provided'}
 
     # Get function from function signature
     target_function = get_function_from_func_signature(function_signature,
                                                        project_name)
-    if target_function == None:
+    if target_function is None:
         return {
             'result': 'error',
             'msg': 'Function signature could not be found'
@@ -1583,10 +1583,10 @@ def sample_cross_references():
                 for ps in project_statistics:
                     if ps.project_name == project_name:
                         datestr = ps.date
-                        if ps.introspector_data != None:
+                        if ps.introspector_data is not None:
                             latest_introspector_datestr = datestr
 
-        if latest_introspector_datestr == None:
+        if latest_introspector_datestr is None:
             return {'result': 'error', 'msg': 'No introspector builds.'}
 
     source_code_xrefs = []
