@@ -676,7 +676,7 @@ def load_jvm_coverage(target_dir: str,
     """
     import xml.etree.ElementTree as ET
     cp = CoverageProfile()
-    cp.set_type("file")
+    cp.set_type("function")
 
     coverage_reports = utils.get_all_files_in_tree_with_regex(
         target_dir, "jacoco.xml")
@@ -688,6 +688,7 @@ def load_jvm_coverage(target_dir: str,
         logger.info("Found no coverage files")
         return cp
 
+    # Parse the jacoco.xml to element tree
     cp.coverage_files.append(xml_file)
     try:
         xml_tree = ET.parse(xml_file)
@@ -695,31 +696,118 @@ def load_jvm_coverage(target_dir: str,
     except Exception:
         raise exceptions.DataLoaderError("Error %s as xml file" % (xml_file))
 
+    # Handles package by package
     for package in root.findall('package'):
-        for cl in package.findall('sourcefile'):
-            cov_entry = cl.attrib['name']
-            if package.attrib['name']:
-                cov_entry = "%s/%s" % (package.attrib['name'], cov_entry)
-            cov_entry = cov_entry.replace("/", ".")
-            cov_entry = cov_entry.replace(".java", "")
-            executed_lines = []
-            missing_lines = []
-            d_executed_lines = []
-            d_missing_lines = []
-            for line in cl.findall('line'):
-                if line.attrib['ci'] > "0":
-                    executed_lines.append((int(line.attrib['nr']), 1000))
-                    d_executed_lines.append(int(line.attrib['nr']))
-                else:
-                    missing_lines.append((int(line.attrib['nr']), 0))
-                    d_missing_lines.append(int(line.attrib['nr']))
+        # Extract all source lines mapping
+        # In jacoco.xml, each packages contains a list of source files and classes.
+        # In each of the source file tag, it contains a list of line child elements
+        # for each valid line in that source file with the count of runtime coverage
+        # of that line. This information is separated with the methods and thus we
+        # are extracting them as a map for further reference when processing all
+        # the methods.
+        source_file_map = {}
+        for src in package.findall('sourcefile'):
+            line_list = []
+            for line in src.findall('line'):
+                # Process each line
+                line_list.append((int(line.attrib['nr']), int(line.attrib['ci'])))
+            source_file_map[src.attrib["name"]] = line_list
 
-            cp.file_map[cov_entry] = executed_lines
-            cp.dual_file_map[cov_entry] = dict()
-            cp.dual_file_map[cov_entry]['executed_lines'] = d_executed_lines
-            cp.dual_file_map[cov_entry]['missing_lines'] = d_missing_lines
+        # Process all methods in all classes within this package
+        for cl in package.findall('class'):
+            class_name = cl.attrib('name').replace('/', '.')
+            line_list = source_file_map[cl.attrib('sourcefilename')]
+            for method in cl.findall('method'):
+                desc = method.attrib('desc').split('(', 1)[1].split(')', 1)[0]
+                args = _determine_jvm_arguments_type(desc)
+                name = '[{class_name}].{method.attrib("name")}(",".join(args))'
+                start_line = method.attrib('line')
+                total_line = 0
+
+                # Get total valid lines count of this method
+                for counter in method.findall('counter'):
+                    if counter.attrib('type') == 'LINE':
+                        missed_line = int(counter.attrib('missed'))
+                        covered_line = int(counter.attrib('covered'))
+                        total_line = missed_line + covered_line
+                        break
+
+                # Find the starting item in the line map
+                start_item = -1
+                for count, item in enumerate(line_list):
+                    if item[0] == start_line:
+                        start_item = count
+
+                # if starting item not found, skip this method
+                if start_item < 0:
+                    continue
+
+                # Store lines, hit_time into the covmap under the target method
+                cp.covmap[name] = []
+                for count in range(start_item, start_item + total_line):
+                    cp.covmap[name].append(line_list[count])
 
     return cp
+
+
+def _determine_jvm_arguments_type(self, desc: str) -> List[str]:
+    """
+      Determine list of jvm arguments type for each method.
+
+      The desc tag for each jvm method in the jacoco.xml coverage
+      report is in basic Java class name specification following
+      the format of "({Arguments}){ReturnType}". The basic java
+      class name specification use single upper case letter for
+      primitive types (and void type) and L{full_class_name}; for
+      object arguments. The JVM_CLASS_MAPPING give the mapping of
+      the single upper case letter of each primitive types.
+
+      For example, for a method
+      "public void test(String,int,String[],boolean,int...)"
+
+      The desc value of the above method will be
+      "(Ljava.lang.String;ILjava.lang.String;[]ZI[])V".
+
+      This method is necessary to match the full method name with
+      the one given in the jacoco.xml report with full argument list.
+    """
+    JVM_CLASS_MAPPING = {
+        'Z': 'boolean', 'B': 'byte', 'C': 'char', 'D': 'double',
+        'F': 'float', 'I': 'int', 'J': 'long', 'S': 'short'
+    }
+
+    args = []
+    arg = ''
+    start = False
+    next_arg = ''
+    for c in desc:
+      if c == '(':
+        continue
+      if c == ')':
+        break
+
+      if start:
+        if c == ';':
+          start = False
+          next_arg = arg.replace('/', '.')
+        else:
+          arg = arg + c
+      else:
+        if c == 'L':
+          start = True
+          args.append(next_arg)
+          arg = ''
+          next_arg = ''
+        elif c in ['[', ']']:
+          next_arg = next_arg + c
+        else:
+          if c in JVM_CLASS_MAPPING:
+            args.append(next_arg)
+            next_arg = JVM_CLASS_MAPPING[c]
+
+    if next_arg:
+      args.append(next_arg)
+    return args
 
 
 if __name__ == "__main__":
