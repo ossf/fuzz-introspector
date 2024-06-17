@@ -14,59 +14,22 @@
 
 import json
 import datetime
+from typing import Dict, List, Tuple, Any
 
 
-def get_date_at_offset_as_str(day_offset=-1):
+def get_date_at_offset_as_str(day_offset: int = -1) -> str:
     datestr = (datetime.date.today() +
                datetime.timedelta(day_offset)).strftime("%Y-%m-%d")
     return datestr
 
 
-class DBTimestamp:
-
-    def __init__(self, date, project_count, fuzzer_count, function_count,
-                 function_coverage_estimate, accummulated_lines_total,
-                 accummulated_lines_covered):
-        self.date = date
-        self.project_count = project_count
-        self.fuzzer_count = fuzzer_count
-        self.function_count = function_count
-        self.function_coverage_estimate = function_coverage_estimate
-        self.accummulated_lines_total = accummulated_lines_total
-        self.accummulated_lines_covered = accummulated_lines_covered
-
-
-class DBSummary:
-
-    def __init__(self, all_projects, total_number_of_projects, total_fuzzers,
-                 total_functions, language_count):
-        self.all_projects = all_projects
-        self.total_number_of_projects = total_number_of_projects
-        self.total_fuzzers = total_fuzzers
-        self.total_functions = total_functions
-        self.language_count = language_count
-
-
-class ProjectTimestamp:
-
-    def __init__(self, project_name, date, language, coverage_data,
-                 introspector_data, fuzzer_count):
-        self.project_name = project_name
-        # date in the format Y-m-d
-        self.date = date
-        self.language = language
-        self.coverage_data = coverage_data
-        self.introspector_data = introspector_data
-        self.fuzzer_count = fuzzer_count
-
-    def has_introspector(self) -> bool:
-        return self.introspector_data != None
-
-
 class Project:
 
-    def __init__(self, name, language, date, coverage_data, introspector_data,
-                 fuzzer_count, project_repository):
+    def __init__(self, name: str, language: str, date: str,
+                 coverage_data: Dict[str,
+                                     Tuple], introspector_data: Dict[str,
+                                                                     Tuple],
+                 fuzzer_count: int, project_repository: str):
         self.name = name
         self.language = language
         self.date = date
@@ -79,33 +42,77 @@ class Project:
         return self.introspector_data != None
 
 
+class DBTimestamp:
+
+    def __init__(self, date: str, project_count: int, fuzzer_count: int,
+                 function_count: int, function_coverage_estimate: float,
+                 accummulated_lines_total: int,
+                 accummulated_lines_covered: int):
+        self.date = date
+        self.project_count = project_count
+        self.fuzzer_count = fuzzer_count
+        self.function_count = function_count
+        self.function_coverage_estimate = function_coverage_estimate
+        self.accummulated_lines_total = accummulated_lines_total
+        self.accummulated_lines_covered = accummulated_lines_covered
+
+
+class DBSummary:
+
+    def __init__(self, all_projects: List[Project],
+                 total_number_of_projects: int, total_fuzzers: int,
+                 total_functions: int, language_count: Dict[str, int]):
+        self.all_projects = all_projects
+        self.total_number_of_projects = total_number_of_projects
+        self.total_fuzzers = total_fuzzers
+        self.total_functions = total_functions
+        self.language_count = language_count
+
+
+class ProjectTimestamp:
+
+    def __init__(self, project_name: str, date: str, language: str,
+                 coverage_data: Dict[str, Tuple],
+                 introspector_data: Dict[str, Tuple], fuzzer_count: int):
+        self.project_name = project_name
+        # date in the format Y-m-d
+        self.date = date
+        self.language = language
+        self.coverage_data = coverage_data
+        self.introspector_data = introspector_data
+        self.fuzzer_count = fuzzer_count
+
+    def has_introspector(self) -> bool:
+        return self.introspector_data != None
+
+
 class Function:
 
     def __init__(self,
-                 name,
-                 project,
-                 is_reached=False,
-                 runtime_code_coverage=0.0,
-                 function_filename="",
-                 reached_by_fuzzers=0,
-                 code_coverage_url="",
-                 accummulated_cyclomatic_complexity=0,
-                 llvm_instruction_count=0,
-                 undiscovered_complexity=0,
-                 function_arguments=[],
-                 function_debug_arguments=[],
-                 return_type="",
-                 function_argument_names=[],
-                 raw_function_name="",
-                 date_str="",
-                 source_line_begin=-1,
-                 source_line_end=-1,
-                 callsites=[],
-                 func_signature='',
-                 debug_data=dict(),
-                 is_accessible=True,
-                 is_jvm_library=False,
-                 is_enum_class=False):
+                 name: str,
+                 project: str,
+                 is_reached: bool = False,
+                 runtime_code_coverage: float = 0.0,
+                 function_filename: str = "",
+                 reached_by_fuzzers: int = 0,
+                 code_coverage_url: str = "",
+                 accummulated_cyclomatic_complexity: int = 0,
+                 llvm_instruction_count: int = 0,
+                 undiscovered_complexity: int = 0,
+                 function_arguments: List[str] = [],
+                 function_debug_arguments: List[str] = [],
+                 return_type: str = "",
+                 function_argument_names: List[str] = [],
+                 raw_function_name: str = "",
+                 date_str: str = "",
+                 source_line_begin: int = -1,
+                 source_line_end: int = -1,
+                 callsites: Dict[str, List[str]] = {},
+                 func_signature: str = '',
+                 debug_data: Dict[str, Any] = {},
+                 is_accessible: bool = True,
+                 is_jvm_library: bool = False,
+                 is_enum_class: bool = False):
         self.name = name
         self.function_filename = function_filename
         self.project = project
@@ -131,7 +138,7 @@ class Function:
         self.is_jvm_library = is_jvm_library
         self.is_enum_class = is_enum_class
 
-    def to_dict(self):
+    def to_dict(self) -> Dict[str, Any]:
         return {
             'function_name': self.name,
             'function_arguments': self.function_arguments,
@@ -153,8 +160,9 @@ class Function:
 
 class BranchBlocker:
 
-    def __init__(self, project_name, function_name, unique_blocked_coverage,
-                 source_file, blocked_unique_functions, src_linenumber):
+    def __init__(self, project_name: str, function_name: str,
+                 unique_blocked_coverage: int, source_file: str,
+                 blocked_unique_functions: List[str], src_linenumber: str):
         self.project_name = project_name
         self.function_name = function_name
         self.unique_blocked_coverage = unique_blocked_coverage
@@ -165,9 +173,10 @@ class BranchBlocker:
 
 class BuildStatus:
 
-    def __init__(self, project_name, fuzz_build_status, coverage_build_status,
-                 introspector_build_status, language, introspector_build_log,
-                 coverage_build_log, fuzz_build_log):
+    def __init__(self, project_name: str, fuzz_build_status: bool,
+                 coverage_build_status: bool, introspector_build_status: bool,
+                 language: str, introspector_build_log: str,
+                 coverage_build_log: str, fuzz_build_log: str):
         self.project_name = project_name
         self.fuzz_build_status = fuzz_build_status
         self.coverage_build_status = coverage_build_status
@@ -181,8 +190,10 @@ class BuildStatus:
 
 class DebugStatus:
 
-    def __init__(self, project_name, all_files_in_project,
-                 all_functions_in_project, all_global_variables, all_types):
+    def __init__(self, project_name: str, all_files_in_project: List[str],
+                 all_functions_in_project: List[str],
+                 all_global_variables: List[str], all_types: List[Dict[str,
+                                                                       Any]]):
         self.project_name = project_name
         self.all_files_in_project = all_files_in_project
         self.all_functions_in_project = all_functions_in_project
