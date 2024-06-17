@@ -395,7 +395,7 @@ def project_profile():
                             build_status.project_name, datestr)
                         latest_introspector_datestr = datestr
 
-            if len(real_stats) > 0:
+            if datestr and len(real_stats) > 0:
                 latest_coverage_report = get_coverage_report_url(
                     build_status.project_name, datestr, build_status.language)
             else:
