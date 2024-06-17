@@ -611,7 +611,67 @@ def match_easy_fuzz_arguments(function):
     return False
 
 
-def oracle_2(all_functions, all_projects, only_functions_with_xrefs=False):
+def is_static(target_function) -> bool:
+    """Returns True if a function is determined to be static and False
+    otherwise, including if undecided."""
+
+    # Find latest introspector date
+    all_build_status = data_storage.get_build_status()
+    latest_introspector_datestr = None
+    for build_status in all_build_status:
+        if build_status.project_name == target_function.project:
+            # Get statistics of the project
+            project_statistics = data_storage.PROJECT_TIMESTAMPS
+            for ps in project_statistics:
+                if ps.project_name == target_function.project:
+                    datestr = ps.date
+                    if ps.introspector_data is not None:
+                        latest_introspector_datestr = datestr
+    if is_local:
+        latest_introspector_datestr = "norelevant"
+
+    if latest_introspector_datestr is None:
+        return False
+
+    src_begin = target_function.source_line_begin
+    src_end = target_function.source_line_end
+    src_file = target_function.function_filename
+
+    # Check if we have accompanying debug info
+    debug_source_dict = target_function.debug_data.get('source', None)
+    if debug_source_dict:
+        source_line = int(debug_source_dict.get('source_line', -1))
+        if source_line != -1:
+            src_begin = source_line
+    src_begin -= 2
+
+    source_code = extract_lines_from_source_code(
+        target_function.project,
+        latest_introspector_datestr,
+        src_file,
+        src_begin,
+        src_end,
+        sanity_check_function_end=True)
+    if source_code is None:
+        return False
+
+    # Cut off the part before the code body. This is a heuristic from looking
+    # at the source, and it's bound to have some false positives. However,
+    # this will do for now.
+    pre_body = ''
+    for line in source_code.split("\n"):
+        if '{' in line:
+            break
+        pre_body += line + '\n'
+    if 'static' in pre_body:
+        return True
+    return False
+
+
+def oracle_2(all_functions,
+             all_projects,
+             only_functions_with_xrefs=False,
+             no_static_functions=False):
     tmp_list = []
     project_count = dict()
     if len(all_projects) == 1:
@@ -649,6 +709,11 @@ def oracle_2(all_functions, all_projects, only_functions_with_xrefs=False):
 
         if function.accummulated_cyclomatic_complexity < 150:
             continue
+
+        if no_static_functions:
+            # Exclude function if it's static
+            if is_static(function):
+                continue
 
         tmp_list.append(function)
         current_count = project_count.get(function.project, 0)
@@ -1170,6 +1235,12 @@ def api_oracle_2():
             'extended_msgs': ['Please provide project name']
         }
 
+    no_static_funcs_arg = request.args.get('no_static_functions', 'false')
+    if no_static_funcs_arg == 'true':
+        no_static_functions = True
+    else:
+        no_static_functions = False
+
     target_project = None
     all_projects = data_storage.get_projects()
     for project in all_projects:
@@ -1183,7 +1254,8 @@ def api_oracle_2():
     all_functions = data_storage.get_functions()
     all_projects = [target_project]
 
-    raw_interesting_functions = oracle_2(all_functions, all_projects)
+    raw_interesting_functions = oracle_2(
+        all_functions, all_projects, no_static_functions=no_static_functions)
 
     functions_to_return = []
     for function in raw_interesting_functions:
