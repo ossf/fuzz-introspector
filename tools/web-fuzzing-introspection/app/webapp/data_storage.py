@@ -1,7 +1,7 @@
 # Auto-generated
 #from app.site.models import *
 
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 import os
 import json
@@ -27,19 +27,19 @@ PROJECT_DEBUG_DATA: List[DebugStatus] = []
 ALL_HEADER_FILES: List[Dict[str, Any]] = []
 
 
-def get_projects():
+def get_projects() -> List[Project]:
     return PROJECTS
 
 
-def get_functions():
+def get_functions() -> List[Function]:
     return FUNCTIONS
 
 
-def get_constructors():
+def get_constructors() -> List[Function]:
     return CONSTRUCTORS
 
 
-def get_blockers():
+def get_blockers() -> List[BranchBlocker]:
     return BLOCKERS
 
 
@@ -47,11 +47,11 @@ def get_build_status() -> List[BuildStatus]:
     return BUILD_STATUS
 
 
-def get_debug_data():
+def get_debug_data() -> List[DebugStatus]:
     return PROJECT_DEBUG_DATA
 
 
-def get_project_debug_report(project):
+def get_project_debug_report(project: str) -> Optional[DebugStatus]:
     debug_report_path = os.path.join(
         os.path.dirname(__file__),
         f"../static/assets/db/db-projects/{project}/debug_report.json")
@@ -73,7 +73,7 @@ def get_project_debug_report(project):
     return debug_model
 
 
-def get_project_branch_blockers(project):
+def get_project_branch_blockers(project: str) -> List[BranchBlocker]:
     branch_blockers_path = os.path.join(
         os.path.dirname(__file__),
         f"../static/assets/db/db-projects/{project}/branch_blockers.json")
