@@ -15,7 +15,6 @@
 ################################################################################
 
 python3 ./web_db_creator_from_summary.py \
-      --since-date=01-05-2024 \
       --output-dir=$PWD \
       --input-dir=$PWD \
       --includes=must_include_small.config

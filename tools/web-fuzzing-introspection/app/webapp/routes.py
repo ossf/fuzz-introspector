@@ -177,10 +177,10 @@ def get_frontpage_summary_stats() -> models.DBSummary:
     # Get total number of projects
     all_projects = data_storage.get_projects()
 
-    projects_to_use = []
+    #    projects_to_use = []
     # Only include fuzz introspector projects
     #for project in all_projects:
-    #    if project.introspector_data != None:
+    #    if project.introspector_data is not None:
     #        projects_to_use.append(project)
 
     total_number_of_projects = len(all_projects)
@@ -298,7 +298,7 @@ def project_profile() -> Union[str, BaseResponse]:
 
     project = get_project_with_name(target_project_name)
 
-    if project != None:
+    if project is not None:
         # Get the build status of the project
         all_build_status = data_storage.get_build_status()
         project_build_status = None
@@ -328,7 +328,7 @@ def project_profile() -> Union[str, BaseResponse]:
 
                 latest_coverage_report = get_coverage_report_url(
                     project.name, datestr, project_language)
-                if ps.introspector_data != None:
+                if ps.introspector_data is not None:
                     latest_fuzz_introspector_report = get_introspector_url(
                         project.name, datestr)
                     latest_introspector_datestr = datestr
@@ -396,7 +396,7 @@ def project_profile() -> Union[str, BaseResponse]:
                     latest_coverage_report = get_coverage_report_url(
                         build_status.project_name, datestr,
                         build_status.language)
-                    if ps.introspector_data != None:
+                    if ps.introspector_data is not None:
                         latest_fuzz_introspector_report = get_introspector_url(
                             build_status.project_name, datestr)
                         latest_introspector_datestr = datestr
@@ -476,7 +476,6 @@ def projects_overview() -> str:
     # Get statistics of the project
     project_statistics = data_storage.PROJECT_TIMESTAMPS
     latest_coverage_profiles = dict()
-    real_stats = []
     latest_statistics = None
     for ps in project_statistics:
         latest_coverage_profiles[ps.project_name] = ps
@@ -604,11 +603,6 @@ def oracle_1(all_functions: List[models.Function],
 
 
 def match_easy_fuzz_arguments(function: models.Function) -> bool:
-    if len(function.function_arguments) == 1 and \
-        function.accummulated_cyclomatic_complexity > 1000:
-        return True
-
-    print(json.dumps(function.debug_data, indent=2))
     debug_args = function.debug_data.get('args')
     if not debug_args:
         return False
@@ -626,15 +620,95 @@ def match_easy_fuzz_arguments(function: models.Function) -> bool:
     return False
 
 
+def is_static(target_function: models.Function) -> bool:
+    """Returns True if a function is determined to be static and False
+    otherwise, including if undecided."""
+
+    # Find latest introspector date
+    all_build_status = data_storage.get_build_status()
+    latest_introspector_datestr = None
+    for build_status in all_build_status:
+        if build_status.project_name == target_function.project:
+            # Get statistics of the project
+            project_statistics = data_storage.PROJECT_TIMESTAMPS
+            for ps in project_statistics:
+                if ps.project_name == target_function.project:
+                    datestr = ps.date
+                    if ps.introspector_data is not None:
+                        latest_introspector_datestr = datestr
+    if is_local:
+        latest_introspector_datestr = "norelevant"
+
+    if latest_introspector_datestr is None:
+        return False
+
+    src_begin = target_function.source_line_begin
+    src_end = target_function.source_line_end
+    src_file = target_function.function_filename
+
+    # Check if we have accompanying debug info
+    debug_source_dict = target_function.debug_data.get('source', None)
+    if debug_source_dict:
+        source_line = int(debug_source_dict.get('source_line', -1))
+        if source_line != -1:
+            src_begin = source_line
+    src_begin -= 2
+
+    source_code = extract_lines_from_source_code(
+        target_function.project,
+        latest_introspector_datestr,
+        src_file,
+        src_begin,
+        src_end,
+        sanity_check_function_end=True)
+    if source_code is None:
+        return False
+
+    # Cut off the part before the code body. This is a heuristic from looking
+    # at the source, and it's bound to have some false positives. However,
+    # this will do for now.
+    pre_body = ''
+    for line in source_code.split("\n"):
+        if '{' in line:
+            break
+        pre_body += line + '\n'
+    if 'static' in pre_body:
+        return True
+    return False
+
+
 def oracle_2(all_functions: List[models.Function],
-             all_projects: List[models.Project]) -> List[models.Function]:
+             all_projects: List[models.Project],
+             only_functions_with_xrefs: bool=False,
+             no_static_functions: bool=False) -> Optional[models.Project]:
     tmp_list = []
     project_count: Dict[str, int] = dict()
     if len(all_projects) == 1:
         project_to_target = all_projects[0]
     else:
         project_to_target = None
-    for function in all_functions:
+
+    # If indicated only include functions with cross references
+    if only_functions_with_xrefs:
+        function_names_with_xref = set()
+        project_functions = []
+        for function in all_functions:
+            if project_to_target:
+                if function.project != project_to_target.name:
+                    continue
+            project_functions.append(function)
+            for cs_dst in function.callsites:
+                function_names_with_xref.add(cs_dst)
+
+        functions_with_xref = []
+        for function in project_functions:
+            if function.name in function_names_with_xref:
+                functions_with_xref.append(function)
+        functions_to_analyse = functions_with_xref
+    else:
+        functions_to_analyse = all_functions
+
+    for function in functions_to_analyse:
         if project_to_target:
             if function.project != project_to_target.name:
                 continue
@@ -644,6 +718,11 @@ def oracle_2(all_functions: List[models.Function],
 
         if function.accummulated_cyclomatic_complexity < 150:
             continue
+
+        if no_static_functions:
+            # Exclude function if it's static
+            if is_static(function):
+                continue
 
         tmp_list.append(function)
         current_count = project_count.get(function.project, 0)
@@ -737,7 +816,7 @@ def api() -> str:
 @blueprint.route('/api/annotated-cfg')
 def api_annotated_cfg() -> Dict[str, Any]:
     project_name = request.args.get('project', None)
-    if project_name == None:
+    if project_name is None:
         return {'result': 'error', 'msg': 'Please provide project name'}
 
     target_project = None
@@ -767,7 +846,7 @@ def api_annotated_cfg() -> Dict[str, Any]:
 @blueprint.route('/api/project-summary')
 def api_project_summary() -> Dict[str, Any]:
     project_name = request.args.get('project', None)
-    if project_name == None:
+    if project_name is None:
         return {'result': 'error', 'msg': 'Please provide project name'}
     target_project = None
     all_projects = data_storage.get_projects()
@@ -791,7 +870,7 @@ def api_project_summary() -> Dict[str, Any]:
 @blueprint.route('/api/branch-blockers')
 def branch_blockers() -> Dict[str, Any]:
     project_name = request.args.get('project', None)
-    if project_name == None:
+    if project_name is None:
         return {'result': 'error', 'msg': 'Please provide project name'}
 
     target_project = None
@@ -829,7 +908,6 @@ def branch_blockers() -> Dict[str, Any]:
 def get_function_from_func_signature(
         func_signature: str, project_name: str) -> Optional[models.Function]:
     all_functions = data_storage.get_functions()
-    project_functions = []
     for function in all_functions:
         if function.project == project_name and function.func_signature == func_signature:
             return function
@@ -840,17 +918,17 @@ def get_function_from_func_signature(
 def api_cross_references() -> Dict[str, Any]:
     """Returns a json representation of all the functions in a given project"""
     project_name = request.args.get('project', None)
-    if project_name == None:
+    if project_name is None:
         return {'result': 'error', 'msg': 'Please provide a project name'}
 
     function_signature = request.args.get('function_signature', None)
-    if function_signature == None:
+    if function_signature is None:
         return {'result': 'error', 'msg': 'No function signature provided'}
 
     # Get function from function signature
     target_function = get_function_from_func_signature(function_signature,
                                                        project_name)
-    if target_function == None:
+    if target_function is None:
         return {
             'result': 'error',
             'msg': 'Function signature could not be found'
@@ -888,7 +966,7 @@ def api_cross_references() -> Dict[str, Any]:
 def api_project_all_functions() -> Dict[str, Any]:
     """Returns a json representation of all the functions in a given project"""
     project_name = request.args.get('project', None)
-    if project_name == None:
+    if project_name is None:
         return {'result': 'error', 'msg': 'Please provide a project name'}
 
     # Get all of the functions
@@ -906,7 +984,7 @@ def api_project_all_functions() -> Dict[str, Any]:
 def api_project_all_jvm_constructors() -> Dict[str, Any]:
     """Returns a json representation of all the functions in a given project"""
     project_name = request.args.get('project', None)
-    if project_name == None:
+    if project_name is None:
         return {'result': 'error', 'msg': 'Please provide a project name'}
 
     # Get all of the constructor
@@ -953,25 +1031,25 @@ def _convert_function_return_list(
 def api_project_source_code() -> Dict[str, Any]:
     """Returns a json representation of all the functions in a given project"""
     project_name = request.args.get('project', None)
-    if project_name == None:
+    if project_name is None:
         return {'result': 'error', 'msg': 'Please provide a project name'}
     filepath = request.args.get('filepath', None)
-    if filepath == None:
+    if filepath is None:
         return {'result': 'error', 'msg': 'No filepath provided'}
 
     begin_line = 0
     begin_line_str = request.args.get('begin_line', None)
-    if begin_line_str == None:
+    if begin_line_str is None:
         return {'result': 'error', 'msg': 'No begin line provided'}
 
     end_line = 0
     end_line_str = request.args.get('end_line', None)
-    if end_line_str == None:
+    if end_line_str is None:
         return {'result': 'error', 'msg': 'No end line provided'}
 
     try:
-        begin_line = int(begin_line)
-        end_line = int(end_line)
+        begin_line = int(begin_line_str)
+        end_line = int(end_line_str)
     except ValueError:
         return {
             'result': 'error',
@@ -983,7 +1061,7 @@ def api_project_source_code() -> Dict[str, Any]:
         source_code = extract_lines_from_source_code(project_name, '',
                                                      filepath, begin_line,
                                                      end_line)
-        if source_code == None:
+        if source_code is None:
             return {'result': 'error', 'msg': 'no source code'}
 
         return {'result': 'success', 'source_code': source_code}
@@ -998,17 +1076,17 @@ def api_project_source_code() -> Dict[str, Any]:
             for ps in project_statistics:
                 if ps.project_name == project_name:
                     datestr = ps.date
-                    if ps.introspector_data != None:
+                    if ps.introspector_data is not None:
                         latest_introspector_datestr = datestr
 
-    if latest_introspector_datestr == None:
+    if latest_introspector_datestr is None:
         return {'result': 'error', 'msg': 'No introspector builds.'}
 
     source_code = extract_lines_from_source_code(project_name,
                                                  latest_introspector_datestr,
                                                  filepath, int(begin_line),
                                                  int(end_line))
-    if source_code == None:
+    if source_code is None:
         return {'result': 'error', 'msg': 'no source code'}
 
     return {'result': 'success', 'source_code': source_code}
@@ -1018,16 +1096,16 @@ def api_project_source_code() -> Dict[str, Any]:
 def api_type_info() -> Dict[str, Any]:
     """Returns a json representation of all the functions in a given project"""
     project_name = request.args.get('project', None)
-    if project_name == None:
+    if project_name is None:
         return {'result': 'error', 'msg': 'Please provide a project name'}
     type_name = request.args.get('name', None)
-    if type_name == None:
+    if type_name is None:
         return {'result': 'error', 'msg': 'No function name provided'}
 
     print("Type name: %s" % (type_name))
     debug_info = data_storage.get_project_debug_report(project_name)
     return_elem = list()
-    if debug_info != None:
+    if debug_info is not None:
         for elem_type in debug_info.all_types:
             if elem_type.get('name') == type_name:
                 return_elem.append(elem_type)
@@ -1037,19 +1115,41 @@ def api_type_info() -> Dict[str, Any]:
     return {'result': 'error', 'msg': 'Could not find type'}
 
 
-@blueprint.route('/api/function-signature')
-def api_function_signature() -> Dict[str, Any]:
+@blueprint.route('/api/func-debug-types')
+def function_debug_types():
     """Returns a json representation of all the functions in a given project"""
     project_name = request.args.get('project', None)
     if project_name == None:
         return {'result': 'error', 'msg': 'Please provide a project name'}
+
+    function_signature = request.args.get('function_signature', None)
+    if function_signature == None:
+        return {'result': 'error', 'msg': 'No function signature provided'}
+
+    # Get function from function signature
+    target_function = get_function_from_func_signature(function_signature,
+                                                       project_name)
+    if target_function is None:
+        return {'result': 'error', 'msg': 'Could not find function'}
+
+    return {
+        'result': 'succes',
+        'arg-types': target_function.function_debug_arguments
+    }
+
+
+@blueprint.route('/api/function-signature')
+def api_function_signature() -> Dict[str, Any]:
+    """Returns a list of argument types extracted from debug information."""
+    project_name = request.args.get('project', None)
+    if project_name is None:
+        return {'result': 'error', 'msg': 'Please provide a project name'}
     function_name = request.args.get('function', None)
-    if function_name == None:
+    if function_name is None:
         return {'result': 'error', 'msg': 'No function name provided'}
 
     all_functions = data_storage.get_functions()
     all_functions = all_functions + data_storage.get_constructors()
-    project_functions = []
     func_to_match = None
     print("Iterating through all functions to match raw function name")
     for function in all_functions:
@@ -1068,11 +1168,11 @@ def api_function_signature() -> Dict[str, Any]:
 def api_function_source_code() -> Dict[str, Any]:
     """Returns a json representation of all the functions in a given project"""
     project_name = request.args.get('project', None)
-    if project_name == None:
+    if project_name is None:
         return {'result': 'error', 'msg': 'Please provide a project name'}
 
     function_signature = request.args.get('function_signature', None)
-    if function_signature == None:
+    if function_signature is None:
         return {'result': 'error', 'msg': 'No function signature provided'}
 
     # Get function from function signature
@@ -1091,12 +1191,12 @@ def api_function_source_code() -> Dict[str, Any]:
             for ps in project_statistics:
                 if ps.project_name == project_name:
                     datestr = ps.date
-                    if ps.introspector_data != None:
+                    if ps.introspector_data is not None:
                         latest_introspector_datestr = datestr
     if is_local:
         latest_introspector_datestr = "norelevant"
 
-    if latest_introspector_datestr == None:
+    if latest_introspector_datestr is None:
         return {'result': 'error', 'msg': 'No introspector builds.'}
 
     src_begin = target_function.source_line_begin
@@ -1117,7 +1217,7 @@ def api_function_source_code() -> Dict[str, Any]:
         src_begin,
         src_end,
         sanity_check_function_end=True)
-    if source_code == None:
+    if source_code is None:
         return {'result': 'error', 'msg': 'No source code'}
     return {
         'result': 'succes',
@@ -1132,7 +1232,6 @@ def get_build_status_of_project(
         project_name: str) -> Optional[models.BuildStatus]:
     build_status = data_storage.get_build_status()
 
-    languages_summarised = dict()
     for bs in build_status:
         if bs.project_name == project_name:
             return bs
@@ -1145,11 +1244,17 @@ def api_oracle_2() -> Dict[str, Any]:
     """API for getting fuzz targets with easy fuzzable arguments."""
     err_msgs: List[str] = list()
     project_name = request.args.get('project', None)
-    if project_name == None:
+    if project_name is None:
         return {
             'result': 'error',
             'extended_msgs': ['Please provide project name']
         }
+
+    no_static_funcs_arg = request.args.get('no_static_functions', 'false')
+    if no_static_funcs_arg == 'true':
+        no_static_functions = True
+    else:
+        no_static_functions = False
 
     target_project = None
     all_projects = data_storage.get_projects()
@@ -1158,10 +1263,14 @@ def api_oracle_2() -> Dict[str, Any]:
             target_project = project
             break
 
+    if target_project == None:
+        return {'result': 'error', 'extended_msgs': ['Project not found.']}
+
     all_functions = data_storage.get_functions()
     all_projects = [target_project]
 
-    raw_interesting_functions = oracle_2(all_functions, all_projects)
+    raw_interesting_functions = oracle_2(
+        all_functions, all_projects, no_static_functions=no_static_functions)
 
     functions_to_return = []
     for function in raw_interesting_functions:
@@ -1195,7 +1304,7 @@ def api_oracle_2() -> Dict[str, Any]:
 def api_oracle_1() -> Dict[str, Any]:
     err_msgs: List[str] = list()
     project_name = request.args.get('project', None)
-    if project_name == None:
+    if project_name is None:
         return {
             'result': 'error',
             'extended_msgs': ['Please provide project name']
@@ -1243,9 +1352,8 @@ def api_oracle_1() -> Dict[str, Any]:
 
 @blueprint.route('/api/project-repository')
 def project_repository() -> Dict[str, Any]:
-    err_msgs = list()
     project_name = request.args.get('project', None)
-    if project_name == None:
+    if project_name is None:
         return {
             'result': 'error',
             'extended_msgs': ['Please provide project name']
@@ -1269,7 +1377,7 @@ def project_repository() -> Dict[str, Any]:
 def far_reach_but_low_coverage() -> Dict[str, Any]:
     err_msgs = list()
     project_name = request.args.get('project', None)
-    if project_name == None:
+    if project_name is None:
         return {
             'result': 'error',
             'extended_msgs': ['Please provide project name']
@@ -1286,7 +1394,7 @@ def far_reach_but_low_coverage() -> Dict[str, Any]:
         # exists in OSS-Fuzz but is present on the ClusterFuzz instance.
         bs = get_build_status_of_project(project_name)
 
-        if bs == None:
+        if bs is None:
             return {
                 'result':
                 'error',
@@ -1351,7 +1459,7 @@ def far_reach_but_low_coverage() -> Dict[str, Any]:
         err_msgs.append('No functions found.')
         bs = get_build_status_of_project(project_name)
 
-        if bs == None:
+        if bs is None:
             return {
                 'result':
                 'error',
@@ -1438,7 +1546,7 @@ def shutdown() -> Dict[str, str]:
 @blueprint.route('/api/all-header-files')
 def all_project_header_files() -> Dict[str, Any]:
     project = request.args.get('project', None)
-    if project == None:
+    if project is None:
         return {
             'result': 'error',
             'extended_msgs': ['Please provide project name']
@@ -1456,15 +1564,18 @@ def all_project_header_files() -> Dict[str, Any]:
 
 @blueprint.route('/api/addr-to-recursive-dwarf-info')
 def type_at_addr() -> Dict[str, Any]:
+    # Temporary disabling this API because of size limit.
+    # @arthurscchan 14/6/2024
+    return {'result': 'error', 'extended_msgs': ['Temporary disabled']}
     project = request.args.get('project', None)
-    if project == None:
+    if project is None:
         return {
             'result': 'error',
             'extended_msgs': ['Please provide project name']
         }
 
     addr = request.args.get('addr', None)
-    if addr == None:
+    if addr is None:
         return {
             'result': 'error',
             'extended_msgs': ['Please provide project name']
@@ -1544,17 +1655,17 @@ def sample_cross_references() -> Dict[str, Any]:
     """Returns a list of strings with functions that call into a given
     target function."""
     project_name = request.args.get('project', None)
-    if project_name == None:
+    if project_name is None:
         return {'result': 'error', 'msg': 'Please provide a project name'}
 
     function_signature = request.args.get('function_signature', None)
-    if function_signature == None:
+    if function_signature is None:
         return {'result': 'error', 'msg': 'No function signature provided'}
 
     # Get function from function signature
     target_function = get_function_from_func_signature(function_signature,
                                                        project_name)
-    if target_function == None:
+    if target_function is None:
         return {
             'result': 'error',
             'msg': 'Function signature could not be found'
@@ -1599,10 +1710,10 @@ def sample_cross_references() -> Dict[str, Any]:
                 for ps in project_statistics:
                     if ps.project_name == project_name:
                         datestr = ps.date
-                        if ps.introspector_data != None:
+                        if ps.introspector_data is not None:
                             latest_introspector_datestr = datestr
 
-        if latest_introspector_datestr == None:
+        if latest_introspector_datestr is None:
             return {'result': 'error', 'msg': 'No introspector builds.'}
 
     source_code_xrefs = []

@@ -100,6 +100,7 @@ class Function:
                  llvm_instruction_count: int = 0,
                  undiscovered_complexity: int = 0,
                  function_arguments: List[str] = [],
+                 function_debug_arguments: List[str] = [],
                  return_type: str = "",
                  function_argument_names: List[str] = [],
                  raw_function_name: str = "",
@@ -123,6 +124,7 @@ class Function:
         self.llvm_instruction_count = llvm_instruction_count
         self.undiscovered_complexity = undiscovered_complexity
         self.function_arguments = function_arguments
+        self.function_debug_arguments = function_debug_arguments
         self.function_argument_names = function_argument_names
         self.return_type = return_type
         self.raw_function_name = raw_function_name
