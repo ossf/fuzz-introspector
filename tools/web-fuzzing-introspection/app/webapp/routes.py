@@ -1037,19 +1037,17 @@ def api_project_source_code() -> Dict[str, Any]:
     if filepath is None:
         return {'result': 'error', 'msg': 'No filepath provided'}
 
-    begin_line = 0
-    begin_line_str = request.args.get('begin_line', None)
-    if begin_line_str is None:
+    begin_line = request.args.get('begin_line', None)
+    if begin_line is None:
         return {'result': 'error', 'msg': 'No begin line provided'}
 
-    end_line = 0
-    end_line_str = request.args.get('end_line', None)
-    if end_line_str is None:
+    end_line = request.args.get('end_line', None)
+    if end_line is None:
         return {'result': 'error', 'msg': 'No end line provided'}
 
     try:
-        begin_line = int(begin_line_str)
-        end_line = int(end_line_str)
+        begin_line = int(begin_line)
+        end_line = int(end_line)
     except ValueError:
         return {
             'result': 'error',

@@ -8,7 +8,7 @@ import json
 
 from .models import *
 
-from typing import Optional
+from typing import List, Optional
 
 PROJECT_TIMESTAMPS: List[ProjectTimestamp] = []
 
