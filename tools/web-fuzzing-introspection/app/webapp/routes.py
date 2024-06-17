@@ -1697,8 +1697,8 @@ def sample_cross_references():
                         if ps.introspector_data is not None:
                             latest_introspector_datestr = datestr
 
-        if latest_introspector_datestr is None:
-            return {'result': 'error', 'msg': 'No introspector builds.'}
+    if latest_introspector_datestr is None:
+        return {'result': 'error', 'msg': 'No introspector builds.'}
 
     source_code_xrefs = []
     for target_function in func_xrefs:
