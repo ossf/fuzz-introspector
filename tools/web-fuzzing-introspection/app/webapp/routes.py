@@ -676,8 +676,8 @@ def is_static(target_function: models.Function) -> bool:
 
 def oracle_2(all_functions: List[models.Function],
              all_projects: List[models.Project],
-             only_functions_with_xrefs: bool=False,
-             no_static_functions: bool=False) -> Optional[models.Project]:
+             only_functions_with_xrefs: bool = False,
+             no_static_functions: bool = False) -> List[models.Function]:
     tmp_list = []
     project_count: Dict[str, int] = dict()
     if len(all_projects) == 1:
