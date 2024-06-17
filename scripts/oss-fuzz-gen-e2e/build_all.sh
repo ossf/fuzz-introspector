@@ -20,7 +20,7 @@ mkdir -p workdir
 cd workdir
 WORKDIR=$PWD
 
-python3.11 -m virtualenv .venv
+python3 -m virtualenv .venv
 . .venv/bin/activate
 
 
@@ -28,6 +28,7 @@ python3.11 -m virtualenv .venv
 # builder logic.
 cd $ROOT_FI
 python3 -m pip install -r ./requirements.txt
+python3 -m pip install -r ./tools/web-fuzzing-introspection/requirements.txt
 cd oss_fuzz_integration
 ./build_post_processing.sh
 
