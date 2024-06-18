@@ -533,7 +533,10 @@ def oracle_3(all_functions, all_projects):
     return functions_of_interest
 
 
-def oracle_1(all_functions, all_projects, max_project_count=5):
+def oracle_1(all_functions,
+             all_projects,
+             max_project_count=5,
+             no_static_functions=False):
     tmp_list = []
     project_count = dict()
     for function in all_functions:
@@ -565,6 +568,11 @@ def oracle_1(all_functions, all_projects, max_project_count=5):
 
         if not is_interesting_func:
             continue
+
+        if no_static_functions:
+            # Exclude function if it's static
+            if is_static(function):
+                continue
 
         if (function.runtime_code_coverage < 60.0
                 and project_count.get(function.project, 0) < max_project_count
@@ -1235,7 +1243,8 @@ def api_oracle_2():
             'extended_msgs': ['Please provide project name']
         }
 
-    no_static_funcs_arg = request.args.get('no_static_functions', 'false')
+    no_static_funcs_arg = request.args.get('exclude-static-functions',
+                                           'false').lower()
     if no_static_funcs_arg == 'true':
         no_static_functions = True
     else:
@@ -1295,6 +1304,13 @@ def api_oracle_1():
             'extended_msgs': ['Please provide project name']
         }
 
+    no_static_funcs_arg = request.args.get('exclude-static-functions',
+                                           'false').lower()
+    if no_static_funcs_arg == 'true':
+        no_static_functions = True
+    else:
+        no_static_functions = False
+
     target_project = None
     all_projects = data_storage.get_projects()
     for project in all_projects:
@@ -1306,7 +1322,8 @@ def api_oracle_1():
 
     all_functions = data_storage.get_functions()
     all_projects = [target_project]
-    raw_functions = oracle_1(all_functions, all_projects, 100)
+    raw_functions = oracle_1(all_functions, all_projects, 100,
+                             no_static_functions)
     functions_to_return = []
     for function in raw_functions:
         functions_to_return.append({
@@ -1368,6 +1385,13 @@ def far_reach_but_low_coverage():
             'extended_msgs': ['Please provide project name']
         }
 
+    no_static_funcs_arg = request.args.get('exclude-static-functions',
+                                           'false').lower()
+    if no_static_funcs_arg == 'true':
+        no_static_functions = True
+    else:
+        no_static_functions = False
+
     target_project = None
     all_projects = data_storage.get_projects()
     for project in all_projects:
@@ -1412,10 +1436,16 @@ def far_reach_but_low_coverage():
     # Get functions of interest
     sorted_functions_of_interest = get_functions_of_interest(project_name)
 
-    max_functions_to_show = 100
+    max_functions_to_show = 30
     functions_to_return = list()
     idx = 0
     for function in sorted_functions_of_interest:
+
+        if no_static_functions:
+            # Exclude function if it's static
+            if is_static(function):
+                continue
+
         if idx >= max_functions_to_show:
             break
         idx += 1
