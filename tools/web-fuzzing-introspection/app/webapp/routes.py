@@ -21,12 +21,11 @@ import signal
 
 from flask import Blueprint, render_template, request, redirect
 
-#from app.site import models
-from . import models
+from . import models, data_storage
+from .helper import function_helper
 
 # Use these during testing.
 #from app.site import test_data
-from . import data_storage
 
 blueprint = Blueprint('site', __name__, template_folder='templates')
 
@@ -970,30 +969,43 @@ def api_project_all_functions():
         return {'result': 'error', 'msg': 'Please provide a project name'}
 
     # Get all of the functions
-    all_functions = data_storage.get_functions()
-    project_functions = [
-        function for function in all_functions
-        if function.project == project_name
-    ]
+    list_to_return = function_helper.process_functions(
+        data_storage.get_functions(), project_name, False)
 
-    list_to_return = _convert_function_return_list(project_functions)
     return {'result': 'success', 'functions': list_to_return}
 
 
 @blueprint.route('/api/all-jvm-constructors')
 def api_project_all_jvm_constructors():
-    """Returns a json representation of all the functions in a given project"""
+    """Returns a json representation of all the constructors in a given project"""
     project_name = request.args.get('project', None)
     if project_name is None:
         return {'result': 'error', 'msg': 'Please provide a project name'}
 
     # Get all of the constructor
-    all_constructors = data_storage.get_constructors()
-    project_constructors = [
-        constr for constr in all_constructors if constr.project == project_name
-    ]
+    list_to_return = function_helper.process_functions(
+        data_storage.get_constructors(), project_name, False)
 
-    list_to_return = _convert_function_return_list(project_constructors)
+    return {'result': 'success', 'functions': list_to_return}
+
+
+@blueprint.route('/api/all-public-candidates')
+def api_project_all_public_jvm_constructors():
+    """
+        Returns a json representation of all the functions / constructors
+        candidates for further process in a given project.
+    """
+    project_name = request.args.get('project', None)
+    if project_name is None:
+        return {'result': 'error', 'msg': 'Please provide a project name'}
+
+    target_list = data_storage.get_functions() + data_storage.get_constructors(
+    )
+
+    # Get the list of function / constructor candidiates to return
+    list_to_return = function_helper.process_functions(target_list,
+                                                       project_name, True)
+
     return {'result': 'success', 'functions': list_to_return}
 
 
