@@ -818,6 +818,9 @@ def api_annotated_cfg():
     if target_project is None:
         return {'result': 'error', 'msg': 'Project not in the database'}
 
+    if target_project.introspector_data is None:
+        return {'result': 'error', 'msg': 'Found no introspector data.'}
+
     try:
         return {
             'result': 'success',
