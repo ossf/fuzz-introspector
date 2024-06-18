@@ -19,7 +19,7 @@ from .. import models
 
 
 def process_functions(target_list: List[models.Function], project_name: str,
-                      is_filter: bool) -> List[models.Function]:
+                      is_filter: bool) -> List[Dict[str, Any]]:
     """
         Found all the functions for the target project with the provided
         project name. Then apply filtering and sorting to the resulting
