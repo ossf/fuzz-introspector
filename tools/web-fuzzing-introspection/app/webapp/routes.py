@@ -370,9 +370,9 @@ def project_profile():
                                      language=build_status.language,
                                      date="",
                                      fuzzer_count=0,
-                                     coverage_data={},
-                                     introspector_data={},
-                                     project_repository='')
+                                     coverage_data=None,
+                                     introspector_data=None,
+                                     project_repository=None)
 
             # Get statistics of the project
             project_statistics = data_storage.PROJECT_TIMESTAMPS
@@ -817,6 +817,9 @@ def api_annotated_cfg():
             break
     if target_project is None:
         return {'result': 'error', 'msg': 'Project not in the database'}
+
+    if target_project.introspector_data is None:
+        return {'result': 'error', 'msg': 'Found no introspector data.'}
 
     try:
         return {

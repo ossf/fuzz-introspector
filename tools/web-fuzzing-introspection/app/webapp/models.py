@@ -14,7 +14,7 @@
 
 import json
 import datetime
-from typing import Dict, List, Tuple, Any
+from typing import Dict, List, Optional, Any
 
 
 def get_date_at_offset_as_str(day_offset: int = -1) -> str:
@@ -26,10 +26,9 @@ def get_date_at_offset_as_str(day_offset: int = -1) -> str:
 class Project:
 
     def __init__(self, name: str, language: str, date: str,
-                 coverage_data: Dict[str,
-                                     Tuple], introspector_data: Dict[str,
-                                                                     Tuple],
-                 fuzzer_count: int, project_repository: str):
+                 coverage_data: Optional[Dict[str, Any]],
+                 introspector_data: Optional[Dict[str, Any]],
+                 fuzzer_count: int, project_repository: Optional[str]):
         self.name = name
         self.language = language
         self.date = date
@@ -72,8 +71,9 @@ class DBSummary:
 class ProjectTimestamp:
 
     def __init__(self, project_name: str, date: str, language: str,
-                 coverage_data: Dict[str, Tuple],
-                 introspector_data: Dict[str, Tuple], fuzzer_count: int):
+                 coverage_data: Optional[Dict[str, Any]],
+                 introspector_data: Optional[Dict[str,
+                                                  Any]], fuzzer_count: int):
         self.project_name = project_name
         # date in the format Y-m-d
         self.date = date
