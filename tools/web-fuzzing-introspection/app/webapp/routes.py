@@ -990,7 +990,7 @@ def api_project_all_jvm_constructors():
 
 
 @blueprint.route('/api/all-public-candidates')
-def api_project_all_public_jvm_constructors():
+def api_project_all_public_candidates():
     """
         Returns a json representation of all the functions / constructors
         candidates for further process in a given project.
