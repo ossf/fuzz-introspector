@@ -43,7 +43,6 @@ echo "[+] Creating the webapp DB"
 cd $ROOT_FI/tools/web-fuzzing-introspection/app/static/assets/db/
 set -x
 python3 ./web_db_creator_from_summary.py \
-    --since-date=20-04-2023 \
     --output-dir=$PWD \
     --input-dir=$PWD \
     --includes=${comma_separated}
