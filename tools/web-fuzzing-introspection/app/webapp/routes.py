@@ -1105,11 +1105,11 @@ def api_type_info():
 def function_debug_types():
     """Returns a json representation of all the functions in a given project"""
     project_name = request.args.get('project', None)
-    if project_name == None:
+    if project_name is None:
         return {'result': 'error', 'msg': 'Please provide a project name'}
 
     function_signature = request.args.get('function_signature', None)
-    if function_signature == None:
+    if function_signature is None:
         return {'result': 'error', 'msg': 'No function signature provided'}
 
     # Get function from function signature
@@ -1248,7 +1248,7 @@ def api_oracle_2():
             target_project = project
             break
 
-    if target_project == None:
+    if target_project is None:
         return {'result': 'error', 'extended_msgs': ['Project not found.']}
 
     all_functions = data_storage.get_functions()
