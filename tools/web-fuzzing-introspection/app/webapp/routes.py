@@ -1025,12 +1025,10 @@ def api_project_source_code():
     if filepath is None:
         return {'result': 'error', 'msg': 'No filepath provided'}
 
-    begin_line = 0
     begin_line_str = request.args.get('begin_line', None)
     if begin_line_str is None:
         return {'result': 'error', 'msg': 'No begin line provided'}
 
-    end_line = 0
     end_line_str = request.args.get('end_line', None)
     if end_line_str is None:
         return {'result': 'error', 'msg': 'No end line provided'}
