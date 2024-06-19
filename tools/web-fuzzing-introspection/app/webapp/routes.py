@@ -1717,7 +1717,7 @@ def get_cross_reference_dict_from_project(project_name) -> Dict[str, int]:
         if function.project == project_name:
             project_functions.append(function)
 
-    func_xrefs = dict()
+    func_xrefs: Dict[str, int] = dict()
     for function in project_functions:
         callsites = function.callsites
         for cs_dst in callsites:
