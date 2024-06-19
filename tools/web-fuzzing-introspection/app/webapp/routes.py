@@ -21,6 +21,8 @@ import signal
 
 from flask import Blueprint, render_template, request, redirect
 
+from typing import Dict
+
 #from app.site import models
 from . import models
 
@@ -536,9 +538,16 @@ def oracle_3(all_functions, all_projects):
 def oracle_1(all_functions,
              all_projects,
              max_project_count=5,
-             no_static_functions=False):
+             no_static_functions=False,
+             only_referenced_functions=False):
     tmp_list = []
     project_count = dict()
+
+    if only_referenced_functions and len(all_projects) == 1:
+        xref_dict = get_cross_reference_dict_from_project(all_projects[0].name)
+    else:
+        xref_dict = {}
+
     for function in all_functions:
         interesting_fuzz_keywords = {
             'deserialize',
@@ -555,6 +564,8 @@ def oracle_1(all_functions,
             'read_message',
             'load_image',
         }
+        if only_referenced_functions and function.name not in xref_dict:
+            continue
 
         is_interesting_func = False
         if any(fuzz_keyword in function.name.lower()
@@ -678,8 +689,8 @@ def is_static(target_function) -> bool:
 
 def oracle_2(all_functions,
              all_projects,
-             only_functions_with_xrefs=False,
-             no_static_functions=False):
+             no_static_functions=False,
+             only_referenced_functions=False):
     tmp_list = []
     project_count = dict()
     if len(all_projects) == 1:
@@ -688,20 +699,12 @@ def oracle_2(all_functions,
         project_to_target = None
 
     # If indicated only include functions with cross references
-    if only_functions_with_xrefs:
-        function_names_with_xref = set()
-        project_functions = []
-        for function in all_functions:
-            if project_to_target:
-                if function.project != project_to_target.name:
-                    continue
-            project_functions.append(function)
-            for cs_dst in function.callsites:
-                function_names_with_xref.add(cs_dst)
+    if only_referenced_functions and len(all_projects) == 1:
+        xref_dict = get_cross_reference_dict_from_project(all_projects[0].name)
 
         functions_with_xref = []
-        for function in project_functions:
-            if function.name in function_names_with_xref:
+        for function in all_functions:
+            if function.name in xref_dict:
                 functions_with_xref.append(function)
         functions_to_analyse = functions_with_xref
     else:
@@ -1253,6 +1256,14 @@ def api_oracle_2():
     else:
         no_static_functions = False
 
+    # Only refernced args
+    only_referenced_functions_arg = request.args.get(
+        'only-referenced-functions', 'false').lower()
+    if only_referenced_functions_arg == 'true':
+        only_referenced_functions = True
+    else:
+        only_referenced_functions = False
+
     target_project = None
     all_projects = data_storage.get_projects()
     for project in all_projects:
@@ -1267,7 +1278,10 @@ def api_oracle_2():
     all_projects = [target_project]
 
     raw_interesting_functions = oracle_2(
-        all_functions, all_projects, no_static_functions=no_static_functions)
+        all_functions,
+        all_projects,
+        no_static_functions=no_static_functions,
+        only_referenced_functions=only_referenced_functions)
 
     functions_to_return = []
     for function in raw_interesting_functions:
@@ -1314,6 +1328,14 @@ def api_oracle_1():
     else:
         no_static_functions = False
 
+    # Only refernced args
+    only_referenced_functions_arg = request.args.get(
+        'only-referenced-functions', 'false').lower()
+    if only_referenced_functions_arg == 'true':
+        only_referenced_functions = True
+    else:
+        only_referenced_functions = False
+
     target_project = None
     all_projects = data_storage.get_projects()
     for project in all_projects:
@@ -1325,8 +1347,12 @@ def api_oracle_1():
 
     all_functions = data_storage.get_functions()
     all_projects = [target_project]
-    raw_functions = oracle_1(all_functions, all_projects, 100,
-                             no_static_functions)
+    raw_functions = oracle_1(
+        all_functions,
+        all_projects,
+        100,
+        no_static_functions,
+        only_referenced_functions=only_referenced_functions)
     functions_to_return = []
     for function in raw_functions:
         functions_to_return.append({
@@ -1395,12 +1421,21 @@ def far_reach_but_low_coverage():
     else:
         no_static_functions = False
 
+    # Check for only using functions with cross references
+    only_referenced_functions_arg = request.args.get(
+        'only-referenced-functions', 'false').lower()
+    if only_referenced_functions_arg == 'true':
+        only_referenced_functions = True
+    else:
+        only_referenced_functions = False
+
     target_project = None
     all_projects = data_storage.get_projects()
     for project in all_projects:
         if project.name == project_name:
             target_project = project
             break
+
     if target_project is None:
         # Is the project a ghost project: a project that no longer
         # exists in OSS-Fuzz but is present on the ClusterFuzz instance.
@@ -1436,6 +1471,12 @@ def far_reach_but_low_coverage():
             )
         return {'result': 'error', 'extended_msgs': err_msgs}
 
+    # Get cross references
+    if only_referenced_functions:
+        xref_dict = get_cross_reference_dict_from_project(project_name)
+    else:
+        xref_dict = {}
+
     # Get functions of interest
     sorted_functions_of_interest = get_functions_of_interest(project_name)
 
@@ -1448,6 +1489,9 @@ def far_reach_but_low_coverage():
             # Exclude function if it's static
             if is_static(function):
                 continue
+
+        if only_referenced_functions and function.name not in xref_dict:
+            continue
 
         if idx >= max_functions_to_show:
             break
@@ -1665,6 +1709,24 @@ def api_all_interesting_function_targets():
     result_dict['function_targets'] = list_of_targets
 
     return result_dict
+
+
+def get_cross_reference_dict_from_project(project_name) -> Dict[str, int]:
+    # Get all of the functions
+    all_functions = data_storage.get_functions()
+    project_functions = []
+    for function in all_functions:
+        if function.project == project_name:
+            project_functions.append(function)
+
+    func_xrefs: Dict[str, int] = dict()
+    for function in project_functions:
+        callsites = function.callsites
+        for cs_dst in callsites:
+            func_xref_count = func_xrefs.get(cs_dst, 0)
+            func_xref_count += 1
+            func_xrefs[cs_dst] = func_xref_count
+    return func_xrefs
 
 
 @blueprint.route('/api/sample-cross-references')
