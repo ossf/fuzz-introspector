@@ -22,7 +22,7 @@ def filter_sort_functions(target_list: List[models.Function],
                           project_name: str,
                           is_filter: bool) -> List[Dict[str, Any]]:
     """
-        Found all the functions for the target project with the provided
+        Find all the functions for the target project with the provided
         project name. Then apply filtering and sorting to the resulting
         list. Lastly, convert the list of Function object to a list of
         Dict for json return.
@@ -41,10 +41,10 @@ def filter_sort_functions(target_list: List[models.Function],
         ]
 
     return _convert_functions_to_list_of_dict(
-        _sort_functions_by_multiple_criteria(functions))
+        _sort_functions_by_fuzz_worthiness(functions))
 
 
-def _sort_functions_by_multiple_criteria(
+def _sort_functions_by_fuzz_worthiness(
         functions: List[models.Function]) -> List[models.Function]:
     """
         Sort the function list according to the following criteria in order.
@@ -70,21 +70,32 @@ def _sort_functions_by_multiple_criteria(
 def _convert_functions_to_list_of_dict(
         functions: List[models.Function]) -> List[Dict[str, Any]]:
     """Convert a function list to a list of dict"""
-    list_to_return = []
+    sorted_function_dict_list_by_fuzz_worthiness = []
     for function in functions:
-        list_to_return.append({
-            'function_name': function.name,
-            'function_filename': function.function_filename,
-            'raw_function_name': function.raw_function_name,
-            'is_reached': function.is_reached,
+        sorted_function_dict_list_by_fuzz_worthiness.append({
+            'function_name':
+            function.name,
+            'function_filename':
+            function.function_filename,
+            'raw_function_name':
+            function.raw_function_name,
+            'is_reached':
+            function.is_reached,
             'accummulated_complexity':
             function.accummulated_cyclomatic_complexity,
-            'function_argument_names': function.function_argument_names,
-            'function_arguments': function.function_arguments,
-            'function_signature': function.func_signature,
-            'reached_by_fuzzers': function.reached_by_fuzzers,
-            'return_type': function.return_type,
-            'runtime_coverage_percent': function.runtime_code_coverage,
-            'is_enum_class': function.is_enum_class
+            'function_argument_names':
+            function.function_argument_names,
+            'function_arguments':
+            function.function_arguments,
+            'function_signature':
+            function.func_signature,
+            'reached_by_fuzzers':
+            function.reached_by_fuzzers,
+            'return_type':
+            function.return_type,
+            'runtime_coverage_percent':
+            function.runtime_code_coverage,
+            'is_enum_class':
+            function.is_enum_class
         })
-    return list_to_return
+    return sorted_function_dict_list_by_fuzz_worthiness
