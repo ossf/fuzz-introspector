@@ -18,8 +18,8 @@ from typing import Dict, List, Any
 from .. import models
 
 
-def process_functions(target_list: List[models.Function], project_name: str,
-                      is_filter: bool) -> List[Dict[str, Any]]:
+def filter_sort_functions(target_list: List[models.Function], project_name: str,
+                          is_filter: bool) -> List[Dict[str, Any]]:
     """
         Found all the functions for the target project with the provided
         project name. Then apply filtering and sorting to the resulting
@@ -43,7 +43,17 @@ def process_functions(target_list: List[models.Function], project_name: str,
 
 
 def _sort_functions(functions: List[models.Function]) -> List[models.Function]:
-    """Sort the function list according to certain criteria."""
+    """
+        Sort the function list according to the following criteria in order.
+        The order is accending unless otherwise specified.
+        1) If the function is reached by any existing fuzzers.
+        2) If the function belongs to a enum class (only for JVM project).
+        3) The runtime code coverage of the function.
+        4) The accumulated cyclomatic complexity of the function in descending order.
+        5) The number of arguments of this function in descending order.
+        6) The number of how many fuzzers reached this target function.
+        For boolean sorting, False is always in front of True in acscending order.
+    """
 
     return sorted(
         functions,
@@ -68,6 +78,7 @@ def _convert_functions(
             function.accummulated_cyclomatic_complexity,
             'function_argument_names': function.function_argument_names,
             'function_arguments': function.function_arguments,
+            'function_signature': function.func_signature,
             'reached_by_fuzzers': function.reached_by_fuzzers,
             'return_type': function.return_type,
             'runtime_coverage_percent': function.runtime_code_coverage,

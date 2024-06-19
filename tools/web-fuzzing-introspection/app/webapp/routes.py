@@ -969,7 +969,7 @@ def api_project_all_functions():
         return {'result': 'error', 'msg': 'Please provide a project name'}
 
     # Get all of the functions
-    list_to_return = function_helper.process_functions(
+    list_to_return = function_helper.filter_sort_functions(
         data_storage.get_functions(), project_name, False)
 
     return {'result': 'success', 'functions': list_to_return}
@@ -983,7 +983,7 @@ def api_project_all_jvm_constructors():
         return {'result': 'error', 'msg': 'Please provide a project name'}
 
     # Get all of the constructor
-    list_to_return = function_helper.process_functions(
+    list_to_return = function_helper.filter_sort_functions(
         data_storage.get_constructors(), project_name, False)
 
     return {'result': 'success', 'functions': list_to_return}
@@ -1003,7 +1003,7 @@ def api_project_all_public_candidates():
     )
 
     # Get the list of function / constructor candidiates to return
-    list_to_return = function_helper.process_functions(target_list,
+    list_to_return = function_helper.filter_sort_functions(target_list,
                                                        project_name, True)
 
     return {'result': 'success', 'functions': list_to_return}
