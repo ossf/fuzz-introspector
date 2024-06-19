@@ -40,20 +40,22 @@ def filter_sort_functions(target_list: List[models.Function],
             target for target in target_list if target.project == project_name
         ]
 
-    return _convert_functions(_sort_functions(functions))
+    return _convert_functions_to_list_of_dict(
+        _sort_functions_by_multuple_criteria(functions))
 
 
-def _sort_functions(functions: List[models.Function]) -> List[models.Function]:
+def _sort_functions_by_multiple_criteria(
+        functions: List[models.Function]) -> List[models.Function]:
     """
         Sort the function list according to the following criteria in order.
-        The order is accending unless otherwise specified.
+        The order is acscending unless otherwise specified.
+        For boolean sorting, False is always in front of True in acscending order.
         1) If the function is reached by any existing fuzzers.
         2) If the function belongs to a enum class (only for JVM project).
         3) The runtime code coverage of the function.
         4) The accumulated cyclomatic complexity of the function in descending order.
         5) The number of arguments of this function in descending order.
         6) The number of how many fuzzers reached this target function.
-        For boolean sorting, False is always in front of True in acscending order.
     """
 
     return sorted(
@@ -65,9 +67,9 @@ def _sort_functions(functions: List[models.Function]) -> List[models.Function]:
         reverse=False)
 
 
-def _convert_functions(
+def _convert_functions_to_list_of_dict(
         functions: List[models.Function]) -> List[Dict[str, Any]]:
-    """Convert a function list to something we can return"""
+    """Convert a function list to a list of dict"""
     list_to_return = []
     for function in functions:
         list_to_return.append({
