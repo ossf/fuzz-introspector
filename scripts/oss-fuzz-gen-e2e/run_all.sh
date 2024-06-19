@@ -36,6 +36,10 @@ echo "[+] Creating introspector reports"
 cd $ROOT_FI/oss_fuzz_integration/oss-fuzz                                        
 for project in ${PROJECT}; do
   python3 ../runner.py introspector $project 10 --disable-webserver
+  # Reset is necessary because some project exeuction
+  # could break the display encoding which affect
+  # the later oss-fuzz-gen execution.
+  reset
 done
                                                                                
 # Create webserver DB
