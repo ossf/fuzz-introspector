@@ -94,7 +94,7 @@ class Function:
                  is_reached: bool = False,
                  runtime_code_coverage: float = 0.0,
                  function_filename: str = "",
-                 reached_by_fuzzers: int = 0,
+                 reached_by_fuzzers: List[str] = [],
                  code_coverage_url: str = "",
                  accummulated_cyclomatic_complexity: int = 0,
                  llvm_instruction_count: int = 0,

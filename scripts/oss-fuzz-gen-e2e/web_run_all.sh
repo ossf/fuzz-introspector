@@ -20,8 +20,8 @@ ROOT_FI=$PWD/../../
 BASE_DIR=$PWD/workdir
 BENCHMARK_HEURISTICS="${VARIABLE:-far-reach-low-coverage,low-cov-with-fuzz-keyword,easy-params-far-reach}"
 #BENCHMARK_HEURISTICS="${VARIABLE:-easy-params-far-reach}"
-#OFG_HARNESS_GENERATOR="${HARNESS_GENERATOR:-CSpecific}
-OFG_HARNESS_GENERATOR="${HARNESS_GENERATOR:-Default}"
+OFG_HARNESS_GENERATOR="${HARNESS_GENERATOR:-CSpecific}"
+#OFG_HARNESS_GENERATOR="${HARNESS_GENERATOR:-Default}"
 OSS_FUZZ_GEN_MODEL=${MODEL}
 VAR_HARNESSES_PER_ORACLE="${HARNESS_PER_ORACLE:-15}"
 VAR_LLM_FIX_LIMIT="${LLM_FIX_LIMIT:-2}"
@@ -47,14 +47,14 @@ python3 ./web_db_creator_from_summary.py \
     --input-dir=$PWD \
     --includes=${comma_separated}
 
-# Start webserver DB                                                            
+# Start webserver DB
 echo "Shutting down server in case it's running"
 curl --silent http://localhost:8080/api/shutdown || true
 
 echo "[+] Launching FI webapp"
 cd $ROOT_FI/tools/web-fuzzing-introspection/app/
 FUZZ_INTROSPECTOR_SHUTDOWN=1 python3 ./main.py >> /dev/null &
-                                                                               
+
 SECONDS=5
 while true
 do
