@@ -1474,6 +1474,8 @@ def far_reach_but_low_coverage():
     # Get cross references
     if only_referenced_functions:
         xref_dict = get_cross_reference_dict_from_project(project_name)
+    else:
+        xref_dict = {}
 
     # Get functions of interest
     sorted_functions_of_interest = get_functions_of_interest(project_name)
