@@ -41,7 +41,7 @@ def filter_sort_functions(target_list: List[models.Function],
         ]
 
     return _convert_functions_to_list_of_dict(
-        _sort_functions_by_multuple_criteria(functions))
+        _sort_functions_by_multiple_criteria(functions))
 
 
 def _sort_functions_by_multiple_criteria(
