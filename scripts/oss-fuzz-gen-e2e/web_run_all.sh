@@ -47,14 +47,14 @@ python3 ./web_db_creator_from_summary.py \
     --input-dir=$PWD \
     --includes=${comma_separated}
 
-# Start webserver DB                                                            
+# Start webserver DB
 echo "Shutting down server in case it's running"
 curl --silent http://localhost:8080/api/shutdown || true
 
 echo "[+] Launching FI webapp"
 cd $ROOT_FI/tools/web-fuzzing-introspection/app/
 FUZZ_INTROSPECTOR_SHUTDOWN=1 python3 ./main.py >> /dev/null &
-                                                                               
+
 SECONDS=5
 while true
 do
