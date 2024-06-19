@@ -18,7 +18,8 @@ from typing import Dict, List, Any
 from .. import models
 
 
-def filter_sort_functions(target_list: List[models.Function], project_name: str,
+def filter_sort_functions(target_list: List[models.Function],
+                          project_name: str,
                           is_filter: bool) -> List[Dict[str, Any]]:
     """
         Found all the functions for the target project with the provided

@@ -1003,8 +1003,8 @@ def api_project_all_public_candidates():
     )
 
     # Get the list of function / constructor candidiates to return
-    list_to_return = function_helper.filter_sort_functions(target_list,
-                                                       project_name, True)
+    list_to_return = function_helper.filter_sort_functions(
+        target_list, project_name, True)
 
     return {'result': 'success', 'functions': list_to_return}
 
