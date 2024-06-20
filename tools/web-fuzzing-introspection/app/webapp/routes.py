@@ -96,7 +96,7 @@ def extract_lines_from_source_code(project_name,
     # Skip the process and return None if src_begin is < 0. This is because
     # JVM constructors do not have valid source line information and thus
     # cannot be located in the source file.
-    if line_begin < 0:
+    if line_begin <= 0:
         return None
 
     raw_source = extract_introspector_raw_source_code(project_name, date_str,
