@@ -43,7 +43,8 @@ public class FunctionConfig {
   }
 
   public void setFunctionElements(List<FunctionElement> functionElements) {
-    this.functionElements = functionElements;
+    this.functionElements = new ArrayList<FunctionElement>();
+    this.addFunctionElements(functionElements);
   }
 
   public void addFunctionElement(FunctionElement newElement) {
