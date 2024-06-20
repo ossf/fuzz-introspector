@@ -23,12 +23,14 @@ import soot.SootClass;
 import soot.SootField;
 import soot.SootMethod;
 import soot.Type;
+import soot.Unit;
 
 public class FunctionElement {
   private String functionName;
   private String functionSourceFile;
   private String linkageType;
   private Integer functionLinenumber;
+  private Integer functionLinenumberEnd;
   private Integer functionDepth;
   private String returnType;
   private Integer argCount;
@@ -59,6 +61,7 @@ public class FunctionElement {
     this.returnType = "";
 
     this.functionLinenumber = -1;
+    this.functionLinenumberEnd = -1;
     this.functionDepth = 0;
     this.argCount = 0;
     this.BBCount = 0;
@@ -100,6 +103,14 @@ public class FunctionElement {
 
   public void setFunctionLinenumber(Integer functionLinenumber) {
     this.functionLinenumber = functionLinenumber;
+  }
+
+  public Integer getFunctionLinenumberEnd() {
+    return functionLinenumberEnd;
+  }
+
+  public void setFunctionLinenumberEnd(Integer functionLinenumberEnd) {
+    this.functionLinenumberEnd = functionLinenumberEnd;
   }
 
   public Integer getFunctionDepth() {
@@ -314,13 +325,29 @@ public class FunctionElement {
     SootClass c = m.getDeclaringClass();
 
     this.setFunctionSourceFile(c.getFilePath());
-    this.setFunctionLinenumber(m.getJavaSourceStartLineNumber());
     this.setReturnType(m.getReturnType().toString());
     this.setFunctionDepth(0);
     this.setArgCount(m.getParameterCount());
     for (Type type : m.getParameterTypes()) {
       this.addArgType(type.toString());
     }
+
+    Integer startLine = m.getJavaSourceStartLineNumber();
+    Integer endLine = -1;
+    if ((startLine > 0) && (m.hasActiveBody())) {
+      for (Unit u : m.getActiveBody().getUnits()) {
+        Integer line = u.getJavaSourceStartLineNumber();
+        if (line > endLine) {
+          endLine = line;
+        }
+      }
+      if (endLine > 0) {
+        endLine++;
+      }
+    }
+
+    this.setFunctionLinenumber(startLine);
+    this.setFunctionLinenumberEnd(endLine);
   }
 
   public void setCountInformation(Integer bbCount, Integer iCount, Integer complexity) {
