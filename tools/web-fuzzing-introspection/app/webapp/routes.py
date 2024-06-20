@@ -95,6 +95,7 @@ def extract_lines_from_source_code(project_name,
                                    sanity_check_function_end=False):
     raw_source = extract_introspector_raw_source_code(project_name, date_str,
                                                       target_file)
+
     if raw_source is None:
         print("Did not found source")
         return raw_source
@@ -109,7 +110,8 @@ def extract_lines_from_source_code(project_name,
     max_length = len(str(line_end))
     function_lines = []
     for line_num in range(line_begin, line_end):
-        if line_num >= len(source_lines):
+        # To avoid list out of index from invalid line_num
+        if line_num >= len(source_lines) or line_num < 0:
             continue
 
         if print_line_numbers:
