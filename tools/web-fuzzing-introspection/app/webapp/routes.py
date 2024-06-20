@@ -93,8 +93,15 @@ def extract_lines_from_source_code(project_name,
                                    line_end,
                                    print_line_numbers=False,
                                    sanity_check_function_end=False):
+    # Skip the process and return None if src_begin is < 0. This is because
+    # JVM constructors do not have valid source line information and thus
+    # cannot be located in the source file.
+    if line_begin < 0:
+        return None
+
     raw_source = extract_introspector_raw_source_code(project_name, date_str,
                                                       target_file)
+
     if raw_source is None:
         print("Did not found source")
         return raw_source
@@ -652,11 +659,6 @@ def is_static(target_function) -> bool:
     src_begin = target_function.source_line_begin
     src_end = target_function.source_line_end
     src_file = target_function.function_filename
-
-    # Skip the check and return False if src_begin is -1. This is because
-    # JVM constructors do not have valid source line information
-    if src_begin < 0:
-        return False
 
     # Check if we have accompanying debug info
     debug_source_dict = target_function.debug_data.get('source', None)
