@@ -111,7 +111,6 @@ def extract_lines_from_source_code(project_name,
     for line_num in range(line_begin, line_end):
         if line_num >= len(source_lines):
             continue
-
         if print_line_numbers:
             line_num_str = " " * (max_length - len(str(line_num)))
             return_source += "%s%d " % (line_num_str, line_num)
@@ -652,6 +651,11 @@ def is_static(target_function) -> bool:
     src_begin = target_function.source_line_begin
     src_end = target_function.source_line_end
     src_file = target_function.function_filename
+
+    # Skip the check and return False if src_begin is -1. This is because
+    # JVM constructors do not have valid source line information
+    if src_begin < 0:
+      return False
 
     # Check if we have accompanying debug info
     debug_source_dict = target_function.debug_data.get('source', None)
