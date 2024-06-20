@@ -93,12 +93,6 @@ def extract_lines_from_source_code(project_name,
                                    line_end,
                                    print_line_numbers=False,
                                    sanity_check_function_end=False):
-    # Skip the process and return None if src_begin is < 0. This is because
-    # JVM constructors do not have valid source line information and thus
-    # cannot be located in the source file.
-    if line_begin <= 0:
-        return None
-
     raw_source = extract_introspector_raw_source_code(project_name, date_str,
                                                       target_file)
 
@@ -116,7 +110,8 @@ def extract_lines_from_source_code(project_name,
     max_length = len(str(line_end))
     function_lines = []
     for line_num in range(line_begin, line_end):
-        if line_num >= len(source_lines):
+        # To avoid list out of index from invalid line_num
+        if line_num >= len(source_lines) or line_num < 0:
             continue
 
         if print_line_numbers:
