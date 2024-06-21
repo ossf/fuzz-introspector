@@ -579,11 +579,6 @@ def oracle_1(all_functions,
         if not is_interesting_func:
             continue
 
-        if no_static_functions:
-            # Exclude function if it's static
-            if is_static(function):
-                continue
-
         if (function.runtime_code_coverage < 60.0
                 and project_count.get(function.project, 0) < max_project_count
                 and function.accummulated_cyclomatic_complexity > 30):
@@ -597,6 +592,11 @@ def oracle_1(all_functions,
                     to_continue = True
             if not to_continue:
                 continue
+
+            if no_static_functions:
+                # Exclude function if it's static
+                if is_static(function):
+                    continue
             tmp_list.append(function)
             current_count = project_count.get(function.project, 0)
             current_count += 1
