@@ -593,7 +593,6 @@ def oracle_1(all_functions,
             if not to_continue:
                 continue
 
-
             if no_static_functions:
                 # Exclude function if it's static
                 if is_static(function):
