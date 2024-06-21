@@ -1012,35 +1012,6 @@ def api_project_all_public_candidates():
     return {'result': 'success', 'functions': list_to_return}
 
 
-def _convert_function_return_list(project_functions):
-    """Convert a function list to something we can return"""
-    list_to_return = []
-    for function in project_functions:
-        list_to_return.append({
-            'function_name':
-            function.name,
-            'function_filename':
-            function.function_filename,
-            'raw_function_name':
-            function.raw_function_name,
-            'is_reached':
-            function.is_reached,
-            'accummulated_complexity':
-            function.accummulated_cyclomatic_complexity,
-            'function_argument_names':
-            function.function_argument_names,
-            'function_arguments':
-            function.function_arguments,
-            'reached_by_fuzzers':
-            function.reached_by_fuzzers,
-            'return_type':
-            function.return_type,
-            'runtime_coverage_percent':
-            function.runtime_code_coverage,
-        })
-    return list_to_return
-
-
 @blueprint.route('/api/project-source-code')
 def api_project_source_code():
     """Returns a json representation of all the functions in a given project"""
