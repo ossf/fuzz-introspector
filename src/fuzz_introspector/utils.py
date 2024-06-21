@@ -397,7 +397,8 @@ def _find_all_java_source_path() -> Set[str]:
 
 def copy_java_source_files(required_class_list: List[str]):
     """Copy the needed java source files."""
-    logger.info(f'Copying java source files to {constants.SAVED_SOURCE_FOLDER}')
+    logger.info(
+        f'Copying java source files to {constants.SAVED_SOURCE_FOLDER}')
 
     count = 0
     java_source_path_set = _find_all_java_source_path()
@@ -414,9 +415,11 @@ def copy_java_source_files(required_class_list: List[str]):
                 # Source file for the target class found. Copy it to the
                 # SAVED_SOURCE_FOLDER while preserving package directories
                 # of the target source file.
-                dst = os.path.join(constants.SAVED_SOURCE_FOLDER, required_file)
+                dst = os.path.join(constants.SAVED_SOURCE_FOLDER,
+                                   required_file)
                 os.makedirs(os.path.dirname(dst), exist_ok=True)
                 shutil.copy(java_source_path, dst)
                 count += 1
                 break
-    logger.info(f'Copied {count} java source files to {constants.SAVED_SOURCE_FOLDER}')
+    logger.info(
+        f'Copied {count} java source files to {constants.SAVED_SOURCE_FOLDER}')
