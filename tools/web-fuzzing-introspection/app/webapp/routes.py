@@ -1245,7 +1245,7 @@ def api_function_source_code():
         'source': source_code,
         'filepath': src_file,
         'src_begin': src_begin,
-        'src_end': src_begin
+        'src_end': src_end
     }
 
 
