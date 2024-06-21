@@ -1183,6 +1183,10 @@ def api_function_source_code():
     if project_name is None:
         return {'result': 'error', 'msg': 'Please provide a project name'}
 
+    project = get_project_with_name(project_name)
+    if project is None:
+        return {'result': 'error', 'msg': 'Could not find project'}
+
     function_signature = request.args.get('function_signature', None)
     if function_signature is None:
         return {'result': 'error', 'msg': 'No function signature provided'}
@@ -1214,6 +1218,11 @@ def api_function_source_code():
     src_begin = target_function.source_line_begin
     src_end = target_function.source_line_end
     src_file = target_function.function_filename
+
+    # Transform java class name to java source file path with package directories
+    if project.language == 'java':
+        src_file = f'/{src_file.split("$", 1)[0].replace(".", "/")}.java'
+        src_end = src_begin + 10
 
     # Check if we have accompanying debug info
     debug_source_dict = target_function.debug_data.get('source', None)
