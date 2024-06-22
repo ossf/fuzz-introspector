@@ -35,7 +35,7 @@ allow_shutdown = False
 local_oss_fuzz = ''
 
 # Add functions in here to make the oracles focus on a specific API.
-ALLOWED_ORACLE_RETURNS = []
+ALLOWED_ORACLE_RETURNS: List[str] = []
 
 
 def get_introspector_report_url_base(project_name, datestr):
