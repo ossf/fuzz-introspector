@@ -1814,6 +1814,9 @@ def sample_cross_references():
         src_end = target_function.source_line_end
         src_file = target_function.function_filename
 
+        # Don't show enormous functions
+        if (src_end - src_begin) > 70:
+            continue
         # Check if we have accompanying debug info
         debug_source_dict = target_function.debug_data.get('source', None)
         if debug_source_dict:
