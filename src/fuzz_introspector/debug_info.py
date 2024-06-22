@@ -305,6 +305,7 @@ def load_debug_report(debug_files):
         'all_global_variables': list(all_global_variables.values()),
         'all_types': list(all_types.values())
     }
+
     return report_dict
 
 

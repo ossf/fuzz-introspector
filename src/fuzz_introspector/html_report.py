@@ -763,7 +763,7 @@ def create_html_report(introspection_proj: analysis.IntrospectionProject,
     # Correlate debug info to introspector functions
     analysis.correlate_introspection_functions_to_debug_info(
         all_functions_json_report, introspection_proj.debug_all_functions,
-        proj_profile.target_lang)
+        proj_profile.target_lang, introspection_proj.debug_report)
 
     # Write various stats and all-functions data to summary.json
     proj_profile.write_stats_to_summary_file()
