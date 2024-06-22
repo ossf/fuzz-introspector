@@ -20,7 +20,7 @@ import json
 import signal
 
 from flask import Blueprint, render_template, request, redirect
-from typing import Dict
+from typing import Dict, List
 from . import models, data_storage
 from .helper import function_helper
 
