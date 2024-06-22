@@ -909,10 +909,16 @@ def correlate_introspector_func_to_debug_information(if_func,
 
 def correlate_introspection_functions_to_debug_info(all_functions_json_report,
                                                     debug_all_functions,
-                                                    proj_lang):
+                                                    proj_lang,
+                                                    report_dict=dict()):
     """Correlates function data collected by debug information to function
     data collected by LLVMs module, and uses the correlated data to generate
     function signatures for each function based on debug information."""
+
+    # Find header files
+    normalized_paths = set()
+    for header_file in report_dict.get('all_files_in_project', []):
+        normalized_paths.add(os.path.normpath(header_file['source_file']))
 
     # A lot of look-ups are needed when matching LLVM functions to debug
     # functions. Start with creating two indexes to make these look-ups
@@ -923,6 +929,21 @@ def correlate_introspection_functions_to_debug_info(all_functions_json_report,
         # Normalize the source file
         df['source']['source_file'] = os.path.normpath(df['source'].get(
             'source_file', ''))
+
+        # Find the header file of this debug function.
+        possible_header_files = set()
+        for header_src_file in normalized_paths:
+            if not header_src_file.endswith(".h"):
+                continue
+            if not os.path.isfile(header_src_file):
+                continue
+            with open(header_src_file, 'r') as header_file_fd:
+                content = header_file_fd.read()
+            name = df.get('name', 'TOTALLYRANDOMNOTFUNCNAME123')
+            for line_idx, line in enumerate(content.split("\n")):
+                if f'{name}(' in line:
+                    possible_header_files.add(header_src_file)
+        df['possible-header-files'] = list(possible_header_files)
 
         # Append debug function to name-index.
         entry_list1 = debug_dict_by_name.get(df.get('name', ''), [])
@@ -939,6 +960,7 @@ def correlate_introspection_functions_to_debug_info(all_functions_json_report,
     for dl3 in debug_dict_by_filename:
         print("%s ------- %d" % (dl3, len(debug_dict_by_filename[dl3])))
 
+    # Now correlate signatures
     for if_func in all_functions_json_report:
         func_sig, correlated_debug_function = correlate_introspector_func_to_debug_information(
             if_func, debug_all_functions, debug_dict_by_name,
