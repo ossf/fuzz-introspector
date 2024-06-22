@@ -20,7 +20,7 @@ import json
 import signal
 
 from flask import Blueprint, render_template, request, redirect
-from typing import Dict
+from typing import Dict, List
 from . import models, data_storage
 from .helper import function_helper
 
@@ -33,6 +33,9 @@ gtag = None
 is_local = False
 allow_shutdown = False
 local_oss_fuzz = ''
+
+# Add functions in here to make the oracles focus on a specific API.
+ALLOWED_ORACLE_RETURNS: List[str] = []
 
 
 def get_introspector_report_url_base(project_name, datestr):
@@ -1295,6 +1298,9 @@ def api_oracle_2():
             'debug_summary': function.debug_data,
         })
 
+    if ALLOWED_ORACLE_RETURNS:
+        functions_to_return = sort_funtions_to_return(functions_to_return)
+
     result_status = 'success'
     return {
         'result': result_status,
@@ -1364,6 +1370,9 @@ def api_oracle_1():
             'function_signature': function.func_signature,
             'debug_summary': function.debug_data,
         })
+
+    if ALLOWED_ORACLE_RETURNS:
+        functions_to_return = sort_funtions_to_return(functions_to_return)
 
     result_status = 'success'
     return {
@@ -1534,11 +1543,23 @@ def far_reach_but_low_coverage():
     else:
         result_status = 'success'
 
+    if ALLOWED_ORACLE_RETURNS:
+        functions_to_return = sort_funtions_to_return(functions_to_return)
+
     return {
         'result': result_status,
         'extended_msgs': err_msgs,
         'functions': functions_to_return
     }
+
+
+def sort_funtions_to_return(functions_to_return):
+    adjusted_functions = []
+    for func in functions_to_return:
+        if func['function_name'] not in ALLOWED_ORACLE_RETURNS:
+            continue
+        adjusted_functions.append(func)
+    return adjusted_functions
 
 
 def get_full_recursive_types(debug_type_dictionary, resulting_types,
