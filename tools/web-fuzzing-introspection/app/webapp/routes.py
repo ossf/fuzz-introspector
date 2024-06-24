@@ -983,6 +983,7 @@ def api_project_all_project_source_files():
                 src_path_list = json.load(f)
     else:
         # Get statistics of the project
+        date_str = None
         for ps in data_storage.PROJECT_TIMESTAMPS:
             if ps.project_name == project_name:
                 if ps.introspector_data is not None:
