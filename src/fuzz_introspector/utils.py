@@ -425,7 +425,8 @@ def copy_java_source_files(required_class_list: List[str]):
                 break
 
     # Store a list of existing source file paths for reference
-    with open(os.path.join(constants.SAVED_SOURCE_FOLDER, 'index.json'), 'w') as f:
+    with open(os.path.join(constants.SAVED_SOURCE_FOLDER, 'index.json'),
+              'w') as f:
         f.write(json.dumps(copied_source_path_list))
 
     logger.info(
