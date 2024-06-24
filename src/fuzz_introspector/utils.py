@@ -421,7 +421,7 @@ def copy_java_source_files(required_class_list: List[str]):
                 os.makedirs(os.path.dirname(dst), exist_ok=True)
                 shutil.copy(java_source_path, dst)
                 count += 1
-                copied_source_path_list.append(dst)
+                copied_source_path_list.append(required_file)
                 break
 
     # Store a list of existing source file paths for reference
