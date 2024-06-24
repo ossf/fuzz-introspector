@@ -976,25 +976,32 @@ def api_project_all_project_source_files():
 
     src_path_list = []
     if is_local:
-        src_dir = os.path.join(local_oss_fuzz, 'build', 'out', project_name,
-                               'inspector', 'source-code', 'index.json')
-        if os.path.isfile(src_location):
-            with open(src_dir, 'r') as f:
-                src_path_list = json.load(f.read())
+        src_json = os.path.join(local_oss_fuzz, 'build', 'out', project_name,
+                                'inspector', 'source-code', 'index.json')
+        if os.path.isfile(src_json):
+            with open(src_json, 'r') as f:
+                src_path_list = json.load(f)
     else:
-        introspector_summary_url = get_introspector_report_url_source_base(
-            project_name, date_str.replace("-", "")) + 'index.json'
+        # Get statistics of the project
+        for ps in data_storage.PROJECT_TIMESTAMPS:
+            if ps.project_name == project_name:
+                if ps.introspector_data is not None:
+                    date_str = ps.date
 
-        print("URL: %s" % (introspector_summary_url))
+        if date_str:
+            introspector_summary_url = get_introspector_report_url_source_base(
+                project_name, date_str.replace("-", "")) + 'index.json'
 
-        # Read the introspector atifact
-        try:
-           src_path_str = requests.get(introspector_summary_url, timeout=10).text
-           src_path_list = json.load(src_path_str)
-        except:
-            # Ignore the error and assume no source path is found
-            pass
+            print("URL: %s" % (introspector_summary_url))
 
+            # Read the introspector atifact
+            try:
+                src_path_str = str(
+                    requests.get(introspector_summary_url, timeout=10).text)
+                src_path_list = json.loads(src_path_str)
+            except:
+                # Ignore the error and assume no source path is found
+                pass
 
     return {'result': 'success', 'src_path': src_path_list}
 
@@ -1011,7 +1018,6 @@ def api_project_all_functions():
         data_storage.get_functions(), project_name, False)
 
     return {'result': 'success', 'functions': list_to_return}
-
 
 
 @blueprint.route('/api/all-jvm-constructors')
