@@ -967,6 +967,38 @@ def api_cross_references():
     return {'result': 'success', 'callsites': xrefs}
 
 
+@blueprint.route('/api/all-project-source-files')
+def api_project_all_project_source_files():
+    """Returns a json representation of all source file path in a given project"""
+    project_name = request.args.get('project', None)
+    if project_name is None:
+        return {'result': 'error', 'msg': 'Please provide a project name'}
+
+    src_path_list = []
+    if is_local:
+        src_dir = os.path.join(local_oss_fuzz, 'build', 'out', project_name,
+                               'inspector', 'source-code', 'index.json')
+        if os.path.isfile(src_location):
+            with open(src_dir, 'r') as f:
+                src_path_list = json.load(f.read())
+    else:
+        introspector_summary_url = get_introspector_report_url_source_base(
+            project_name, date_str.replace("-", "")) + 'index.json'
+
+        print("URL: %s" % (introspector_summary_url))
+
+        # Read the introspector atifact
+        try:
+           src_path_str = requests.get(introspector_summary_url, timeout=10).text
+           src_path_list = json.load(src_path_str)
+        except:
+            # Ignore the error and assume no source path is found
+            pass
+
+
+    return {'result': 'success', 'src_path': src_path_list}
+
+
 @blueprint.route('/api/all-functions')
 def api_project_all_functions():
     """Returns a json representation of all the functions in a given project"""
@@ -979,6 +1011,7 @@ def api_project_all_functions():
         data_storage.get_functions(), project_name, False)
 
     return {'result': 'success', 'functions': list_to_return}
+
 
 
 @blueprint.route('/api/all-jvm-constructors')
