@@ -403,6 +403,7 @@ def copy_java_source_files(required_class_list: List[str]):
     count = 0
     java_source_path_set = _find_all_java_source_path()
 
+    copied_source_path_list = []
     for required_class in set(required_class_list):
         # Remove inner class name
         required_file = required_class.split('$', 1)[0]
@@ -420,6 +421,12 @@ def copy_java_source_files(required_class_list: List[str]):
                 os.makedirs(os.path.dirname(dst), exist_ok=True)
                 shutil.copy(java_source_path, dst)
                 count += 1
+                copied_source_path_set.append(dst)
                 break
+
+    # Store a list of existing source file paths for reference
+    with open(os.path.join(constants.SAVED_SOURCE_FOLDER, 'index.json'), 'w') as f:
+        f.write(json.dumps(copied_source_path_list))
+
     logger.info(
         f'Copied {count} java source files to {constants.SAVED_SOURCE_FOLDER}')
