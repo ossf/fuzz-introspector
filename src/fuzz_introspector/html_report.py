@@ -803,7 +803,7 @@ def create_html_report(introspection_proj: analysis.IntrospectionProject,
     # Copy source file for all target functions (Java project only)
     if introspection_proj.language == 'jvm':
         source_file_list = [
-            i['Functions filename']
-            for i in (all_functions_json_report + jvm_constructor_json_report)
+            func_item['Functions filename']
+            for func_item in (all_functions_json_report + jvm_constructor_json_report)
         ]
         utils.copy_java_source_files(source_file_list)
