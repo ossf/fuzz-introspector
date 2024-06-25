@@ -1196,7 +1196,8 @@ def api_function_source_code():
     # Transform java class name to java source file path with package directories
     if project.language == 'java':
         src_file = f'/{src_file.split("$", 1)[0].replace(".", "/")}.java'
-        src_end = src_begin + 10
+        if src_end <= src_begin:
+            src_end = src_begin + 10
 
     # Check if we have accompanying debug info
     debug_source_dict = target_function.debug_data.get('source', None)
