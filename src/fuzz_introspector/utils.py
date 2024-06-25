@@ -18,6 +18,7 @@ import logging
 import json
 import os
 import re
+import shutil
 import yaml
 
 from typing import (
@@ -25,6 +26,7 @@ from typing import (
     List,
     Dict,
     Optional,
+    Set,
     Tuple,
 )
 
@@ -369,3 +371,63 @@ def check_coverage_link_existence(link: str) -> bool:
     if link.startswith("/"):
         link = link[1:]
     return os.path.exists(link) and os.path.isfile(link)
+
+
+def _find_all_java_source_path() -> Set[str]:
+    """Search the $OUT/$SRC directory to find paths of all Java source files."""
+    # Use set to avoid duplication
+    java_source_path_list = set()
+
+    # Retrieve $OUT and $SRC from environment variables
+    out_dir = os.environ.get('OUT', None)
+    src_dir = os.environ.get('SRC', None)
+    logger.info(f'{out_dir}/{src_dir}')
+    if out_dir and src_dir:
+        # OSS-Fuzz store the source code in $OUT/$SRC directory
+        path_to_search = os.path.join(out_dir, src_dir)
+        if os.path.isdir(path_to_search):
+            # Confirm that the source directory does exist
+            for root, dirs, files in os.walk(path_to_search):
+                for file in files:
+                    if file.endswith(".java"):
+                        java_source_path_list.add(os.path.join(root, file))
+    logger.info(java_source_path_list)
+    return java_source_path_list
+
+
+def copy_java_source_files(required_class_list: List[str]):
+    """Copy the needed java source files."""
+    logger.info(
+        f'Copying java source files to {constants.SAVED_SOURCE_FOLDER}')
+
+    count = 0
+    java_source_path_set = _find_all_java_source_path()
+
+    copied_source_path_list = []
+    for required_class in set(required_class_list):
+        # Remove inner class name
+        required_file = required_class.split('$', 1)[0]
+
+        # Transform class name to java source file name
+        required_file = f'{required_file.replace(".", "/")}.java'
+
+        for java_source_path in java_source_path_set:
+            if java_source_path.endswith(required_file):
+                # Source file for the target class found. Copy it to the
+                # SAVED_SOURCE_FOLDER while preserving package directories
+                # of the target source file.
+                dst = os.path.join(constants.SAVED_SOURCE_FOLDER,
+                                   required_file)
+                os.makedirs(os.path.dirname(dst), exist_ok=True)
+                shutil.copy(java_source_path, dst)
+                count += 1
+                copied_source_path_list.append(required_file)
+                break
+
+    # Store a list of existing source file paths for reference
+    with open(os.path.join(constants.SAVED_SOURCE_FOLDER, 'index.json'),
+              'w') as f:
+        f.write(json.dumps(copied_source_path_list))
+
+    logger.info(
+        f'Copied {count} java source files to {constants.SAVED_SOURCE_FOLDER}')
