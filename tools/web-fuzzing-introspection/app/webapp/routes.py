@@ -913,7 +913,8 @@ def branch_blockers():
 
 def get_function_from_func_signature(func_signature, project_name):
     all_functions = data_storage.get_functions()
-    for function in all_functions:
+    all_constructors = data_storage.get_constructors()
+    for function in (all_functions + all_constructors):
         if function.project == project_name and function.func_signature == func_signature:
             return function
     return None
