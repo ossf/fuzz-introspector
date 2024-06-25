@@ -775,19 +775,33 @@ def create_html_report(introspection_proj: analysis.IntrospectionProject,
     if proj_profile.target_lang == 'jvm' and all_functions_json_report:
         jvm_constructor_json_report = []
         for fd in proj_profile.all_constructors.values():
-            json_copy = all_functions_json_report[-1].copy()
+            json_copy = dict()
             json_copy['Func name'] = fd.function_name
+            json_copy['function_signature'] = fd.function_name
+            json_copy['Functions filename'] = fd.function_source_file
             json_copy['Args'] = fd.arg_types
             json_copy['ArgNames'] = fd.arg_names
+            json_copy['Function call depth'] = fd.function_depth,
             json_copy['Reached by Fuzzers'] = fd.reached_by_fuzzers
+            json_copy['collapsible_id'] = fd.function_name
             json_copy['return_type'] = fd.return_type
             json_copy['raw-function-name'] = fd.raw_function_name
+            json_copy['I Count'] = fd.i_count
+            json_copy['BB Count'] = fd.bb_count
+            json_copy['Cyclomatic complexity'] = fd.cyclomatic_complexity
+            json_copy['Undiscovered complexity'] = fd.new_unreached_complexity
+            json_copy['Functions reached'] = len(fd.functions_reached)
+            json_copy['Reached by functions'] = len(fd.incoming_references)
+            json_copy[
+                'Accumulated cyclomatic complexity'] = fd.total_cyclomatic_complexity
             json_copy['callsites'] = fd.callsite
             json_copy['source_line_begin'] = fd.function_linenumber
             json_copy['source_line_end'] = fd.function_line_number_end
             json_copy['is_accessible'] = fd.is_accessible
             json_copy['is_jvm_library'] = fd.is_jvm_library
             json_copy['is_enum_class'] = fd.is_enum
+            json_copy['Fuzzers runtime hit'] = 'no'
+            json_copy['Func lines hit %'] = '0.0%'
             jvm_constructor_json_report.append(json_copy)
 
         if jvm_constructor_json_report:
