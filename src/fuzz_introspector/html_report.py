@@ -792,7 +792,8 @@ def create_html_report(introspection_proj: analysis.IntrospectionProject,
             json_copy['Undiscovered complexity'] = fd.new_unreached_complexity
             json_copy['Functions reached'] = len(fd.functions_reached)
             json_copy['Reached by functions'] = len(fd.incoming_references)
-            json_copy['Accumulated cyclomatic complexity'] = fd.total_cyclomatic_complexity
+            json_copy[
+                'Accumulated cyclomatic complexity'] = fd.total_cyclomatic_complexity
             json_copy['callsites'] = fd.callsite
             json_copy['source_line_begin'] = fd.function_linenumber
             json_copy['source_line_end'] = fd.function_line_number_end
