@@ -967,6 +967,46 @@ def api_cross_references():
     return {'result': 'success', 'callsites': xrefs}
 
 
+@blueprint.route('/api/all-project-source-files')
+def api_project_all_project_source_files():
+    """Returns a json representation of all source file path in a given project"""
+    project_name = request.args.get('project', None)
+    if project_name is None:
+        return {'result': 'error', 'msg': 'Please provide a project name'}
+
+    src_path_list = []
+    if is_local:
+        src_json = os.path.join(local_oss_fuzz, 'build', 'out', project_name,
+                                'inspector', 'source-code', 'index.json')
+        if os.path.isfile(src_json):
+            with open(src_json, 'r') as f:
+                src_path_list = json.load(f)
+    else:
+        # Get statistics of the project
+        date_str = None
+        for ps in data_storage.PROJECT_TIMESTAMPS:
+            if ps.project_name == project_name:
+                if ps.introspector_data is not None:
+                    date_str = ps.date
+
+        if date_str:
+            introspector_summary_url = get_introspector_report_url_source_base(
+                project_name, date_str.replace("-", "")) + 'index.json'
+
+            print("URL: %s" % (introspector_summary_url))
+
+            # Read the introspector atifact
+            try:
+                src_path_str = str(
+                    requests.get(introspector_summary_url, timeout=10).text)
+                src_path_list = json.loads(src_path_str)
+            except:
+                # Ignore the error and assume no source path is found
+                pass
+
+    return {'result': 'success', 'src_path': src_path_list}
+
+
 @blueprint.route('/api/all-functions')
 def api_project_all_functions():
     """Returns a json representation of all the functions in a given project"""
