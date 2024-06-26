@@ -777,6 +777,7 @@ def create_html_report(introspection_proj: analysis.IntrospectionProject,
         for fd in proj_profile.all_constructors.values():
             json_copy = dict()
             json_copy['Func name'] = fd.function_name
+            json_copy['func_url'] = 'N/A'
             json_copy['function_signature'] = fd.function_name
             json_copy['Functions filename'] = fd.function_source_file
             json_copy['Args'] = fd.arg_types
