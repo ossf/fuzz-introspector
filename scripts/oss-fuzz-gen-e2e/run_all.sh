@@ -20,6 +20,8 @@ BASE_DIR=$PWD/workdir
 BENCHMARK_HEURISTICS="${VARIABLE:-far-reach-low-coverage}"
 OSS_FUZZ_GEN_MODEL=${MODEL}
 PROJECT=${@}
+VAR_HARNESSES_PER_ORACLE="${HARNESS_PER_ORACLE:-10}"
+
 
 comma_separated=""
 for proj in ${PROJECT}; do
@@ -77,7 +79,7 @@ LLM_NUM_EVA=1 LLM_NUM_EXP=1 ./run_all_experiments.py \
     --model=$OSS_FUZZ_GEN_MODEL \
     -g ${BENCHMARK_HEURISTICS} \
     -gp ${comma_separated} \
-    -gm 6 \
+    -gm ${VAR_HARNESSES_PER_ORACLE} \
     -e http://127.0.0.1:8080/api
 
 echo "Shutting down started webserver"
