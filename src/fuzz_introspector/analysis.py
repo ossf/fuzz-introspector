@@ -937,8 +937,12 @@ def correlate_introspection_functions_to_debug_info(all_functions_json_report,
                 continue
             if not os.path.isfile(header_src_file):
                 continue
-            with open(header_src_file, 'r') as header_file_fd:
-                content = header_file_fd.read()
+            try:
+                with open(header_src_file, 'r') as header_file_fd:
+                    content = header_file_fd.read()
+            except UnicodeDecodeError:
+                content = ""
+
             name = df.get('name', 'TOTALLYRANDOMNOTFUNCNAME123')
             for line_idx, line in enumerate(content.split("\n")):
                 if f'{name}(' in line:
