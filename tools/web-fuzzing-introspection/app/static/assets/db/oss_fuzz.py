@@ -144,6 +144,8 @@ def extract_local_introspector_report(project_name, oss_fuzz_folder):
 def get_local_code_coverage_summary(project_name, oss_fuzz_folder):
     summary_json = os.path.join(oss_fuzz_folder, 'build', 'out', project_name,
                                 'report', 'linux', 'summary.json')
+    if not os.path.isfile(summary_json):
+        return None
     with open(summary_json, 'r') as f:
         json_dict = json.load(f)
     return json_dict
@@ -153,6 +155,8 @@ def get_local_code_coverage_stats(project_name, oss_fuzz_folder):
     coverage_targets = os.path.join(oss_fuzz_folder, 'build', 'out',
                                     project_name, 'fuzzer_stats',
                                     'coverage_targets.txt')
+    if not os.path.isfile(coverage_targets):
+        return None
     with open(coverage_targets, 'r') as f:
         content = f.read()
     return content
