@@ -535,7 +535,6 @@ def extract_project_data(project_name, date_str, should_include_details,
             amount_of_fuzzers = len(introspector_report) - 2
             number_of_functions = len(all_function_list)
         else:
-            print('Using new style of function storage')
             amount_of_fuzzers = project_stats['harness-count']
             number_of_functions = project_stats['total-functions']
             all_function_list = None
