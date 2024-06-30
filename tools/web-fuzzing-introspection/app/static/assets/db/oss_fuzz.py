@@ -145,7 +145,7 @@ def get_local_code_coverage_summary(project_name, oss_fuzz_folder):
     summary_json = os.path.join(oss_fuzz_folder, 'build', 'out', project_name,
                                 'report', 'linux', 'summary.json')
     if not os.path.isfile(summary_json):
-        return None    
+        return None
     with open(summary_json, 'r') as f:
         json_dict = json.load(f)
     return json_dict
