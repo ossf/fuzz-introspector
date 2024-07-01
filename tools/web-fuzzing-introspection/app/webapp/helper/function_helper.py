@@ -28,20 +28,42 @@ def filter_sort_functions(target_list: List[models.Function],
         Dict for json return.
     """
 
+    functions = _filter_unrelated_functions(target_list, project_name,
+                                            is_filter)
+
+    return _convert_functions_to_list_of_dict(
+        _sort_functions_by_fuzz_worthiness(functions))
+
+
+def _filter_unrelated_functions(target_list: List[models.Function],
+                                project_name: str,
+                                is_filter: bool) -> List[models.Function]:
+    """
+        Filter unrelated functions in a provided function list if
+        it meet any of the following conditions.
+        1) Fuzzing related methods / functions
+        2) Functions with name contains word "exception / error / test"
+    """
+    excluded_function_name = [
+        'fuzzertestoneinput', 'fuzzerinitialize', 'fuzzerteardown',
+        'exception', 'error', 'test'
+    ]
+
     if is_filter:
         functions = [
             target for target in target_list
             if (target.project == project_name and target.is_accessible
                 and not target.is_jvm_library
-                and len(target.function_arguments) > 0)
+                and len(target.function_arguments) > 0 and not any(
+                    function_name in target.name.lower()
+                    for function_name in excluded_function_name))
         ]
     else:
         functions = [
             target for target in target_list if target.project == project_name
         ]
 
-    return _convert_functions_to_list_of_dict(
-        _sort_functions_by_fuzz_worthiness(functions))
+    return functions
 
 
 def _sort_functions_by_fuzz_worthiness(
