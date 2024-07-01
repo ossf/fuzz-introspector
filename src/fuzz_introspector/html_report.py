@@ -146,6 +146,7 @@ def create_all_function_table(
         json_copy['is_accessible'] = fd.is_accessible
         json_copy['is_jvm_library'] = fd.is_jvm_library
         json_copy['is_enum_class'] = fd.is_enum
+        json_copy['exceptions'] = fd.exceptions
         table_rows_json_report.append(json_copy)
 
     logger.info("Assembled a total of %d entries" %
@@ -801,6 +802,7 @@ def create_html_report(introspection_proj: analysis.IntrospectionProject,
             json_copy['is_accessible'] = fd.is_accessible
             json_copy['is_jvm_library'] = fd.is_jvm_library
             json_copy['is_enum_class'] = fd.is_enum
+            json_copy['exceptions'] = fd.exceptions
             json_copy['Fuzzers runtime hit'] = 'no'
             json_copy['Func lines hit %'] = '0.0%'
             jvm_constructor_json_report.append(json_copy)

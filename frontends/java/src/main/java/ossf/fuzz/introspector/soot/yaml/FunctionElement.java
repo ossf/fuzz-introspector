@@ -285,13 +285,12 @@ public class FunctionElement {
     methodInfo.setIsClassEnum(c.isEnum());
     methodInfo.setIsClassPublic(c.isPublic());
     methodInfo.setIsClassConcrete(c.isConcrete());
+    for (SootClass exception : m.getExceptions()) {
+      methodInfo.addException(exception.getFilePath());
+    }
 
     // Additional information for auto-fuzz process
     if (isAutoFuzz) {
-      for (SootClass exception : m.getExceptions()) {
-        methodInfo.addException(exception.getFilePath());
-      }
-
       // Extra class information for constructors
       if (m.getName().equals("<init>")) {
         if (c.hasSuperclass()) {
