@@ -112,7 +112,8 @@ class Function:
                  debug_data: Dict[str, Any] = {},
                  is_accessible: bool = True,
                  is_jvm_library: bool = False,
-                 is_enum_class: bool = False):
+                 is_enum_class: bool = False,
+                 exceptions: List[str] = []):
         self.name = name
         self.function_filename = function_filename
         self.project = project
@@ -137,6 +138,7 @@ class Function:
         self.is_accessible = is_accessible
         self.is_jvm_library = is_jvm_library
         self.is_enum_class = is_enum_class
+        self.exceptions = exceptions
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -154,7 +156,8 @@ class Function:
             'function_filename': self.function_filename,
             'is_accessible': self.is_accessible,
             'is_jvm_library': self.is_jvm_library,
-            'is_enum_class': self.is_enum_class
+            'is_enum_class': self.is_enum_class,
+            'exceptions': self.exceptions
         }
 
 

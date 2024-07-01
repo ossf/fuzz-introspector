@@ -118,6 +118,8 @@ def _convert_functions_to_list_of_dict(
             'runtime_coverage_percent':
             function.runtime_code_coverage,
             'is_enum_class':
-            function.is_enum_class
+            function.is_enum_class,
+            'exceptions':
+            function.exceptions
         })
     return sorted_function_dict_list_by_fuzz_worthiness
