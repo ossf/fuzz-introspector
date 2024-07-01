@@ -1,7 +1,7 @@
 beautifulsoup4==4.10.0
 cxxfilt==0.3.0
 lxml==4.9.1
-matplotlib==3.3.4
+matplotlib==3.7.5
 PyYAML==6.0
 soupsieve==2.2.1
 yapf==0.32.0
