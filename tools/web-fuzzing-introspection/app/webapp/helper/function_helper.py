@@ -119,6 +119,8 @@ def _convert_functions_to_list_of_dict(
             function.runtime_code_coverage,
             'is_enum_class':
             function.is_enum_class,
+            'is_static':
+            function.is_static,
             'exceptions':
             function.exceptions
         })

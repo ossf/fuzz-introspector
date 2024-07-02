@@ -234,6 +234,7 @@ def extract_and_refine_functions(all_function_list, project_name, date_str):
         introspector_func['is_accessible'] = func.get('is_accessible', True)
         introspector_func['is_jvm_library'] = func.get('is_jvm_library', False)
         introspector_func['is_enum_class'] = func.get('is_enum_class', False)
+        introspector_func['is_static'] = func.get('is_static', False)
         introspector_func['exceptions'] = func.get('exceptions', [])
 
         refined_proj_list.append(introspector_func)
