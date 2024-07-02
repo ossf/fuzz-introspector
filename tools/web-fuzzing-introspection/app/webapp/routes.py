@@ -689,10 +689,25 @@ def is_static(target_function) -> bool:
     return False
 
 
+def remove_functions_with_header_declarations(function_list):
+    """For a list of functions sorts out functions without possible header
+    declarations.
+    """
+    new_functions = []
+    for function in function_list:
+        possible_header_files = function.debug_data.get(
+            'possible-header-files', [])
+        if not possible_header_files:
+            continue
+        new_functions.append(function)
+    return new_functions
+
+
 def oracle_2(all_functions,
              all_projects,
              no_static_functions=False,
-             only_referenced_functions=False):
+             only_referenced_functions=False,
+             only_functions_declared_in_header_files=False):
     tmp_list = []
     project_count = dict()
     if len(all_projects) == 1:
@@ -711,6 +726,10 @@ def oracle_2(all_functions,
         functions_to_analyse = functions_with_xref
     else:
         functions_to_analyse = all_functions
+
+    if only_functions_declared_in_header_files:
+        functions_to_analyse = remove_functions_with_header_declarations(
+            functions_to_analyse)
 
     for function in functions_to_analyse:
         if project_to_target:
@@ -1293,6 +1312,13 @@ def api_oracle_2():
     else:
         no_static_functions = False
 
+    only_functions_declared_in_header_files_arg = request.args.get(
+        'only-with-header-file-declaration', 'false').lower()
+    if only_functions_declared_in_header_files_arg == 'true':
+        only_functions_declared_in_header_files = True
+    else:
+        only_functions_declared_in_header_files = False
+
     # Only refernced args
     only_referenced_functions_arg = request.args.get(
         'only-referenced-functions', 'false').lower()
@@ -1318,7 +1344,9 @@ def api_oracle_2():
         all_functions,
         all_projects,
         no_static_functions=no_static_functions,
-        only_referenced_functions=only_referenced_functions)
+        only_referenced_functions=only_referenced_functions,
+        only_functions_declared_in_header_files=
+        only_functions_declared_in_header_files)
 
     functions_to_return = []
     for function in raw_interesting_functions:
@@ -1472,6 +1500,13 @@ def far_reach_but_low_coverage():
     else:
         only_referenced_functions = False
 
+    only_functions_declared_in_header_files_arg = request.args.get(
+        'only-with-header-file-declaration', 'false').lower()
+    if only_functions_declared_in_header_files_arg == 'true':
+        only_functions_declared_in_header_files = True
+    else:
+        only_functions_declared_in_header_files = False
+
     target_project = None
     all_projects = data_storage.get_projects()
     for project in all_projects:
@@ -1525,7 +1560,6 @@ def far_reach_but_low_coverage():
 
     max_functions_to_show = 30
     functions_to_return = list()
-    idx = 0
     for function in sorted_functions_of_interest:
 
         if no_static_functions:
@@ -1535,12 +1569,17 @@ def far_reach_but_low_coverage():
 
         if only_referenced_functions and function.name not in xref_dict:
             continue
+        functions_to_return.append(function)
 
-        if idx >= max_functions_to_show:
-            break
-        idx += 1
+    if only_functions_declared_in_header_files:
+        functions_to_return = remove_functions_with_header_declarations(
+            functions_to_return)
 
-        functions_to_return.append({
+    functions_to_return = functions_to_return[:max_functions_to_show]
+
+    rewritten_list = []
+    for function in functions_to_return:
+        rewritten_list.append({
             'function_name': function.name,
             'function_filename': function.function_filename,
             'runtime_coverage_percent': function.runtime_code_coverage,
@@ -1557,6 +1596,7 @@ def far_reach_but_low_coverage():
             'function_signature': function.func_signature,
             'debug_summary': function.debug_data,
         })
+    functions_to_return = rewritten_list
 
     # Assess if this worked well, and if not, provide a reason
     if len(functions_to_return) == 0:
