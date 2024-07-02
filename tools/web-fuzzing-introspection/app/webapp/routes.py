@@ -1020,6 +1020,30 @@ def get_function_from_func_signature(func_signature, project_name):
     return None
 
 
+@blueprint.route('/api/get-header-files-needed-for-function')
+def get_header_files_needed_for_function():
+    """Return the header files needed for a given function"""
+    project_name = request.args.get('project', None)
+    if project_name is None:
+        return {'result': 'error', 'msg': 'Please provide a project name'}
+
+    function_signature = request.args.get('function_signature', None)
+    if function_signature is None:
+        return {'result': 'error', 'msg': 'No function signature provided'}
+
+    # Get function from function signature
+    target_function = get_function_from_func_signature(function_signature,
+                                                       project_name)
+    if target_function is None:
+        return {
+            'result': 'error',
+            'msg': 'Function signature could not be found'
+        }
+    headers_to_include = target_function.debug_data.get(
+        'possible-header-files', [])
+    return {'result': 'succes', 'headers-to-include': headers_to_include}
+
+
 @blueprint.route('/api/all-cross-references')
 def api_cross_references():
     """Returns a json representation of all the functions in a given project"""
