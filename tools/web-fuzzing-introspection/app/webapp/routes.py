@@ -1365,6 +1365,40 @@ def api_function_source_code():
     }
 
 
+@blueprint.route('/api/function-with-matching-return-type')
+def api_function_with_matching_type():
+    """
+        Returns a json representation of all the functions in a given project
+        that match the needed return type
+    """
+    project_name = request.args.get('project', None)
+    if project_name is None:
+        return {'result': 'error', 'msg': 'Please provide a project name'}
+
+    project = get_project_with_name(project_name)
+    if project is None:
+        return {'result': 'error', 'msg': 'Could not find project'}
+
+    return_type = request.args.get('return-type', None)
+    if return_type is None:
+        return {
+            'result': 'error',
+            'msg': 'Please provide a matching return type'
+        }
+
+    matched_function_list = function_helper.search_function_by_return_type(
+        data_storage.get_functions(), return_type, project_name)
+    matched_constructor_list = function_helper.search_function_by_return_type(
+        data_storage.get_constructors(), return_type, project_name)
+
+    return {
+        'result': 'success',
+        'return-type': return_type,
+        'constructors': matched_constructor_list,
+        'functions': matched_function_list
+    }
+
+
 def get_build_status_of_project(project_name):
     build_status = data_storage.get_build_status()
 

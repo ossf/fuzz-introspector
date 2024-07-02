@@ -47,15 +47,15 @@ def load_db() -> None:
     # Load functions
     with open(all_functions_file, 'r') as f:
         all_function_list = json.load(f)
-    idx = load_functions(all_function_list, data_storage.FUNCTIONS)
+    idx = load_functions(all_function_list, False)
     print("Loaded %d functions" % (idx))
     print("Len %d" % (len(data_storage.FUNCTIONS)))
 
     # Load constructors
     with open(all_constructors_file, 'r') as f:
         all_constructor_list = json.load(f)
-    idx = load_functions(all_constructor_list, data_storage.CONSTRUCTORS)
-    print("Loaded %d constructorss" % (idx))
+    idx = load_functions(all_constructor_list, True)
+    print("Loaded %d constructors" % (idx))
     print("Len %d" % (len(data_storage.CONSTRUCTORS)))
 
     with open(project_timestamps_file, 'r') as f:
@@ -143,7 +143,7 @@ def load_db() -> None:
 
 
 def load_functions(function_list: List[Dict[str, Any]],
-                   target: List[models.Function]) -> int:
+                   is_constructor: bool) -> int:
     """Load functions or constructors into data storage"""
     idx = 0
     for func in function_list:
@@ -152,6 +152,14 @@ def load_functions(function_list: List[Dict[str, Any]],
             debug_argtypes = func['debug-function']['args']
         except KeyError:
             debug_argtypes = []
+
+        # Constructors and functions stored in different list
+        if is_constructor:
+            # Constructors must have a return type of its own class
+            func['return-type'] = func['filename']
+            target = data_storage.CONSTRUCTORS
+        else:
+            target = data_storage.FUNCTIONS
 
         target.append(
             models.Function(

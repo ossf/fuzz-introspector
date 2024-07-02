@@ -18,6 +18,27 @@ from typing import Dict, List, Any
 from .. import models
 
 
+def search_function_by_return_type(target_list: List[models.Function],
+                                   needed_return_type: str,
+                                   project_name: str) -> List[Dict[str, Any]]:
+    """
+        Find all the functions for the target project from the target list
+        that returns the needed return type. The found function list is
+        then convert to a list of dict for returning.
+    """
+    # Obtain the plain return type by removing generics
+    needed_return_type = needed_return_type.split('<')[0]
+
+    functions = _filter_unrelated_functions(target_list, project_name, True)
+
+    functions = [
+        function for function in functions
+        if function.return_type == needed_return_type
+    ]
+
+    return convert_functions_to_list_of_dict(functions)
+
+
 def filter_sort_functions(target_list: List[models.Function],
                           project_name: str,
                           is_filter: bool) -> List[Dict[str, Any]]:
