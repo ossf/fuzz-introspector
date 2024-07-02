@@ -31,7 +31,7 @@ def filter_sort_functions(target_list: List[models.Function],
     functions = _filter_unrelated_functions(target_list, project_name,
                                             is_filter)
 
-    return _convert_functions_to_list_of_dict(
+    return convert_functions_to_list_of_dict(
         _sort_functions_by_fuzz_worthiness(functions))
 
 
@@ -89,7 +89,7 @@ def _sort_functions_by_fuzz_worthiness(
         reverse=False)
 
 
-def _convert_functions_to_list_of_dict(
+def convert_functions_to_list_of_dict(
         functions: List[models.Function]) -> List[Dict[str, Any]]:
     """Convert a function list to a list of dict"""
     sorted_function_dict_list_by_fuzz_worthiness = []
@@ -117,6 +117,12 @@ def _convert_functions_to_list_of_dict(
             function.return_type,
             'runtime_coverage_percent':
             function.runtime_code_coverage,
+            'source_line_begin':
+            function.source_line_begin,
+            'source_line_end':
+            function.source_line_end,
+            'debug_summary':
+            function.debug_data,
             'is_enum_class':
             function.is_enum_class,
             'is_static':

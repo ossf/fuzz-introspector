@@ -1429,25 +1429,8 @@ def api_oracle_2():
         only_functions_declared_in_header_files=
         only_functions_declared_in_header_files)
 
-    functions_to_return = []
-    for function in raw_interesting_functions:
-        functions_to_return.append({
-            'function_name': function.name,
-            'function_filename': function.function_filename,
-            'runtime_coverage_percent': function.runtime_code_coverage,
-            'accummulated_complexity':
-            function.accummulated_cyclomatic_complexity,
-            'function_arguments': function.function_arguments,
-            'function_argument_names': function.function_argument_names,
-            'return_type': function.return_type,
-            'is_reached': function.is_reached,
-            'reached_by_fuzzers': function.reached_by_fuzzers,
-            'raw_function_name': function.raw_function_name,
-            'source_line_begin': function.source_line_begin,
-            'source_line_end': function.source_line_end,
-            'function_signature': function.func_signature,
-            'debug_summary': function.debug_data,
-        })
+    functions_to_return = function_helper.convert_functions_to_list_of_dict(
+        raw_interesting_functions)
 
     if ALLOWED_ORACLE_RETURNS:
         functions_to_return = sort_funtions_to_return(functions_to_return)
@@ -1502,25 +1485,8 @@ def api_oracle_1():
         100,
         no_static_functions,
         only_referenced_functions=only_referenced_functions)
-    functions_to_return = []
-    for function in raw_functions:
-        functions_to_return.append({
-            'function_name': function.name,
-            'function_filename': function.function_filename,
-            'runtime_coverage_percent': function.runtime_code_coverage,
-            'accummulated_complexity':
-            function.accummulated_cyclomatic_complexity,
-            'function_arguments': function.function_arguments,
-            'function_argument_names': function.function_argument_names,
-            'return_type': function.return_type,
-            'is_reached': function.is_reached,
-            'reached_by_fuzzers': function.reached_by_fuzzers,
-            'raw_function_name': function.raw_function_name,
-            'source_line_begin': function.source_line_begin,
-            'source_line_end': function.source_line_end,
-            'function_signature': function.func_signature,
-            'debug_summary': function.debug_data,
-        })
+    functions_to_return = function_helper.convert_functions_to_list_of_dict(
+        raw_functions)
 
     if ALLOWED_ORACLE_RETURNS:
         functions_to_return = sort_funtions_to_return(functions_to_return)
@@ -1656,28 +1622,8 @@ def far_reach_but_low_coverage():
         functions_to_return = remove_functions_with_header_declarations(
             functions_to_return)
 
-    functions_to_return = functions_to_return[:max_functions_to_show]
-
-    rewritten_list = []
-    for function in functions_to_return:
-        rewritten_list.append({
-            'function_name': function.name,
-            'function_filename': function.function_filename,
-            'runtime_coverage_percent': function.runtime_code_coverage,
-            'accummulated_complexity':
-            function.accummulated_cyclomatic_complexity,
-            'function_arguments': function.function_arguments,
-            'function_argument_names': function.function_argument_names,
-            'return_type': function.return_type,
-            'is_reached': function.is_reached,
-            'reached_by_fuzzers': function.reached_by_fuzzers,
-            'raw_function_name': function.raw_function_name,
-            'source_line_begin': function.source_line_begin,
-            'source_line_end': function.source_line_end,
-            'function_signature': function.func_signature,
-            'debug_summary': function.debug_data,
-        })
-    functions_to_return = rewritten_list
+    functions_to_return = function_helper.convert_functions_to_list_of_dict(
+        functions_to_return[:max_functions_to_show])
 
     # Assess if this worked well, and if not, provide a reason
     if len(functions_to_return) == 0:
