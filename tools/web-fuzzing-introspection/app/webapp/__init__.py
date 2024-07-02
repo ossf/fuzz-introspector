@@ -157,9 +157,9 @@ def load_functions(function_list: List[Dict[str, Any]],
         if is_constructor:
             # Constructors must have a return type of its own class
             func['return-type'] = func['filename']
-            target=data_storage.CONSTRUCTORS
+            target = data_storage.CONSTRUCTORS
         else:
-            target=data_storage.FUNCTIONS
+            target = data_storage.FUNCTIONS
 
         target.append(
             models.Function(

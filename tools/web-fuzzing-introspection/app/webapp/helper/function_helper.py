@@ -32,10 +32,11 @@ def search_function_by_return_type(target_list: List[models.Function],
     functions = _filter_unrelated_functions(target_list, project_name, True)
 
     functions = [
-        function for function in functions if function.return_type == needed_return_type
+        function for function in functions
+        if function.return_type == needed_return_type
     ]
 
-    return _convert_functions_to_list_of_dict(functions)
+    return convert_functions_to_list_of_dict(functions)
 
 
 def filter_sort_functions(target_list: List[models.Function],
@@ -51,7 +52,7 @@ def filter_sort_functions(target_list: List[models.Function],
     functions = _filter_unrelated_functions(target_list, project_name,
                                             is_filter)
 
-    return _convert_functions_to_list_of_dict(
+    return convert_functions_to_list_of_dict(
         _sort_functions_by_fuzz_worthiness(functions))
 
 
@@ -109,7 +110,7 @@ def _sort_functions_by_fuzz_worthiness(
         reverse=False)
 
 
-def _convert_functions_to_list_of_dict(
+def convert_functions_to_list_of_dict(
         functions: List[models.Function]) -> List[Dict[str, Any]]:
     """Convert a function list to a list of dict"""
     sorted_function_dict_list_by_fuzz_worthiness = []

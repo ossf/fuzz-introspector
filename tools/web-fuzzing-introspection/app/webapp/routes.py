@@ -1368,7 +1368,10 @@ def api_function_with_matching_type():
 
     return_type = request.args.get('return-type', None)
     if return_type is None:
-        return {'result': 'error', 'msg': 'Please provide a matching return type'}
+        return {
+            'result': 'error',
+            'msg': 'Please provide a matching return type'
+        }
 
     matched_function_list = function_helper.search_function_by_return_type(
         data_storage.get_functions(), return_type, project_name)
@@ -1376,7 +1379,8 @@ def api_function_with_matching_type():
         data_storage.get_constructors(), return_type, project_name)
 
     return {
-        'result': 'success', 'return-type': return_type,
+        'result': 'success',
+        'return-type': return_type,
         'constructors': matched_constructor_list,
         'functions': matched_function_list
     }
