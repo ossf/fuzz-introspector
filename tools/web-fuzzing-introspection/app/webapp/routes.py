@@ -895,10 +895,7 @@ def api_optimal_targets():
 
         return {
             'result': 'success',
-            'project': {
-                'name': project_name,
-                'functions': function_model_optimal_targets
-            }
+            'functions': function_model_optimal_targets
         }
     except KeyError:
         return {'result': 'error', 'msg': 'Found no optimal analysis.'}
