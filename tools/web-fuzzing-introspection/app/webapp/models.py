@@ -113,6 +113,7 @@ class Function:
                  is_accessible: bool = True,
                  is_jvm_library: bool = False,
                  is_enum_class: bool = False,
+                 is_static: bool = False,
                  exceptions: List[str] = []):
         self.name = name
         self.function_filename = function_filename
@@ -138,6 +139,7 @@ class Function:
         self.is_accessible = is_accessible
         self.is_jvm_library = is_jvm_library
         self.is_enum_class = is_enum_class
+        self.is_static = is_static
         self.exceptions = exceptions
 
     def to_dict(self) -> Dict[str, Any]:
@@ -157,6 +159,7 @@ class Function:
             'is_accessible': self.is_accessible,
             'is_jvm_library': self.is_jvm_library,
             'is_enum_class': self.is_enum_class,
+            'is_static': self.is_static,
             'exceptions': self.exceptions
         }
 

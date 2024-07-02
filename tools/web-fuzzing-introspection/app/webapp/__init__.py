@@ -179,6 +179,7 @@ def load_functions(function_list: List[Dict[str, Any]],
                 is_accessible=func.get('is_accessible', True),
                 is_jvm_library=func.get('is_jvm_library', False),
                 is_enum_class=func.get('is_enum_class', False),
+                is_static=func.get('is_static', False),
                 exceptions=func.get('exceptions', [])))
 
     return idx
