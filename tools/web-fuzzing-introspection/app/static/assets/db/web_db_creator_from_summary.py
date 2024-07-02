@@ -543,6 +543,9 @@ def extract_project_data(project_name, date_str, should_include_details,
         functions_covered_estimate = project_stats[
             'code-coverage-function-percentage']
 
+        optimal_targets = introspector_report.get('analyses', {}).get(
+            'OptimalTargets', [])
+
         # Get details if needed and otherwise leave empty
         refined_proj_list = list()
         refined_constructor_list = list()
@@ -581,6 +584,7 @@ def extract_project_data(project_name, date_str, should_include_details,
             'refined_proj_list': refined_proj_list,
             'refined_constructor_list': refined_constructor_list,
             'annotated_cfg': annotated_cfg,
+            'optimal_targets': optimal_targets,
         }
 
     code_coverage_data_dict = extract_code_coverage_data(
