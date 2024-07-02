@@ -45,6 +45,7 @@ set -x
 python3 ./web_db_creator_from_summary.py \
     --output-dir=$PWD \
     --input-dir=$PWD \
+    --base-offset=0 \
     --includes=${comma_separated}
 
 # Start webserver DB
