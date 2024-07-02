@@ -138,8 +138,16 @@ def convert_functions_to_list_of_dict(
             function.return_type,
             'runtime_coverage_percent':
             function.runtime_code_coverage,
+            'source_line_begin':
+            function.source_line_begin,
+            'source_line_end':
+            function.source_line_end,
+            'debug_summary':
+            function.debug_data,
             'is_enum_class':
             function.is_enum_class,
+            'is_static':
+            function.is_static,
             'exceptions':
             function.exceptions
         })

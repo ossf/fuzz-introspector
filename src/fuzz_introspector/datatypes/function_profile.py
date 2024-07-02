@@ -68,6 +68,7 @@ class FunctionProfile:
         self.is_accessible = self._is_function_acccessible(elem)
         self.is_jvm_library = self._is_jvm_library(elem)
         self.is_enum = self._is_enum_class(elem)
+        self.is_static = self._is_static(elem)
         self.exceptions = self._get_exceptions(elem)
 
         # Temporary handle for unreadable library method (JVM)
@@ -144,6 +145,12 @@ class FunctionProfile:
     def _is_enum_class(self, elem: Dict[Any, Any]) -> bool:
         if "JavaMethodInfo" in elem and elem['JavaMethodInfo']:
             return bool(elem['JavaMethodInfo']['classEnum'])
+
+        return False
+
+    def _is_static(self, elem: Dict[Any, Any]) -> bool:
+        if "JavaMethodInfo" in elem and elem['JavaMethodInfo']:
+            return bool(elem['JavaMethodInfo']['static'])
 
         return False
 
