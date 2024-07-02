@@ -844,6 +844,13 @@ def api_optimal_targets():
     if project_name is None:
         return {'result': 'error', 'msg': 'Please provide project name'}
 
+    only_functions_declared_in_header_files_arg = request.args.get(
+        'only-with-header-file-declaration', 'false').lower()
+    if only_functions_declared_in_header_files_arg == 'true':
+        only_functions_declared_in_header_files = True
+    else:
+        only_functions_declared_in_header_files = False
+
     target_project = None
     all_projects = data_storage.get_projects()
     for project in all_projects:
@@ -870,6 +877,12 @@ def api_optimal_targets():
             substituted_function = None
             for model_func in project_functions:
                 if model_func.name == function['name'].replace(' ', ''):
+                    if only_functions_declared_in_header_files:
+                        possible_header_files = model_func.debug_data.get(
+                            'possible-header-files', [])
+                        if not possible_header_files:
+                            continue
+
                     substituted_function = {
                         'function_name': model_func.name,
                         'function_filename': model_func.function_filename,
