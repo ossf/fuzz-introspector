@@ -671,9 +671,9 @@ def get_body_script_tags() -> str:
     js_files.append(constants.FUZZER_TABLE_JS)
     js_files.extend(styling.JAVASCRIPT_REMOTE_SCRIPTS)
     for js_file in js_files:
-        html_script_tags += (
+        html_script_tags += 
             f"<script type=\"text/javascript\" src=\"{js_file}\"></script>"
-        )
+
     return html_script_tags
 
 
