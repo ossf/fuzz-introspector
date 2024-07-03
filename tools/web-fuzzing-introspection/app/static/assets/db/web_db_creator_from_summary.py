@@ -1031,6 +1031,11 @@ def extract_must_includes(must_include_arg):
             for line in f:
                 if line.strip():
                     must_include.add(line.strip())
+    elif os.path.isdir(must_include_arg):
+        # Convenient when reading OSS-Fuzz-gen benchmark folder
+        for filename in os.listdir(must_include_arg):
+            if filename.endswith(".yaml"):
+                must_include.add(filename.replace(".yaml", ""))
     else:
         for elem in must_include_arg.split(","):
             must_include.add(elem.strip())
