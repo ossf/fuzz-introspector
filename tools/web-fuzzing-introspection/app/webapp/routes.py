@@ -1666,12 +1666,6 @@ def far_reach_but_low_coverage():
     max_functions_to_show = 30
     functions_to_return = list()
     for function in sorted_functions_of_interest:
-
-        if no_static_functions:
-            # Exclude function if it's static
-            if is_static(function):
-                continue
-
         if only_referenced_functions and function.name not in xref_dict:
             continue
         functions_to_return.append(function)
@@ -1680,8 +1674,20 @@ def far_reach_but_low_coverage():
         functions_to_return = remove_functions_with_header_declarations(
             functions_to_return)
 
+    new_functions_to_return = []
+    print("Iterating")
+    for i in range(len(functions_to_return)):
+        function = functions_to_return[i]
+        if len(new_functions_to_return) >= max_functions_to_show:
+            break
+        if no_static_functions:
+            # Exclude function if it's static
+            if is_static(function):
+                continue
+        new_functions_to_return.append(function)
+
     functions_to_return = function_helper.convert_functions_to_list_of_dict(
-        functions_to_return[:max_functions_to_show])
+        new_functions_to_return)
 
     # Assess if this worked well, and if not, provide a reason
     if len(functions_to_return) == 0:
