@@ -738,20 +738,24 @@ def extend_db_timestamps(db_timestamp, output_directory):
     directory then a DB timestamp file will be created.
     """
     existing_timestamps = []
+    logging.info('Loading existing timestamps')
     if os.path.isfile(os.path.join(output_directory, DB_JSON_DB_TIMESTAMP)):
         with open(os.path.join(output_directory, DB_JSON_DB_TIMESTAMP),
                   'r') as f:
             try:
-                existing_timestamps = json.load(f)
+                existing_timestamps = orjson.loads(f.read())
             except:
                 existing_timestamps = []
     else:
         existing_timestamps = []
+    logging.info('Number of existing timestamps: %d' %
+                 (len(existing_timestamps)))
     to_add = True
     for ts in existing_timestamps:
         if ts['date'] == db_timestamp['date']:
             to_add = False
     if to_add:
+        logging.info('Dumping new timestamps')
         existing_timestamps.append(db_timestamp)
         with open(os.path.join(output_directory, DB_JSON_DB_TIMESTAMP),
                   'w') as f:
@@ -762,18 +766,22 @@ def extend_db_json_files(project_timestamps, output_directory):
     """Extends a set of DB .json files."""
 
     existing_timestamps = []
+    logging.info('Loading existing timestamps 1')
     if os.path.isfile(
             os.path.join(output_directory, DB_JSON_ALL_PROJECT_TIMESTAMP)):
         with open(
                 os.path.join(output_directory, DB_JSON_ALL_PROJECT_TIMESTAMP),
                 'r') as f:
             try:
-                existing_timestamps = json.load(f)
+                existing_timestamps = orjson.loads(f.read())
             except:
                 existing_timestamps = []
     else:
         existing_timestamps = []
+    logging.info('Number of existing timestamps: %d' %
+                 (len(existing_timestamps)))
 
+    logging.info('Creating timestamp mapping')
     have_added = False
     existing_timestamp_mapping = dict()
     for es in existing_timestamps:
@@ -793,11 +801,13 @@ def extend_db_json_files(project_timestamps, output_directory):
             have_added = True
 
     if have_added:
+        logging.info('Dumping all timestamps')
         with open(
                 os.path.join(output_directory, DB_JSON_ALL_PROJECT_TIMESTAMP),
                 'w') as f:
             f.write(orjson.dumps(existing_timestamps).decode('utf-8'))
 
+    logging.info('Dumping all current projects')
     with open(os.path.join(output_directory, DB_JSON_ALL_CURRENT_FUNCS),
               'w') as f:
         json.dump(project_timestamps, f)
@@ -843,14 +853,19 @@ def update_db_files(db_timestamp,
         extend_func_db(constructor_list, output_directory,
                        DB_JSON_ALL_CONSTRUCTORS)
 
+    logging.info('Writing header files')
     with open('all-header-files.json', 'w') as f:
         f.write(json.dumps(all_header_files))
 
+    logging.info('Extending DB json files')
     extend_db_json_files(project_timestamps, output_directory)
+
+    logging.info('Extending DB time stamps')
     extend_db_timestamps(db_timestamp, output_directory)
 
     # Write a zip folder the values that make sense to save
     if should_include_details:
+        logging.info('Writing ZIP archives')
         with zipfile.ZipFile('db-archive.zip', 'w') as zip_object:
             zip_object.write(os.path.join(output_directory,
                                           DB_JSON_DB_TIMESTAMP),
@@ -925,6 +940,7 @@ def analyse_set_of_dates(dates, projects_to_analyse, output_directory,
 
         function_list, constructor_list, project_timestamps, db_timestamp, all_header_files = analyse_list_of_projects(
             date, projects_to_analyse, should_include_details=is_end)
+        logging.info('Updating DB files')
         update_db_files(db_timestamp,
                         project_timestamps,
                         function_list,
@@ -932,6 +948,7 @@ def analyse_set_of_dates(dates, projects_to_analyse, output_directory,
                         output_directory,
                         should_include_details=is_end,
                         all_header_files=all_header_files)
+        logging.info('Done updating DB files')
 
 
 def get_date_at_offset_as_str(day_offset=-1):
@@ -1312,7 +1329,9 @@ def main():
     if args.debug:
         logging.basicConfig(level=logging.DEBUG)
     else:
-        logging.basicConfig(level=logging.INFO)
+        logging.basicConfig(level=logging.INFO,
+                            format=('%(asctime)s.%(msecs)03d %(levelname)s '
+                                    '%(module)s - %(funcName)s: %(message)s'))
 
     if args.local_oss_fuzz:
         logging.info('Using local version of OSS-Fuzz.')
