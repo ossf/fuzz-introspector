@@ -6,3 +6,4 @@ MarkupSafe==2.1.2
 Werkzeug==3.0.3
 requests==2.32.0
 pyyaml==6.0
+orjson==3.10.0
