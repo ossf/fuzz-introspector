@@ -759,6 +759,7 @@ def extend_db_timestamps(db_timestamp, output_directory):
 
 def extend_db_json_files(project_timestamps, output_directory):
     """Extends a set of DB .json files."""
+
     existing_timestamps = []
     if os.path.isfile(
             os.path.join(output_directory, DB_JSON_ALL_PROJECT_TIMESTAMP)):
@@ -773,15 +774,23 @@ def extend_db_json_files(project_timestamps, output_directory):
         existing_timestamps = []
 
     have_added = False
+    existing_timestamp_mapping = dict()
+    for es in existing_timestamps:
+        if not es['project_name'] in existing_timestamp_mapping:
+            existing_timestamp_mapping[es['project_name']] = set()
+        existing_timestamp_mapping[es['project_name']].add(es['date'])
+
     for new_ts in project_timestamps:
         to_add = True
-        for ts in existing_timestamps:
-            if ts['date'] == new_ts['date'] and ts['project_name'] == new_ts[
-                    'project_name']:
+
+        if new_ts['project_name'] in existing_timestamp_mapping:
+            if new_ts['date'] in existing_timestamp_mapping[
+                    new_ts['project_name']]:
                 to_add = False
         if to_add:
             existing_timestamps.append(new_ts)
             have_added = True
+
     if have_added:
         with open(
                 os.path.join(output_directory, DB_JSON_ALL_PROJECT_TIMESTAMP),
