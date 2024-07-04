@@ -17,6 +17,7 @@ import os
 import sys
 import argparse
 import json
+import orjson
 import yaml
 import shutil
 import logging
@@ -795,7 +796,7 @@ def extend_db_json_files(project_timestamps, output_directory):
         with open(
                 os.path.join(output_directory, DB_JSON_ALL_PROJECT_TIMESTAMP),
                 'w') as f:
-            json.dump(existing_timestamps, f)
+            f.write(orjson.dumps(existing_timestamps).decode('utf-8'))
 
     with open(os.path.join(output_directory, DB_JSON_ALL_CURRENT_FUNCS),
               'w') as f:
