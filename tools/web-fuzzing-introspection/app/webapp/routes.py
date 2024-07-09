@@ -181,7 +181,7 @@ def get_functions_of_interest(project_name):
     sorted_functions_of_interest = sorted(
         project_functions,
         key=lambda x:
-        (-x.accummulated_cyclomatic_complexity, -x.runtime_code_coverage))
+        (-x.accummulated_cyclomatic_complexity, x.runtime_code_coverage))
 
     return sorted_functions_of_interest
 
