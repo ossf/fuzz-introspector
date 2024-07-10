@@ -194,19 +194,17 @@ def extract_and_refine_functions(all_function_list, project_name, date_str):
             'cov_url':
             func['func_url'].replace(
                 "https://storage.googleapis.com/oss-fuzz-coverage/", ""),
-            'filename':
+            'file':
             func['Functions filename'],
             'cov':
             float(func['Func lines hit %'].replace("%", "")),
-            'is_reached':
-            len(func['Reached by Fuzzers']) > 0,
-            'reached-by-fuzzers':
+            'fuzzers':
             func['Reached by Fuzzers'],
             'project':
             project_name,
             'acc_cc':
             func['Accumulated cyclomatic complexity'],
-            'instr-count':
+            'icount':
             func['I Count'],
             'u-cc':
             func['Undiscovered complexity'],
@@ -214,7 +212,7 @@ def extract_and_refine_functions(all_function_list, project_name, date_str):
             func['Args'],
             'args-names':
             func.get('ArgNames', ['Did not find arguments']),
-            'return-type':
+            'rtn':
             func.get('return_type', 'N/A'),
             'raw-name':
             func.get('raw-function-name', 'N/A'),
@@ -230,11 +228,11 @@ def extract_and_refine_functions(all_function_list, project_name, date_str):
 
         introspector_func['sig'] = func.get('function_signature', 'N/A')
         introspector_func['debug'] = func.get('debug_function_info', dict())
-        introspector_func['is_accessible'] = func.get('is_accessible', True)
-        introspector_func['is_jvm_library'] = func.get('is_jvm_library', False)
-        introspector_func['is_enum_class'] = func.get('is_enum_class', False)
-        introspector_func['is_static'] = func.get('is_static', False)
-        introspector_func['exceptions'] = func.get('exceptions', [])
+        introspector_func['access'] = func.get('is_accessible', True)
+        introspector_func['jvm_lib'] = func.get('is_jvm_library', False)
+        introspector_func['enum'] = func.get('is_enum_class', False)
+        introspector_func['static'] = func.get('is_static', False)
+        introspector_func['exc'] = func.get('exceptions', [])
 
         refined_proj_list.append(introspector_func)
     return refined_proj_list
