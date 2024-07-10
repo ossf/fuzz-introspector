@@ -191,12 +191,12 @@ def extract_and_refine_functions(all_function_list, project_name, date_str):
         introspector_func = {
             'name':
             func['Func name'],
-            'code_coverage_url':
+            'cov_url':
             func['func_url'].replace(
                 "https://storage.googleapis.com/oss-fuzz-coverage/", ""),
             'filename':
             func['Functions filename'],
-            'code_cov':
+            'cov':
             float(func['Func lines hit %'].replace("%", "")),
             'is_reached':
             len(func['Reached by Fuzzers']) > 0,
@@ -210,27 +210,27 @@ def extract_and_refine_functions(all_function_list, project_name, date_str):
             func['I Count'],
             'u-cc':
             func['Undiscovered complexity'],
-            'function-arguments':
+            'args':
             func['Args'],
-            'function-argument-names':
+            'args-names':
             func.get('ArgNames', ['Did not find arguments']),
             'return-type':
             func.get('return_type', 'N/A'),
-            'raw-function-name':
+            'raw-name':
             func.get('raw-function-name', 'N/A'),
             'date-str':
             date_str,
-            'source_line_begin':
+            'src_begin':
             func.get('source_line_begin', 'N/A'),
-            'source_line_end':
+            'src_end':
             func.get('source_line_end', 'N/A'),
             'callsites':
             func.get('callsites', [])
         }
 
-        introspector_func['function-signature'] = func.get(
+        introspector_func['sig'] = func.get(
             'function_signature', 'N/A')
-        introspector_func['debug-function'] = func.get('debug_function_info',
+        introspector_func['debug'] = func.get('debug_function_info',
                                                        dict())
         introspector_func['is_accessible'] = func.get('is_accessible', True)
         introspector_func['is_jvm_library'] = func.get('is_jvm_library', False)
