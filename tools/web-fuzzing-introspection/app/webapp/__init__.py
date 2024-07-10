@@ -149,45 +149,45 @@ def load_functions(function_list: List[Dict[str, Any]],
     for func in function_list:
         idx += 1
         try:
-            debug_argtypes = func['debug-function']['args']
+            debug_argtypes = func['debug']['args']
         except KeyError:
             debug_argtypes = []
 
         # Constructors and functions stored in different list
         if is_constructor:
             # Constructors must have a return type of its own class
-            func['return-type'] = func['filename']
+            func['rtn'] = func['file']
             target = data_storage.CONSTRUCTORS
         else:
             target = data_storage.FUNCTIONS
 
         target.append(
-            models.Function(
-                name=func['name'],
-                project=func['project'],
-                runtime_code_coverage=func['code_cov'],
-                function_filename=func['filename'],
-                reached_by_fuzzers=func['reached-by-fuzzers'],
-                code_coverage_url=func['code_coverage_url'],
-                is_reached=func['is_reached'],
-                llvm_instruction_count=func['instr-count'],
-                accummulated_cyclomatic_complexity=func['acc_cc'],
-                undiscovered_complexity=func['u-cc'],
-                function_arguments=func['function-arguments'],
-                function_debug_arguments=debug_argtypes,
-                return_type=func['return-type'],
-                function_argument_names=func['function-argument-names'],
-                raw_function_name=func['raw-function-name'],
-                date_str=func.get('date-str', ''),
-                source_line_begin=func.get('source_line_begin', -1),
-                source_line_end=func.get('source_line_end', -1),
-                callsites=func.get('callsites', {}),
-                func_signature=func.get('function-signature', 'N/A'),
-                debug_data=func.get('debug-function', {}),
-                is_accessible=func.get('is_accessible', True),
-                is_jvm_library=func.get('is_jvm_library', False),
-                is_enum_class=func.get('is_enum_class', False),
-                is_static=func.get('is_static', False),
-                exceptions=func.get('exceptions', [])))
+            models.Function(name=func['name'],
+                            project=func['project'],
+                            runtime_code_coverage=func['cov'],
+                            function_filename=func['file'],
+                            reached_by_fuzzers=func['fuzzers'],
+                            code_coverage_url=func['cov_url'],
+                            is_reached=(len(func['fuzzers']) > 0),
+                            llvm_instruction_count=func['icount'],
+                            accummulated_cyclomatic_complexity=func['acc_cc'],
+                            undiscovered_complexity=func['u-cc'],
+                            function_arguments=func['args'],
+                            function_debug_arguments=debug_argtypes,
+                            return_type=func['rtn'],
+                            function_argument_names=func['args-names'],
+                            raw_function_name=func.get('raw-name',
+                                                       func['name']),
+                            date_str=func.get('date-str', ''),
+                            source_line_begin=func.get('src_begin', -1),
+                            source_line_end=func.get('src_end', -1),
+                            callsites=func.get('callsites', {}),
+                            func_signature=func.get('sig', func['name']),
+                            debug_data=func.get('debug', {}),
+                            is_accessible=func.get('access', True),
+                            is_jvm_library=func.get('jvm_lib', False),
+                            is_enum_class=func.get('enum', False),
+                            is_static=func.get('static', False),
+                            exceptions=func.get('exc', [])))
 
     return idx
