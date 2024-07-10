@@ -696,8 +696,8 @@ def analyse_list_of_projects(date, projects_to_analyse,
             proj = introspector_dictionary['project_name']
             # Functions
             if proj in function_dict:
-                function_dict[proj].extend(introspector_dictionary[
-                    'refined_proj_list'])
+                function_dict[proj].extend(
+                    introspector_dictionary['refined_proj_list'])
             else:
                 function_dict[proj] = introspector_dictionary[
                     'refined_proj_list']
@@ -706,8 +706,8 @@ def analyse_list_of_projects(date, projects_to_analyse,
 
             # Constructors
             if proj in constructor_dict:
-                constructor_dict[proj].extend(introspector_dictionary[
-                    'refined_constructor_list'])
+                constructor_dict[proj].extend(
+                    introspector_dictionary['refined_constructor_list'])
             else:
                 constructor_dict[proj] = introspector_dictionary[
                     'refined_constructor_list']
@@ -1212,8 +1212,8 @@ def create_local_db(oss_fuzz_path):
             proj = introspector_dictionary['project_name']
             # Functions
             if proj in function_dict:
-                function_dict[proj].extend(introspector_dictionary[
-                    'refined_proj_list'])
+                function_dict[proj].extend(
+                    introspector_dictionary['refined_proj_list'])
             else:
                 function_dict[proj] = introspector_dictionary[
                     'refined_proj_list']
@@ -1222,8 +1222,8 @@ def create_local_db(oss_fuzz_path):
 
             # Constructors
             if proj in constructor_dict:
-                constructor_dict[proj].extend(introspector_dictionary[
-                    'refined_constructor_list'])
+                constructor_dict[proj].extend(
+                    introspector_dictionary['refined_constructor_list'])
             else:
                 constructor_dict[proj] = introspector_dictionary[
                     'refined_constructor_list']

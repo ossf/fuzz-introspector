@@ -238,7 +238,7 @@ def get_fuction_with_name(function_name, project_name):
             return function
 
     # TODO: Handle the case where there is no such function
-    return data_storage.get_all_functions[0]
+    return data_storage.get_all_functions()[0]
 
 
 def get_all_related_functions(primary_function):
@@ -1176,11 +1176,11 @@ def api_project_all_public_candidates():
     if project_name is None:
         return {'result': 'error', 'msg': 'Please provide a project name'}
 
-    target_list = data_storage.get_functions_by_project(project_name) + data_storage.get_constructors_by_project(project_name)
+    target_list = data_storage.get_functions_by_project(
+        project_name) + data_storage.get_constructors_by_project(project_name)
 
     # Get the list of function / constructor candidiates to return
-    list_to_return = function_helper.filter_sort_functions(
-        target_list, True)
+    list_to_return = function_helper.filter_sort_functions(target_list, True)
 
     return {'result': 'success', 'functions': list_to_return}
 
@@ -1305,7 +1305,8 @@ def api_function_signature():
         return {'result': 'error', 'msg': 'No function name provided'}
 
     all_functions = data_storage.get_functions_by_project(project_name)
-    all_functions = all_functions + data_storage.get_constructors_by_project(project_name)
+    all_functions = all_functions + data_storage.get_constructors_by_project(
+        project_name)
     func_to_match = None
     print("Iterating through all functions to match raw function name")
     for function in all_functions:

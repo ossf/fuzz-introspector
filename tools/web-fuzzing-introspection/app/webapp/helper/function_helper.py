@@ -18,8 +18,9 @@ from typing import Dict, List, Any
 from .. import models
 
 
-def search_function_by_return_type(target_list: List[models.Function],
-                                   needed_return_type: str) -> List[Dict[str, Any]]:
+def search_function_by_return_type(
+        target_list: List[models.Function],
+        needed_return_type: str) -> List[Dict[str, Any]]:
     """
         Find all the functions for the target project from the target list
         that returns the needed return type. The found function list is
@@ -56,7 +57,8 @@ def filter_sort_functions(target_list: List[models.Function],
         _sort_functions_by_fuzz_worthiness(functions))
 
 
-def _filter_unrelated_functions(target_list: List[models.Function]) -> List[models.Function]:
+def _filter_unrelated_functions(
+        target_list: List[models.Function]) -> List[models.Function]:
     """
         Filter unrelated functions in a provided function list if
         it meet any of the following conditions.

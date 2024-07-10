@@ -10,10 +10,10 @@ from .models import *
 
 all_functions_file = os.path.join(
     os.path.dirname(__file__),
-        '../static/assets/db/all-functions-db-{PROJ}.json')
+    '../static/assets/db/all-functions-db-{PROJ}.json')
 all_constructors_file = os.path.join(
     os.path.dirname(__file__),
-        '../static/assets/db/all-constructors-db-{PROJ}.json')
+    '../static/assets/db/all-constructors-db-{PROJ}.json')
 
 PROJECT_TIMESTAMPS: List[ProjectTimestamp] = []
 
