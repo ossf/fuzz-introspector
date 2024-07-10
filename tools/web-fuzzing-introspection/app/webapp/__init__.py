@@ -149,14 +149,14 @@ def load_functions(function_list: List[Dict[str, Any]],
     for func in function_list:
         idx += 1
         try:
-            debug_argtypes = func['debug-function']['args']
+            debug_argtypes = func['debug']['args']
         except KeyError:
             debug_argtypes = []
 
         # Constructors and functions stored in different list
         if is_constructor:
             # Constructors must have a return type of its own class
-            func['return-type'] = func['filename']
+            func['rtn'] = func['file']
             target = data_storage.CONSTRUCTORS
         else:
             target = data_storage.FUNCTIONS
