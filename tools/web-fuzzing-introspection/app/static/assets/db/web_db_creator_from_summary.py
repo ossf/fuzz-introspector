@@ -234,6 +234,14 @@ def extract_and_refine_functions(all_function_list, project_name, date_str):
         introspector_func['static'] = func.get('is_static', False)
         introspector_func['exc'] = func.get('exceptions', [])
 
+        # For JVM projects, the function name, function signature and function raw
+        # name should be the same. Remove them to avoid duplication and reduce the
+        # db size if they are indeed the same.
+        if introspector_func['sig'] == introspector_func['name']:
+          del introspector_func['sig']
+        if introspector_func['raw-name'] == introspector_func['name']:
+          del introspector_func['raw-name']
+
         refined_proj_list.append(introspector_func)
     return refined_proj_list
 
