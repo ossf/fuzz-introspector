@@ -38,6 +38,10 @@ comma_separated=${comma_separated::-1}
 cd ${BASE_DIR}
 . .venv/bin/activate
 
+# Install dependencies
+pip3 install -r $ROOT_FI/tools/web-fuzzing-introspection/requirements.txt
+pip3 install -r $BASE_DIR/oss-fuzz-gen/requirements.txt
+
 # Create webserver DB
 echo "[+] Creating the webapp DB"
 cd $ROOT_FI/tools/web-fuzzing-introspection/app/static/assets/db/
