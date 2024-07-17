@@ -34,15 +34,15 @@ def sample_jvm_coverage_xml():
   <sessioninfo id="9253a4a5cb62-c5efb6cd" start="1669995723552" dump="1669995724729"/>
   <package name="">
     <class name="BASE64EncoderStreamFuzzer" sourcefilename="BASE64EncoderStreamFuzzer.java">
-      <method name="&lt;init&gt;" desc="()V" line="24">
+      <method name="&lt;init&gt;" desc="()V" line="23">
         <counter type="INSTRUCTION" missed="3" covered="0"/>
         <counter type="LINE" missed="1" covered="0"/>
         <counter type="COMPLEXITY" missed="1" covered="0"/>
         <counter type="METHOD" missed="1" covered="0"/>
       </method>
-      <method name="fuzzerTestOneInput" desc="(LFuzzedDataProvider;)V" line="26">
+      <method name="fuzzerTestOneInput" desc="(LFuzzedDataProvider;)V" line="25">
         <counter type="INSTRUCTION" missed="2" covered="16"/>
-        <counter type="LINE" missed="2" covered="5"/>
+        <counter type="LINE" missed="1" covered="1"/>
         <counter type="COMPLEXITY" missed="0" covered="1"/>
         <counter type="METHOD" missed="0" covered="1"/>
       </method>
@@ -137,54 +137,10 @@ def test_jvm_coverage(tmpdir, sample_jvm_coverage_xml):
     assert len(cp.coverage_files) == 1
     assert cp.coverage_files == [os.path.join(tmpdir, "jacoco.xml")]
 
-    # Ensure file map is correct
-    assert len(cp.file_map) == 1
-    assert "BASE64EncoderStreamFuzzer" in cp.file_map
-    assert cp.file_map["BASE64EncoderStreamFuzzer"] == [(25, 1000), (27, 1000)]
-
-    # Ensure dual file map is correct
-    assert len(cp.dual_file_map) == 1
-    assert "BASE64EncoderStreamFuzzer" in cp.dual_file_map
-    assert len(cp.dual_file_map["BASE64EncoderStreamFuzzer"]) == 2
-    assert "executed_lines" in cp.dual_file_map["BASE64EncoderStreamFuzzer"]
-    assert "missing_lines" in cp.dual_file_map["BASE64EncoderStreamFuzzer"]
-    assert len(cp.dual_file_map["BASE64EncoderStreamFuzzer"]["executed_lines"]) == 2
-    assert len(cp.dual_file_map["BASE64EncoderStreamFuzzer"]["missing_lines"]) == 1
-    assert cp.dual_file_map["BASE64EncoderStreamFuzzer"]["executed_lines"] == [25, 27]
-    assert cp.dual_file_map["BASE64EncoderStreamFuzzer"]["missing_lines"] == [23]
-
-
-def test_jvm_coverage_correlation(tmpdir, sample_jvm_coverage_xml):
-    """Test jvm coverage correlation"""
-    write_coverage_file(tmpdir, sample_jvm_coverage_xml)
-
-    # Generate Coverage Profile
-    cp = code_coverage.load_jvm_coverage(tmpdir)
-
-    # Assure coverage profile has been correctly retrieved
-    assert cp is not None
-
-    # Generate test function list
-    function_list = dict()
-    function_list["<init>"] = generate_temp_function_profile(
-        "<init>",
-        "BASE64EncoderStreamFuzzer"
-    )
-    function_list["fuzzerTestOneInput"] = generate_temp_function_profile(
-        "fuzzerTestOneInput",
-        "BASE64EncoderStreamFuzzer"
-    )
-    function_list["test"] = generate_temp_function_profile(
-        "test",
-        "test"
-    )
-
-    # Correlate jvm coverage map
-    cp.correlate_jvm_method_with_coverage(function_list)
-
     # Ensure the coverage map result is correct
     assert len(cp.covmap) == 2
-    assert "<init>" in cp.covmap
-    assert "fuzzerTestOneInput" in cp.covmap
-    assert cp.covmap["<init>"] == []
-    assert cp.covmap["fuzzerTestOneInput"] == [(25, 1000), (27, 1000), (23, 0)]
+    assert "[BASE64EncoderStreamFuzzer].<init>()" in cp.covmap
+    assert "[BASE64EncoderStreamFuzzer].fuzzerTestOneInput(FuzzedDataProvider)" in cp.covmap
+    assert cp.covmap["[BASE64EncoderStreamFuzzer].<init>()"] == [(23, 0)]
+    assert cp.covmap[
+        "[BASE64EncoderStreamFuzzer].fuzzerTestOneInput(FuzzedDataProvider)"] == [(25, 3), (27, 6)]

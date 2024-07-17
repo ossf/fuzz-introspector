@@ -321,7 +321,6 @@ class CoverageProfile:
 
         return
 
-
     def get_hit_summary(self,
                         funcname: str) -> Tuple[Optional[int], Optional[int]]:
         """Returns the hit summary of a give function.
@@ -677,7 +676,8 @@ def load_jvm_coverage(target_dir: str,
             line_list = []
             for line in src.findall('line'):
                 # Process each line
-                line_list.append((int(line.attrib['nr']), int(line.attrib['ci'])))
+                line_list.append(
+                    (int(line.attrib['nr']), int(line.attrib['ci'])))
             source_file_map[src.attrib["name"]] = line_list
 
         # Process all methods in all classes within this package
@@ -692,16 +692,16 @@ def load_jvm_coverage(target_dir: str,
                 # Determine method full signaturre
                 desc = method.attrib['desc'].split('(', 1)[1].split(')', 1)[0]
                 args = _interpret_jvm_arguments_type(desc)
-                name = '[{class_name}].{method.attrib["name"]}(",".join(args))'
+                name = f'[{class_name}].{method.attrib["name"]}({",".join(args)})'
 
                 start_line = int(method.attrib['line'])
                 total_line = 0
 
                 # Get total valid lines count of this method
                 for counter in method.findall('counter'):
-                    if counter.attrib('type') == 'LINE':
-                        missed_line = int(counter.attrib('missed'))
-                        covered_line = int(counter.attrib('covered'))
+                    if counter.attrib['type'] == 'LINE':
+                        missed_line = int(counter.attrib['missed'])
+                        covered_line = int(counter.attrib['covered'])
                         total_line = missed_line + covered_line
                         break
 
@@ -750,8 +750,14 @@ def _interpret_jvm_arguments_type(desc: str) -> List[str]:
       the one given in the jacoco.xml report with full argument list.
     """
     JVM_CLASS_MAPPING = {
-        'Z': 'boolean', 'B': 'byte', 'C': 'char', 'D': 'double',
-        'F': 'float', 'I': 'int', 'J': 'long', 'S': 'short'
+        'Z': 'boolean',
+        'B': 'byte',
+        'C': 'char',
+        'D': 'double',
+        'F': 'float',
+        'I': 'int',
+        'J': 'long',
+        'S': 'short'
     }
 
     args = []
@@ -760,39 +766,39 @@ def _interpret_jvm_arguments_type(desc: str) -> List[str]:
     next_arg = ''
     array_count = 0
     for c in desc:
-      if c == '(':
-        continue
-      if c == ')':
-        break
+        if c == '(':
+            continue
+        if c == ')':
+            break
 
-      if start:
-        if c == ';':
-          start = False
-          next_arg = arg.replace('/', '.')
+        if start:
+            if c == ';':
+                start = False
+                next_arg = arg.replace('/', '.')
+            else:
+                arg = arg + c
         else:
-          arg = arg + c
-      else:
-        if c == 'L':
-          start = True
-          if next_arg:
-            next_arg = f'{next_arg}{"[]" * array_count}'
-            array_count = 0
-            args.append(next_arg)
-          arg = ''
-          next_arg = ''
-        elif c == '[':
-          array_count += 1
-        else:
-          if c in JVM_CLASS_MAPPING:
-            if next_arg:
-              next_arg = f'{next_arg}{"[]" * array_count}'
-              array_count = 0
-              args.append(next_arg)
-            next_arg = JVM_CLASS_MAPPING[c]
+            if c == 'L':
+                start = True
+                if next_arg:
+                    next_arg = f'{next_arg}{"[]" * array_count}'
+                    array_count = 0
+                    args.append(next_arg)
+                arg = ''
+                next_arg = ''
+            elif c == '[':
+                array_count += 1
+            else:
+                if c in JVM_CLASS_MAPPING:
+                    if next_arg:
+                        next_arg = f'{next_arg}{"[]" * array_count}'
+                        array_count = 0
+                        args.append(next_arg)
+                    next_arg = JVM_CLASS_MAPPING[c]
 
     if next_arg:
-      next_arg = f'{next_arg}{"[]" * array_count}'
-      args.append(next_arg)
+        next_arg = f'{next_arg}{"[]" * array_count}'
+        args.append(next_arg)
     return args
 
 
