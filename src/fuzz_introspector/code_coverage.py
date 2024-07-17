@@ -155,6 +155,8 @@ class CoverageProfile:
             fuzz_key = utils.demangle_cpp_func(funcname)
         elif utils.normalise_str(funcname) in self.covmap:
             fuzz_key = utils.normalise_str(funcname)
+        elif utils.remove_jvm_generics(funcname) in self.covmap:
+            fuzz_key = utils.remove_jvm_generics(funcname)
 
         if fuzz_key is None or fuzz_key not in self.covmap:
             return []
@@ -342,6 +344,8 @@ class CoverageProfile:
             fuzz_key = utils.demangle_cpp_func(funcname)
         elif utils.normalise_str(funcname) in self.covmap:
             fuzz_key = utils.normalise_str(funcname)
+        elif utils.remove_jvm_generics(funcname) in self.covmap:
+            fuzz_key = utils.remove_jvm_generics(funcname)
 
         if fuzz_key is None:
             return None, None

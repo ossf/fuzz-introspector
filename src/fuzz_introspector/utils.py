@@ -161,6 +161,12 @@ def demangle_jvm_func(package: str, funcname: str) -> str:
         return "[%s].%s" % (package, funcname)
 
 
+def remove_jvm_generics(funcname: str) -> str:
+    """Remove generic arguments from the full jvm method name."""
+    pattern = r'<[\s.,a-zA-Z0-9]+>|\\u003C[\s.,a-zA-Z0-9]+\\u003E'
+    return re.sub(pattern, '', funcname)
+
+
 def scan_executables_for_fuzz_introspector_logs(
         exec_dir: str) -> List[Dict[str, str]]:
     """Finds all executables containing fuzzerLogFile string
