@@ -497,9 +497,6 @@ class FuzzerProfile:
         elif self.target_lang == "jvm":
             self.coverage = code_coverage.load_jvm_coverage(
                 target_folder, self.identifier)
-            if self.coverage is not None:
-                self.coverage.correlate_jvm_method_with_coverage(
-                    self.all_class_functions)
         else:
             raise DataLoaderError(
                 "The profile target has no coverage loading support")
