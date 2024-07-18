@@ -155,6 +155,8 @@ class CoverageProfile:
             fuzz_key = utils.demangle_cpp_func(funcname)
         elif utils.normalise_str(funcname) in self.covmap:
             fuzz_key = utils.normalise_str(funcname)
+        elif utils.remove_jvm_generics(funcname) in self.covmap:
+            fuzz_key = utils.remove_jvm_generics(funcname)
 
         if fuzz_key is None or fuzz_key not in self.covmap:
             return []
@@ -321,41 +323,6 @@ class CoverageProfile:
 
         return
 
-    def correlate_jvm_method_with_coverage(
-        self,
-        function_list,
-    ) -> None:
-        logger.debug("Correlating JVM")
-
-        file_and_function_mappings: Dict[str, List[Tuple[str, int]]] = dict()
-        for (func_key, func) in function_list.items():
-            function_name = func.function_name
-            function_line = func.function_linenumber
-            class_name = func.function_source_file
-            logger.debug(
-                f"Correlated init: {class_name} ---- {function_name} ---- {function_line}"
-            )
-
-            if class_name not in self.file_map:
-                logger.debug("Fail to find matching class")
-                continue
-
-            if class_name not in file_and_function_mappings:
-                file_and_function_mappings[class_name] = []
-
-            file_and_function_mappings[class_name].append(
-                (function_name, function_line))
-
-        # Sort and retrieve line range of all functions
-        function_internals = self._retrieve_func_line(
-            file_and_function_mappings)
-
-        # Map the source codes of each line with coverage information.
-        # Store the result in covmap to be compatible with other languages.
-        self._map_func_covmap(function_internals)
-
-        return
-
     def get_hit_summary(self,
                         funcname: str) -> Tuple[Optional[int], Optional[int]]:
         """Returns the hit summary of a give function.
@@ -377,6 +344,8 @@ class CoverageProfile:
             fuzz_key = utils.demangle_cpp_func(funcname)
         elif utils.normalise_str(funcname) in self.covmap:
             fuzz_key = utils.normalise_str(funcname)
+        elif utils.remove_jvm_generics(funcname) in self.covmap:
+            fuzz_key = utils.remove_jvm_generics(funcname)
 
         if fuzz_key is None:
             return None, None
@@ -676,8 +645,9 @@ def load_jvm_coverage(target_dir: str,
     """
     import xml.etree.ElementTree as ET
     cp = CoverageProfile()
-    cp.set_type("file")
+    cp.set_type("function")
 
+    # Retrieve jacoco.xml coverage report
     coverage_reports = utils.get_all_files_in_tree_with_regex(
         target_dir, "jacoco.xml")
     logger.info(f"FOUND XML COVERAGE FILES: {str(coverage_reports)}")
@@ -688,6 +658,7 @@ def load_jvm_coverage(target_dir: str,
         logger.info("Found no coverage files")
         return cp
 
+    # Parse the jacoco.xml to element tree
     cp.coverage_files.append(xml_file)
     try:
         xml_tree = ET.parse(xml_file)
@@ -695,31 +666,144 @@ def load_jvm_coverage(target_dir: str,
     except Exception:
         raise exceptions.DataLoaderError("Error %s as xml file" % (xml_file))
 
+    # Handles package by package
     for package in root.findall('package'):
-        for cl in package.findall('sourcefile'):
-            cov_entry = cl.attrib['name']
-            if package.attrib['name']:
-                cov_entry = "%s/%s" % (package.attrib['name'], cov_entry)
-            cov_entry = cov_entry.replace("/", ".")
-            cov_entry = cov_entry.replace(".java", "")
-            executed_lines = []
-            missing_lines = []
-            d_executed_lines = []
-            d_missing_lines = []
-            for line in cl.findall('line'):
-                if line.attrib['ci'] > "0":
-                    executed_lines.append((int(line.attrib['nr']), 1000))
-                    d_executed_lines.append(int(line.attrib['nr']))
-                else:
-                    missing_lines.append((int(line.attrib['nr']), 0))
-                    d_missing_lines.append(int(line.attrib['nr']))
+        # Extract all source lines mapping
+        # In jacoco.xml, each packages contains a list of source files and classes.
+        # In each of the source file tag, it contains a list of line child elements
+        # for each valid line in that source file with the count of runtime coverage
+        # of that line. This information is separated with the methods and thus we
+        # are extracting them as a map for further reference when processing all
+        # the methods.
+        source_file_map = {}
+        for src in package.findall('sourcefile'):
+            line_list = []
+            for line in src.findall('line'):
+                # Process each line
+                line_list.append(
+                    (int(line.attrib['nr']), int(line.attrib['ci'])))
+            source_file_map[src.attrib["name"]] = line_list
 
-            cp.file_map[cov_entry] = executed_lines
-            cp.dual_file_map[cov_entry] = dict()
-            cp.dual_file_map[cov_entry]['executed_lines'] = d_executed_lines
-            cp.dual_file_map[cov_entry]['missing_lines'] = d_missing_lines
+        # Process all methods in all classes within this package
+        for cl in package.findall('class'):
+            class_name = cl.attrib['name'].replace('/', '.')
+            line_list = source_file_map.get(cl.attrib['sourcefilename'], [])
+            if not line_list:
+                # Fail safe for malformed or invalid jacoco.xml report
+                continue
+
+            for method in cl.findall('method'):
+                # Determine method full signaturre
+                desc = method.attrib['desc'].split('(', 1)[1].split(')', 1)[0]
+                args = _interpret_jvm_arguments_type(desc)
+                name = f'[{class_name}].{method.attrib["name"]}({",".join(args)})'
+
+                start_line = int(method.attrib['line'])
+                total_line = 0
+
+                # Get total valid lines count of this method
+                for counter in method.findall('counter'):
+                    if counter.attrib['type'] == 'LINE':
+                        missed_line = int(counter.attrib['missed'])
+                        covered_line = int(counter.attrib['covered'])
+                        total_line = missed_line + covered_line
+                        break
+
+                # Find the starting item in the line map
+                start_item = -1
+                for count, item in enumerate(line_list):
+                    if item[0] == start_line:
+                        start_item = count
+                        break
+
+                # if starting item not found, skip this method
+                if start_item < 0:
+                    continue
+
+                # Find the ending item in the line map
+                end_item = min(start_item + total_line, len(line_list))
+
+                # Store lines, hit_time into the covmap under the target method
+                cp.covmap[name] = []
+                # Add source code line and hitcount to coverage map of current function
+                logger.debug(f"reading coverage: {name} -- {line_list[count]}")
+                for count in range(start_item, end_item):
+                    cp.covmap[name].append(line_list[count])
 
     return cp
+
+
+def _interpret_jvm_arguments_type(desc: str) -> List[str]:
+    """
+      Interpret list of jvm arguments type for each method.
+      The desc tag for each jvm method in the jacoco.xml coverage
+      report is in basic Java class name specification following
+      the format of "({Arguments}){ReturnType}". The basic java
+      class name specification use single upper case letter for
+      primitive types (and void type) and L{full_class_name}; for
+      object arguments. The JVM_CLASS_MAPPING give the mapping of
+      the single upper case letter of each primitive types.
+      Arrays are specified with a [ character before the arugment
+      type. The number of [ character determine the dimention of
+      the array.
+      For example, for a method
+      "public void test(String,int,String[][],boolean[],int...)"
+      The desc value of the above method will be
+      "(Ljava.lang.String;I[[Ljava.lang.String;[Z[I)V".
+      This method is necessary to match the full method name with
+      the one given in the jacoco.xml report with full argument list.
+    """
+    JVM_CLASS_MAPPING = {
+        'Z': 'boolean',
+        'B': 'byte',
+        'C': 'char',
+        'D': 'double',
+        'F': 'float',
+        'I': 'int',
+        'J': 'long',
+        'S': 'short'
+    }
+
+    args = []
+    arg = ''
+    start = False
+    next_arg = ''
+    array_count = 0
+    for c in desc:
+        if c == '(':
+            continue
+        if c == ')':
+            break
+
+        if start:
+            if c == ';':
+                start = False
+                next_arg = arg.replace('/', '.')
+            else:
+                arg = arg + c
+        else:
+            if c == 'L':
+                start = True
+                if next_arg:
+                    next_arg = f'{next_arg}{"[]" * array_count}'
+                    array_count = 0
+                    args.append(next_arg)
+                arg = ''
+                next_arg = ''
+            elif c == '[':
+                array_count += 1
+            else:
+                if c in JVM_CLASS_MAPPING:
+                    if next_arg:
+                        next_arg = f'{next_arg}{"[]" * array_count}'
+                        array_count = 0
+                        args.append(next_arg)
+                    next_arg = JVM_CLASS_MAPPING[c]
+
+    if next_arg:
+        next_arg = f'{next_arg}{"[]" * array_count}'
+        args.append(next_arg)
+    return args
 
 
 if __name__ == "__main__":
