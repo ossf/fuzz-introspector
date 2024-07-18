@@ -108,9 +108,11 @@ def _sort_functions_by_fuzz_worthiness(
         functions,
         key=lambda item:
         (item.is_reached, item.is_enum_class, item.runtime_code_coverage, -item
-         .calldepth, -item.accummulated_cyclomatic_complexity, item.undiscovered_complexity,
-         -len(item.function_arguments), -(item.source_line_end - item.source_line_begin),
-         len(item.reached_by_fuzzers)), reverse=False)
+         .calldepth, -item.accummulated_cyclomatic_complexity, item.
+         undiscovered_complexity, -len(item.function_arguments), -(
+             item.source_line_end - item.source_line_begin),
+         len(item.reached_by_fuzzers)),
+        reverse=False)
 
 
 def convert_functions_to_list_of_dict(
