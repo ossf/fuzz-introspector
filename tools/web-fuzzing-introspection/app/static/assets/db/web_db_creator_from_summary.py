@@ -223,7 +223,9 @@ def extract_and_refine_functions(all_function_list, project_name, date_str):
             'src_end':
             func.get('source_line_end', 'N/A'),
             'callsites':
-            func.get('callsites', [])
+            func.get('callsites', []),
+            'calldepth':
+            func.get('Function call depth', 0)
         }
 
         introspector_func['sig'] = func.get('function_signature', 'N/A')
