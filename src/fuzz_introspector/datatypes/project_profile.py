@@ -166,7 +166,6 @@ class MergedProjectProfile:
         self._set_basefolder()
         self._set_fd_cache()
         logger.info("Completed creationg of merged profile")
-        logger.info(self.all_functions)
 
     def get_all_runtime_covered_functions(self) -> List[str]:
         """Gets the name of all functions that are covered by runtime
