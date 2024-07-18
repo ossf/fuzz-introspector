@@ -769,6 +769,11 @@ def create_html_report(introspection_proj: analysis.IntrospectionProject,
         all_functions_json_report, introspection_proj.debug_all_functions,
         proj_profile.target_lang, introspection_proj.debug_report)
 
+    all_test_files = analysis.extract_test_information(
+        introspection_proj.debug_report)
+    with open(constants.TEST_FILES_JSON, 'w') as test_file_fd:
+        test_file_fd.write(json.dumps(list(all_test_files)))
+
     # Write various stats and all-functions data to summary.json
     proj_profile.write_stats_to_summary_file()
 

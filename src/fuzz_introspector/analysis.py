@@ -17,6 +17,7 @@ import abc
 import logging
 import multiprocessing
 import os
+import shutil
 
 from typing import (
     Dict,
@@ -979,3 +980,67 @@ def correlate_introspection_functions_to_debug_info(all_functions_json_report,
             else:
                 if_func['function_signature'] = 'N/A'
             if_func['debug_function_info'] = dict()
+
+
+def extract_test_information(report_dict=dict()):
+    """Correlates function data collected by debug information to function
+    data collected by LLVMs module, and uses the correlated data to generate
+    function signatures for each function based on debug information."""
+
+    # Find header files
+    normalized_paths = set()
+    for header_file in report_dict.get('all_files_in_project', []):
+        normalized_paths.add(os.path.normpath(header_file['source_file']))
+
+    directories = set()
+
+    # All directories added
+    for path in normalized_paths:
+        if path.startswith('/usr/'):
+            continue
+        directories.add('/'.join(path.split('/')[:-1]))
+
+    all_files_in_subtree = set()
+    for dir in directories:
+        for root, dirs, files in os.walk(dir):
+            for f in files:
+                all_files_in_subtree.add(os.path.join(root, f))
+
+    all_directories = set()
+    for file in all_files_in_subtree:
+        assembled_dir = '/'
+        for dd2 in file.split('/'):
+            assembled_dir += dd2
+            if os.path.isdir(assembled_dir):
+                all_directories.add(assembled_dir)
+            assembled_dir += '/'
+
+    inspirations = ["sample", "test"]
+    all_inspiration_dirs = set()
+    for directory in all_directories:
+        if any(ins in directory for ins in inspirations):
+            all_inspiration_dirs.add(directory)
+
+    # Get all .c files
+    test_extensions = ['.cc', '.cpp', '.cxx', '.c++', '.c']
+    all_test_files = set()
+    for dir in all_inspiration_dirs:
+        for root, dirs, files in os.walk(dir):
+            for f in files:
+                if not any(f.endswith(ext) for ext in test_extensions):
+                    continue
+                # Absolute path
+                absolute_path = os.path.join(root, f)
+                with open(absolute_path, 'r') as file_fp:
+                    if 'LLVMFuzzerTestOneInput' in file_fp.read():
+                        continue
+                all_test_files.add(absolute_path)
+
+    logger.info("All test files")
+    for test_file in all_test_files:
+        logger.info(test_file)
+        dst = constants.SAVED_SOURCE_FOLDER + '/' + test_file
+        os.makedirs(os.path.dirname(dst), exist_ok=True)
+        shutil.copy(test_file, dst)
+
+    return all_test_files
