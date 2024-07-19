@@ -791,7 +791,7 @@ def create_html_report(introspection_proj: analysis.IntrospectionProject,
             json_copy['Functions filename'] = fd.function_source_file
             json_copy['Args'] = fd.arg_types
             json_copy['ArgNames'] = fd.arg_names
-            json_copy['Function call depth'] = fd.function_depth,
+            json_copy['Function call depth'] = fd.function_depth
             json_copy['Reached by Fuzzers'] = fd.reached_by_fuzzers
             json_copy['collapsible_id'] = fd.function_name
             json_copy['return_type'] = fd.return_type
