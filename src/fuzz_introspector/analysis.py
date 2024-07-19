@@ -1031,9 +1031,12 @@ def extract_test_information(report_dict=dict()):
                     continue
                 # Absolute path
                 absolute_path = os.path.join(root, f)
-                with open(absolute_path, 'r') as file_fp:
-                    if 'LLVMFuzzerTestOneInput' in file_fp.read():
-                        continue
+                try:
+                    with open(absolute_path, 'r') as file_fp:
+                        if 'LLVMFuzzerTestOneInput' in file_fp.read():
+                            continue
+                except UnicodeDecodeError:
+                    continue
                 all_test_files.add(absolute_path)
 
     logger.info("All test files")
