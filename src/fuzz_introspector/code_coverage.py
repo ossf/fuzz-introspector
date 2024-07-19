@@ -682,26 +682,36 @@ def load_jvm_coverage(target_dir: str,
                 # Process each line
                 line_list.append(
                     (int(line.attrib['nr']), int(line.attrib['ci'])))
-            source_file_map[src.attrib["name"]] = line_list
+            if line_list:
+                source_file_map[src.attrib["name"]] = line_list
 
         # Process all methods in all classes within this package
         for cl in package.findall('class'):
-            class_name = cl.attrib['name'].replace('/', '.')
-            line_list = source_file_map.get(cl.attrib['sourcefilename'], [])
-            if not line_list:
-                # Fail safe for malformed or invalid jacoco.xml report
+            class_name = cl.attrib.get('name', '').replace('/', '.')
+            line_list = source_file_map.get(
+                cl.attrib.get('sourcefilename', ''), [])
+            if not class_name or not line_list:
+                # Fail safe for malformed or invalid jacoco.xml report or
+                # no source file found because target class not compiled
+                # with correct debug information.
                 continue
 
             for method in cl.findall('method'):
                 # Determine method full signaturre
-                desc = method.attrib['desc'].split('(', 1)[1].split(')', 1)[0]
+                name = method.attrib.get('name', '')
+                desc = method.attrib.get('desc', '')
+                start_line = int(method.attrib.get('line', '-1'))
+
+                if not name or not desc or start_line < 0:
+                    # Fail safe for malformed or invalid jacoco.xml report with
+                    # no line number information.
+                    continue
+
                 args = _interpret_jvm_arguments_type(desc)
                 name = f'[{class_name}].{method.attrib["name"]}({",".join(args)})'
 
-                start_line = int(method.attrib['line'])
-                total_line = 0
-
                 # Get total valid lines count of this method
+                total_line = 0
                 for counter in method.findall('counter'):
                     if counter.attrib['type'] == 'LINE':
                         missed_line = int(counter.attrib['missed'])
@@ -763,6 +773,9 @@ def _interpret_jvm_arguments_type(desc: str) -> List[str]:
         'J': 'long',
         'S': 'short'
     }
+
+    # Extract arguments and remove return value from description
+    desc = desc.split('(', 1)[1].split(')', 1)[0]
 
     args = []
     arg = ''

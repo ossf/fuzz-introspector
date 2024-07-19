@@ -1,5 +1,6 @@
 #!/bin/bash -eu
 python3 -m pip install --upgrade pip
+python3 -m pip install jaraco.text==3.12.0
 python3 -m pip install --prefer-binary -r requirements.txt
 
 cp src/test/fuzz/*.py .
