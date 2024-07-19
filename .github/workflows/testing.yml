@@ -16,7 +16,7 @@ jobs:
       - name: Check out source repository
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v2.4.0
       - name: Set up Python environment
-        uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d # v3.0.0
+        uses: actions/setup-python@39cd14951b08e74b54015e9e001cdefcf80e669f # v3.0.0
         with:
           python-version: "3.8"
       - name: Install dependencies
