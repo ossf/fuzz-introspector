@@ -688,7 +688,8 @@ def load_jvm_coverage(target_dir: str,
         # Process all methods in all classes within this package
         for cl in package.findall('class'):
             class_name = cl.attrib.get('name', '').replace('/', '.')
-            line_list = source_file_map.get(cl.attrib.get('sourcefilename', ''), [])
+            line_list = source_file_map.get(
+                cl.attrib.get('sourcefilename', ''), [])
             if not class_name or not line_list:
                 # Fail safe for malformed or invalid jacoco.xml report or
                 # no source file found because target class not compiled
