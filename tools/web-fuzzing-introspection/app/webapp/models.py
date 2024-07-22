@@ -108,6 +108,7 @@ class Function:
                  source_line_begin: int = -1,
                  source_line_end: int = -1,
                  callsites: Dict[str, List[str]] = {},
+                 calldepth: int = 0,
                  func_signature: str = '',
                  debug_data: Dict[str, Any] = {},
                  is_accessible: bool = True,
@@ -134,6 +135,7 @@ class Function:
         self.source_line_begin = source_line_begin
         self.source_line_end = source_line_end
         self.callsites = callsites
+        self.calldepth = calldepth
         self.func_signature = func_signature
         self.debug_data = debug_data
         self.is_accessible = is_accessible
@@ -155,6 +157,7 @@ class Function:
             'accummulated_cyclomatic_complexity':
             self.accummulated_cyclomatic_complexity,
             'undiscovered_complexity': self.undiscovered_complexity,
+            'calldepth': self.calldepth,
             'function_filename': self.function_filename,
             'is_accessible': self.is_accessible,
             'is_jvm_library': self.is_jvm_library,
