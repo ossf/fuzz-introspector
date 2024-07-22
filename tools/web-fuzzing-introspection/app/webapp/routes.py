@@ -105,20 +105,26 @@ def extract_lines_from_source_code(project_name,
     # Transform java class name to java source file path with package directories
     if project.language == 'java':
         target_file = f'/{target_file.split("$", 1)[0].replace(".", "/")}.java'
-        if line_end <= line_begin:
-            line_end = line_begin + 10
 
     # Extract the source code from the target file
     raw_source = extract_introspector_raw_source_code(project_name, date_str,
                                                       target_file)
 
+    # Return None if source is not found.
     if raw_source is None:
         print("Did not found source")
         return raw_source
 
+    return_source = ""
     source_lines = raw_source.split("\n")
 
-    return_source = ""
+    # Process for invalid line_begin and line_end when source is found.
+    if line_begin <= 0:
+        # line_begin is invalid, assume starting from the first line.
+        line_begin = 1
+    if line_end < line_begin:
+        # line_end is invalid, assume ending at the last line.
+        line_end = len(source_lines)
 
     # Source line numbers start from 1
     line_begin -= 1
