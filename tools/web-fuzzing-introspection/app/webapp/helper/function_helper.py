@@ -96,16 +96,21 @@ def _sort_functions_by_fuzz_worthiness(
         1) If the function is reached by any existing fuzzers.
         2) If the function belongs to a enum class (only for JVM project).
         3) The runtime code coverage of the function.
-        4) The accumulated cyclomatic complexity of the function in descending order.
-        5) The number of arguments of this function in descending order.
-        6) The number of how many fuzzers reached this target function.
+        4) The function call depth in descending order.
+        5) The accumulated cyclomatic complexity of the function in descending order.
+        6) The undiscovered complexity of the function.
+        7) The number of arguments of this function in descending order.
+        8) Number of source code lines in descending order.
+        9) The number of how many fuzzers reached this target function.
     """
 
     return sorted(
         functions,
         key=lambda item:
         (item.is_reached, item.is_enum_class, item.runtime_code_coverage, -item
-         .accummulated_cyclomatic_complexity, -len(item.function_arguments),
+         .calldepth, -item.accummulated_cyclomatic_complexity, item.
+         undiscovered_complexity, -len(item.function_arguments), -(
+             item.source_line_end - item.source_line_begin),
          len(item.reached_by_fuzzers)),
         reverse=False)
 

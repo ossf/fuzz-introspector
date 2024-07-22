@@ -242,6 +242,18 @@ def extract_and_refine_functions(all_function_list, project_name, date_str):
         if introspector_func['raw-name'] == introspector_func['name']:
             del introspector_func['raw-name']
 
+        # There is a bug in Fuzz-Introspector report generation that sets function
+        # call depth as a list instead of an integer in the JSON reports. Although
+        # the bug has been fixed in PR#1675, older JSON reports may still contain
+        # a list of a single integer instead of an integer. The logic here retrieves
+        # the function call depth from JSON reports, assuming that the function call
+        # depth could be an integer or a list of a single integer, for backward
+        # compatibility of old JSON reports.
+        calldepth = func.get('Function call depth', 0)
+        if calldepth and isinstance(calldepth, list):
+            calldepth = calldepth[0]
+        introspector_func['calldepth'] = calldepth
+
         refined_proj_list.append(introspector_func)
     return refined_proj_list
 
