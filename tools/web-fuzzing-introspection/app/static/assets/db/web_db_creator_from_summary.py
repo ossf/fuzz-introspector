@@ -102,6 +102,15 @@ def save_fuzz_introspector_report(introspector_report, project_name, date_str):
     return
 
 
+def save_test_files_report(test_files, project_name):
+    project_db_dir = os.path.join(constants.DB_PROJECT_DIR, project_name)
+    os.makedirs(project_db_dir, exist_ok=True)
+
+    report_dst = os.path.join(project_db_dir, 'test_files.json')
+    with open(report_dst, 'w') as report_fd:
+        json.dump(test_files, report_fd)
+
+
 def save_debug_report(debug_report, project_name):
     project_db_dir = os.path.join(constants.DB_PROJECT_DIR, project_name)
     os.makedirs(project_db_dir, exist_ok=True)
@@ -456,6 +465,11 @@ def extract_project_data(project_name, date_str, should_include_details,
 
     introspector_report_url = oss_fuzz.get_introspector_report_url_report(
         project_name, date_str.replace("-", ""))
+
+    test_files = oss_fuzz.extract_introspector_test_files(
+        project_name, date_str.replace("-", ""))
+    if test_files:
+        save_test_files_report(test_files, project_name)
 
     # Collet debug informaiton for languages with debug information
     # Disable dumping type map for now because it takes too much storage.
