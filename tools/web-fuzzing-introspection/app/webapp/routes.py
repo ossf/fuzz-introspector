@@ -20,7 +20,7 @@ import json
 import signal
 
 from flask import Blueprint, render_template, request, redirect
-from typing import Dict, List
+from typing import Dict, List, Optional
 from . import models, data_storage
 from .helper import function_helper
 
@@ -1817,6 +1817,50 @@ def all_project_header_files():
             }
 
     return {'result': 'failed', 'msg': 'did not find project'}
+
+
+def extract_project_tests(project_name,
+                          refine: bool = True) -> Optional[List[str]]:
+    tests_file = os.path.join(
+        os.path.dirname(__file__),
+        f"../static/assets/db/db-projects/{project_name}/test_files.json")
+    if not os.path.isfile(tests_file):
+        return None
+
+    with open(tests_file, 'r') as f:
+        tests_file_list = json.load(f)
+
+    if refine:
+        refined_list = []
+        for test_file in tests_file_list:
+            if '/src/fuzztest/' in test_file:
+                continue
+            if '/src/aflplusplus/' in test_file:
+                continue
+            if '/src/LPM/' in test_file:
+                continue
+            refined_list.append(test_file)
+        tests_file_list = refined_list
+    return tests_file_list
+
+
+@blueprint.route('/api/project-tests')
+def project_tests():
+    project = request.args.get('project', None)
+    if project is None:
+        return {
+            'result': 'error',
+            'extended_msgs': ['Please provide project name']
+        }
+
+    test_file_list = extract_project_tests(project)
+    if test_file_list == None:
+        return {
+            'result': 'error',
+            'extended_msgs': ['Could not find tests file']
+        }
+
+    return {'result': 'success', 'test-file-list': test_file_list}
 
 
 @blueprint.route('/api/addr-to-recursive-dwarf-info')
