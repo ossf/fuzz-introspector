@@ -1835,6 +1835,8 @@ def extract_project_tests(project_name,
         for test_file in tests_file_list:
             if '/src/fuzztest/' in test_file:
                 continue
+            if '/src/libfuzzer/' in test_file:
+                continue
             if '/src/aflplusplus/' in test_file:
                 continue
             if '/src/LPM/' in test_file:
