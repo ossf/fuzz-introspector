@@ -1839,6 +1839,10 @@ def extract_project_tests(project_name,
                 continue
             if '/src/LPM/' in test_file:
                 continue
+            if '/googletest/' in test_file:
+                continue
+            if '/third_party/' in test_file:
+                continue
             refined_list.append(test_file)
         tests_file_list = refined_list
     return tests_file_list
