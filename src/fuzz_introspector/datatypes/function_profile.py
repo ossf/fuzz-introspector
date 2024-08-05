@@ -70,6 +70,7 @@ class FunctionProfile:
         self.is_enum = self._is_enum_class(elem)
         self.is_static = self._is_static(elem)
         self.exceptions = self._get_exceptions(elem)
+        self.need_close = self._need_close(elem)
 
         # Temporary handle for unreadable library method (JVM)
         # (jar missing or purposely ignored)
@@ -151,6 +152,12 @@ class FunctionProfile:
     def _is_static(self, elem: Dict[Any, Any]) -> bool:
         if "JavaMethodInfo" in elem and elem['JavaMethodInfo']:
             return bool(elem['JavaMethodInfo']['static'])
+
+        return False
+
+    def _need_close(self, elem: Dict[Any, Any]) -> bool:
+        if "JavaMethodInfo" in elem and elem['JavaMethodInfo']:
+            return bool(elem['JavaMethodInfo']['needClose'])
 
         return False
 
