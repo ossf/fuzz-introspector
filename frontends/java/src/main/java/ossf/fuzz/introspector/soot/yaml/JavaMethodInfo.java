@@ -33,6 +33,7 @@ public class JavaMethodInfo {
   private Boolean isClassConcrete;
   private Boolean isClassEnum;
   private Boolean isClassPublic;
+  private Boolean needClose;
 
   public JavaMethodInfo() {
     this.exceptions = new ArrayList<String>();
@@ -48,6 +49,7 @@ public class JavaMethodInfo {
     this.isClassConcrete = true;
     this.isClassEnum = false;
     this.isClassPublic = true;
+    this.needClose = false;
   }
 
   public List<String> getExceptions() {
@@ -164,5 +166,13 @@ public class JavaMethodInfo {
 
   public void setIsClassPublic(Boolean isClassPublic) {
     this.isClassPublic = isClassPublic;
+  }
+
+  public Boolean isNeedClose() {
+    return this.needClose;
+  }
+
+  public void setNeedClose(Boolean needClose) {
+    this.needClose = needClose;
   }
 }
