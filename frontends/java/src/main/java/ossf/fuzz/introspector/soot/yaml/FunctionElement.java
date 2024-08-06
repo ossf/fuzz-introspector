@@ -289,6 +289,14 @@ public class FunctionElement {
       methodInfo.addException(exception.getFilePath());
     }
 
+    // Determine if the method's class need closing after use
+    for (SootMethod temp : c.getMethods()) {
+      if (temp.getName().equals("close")) {
+        methodInfo.setNeedClose(true);
+        break;
+      }
+    }
+
     // Additional information for auto-fuzz process
     if (isAutoFuzz) {
       // Extra class information for constructors

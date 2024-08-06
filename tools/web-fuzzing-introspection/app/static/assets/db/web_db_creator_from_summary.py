@@ -241,6 +241,7 @@ def extract_and_refine_functions(all_function_list, project_name, date_str):
         introspector_func['jvm_lib'] = func.get('is_jvm_library', False)
         introspector_func['enum'] = func.get('is_enum_class', False)
         introspector_func['static'] = func.get('is_static', False)
+        introspector_func['need_close'] = func.get('need_close', False)
         introspector_func['exc'] = func.get('exceptions', [])
 
         # For JVM projects, the function name, function signature and function raw

@@ -153,6 +153,8 @@ def convert_functions_to_list_of_dict(
             function.is_enum_class,
             'is_static':
             function.is_static,
+            'need_close':
+            function.need_close,
             'exceptions':
             function.exceptions
         })
