@@ -68,7 +68,9 @@ def load_db() -> None:
                 language=project_timestamp['language'],
                 coverage_data=project_timestamp['coverage-data'],
                 introspector_data=project_timestamp['introspector-data'],
-                fuzzer_count=project_timestamp['fuzzer-count']))
+                fuzzer_count=project_timestamp['fuzzer-count'],
+                introspector_url=project_timestamp.get('introspector_url',
+                                                       None)))
 
     # Load all profiles
     with open(project_currents, 'r') as f:
