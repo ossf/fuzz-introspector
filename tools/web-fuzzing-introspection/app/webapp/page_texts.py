@@ -33,12 +33,12 @@ def get_page_name():
 
 
 def get_page_main_url():
-    return default_page_main_url
+    return os.getenv('FI_PAGE_MAIN_URL', default_page_main_url)
 
 
 def get_page_summary():
-    return default_helper_text
+    return os.getenv('FI_PAGE_SUMMARY', default_helper_text)
 
 
 def get_page_base_title():
-    return default_page_base_title
+    return os.getenv('FI_PAGE_BASE_TITLE', default_page_base_title)
