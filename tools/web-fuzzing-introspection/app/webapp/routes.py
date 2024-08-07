@@ -351,8 +351,11 @@ def project_profile():
                 latest_coverage_report = get_coverage_report_url(
                     project.name, datestr, project_language)
                 if ps.introspector_data is not None:
-                    latest_fuzz_introspector_report = get_introspector_url(
-                        project.name, datestr)
+                    if ps.introspector_url:
+                        latest_fuzz_introspector_report = ps.introspector_url
+                    else:
+                        latest_fuzz_introspector_report = get_introspector_url(
+                            project.name, datestr)
                     latest_introspector_datestr = datestr
 
         # Get functions of interest for the project
@@ -420,8 +423,11 @@ def project_profile():
                         build_status.project_name, datestr,
                         build_status.language)
                     if ps.introspector_data is not None:
-                        latest_fuzz_introspector_report = get_introspector_url(
-                            build_status.project_name, datestr)
+                        if ps.introspector_url:
+                            latest_fuzz_introspector_report = ps.introspector_url
+                        else:
+                            latest_fuzz_introspector_report = get_introspector_url(
+                                project.name, datestr)
                         latest_introspector_datestr = datestr
 
             if datestr and len(real_stats) > 0:
