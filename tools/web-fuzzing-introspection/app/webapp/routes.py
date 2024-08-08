@@ -1468,8 +1468,10 @@ def api_jvm_method_properties():
 
     if target_function is None:
         return {
-            'result': 'error',
-            'msg': f'Function signature could not be found in project {project_name}'
+            'result':
+            'error',
+            'msg':
+            f'Function signature could not be found in project {project_name}'
         }
 
     return {
