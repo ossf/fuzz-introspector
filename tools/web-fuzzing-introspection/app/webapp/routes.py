@@ -1453,6 +1453,35 @@ def api_function_with_matching_type():
     }
 
 
+@blueprint.route('/api/jvm-method-properties')
+def api_jvm_method_properties():
+    """Returns some properties for the jvm method"""
+    project_name = request.args.get('project', None)
+    if project_name is None:
+        return {'result': 'error', 'msg': 'Please provide a project name'}
+    function_signature = request.args.get('function_signature', None)
+    if function_signature is None:
+        return {'result': 'error', 'msg': 'No function signature provided'}
+
+    target_function = get_function_from_func_signature(function_signature,
+                                                       project_name)
+
+    if target_function is None:
+        return {
+            'result':
+            'error',
+            'msg':
+            f'Function signature could not be found in project {project_name}'
+        }
+
+    return {
+        'result': 'success',
+        'is-jvm-static': target_function.is_static,
+        'need-close': target_function.need_close,
+        'exceptions': target_function.exceptions
+    }
+
+
 def get_build_status_of_project(project_name):
     build_status = data_storage.get_build_status()
 
