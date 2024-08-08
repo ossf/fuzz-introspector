@@ -151,11 +151,5 @@ def convert_functions_to_list_of_dict(
             function.debug_data,
             'is_enum_class':
             function.is_enum_class,
-            'is_static':
-            function.is_static,
-            'need_close':
-            function.need_close,
-            'exceptions':
-            function.exceptions
         })
     return sorted_function_dict_list_by_fuzz_worthiness
