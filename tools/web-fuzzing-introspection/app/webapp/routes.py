@@ -197,15 +197,12 @@ def get_frontpage_summary_stats():
     # Get total number of projects
     all_projects = data_storage.get_projects()
 
-    #    projects_to_use = []
-    # Only include fuzz introspector projects
-    #for project in all_projects:
-    #    if project.introspector_data is not None:
-    #        projects_to_use.append(project)
+    # Read from DB timestamps
+    latest_db_timestamp = data_storage.DB_TIMESTAMPS[-1]
+    total_functions = latest_db_timestamp.function_count
+    total_fuzzers = latest_db_timestamp.fuzzer_count
+    total_number_of_projects = latest_db_timestamp.project_count
 
-    total_number_of_projects = len(all_projects)
-    total_fuzzers = sum([project.fuzzer_count for project in all_projects])
-    total_functions = data_storage.get_total_function_count()
     language_count = {
         'c': 0,
         'python': 0,
