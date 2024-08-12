@@ -245,7 +245,10 @@ def get_fuction_with_name(function_name, project_name):
             return function
 
     # TODO: Handle the case where there is no such function
-    return data_storage.get_all_functions()[0]
+    for tmp_proj in data_storage.PROJECTS:
+        proj_func_list = data_storage.get_functions_by_project(tmp_proj.name)
+        for function in proj_func_list:
+            return function
 
 
 def get_all_related_functions(primary_function):
@@ -805,20 +808,24 @@ def oracle_2(all_functions,
 @blueprint.route('/target_oracle')
 def target_oracle():
     all_projects = data_storage.get_projects()
-    all_functions = data_storage.get_all_functions()
-
     functions_to_display = []
 
     total_funcs = set()
     oracle_pairs = [(oracle_1, "heuristic 1"), (oracle_2, "heuristic 2"),
                     (oracle_3, "heuristic 3")]
+    funcs_max_to_display = 4000
     for oracle, heuristic_name in oracle_pairs:
-        func_targets = oracle(all_functions, all_projects)
-        for func in func_targets:
-            if func in total_funcs:
-                continue
-            total_funcs.add(func)
-            functions_to_display.append((func, heuristic_name))
+        for tmp_proj in data_storage.PROJECTS:
+            if len(functions_to_display) > funcs_max_to_display:
+                break
+            proj_func_list = data_storage.get_functions_by_project(
+                tmp_proj.name)
+            func_targets = oracle(proj_func_list, all_projects)
+            for func in func_targets:
+                if func in total_funcs:
+                    continue
+                total_funcs.add(func)
+                functions_to_display.append((func, heuristic_name))
 
     func_to_lang = dict()
     for func, heuristic in functions_to_display:
@@ -1961,21 +1968,25 @@ def api_all_interesting_function_targets():
 
     # Get the list of all oracles that we have
     all_projects = data_storage.get_projects()
-    all_functions = data_storage.get_all_functions()
 
     # Extract all of the data needed for each function target
     functions_to_display = []
-
+    funcs_max_to_display = 400
     total_funcs = set()
     oracle_pairs = [(oracle_1, "heuristic 1"), (oracle_2, "heuristic 2"),
                     (oracle_3, "heuristic 3")]
     for oracle, heuristic_name in oracle_pairs:
-        func_targets = oracle(all_functions, all_projects)
-        for func in func_targets:
-            if func in total_funcs:
-                continue
-            total_funcs.add(func)
-            functions_to_display.append((func, heuristic_name))
+        for tmp_proj in data_storage.PROJECTS:
+            if len(functions_to_display) > funcs_max_to_display:
+                break
+            proj_func_list = data_storage.get_functions_by_project(
+                tmp_proj.name)
+            func_targets = oracle(proj_func_list, all_projects)
+            for func in func_targets:
+                if func in total_funcs:
+                    continue
+                total_funcs.add(func)
+                functions_to_display.append((func, heuristic_name))
 
     func_to_lang = dict()
     for func, heuristic in functions_to_display:
