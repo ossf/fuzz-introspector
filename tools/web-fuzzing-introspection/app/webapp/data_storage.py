@@ -5,6 +5,7 @@ from typing import List, Dict, Any, Optional
 
 import os
 import json
+import orjson
 
 from .models import *
 
@@ -94,7 +95,7 @@ def get_project_debug_report(project: str) -> Optional[DebugStatus]:
         return None
 
     with open(debug_report_path, 'r') as f:
-        debug_report = json.load(f)
+        debug_report = orjson.loads(f.read())
 
     debug_model = DebugStatus(
         project_name=project,
@@ -116,7 +117,7 @@ def get_project_branch_blockers(project: str) -> List[BranchBlocker]:
         return []
 
     with open(branch_blockers_path, 'r') as f:
-        branch_report = json.load(f)
+        branch_report = orjson.loads(f.read())
 
     branch_models = list()
     for json_bb in branch_report:
@@ -141,7 +142,7 @@ def retrieve_functions(proj: str, is_constructor: bool) -> List[Function]:
 
     if os.path.isfile(json_path):
         with open(json_path, 'r') as file:
-            function_list = json.load(file)
+            function_list = orjson.loads(file.read())
     else:
         return []
 
