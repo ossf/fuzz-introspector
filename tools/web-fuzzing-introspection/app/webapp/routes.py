@@ -171,8 +171,9 @@ def extract_lines_from_source_code(project_name,
 
 
 def get_functions_of_interest(project_name):
-    all_functions = data_storage.get_all_functions()
-    all_functions = all_functions + data_storage.get_all_constructors()
+    all_functions = data_storage.get_functions_by_project(project_name)
+    all_functions = all_functions + data_storage.get_constructors_by_project(
+        project_name)
 
     project_functions = []
     for function in all_functions:
@@ -204,7 +205,7 @@ def get_frontpage_summary_stats():
 
     total_number_of_projects = len(all_projects)
     total_fuzzers = sum([project.fuzzer_count for project in all_projects])
-    total_functions = len(data_storage.get_all_functions())
+    total_functions = data_storage.get_total_function_count()
     language_count = {
         'c': 0,
         'python': 0,
@@ -248,14 +249,15 @@ def get_fuction_with_name(function_name, project_name):
 
 
 def get_all_related_functions(primary_function):
-    all_functions = data_storage.get_all_functions()
     related_functions = []
-    for function in all_functions:
-        # Skipping non-related jvm methods
-        if not function.is_accessible or function.is_jvm_library:
-            continue
-        if function.name == primary_function.name and function.project != primary_function.project:
-            related_functions.append(function)
+    for tmp_proj in data_storage.PROJECTS:
+        proj_func_list = data_storage.get_functions_by_project(tmp_proj.name)
+        for function in proj_func_list:
+            # Skipping non-related jvm methods
+            if not function.is_accessible or function.is_jvm_library:
+                continue
+            if function.name == primary_function.name and function.project != primary_function.project:
+                related_functions.append(function)
     return related_functions
 
 
@@ -459,7 +461,6 @@ def function_search():
     MAX_MATCHES_TO_DISPLAY = 900
     query = request.args.get('q', '')
     print("query: { %s }" % (query))
-    print("Length of functions: %d" % (len(data_storage.get_all_functions())))
     if query == '':
         # Pick a random interesting query
         # Some queries involving fuzzing-interesting targets.
@@ -470,9 +471,12 @@ def function_search():
         ]
         interesting_query = random.choice(interesting_query_roulette)
         tmp_list = []
-        for function in data_storage.get_all_functions():
-            if interesting_query in function.name:
-                tmp_list.append(function)
+        for tmp_proj in data_storage.PROJECTS:
+            proj_func_list = data_storage.get_functions_by_project(
+                tmp_proj.name)
+            for function in proj_func_list:
+                if interesting_query in function.name:
+                    tmp_list.append(function)
         functions_to_display = tmp_list
 
         # Shuffle to give varying results each time
@@ -484,9 +488,12 @@ def function_search():
         info_msg = f"No query was given, picked the query \"{interesting_query}\" for this"
     else:
         tmp_list = []
-        for function in data_storage.get_all_functions():
-            if query in function.name:
-                tmp_list.append(function)
+        for tmp_proj in data_storage.PROJECTS:
+            proj_func_list = data_storage.get_functions_by_project(
+                tmp_proj.name)
+            for function in proj_func_list:
+                if query in function.name:
+                    tmp_list.append(function)
         functions_to_display = tmp_list
 
         total_matches = len(functions_to_display)
@@ -1527,7 +1534,7 @@ def api_oracle_2():
     if target_project is None:
         return {'result': 'error', 'extended_msgs': ['Project not found.']}
 
-    all_functions = data_storage.get_all_functions()
+    all_functions = data_storage.get_functions_by_project(project_name)
     all_projects = [target_project]
 
     raw_interesting_functions = oracle_2(
@@ -1586,7 +1593,7 @@ def api_oracle_1():
     if not target_project:
         return {'result': 'error', 'extended_msgs': ['Could not find project']}
 
-    all_functions = data_storage.get_all_functions()
+    all_functions = data_storage.get_functions_by_project(project_name)
     all_projects = [target_project]
     raw_functions = oracle_1(
         all_functions,
