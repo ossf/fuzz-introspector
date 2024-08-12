@@ -171,8 +171,8 @@ def extract_lines_from_source_code(project_name,
 
 
 def get_functions_of_interest(project_name):
-    all_functions = data_storage.get_functions()
-    all_functions = all_functions + data_storage.get_constructors()
+    all_functions = data_storage.get_all_functions()
+    all_functions = all_functions + data_storage.get_all_constructors()
 
     project_functions = []
     for function in all_functions:
@@ -204,7 +204,7 @@ def get_frontpage_summary_stats():
 
     total_number_of_projects = len(all_projects)
     total_fuzzers = sum([project.fuzzer_count for project in all_projects])
-    total_functions = len(data_storage.get_functions())
+    total_functions = len(data_storage.get_all_functions())
     language_count = {
         'c': 0,
         'python': 0,
@@ -238,17 +238,17 @@ def get_project_with_name(project_name):
 
 
 def get_fuction_with_name(function_name, project_name):
-    all_functions = data_storage.get_functions()
+    all_functions = data_storage.get_functions_by_project(project_name)
     for function in all_functions:
-        if function.name == function_name and function.project == project_name:
+        if function.name == function_name:
             return function
 
     # TODO: Handle the case where there is no such function
-    return all_functions[0]
+    return data_storage.get_all_functions()[0]
 
 
 def get_all_related_functions(primary_function):
-    all_functions = data_storage.get_functions()
+    all_functions = data_storage.get_all_functions()
     related_functions = []
     for function in all_functions:
         # Skipping non-related jvm methods
@@ -459,7 +459,7 @@ def function_search():
     MAX_MATCHES_TO_DISPLAY = 900
     query = request.args.get('q', '')
     print("query: { %s }" % (query))
-    print("Length of functions: %d" % (len(data_storage.get_functions())))
+    print("Length of functions: %d" % (len(data_storage.get_all_functions())))
     if query == '':
         # Pick a random interesting query
         # Some queries involving fuzzing-interesting targets.
@@ -470,7 +470,7 @@ def function_search():
         ]
         interesting_query = random.choice(interesting_query_roulette)
         tmp_list = []
-        for function in data_storage.get_functions():
+        for function in data_storage.get_all_functions():
             if interesting_query in function.name:
                 tmp_list.append(function)
         functions_to_display = tmp_list
@@ -484,7 +484,7 @@ def function_search():
         info_msg = f"No query was given, picked the query \"{interesting_query}\" for this"
     else:
         tmp_list = []
-        for function in data_storage.get_functions():
+        for function in data_storage.get_all_functions():
             if query in function.name:
                 tmp_list.append(function)
         functions_to_display = tmp_list
@@ -798,7 +798,7 @@ def oracle_2(all_functions,
 @blueprint.route('/target_oracle')
 def target_oracle():
     all_projects = data_storage.get_projects()
-    all_functions = data_storage.get_functions()
+    all_functions = data_storage.get_all_functions()
 
     functions_to_display = []
 
@@ -903,11 +903,8 @@ def api_optimal_targets():
     if target_project.introspector_data is None:
         return {'result': 'error', 'msg': 'Found no introspector data.'}
 
-    all_functions = data_storage.get_functions()
-    project_functions = []
-    for function in all_functions:
-        if function.project == project_name:
-            project_functions.append(function)
+    # Get all functions of the target project
+    project_functions = data_storage.get_functions_by_project(project_name)
 
     try:
         optimal_targets_raw = target_project.introspector_data[
@@ -1052,10 +1049,10 @@ def branch_blockers():
 
 
 def get_function_from_func_signature(func_signature, project_name):
-    all_functions = data_storage.get_functions()
-    all_constructors = data_storage.get_constructors()
+    all_functions = data_storage.get_functions_by_project(project_name)
+    all_constructors = data_storage.get_constructors_by_project(project_name)
     for function in (all_functions + all_constructors):
-        if function.project == project_name and function.func_signature == func_signature:
+        if function.func_signature == func_signature:
             return function
     return None
 
@@ -1105,12 +1102,8 @@ def api_cross_references():
         }
     function_name = target_function.raw_function_name
 
-    # Get all of the functions
-    all_functions = data_storage.get_functions()
-    project_functions = []
-    for function in all_functions:
-        if function.project == project_name:
-            project_functions.append(function)
+    # Get all functions of the target project
+    project_functions = data_storage.get_functions_by_project(project_name)
 
     func_xrefs = []
     xrefs = []
@@ -1181,7 +1174,7 @@ def api_project_all_functions():
 
     # Get all of the functions
     list_to_return = function_helper.filter_sort_functions(
-        data_storage.get_functions(), project_name, False)
+        data_storage.get_functions_by_project(project_name), False)
 
     return {'result': 'success', 'functions': list_to_return}
 
@@ -1195,7 +1188,7 @@ def api_project_all_jvm_constructors():
 
     # Get all of the constructor
     list_to_return = function_helper.filter_sort_functions(
-        data_storage.get_constructors(), project_name, False)
+        data_storage.get_constructors_by_project(project_name), False)
 
     return {'result': 'success', 'functions': list_to_return}
 
@@ -1210,12 +1203,11 @@ def api_project_all_public_candidates():
     if project_name is None:
         return {'result': 'error', 'msg': 'Please provide a project name'}
 
-    target_list = data_storage.get_functions() + data_storage.get_constructors(
-    )
+    target_list = data_storage.get_functions_by_project(
+        project_name) + data_storage.get_constructors_by_project(project_name)
 
     # Get the list of function / constructor candidiates to return
-    list_to_return = function_helper.filter_sort_functions(
-        target_list, project_name, True)
+    list_to_return = function_helper.filter_sort_functions(target_list, True)
 
     return {'result': 'success', 'functions': list_to_return}
 
@@ -1339,18 +1331,18 @@ def api_function_signature():
     if function_name is None:
         return {'result': 'error', 'msg': 'No function name provided'}
 
-    all_functions = data_storage.get_functions()
-    all_functions = all_functions + data_storage.get_constructors()
+    all_functions = data_storage.get_functions_by_project(project_name)
+    all_functions = all_functions + data_storage.get_constructors_by_project(
+        project_name)
     func_to_match = None
     print("Iterating through all functions to match raw function name")
     for function in all_functions:
-        if function.project == project_name:
-            if function.raw_function_name == function_name:
-                return {
-                    'result': 'success',
-                    'signature': function.func_signature,
-                    'raw_data': function.debug_data,
-                }
+        if function.raw_function_name == function_name:
+            return {
+                'result': 'success',
+                'signature': function.func_signature,
+                'raw_data': function.debug_data,
+            }
 
     return {'result': 'failed', 'msg': 'could not find specified function'}
 
@@ -1441,9 +1433,9 @@ def api_function_with_matching_type():
         }
 
     matched_function_list = function_helper.search_function_by_return_type(
-        data_storage.get_functions(), return_type, project_name)
+        data_storage.get_functions_by_project(project_name), return_type)
     matched_constructor_list = function_helper.search_function_by_return_type(
-        data_storage.get_constructors(), return_type, project_name)
+        data_storage.get_constructors_by_project(project_name), return_type)
 
     return {
         'result': 'success',
@@ -1535,7 +1527,7 @@ def api_oracle_2():
     if target_project is None:
         return {'result': 'error', 'extended_msgs': ['Project not found.']}
 
-    all_functions = data_storage.get_functions()
+    all_functions = data_storage.get_all_functions()
     all_projects = [target_project]
 
     raw_interesting_functions = oracle_2(
@@ -1594,7 +1586,7 @@ def api_oracle_1():
     if not target_project:
         return {'result': 'error', 'extended_msgs': ['Could not find project']}
 
-    all_functions = data_storage.get_functions()
+    all_functions = data_storage.get_all_functions()
     all_projects = [target_project]
     raw_functions = oracle_1(
         all_functions,
@@ -1962,7 +1954,7 @@ def api_all_interesting_function_targets():
 
     # Get the list of all oracles that we have
     all_projects = data_storage.get_projects()
-    all_functions = data_storage.get_functions()
+    all_functions = data_storage.get_all_functions()
 
     # Extract all of the data needed for each function target
     functions_to_display = []
@@ -2007,12 +1999,8 @@ def api_all_interesting_function_targets():
 
 
 def get_cross_reference_dict_from_project(project_name) -> Dict[str, int]:
-    # Get all of the functions
-    all_functions = data_storage.get_functions()
-    project_functions = []
-    for function in all_functions:
-        if function.project == project_name:
-            project_functions.append(function)
+    # Get all functions of the target project
+    project_functions = data_storage.get_functions_by_project(project_name)
 
     func_xrefs: Dict[str, int] = dict()
     for function in project_functions:
@@ -2046,12 +2034,8 @@ def sample_cross_references():
         }
     function_name = target_function.raw_function_name
 
-    # Get all of the functions
-    all_functions = data_storage.get_functions()
-    project_functions = []
-    for function in all_functions:
-        if function.project == project_name:
-            project_functions.append(function)
+    # Get all functions of the target project
+    project_functions = data_storage.get_functions_by_project(project_name)
 
     func_xrefs = []
     xrefs = []

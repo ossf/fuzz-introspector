@@ -32,8 +32,8 @@ import oss_fuzz
 
 DB_JSON_DB_TIMESTAMP = 'db-timestamps.json'
 DB_JSON_ALL_PROJECT_TIMESTAMP = 'all-project-timestamps.json'
-DB_JSON_ALL_FUNCTIONS = 'all-functions-db.json'
-DB_JSON_ALL_CONSTRUCTORS = 'all-constructors-db.json'
+DB_JSON_ALL_FUNCTIONS = 'all-functions-db-{PROJ}.json'
+DB_JSON_ALL_CONSTRUCTORS = 'all-constructors-db-{PROJ}.json'
 DB_JSON_ALL_CURRENT_FUNCS = 'all-project-current.json'
 DB_JSON_ALL_BRANCH_BLOCKERS = 'all-branch-blockers.json'
 DB_BUILD_STATUS_JSON = 'build-status.json'
@@ -193,7 +193,7 @@ def extract_and_refine_annotated_cfg(introspector_report):
     return annotated_cfg
 
 
-def extract_and_refine_functions(all_function_list, project_name, date_str):
+def extract_and_refine_functions(all_function_list, date_str):
     refined_proj_list = []
 
     for func in all_function_list:
@@ -209,8 +209,6 @@ def extract_and_refine_functions(all_function_list, project_name, date_str):
             float(func['Func lines hit %'].replace("%", "")),
             'fuzzers':
             func['Reached by Fuzzers'],
-            'project':
-            project_name,
             'acc_cc':
             func['Accumulated cyclomatic complexity'],
             'icount':
@@ -355,10 +353,9 @@ def extract_local_project_data(project_name, oss_fuzz_path,
     branch_pairs = list()
     annotated_cfg = dict()
 
-    refined_proj_list = extract_and_refine_functions(all_function_list,
-                                                     project_name, '')
+    refined_proj_list = extract_and_refine_functions(all_function_list, '')
     refined_constructor_list = extract_and_refine_functions(
-        all_constructor_list, project_name, '')
+        all_constructor_list, '')
     annotated_cfg = extract_and_refine_annotated_cfg(introspector_report)
     branch_pairs = extract_and_refine_branch_blockers(introspector_report,
                                                       project_name)
@@ -381,6 +378,7 @@ def extract_local_project_data(project_name, oss_fuzz_path,
         'refined_proj_list': refined_proj_list,
         'refined_constructor_list': refined_constructor_list,
         'annotated_cfg': annotated_cfg,
+        'project_name': project_name
     }
 
     code_coverage_data_dict = extract_code_coverage_data(
@@ -593,9 +591,9 @@ def extract_project_data(project_name, date_str, should_include_details,
                 project_name, date_str)
 
             refined_proj_list = extract_and_refine_functions(
-                all_function_list, project_name, date_str)
+                all_function_list, date_str)
             refined_constructor_list = extract_and_refine_functions(
-                all_constructor_list, project_name, date_str)
+                all_constructor_list, date_str)
 
             annotated_cfg = extract_and_refine_annotated_cfg(
                 introspector_report)
@@ -618,6 +616,7 @@ def extract_project_data(project_name, date_str, should_include_details,
             'refined_constructor_list': refined_constructor_list,
             'annotated_cfg': annotated_cfg,
             'optimal_targets': optimal_targets,
+            'project_name': project_name
         }
 
     code_coverage_data_dict = extract_code_coverage_data(
@@ -662,8 +661,8 @@ def analyse_list_of_projects(date, projects_to_analyse,
       - This holds data relative to whether coverage and introspector builds succeeds.
 
     """
-    function_list = list()
-    constructor_list = list()
+    function_dict = dict()
+    constructor_dict = dict()
     project_timestamps = list()
     all_header_files = list()
     accummulated_fuzzer_count = 0
@@ -699,7 +698,6 @@ def analyse_list_of_projects(date, projects_to_analyse,
     for batch in all_batches:
         for project_name in batch:
             idx += 1
-            logger.debug("%d" % (len(function_list)))
             t = Thread(target=extract_project_data,
                        args=(project_name, date, should_include_details,
                              analyses_dictionary))
@@ -722,15 +720,25 @@ def analyse_list_of_projects(date, projects_to_analyse,
             'introspector-data', None)
 
         if introspector_dictionary != None:
+            proj = introspector_dictionary['project_name']
             # Functions
-            function_list += introspector_dictionary['refined_proj_list']
+            if proj in function_dict:
+                function_dict[proj].extend(
+                    introspector_dictionary['refined_proj_list'])
+            else:
+                function_dict[proj] = introspector_dictionary[
+                    'refined_proj_list']
             # Remove the function list because we don't want it anymore.
             introspector_dictionary.pop('refined_proj_list')
 
             # Constructors
-            constructor_list += introspector_dictionary[
-                'refined_constructor_list']
-            # Remove the function list because we don't want it anymore.
+            if proj in constructor_dict:
+                constructor_dict[proj].extend(
+                    introspector_dictionary['refined_constructor_list'])
+            else:
+                constructor_dict[proj] = introspector_dictionary[
+                    'refined_constructor_list']
+            # Remove the constructor list because we don't want it anymore.
             introspector_dictionary.pop('refined_constructor_list')
 
             # Accummulate various stats for the DB timestamp.
@@ -760,7 +768,7 @@ def analyse_list_of_projects(date, projects_to_analyse,
     # - all constructors (maybe empty)
     # - a list of project timestamps
     # - the DB timestamp
-    return function_list, constructor_list, project_timestamps, db_timestamp, all_header_files
+    return function_dict, constructor_dict, project_timestamps, db_timestamp, all_header_files
 
 
 def extend_db_timestamps(db_timestamp, output_directory):
@@ -844,35 +852,36 @@ def extend_db_json_files(project_timestamps, output_directory):
         json.dump(project_timestamps, f)
 
 
-def extend_func_db(function_list, output_directory, target):
-    if os.path.isfile(os.path.join(output_directory, target)):
-        with open(os.path.join(output_directory, target), 'r') as f:
-            existing_function_list = json.load(f)
-    else:
-        existing_function_list = []
+def extend_func_db(function_dict, output_dir, target):
+    # Loop for function list of all projects
+    for proj in function_dict:
+        json_path = os.path.join(output_dir, target.replace('{PROJ}', proj))
 
-    # We should update data on all projects where we have function data, and
-    # for those we do not have updated information on we will use the old data.
-    projects_that_need_updating = set()
-    for elem in function_list:
-        projects_that_need_updating.add(elem['project'])
+        # Process the new function list
+        function_list = function_dict[proj]
+        function_name_list = [function['name'] for function in function_list]
 
-    functions_to_keep = []
-    for func in existing_function_list:
-        if func['project'] not in projects_that_need_updating:
-            functions_to_keep.append(func)
+        # Retrieve existing function list for the target project
+        if os.path.isfile(json_path):
+            with open(json_path, 'r') as f:
+                existing_function_list = json.load(f)
+        else:
+            existing_function_list = list()
 
-    # Add new functions
-    all_functions = functions_to_keep + function_list
+        # Add new functions
+        for function in existing_function_list:
+            if function['name'] not in function_name_list:
+                function_list.append(function)
 
-    with open(os.path.join(output_directory, target), 'w') as f:
-        json.dump(all_functions, f)
+        # Write to the function json for the target project
+        with open(json_path, 'w') as f:
+            json.dump(function_list, f)
 
 
 def update_db_files(db_timestamp,
                     project_timestamps,
-                    function_list,
-                    constructor_list,
+                    function_dict,
+                    constructor_dict,
                     output_directory,
                     should_include_details,
                     all_header_files=dict()):
@@ -880,8 +889,8 @@ def update_db_files(db_timestamp,
         "Updating the database with DB snapshot. Number of functions in total: %d"
         % (db_timestamp['function_count']))
     if should_include_details:
-        extend_func_db(function_list, output_directory, DB_JSON_ALL_FUNCTIONS)
-        extend_func_db(constructor_list, output_directory,
+        extend_func_db(function_dict, output_directory, DB_JSON_ALL_FUNCTIONS)
+        extend_func_db(constructor_dict, output_directory,
                        DB_JSON_ALL_CONSTRUCTORS)
 
     logging.info('Writing header files')
@@ -969,13 +978,13 @@ def analyse_set_of_dates(dates, projects_to_analyse, output_directory,
         if force_creation:
             is_end = True
 
-        function_list, constructor_list, project_timestamps, db_timestamp, all_header_files = analyse_list_of_projects(
+        function_dict, constructor_dict, project_timestamps, db_timestamp, all_header_files = analyse_list_of_projects(
             date, projects_to_analyse, should_include_details=is_end)
         logging.info('Updating DB files')
         update_db_files(db_timestamp,
                         project_timestamps,
-                        function_list,
-                        constructor_list,
+                        function_dict,
+                        constructor_dict,
                         output_directory,
                         should_include_details=is_end,
                         all_header_files=all_header_files)
@@ -1171,8 +1180,8 @@ def get_dates_to_analyse(since_date, days_to_analyse, day_offset):
 
 def create_local_db(oss_fuzz_path):
     """Creates a database based of local runs."""
-    function_list = list()
-    constructor_list = list()
+    function_dict = dict()
+    constructor_dict = dict()
     project_timestamps = list()
     accummulated_fuzzer_count = 0
     accummulated_function_count = 0
@@ -1227,15 +1236,25 @@ def create_local_db(oss_fuzz_path):
         introspector_dictionary = project_timestamp.get(
             'introspector-data', None)
         if introspector_dictionary != None:
+            proj = introspector_dictionary['project_name']
             # Functions
-            function_list += introspector_dictionary['refined_proj_list']
+            if proj in function_dict:
+                function_dict[proj].extend(
+                    introspector_dictionary['refined_proj_list'])
+            else:
+                function_dict[proj] = introspector_dictionary[
+                    'refined_proj_list']
             # Remove the function list because we don't want it anymore.
             introspector_dictionary.pop('refined_proj_list')
 
             # Constructors
-            constructor_list += introspector_dictionary[
-                'refined_constructor_list']
-            # Remove the function list because we don't want it anymore.
+            if proj in constructor_dict:
+                constructor_dict[proj].extend(
+                    introspector_dictionary['refined_constructor_list'])
+            else:
+                constructor_dict[proj] = introspector_dictionary[
+                    'refined_constructor_list']
+            # Remove the constructor list because we don't want it anymore.
             introspector_dictionary.pop('refined_constructor_list')
 
             # Accummulate various stats for the DB timestamp.
@@ -1259,8 +1278,8 @@ def create_local_db(oss_fuzz_path):
 
     update_db_files(db_timestamp,
                     project_timestamps,
-                    function_list,
-                    constructor_list,
+                    function_dict,
+                    constructor_dict,
                     os.getcwd(),
                     should_include_details=True,
                     all_header_files=all_header_files)

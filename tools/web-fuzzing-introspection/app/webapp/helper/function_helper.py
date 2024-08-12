@@ -18,9 +18,9 @@ from typing import Dict, List, Any
 from .. import models
 
 
-def search_function_by_return_type(target_list: List[models.Function],
-                                   needed_return_type: str,
-                                   project_name: str) -> List[Dict[str, Any]]:
+def search_function_by_return_type(
+        target_list: List[models.Function],
+        needed_return_type: str) -> List[Dict[str, Any]]:
     """
         Find all the functions for the target project from the target list
         that returns the needed return type. The found function list is
@@ -29,7 +29,7 @@ def search_function_by_return_type(target_list: List[models.Function],
     # Obtain the plain return type by removing generics
     needed_return_type = needed_return_type.split('<')[0]
 
-    functions = _filter_unrelated_functions(target_list, project_name, True)
+    functions = _filter_unrelated_functions(target_list)
 
     functions = [
         function for function in functions
@@ -40,7 +40,6 @@ def search_function_by_return_type(target_list: List[models.Function],
 
 
 def filter_sort_functions(target_list: List[models.Function],
-                          project_name: str,
                           is_filter: bool) -> List[Dict[str, Any]]:
     """
         Find all the functions for the target project with the provided
@@ -49,16 +48,17 @@ def filter_sort_functions(target_list: List[models.Function],
         Dict for json return.
     """
 
-    functions = _filter_unrelated_functions(target_list, project_name,
-                                            is_filter)
+    if is_filter:
+        functions = _filter_unrelated_functions(target_list)
+    else:
+        functions = target_list
 
     return convert_functions_to_list_of_dict(
         _sort_functions_by_fuzz_worthiness(functions))
 
 
-def _filter_unrelated_functions(target_list: List[models.Function],
-                                project_name: str,
-                                is_filter: bool) -> List[models.Function]:
+def _filter_unrelated_functions(
+        target_list: List[models.Function]) -> List[models.Function]:
     """
         Filter unrelated functions in a provided function list if
         it meet any of the following conditions.
@@ -70,21 +70,13 @@ def _filter_unrelated_functions(target_list: List[models.Function],
         'exception', 'error', 'test'
     ]
 
-    if is_filter:
-        functions = [
-            target for target in target_list
-            if (target.project == project_name and target.is_accessible
-                and not target.is_jvm_library
-                and len(target.function_arguments) > 0 and not any(
-                    function_name in target.name.lower()
-                    for function_name in excluded_function_name))
-        ]
-    else:
-        functions = [
-            target for target in target_list if target.project == project_name
-        ]
-
-    return functions
+    return [
+        target for target in target_list
+        if (target.is_accessible and not target.is_jvm_library
+            and len(target.function_arguments) > 0 and not any(
+                function_name in target.name.lower()
+                for function_name in excluded_function_name))
+    ]
 
 
 def _sort_functions_by_fuzz_worthiness(

@@ -8,15 +8,18 @@ import json
 
 from .models import *
 
+all_functions_file = os.path.join(
+    os.path.dirname(__file__),
+    '../static/assets/db/all-functions-db-{PROJ}.json')
+all_constructors_file = os.path.join(
+    os.path.dirname(__file__),
+    '../static/assets/db/all-constructors-db-{PROJ}.json')
+
 PROJECT_TIMESTAMPS: List[ProjectTimestamp] = []
 
 DB_TIMESTAMPS: List[DBTimestamp] = []
 
 PROJECTS: List[Project] = []
-
-FUNCTIONS: List[Function] = []
-
-CONSTRUCTORS: List[Function] = []
 
 BLOCKERS: List[BranchBlocker] = []
 
@@ -31,12 +34,28 @@ def get_projects() -> List[Project]:
     return PROJECTS
 
 
-def get_functions() -> List[Function]:
-    return FUNCTIONS
+def get_all_functions() -> List[Function]:
+    result_list = []
+    for proj in PROJECTS:
+        result_list.extend(get_functions_by_project(proj.name))
+
+    return result_list
 
 
-def get_constructors() -> List[Function]:
-    return CONSTRUCTORS
+def get_all_constructors() -> List[Function]:
+    result_list = []
+    for proj in PROJECTS:
+        result_list.extend(get_constructors_by_project(proj.name))
+
+    return result_list
+
+
+def get_functions_by_project(proj: str) -> List[Function]:
+    return retrieve_functions(proj, False)
+
+
+def get_constructors_by_project(proj: str) -> List[Function]:
+    return retrieve_functions(proj, True)
 
 
 def get_blockers() -> List[BranchBlocker]:
@@ -97,3 +116,59 @@ def get_project_branch_blockers(project: str) -> List[BranchBlocker]:
                               'blocked_unique_functions'),
                           src_linenumber=json_bb.get('linenumber')))
     return branch_models
+
+
+def retrieve_functions(proj: str, is_constructor: bool) -> List[Function]:
+    """Retrieve functions or constructors"""
+    if is_constructor:
+        json_path = all_constructors_file.replace('{PROJ}', proj)
+    else:
+        json_path = all_functions_file.replace('{PROJ}', proj)
+
+    if os.path.isfile(json_path):
+        with open(json_path, 'r') as file:
+            function_list = json.load(file)
+    else:
+        return []
+
+    result_list = []
+    for func in function_list:
+        try:
+            debug_argtypes = func['debug']['args']
+        except KeyError:
+            debug_argtypes = []
+
+        if is_constructor:
+            # Constructors must have a return type of its own class
+            func['rtn'] = func['file']
+
+        result_list.append(
+            Function(name=func['name'],
+                     project=proj,
+                     runtime_code_coverage=func['cov'],
+                     function_filename=func['file'],
+                     reached_by_fuzzers=func['fuzzers'],
+                     code_coverage_url=func['cov_url'],
+                     is_reached=(len(func['fuzzers']) > 0),
+                     llvm_instruction_count=func['icount'],
+                     accummulated_cyclomatic_complexity=func['acc_cc'],
+                     undiscovered_complexity=func['u-cc'],
+                     function_arguments=func['args'],
+                     function_debug_arguments=debug_argtypes,
+                     return_type=func['rtn'],
+                     function_argument_names=func['args-names'],
+                     raw_function_name=func.get('raw-name', func['name']),
+                     date_str=func.get('date-str', ''),
+                     source_line_begin=func.get('src_begin', -1),
+                     source_line_end=func.get('src_end', -1),
+                     callsites=func.get('callsites', {}),
+                     func_signature=func.get('sig', func['name']),
+                     debug_data=func.get('debug', {}),
+                     is_accessible=func.get('access', True),
+                     is_jvm_library=func.get('jvm_lib', False),
+                     is_enum_class=func.get('enum', False),
+                     is_static=func.get('static', False),
+                     need_close=func.get('need_close', False),
+                     exceptions=func.get('exc', [])))
+
+    return result_list

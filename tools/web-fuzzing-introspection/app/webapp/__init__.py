@@ -11,11 +11,6 @@ def load_db() -> None:
 
     db_timestamps_file = os.path.join(
         os.path.dirname(__file__), "../static/assets/db/db-timestamps.json")
-    all_functions_file = os.path.join(
-        os.path.dirname(__file__), "../static/assets/db/all-functions-db.json")
-    all_constructors_file = os.path.join(
-        os.path.dirname(__file__),
-        "../static/assets/db/all-constructors-db.json")
     project_timestamps_file = os.path.join(
         os.path.dirname(__file__),
         "../static/assets/db/all-project-timestamps.json")
@@ -43,20 +38,6 @@ def load_db() -> None:
                 function_coverage_estimate=ts['function_coverage_estimate'],
                 accummulated_lines_total=ts['accummulated_lines_total'],
                 accummulated_lines_covered=ts['accummulated_lines_covered']))
-
-    # Load functions
-    with open(all_functions_file, 'r') as f:
-        all_function_list = json.load(f)
-    idx = load_functions(all_function_list, False)
-    print("Loaded %d functions" % (idx))
-    print("Len %d" % (len(data_storage.FUNCTIONS)))
-
-    # Load constructors
-    with open(all_constructors_file, 'r') as f:
-        all_constructor_list = json.load(f)
-    idx = load_functions(all_constructor_list, True)
-    print("Loaded %d constructors" % (idx))
-    print("Len %d" % (len(data_storage.CONSTRUCTORS)))
 
     with open(project_timestamps_file, 'r') as f:
         project_timestamps_json = json.load(f)
@@ -142,56 +123,3 @@ def load_db() -> None:
         data_storage.ALL_HEADER_FILES = all_header_files
 
     return
-
-
-def load_functions(function_list: List[Dict[str, Any]],
-                   is_constructor: bool) -> int:
-    """Load functions or constructors into data storage"""
-    idx = 0
-    for func in function_list:
-        idx += 1
-        try:
-            debug_argtypes = func['debug']['args']
-        except KeyError:
-            debug_argtypes = []
-
-        # Constructors and functions stored in different list
-        if is_constructor:
-            # Constructors must have a return type of its own class
-            func['rtn'] = func['file']
-            target = data_storage.CONSTRUCTORS
-        else:
-            target = data_storage.FUNCTIONS
-
-        target.append(
-            models.Function(name=func['name'],
-                            project=func['project'],
-                            runtime_code_coverage=func['cov'],
-                            function_filename=func['file'],
-                            reached_by_fuzzers=func['fuzzers'],
-                            code_coverage_url=func['cov_url'],
-                            is_reached=(len(func['fuzzers']) > 0),
-                            llvm_instruction_count=func['icount'],
-                            accummulated_cyclomatic_complexity=func['acc_cc'],
-                            undiscovered_complexity=func['u-cc'],
-                            function_arguments=func['args'],
-                            function_debug_arguments=debug_argtypes,
-                            return_type=func['rtn'],
-                            function_argument_names=func['args-names'],
-                            raw_function_name=func.get('raw-name',
-                                                       func['name']),
-                            date_str=func.get('date-str', ''),
-                            source_line_begin=func.get('src_begin', -1),
-                            source_line_end=func.get('src_end', -1),
-                            callsites=func.get('callsites', {}),
-                            calldepth=func.get('calldepth', 0),
-                            func_signature=func.get('sig', func['name']),
-                            debug_data=func.get('debug', {}),
-                            is_accessible=func.get('access', True),
-                            is_jvm_library=func.get('jvm_lib', False),
-                            is_enum_class=func.get('enum', False),
-                            is_static=func.get('static', False),
-                            need_close=func.get('need_close', False),
-                            exceptions=func.get('exc', [])))
-
-    return idx
