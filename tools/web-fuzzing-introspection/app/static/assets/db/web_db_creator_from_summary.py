@@ -239,6 +239,7 @@ def extract_and_refine_functions(all_function_list, date_str):
         introspector_func['jvm_lib'] = func.get('is_jvm_library', False)
         introspector_func['enum'] = func.get('is_enum_class', False)
         introspector_func['static'] = func.get('is_static', False)
+        introspector_func['need_close'] = func.get('need_close', False)
         introspector_func['exc'] = func.get('exceptions', [])
 
         # For JVM projects, the function name, function signature and function raw
@@ -687,7 +688,7 @@ def analyse_list_of_projects(date, projects_to_analyse,
 
     project_name_list = list(projects_to_analyse.keys())
 
-    batch_size = 10 if not should_include_details else 2
+    batch_size = 6 if not should_include_details else 1
     all_batches = [
         project_name_list[x:x + batch_size]
         for x in range(0, len(project_name_list), batch_size)

@@ -20,8 +20,8 @@ import json
 import signal
 
 from flask import Blueprint, render_template, request, redirect
-from typing import Dict, List
-from . import models, data_storage
+from typing import Dict, List, Optional
+from . import models, data_storage, page_texts
 from .helper import function_helper
 
 # Use these during testing.
@@ -291,7 +291,11 @@ def index():
                            max_fuzzer_count=max_fuzzer_count,
                            max_function_count=max_function_count,
                            oss_fuzz_total_number=oss_fuzz_total_number,
-                           max_line_count=max_line_count)
+                           max_line_count=max_line_count,
+                           page_main_name=page_texts.get_page_name(),
+                           page_main_url=page_texts.get_page_main_url(),
+                           page_summary=page_texts.get_page_summary(),
+                           page_base_title=page_texts.get_page_base_title())
 
 
 @blueprint.route('/function-profile', methods=['GET'])
@@ -304,7 +308,8 @@ def function_profile():
     return render_template('function-profile.html',
                            gtag=gtag,
                            related_functions=related_functions,
-                           function_profile=function_profile)
+                           function_profile=function_profile,
+                           page_base_title=page_texts.get_page_base_title())
 
 
 @blueprint.route('/project-profile', methods=['GET'])
@@ -346,8 +351,11 @@ def project_profile():
                 latest_coverage_report = get_coverage_report_url(
                     project.name, datestr, project_language)
                 if ps.introspector_data is not None:
-                    latest_fuzz_introspector_report = get_introspector_url(
-                        project.name, datestr)
+                    if ps.introspector_url:
+                        latest_fuzz_introspector_report = ps.introspector_url
+                    else:
+                        latest_fuzz_introspector_report = get_introspector_url(
+                            project.name, datestr)
                     latest_introspector_datestr = datestr
 
         # Get functions of interest for the project
@@ -383,7 +391,8 @@ def project_profile():
             latest_coverage_report=None,
             latest_statistics=latest_statistics,
             latest_fuzz_introspector_report=latest_fuzz_introspector_report,
-            latest_introspector_datestr=latest_introspector_datestr)
+            latest_introspector_datestr=latest_introspector_datestr,
+            page_base_title=page_texts.get_page_base_title())
 
     # Either this is a wrong project or we only have a build status for it
     all_build_status = data_storage.get_build_status()
@@ -414,8 +423,11 @@ def project_profile():
                         build_status.project_name, datestr,
                         build_status.language)
                     if ps.introspector_data is not None:
-                        latest_fuzz_introspector_report = get_introspector_url(
-                            build_status.project_name, datestr)
+                        if ps.introspector_url:
+                            latest_fuzz_introspector_report = ps.introspector_url
+                        else:
+                            latest_fuzz_introspector_report = get_introspector_url(
+                                project.name, datestr)
                         latest_introspector_datestr = datestr
 
             if datestr and len(real_stats) > 0:
@@ -435,7 +447,8 @@ def project_profile():
                 latest_coverage_report=latest_coverage_report,
                 coverage_date=datestr,
                 latest_statistics=latest_statistics,
-                latest_introspector_datestr=latest_introspector_datestr)
+                latest_introspector_datestr=latest_introspector_datestr,
+                page_base_title=page_texts.get_page_base_title())
     print("Nothing to do. We shuold probably have a 404")
     return redirect("/")
 
@@ -485,7 +498,8 @@ def function_search():
     return render_template('function-search.html',
                            gtag=gtag,
                            all_functions=functions_to_display,
-                           info_msg=info_msg)
+                           info_msg=info_msg,
+                           page_base_title=page_texts.get_page_base_title())
 
 
 @blueprint.route('/projects-overview')
@@ -499,7 +513,8 @@ def projects_overview():
 
     return render_template('projects-overview.html',
                            gtag=gtag,
-                           all_projects=latest_coverage_profiles.values())
+                           all_projects=latest_coverage_profiles.values(),
+                           page_base_title=page_texts.get_page_base_title())
 
 
 def oracle_3(all_functions, all_projects):
@@ -812,7 +827,8 @@ def target_oracle():
     return render_template('target-oracle.html',
                            gtag=gtag,
                            functions_to_display=functions_to_display,
-                           func_to_lang=func_to_lang)
+                           func_to_lang=func_to_lang,
+                           page_base_title=page_texts.get_page_base_title())
 
 
 @blueprint.route('/indexing-overview')
@@ -841,17 +857,22 @@ def indexing_overview():
     return render_template('indexing-overview.html',
                            gtag=gtag,
                            all_build_status=build_status,
-                           languages_summarised=languages_summarised)
+                           languages_summarised=languages_summarised,
+                           page_base_title=page_texts.get_page_base_title())
 
 
 @blueprint.route('/about')
 def about():
-    return render_template('about.html', gtag=gtag)
+    return render_template('about.html',
+                           gtag=gtag,
+                           page_base_title=page_texts.get_page_base_title())
 
 
 @blueprint.route('/api')
 def api():
-    return render_template('api.html', gtag=gtag)
+    return render_template('api.html',
+                           gtag=gtag,
+                           page_base_title=page_texts.get_page_base_title())
 
 
 @blueprint.route('/api/optimal-targets')
@@ -1424,6 +1445,35 @@ def api_function_with_matching_type():
     }
 
 
+@blueprint.route('/api/jvm-method-properties')
+def api_jvm_method_properties():
+    """Returns some properties for the jvm method"""
+    project_name = request.args.get('project', None)
+    if project_name is None:
+        return {'result': 'error', 'msg': 'Please provide a project name'}
+    function_signature = request.args.get('function_signature', None)
+    if function_signature is None:
+        return {'result': 'error', 'msg': 'No function signature provided'}
+
+    target_function = get_function_from_func_signature(function_signature,
+                                                       project_name)
+
+    if target_function is None:
+        return {
+            'result':
+            'error',
+            'msg':
+            f'Function signature could not be found in project {project_name}'
+        }
+
+    return {
+        'result': 'success',
+        'is-jvm-static': target_function.is_static,
+        'need-close': target_function.need_close,
+        'exceptions': target_function.exceptions
+    }
+
+
 def get_build_status_of_project(project_name):
     build_status = data_storage.get_build_status()
 
@@ -1809,6 +1859,56 @@ def all_project_header_files():
             }
 
     return {'result': 'failed', 'msg': 'did not find project'}
+
+
+def extract_project_tests(project_name,
+                          refine: bool = True) -> Optional[List[str]]:
+    tests_file = os.path.join(
+        os.path.dirname(__file__),
+        f"../static/assets/db/db-projects/{project_name}/test_files.json")
+    if not os.path.isfile(tests_file):
+        return None
+
+    with open(tests_file, 'r') as f:
+        tests_file_list = json.load(f)
+
+    if refine:
+        refined_list = []
+        for test_file in tests_file_list:
+            if '/src/fuzztest/' in test_file:
+                continue
+            if '/src/libfuzzer/' in test_file:
+                continue
+            if '/src/aflplusplus/' in test_file:
+                continue
+            if '/src/LPM/' in test_file:
+                continue
+            if '/googletest/' in test_file:
+                continue
+            if '/third_party/' in test_file:
+                continue
+            refined_list.append(test_file)
+        tests_file_list = refined_list
+    return tests_file_list
+
+
+@blueprint.route('/api/project-tests')
+def project_tests():
+    project = request.args.get('project', None)
+    if project is None:
+        return {
+            'result': 'error',
+            'extended_msgs': ['Please provide project name']
+        }
+
+    test_file_list = extract_project_tests(project)
+    if test_file_list == None:
+        return {
+            'result': 'error',
+            'extended_msgs': ['Could not find tests file']
+        }
+
+    return {'result': 'success', 'test-file-list': test_file_list}
 
 
 @blueprint.route('/api/addr-to-recursive-dwarf-info')

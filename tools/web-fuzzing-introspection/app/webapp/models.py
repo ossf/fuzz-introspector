@@ -70,10 +70,14 @@ class DBSummary:
 
 class ProjectTimestamp:
 
-    def __init__(self, project_name: str, date: str, language: str,
+    def __init__(self,
+                 project_name: str,
+                 date: str,
+                 language: str,
                  coverage_data: Optional[Dict[str, Any]],
-                 introspector_data: Optional[Dict[str,
-                                                  Any]], fuzzer_count: int):
+                 introspector_data: Optional[Dict[str, Any]],
+                 fuzzer_count: int,
+                 introspector_url: Optional[str] = None):
         self.project_name = project_name
         # date in the format Y-m-d
         self.date = date
@@ -81,6 +85,7 @@ class ProjectTimestamp:
         self.coverage_data = coverage_data
         self.introspector_data = introspector_data
         self.fuzzer_count = fuzzer_count
+        self.introspector_url = introspector_url
 
     def has_introspector(self) -> bool:
         return self.introspector_data != None
@@ -115,6 +120,7 @@ class Function:
                  is_jvm_library: bool = False,
                  is_enum_class: bool = False,
                  is_static: bool = False,
+                 need_close: bool = False,
                  exceptions: List[str] = []):
         self.name = name
         self.function_filename = function_filename
@@ -142,6 +148,7 @@ class Function:
         self.is_jvm_library = is_jvm_library
         self.is_enum_class = is_enum_class
         self.is_static = is_static
+        self.need_close = need_close
         self.exceptions = exceptions
 
     def to_dict(self) -> Dict[str, Any]:
