@@ -37,34 +37,6 @@ def get_projects() -> List[Project]:
     return PROJECTS
 
 
-def get_all_functions() -> List[Function]:
-    result_list = []
-    for proj in PROJECTS:
-        result_list.extend(get_functions_by_project(proj.name))
-
-    return result_list
-
-
-def get_all_constructors() -> List[Function]:
-    result_list = []
-    for proj in PROJECTS:
-        result_list.extend(get_constructors_by_project(proj.name))
-
-    return result_list
-
-
-def get_total_function_count() -> int:
-    global TOTAL_FUNCTION_COUNT
-
-    if TOTAL_FUNCTION_COUNT == -1:
-        total_func_count = 0
-        for proj in PROJECTS:
-            func_count = len(get_functions_by_project(proj.name))
-            total_func_count += func_count
-        TOTAL_FUNCTION_COUNT = total_func_count
-    return TOTAL_FUNCTION_COUNT
-
-
 def get_functions_by_project(proj: str) -> List[Function]:
     return retrieve_functions(proj, False)
 
