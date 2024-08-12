@@ -117,7 +117,7 @@ def get_project_branch_blockers(project: str) -> List[BranchBlocker]:
         return []
 
     with open(branch_blockers_path, 'r') as f:
-        branch_repotr = orjson.loads(f.read())
+        branch_report = orjson.loads(f.read())
 
     branch_models = list()
     for json_bb in branch_report:
