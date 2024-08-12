@@ -168,6 +168,7 @@ def retrieve_functions(proj: str, is_constructor: bool) -> List[Function]:
                      is_jvm_library=func.get('jvm_lib', False),
                      is_enum_class=func.get('enum', False),
                      is_static=func.get('static', False),
+                     need_close=func.get('need_close', False),
                      exceptions=func.get('exc', [])))
 
     return result_list
