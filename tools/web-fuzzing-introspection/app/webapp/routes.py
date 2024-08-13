@@ -339,6 +339,7 @@ def project_profile():
         latest_coverage_report = None
         latest_fuzz_introspector_report = None
         latest_introspector_datestr = ""
+        project_url = ''
         for ps in project_statistics:
             if ps.project_name == project.name:
                 real_stats.append(ps)
@@ -359,6 +360,10 @@ def project_profile():
                         latest_fuzz_introspector_report = get_introspector_url(
                             project.name, datestr)
                     latest_introspector_datestr = datestr
+            if ps.project_url:
+                project_url = ps.project_url
+        if not project_url:
+            project_url = f'https://github.com/google/oss-fuzz/tree/master/projects/{project.name}'
 
         # Get functions of interest for the project
         # Display a maximum of 10 functions of interest. Down the line, this
@@ -394,7 +399,8 @@ def project_profile():
             latest_statistics=latest_statistics,
             latest_fuzz_introspector_report=latest_fuzz_introspector_report,
             latest_introspector_datestr=latest_introspector_datestr,
-            page_base_title=page_texts.get_page_base_title())
+            page_base_title=page_texts.get_page_base_title(),
+            project_url=project_url)
 
     # Either this is a wrong project or we only have a build status for it
     all_build_status = data_storage.get_build_status()
