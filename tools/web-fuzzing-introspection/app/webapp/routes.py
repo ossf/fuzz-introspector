@@ -876,7 +876,8 @@ def indexing_overview():
                            gtag=gtag,
                            all_build_status=build_status,
                            languages_summarised=languages_summarised,
-                           page_base_title=page_texts.get_page_base_title())
+                           page_base_title=page_texts.get_page_base_title(),
+                           page_main_name=page_texts.get_page_name())
 
 
 @blueprint.route('/about')
