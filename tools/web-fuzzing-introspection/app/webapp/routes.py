@@ -311,6 +311,8 @@ def function_profile():
                            gtag=gtag,
                            related_functions=related_functions,
                            function_profile=function_profile,
+                           page_main_name=page_texts.get_page_name(),
+                           page_main_url=page_texts.get_page_main_url(),
                            page_base_title=page_texts.get_page_base_title())
 
 
@@ -401,6 +403,7 @@ def project_profile():
             latest_introspector_datestr=latest_introspector_datestr,
             page_base_title=page_texts.get_page_base_title(),
             project_url=project_url,
+            page_main_url=page_texts.get_page_main_url(),
             page_main_name=page_texts.get_page_name())
 
     # Either this is a wrong project or we only have a build status for it
@@ -457,6 +460,8 @@ def project_profile():
                 coverage_date=datestr,
                 latest_statistics=latest_statistics,
                 latest_introspector_datestr=latest_introspector_datestr,
+                page_main_name=page_texts.get_page_name(),
+                page_main_url=page_texts.get_page_main_url(),
                 page_base_title=page_texts.get_page_base_title())
     print("Nothing to do. We shuold probably have a 404")
     return redirect("/")
@@ -512,6 +517,8 @@ def function_search():
     return render_template('function-search.html',
                            gtag=gtag,
                            all_functions=functions_to_display,
+                           page_main_name=page_texts.get_page_name(),
+                           page_main_url=page_texts.get_page_main_url(),
                            info_msg=info_msg,
                            page_base_title=page_texts.get_page_base_title())
 
@@ -525,10 +532,14 @@ def projects_overview():
     for ps in project_statistics:
         latest_coverage_profiles[ps.project_name] = ps
 
-    return render_template('projects-overview.html',
-                           gtag=gtag,
-                           all_projects=latest_coverage_profiles.values(),
-                           page_base_title=page_texts.get_page_base_title())
+    return render_template(
+        'projects-overview.html',
+        gtag=gtag,
+        all_projects=latest_coverage_profiles.values(),
+        page_base_title=page_texts.get_page_base_title(),
+        page_main_name=page_texts.get_page_name(),
+        page_main_url=page_texts.get_page_main_url(),
+    )
 
 
 def oracle_3(all_functions, all_projects):
@@ -846,7 +857,9 @@ def target_oracle():
                            gtag=gtag,
                            functions_to_display=functions_to_display,
                            func_to_lang=func_to_lang,
-                           page_base_title=page_texts.get_page_base_title())
+                           page_base_title=page_texts.get_page_base_title(),
+                           page_main_name=page_texts.get_page_name(),
+                           page_main_url=page_texts.get_page_main_url())
 
 
 @blueprint.route('/indexing-overview')
@@ -877,13 +890,16 @@ def indexing_overview():
                            all_build_status=build_status,
                            languages_summarised=languages_summarised,
                            page_base_title=page_texts.get_page_base_title(),
-                           page_main_name=page_texts.get_page_name())
+                           page_main_name=page_texts.get_page_name(),
+                           page_main_url=page_texts.get_page_main_url())
 
 
 @blueprint.route('/about')
 def about():
     return render_template('about.html',
                            gtag=gtag,
+                           page_main_name=page_texts.get_page_name(),
+                           page_main_url=page_texts.get_page_main_url(),
                            page_base_title=page_texts.get_page_base_title())
 
 
@@ -891,6 +907,8 @@ def about():
 def api():
     return render_template('api.html',
                            gtag=gtag,
+                           page_main_name=page_texts.get_page_name(),
+                           page_main_url=page_texts.get_page_main_url(),
                            page_base_title=page_texts.get_page_base_title())
 
 
