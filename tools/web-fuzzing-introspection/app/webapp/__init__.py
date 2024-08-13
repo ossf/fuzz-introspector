@@ -51,7 +51,8 @@ def load_db() -> None:
                 introspector_data=project_timestamp['introspector-data'],
                 fuzzer_count=project_timestamp['fuzzer-count'],
                 introspector_url=project_timestamp.get('introspector_url',
-                                                       None)))
+                                                       None),
+                project_url=project_timestamp.get('project_url', None)))
 
     # Load all profiles
     with open(project_currents, 'r') as f:

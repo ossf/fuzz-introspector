@@ -77,7 +77,8 @@ class ProjectTimestamp:
                  coverage_data: Optional[Dict[str, Any]],
                  introspector_data: Optional[Dict[str, Any]],
                  fuzzer_count: int,
-                 introspector_url: Optional[str] = None):
+                 introspector_url: Optional[str] = None,
+                 project_url: Optional[str] = None):
         self.project_name = project_name
         # date in the format Y-m-d
         self.date = date
@@ -86,6 +87,7 @@ class ProjectTimestamp:
         self.introspector_data = introspector_data
         self.fuzzer_count = fuzzer_count
         self.introspector_url = introspector_url
+        self.project_url = project_url
 
     def has_introspector(self) -> bool:
         return self.introspector_data != None
