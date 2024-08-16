@@ -1868,6 +1868,12 @@ def get_full_recursive_types(debug_type_dictionary, resulting_types,
         to_visit.add(type_to_query)
 
 
+@blueprint.route('/api/tester')
+def tester():
+    """Simple response tester."""
+    return {'result': 'success', 'msg': 'tester'}
+
+
 @blueprint.route('/api/shutdown')
 def shutdown():
     """Shuts down the server, only if it's local."""
