@@ -770,6 +770,8 @@ def oracle_2(all_functions,
              only_functions_declared_in_header_files=False):
     tmp_list = []
     project_count = dict()
+    funcs_max_to_display = 4000
+
     if len(all_projects) == 1:
         project_to_target = all_projects[0]
     else:
@@ -813,7 +815,7 @@ def oracle_2(all_functions,
         project_count[function.project] = current_count
 
     functions_to_display = tmp_list
-    funcs_max_to_display = 4000
+
     total_matches = len(functions_to_display)
     if total_matches >= funcs_max_to_display:
         functions_to_display = functions_to_display[:funcs_max_to_display]
@@ -829,13 +831,15 @@ def target_oracle():
     total_funcs = set()
     oracle_pairs = [(oracle_1, "heuristic 1"), (oracle_2, "heuristic 2"),
                     (oracle_3, "heuristic 3")]
-    funcs_max_to_display = 4000
+    random.shuffle(oracle_pairs)
+    funcs_max_to_display = 150
+    project_list = [proj.name for proj in data_storage.PROJECTS]
+    random.shuffle(project_list)
     for oracle, heuristic_name in oracle_pairs:
-        for tmp_proj in data_storage.PROJECTS:
+        for tmp_proj in project_list:
             if len(functions_to_display) > funcs_max_to_display:
                 break
-            proj_func_list = data_storage.get_functions_by_project(
-                tmp_proj.name)
+            proj_func_list = data_storage.get_functions_by_project(tmp_proj)
             func_targets = oracle(proj_func_list, all_projects)
             for func in func_targets:
                 if func in total_funcs:
