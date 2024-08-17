@@ -53,6 +53,10 @@ def load_db() -> None:
                 introspector_url=project_timestamp.get('introspector_url',
                                                        None),
                 project_url=project_timestamp.get('project_url', None)))
+    # If we're caching, then remove the timestamp file.
+    force_cache = True
+    if 'G_ANALYTICS_TAG' in os.environ or force_cache:
+        os.remove(project_timestamps_file)
 
     # Load all profiles
     with open(project_currents, 'r') as f:
@@ -122,5 +126,8 @@ def load_db() -> None:
         with open(all_header_files_file, 'r') as f:
             all_header_files = json.load(f)
         data_storage.ALL_HEADER_FILES = all_header_files
+
+    # Load all functions into a cache
+    data_storage.load_cache()
 
     return

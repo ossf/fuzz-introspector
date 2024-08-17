@@ -32,9 +32,16 @@ ALL_HEADER_FILES: List[Dict[str, Any]] = []
 
 TOTAL_FUNCTION_COUNT = -1
 
+JSON_TO_FUNCTION_CACHE: Dict[str, List[Function]] = dict()
+
 
 def get_projects() -> List[Project]:
     return PROJECTS
+
+
+def load_cache():
+    for project in PROJECTS:
+        get_functions_by_project(project.name)
 
 
 def get_functions_by_project(proj: str) -> List[Function]:
@@ -112,6 +119,9 @@ def retrieve_functions(proj: str, is_constructor: bool) -> List[Function]:
     else:
         json_path = all_functions_file.replace('{PROJ}', proj)
 
+    if json_path in JSON_TO_FUNCTION_CACHE:
+        return JSON_TO_FUNCTION_CACHE[json_path]
+
     if os.path.isfile(json_path):
         with open(json_path, 'r') as file:
             function_list = orjson.loads(file.read())
@@ -157,5 +167,13 @@ def retrieve_functions(proj: str, is_constructor: bool) -> List[Function]:
                      is_static=func.get('static', False),
                      need_close=func.get('need_close', False),
                      exceptions=func.get('exc', [])))
+    JSON_TO_FUNCTION_CACHE[json_path] = result_list
 
+    # At this point if google analytics tag is set it means we are in production, and we should
+    # delete the .json file then to save storage.
+    force_cache = True
+    if 'G_ANALYTICS_TAG' in os.environ or force_cache:
+        os.remove(json_path)
+
+    print("Converted list")
     return result_list
