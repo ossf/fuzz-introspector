@@ -1015,7 +1015,7 @@ def extract_test_information(report_dict=dict()):
                 all_directories.add(assembled_dir)
             assembled_dir += '/'
 
-    inspirations = ["sample", "test"]
+    inspirations = ["sample", "test", "example"]
     all_inspiration_dirs = set()
     for directory in all_directories:
         if any(ins in directory for ins in inspirations):
