@@ -171,8 +171,7 @@ def retrieve_functions(proj: str, is_constructor: bool) -> List[Function]:
 
     # At this point if google analytics tag is set it means we are in production, and we should
     # delete the .json file then to save storage.
-    force_cache = True
-    if 'G_ANALYTICS_TAG' in os.environ or force_cache:
+    if 'G_ANALYTICS_TAG' in os.environ:
         os.remove(json_path)
 
     print("Converted list")
