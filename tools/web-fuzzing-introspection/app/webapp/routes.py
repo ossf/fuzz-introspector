@@ -1936,6 +1936,8 @@ def extract_project_tests(project_name,
                 continue
             if '/depends/' in test_file:
                 continue
+            if '/external/' in test_file:
+                continue
             if '/build/' in test_file:
                 continue
             refined_list.append(test_file)
