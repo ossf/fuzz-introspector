@@ -54,8 +54,7 @@ def load_db() -> None:
                                                        None),
                 project_url=project_timestamp.get('project_url', None)))
     # If we're caching, then remove the timestamp file.
-    force_cache = True
-    if 'G_ANALYTICS_TAG' in os.environ or force_cache:
+    if 'G_ANALYTICS_TAG' in os.environ:
         os.remove(project_timestamps_file)
 
     # Load all profiles
