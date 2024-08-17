@@ -1932,6 +1932,8 @@ def extract_project_tests(project_name,
                 continue
             if 'fuzz' in test_file:
                 continue
+            if '/depends/' in test_file:
+                continue
             refined_list.append(test_file)
         tests_file_list = refined_list
     return tests_file_list
