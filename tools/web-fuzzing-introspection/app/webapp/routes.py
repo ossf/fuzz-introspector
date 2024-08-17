@@ -236,6 +236,7 @@ def get_project_with_name(project_name):
 
 
 def get_fuction_with_name(function_name, project_name):
+
     all_functions = data_storage.get_functions_by_project(project_name)
     for function in all_functions:
         if function.name == function_name:
@@ -841,7 +842,6 @@ def target_oracle():
                     continue
                 total_funcs.add(func)
                 functions_to_display.append((func, heuristic_name))
-
     func_to_lang = dict()
     for func, heuristic in functions_to_display:
         language = 'c'
