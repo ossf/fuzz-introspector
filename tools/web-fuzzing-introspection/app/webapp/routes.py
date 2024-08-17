@@ -1924,7 +1924,7 @@ def extract_project_tests(project_name,
                 continue
             if '/src/aflplusplus/' in test_file:
                 continue
-            if '/src/LPM/' in test_file:
+            if '/LPM/' in test_file:
                 continue
             if '/googletest/' in test_file:
                 continue
