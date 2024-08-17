@@ -1930,6 +1930,8 @@ def extract_project_tests(project_name,
                 continue
             if '/third_party/' in test_file:
                 continue
+            if '/thirdparty/' in test_file:
+                continue
             if 'fuzz' in test_file:
                 continue
             if '/depends/' in test_file:
