@@ -27,6 +27,8 @@ Fuzzing Introspection"""
 default_page_main_name = "OSS-Fuzz"
 default_page_main_url = "https://github.com/google/oss-fuzz"
 
+default_coverage_base = "https://storage.googleapis.com/oss-fuzz-coverage/"
+
 
 def get_page_name():
     return os.getenv('FI_PAGE_MAIN_NAME', default_page_main_name)
@@ -42,3 +44,7 @@ def get_page_summary():
 
 def get_page_base_title():
     return os.getenv('FI_PAGE_BASE_TITLE', default_page_base_title)
+
+
+def get_default_coverage_base():
+    return os.getenv('FI_DEFAULT_COV_BASE', default_coverage_base)
