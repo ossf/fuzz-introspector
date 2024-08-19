@@ -314,7 +314,8 @@ def function_profile():
                            function_profile=function_profile,
                            page_main_name=page_texts.get_page_name(),
                            page_main_url=page_texts.get_page_main_url(),
-                           page_base_title=page_texts.get_page_base_title())
+                           page_base_title=page_texts.get_page_base_title(),
+                           base_cov_url=page_texts.get_default_coverage_base())
 
 
 @blueprint.route('/project-profile', methods=['GET'])
@@ -405,7 +406,8 @@ def project_profile():
             page_base_title=page_texts.get_page_base_title(),
             project_url=project_url,
             page_main_url=page_texts.get_page_main_url(),
-            page_main_name=page_texts.get_page_name())
+            page_main_name=page_texts.get_page_name(),
+            base_cov_url=page_texts.get_default_coverage_base())
 
     # Either this is a wrong project or we only have a build status for it
     all_build_status = data_storage.get_build_status()
@@ -463,7 +465,8 @@ def project_profile():
                 latest_introspector_datestr=latest_introspector_datestr,
                 page_main_name=page_texts.get_page_name(),
                 page_main_url=page_texts.get_page_main_url(),
-                page_base_title=page_texts.get_page_base_title())
+                page_base_title=page_texts.get_page_base_title(),
+                base_cov_url=page_texts.get_default_coverage_base())
     print("Nothing to do. We shuold probably have a 404")
     return redirect("/")
 
