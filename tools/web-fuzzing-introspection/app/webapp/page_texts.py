@@ -29,6 +29,16 @@ default_page_main_url = "https://github.com/google/oss-fuzz"
 
 default_coverage_base = "https://storage.googleapis.com/oss-fuzz-coverage/"
 
+default_about_content = """<p>
+  This page is designed to be a convenient way for understanding the state of open source fuzzing as provided by <a href="https://github.com/google/oss-fuzz">OSS-Fuzz</a>. OSS-Fuzz builds projects by way of <a href="https://github.com/ossf/fuzz-introspector">Fuzz Introspector</a> in order to extract detailed insights about the state of fuzzing of a given open source project. The information provided by Fuzz Introspector is useful to understand how well a given project is being fuzzed and how to improve the fuzzing. Each Fuzz Introspector report provides lots of data for each project, and this page is used to aggregate specific pieces of this information about all OSS-Fuzz projects that successfully build with Fuzz Introspector.
+</p>
+<p>
+  The page is designed with several audiences in mind, this includes both developers and security researchers. Developers may find this page useful for quickly assessing whether specific parts of an open source project is being analysed, which is useful information when using or adapting a new open source project. Security researchers may find this page useful to assess where there are gaps in the analysis and where security efforts are likely to benefit. The goal is to have as much code analysed of the projects integrated into OSS-Fuzz.
+</p>
+<p>
+  We welcome any feedback and please refer to the relevant GitHub repositories when suggesting improvements or highlighting issues.
+</p>"""
+
 
 def get_page_name():
     return os.getenv('FI_PAGE_MAIN_NAME', default_page_main_name)
@@ -48,3 +58,7 @@ def get_page_base_title():
 
 def get_default_coverage_base():
     return os.getenv('FI_DEFAULT_COV_BASE', default_coverage_base)
+
+
+def get_about_text():
+    return os.getenv('FI_DEFAULT_ABOUT_CONTENT', default_about_content)

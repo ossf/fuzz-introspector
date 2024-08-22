@@ -904,6 +904,7 @@ def indexing_overview():
 @blueprint.route('/about')
 def about():
     return render_template('about.html',
+                           about_content=page_texts.get_about_text(),
                            gtag=gtag,
                            page_main_name=page_texts.get_page_name(),
                            page_main_url=page_texts.get_page_main_url(),
