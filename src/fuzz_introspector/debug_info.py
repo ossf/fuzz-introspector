@@ -365,6 +365,8 @@ def extract_func_sig_friendly_type_tags(target_type, debug_type_dictionary):
 
         # Provide the tag
         tags.append(target_type['tag'])
+        if 'array' in target_type['tag']:
+            tags.append('ARRAY-SIZE: %d' % (target_type['const_size']))
 
         name = target_type.get("name", "")
         if name != "":
@@ -565,6 +567,11 @@ def extract_syzkaller_type(param_list):
             pre += "const "
         elif param == "DW_TAG_enumeration_type":
             continue
+        elif 'ARRAY-SIZE' in param:
+            syzkaller_tag = '%s, %s' % (syzkaller_tag,
+                                        param.replace('ARRAY-SIZE:', ''))
+        elif 'DW_TAG_array' in param:
+            syzkaller_tag = 'array[%s]' % (syzkaller_tag)
         else:
             # This is a type and we should convert it to the syzkaller type
             if param == 'char':
