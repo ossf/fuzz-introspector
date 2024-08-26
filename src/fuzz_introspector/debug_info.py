@@ -576,15 +576,17 @@ def extract_syzkaller_type(param_list):
             # This is a type and we should convert it to the syzkaller type
             if param == 'char':
                 syzkaller_tag = 'int8'
-            elif param == 'int':
+            elif param == 'int' or param == 'unsigned int':
                 syzkaller_tag = 'int32'
-            elif param == '__i32':
+            elif param == '__i32' or param == '__b32':
                 syzkaller_tag = 'int32'
             elif param == '__u32' or param == 'u32':
                 syzkaller_tag = 'int32'
             elif param == '__s32' or param == 's32':
                 syzkaller_tag = 'int32'
             elif param == '__u64' or param == 's64':
+                syzkaller_tag = 'int64'
+            elif param == 'unsigned long long':
                 syzkaller_tag = 'int64'
             elif param == '__u8' or param == 'u8' or param == '__s8':
                 syzkaller_tag = 'int8'
