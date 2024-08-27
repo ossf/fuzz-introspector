@@ -1024,6 +1024,10 @@ def extract_test_information(report_dict=dict()):
     # Get all .c files
     test_extensions = ['.cc', '.cpp', '.cxx', '.c++', '.c']
     all_test_files = set()
+    to_avoid = [
+        'fuzztest', 'aflplusplus', 'libfuzzer', 'googletest', 'thirdparty',
+        'third_party', '/build/', '/usr/local/', '/fuzz-introspector/'
+    ]
     for dir in all_inspiration_dirs:
         for root, dirs, files in os.walk(dir):
             for f in files:
@@ -1038,6 +1042,26 @@ def extract_test_information(report_dict=dict()):
                 except UnicodeDecodeError:
                     continue
                 all_test_files.add(absolute_path)
+
+    # Iterate through all directories and search for files with test in them.
+    for dir in all_directories:
+        for root, dirs, files in os.walk(dir):
+            for f in files:
+                if not any(f.endswith(ext) for ext in test_extensions):
+                    continue
+                # Absolute path
+                absolute_path = os.path.join(root, f)
+                if any([avoid in absolute_path for avoid in to_avoid]):
+                    continue
+
+                if "test" in f:
+                    all_test_files.add(absolute_path)
+    new_test_files = set()
+    for test_file in all_test_files:
+        if test_file.startswith('//'):
+            test_file = test_file[1:]
+        new_test_files.add(test_file)
+    all_test_files = new_test_files
 
     logger.info("All test files")
     for test_file in all_test_files:
