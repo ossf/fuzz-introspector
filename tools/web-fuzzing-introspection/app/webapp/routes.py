@@ -1340,8 +1340,7 @@ def api_project_test_code():
     # If this is a local build do not look for project timestamps
     if is_local:
         source_code = extract_lines_from_source_code(project_name, '',
-                                                     filepath, 0,
-                                                     100000)
+                                                     filepath, 0, 100000)
         if source_code is None:
             return {'result': 'error', 'msg': 'no source code'}
     else:
@@ -1361,10 +1360,8 @@ def api_project_test_code():
         if latest_introspector_datestr is None:
             return {'result': 'error', 'msg': 'No introspector builds.'}
 
-        source_code = extract_lines_from_source_code(project_name,
-                                                     latest_introspector_datestr,
-                                                     filepath, 0,
-                                                     100000)
+        source_code = extract_lines_from_source_code(
+            project_name, latest_introspector_datestr, filepath, 0, 100000)
 
     if source_code is None:
         return {'result': 'error', 'msg': 'no source code'}
@@ -1385,9 +1382,9 @@ def api_project_test_code():
         if item and item[0] == '}':
             latest_closing = idx
     if latest_closing > 0:
-        content_to_return = "\n".join(split_lines[:latest_closing+1])
+        content_to_return = "\n".join(split_lines[:latest_closing + 1])
 
-    print("Latest closing: %d"%(latest_closing))
+    print("Latest closing: %d" % (latest_closing))
     return {'result': 'success', 'source_code': content_to_return}
 
 
