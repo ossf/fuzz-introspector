@@ -1026,7 +1026,8 @@ def extract_test_information(report_dict=dict()):
     all_test_files = set()
     to_avoid = [
         'fuzztest', 'aflplusplus', 'libfuzzer', 'googletest', 'thirdparty',
-        'third_party', '/build/', '/usr/local/', '/fuzz-introspector/'
+        'third_party', '/build/', '/usr/local/', '/fuzz-introspector/',
+        '/root/.cache/'
     ]
     for dir in all_inspiration_dirs:
         for root, dirs, files in os.walk(dir):
