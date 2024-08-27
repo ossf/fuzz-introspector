@@ -315,6 +315,10 @@ def extract_local_project_data(project_name, oss_fuzz_path,
         project_name, oss_fuzz_path)
     debug_report = oss_fuzz.extract_local_introspector_debug_info(
         project_name, oss_fuzz_path)
+    test_files = oss_fuzz.extract_local_introspector_test_files(
+        project_name, oss_fuzz_path)
+    if test_files:
+        save_test_files_report(test_files, project_name)
 
     if debug_report:
         all_files_in_project = debug_report.get('all_files_in_project', [])
