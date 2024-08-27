@@ -1320,6 +1320,74 @@ def api_project_source_code():
     return {'result': 'success', 'source_code': source_code}
 
 
+@blueprint.route('/api/project-test-code')
+def api_project_test_code():
+    """Extracts source code of a test"""
+    project_name = request.args.get('project', None)
+    if project_name is None:
+        return {'result': 'error', 'msg': 'Please provide a project name'}
+    filepath = request.args.get('filepath', None)
+    if filepath is None:
+        return {'result': 'error', 'msg': 'No filepath provided'}
+
+    MAX_TEST_SIZE = 6000
+    max_content_size = request.args.get('max_size', str(MAX_TEST_SIZE))
+    try:
+        max_content_size = int(max_content_size)
+    except ValueError:
+        max_content_size = MAX_TEST_SIZE
+
+    # If this is a local build do not look for project timestamps
+    if is_local:
+        source_code = extract_lines_from_source_code(project_name, '',
+                                                     filepath, 0, 100000)
+        if source_code is None:
+            return {'result': 'error', 'msg': 'no source code'}
+    else:
+        all_build_status = data_storage.get_build_status()
+        latest_introspector_datestr = None
+        for build_status in all_build_status:
+            if build_status.project_name == project_name:
+
+                # Get statistics of the project
+                project_statistics = data_storage.PROJECT_TIMESTAMPS
+                for ps in project_statistics:
+                    if ps.project_name == project_name:
+                        datestr = ps.date
+                        if ps.introspector_data is not None:
+                            latest_introspector_datestr = datestr
+
+        if latest_introspector_datestr is None:
+            return {'result': 'error', 'msg': 'No introspector builds.'}
+
+        source_code = extract_lines_from_source_code(
+            project_name, latest_introspector_datestr, filepath, 0, 100000)
+
+    if source_code is None:
+        return {'result': 'error', 'msg': 'no source code'}
+
+    # Deconstruct the buffer we want to return
+    content_to_return = ""
+    for line in source_code.split("\n"):
+        if len(line) + len(content_to_return) < max_content_size:
+            content_to_return += line + "\n"
+        else:
+            break
+
+    # Try and close from the last "}", which in most cases should be a function
+    # close indication.
+    split_lines = content_to_return.split("\n")
+    latest_closing = 0
+    for idx, item in enumerate(split_lines):
+        if item and item[0] == '}':
+            latest_closing = idx
+    if latest_closing > 0:
+        content_to_return = "\n".join(split_lines[:latest_closing + 1])
+
+    print("Latest closing: %d" % (latest_closing))
+    return {'result': 'success', 'source_code': content_to_return}
+
+
 @blueprint.route('/api/type-info')
 def api_type_info():
     """Returns a json representation of all the functions in a given project"""
