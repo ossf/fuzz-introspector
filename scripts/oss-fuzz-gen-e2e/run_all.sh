@@ -18,9 +18,11 @@
 ROOT_FI=$PWD/../../
 BASE_DIR=$PWD/workdir
 BENCHMARK_HEURISTICS="${VARIABLE:-far-reach-low-coverage}"
+#BENCHMARK_HEURISTICS="${VARIABLE:-test-migration}"
 OSS_FUZZ_GEN_MODEL=${MODEL}
 PROJECT=${@}
-VAR_HARNESSES_PER_ORACLE="${HARNESS_PER_ORACLE:-10}"
+VAR_HARNESSES_PER_ORACLE="${HARNESS_PER_ORACLE:-5}"
+VAR_LLM_FIX_LIMIT="${LLM_FIX_LIMIT:-2}"
 
 
 comma_separated=""
@@ -58,7 +60,7 @@ echo "[+] Launching FI webapp"
 cd $ROOT_FI/tools/web-fuzzing-introspection/app/                                
 FUZZ_INTROSPECTOR_LOCAL_OSS_FUZZ=$ROOT_FI/oss_fuzz_integration/oss-fuzz \
   python3 ./main.py >> /dev/null &
-                                                                               
+
 SECONDS=5
 while true
 do
@@ -74,6 +76,7 @@ done
 
 # Deactivate
 echo "[+] Running OSS-Fuzz-gen experiment"
+export LLM_FIX_LIMIT=${VAR_LLM_FIX_LIMIT}
 cd $BASE_DIR/oss-fuzz-gen
 LLM_NUM_EVA=1 LLM_NUM_EXP=1 ./run_all_experiments.py \
     --model=$OSS_FUZZ_GEN_MODEL \
