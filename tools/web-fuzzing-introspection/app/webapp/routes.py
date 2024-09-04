@@ -998,6 +998,42 @@ def api_optimal_targets():
         return {'result': 'error', 'msg': 'Found no introspector data.'}
 
 
+@blueprint.route('/api/harness-source-and-executable')
+def harness_source_and_executable():
+    project_name = request.args.get('project', None)
+    if project_name is None:
+        return {'result': 'error', 'msg': 'Please provide project name'}
+
+    target_project = None
+    all_projects = data_storage.get_projects()
+    for project in all_projects:
+        if project.name == project_name:
+            target_project = project
+            break
+    if target_project is None:
+        return {'result': 'error', 'msg': 'Project not in the database'}
+
+    if target_project.introspector_data is None:
+        return {'result': 'error', 'msg': 'Found no introspector data.'}
+
+    try:
+        annotated_cfg = target_project.introspector_data['annotated_cfg']
+    except KeyError:
+        return {'result': 'error', 'msg': 'Found no annotated CFG data.'}
+    except TypeError:
+        return {'result': 'error', 'msg': 'Found no introspector data.'}
+
+    source_harness_pairs = []
+    for harness_dict in annotated_cfg:
+        source_harness_pairs.append({
+            'source':
+            harness_dict.get('source_file', ''),
+            'executable':
+            harness_dict.get('fuzzer_name', '')
+        })
+    return {'result': 'success', 'pairs': source_harness_pairs}
+
+
 @blueprint.route('/api/annotated-cfg')
 def api_annotated_cfg():
     project_name = request.args.get('project', None)
