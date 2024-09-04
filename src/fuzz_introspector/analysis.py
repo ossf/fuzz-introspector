@@ -990,7 +990,6 @@ def extract_all_sources():
     interesting_source_files = set()
 
     test_extensions = ['.cc', '.cpp', '.cxx', '.c++', '.c']
-    all_test_files = set()
     to_avoid = [
         'fuzztest',
         'aflplusplus',
