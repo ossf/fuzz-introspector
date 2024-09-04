@@ -982,6 +982,39 @@ def correlate_introspection_functions_to_debug_info(all_functions_json_report,
             if_func['debug_function_info'] = dict()
 
 
+def extract_all_sources():
+    all_files = set()
+    for root, dirs, files in os.walk('/src/'):
+        for f in files:
+            all_files.add(os.path.join(root, f))
+    interesting_source_files = set()
+
+    test_extensions = ['.cc', '.cpp', '.cxx', '.c++', '.c']
+    to_avoid = [
+        'fuzztest',
+        'aflplusplus',
+        'libfuzzer',
+        'googletest',
+        'thirdparty',
+        'third_party',
+        '/build/',
+        '/usr/local/',
+        '/fuzz-introspector/',
+        '/root/.cache/',
+        'honggfuzz',
+    ]
+
+    for file in all_files:
+        if not any(file.endswith(ext) for ext in test_extensions):
+            continue
+
+        # Absolute path
+        if any([avoid in file for avoid in to_avoid]):
+            continue
+        interesting_source_files.add(file)
+    return interesting_source_files
+
+
 def extract_test_information(report_dict=dict()):
     """Correlates function data collected by debug information to function
     data collected by LLVMs module, and uses the correlated data to generate
