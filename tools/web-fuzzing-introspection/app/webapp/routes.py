@@ -364,8 +364,8 @@ def project_profile():
                         latest_fuzz_introspector_report = get_introspector_url(
                             project.name, datestr)
                     latest_introspector_datestr = datestr
-            if ps.project_url:
-                project_url = ps.project_url
+                if ps.project_url:
+                    project_url = ps.project_url
         if not project_url:
             project_url = f'https://github.com/google/oss-fuzz/tree/master/projects/{project.name}'
 
