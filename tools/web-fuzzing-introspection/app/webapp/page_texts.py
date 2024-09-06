@@ -39,6 +39,8 @@ default_about_content = """<p>
   We welcome any feedback and please refer to the relevant GitHub repositories when suggesting improvements or highlighting issues.
 </p>"""
 
+default_project_type = 'open source'
+
 
 def get_page_name():
     return os.getenv('FI_PAGE_MAIN_NAME', default_page_main_name)
@@ -62,3 +64,7 @@ def get_default_coverage_base():
 
 def get_about_text():
     return os.getenv('FI_DEFAULT_ABOUT_CONTENT', default_about_content)
+
+
+def get_project_type_string():
+    return os.getenv('FI_DEFAULT_PROJECT_STRING_TYPE', default_project_type)

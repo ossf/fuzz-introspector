@@ -286,19 +286,21 @@ def index():
     max_line_count = int(max_line_count * 1.2)
 
     oss_fuzz_total_number = len(data_storage.get_build_status())
-    return render_template('index.html',
-                           gtag=gtag,
-                           db_summary=db_summary,
-                           db_timestamps=db_timestamps,
-                           max_proj=max_proj,
-                           max_fuzzer_count=max_fuzzer_count,
-                           max_function_count=max_function_count,
-                           oss_fuzz_total_number=oss_fuzz_total_number,
-                           max_line_count=max_line_count,
-                           page_main_name=page_texts.get_page_name(),
-                           page_main_url=page_texts.get_page_main_url(),
-                           page_summary=page_texts.get_page_summary(),
-                           page_base_title=page_texts.get_page_base_title())
+    return render_template(
+        'index.html',
+        gtag=gtag,
+        db_summary=db_summary,
+        db_timestamps=db_timestamps,
+        max_proj=max_proj,
+        max_fuzzer_count=max_fuzzer_count,
+        max_function_count=max_function_count,
+        oss_fuzz_total_number=oss_fuzz_total_number,
+        max_line_count=max_line_count,
+        page_main_name=page_texts.get_page_name(),
+        page_main_url=page_texts.get_page_main_url(),
+        page_summary=page_texts.get_page_summary(),
+        page_base_title=page_texts.get_page_base_title(),
+        project_type_string=page_texts.get_project_type_string())
 
 
 @blueprint.route('/function-profile', methods=['GET'])
