@@ -58,6 +58,11 @@ def get_introspector_project_tests_url(project_name, datestr):
                                             datestr) + "test-files.json"
 
 
+def get_introspector_project_all_files(project_name, datestr):
+    return get_introspector_report_url_base(project_name,
+                                            datestr) + "all-files.json"
+
+
 def get_introspector_type_map_url_summary(project_name, datestr):
     return get_introspector_report_url_base(
         project_name, datestr) + "all-friendly-debug-types.json"
@@ -209,6 +214,24 @@ def extract_new_introspector_constructors(project_name, date_str):
         return []
 
     return introspector_constructors
+
+
+def extract_introspector_all_files(project_name, date_str):
+    introspector_all_files_url = get_introspector_project_all_files(
+        project_name, date_str.replace("-", ""))
+
+    # Read the introspector atifact
+    try:
+        raw_introspector_json_request = requests.get(
+            introspector_all_files_url, timeout=10)
+    except:
+        return None
+    try:
+        all_files = json.loads(raw_introspector_json_request.text)
+    except:
+        return None
+
+    return all_files
 
 
 def extract_introspector_test_files(project_name, date_str):

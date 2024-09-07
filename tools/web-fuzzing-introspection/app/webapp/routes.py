@@ -1006,6 +1006,12 @@ def harness_source_and_executable():
     if project_name is None:
         return {'result': 'error', 'msg': 'Please provide project name'}
 
+    all_file_json = os.path.join(
+        os.path.dirname(__file__),
+        f"../static/assets/db/db-projects/{project_name}/all_files.json")
+    if not os.path.isfile(all_file_json):
+        return {'result': 'error', 'msg': 'Did not find file check json'}
+
     target_project = None
     all_projects = data_storage.get_projects()
     for project in all_projects:
@@ -1033,6 +1039,23 @@ def harness_source_and_executable():
             'executable':
             harness_dict.get('fuzzer_name', '')
         })
+
+    # Ensure the files are present in the soruce code
+    with open(all_file_json, 'r') as f:
+        all_files_list = json.loads(f.read())
+
+    for harness_dict in source_harness_pairs:
+        found_harnesses = []
+        for source_file in all_files_list:
+            if os.path.basename(
+                    harness_dict['source']) == os.path.basename(source_file):
+                found_harnesses.append(source_file)
+        if len(found_harnesses) == 1:
+            harness_dict['source'] = found_harnesses[0]
+        else:
+            print("Did not find one matching harness")
+            print(str(found_harnesses))
+
     return {'result': 'success', 'pairs': source_harness_pairs}
 
 
