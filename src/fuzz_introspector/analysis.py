@@ -1002,6 +1002,7 @@ def extract_all_sources():
         '/fuzz-introspector/',
         '/root/.cache/',
         'honggfuzz',
+        '/src/inspector/',
     ]
 
     for file in all_files:
