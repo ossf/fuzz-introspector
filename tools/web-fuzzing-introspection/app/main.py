@@ -16,6 +16,7 @@ import os
 
 from flask import Flask
 
+from typing import Optional, Tuple
 import webapp
 from webapp import routes
 
@@ -54,6 +55,13 @@ def create_app():
 
 
 if __name__ == "__main__":
+    ssl_cert = os.getenv('FI_SSL_CERT', '')
+    ssl_key = os.getenv('FI_SSL_KEY', '')
+    ssl_context: Optional[Tuple[str, str]] = None
+    if ssl_cert and ssl_key:
+        ssl_context = (ssl_cert, ssl_key)
+
     create_app().run(debug=False,
                      host="0.0.0.0",
+                     ssl_context=ssl_context,
                      port=int(os.environ.get("WEBAPP_PORT", '8080')))
