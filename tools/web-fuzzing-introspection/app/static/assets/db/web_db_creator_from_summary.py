@@ -111,6 +111,15 @@ def save_test_files_report(test_files, project_name):
         json.dump(test_files, report_fd)
 
 
+def save_all_files_report(all_files, project_name):
+    project_db_dir = os.path.join(constants.DB_PROJECT_DIR, project_name)
+    os.makedirs(project_db_dir, exist_ok=True)
+
+    report_dst = os.path.join(project_db_dir, 'all_files.json')
+    with open(report_dst, 'w') as report_fd:
+        json.dump(all_files, report_fd)
+
+
 def save_debug_report(debug_report, project_name):
     project_db_dir = os.path.join(constants.DB_PROJECT_DIR, project_name)
     os.makedirs(project_db_dir, exist_ok=True)
@@ -473,6 +482,16 @@ def extract_project_data(project_name, date_str, should_include_details,
         project_name, date_str.replace("-", ""))
     if test_files:
         save_test_files_report(test_files, project_name)
+
+    all_files = oss_fuzz.extract_introspector_all_files(
+        project_name, date_str.replace("-", ""))
+    if all_files:
+        new_all_files = []
+        for file in all_files:
+            if '/src/inspector/source-code/' in file:
+                continue
+            new_all_files.append(file)
+        save_all_files_report(new_all_files, project_name)
 
     # Collet debug informaiton for languages with debug information
     # Disable dumping type map for now because it takes too much storage.
