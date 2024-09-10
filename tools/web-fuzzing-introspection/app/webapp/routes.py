@@ -66,18 +66,24 @@ def get_coverage_report_url(project_name, datestr, language):
 
 
 def extract_introspector_raw_source_code(project_name, date_str, target_file):
+    # Remove leading slash to avoid errors
+    while target_file.startswith('/'):
+        target_file = target_file[1:]
 
     if is_local:
         src_location = os.path.join(local_oss_fuzz, 'build', 'out',
-                                    project_name, 'inspector',
-                                    'source-code') + target_file
+                                    project_name, 'inspector', 'source-code',
+                                    target_file)
+
         if not os.path.isfile(src_location):
             return None
         with open(src_location, 'r') as f:
             return f.read()
 
-    introspector_summary_url = get_introspector_report_url_source_base(
-        project_name, date_str.replace("-", "")) + target_file
+    introspector_summary_url = os.path.join(
+        get_introspector_report_url_source_base(project_name,
+                                                date_str.replace("-", "")),
+        target_file)
 
     print("URL: %s" % (introspector_summary_url))
     # Read the introspector atifact
