@@ -66,7 +66,8 @@ def get_coverage_report_url(project_name, datestr, language):
 
 
 def extract_introspector_raw_source_code(project_name, date_str, target_file):
-    if target_file.startswith('/'):
+    # Remove leading slash to avoid errors
+    while target_file.startswith('/'):
         target_file = target_file[1:]
 
     if is_local:
