@@ -1127,7 +1127,8 @@ def _extract_test_information_jvm():
     code to locate extra example source files."""
 
     all_test_files = set()
-    source_code_extensions = ('.java', '.scala', '.sc', '.kt', '.kts', '.groovy')
+    source_code_extensions = ('.java', '.scala', '.sc', '.kt', '.kts',
+                              '.groovy')
     inspirations = ['sample', 'example', 'documentation', 'demo']
 
     # Java project source code is meant to exist in the $SRC directory
@@ -1152,7 +1153,8 @@ def _extract_test_information_jvm():
         for root, _, files in os.walk(test_path):
             for file in files:
                 if file.endswith(source_code_extensions):
-                    path = os.path.join(root, file).replace(f'{test_path}/', '')
+                    path = os.path.join(root,
+                                        file).replace(f'{test_path}/', '')
                     all_test_files.add(path)
 
     # Walk through all the packages under source paths and locate example sources
@@ -1160,8 +1162,9 @@ def _extract_test_information_jvm():
         for root, _, files in os.walk(source_path):
             for file in files:
                 if file.endswith(source_code_extensions) and any(
-                    inspiration in file for inspiration in inspirations):
-                    path = os.path.join(root, file).replace(f'{source_path}/', '')
+                        inspiration in file for inspiration in inspirations):
+                    path = os.path.join(root,
+                                        file).replace(f'{source_path}/', '')
                     all_test_files.add(path)
 
     # Walk through all the files under possible sample path and locate example sources
@@ -1169,7 +1172,8 @@ def _extract_test_information_jvm():
         for root, _, files in os.walk(sample_path):
             for file in files:
                 if file.endswith(source_code_extensions):
-                    path = os.path.join(root, file).replace(f'{sample_path}/', '')
+                    path = os.path.join(root,
+                                        file).replace(f'{sample_path}/', '')
                     all_test_files.add(path)
 
     return all_test_files
