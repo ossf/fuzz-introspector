@@ -1,3 +1,4 @@
+
 # Copyright 2023 Fuzz Introspector Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -1322,6 +1323,28 @@ def api_project_all_public_candidates():
     list_to_return = function_helper.filter_sort_functions(target_list, True)
 
     return {'result': 'success', 'functions': list_to_return}
+
+
+@blueprint.route('/api/all-public-classes')
+def api_project_all_public_classes():
+    """
+        Return a list of public classes in the project.
+    """
+    project_name = request.args.get('project', None)
+    if project_name is None:
+        return {'result': 'error', 'msg': 'Please provide a project name'}
+
+    project = get_project_with_name(project_name)
+    if not project:
+        return {'result': 'error', 'msg': 'Project not found'}
+
+    target_list = data_storage.get_functions_by_project(
+        project_name) + data_storage.get_constructors_by_project(project_name)
+
+    # Get a list of public class to return
+    list_to_return = list(function_helper.get_public_class_list(target_list))
+
+    return {'result': 'success', 'classes': list_to_return}
 
 
 @blueprint.route('/api/project-source-code')
