@@ -57,8 +57,7 @@ def filter_sort_functions(target_list: List[models.Function],
         _sort_functions_by_fuzz_worthiness(functions))
 
 
-def get_public_class_list(
-        target_list: List[models.Function]) -> Set[str]:
+def get_public_class_list(target_list: List[models.Function]) -> Set[str]:
     """
         Go through all function in the target list and retrieve a unique
         set of classes which are public and not belongs to the JVM library.
