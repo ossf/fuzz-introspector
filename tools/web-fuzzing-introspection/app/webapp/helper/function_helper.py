@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import sys
-from typing import Dict, List, Any
+from typing import Dict, List, Set, Any
 
 from .. import models
 
@@ -55,6 +55,19 @@ def filter_sort_functions(target_list: List[models.Function],
 
     return convert_functions_to_list_of_dict(
         _sort_functions_by_fuzz_worthiness(functions))
+
+
+def get_public_class_list(target_list: List[models.Function]) -> Set[str]:
+    """
+        Go through all function in the target list and retrieve a unique
+        set of classes which are public and not belongs to the JVM library.
+    """
+    class_set = set()
+    for function in target_list:
+        if function.is_accessible and not function.is_jvm_library:
+            class_set.add(function.function_filename)
+
+    return class_set
 
 
 def _filter_unrelated_functions(
