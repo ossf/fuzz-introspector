@@ -71,8 +71,8 @@ def extract_introspector_raw_source_code(project_name, date_str, target_file):
 
     if is_local:
         src_location = os.path.join(local_oss_fuzz, 'build', 'out',
-                                    project_name, 'inspector',
-                                    'source-code',  target_file)
+                                    project_name, 'inspector', 'source-code',
+                                    target_file)
 
         if not os.path.isfile(src_location):
             return None
@@ -80,8 +80,9 @@ def extract_introspector_raw_source_code(project_name, date_str, target_file):
             return f.read()
 
     introspector_summary_url = os.path.join(
-        get_introspector_report_url_source_base(
-            project_name, date_str.replace("-", "")), target_file)
+        get_introspector_report_url_source_base(project_name,
+                                                date_str.replace("-", "")),
+        target_file)
 
     print("URL: %s" % (introspector_summary_url))
     # Read the introspector atifact
