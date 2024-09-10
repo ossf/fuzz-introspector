@@ -796,7 +796,7 @@ def create_html_report(introspection_proj: analysis.IntrospectionProject,
         proj_profile.target_lang, introspection_proj.debug_report)
 
     all_test_files = analysis.extract_test_information(
-        introspection_proj.debug_report)
+        introspection_proj.debug_report, proj_profile.target_lang)
     with open(constants.TEST_FILES_JSON, 'w') as test_file_fd:
         test_file_fd.write(json.dumps(list(all_test_files)))
 
@@ -864,4 +864,8 @@ def create_html_report(introspection_proj: analysis.IntrospectionProject,
             for func_item in (all_functions_json_report +
                               jvm_constructor_json_report)
         ]
+
+        # Also add test sources
+        source_file_list.extend(list(all_test_files))
+        logger.info(source_file_list)
         utils.copy_java_source_files(source_file_list)

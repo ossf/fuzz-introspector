@@ -1016,7 +1016,18 @@ def extract_all_sources():
     return interesting_source_files
 
 
-def extract_test_information(report_dict=dict()):
+def extract_test_information(report_dict=dict(), language='c-cpp'):
+    """Extract test information for different project language."""
+    if language == 'c-cpp':
+        return _extract_test_information_cpp(report_dict)
+    elif language == 'jvm':
+        return _extract_test_information_jvm()
+    else:
+        # Currently only support c-cpp or jvm project
+        return set()
+
+
+def _extract_test_information_cpp(report_dict):
     """Correlates function data collected by debug information to function
     data collected by LLVMs module, and uses the correlated data to generate
     function signatures for each function based on debug information."""
@@ -1104,5 +1115,65 @@ def extract_test_information(report_dict=dict()):
         dst = constants.SAVED_SOURCE_FOLDER + '/' + test_file
         os.makedirs(os.path.dirname(dst), exist_ok=True)
         shutil.copy(test_file, dst)
+
+    return all_test_files
+
+
+def _extract_test_information_jvm():
+    """Search the /src directory for source code of the JVM project and
+    locate all java files in the subdirectories. Include all the Java source
+    files in the default test package location src/test/java packages which is
+    common for different Java build system. Then analyse the remaining source
+    code to locate extra example source files."""
+
+    all_test_files = set()
+    source_code_extensions = ('.java', '.scala', '.sc', '.kt', '.kts',
+                              '.groovy')
+    inspirations = ['sample', 'example', 'documentation', 'demo']
+
+    # Java project source code is meant to exist in the $SRC directory
+    base_dir = os.path.abspath(os.environ.get('SRC', '/src'))
+
+    # Walk through all directories under $SRC and locate all standard directories
+    # of /src/main/java and /src/test/java for Java source and test files. Also
+    # locate sample or example directories under $SRC for additional search
+    source_paths = set()
+    test_paths = set()
+    sample_paths = set()
+    for root, _, _ in os.walk(base_dir):
+        if root.endswith('src/main/java'):
+            source_paths.add(root)
+        if root.endswith('src/test/java'):
+            test_paths.add(root)
+        if any(inspiration in root for inspiration in inspirations):
+            sample_paths.add(root)
+
+    # Walk through all the packages under test paths and include the test files
+    for test_path in test_paths:
+        for root, _, files in os.walk(test_path):
+            for file in files:
+                if file.endswith(source_code_extensions):
+                    path = os.path.join(root,
+                                        file).replace(f'{test_path}/', '')
+                    all_test_files.add(path)
+
+    # Walk through all the packages under source paths and locate example sources
+    for source_path in source_paths:
+        for root, _, files in os.walk(source_path):
+            for file in files:
+                if file.endswith(source_code_extensions) and any(
+                        inspiration in file for inspiration in inspirations):
+                    path = os.path.join(root,
+                                        file).replace(f'{source_path}/', '')
+                    all_test_files.add(path)
+
+    # Walk through all the files under possible sample path and locate example sources
+    for sample_path in sample_paths:
+        for root, _, files in os.walk(sample_path):
+            for file in files:
+                if file.endswith(source_code_extensions):
+                    path = os.path.join(root,
+                                        file).replace(f'{sample_path}/', '')
+                    all_test_files.add(path)
 
     return all_test_files

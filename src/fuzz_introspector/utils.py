@@ -415,7 +415,8 @@ def copy_java_source_files(required_class_list: List[str]):
         required_file = required_class.split('$', 1)[0]
 
         # Transform class name to java source file name
-        required_file = f'{required_file.replace(".", "/")}.java'
+        if not required_file.endswith('.java'):
+            required_file = f'{required_file.replace(".", "/")}.java'
 
         for java_source_path in java_source_path_set:
             if java_source_path.endswith(required_file):
@@ -424,6 +425,9 @@ def copy_java_source_files(required_class_list: List[str]):
                 # of the target source file.
                 dst = os.path.join(constants.SAVED_SOURCE_FOLDER,
                                    required_file)
+                if os.path.isfile(dst):
+                    # Skip duplicate files
+                    continue
                 os.makedirs(os.path.dirname(dst), exist_ok=True)
                 shutil.copy(java_source_path, dst)
                 count += 1
