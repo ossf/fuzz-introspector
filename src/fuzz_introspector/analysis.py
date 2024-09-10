@@ -1159,7 +1159,8 @@ def _extract_test_information_jvm():
     for source_path in source_paths:
         for root, _, files in os.walk(source_path):
             for file in files:
-                if file.endswith(source_code_extensions) and any(inspiration in file for inspiration in inspirations):
+                if file.endswith(source_code_extensions) and any(
+                    inspiration in file for inspiration in inspirations):
                     path = os.path.join(root, file).replace(f'{source_path}/', '')
                     all_test_files.add(path)
 
