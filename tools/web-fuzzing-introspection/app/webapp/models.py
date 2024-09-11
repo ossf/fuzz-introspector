@@ -153,6 +153,11 @@ class Function:
         self.need_close = need_close
         self.exceptions = exceptions
 
+        # Handles the case when function signature is not available
+        # Majorly used for python project
+        if self.func_signature == 'N/A':
+            self.func_signature = self.name
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             'function_name': self.name,
