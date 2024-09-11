@@ -990,7 +990,7 @@ def extract_all_sources(language):
     interesting_source_files = set()
 
     if language == 'jvm':
-      test_extensions = ['.java', '.scala', '.sc', '.groovy', '.kt', '.kts']]
+      test_extensions = ['.java', '.scala', '.sc', '.groovy', '.kt', '.kts']
     elif language == 'python':
       test_extensions = ['.py']
     else:
