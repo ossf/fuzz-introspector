@@ -471,7 +471,8 @@ def _copy_python_source_files():
         f.write(json.dumps(copied_source_path_list))
 
     logger.info(
-        f'Copied {count} python source files to {constants.SAVED_SOURCE_FOLDER}')
+        f'Copied {count} python source files to {constants.SAVED_SOURCE_FOLDER}'
+    )
 
 
 def copy_source_files(required_class_list: List[str], language: str):
@@ -483,4 +484,5 @@ def copy_source_files(required_class_list: List[str], language: str):
     elif language == 'python':
         _copy_python_source_files()
     else:
-        logger.warning('Language: {language} not support. Skipping source file copy.')
+        logger.warning(
+            f'Language: {language} not support. Skipping source file copy.')
