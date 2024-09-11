@@ -379,7 +379,7 @@ def check_coverage_link_existence(link: str) -> bool:
     return os.path.exists(link) and os.path.isfile(link)
 
 
-def _find_all_java_source_path() -> Set[str]:
+def _find_all_source_path(extension: str) -> Set[str]:
     """Search the $OUT/$SRC directory to find paths of all Java source files."""
     # Use set to avoid duplication
     java_source_path_list = set()
@@ -395,19 +395,19 @@ def _find_all_java_source_path() -> Set[str]:
             # Confirm that the source directory does exist
             for root, dirs, files in os.walk(path_to_search):
                 for file in files:
-                    if file.endswith(".java"):
+                    if file.endswith(extension):
                         java_source_path_list.add(os.path.join(root, file))
     logger.info(java_source_path_list)
     return java_source_path_list
 
 
-def copy_java_source_files(required_class_list: List[str]):
+def _copy_java_source_files(required_class_list: List[str]):
     """Copy the needed java source files."""
     logger.info(
         f'Copying java source files to {constants.SAVED_SOURCE_FOLDER}')
 
     count = 0
-    java_source_path_set = _find_all_java_source_path()
+    java_source_path_set = _find_all_source_path('.java')
 
     copied_source_path_list = []
     for required_class in set(required_class_list):
@@ -441,3 +441,46 @@ def copy_java_source_files(required_class_list: List[str]):
 
     logger.info(
         f'Copied {count} java source files to {constants.SAVED_SOURCE_FOLDER}')
+
+
+def _copy_python_source_files():
+    """Copy the needed python source files."""
+    logger.info(
+        f'Copying python source files to {constants.SAVED_SOURCE_FOLDER}')
+
+    count = 0
+    python_source_path_set = _find_all_source_path('.py')
+    os.makedirs(constants.SAVED_SOURCE_FOLDER, exist_ok=True)
+
+    copied_source_path_list = []
+    for python_source_path in python_source_path_set:
+        filename = os.path.basename(python_source_path)
+        dst = os.path.join(constants.SAVED_SOURCE_FOLDER, filename)
+
+        if os.path.isfile(dst):
+            # Skip duplicate files
+            continue
+
+        shutil.copy(python_source_path, dst)
+        count += 1
+        copied_source_path_list.append(filename)
+
+    # Store a list of existing source file paths for reference
+    with open(os.path.join(constants.SAVED_SOURCE_FOLDER, 'index.json'),
+              'w') as f:
+        f.write(json.dumps(copied_source_path_list))
+
+    logger.info(
+        f'Copied {count} python source files to {constants.SAVED_SOURCE_FOLDER}')
+
+
+def copy_source_files(required_class_list: List[str], language: str):
+    """Copy the needed source files for different project.
+    Currently only support Python and Java projects."""
+
+    if language == 'jvm':
+        _copy_java_source_files(required_class_list)
+    elif language == 'python':
+        _copy_python_source_files()
+    else:
+        logger.warning('Language: {language} not support. Skipping source file copy.')

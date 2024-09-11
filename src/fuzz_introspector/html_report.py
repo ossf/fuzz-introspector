@@ -857,7 +857,8 @@ def create_html_report(introspection_proj: analysis.IntrospectionProject,
 
         introspection_proj.dump_debug_report()
 
-    # Copy source file for all target functions (Java project only)
+    # Determine the source files required for the java project
+    source_file_list = []
     if introspection_proj.language == 'jvm':
         source_file_list = [
             func_item['Functions filename']
@@ -868,4 +869,6 @@ def create_html_report(introspection_proj: analysis.IntrospectionProject,
         # Also add test sources
         source_file_list.extend(list(all_test_files))
         logger.info(source_file_list)
-        utils.copy_java_source_files(source_file_list)
+
+    # Copy source files (Only for Java/Python projects)
+    utils.copy_source_files(source_file_list, introspection_proj.language)
