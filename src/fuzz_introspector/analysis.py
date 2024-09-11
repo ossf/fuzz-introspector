@@ -990,11 +990,11 @@ def extract_all_sources(language):
     interesting_source_files = set()
 
     if language == 'jvm':
-      test_extensions = ['.java', '.scala', '.sc', '.groovy', '.kt', '.kts']
+        test_extensions = ['.java', '.scala', '.sc', '.groovy', '.kt', '.kts']
     elif language == 'python':
-      test_extensions = ['.py']
+        test_extensions = ['.py']
     else:
-      test_extensions = ['.cc', '.cpp', '.cxx', '.c++', '.c']
+        test_extensions = ['.cc', '.cpp', '.cxx', '.c++', '.c']
 
     to_avoid = [
         'fuzztest',
