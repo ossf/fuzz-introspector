@@ -800,7 +800,7 @@ def create_html_report(introspection_proj: analysis.IntrospectionProject,
     with open(constants.TEST_FILES_JSON, 'w') as test_file_fd:
         test_file_fd.write(json.dumps(list(all_test_files)))
 
-    all_source_files = analysis.extract_all_sources()
+    all_source_files = analysis.extract_all_sources(proj_profile.target_lang)
     with open(constants.ALL_SOURCE_FILES, 'w') as source_fd:
         source_fd.write(json.dumps(list(all_source_files)))
 
