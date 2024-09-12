@@ -997,19 +997,9 @@ def extract_all_sources(language):
         test_extensions = ['.cc', '.cpp', '.cxx', '.c++', '.c']
 
     to_avoid = [
-        'fuzztest',
-        'aflplusplus',
-        'libfuzzer',
-        'googletest',
-        'thirdparty',
-        'third_party',
-        '/build/',
-        '/usr/local/',
-        '/fuzz-introspector/',
-        '/root/.cache/',
-        'honggfuzz',
-        '/src/inspector/',
-        '/src/.venv'
+        'fuzztest', 'aflplusplus', 'libfuzzer', 'googletest', 'thirdparty',
+        'third_party', '/build/', '/usr/local/', '/fuzz-introspector/',
+        '/root/.cache/', 'honggfuzz', '/src/inspector/', '/src/.venv'
     ]
 
     for file in all_files:
