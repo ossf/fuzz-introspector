@@ -382,7 +382,7 @@ def check_coverage_link_existence(link: str) -> bool:
 def _find_all_source_path(extension: str) -> Set[str]:
     """Search the $OUT/$SRC directory to find paths of all Java source files."""
     # Use set to avoid duplication
-    java_source_path_list = set()
+    source_path_list = set()
 
     # Retrieve $OUT and $SRC from environment variables
     out_dir = os.environ.get('OUT', None)
@@ -394,11 +394,14 @@ def _find_all_source_path(extension: str) -> Set[str]:
         if os.path.isdir(path_to_search):
             # Confirm that the source directory does exist
             for root, dirs, files in os.walk(path_to_search):
+                if '/.' in root:
+                    # Skipping hidden directory
+                    continue
                 for file in files:
                     if file.endswith(extension):
-                        java_source_path_list.add(os.path.join(root, file))
-    logger.info(java_source_path_list)
-    return java_source_path_list
+                        source_path_list.add(os.path.join(root, file))
+
+    return source_path_list
 
 
 def _copy_java_source_files(required_class_list: List[str]):

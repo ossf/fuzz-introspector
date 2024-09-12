@@ -1009,6 +1009,7 @@ def extract_all_sources(language):
         '/root/.cache/',
         'honggfuzz',
         '/src/inspector/',
+        '/src/.venv'
     ]
 
     for file in all_files:
