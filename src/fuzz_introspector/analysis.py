@@ -982,27 +982,24 @@ def correlate_introspection_functions_to_debug_info(all_functions_json_report,
             if_func['debug_function_info'] = dict()
 
 
-def extract_all_sources():
+def extract_all_sources(language):
     all_files = set()
     for root, dirs, files in os.walk('/src/'):
         for f in files:
             all_files.add(os.path.join(root, f))
     interesting_source_files = set()
 
-    test_extensions = ['.cc', '.cpp', '.cxx', '.c++', '.c']
+    if language == 'jvm':
+        test_extensions = ['.java', '.scala', '.sc', '.groovy', '.kt', '.kts']
+    elif language == 'python':
+        test_extensions = ['.py']
+    else:
+        test_extensions = ['.cc', '.cpp', '.cxx', '.c++', '.c']
+
     to_avoid = [
-        'fuzztest',
-        'aflplusplus',
-        'libfuzzer',
-        'googletest',
-        'thirdparty',
-        'third_party',
-        '/build/',
-        '/usr/local/',
-        '/fuzz-introspector/',
-        '/root/.cache/',
-        'honggfuzz',
-        '/src/inspector/',
+        'fuzztest', 'aflplusplus', 'libfuzzer', 'googletest', 'thirdparty',
+        'third_party', '/build/', '/usr/local/', '/fuzz-introspector/',
+        '/root/.cache/', 'honggfuzz', '/src/inspector/', '/src/.venv'
     ]
 
     for file in all_files:

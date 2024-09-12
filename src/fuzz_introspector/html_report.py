@@ -800,7 +800,7 @@ def create_html_report(introspection_proj: analysis.IntrospectionProject,
     with open(constants.TEST_FILES_JSON, 'w') as test_file_fd:
         test_file_fd.write(json.dumps(list(all_test_files)))
 
-    all_source_files = analysis.extract_all_sources()
+    all_source_files = analysis.extract_all_sources(proj_profile.target_lang)
     with open(constants.ALL_SOURCE_FILES, 'w') as source_fd:
         source_fd.write(json.dumps(list(all_source_files)))
 
@@ -857,7 +857,8 @@ def create_html_report(introspection_proj: analysis.IntrospectionProject,
 
         introspection_proj.dump_debug_report()
 
-    # Copy source file for all target functions (Java project only)
+    # Determine the source files required for the java project
+    source_file_list = []
     if introspection_proj.language == 'jvm':
         source_file_list = [
             func_item['Functions filename']
@@ -868,4 +869,6 @@ def create_html_report(introspection_proj: analysis.IntrospectionProject,
         # Also add test sources
         source_file_list.extend(list(all_test_files))
         logger.info(source_file_list)
-        utils.copy_java_source_files(source_file_list)
+
+    # Copy source files (Only for Java/Python projects)
+    utils.copy_source_files(source_file_list, introspection_proj.language)
