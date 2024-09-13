@@ -27,6 +27,7 @@ VAR_HARNESSES_PER_ORACLE="${HARNESS_PER_ORACLE:-15}"
 VAR_LLM_FIX_LIMIT="${LLM_FIX_LIMIT:-2}"
 PROJECT=${@}
 export OFG_USE_CACHING=1
+export OSS_FI_TO_GET_TARGETS=1
 
 comma_separated=""
 for proj in ${PROJECT}; do
