@@ -126,6 +126,8 @@ def convert_functions_to_list_of_dict(
     sorted_function_dict_list_by_fuzz_worthiness = []
     for function in functions:
         sorted_function_dict_list_by_fuzz_worthiness.append({
+            'project':
+            function.project,
             'function_name':
             function.name,
             'function_filename':
