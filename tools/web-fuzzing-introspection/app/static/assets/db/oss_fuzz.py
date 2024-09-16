@@ -272,6 +272,14 @@ def extract_introspector_report(project_name, date_str):
     return introspector_report
 
 
+def extract_local_introspector_all_files(project_name, oss_fuzz_folder):
+    summary_json = os.path.join(oss_fuzz_folder, 'build', 'out', project_name,
+                                'inspector', 'all-files.json')
+    with open(summary_json, 'r') as f:
+        json_list = json.load(f)
+    return json_list
+
+
 def extract_local_introspector_test_files(project_name, oss_fuzz_folder):
     summary_json = os.path.join(oss_fuzz_folder, 'build', 'out', project_name,
                                 'inspector', 'test-files.json')
