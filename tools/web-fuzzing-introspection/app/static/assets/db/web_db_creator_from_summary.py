@@ -329,6 +329,16 @@ def extract_local_project_data(project_name, oss_fuzz_path,
     if test_files:
         save_test_files_report(test_files, project_name)
 
+    all_files = oss_fuzz.extract_local_introspector_all_files(
+        project_name, oss_fuzz_path)
+    if all_files:
+        new_all_files = []
+        for file in all_files:
+            if '/src/inspector/source-code/' in file:
+                continue
+            new_all_files.append(file)
+        save_all_files_report(new_all_files, project_name)
+
     if debug_report:
         all_files_in_project = debug_report.get('all_files_in_project', [])
         all_header_files_in_project = set()
