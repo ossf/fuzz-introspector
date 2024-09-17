@@ -117,7 +117,7 @@
                   </tr>
                   <tr>
                     <td>Fuzz Introspector report</td>
-                    {% if latest_fuzz_introspector_report %}
+                    {% if (latest_fuzz_introspector_report and latest_fuzz_introspector_report != "N/A") %}
                     <td><a href="{{ latest_fuzz_introspector_report }}">Report link (from {{ latest_introspector_datestr }})</a></td>
                     {% else %}
                       <td>N/A</td>
