@@ -1237,6 +1237,49 @@ def api_cross_references():
     return {'result': 'success', 'callsites': xrefs}
 
 
+@blueprint.route('/api/get-project-language-from-souce-files')
+def api_get_project_language_from_source_files():
+    """Gets the project language based on the file extensions of the project"""
+    project_name = request.args.get('project', None)
+    if project_name is None:
+        return {'result': 'error', 'msg': 'Please provide a project name'}
+
+    all_file_json = os.path.join(
+        os.path.dirname(__file__),
+        f"../static/assets/db/db-projects/{project_name}/all_files.json")
+    if not os.path.isfile(all_file_json):
+        return {'result': 'error', 'msg': 'Did not find file check json'}
+
+    # Ensure the files are present in the soruce code
+    with open(all_file_json, 'r') as f:
+        all_files_list = json.loads(f.read())
+
+    languages = {'c': 0, 'c++': 0, 'python': 0, 'java': 0}
+
+    print("")
+
+    for source_file in all_files_list:
+        print(source_file)
+        _, file_ext = os.path.splitext(source_file)
+        if file_ext == '.c':
+            languages['c'] += 1
+        elif file_ext == '.cc' or file_ext == '.cpp' or file_ext == '.c++':
+            languages['c++'] += 1
+        elif file_ext == '.py':
+            languages['python'] += 1
+        elif file_ext == '.java':
+            languages['java'] += 1
+
+    print(json.dumps(languages, indent=2))
+    max_language = ''
+    max_language_count = -1
+    for language, count in languages.items():
+        if max_language_count <= count:
+            max_language_count = count
+            max_language = language
+    return {'result': 'success', 'language': max_language}
+
+
 @blueprint.route('/api/all-project-source-files')
 def api_project_all_project_source_files():
     """Returns a json representation of all source file path in a given project"""
