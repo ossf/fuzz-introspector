@@ -49,6 +49,11 @@ ALL_JSON_FILES = [
 
 INTROSPECTOR_WEBAPP_ZIP = 'https://introspector.oss-fuzz.com/static/assets/db/db-archive.zip'
 
+FI_EXCLUDE_ALL_NON_MUSTS = bool(int(os.getenv('FI_EXCLUDE_ALL_NON_MUSTS',
+                                              '0')))
+
+MUST_INCLUDES = set()
+
 logging.getLogger("requests").setLevel(logging.WARNING)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 
@@ -872,6 +877,19 @@ def extend_db_json_files(project_timestamps, output_directory):
             existing_timestamps.append(new_ts)
             have_added = True
 
+    if FI_EXCLUDE_ALL_NON_MUSTS:
+        new_timestamps = []
+        for ts in existing_timestamps:
+            if ts['project_name'] in MUST_INCLUDES:
+                new_timestamps.append(ts)
+        existing_timestamps = new_timestamps
+
+        new_project_stamps = []
+        for project_stamp in project_timestamps:
+            if project_stamp['project_name'] in MUST_INCLUDES:
+                new_project_stamps.append(project_stamp)
+        project_timestamps = new_project_stamps
+
     if have_added:
         logging.info('Dumping all timestamps')
         with open(
@@ -1075,6 +1093,14 @@ def extract_oss_fuzz_build_status(output_directory):
     git_clone_project(constants.OSS_FUZZ_REPO, oss_fuzz_local_clone)
 
     build_status_dict = oss_fuzz.get_projects_build_status()
+
+    if FI_EXCLUDE_ALL_NON_MUSTS:
+        new_build_status_dict = {}
+        for bs in build_status_dict:
+            if bs in MUST_INCLUDES:
+                new_build_status_dict[bs] = build_status_dict[bs]
+        build_status_dict = new_build_status_dict
+
     update_build_status(build_status_dict)
     return build_status_dict
 
@@ -1321,9 +1347,12 @@ def create_local_db(oss_fuzz_path):
 def create_db(max_projects, days_to_analyse, output_directory, input_directory,
               day_offset, to_cleanup, since_date, use_github_cache,
               use_webapp_cache, force_creation, includes):
+    global MUST_INCLUDES
 
     must_include = extract_must_includes(includes)
 
+    for must_include_project in must_include:
+        MUST_INCLUDES.add(must_include_project)
     # Set up cache and input/output directory
     input_directory = create_cache(use_webapp_cache, use_github_cache,
                                    input_directory, output_directory)
