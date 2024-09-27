@@ -174,5 +174,4 @@ def retrieve_functions(proj: str, is_constructor: bool) -> List[Function]:
     if 'G_ANALYTICS_TAG' in os.environ:
         os.remove(json_path)
 
-    print("Converted list")
     return result_list
