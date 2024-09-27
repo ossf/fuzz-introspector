@@ -935,7 +935,8 @@ def update_db_files(db_timestamp,
                     constructor_dict,
                     output_directory,
                     should_include_details,
-                    all_header_files=dict()):
+                    all_header_files=dict(),
+                    must_include_not_in_ossfuzz=None):
     logger.info(
         "Updating the database with DB snapshot. Number of functions in total: %d"
         % (db_timestamp['function_count']))
@@ -953,6 +954,10 @@ def update_db_files(db_timestamp,
 
     logging.info('Extending DB time stamps')
     extend_db_timestamps(db_timestamp, output_directory)
+
+    if must_include_not_in_ossfuzz:
+        with open('projects-not-in-oss-fuzz.json', 'w') as f:
+            f.write(json.dumps(list(must_include_not_in_ossfuzz)))
 
     # Write a zip folder the values that make sense to save
     if should_include_details:
@@ -1003,7 +1008,7 @@ def is_date_in_db(date, output_directory):
 
 
 def analyse_set_of_dates(dates, projects_to_analyse, output_directory,
-                         force_creation):
+                         force_creation, must_include_not_in_ossfuzz):
     """Performs analysis of all projects in the projects_to_analyse argument for
     the given set of dates. DB .json files are stored in output_directory.
     """
@@ -1032,13 +1037,15 @@ def analyse_set_of_dates(dates, projects_to_analyse, output_directory,
         function_dict, constructor_dict, project_timestamps, db_timestamp, all_header_files = analyse_list_of_projects(
             date, projects_to_analyse, should_include_details=is_end)
         logging.info('Updating DB files')
-        update_db_files(db_timestamp,
-                        project_timestamps,
-                        function_dict,
-                        constructor_dict,
-                        output_directory,
-                        should_include_details=is_end,
-                        all_header_files=all_header_files)
+        update_db_files(
+            db_timestamp,
+            project_timestamps,
+            function_dict,
+            constructor_dict,
+            output_directory,
+            should_include_details=is_end,
+            all_header_files=all_header_files,
+            must_include_not_in_ossfuzz=must_include_not_in_ossfuzz)
         logging.info('Done updating DB files')
 
 
@@ -1365,6 +1372,12 @@ def create_db(max_projects, days_to_analyse, output_directory, input_directory,
     for p in projects_list_build_status:
         projects_to_analyse[p] = projects_list_build_status[p]
 
+    must_includes_not_in_ossfuzz = set()
+    for project in MUST_INCLUDES:
+        if project not in projects_to_analyse.keys():
+            logger.info('Project not in OSS-Fuzz: %s' % (project))
+            must_includes_not_in_ossfuzz.add(project)
+
     # Reduce the amount of projects if needed.
     projects_to_analyse = reduce_projects_to_analyse(projects_to_analyse,
                                                      max_projects,
@@ -1388,7 +1401,7 @@ def create_db(max_projects, days_to_analyse, output_directory, input_directory,
                 (len(projects_to_analyse)))
 
     analyse_set_of_dates(date_range, projects_to_analyse, output_directory,
-                         force_creation)
+                         force_creation, must_includes_not_in_ossfuzz)
 
 
 def get_cmdline_parser():

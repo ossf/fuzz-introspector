@@ -23,6 +23,10 @@ def load_db() -> None:
     all_header_files_file = os.path.join(
         os.path.dirname(__file__), "../static/assets/db/all-header-files.json")
 
+    all_projects_not_in_ossfuzz = os.path.join(
+        os.path.dirname(__file__),
+        "../static/assets/db/projects-not-in-oss-fuzz.json")
+
     if len(data_storage.DB_TIMESTAMPS) > 0:
         return
 
@@ -125,6 +129,11 @@ def load_db() -> None:
         with open(all_header_files_file, 'r') as f:
             all_header_files = json.load(f)
         data_storage.ALL_HEADER_FILES = all_header_files
+
+    if os.path.isfile(all_projects_not_in_ossfuzz):
+        with open(all_projects_not_in_ossfuzz, 'r') as f:
+            projects_not_in_ossfuzz = json.load(f)
+        data_storage.PROJECTS_NOT_IN_OSSFUZZ = projects_not_in_ossfuzz
 
     # Load all functions into a cache
     data_storage.load_cache()

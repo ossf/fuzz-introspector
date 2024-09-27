@@ -43,6 +43,16 @@
                       <td> {{ project.coverage_data.line_coverage.covered }}</td>
                   </tr>
                 {% endfor %}
+                {% for project in projects_not_in_ossfuzz %}
+                  <tr>
+                    <td>{{project}}</td>
+                    <td>Not in OSS-Fuzz</td>
+                    <td>N/A</td>
+                    <td>N/A</td>
+                    <td>N/A</td>
+                    <td>N/A</td>
+                  </tr>
+                {% endfor %}
                 </tbody>
               </table>
             </div>
