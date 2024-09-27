@@ -34,6 +34,8 @@ TOTAL_FUNCTION_COUNT = -1
 
 JSON_TO_FUNCTION_CACHE: Dict[str, List[Function]] = dict()
 
+PROJECTS_NOT_IN_OSSFUZZ: List[str] = []
+
 
 def get_projects() -> List[Project]:
     return PROJECTS

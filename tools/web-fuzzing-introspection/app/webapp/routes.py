@@ -548,6 +548,7 @@ def projects_overview():
         'projects-overview.html',
         gtag=gtag,
         all_projects=latest_coverage_profiles.values(),
+        projects_not_in_ossfuzz=data_storage.PROJECTS_NOT_IN_OSSFUZZ,
         page_base_title=page_texts.get_page_base_title(),
         page_main_name=page_texts.get_page_name(),
         page_main_url=page_texts.get_page_main_url(),
