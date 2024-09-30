@@ -26,6 +26,7 @@ import requests
 import subprocess
 import zipfile
 from threading import Thread
+from typing import List, Any
 
 import constants
 import oss_fuzz
@@ -53,6 +54,7 @@ FI_EXCLUDE_ALL_NON_MUSTS = bool(int(os.getenv('FI_EXCLUDE_ALL_NON_MUSTS',
                                               '0')))
 
 MUST_INCLUDES = set()
+MUST_INCLUDE_WITH_LANG: List[Any] = []
 
 logging.getLogger("requests").setLevel(logging.WARNING)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
@@ -956,8 +958,14 @@ def update_db_files(db_timestamp,
     extend_db_timestamps(db_timestamp, output_directory)
 
     if must_include_not_in_ossfuzz:
+        to_dump = []
+        for project in must_include_not_in_ossfuzz:
+            for elem in MUST_INCLUDE_WITH_LANG:
+                if elem['project'] == project:
+                    to_dump.append(elem)
+
         with open('projects-not-in-oss-fuzz.json', 'w') as f:
-            f.write(json.dumps(list(must_include_not_in_ossfuzz)))
+            f.write(json.dumps(list(to_dump)))
 
     # Write a zip folder the values that make sense to save
     if should_include_details:
@@ -1158,12 +1166,21 @@ def setup_webapp_cache():
 
 
 def extract_must_includes(must_include_arg):
+    global MUST_INCLUDE_WITH_LANG
     must_include = set()
     if os.path.isfile(must_include_arg):
-        with open(must_include_arg, "r") as f:
-            for line in f:
-                if line.strip():
-                    must_include.add(line.strip())
+
+        if must_include_arg.endswith('.json'):
+            with open(must_include_arg, 'r') as f:
+                contents = json.load(f)
+            MUST_INCLUDE_WITH_LANG = contents
+            for project in contents:
+                must_include.add(project['project'])
+        else:
+            with open(must_include_arg, "r") as f:
+                for line in f:
+                    if line.strip():
+                        must_include.add(line.strip())
     elif os.path.isdir(must_include_arg):
         # Convenient when reading OSS-Fuzz-gen benchmark folder
         for filename in os.listdir(must_include_arg):
