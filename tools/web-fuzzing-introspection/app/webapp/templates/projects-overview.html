@@ -45,9 +45,9 @@
                 {% endfor %}
                 {% for project in projects_not_in_ossfuzz %}
                   <tr>
-                    <td>{{project}}</td>
+                    <td>{{project.project}}</td>
+                    <td>{{project.language}}</td>
                     <td>Not in OSS-Fuzz</td>
-                    <td>N/A</td>
                     <td>N/A</td>
                     <td>N/A</td>
                     <td>N/A</td>
