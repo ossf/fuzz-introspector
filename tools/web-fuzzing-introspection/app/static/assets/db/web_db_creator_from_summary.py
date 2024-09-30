@@ -26,6 +26,7 @@ import requests
 import subprocess
 import zipfile
 from threading import Thread
+from typing import List, Any
 
 import constants
 import oss_fuzz
@@ -53,7 +54,7 @@ FI_EXCLUDE_ALL_NON_MUSTS = bool(int(os.getenv('FI_EXCLUDE_ALL_NON_MUSTS',
                                               '0')))
 
 MUST_INCLUDES = set()
-MUST_INCLUDE_WITH_LANG = []
+MUST_INCLUDE_WITH_LANG: List[Any] = []
 
 logging.getLogger("requests").setLevel(logging.WARNING)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
