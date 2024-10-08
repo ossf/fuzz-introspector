@@ -31,7 +31,7 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
 
     subparsers = parser.add_subparsers(dest='command')
 
-    light_parser = subparsers.add_parser(
+    subparsers.add_parser(
         "light",
         help="Perform light analysis of project. This involves no compilaiton.",
     )
