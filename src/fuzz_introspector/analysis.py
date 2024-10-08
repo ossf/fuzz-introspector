@@ -1041,7 +1041,10 @@ def _extract_test_information_cpp(report_dict):
         if path.startswith('/usr/'):
             continue
         directories.add('/'.join(path.split('/')[:-1]))
+    return extract_tests_from_directories(directories)
 
+
+def extract_tests_from_directories(directories):
     all_files_in_subtree = set()
     for dir in directories:
         for root, dirs, files in os.walk(dir):
@@ -1078,6 +1081,8 @@ def _extract_test_information_cpp(report_dict):
                     continue
                 # Absolute path
                 absolute_path = os.path.join(root, f)
+                if any([avoid in absolute_path for avoid in to_avoid]):
+                    continue
                 try:
                     with open(absolute_path, 'r') as file_fp:
                         if 'LLVMFuzzerTestOneInput' in file_fp.read():
