@@ -1203,7 +1203,6 @@ def light_correlate_source_to_executable():
     for source_file in all_source_files:
         harness_source_file = os.path.splitext(
             os.path.basename(source_file))[0]
-        is_match = False
         matches = set()
         for cov_report in cov_reports:
             cov_report_base = os.path.splitext(os.path.basename(cov_report))[0]
