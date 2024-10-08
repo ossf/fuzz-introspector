@@ -14,6 +14,7 @@
 """High-level routines and CLI entrypoints"""
 
 import logging
+import os
 import yaml
 from typing import List
 
@@ -66,3 +67,15 @@ def run_analysis_on_dir(target_folder: str,
                                    output_json, report_name, dump_files)
 
     return constants.APP_EXIT_SUCCESS
+
+
+def light_analysis(args) -> int:
+
+    src_dir = os.getenv('SRC', '/src/')
+    inspector_dir = os.path.join(src_dir, 'inspector')
+    light_dir = os.path.join(inspector_dir, 'light')
+
+    if not os.path.isdir(light_dir):
+        os.makedirs(light_dir, exist_ok=True)
+
+    return 0
