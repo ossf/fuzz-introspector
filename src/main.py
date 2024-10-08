@@ -31,6 +31,11 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
 
     subparsers = parser.add_subparsers(dest='command')
 
+    subparsers.add_parser(
+        "light",
+        help="Perform light analysis of project. This involves no compilaiton.",
+    )
+
     # Report generation command
     report_parser = subparsers.add_parser(
         "report",
@@ -144,6 +149,8 @@ def main() -> int:
         return_code = commands.correlate_binaries_to_logs(args.binaries_dir)
     elif args.command == 'diff':
         return_code = commands.diff_two_reports(args.report1, args.report2)
+    elif args.command == 'light':
+        return_code = commands.light_analysis(args)
     else:
         return_code = constants.APP_EXIT_ERROR
     logger.info("Ending fuzz introspector post-processing")
