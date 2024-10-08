@@ -85,4 +85,7 @@ def light_analysis(args) -> int:
     with open(os.path.join(light_dir, 'all_tests.json'), 'w') as f:
         f.write(json.dumps(list(all_tests)))
 
+    pairs = analysis.light_correlate_source_to_executable()
+    with open(os.path.join(light_dir, 'all_pairs.json'), 'w') as f:
+        f.write(json.dumps(list(pairs)))
     return 0
