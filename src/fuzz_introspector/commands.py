@@ -15,6 +15,7 @@
 
 import logging
 import os
+import json
 import yaml
 from typing import List
 
@@ -70,12 +71,18 @@ def run_analysis_on_dir(target_folder: str,
 
 
 def light_analysis(args) -> int:
-
+    """Performs a light analysis, without any data from the frontends, so
+    no compilation is needed for this analysis."""
     src_dir = os.getenv('SRC', '/src/')
     inspector_dir = os.path.join(src_dir, 'inspector')
     light_dir = os.path.join(inspector_dir, 'light')
 
     if not os.path.isdir(light_dir):
         os.makedirs(light_dir, exist_ok=True)
+
+    all_tests = analysis.extract_tests_from_directories({src_dir})
+
+    with open(os.path.join(light_dir, 'all_tests.json'), 'w') as f:
+        f.write(json.dumps(list(all_tests)))
 
     return 0
