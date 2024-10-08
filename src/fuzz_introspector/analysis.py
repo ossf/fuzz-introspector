@@ -1179,3 +1179,39 @@ def _extract_test_information_jvm():
                     all_test_files.add(path)
 
     return all_test_files
+
+
+def light_correlate_source_to_executable():
+    """Extracts pairs of harness source/executable"""
+    out_dir = os.getenv('OUT', '/out/')
+    textcov_dir = os.path.join(out_dir, 'textcov_reports')
+
+    if not os.path.isdir(textcov_dir):
+        return []
+
+    cov_reports = []
+    for cov_report in os.listdir(textcov_dir):
+        if cov_report.endswith('.covreport'):
+            cov_reports.append(os.path.join(textcov_dir, cov_report))
+    for cov_report in cov_reports:
+        print('- cov report: %s' % (cov_report))
+
+    all_source_files = extract_all_sources('cpp')
+    pairs = []
+    # Match based on file names. This should be the most primitive but
+    # will catch a large number of targets
+    for source_file in all_source_files:
+        harness_source_file = os.path.splitext(
+            os.path.basename(source_file))[0]
+        matches = set()
+        for cov_report in cov_reports:
+            cov_report_base = os.path.splitext(os.path.basename(cov_report))[0]
+            if cov_report_base == harness_source_file:
+                matches.add(cov_report_base)
+        if len(matches) == 1:
+            pairs.append({
+                'harness_source': source_file,
+                'harness_executable': matches.pop()
+            })
+
+    return pairs
