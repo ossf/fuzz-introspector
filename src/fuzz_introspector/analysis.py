@@ -1011,6 +1011,8 @@ def extract_all_sources(language):
             continue
         if file.startswith('/src/source-code'):
             continue
+        if file.startswith('/src/inspector/'):
+            continue
 
         interesting_source_files.add(file)
     return interesting_source_files
@@ -1075,7 +1077,7 @@ def extract_tests_from_directories(directories):
     to_avoid = [
         'fuzztest', 'aflplusplus', 'libfuzzer', 'googletest', 'thirdparty',
         'third_party', '/build/', '/usr/local/', '/fuzz-introspector/',
-        '/root/.cache/'
+        '/root/.cache/', '/usr/'
     ]
     for dir in all_inspiration_dirs:
         for root, dirs, files in os.walk(dir):
@@ -1087,6 +1089,8 @@ def extract_tests_from_directories(directories):
                 if any([avoid in absolute_path for avoid in to_avoid]):
                     continue
                 if absolute_path.startswith('/out/'):
+                    continue
+                if absolute_path.startswith('/src/inspector/'):
                     continue
                 try:
                     with open(absolute_path, 'r') as file_fp:
@@ -1107,6 +1111,10 @@ def extract_tests_from_directories(directories):
                 if any([avoid in absolute_path for avoid in to_avoid]):
                     continue
                 if absolute_path.startswith('/out/'):
+                    continue
+                if absolute_path.startswith('/src/inspector/'):
+                    continue
+                if absolute_path.startswith('/usr/'):
                     continue
                 if "test" in f:
                     all_test_files.add(absolute_path)
