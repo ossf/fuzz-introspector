@@ -97,7 +97,6 @@ def build_project(
         subprocess.check_call(" ".join(cmd), shell=True)
     except:
         print("Building project failed")
-        exit(1)
 
 
 def patch_jvm_source_report(server_directory):
