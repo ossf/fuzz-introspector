@@ -327,6 +327,9 @@ def extract_local_project_data(project_name, oss_fuzz_path,
         project_name, oss_fuzz_path)
     introspector_report = oss_fuzz.extract_local_introspector_report(
         project_name, oss_fuzz_path)
+    if not introspector_report:
+        return
+
     introspector_type_map = oss_fuzz.get_local_introspector_type_map(
         project_name, oss_fuzz_path)
     debug_report = oss_fuzz.extract_local_introspector_debug_info(
