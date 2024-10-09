@@ -336,6 +336,19 @@ def extract_local_project_data(project_name, oss_fuzz_path,
     if test_files:
         save_test_files_report(test_files, project_name)
 
+    light_test_files = oss_fuzz.extract_local_introspector_light_test_files(
+        project_name, oss_fuzz_path)
+    light_all_files = oss_fuzz.extract_local_introspector_light_all_files(
+        project_name, oss_fuzz_path)
+    light_all_pairs = oss_fuzz.extract_local_introspector_light_pairs(
+        project_name, oss_fuzz_path)
+
+    light_report = {
+        'test-files': light_test_files,
+        'all-files': light_all_files,
+        'all-pairs': light_all_pairs,
+    }
+
     all_files = oss_fuzz.extract_local_introspector_all_files(
         project_name, oss_fuzz_path)
     if all_files:
@@ -442,6 +455,7 @@ def extract_local_project_data(project_name, oss_fuzz_path,
         'introspector-data': introspector_data_dict,
         'fuzzer-count': amount_of_fuzzers,
         'project_repository': project_repository,
+        'light-introspector': light_report,
     }
 
     dictionary_key = '%s###%s' % (project_name, '')
