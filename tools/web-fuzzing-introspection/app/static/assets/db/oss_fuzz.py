@@ -146,6 +146,9 @@ def extract_local_introspector_constructor_list(project_name, oss_fuzz_folder):
 def extract_local_introspector_report(project_name, oss_fuzz_folder):
     summary_json = os.path.join(oss_fuzz_folder, 'build', 'out', project_name,
                                 'inspector', 'summary.json')
+    if not os.path.isfile(summary_json):
+        return {}
+
     with open(summary_json, 'r') as f:
         json_dict = json.load(f)
     return json_dict

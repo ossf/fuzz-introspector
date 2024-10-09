@@ -38,10 +38,16 @@
                       <td> <a href="/project-profile?project={{project.project_name}}">{{ project.project_name }}</a> </td>
                       <td> {{ project.language }} </td>
                       <td> {{ project.fuzzer_count }} </td>
+                      {% if project.coverage_data != None %}
                       <td> {{ '%0.2f' % project.coverage_data.line_coverage.percent |float }}% </td>
                       <td> {{ project.coverage_data.line_coverage.count }}</td>
                       <td> {{ project.coverage_data.line_coverage.covered }}</td>
-                  </tr>
+                      {% else %}
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                      {% endif %}
+                      </tr>
                 {% endfor %}
                 {% for project in projects_not_in_ossfuzz %}
                   <tr>
