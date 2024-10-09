@@ -97,5 +97,7 @@ def light_analysis(args) -> int:
         dst = light_out_src + '/' + source_file
         os.makedirs(os.path.dirname(dst), exist_ok=True)
         shutil.copy(source_file, dst)
+    with open(os.path.join(light_dir, 'all_files.json'), 'w') as f:
+        f.write(json.dumps(list(all_source_files)))
 
     return 0

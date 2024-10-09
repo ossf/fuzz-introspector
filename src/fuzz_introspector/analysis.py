@@ -1009,6 +1009,9 @@ def extract_all_sources(language):
         # Absolute path
         if any([avoid in file for avoid in to_avoid]):
             continue
+        if file.startswith('/src/source-code'):
+            continue
+
         interesting_source_files.add(file)
     return interesting_source_files
 
@@ -1083,6 +1086,8 @@ def extract_tests_from_directories(directories):
                 absolute_path = os.path.join(root, f)
                 if any([avoid in absolute_path for avoid in to_avoid]):
                     continue
+                if absolute_path.startswith('/out/'):
+                    continue
                 try:
                     with open(absolute_path, 'r') as file_fp:
                         if 'LLVMFuzzerTestOneInput' in file_fp.read():
@@ -1101,7 +1106,8 @@ def extract_tests_from_directories(directories):
                 absolute_path = os.path.join(root, f)
                 if any([avoid in absolute_path for avoid in to_avoid]):
                     continue
-
+                if absolute_path.startswith('/out/'):
+                    continue
                 if "test" in f:
                     all_test_files.add(absolute_path)
     new_test_files = set()
