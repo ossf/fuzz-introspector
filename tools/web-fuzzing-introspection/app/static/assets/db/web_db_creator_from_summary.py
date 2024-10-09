@@ -327,9 +327,6 @@ def extract_local_project_data(project_name, oss_fuzz_path,
         project_name, oss_fuzz_path)
     introspector_report = oss_fuzz.extract_local_introspector_report(
         project_name, oss_fuzz_path)
-    if not introspector_report:
-        return
-
     introspector_type_map = oss_fuzz.get_local_introspector_type_map(
         project_name, oss_fuzz_path)
     debug_report = oss_fuzz.extract_local_introspector_debug_info(
@@ -375,11 +372,15 @@ def extract_local_project_data(project_name, oss_fuzz_path,
         project_name, oss_fuzz_path)
     all_constructor_list = oss_fuzz.extract_local_introspector_constructor_list(
         project_name, oss_fuzz_path)
-    project_stats = introspector_report['MergedProjectProfile']['stats']
-    amount_of_fuzzers = project_stats['harness-count']
-    number_of_functions = project_stats['total-functions']
-    functions_covered_estimate = project_stats[
-        'code-coverage-function-percentage']
+
+    try:
+        project_stats = introspector_report['MergedProjectProfile']['stats']
+    except KeyError:
+        project_stats = {}
+    amount_of_fuzzers = project_stats.get('harness-count', 0)
+    number_of_functions = project_stats.get('total-functions', 0)
+    functions_covered_estimate = project_stats.get(
+        'code-coverage-function-percentage', 0.0)
 
     # Get details if needed and otherwise leave empty
     refined_proj_list = list()
@@ -402,16 +403,26 @@ def extract_local_project_data(project_name, oss_fuzz_path,
         project_repository = 'N/A'
 
     introspector_data_dict = {
-        "introspector_report_url": 'introspector_url',
-        "coverage_lines": project_stats['code-coverage-function-percentage'],
-        "static_reachability": project_stats['reached-complexity-percentage'],
-        "fuzzer_count": amount_of_fuzzers,
-        "function_count": len(all_function_list),
-        "functions_covered_estimate": functions_covered_estimate,
-        'refined_proj_list': refined_proj_list,
-        'refined_constructor_list': refined_constructor_list,
-        'annotated_cfg': annotated_cfg,
-        'project_name': project_name
+        "introspector_report_url":
+        'introspector_url',
+        "coverage_lines":
+        project_stats.get('code-coverage-function-percentage', 0.0),
+        "static_reachability":
+        project_stats.get('reached-complexity-percentage', 0.0),
+        "fuzzer_count":
+        amount_of_fuzzers,
+        "function_count":
+        len(all_function_list),
+        "functions_covered_estimate":
+        functions_covered_estimate,
+        'refined_proj_list':
+        refined_proj_list,
+        'refined_constructor_list':
+        refined_constructor_list,
+        'annotated_cfg':
+        annotated_cfg,
+        'project_name':
+        project_name
     }
 
     code_coverage_data_dict = extract_code_coverage_data(
