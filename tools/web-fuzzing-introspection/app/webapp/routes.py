@@ -453,7 +453,8 @@ def project_profile():
                                      fuzzer_count=0,
                                      coverage_data=None,
                                      introspector_data=None,
-                                     project_repository=None)
+                                     project_repository=None,
+                                     light_analysis={})
 
             # Get statistics of the project
             project_statistics = data_storage.PROJECT_TIMESTAMPS
