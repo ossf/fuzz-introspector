@@ -17,6 +17,7 @@ import logging
 import os
 import json
 import yaml
+import shutil
 from typing import List
 
 from fuzz_introspector import analysis
@@ -88,4 +89,13 @@ def light_analysis(args) -> int:
     pairs = analysis.light_correlate_source_to_executable()
     with open(os.path.join(light_dir, 'all_pairs.json'), 'w') as f:
         f.write(json.dumps(list(pairs)))
+
+    all_source_files = analysis.extract_all_sources('cpp')
+    light_out_src = os.path.join(light_dir, 'source_files')
+
+    for source_file in all_source_files:
+        dst = light_out_src + '/' + source_file
+        os.makedirs(os.path.dirname(dst), exist_ok=True)
+        shutil.copy(source_file, dst)
+
     return 0
