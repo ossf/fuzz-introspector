@@ -27,8 +27,10 @@ class Project:
 
     def __init__(self, name: str, language: str, date: str,
                  coverage_data: Optional[Dict[str, Any]],
-                 introspector_data: Optional[Dict[str, Any]],
-                 fuzzer_count: int, project_repository: Optional[str]):
+                 introspector_data: Optional[Dict[str,
+                                                  Any]], fuzzer_count: int,
+                 project_repository: Optional[str], light_analysis: Dict[Any,
+                                                                         Any]):
         self.name = name
         self.language = language
         self.date = date
@@ -36,6 +38,7 @@ class Project:
         self.introspector_data = introspector_data
         self.fuzzer_count = fuzzer_count
         self.project_repository = project_repository
+        self.light_analysis = light_analysis
 
     def has_introspector(self) -> bool:
         return self.introspector_data != None

@@ -95,6 +95,25 @@ def extract_introspector_raw_source_code(project_name, date_str, target_file):
     return raw_source
 
 
+def _light_extract_introspector_raw_source_code(project_name, date_str,
+                                                target_file):
+    # Remove leading slash to avoid errors
+    while target_file.startswith('/'):
+        target_file = target_file[1:]
+
+    if is_local:
+        src_location = os.path.join(local_oss_fuzz, 'build', 'out',
+                                    project_name, 'inspector', 'light',
+                                    'source_files', target_file)
+
+        if not os.path.isfile(src_location):
+            return None
+        with open(src_location, 'r') as f:
+            return f.read()
+
+    return None
+
+
 def extract_lines_from_source_code(project_name,
                                    date_str,
                                    target_file,
@@ -112,9 +131,16 @@ def extract_lines_from_source_code(project_name,
     if project.language == 'java':
         target_file = f'/{target_file.split("$", 1)[0].replace(".", "/")}.java'
 
+    # Light source code
+    light_raw_source = _light_extract_introspector_raw_source_code(
+        project_name, date_str, target_file)
+
     # Extract the source code from the target file
     raw_source = extract_introspector_raw_source_code(project_name, date_str,
                                                       target_file)
+
+    if not raw_source and light_raw_source:
+        raw_source = light_raw_source
 
     # Return None if source is not found.
     if raw_source is None:
@@ -427,7 +453,8 @@ def project_profile():
                                      fuzzer_count=0,
                                      coverage_data=None,
                                      introspector_data=None,
-                                     project_repository=None)
+                                     project_repository=None,
+                                     light_analysis={})
 
             # Get statistics of the project
             project_statistics = data_storage.PROJECT_TIMESTAMPS
@@ -1007,17 +1034,24 @@ def api_optimal_targets():
         return {'result': 'error', 'msg': 'Found no introspector data.'}
 
 
+def _light_harness_source_and_executable(target_project):
+    # Check if light analysis is there
+    light_pairs_to_ret = []
+    if target_project.light_analysis:
+        light_pairs = target_project.light_analysis.get('all-pairs', [])
+        for light_pair in light_pairs:
+            ls = light_pair.get('harness_source', '')
+            lh = light_pair.get('harness_executable', '')
+            if ls and lh:
+                light_pairs_to_ret.append({'source': ls, 'executable': lh})
+    return light_pairs_to_ret
+
+
 @blueprint.route('/api/harness-source-and-executable')
 def harness_source_and_executable():
     project_name = request.args.get('project', None)
     if project_name is None:
         return {'result': 'error', 'msg': 'Please provide project name'}
-
-    all_file_json = os.path.join(
-        os.path.dirname(__file__),
-        f"../static/assets/db/db-projects/{project_name}/all_files.json")
-    if not os.path.isfile(all_file_json):
-        return {'result': 'error', 'msg': 'Did not find file check json'}
 
     target_project = None
     all_projects = data_storage.get_projects()
@@ -1027,6 +1061,17 @@ def harness_source_and_executable():
             break
     if target_project is None:
         return {'result': 'error', 'msg': 'Project not in the database'}
+
+    light_pairs_to_ret = _light_harness_source_and_executable(target_project)
+
+    all_file_json = os.path.join(
+        os.path.dirname(__file__),
+        f"../static/assets/db/db-projects/{project_name}/all_files.json")
+
+    if not os.path.isfile(all_file_json):
+        if light_pairs_to_ret:
+            return {'rseult': 'success', 'pairs': light_pairs_to_ret}
+        return {'result': 'error', 'msg': 'Did not find file check json'}
 
     if target_project.introspector_data is None:
         return {'result': 'error', 'msg': 'Found no introspector data.'}
@@ -2154,6 +2199,23 @@ def extract_project_tests(project_name,
     return tests_file_list
 
 
+def _light_project_tests(project_name):
+    target_project = None
+    all_projects = data_storage.get_projects()
+    for project in all_projects:
+        if project.name == project_name:
+            target_project = project
+            break
+    if not target_project:
+        return []
+
+    if not target_project.light_analysis:
+        return []
+
+    light_test_files = target_project.light_analysis.get('test-files', [])
+    return light_test_files
+
+
 @blueprint.route('/api/project-tests')
 def project_tests():
     project = request.args.get('project', None)
@@ -2163,8 +2225,15 @@ def project_tests():
             'extended_msgs': ['Please provide project name']
         }
 
+    light_tests = _light_project_tests(project)
+
     test_file_list = extract_project_tests(project)
     if test_file_list == None:
+
+        # Return light if we have it
+        if light_tests:
+            return {'result': 'succes', 'test-file-list': light_tests}
+        # Error
         return {
             'result': 'error',
             'extended_msgs': ['Could not find tests file']
