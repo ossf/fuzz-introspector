@@ -1517,7 +1517,14 @@ bool FuzzIntrospector::isNodeInVector(CalltreeNode *Src,
   for (CalltreeNode *TmpN : *Vec) {
     if (TmpN->LineNumber == Src->LineNumber &&
         TmpN->FileName.compare(Src->FileName) == 0) {
-      return true;
+      // errs() << "Likely true\n";
+      // errs() << "TmpN: " << TmpN->FunctionName.str() << "\n";
+      // errs() << "Src: " << Src->FunctionName.str() << "\n";
+      if (TmpN->FunctionName.str().compare(Src->FunctionName.str()) == 0) {
+          return 0;
+      } else {
+          // errs() << "Actually false\n";
+      }
     }
   }
   return false;
