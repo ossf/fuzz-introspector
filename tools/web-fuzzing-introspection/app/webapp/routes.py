@@ -65,6 +65,13 @@ def get_coverage_report_url(project_name, datestr, language):
     return project_url
 
 
+def all_functions_in_db():
+    """Iterator for going through all functions in the DB"""
+    for project in data_storage.get_projects():
+        for function in data_storage.get_functions_by_project(project.name):
+            yield function
+
+
 def extract_introspector_raw_source_code(project_name, date_str, target_file):
     # Remove leading slash to avoid errors
     while target_file.startswith('/'):
@@ -522,12 +529,9 @@ def function_search():
         ]
         interesting_query = random.choice(interesting_query_roulette)
         tmp_list = []
-        for tmp_proj in data_storage.PROJECTS:
-            proj_func_list = data_storage.get_functions_by_project(
-                tmp_proj.name)
-            for function in proj_func_list:
-                if interesting_query in function.name:
-                    tmp_list.append(function)
+        for function in all_functions_in_db():
+            if interesting_query in function.name:
+                tmp_list.append(function)
         functions_to_display = tmp_list
 
         # Shuffle to give varying results each time
@@ -539,12 +543,9 @@ def function_search():
         info_msg = f"No query was given, picked the query \"{interesting_query}\" for this"
     else:
         tmp_list = []
-        for tmp_proj in data_storage.PROJECTS:
-            proj_func_list = data_storage.get_functions_by_project(
-                tmp_proj.name)
-            for function in proj_func_list:
-                if query in function.name:
-                    tmp_list.append(function)
+        for function in all_functions_in_db():
+            if query in function.name:
+                tmp_list.append(function)
         functions_to_display = tmp_list
 
         total_matches = len(functions_to_display)
