@@ -1108,7 +1108,6 @@ def api_annotated_cfg():
         return {'result': 'error', 'msg': 'Please provide project name'}
 
     target_project = get_project_with_name(project_name)
-    all_projects = data_storage.get_projects()
     if target_project is None:
         return {'result': 'error', 'msg': 'Project not in the database'}
 
