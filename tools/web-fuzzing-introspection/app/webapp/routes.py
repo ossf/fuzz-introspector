@@ -972,12 +972,7 @@ def api_optimal_targets():
     else:
         only_functions_declared_in_header_files = False
 
-    target_project = None
-    all_projects = data_storage.get_projects()
-    for project in all_projects:
-        if project.name == project_name:
-            target_project = project
-            break
+    target_project = get_project_with_name(project_name)
     if target_project is None:
         return {'result': 'error', 'msg': 'Project not in the database'}
 
@@ -1053,12 +1048,7 @@ def harness_source_and_executable():
     if project_name is None:
         return {'result': 'error', 'msg': 'Please provide project name'}
 
-    target_project = None
-    all_projects = data_storage.get_projects()
-    for project in all_projects:
-        if project.name == project_name:
-            target_project = project
-            break
+    target_project = get_project_with_name(project_name)
     if target_project is None:
         return {'result': 'error', 'msg': 'Project not in the database'}
 
@@ -1117,12 +1107,7 @@ def api_annotated_cfg():
     if project_name is None:
         return {'result': 'error', 'msg': 'Please provide project name'}
 
-    target_project = None
-    all_projects = data_storage.get_projects()
-    for project in all_projects:
-        if project.name == project_name:
-            target_project = project
-            break
+    target_project = get_project_with_name(project_name)
     if target_project is None:
         return {'result': 'error', 'msg': 'Project not in the database'}
 
@@ -1149,12 +1134,7 @@ def api_project_summary():
     project_name = request.args.get('project', None)
     if project_name is None:
         return {'result': 'error', 'msg': 'Please provide project name'}
-    target_project = None
-    all_projects = data_storage.get_projects()
-    for project in all_projects:
-        if project.name == project_name:
-            target_project = project
-            break
+    target_project = get_project_with_name(project_name)
     if target_project is None:
         return {'result': 'error', 'msg': 'Project not in the database'}
 
@@ -1174,12 +1154,7 @@ def branch_blockers():
     if project_name is None:
         return {'result': 'error', 'msg': 'Please provide project name'}
 
-    target_project = None
-    all_projects = data_storage.get_projects()
-    for project in all_projects:
-        if project.name == project_name:
-            target_project = project
-            break
+    target_project = get_project_with_name(project_name)
     if target_project is None:
         return {'result': 'error', 'msg': 'Project not in the database'}
 
@@ -1808,13 +1783,7 @@ def api_oracle_2():
     else:
         only_referenced_functions = False
 
-    target_project = None
-    all_projects = data_storage.get_projects()
-    for project in all_projects:
-        if project.name == project_name:
-            target_project = project
-            break
-
+    target_project = get_project_with_name(project_name)
     if target_project is None:
         return {'result': 'error', 'extended_msgs': ['Project not found.']}
 
@@ -1868,12 +1837,7 @@ def api_oracle_1():
     else:
         only_referenced_functions = False
 
-    target_project = None
-    all_projects = data_storage.get_projects()
-    for project in all_projects:
-        if project.name == project_name:
-            target_project = project
-            break
+    target_project = get_project_with_name(project_name)
     if not target_project:
         return {'result': 'error', 'extended_msgs': ['Could not find project']}
 
@@ -1908,12 +1872,7 @@ def project_repository():
             'extended_msgs': ['Please provide project name']
         }
 
-    target_project = None
-    all_projects = data_storage.get_projects()
-    for project in all_projects:
-        if project.name == project_name:
-            target_project = project
-            break
+    target_project = get_project_with_name(project_name)
     if target_project is None:
         return {'result': 'error', 'extended_msgs': ['Did not find project']}
     return {
@@ -1954,13 +1913,7 @@ def far_reach_but_low_coverage():
     else:
         only_functions_declared_in_header_files = False
 
-    target_project = None
-    all_projects = data_storage.get_projects()
-    for project in all_projects:
-        if project.name == project_name:
-            target_project = project
-            break
-
+    target_project = get_project_with_name(project_name)
     if target_project is None:
         # Is the project a ghost project: a project that no longer
         # exists in OSS-Fuzz but is present on the ClusterFuzz instance.
@@ -2200,12 +2153,7 @@ def extract_project_tests(project_name,
 
 
 def _light_project_tests(project_name):
-    target_project = None
-    all_projects = data_storage.get_projects()
-    for project in all_projects:
-        if project.name == project_name:
-            target_project = project
-            break
+    target_project = get_project_with_name(project_name)
     if not target_project:
         return []
 
