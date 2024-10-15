@@ -741,22 +741,12 @@ def is_static(target_function) -> bool:
     """Returns True if a function is determined to be static and False
     otherwise, including if undecided."""
 
-    # Find latest introspector date
-    all_build_status = data_storage.get_build_status()
-    latest_introspector_datestr = None
-    for build_status in all_build_status:
-        if build_status.project_name == target_function.project:
-            # Get statistics of the project
-            project_statistics = data_storage.PROJECT_TIMESTAMPS
-            for ps in project_statistics:
-                if ps.project_name == target_function.project:
-                    datestr = ps.date
-                    if ps.introspector_data is not None:
-                        latest_introspector_datestr = datestr
+    latest_introspector_datestr = get_latest_introspector_date(
+        target_function.project)
     if is_local:
         latest_introspector_datestr = "norelevant"
 
-    if latest_introspector_datestr is None:
+    if not latest_introspector_datestr:
         return False
 
     src_begin = target_function.source_line_begin
@@ -1453,20 +1443,8 @@ def api_project_source_code():
 
         return {'result': 'success', 'source_code': source_code}
 
-    all_build_status = data_storage.get_build_status()
-    latest_introspector_datestr = None
-    for build_status in all_build_status:
-        if build_status.project_name == project_name:
-
-            # Get statistics of the project
-            project_statistics = data_storage.PROJECT_TIMESTAMPS
-            for ps in project_statistics:
-                if ps.project_name == project_name:
-                    datestr = ps.date
-                    if ps.introspector_data is not None:
-                        latest_introspector_datestr = datestr
-
-    if latest_introspector_datestr is None:
+    latest_introspector_datestr = get_latest_introspector_date(project_name)
+    if not latest_introspector_datestr:
         return {'result': 'error', 'msg': 'No introspector builds.'}
 
     source_code = extract_lines_from_source_code(project_name,
@@ -1480,6 +1458,7 @@ def api_project_source_code():
 
 
 def get_latest_introspector_date(project_name: str) -> str:
+    """Gets the date of the most recent successful introspector build."""
     all_build_status = data_storage.get_build_status()
     latest_introspector_datestr = ''
     for build_status in all_build_status:
@@ -2342,20 +2321,10 @@ def sample_cross_references():
     if is_local:
         latest_introspector_datestr = "notrelevant"
     else:
-        all_build_status = data_storage.get_build_status()
-        latest_introspector_datestr = None
-        for build_status in all_build_status:
-            if build_status.project_name == project_name:
+        latest_introspector_datestr = get_latest_introspector_date(
+            project_name)
 
-                # Get statistics of the project
-                project_statistics = data_storage.PROJECT_TIMESTAMPS
-                for ps in project_statistics:
-                    if ps.project_name == project_name:
-                        datestr = ps.date
-                        if ps.introspector_data is not None:
-                            latest_introspector_datestr = datestr
-
-    if latest_introspector_datestr is None:
+    if not latest_introspector_datestr:
         return {'result': 'error', 'msg': 'No introspector builds.'}
 
     source_code_xrefs = []
