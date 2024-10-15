@@ -11,16 +11,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""API handlers"""
 
 import os
-import sys
 import random
-import requests
 import json
 import signal
+from typing import Dict, List, Optional
+import requests
 
 from flask import Blueprint, render_template, request, redirect
-from typing import Dict, List, Optional
+
 from . import models, data_storage, page_texts
 from .helper import function_helper
 
@@ -36,6 +37,12 @@ local_oss_fuzz = ''
 
 # Add functions in here to make the oracles focus on a specific API.
 ALLOWED_ORACLE_RETURNS: List[str] = []
+
+# Max length of testcase sorce code to return from API.
+MAX_TEST_SIZE = 6000
+
+# Max matches to show when searching for functions in functions view.
+MAX_MATCHES_TO_DISPLAY = 180
 
 
 def get_introspector_report_url_base(project_name, datestr):
@@ -237,7 +244,8 @@ def get_functions_of_interest(
     return sorted_functions_of_interest
 
 
-def get_frontpage_summary_stats():
+def get_frontpage_summary_stats() -> models.DBSummary:
+    """Gets a DBSummary object with stats for front page."""
     # Get total number of projects
     all_projects = data_storage.get_projects()
 
@@ -269,7 +277,8 @@ def get_frontpage_summary_stats():
     return db_summary
 
 
-def get_project_with_name(project_name):
+def get_project_with_name(project_name) -> Optional[models.Project]:
+    """Extracts project with given project name."""
     all_projects = data_storage.get_projects()
     for project in all_projects:
         if project.name == project_name:
@@ -279,7 +288,9 @@ def get_project_with_name(project_name):
     return None
 
 
-def get_fuction_with_name(function_name, project_name):
+def get_fuction_with_name(function_name,
+                          project_name) -> Optional[models.Function]:
+    """Gets the function with the given function name from a given project"""
 
     all_functions = data_storage.get_functions_by_project(project_name)
     for function in all_functions:
@@ -291,9 +302,11 @@ def get_fuction_with_name(function_name, project_name):
         proj_func_list = data_storage.get_functions_by_project(tmp_proj.name)
         for function in proj_func_list:
             return function
+    return None
 
 
-def get_all_related_functions(primary_function):
+def get_all_related_functions(primary_function) -> List[models.Function]:
+    """Gets all functions across the DB that has the same name."""
     related_functions = []
     for tmp_proj in data_storage.PROJECTS:
         proj_func_list = data_storage.get_functions_by_project(tmp_proj.name)
@@ -349,15 +362,15 @@ def index():
 
 @blueprint.route('/function-profile', methods=['GET'])
 def function_profile():
-    function_profile = get_fuction_with_name(
-        request.args.get('function', 'none'),
-        request.args.get('project', 'none'))
+    """Renders a given function."""
+    func_profile = get_fuction_with_name(request.args.get('function', 'none'),
+                                         request.args.get('project', 'none'))
 
-    related_functions = get_all_related_functions(function_profile)
+    related_functions = get_all_related_functions(func_profile)
     return render_template('function-profile.html',
                            gtag=gtag,
                            related_functions=related_functions,
-                           function_profile=function_profile,
+                           function_profile=func_profile,
                            page_main_name=page_texts.get_page_name(),
                            page_main_url=page_texts.get_page_main_url(),
                            page_base_title=page_texts.get_page_base_title(),
@@ -520,8 +533,8 @@ def project_profile():
 
 @blueprint.route('/function-search')
 def function_search():
+    """Renders function search page"""
     info_msg = None
-    MAX_MATCHES_TO_DISPLAY = 900
     query = request.args.get('q', '')
     print("query: { %s }" % (query))
     if query == '':
@@ -573,7 +586,6 @@ def projects_overview():
     # Get statistics of the project
     project_statistics = data_storage.PROJECT_TIMESTAMPS
     latest_coverage_profiles = dict()
-    latest_statistics = None
     for ps in project_statistics:
         latest_coverage_profiles[ps.project_name] = ps
 
@@ -637,7 +649,7 @@ def oracle_3(all_functions, all_projects):
                         current_list[idx] = function
                         break
 
-    for project_name, functions in projects_added.items():
+    for functions in projects_added.values():
         functions_of_interest += functions
     return functions_of_interest
 
@@ -1484,7 +1496,6 @@ def api_project_test_code():
     if filepath is None:
         return {'result': 'error', 'msg': 'No filepath provided'}
 
-    MAX_TEST_SIZE = 6000
     max_content_size = request.args.get('max_size', str(MAX_TEST_SIZE))
     try:
         max_content_size = int(max_content_size)
@@ -1590,7 +1601,6 @@ def api_function_signature():
     all_functions = data_storage.get_functions_by_project(project_name)
     all_functions = all_functions + data_storage.get_constructors_by_project(
         project_name)
-    func_to_match = None
     print("Iterating through all functions to match raw function name")
     for function in all_functions:
         if function.raw_function_name == function_name:
@@ -1721,7 +1731,7 @@ def api_jvm_method_properties():
 
 
 def get_build_status_of_project(
-        project_name: str) -> Optional[data_storage.BuildStatus]:
+        project_name: str) -> Optional[models.BuildStatus]:
     """Gets the current build status of a project."""
     build_status = data_storage.get_build_status()
     for bs in build_status:
@@ -2156,8 +2166,7 @@ def project_tests():
     light_tests = _light_project_tests(project)
 
     test_file_list = extract_project_tests(project)
-    if test_file_list == None:
-
+    if test_file_list is None:
         # Return light if we have it
         if light_tests:
             return {'result': 'succes', 'test-file-list': light_tests}
