@@ -121,17 +121,18 @@ def _light_extract_introspector_raw_source_code(project_name, date_str,
     return None
 
 
-def extract_lines_from_source_code(project_name,
-                                   date_str,
-                                   target_file,
-                                   line_begin,
-                                   line_end,
-                                   print_line_numbers=False,
-                                   sanity_check_function_end=False):
-    # Retrieve project from project_name
+def extract_lines_from_source_code(
+        project_name,
+        date_str,
+        target_file,
+        line_begin,
+        line_end,
+        print_line_numbers=False,
+        sanity_check_function_end=False) -> Optional[str]:
+    """Extracts source from a given file of a given date for a given Project."""
+
     project = get_project_with_name(project_name)
     if project is None:
-        # Failed to locate the project with project_name
         return None
 
     # Transform java class name to java source file path with package directories
@@ -209,7 +210,10 @@ def extract_lines_from_source_code(project_name,
     return return_source
 
 
-def get_functions_of_interest(project_name):
+def get_functions_of_interest(
+        project_name: str) -> List[data_storage.Function]:
+    """Returns functions that are publicly available sorted by cyclomatic complexity
+    and code coverage."""
     all_functions = data_storage.get_functions_by_project(project_name)
     all_functions = all_functions + data_storage.get_constructors_by_project(
         project_name)
@@ -217,6 +221,7 @@ def get_functions_of_interest(project_name):
     project_functions = []
     for function in all_functions:
         # Skipping non-related jvm methods and methods from enum classes
+        # is_accessible is True by default, i.e. for non jvm projects
         if not function.is_accessible or function.is_jvm_library or function.is_enum_class:
             continue
         if function.project == project_name:
@@ -361,7 +366,7 @@ def function_profile():
 
 @blueprint.route('/project-profile', methods=['GET'])
 def project_profile():
-    #print(request.args.get('project', 'none'))
+    """Renders the project profile page"""
 
     target_project_name = request.args.get('project', 'none')
 
@@ -1474,6 +1479,22 @@ def api_project_source_code():
     return {'result': 'success', 'source_code': source_code}
 
 
+def get_latest_introspector_date(project_name: str) -> str:
+    all_build_status = data_storage.get_build_status()
+    latest_introspector_datestr = ''
+    for build_status in all_build_status:
+        if build_status.project_name == project_name:
+
+            # Get statistics of the project
+            project_statistics = data_storage.PROJECT_TIMESTAMPS
+            for ps in project_statistics:
+                if ps.project_name == project_name:
+                    datestr = ps.date
+                    if ps.introspector_data is not None:
+                        latest_introspector_datestr = datestr
+    return latest_introspector_datestr
+
+
 @blueprint.route('/api/project-test-code')
 def api_project_test_code():
     """Extracts source code of a test"""
@@ -1498,20 +1519,9 @@ def api_project_test_code():
         if source_code is None:
             return {'result': 'error', 'msg': 'no source code'}
     else:
-        all_build_status = data_storage.get_build_status()
-        latest_introspector_datestr = None
-        for build_status in all_build_status:
-            if build_status.project_name == project_name:
-
-                # Get statistics of the project
-                project_statistics = data_storage.PROJECT_TIMESTAMPS
-                for ps in project_statistics:
-                    if ps.project_name == project_name:
-                        datestr = ps.date
-                        if ps.introspector_data is not None:
-                            latest_introspector_datestr = datestr
-
-        if latest_introspector_datestr is None:
+        latest_introspector_datestr = get_latest_introspector_date(
+            project_name)
+        if not latest_introspector_datestr:
             return {'result': 'error', 'msg': 'No introspector builds.'}
 
         source_code = extract_lines_from_source_code(
@@ -1632,21 +1642,11 @@ def api_function_source_code():
         return {'result': 'error', 'msg': 'Could not find function'}
 
     # Find latest introspector date
-    all_build_status = data_storage.get_build_status()
-    latest_introspector_datestr = None
-    for build_status in all_build_status:
-        if build_status.project_name == project_name:
-            # Get statistics of the project
-            project_statistics = data_storage.PROJECT_TIMESTAMPS
-            for ps in project_statistics:
-                if ps.project_name == project_name:
-                    datestr = ps.date
-                    if ps.introspector_data is not None:
-                        latest_introspector_datestr = datestr
+    latest_introspector_datestr = get_latest_introspector_date(project_name)
     if is_local:
         latest_introspector_datestr = "norelevant"
 
-    if latest_introspector_datestr is None:
+    if not latest_introspector_datestr:
         return {'result': 'error', 'msg': 'No introspector builds.'}
 
     src_begin = target_function.source_line_begin
@@ -1741,13 +1741,13 @@ def api_jvm_method_properties():
     }
 
 
-def get_build_status_of_project(project_name):
+def get_build_status_of_project(
+        project_name: str) -> Optional[data_storage.BuildStatus]:
+    """Gets the current build status of a project."""
     build_status = data_storage.get_build_status()
-
     for bs in build_status:
         if bs.project_name == project_name:
             return bs
-
     return None
 
 
