@@ -79,7 +79,9 @@ def all_functions_in_db():
             yield function
 
 
-def extract_introspector_raw_source_code(project_name, date_str, target_file):
+def extract_introspector_raw_source_code(project_name, date_str,
+                                         target_file) -> str:
+    """Returns the contents of a source code file."""
     # Remove leading slash to avoid errors
     while target_file.startswith('/'):
         target_file = target_file[1:]
@@ -90,7 +92,7 @@ def extract_introspector_raw_source_code(project_name, date_str, target_file):
                                     target_file)
 
         if not os.path.isfile(src_location):
-            return None
+            return ''
         with open(src_location, 'r') as f:
             return f.read()
 
@@ -104,7 +106,7 @@ def extract_introspector_raw_source_code(project_name, date_str, target_file):
     try:
         raw_source = requests.get(introspector_summary_url, timeout=10).text
     except:
-        return None
+        return ''
 
     return raw_source
 
@@ -185,7 +187,7 @@ def extract_lines_from_source_code(
 
         if print_line_numbers:
             line_num_str = " " * (max_length - len(str(line_num)))
-            return_source += "%s%d " % (line_num_str, line_num)
+            return_source += f"{line_num_str}{line_num}"
         return_source += source_lines[line_num] + "\n"
         function_lines.append(source_lines[line_num])
 
@@ -219,8 +221,8 @@ def extract_lines_from_source_code(
 
 def get_functions_of_interest(
         project_name: str) -> List[data_storage.Function]:
-    """Returns functions that are publicly available sorted by cyclomatic complexity
-    and code coverage."""
+    """Returns functions that are publicly available sorted by cyclomatic
+    complexity and code coverage."""
     all_functions = data_storage.get_functions_by_project(project_name)
     all_functions = all_functions + data_storage.get_constructors_by_project(
         project_name)
@@ -229,7 +231,8 @@ def get_functions_of_interest(
     for function in all_functions:
         # Skipping non-related jvm methods and methods from enum classes
         # is_accessible is True by default, i.e. for non jvm projects
-        if not function.is_accessible or function.is_jvm_library or function.is_enum_class:
+        if (not function.is_accessible or function.is_jvm_library
+                or function.is_enum_class):
             continue
         if function.project == project_name:
             if function.runtime_code_coverage < 20.0:
@@ -321,6 +324,7 @@ def get_all_related_functions(primary_function) -> List[models.Function]:
 
 @blueprint.route('/')
 def index():
+    """Renders index page"""
     db_summary = get_frontpage_summary_stats()
     db_timestamps = data_storage.DB_TIMESTAMPS
     print("Length of timestamps: %d" % (len(db_timestamps)))
@@ -629,8 +633,9 @@ def oracle_3(all_functions, all_projects):
             if not to_continue:
                 continue
 
-            # If there is only a single argument then we want it to be something that is "fuzzable", i.e.
-            # either a string or a char pointer.
+            # If there is only a single argument then we want it to be
+            # something that is "fuzzable", i.e. either a string or a
+            # char pointer.
             if len(function.function_arguments) == 1 and (
                     "str" not in function.function_arguments[0]
                     or "char" not in function.function_arguments):
@@ -731,7 +736,8 @@ def oracle_1(all_functions,
     return functions_to_display
 
 
-def match_easy_fuzz_arguments(function):
+def match_easy_fuzz_arguments(function: models.Function) -> bool:
+    """Returns true if the function args are considered easy to fuzz."""
     debug_args = function.debug_data.get('args')
     if not debug_args:
         return False
@@ -894,7 +900,7 @@ def target_oracle():
                 total_funcs.add(func)
                 functions_to_display.append((func, heuristic_name))
     func_to_lang = dict()
-    for func, heuristic in functions_to_display:
+    for func, _ in functions_to_display:
         language = 'c'
         for proj in all_projects:
             if proj.name == func.project:
@@ -1052,6 +1058,7 @@ def _light_harness_source_and_executable(target_project):
 
 @blueprint.route('/api/harness-source-and-executable')
 def harness_source_and_executable():
+    """API that returns a pair of harness executable/source"""
     project_name = request.args.get('project', None)
     if project_name is None:
         return {'result': 'error', 'msg': 'Please provide project name'}
@@ -1111,6 +1118,7 @@ def harness_source_and_executable():
 
 @blueprint.route('/api/annotated-cfg')
 def api_annotated_cfg():
+    """API that returns the annotated  CFG of a project."""
     project_name = request.args.get('project', None)
     if project_name is None:
         return {'result': 'error', 'msg': 'Please provide project name'}
@@ -1158,6 +1166,7 @@ def api_project_summary():
 
 @blueprint.route('/api/branch-blockers')
 def branch_blockers():
+    """API that returns the branch blockers of project."""
     project_name = request.args.get('project', None)
     if project_name is None:
         return {'result': 'error', 'msg': 'Please provide project name'}
@@ -1311,7 +1320,8 @@ def api_get_project_language_from_source_files():
 
 @blueprint.route('/api/all-project-source-files')
 def api_project_all_project_source_files():
-    """Returns a json representation of all source file path in a given project"""
+    """Returns a json representation of all source file path in a given
+    project"""
     project_name = request.args.get('project', None)
     if project_name is None:
         return {'result': 'error', 'msg': 'Please provide a project name'}
@@ -1873,6 +1883,7 @@ def project_repository():
 
 @blueprint.route('/api/far-reach-but-low-coverage')
 def far_reach_but_low_coverage():
+    """API that returns functions with far reach but low code coverage."""
     err_msgs = list()
     project_name = request.args.get('project', None)
     if project_name is None:
@@ -2156,6 +2167,8 @@ def _light_project_tests(project_name):
 
 @blueprint.route('/api/project-tests')
 def project_tests():
+    """API that returns list of source files corresponding to tests of a
+    project."""
     project = request.args.get('project', None)
     if project is None:
         return {
