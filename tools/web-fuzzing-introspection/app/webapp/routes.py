@@ -92,7 +92,7 @@ def extract_introspector_raw_source_code(project_name, date_str,
                                     target_file)
 
         if not os.path.isfile(src_location):
-            return None
+            return ''
         with open(src_location, 'r') as f:
             return f.read()
 
@@ -106,7 +106,7 @@ def extract_introspector_raw_source_code(project_name, date_str,
     try:
         raw_source = requests.get(introspector_summary_url, timeout=10).text
     except:
-        return None
+        return ''
 
     return raw_source
 
