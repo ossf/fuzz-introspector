@@ -14,11 +14,9 @@
 """Helper for creating the necessary .json files used by the webapp."""
 import io
 import os
-import sys
 import argparse
 import json
 import orjson
-import yaml
 import shutil
 import logging
 import datetime
@@ -48,7 +46,8 @@ ALL_JSON_FILES = [
     DB_JSON_ALL_CURRENT_FUNCS,
 ]
 
-INTROSPECTOR_WEBAPP_ZIP = 'https://introspector.oss-fuzz.com/static/assets/db/db-archive.zip'
+INTROSPECTOR_WEBAPP_ZIP = (
+    'https://introspector.oss-fuzz.com/static/assets/db/db-archive.zip')
 
 FI_EXCLUDE_ALL_NON_MUSTS = bool(int(os.getenv('FI_EXCLUDE_ALL_NON_MUSTS',
                                               '0')))
@@ -71,10 +70,10 @@ def git_clone_project(github_url, destination):
                               stdout=subprocess.DEVNULL,
                               stderr=subprocess.DEVNULL)
     except subprocess.TimeoutExpired:
-        logger.info("Timed out cloning %s" % (github_url))
+        logger.info("Timed out cloning %s", github_url)
         return False
     except subprocess.CalledProcessError:
-        logger.info("Error cloning %s" % (github_url))
+        logger.info("Error cloning %s", github_url)
         return False
     return True
 
@@ -166,7 +165,7 @@ def extract_and_refine_branch_blockers(introspector_report, project_name):
             continue
 
         branch_blockers = val.get('branch_blockers', None)
-        if branch_blockers == None or not isinstance(branch_blockers, list):
+        if branch_blockers is None or not isinstance(branch_blockers, list):
             continue
 
         for branch_blocker in branch_blockers:
@@ -175,9 +174,9 @@ def extract_and_refine_branch_blockers(introspector_report, project_name):
                 'blocked_unique_not_covered_complexity', None)
             if blocked_unique_not_covered_complexity < 5:
                 continue
-            if function_blocked == None:
+            if function_blocked is None:
                 continue
-            if blocked_unique_not_covered_complexity == None:
+            if blocked_unique_not_covered_complexity is None:
                 continue
 
             branch_pairs.append({
@@ -397,7 +396,6 @@ def extract_local_project_data(project_name, oss_fuzz_path,
 
     # Get details if needed and otherwise leave empty
     refined_proj_list = list()
-    branch_pairs = list()
     annotated_cfg = dict()
 
     refined_proj_list = extract_and_refine_functions(all_function_list, '')
@@ -622,7 +620,7 @@ def extract_project_data(project_name, date_str, should_include_details,
             or introspector_report != None):
         return
 
-    if introspector_report == None:
+    if introspector_report is None:
         introspector_data_dict = None
     else:
         # Access all functions
@@ -690,7 +688,7 @@ def extract_project_data(project_name, date_str, should_include_details,
     code_coverage_data_dict = extract_code_coverage_data(
         code_coverage_summary, project_name, date_str, project_language)
 
-    if cov_fuzz_stats != None:
+    if cov_fuzz_stats is not None:
         all_fuzzers = cov_fuzz_stats.split("\n")
         if all_fuzzers[-1] == '':
             all_fuzzers = all_fuzzers[0:-1]
@@ -855,8 +853,7 @@ def extend_db_timestamps(db_timestamp, output_directory):
                 existing_timestamps = []
     else:
         existing_timestamps = []
-    logging.info('Number of existing timestamps: %d' %
-                 (len(existing_timestamps)))
+    logging.info('Number of existing timestamps: %d', len(existing_timestamps))
     to_add = True
     for ts in existing_timestamps:
         if ts['date'] == db_timestamp['date']:
@@ -885,8 +882,7 @@ def extend_db_json_files(project_timestamps, output_directory):
                 existing_timestamps = []
     else:
         existing_timestamps = []
-    logging.info('Number of existing timestamps: %d' %
-                 (len(existing_timestamps)))
+    logging.info('Number of existing timestamps: %d', len(existing_timestamps))
 
     logging.info('Creating timestamp mapping')
     have_added = False
@@ -965,15 +961,18 @@ def update_db_files(db_timestamp,
                     constructor_dict,
                     output_directory,
                     should_include_details,
-                    all_header_files=dict(),
+                    all_header_files=None,
                     must_include_not_in_ossfuzz=None):
     logger.info(
-        "Updating the database with DB snapshot. Number of functions in total: %d"
-        % (db_timestamp['function_count']))
+        "Updating the database with DB snapshot. Number of functions in total: %d",
+        db_timestamp['function_count'])
     if should_include_details:
         extend_func_db(function_dict, output_directory, DB_JSON_ALL_FUNCTIONS)
         extend_func_db(constructor_dict, output_directory,
                        DB_JSON_ALL_CONSTRUCTORS)
+
+    if all_header_files is None:
+        all_header_files = {}
 
     logging.info('Writing header files')
     with open('all-header-files.json', 'w') as f:
@@ -1051,18 +1050,18 @@ def analyse_set_of_dates(dates, projects_to_analyse, output_directory,
     idx = 1
     for date in dates:
         current_time = datetime.datetime.now().strftime("%H:%M:%S")
-        logger.info("Analysing date %s -- [%d of %d] -- %s" %
-                    (date, idx, len(dates), current_time))
+        logger.info("Analysing date %s -- [%d of %d] -- %s", date, idx,
+                    len(dates), current_time)
 
         # Is this the last date to analyse?
         is_end = idx == len(dates)
-        logger.info("Is this the last date: %s" % (is_end))
+        logger.info("Is this the last date: %s", is_end)
 
         # Increment counter. Must happen after our is_end check.
         idx += 1
 
         # If it's not the last date and we have cached data, use the cache.
-        if not force_creation and is_end == False and is_date_in_db(
+        if not force_creation and is_end is False and is_date_in_db(
                 date, output_directory):
             logger.info("Date already analysed, skipping")
             continue
@@ -1101,7 +1100,7 @@ def copy_input_to_output(input_dir, output_dir):
     if input_dir == output_dir:
         return
 
-    logger.info("The input dir: %s" % (input_dir))
+    logger.info("The input dir: %s", input_dir)
     if not os.path.isdir(input_dir):
         raise Exception("No input directory, but specified")
 
@@ -1245,8 +1244,8 @@ def reduce_projects_to_analyse(projects_to_analyse, max_projects,
         projects_to_analyse = tmp_dictionary
 
     logger.info("Projects targeted in the DB creation")
-    for p in projects_to_analyse:
-        logger.info("- %s" % (p))
+    for project in projects_to_analyse:
+        logger.info("- %s", project)
     return projects_to_analyse
 
 
@@ -1278,7 +1277,7 @@ def create_cache(use_webapp_cache, use_github_cache, input_directory,
 
 
 def get_dates_to_analyse(since_date, days_to_analyse, day_offset):
-    if since_date != None:
+    if since_date is not None:
         start_date = datetime.datetime.strptime(since_date, "%d-%m-%Y").date()
         today = datetime.date.today()
         delta = today - start_date
@@ -1291,14 +1290,9 @@ def get_dates_to_analyse(since_date, days_to_analyse, day_offset):
 
 def create_local_db(oss_fuzz_path):
     """Creates a database based of local runs."""
-    function_dict = dict()
-    constructor_dict = dict()
-    project_timestamps = list()
-    accummulated_fuzzer_count = 0
-    accummulated_function_count = 0
-    accummulated_covered_functions = 0
-    accummulated_lines_total = 0
-    accummulated_lines_covered = 0
+    function_dict = {}
+    constructor_dict = {}
+    project_timestamps = []
 
     # Create a DB timestamp
     db_timestamp = {
@@ -1310,9 +1304,6 @@ def create_local_db(oss_fuzz_path):
         "accummulated_lines_total": 0,
         "accummulated_lines_covered": 0,
     }
-
-    idx = 0
-    jobs = []
 
     oss_fuzz_build_path = os.path.join(oss_fuzz_path, 'build', 'out')
 
@@ -1399,8 +1390,6 @@ def create_local_db(oss_fuzz_path):
 def create_db(max_projects, days_to_analyse, output_directory, input_directory,
               day_offset, to_cleanup, since_date, use_github_cache,
               use_webapp_cache, force_creation, includes):
-    global MUST_INCLUDES
-
     must_include = extract_must_includes(includes)
 
     for must_include_project in must_include:
@@ -1414,13 +1403,13 @@ def create_db(max_projects, days_to_analyse, output_directory, input_directory,
     projects_list_build_status = extract_oss_fuzz_build_status(
         output_directory)
     projects_to_analyse = dict()
-    for p in projects_list_build_status:
-        projects_to_analyse[p] = projects_list_build_status[p]
+    for k, v in projects_list_build_status.items():
+        projects_to_analyse[k] = v
 
     must_includes_not_in_ossfuzz = set()
     for project in MUST_INCLUDES:
-        if project not in projects_to_analyse.keys():
-            logger.info('Project not in OSS-Fuzz: %s' % (project))
+        if project not in projects_to_analyse:
+            logger.info('Project not in OSS-Fuzz: %s', project)
             must_includes_not_in_ossfuzz.add(project)
 
     # Reduce the amount of projects if needed.
@@ -1433,17 +1422,16 @@ def create_db(max_projects, days_to_analyse, output_directory, input_directory,
 
     date_range = get_dates_to_analyse(since_date, days_to_analyse, day_offset)
     logger.info("Creating a DB with the specifications:")
-    logger.info("- Date range: [%s : %s]" %
-                (str(date_range[0]), str(date_range[-1])))
-    logger.info("- Total of %d projects to analyse" %
-                (len(projects_to_analyse)))
+    logger.info("- Date range: [%s : %s]", str(date_range[0]),
+                str(date_range[-1]))
+    logger.info("- Total of %d projects to analyse", len(projects_to_analyse))
     if input_directory is not None:
-        logger.info("- Extending upon the DB in %s" % (str(input_directory)))
+        logger.info("- Extending upon the DB in %s", str(input_directory))
     else:
         logger.info("-Creating the DB from scratch")
 
-    logger.info("Starting analysis of max %d projects" %
-                (len(projects_to_analyse)))
+    logger.info("Starting analysis of max %d projects",
+                len(projects_to_analyse))
 
     analyse_set_of_dates(date_range, projects_to_analyse, output_directory,
                          force_creation, must_includes_not_in_ossfuzz)
