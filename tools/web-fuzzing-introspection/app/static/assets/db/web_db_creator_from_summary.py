@@ -24,7 +24,7 @@ import requests
 import subprocess
 import zipfile
 from threading import Thread
-from typing import List, Any
+from typing import List, Any, Optional, Dict
 
 import constants
 import oss_fuzz
@@ -61,8 +61,9 @@ logging.getLogger("urllib3").setLevel(logging.WARNING)
 logger = logging.getLogger(name=__name__)
 
 
-def git_clone_project(github_url, destination):
-    cmd = ["git clone", github_url, destination]
+def git_clone_project(git_url: str, destination: str) -> bool:
+    """Clones a Git repository into a given destination folder."""
+    cmd = ["git clone", git_url, destination]
     try:
         subprocess.check_call(" ".join(cmd),
                               shell=True,
@@ -70,10 +71,10 @@ def git_clone_project(github_url, destination):
                               stdout=subprocess.DEVNULL,
                               stderr=subprocess.DEVNULL)
     except subprocess.TimeoutExpired:
-        logger.info("Timed out cloning %s", github_url)
+        logger.info("Timed out cloning %s", git_url)
         return False
     except subprocess.CalledProcessError:
-        logger.info("Error cloning %s", github_url)
+        logger.info("Error cloning %s", git_url)
         return False
     return True
 
@@ -282,9 +283,10 @@ def extract_and_refine_functions(all_function_list, date_str):
 
 
 def extract_code_coverage_data(code_coverage_summary, project_name, date_str,
-                               project_language):
+                               project_language) -> Optional[Dict[str, Any]]:
+    """Gets coverage URL and line coverage total of a project"""
     # Extract data from the code coverage reports
-    if code_coverage_summary == None:
+    if code_coverage_summary is None:
         return None
 
     try:
@@ -390,7 +392,6 @@ def extract_local_project_data(project_name, oss_fuzz_path,
     except KeyError:
         project_stats = {}
     amount_of_fuzzers = project_stats.get('harness-count', 0)
-    number_of_functions = project_stats.get('total-functions', 0)
     functions_covered_estimate = project_stats.get(
         'code-coverage-function-percentage', 0.0)
 
@@ -402,8 +403,6 @@ def extract_local_project_data(project_name, oss_fuzz_path,
     refined_constructor_list = extract_and_refine_functions(
         all_constructor_list, '')
     annotated_cfg = extract_and_refine_annotated_cfg(introspector_report)
-    branch_pairs = extract_and_refine_branch_blockers(introspector_report,
-                                                      project_name)
 
     # Dump things we dont want to accummulate.
     #save_branch_blockers(branch_pairs, project_name)
@@ -439,7 +438,7 @@ def extract_local_project_data(project_name, oss_fuzz_path,
     code_coverage_data_dict = extract_code_coverage_data(
         code_coverage_summary, project_name, '', project_language)
 
-    if cov_fuzz_stats != None:
+    if cov_fuzz_stats is not None:
         all_fuzzers = cov_fuzz_stats.split("\n")
         if all_fuzzers[-1] == '':
             all_fuzzers = all_fuzzers[0:-1]
@@ -731,11 +730,6 @@ def analyse_list_of_projects(date, projects_to_analyse,
     constructor_dict = dict()
     project_timestamps = list()
     all_header_files = list()
-    accummulated_fuzzer_count = 0
-    accummulated_function_count = 0
-    accummulated_covered_functions = 0
-    accummulated_lines_total = 0
-    accummulated_lines_covered = 0
 
     # Create a DB timestamp
     db_timestamp = {
@@ -1018,12 +1012,14 @@ def update_db_files(db_timestamp,
     #    shutil.rmtree(DB_RAW_INTROSPECTOR_REPORTS)
 
 
-def update_build_status(build_dict):
+def update_build_status(build_dict) -> None:
+    """Writes the `build_dict` to the build status json file."""
     with open(DB_BUILD_STATUS_JSON, "w") as f:
         json.dump(build_dict, f)
 
 
-def is_date_in_db(date, output_directory):
+def is_date_in_db(date: str, output_directory: str) -> bool:
+    """Returns whether the date exists in the timestamp json file."""
     existing_timestamps = []
     if os.path.isfile(os.path.join(output_directory, DB_JSON_DB_TIMESTAMP)):
         with open(os.path.join(output_directory, DB_JSON_DB_TIMESTAMP),
