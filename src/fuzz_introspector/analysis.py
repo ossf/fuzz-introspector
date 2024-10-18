@@ -562,7 +562,7 @@ def update_branch_complexities(
     Traverse every branch profile and update the side complexities based on reached funcs
     complexity.
     """
-    for func in all_functions.values()():
+    for func in all_functions.values():
         for branch in func.branch_profiles.values():
             sides_number = len(branch.sides)
             for side_idx in range(sides_number):
