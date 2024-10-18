@@ -34,6 +34,8 @@ TOTAL_FUNCTION_COUNT = -1
 
 JSON_TO_FUNCTION_CACHE: Dict[str, List[Function]] = dict()
 
+PROJECTS_NOT_IN_OSSFUZZ: List[str] = []
+
 
 def get_projects() -> List[Project]:
     return PROJECTS
@@ -174,5 +176,4 @@ def retrieve_functions(proj: str, is_constructor: bool) -> List[Function]:
     if 'G_ANALYTICS_TAG' in os.environ:
         os.remove(json_path)
 
-    print("Converted list")
     return result_list

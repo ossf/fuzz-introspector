@@ -11,16 +11,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""API handlers"""
 
 import os
-import sys
 import random
-import requests
 import json
 import signal
+from typing import Dict, List, Optional
+import requests
 
 from flask import Blueprint, render_template, request, redirect
-from typing import Dict, List, Optional
+
 from . import models, data_storage, page_texts
 from .helper import function_helper
 
@@ -36,6 +37,12 @@ local_oss_fuzz = ''
 
 # Add functions in here to make the oracles focus on a specific API.
 ALLOWED_ORACLE_RETURNS: List[str] = []
+
+# Max length of testcase sorce code to return from API.
+MAX_TEST_SIZE = 6000
+
+# Max matches to show when searching for functions in functions view.
+MAX_MATCHES_TO_DISPLAY = 180
 
 
 def get_introspector_report_url_base(project_name, datestr):
@@ -65,7 +72,16 @@ def get_coverage_report_url(project_name, datestr, language):
     return project_url
 
 
-def extract_introspector_raw_source_code(project_name, date_str, target_file):
+def all_functions_in_db():
+    """Iterator for going through all functions in the DB"""
+    for project in data_storage.get_projects():
+        for function in data_storage.get_functions_by_project(project.name):
+            yield function
+
+
+def extract_introspector_raw_source_code(project_name, date_str,
+                                         target_file) -> str:
+    """Returns the contents of a source code file."""
     # Remove leading slash to avoid errors
     while target_file.startswith('/'):
         target_file = target_file[1:]
@@ -76,7 +92,7 @@ def extract_introspector_raw_source_code(project_name, date_str, target_file):
                                     target_file)
 
         if not os.path.isfile(src_location):
-            return None
+            return ''
         with open(src_location, 'r') as f:
             return f.read()
 
@@ -90,31 +106,58 @@ def extract_introspector_raw_source_code(project_name, date_str, target_file):
     try:
         raw_source = requests.get(introspector_summary_url, timeout=10).text
     except:
-        return None
+        return ''
 
     return raw_source
 
 
-def extract_lines_from_source_code(project_name,
-                                   date_str,
-                                   target_file,
-                                   line_begin,
-                                   line_end,
-                                   print_line_numbers=False,
-                                   sanity_check_function_end=False):
-    # Retrieve project from project_name
+def _light_extract_introspector_raw_source_code(project_name, date_str,
+                                                target_file):
+    # Remove leading slash to avoid errors
+    while target_file.startswith('/'):
+        target_file = target_file[1:]
+
+    if is_local:
+        src_location = os.path.join(local_oss_fuzz, 'build', 'out',
+                                    project_name, 'inspector', 'light',
+                                    'source_files', target_file)
+
+        if not os.path.isfile(src_location):
+            return None
+        with open(src_location, 'r') as f:
+            return f.read()
+
+    return None
+
+
+def extract_lines_from_source_code(
+        project_name,
+        date_str,
+        target_file,
+        line_begin,
+        line_end,
+        print_line_numbers=False,
+        sanity_check_function_end=False) -> Optional[str]:
+    """Extracts source from a given file of a given date for a given Project."""
+
     project = get_project_with_name(project_name)
     if project is None:
-        # Failed to locate the project with project_name
         return None
 
     # Transform java class name to java source file path with package directories
     if project.language == 'java':
         target_file = f'/{target_file.split("$", 1)[0].replace(".", "/")}.java'
 
+    # Light source code
+    light_raw_source = _light_extract_introspector_raw_source_code(
+        project_name, date_str, target_file)
+
     # Extract the source code from the target file
     raw_source = extract_introspector_raw_source_code(project_name, date_str,
                                                       target_file)
+
+    if not raw_source and light_raw_source:
+        raw_source = light_raw_source
 
     # Return None if source is not found.
     if raw_source is None:
@@ -144,7 +187,7 @@ def extract_lines_from_source_code(project_name,
 
         if print_line_numbers:
             line_num_str = " " * (max_length - len(str(line_num)))
-            return_source += "%s%d " % (line_num_str, line_num)
+            return_source += f"{line_num_str}{line_num}"
         return_source += source_lines[line_num] + "\n"
         function_lines.append(source_lines[line_num])
 
@@ -176,7 +219,10 @@ def extract_lines_from_source_code(project_name,
     return return_source
 
 
-def get_functions_of_interest(project_name):
+def get_functions_of_interest(
+        project_name: str) -> List[data_storage.Function]:
+    """Returns functions that are publicly available sorted by cyclomatic
+    complexity and code coverage."""
     all_functions = data_storage.get_functions_by_project(project_name)
     all_functions = all_functions + data_storage.get_constructors_by_project(
         project_name)
@@ -184,7 +230,9 @@ def get_functions_of_interest(project_name):
     project_functions = []
     for function in all_functions:
         # Skipping non-related jvm methods and methods from enum classes
-        if not function.is_accessible or function.is_jvm_library or function.is_enum_class:
+        # is_accessible is True by default, i.e. for non jvm projects
+        if (not function.is_accessible or function.is_jvm_library
+                or function.is_enum_class):
             continue
         if function.project == project_name:
             if function.runtime_code_coverage < 20.0:
@@ -199,7 +247,8 @@ def get_functions_of_interest(project_name):
     return sorted_functions_of_interest
 
 
-def get_frontpage_summary_stats():
+def get_frontpage_summary_stats() -> models.DBSummary:
+    """Gets a DBSummary object with stats for front page."""
     # Get total number of projects
     all_projects = data_storage.get_projects()
 
@@ -231,7 +280,8 @@ def get_frontpage_summary_stats():
     return db_summary
 
 
-def get_project_with_name(project_name):
+def get_project_with_name(project_name) -> Optional[models.Project]:
+    """Extracts project with given project name."""
     all_projects = data_storage.get_projects()
     for project in all_projects:
         if project.name == project_name:
@@ -241,7 +291,9 @@ def get_project_with_name(project_name):
     return None
 
 
-def get_fuction_with_name(function_name, project_name):
+def get_fuction_with_name(function_name,
+                          project_name) -> Optional[models.Function]:
+    """Gets the function with the given function name from a given project"""
 
     all_functions = data_storage.get_functions_by_project(project_name)
     for function in all_functions:
@@ -253,9 +305,11 @@ def get_fuction_with_name(function_name, project_name):
         proj_func_list = data_storage.get_functions_by_project(tmp_proj.name)
         for function in proj_func_list:
             return function
+    return None
 
 
-def get_all_related_functions(primary_function):
+def get_all_related_functions(primary_function) -> List[models.Function]:
+    """Gets all functions across the DB that has the same name."""
     related_functions = []
     for tmp_proj in data_storage.PROJECTS:
         proj_func_list = data_storage.get_functions_by_project(tmp_proj.name)
@@ -270,6 +324,7 @@ def get_all_related_functions(primary_function):
 
 @blueprint.route('/')
 def index():
+    """Renders index page"""
     db_summary = get_frontpage_summary_stats()
     db_timestamps = data_storage.DB_TIMESTAMPS
     print("Length of timestamps: %d" % (len(db_timestamps)))
@@ -311,15 +366,15 @@ def index():
 
 @blueprint.route('/function-profile', methods=['GET'])
 def function_profile():
-    function_profile = get_fuction_with_name(
-        request.args.get('function', 'none'),
-        request.args.get('project', 'none'))
+    """Renders a given function."""
+    func_profile = get_fuction_with_name(request.args.get('function', 'none'),
+                                         request.args.get('project', 'none'))
 
-    related_functions = get_all_related_functions(function_profile)
+    related_functions = get_all_related_functions(func_profile)
     return render_template('function-profile.html',
                            gtag=gtag,
                            related_functions=related_functions,
-                           function_profile=function_profile,
+                           function_profile=func_profile,
                            page_main_name=page_texts.get_page_name(),
                            page_main_url=page_texts.get_page_main_url(),
                            page_base_title=page_texts.get_page_base_title(),
@@ -328,7 +383,7 @@ def function_profile():
 
 @blueprint.route('/project-profile', methods=['GET'])
 def project_profile():
-    #print(request.args.get('project', 'none'))
+    """Renders the project profile page"""
 
     target_project_name = request.args.get('project', 'none')
 
@@ -427,7 +482,8 @@ def project_profile():
                                      fuzzer_count=0,
                                      coverage_data=None,
                                      introspector_data=None,
-                                     project_repository=None)
+                                     project_repository=None,
+                                     light_analysis={})
 
             # Get statistics of the project
             project_statistics = data_storage.PROJECT_TIMESTAMPS
@@ -481,8 +537,8 @@ def project_profile():
 
 @blueprint.route('/function-search')
 def function_search():
+    """Renders function search page"""
     info_msg = None
-    MAX_MATCHES_TO_DISPLAY = 900
     query = request.args.get('q', '')
     print("query: { %s }" % (query))
     if query == '':
@@ -495,12 +551,9 @@ def function_search():
         ]
         interesting_query = random.choice(interesting_query_roulette)
         tmp_list = []
-        for tmp_proj in data_storage.PROJECTS:
-            proj_func_list = data_storage.get_functions_by_project(
-                tmp_proj.name)
-            for function in proj_func_list:
-                if interesting_query in function.name:
-                    tmp_list.append(function)
+        for function in all_functions_in_db():
+            if interesting_query in function.name:
+                tmp_list.append(function)
         functions_to_display = tmp_list
 
         # Shuffle to give varying results each time
@@ -512,12 +565,9 @@ def function_search():
         info_msg = f"No query was given, picked the query \"{interesting_query}\" for this"
     else:
         tmp_list = []
-        for tmp_proj in data_storage.PROJECTS:
-            proj_func_list = data_storage.get_functions_by_project(
-                tmp_proj.name)
-            for function in proj_func_list:
-                if query in function.name:
-                    tmp_list.append(function)
+        for function in all_functions_in_db():
+            if query in function.name:
+                tmp_list.append(function)
         functions_to_display = tmp_list
 
         total_matches = len(functions_to_display)
@@ -540,7 +590,6 @@ def projects_overview():
     # Get statistics of the project
     project_statistics = data_storage.PROJECT_TIMESTAMPS
     latest_coverage_profiles = dict()
-    latest_statistics = None
     for ps in project_statistics:
         latest_coverage_profiles[ps.project_name] = ps
 
@@ -548,6 +597,7 @@ def projects_overview():
         'projects-overview.html',
         gtag=gtag,
         all_projects=latest_coverage_profiles.values(),
+        projects_not_in_ossfuzz=data_storage.PROJECTS_NOT_IN_OSSFUZZ,
         page_base_title=page_texts.get_page_base_title(),
         page_main_name=page_texts.get_page_name(),
         page_main_url=page_texts.get_page_main_url(),
@@ -583,8 +633,9 @@ def oracle_3(all_functions, all_projects):
             if not to_continue:
                 continue
 
-            # If there is only a single argument then we want it to be something that is "fuzzable", i.e.
-            # either a string or a char pointer.
+            # If there is only a single argument then we want it to be
+            # something that is "fuzzable", i.e. either a string or a
+            # char pointer.
             if len(function.function_arguments) == 1 and (
                     "str" not in function.function_arguments[0]
                     or "char" not in function.function_arguments):
@@ -603,7 +654,7 @@ def oracle_3(all_functions, all_projects):
                         current_list[idx] = function
                         break
 
-    for project_name, functions in projects_added.items():
+    for functions in projects_added.values():
         functions_of_interest += functions
     return functions_of_interest
 
@@ -685,7 +736,8 @@ def oracle_1(all_functions,
     return functions_to_display
 
 
-def match_easy_fuzz_arguments(function):
+def match_easy_fuzz_arguments(function: models.Function) -> bool:
+    """Returns true if the function args are considered easy to fuzz."""
     debug_args = function.debug_data.get('args')
     if not debug_args:
         return False
@@ -707,22 +759,12 @@ def is_static(target_function) -> bool:
     """Returns True if a function is determined to be static and False
     otherwise, including if undecided."""
 
-    # Find latest introspector date
-    all_build_status = data_storage.get_build_status()
-    latest_introspector_datestr = None
-    for build_status in all_build_status:
-        if build_status.project_name == target_function.project:
-            # Get statistics of the project
-            project_statistics = data_storage.PROJECT_TIMESTAMPS
-            for ps in project_statistics:
-                if ps.project_name == target_function.project:
-                    datestr = ps.date
-                    if ps.introspector_data is not None:
-                        latest_introspector_datestr = datestr
+    latest_introspector_datestr = get_latest_introspector_date(
+        target_function.project)
     if is_local:
         latest_introspector_datestr = "norelevant"
 
-    if latest_introspector_datestr is None:
+    if not latest_introspector_datestr:
         return False
 
     src_begin = target_function.source_line_begin
@@ -858,7 +900,7 @@ def target_oracle():
                 total_funcs.add(func)
                 functions_to_display.append((func, heuristic_name))
     func_to_lang = dict()
-    for func, heuristic in functions_to_display:
+    for func, _ in functions_to_display:
         language = 'c'
         for proj in all_projects:
             if proj.name == func.project:
@@ -944,12 +986,7 @@ def api_optimal_targets():
     else:
         only_functions_declared_in_header_files = False
 
-    target_project = None
-    all_projects = data_storage.get_projects()
-    for project in all_projects:
-        if project.name == project_name:
-            target_project = project
-            break
+    target_project = get_project_with_name(project_name)
     if target_project is None:
         return {'result': 'error', 'msg': 'Project not in the database'}
 
@@ -1006,26 +1043,40 @@ def api_optimal_targets():
         return {'result': 'error', 'msg': 'Found no introspector data.'}
 
 
+def _light_harness_source_and_executable(target_project):
+    # Check if light analysis is there
+    light_pairs_to_ret = []
+    if target_project.light_analysis:
+        light_pairs = target_project.light_analysis.get('all-pairs', [])
+        for light_pair in light_pairs:
+            ls = light_pair.get('harness_source', '')
+            lh = light_pair.get('harness_executable', '')
+            if ls and lh:
+                light_pairs_to_ret.append({'source': ls, 'executable': lh})
+    return light_pairs_to_ret
+
+
 @blueprint.route('/api/harness-source-and-executable')
 def harness_source_and_executable():
+    """API that returns a pair of harness executable/source"""
     project_name = request.args.get('project', None)
     if project_name is None:
         return {'result': 'error', 'msg': 'Please provide project name'}
 
+    target_project = get_project_with_name(project_name)
+    if target_project is None:
+        return {'result': 'error', 'msg': 'Project not in the database'}
+
+    light_pairs_to_ret = _light_harness_source_and_executable(target_project)
+
     all_file_json = os.path.join(
         os.path.dirname(__file__),
         f"../static/assets/db/db-projects/{project_name}/all_files.json")
-    if not os.path.isfile(all_file_json):
-        return {'result': 'error', 'msg': 'Did not find file check json'}
 
-    target_project = None
-    all_projects = data_storage.get_projects()
-    for project in all_projects:
-        if project.name == project_name:
-            target_project = project
-            break
-    if target_project is None:
-        return {'result': 'error', 'msg': 'Project not in the database'}
+    if not os.path.isfile(all_file_json):
+        if light_pairs_to_ret:
+            return {'rseult': 'success', 'pairs': light_pairs_to_ret}
+        return {'result': 'error', 'msg': 'Did not find file check json'}
 
     if target_project.introspector_data is None:
         return {'result': 'error', 'msg': 'Found no introspector data.'}
@@ -1067,16 +1118,12 @@ def harness_source_and_executable():
 
 @blueprint.route('/api/annotated-cfg')
 def api_annotated_cfg():
+    """API that returns the annotated  CFG of a project."""
     project_name = request.args.get('project', None)
     if project_name is None:
         return {'result': 'error', 'msg': 'Please provide project name'}
 
-    target_project = None
-    all_projects = data_storage.get_projects()
-    for project in all_projects:
-        if project.name == project_name:
-            target_project = project
-            break
+    target_project = get_project_with_name(project_name)
     if target_project is None:
         return {'result': 'error', 'msg': 'Project not in the database'}
 
@@ -1103,12 +1150,7 @@ def api_project_summary():
     project_name = request.args.get('project', None)
     if project_name is None:
         return {'result': 'error', 'msg': 'Please provide project name'}
-    target_project = None
-    all_projects = data_storage.get_projects()
-    for project in all_projects:
-        if project.name == project_name:
-            target_project = project
-            break
+    target_project = get_project_with_name(project_name)
     if target_project is None:
         return {'result': 'error', 'msg': 'Project not in the database'}
 
@@ -1124,16 +1166,12 @@ def api_project_summary():
 
 @blueprint.route('/api/branch-blockers')
 def branch_blockers():
+    """API that returns the branch blockers of project."""
     project_name = request.args.get('project', None)
     if project_name is None:
         return {'result': 'error', 'msg': 'Please provide project name'}
 
-    target_project = None
-    all_projects = data_storage.get_projects()
-    for project in all_projects:
-        if project.name == project_name:
-            target_project = project
-            break
+    target_project = get_project_with_name(project_name)
     if target_project is None:
         return {'result': 'error', 'msg': 'Project not in the database'}
 
@@ -1237,9 +1275,53 @@ def api_cross_references():
     return {'result': 'success', 'callsites': xrefs}
 
 
+@blueprint.route('/api/get-project-language-from-souce-files')
+def api_get_project_language_from_source_files():
+    """Gets the project language based on the file extensions of the project"""
+    project_name = request.args.get('project', None)
+    if project_name is None:
+        return {'result': 'error', 'msg': 'Please provide a project name'}
+
+    all_file_json = os.path.join(
+        os.path.dirname(__file__),
+        f"../static/assets/db/db-projects/{project_name}/all_files.json")
+    if not os.path.isfile(all_file_json):
+        return {'result': 'error', 'msg': 'Did not find file check json'}
+
+    # Ensure the files are present in the soruce code
+    with open(all_file_json, 'r') as f:
+        all_files_list = json.loads(f.read())
+
+    languages = {'c': 0, 'c++': 0, 'python': 0, 'java': 0}
+
+    print("")
+
+    for source_file in all_files_list:
+        print(source_file)
+        _, file_ext = os.path.splitext(source_file)
+        if file_ext == '.c':
+            languages['c'] += 1
+        elif file_ext == '.cc' or file_ext == '.cpp' or file_ext == '.c++':
+            languages['c++'] += 1
+        elif file_ext == '.py':
+            languages['python'] += 1
+        elif file_ext == '.java':
+            languages['java'] += 1
+
+    print(json.dumps(languages, indent=2))
+    max_language = ''
+    max_language_count = -1
+    for language, count in languages.items():
+        if max_language_count <= count:
+            max_language_count = count
+            max_language = language
+    return {'result': 'success', 'language': max_language}
+
+
 @blueprint.route('/api/all-project-source-files')
 def api_project_all_project_source_files():
-    """Returns a json representation of all source file path in a given project"""
+    """Returns a json representation of all source file path in a given
+    project"""
     project_name = request.args.get('project', None)
     if project_name is None:
         return {'result': 'error', 'msg': 'Please provide a project name'}
@@ -1383,20 +1465,8 @@ def api_project_source_code():
 
         return {'result': 'success', 'source_code': source_code}
 
-    all_build_status = data_storage.get_build_status()
-    latest_introspector_datestr = None
-    for build_status in all_build_status:
-        if build_status.project_name == project_name:
-
-            # Get statistics of the project
-            project_statistics = data_storage.PROJECT_TIMESTAMPS
-            for ps in project_statistics:
-                if ps.project_name == project_name:
-                    datestr = ps.date
-                    if ps.introspector_data is not None:
-                        latest_introspector_datestr = datestr
-
-    if latest_introspector_datestr is None:
+    latest_introspector_datestr = get_latest_introspector_date(project_name)
+    if not latest_introspector_datestr:
         return {'result': 'error', 'msg': 'No introspector builds.'}
 
     source_code = extract_lines_from_source_code(project_name,
@@ -1409,6 +1479,23 @@ def api_project_source_code():
     return {'result': 'success', 'source_code': source_code}
 
 
+def get_latest_introspector_date(project_name: str) -> str:
+    """Gets the date of the most recent successful introspector build."""
+    all_build_status = data_storage.get_build_status()
+    latest_introspector_datestr = ''
+    for build_status in all_build_status:
+        if build_status.project_name == project_name:
+
+            # Get statistics of the project
+            project_statistics = data_storage.PROJECT_TIMESTAMPS
+            for ps in project_statistics:
+                if ps.project_name == project_name:
+                    datestr = ps.date
+                    if ps.introspector_data is not None:
+                        latest_introspector_datestr = datestr
+    return latest_introspector_datestr
+
+
 @blueprint.route('/api/project-test-code')
 def api_project_test_code():
     """Extracts source code of a test"""
@@ -1419,7 +1506,6 @@ def api_project_test_code():
     if filepath is None:
         return {'result': 'error', 'msg': 'No filepath provided'}
 
-    MAX_TEST_SIZE = 6000
     max_content_size = request.args.get('max_size', str(MAX_TEST_SIZE))
     try:
         max_content_size = int(max_content_size)
@@ -1433,20 +1519,9 @@ def api_project_test_code():
         if source_code is None:
             return {'result': 'error', 'msg': 'no source code'}
     else:
-        all_build_status = data_storage.get_build_status()
-        latest_introspector_datestr = None
-        for build_status in all_build_status:
-            if build_status.project_name == project_name:
-
-                # Get statistics of the project
-                project_statistics = data_storage.PROJECT_TIMESTAMPS
-                for ps in project_statistics:
-                    if ps.project_name == project_name:
-                        datestr = ps.date
-                        if ps.introspector_data is not None:
-                            latest_introspector_datestr = datestr
-
-        if latest_introspector_datestr is None:
+        latest_introspector_datestr = get_latest_introspector_date(
+            project_name)
+        if not latest_introspector_datestr:
             return {'result': 'error', 'msg': 'No introspector builds.'}
 
         source_code = extract_lines_from_source_code(
@@ -1536,7 +1611,6 @@ def api_function_signature():
     all_functions = data_storage.get_functions_by_project(project_name)
     all_functions = all_functions + data_storage.get_constructors_by_project(
         project_name)
-    func_to_match = None
     print("Iterating through all functions to match raw function name")
     for function in all_functions:
         if function.raw_function_name == function_name:
@@ -1567,21 +1641,11 @@ def api_function_source_code():
         return {'result': 'error', 'msg': 'Could not find function'}
 
     # Find latest introspector date
-    all_build_status = data_storage.get_build_status()
-    latest_introspector_datestr = None
-    for build_status in all_build_status:
-        if build_status.project_name == project_name:
-            # Get statistics of the project
-            project_statistics = data_storage.PROJECT_TIMESTAMPS
-            for ps in project_statistics:
-                if ps.project_name == project_name:
-                    datestr = ps.date
-                    if ps.introspector_data is not None:
-                        latest_introspector_datestr = datestr
+    latest_introspector_datestr = get_latest_introspector_date(project_name)
     if is_local:
         latest_introspector_datestr = "norelevant"
 
-    if latest_introspector_datestr is None:
+    if not latest_introspector_datestr:
         return {'result': 'error', 'msg': 'No introspector builds.'}
 
     src_begin = target_function.source_line_begin
@@ -1676,13 +1740,13 @@ def api_jvm_method_properties():
     }
 
 
-def get_build_status_of_project(project_name):
+def get_build_status_of_project(
+        project_name: str) -> Optional[models.BuildStatus]:
+    """Gets the current build status of a project."""
     build_status = data_storage.get_build_status()
-
     for bs in build_status:
         if bs.project_name == project_name:
             return bs
-
     return None
 
 
@@ -1719,13 +1783,7 @@ def api_oracle_2():
     else:
         only_referenced_functions = False
 
-    target_project = None
-    all_projects = data_storage.get_projects()
-    for project in all_projects:
-        if project.name == project_name:
-            target_project = project
-            break
-
+    target_project = get_project_with_name(project_name)
     if target_project is None:
         return {'result': 'error', 'extended_msgs': ['Project not found.']}
 
@@ -1779,12 +1837,7 @@ def api_oracle_1():
     else:
         only_referenced_functions = False
 
-    target_project = None
-    all_projects = data_storage.get_projects()
-    for project in all_projects:
-        if project.name == project_name:
-            target_project = project
-            break
+    target_project = get_project_with_name(project_name)
     if not target_project:
         return {'result': 'error', 'extended_msgs': ['Could not find project']}
 
@@ -1819,12 +1872,7 @@ def project_repository():
             'extended_msgs': ['Please provide project name']
         }
 
-    target_project = None
-    all_projects = data_storage.get_projects()
-    for project in all_projects:
-        if project.name == project_name:
-            target_project = project
-            break
+    target_project = get_project_with_name(project_name)
     if target_project is None:
         return {'result': 'error', 'extended_msgs': ['Did not find project']}
     return {
@@ -1835,6 +1883,7 @@ def project_repository():
 
 @blueprint.route('/api/far-reach-but-low-coverage')
 def far_reach_but_low_coverage():
+    """API that returns functions with far reach but low code coverage."""
     err_msgs = list()
     project_name = request.args.get('project', None)
     if project_name is None:
@@ -1865,13 +1914,7 @@ def far_reach_but_low_coverage():
     else:
         only_functions_declared_in_header_files = False
 
-    target_project = None
-    all_projects = data_storage.get_projects()
-    for project in all_projects:
-        if project.name == project_name:
-            target_project = project
-            break
-
+    target_project = get_project_with_name(project_name)
     if target_project is None:
         # Is the project a ghost project: a project that no longer
         # exists in OSS-Fuzz but is present on the ClusterFuzz instance.
@@ -2110,8 +2153,22 @@ def extract_project_tests(project_name,
     return tests_file_list
 
 
+def _light_project_tests(project_name):
+    target_project = get_project_with_name(project_name)
+    if not target_project:
+        return []
+
+    if not target_project.light_analysis:
+        return []
+
+    light_test_files = target_project.light_analysis.get('test-files', [])
+    return light_test_files
+
+
 @blueprint.route('/api/project-tests')
 def project_tests():
+    """API that returns list of source files corresponding to tests of a
+    project."""
     project = request.args.get('project', None)
     if project is None:
         return {
@@ -2119,8 +2176,14 @@ def project_tests():
             'extended_msgs': ['Please provide project name']
         }
 
+    light_tests = _light_project_tests(project)
+
     test_file_list = extract_project_tests(project)
-    if test_file_list == None:
+    if test_file_list is None:
+        # Return light if we have it
+        if light_tests:
+            return {'result': 'succes', 'test-file-list': light_tests}
+        # Error
         return {
             'result': 'error',
             'extended_msgs': ['Could not find tests file']
@@ -2280,20 +2343,10 @@ def sample_cross_references():
     if is_local:
         latest_introspector_datestr = "notrelevant"
     else:
-        all_build_status = data_storage.get_build_status()
-        latest_introspector_datestr = None
-        for build_status in all_build_status:
-            if build_status.project_name == project_name:
+        latest_introspector_datestr = get_latest_introspector_date(
+            project_name)
 
-                # Get statistics of the project
-                project_statistics = data_storage.PROJECT_TIMESTAMPS
-                for ps in project_statistics:
-                    if ps.project_name == project_name:
-                        datestr = ps.date
-                        if ps.introspector_data is not None:
-                            latest_introspector_datestr = datestr
-
-    if latest_introspector_datestr is None:
+    if not latest_introspector_datestr:
         return {'result': 'error', 'msg': 'No introspector builds.'}
 
     source_code_xrefs = []

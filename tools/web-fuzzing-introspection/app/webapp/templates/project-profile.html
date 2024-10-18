@@ -66,7 +66,7 @@
                     <td>
                       {% if project.coverage_data is not none %} 
                         {{ project.coverage_data.line_coverage.count }}
-                      {% elif latest_statistics != None %}
+                      {% elif latest_statistics != None and latest_statistics.coverage_data != None %}
                         {{ latest_statistics.coverage_data.line_coverage.count }}
                       {% else %}
                         N/A
@@ -78,7 +78,7 @@
                     <td>
                       {% if project.coverage_data is not none %}
                         {{ project.coverage_data.line_coverage.covered }}
-                      {% elif latest_statistics != None %}
+                      {% elif latest_statistics != None and latest_statistics.coverage_data != None %}
                         {{ latest_statistics.coverage_data.line_coverage.covered }}
                       {% else %}
                         N/A
@@ -88,9 +88,9 @@
                   <tr>
                     <td>Code coverage</td>
                     <td>
-                    {% if has_project_details %}
+                    {% if has_project_details and project.coverage_data != None %}
                       {{ '%0.2f' % project.coverage_data.line_coverage.percent |float}}%
-                    {% elif latest_statistics != None %}
+                    {% elif latest_statistics != None and latest_statistics.coverage_data != None %}
                         {{ latest_statistics.coverage_data.line_coverage.percent }}%
                     {% else %}
                       N/A
@@ -253,15 +253,17 @@ max_fuzzer_count = 0;
 
 
 {% for project_timestamp in project_statistics %}
-  code_coverage_lines_x.push("{{project_timestamp.date}}");
-  code_coverage_lines_y.push({{project_timestamp.coverage_data.line_coverage.percent}});
-  fuzzer_count_y.push({{project_timestamp.fuzzer_count}});
-  max_fuzzer_count = Math.max(max_fuzzer_count, {{project_timestamp.fuzzer_count}});
+  {% if project_timestamp.coverage_data != None %}
+    code_coverage_lines_x.push("{{project_timestamp.date}}");
+    code_coverage_lines_y.push({{project_timestamp.coverage_data.line_coverage.percent}});
+    fuzzer_count_y.push({{project_timestamp.fuzzer_count}});
+    max_fuzzer_count = Math.max(max_fuzzer_count, {{project_timestamp.fuzzer_count}});
 
-  // Stats dependending on fuzz introspector
-  {% if project.has_introspector() %}
-    code_coverage_functions_y.push({{project_timestamp.introspector_data.functions_covered_estimate}});
-    code_reachability_y.push({{project_timestamp.introspector_data.static_reachability}});
+    // Stats dependending on fuzz introspector
+    {% if project.has_introspector() %}
+      code_coverage_functions_y.push({{project_timestamp.introspector_data.functions_covered_estimate}});
+      code_reachability_y.push({{project_timestamp.introspector_data.static_reachability}});
+    {% endif %}
   {% endif %}
 {%endfor%}
 

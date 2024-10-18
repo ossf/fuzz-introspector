@@ -14,7 +14,10 @@
 """High-level routines and CLI entrypoints"""
 
 import logging
+import os
+import json
 import yaml
+import shutil
 from typing import List
 
 from fuzz_introspector import analysis
@@ -66,3 +69,35 @@ def run_analysis_on_dir(target_folder: str,
                                    output_json, report_name, dump_files)
 
     return constants.APP_EXIT_SUCCESS
+
+
+def light_analysis(args) -> int:
+    """Performs a light analysis, without any data from the frontends, so
+    no compilation is needed for this analysis."""
+    src_dir = os.getenv('SRC', '/src/')
+    inspector_dir = os.path.join(src_dir, 'inspector')
+    light_dir = os.path.join(inspector_dir, 'light')
+
+    if not os.path.isdir(light_dir):
+        os.makedirs(light_dir, exist_ok=True)
+
+    all_tests = analysis.extract_tests_from_directories({src_dir})
+
+    with open(os.path.join(light_dir, 'all_tests.json'), 'w') as f:
+        f.write(json.dumps(list(all_tests)))
+
+    pairs = analysis.light_correlate_source_to_executable()
+    with open(os.path.join(light_dir, 'all_pairs.json'), 'w') as f:
+        f.write(json.dumps(list(pairs)))
+
+    all_source_files = analysis.extract_all_sources('cpp')
+    light_out_src = os.path.join(light_dir, 'source_files')
+
+    for source_file in all_source_files:
+        dst = light_out_src + '/' + source_file
+        os.makedirs(os.path.dirname(dst), exist_ok=True)
+        shutil.copy(source_file, dst)
+    with open(os.path.join(light_dir, 'all_files.json'), 'w') as f:
+        f.write(json.dumps(list(all_source_files)))
+
+    return 0

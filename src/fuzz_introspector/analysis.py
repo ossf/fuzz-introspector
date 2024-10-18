@@ -1017,6 +1017,11 @@ def extract_all_sources(language):
         # Absolute path
         if any([avoid in file for avoid in to_avoid]):
             continue
+        if file.startswith('/src/source-code'):
+            continue
+        if file.startswith('/src/inspector/'):
+            continue
+
         interesting_source_files.add(file)
     return interesting_source_files
 
@@ -1049,7 +1054,10 @@ def _extract_test_information_cpp(report_dict):
         if path.startswith('/usr/'):
             continue
         directories.add('/'.join(path.split('/')[:-1]))
+    return extract_tests_from_directories(directories)
 
+
+def extract_tests_from_directories(directories):
     all_files_in_subtree = set()
     for dir in directories:
         for root, dirs, files in os.walk(dir):
@@ -1077,7 +1085,7 @@ def _extract_test_information_cpp(report_dict):
     to_avoid = [
         'fuzztest', 'aflplusplus', 'libfuzzer', 'googletest', 'thirdparty',
         'third_party', '/build/', '/usr/local/', '/fuzz-introspector/',
-        '/root/.cache/'
+        '/root/.cache/', '/usr/'
     ]
     for dir in all_inspiration_dirs:
         for root, dirs, files in os.walk(dir):
@@ -1086,6 +1094,12 @@ def _extract_test_information_cpp(report_dict):
                     continue
                 # Absolute path
                 absolute_path = os.path.join(root, f)
+                if any([avoid in absolute_path for avoid in to_avoid]):
+                    continue
+                if absolute_path.startswith('/out/'):
+                    continue
+                if absolute_path.startswith('/src/inspector/'):
+                    continue
                 try:
                     with open(absolute_path, 'r') as file_fp:
                         if 'LLVMFuzzerTestOneInput' in file_fp.read():
@@ -1104,7 +1118,12 @@ def _extract_test_information_cpp(report_dict):
                 absolute_path = os.path.join(root, f)
                 if any([avoid in absolute_path for avoid in to_avoid]):
                     continue
-
+                if absolute_path.startswith('/out/'):
+                    continue
+                if absolute_path.startswith('/src/inspector/'):
+                    continue
+                if absolute_path.startswith('/usr/'):
+                    continue
                 if "test" in f:
                     all_test_files.add(absolute_path)
     new_test_files = set()
@@ -1182,3 +1201,39 @@ def _extract_test_information_jvm():
                     all_test_files.add(path)
 
     return all_test_files
+
+
+def light_correlate_source_to_executable():
+    """Extracts pairs of harness source/executable"""
+    out_dir = os.getenv('OUT', '/out/')
+    textcov_dir = os.path.join(out_dir, 'textcov_reports')
+
+    if not os.path.isdir(textcov_dir):
+        return []
+
+    cov_reports = []
+    for cov_report in os.listdir(textcov_dir):
+        if cov_report.endswith('.covreport'):
+            cov_reports.append(os.path.join(textcov_dir, cov_report))
+    for cov_report in cov_reports:
+        print('- cov report: %s' % (cov_report))
+
+    all_source_files = extract_all_sources('cpp')
+    pairs = []
+    # Match based on file names. This should be the most primitive but
+    # will catch a large number of targets
+    for source_file in all_source_files:
+        harness_source_file = os.path.splitext(
+            os.path.basename(source_file))[0]
+        matches = set()
+        for cov_report in cov_reports:
+            cov_report_base = os.path.splitext(os.path.basename(cov_report))[0]
+            if cov_report_base == harness_source_file:
+                matches.add(cov_report_base)
+        if len(matches) == 1:
+            pairs.append({
+                'harness_source': source_file,
+                'harness_executable': matches.pop()
+            })
+
+    return pairs
