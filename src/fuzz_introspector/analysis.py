@@ -286,6 +286,10 @@ def get_node_coverage_hitcount(demangled_name: str, callstack: Dict[int, str],
         if not profile.func_is_entrypoint(demangled_name):
             raise AnalysisError(
                 "First node in calltree is non-fuzzer function")
+        if profile.coverage.get_type() == 'kernel':
+            # For now, assume EP is hit. TODO(David) adjust this.
+            return 100
+
         coverage_data = profile.coverage.get_hit_details(demangled_name)
 
         if len(coverage_data) == 0:
@@ -303,13 +307,18 @@ def get_node_coverage_hitcount(demangled_name: str, callstack: Dict[int, str],
                      f"{node.cov_ct_idx} -- {node.src_linenumber}")
 
         if profile.target_lang == "c-cpp":
-            coverage_data = profile.coverage.get_hit_details(
-                callstack_get_parent(node, callstack))
-            for (n_line_number, hit_count_cov) in coverage_data:
-                logger.debug(
-                    f"  - iterating {n_line_number} : {hit_count_cov}")
-                if n_line_number == node.src_linenumber and hit_count_cov > 0:
-                    node_hitcount = hit_count_cov
+            if profile.coverage.get_type() == 'kernel':
+                # Handle coverage
+                logger.info('Handling kernel cov')
+                return profile.coverage.get_kernel_hitcount(node)
+            else:
+                coverage_data = profile.coverage.get_hit_details(
+                    callstack_get_parent(node, callstack))
+                for (n_line_number, hit_count_cov) in coverage_data:
+                    logger.debug(
+                        f"  - iterating {n_line_number} : {hit_count_cov}")
+                    if n_line_number == node.src_linenumber and hit_count_cov > 0:
+                        node_hitcount = hit_count_cov
         elif profile.target_lang == "python":
             ih = profile.coverage.is_file_lineno_hit(
                 callstack_get_parent(node, callstack), node.src_linenumber,
@@ -421,7 +430,6 @@ def overlay_calltree_with_coverage(
     target_coverage_url = utils.get_target_coverage_url(
         coverage_url, target_name, profile.target_lang)
     logger.info(f"Using coverage url: {target_coverage_url}")
-    logger.info("Overlaying 1")
     for node in cfg_load.extract_all_callsites(
             profile.fuzzer_callsite_calltree):
         node.cov_ct_idx = ct_idx
