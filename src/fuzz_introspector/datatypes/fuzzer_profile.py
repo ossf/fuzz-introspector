@@ -486,8 +486,12 @@ class FuzzerProfile:
         """Load coverage data for this profile"""
         logger.info(f"Loading coverage of type {self.target_lang}")
         if self.target_lang == "c-cpp":
-            self.coverage = code_coverage.load_llvm_coverage(
-                target_folder, self.identifier)
+            if os.getenv('FI_KERNEL_COV', ''):
+                self.coverage = code_coverage.load_kernel_cov(
+                    os.getenv('FI_KERNEL_COV'))
+            else:
+                self.coverage = code_coverage.load_llvm_coverage(
+                    target_folder, self.identifier)
         elif self.target_lang == "python":
             self.coverage = code_coverage.load_python_json_coverage(
                 target_folder)

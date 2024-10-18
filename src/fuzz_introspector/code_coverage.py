@@ -14,10 +14,13 @@
 """Module for handling code coverage reports"""
 
 import os
+import sys
+import json
 import logging
 import re
 
 from typing import (
+    Any,
     Dict,
     List,
     Set,
@@ -61,6 +64,7 @@ class CoverageProfile:
         self._cov_type = ""
         self.coverage_files: List[str] = []
         self.dual_file_map: Dict[str, Dict[str, List[int]]] = dict()
+        self.kernel_coverage: List[Dict[Any, Any]] = []
 
     def set_type(self, cov_type: str) -> None:
         self._cov_type = cov_type
@@ -70,6 +74,24 @@ class CoverageProfile:
 
     def is_type_set(self) -> bool:
         return self._cov_type != ""
+
+    def get_kernel_hitcount(self, node):
+        try:
+            target_file = node.parent_calltree_callsite.dst_function_source_file
+        except Exception:
+            return 0
+        lineno = node.src_linenumber
+
+        if target_file.startswith('../'):
+            target_file = target_file[3:]
+
+        for cov_module in self.kernel_coverage:
+            if cov_module['Filename'].endswith(target_file):
+                # Check if the line is hit
+                for i in range(10):
+                    if lineno + i in cov_module.get('Covered', []):
+                        return 100
+        return 0
 
     def is_file_lineno_hit(self,
                            target_file: str,
@@ -441,8 +463,8 @@ def load_llvm_coverage(target_dir: str,
     if len(coverage_reports) == 0:
         coverage_reports = all_coverage_reports
 
-    logger.info(f"Using the following coverages {coverage_reports}")
     cp = CoverageProfile()
+    logger.info(f"Using the following coverages {coverage_reports}")
     cp.set_type("function")
     for profile_file in coverage_reports:
         cp.coverage_files.append(profile_file)
@@ -819,14 +841,23 @@ def _interpret_jvm_arguments_type(desc: str) -> List[str]:
     return args
 
 
+def load_kernel_cov(filename):
+    print('Loading kernel coverage')
+    with open(filename, 'r') as f:
+        json_coverage = json.loads(f.read())
+
+    private_modules = []
+    for elem in json_coverage:
+        if '/private/' in elem.get('Filename', ''):
+            private_modules.append(elem)
+
+    cp = CoverageProfile()
+    cp.set_type('kernel')
+    cp.kernel_coverage = private_modules
+    return cp
+
+
 if __name__ == "__main__":
     logging.basicConfig()
     logger.info("Starting coverage loader")
-    cp = load_python_json_coverage("total_coverage.json")
-
-    logger.info("Coverage map keys")
-    for fn in cp.file_map:
-        logger.info(fn)
-    logger.info("Coverage loader end")
-    is_hit = cp.is_file_lineno_hit("yaml.reader", 150, True)
-    logger.info(f"Checking hit {is_hit}")
+    load_kernel_cov(sys.argv[1])
