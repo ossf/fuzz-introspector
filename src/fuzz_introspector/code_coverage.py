@@ -20,6 +20,7 @@ import logging
 import re
 
 from typing import (
+    Any,
     Dict,
     List,
     Set,
@@ -63,7 +64,7 @@ class CoverageProfile:
         self._cov_type = ""
         self.coverage_files: List[str] = []
         self.dual_file_map: Dict[str, Dict[str, List[int]]] = dict()
-        self.kernel_coverage = []
+        self.kernel_coverage: List[Dict[Any, Any]] = []
 
     def set_type(self, cov_type: str) -> None:
         self._cov_type = cov_type
@@ -77,7 +78,7 @@ class CoverageProfile:
     def get_kernel_hitcount(self, node):
         try:
             target_file = node.parent_calltree_callsite.dst_function_source_file
-        except:
+        except Exception:
             return 0
         lineno = node.src_linenumber
 
@@ -85,12 +86,11 @@ class CoverageProfile:
             target_file = target_file[3:]
 
         for cov_module in self.kernel_coverage:
-            #print('Kernel cov: -%s :: %s'%(cov_module['Filename'], target_file))
             if cov_module['Filename'].endswith(target_file):
                 # Check if the line is hit
                 for i in range(10):
-                  if lineno+i in cov_module.get('Covered', []):
-                      return 100
+                    if lineno + i in cov_module.get('Covered', []):
+                        return 100
         return 0
 
     def is_file_lineno_hit(self,
