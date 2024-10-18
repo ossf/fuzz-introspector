@@ -23,6 +23,7 @@ from typing import (
     Dict,
     List,
     Type,
+    Set,
 )
 
 from fuzz_introspector import (cfg_load, code_coverage, constants, data_loader,
@@ -345,7 +346,7 @@ def get_node_coverage_hitcount(demangled_name: str, callstack: Dict[int, str],
 
 def get_hit_count_color(hit_count: int) -> str:
     """Map hitcount to color of target"""
-    for cmin, cmax, cname, rgb in constants.COLOR_CONSTANTS:
+    for cmin, cmax, cname, _ in constants.COLOR_CONSTANTS:
         if hit_count >= cmin and hit_count < cmax:
             return cname
     return "red"
@@ -561,8 +562,8 @@ def update_branch_complexities(
     Traverse every branch profile and update the side complexities based on reached funcs
     complexity.
     """
-    for func_k, func in all_functions.items():
-        for branch_k, branch in func.branch_profiles.items():
+    for func in all_functions.values():
+        for branch in func.branch_profiles.values():
             sides_number = len(branch.sides)
             for side_idx in range(sides_number):
                 branch.sides[side_idx].unique_not_covered_complexity = 0
@@ -1057,10 +1058,13 @@ def _extract_test_information_cpp(report_dict):
     return extract_tests_from_directories(directories)
 
 
-def extract_tests_from_directories(directories):
+def extract_tests_from_directories(directories) -> Set[str]:
+    """Extracts test files from a given collection of directory paths and also
+    copies them to the `constants.SAVED_SOURCE_FOLDER` folder with the same
+    absolute path appended."""
     all_files_in_subtree = set()
-    for dir in directories:
-        for root, dirs, files in os.walk(dir):
+    for directory in directories:
+        for root, _, files in os.walk(directory):
             for f in files:
                 all_files_in_subtree.add(os.path.join(root, f))
 
