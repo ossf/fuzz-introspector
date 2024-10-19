@@ -56,7 +56,9 @@ def load_db() -> None:
                 fuzzer_count=project_timestamp['fuzzer-count'],
                 introspector_url=project_timestamp.get('introspector_url',
                                                        None),
-                project_url=project_timestamp.get('project_url', None)))
+                project_url=project_timestamp.get('project_url', None),
+                project_repository=project_timestamp.get(
+                    'project_repository', None)))
     # If we're caching, then remove the timestamp file.
     if 'G_ANALYTICS_TAG' in os.environ:
         os.remove(project_timestamps_file)

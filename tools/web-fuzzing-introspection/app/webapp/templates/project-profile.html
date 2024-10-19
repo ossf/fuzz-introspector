@@ -21,6 +21,12 @@
                     <td>{{page_main_name}} project</td>
                     <td><a href="{{project_url}}">link</a></td>
                   </tr>
+                  {% if project_repo %}
+                  <tr>
+                    <td>Project repository</td>
+                    <td><a href="{{project_repo}}">link</a></td>
+                  </tr>
+                  {% endif %}
                   <tr>
                     <td>Build status: Fuzzers</td>
                     <td>
