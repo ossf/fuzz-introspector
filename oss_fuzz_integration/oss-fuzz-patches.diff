@@ -17,45 +17,6 @@ index 4fa7a9100..810ac5608 100644
 +COPY frontends /fuzz-introspector/frontends
 +
  CMD ["compile"]
-diff --git a/infra/base-images/base-builder/compile b/infra/base-images/base-builder/compile
-index 27a335f3b..2a9881a0c 100755
---- a/infra/base-images/base-builder/compile
-+++ b/infra/base-images/base-builder/compile
-@@ -207,6 +207,15 @@ if [ "$SANITIZER" = "introspector" ]; then
-   ln -sf /usr/local/bin/llvm-ar /usr/bin/ar
-   ln -sf /usr/local/bin/llvm-nm /usr/bin/nm
-   ln -sf /usr/local/bin/llvm-ranlib /usr/bin/ranlib
-+
-+  # First, perform an initial light analysis
-+  apt-get install -y libjpeg-dev zlib1g-dev libyaml-dev
-+  python3 -m pip install --upgrade pip setuptools
-+  python3 -m pip install cxxfilt pyyaml beautifulsoup4 lxml soupsieve
-+  python3 -m pip install --prefer-binary matplotlib
-+
-+  python3 /fuzz-introspector/src/main.py light
-+  rsync -avu --delete "$SRC/inspector/" "$OUT/inspector"
- fi
- 
- echo "---------------------------------------------------------------"
-@@ -260,10 +269,6 @@ if [ "$SANITIZER" = "introspector" ]; then
-   unset CXXFLAGS
-   unset CFLAGS
-   export G_ANALYTICS_TAG="G-8WTFM1Y62J"
--  apt-get install -y libjpeg-dev zlib1g-dev libyaml-dev
--  python3 -m pip install --upgrade pip setuptools
--  python3 -m pip install cxxfilt pyyaml beautifulsoup4 lxml soupsieve
--  python3 -m pip install --prefer-binary matplotlib
- 
-   if [ "$FUZZING_LANGUAGE" = "jvm" ]; then
-     echo "GOING jvm route"
-@@ -328,6 +333,6 @@ if [ "$SANITIZER" = "introspector" ]; then
-     REPORT_ARGS="$REPORT_ARGS --correlation_file=exe_to_fuzz_introspector_logs.yaml"
-     python3 /fuzz-introspector/src/main.py report $REPORT_ARGS
- 
--    cp -rf $SRC/inspector $OUT/inspector
-+    rsync -avu --delete "$SRC/inspector/" "$OUT/inspector"
-   fi
- fi
 diff --git a/infra/base-images/base-clang/Dockerfile b/infra/base-images/base-clang/Dockerfile
 index 757ea3de5..5be6bd30a 100644
 --- a/infra/base-images/base-clang/Dockerfile
