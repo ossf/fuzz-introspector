@@ -63,6 +63,72 @@ def get_introspector_project_all_files(project_name, datestr):
                                             datestr) + "all-files.json"
 
 
+def get_introspector_light_pairs_url(project_name, datestr):
+    return get_introspector_report_url_base(project_name,
+                                            datestr) + "light/all-files.json"
+
+
+def extract_introspector_light_all_pairs(project_name, date_str):
+    """Gets the list of pairs from introspector light"""
+    debug_data_url = get_introspector_light_pairs_url(
+        project_name, date_str.replace("-", ""))
+    try:
+        raw_introspector_json_request = requests.get(debug_data_url,
+                                                     timeout=10)
+    except:
+        return []
+    try:
+        all_pairs = json.loads(raw_introspector_json_request.text)
+    except:
+        return []
+
+    return all_pairs
+
+
+def get_introspector_light_tests_url(project_name, datestr):
+    return get_introspector_report_url_base(project_name,
+                                            datestr) + "light/all_tests.json"
+
+
+def extract_introspector_light_all_tests(project_name, date_str):
+    """Gets the list of test files from light"""
+    debug_data_url = get_introspector_light_tests_url(
+        project_name, date_str.replace("-", ""))
+    try:
+        raw_introspector_json_request = requests.get(debug_data_url,
+                                                     timeout=10)
+    except:
+        return []
+    try:
+        all_tests = json.loads(raw_introspector_json_request.text)
+    except:
+        return []
+
+    return all_tests
+
+
+def get_introspector_light_all_files_url(project_name, datestr):
+    return get_introspector_report_url_base(project_name,
+                                            datestr) + "light/all_files.json"
+
+
+def extract_introspector_light_all_files(project_name, date_str):
+    """Gets the list of all files from light"""
+    debug_data_url = get_introspector_light_all_files_url(
+        project_name, date_str.replace("-", ""))
+    try:
+        raw_introspector_json_request = requests.get(debug_data_url,
+                                                     timeout=10)
+    except:
+        return []
+    try:
+        all_urls = json.loads(raw_introspector_json_request.text)
+    except:
+        return []
+
+    return all_urls
+
+
 def get_introspector_type_map_url_summary(project_name, datestr):
     return get_introspector_report_url_base(
         project_name, datestr) + "all-friendly-debug-types.json"
