@@ -572,6 +572,19 @@ def extract_project_data(project_name, date_str, should_include_details,
     # Save the report
     save_fuzz_introspector_report(introspector_report, project_name, date_str)
 
+    light_test_files = oss_fuzz.extract_introspector_light_all_tests(
+        project_name, date_str.replace("-", ""))
+    light_all_files = oss_fuzz.extract_introspector_light_all_files(
+        project_name, date_str.replace("-", ""))
+    light_all_pairs = oss_fuzz.extract_introspector_light_all_pairs(
+        project_name, date_str.replace("-", ""))
+
+    light_report = {
+        'test-files': light_test_files,
+        'all-files': light_all_files,
+        'all-pairs': light_all_pairs,
+    }
+
     # Get debug data
     if collect_debug_info and should_include_details:
         debug_report = oss_fuzz.extract_introspector_debug_info(
@@ -701,6 +714,7 @@ def extract_project_data(project_name, date_str, should_include_details,
         'introspector-data': introspector_data_dict,
         'fuzzer-count': amount_of_fuzzers,
         'project_repository': project_repository,
+        'light-introspector': light_report,
     }
 
     dictionary_key = '%s###%s' % (project_name, date_str)
