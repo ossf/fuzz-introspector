@@ -514,6 +514,7 @@ def project_profile():
                     build_status.project_name, datestr, build_status.language)
             else:
                 latest_coverage_report = None
+            project_url = f'https://github.com/google/oss-fuzz/tree/master/projects/{project.name}'
             return render_template(
                 'project-profile.html',
                 gtag=gtag,
@@ -525,6 +526,7 @@ def project_profile():
                 functions_of_interest=[],
                 latest_coverage_report=latest_coverage_report,
                 coverage_date=datestr,
+                project_url=project_url,
                 latest_statistics=latest_statistics,
                 latest_introspector_datestr=latest_introspector_datestr,
                 page_main_name=page_texts.get_page_name(),
