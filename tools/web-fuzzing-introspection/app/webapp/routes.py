@@ -407,6 +407,7 @@ def project_profile():
         latest_fuzz_introspector_report = None
         latest_introspector_datestr = ""
         project_url = ''
+        project_repo = ''
         for ps in project_statistics:
             if ps.project_name == project.name:
                 real_stats.append(ps)
@@ -429,6 +430,8 @@ def project_profile():
                     latest_introspector_datestr = datestr
                 if ps.project_url:
                     project_url = ps.project_url
+                if ps.project_repository:
+                    project_repo = ps.project_repository
         if not project_url:
             project_url = f'https://github.com/google/oss-fuzz/tree/master/projects/{project.name}'
 
@@ -470,7 +473,8 @@ def project_profile():
             project_url=project_url,
             page_main_url=page_texts.get_page_main_url(),
             page_main_name=page_texts.get_page_name(),
-            base_cov_url=page_texts.get_default_coverage_base())
+            base_cov_url=page_texts.get_default_coverage_base(),
+            project_repo=project_repo)
 
     # Either this is a wrong project or we only have a build status for it
     all_build_status = data_storage.get_build_status()
@@ -493,6 +497,7 @@ def project_profile():
             latest_coverage_report = None
             latest_fuzz_introspector_report = None
             latest_introspector_datestr = ""
+            project_repo = ''
             for ps in project_statistics:
                 if ps.project_name == project.name:
                     real_stats.append(ps)
@@ -508,6 +513,8 @@ def project_profile():
                             latest_fuzz_introspector_report = get_introspector_url(
                                 project.name, datestr)
                         latest_introspector_datestr = datestr
+                    if ps.project_repository:
+                        project_repo = ps.project_repository
 
             if datestr and len(real_stats) > 0:
                 latest_coverage_report = get_coverage_report_url(
@@ -529,6 +536,7 @@ def project_profile():
                 project_url=project_url,
                 latest_statistics=latest_statistics,
                 latest_introspector_datestr=latest_introspector_datestr,
+                project_repo=project_repo,
                 page_main_name=page_texts.get_page_name(),
                 page_main_url=page_texts.get_page_main_url(),
                 page_base_title=page_texts.get_page_base_title(),
