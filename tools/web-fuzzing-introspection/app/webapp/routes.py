@@ -1750,6 +1750,24 @@ def api_jvm_method_properties():
     }
 
 
+@blueprint.route('/api/get-all-tests')
+def api_get_all_tests():
+    """Returns the test files of all projects"""
+
+    projects_tests = {}
+    for project in data_storage.get_projects():
+        light_tests = _light_project_tests(project.name)
+
+        test_file_list = extract_project_tests(project.name)
+
+        projects_tests[project.name] = {
+            'light': light_tests,
+            'normal': test_file_list
+        }
+
+    return {'result': 'success', 'project-tests': projects_tests}
+
+
 def get_build_status_of_project(
         project_name: str) -> Optional[models.BuildStatus]:
     """Gets the current build status of a project."""
