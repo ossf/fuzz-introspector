@@ -2151,30 +2151,15 @@ def extract_project_tests(project_name,
     with open(tests_file, 'r') as f:
         tests_file_list = json.load(f)
 
+    banned_paths = {
+        '/src/fuzztest/', '/src/libfuzzer/', '/src/aflplusplus/', '/LPM/',
+        '/googletest/', '/third_party/', '/thirdparty/', 'fuzz', '/depends/',
+        '/external/', '/build/', '/src/inspector/', '/source-code/'
+    }
     if refine:
         refined_list = []
         for test_file in tests_file_list:
-            if '/src/fuzztest/' in test_file:
-                continue
-            if '/src/libfuzzer/' in test_file:
-                continue
-            if '/src/aflplusplus/' in test_file:
-                continue
-            if '/LPM/' in test_file:
-                continue
-            if '/googletest/' in test_file:
-                continue
-            if '/third_party/' in test_file:
-                continue
-            if '/thirdparty/' in test_file:
-                continue
-            if 'fuzz' in test_file:
-                continue
-            if '/depends/' in test_file:
-                continue
-            if '/external/' in test_file:
-                continue
-            if '/build/' in test_file:
+            if [bp for bp in banned_paths if bp in test_file]:
                 continue
             refined_list.append(test_file)
         tests_file_list = refined_list
