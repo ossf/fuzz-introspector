@@ -2140,8 +2140,22 @@ def all_project_header_files():
     return {'result': 'failed', 'msg': 'did not find project'}
 
 
+def should_ignore_testpath(test_path: str) -> bool:
+    """Returns true if the test path should be ignored"""
+    banned_paths = {
+        '/src/fuzztest/', '/src/libfuzzer/', '/src/aflplusplus/', '/LPM/',
+        '/googletest/', '/third_party/', '/thirdparty/', 'fuzz', '/depends/',
+        '/external/', '/build/', '/src/inspector/', '/source-code/',
+        '/workspace/'
+    }
+    if [bp for bp in banned_paths if bp in test_path]:
+        return True
+    return False
+
+
 def extract_project_tests(project_name,
                           refine: bool = True) -> Optional[List[str]]:
+    """Extracts the tests in terms of file paths of a given project"""
     tests_file = os.path.join(
         os.path.dirname(__file__),
         f"../static/assets/db/db-projects/{project_name}/test_files.json")
@@ -2151,15 +2165,10 @@ def extract_project_tests(project_name,
     with open(tests_file, 'r') as f:
         tests_file_list = json.load(f)
 
-    banned_paths = {
-        '/src/fuzztest/', '/src/libfuzzer/', '/src/aflplusplus/', '/LPM/',
-        '/googletest/', '/third_party/', '/thirdparty/', 'fuzz', '/depends/',
-        '/external/', '/build/', '/src/inspector/', '/source-code/'
-    }
     if refine:
         refined_list = []
         for test_file in tests_file_list:
-            if [bp for bp in banned_paths if bp in test_file]:
+            if should_ignore_testpath(test_file):
                 continue
             refined_list.append(test_file)
         tests_file_list = refined_list
@@ -2167,6 +2176,7 @@ def extract_project_tests(project_name,
 
 
 def _light_project_tests(project_name):
+    """Returns the list of test files in a project based on FI light."""
     target_project = get_project_with_name(project_name)
     if not target_project:
         return []
@@ -2175,7 +2185,12 @@ def _light_project_tests(project_name):
         return []
 
     light_test_files = target_project.light_analysis.get('test-files', [])
-    return light_test_files
+    returner_list = []
+    for test_file in light_test_files:
+        if should_ignore_testpath(test_file):
+            continue
+        returner_list.append(test_file)
+    return returner_list
 
 
 @blueprint.route('/api/project-tests')
