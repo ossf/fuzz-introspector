@@ -2165,7 +2165,7 @@ def extract_project_tests(project_name,
         os.path.dirname(__file__),
         f"../static/assets/db/db-projects/{project_name}/test_files.json")
     if not os.path.isfile(tests_file):
-        return None
+        return []
 
     with open(tests_file, 'r') as f:
         tests_file_list = json.load(f)
@@ -2210,19 +2210,15 @@ def project_tests():
         }
 
     light_tests = _light_project_tests(project)
-
     test_file_list = extract_project_tests(project)
-    if test_file_list is None:
-        # Return light if we have it
-        if light_tests:
-            return {'result': 'succes', 'test-file-list': light_tests}
-        # Error
+    combined = list(set(test_file_list + light_tests))
+    if not combined:
         return {
             'result': 'error',
             'extended_msgs': ['Could not find tests file']
         }
 
-    return {'result': 'success', 'test-file-list': test_file_list}
+    return {'result': 'success', 'test-file-list': combined}
 
 
 @blueprint.route('/api/addr-to-recursive-dwarf-info')
