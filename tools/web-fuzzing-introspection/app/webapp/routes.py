@@ -1061,6 +1061,8 @@ def _light_harness_source_and_executable(target_project):
         for light_pair in light_pairs:
             ls = light_pair.get('harness_source', '')
             lh = light_pair.get('harness_executable', '')
+            if '/' in lh:
+                continue
             if ls and lh:
                 light_pairs_to_ret.append({'source': ls, 'executable': lh})
     return light_pairs_to_ret
@@ -1085,7 +1087,7 @@ def harness_source_and_executable():
 
     if not os.path.isfile(all_file_json):
         if light_pairs_to_ret:
-            return {'rseult': 'success', 'pairs': light_pairs_to_ret}
+            return {'result': 'success', 'pairs': light_pairs_to_ret}
         return {'result': 'error', 'msg': 'Did not find file check json'}
 
     if target_project.introspector_data is None:
@@ -1100,11 +1102,14 @@ def harness_source_and_executable():
 
     source_harness_pairs = []
     for harness_dict in annotated_cfg:
+        harness_executable = harness_dict.get('fuzzer_name', '/')
+        if '/' in harness_executable:
+            continue
         source_harness_pairs.append({
             'source':
             harness_dict.get('source_file', ''),
             'executable':
-            harness_dict.get('fuzzer_name', '')
+            harness_executable
         })
 
     # Ensure the files are present in the soruce code
