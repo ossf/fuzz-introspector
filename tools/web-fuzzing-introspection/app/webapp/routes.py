@@ -2158,8 +2158,7 @@ def should_ignore_testpath(test_path: str) -> bool:
     return False
 
 
-def extract_project_tests(project_name,
-                          refine: bool = True) -> Optional[List[str]]:
+def extract_project_tests(project_name, refine: bool = True) -> List[str]:
     """Extracts the tests in terms of file paths of a given project"""
     tests_file = os.path.join(
         os.path.dirname(__file__),
