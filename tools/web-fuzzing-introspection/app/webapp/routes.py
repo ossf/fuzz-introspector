@@ -1108,7 +1108,8 @@ def harness_source_and_executable():
         source_harness_pairs.append({
             'source':
             harness_dict.get('source_file', ''),
-            'executable': harness_executable
+            'executable':
+            harness_executable
         })
 
     # Ensure the files are present in the soruce code
