@@ -127,7 +127,14 @@ def _light_extract_introspector_raw_source_code(project_name, date_str,
         with open(src_location, 'r') as f:
             return f.read()
 
-    return None
+    introspector_url = get_introspector_report_url_base(project_name, date_str)
+    source_url = introspector_url + 'light/source_files/' + target_file
+    try:
+        raw_source = requests.get(source_url, timeout=10).text
+    except:
+        return None
+
+    return raw_source
 
 
 def extract_lines_from_source_code(
@@ -157,6 +164,9 @@ def extract_lines_from_source_code(
                                                       target_file)
 
     if not raw_source and light_raw_source:
+        raw_source = light_raw_source
+
+    if '<Error><Code>NoSuchKey</Code><Message>The specified key does not exist.' in raw_source:
         raw_source = light_raw_source
 
     # Return None if source is not found.
