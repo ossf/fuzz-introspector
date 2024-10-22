@@ -943,7 +943,8 @@ def correlate_introspection_functions_to_debug_info(all_functions_json_report,
         # Find the header file of this debug function.
         possible_header_files = set()
         for header_src_file in normalized_paths:
-            if not header_src_file.endswith(".h"):
+            if not (header_src_file.endswith(".h")
+                    or header_src_file.endswith(".hpp")):
                 continue
             if not os.path.isfile(header_src_file):
                 continue
@@ -1003,7 +1004,7 @@ def extract_all_sources(language):
     elif language == 'python':
         test_extensions = ['.py']
     else:
-        test_extensions = ['.cc', '.cpp', '.cxx', '.c++', '.c']
+        test_extensions = ['.cc', '.cpp', '.cxx', '.c++', '.c', '.h', '.hpp']
 
     to_avoid = [
         'fuzztest', 'aflplusplus', 'libfuzzer', 'googletest', 'thirdparty',
