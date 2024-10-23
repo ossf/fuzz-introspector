@@ -1566,7 +1566,7 @@ def api_project_test_code():
             project_name, latest_introspector_datestr, filepath, 0, 100000)
 
         # If an error happened, try the latest one.
-        if NO_KEY_MSG in source_code:
+        if source_code and NO_KEY_MSG in source_code:
             new_datestr = ''
             for ps in data_storage.PROJECT_TIMESTAMPS:
                 if ps.project_name == project_name:
