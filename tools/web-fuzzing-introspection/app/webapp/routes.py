@@ -35,6 +35,8 @@ is_local = False
 allow_shutdown = False
 local_oss_fuzz = ''
 
+NO_KEY_MSG = '<Error><Code>NoSuchKey</Code><Message>The specified key does not exist.'
+
 # Add functions in here to make the oracles focus on a specific API.
 ALLOWED_ORACLE_RETURNS: List[str] = []
 
@@ -1560,9 +1562,18 @@ def api_project_test_code():
             for ps in data_storage.PROJECT_TIMESTAMPS:
                 if ps.project_name == project_name:
                     latest_introspector_datestr = ps.date
-
         source_code = extract_lines_from_source_code(
             project_name, latest_introspector_datestr, filepath, 0, 100000)
+
+        # If an error happened, try the latest one.
+        if NO_KEY_MSG in source_code:
+            new_datestr = ''
+            for ps in data_storage.PROJECT_TIMESTAMPS:
+                if ps.project_name == project_name:
+                    new_datestr = ps.date
+            if new_datestr and new_datestr != latest_introspector_datestr:
+                source_code = extract_lines_from_source_code(
+                    project_name, new_datestr, filepath, 0, 100000)
 
     if source_code is None:
         return {'result': 'error', 'msg': 'no source code'}
