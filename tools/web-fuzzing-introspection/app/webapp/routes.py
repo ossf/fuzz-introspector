@@ -2152,12 +2152,25 @@ def all_project_header_files():
             'extended_msgs': ['Please provide project name']
         }
 
+    target_project = get_project_with_name(project)
+    light_all_header_files = []
+    if target_project and target_project.light_analysis:
+        for f in target_project.light_analysis.get('all-files', []):
+            print('Checking: %s' % (f))
+            if f.endswith('.h') or f.endswith('hpp'):
+                light_all_header_files.append(f)
+
     for elem in data_storage.ALL_HEADER_FILES:
         if elem['project'] == project:
             return {
                 'result': 'success',
                 'all-header-files': elem['all-header-files']
             }
+    if light_all_header_files:
+        return {
+            'result': 'success',
+            'all-header-files': light_all_header_files
+        }
 
     return {'result': 'failed', 'msg': 'did not find project'}
 
