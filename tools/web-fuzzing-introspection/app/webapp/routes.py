@@ -2156,7 +2156,6 @@ def all_project_header_files():
     light_all_header_files = []
     if target_project and target_project.light_analysis:
         for f in target_project.light_analysis.get('all-files', []):
-            print('Checking: %s' % (f))
             if f.endswith('.h') or f.endswith('hpp'):
                 light_all_header_files.append(f)
 
