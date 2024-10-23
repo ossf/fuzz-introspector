@@ -1779,9 +1779,7 @@ def api_get_all_tests():
     projects_tests = {}
     for project in data_storage.get_projects():
         light_tests = _light_project_tests(project.name)
-
         test_file_list = extract_project_tests(project.name)
-
         projects_tests[project.name] = {
             'light': light_tests,
             'normal': test_file_list
@@ -2187,7 +2185,9 @@ def should_ignore_testpath(test_path: str) -> bool:
     return False
 
 
-def extract_project_tests(project_name, refine: bool = True) -> List[str]:
+def extract_project_tests(project_name,
+                          refine: bool = True,
+                          try_ignore_irrelevant=True) -> List[str]:
     """Extracts the tests in terms of file paths of a given project"""
     tests_file = os.path.join(
         os.path.dirname(__file__),
@@ -2205,10 +2205,23 @@ def extract_project_tests(project_name, refine: bool = True) -> List[str]:
                 continue
             refined_list.append(test_file)
         tests_file_list = refined_list
+
+    # If filtering is to be done, do thsi now.
+    if try_ignore_irrelevant:
+        has_repo_match = False
+        for test_file in tests_file_list:
+            if f'/src/{project_name.lower()}' in test_file.lower():
+                has_repo_match = True
+        if has_repo_match:
+            tmp = []
+            for test_file in tests_file_list:
+                if f'/src/{project_name.lower()}' in test_file.lower():
+                    tmp.append(test_file)
+            return tmp
     return tests_file_list
 
 
-def _light_project_tests(project_name):
+def _light_project_tests(project_name, try_ignore_irrelevant=True):
     """Returns the list of test files in a project based on FI light."""
     target_project = get_project_with_name(project_name)
     if not target_project:
@@ -2223,6 +2236,19 @@ def _light_project_tests(project_name):
         if should_ignore_testpath(test_file):
             continue
         returner_list.append(test_file)
+
+    # If filtering is to be done, do thsi now.
+    if try_ignore_irrelevant:
+        has_repo_match = False
+        for test_file in returner_list:
+            if f'/src/{project_name.lower()}' in test_file.lower():
+                has_repo_match = True
+        if has_repo_match:
+            tmp = []
+            for test_file in returner_list:
+                if f'/src/{project_name.lower()}' in test_file.lower():
+                    tmp.append(test_file)
+            return tmp
     return returner_list
 
 
@@ -2352,6 +2378,44 @@ def get_cross_reference_dict_from_project(project_name) -> Dict[str, int]:
             func_xref_count += 1
             func_xrefs[cs_dst] = func_xref_count
     return func_xrefs
+
+
+def _get_projects_with_light_but_not_full():
+    results = []
+    for project in data_storage.get_projects():
+        if project.light_analysis and not project.introspector_data:
+            results.append({
+                'project': project.name,
+                'language': project.language
+            })
+    return results
+
+
+@blueprint.route('/api/only-light-with-tests')
+def only_light_with_tests():
+    results = []
+    lights = _get_projects_with_light_but_not_full()
+    for project in lights:
+        if 'c' not in project['language']:
+            continue
+        light_tests = _light_project_tests(project['project'])
+        test_file_list = extract_project_tests(project['project'])
+        if light_tests or test_file_list:
+            results.append({
+                'project': project['project'],
+                'tests': {
+                    'light': light_tests,
+                    'full': test_file_list
+                }
+            })
+    return {'result': 'success', 'projects': results}
+
+
+@blueprint.route('/api/projects-with-light-but-not-full')
+def projects_with_light_but_not_full():
+    """Returns projects that have a light introspector but not a full."""
+    results = _get_projects_with_light_but_not_full()
+    return {'result': 'success', 'projects': results}
 
 
 @blueprint.route('/api/sample-cross-references')
