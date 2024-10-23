@@ -1068,6 +1068,7 @@ def _light_harness_source_and_executable(target_project):
     light_pairs_to_ret = []
     if target_project.light_analysis:
         light_pairs = target_project.light_analysis.get('all-pairs', [])
+        print('Light: %s' % (str(light_pairs)))
         for light_pair in light_pairs:
             ls = light_pair.get('harness_source', '')
             lh = light_pair.get('harness_executable', '')
@@ -1101,13 +1102,20 @@ def harness_source_and_executable():
         return {'result': 'error', 'msg': 'Did not find file check json'}
 
     if target_project.introspector_data is None:
+        if light_pairs_to_ret:
+            return {'result': 'success', 'pairs': light_pairs_to_ret}
+
         return {'result': 'error', 'msg': 'Found no introspector data.'}
 
     try:
         annotated_cfg = target_project.introspector_data['annotated_cfg']
     except KeyError:
+        if light_pairs_to_ret:
+            return {'result': 'success', 'pairs': light_pairs_to_ret}
         return {'result': 'error', 'msg': 'Found no annotated CFG data.'}
     except TypeError:
+        if light_pairs_to_ret:
+            return {'result': 'success', 'pairs': light_pairs_to_ret}
         return {'result': 'error', 'msg': 'Found no introspector data.'}
 
     source_harness_pairs = []

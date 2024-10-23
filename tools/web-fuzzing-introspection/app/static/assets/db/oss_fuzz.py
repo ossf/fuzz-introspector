@@ -55,17 +55,17 @@ def get_fuzzer_stats_fuzz_count_url(project_name, date_str):
 
 def get_introspector_project_tests_url(project_name, datestr):
     return get_introspector_report_url_base(project_name,
-                                            datestr) + "test-files.json"
+                                            datestr) + "light/all_tests.json"
 
 
 def get_introspector_project_all_files(project_name, datestr):
     return get_introspector_report_url_base(project_name,
-                                            datestr) + "all-files.json"
+                                            datestr) + "light/all_files.json"
 
 
 def get_introspector_light_pairs_url(project_name, datestr):
     return get_introspector_report_url_base(project_name,
-                                            datestr) + "light/all-files.json"
+                                            datestr) + "light/all_pairs.json"
 
 
 def extract_introspector_light_all_pairs(project_name, date_str):
