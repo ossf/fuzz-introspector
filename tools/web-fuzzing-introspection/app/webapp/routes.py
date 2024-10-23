@@ -1499,7 +1499,10 @@ def api_project_source_code():
 
     latest_introspector_datestr = get_latest_introspector_date(project_name)
     if not latest_introspector_datestr:
-        return {'result': 'error', 'msg': 'No introspector builds.'}
+        # Backup to capture simply the latest build.
+        for ps in data_storage.PROJECT_TIMESTAMPS:
+            if ps.project_name == project_name:
+                latest_introspector_datestr = ps.date
 
     source_code = extract_lines_from_source_code(project_name,
                                                  latest_introspector_datestr,
@@ -1554,7 +1557,9 @@ def api_project_test_code():
         latest_introspector_datestr = get_latest_introspector_date(
             project_name)
         if not latest_introspector_datestr:
-            return {'result': 'error', 'msg': 'No introspector builds.'}
+            for ps in data_storage.PROJECT_TIMESTAMPS:
+                if ps.project_name == project_name:
+                    latest_introspector_datestr = ps.date
 
         source_code = extract_lines_from_source_code(
             project_name, latest_introspector_datestr, filepath, 0, 100000)
