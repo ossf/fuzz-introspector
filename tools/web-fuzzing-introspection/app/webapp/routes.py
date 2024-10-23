@@ -1068,7 +1068,6 @@ def _light_harness_source_and_executable(target_project):
     light_pairs_to_ret = []
     if target_project.light_analysis:
         light_pairs = target_project.light_analysis.get('all-pairs', [])
-        print('Light: %s' % (str(light_pairs)))
         for light_pair in light_pairs:
             ls = light_pair.get('harness_source', '')
             lh = light_pair.get('harness_executable', '')
