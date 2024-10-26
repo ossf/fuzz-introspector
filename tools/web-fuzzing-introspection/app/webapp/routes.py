@@ -1914,10 +1914,11 @@ def api_oracle_1(args):
 
     project_name = args.get('project', None)
     if project_name is None:
-        returner.result = 'error'
-        returner.extended_msgs = ['Please provide project name']
-        returner.functions = []
-        return returner
+        return ProjectFunctionSchema.dump({
+            'result': 'error',
+            'extended_msgs': ['Please provide project name'],
+            'functions': []
+        })
 
     no_static_funcs_arg = request.args.get('exclude-static-functions',
                                            'false').lower()
