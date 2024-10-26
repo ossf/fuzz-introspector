@@ -20,7 +20,10 @@ import signal
 from typing import Dict, List, Optional
 import requests
 
-from flask import Blueprint, render_template, request, redirect
+from flask import render_template, request, redirect
+from flask_smorest import Blueprint
+
+import marshmallow
 
 from . import models, data_storage, page_texts
 from .helper import function_helper
@@ -29,6 +32,10 @@ from .helper import function_helper
 #from app.site import test_data
 
 blueprint = Blueprint('site', __name__, template_folder='templates')
+
+api_blueprint = Blueprint('api',
+                          'Fuzz Introspector API',
+                          description='Fuzz Introspector Web app Api.')
 
 gtag = None
 is_local = False
@@ -45,6 +52,22 @@ MAX_TEST_SIZE = 6000
 
 # Max matches to show when searching for functions in functions view.
 MAX_MATCHES_TO_DISPLAY = 180
+
+
+class ProjectSchema(marshmallow.Schema):
+    """Schema for project names."""
+    project = marshmallow.fields.String(
+        description='Name of the OSS-Fuzz project.')
+
+
+class ProjectFunctionSchema(marshmallow.Schema):
+    """Generic response with function dictionaries"""
+    extended_msgs = marshmallow.fields.List(
+        marshmallow.fields.String(),
+        description='List of informative messages')
+    result = marshmallow.fields.String(
+        description='Indication of success or not.')
+    functions = marshmallow.fields.List(marshmallow.fields.Dict())
 
 
 def get_introspector_report_url_base(project_name, datestr):
@@ -1876,15 +1899,26 @@ def api_oracle_2():
     }
 
 
-@blueprint.route('/api/far-reach-low-cov-fuzz-keyword')
-def api_oracle_1():
-    err_msgs = list()
-    project_name = request.args.get('project', None)
+@api_blueprint.route('/api/far-reach-low-cov-fuzz-keyword')
+@api_blueprint.arguments(ProjectSchema, location='query')
+@api_blueprint.response(200, ProjectFunctionSchema)
+def api_oracle_1(args):
+    """Returns functions with far reach, low coverage and function names
+    that are often relevant for fuzzing.
+    
+    
+    This API is used to extract interesting targets to fuzz. The filtering
+    on naming is meant to increase the likelihood of the function being
+    a good target."""
+    returner = ProjectFunctionSchema()
+
+    project_name = args.get('project', None)
     if project_name is None:
-        return {
+        return returner.dump({
             'result': 'error',
-            'extended_msgs': ['Please provide project name']
-        }
+            'extended_msgs': ['Please provide project name'],
+            'functions': []
+        })
 
     no_static_funcs_arg = request.args.get('exclude-static-functions',
                                            'false').lower()
@@ -1903,7 +1937,11 @@ def api_oracle_1():
 
     target_project = get_project_with_name(project_name)
     if not target_project:
-        return {'result': 'error', 'extended_msgs': ['Could not find project']}
+        return returner.dump({
+            'result': 'error',
+            'extended_msgs': ['Could not find project'],
+            'functions': []
+        })
 
     all_functions = data_storage.get_functions_by_project(project_name)
     all_projects = [target_project]
@@ -1919,12 +1957,11 @@ def api_oracle_1():
     if ALLOWED_ORACLE_RETURNS:
         functions_to_return = sort_funtions_to_return(functions_to_return)
 
-    result_status = 'success'
-    return {
-        'result': result_status,
-        'extended_msgs': err_msgs,
+    return returner.dump({
+        'result': 'success',
+        'extended_msgs': [],
         'functions': functions_to_return
-    }
+    })
 
 
 @blueprint.route('/api/project-repository')
