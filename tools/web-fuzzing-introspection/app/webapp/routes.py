@@ -1937,10 +1937,11 @@ def api_oracle_1(args):
 
     target_project = get_project_with_name(project_name)
     if not target_project:
-        returner.result = 'error'
-        returner.extended_msgs = ['Could not find project']
-        returner.functions = []
-        return returner
+        return returner.dump({
+            'result': 'error',
+            'extended_msgs': ['Could not find project'],
+            'functions': []
+        })
 
     all_functions = data_storage.get_functions_by_project(project_name)
     all_projects = [target_project]
@@ -1956,10 +1957,11 @@ def api_oracle_1(args):
     if ALLOWED_ORACLE_RETURNS:
         functions_to_return = sort_funtions_to_return(functions_to_return)
 
-    returner.result = 'success'
-    returner.extended_msgs = []
-    returner.functions = functions_to_return
-    return returner
+    return returner.dump({
+        'result': 'success',
+        'extended_msgs': [],
+        'functions': functions_to_return
+    })
 
 
 @blueprint.route('/api/project-repository')
