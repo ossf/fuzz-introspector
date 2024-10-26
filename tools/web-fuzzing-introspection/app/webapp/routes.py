@@ -59,22 +59,28 @@ class ProjectSchema(marshmallow.Schema):
     project = marshmallow.fields.String(
         description='Name of the OSS-Fuzz project.')
 
+
 class ProjectTypeQuerySchema(marshmallow.Schema):
     """Project type query"""
     project = marshmallow.fields.String(
         description='Name of the OSS-Fuzz project.')
-    type_name = marshmallow.fields.String(description='Name of the type to be searched.')
+    type_name = marshmallow.fields.String(
+        description='Name of the type to be searched.')
+
 
 class ProjectFunctionSignatureQuerySchema(marshmallow.Schema):
     """Schema for project names."""
     project = marshmallow.fields.String(
         description='Name of the OSS-Fuzz project.')
-    function_signature = marshmallow.fields.String(description='Function signature to be used as key.')
+    function_signature = marshmallow.fields.String(
+        description='Function signature to be used as key.')
+
 
 class ProjectFunctionNameQuerySchema(marshmallow.Schema):
     project = marshmallow.fields.String(
         description='Name of the OSS-Fuzz project.')
-    function = marshmallow.fields.String(description='Function name to be used as key.')
+    function = marshmallow.fields.String(
+        description='Function name to be used as key.')
 
 
 class ProjectFunctionSourceDataSchema(marshmallow.Schema):
