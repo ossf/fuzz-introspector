@@ -1297,14 +1297,24 @@ def get_function_from_func_signature(func_signature, project_name):
 
 
 @api_blueprint.route('/api/get-header-files-needed-for-function')
-def get_header_files_needed_for_function():
-    """Return the header files needed for a given function"""
-    project_name = request.args.get('project', None)
-    if project_name is None:
+@api_blueprint.arguments(ProjectFunctionSignatureQuerySchema, location='query')
+def get_header_files_needed_for_function(args):
+    """Gets the header files needed for a given function.
+
+    The header files are returned as a list of strings.
+
+    # Examples
+
+    ## Example 1:
+    - `project`: `htslib`
+    - `function_signature`: `void sam_hrecs_remove_ref_altnames(sam_hrecs_t *, int, const char *)`
+    """
+    project_name = args.get('project', '')
+    if not project_name:
         return {'result': 'error', 'msg': 'Please provide a project name'}
 
-    function_signature = request.args.get('function_signature', None)
-    if function_signature is None:
+    function_signature = args.get('function_signature', '')
+    if not function_signature:
         return {'result': 'error', 'msg': 'No function signature provided'}
 
     # Get function from function signature
@@ -1321,14 +1331,23 @@ def get_header_files_needed_for_function():
 
 
 @api_blueprint.route('/api/all-cross-references')
-def api_cross_references():
-    """Returns a json representation of all the functions in a given project"""
-    project_name = request.args.get('project', None)
-    if project_name is None:
+@api_blueprint.arguments(ProjectFunctionSignatureQuerySchema, location='query')
+def api_cross_references(args):
+    """Returns a json representation of all the functions in a given project.
+
+
+    # Examples
+
+    ## Example 1:
+    - `project`: `htslib`
+    - `function_signature`: `void sam_hrecs_remove_ref_altnames(sam_hrecs_t *, int, const char *)`
+    """
+    project_name = args.get('project', '')
+    if not project_name:
         return {'result': 'error', 'msg': 'Please provide a project name'}
 
-    function_signature = request.args.get('function_signature', None)
-    if function_signature is None:
+    function_signature = args.get('function_signature', '')
+    if not function_signature:
         return {'result': 'error', 'msg': 'No function signature provided'}
 
     # Get function from function signature
