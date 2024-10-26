@@ -60,7 +60,30 @@ class ProjectSchema(marshmallow.Schema):
         description='Name of the OSS-Fuzz project.')
 
 
-class ProjectFunctionSchema(marshmallow.Schema):
+class ProjectTypeQuerySchema(marshmallow.Schema):
+    """Project type query"""
+    project = marshmallow.fields.String(
+        description='Name of the OSS-Fuzz project.')
+    type_name = marshmallow.fields.String(
+        description='Name of the type to be searched.')
+
+
+class ProjectFunctionSignatureQuerySchema(marshmallow.Schema):
+    """Schema for project names."""
+    project = marshmallow.fields.String(
+        description='Name of the OSS-Fuzz project.')
+    function_signature = marshmallow.fields.String(
+        description='Function signature to be used as key.')
+
+
+class ProjectFunctionNameQuerySchema(marshmallow.Schema):
+    project = marshmallow.fields.String(
+        description='Name of the OSS-Fuzz project.')
+    function = marshmallow.fields.String(
+        description='Function name to be used as key.')
+
+
+class ProjectFunctionSourceDataSchema(marshmallow.Schema):
     """Generic response with function dictionaries"""
     extended_msgs = marshmallow.fields.List(
         marshmallow.fields.String(),
@@ -1104,9 +1127,16 @@ def _light_harness_source_and_executable(target_project):
 
 
 @api_blueprint.route('/api/harness-source-and-executable')
-def harness_source_and_executable():
-    """API that returns a pair of harness executable/source"""
-    project_name = request.args.get('project', None)
+@api_blueprint.arguments(ProjectSchema, location='query')
+def harness_source_and_executable(args):
+    """Gets a list of pairs of harness executable/source
+
+    # Examples
+
+    ## Example 1:
+    - `project`: `leveldb`
+    """
+    project_name = args.get('project', None)
     if project_name is None:
         return {'result': 'error', 'msg': 'Please provide project name'}
 
@@ -1203,9 +1233,17 @@ def api_annotated_cfg():
 
 
 @api_blueprint.route('/api/project-summary')
-def api_project_summary():
-    project_name = request.args.get('project', None)
-    if project_name is None:
+@api_blueprint.arguments(ProjectSchema, location='query')
+def api_project_summary(args):
+    """Returns high-level fuzzing stats of a given project.
+    
+    # Examples
+
+    ## Example 1
+    - `project`: `leveldb`
+    """
+    project_name = args.get('project', '')
+    if not project_name:
         return {'result': 'error', 'msg': 'Please provide project name'}
     target_project = get_project_with_name(project_name)
     if target_project is None:
@@ -1265,14 +1303,24 @@ def get_function_from_func_signature(func_signature, project_name):
 
 
 @api_blueprint.route('/api/get-header-files-needed-for-function')
-def get_header_files_needed_for_function():
-    """Return the header files needed for a given function"""
-    project_name = request.args.get('project', None)
-    if project_name is None:
+@api_blueprint.arguments(ProjectFunctionSignatureQuerySchema, location='query')
+def get_header_files_needed_for_function(args):
+    """Gets the header files needed for a given function.
+
+    The header files are returned as a list of strings.
+
+    # Examples
+
+    ## Example 1:
+    - `project`: `htslib`
+    - `function_signature`: `void sam_hrecs_remove_ref_altnames(sam_hrecs_t *, int, const char *)`
+    """
+    project_name = args.get('project', '')
+    if not project_name:
         return {'result': 'error', 'msg': 'Please provide a project name'}
 
-    function_signature = request.args.get('function_signature', None)
-    if function_signature is None:
+    function_signature = args.get('function_signature', '')
+    if not function_signature:
         return {'result': 'error', 'msg': 'No function signature provided'}
 
     # Get function from function signature
@@ -1289,14 +1337,23 @@ def get_header_files_needed_for_function():
 
 
 @api_blueprint.route('/api/all-cross-references')
-def api_cross_references():
-    """Returns a json representation of all the functions in a given project"""
-    project_name = request.args.get('project', None)
-    if project_name is None:
+@api_blueprint.arguments(ProjectFunctionSignatureQuerySchema, location='query')
+def api_cross_references(args):
+    """Returns a json representation of all the functions in a given project.
+
+
+    # Examples
+
+    ## Example 1:
+    - `project`: `htslib`
+    - `function_signature`: `void sam_hrecs_remove_ref_altnames(sam_hrecs_t *, int, const char *)`
+    """
+    project_name = args.get('project', '')
+    if not project_name:
         return {'result': 'error', 'msg': 'Please provide a project name'}
 
-    function_signature = request.args.get('function_signature', None)
-    if function_signature is None:
+    function_signature = args.get('function_signature', '')
+    if not function_signature:
         return {'result': 'error', 'msg': 'No function signature provided'}
 
     # Get function from function signature
@@ -1624,16 +1681,33 @@ def api_project_test_code():
 
 
 @api_blueprint.route('/api/type-info')
-def api_type_info():
-    """Returns a json representation of all the functions in a given project"""
-    project_name = request.args.get('project', None)
+@api_blueprint.arguments(ProjectTypeQuerySchema, location='query')
+def api_type_info(args):
+    """Gets type information about a given type in a project.
+    
+    The `type_name` is as the type is written in the source code. For example,
+    `struct sam_hrec_type_s` is a name defined in the `htslib` library. In
+    order to query data about this type, use `sam_hrec_type_s` as `type_name`
+    and `htslib` for `project`.
+
+    The Fuzz Introspector analysis may extract multiple internal data
+    elements that represent the same type. As such, the return value of the API
+    may include multiple elements.
+
+
+    # Examples
+
+    ## Example 1:
+    - `project` : `htslib`
+    - `type_name`: `sam_hrec_type_s`
+    """
+    project_name = args.get('project', None)
     if project_name is None:
         return {'result': 'error', 'msg': 'Please provide a project name'}
-    type_name = request.args.get('name', None)
+    type_name = args.get('type_name', None)
     if type_name is None:
         return {'result': 'error', 'msg': 'No function name provided'}
 
-    print("Type name: %s" % (type_name))
     debug_info = data_storage.get_project_debug_report(project_name)
     return_elem = list()
     if debug_info is not None:
@@ -1670,19 +1744,31 @@ def function_debug_types():
 
 
 @api_blueprint.route('/api/function-signature')
-def api_function_signature():
-    """Returns a list of argument types extracted from debug information."""
-    project_name = request.args.get('project', None)
-    if project_name is None:
+@api_blueprint.arguments(ProjectFunctionNameQuerySchema, location='query')
+def api_function_signature(args):
+    """Gets the function signature for a given function.
+
+    The function provided is in the form of a raw function name.
+    
+    The raw function name in context of `C` is just the function name. The raw
+    function name in the context of `C++` is the mangled function name.
+
+    # Examples
+    ## Example 1:
+    - `project`: `htslib`
+    - `function`: `sam_hrecs_remove_ref_altnames`
+    """
+    project_name = args.get('project', '')
+    if not project_name:
         return {'result': 'error', 'msg': 'Please provide a project name'}
-    function_name = request.args.get('function', None)
-    if function_name is None:
+    function_name = args.get('function', '')
+    if not function_name:
         return {'result': 'error', 'msg': 'No function name provided'}
 
     all_functions = data_storage.get_functions_by_project(project_name)
     all_functions = all_functions + data_storage.get_constructors_by_project(
         project_name)
-    print("Iterating through all functions to match raw function name")
+
     for function in all_functions:
         if function.raw_function_name == function_name:
             return {
@@ -1695,14 +1781,31 @@ def api_function_signature():
 
 
 @api_blueprint.route('/api/function-source-code')
-def api_function_source_code():
-    """Returns a json representation of all the functions in a given project"""
-    project_name = request.args.get('project', None)
-    if project_name is None:
+@api_blueprint.arguments(ProjectFunctionSignatureQuerySchema, location='query')
+def api_function_source_code(args):
+    """Gets the source code of a given function.
+    
+    The function signature provided is the value as is returned by
+    other APIs, such as `/api/function-signature`.
+    
+    The function is identified by function signature.
+
+    On success and the function is found, then the return value
+    is data in json format including the source code itself,
+    the filepath, the source line number where the function begins
+    and the source line number where the function ends.
+
+    # Examples
+    ## Example 1:
+    - `project`: `htslib`
+    - `function_signature`: `void sam_hrecs_remove_ref_altnames(sam_hrecs_t *, int, const char *)`
+    """
+    project_name = args.get('project', '')
+    if not project_name:
         return {'result': 'error', 'msg': 'Please provide a project name'}
 
-    function_signature = request.args.get('function_signature', None)
-    if function_signature is None:
+    function_signature = args.get('function_signature', '')
+    if not function_signature:
         return {'result': 'error', 'msg': 'No function signature provided'}
 
     # Get function from function signature
@@ -1901,7 +2004,6 @@ def api_oracle_2():
 
 @api_blueprint.route('/api/far-reach-low-cov-fuzz-keyword')
 @api_blueprint.arguments(ProjectSchema, location='query')
-@api_blueprint.response(200, ProjectFunctionSchema)
 def api_oracle_1(args):
     """Returns functions with far reach, low coverage and function names
     that are often relevant for fuzzing.
@@ -1910,7 +2012,7 @@ def api_oracle_1(args):
     This API is used to extract interesting targets to fuzz. The filtering
     on naming is meant to increase the likelihood of the function being
     a good target."""
-    returner = ProjectFunctionSchema()
+    returner = ProjectFunctionSourceDataSchema()
 
     project_name = args.get('project', None)
     if project_name is None:
