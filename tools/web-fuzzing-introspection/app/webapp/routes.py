@@ -1914,7 +1914,7 @@ def api_oracle_1(args):
 
     project_name = args.get('project', None)
     if project_name is None:
-        return ProjectFunctionSchema.dump({
+        return returner.dump({
             'result': 'error',
             'extended_msgs': ['Please provide project name'],
             'functions': []
