@@ -1214,10 +1214,11 @@ def harness_source_and_executable(args):
 
 
 @api_blueprint.route('/api/annotated-cfg')
-def api_annotated_cfg():
+@api_blueprint.arguments(ProjectSchema, location='query')
+def api_annotated_cfg(args):
     """API that returns the annotated  CFG of a project."""
-    project_name = request.args.get('project', None)
-    if project_name is None:
+    project_name = args.get('project', '')
+    if not project_name:
         return {'result': 'error', 'msg': 'Please provide project name'}
 
     target_project = get_project_with_name(project_name)
@@ -1270,10 +1271,11 @@ def api_project_summary(args):
 
 
 @api_blueprint.route('/api/branch-blockers')
-def branch_blockers():
+@api_blueprint.arguments(ProjectSchema, location='query')
+def branch_blockers(args):
     """API that returns the branch blockers of project."""
-    project_name = request.args.get('project', None)
-    if project_name is None:
+    project_name = args.get('project', '')
+    if not project_name:
         return {'result': 'error', 'msg': 'Please provide project name'}
 
     target_project = get_project_with_name(project_name)
@@ -1392,7 +1394,6 @@ def api_cross_references(args):
                 func_xrefs.append(function)
                 all_locations = function.callsites[cs_dst]
                 for loc in all_locations:
-                    filename = loc.split('#')[0]
                     cs_linenumber = int(loc.split(':')[-1])
                     xrefs.append({
                         'filename': function.function_filename,
@@ -1404,10 +1405,11 @@ def api_cross_references(args):
 
 
 @api_blueprint.route('/api/get-project-language-from-souce-files')
-def api_get_project_language_from_source_files():
+@api_blueprint.arguments(ProjectSchema, location='query')
+def api_get_project_language_from_source_files(args):
     """Gets the project language based on the file extensions of the project"""
-    project_name = request.args.get('project', None)
-    if project_name is None:
+    project_name = args.get('project', '')
+    if not project_name:
         return {'result': 'error', 'msg': 'Please provide a project name'}
 
     all_file_json = os.path.join(
@@ -2470,6 +2472,7 @@ def project_tests(args):
 
 @api_blueprint.route('/api/addr-to-recursive-dwarf-info')
 def type_at_addr():
+    """Temporarily deprecated."""
     # Temporary disabling this API because of size limit.
     # @arthurscchan 14/6/2024
     return {'result': 'error', 'extended_msgs': ['Temporary disabled']}
@@ -2504,10 +2507,10 @@ def type_at_addr():
 
 @api_blueprint.route('/api/function-target-oracle')
 def api_all_interesting_function_targets():
-    """Returns a list of function targets based on analysis of all functions in all
-    OSS-Fuzz projects (assuming they have introspetor builds) using several different
-    heuristics."""
-    result_dict = dict()
+    """Returns a list of function targets based on analysis of all functions
+    in all OSS-Fuzz projects (assuming they have introspetor builds)
+    using several different heuristics."""
+    result_dict = {}
 
     # Get the list of all oracles that we have
     all_projects = data_storage.get_projects()
@@ -2531,8 +2534,8 @@ def api_all_interesting_function_targets():
                 total_funcs.add(func)
                 functions_to_display.append((func, heuristic_name))
 
-    func_to_lang = dict()
-    for func, heuristic in functions_to_display:
+    func_to_lang = {}
+    for func, _ in functions_to_display:
         language = 'c'
         for proj in all_projects:
             if proj.name == func.project:
@@ -2617,15 +2620,30 @@ def projects_with_light_but_not_full():
 
 
 @api_blueprint.route('/api/sample-cross-references')
-def sample_cross_references():
-    """Returns a list of strings with functions that call into a given 
-    target function."""
-    project_name = request.args.get('project', None)
-    if project_name is None:
+@api_blueprint.arguments(ProjectFunctionSignatureQuerySchema, location='query')
+def sample_cross_references(args):
+    """Gets the source code of functions calling into a given function.
+
+    This is used for quickly getting the source code of cross-references
+    for a given function. The only data returned about the cross-references
+    is the source code itself. For each cross-reference, the full function
+    source code call is returned.
+
+    Only functions with source code of length less than 70 aer included in
+    the returned list.
+
+    # Examples
+
+    ## Example 1:
+    - `project`: `htslib`
+    - `function_signature`: `void sam_hrecs_remove_ref_altnames(sam_hrecs_t *, int, const char *)`
+    """
+    project_name = args.get('project', '')
+    if not project_name:
         return {'result': 'error', 'msg': 'Please provide a project name'}
 
-    function_signature = request.args.get('function_signature', None)
-    if function_signature is None:
+    function_signature = args.get('function_signature', '')
+    if not function_signature:
         return {'result': 'error', 'msg': 'No function signature provided'}
 
     # Get function from function signature
@@ -2642,22 +2660,11 @@ def sample_cross_references():
     project_functions = data_storage.get_functions_by_project(project_name)
 
     func_xrefs = []
-    xrefs = []
     for function in project_functions:
         callsites = function.callsites
         for cs_dst in callsites:
             if cs_dst == function_name:
                 func_xrefs.append(function)
-                all_locations = function.callsites[cs_dst]
-                for loc in all_locations:
-                    filename = loc.split('#')[0]
-                    cs_linenumber = int(loc.split(':')[-1])
-                    xrefs.append({
-                        'filename': function.function_filename,
-                        'cs_linenumber': cs_linenumber,
-                        'src_func': function.name,
-                        'dst_func': function_name
-                    })
 
     if is_local:
         latest_introspector_datestr = "notrelevant"
@@ -2679,7 +2686,7 @@ def sample_cross_references():
             continue
         # Check if we have accompanying debug info
         debug_source_dict = target_function.debug_data.get('source', None)
-        if debug_source_dict:
+        if debug_source_dict is not None:
             source_line = int(debug_source_dict.get('source_line', -1))
             if source_line != -1:
                 src_begin = source_line
