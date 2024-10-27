@@ -2619,6 +2619,57 @@ def projects_with_light_but_not_full():
     return {'result': 'success', 'projects': results}
 
 
+@api_blueprint.route('/api/database-language-stats')
+def database_language_stats():
+    """Gets stats about line coverage across all languages."""
+
+    project_statistics = data_storage.PROJECT_TIMESTAMPS
+    latest_coverage_profiles = dict()
+    for ps in project_statistics:
+        latest_coverage_profiles[ps.project_name] = ps
+
+    language_counts = {
+        'c': {
+            'covered': 0,
+            'total': 0
+        },
+        'java': {
+            'covered': 0,
+            'total': 0
+        },
+        'c++': {
+            'covered': 0,
+            'total': 0
+        },
+        'python': {
+            'covered': 0,
+            'total': 0
+        },
+        'go': {
+            'covered': 0,
+            'total': 0
+        },
+        'rust': {
+            'covered': 0,
+            'total': 0
+        },
+        'swift': {
+            'covered': 0,
+            'total': 0
+        },
+    }
+    for project_info in latest_coverage_profiles.values():
+        if project_info.language == 'N/A':
+            continue
+        language_counts[
+            project_info.language]['covered'] += project_info.coverage_data[
+                'line_coverage']['covered']
+        language_counts[project_info.language][
+            'total'] += project_info.coverage_data['line_coverage']['count']
+
+    return {'result': 'success', 'stats': language_counts}
+
+
 @api_blueprint.route('/api/sample-cross-references')
 @api_blueprint.arguments(ProjectFunctionSignatureQuerySchema, location='query')
 def sample_cross_references(args):
