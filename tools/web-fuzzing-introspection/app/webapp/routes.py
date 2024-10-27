@@ -93,6 +93,16 @@ class ProjectFunctionSourceDataSchema(marshmallow.Schema):
     functions = marshmallow.fields.List(marshmallow.fields.Dict())
 
 
+class ProjectSourceCodeSpecificationSchema(marshmallow.Schema):
+    """Generic response with function dictionaries"""
+    project = marshmallow.fields.String(
+        description='Name of the OSS-Fuzz project.')
+    filepath = marshmallow.fields.String(description='Source file to be used.')
+    begin_line = marshmallow.fields.Integer(
+        description='Beginning source line')
+    end_line = marshmallow.fields.Integer(description='Ending source line')
+
+
 def get_introspector_report_url_base(project_name, datestr):
     base_url = 'https://storage.googleapis.com/oss-fuzz-introspector/{0}/inspector-report/{1}/'
     project_url = base_url.format(project_name, datestr.replace("-", ""))
@@ -1339,8 +1349,12 @@ def get_header_files_needed_for_function(args):
 @api_blueprint.route('/api/all-cross-references')
 @api_blueprint.arguments(ProjectFunctionSignatureQuerySchema, location='query')
 def api_cross_references(args):
-    """Returns a json representation of all the functions in a given project.
+    """Returns cross references across the project for a given function.
 
+    The cross references are returned are returned as tuples containing
+    source code name of the calling function, the name of the calling
+    function, as well as the source code line number and name of the
+    destination function.
 
     # Examples
 
@@ -1433,11 +1447,16 @@ def api_get_project_language_from_source_files():
 
 
 @api_blueprint.route('/api/all-project-source-files')
-def api_project_all_project_source_files():
-    """Returns a json representation of all source file path in a given
-    project"""
-    project_name = request.args.get('project', None)
-    if project_name is None:
+@api_blueprint.arguments(ProjectSchema, location='query')
+def api_project_all_project_source_files(args):
+    """Returns all source file path in a given project
+
+    # Examples
+    ## Example 1
+    - `project`: `tinyxml2`
+    """
+    project_name = args.get('project', '')
+    if not project_name:
         return {'result': 'error', 'msg': 'Please provide a project name'}
 
     src_path_list = []
@@ -1474,10 +1493,16 @@ def api_project_all_project_source_files():
 
 
 @api_blueprint.route('/api/all-functions')
-def api_project_all_functions():
-    """Returns a json representation of all the functions in a given project"""
-    project_name = request.args.get('project', None)
-    if project_name is None:
+@api_blueprint.arguments(ProjectSchema, location='query')
+def api_project_all_functions(args):
+    """Returns a json representation of all the functions in a given project
+
+    # Examples
+    ## Example 1
+    - `project`: `tinyxml2`
+    """
+    project_name = args.get('project', '')
+    if not project_name:
         return {'result': 'error', 'msg': 'Please provide a project name'}
 
     # Get all of the functions
@@ -1543,31 +1568,33 @@ def api_project_all_public_classes():
 
 
 @api_blueprint.route('/api/project-source-code')
-def api_project_source_code():
-    """Returns a json representation of all the functions in a given project"""
-    project_name = request.args.get('project', None)
-    if project_name is None:
+@api_blueprint.arguments(ProjectSourceCodeSpecificationSchema,
+                         location='query')
+def api_project_source_code(args):
+    """Returns the source code at a specified location for a given project.
+
+
+    # Examples
+    ## Example 1
+    - `project`: `htslib`
+    - `filepath`: `/src/htslib/htsfile.c`
+    - `begin_line`: `10`
+    - `end_line`: `90`
+    """
+    project_name = args.get('project', '')
+    if not project_name:
         return {'result': 'error', 'msg': 'Please provide a project name'}
-    filepath = request.args.get('filepath', None)
-    if filepath is None:
+    filepath = args.get('filepath', '')
+    if not filepath:
         return {'result': 'error', 'msg': 'No filepath provided'}
 
-    begin_line_str = request.args.get('begin_line', None)
-    if begin_line_str is None:
+    begin_line = args.get('begin_line', -1432)
+    if begin_line == -1432:
         return {'result': 'error', 'msg': 'No begin line provided'}
 
-    end_line_str = request.args.get('end_line', None)
-    if end_line_str is None:
+    end_line = args.get('end_line', -1432)
+    if end_line == -1432:
         return {'result': 'error', 'msg': 'No end line provided'}
-
-    try:
-        begin_line = int(begin_line_str)
-        end_line = int(end_line_str)
-    except ValueError:
-        return {
-            'result': 'error',
-            'msg': 'begin line or end line are not valid integer'
-        }
 
     # If this is a local build do not look for project timestamps
     if is_local:
@@ -1941,11 +1968,12 @@ def get_build_status_of_project(
 
 
 @api_blueprint.route('/api/easy-params-far-reach')
-def api_oracle_2():
+@api_blueprint.arguments(ProjectSchema, location='query')
+def api_oracle_2(args):
     """API for getting fuzz targets with easy fuzzable arguments."""
     err_msgs = list()
-    project_name = request.args.get('project', None)
-    if project_name is None:
+    project_name = args.get('project', '')
+    if not project_name:
         return {
             'result': 'error',
             'extended_msgs': ['Please provide project name']
@@ -2086,11 +2114,12 @@ def project_repository():
 
 
 @api_blueprint.route('/api/far-reach-but-low-coverage')
-def far_reach_but_low_coverage():
+@api_blueprint.arguments(ProjectSchema, location='query')
+def far_reach_but_low_coverage(args):
     """Gets functions with far reach but low code coverage."""
     err_msgs = list()
-    project_name = request.args.get('project', None)
-    if project_name is None:
+    project_name = args.get('project', '')
+    if not project_name:
         return {
             'result': 'error',
             'extended_msgs': ['Please provide project name']
@@ -2302,10 +2331,11 @@ def shutdown():
 
 
 @api_blueprint.route('/api/all-header-files')
-def all_project_header_files():
+@api_blueprint.arguments(ProjectSchema, location='query')
+def all_project_header_files(args):
     """Gets all the header files in the source code of a given project."""
-    project = request.args.get('project', None)
-    if project is None:
+    project = args.get('project', '')
+    if not project:
         return {
             'result': 'error',
             'extended_msgs': ['Please provide project name']
@@ -2414,12 +2444,13 @@ def _light_project_tests(project_name, try_ignore_irrelevant=True):
 
 
 @api_blueprint.route('/api/project-tests')
-def project_tests():
+@api_blueprint.arguments(ProjectSchema, location='query')
+def project_tests(args):
     """Gets the tests of a given project.
 
     Returns a list of source files corresponding to tests of a project."""
-    project = request.args.get('project', None)
-    if project is None:
+    project = args.get('project', '')
+    if not project:
         return {
             'result': 'error',
             'extended_msgs': ['Please provide project name']
