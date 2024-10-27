@@ -1521,7 +1521,7 @@ bool FuzzIntrospector::isNodeInVector(CalltreeNode *Src,
       // errs() << "TmpN: " << TmpN->FunctionName.str() << "\n";
       // errs() << "Src: " << Src->FunctionName.str() << "\n";
       if (TmpN->FunctionName.str().compare(Src->FunctionName.str()) == 0) {
-          return 0;
+          return true;
       } else {
           // errs() << "Actually false\n";
       }
