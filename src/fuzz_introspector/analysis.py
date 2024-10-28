@@ -310,7 +310,6 @@ def get_node_coverage_hitcount(demangled_name: str, callstack: Dict[int, str],
         if profile.target_lang == "c-cpp":
             if profile.coverage.get_type() == 'kernel':
                 # Handle coverage
-                logger.info('Handling kernel cov')
                 return profile.coverage.get_kernel_hitcount(node)
             else:
                 coverage_data = profile.coverage.get_hit_details(
