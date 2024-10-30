@@ -1330,21 +1330,19 @@ def create_local_db(oss_fuzz_path):
 
     # Accummulate the data from all the projects.
     all_header_files = []
-    for project_key in analyses_dictionary:
+    for project_dict in analyses_dictionary.values():
         # Append project timestamp to the list of timestamps
-        project_timestamp = analyses_dictionary[project_key][
-            'project_timestamp']
+        project_timestamp = project_dict['project_timestamp']
         project_timestamps.append(project_timestamp)
         db_timestamp['fuzzer_count'] += project_timestamp['fuzzer-count']
 
         # Extend all header files
-        all_header_files.append(
-            analyses_dictionary[project_key]['all-header-files'])
+        all_header_files.append(project_dict['all-header-files'])
 
         # Accummulate all function list and branch blockers
         introspector_dictionary = project_timestamp.get(
             'introspector-data', None)
-        if introspector_dictionary != None:
+        if introspector_dictionary is not None:
             proj = introspector_dictionary['project_name']
             # Functions
             if proj in function_dict:
@@ -1373,9 +1371,8 @@ def create_local_db(oss_fuzz_path):
                 'function_coverage_estimate'] += introspector_dictionary[
                     'functions_covered_estimate']
 
-        coverage_dictionary = analyses_dictionary[project_key].get(
-            'coverage-data-dict', None)
-        if coverage_dictionary != None:
+        coverage_dictionary = project_dict.get('coverage-data-dict', None)
+        if coverage_dictionary is not None:
             # Accummulate various stats for the DB timestamp.
             db_timestamp["accummulated_lines_total"] += coverage_dictionary[
                 'line_coverage']['count']
