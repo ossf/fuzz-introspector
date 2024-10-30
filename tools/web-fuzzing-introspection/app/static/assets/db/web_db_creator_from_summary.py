@@ -782,10 +782,9 @@ def analyse_list_of_projects(date, projects_to_analyse,
             proc.join()
 
     # Accummulate the data from all the projects.
-    for project_key in analyses_dictionary:
+    for project_info in analyses_dictionary.values():
         # Append project timestamp to the list of timestamps
-        project_timestamp = analyses_dictionary[project_key][
-            'project_timestamp']
+        project_timestamp = project_info['project_timestamp']
         project_timestamps.append(project_timestamp)
         db_timestamp['fuzzer_count'] += project_timestamp['fuzzer-count']
 
@@ -793,7 +792,7 @@ def analyse_list_of_projects(date, projects_to_analyse,
         introspector_dictionary = project_timestamp.get(
             'introspector-data', None)
 
-        if introspector_dictionary != None:
+        if introspector_dictionary is not None:
             proj = introspector_dictionary['project_name']
             # Functions
             if proj in function_dict:
@@ -822,12 +821,10 @@ def analyse_list_of_projects(date, projects_to_analyse,
                 'function_coverage_estimate'] += introspector_dictionary[
                     'functions_covered_estimate']
 
-            all_header_files.append(
-                analyses_dictionary[project_key]['all-header-files'])
+            all_header_files.append(project_info['all-header-files'])
 
-        coverage_dictionary = analyses_dictionary[project_key].get(
-            'coverage-data-dict', None)
-        if coverage_dictionary != None:
+        coverage_dictionary = project_info.get('coverage-data-dict', None)
+        if coverage_dictionary is not None:
             # Accummulate various stats for the DB timestamp.
             db_timestamp["accummulated_lines_total"] += coverage_dictionary[
                 'line_coverage']['count']
