@@ -1,8 +1,8 @@
 diff --git a/infra/base-images/base-builder/Dockerfile b/infra/base-images/base-builder/Dockerfile
-index 4fa7a9100..810ac5608 100644
+index 828155e9d..f95198a49 100644
 --- a/infra/base-images/base-builder/Dockerfile
 +++ b/infra/base-images/base-builder/Dockerfile
-@@ -180,4 +180,14 @@ COPY llvmsymbol.diff $SRC
+@@ -190,6 +190,16 @@ COPY llvmsymbol.diff $SRC
  COPY detect_repo.py /opt/cifuzz/
  COPY bazel.bazelrc /root/.bazelrc
  
@@ -16,9 +16,11 @@ index 4fa7a9100..810ac5608 100644
 +COPY src /fuzz-introspector/src
 +COPY frontends /fuzz-introspector/frontends
 +
- CMD ["compile"]
+ # Set up ccache binary and cache directory.
+ # /ccache/bin will contain the compiler wrappers, and /ccache/cache will
+ # contain the actual cache, which can be saved.
 diff --git a/infra/base-images/base-clang/Dockerfile b/infra/base-images/base-clang/Dockerfile
-index 757ea3de5..5be6bd30a 100644
+index 8f6486896..b4f50ac36 100644
 --- a/infra/base-images/base-clang/Dockerfile
 +++ b/infra/base-images/base-clang/Dockerfile
 @@ -45,6 +45,9 @@ RUN apt-get update && apt-get install -y git && \
