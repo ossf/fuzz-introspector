@@ -14,6 +14,8 @@
  */
 
 mod analyse;
+mod generate_yaml;
+mod call_tree;
 
 use std::io;
 
@@ -37,9 +39,14 @@ fn main() -> io::Result<()> {
     }
     let target_directory = &args[1];
 
-    // Collect all results into a single string and print to stdout
-    let result = analyse::analyse_directory(target_directory, &exclude_dirs)?;
-    println!("{}", result);
+    // Get the analysis result
+    let functions = analyse::analyse_directory(target_directory, &exclude_dirs)?;
+
+    // Generate call trees for fuzzing harnesses and get their paths
+    let fuzzing_harnesses = call_tree::generate_call_trees(target_directory, &functions)?;
+
+    // Generate YAML for each fuzzing harness
+    generate_yaml::generate_yaml(&functions, &fuzzing_harnesses)?;
 
     Ok(())
 }

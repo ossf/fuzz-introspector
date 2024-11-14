@@ -16,9 +16,8 @@
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::fs;
-use syn::{
-    Expr, FnArg, ImplItem, ImplItemFn, Item, ItemFn, ItemImpl, ReturnType, Stmt, Visibility,
-};
+use syn::{Expr, FnArg, ImplItem, ImplItemFn, Item, ItemFn, ItemImpl, ReturnType, Stmt, Visibility};
+use syn::spanned::Spanned;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct BranchSide {
@@ -37,23 +36,54 @@ pub struct BranchProfileEntry {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct CallSite {
+    #[serde(rename = "Src")]
+    pub src: String,
+    #[serde(rename = "Dst")]
+    pub dst: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunctionInfo {
+    #[serde(rename = "linkageType")]
+    pub linkage_type: String,
+    #[serde(rename = "constantsTouched")]
+    pub constants_touched: Vec<String>,
+    #[serde(rename = "argNames")]
+    pub arg_names: Vec<String>,
+    #[serde(rename = "functionName")]
     pub name: String,
+    #[serde(rename = "functionSourceFile")]
     pub file: String,
+    #[serde(rename = "returnType")]
     pub return_type: String,
+    #[serde(rename = "argCount")]
     pub arg_count: usize,
+    #[serde(rename = "argTypes")]
     pub arg_types: Vec<String>,
+    #[serde(rename = "CyclomaticComplexity")]
     pub complexity: usize,
+    #[serde(rename = "functionsReached")]
     pub called_functions: Vec<String>,
+    #[serde(rename = "functionDepth")]
     pub depth: usize,
     pub visibility: String,
+    #[serde(rename = "ICount")]
     pub icount: usize,
+    #[serde(rename = "BBCount")]
     pub bbcount: usize,
+    #[serde(rename = "EdgeCount")]
     pub edge_count: usize,
+    #[serde(rename = "functionUses")]
     pub function_uses: usize,
+    #[serde(rename = "BranchProfiles")]
     pub branch_profiles: Vec<BranchProfileEntry>,
+    #[serde(rename = "functionLinenumber")]
     pub start_line: usize,
+    #[serde(rename = "functionLinenumberEnd")]
     pub end_line: usize,
+    #[serde(rename = "Callsites")]
+    pub callsites: Vec<CallSite>,
 }
 
 pub struct FunctionAnalyser {
@@ -144,15 +174,23 @@ impl FunctionAnalyser {
         let branch_profiles = self.profile_branches(stmts, file);
 
         let mut called_functions = Vec::new();
+        let mut callsites = Vec::new();
+
         for stmt in stmts {
-            self.extract_called_functions(stmt, name, &mut called_functions);
+            self.extract_called_functions(stmt, name, &mut called_functions, &mut callsites, file);
         }
+
+        called_functions.sort();
+        called_functions.dedup();
 
         for called in &called_functions {
             *self.reverse_call_map.entry(called.clone()).or_insert(0) += 1;
         }
 
         self.functions.push(FunctionInfo {
+            linkage_type: String::new(),
+            constants_touched: Vec::new(),
+            arg_names: Vec::new(),
             name: name.to_string(),
             file: file.to_string(),
             return_type,
@@ -169,6 +207,7 @@ impl FunctionAnalyser {
             branch_profiles,
             start_line,
             end_line,
+            callsites,
         });
 
         self.call_stack
@@ -182,9 +221,11 @@ impl FunctionAnalyser {
         stmt: &Stmt,
         current_function: &str,
         called_functions: &mut Vec<String>,
+        callsites: &mut Vec<CallSite>,
+        file: &str,
     ) {
         if let Stmt::Expr(expr, _) = stmt {
-            self.extract_from_expr(expr, current_function, called_functions);
+            self.extract_from_expr(expr, current_function, called_functions, callsites, file);
         }
     }
 
@@ -193,6 +234,8 @@ impl FunctionAnalyser {
         expr: &Expr,
         current_function: &str,
         called_functions: &mut Vec<String>,
+        callsites: &mut Vec<CallSite>,
+        file: &str,
     ) {
         match expr {
             Expr::Call(call_expr) => {
@@ -204,49 +247,39 @@ impl FunctionAnalyser {
                         .map(|seg| seg.ident.to_string())
                         .collect::<Vec<_>>()
                         .join("::");
-                    if full_path != current_function {
-                        called_functions.push(full_path);
+                    if self.is_function_known(&full_path) {
+                        called_functions.push(full_path.clone());
+                        let span = call_expr.func.span().start();
+                        callsites.push(CallSite {
+                            src: format!("{},{},{}", file, span.line, span.column),
+                            dst: full_path,
+                        });
                     }
                 }
             }
             Expr::MethodCall(method_call) => {
                 let method_name = method_call.method.to_string();
-                if method_name != current_function {
-                    called_functions.push(method_name);
-                }
-            }
-            Expr::Path(path) => {
-                let full_path = path
-                    .path
-                    .segments
-                    .iter()
-                    .map(|seg| seg.ident.to_string())
-                    .collect::<Vec<_>>()
-                    .join("::");
-                if full_path != current_function {
-                    called_functions.push(full_path);
+                if let Some(impl_name) = self.method_impls.get(&method_name) {
+                    let full_path = format!("{}::{}", impl_name, method_name);
+                    called_functions.push(full_path.clone());
+                    let span = method_call.span().start();
+                    callsites.push(CallSite {
+                        src: format!("{},{},{}", file, span.line, span.column),
+                        dst: full_path,
+                    });
                 }
             }
             Expr::Block(block) => {
                 for stmt in &block.block.stmts {
-                    self.extract_called_functions(stmt, current_function, called_functions);
-                }
-            }
-            Expr::If(if_expr) => {
-                self.extract_from_expr(&*if_expr.cond, current_function, called_functions);
-                for stmt in &if_expr.then_branch.stmts {
-                    self.extract_called_functions(stmt, current_function, called_functions);
-                }
-                if let Some((_, else_branch)) = &if_expr.else_branch {
-                    if let Expr::Block(block) = &**else_branch {
-                        for stmt in &block.block.stmts {
-                            self.extract_called_functions(stmt, current_function, called_functions);
-                        }
-                    }
+                    self.extract_called_functions(stmt, current_function, called_functions, callsites, file);
                 }
             }
             _ => {}
         }
+    }
+
+    fn is_function_known(&self, name: &str) -> bool {
+        self.functions.iter().any(|f| f.name == name)
     }
 
     fn get_visibility(&self, vis: &Visibility) -> String {
@@ -303,7 +336,7 @@ impl FunctionAnalyser {
     fn extract_branch_side(&self, block: &syn::Block, file: &str) -> BranchSide {
         let mut branch_side_funcs = vec![];
         for stmt in &block.stmts {
-            self.extract_called_functions(stmt, "temp_branch", &mut branch_side_funcs);
+            self.extract_called_functions(stmt, "temp_branch", &mut branch_side_funcs, &mut vec![], file);
         }
 
         let span = block.brace_token.span.open().start();
@@ -384,9 +417,10 @@ impl FunctionAnalyser {
     }
 }
 
-pub fn analyse_directory(dir: &str, exclude_dirs: &[&str]) -> std::io::Result<String> {
+pub fn analyse_directory(dir: &str, exclude_dirs: &[&str]) -> std::io::Result<Vec<FunctionInfo>> {
     let mut analyser = FunctionAnalyser::new();
 
+    // Search for rust source files and process
     for entry in fs::read_dir(dir)? {
         let entry = entry?;
         let path = entry.path();
@@ -395,13 +429,14 @@ pub fn analyse_directory(dir: &str, exclude_dirs: &[&str]) -> std::io::Result<St
             continue;
         } else if path.is_dir() {
             let sub_result = analyse_directory(path.to_str().unwrap(), exclude_dirs)?;
-            let parsed_functions: Vec<FunctionInfo> = serde_json::from_str(&sub_result).unwrap();
-            analyser.functions.extend(parsed_functions);
+            analyser.functions.extend(sub_result);
         } else if path.extension().and_then(|s| s.to_str()) == Some("rs") {
+            // Parse the rust source code and build an AST by the syn crate
             let file_content = fs::read_to_string(&path)?;
             let syntax = syn::parse_file(&file_content)
                 .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
 
+            // Analyse and retrieve a list of functions/methods with all properties
             for item in syntax.items {
                 match item {
                     Item::Fn(func) => analyser.visit_function(&func, path.to_str().unwrap()),
@@ -424,7 +459,9 @@ pub fn analyse_directory(dir: &str, exclude_dirs: &[&str]) -> std::io::Result<St
         }
     }
 
+    // Post process the result and add in additional information for each functions/methods
     analyser.calculate_depths();
     analyser.post_process_called_functions();
-    Ok(serde_json::to_string(&analyser.functions).unwrap())
+
+    Ok(analyser.functions)
 }
