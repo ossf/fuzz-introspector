@@ -44,4 +44,5 @@ cd oss-fuzz
 docker build -t gcr.io/oss-fuzz-base/base-builder infra/base-images/base-builder
 docker build -t gcr.io/oss-fuzz-base/base-builder-python infra/base-images/base-builder-python
 docker build -t gcr.io/oss-fuzz-base/base-builder-jvm infra/base-images/base-builder-jvm
+docker build -t gcr.io/oss-fuzz-base/base-builder-rust infra/base-images/base-builder-rust
 docker build -t gcr.io/oss-fuzz-base/base-runner infra/base-images/base-runner
