@@ -39,12 +39,12 @@ def read_fuzzer_data_file_to_profile(
     For a given .data file (CFG) read the corresponding .yaml file
     This is a bit odd way of doing it and should probably be improved.
     """
-    logger.info(f" - loading {cfg_file}")
+    logger.info(" - loading %s", cfg_file)
     if not os.path.isfile(cfg_file) or not os.path.isfile(cfg_file + ".yaml"):
         return None
 
     data_dict_yaml = utils.data_file_read_yaml(cfg_file + ".yaml")
-    logger.info(f"Finished loading {cfg_file}")
+    logger.info("Finished loading %s", cfg_file)
 
     # Must be  dictionary
     if data_dict_yaml is None or not isinstance(data_dict_yaml, dict):
@@ -77,7 +77,7 @@ def load_all_debug_files(target_folder: str):
     debug_info_files = utils.get_all_files_in_tree_with_regex(
         target_folder, ".*debug_info$")
     for file in debug_info_files:
-        print("debug info file: %s" % (file))
+        print("debug info file: %s", file)
     return debug_info_files
 
 
@@ -86,7 +86,7 @@ def find_all_debug_all_types_files(target_folder: str):
     debug_info_files = utils.get_all_files_in_tree_with_regex(
         target_folder, ".*debug_all_types$")
     for file in debug_info_files:
-        print("debug info file: %s" % (file))
+        print("debug info file: %s", file)
     return debug_info_files
 
 
@@ -95,7 +95,7 @@ def find_all_debug_function_files(target_folder: str):
     debug_info_files = utils.get_all_files_in_tree_with_regex(
         target_folder, ".*debug_all_functions$")
     for file in debug_info_files:
-        print("debug info file: %s" % (file))
+        print("debug info file: %s", file)
     return debug_info_files
 
 
@@ -115,7 +115,7 @@ def load_all_profiles(
     profiles = []
     data_files = utils.get_all_files_in_tree_with_regex(
         target_folder, "fuzzerLogFile.*\.data$")
-    logger.info(f" - found {len(data_files)} profiles to load")
+    logger.info(" - found %d profiles to load", len(data_files))
     if parallelise:
         manager = multiprocessing.Manager()
         semaphore = multiprocessing.Semaphore(semaphore_count)
@@ -130,13 +130,13 @@ def load_all_profiles(
         for proc in jobs:
             proc.join()
 
-        for k, v in return_dict.items():
+        for v in return_dict.values():
             profiles.append(v)
     else:
         return_dict_gen: Dict[Any, Any] = dict()
         for data_file in data_files:
             _load_profile(data_file, language, return_dict_gen, None)
-        for k, v in return_dict_gen.items():
+        for v in return_dict_gen.values():
             profiles.append(v)
 
     return profiles
