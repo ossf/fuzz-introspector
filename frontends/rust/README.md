@@ -20,20 +20,26 @@ This tool operates in three primary phases:
 
 The `main.rs` is the major entry points of the Rust frontend analyser. It manage the calls to `analyse.rs`, `call_tree.rs` and `generate_yaml.rs` separately to operates the three phases mentioned above.
 
-### Step 1: Source Analysis and Function/Method Extraction
+## Source files
 
-The `main.rs` takes in a provide source directory path (or retrieved from the environment variable $SRC in OSS-Fuzz docker image). It then pass the project source directory to `analyse.rs` for source analysis and function/method extraction
+Here’s a refined version in British English:
 
-The `analysis.rs` performs both the source analysis and function/method extraction.
+The `main.rs` script accepts a source directory path (or retrieves it from the environment variable `$SRC` in the OSS-Fuzz Docker image). It then passes the project source directory to `analyse.rs` for source analysis and function/method extraction.
 
-#### Source Analysis
+The `analyse.rs` script performs both source analysis and function/method extraction (details provided below).
+
+The `call_tree.rs` script identifies fuzzing harnesses (marked with the `fuzz_target` macro) in the specified source directory. It generates call graphs linking the functions extracted by `analyse.rs` to the function calls within each fuzzing harness's `fuzz_target` macro. The output is saved to `fuzzerLogFile-<fuzzing_harness_name>.data`.
+
+The `generate_yaml.rs` script produces YAML files containing all the functions extracted from the project source directory by `analyse.rs`. The output is saved as `fuzzerLogFile-<fuzzing_harness_name>.data.yaml`.
+
+### Source Analysis
 The source analysis process targets to identify all rust source files from the project directory while excluding unnecessary files.
 
 1. **Directory Traversal**: Uses Rust's `std::fs` and `walkdir` crates to traverse the project directory.
 2. **File Filtering**: Ensures only `.rs` files are processed.
 3. **Exclusion Handling**: Skips files within excluded directories.
 
-#### Function/Method Extraction
+### Function/Method Extraction
 The function/method extraction process adopt the **Syn** crate from the rust framework to extract Abstract-Syntax-Tree (AST) of the project source code and extract all functions/methods from the source directory together with their information.
 
 The **Syn** crate provides the following applications:
@@ -66,7 +72,5 @@ The tool analyses the function body (`Block`) to calculate cyclomatic complexity
 ### 6. Post-Processing
 
 After traversal, the tool calculates function depths by tracing call relationships and resolves fully qualified method names for accuracy. It finalises function use counts from the reverse call map, offering a detailed view of function utilisation.
-
-### Conclusion
 
 By leveraging the **Syn** crate, `FunctionAnalyser` systematically extracts and analyses function and method data, enabling comprehensive code analysis.
