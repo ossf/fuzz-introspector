@@ -108,12 +108,16 @@ index d9077510f..5baa138a6 100755
    fi
  
    mkdir -p $SRC/inspector
-@@ -336,7 +359,7 @@ if [ "$SANITIZER" = "introspector" ]; then
+@@ -335,6 +358,12 @@ if [ "$SANITIZER" = "introspector" ]; then
+     REPORT_ARGS="$REPORT_ARGS --language=jvm"
      python3 /fuzz-introspector/src/main.py report $REPORT_ARGS
      cp -rf $SRC/inspector $OUT/inspector
++  elif [ "$FUZZING_LANGUAGE" = "rust" ]; then
++    echo "GOING rust route"
++    REPORT_ARGS="$REPORT_ARGS --target_dir=$SRC/inspector"
++    REPORT_ARGS="$REPORT_ARGS --language=rust"
++    python3 /fuzz-introspector/src/main.py report $REPORT_ARGS
++    cp -rf $SRC/inspector $OUT/inspector
    else
--    # C/C++
-+    # C/C++/Rust
+     # C/C++
  
-     # Correlate fuzzer binaries to fuzz-introspector's raw data
-     python3 /fuzz-introspector/src/main.py correlate --binaries_dir=$OUT/
