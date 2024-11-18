@@ -51,8 +51,8 @@ class FuzzerProfile:
             str, function_profile.FunctionProfile] = dict()
         self.all_class_constructors: Dict[
             str, function_profile.FunctionProfile] = dict()
-        self.branch_blockers: List[Any] = []
 
+        self.branch_blockers: List[Any] = []
         self._target_lang = target_lang
         self.introspector_data_file = cfg_file
 
@@ -100,6 +100,12 @@ class FuzzerProfile:
             cname = self.fuzzer_source_file
             mname = self.entrypoint_method
             return f"[{cname}].{mname}"
+        elif self.target_lang == "rust":
+            # For rust, there is no entry function
+            # Instead, it is wrapped by the fuzz_target
+            # macro and we manually considered it as
+            # function in the frontend.
+            return "fuzz_target"
         else:
             return None
 
@@ -131,7 +137,7 @@ class FuzzerProfile:
 
     def has_entry_point(self) -> bool:
         """Returns whether an entrypoint is identified"""
-        if self.target_lang == "c-cpp":
+        if self.target_lang == "c-cpp" or self.target_lang == "rust":
             return self.entrypoint_function in self.all_class_functions
 
         elif self.target_lang == "python":
@@ -440,8 +446,8 @@ class FuzzerProfile:
         the fuzzer. This is based on identifying all functions reached by the
         fuzzer entrypoint function, e.g. LLVMFuzzerTestOneInput in C/C++.
         """
-        # Find C/CPP entry point
-        if self._target_lang == "c-cpp":
+        # Find C/CPP/Rust entry point
+        if self._target_lang == "c-cpp" or self.target_lang == "rust":
             if self.entrypoint_function in self.all_class_functions:
                 self.functions_reached_by_fuzzer = (self.all_class_functions[
                     self.entrypoint_function].functions_reached)
@@ -485,7 +491,7 @@ class FuzzerProfile:
     def _load_coverage(self, target_folder: str) -> None:
         """Load coverage data for this profile"""
         logger.info(f"Loading coverage of type {self.target_lang}")
-        if self.target_lang == "c-cpp":
+        if self.target_lang == "c-cpp" or self.target_lang == "rust":
             if os.getenv('FI_KERNEL_COV', ''):
                 self.coverage = code_coverage.load_kernel_cov(
                     os.getenv('FI_KERNEL_COV'))
