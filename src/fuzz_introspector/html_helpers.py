@@ -181,6 +181,8 @@ def create_pfc_button(profiles: List[fuzzer_profile.FuzzerProfile],
             target_coverage_url += "/index.html"
         elif profile.target_lang == "jvm":
             target_coverage_url += "/index.html"
+        elif profile.target_lang == "rust":
+            target_coverage_url += "/report.html"
 
         html_string += f"""
             <a href="{target_coverage_url}">
