@@ -36,7 +36,7 @@ fn main() -> io::Result<()> {
     // Obtain $SRC or given project source directory
     let args: Vec<String> = std::env::args().collect();
     let target_directory = if args.len() != 2 {
-        match env::var("SRC") {
+        match std::env::var("SRC") {
             Ok(src) => src,
             Err(_) => {
                 eprintln!("Usage: cargo run -- <source_directory> or set the SRC environment variable");
