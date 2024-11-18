@@ -48,10 +48,10 @@ fn main() -> io::Result<()> {
     };
 
     // Get the analysis result
-    let functions = analyse::analyse_directory(target_directory, &exclude_dirs)?;
+    let functions = analyse::analyse_directory(&target_directory, &exclude_dirs)?;
 
     // Generate call trees for fuzzing harnesses and get their paths
-    let fuzz_target_map = call_tree::generate_call_trees(target_directory, &functions)?;
+    let fuzz_target_map = call_tree::generate_call_trees(&target_directory, &functions)?;
 
     // Generate YAML using the function list and fuzz target map
     generate_yaml::generate_yaml(&functions, &fuzz_target_map)?;
