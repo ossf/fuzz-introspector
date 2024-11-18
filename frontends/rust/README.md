@@ -7,10 +7,6 @@ This project provides a tool for analyzing a Rust project directory to extract i
 cargo run -- $SRC
 ```
 
-Here’s the expanded **How It Works** section for your `README.md`:
-
----
-
 ## How It Works
 
 This tool operates in three primary phases: 
@@ -21,8 +17,6 @@ This tool operates in three primary phases:
 The `main.rs` is the major entry points of the Rust frontend analyser. It manage the calls to `analyse.rs`, `call_tree.rs` and `generate_yaml.rs` separately to operates the three phases mentioned above.
 
 ## Source files
-
-Here’s a refined version in British English:
 
 The `main.rs` script accepts a source directory path (or retrieves it from the environment variable `$SRC` in the OSS-Fuzz Docker image). It then passes the project source directory to `analyse.rs` for source analysis and function/method extraction.
 
