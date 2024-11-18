@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-use crate::analyse::FunctionInfo;
+use crate::analyse::{CallSite, FunctionInfo};
 
 use syn::{visit::Visit, Expr, ImplItem, ItemImpl, Macro, ExprMethodCall, ExprCall, ExprPath, Path as SynPath};
 use syn::spanned::Spanned;
@@ -26,10 +26,12 @@ use std::path::Path;
 pub fn generate_call_trees(
     source_dir: &str,
     functions: &[FunctionInfo],
-) -> io::Result<Vec<String>> {
+) -> io::Result<HashMap<String, FunctionInfo>> {
     // Retrieve a list of all fuzzing harnesses
     let fuzzing_files = find_fuzzing_harnesses(source_dir)?;
     let function_map: HashMap<String, &FunctionInfo> = functions.iter().map(|f| (f.name.clone(), f)).collect();
+
+    let mut harness_map = HashMap::new();
 
     // Generate call graph per harness
     for fuzz_file in &fuzzing_files {
@@ -51,23 +53,55 @@ pub fn generate_call_trees(
 
         // Build the call tree
         let mut visited = HashSet::new();
-        for (func_name, line_number) in called_functions {
+        for (func_name, line_number) in &called_functions {
             if let Some(call_tree) = build_call_tree(
                 &func_name,
                 &function_map,
                 fuzz_file,
-                line_number as i32,
+                *line_number as i32,
                 &mut visited,
                 0,
             ) {
                 output.write_all(call_tree.as_bytes())?;
             }
         }
+
+        // Manually populate all fields for FunctionInfo
+        let function_info = FunctionInfo {
+            name: "fuzz_target".to_string(),
+            file: fuzz_file.clone(),
+            return_type: String::new(),
+            linkage_type: String::new(),
+            arg_count: 0,
+            arg_names: Vec::new(),
+            arg_types: Vec::new(),
+            constants_touched: Vec::new(),
+            called_functions: called_functions.iter().map(|(name, _)| name.clone()).collect(),
+            branch_profiles: Vec::new(),
+            callsites: called_functions
+                .iter()
+                .map(|(src, _)| CallSite {
+                    src: fuzz_file.clone(),
+                    dst: src.clone(),
+                })
+                .collect(),
+            depth: 0,
+            visibility: String::new(),
+            icount: 0,
+            bbcount: 0,
+            edge_count: 0,
+            complexity: 0,
+            function_uses: 0,
+            start_line: 0,
+            end_line: 0,
+        };
+        harness_map.insert(fuzz_file.clone(), function_info);
     }
 
-    Ok(fuzzing_files)
+    Ok(harness_map)
 }
 
+// Locate all fuzzing harness files with fuzz_target macro
 fn find_fuzzing_harnesses(dir: &str) -> io::Result<Vec<String>> {
     let mut harnesses = Vec::new();
     for entry in fs::read_dir(dir)? {
@@ -84,6 +118,7 @@ fn find_fuzzing_harnesses(dir: &str) -> io::Result<Vec<String>> {
     Ok(harnesses)
 }
 
+// Extract all functions in the fuzz_target macro in the fuzzing harnesses
 fn extract_called_functions(file_path: &str) -> io::Result<Vec<(String, usize)>> {
     let content = fs::read_to_string(file_path)?;
     let syntax = syn::parse_file(&content).expect("Failed to parse file");
@@ -93,12 +128,14 @@ fn extract_called_functions(file_path: &str) -> io::Result<Vec<(String, usize)>>
     Ok(visitor.called_functions)
 }
 
+// Base struct and syn:Visit implementation for traversing the function call tree
 #[derive(Default)]
 struct FuzzTargetVisitor {
     called_functions: Vec<(String, usize)>,
 }
 
 impl<'ast> Visit<'ast> for FuzzTargetVisitor {
+    // visit implementation method for locating the statement in the fuzz_target macro
     fn visit_macro(&mut self, mac: &'ast Macro) {
         if mac.path.segments.last().unwrap().ident == "fuzz_target" {
             if let Ok(body) = mac.parse_body::<Expr>() {
@@ -107,6 +144,7 @@ impl<'ast> Visit<'ast> for FuzzTargetVisitor {
         }
     }
 
+    // visit implementation method for processing each function expression
     fn visit_expr_call(&mut self, node: &'ast ExprCall) {
         if let Expr::Path(ExprPath { path, .. }) = &*node.func {
             let qualified_name = path_to_string(path);
@@ -116,6 +154,7 @@ impl<'ast> Visit<'ast> for FuzzTargetVisitor {
         syn::visit::visit_expr_call(self, node);
     }
 
+    // visit implementation method for handling echo method experssion
     fn visit_expr_method_call(&mut self, node: &'ast ExprMethodCall) {
         let method_name = node.method.to_string();
         if let Expr::Path(ExprPath { path, .. }) = &*node.receiver {
@@ -127,6 +166,7 @@ impl<'ast> Visit<'ast> for FuzzTargetVisitor {
         syn::visit::visit_expr_method_call(self, node);
     }
 
+    // visit implementation method for handling other expressions
     fn visit_item_impl(&mut self, node: &'ast ItemImpl) {
         if let syn::Type::Path(type_path) = &*node.self_ty {
             let parent_name = path_to_string(&type_path.path);
@@ -141,6 +181,7 @@ impl<'ast> Visit<'ast> for FuzzTargetVisitor {
     }
 }
 
+// Process the correct full qualified name for rust functions/methods
 fn path_to_string(path: &SynPath) -> String {
     path.segments
         .iter()
@@ -149,6 +190,7 @@ fn path_to_string(path: &SynPath) -> String {
         .join("::")
 }
 
+// Build and output the call tree in .data format following LLVM approach
 fn build_call_tree(
     function_name: &str,
     function_map: &HashMap<String, &FunctionInfo>,
@@ -159,6 +201,7 @@ fn build_call_tree(
 ) -> Option<String> {
     let mut result = String::new();
 
+    // Only include functions/methods found in the project (determined from analysis result)
     if let Some(function_info) = find_function(function_name, function_map) {
         if visited.contains(&function_info.name) {
             return None;
@@ -172,11 +215,13 @@ fn build_call_tree(
             line_number = -1;
         }
 
+        // Insert the call tree line
         result.push_str(&format!(
             "{}{} {} linenumber={}\n",
             indent, function_info.name, call_path, line_number
         ));
 
+        // Recursively process all function call trees
         for callsite in &function_info.callsites {
             let call_location: Vec<&str> = callsite.src.split(',').collect();
             if call_location.len() >= 2 {
@@ -204,6 +249,7 @@ fn build_call_tree(
     }
 }
 
+// Search for the functions in the analysis result and exclude functions/methods not from the project
 fn find_function<'a>(
     function_name: &str,
     function_map: &'a HashMap<String, &FunctionInfo>,

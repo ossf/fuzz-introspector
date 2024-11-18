@@ -19,6 +19,7 @@ use std::fs;
 use syn::{Expr, FnArg, ImplItem, ImplItemFn, Item, ItemFn, ItemImpl, ReturnType, Stmt, Visibility};
 use syn::spanned::Spanned;
 
+// Base struct for BranchSide array in Branch Profile
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct BranchSide {
     #[serde(rename = "BranchSide")]
@@ -27,6 +28,7 @@ pub struct BranchSide {
     pub branch_side_funcs: Vec<String>,
 }
 
+// Base struct for Branch Profile elements
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct BranchProfileEntry {
     #[serde(rename = "Branch String")]
@@ -35,6 +37,7 @@ pub struct BranchProfileEntry {
     pub branch_sides: Vec<BranchSide>,
 }
 
+// Base struct for Callsites elements
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct CallSite {
     #[serde(rename = "Src")]
@@ -43,6 +46,7 @@ pub struct CallSite {
     pub dst: String,
 }
 
+// Major struct for function elements
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FunctionInfo {
     #[serde(rename = "linkageType")]
@@ -86,6 +90,7 @@ pub struct FunctionInfo {
     pub callsites: Vec<CallSite>,
 }
 
+// Helper struct to keep track of important information throughout the analysis
 pub struct FunctionAnalyser {
     pub functions: Vec<FunctionInfo>,
     pub call_stack: HashMap<String, HashSet<String>>,
@@ -93,6 +98,7 @@ pub struct FunctionAnalyser {
     pub method_impls: HashMap<String, String>,
 }
 
+// Major implementation for the AST visiting and analysing through the syn crate
 impl FunctionAnalyser {
     pub fn new() -> Self {
         Self {
@@ -103,6 +109,7 @@ impl FunctionAnalyser {
         }
     }
 
+    // visit implementation to go through all functions from the AST
     pub fn visit_function(&mut self, node: &ItemFn, file: &str) {
         let visibility = self.get_visibility(&node.vis);
         let (start_line, end_line) = self.get_function_lines(&node.block.brace_token);
@@ -118,6 +125,7 @@ impl FunctionAnalyser {
         );
     }
 
+    // visit implementation to go through all methods from the AST
     pub fn visit_method(&mut self, node: &ImplItemFn, file: &str, parent_name: &str) {
         let name = format!("{}::{}", parent_name, node.sig.ident);
         self.method_impls
@@ -136,6 +144,8 @@ impl FunctionAnalyser {
         );
     }
 
+    // Internal method to process each functions/methods when going through them in the AST
+    // Used by visit_function and visit_method implementation
     fn process_function(
         &mut self,
         name: &str,
@@ -147,12 +157,14 @@ impl FunctionAnalyser {
         start_line: usize,
         end_line: usize,
     ) {
+        // Discover return type of the target function/method
         let return_type = match output {
             ReturnType::Default => "void".to_string(),
             ReturnType::Type(_, ty) => format!("{}", quote::ToTokens::to_token_stream(&**ty)),
         }
         .replace(' ', "");
 
+        // Discover the arg types Vector of the target function/method
         let arg_types = inputs
             .iter()
             .filter_map(|arg| {
@@ -164,15 +176,26 @@ impl FunctionAnalyser {
             })
             .collect::<Vec<_>>();
 
+        // Calculate the cyclomatic complexity of the target function/method
         let complexity = self.calculate_cyclomatic_complexity(stmts);
+
+        // Calculate the basic block count of the target function/method
         let bbcount = stmts
             .iter()
             .filter(|stmt| matches!(stmt, Stmt::Expr(_, _) | Stmt::Local(_)))
             .count();
+
+        // Calculate the edge count from the cyclomatic complexity and basic block count
         let edge_count = complexity + bbcount - 1;
+
+        // Calculate the instruction (statements in rust) of the target function/method
         let icount = stmts.len();
+
+        // Generate branch profiles for the target function/method. The SYN create AST
+        // approach currently only support branching analysis for if statement.
         let branch_profiles = self.profile_branches(stmts, file);
 
+        // Extract the callsites and called functions information from the target function/method
         let mut called_functions = Vec::new();
         let mut callsites = Vec::new();
 
@@ -187,6 +210,7 @@ impl FunctionAnalyser {
             *self.reverse_call_map.entry(called.clone()).or_insert(0) += 1;
         }
 
+        // Store all infomration in the FunctionInfo struct for later yaml generation
         self.functions.push(FunctionInfo {
             linkage_type: String::new(),
             constants_touched: Vec::new(),
@@ -216,6 +240,7 @@ impl FunctionAnalyser {
             .extend(called_functions.into_iter());
     }
 
+    // Internal method implementation for extracting function/method called within a rust statement
     fn extract_called_functions(
         &self,
         stmt: &Stmt,
@@ -229,6 +254,7 @@ impl FunctionAnalyser {
         }
     }
 
+    // Internal method implementation for extracting function/method called within a rust expression
     fn extract_from_expr(
         &self,
         expr: &Expr,
@@ -238,6 +264,7 @@ impl FunctionAnalyser {
         file: &str,
     ) {
         match expr {
+            // General function call
             Expr::Call(call_expr) => {
                 if let Expr::Path(path) = &*call_expr.func {
                     let full_path = path
@@ -257,6 +284,7 @@ impl FunctionAnalyser {
                     }
                 }
             }
+            // General method call
             Expr::MethodCall(method_call) => {
                 let method_name = method_call.method.to_string();
                 if let Some(impl_name) = self.method_impls.get(&method_name) {
@@ -269,6 +297,7 @@ impl FunctionAnalyser {
                     });
                 }
             }
+            // Basic block call
             Expr::Block(block) => {
                 for stmt in &block.block.stmts {
                     self.extract_called_functions(stmt, current_function, called_functions, callsites, file);
@@ -278,10 +307,12 @@ impl FunctionAnalyser {
         }
     }
 
+    // Check if the function with the given name is processed before
     fn is_function_known(&self, name: &str) -> bool {
         self.functions.iter().any(|f| f.name == name)
     }
 
+    // Transform Visibility enum of rust functions/methods into string
     fn get_visibility(&self, vis: &Visibility) -> String {
         match vis {
             Visibility::Public(_) => "public".to_string(),
@@ -290,16 +321,22 @@ impl FunctionAnalyser {
         }
     }
 
+    // Internal helper for calculating cyclomatic complexity
     fn calculate_cyclomatic_complexity(&self, stmts: &[Stmt]) -> usize {
         1 + stmts.iter().filter(|stmt| matches!(stmt, Stmt::Expr(..))).count()
     }
 
+    // Internal helper for retrieving the line number of the needed blocks/functions/lines
+    // or other object with span information
     fn get_function_lines(&self, brace: &syn::token::Brace) -> (usize, usize) {
         let start = brace.span.open().start();
         let end = brace.span.close().end();
         (start.line, end.line)
     }
 
+    // Internal helper method for extracing branch profile of a function
+    // Currently, the SYN crate AST approach only support branching with IF statement
+    // TODO Find other ways to extract and handle of other branching statements
     fn profile_branches(&self, stmts: &[Stmt], file: &str) -> Vec<BranchProfileEntry> {
         let mut branch_profiles = Vec::new();
 
@@ -333,6 +370,7 @@ impl FunctionAnalyser {
         branch_profiles
     }
 
+    // Internal helper for profile_branches to retrieve information of the branch side for the if statement
     fn extract_branch_side(&self, block: &syn::Block, file: &str) -> BranchSide {
         let mut branch_side_funcs = vec![];
         for stmt in &block.stmts {
@@ -348,6 +386,8 @@ impl FunctionAnalyser {
         }
     }
 
+    // Public methods for post processing and fixing of called functions name to
+    // include missing full qualified function name identifiers for impl methods
     pub fn post_process_called_functions(&mut self) {
         let function_set: HashSet<_> = self.functions.iter().map(|f| f.name.clone()).collect();
 
@@ -372,17 +412,21 @@ impl FunctionAnalyser {
         }
     }
 
+    // Internal entry method for calculating function depth recursively
     fn calculate_function_depth(&self, name: &str) -> usize {
         let mut visited = HashSet::new();
         self.calculate_depth_recursive(name, &mut visited)
     }
 
+    // Internal recursive method for tracing down the call tree
+    // recursively to calculate the function/method call depth
     fn calculate_depth_recursive(&self, name: &str, visited: &mut HashSet<String>) -> usize {
         if !visited.insert(name.to_string()) {
             return 0;
         }
 
         if let Some(called_functions) = self.call_stack.get(name) {
+            // Recursively called the called functions to determine the call depth
             let max_depth = called_functions
                 .iter()
                 .map(|callee| self.calculate_depth_recursive(callee, visited))
@@ -392,11 +436,14 @@ impl FunctionAnalyser {
             visited.remove(name);
             max_depth + 1
         } else {
+            // Always return 0 for leaf function
             visited.remove(name);
             0
         }
     }
 
+    // Public methods for calculating function depth, call to the
+    // calculate_function_depth to start the recursion to determine the call depth
     pub fn calculate_depths(&mut self) {
         let depths: HashMap<String, usize> = self
             .functions
@@ -417,6 +464,9 @@ impl FunctionAnalyser {
     }
 }
 
+// Main function for this module to analyse the given source directory and retrieve a list
+// of FunctionInfo representing all functions/methods found in any rust source code located
+// in the given directory, excluding a list of unrelated directories.
 pub fn analyse_directory(dir: &str, exclude_dirs: &[&str]) -> std::io::Result<Vec<FunctionInfo>> {
     let mut analyser = FunctionAnalyser::new();
 
