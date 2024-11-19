@@ -226,11 +226,12 @@ class CoverageProfile:
         # at the end of __init__matches list.
         logger.info("Scanning for init paths")
         for potential_init_path in init_paths:
-            logger.info("Trying %s" % (potential_init_path))
+            logger.info("Trying %s", potential_init_path)
             for potential_key in self.file_map:
-                logger.debug(f"Scanning {str(potential_key)}")
+                logger.debug("Scanning %s", str(potential_key))
                 if potential_key.endswith(potential_init_path):
-                    logger.debug(f"Found __init__ match: {str(potential_key)}")
+                    logger.debug("Found __init__ match: %s",
+                                 str(potential_key))
                     init_matches.append(potential_key)
 
         # Return the last match, as this signals the path with most precise
@@ -275,7 +276,7 @@ class CoverageProfile:
         function_internals,
     ) -> None:
         for filename in function_internals:
-            logger.debug(f"Filename: {filename}")
+            logger.debug("Filename: %s", filename)
             for fname, fstart, fend in function_internals[filename]:
                 logger.debug(f"--- {fname} ::: {fstart} ::: {fend}")
 
@@ -293,13 +294,13 @@ class CoverageProfile:
                         'executed_lines']:
                     if (exec_line > fstart) and (exec_line < fend
                                                  or fend == -1):
-                        logger.debug(f"E: {exec_line}")
+                        logger.debug("E: %s", exec_line)
                         self.covmap[fname].append((exec_line, 1000))
                 for non_exec_line in self.dual_file_map[filename][
                         'missing_lines']:
                     if (non_exec_line > fstart) and (non_exec_line < fend
                                                      or fend == -1):
-                        logger.debug(f"N: {non_exec_line}")
+                        logger.debug("N: %s", non_exec_line)
                         self.covmap[fname].append((non_exec_line, 0))
 
     def correlate_python_functions_with_coverage(
@@ -390,25 +391,26 @@ class CoverageProfile:
         return False
 
 
-def extract_hitcount(input: str) -> int:
+def extract_hitcount(coverage_line: str) -> int:
     """
     Extract the count from coverage format hitcount: 4.68k or 5.2M.
     The caller has to check for error returns before using the value.
     """
-    input = input.strip()
-    if len(input) == 0:
+    coverage_line = coverage_line.strip()
+    if len(coverage_line) == 0:
         return -1
-    unit = input[-1]
+    unit = coverage_line[-1]
     if not unit.isalpha():
         try:
-            return int(input)
+            return int(coverage_line)
         except Exception:
             return -1
 
     if unit not in ['k', 'M', 'G']:
-        logger.error(f'Unexpected coverage count unit: {unit} as in {input}')
+        logger.error(
+            f'Unexpected coverage count unit: {unit} as in {coverage_line}')
         return -1
-    num = float(input[:-1])
+    num = float(coverage_line[:-1])
     if unit == 'k':
         num *= 1000
     elif unit == 'M':
@@ -589,8 +591,8 @@ def load_llvm_coverage(target_dir: str,
                         if switch_string:
                             case_line_numbers.add(line_number)
                         else:
-                            logger.info(
-                                f'found case outside a switch?! \n{line}')
+                            logger.info('found case outside a switch?! \n%s',
+                                        line)
 
                     # Extract hit count
                     # Write out numbers e.g. 1.2k into 1200 and 5.99M to 5990000
@@ -842,6 +844,7 @@ def _interpret_jvm_arguments_type(desc: str) -> List[str]:
 
 
 def load_kernel_cov(filename):
+    """Loads a .json code coverage file from Syzkaller."""
     print('Loading kernel coverage')
     with open(filename, 'r') as f:
         json_coverage = json.loads(f.read())

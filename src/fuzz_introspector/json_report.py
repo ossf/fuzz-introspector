@@ -55,7 +55,7 @@ def add_analysis_dict_to_json_report(analysis_name: str,
     """
     contents = _get_summary_dict()
     if 'analyses' not in contents:
-        contents['analyses'] = dict()
+        contents['analyses'] = {}
     contents['analyses'][analysis_name] = dict_to_add
 
     _overwrite_report_with_dict(contents)
