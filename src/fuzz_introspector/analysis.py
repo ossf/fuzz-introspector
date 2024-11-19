@@ -87,8 +87,8 @@ class IntrospectionProject():
         for profile in self.profiles:
             p = multiprocessing.Process(
                 target=fuzzer_profile.FuzzerProfile.accummulate_profile,
-                args=(profile, self.base_folder, return_dict,
-                      "uniq-%s" % (idx), semaphore))
+                args=(profile, self.base_folder, return_dict, f"uniq-{idx}",
+                      semaphore))
             jobs.append(p)
             idx += 1
             p.start()
@@ -312,8 +312,8 @@ def get_node_coverage_hitcount(demangled_name: str, callstack: Dict[int, str],
                 coverage_data = profile.coverage.get_hit_details(
                     callstack_get_parent(node, callstack))
                 for (n_line_number, hit_count_cov) in coverage_data:
-                    logger.debug(
-                        f"  - iterating {n_line_number} : {hit_count_cov}")
+                    logger.debug("  - iterating %d : %d", n_line_number,
+                                 hit_count_cov)
                     if n_line_number == node.src_linenumber and hit_count_cov > 0:
                         node_hitcount = hit_count_cov
         elif profile.target_lang == "python":
@@ -326,8 +326,8 @@ def get_node_coverage_hitcount(demangled_name: str, callstack: Dict[int, str],
             coverage_data = profile.coverage.get_hit_details(
                 callstack_get_parent(node, callstack))
             for (n_line_number, hit_count_cov) in coverage_data:
-                logger.debug(
-                    f"  - iterating {n_line_number} : {hit_count_cov}")
+                logger.debug("  - iterating %d : %d", n_line_number,
+                             hit_count_cov)
                 if n_line_number == node.src_linenumber and hit_count_cov > 0:
                     node_hitcount = hit_count_cov
         node.cov_parent = callstack_get_parent(node, callstack)
@@ -426,7 +426,7 @@ def overlay_calltree_with_coverage(
     target_name = profile.identifier
     target_coverage_url = utils.get_target_coverage_url(
         coverage_url, target_name, profile.target_lang)
-    logger.info(f"Using coverage url: {target_coverage_url}")
+    logger.info("Using coverage url: %s", target_coverage_url)
     for node in cfg_load.extract_all_callsites(
             profile.fuzzer_callsite_calltree):
         node.cov_ct_idx = ct_idx
@@ -441,7 +441,7 @@ def overlay_calltree_with_coverage(
         # Add to callstack
         callstack_set_curr_node(node, demangled_name, callstack)
 
-        logger.debug(f"Checking callsite: { demangled_name}")
+        logger.debug("Checking callsite: %s", demangled_name)
 
         # Get hitcount for this node
         node.cov_hitcount = get_node_coverage_hitcount(demangled_name,
