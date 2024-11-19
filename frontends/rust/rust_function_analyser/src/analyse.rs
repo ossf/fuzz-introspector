@@ -16,7 +16,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::fs;
-use syn::{Expr, FnArg, ImplItem, ImplItemFn, Item, ItemFn, ItemImpl, ReturnType, Stmt, Visibility};
+use syn::{Expr, ExprBlock, FnArg, ImplItem, ImplItemFn, Item, ItemFn, ItemImpl, ReturnType, Stmt, Visibility};
 use syn::spanned::Spanned;
 
 // Base struct for BranchSide array in Branch Profile
@@ -107,6 +107,33 @@ impl FunctionAnalyser {
             reverse_call_map: HashMap::new(),
             method_impls: HashMap::new(),
         }
+    }
+
+    // Entry method to analyse rust source files and extract functions/methods definition
+    pub fn analyse_file(&mut self, file_path: &str) -> std::io::Result<()> {
+        // Parse the rust source code and build an AST by the syn crate
+        let file_content = fs::read_to_string(&file_path)?;
+        let syntax = syn::parse_file(&file_content)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+
+        // Analyse and retrieve a list of functions/methods with all properties
+        for item in syntax.items {
+            match item {
+                Item::Fn(func) => self.visit_function(&func, file_path),
+                Item::Impl(ItemImpl { self_ty, items, .. }) => {
+                    let parent_name =
+                        format!("{}", quote::ToTokens::to_token_stream(&self_ty));
+                    for impl_item in items {
+                        if let ImplItem::Fn(method) = impl_item {
+                            self.visit_method(&method, file_path, &parent_name);
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        Ok(())
     }
 
     // visit implementation to go through all functions from the AST
@@ -200,7 +227,7 @@ impl FunctionAnalyser {
         let mut callsites = Vec::new();
 
         for stmt in stmts {
-            self.extract_called_functions(stmt, name, &mut called_functions, &mut callsites, file);
+            self.extract_called_functions(stmt, &mut called_functions, &mut callsites, file);
         }
 
         called_functions.sort();
@@ -240,25 +267,27 @@ impl FunctionAnalyser {
             .extend(called_functions.into_iter());
     }
 
-    // Internal method implementation for extracting function/method called within a rust statement
+    // Internal unboxing method implementation for unwrapping Stmt to Stmt::Expr and call extract_from_expr
     fn extract_called_functions(
         &self,
         stmt: &Stmt,
-        current_function: &str,
         called_functions: &mut Vec<String>,
         callsites: &mut Vec<CallSite>,
         file: &str,
     ) {
         if let Stmt::Expr(expr, _) = stmt {
-            self.extract_from_expr(expr, current_function, called_functions, callsites, file);
+            self.extract_from_expr(expr, called_functions, callsites, file);
         }
     }
 
-    // Internal method implementation for extracting function/method called within a rust expression
+    // Internal method implementation for extracting function/method called within different kind
+    // of rust statement and expression. Only Expr::Call and Expr::MethodCall are he target
+    // functions/methods that are expected in a callsites. All other expressions and statements are
+    // decomposing to simplier statements and call either extract_called_functions or extract_from_expr
+    // recursively to get down to the actual function/method calls in Expr::Call or Expr::MethodCall.
     fn extract_from_expr(
         &self,
         expr: &Expr,
-        current_function: &str,
         called_functions: &mut Vec<String>,
         callsites: &mut Vec<CallSite>,
         file: &str,
@@ -266,6 +295,7 @@ impl FunctionAnalyser {
         match expr {
             // General function call
             Expr::Call(call_expr) => {
+                // Handle function call
                 if let Expr::Path(path) = &*call_expr.func {
                     let full_path = path
                         .path
@@ -274,18 +304,31 @@ impl FunctionAnalyser {
                         .map(|seg| seg.ident.to_string())
                         .collect::<Vec<_>>()
                         .join("::");
-                    if self.is_function_known(&full_path) {
-                        called_functions.push(full_path.clone());
-                        let span = call_expr.func.span().start();
-                        callsites.push(CallSite {
-                            src: format!("{},{},{}", file, span.line, span.column),
-                            dst: full_path,
-                        });
-                    }
+                    called_functions.push(full_path.clone());
+                    let span = call_expr.func.span().start();
+                    callsites.push(CallSite {
+                        src: format!("{},{},{}", file, span.line, span.column),
+                        dst: full_path,
+                    });
+                }
+
+                // Handle method/function in arguments
+                for arg in &call_expr.args {
+                    self.extract_from_expr(arg, called_functions, callsites, file);
                 }
             }
+
             // General method call
             Expr::MethodCall(method_call) => {
+                // Handle chained method/function
+                self.extract_from_expr(
+                    &method_call.receiver,
+                    called_functions,
+                    callsites,
+                    file,
+                );
+
+                // Handle method call
                 let method_name = method_call.method.to_string();
                 if let Some(impl_name) = self.method_impls.get(&method_name) {
                     let full_path = format!("{}::{}", impl_name, method_name);
@@ -296,20 +339,200 @@ impl FunctionAnalyser {
                         dst: full_path,
                     });
                 }
-            }
-            // Basic block call
-            Expr::Block(block) => {
-                for stmt in &block.block.stmts {
-                    self.extract_called_functions(stmt, current_function, called_functions, callsites, file);
+
+                // Handle method/function in arguments
+                for arg in &method_call.args {
+                    self.extract_from_expr(arg, called_functions, callsites, file);
                 }
             }
+
+            // Basic block call
+            Expr::Block(block_expr) => {
+                for stmt in &block_expr.block.stmts {
+                    match stmt {
+                        Stmt::Local(local_stmt) => {
+                            if let Some(init_expr) = &local_stmt.init {
+                                self.extract_from_expr(&init_expr.expr, called_functions, callsites, file);
+                            }
+                        }
+
+                        Stmt::Expr(expr, _) => {
+                            self.extract_from_expr(expr, called_functions, callsites, file);
+                        }
+
+                        _ => {}
+                    }
+                }
+            }
+
+            // If statement
+            Expr::If(if_expr) => {
+                self.extract_from_expr(
+                    &Expr::Block(ExprBlock {
+                        attrs: Vec::new(),
+                        label: None,
+                        block: if_expr.then_branch.clone(),
+                    }),
+                    called_functions,
+                    callsites,
+                    file,
+                );
+                if let Some((_, else_expr)) = &if_expr.else_branch {
+                    match else_expr.as_ref() {
+                        // else if
+                        Expr::If(_) => {
+                            self.extract_from_expr(
+                                else_expr,
+                                called_functions,
+                                callsites,
+                                file,
+                            );
+                        }
+
+                        // else
+                        Expr::Block(block_expr) => {
+                            self.extract_from_expr(
+                                &Expr::Block(block_expr.clone()),
+                                called_functions,
+                                callsites,
+                                file,
+                            );
+                        }
+
+                        // For non-exhausive fail safe
+                        _ => {}
+                    }
+                }
+            }
+
+            // Match statement
+            Expr::Match(match_expr) => {
+                for arm in &match_expr.arms {
+                    self.extract_called_functions(
+                        &Stmt::Expr(*arm.body.clone(), None),
+                        called_functions,
+                        callsites,
+                        file,
+                    );
+                }
+            }
+
+            // Await statement
+            Expr::Await(await_expr) => {
+                self.extract_from_expr(&await_expr.base, called_functions, callsites, file);
+            }
+
+            // Try statment
+            Expr::Try(try_expr) => {
+                self.extract_from_expr(&try_expr.expr, called_functions, callsites, file);
+            }
+
+            // While loop
+            Expr::While(while_expr) => {
+                self.extract_from_expr(
+                    &Expr::Block(ExprBlock {
+                        attrs: Vec::new(),
+                        label: None,
+                        block: while_expr.body.clone(),
+                    }),
+                    called_functions,
+                    callsites,
+                    file,
+                );
+            }
+
+            // For loop
+            Expr::ForLoop(for_expr) => {
+                self.extract_from_expr(
+                    &Expr::Block(ExprBlock {
+                        attrs: Vec::new(),
+                        label: None,
+                        block: for_expr.body.clone(),
+                    }),
+                    called_functions,
+                    callsites,
+                    file,
+                );
+            }
+
+            // Closures inline
+            Expr::Closure(closure) => {
+                self.extract_called_functions(
+                    &Stmt::Expr(*closure.body.clone(), None),
+                    called_functions,
+                    callsites,
+                    file,
+                );
+            }
+
+            // Struct context
+            Expr::Struct(struct_expr) => {
+                for field in &struct_expr.fields {
+                    self.extract_from_expr(&field.expr, called_functions, callsites, file);
+                }
+            }
+
+            // Indexing for vector and array
+            Expr::Index(index_expr) => {
+                self.extract_from_expr(&index_expr.expr, called_functions, callsites, file);
+                self.extract_from_expr(&index_expr.index, called_functions, callsites, file);
+            }
+
+            // Impl field accessing
+            Expr::Field(field_expr) => {
+                self.extract_from_expr(&field_expr.base, called_functions, callsites, file);
+            }
+
+            // Tuple handling
+            Expr::Tuple(tuple_expr) => {
+                for elem in &tuple_expr.elems {
+                    self.extract_from_expr(elem, called_functions, callsites, file);
+                }
+            }
+
+            // Macro invocations
+            Expr::Macro(macro_expr) => {
+                if let Ok(parsed_body) = macro_expr.mac.parse_body::<Expr>() {
+                    self.extract_from_expr(&parsed_body, called_functions, callsites, file);
+                }
+            }
+
+            // Return statement
+            Expr::Return(return_expr) => {
+                if let Some(expr) = &return_expr.expr {
+                    self.extract_from_expr(expr, called_functions, callsites, file);
+                }
+            }
+
+            // Assigning statement
+            Expr::Assign(assign_expr) => {
+                self.extract_from_expr(&assign_expr.left, called_functions, callsites, file);
+                self.extract_from_expr(&assign_expr.right, called_functions, callsites, file);
+            }
+
+            // Binary comparison
+            Expr::Binary(binary_expr) => {
+                self.extract_from_expr(&binary_expr.left, called_functions, callsites, file);
+                self.extract_from_expr(&binary_expr.right, called_functions, callsites, file);
+            }
+
+            // Unary Comparison
+            Expr::Unary(unary_expr) => {
+                self.extract_from_expr(&unary_expr.expr, called_functions, callsites, file);
+            }
+
+            // Paren Statement
+            Expr::Paren(paren_expr) => {
+                self.extract_from_expr(&paren_expr.expr, called_functions, callsites, file);
+            }
+
+            // Grouping process
+            Expr::Group(group_expr) => {
+                self.extract_from_expr(&group_expr.expr, called_functions, callsites, file);
+            }
+
             _ => {}
         }
-    }
-
-    // Check if the function with the given name is processed before
-    fn is_function_known(&self, name: &str) -> bool {
-        self.functions.iter().any(|f| f.name == name)
     }
 
     // Transform Visibility enum of rust functions/methods into string
@@ -374,7 +597,7 @@ impl FunctionAnalyser {
     fn extract_branch_side(&self, block: &syn::Block, file: &str) -> BranchSide {
         let mut branch_side_funcs = vec![];
         for stmt in &block.stmts {
-            self.extract_called_functions(stmt, "temp_branch", &mut branch_side_funcs, &mut vec![], file);
+            self.extract_called_functions(stmt, &mut branch_side_funcs, &mut vec![], file);
         }
 
         let span = block.brace_token.span.open().start();
@@ -473,39 +696,15 @@ pub fn analyse_directory(dir: &str, exclude_dirs: &[&str]) -> std::io::Result<Ve
     // Search for rust source files and process
     for entry in fs::read_dir(dir)? {
         let entry = entry?;
-        let path = entry.path();
+        let file_path = entry.path();
 
-        if path.is_dir() && exclude_dirs.iter().any(|d| path.ends_with(d)) {
+        if file_path.is_dir() && exclude_dirs.iter().any(|d| file_path.ends_with(d)) {
             continue;
-        } else if path.is_dir() {
-            let sub_result = analyse_directory(path.to_str().unwrap(), exclude_dirs)?;
+        } else if file_path.is_dir() {
+            let sub_result = analyse_directory(file_path.to_str().unwrap(), exclude_dirs)?;
             analyser.functions.extend(sub_result);
-        } else if path.extension().and_then(|s| s.to_str()) == Some("rs") {
-            // Parse the rust source code and build an AST by the syn crate
-            let file_content = fs::read_to_string(&path)?;
-            let syntax = syn::parse_file(&file_content)
-                .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
-
-            // Analyse and retrieve a list of functions/methods with all properties
-            for item in syntax.items {
-                match item {
-                    Item::Fn(func) => analyser.visit_function(&func, path.to_str().unwrap()),
-                    Item::Impl(ItemImpl { self_ty, items, .. }) => {
-                        let parent_name =
-                            format!("{}", quote::ToTokens::to_token_stream(&self_ty));
-                        for impl_item in items {
-                            if let ImplItem::Fn(method) = impl_item {
-                                analyser.visit_method(
-                                    &method,
-                                    path.to_str().unwrap(),
-                                    &parent_name,
-                                );
-                            }
-                        }
-                    }
-                    _ => {}
-                }
-            }
+        } else if file_path.extension().and_then(|s| s.to_str()) == Some("rs") {
+            analyser.analyse_file(file_path.to_str().unwrap())?;
         }
     }
 

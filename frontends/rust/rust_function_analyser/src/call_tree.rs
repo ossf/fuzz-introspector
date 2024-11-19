@@ -15,8 +15,9 @@
 
 use crate::analyse::{CallSite, FunctionInfo};
 
-use syn::{visit::Visit, Expr, ImplItem, ItemImpl, Macro, ExprMethodCall, ExprCall, ExprPath, Path as SynPath};
-use syn::spanned::Spanned;
+use syn::{
+    spanned::Spanned, visit::Visit, Expr, ExprCall, ExprMethodCall, ExprPath, Macro, Stmt, Path as SynPath
+};
 
 use std::collections::{HashSet, HashMap};
 use std::fs::{self, File};
@@ -125,7 +126,12 @@ fn extract_called_functions(file_path: &str) -> io::Result<Vec<(String, usize)>>
 
     let mut visitor = FuzzTargetVisitor::default();
     visitor.visit_file(&syntax);
-    Ok(visitor.called_functions)
+
+    // Remove duplicate items
+    let set: HashSet<_> = visitor.called_functions.into_iter().collect();
+    let result = set.into_iter().collect();
+
+    Ok(result)
 }
 
 // Base struct and syn:Visit implementation for traversing the function call tree
@@ -147,37 +153,183 @@ impl<'ast> Visit<'ast> for FuzzTargetVisitor {
     // visit implementation method for processing each function expression
     fn visit_expr_call(&mut self, node: &'ast ExprCall) {
         if let Expr::Path(ExprPath { path, .. }) = &*node.func {
-            let qualified_name = path_to_string(path);
+            let qualified_name = path_to_string(&path);
             let line_number = node.func.span().start().line;
             self.called_functions.push((qualified_name, line_number));
         }
+
+        for arg in &node.args {
+            self.visit_expr(arg);
+        }
+
         syn::visit::visit_expr_call(self, node);
     }
 
     // visit implementation method for handling echo method experssion
     fn visit_expr_method_call(&mut self, node: &'ast ExprMethodCall) {
         let method_name = node.method.to_string();
+        let span = node.method.span().start();
+        let line_number = span.line;
+
         if let Expr::Path(ExprPath { path, .. }) = &*node.receiver {
-            let receiver_name = path_to_string(path);
+            let receiver_name = path_to_string(&path);
             let qualified_name = format!("{}::{}", receiver_name, method_name);
-            let line_number = node.method.span().start().line;
+            self.called_functions.push((qualified_name, line_number));
+        } else {
+            let qualified_name = method_name;
             self.called_functions.push((qualified_name, line_number));
         }
+
+        self.visit_expr(&node.receiver);
+        for arg in &node.args {
+            self.visit_expr(arg);
+        }
+
         syn::visit::visit_expr_method_call(self, node);
     }
 
-    // visit implementation method for handling other expressions
-    fn visit_item_impl(&mut self, node: &'ast ItemImpl) {
-        if let syn::Type::Path(type_path) = &*node.self_ty {
-            let parent_name = path_to_string(&type_path.path);
-            for item in &node.items {
-                if let ImplItem::Fn(method) = item {
-                    let method_name = format!("{}::{}", parent_name, method.sig.ident);
-                    self.called_functions.push((method_name, 0));
+    // General method ensure visiting all kinds of Expr that could call functions/methods
+    fn visit_expr(&mut self, expr: &'ast Expr) {
+        match expr {
+            Expr::Call(call_expr) => {
+                self.visit_expr_call(call_expr);
+            }
+
+            Expr::MethodCall(method_call_expr) => {
+                self.visit_expr_method_call(method_call_expr);
+            }
+
+            Expr::Block(block_expr) => {
+                for stmt in &block_expr.block.stmts {
+                    match stmt {
+                        Stmt::Local(local_stmt) => {
+                            if let Some(init_expr) = &local_stmt.init {
+                                self.visit_expr(&init_expr.expr);
+                            }
+                        }
+
+                        Stmt::Expr(inner_expr, _) => {
+                            self.visit_expr(inner_expr);
+                        }
+
+                        Stmt::Item(item) => {
+                            syn::visit::visit_item(self, item);
+                        }
+
+                        _ => {}
+                    }
                 }
             }
+
+            Expr::If(if_expr) => {
+                self.visit_expr(&if_expr.cond);
+                self.visit_block(&if_expr.then_branch);
+                if let Some((_, else_branch)) = &if_expr.else_branch {
+                    self.visit_expr(else_branch);
+                }
+            }
+
+            Expr::Match(match_expr) => {
+                self.visit_expr(&match_expr.expr);
+                for arm in &match_expr.arms {
+                    self.visit_expr(&arm.body);
+                }
+            }
+
+            Expr::While(while_expr) => {
+                self.visit_expr(&while_expr.cond);
+                self.visit_block(&while_expr.body);
+            }
+
+            Expr::ForLoop(for_loop_expr) => {
+                self.visit_expr(&for_loop_expr.expr);
+                self.visit_block(&for_loop_expr.body);
+            }
+
+            Expr::Await(await_expr) => {
+                self.visit_expr(&await_expr.base);
+            }
+
+            Expr::Try(try_expr) => {
+                self.visit_expr(&try_expr.expr);
+            }
+
+            Expr::Closure(closure_expr) => {
+                self.visit_expr(&closure_expr.body);
+            }
+
+            Expr::Return(return_expr) => {
+                if let Some(inner_expr) = &return_expr.expr {
+                    self.visit_expr(inner_expr);
+                }
+            }
+
+            Expr::Assign(assign_expr) => {
+                self.visit_expr(&assign_expr.left);
+                self.visit_expr(&assign_expr.right);
+            }
+
+            Expr::Unary(unary_expr) => {
+                self.visit_expr(&unary_expr.expr);
+            }
+
+            Expr::Binary(binary_expr) => {
+                self.visit_expr(&binary_expr.left);
+                self.visit_expr(&binary_expr.right);
+            }
+
+            Expr::Field(field_expr) => {
+                self.visit_expr(&field_expr.base);
+            }
+
+            Expr::Index(index_expr) => {
+                self.visit_expr(&index_expr.expr);
+                self.visit_expr(&index_expr.index);
+            }
+
+            Expr::Tuple(tuple_expr) => {
+                for elem in &tuple_expr.elems {
+                    self.visit_expr(elem);
+                }
+            }
+
+            Expr::Array(array_expr) => {
+                for elem in &array_expr.elems {
+                    self.visit_expr(elem);
+                }
+            }
+
+            Expr::Struct(struct_expr) => {
+                for field in &struct_expr.fields {
+                    self.visit_expr(&field.expr);
+                }
+                if let Some(rest) = &struct_expr.rest {
+                    self.visit_expr(rest);
+                }
+            }
+
+            Expr::Paren(paren_expr) => {
+                self.visit_expr(&paren_expr.expr);
+            }
+
+            Expr::Macro(macro_expr) => {
+                if let Ok(parsed_body) = macro_expr.mac.parse_body::<Expr>() {
+                    self.visit_expr(&parsed_body);
+                }
+            }
+
+            Expr::Repeat(repeat_expr) => {
+                self.visit_expr(&repeat_expr.expr);
+            }
+
+            Expr::Group(group_expr) => {
+                self.visit_expr(&group_expr.expr);
+            }
+
+            _ => {
+                syn::visit::visit_expr(self, expr);
+            }
         }
-        syn::visit::visit_item_impl(self, node);
     }
 }
 
@@ -218,7 +370,7 @@ fn build_call_tree(
         // Insert the call tree line
         result.push_str(&format!(
             "{}{} {} linenumber={}\n",
-            indent, function_info.name, call_path, line_number
+            indent, function_info.name.replace(" ", ""), call_path, line_number
         ));
 
         // Recursively process all function call trees
