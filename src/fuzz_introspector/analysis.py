@@ -56,13 +56,14 @@ class IntrospectionProject():
         self.coverage_url = coverage_url
 
     def load_data_files(self, parallelise=True, correlation_file=None):
-        self.profiles = data_loader.load_all_profiles(self.base_folder,
-                                                      self.language,
-                                                      parallelise)
         """Generates the `proj_profile` and `profiles` elements of this class
         based on the raw data given as arguments. This function must be called
         before any real use of `IntrospectionProject` can happen.
         """
+        self.profiles = data_loader.load_all_profiles(self.base_folder,
+                                                      self.language,
+                                                      parallelise)
+
         logger.info(f"Found {len(self.profiles)} profiles")
         if len(self.profiles) == 0:
             logger.info("Found no profiles")
@@ -204,23 +205,19 @@ class AnalysisInterface(abc.ABC):
         :returns:  A string that corresponds to HTML that can be embedded in the
                    html report.
         """
-        pass
 
     @classmethod
     @abc.abstractmethod
     def get_name(cls):
         """Return name of analysis"""
-        pass
 
     @abc.abstractmethod
     def get_json_string_result(self):
         """Return json_string_result"""
-        pass
 
     @abc.abstractmethod
     def set_json_string_result(self, string):
         """Set json_string_result"""
-        pass
 
     def set_display_html(self, is_display_html):
         """Set display_html"""
@@ -521,7 +518,7 @@ def overlay_calltree_with_coverage(
     update_branch_complexities(proj_profile.all_functions, profile.coverage)
     profile.branch_blockers = detect_branch_level_blockers(
         proj_profile.all_functions, profile, target_coverage_url)
-    logger.info(f"[+] found {len(profile.branch_blockers)} branch blockers.")
+    logger.info("[+] found %d branch blockers.", len(profile.branch_blockers))
     branch_blockers_list = []
     for blk in profile.branch_blockers:
         branch_blockers_list.append({
@@ -621,14 +618,14 @@ def detect_branch_level_blockers(
             line_number, column_number = rest_string.split(',')
         except ValueError:
             logger.debug(
-                f"branch-profiling: error getting function name from {branch_string}"
-            )
+                "branch-profiling: error getting function name from %s",
+                branch_string)
             continue
 
         if function_name not in functions_profile:
             logger.debug(
-                f"branch-profiling: func name not in functions_profile {function_name}"
-            )
+                "branch-profiling: func name not in functions_profile %s",
+                function_name)
             continue
 
         llvm_branch_profile = functions_profile[function_name].branch_profiles
@@ -641,9 +638,8 @@ def detect_branch_level_blockers(
         if llvm_branch_string not in llvm_branch_profile:
             # TODO: there are cases that the column number of the branch is not consistent between
             # llvm and coverage debug info. For now we skip those cases.
-            logger.debug(
-                f"branch-profiling: failed to find branch profile {llvm_branch_string}"
-            )
+            logger.debug("branch-profiling: failed to find branch profile %s",
+                         llvm_branch_string)
             continue
 
         llvm_branch = llvm_branch_profile[llvm_branch_string]
@@ -664,10 +660,10 @@ def detect_branch_level_blockers(
         # Sanity checks for capturing any potential inconsistancy between coverage and LLVM.
         if len(sides_hitcount) != len(llvm_branch.sides):
             logger.debug(
-                "Branch-blocker: inconsistent data found between COV vs LLVM:\n%s %s"
-                % (llvm_branch_string, branch_string))
-            logger.debug("llvm_branch.sides: %s" % str(llvm_branch.sides))
-            logger.debug("blocked_idx: %s" % sides_hitcount)
+                "Branch-blocker: inconsistent data found between COV vs LLVM:\n%s %s",
+                llvm_branch_string, branch_string)
+            logger.debug("llvm_branch.sides: %s", str(llvm_branch.sides))
+            logger.debug("blocked_idx: %s", sides_hitcount)
             continue
         # We have some sides taken and some not taken sides => there are blockers.
         for blocked_idx in not_taken_sides:
@@ -688,8 +684,8 @@ def detect_branch_level_blockers(
             # Sanity check on line numbers: anomaly can happen because of debug info inaccuracy
             if int(line_number) > int(side_line_number):
                 logger.debug(
-                    "Branch-blocker: Anomalous branch sides line nubmers: %s:%s -> %s"
-                    % (source_file_path, line_number, side_line_number))
+                    "Branch-blocker: Anomalous branch sides line nubmers: %s:%s -> %s",
+                    source_file_path, line_number, side_line_number)
                 continue
 
             # Sanity check for fall through cases: checks if the branch side has coverage or not
@@ -697,15 +693,15 @@ def detect_branch_level_blockers(
                 if coverage.is_file_lineno_hit(source_file_path,
                                                int(side_line_number)):
                     logger.debug(
-                        "Branch-blocker: fall through branch side is not blocked: %s"
-                        % (side_line))
+                        "Branch-blocker: fall through branch side is not blocked: %s",
+                        side_line)
                     continue
             else:
                 if coverage.is_func_lineno_hit(function_name,
                                                int(side_line_number)):
                     logger.debug(
-                        "Branch-blocker: fall through branch side is not blocked: %s"
-                        % (side_line))
+                        "Branch-blocker: fall through branch side is not blocked: %s",
+                        side_line)
                     continue
 
             hitcount_diff = max(sides_hitcount + [branch_hitcount])
@@ -919,10 +915,12 @@ def correlate_introspector_func_to_debug_information(if_func,
 def correlate_introspection_functions_to_debug_info(all_functions_json_report,
                                                     debug_all_functions,
                                                     proj_lang,
-                                                    report_dict=dict()):
+                                                    report_dict=None):
     """Correlates function data collected by debug information to function
     data collected by LLVMs module, and uses the correlated data to generate
     function signatures for each function based on debug information."""
+    if not report_dict:
+        report_dict = {}
 
     # Find header files
     normalized_paths = set()
@@ -1027,8 +1025,10 @@ def extract_all_sources(language):
     return interesting_source_files
 
 
-def extract_test_information(report_dict=dict(), language='c-cpp'):
+def extract_test_information(report_dict=None, language='c-cpp'):
     """Extract test information for different project language."""
+    if not report_dict:
+        report_dict = {}
     if language == 'c-cpp':
         return _extract_test_information_cpp(report_dict)
     elif language == 'jvm':
@@ -1091,8 +1091,8 @@ def extract_tests_from_directories(directories) -> Set[str]:
         'third_party', '/build/', '/usr/local/', '/fuzz-introspector/',
         '/root/.cache/', '/usr/'
     ]
-    for dir in all_inspiration_dirs:
-        for root, dirs, files in os.walk(dir):
+    for directory in all_inspiration_dirs:
+        for root, dirs, files in os.walk(directory):
             for f in files:
                 if not any(f.endswith(ext) for ext in test_extensions):
                     continue
@@ -1113,8 +1113,8 @@ def extract_tests_from_directories(directories) -> Set[str]:
                 all_test_files.add(absolute_path)
 
     # Iterate through all directories and search for files with test in them.
-    for dir in all_directories:
-        for root, dirs, files in os.walk(dir):
+    for directory in all_directories:
+        for root, dirs, files in os.walk(directory):
             for f in files:
                 if not any(f.endswith(ext) for ext in test_extensions):
                     continue

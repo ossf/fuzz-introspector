@@ -63,7 +63,7 @@ def run_analysis_on_dir(target_folder: str,
                                                        coverage_url)
     introspection_proj.load_data_files(parallelise, correlation_file)
 
-    logger.info(f"Analyses to run: {str(analyses_to_run)}")
+    logger.info("Analyses to run: %s", str(analyses_to_run))
     logger.info("[+] Creating HTML report")
     html_report.create_html_report(introspection_proj, analyses_to_run,
                                    output_json, report_name, dump_files)
