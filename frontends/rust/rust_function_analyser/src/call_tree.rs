@@ -127,10 +127,11 @@ fn extract_called_functions(file_path: &str) -> io::Result<Vec<(String, usize)>>
     let mut visitor = FuzzTargetVisitor::default();
     visitor.visit_file(&syntax);
 
-println!("{:?}", file_path);
-println!("{:?}", visitor.called_functions);
+    // Remove duplicate items
+    let set: HashSet<_> = visitor.called_functions.into_iter().collect();
+    let result = set.into_iter().collect();
 
-    Ok(visitor.called_functions)
+    Ok(result)
 }
 
 // Base struct and syn:Visit implementation for traversing the function call tree
