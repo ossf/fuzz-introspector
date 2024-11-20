@@ -768,13 +768,14 @@ impl FunctionAnalyser {
     }
 
     // Internal helper method for extracing branch profile of a function
-    // Currently, the SYN crate AST approach only support branching with IF statement
-    // TODO Find other ways to extract and handle of other branching statements
+    // Currently, the branch profile supports the following SYN create AST expression
+    // ExprIf ExprMatch ExprLoop ExprWhile ExprForLoop
     fn profile_branches(&self, stmts: &[Stmt], file: &str, arg_map: &HashMap<String, String>) -> Vec<BranchProfileEntry> {
         let mut branch_profiles = Vec::new();
 
         for stmt in stmts {
             match stmt {
+                // If statement
                 Stmt::Expr(Expr::If(if_expr), _) => {
                     let branch_string = format!(
                         "{}:{}:{}",
@@ -785,8 +786,8 @@ impl FunctionAnalyser {
 
                     let mut branch_sides = vec![self.extract_branch_side(&if_expr.then_branch, file, arg_map)];
 
-                    if let Some((_, else_block)) = &if_expr.else_branch {
-                        if let Expr::Block(block_expr) = &**else_block {
+                    if let Some((_, else_expr)) = &if_expr.else_branch {
+                        if let Expr::Block(block_expr) = &**else_expr {
                             branch_sides.push(self.extract_branch_side(&block_expr.block, file, arg_map));
                         }
                     }
@@ -796,6 +797,80 @@ impl FunctionAnalyser {
                         branch_sides,
                     });
                 }
+
+                // Match statement
+                Stmt::Expr(Expr::Match(match_expr), _) => {
+                    let branch_string = format!(
+                        "{}:{}:{}",
+                        file,
+                        match_expr.match_token.span.start().line,
+                        match_expr.match_token.span.start().column
+                    );
+
+                    let mut branch_sides = vec![];
+                    for arm in &match_expr.arms {
+                        if let Expr::Block(block_expr) = arm.body.as_ref() {
+                            branch_sides.push(self.extract_branch_side(&block_expr.block, file, arg_map));
+                        }
+                    }
+
+                    branch_profiles.push(BranchProfileEntry {
+                        branch_string,
+                        branch_sides,
+                    });
+                }
+
+                // While loop
+                Stmt::Expr(Expr::While(while_expr), _) => {
+                    let branch_string = format!(
+                        "{}:{}:{}",
+                        file,
+                        while_expr.while_token.span.start().line,
+                        while_expr.while_token.span.start().column
+                    );
+
+                    let branch_side = self.extract_branch_side(&while_expr.body, file, arg_map);
+
+                    branch_profiles.push(BranchProfileEntry {
+                        branch_string,
+                        branch_sides: vec![branch_side],
+                    });
+                }
+
+                // For loop
+                Stmt::Expr(Expr::ForLoop(for_expr), _) => {
+                    let branch_string = format!(
+                        "{}:{}:{}",
+                        file,
+                        for_expr.for_token.span.start().line,
+                        for_expr.for_token.span.start().column
+                    );
+
+                    let branch_side = self.extract_branch_side(&for_expr.body, file, arg_map);
+
+                    branch_profiles.push(BranchProfileEntry {
+                        branch_string,
+                        branch_sides: vec![branch_side],
+                    });
+                }
+
+                // Infinite loop
+                Stmt::Expr(Expr::Loop(loop_expr), _) => {
+                    let branch_string = format!(
+                        "{}:{}:{}",
+                        file,
+                        loop_expr.loop_token.span.start().line,
+                        loop_expr.loop_token.span.start().column
+                    );
+
+                    let branch_side = self.extract_branch_side(&loop_expr.body, file, arg_map);
+
+                    branch_profiles.push(BranchProfileEntry {
+                        branch_string,
+                        branch_sides: vec![branch_side],
+                    });
+                }
+
                 _ => {}
             }
         }
@@ -803,7 +878,7 @@ impl FunctionAnalyser {
         branch_profiles
     }
 
-    // Internal helper for profile_branches to retrieve information of the branch side for the if statement
+    // Internal helper for retrieving information of the branch side
     fn extract_branch_side(&self, block: &syn::Block, file: &str, arg_map: &HashMap<String, String>) -> BranchSide {
         let mut branch_side_funcs = vec![];
         for stmt in &block.stmts {
