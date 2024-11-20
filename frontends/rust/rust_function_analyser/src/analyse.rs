@@ -552,6 +552,20 @@ impl FunctionAnalyser {
                 self.extract_from_expr(&await_expr.base, called_functions, callsites, file, arg_map);
             }
 
+            // Async block
+            Expr::Async(async_expr) => {
+                for stmt in &async_expr.block.stmts {
+                    self.extract_called_functions(stmt, called_functions, callsites, file, arg_map);
+                }
+            }
+
+            // Try block
+            Expr::TryBlock(try_block_expr) => {
+                for stmt in &try_block_expr.block.stmts {
+                    self.extract_called_functions(stmt, called_functions, callsites, file, arg_map);
+                }
+            }
+
             // Try statment
             Expr::Try(try_expr) => {
                 self.extract_from_expr(&try_expr.expr, called_functions, callsites, file, arg_map);
@@ -587,6 +601,13 @@ impl FunctionAnalyser {
                     file,
                     arg_map,
                 );
+            }
+
+            // Infinite loop
+            Expr::Loop(loop_expr) => {
+                for stmt in &loop_expr.body.stmts {
+                    self.extract_called_functions(stmt, called_functions, callsites, file, arg_map);
+                }
             }
 
             // Closures inline
