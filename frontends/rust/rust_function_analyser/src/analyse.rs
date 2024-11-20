@@ -505,6 +505,12 @@ impl FunctionAnalyser {
             // If statement
             Expr::If(if_expr) => {
                 self.extract_from_expr(
+                    &if_expr.cond,
+                    called_functions,
+                    callsites,
+                    file,
+                    arg_map);
+                self.extract_from_expr(
                     &Expr::Block(ExprBlock {
                         attrs: Vec::new(),
                         label: None,
@@ -516,37 +522,20 @@ impl FunctionAnalyser {
                     arg_map,
                 );
                 if let Some((_, else_expr)) = &if_expr.else_branch {
-                    match else_expr.as_ref() {
-                        // else if
-                        Expr::If(_) => {
-                            self.extract_from_expr(
-                                else_expr,
-                                called_functions,
-                                callsites,
-                                file,
-                                arg_map,
-                            );
-                        }
-
-                        // else
-                        Expr::Block(block_expr) => {
-                            self.extract_from_expr(
-                                &Expr::Block(block_expr.clone()),
-                                called_functions,
-                                callsites,
-                                file,
-                                arg_map,
-                            );
-                        }
-
-                        // For non-exhausive fail safe
-                        _ => {}
-                    }
+                    self.extract_from_expr(
+                        else_expr,
+                        called_functions,
+                        callsites,
+                        file,
+                        arg_map,
+                    );
                 }
             }
 
             // Match statement
             Expr::Match(match_expr) => {
+                self.extract_from_expr(&match_expr.expr, called_functions, callsites, file, arg_map);
+
                 for arm in &match_expr.arms {
                     self.extract_called_functions(
                         &Stmt::Expr(*arm.body.clone(), None),
@@ -570,6 +559,8 @@ impl FunctionAnalyser {
 
             // While loop
             Expr::While(while_expr) => {
+                self.extract_from_expr(&while_expr.cond, called_functions, callsites, file, arg_map);
+
                 self.extract_from_expr(
                     &Expr::Block(ExprBlock {
                         attrs: Vec::new(),
@@ -613,6 +604,9 @@ impl FunctionAnalyser {
             Expr::Struct(struct_expr) => {
                 for field in &struct_expr.fields {
                     self.extract_from_expr(&field.expr, called_functions, callsites, file, arg_map);
+                }
+                if let Some(rest_expr) = &struct_expr.rest {
+                    self.extract_from_expr(rest_expr, called_functions, callsites, file, arg_map);
                 }
             }
 
@@ -663,6 +657,13 @@ impl FunctionAnalyser {
             // Unary Comparison
             Expr::Unary(unary_expr) => {
                 self.extract_from_expr(&unary_expr.expr, called_functions, callsites, file, arg_map);
+            }
+
+            // Unsafe Block
+            Expr::Unsafe(unsafe_expr) => {
+                for stmt in &unsafe_expr.block.stmts {
+                    self.extract_called_functions(stmt, called_functions, callsites, file, arg_map);
+                }
             }
 
             // Paren Statement
