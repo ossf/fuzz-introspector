@@ -50,7 +50,7 @@ pub fn generate_call_trees(
         writeln!(output, "fuzz_target {} linenumber=-1", fuzz_file)?;
 
         // Extract functions from the fuzz_target macro in the harness
-        let called_functions = extract_called_functions(fuzz_file)?;
+        let called_functions = extract_called_functions(fuzz_file, functions)?;
 
         // Build the call tree
         let mut visited = HashSet::new();
@@ -120,24 +120,103 @@ fn find_fuzzing_harnesses(dir: &str) -> io::Result<Vec<String>> {
 }
 
 // Extract all functions in the fuzz_target macro in the fuzzing harnesses
-fn extract_called_functions(file_path: &str) -> io::Result<Vec<(String, usize)>> {
+fn extract_called_functions(
+    file_path: &str,
+    function_info: &[FunctionInfo],
+) -> io::Result<Vec<(String, usize)>> {
     let content = fs::read_to_string(file_path)?;
     let syntax = syn::parse_file(&content).expect("Failed to parse file");
 
-    let mut visitor = FuzzTargetVisitor::default();
+    let mut visitor = FuzzTargetVisitor::new(function_info.to_vec());
     visitor.visit_file(&syntax);
 
-    // Remove duplicate items
+    // Remove duplicate items and sort by line number
     let set: HashSet<_> = visitor.called_functions.into_iter().collect();
-    let result = set.into_iter().collect();
+    let mut result: Vec<(String, usize)> = set.into_iter().collect();
+    result.sort_by_key(|item| item.1);
+    result = post_process_called_functions(result);
 
     Ok(result)
+}
+
+// Helper function to post process the called function vector
+fn post_process_called_functions(items: Vec<(String, usize)>) -> Vec<(String, usize)> {
+    let mut stored_value: Option<String> = None;
+    let mut result = Vec::new();
+
+    for (mut string_value, usize_value) in items {
+        if let Some(pos) = string_value.rfind("::") {
+            stored_value = Some(string_value[..pos].to_string());
+        } else if let Some(stored) = &stored_value {
+            string_value = format!("{}::{}", stored, string_value);
+        }
+
+        // Push the updated item into the result
+        result.push((string_value, usize_value));
+    }
+
+    result
 }
 
 // Base struct and syn:Visit implementation for traversing the function call tree
 #[derive(Default)]
 struct FuzzTargetVisitor {
     called_functions: Vec<(String, usize)>,
+    function_info: Vec<FunctionInfo>,
+    variable_types: HashMap<String, String>,
+}
+
+impl FuzzTargetVisitor {
+    pub fn new(function_info: Vec<FunctionInfo>) -> Self {
+        FuzzTargetVisitor {
+            called_functions: Vec::new(),
+            function_info,
+            variable_types: HashMap::new(),
+        }
+    }
+
+    // Helper method to extract type of method call receiver
+    fn extract_receiver_type(&self, receiver: &Expr) -> Option<String> {
+        match receiver {
+            // Variable or parameter call
+            Expr::Path(path_expr) => {
+                let variable_name = path_expr.path.segments.last()?.ident.to_string();
+                self.variable_types.get(&variable_name).cloned()
+            }
+
+            // Chained method call
+            Expr::MethodCall(method_call) => {
+                let receiver_type = self.extract_receiver_type(&method_call.receiver);
+                let method_name = method_call.method.to_string();
+                let name = match receiver_type {
+                    Some(receiver) => format!("{}::{}", receiver, method_name),
+                    None => method_name.clone(),
+                };
+                self.lookup_function_return_type(&name)
+            }
+
+            _ => None,
+        }
+    }
+
+    // Helper method to lookup function return type for reference
+    fn lookup_function_return_type(&self, method_name: &str) -> Option<String> {
+        let function_map: HashMap<String, &FunctionInfo> = self.function_info.iter().map(|f| (f.name.clone(), f)).collect();
+
+        if let Some(function_info) = find_function(method_name, &function_map) {
+            return Some(function_info.return_type.clone());
+        }
+        None
+    }
+
+    // Try extracting the local variable name creation
+    fn extract_variable_name(&self, pat: &syn::Pat) -> Option<String> {
+        if let syn::Pat::Ident(ident) = pat {
+            Some(ident.ident.to_string())
+        } else {
+            None
+        }
+    }
 }
 
 impl<'ast> Visit<'ast> for FuzzTargetVisitor {
@@ -161,8 +240,6 @@ impl<'ast> Visit<'ast> for FuzzTargetVisitor {
         for arg in &node.args {
             self.visit_expr(arg);
         }
-
-        syn::visit::visit_expr_call(self, node);
     }
 
     // visit implementation method for handling echo method experssion
@@ -171,21 +248,30 @@ impl<'ast> Visit<'ast> for FuzzTargetVisitor {
         let span = node.method.span().start();
         let line_number = span.line;
 
-        if let Expr::Path(ExprPath { path, .. }) = &*node.receiver {
-            let receiver_name = path_to_string(&path);
-            let qualified_name = format!("{}::{}", receiver_name, method_name);
-            self.called_functions.push((qualified_name, line_number));
-        } else {
-            let qualified_name = method_name;
-            self.called_functions.push((qualified_name, line_number));
-        }
+        // Determine the fully qualified name
+        let receiver_type = self.extract_receiver_type(&node.receiver);
+        let qualified_name = match receiver_type {
+            Some(receiver) => format!("{}::{}", receiver, method_name),
+            None => method_name.clone(),
+        };
+
+        self.called_functions.push((qualified_name, line_number));
 
         self.visit_expr(&node.receiver);
         for arg in &node.args {
             self.visit_expr(arg);
         }
+    }
 
-        syn::visit::visit_expr_method_call(self, node);
+    // visit implementation for local variables
+    fn visit_local(&mut self, local: &syn::Local) {
+        if let Some(init_expr) = &local.init {
+            if let Some(var_name) = self.extract_variable_name(&local.pat) {
+                if let Some(var_type) = self.extract_receiver_type(&init_expr.expr) {
+                    self.variable_types.insert(var_name, var_type);
+                }
+            }
+        }
     }
 
     // General method ensure visiting all kinds of Expr that could call functions/methods
@@ -352,20 +438,18 @@ fn build_call_tree(
     depth: usize,
 ) -> Option<String> {
     let mut result = String::new();
+    let indent = "  ".repeat(depth + 1);
 
-    // Only include functions/methods found in the project (determined from analysis result)
+    if line_number == 0 {
+        line_number = -1;
+    }
+
     if let Some(function_info) = find_function(function_name, function_map) {
         if visited.contains(&function_info.name) {
             return None;
         }
 
         visited.insert(function_info.name.clone());
-
-        let indent = "  ".repeat(depth + 1);
-
-        if line_number == 0 {
-            line_number = -1;
-        }
 
         // Insert the call tree line
         result.push_str(&format!(
@@ -392,8 +476,12 @@ fn build_call_tree(
                 }
             }
         }
+    } else {
+        result.push_str(&format!(
+            "{}{} {} linenumber={}\n",
+            indent, function_name.replace(" ", ""), call_path, line_number
+        ));
     }
-
     if result.is_empty() {
         None
     } else {
@@ -404,25 +492,27 @@ fn build_call_tree(
 // Search for the functions in the analysis result and exclude functions/methods not from the project
 fn find_function<'a>(
     function_name: &str,
-    function_map: &'a HashMap<String, &FunctionInfo>,
+    function_map: &'a HashMap<String, &'a FunctionInfo>,
 ) -> Option<&'a FunctionInfo> {
+    // Exact match
     if let Some(func) = function_map.get(function_name) {
         return Some(func);
     }
 
-    let simplified_name = function_name.split("::").last().unwrap_or(function_name);
-    let mut best_match: Option<&FunctionInfo> = None;
-    let mut best_match_length = 0;
+    // Match any key that ends with function_name
+    if let Some((_, func)) = function_map.iter().find(|(key, _)| key.ends_with(function_name)) {
+        return Some(func);
+    }
 
-    for func in function_map.values() {
-        if func.name.ends_with(simplified_name) {
-            let match_length = func.name.len();
-            if match_length > best_match_length {
-                best_match = Some(func);
-                best_match_length = match_length;
-            }
+    // Split and check segments from the right side
+    let segments: Vec<&str> = function_name.split("::").collect();
+    for i in 0..segments.len() {
+        let partial_name = segments[i..].join("::");
+        if let Some(func) = function_map.get(&partial_name) {
+            return Some(func);
         }
     }
 
-    best_match
+    // No match found
+    None
 }
