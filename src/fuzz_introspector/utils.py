@@ -492,8 +492,8 @@ def copy_source_files(required_class_list: List[str], language: str):
 
 
 def locate_rust_fuzz_key(
-    funcname: str,
-    covmap: Dict[str, List[Tuple[int, int]]]) -> Optional[str]:
+        funcname: str, covmap: Dict[str, List[Tuple[int,
+                                                    int]]]) -> Optional[str]:
     """Helper method for locating rust fuzz key with missing crate information."""
 
     while funcname:
