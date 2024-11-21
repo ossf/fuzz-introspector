@@ -302,7 +302,7 @@ def resolve_coverage_link(cov_url: str, source_file: str, lineno: int,
                           function_name: str, target_lang: str) -> str:
     """Resolves link to HTML coverage report"""
     result = "#"
-    if (target_lang == "c-cpp"):
+    if (target_lang == "c-cpp" or target_lang == "rust"):
         result = source_file + ".html#L" + str(lineno)
     elif (target_lang == "python"):
         """Resolves link to HTML coverage report for Python targets"""
@@ -489,3 +489,22 @@ def copy_source_files(required_class_list: List[str], language: str):
     else:
         logger.warning(
             f'Language: {language} not support. Skipping source file copy.')
+
+
+def locate_rust_fuzz_key(
+    funcname: str,
+    covmap: Dict[str, List[Tuple[int, int]]]) -> Optional[str]:
+    """Helper method for locating rust fuzz key with missing crate information."""
+
+    while funcname:
+        match = next((key for key in covmap if key.endswith(funcname)), None)
+        # Ensure the matched key contains crate information which is unique for rust
+        if match and "::" in match:
+            return match
+
+        if '::' in funcname:
+            funcname = funcname.split('::', 1)[1]
+        else:
+            break
+
+    return None
