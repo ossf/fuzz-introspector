@@ -530,10 +530,9 @@ def locate_rust_fuzz_item(funcname: str, item_list: List[str]) -> Optional[str]:
         return funcname
 
     while funcname:
-        match = (item for item in item_list if item.endswith(funcname))
-        # Ensure the matched key contains crate information which is unique for rust
-        if match and "::" in match:
-            return match
+        for item in item_list:
+            if item.endswith(funcname) and "::" in item:
+                return item
 
         if '::' in funcname:
             funcname = funcname.split('::', 1)[1]
