@@ -540,3 +540,4 @@ def locate_rust_fuzz_item(funcname: str, item_list: List[str]) -> Optional[str]:
             break
 
     return None
+

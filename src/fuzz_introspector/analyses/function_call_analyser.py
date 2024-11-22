@@ -234,8 +234,9 @@ class ThirdPartyAPICoverageAnalyser(analysis.AnalysisInterface):
         for fd in func_profile_list:
             if proj_profile.target_lang == "rust":
                 func_name = utils.demangle_rust_func(fd.function_name)
-                func_name = utils.locate_rust_fuzz_item(func_name,
-                                                        functions_of_interest)
+                if func_name:
+                    func_name = utils.locate_rust_fuzz_item(func_name,
+                                                            functions_of_interest)
             else:
                 func_name = utils.demangle_cpp_func(fd.function_name)
 
