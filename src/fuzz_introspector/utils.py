@@ -523,7 +523,7 @@ def locate_rust_fuzz_key(funcname: str, map: Dict[str, Any]) -> Optional[str]:
     return None
 
 
-def locate_rust_fuzz_item(funcname: str, item_list: List[str]) -> Optional[str]:
+def locate_rust_fuzz_item(funcname: str, item_list: List[str]) -> str:
     """Helper method for locating str item with missing crate information."""
 
     if funcname in item_list:
@@ -539,5 +539,4 @@ def locate_rust_fuzz_item(funcname: str, item_list: List[str]) -> Optional[str]:
         else:
             break
 
-    return None
-
+    return ''
