@@ -462,18 +462,19 @@ class FuzzCalltreeAnalysis(analysis.AnalysisInterface):
                 collapsible_string = "None"
 
             if profile.target_lang == "rust":
-                entry_function_name = utils.demangle_rust_func(entry.function_name)
+                entry_function_name = utils.demangle_rust_func(
+                    entry.function_name)
             else:
-                entry_function_name = utils.demangle_cpp_func(entry.function_name)
+                entry_function_name = utils.demangle_cpp_func(
+                    entry.function_name)
 
             html_table_string += html_helpers.html_table_add_row([
                 str(entry.blocked_unique_not_covered_complexity),
                 str(entry.blocked_unique_reachable_complexity),
                 collapsible_string,
                 str(entry.blocked_not_covered_complexity),
-                str(entry.blocked_reachable_complexity),
-                entry_function_name, cs_link,
-                f"""<a href="{entry.coverage_report_link}">
+                str(entry.blocked_reachable_complexity), entry_function_name,
+                cs_link, f"""<a href="{entry.coverage_report_link}">
                     {entry.source_file}:{entry.branch_line_number}
                 </a>"""
             ])

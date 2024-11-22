@@ -181,7 +181,8 @@ class CoverageProfile:
             fuzz_key = utils.remove_jvm_generics(funcname)
         else:
             # Handle special case for rust where crate is missing from function name
-            fuzz_key = utils.locate_rust_fuzz_key(utils.demangle_rust_func(funcname), self.covmap)
+            fuzz_key = utils.locate_rust_fuzz_key(
+                utils.demangle_rust_func(funcname), self.covmap)
 
         if fuzz_key is None or fuzz_key not in self.covmap:
             return []
@@ -374,7 +375,8 @@ class CoverageProfile:
             fuzz_key = utils.remove_jvm_generics(funcname)
         else:
             # Handle special case for rust where crate is missing from function name
-            fuzz_key = utils.locate_rust_fuzz_key(utils.demangle_rust_func(funcname), self.covmap)
+            fuzz_key = utils.locate_rust_fuzz_key(
+                utils.demangle_rust_func(funcname), self.covmap)
 
         if fuzz_key is None:
             return None, None

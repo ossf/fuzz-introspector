@@ -737,7 +737,8 @@ def detect_branch_level_blockers(
 
 def extract_namespace(mangled_function_name, return_type=None):
     # logger.info("Demangling: %s" % (mangled_function_name))
-    demangled_func_name = utils.demangle_rust_func(utils.demangle_cpp_func(mangled_function_name))
+    demangled_func_name = utils.demangle_rust_func(
+        utils.demangle_cpp_func(mangled_function_name))
     # logger.info("Demangled name: %s" % (demangled_func_name))
     if return_type is not None and demangled_func_name.startswith(
             f"{return_type} "):

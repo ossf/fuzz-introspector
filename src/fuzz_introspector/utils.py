@@ -506,12 +506,31 @@ def copy_source_files(required_class_list: List[str], language: str):
             f'Language: {language} not support. Skipping source file copy.')
 
 
-def locate_rust_fuzz_key(
-        funcname: str, map: Dict[str, Any]) -> Optional[str]:
+def locate_rust_fuzz_key(funcname: str, map: Dict[str, Any]) -> Optional[str]:
     """Helper method for locating rust fuzz key with missing crate information."""
 
     while funcname:
         match = next((key for key in map if key.endswith(funcname)), None)
+        # Ensure the matched key contains crate information which is unique for rust
+        if match and "::" in match:
+            return match
+
+        if '::' in funcname:
+            funcname = funcname.split('::', 1)[1]
+        else:
+            break
+
+    return None
+
+
+def locate_rust_fuzz_item(funcname: str, item_list: List[str]) -> Optional[str]:
+    """Helper method for locating str item with missing crate information."""
+
+    if funcname in item_list:
+        return funcname
+
+    while funcname:
+        match = (item for item in item_list if item.endswith(funcname))
         # Ensure the matched key contains crate information which is unique for rust
         if match and "::" in match:
             return match
