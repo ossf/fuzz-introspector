@@ -14,6 +14,7 @@
 """ Utility functions """
 
 import cxxfilt
+import rust_demangler
 import logging
 import json
 import os
@@ -148,6 +149,20 @@ def data_file_read_yaml(filename: str) -> Optional[Dict[Any, Any]]:
 def demangle_cpp_func(funcname: str) -> str:
     try:
         demangled: str = cxxfilt.demangle(funcname.replace(" ", ""))
+        return demangled
+    except Exception:
+        return funcname
+
+
+def demangle_rust_func(funcname: str) -> str:
+    # Ignore all non-mangled rust function names
+    # All mangled rust function names started with _R
+    if not funcname.startswith("_R"):
+        return funcname
+
+    try:
+        demangled: str = rust_demangler.demangle(funcname.replace(" ", ""))
+        demangled = demangled.replace('<', '').replace('>', '')
         return demangled
     except Exception:
         return funcname
@@ -294,7 +309,7 @@ def load_func_names(input_list: List[str],
         if (check_for_blocking
                 and constants.BLOCKLISTED_FUNCTION_NAMES.match(reached)):
             continue
-        loaded.append(demangle_cpp_func(reached))
+        loaded.append(demangle_rust_func(demangle_cpp_func(reached)))
     return loaded
 
 
@@ -302,7 +317,7 @@ def resolve_coverage_link(cov_url: str, source_file: str, lineno: int,
                           function_name: str, target_lang: str) -> str:
     """Resolves link to HTML coverage report"""
     result = "#"
-    if (target_lang == "c-cpp"):
+    if (target_lang == "c-cpp" or target_lang == "rust"):
         result = source_file + ".html#L" + str(lineno)
     elif (target_lang == "python"):
         """Resolves link to HTML coverage report for Python targets"""
@@ -489,3 +504,21 @@ def copy_source_files(required_class_list: List[str], language: str):
     else:
         logger.warning(
             f'Language: {language} not support. Skipping source file copy.')
+
+
+def locate_rust_fuzz_key(
+        funcname: str, map: Dict[str, Any]) -> Optional[str]:
+    """Helper method for locating rust fuzz key with missing crate information."""
+
+    while funcname:
+        match = next((key for key in map if key.endswith(funcname)), None)
+        # Ensure the matched key contains crate information which is unique for rust
+        if match and "::" in match:
+            return match
+
+        if '::' in funcname:
+            funcname = funcname.split('::', 1)[1]
+        else:
+            break
+
+    return None

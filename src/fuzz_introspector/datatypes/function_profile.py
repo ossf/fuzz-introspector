@@ -33,7 +33,7 @@ class FunctionProfile:
     """
 
     def __init__(self, elem: Dict[Any, Any]) -> None:
-        self.function_name = utils.demangle_cpp_func(elem['functionName'])
+        self.function_name = utils.demangle_rust_func(utils.demangle_cpp_func(elem['functionName']))
         self.raw_function_name = elem['functionName']
         self.function_source_file = elem['functionSourceFile']
         self.linkage_type = elem['linkageType']

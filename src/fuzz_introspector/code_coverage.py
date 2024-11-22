@@ -179,6 +179,9 @@ class CoverageProfile:
             fuzz_key = utils.normalise_str(funcname)
         elif utils.remove_jvm_generics(funcname) in self.covmap:
             fuzz_key = utils.remove_jvm_generics(funcname)
+        else:
+            # Handle special case for rust where crate is missing from function name
+            fuzz_key = utils.locate_rust_fuzz_key(utils.demangle_rust_func(funcname), self.covmap)
 
         if fuzz_key is None or fuzz_key not in self.covmap:
             return []
@@ -369,6 +372,9 @@ class CoverageProfile:
             fuzz_key = utils.normalise_str(funcname)
         elif utils.remove_jvm_generics(funcname) in self.covmap:
             fuzz_key = utils.remove_jvm_generics(funcname)
+        else:
+            # Handle special case for rust where crate is missing from function name
+            fuzz_key = utils.locate_rust_fuzz_key(utils.demangle_rust_func(funcname), self.covmap)
 
         if fuzz_key is None:
             return None, None
@@ -421,7 +427,8 @@ def extract_hitcount(coverage_line: str) -> int:
 
 
 def load_llvm_coverage(target_dir: str,
-                       target_name: Optional[str] = None) -> CoverageProfile:
+                       target_name: Optional[str] = None,
+                       is_rust: bool = False) -> CoverageProfile:
     """
     Scans a directory to read one or more coverage reports, and returns a CoverageProfile
 
@@ -430,7 +437,9 @@ def load_llvm_coverage(target_dir: str,
           -line-coverage-gt=0 $shared_libraries $LLVM_COV_COMMON_ARGS > \
           ${FUZZER_STATS_DIR}/$target.covreport
 
-    This is used to parse C/C++ coverage.
+    This is used to parse C/C++/Rust coverage.
+    If it is used for rust, please pass in True for is_rust in order to correctly
+    demangle rust function name.
 
     The function supports loading multiple and individual coverage reports.
     This is needed because finding coverage on a per-fuzzer basis requires
@@ -496,7 +505,10 @@ def load_llvm_coverage(target_dir: str,
                                                                    ":", "")
                     else:
                         curr_func = line.replace(" ", "").replace(":", "")
-                    curr_func = utils.demangle_cpp_func(curr_func)
+                    if is_rust:
+                        curr_func = utils.demangle_rust_func(curr_func)
+                    else:
+                        curr_func = utils.demangle_cpp_func(curr_func)
                     cp.covmap[curr_func] = list()
                     switch_string = ''
                     switch_line_number = None

@@ -232,7 +232,11 @@ class ThirdPartyAPICoverageAnalyser(analysis.AnalysisInterface):
         # ]
         functions_of_interest = command_injection_sinks
         for fd in func_profile_list:
-            func_name = utils.demangle_cpp_func(fd.function_name)
+            if proj_profile.target_lang == "rust":
+                func_name = utils.demangle_rust_func(fd.function_name)
+                func_name = utils.locate_rust_fuzz_key(func_name, functions_of_interest)
+            else:
+                func_name = utils.demangle_cpp_func(fd.function_name)
 
             if func_name not in functions_of_interest:
                 continue

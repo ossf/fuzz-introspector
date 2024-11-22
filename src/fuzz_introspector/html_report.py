@@ -82,7 +82,11 @@ def create_all_function_table(
     table_rows_json_report = []
 
     for fd_k, fd in proj_profile.get_all_functions_with_source().items():
-        demangled_func_name = utils.demangle_cpp_func(fd.function_name)
+        if proj_profile.target_lang == "rust":
+            demangled_func_name = utils.demangle_rust_func(fd.function_name)
+        else:
+            demangled_func_name = utils.demangle_cpp_func(fd.function_name)
+
         hit_percentage = proj_profile.get_func_hit_percentage(fd.function_name)
 
         func_cov_url = proj_profile.resolve_coverage_report_link(

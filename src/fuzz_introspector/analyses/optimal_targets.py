@@ -68,8 +68,12 @@ def add_func_to_reached_and_clone(
         f = merged_profile.all_functions[func_name]
         f.hitcount += 1
 
-        f.reached_by_fuzzers.append(
-            utils.demangle_cpp_func(func_to_add.function_name))
+        if merged_profile.target_lang == "rust":
+            f.reached_by_fuzzers.append(
+                utils.demangle_rust_func(func_to_add.function_name))
+        else:
+            f.reached_by_fuzzers.append(
+                utils.demangle_cpp_func(func_to_add.function_name))
 
     # Recompute all analysis that is based on hitcounts in all functions as hitcount has
     # changed for elements in the dictionary.
@@ -314,7 +318,7 @@ class OptimalTargets(analysis.AnalysisInterface):
                                                        target_lang)
             html_func_row = (
                 f"<a href=\"{ func_cov_url }\"><code class='language-clike'>"
-                f"{utils.demangle_cpp_func(fd.function_name)}"
+                f"{utils.demangle_rust_func(utils.demangle_cpp_func(fd.function_name))}"
                 f"</code></a>")
             html_string += html_helpers.html_table_add_row([
                 html_func_row, fd.function_source_file, fd.arg_count,

@@ -159,7 +159,10 @@ class EngineInput(analysis.AnalysisInterface):
         for fuzz_blocker in fuzz_blockers:
             ffname = fuzz_blocker.src_function_name
             if ffname is not None and ffname not in focus_functions:
-                focus_functions.append(utils.demangle_cpp_func(ffname))
+                if profile.target_lang == "rust":
+                    focus_functions.append(utils.demangle_rust_func(ffname))
+                else:
+                    focus_functions.append(utils.demangle_cpp_func(ffname))
                 logger.info(
                     f"Found focus function: {fuzz_blocker.src_function_name}")
 

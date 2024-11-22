@@ -517,5 +517,9 @@ class MergedProjectProfile:
 
     def _set_fd_cache(self):
         for fd_k, fd in self.all_functions.items():
-            self.dst_to_fd_cache[utils.demangle_cpp_func(
-                fd.function_name)] = fd
+            if self.target_lang == "rust":
+                self.dst_to_fd_cache[utils.demangle_rust_func(
+                    fd.function_name)] = fd
+            else:
+                self.dst_to_fd_cache[utils.demangle_cpp_func(
+                    fd.function_name)] = fd
