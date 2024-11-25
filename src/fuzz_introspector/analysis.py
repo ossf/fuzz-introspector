@@ -330,6 +330,14 @@ def get_node_coverage_hitcount(demangled_name: str, callstack: Dict[int, str],
                              hit_count_cov)
                 if n_line_number == node.src_linenumber and hit_count_cov > 0:
                     node_hitcount = hit_count_cov
+        elif profile.target_lang == "rust":
+            coverage_data = profile.coverage.get_hit_details(
+                callstack_get_parent(node, callstack))
+            for (n_line_number, hit_count_cov) in coverage_data:
+                logger.debug("  - iterating %d : %d", n_line_number,
+                             hit_count_cov)
+                if n_line_number == node.src_linenumber and hit_count_cov > 0:
+                    node_hitcount = hit_count_cov
         node.cov_parent = callstack_get_parent(node, callstack)
     else:
         logger.error(
@@ -1008,6 +1016,8 @@ def extract_all_sources(language):
         test_extensions = ['.java', '.scala', '.sc', '.groovy', '.kt', '.kts']
     elif language == 'python':
         test_extensions = ['.py']
+    elif language == 'rust':
+        test_extensions = ['.rs']
     else:
         test_extensions = ['.cc', '.cpp', '.cxx', '.c++', '.c', '.h', '.hpp']
 
