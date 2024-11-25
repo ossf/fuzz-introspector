@@ -14,6 +14,7 @@
 """ Utility functions """
 
 import cxxfilt
+import rust_demangler
 import logging
 import json
 import os
@@ -148,6 +149,20 @@ def data_file_read_yaml(filename: str) -> Optional[Dict[Any, Any]]:
 def demangle_cpp_func(funcname: str) -> str:
     try:
         demangled: str = cxxfilt.demangle(funcname.replace(" ", ""))
+        return demangled
+    except Exception:
+        return funcname
+
+
+def demangle_rust_func(funcname: str) -> str:
+    # Ignore all non-mangled rust function names
+    # All mangled rust function names started with _R
+    if not funcname.startswith("_R"):
+        return funcname
+
+    try:
+        demangled: str = rust_demangler.demangle(funcname.replace(" ", ""))
+        demangled = demangled.replace('<', '').replace('>', '')
         return demangled
     except Exception:
         return funcname
@@ -294,7 +309,7 @@ def load_func_names(input_list: List[str],
         if (check_for_blocking
                 and constants.BLOCKLISTED_FUNCTION_NAMES.match(reached)):
             continue
-        loaded.append(demangle_cpp_func(reached))
+        loaded.append(demangle_rust_func(demangle_cpp_func(reached)))
     return loaded
 
 
@@ -491,13 +506,11 @@ def copy_source_files(required_class_list: List[str], language: str):
             f'Language: {language} not support. Skipping source file copy.')
 
 
-def locate_rust_fuzz_key(
-        funcname: str, covmap: Dict[str, List[Tuple[int,
-                                                    int]]]) -> Optional[str]:
+def locate_rust_fuzz_key(funcname: str, map: Dict[str, Any]) -> Optional[str]:
     """Helper method for locating rust fuzz key with missing crate information."""
 
     while funcname:
-        match = next((key for key in covmap if key.endswith(funcname)), None)
+        match = next((key for key in map if key.endswith(funcname)), None)
         # Ensure the matched key contains crate information which is unique for rust
         if match and "::" in match:
             return match
@@ -508,3 +521,22 @@ def locate_rust_fuzz_key(
             break
 
     return None
+
+
+def locate_rust_fuzz_item(funcname: str, item_list: List[str]) -> str:
+    """Helper method for locating str item with missing crate information."""
+
+    if funcname in item_list:
+        return funcname
+
+    while funcname:
+        for item in item_list:
+            if item.endswith(funcname) and "::" in item:
+                return item
+
+        if '::' in funcname:
+            funcname = funcname.split('::', 1)[1]
+        else:
+            break
+
+    return ''

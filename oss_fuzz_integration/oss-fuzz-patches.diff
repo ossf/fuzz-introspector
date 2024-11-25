@@ -45,7 +45,7 @@ index d9077510f..5baa138a6 100755
  
  if [ "$FUZZING_LANGUAGE" = "jvm" ]; then
    if [ "$FUZZING_ENGINE" != "libfuzzer" ] && [ "$FUZZING_ENGINE" != "wycheproof" ]; then
-@@ -66,6 +67,13 @@ if [ "$FUZZING_LANGUAGE" = "python" ]; then
+@@ -66,6 +67,14 @@ if [ "$FUZZING_LANGUAGE" = "python" ]; then
    fi
  fi
  
@@ -53,6 +53,7 @@ index d9077510f..5baa138a6 100755
 +  if [ "$SANITIZER" = "introspector" ]; then
 +    # introspector sanitizer flag will cause cargo build failed, remove it temporary and store it in separate variable
 +    export SANITIZER=address
++    pip3 install rust-demangler
 +  fi
 +fi
 +

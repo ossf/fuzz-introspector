@@ -491,7 +491,7 @@ class FuzzerProfile:
     def _load_coverage(self, target_folder: str) -> None:
         """Load coverage data for this profile"""
         logger.info(f"Loading coverage of type {self.target_lang}")
-        if self.target_lang == "c-cpp" or self.target_lang == "rust":
+        if self.target_lang == "c-cpp":
             if os.getenv('FI_KERNEL_COV', ''):
                 self.coverage = code_coverage.load_kernel_cov(
                     os.getenv('FI_KERNEL_COV'))
@@ -507,6 +507,9 @@ class FuzzerProfile:
         elif self.target_lang == "jvm":
             self.coverage = code_coverage.load_jvm_coverage(
                 target_folder, self.identifier)
+        elif self.target_lang == "rust":
+            self.coverage = code_coverage.load_llvm_coverage(
+                target_folder, self.identifier, True)
         else:
             raise DataLoaderError(
                 "The profile target has no coverage loading support")

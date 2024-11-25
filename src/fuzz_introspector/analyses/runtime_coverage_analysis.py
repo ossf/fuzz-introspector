@@ -97,8 +97,14 @@ class RuntimeCoverageAnalysis(analysis.AnalysisInterface):
                                      reached_by_fuzzers)
                 else:
                     reached_by = ""
+
+                if proj_profile.target_lang == "rust":
+                    demangled_name = utils.demangle_rust_func(funcname)
+                else:
+                    demangled_name = utils.demangle_cpp_func(funcname)
+
                 html_string += html_helpers.html_table_add_row([
-                    utils.demangle_cpp_func(funcname), func_lines, hit_lines,
+                    demangled_name, func_lines, hit_lines,
                     "%.5s%%" % (str((hit_lines / func_lines) * 100.0)),
                     reached_by
                 ])
