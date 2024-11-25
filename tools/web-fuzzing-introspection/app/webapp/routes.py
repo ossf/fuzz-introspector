@@ -2667,6 +2667,9 @@ def database_language_stats():
         language_counts[project_info.language][
             'total'] += project_info.coverage_data['line_coverage']['count']
 
+    # Match java result to OSS-Fuzz jvm setting
+    language_counts['jvm'] = language_counts['java']
+
     return {'result': 'success', 'stats': language_counts}
 
 
