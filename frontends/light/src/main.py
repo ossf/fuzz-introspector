@@ -13,7 +13,6 @@
 # limitations under the License.
 #
 ################################################################################
-
 """Fuzz Introspector Light frontend"""
 
 import os
@@ -55,13 +54,43 @@ class Project():
                 func_dict = {}
                 func_dict['name'] = func_name
                 func_dict['source_file'] = source_code.source_file
-
                 start_pos, end_pos = source_code.get_function_linenumber(
                     func_name)
                 func_dict['func_position'] = {
                     'start': start_pos,
                     'end': end_pos
                 }
+
+                func_callsites = source_code.get_callsites_in_function(
+                    func_name)
+                funcs_reached = set()
+                for cs_dst, _ in func_callsites:
+                    funcs_reached.add(cs_dst)
+                func_dict['functionsReached'] = list(funcs_reached)
+
+                # Get cyclomatic complexity
+                func_dict[
+                    'CyclomaticComplexity'] = source_code.get_function_complexity(
+                        func_name)
+
+                # Function depth
+
+                # ICount
+                func_dict['ICount'] = source_code.get_function_instr_count(
+                    func_name)
+
+                # EdgeCount
+                func_dict['EdgeCount'] = func_dict['CyclomaticComplexity']
+
+                # argCount
+
+                # Arg names
+
+                # Arg types
+
+                # Return type
+
+                # Callsites
 
                 func_signature = source_code.function_signature(func_name)
                 func_dict['signature'] = func_signature
@@ -226,7 +255,11 @@ class SourceCodeFile():
             if child.is_named:
                 if func.field_name_for_child(child_idx) == 'body':
                     break
-            function_signature += child.text.decode() + ' '
+            # TODO(David): fix decoding issue
+            try:
+                function_signature += child.text.decode() + ' '
+            except:
+                pass
         function_signature = function_signature.replace('\n',
                                                         '').replace('\\n', '')
         while '  ' in function_signature:
@@ -253,6 +286,62 @@ class SourceCodeFile():
         start_pos = self.get_linenumber(func.byte_range[0])
         end_pos = self.get_linenumber(func.byte_range[1])
         return start_pos, end_pos
+
+    def get_function_complexity(self, target_function_name):
+        """Gets complexity measure based on counting branch nodes in a
+        function."""
+        func = self.get_function_node(target_function_name)
+        if not func:
+            return -1
+        branch_nodes = [
+            "if_statement",
+            "case_statement",
+            "do_statement",
+            "for_range_loop",
+            "for_statement",
+            "goto_statement",
+            "function_declarator",
+            "pointer_declarator",
+            "struct_specifier",
+            "preproc_elif",
+            "while_statement",
+            "switch_statement",
+            "&&",
+            "||",
+        ]
+
+        def _traverse_node_complexity(node):
+            count = 0
+            if node.type in branch_nodes:
+                count += 1
+            for item in node.children:
+                count += _traverse_node_complexity(item)
+            return count
+
+        return _traverse_node_complexity(func)
+
+    def get_function_instr_count(self, target_function_name):
+        """Returns a pseudo measurement of instruction count."""
+        func = self.get_function_node(target_function_name)
+        if not func:
+            return -1
+        instr_nodes = [
+            "binary_expression",
+            "unary_expression",
+            "call_expression",
+            "compound_statement",
+            "assignment_expression",
+        ]
+
+        def _traverse_node_instr_count(node):
+            count = 0
+            if node.type in instr_nodes:
+                count += 1
+            for item in node.children:
+                count += _traverse_node_instr_count(item)
+            return count
+
+        return _traverse_node_instr_count(func)
 
     def get_linenumber(self, bytepos):
         """Gets the line number corresponding to a byte range."""
