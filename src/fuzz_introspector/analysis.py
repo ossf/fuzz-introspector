@@ -1073,10 +1073,10 @@ def _extract_test_information_cpp(report_dict):
         if path.startswith('/usr/'):
             continue
         directories.add('/'.join(path.split('/')[:-1]))
-    return extract_tests_from_directories(directories)
+    return extract_tests_from_directories(directories, 'c-cpp')
 
 
-def extract_tests_from_directories(directories) -> Set[str]:
+def extract_tests_from_directories(directories, language) -> Set[str]:
     """Extracts test files from a given collection of directory paths and also
     copies them to the `constants.SAVED_SOURCE_FOLDER` folder with the same
     absolute path appended."""
@@ -1101,8 +1101,19 @@ def extract_tests_from_directories(directories) -> Set[str]:
         if any(ins in directory for ins in inspirations):
             all_inspiration_dirs.add(directory)
 
-    # Get all .c files
-    test_extensions = ['.cc', '.cpp', '.cxx', '.c++', '.c']
+    if language == 'jvm':
+        # Get all jvm source files
+        test_extensions = ['.java', '.scala', '.sc', '.groovy', '.kt', '.kts']
+    elif language == 'python':
+        # Get all python source files
+        test_extensions = ['.py']
+    elif language == 'rust':
+        # Get all rust source files
+        test_extensions = ['.rs']
+    else:
+        # Get all c/cpp source files
+        test_extensions = ['.cc', '.cpp', '.cxx', '.c++', '.c']
+
     all_test_files = set()
     to_avoid = [
         'fuzztest', 'aflplusplus', 'libfuzzer', 'googletest', 'thirdparty',
@@ -1125,6 +1136,15 @@ def extract_tests_from_directories(directories) -> Set[str]:
                 try:
                     with open(absolute_path, 'r') as file_fp:
                         if 'LLVMFuzzerTestOneInput' in file_fp.read():
+                            continue
+                        # For rust projects
+                        if 'fuzz_target' in file_fp.read():
+                            continue
+                        # For python projects
+                        if '.Fuzz()' in file_fp.read():
+                            continue
+                        # For jvm projects
+                        if 'fuzzerTestOneInput' in file_fp.read():
                             continue
                 except UnicodeDecodeError:
                     continue
@@ -1225,8 +1245,12 @@ def _extract_test_information_jvm():
     return all_test_files
 
 
-def light_correlate_source_to_executable():
+def light_correlate_source_to_executable(language):
     """Extracts pairs of harness source/executable"""
+    if language == 'jvm' or language == 'python':
+        # Skip this step for jvm or python projects
+        return []
+
     out_dir = os.getenv('OUT', '/out/')
     textcov_dir = os.path.join(out_dir, 'textcov_reports')
 
@@ -1240,7 +1264,7 @@ def light_correlate_source_to_executable():
     for cov_report in cov_reports:
         print('- cov report: %s' % (cov_report))
 
-    all_source_files = extract_all_sources('cpp')
+    all_source_files = extract_all_sources(language)
     pairs = []
     # Match based on file names. This should be the most primitive but
     # will catch a large number of targets

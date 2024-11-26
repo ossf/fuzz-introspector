@@ -81,16 +81,16 @@ def light_analysis(args) -> int:
     if not os.path.isdir(light_dir):
         os.makedirs(light_dir, exist_ok=True)
 
-    all_tests = analysis.extract_tests_from_directories({src_dir})
+    all_tests = analysis.extract_tests_from_directories({src_dir}, args.language)
 
     with open(os.path.join(light_dir, 'all_tests.json'), 'w') as f:
         f.write(json.dumps(list(all_tests)))
 
-    pairs = analysis.light_correlate_source_to_executable()
+    pairs = analysis.light_correlate_source_to_executable(args.language)
     with open(os.path.join(light_dir, 'all_pairs.json'), 'w') as f:
         f.write(json.dumps(list(pairs)))
 
-    all_source_files = analysis.extract_all_sources('cpp')
+    all_source_files = analysis.extract_all_sources(args.language)
     light_out_src = os.path.join(light_dir, 'source_files')
 
     for source_file in all_source_files:

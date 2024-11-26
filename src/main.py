@@ -31,10 +31,14 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
 
     subparsers = parser.add_subparsers(dest='command')
 
-    subparsers.add_parser(
+    light_parser = subparsers.add_parser(
         "light",
         help="Perform light analysis of project. This involves no compilaiton.",
     )
+    light_parser.add_argument("--language",
+                              type=str,
+                              default="c-cpp",
+                              help="Language of project")
 
     # Report generation command
     report_parser = subparsers.add_parser(
