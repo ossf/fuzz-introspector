@@ -81,7 +81,8 @@ def light_analysis(args) -> int:
     if not os.path.isdir(light_dir):
         os.makedirs(light_dir, exist_ok=True)
 
-    all_tests = analysis.extract_tests_from_directories({src_dir}, args.language)
+    all_tests = analysis.extract_tests_from_directories({src_dir},
+                                                        args.language)
 
     with open(os.path.join(light_dir, 'all_tests.json'), 'w') as f:
         f.write(json.dumps(list(all_tests)))
