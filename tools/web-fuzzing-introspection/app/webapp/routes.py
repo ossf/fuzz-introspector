@@ -210,7 +210,7 @@ def extract_lines_from_source_code(
         return None
 
     # Transform java class name to java source file path with package directories
-    if project.language == 'java':
+    if project.language == 'java' and not target_file.endswith('.java'):
         target_file = f'/{target_file.split("$", 1)[0].replace(".", "/")}.java'
 
     # Light source code
@@ -2660,6 +2660,8 @@ def database_language_stats():
     }
     for project_info in latest_coverage_profiles.values():
         if project_info.language == 'N/A':
+            continue
+        if not project_info.coverage_data:
             continue
         language_counts[
             project_info.language]['covered'] += project_info.coverage_data[
