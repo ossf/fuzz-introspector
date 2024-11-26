@@ -45,7 +45,7 @@ index d9077510f..5baa138a6 100755
  
  if [ "$FUZZING_LANGUAGE" = "jvm" ]; then
    if [ "$FUZZING_ENGINE" != "libfuzzer" ] && [ "$FUZZING_ENGINE" != "wycheproof" ]; then
-@@ -66,6 +67,14 @@ if [ "$FUZZING_LANGUAGE" = "python" ]; then
+@@ -66,6 +67,13 @@ if [ "$FUZZING_LANGUAGE" = "python" ]; then
    fi
  fi
  
@@ -53,7 +53,6 @@ index d9077510f..5baa138a6 100755
 +  if [ "$SANITIZER" = "introspector" ]; then
 +    # introspector sanitizer flag will cause cargo build failed, remove it temporary and store it in separate variable
 +    export SANITIZER=address
-+    pip3 install rust-demangler
 +  fi
 +fi
 +
@@ -80,6 +79,28 @@ index d9077510f..5baa138a6 100755
    export AR=llvm-ar
    export NM=llvm-nm
    export RANLIB=llvm-ranlib
+@@ -210,10 +220,19 @@ if [ "$SANITIZER" = "introspector" ]; then
+ 
+   apt-get install -y libjpeg-dev zlib1g-dev libyaml-dev
+   python3 -m pip install --upgrade pip setuptools
+-  python3 -m pip install cxxfilt pyyaml beautifulsoup4 lxml soupsieve
++  python3 -m pip install cxxfilt pyyaml beautifulsoup4 lxml soupsieve rust-demangler
+   python3 -m pip install --prefer-binary matplotlib
+ 
+-  python3 /fuzz-introspector/src/main.py light
++  if [ "$FUZZING_LANGUAGE" = "python" ]; then
++    python3 /fuzz-introspector/src/main.py light --language=python
++  elif [ "$FUZZING_LANGUAGE" = "jvm" ]; then
++    python3 /fuzz-introspector/src/main.py light --language=jvm
++  elif [ "$FUZZING_LANGUAGE" = "rust" ]; then
++    python3 /fuzz-introspector/src/main.py light --language=rust
++  else
++    python3 /fuzz-introspector/src/main.py light
++  fi
++
+   rsync -avu --delete "$SRC/inspector/" "$OUT/inspector"
+ fi
+ 
 @@ -280,7 +288,7 @@ else
    fi
  fi
