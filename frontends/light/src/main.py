@@ -89,8 +89,12 @@ class Project():
                     func_name)
 
                 # Arg types
+                func_dict['ArgTypes'] = source_code.get_function_arg_types(
+                    func_name)
 
                 # Return type
+                func_dict['ReturnType'] = source_code.get_function_return_type(
+                    func_name)
 
                 # Callsites
 
@@ -243,6 +247,57 @@ class SourceCodeFile():
                     if function_name == target_function_name:
                         return func
         return None
+
+    def get_function_return_type(self, target_function_name):
+        """Gets a function's return type as a string"""
+        func = self.get_function_node(target_function_name)
+        if not func:
+            return ''
+
+        ret_type = parameters_node = func.child_by_field_name(
+            'type').text.decode()
+
+        tmp_decl = func
+        while tmp_decl.child_by_field_name(
+                'declarator').type == 'pointer_declarator':
+            ret_type += '*'
+            tmp_decl = tmp_decl.child_by_field_name('declarator')
+
+        return ret_type
+
+    def get_function_arg_types(self, target_function_name):
+        """Gets the text of a function's types"""
+        param_types = []
+        func = self.get_function_node(target_function_name)
+        if not func:
+            return param_types
+
+        try:
+            parameters_node = func.child_by_field_name(
+                'declarator').child_by_field_name('parameters')
+        except:
+            return param_types
+
+        if not parameters_node:
+            return param_types
+
+        for param in parameters_node.children:
+            if not param.is_named:
+                continue
+            try:
+                type_str = param.child_by_field_name('type').text.decode()
+
+                param_tmp = param
+                while param_tmp.child_by_field_name('declarator') is not None:
+                    if param_tmp.type == 'pointer_declarator':
+                        type_str += '*'
+                    param_tmp = param_tmp.child_by_field_name('declarator')
+
+                param_types.append(type_str)
+            except:
+                pass
+
+        return param_types
 
     def get_function_arg_names(self, target_function_name):
         """Gets the same of a function's arguments"""
