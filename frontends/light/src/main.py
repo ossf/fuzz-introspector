@@ -85,6 +85,8 @@ class Project():
                 # argCount
 
                 # Arg names
+                func_dict['ArgNames'] = source_code.get_function_arg_names(
+                    func_name)
 
                 # Arg types
 
@@ -241,6 +243,35 @@ class SourceCodeFile():
                     if function_name == target_function_name:
                         return func
         return None
+
+    def get_function_arg_names(self, target_function_name):
+        """Gets the same of a function's arguments"""
+        param_names = []
+        func = self.get_function_node(target_function_name)
+        if not func:
+            return param_names
+
+        try:
+            parameters_node = func.child_by_field_name(
+                'declarator').child_by_field_name('parameters')
+        except:
+            return param_names
+
+        if not parameters_node:
+            return param_names
+
+        for param in parameters_node.children:
+            if not param.is_named:
+                continue
+            try:
+                param_tmp = param
+                while param_tmp.child_by_field_name('declarator') is not None:
+                    param_tmp = param_tmp.child_by_field_name('declarator')
+                param_names.append(param_tmp.text.decode())
+            except:
+                pass
+
+        return param_names
 
     def function_signature(self, target_function_name):
         """Returns the function signature of a function as a string."""
