@@ -320,7 +320,13 @@ def extract_local_project_data(project_name, oss_fuzz_path,
                                manager_return_dict):
     """Extracts data for a project using a local OSS-Fuzz output."""
     print(f'Analysing {project_name}')
-    project_language = 'c++'
+    try:
+        project_language = oss_fuzz.try_to_get_project_language(project_name)
+        if project_language == 'jvm':
+            project_language = 'java'
+    except:
+        # Default set to c++ as this is OSS-Fuzz's default.
+        project_language = 'c++'
 
     code_coverage_summary = oss_fuzz.get_local_code_coverage_summary(
         project_name, oss_fuzz_path)
@@ -1327,7 +1333,6 @@ def create_local_db(oss_fuzz_path):
     for project in projects_to_analyse:
         # Get the data
         extract_local_project_data(project, oss_fuzz_path, analyses_dictionary)
-
     # Accummulate the data from all the projects.
     all_header_files = []
     for project_dict in analyses_dictionary.values():
