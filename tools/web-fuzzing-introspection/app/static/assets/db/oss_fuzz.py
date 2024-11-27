@@ -395,7 +395,8 @@ def extract_local_introspector_light_all_files(project_name, oss_fuzz_folder):
 
 def extract_local_introspector_debug_info(project_name, oss_fuzz_folder):
     summary_json = os.path.join(oss_fuzz_folder, 'build', 'out', project_name,
-                                'inspector', 'inspector', 'all_debug_info.json')
+                                'inspector', 'inspector',
+                                'all_debug_info.json')
     if not os.path.isfile(summary_json):
         return {}
     with open(summary_json, 'r') as f:
