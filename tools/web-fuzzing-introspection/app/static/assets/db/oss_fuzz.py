@@ -189,7 +189,7 @@ def extract_introspector_debug_info(project_name, date_str):
 
 def extract_local_introspector_function_list(project_name, oss_fuzz_folder):
     summary_json = os.path.join(oss_fuzz_folder, 'build', 'out', project_name,
-                                'inspector',
+                                'inspector', 'inspector',
                                 'all-fuzz-introspector-functions.json')
     if not os.path.isfile(summary_json):
         return []
@@ -201,7 +201,7 @@ def extract_local_introspector_function_list(project_name, oss_fuzz_folder):
 
 def extract_local_introspector_constructor_list(project_name, oss_fuzz_folder):
     summary_json = os.path.join(oss_fuzz_folder, 'build', 'out', project_name,
-                                'inspector',
+                                'inspector', 'inspector',
                                 'all-fuzz-introspector-jvm-constructor.json')
     if not os.path.isfile(summary_json):
         return []
@@ -213,7 +213,7 @@ def extract_local_introspector_constructor_list(project_name, oss_fuzz_folder):
 
 def extract_local_introspector_report(project_name, oss_fuzz_folder):
     summary_json = os.path.join(oss_fuzz_folder, 'build', 'out', project_name,
-                                'inspector', 'summary.json')
+                                'inspector', 'inspector', 'summary.json')
     if not os.path.isfile(summary_json):
         return {}
 
@@ -345,7 +345,7 @@ def extract_introspector_report(project_name, date_str):
 
 def extract_local_introspector_all_files(project_name, oss_fuzz_folder):
     summary_json = os.path.join(oss_fuzz_folder, 'build', 'out', project_name,
-                                'inspector', 'all-files.json')
+                                'inspector', 'inspector', 'all-files.json')
     if not os.path.isfile(summary_json):
         return []
     with open(summary_json, 'r') as f:
@@ -355,7 +355,7 @@ def extract_local_introspector_all_files(project_name, oss_fuzz_folder):
 
 def extract_local_introspector_test_files(project_name, oss_fuzz_folder):
     summary_json = os.path.join(oss_fuzz_folder, 'build', 'out', project_name,
-                                'inspector', 'test-files.json')
+                                'inspector', 'inspector', 'test-files.json')
     if not os.path.isfile(summary_json):
         return {}
     with open(summary_json, 'r') as f:
@@ -395,7 +395,7 @@ def extract_local_introspector_light_all_files(project_name, oss_fuzz_folder):
 
 def extract_local_introspector_debug_info(project_name, oss_fuzz_folder):
     summary_json = os.path.join(oss_fuzz_folder, 'build', 'out', project_name,
-                                'inspector', 'all_debug_info.json')
+                                'inspector', 'inspector', 'all_debug_info.json')
     if not os.path.isfile(summary_json):
         return {}
     with open(summary_json, 'r') as f:
