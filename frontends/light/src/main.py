@@ -278,8 +278,7 @@ class SourceCodeFile():
         if not func:
             return ''
 
-        ret_type = parameters_node = func.child_by_field_name(
-            'type').text.decode()
+        ret_type = func.child_by_field_name('type').text.decode()
 
         tmp_decl = func
         while tmp_decl.child_by_field_name(
