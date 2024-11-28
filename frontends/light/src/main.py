@@ -19,9 +19,14 @@ import os
 import sys
 import pathlib
 
+import logging
+
 from tree_sitter import Language, Parser
 import tree_sitter_c
 import yaml
+
+logger = logging.getLogger(name=__name__)
+LOG_FMT = '%(asctime)s.%(msecs)03d %(levelname)s %(module)s - %(funcName)s: %(message)s'
 
 tree_sitter_languages = {'c': Language(tree_sitter_c.language())}
 
@@ -36,6 +41,7 @@ class Project():
 
     def dump_module_logic(self, report_name):
         """Dumps the data for the module in full."""
+        logger.info('Dumping project-wide logic.')
         report = {'report': 'name'}
         report['sources'] = []
 
@@ -479,7 +485,6 @@ class SourceCodeFile():
         treesitter tree."""
         callsites = []
         if not target_function_name in self.function_names:
-            print('Did not find the function')
             return callsites
 
         call_query = self.tree_sitter_lang.query('( call_expression ) @ce')
@@ -502,7 +507,6 @@ class SourceCodeFile():
 
                     for _, call_exprs in call_res.items():
                         for call_expr in call_exprs:
-                            # print('Call res')
                             for call_child in call_expr.children:
 
                                 if call_child.type == 'identifier':
@@ -529,7 +533,7 @@ def capture_source_files_in_tree(directory_tree, language):
     return language_files
 
 
-def load_treesitter_trees(source_files):
+def load_treesitter_trees(source_files, log_harnesses=True):
     """Creates treesitter trees for all files in a given list of source files."""
     results = []
 
@@ -538,31 +542,42 @@ def load_treesitter_trees(source_files):
             for code_file in source_files[language]:
                 source_cls = SourceCodeFile(code_file, language)
                 source_cls.get_defined_function_names()
-                if source_cls.has_libfuzzer_harness():
-                    print(code_file)
+                if log_harnesses:
+                    if source_cls.has_libfuzzer_harness():
+                        logger.info('harness: %s', code_file)
                 results.append(source_cls)
     return results
 
 
+def setup_logging():
+    """Initializes logging"""
+    logging.basicConfig(
+        level=logging.INFO,
+        format=LOG_FMT,
+        datefmt='%Y-%m-%d %H:%M:%S',
+    )
+
+
 def main():
     """Main"""
+    setup_logging()
+
     source_files = {}
+
     source_files['c'] = capture_source_files_in_tree(sys.argv[1], 'c')
+    logger.info('Found %d files to include in analysis',
+                len(source_files['c']))
+    logger.info('Loading tree-sitter trees')
     source_codes = load_treesitter_trees(source_files)
 
+    logger.info('Creating base project.')
     project = Project(source_codes)
-
     project.dump_module_logic('report.yaml')
-
     harnesses = []
     for idx, harness in enumerate(project.get_source_codes_with_harnesses()):
-        print(f'Extracting calltree for {harness.source_file}')
+        logger.info('Extracting calltree for %s', harness.source_file)
         calltree = project.extract_calltree(harness, 'LLVMFuzzerTestOneInput')
         harnesses.append({'calltree': calltree})
-        #print('-'*65)
-        #print(calltree)
-        #print('-'*65)
-        #sys.exit(0)
         with open(f'fuzzer-calltree-{idx}', 'w', encoding='utf-8') as f:
             f.write(calltree)
 
