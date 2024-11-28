@@ -42,7 +42,7 @@ class Project():
         # Find all functions
         function_list = []
         for source_code in self.source_code_files:
-
+            source_code.extract_imported_header_files()
             report['sources'].append({
                 'source_file':
                 source_code.source_file,
@@ -195,6 +195,8 @@ class SourceCodeFile():
 
         self.line_range_pairs = []
 
+        self.includes = set()
+
         # Initialization ruotines
         self.load_tree()
 
@@ -205,6 +207,22 @@ class SourceCodeFile():
             with open(self.source_file, 'rb') as f:
                 source_code = f.read()
             self.root = self.parser.parse(source_code).root_node
+
+    def extract_imported_header_files(self):
+        """Sets the header files imported by a given module."""
+        if not self.root:
+            return
+        include_query_str = '( preproc_include ) @imp'
+
+        include_query = self.tree_sitter_lang.query(include_query_str)
+        include_query_res = include_query.captures(self.root)
+
+        for _, includes in include_query_res.items():
+            for include in includes:
+                include_path_node = include.child_by_field_name('path')
+                include_path = include_path_node.text.decode().replace(
+                    '"', '').replace('>', '').replace('<', '')
+                self.includes.add(include_path)
 
     def get_defined_function_names(self):
         """Gets the functions defined in the file, as a list of strings."""
