@@ -53,59 +53,33 @@ class Project():
                 'source_file':
                 source_code.source_file,
                 'function_names':
-                source_code.function_names
+                source_code.get_defined_function_names()
             })
 
-            for func_name in source_code.function_names:
+            for func_def in source_code.func_defs:
                 func_dict = {}
-                func_dict['name'] = func_name
+                func_dict['name'] = func_def.name()
                 func_dict['source_file'] = source_code.source_file
-                start_pos, end_pos = source_code.get_function_linenumber(
-                    func_name)
                 func_dict['func_position'] = {
-                    'start': start_pos,
-                    'end': end_pos
+                    'start':
+                    source_code.get_linenumber(func_def.position()[0]),
+                    'end': source_code.get_linenumber(func_def.position()[1])
                 }
-
-                func_callsites = source_code.get_callsites_in_function(
-                    func_name)
+                func_dict[
+                    'CyclomaticComplexity'] = func_def.get_function_complexity(
+                    )
+                func_dict['EdgeCount'] = func_dict['CyclomaticComplexity']
+                func_dict['ICount'] = func_def.get_function_instr_count()
+                func_dict['ArgNames'] = func_def.get_function_arg_names()
+                func_dict['ArgTypes'] = func_def.get_function_arg_types()
+                func_dict['ReturnType'] = func_def.get_function_return_type()
+                func_dict['signature'] = func_def.function_signature()
+                func_callsites = func_def.callsites()
                 funcs_reached = set()
                 for cs_dst, _ in func_callsites:
                     funcs_reached.add(cs_dst)
                 func_dict['functionsReached'] = list(funcs_reached)
 
-                # Get cyclomatic complexity
-                func_dict[
-                    'CyclomaticComplexity'] = source_code.get_function_complexity(
-                        func_name)
-
-                # Function depth
-
-                # ICount
-                func_dict['ICount'] = source_code.get_function_instr_count(
-                    func_name)
-
-                # EdgeCount
-                func_dict['EdgeCount'] = func_dict['CyclomaticComplexity']
-
-                # argCount
-
-                # Arg names
-                func_dict['ArgNames'] = source_code.get_function_arg_names(
-                    func_name)
-
-                # Arg types
-                func_dict['ArgTypes'] = source_code.get_function_arg_types(
-                    func_name)
-
-                # Return type
-                func_dict['ReturnType'] = source_code.get_function_return_type(
-                    func_name)
-
-                # Callsites
-
-                func_signature = source_code.function_signature(func_name)
-                func_dict['signature'] = func_signature
                 function_list.append(func_dict)
 
         if function_list:
@@ -153,7 +127,8 @@ class Project():
         if not source_code:
             return line_to_print
 
-        callsites = source_code.get_callsites_in_function(function)
+        func = source_code.get_function_node(function)
+        callsites = func.callsites()
 
         if function in visited_functions:
             return line_to_print
@@ -187,221 +162,42 @@ class Project():
         return None
 
 
-class SourceCodeFile():
-    """Class for holding file-specific information."""
+class FunctionDefinition():
+    """Wrapper for a function definition"""
 
-    def __init__(self, source_file, language):
-        self.source_file = source_file
-        self.language = language
-        self.parser = language_parsers.get(self.language)
-        self.tree_sitter_lang = tree_sitter_languages[self.language]
+    def __init__(self, root, tree_sitter_lang):
+        self.root = root
+        self.tree_sitter_lang = tree_sitter_lang
 
-        self.root = None
-        self.function_names = []
+    def name(self):
+        """Gets name of a function"""
+        function_name = ''
+        name_node = self.root
+        while name_node.child_by_field_name('declarator') is not None:
+            name_node = name_node.child_by_field_name('declarator')
+            # Assign function name here because we want to make sure that there is a
+            # declarator when defining the name.
+            function_name = name_node.text.decode()
+        return function_name
 
-        self.line_range_pairs = []
-
-        self.includes = set()
-
-        # Initialization ruotines
-        self.load_tree()
-
-    def load_tree(self) -> None:
-        """Load the the source code into a treesitter tree, and set
-        the root node."""
-        if self.language == 'c' and not self.root:
-            with open(self.source_file, 'rb') as f:
-                source_code = f.read()
-            self.root = self.parser.parse(source_code).root_node
-
-    def extract_imported_header_files(self):
-        """Sets the header files imported by a given module."""
-        if not self.root:
-            return
-        include_query_str = '( preproc_include ) @imp'
-
-        include_query = self.tree_sitter_lang.query(include_query_str)
-        include_query_res = include_query.captures(self.root)
-
-        for _, includes in include_query_res.items():
-            for include in includes:
-                include_path_node = include.child_by_field_name('path')
-                include_path = include_path_node.text.decode().replace(
-                    '"', '').replace('>', '').replace('<', '')
-                self.includes.add(include_path)
-
-    def get_defined_function_names(self):
-        """Gets the functions defined in the file, as a list of strings."""
-        if not self.root:
-            return []
-
-        func_def_query_str = '( function_definition ) @fd '
-        func_def_query = self.tree_sitter_lang.query(func_def_query_str)
-
-        function_res = func_def_query.captures(self.root)
-        for _, funcs in function_res.items():
-            for func in funcs:
-                function_name = ''
-                name_node = func
-                while name_node.child_by_field_name('declarator') is not None:
-                    name_node = name_node.child_by_field_name('declarator')
-                    # Assign function name here because we want to make sure that there is a
-                    # declarator when defining the name.
-                    function_name = name_node.text.decode()
-
-                if not function_name:
-                    continue
-                self.function_names.append(function_name)
-
-    def get_function_node(self, target_function_name):
-        """Gets the tree-sitter node corresponding to a function."""
-        func_def_query_str = '( function_definition ) @fd '
-        func_def_query = self.tree_sitter_lang.query(func_def_query_str)
-
-        function_res = func_def_query.captures(self.root)
-        for _, funcs in function_res.items():
-            for func in funcs:
-                function_name = ''
-                name_node = func
-                while name_node.child_by_field_name('declarator') is not None:
-                    name_node = name_node.child_by_field_name('declarator')
-                    # Assign function name here because we want to make sure that there is a
-                    # declarator when defining the name.
-                    function_name = name_node.text.decode()
-                    if function_name == target_function_name:
-                        return func
-        return None
-
-    def get_function_return_type(self, target_function_name):
+    def get_return_type(self):
         """Gets a function's return type as a string"""
-        func = self.get_function_node(target_function_name)
-        if not func:
-            return ''
-
-        ret_type = func.child_by_field_name('type').text.decode()
-
-        tmp_decl = func
+        ret_type = self.root.child_by_field_name('type').text.decode()
+        tmp_decl = self.root
         while tmp_decl.child_by_field_name(
                 'declarator').type == 'pointer_declarator':
             ret_type += '*'
             tmp_decl = tmp_decl.child_by_field_name('declarator')
-
         return ret_type
 
-    def get_function_arg_types(self, target_function_name):
-        """Gets the text of a function's types"""
-        param_types = []
-        func = self.get_function_node(target_function_name)
-        if not func:
-            return param_types
+    def position(self):
+        """Gets the byte position of the root node"""
+        return self.root.byte_range
 
-        try:
-            parameters_node = func.child_by_field_name(
-                'declarator').child_by_field_name('parameters')
-        except:
-            return param_types
-
-        if not parameters_node:
-            return param_types
-
-        for param in parameters_node.children:
-            if not param.is_named:
-                continue
-            try:
-                type_str = param.child_by_field_name('type').text.decode()
-
-                param_tmp = param
-                while param_tmp.child_by_field_name('declarator') is not None:
-                    if param_tmp.type == 'pointer_declarator':
-                        type_str += '*'
-                    param_tmp = param_tmp.child_by_field_name('declarator')
-
-                param_types.append(type_str)
-            except:
-                pass
-
-        return param_types
-
-    def get_function_arg_names(self, target_function_name):
-        """Gets the same of a function's arguments"""
-        param_names = []
-        func = self.get_function_node(target_function_name)
-        if not func:
-            return param_names
-
-        try:
-            parameters_node = func.child_by_field_name(
-                'declarator').child_by_field_name('parameters')
-        except:
-            return param_names
-
-        if not parameters_node:
-            return param_names
-
-        for param in parameters_node.children:
-            if not param.is_named:
-                continue
-            try:
-                param_tmp = param
-                while param_tmp.child_by_field_name('declarator') is not None:
-                    param_tmp = param_tmp.child_by_field_name('declarator')
-                param_names.append(param_tmp.text.decode())
-            except:
-                pass
-
-        return param_names
-
-    def function_signature(self, target_function_name):
-        """Returns the function signature of a function as a string."""
-
-        func = self.get_function_node(target_function_name)
-        if not func:
-            return ''
-
-        function_signature = ''
-        for child_idx in range(len(func.children)):
-            child = func.child(child_idx)
-            if child.is_named:
-                if func.field_name_for_child(child_idx) == 'body':
-                    break
-            # TODO(David): fix decoding issue
-            try:
-                function_signature += child.text.decode() + ' '
-            except:
-                pass
-        function_signature = function_signature.replace('\n',
-                                                        '').replace('\\n', '')
-        while '  ' in function_signature:
-            function_signature = function_signature.replace('  ', ' ')
-        return function_signature
-
-    def has_libfuzzer_harness(self) -> bool:
-        """Returns whether the source code holds a libfuzzer harness"""
-        for func in self.function_names:
-            if 'LLVMFuzzerTestOneInput' in func:
-                return True
-        return False
-
-    def has_function_definition(self, target_function_name):
-        """Returns if the source file holds a given function definition."""
-        if target_function_name in self.function_names:
-            return True
-
-    def get_function_linenumber(self, target_function_name):
-        """Gets the source file position of a given file."""
-        func = self.get_function_node(target_function_name)
-        if not func:
-            return -1, -1
-        start_pos = self.get_linenumber(func.byte_range[0])
-        end_pos = self.get_linenumber(func.byte_range[1])
-        return start_pos, end_pos
-
-    def get_function_complexity(self, target_function_name):
+    def get_function_complexity(self):
         """Gets complexity measure based on counting branch nodes in a
         function."""
-        func = self.get_function_node(target_function_name)
-        if not func:
-            return -1
+
         branch_nodes = [
             "if_statement",
             "case_statement",
@@ -427,13 +223,11 @@ class SourceCodeFile():
                 count += _traverse_node_complexity(item)
             return count
 
-        return _traverse_node_complexity(func)
+        return _traverse_node_complexity(self.root)
 
-    def get_function_instr_count(self, target_function_name):
+    def get_function_instr_count(self):
         """Returns a pseudo measurement of instruction count."""
-        func = self.get_function_node(target_function_name)
-        if not func:
-            return -1
+
         instr_nodes = [
             "binary_expression",
             "unary_expression",
@@ -450,7 +244,208 @@ class SourceCodeFile():
                 count += _traverse_node_instr_count(item)
             return count
 
-        return _traverse_node_instr_count(func)
+        return _traverse_node_instr_count(self.root)
+
+    def get_function_arg_names(self):
+        """Gets the same of a function's arguments"""
+        param_names = []
+        #try:
+        parameters_node = self.root.child_by_field_name(
+            'declarator').child_by_field_name('parameters')
+        #except:
+        #    return param_names
+
+        if not parameters_node:
+            return param_names
+
+        for param in parameters_node.children:
+            if not param.is_named:
+                continue
+            try:
+                param_tmp = param
+                while param_tmp.child_by_field_name('declarator') is not None:
+                    param_tmp = param_tmp.child_by_field_name('declarator')
+                param_names.append(param_tmp.text.decode())
+            except:
+                pass
+        return param_names
+
+    def get_function_arg_types(self):
+        """Gets the text of a function's types"""
+        param_types = []
+        try:
+            parameters_node = self.root.child_by_field_name(
+                'declarator').child_by_field_name('parameters')
+        except:
+            return param_types
+
+        if not parameters_node:
+            return param_types
+
+        for param in parameters_node.children:
+            if not param.is_named:
+                continue
+            try:
+                type_str = param.child_by_field_name('type').text.decode()
+
+                param_tmp = param
+                while param_tmp.child_by_field_name('declarator') is not None:
+                    if param_tmp.type == 'pointer_declarator':
+                        type_str += '*'
+                    param_tmp = param_tmp.child_by_field_name('declarator')
+
+                param_types.append(type_str)
+            except:
+                pass
+
+        return param_types
+
+    def get_function_return_type(self):
+        """Gets a function's return type as a string"""
+        ret_type = self.root.child_by_field_name('type').text.decode()
+
+        tmp_decl = self.root
+        while tmp_decl.child_by_field_name(
+                'declarator').type == 'pointer_declarator':
+            ret_type += '*'
+            tmp_decl = tmp_decl.child_by_field_name('declarator')
+
+        return ret_type
+
+    def function_signature(self):
+        """Returns the function signature of a function as a string."""
+
+        function_signature = ''
+        for child_idx in range(len(self.root.children)):
+            child = self.root.child(child_idx)
+            if child.is_named:
+                if self.root.field_name_for_child(child_idx) == 'body':
+                    break
+            # TODO(David): fix decoding issue
+            try:
+                function_signature += child.text.decode() + ' '
+            except:
+                pass
+        function_signature = function_signature.replace('\n',
+                                                        '').replace('\\n', '')
+        while '  ' in function_signature:
+            function_signature = function_signature.replace('  ', ' ')
+        return function_signature
+
+    def callsites(self):
+        """Gets the callsites of the function."""
+        callsites = []
+        call_query = self.tree_sitter_lang.query('( call_expression ) @ce')
+        # func = self.get_function_node(target_function_name)
+        # if func:
+
+        call_res = call_query.captures(self.root)
+        for _, call_exprs in call_res.items():
+            for call_expr in call_exprs:
+                for call_child in call_expr.children:
+                    if call_child.type == 'identifier':
+                        callsites.append(
+                            (call_child.text.decode(), call_child.byte_range))
+        # Sort the callsites relative to their end position. End position
+        # here makes sense to handle cases of e.g.
+        # func1(func2(), func3())
+        # where the execution ordering is func2 -> func3 -> func1
+        callsites = list(sorted(callsites, key=lambda x: x[1][1]))
+
+        return callsites
+
+
+class SourceCodeFile():
+    """Class for holding file-specific information."""
+
+    def __init__(self, source_file, language):
+        self.source_file = source_file
+        self.language = language
+        self.parser = language_parsers.get(self.language)
+        self.tree_sitter_lang = tree_sitter_languages[self.language]
+
+        self.root = None
+        self.function_names = []
+
+        self.line_range_pairs = []
+
+        self.includes = set()
+
+        # List of function definitions in the source file.
+        self.func_defs = []
+
+        # Initialization ruotines
+        self.load_tree()
+
+        # Load function definitions
+        self._set_function_defintions()
+
+    def load_tree(self) -> None:
+        """Load the the source code into a treesitter tree, and set
+        the root node."""
+        if self.language == 'c' and not self.root:
+            with open(self.source_file, 'rb') as f:
+                source_code = f.read()
+            self.root = self.parser.parse(source_code).root_node
+
+    def extract_imported_header_files(self):
+        """Sets the header files imported by a given module."""
+        if not self.root:
+            return
+        include_query_str = '( preproc_include ) @imp'
+
+        include_query = self.tree_sitter_lang.query(include_query_str)
+        include_query_res = include_query.captures(self.root)
+
+        for _, includes in include_query_res.items():
+            for include in includes:
+                include_path_node = include.child_by_field_name('path')
+                include_path = include_path_node.text.decode().replace(
+                    '"', '').replace('>', '').replace('<', '')
+                self.includes.add(include_path)
+
+    def _set_function_defintions(self):
+        func_def_query_str = '( function_definition ) @fd '
+        func_def_query = self.tree_sitter_lang.query(func_def_query_str)
+
+        function_res = func_def_query.captures(self.root)
+        for _, funcs in function_res.items():
+            for func in funcs:
+                self.func_defs.append(
+                    FunctionDefinition(func, self.tree_sitter_lang))
+
+    def get_defined_function_names(self):
+        """Gets the functions defined in the file, as a list of strings."""
+        func_names = []
+        for func in self.func_defs:
+            func_names.append(func.name())
+        return func_names
+
+    def get_function_node(self, target_function_name):
+        """Gets the tree-sitter node corresponding to a function."""
+        #func_def_query_str = '( function_definition ) @fd '
+
+        # Find the first instance of the function name
+        for func in self.func_defs:
+            if func.name() == target_function_name:
+                return func
+        return None
+
+    def has_libfuzzer_harness(self) -> bool:
+        """Returns whether the source code holds a libfuzzer harness"""
+        for func in self.func_defs:
+            if 'LLVMFuzzerTestOneInput' in func.name():
+                return True
+
+        return False
+
+    def has_function_definition(self, target_function_name):
+        """Returns if the source file holds a given function definition."""
+
+        for func in self.func_defs:
+            if func.name() == target_function_name:
+                return True
+        return False
 
     def get_linenumber(self, bytepos):
         """Gets the line number corresponding to a byte range."""
@@ -479,46 +474,6 @@ class SourceCodeFile():
 
         return -1
 
-    def get_callsites_in_function(self, target_function_name):
-        """Gets the list of call sites in a function, as nodes in the
-        treesitter tree."""
-        callsites = []
-        if not target_function_name in self.function_names:
-            return callsites
-
-        call_query = self.tree_sitter_lang.query('( call_expression ) @ce')
-        func_def_query_str = '( function_definition ) @fd '
-        func_def_query = self.tree_sitter_lang.query(func_def_query_str)
-
-        function_res = func_def_query.captures(self.root)
-        for _, funcs in function_res.items():
-            for func in funcs:
-                function_name = ''
-                name_node = func
-                while name_node.child_by_field_name('declarator') is not None:
-                    name_node = name_node.child_by_field_name('declarator')
-                    # Assign function name here because we want to make sure that there is a
-                    # declarator when defining the name.
-                    function_name = name_node.text.decode()
-
-                if function_name == target_function_name:
-                    call_res = call_query.captures(func)
-
-                    for _, call_exprs in call_res.items():
-                        for call_expr in call_exprs:
-                            for call_child in call_expr.children:
-
-                                if call_child.type == 'identifier':
-                                    callsites.append((call_child.text.decode(),
-                                                      call_child.byte_range))
-
-        # Sort the callsites relative to their end position. End position
-        # here makes sense to handle cases of e.g.
-        # func1(func2(), func3())
-        # where the execution ordering is func2 -> func3 -> func1
-        callsites = list(sorted(callsites, key=lambda x: x[1][1]))
-        return callsites
-
 
 def capture_source_files_in_tree(directory_tree, language):
     """Captures source code files in a given directory."""
@@ -540,7 +495,7 @@ def load_treesitter_trees(source_files, log_harnesses=True):
         if language == 'c':
             for code_file in source_files[language]:
                 source_cls = SourceCodeFile(code_file, language)
-                source_cls.get_defined_function_names()
+                # source_cls.get_defined_function_names()
                 if log_harnesses:
                     if source_cls.has_libfuzzer_harness():
                         logger.info('harness: %s', code_file)
@@ -572,6 +527,7 @@ def main():
     logger.info('Creating base project.')
     project = Project(source_codes)
     project.dump_module_logic('report.yaml')
+
     harnesses = []
     for idx, harness in enumerate(project.get_source_codes_with_harnesses()):
         logger.info('Extracting calltree for %s', harness.source_file)
