@@ -249,35 +249,28 @@ class FunctionDefinition():
     def get_function_arg_names(self):
         """Gets the same of a function's arguments"""
         param_names = []
-        #try:
         parameters_node = self.root.child_by_field_name(
             'declarator').child_by_field_name('parameters')
-        #except:
-        #    return param_names
-
         if not parameters_node:
             return param_names
 
         for param in parameters_node.children:
             if not param.is_named:
                 continue
-            try:
-                param_tmp = param
-                while param_tmp.child_by_field_name('declarator') is not None:
-                    param_tmp = param_tmp.child_by_field_name('declarator')
-                param_names.append(param_tmp.text.decode())
-            except:
-                pass
+
+            param_tmp = param
+            while param_tmp.child_by_field_name('declarator') is not None:
+                param_tmp = param_tmp.child_by_field_name('declarator')
+            param_names.append(param_tmp.text.decode())
+
         return param_names
 
     def get_function_arg_types(self):
         """Gets the text of a function's types"""
         param_types = []
-        try:
-            parameters_node = self.root.child_by_field_name(
-                'declarator').child_by_field_name('parameters')
-        except:
-            return param_types
+
+        parameters_node = self.root.child_by_field_name(
+            'declarator').child_by_field_name('parameters')
 
         if not parameters_node:
             return param_types
@@ -285,18 +278,17 @@ class FunctionDefinition():
         for param in parameters_node.children:
             if not param.is_named:
                 continue
-            try:
-                type_str = param.child_by_field_name('type').text.decode()
 
-                param_tmp = param
-                while param_tmp.child_by_field_name('declarator') is not None:
-                    if param_tmp.type == 'pointer_declarator':
-                        type_str += '*'
-                    param_tmp = param_tmp.child_by_field_name('declarator')
+            if not param.child_by_field_name('type'):
+                continue
 
-                param_types.append(type_str)
-            except:
-                pass
+            type_str = param.child_by_field_name('type').text.decode()
+            param_tmp = param
+            while param_tmp.child_by_field_name('declarator') is not None:
+                if param_tmp.type == 'pointer_declarator':
+                    type_str += '*'
+                param_tmp = param_tmp.child_by_field_name('declarator')
+            param_types.append(type_str)
 
         return param_types
 
@@ -321,11 +313,8 @@ class FunctionDefinition():
             if child.is_named:
                 if self.root.field_name_for_child(child_idx) == 'body':
                     break
-            # TODO(David): fix decoding issue
-            try:
-                function_signature += child.text.decode() + ' '
-            except:
-                pass
+            function_signature += child.text.decode() + ' '
+
         function_signature = function_signature.replace('\n',
                                                         '').replace('\\n', '')
         while '  ' in function_signature:
@@ -336,9 +325,6 @@ class FunctionDefinition():
         """Gets the callsites of the function."""
         callsites = []
         call_query = self.tree_sitter_lang.query('( call_expression ) @ce')
-        # func = self.get_function_node(target_function_name)
-        # if func:
-
         call_res = call_query.captures(self.root)
         for _, call_exprs in call_res.items():
             for call_expr in call_exprs:
@@ -423,7 +409,6 @@ class SourceCodeFile():
 
     def get_function_node(self, target_function_name):
         """Gets the tree-sitter node corresponding to a function."""
-        #func_def_query_str = '( function_definition ) @fd '
 
         # Find the first instance of the function name
         for func in self.func_defs:
@@ -453,12 +438,7 @@ class SourceCodeFile():
         # TODO(David): fix up encoding issues.
         if not self.line_range_pairs:
             with open(self.source_file, 'r', encoding='utf-8') as f:
-                try:
-                    source_content = f.read()
-                except:
-                    # Set a value to avoid reading again.
-                    self.line_range_pairs.append((-1, -1))
-                    return -1
+                source_content = f.read()
 
             payload_range = 0
             for line in source_content.split('\n'):
@@ -495,7 +475,6 @@ def load_treesitter_trees(source_files, log_harnesses=True):
         if language == 'c':
             for code_file in source_files[language]:
                 source_cls = SourceCodeFile(code_file, language)
-                # source_cls.get_defined_function_names()
                 if log_harnesses:
                     if source_cls.has_libfuzzer_harness():
                         logger.info('harness: %s', code_file)
