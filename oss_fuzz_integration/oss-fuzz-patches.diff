@@ -141,7 +141,7 @@ index d9077510f..5baa138a6 100755
 +    REPORT_ARGS="$REPORT_ARGS --target_dir=$SRC/inspector"
 +    REPORT_ARGS="$REPORT_ARGS --language=rust"
 +    python3 /fuzz-introspector/src/main.py report $REPORT_ARGS
-+    cp -rf $SRC/inspector $OUT/inspector
++    rsync -avu --delete "$SRC/inspector/" "$OUT/inspector"
    else
      # C/C++
  
