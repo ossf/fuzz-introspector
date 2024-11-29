@@ -18,6 +18,7 @@
 import os
 import sys
 import pathlib
+import argparse
 
 import logging
 
@@ -100,6 +101,14 @@ class Project():
             if source_code.has_libfuzzer_harness():
                 harnesses.append(source_code)
         return harnesses
+
+    def get_source_code_with_target(self, target_func_name):
+        for source_code in self.source_code_files:
+            tfunc = source_code.get_function_node(target_func_name)
+            if not tfunc:
+                continue
+            return source_code
+        return None
 
     def extract_calltree(self,
                          source_code=None,
@@ -496,13 +505,26 @@ def setup_logging():
     )
 
 
+def parse_args():
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('--target-dir',
+                        help='Directory of which do analysis',
+                        required=True)
+    parser.add_argument('--entrypoint',
+                        help='Entrypoint for the calltree',
+                        default='LLVMFuzzerTestOneInput')
+
+    return parser.parse_args()
+
+
 def main():
     """Main"""
     setup_logging()
+    args = parse_args()
 
     source_files = {}
-
-    source_files['c'] = capture_source_files_in_tree(sys.argv[1], 'c')
+    source_files['c'] = capture_source_files_in_tree(args.target_dir, 'c')
     logger.info('Found %d files to include in analysis',
                 len(source_files['c']))
     logger.info('Loading tree-sitter trees')
@@ -512,17 +534,27 @@ def main():
     project = Project(source_codes)
     project.dump_module_logic('report.yaml')
 
-    harnesses = []
-    for idx, harness in enumerate(project.get_source_codes_with_harnesses()):
-        logger.info('Extracting calltree for %s', harness.source_file)
-        calltree = project.extract_calltree(harness, 'LLVMFuzzerTestOneInput')
-        harnesses.append({'calltree': calltree})
-        with open(f'fuzzer-calltree-{idx}', 'w', encoding='utf-8') as f:
-            f.write(calltree)
+    if args.entrypoint != 'LLVMFuzzerTestOneInput':
+        calltree_source = project.get_source_code_with_target(args.entrypoint)
+        if calltree_source:
+            calltree = project.extract_calltree(calltree_source,
+                                                args.entrypoint)
+            with open('targetCalltree.txt', 'w') as f:
+                f.write(calltree)
+    else:
+        harnesses = []
+        for idx, harness in enumerate(
+                project.get_source_codes_with_harnesses()):
+            logger.info('Extracting calltree for %s', harness.source_file)
+            calltree = project.extract_calltree(harness, args.entrypoint)
+            harnesses.append({'calltree': calltree})
+            with open(f'fuzzer-calltree-{idx}', 'w', encoding='utf-8') as f:
+                f.write(calltree)
 
-    for idx, harness_dict in enumerate(harnesses):
-        with open('fuzzer-calltree-%d' % (idx), 'w', encoding='utf-8') as f:
-            f.write(harness_dict['calltree'])
+        for idx, harness_dict in enumerate(harnesses):
+            with open('fuzzer-calltree-%d' % (idx), 'w',
+                      encoding='utf-8') as f:
+                f.write(harness_dict['calltree'])
 
 
 if __name__ == "__main__":
