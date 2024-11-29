@@ -63,8 +63,16 @@ class Project():
 
             for func_def in source_code.func_defs:
                 func_dict = {}
-                func_dict['name'] = func_def.name()
-                func_dict['source_file'] = source_code.source_file
+                #func_dict['name'] = func_def.name()
+                func_dict['functionName'] = func_def.name()
+                #func_dict['source_file'] = source_code.source_file
+                func_dict['functionSourceFile'] = source_code.source_file
+                func_dict['functionLinenumber'] = source_code.get_linenumber(
+                    func_def.position()[0])
+                func_dict[
+                    'functionLinbernumberEnd'] = source_code.get_linenumber(
+                        func_def.position()[1])
+                func_dict['linkageType'] = ''
                 func_dict['func_position'] = {
                     'start':
                     source_code.get_linenumber(func_def.position()[0]),
@@ -75,9 +83,17 @@ class Project():
                     )
                 func_dict['EdgeCount'] = func_dict['CyclomaticComplexity']
                 func_dict['ICount'] = func_def.get_function_instr_count()
-                func_dict['ArgNames'] = func_def.get_function_arg_names()
-                func_dict['ArgTypes'] = func_def.get_function_arg_types()
-                func_dict['ReturnType'] = func_def.get_function_return_type()
+                func_dict['argNames'] = func_def.get_function_arg_names()
+                func_dict['argTypes'] = func_def.get_function_arg_types()
+                func_dict['argCount'] = len(func_dict['argTypes'])
+                func_dict['returnType'] = func_def.get_function_return_type()
+                func_dict['BranchProfiles'] = []
+                func_dict['functionUses'] = []
+                func_dict['Callsites'] = []
+                func_dict['functionDepth'] = 0
+                func_dict['constantsTouched'] = []
+                func_dict['BBCount'] = 0
+
                 func_dict['signature'] = func_def.function_signature()
                 func_callsites = func_def.callsites()
                 funcs_reached = set()
@@ -88,7 +104,8 @@ class Project():
                 function_list.append(func_dict)
 
         if function_list:
-            report['function-list'] = function_list
+            report['All functions'] = {}
+            report['All functions']['Elements'] = function_list
         report['included-header-files'] = list(included_header_files)
 
         with open(report_name, 'w', encoding='utf-8') as f:
