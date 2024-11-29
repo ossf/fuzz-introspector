@@ -89,7 +89,7 @@ class Project():
                 func_dict['returnType'] = func_def.get_function_return_type()
                 func_dict['BranchProfiles'] = []
                 func_dict['functionUses'] = []
-                func_dict['Callsites'] = []
+                func_dict['Callsites'] = func_def.detailed_callsites()
                 func_dict['functionDepth'] = 0
                 func_dict['constantsTouched'] = []
                 func_dict['BBCount'] = 0
@@ -196,9 +196,10 @@ class Project():
 class FunctionDefinition():
     """Wrapper for a function definition"""
 
-    def __init__(self, root, tree_sitter_lang):
+    def __init__(self, root, tree_sitter_lang, source_code):
         self.root = root
         self.tree_sitter_lang = tree_sitter_lang
+        self.parent_source = source_code
 
     def name(self):
         """Gets name of a function"""
@@ -352,6 +353,26 @@ class FunctionDefinition():
             function_signature = function_signature.replace('  ', ' ')
         return function_signature
 
+    def detailed_callsites(self):
+        """Captures the callsite details as used by Fuzz Introspector core."""
+        callsites = []
+        call_query = self.tree_sitter_lang.query('( call_expression ) @ce')
+        call_res = call_query.captures(self.root)
+        for _, call_exprs in call_res.items():
+            for call_expr in call_exprs:
+                for call_child in call_expr.children:
+                    if call_child.type == 'identifier':
+                        # TODO(David): fix remaining column value
+                        src_line = self.parent_source.get_linenumber(
+                            call_child.byte_range[0])
+                        src_loc = self.parent_source.source_file + ':%d,1' % (
+                            src_line)
+                        callsites.append({
+                            'Src': src_loc,
+                            'Dst': call_child.text.decode()
+                        })
+        return callsites
+
     def callsites(self):
         """Gets the callsites of the function."""
         callsites = []
@@ -429,7 +450,7 @@ class SourceCodeFile():
         for _, funcs in function_res.items():
             for func in funcs:
                 self.func_defs.append(
-                    FunctionDefinition(func, self.tree_sitter_lang))
+                    FunctionDefinition(func, self.tree_sitter_lang, self))
 
     def get_defined_function_names(self):
         """Gets the functions defined in the file, as a list of strings."""
