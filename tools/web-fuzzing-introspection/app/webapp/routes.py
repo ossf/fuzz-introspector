@@ -2403,7 +2403,9 @@ def extract_project_tests(project_name,
     # If filtering is to be done, do this now.
     if try_ignore_irrelevant:
         target_project = get_project_with_name(project_name)
-        tests_file_list = _ignore_irrelevant_tests(tests_file_list, target_project, project_name)
+        tests_file_list = _ignore_irrelevant_tests(tests_file_list,
+                                                   target_project,
+                                                   project_name)
 
     return tests_file_list
 
@@ -2426,7 +2428,8 @@ def _light_project_tests(project_name, try_ignore_irrelevant=True):
 
     # If filtering is to be done, do this now.
     if try_ignore_irrelevant:
-        returner_list = _ignore_irrelevant_tests(returner_list, target_project, project_name)
+        returner_list = _ignore_irrelevant_tests(returner_list, target_project,
+                                                 project_name)
 
     return returner_list
 
@@ -2447,14 +2450,17 @@ def _ignore_irrelevant_tests(tests_file_list, project, project_name):
 
         # Determine a list of relevant import statements
         target_list = data_storage.get_functions_by_project(
-            project_name) + data_storage.get_constructors_by_project(project_name)
-        public_classes = list(function_helper.get_public_class_list(target_list))
+            project_name) + data_storage.get_constructors_by_project(
+                project_name)
+        public_classes = list(
+            function_helper.get_public_class_list(target_list))
         relevant_import = _determine_relevant_imports(public_classes)
 
         # Determine if the test files are relevant by checking if the relevant
         # import statements exist in the test files
         for test_file in repo_match:
-            if _contains_relevant_import(test_file, relevant_import, project_name):
+            if _contains_relevant_import(test_file, relevant_import,
+                                         project_name):
                 result_list.append(test_file)
 
         return result_list
@@ -2504,11 +2510,17 @@ def _determine_relevant_imports(public_classes):
 def _contains_relevant_import(test_file, imports, project_name):
     """Helper function to determine if imports exists in test_file."""
 
-    import_pattern = re.compile(r'^\s*import\s+([\w.*]+);\s*(//.*)?$', re.MULTILINE)
+    import_pattern = re.compile(r'^\s*import\s+([\w.*]+);\s*(//.*)?$',
+                                re.MULTILINE)
 
     # Extract source from test file path
     datestr = get_latest_introspector_date(project_name)
-    source = extract_lines_from_source_code(project_name, datestr, test_file, 0, 10000)
+    source = extract_lines_from_source_code(project_name, datestr, test_file,
+                                            0, 10000)
+
+    if not source:
+        # Always return true if we failed to extract the test source
+        return True
 
     # Extract all import statements from the source code
     source_imports = set()
