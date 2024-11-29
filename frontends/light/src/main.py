@@ -47,8 +47,12 @@ class Project():
 
         # Find all functions
         function_list = []
+        included_header_files = set()
         for source_code in self.source_code_files:
             source_code.extract_imported_header_files()
+            for incl in source_code.includes:
+                included_header_files.add(incl)
+
             report['sources'].append({
                 'source_file':
                 source_code.source_file,
@@ -84,6 +88,7 @@ class Project():
 
         if function_list:
             report['function-list'] = function_list
+        report['included-header-files'] = list(included_header_files)
 
         with open(report_name, 'w', encoding='utf-8') as f:
             f.write(yaml.dump(report))
