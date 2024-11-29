@@ -63,8 +63,10 @@ class FuzzerProfile:
         # Read yaml data (as dictionary) from frontend
         try:
             self.fuzzer_source_file: str = frontend_yaml['Fuzzer filename']
+
         except KeyError:
-            raise DataLoaderError("Fuzzer filename not in loaded yaml")
+            #raise DataLoaderError("Fuzzer filename not in loaded yaml")
+            self.fuzzer_source_file = ''
 
         # Read entrypoint of fuzzer if this is a Python module
         if target_lang == "python":

@@ -40,11 +40,19 @@ def read_fuzzer_data_file_to_profile(
     This is a bit odd way of doing it and should probably be improved.
     """
     logger.info(" - loading %s", cfg_file)
-    if not os.path.isfile(cfg_file) or not os.path.isfile(cfg_file + ".yaml"):
+    target_data_f = cfg_file
+    if cfg_file.endswith('.txt'):
+        target_data_f = '/'.join(cfg_file.split('/')[:-1]) + '/report'
+
+    logging.info('target data f: %s' % (target_data_f))
+
+    if not os.path.isfile(target_data_f) and not os.path.isfile(target_data_f +
+                                                                ".yaml"):
+        logger.info('R1')
         return None
 
-    data_dict_yaml = utils.data_file_read_yaml(cfg_file + ".yaml")
-    logger.info("Finished loading %s", cfg_file)
+    data_dict_yaml = utils.data_file_read_yaml(target_data_f + ".yaml")
+    logger.info("Finished loading %s", data_dict_yaml)
 
     # Must be  dictionary
     if data_dict_yaml is None or not isinstance(data_dict_yaml, dict):
@@ -65,6 +73,7 @@ def _load_profile(data_file: str, language: str, manager, semaphore=None):
         semaphore.acquire()
 
     profile = read_fuzzer_data_file_to_profile(data_file, language)
+    logger.info('profile is none')
     if profile is not None:
         manager[data_file] = profile
 
@@ -115,6 +124,11 @@ def load_all_profiles(
     profiles = []
     data_files = utils.get_all_files_in_tree_with_regex(
         target_folder, "fuzzerLogFile.*\.data$")
+    target_calltrees = utils.get_all_files_in_tree_with_regex(
+        target_folder, "targetCalltree.txt$")
+    logger.info(target_calltrees)
+    data_files.extend(target_calltrees)
+
     logger.info(" - found %d profiles to load", len(data_files))
     if parallelise:
         manager = multiprocessing.Manager()
