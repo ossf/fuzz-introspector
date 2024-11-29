@@ -65,7 +65,8 @@ def get_public_class_list(target_list: List[models.Function]) -> Set[str]:
     class_set = set()
     for function in target_list:
         if function.is_accessible and not function.is_jvm_library:
-            class_set.add(function.function_filename.split('$')[0])
+            if '/' not in function.function_filename:
+                class_set.add(function.function_filename.split('$')[0])
 
     return class_set
 
