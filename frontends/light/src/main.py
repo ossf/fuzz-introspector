@@ -58,7 +58,10 @@ class Project():
                 'source_file':
                 source_code.source_file,
                 'function_names':
-                source_code.get_defined_function_names()
+                source_code.get_defined_function_names(),
+                'types': {
+                    'structs': source_code.struct_defs
+                }
             })
 
             for func_def in source_code.func_defs:
@@ -404,9 +407,8 @@ class SourceCodeFile():
 
         self.root = None
         self.function_names = []
-
         self.line_range_pairs = []
-
+        self.struct_defs = []
         self.includes = set()
 
         # List of function definitions in the source file.
@@ -417,6 +419,7 @@ class SourceCodeFile():
 
         # Load function definitions
         self._set_function_defintions()
+        self.extract_types()
 
     def load_tree(self) -> None:
         """Load the the source code into a treesitter tree, and set
@@ -426,12 +429,43 @@ class SourceCodeFile():
                 source_code = f.read()
             self.root = self.parser.parse(source_code).root_node
 
+    def extract_types(self):
+        """Extracts the types of the source code"""
+        # Extract all structs
+        struct_query = self.tree_sitter_lang.query('( struct_specifier ) @sp')
+        struct_query_res = struct_query.captures(self.root)
+        for _, structs in struct_query_res.items():
+            for struct in structs:
+                if struct.child_by_field_name('body') is None:
+                    continue
+                if struct.child_by_field_name('name') is None:
+                    continue
+                print(struct.text.decode())
+                # Go through each of the field declarations
+                fields = []
+                for child in struct.child_by_field_name('body').children:
+                    print("- child %s" % (child.type))
+                    if child.type == 'field_declaration':
+                        print(child.text.decode())
+                        fields.append({
+                            'type':
+                            child.child_by_field_name('type').text.decode(),
+                            'name':
+                            child.child_by_field_name(
+                                'declarator').text.decode()
+                        })
+                self.struct_defs.append({
+                    'name':
+                    struct.child_by_field_name('name').text.decode(),
+                    'fields':
+                    fields
+                })
+
     def extract_imported_header_files(self):
         """Sets the header files imported by a given module."""
         if not self.root:
             return
         include_query_str = '( preproc_include ) @imp'
-
         include_query = self.tree_sitter_lang.query(include_query_str)
         include_query_res = include_query.captures(self.root)
 
