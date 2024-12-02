@@ -23,6 +23,7 @@ import datetime
 import requests
 import subprocess
 import zipfile
+import tarfile
 from threading import Thread
 from typing import List, Any, Optional, Dict
 
@@ -309,10 +310,7 @@ def extract_code_coverage_data(code_coverage_summary, project_name, date_str,
     coverage_url = oss_fuzz.get_coverage_report_url(project_name,
                                                     date_str.replace("-", ""),
                                                     project_language)
-    code_coverage_data_dict = {
-        'coverage_url': coverage_url,
-        'line_coverage': line_total_summary
-    }
+    code_coverage_data_dict = {'line_coverage': line_total_summary}
     return code_coverage_data_dict
 
 
@@ -419,8 +417,6 @@ def extract_local_project_data(project_name, oss_fuzz_path,
         project_repository = 'N/A'
 
     introspector_data_dict = {
-        "introspector_report_url":
-        'introspector_url',
         "coverage_lines":
         project_stats.get('code-coverage-function-percentage', 0.0),
         "static_reachability":
@@ -688,7 +684,6 @@ def extract_project_data(project_name, date_str, should_include_details,
         save_branch_blockers(branch_pairs, project_name)
 
         introspector_data_dict = {
-            "introspector_report_url": introspector_report_url,
             "coverage_lines":
             project_stats['code-coverage-function-percentage'],
             "static_reachability":
@@ -895,9 +890,20 @@ def extend_db_json_files(project_timestamps, output_directory):
         existing_timestamps = []
     logging.info('Number of existing timestamps: %d', len(existing_timestamps))
 
+    for es2 in existing_timestamps:
+        try:
+            es2['coverage-data'].pop('coverage_url', None)
+        except:
+            pass
+        try:
+            es2['introspector-data'].pop('introspector_report_url', None)
+        except:
+            pass
+
     logging.info('Creating timestamp mapping')
     have_added = False
     existing_timestamp_mapping = dict()
+
     for es in existing_timestamps:
         if not es['project_name'] in existing_timestamp_mapping:
             existing_timestamp_mapping[es['project_name']] = set()
@@ -927,17 +933,24 @@ def extend_db_json_files(project_timestamps, output_directory):
                 new_project_stamps.append(project_stamp)
         project_timestamps = new_project_stamps
 
+    logging.info('Dumping all current projects')
+    with open(os.path.join(output_directory, DB_JSON_ALL_CURRENT_FUNCS),
+              'w') as f:
+        json.dump(project_timestamps, f)
+
+    # Remove any light-introspector files because they should not be saved in the
+    # timestamp file.
+    for es2 in existing_timestamps:
+        try:
+            es2.pop('light-introspector', None)
+        except:
+            pass
     if have_added:
         logging.info('Dumping all timestamps')
         with open(
                 os.path.join(output_directory, DB_JSON_ALL_PROJECT_TIMESTAMP),
                 'w') as f:
             f.write(orjson.dumps(existing_timestamps).decode('utf-8'))
-
-    logging.info('Dumping all current projects')
-    with open(os.path.join(output_directory, DB_JSON_ALL_CURRENT_FUNCS),
-              'w') as f:
-        json.dump(project_timestamps, f)
 
 
 def extend_func_db(function_dict, output_dir, target):
@@ -1180,6 +1193,13 @@ def setup_github_cache():
         with zipfile.ZipFile(db_zipfile, 'r') as zip_ref:
             zip_ref.extractall("github_cache")
         return True
+
+    db_tarfile = os.path.join('github_cache', 'db-stamp.tar.xz')
+    if os.path.isfile(db_tarfile):
+        with tarfile.open(db_tarfile) as f:
+            f.extractall('github_cache')
+        return True
+
     return False
 
 
