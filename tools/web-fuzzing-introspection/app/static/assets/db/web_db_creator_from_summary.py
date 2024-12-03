@@ -23,6 +23,7 @@ import datetime
 import requests
 import subprocess
 import zipfile
+import tarfile
 from threading import Thread
 from typing import List, Any, Optional, Dict
 
@@ -898,6 +899,7 @@ def extend_db_json_files(project_timestamps, output_directory):
     logging.info('Creating timestamp mapping')
     have_added = False
     existing_timestamp_mapping = dict()
+
     for es in existing_timestamps:
         if not es['project_name'] in existing_timestamp_mapping:
             existing_timestamp_mapping[es['project_name']] = set()
@@ -927,17 +929,24 @@ def extend_db_json_files(project_timestamps, output_directory):
                 new_project_stamps.append(project_stamp)
         project_timestamps = new_project_stamps
 
+    logging.info('Dumping all current projects')
+    with open(os.path.join(output_directory, DB_JSON_ALL_CURRENT_FUNCS),
+              'w') as f:
+        json.dump(project_timestamps, f)
+
+    # Remove any light-introspector files because they should not be saved in the
+    # timestamp file.
+    for es2 in existing_timestamps:
+        try:
+            es2.pop('light-introspector', None)
+        except:
+            pass
     if have_added:
         logging.info('Dumping all timestamps')
         with open(
                 os.path.join(output_directory, DB_JSON_ALL_PROJECT_TIMESTAMP),
                 'w') as f:
             f.write(orjson.dumps(existing_timestamps).decode('utf-8'))
-
-    logging.info('Dumping all current projects')
-    with open(os.path.join(output_directory, DB_JSON_ALL_CURRENT_FUNCS),
-              'w') as f:
-        json.dump(project_timestamps, f)
 
 
 def extend_func_db(function_dict, output_dir, target):
@@ -1180,6 +1189,13 @@ def setup_github_cache():
         with zipfile.ZipFile(db_zipfile, 'r') as zip_ref:
             zip_ref.extractall("github_cache")
         return True
+
+    db_tarfile = os.path.join('github_cache', 'db-stamp.tar.xz')
+    if os.path.isfile(db_tarfile):
+        with tarfile.open(db_tarfile) as f:
+            f.extractall('github_cache')
+        return True
+
     return False
 
 
