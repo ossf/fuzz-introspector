@@ -310,7 +310,10 @@ def extract_code_coverage_data(code_coverage_summary, project_name, date_str,
     coverage_url = oss_fuzz.get_coverage_report_url(project_name,
                                                     date_str.replace("-", ""),
                                                     project_language)
-    code_coverage_data_dict = {'line_coverage': line_total_summary}
+    code_coverage_data_dict = {
+        'coverage_url': coverage_url,
+        'line_coverage': line_total_summary
+    }
     return code_coverage_data_dict
 
 
@@ -417,6 +420,8 @@ def extract_local_project_data(project_name, oss_fuzz_path,
         project_repository = 'N/A'
 
     introspector_data_dict = {
+        "introspector_report_url":
+        'introspector_url',
         "coverage_lines":
         project_stats.get('code-coverage-function-percentage', 0.0),
         "static_reachability":
@@ -684,6 +689,7 @@ def extract_project_data(project_name, date_str, should_include_details,
         save_branch_blockers(branch_pairs, project_name)
 
         introspector_data_dict = {
+            "introspector_report_url": introspector_report_url,
             "coverage_lines":
             project_stats['code-coverage-function-percentage'],
             "static_reachability":
@@ -889,16 +895,6 @@ def extend_db_json_files(project_timestamps, output_directory):
     else:
         existing_timestamps = []
     logging.info('Number of existing timestamps: %d', len(existing_timestamps))
-
-    for es2 in existing_timestamps:
-        try:
-            es2['coverage-data'].pop('coverage_url', None)
-        except:
-            pass
-        try:
-            es2['introspector-data'].pop('introspector_report_url', None)
-        except:
-            pass
 
     logging.info('Creating timestamp mapping')
     have_added = False
