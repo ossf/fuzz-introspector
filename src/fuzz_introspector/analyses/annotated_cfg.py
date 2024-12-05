@@ -130,6 +130,9 @@ class FuzzAnnotatedCFG(analysis.AnalysisInterface):
                         dst_fd.arg_names,
                     })
 
+            if proj_profile.target_lang == 'jvm':
+                src_file = self.find_jvm_source(profile.fuzzer_source_file)
+
             if src_file is None:
                 src_file = "Did-not-find-sourcefile"
             self.json_results[profile.identifier] = {
@@ -178,4 +181,20 @@ class FuzzAnnotatedCFG(analysis.AnalysisInterface):
                 return fd
             except KeyError:
                 pass
+        return None
+
+    def find_jvm_source(self, class_name):
+        """Locate the source file in $SRC on a full qualified class name."""
+        src_dir = os.environ.get('SRC', None)
+        if not src_dir or not class_name:
+            return None
+
+        class_name = class_name.split('.')[-1]
+        for root, _, files in os.walk(src_dir):
+            for file in files:
+                if file.endswith('.class'):
+                    continue
+                if file.rsplit('.', 1)[0] == class_name:
+                    return os.path.join(root, file)
+
         return None
