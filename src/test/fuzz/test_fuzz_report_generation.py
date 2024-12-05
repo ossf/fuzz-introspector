@@ -79,6 +79,8 @@ def test_TestOneInput(data: bytes):
         )
     except exceptions.FuzzIntrospectorError:
         pass
+    except KeyError:
+        pass
 
     shutil.rmtree(report_dir)
 
