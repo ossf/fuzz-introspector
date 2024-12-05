@@ -149,7 +149,6 @@ def extract_introspector_raw_source_code(project_name, date_str,
         src_location = os.path.join(local_oss_fuzz, 'build', 'out',
                                     project_name, 'inspector', 'source-code',
                                     target_file)
-
         if not os.path.isfile(src_location):
             return ''
         with open(src_location, 'r') as f:
@@ -229,9 +228,9 @@ def extract_lines_from_source_code(
         raw_source = light_raw_source
 
     # Return None if source is not found.
-    if raw_source is None:
+    if not raw_source:
         print("Did not found source")
-        return raw_source
+        return None
 
     return_source = ""
     source_lines = raw_source.split("\n")
