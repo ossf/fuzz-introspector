@@ -149,6 +149,7 @@ def extract_introspector_raw_source_code(project_name, date_str,
         src_location = os.path.join(local_oss_fuzz, 'build', 'out',
                                     project_name, 'inspector', 'source-code',
                                     target_file)
+
         if not os.path.isfile(src_location):
             return ''
         with open(src_location, 'r') as f:
