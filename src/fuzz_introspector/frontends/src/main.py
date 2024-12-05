@@ -77,8 +77,8 @@ class Project():
                     'start': source_code.root.start_point.row,
                     'end': source_code.root.end_point.row,
                 }
-                func_dict['CyclomaticComplexity'] = func_def.get_function_complexity()
-                    )
+                cc_str = 'CyclomaticComplexity'
+                func_dict[cc_str] = func_def.get_function_complexity()
                 func_dict['EdgeCount'] = func_dict['CyclomaticComplexity']
                 func_dict['ICount'] = func_def.get_function_instr_count()
                 func_dict['argNames'] = func_def.get_function_arg_names()
