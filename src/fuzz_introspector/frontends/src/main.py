@@ -16,7 +16,6 @@
 """Fuzz Introspector Light frontend"""
 
 import os
-import sys
 import pathlib
 import argparse
 
@@ -67,9 +66,7 @@ class Project():
 
             for func_def in source_code.func_defs:
                 func_dict = {}
-                #func_dict['name'] = func_def.name()
                 func_dict['functionName'] = func_def.name()
-                #func_dict['source_file'] = source_code.source_file
                 func_dict['functionSourceFile'] = source_code.source_file
                 func_dict[
                     'functionLinenumber'] = source_code.root.start_point.row
@@ -80,8 +77,7 @@ class Project():
                     'start': source_code.root.start_point.row,
                     'end': source_code.root.end_point.row,
                 }
-                func_dict[
-                    'CyclomaticComplexity'] = func_def.get_function_complexity(
+                func_dict['CyclomaticComplexity'] = func_def.get_function_complexity()
                     )
                 func_dict['EdgeCount'] = func_dict['CyclomaticComplexity']
                 func_dict['ICount'] = func_def.get_function_instr_count()
@@ -187,11 +183,6 @@ class Project():
             # We hav have, in this case it's trivial.
             return source_codes_with_target[0]
 
-        #for sc in source_codes_with_target:
-        #    print('--- %s'%(sc.source_file))
-        #print("Found multiple instances: %d, %s"%(len(source_codes_with_target), target_function_name))
-        #for ctp in source_codes_with_target:
-        #    print("-- %s"%(ctp.source_file))
         return None
 
 
