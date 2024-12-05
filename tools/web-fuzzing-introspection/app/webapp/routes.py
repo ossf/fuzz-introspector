@@ -229,9 +229,9 @@ def extract_lines_from_source_code(
         raw_source = light_raw_source
 
     # Return None if source is not found.
-    if raw_source is None:
+    if not raw_source:
         print("Did not found source")
-        return raw_source
+        return None
 
     return_source = ""
     source_lines = raw_source.split("\n")
