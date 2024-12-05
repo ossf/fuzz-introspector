@@ -1,0 +1,53 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fuzz-introspector"
+version = "0.1.0"
+authors = [
+  { name="David Korczynski", email="david@adalogics.com" },
+]
+description = "Sanitizers to detect security vulnerabilities at runtime."
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+"beautifulsoup4==4.10.0",
+"cxxfilt==0.3.0",
+"lxml==4.9.1",
+"matplotlib==3.7.5",
+"PyYAML==6.0",
+"soupsieve==2.2.1",
+"yapf==0.32.0",
+"flake8",
+"pep8",
+"mypy",
+"psutil",
+"pytest",
+"sphinx==6.0.0",
+"sphinx_rtd_theme",
+"configparser",
+"coverage",
+"atheris",
+"setuptools>=65.5.1",
+"tqdm",
+"rust-demangler",
+"matplotlib",
+"tree-sitter",
+"tree-sitter-python",
+"networkx",
+"pygraphviz",
+"tree-sitter-languages",
+"tree-sitter-c"
+]
+
+[project.urls]
+"Homepage" = "https://github.com/ossf/fuzz-introspector"
+"Bug Tracker" = "https://github.com/ossf/fuzz-introspector/issues"
+
+
