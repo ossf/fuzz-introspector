@@ -387,7 +387,7 @@ class FunctionDefinition():
 class SourceCodeFile():
     """Class for holding file-specific information."""
 
-    def __init__(self, source_file, language):
+    def __init__(self, source_file, language, source_content=""):
         self.source_file = source_file
         self.language = language
         self.parser = language_parsers.get(self.language)
@@ -399,6 +399,12 @@ class SourceCodeFile():
         self.struct_defs = []
         self.typedefs = []
         self.includes = set()
+
+        if source_content:
+            self.source_content = source_content
+        else:
+            with open(self.source_file, 'rb') as f:
+                self.source_content = f.read()
 
         # List of function definitions in the source file.
         self.func_defs = []
@@ -414,9 +420,7 @@ class SourceCodeFile():
         """Load the the source code into a treesitter tree, and set
         the root node."""
         if self.language == 'c' and not self.root:
-            with open(self.source_file, 'rb') as f:
-                source_code = f.read()
-            self.root = self.parser.parse(source_code).root_node
+            self.root = self.parser.parse(self.source_content).root_node
 
     def extract_types(self):
         """Extracts the types of the source code"""
@@ -545,9 +549,7 @@ class SourceCodeFile():
 
         # TODO(David): fix up encoding issues.
         if not self.line_range_pairs:
-            with open(self.source_file, 'r', encoding='utf-8') as f:
-                source_content = f.read()
-
+            source_content = self.source_content.decode()
             payload_range = 1
             for line in source_content.split('\n'):
                 end_line_pos = payload_range + len(line) + 1
