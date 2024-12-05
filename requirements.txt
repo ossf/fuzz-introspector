@@ -8,6 +8,7 @@ yapf==0.32.0
 flake8
 pep8
 mypy
+toml
 psutil
 pytest
 sphinx==6.0.0
