@@ -39,7 +39,7 @@ class Project():
         """Gets the source codes that holds libfuzzer harnesses."""
         harnesses = []
         for source_code in self.source_code_files:
-            logger.info('Checking: %s'%(source_code.source_file))
+            logger.info('Checking: %s' % (source_code.source_file))
             if source_code.has_libfuzzer_harness():
                 harnesses.append(source_code)
         return harnesses
@@ -145,7 +145,7 @@ class SourceCodeFile():
             if func.name() == target_function_name:
                 return func
         return None
-    
+
     def has_function_definition(self, target_function_name):
         """Returns if the source file holds a given function definition."""
 
@@ -199,6 +199,7 @@ class SourceCodeFile():
 
         return -1
 
+
 class FunctionDefinition():
     """Wrapper for a function definition"""
 
@@ -219,7 +220,6 @@ class FunctionDefinition():
             # declarator when defining the name.
             function_name = name_node.text.decode()
         return function_name
-
 
     def callsites(self):
         """Gets the callsites of the function."""
@@ -247,9 +247,13 @@ def capture_source_files_in_tree(directory_tree, language):
     language_files = []
     for dirpath, _dirnames, filenames in os.walk(directory_tree):
         for filename in filenames:
-            if any([ext for ext in language_extensions[language] if pathlib.Path(filename).suffix in ext]):
+            if any([
+                    ext for ext in language_extensions[language]
+                    if pathlib.Path(filename).suffix in ext
+            ]):
                 language_files.append(os.path.join(dirpath, filename))
     return language_files
+
 
 def load_treesitter_trees(source_files, log_harnesses=True):
     """Creates treesitter trees for all files in a given list of source files."""

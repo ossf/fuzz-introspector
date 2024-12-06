@@ -32,6 +32,7 @@ def setup_logging():
         datefmt='%Y-%m-%d %H:%M:%S',
     )
 
+
 def parse_args():
     """Parse command line arguments."""
     parser = argparse.ArgumentParser()
@@ -84,6 +85,7 @@ def process_c_project(args):
                       encoding='utf-8') as f:
                 f.write(harness_dict['calltree'])
 
+
 def process_cpp_project(args):
     """Process a project in CPP language"""
     source_files = {}
@@ -97,23 +99,24 @@ def process_cpp_project(args):
     logger.info('Creating base project.')
     project = frontend_cpp.Project(source_codes)
     # project.dump_module_logic('report.yaml')
-    for idx, harness in enumerate(
-            project.get_source_codes_with_harnesses()):
+    for idx, harness in enumerate(project.get_source_codes_with_harnesses()):
         logger.info('Extracting calltree for %s', harness.source_file)
 
         calltree = project.extract_calltree(harness, args.entrypoint)
-        logger.info('calltree: %s'%(calltree))
+        logger.info('calltree: %s' % (calltree))
+
 
 def main():
     """Main"""
 
     setup_logging()
-    args = parse_args() 
+    args = parse_args()
 
     if args.language == 'c':
         process_c_project(args)
     if args.language == 'cpp':
         process_cpp_project(args)
+
 
 if __name__ == "__main__":
     main()

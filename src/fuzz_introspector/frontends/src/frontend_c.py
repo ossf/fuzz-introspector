@@ -591,6 +591,7 @@ def load_treesitter_trees(source_files, log_harnesses=True):
                 results.append(source_cls)
     return results
 
+
 def parse_args():
     parser = argparse.ArgumentParser()
 
