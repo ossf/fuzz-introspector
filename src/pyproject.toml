@@ -44,7 +44,8 @@ dependencies = [
 "networkx",
 "pygraphviz",
 "tree-sitter-languages",
-"tree-sitter-c"
+"tree-sitter-c",
+"tree-sitter-cpp",
 ]
 
 [project.urls]
