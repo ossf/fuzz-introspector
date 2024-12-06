@@ -614,6 +614,25 @@ def parse_args():
     return parser.parse_args()
 
 
+def analyse_source_code(source_content: str) -> Project:
+    """Returns a Project based on a single source string."""
+    source_code = SourceCodeFile(source_file='in-memory string',
+                                 language='c',
+                                 source_content=source_content.encode())
+    project = Project([source_code])
+    return project
+
+
+def analyse_folder(folder_path: str, language: str = 'c') -> Project:
+    """Constructs a project based on the source code in a folder."""
+    source_files = {}
+    source_files[language] = capture_source_files_in_tree(
+        folder_path, language)
+    source_codes = load_treesitter_trees(source_files)
+    project = Project(source_codes)
+    return project
+
+
 def main():
     """Main"""
     setup_logging()
