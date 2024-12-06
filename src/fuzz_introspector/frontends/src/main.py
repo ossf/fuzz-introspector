@@ -15,6 +15,8 @@
 ################################################################################
 """Fuzz Introspector Light frontend"""
 
+from typing import List
+
 import os
 import pathlib
 import argparse
@@ -23,14 +25,21 @@ import logging
 
 from tree_sitter import Language, Parser
 import tree_sitter_c
+import tree_sitter_go
 import yaml
 
 logger = logging.getLogger(name=__name__)
 LOG_FMT = '%(asctime)s.%(msecs)03d %(levelname)s %(module)s - %(funcName)s: %(message)s'
 
-tree_sitter_languages = {'c': Language(tree_sitter_c.language())}
+tree_sitter_languages = {
+    'c': Language(tree_sitter_c.language()),
+    'go': Language(tree_sitter_go.language()),
+}
 
-language_parsers = {'c': Parser(Language(tree_sitter_c.language()))}
+language_parsers = {
+    'c': Parser(Language(tree_sitter_c.language())),
+    'go': Parser(Language(tree_sitter_go.language())),
+}
 
 
 class Project():
@@ -413,13 +422,14 @@ class SourceCodeFile():
         self.load_tree()
 
         # Load function definitions
-        self._set_function_defintions()
-        self.extract_types()
+        if self.language == 'c':
+            self._set_function_defintions()
+            self.extract_types()
 
     def load_tree(self) -> None:
         """Load the the source code into a treesitter tree, and set
         the root node."""
-        if self.language == 'c' and not self.root:
+        if self.language in tree_sitter_languages and not self.root:
             self.root = self.parser.parse(self.source_content).root_node
 
     def extract_types(self):
@@ -565,10 +575,15 @@ class SourceCodeFile():
         return -1
 
 
-def capture_source_files_in_tree(directory_tree, language):
+def capture_source_files_in_tree(directory_tree: str, language: str) -> list[str]:
     """Captures source code files in a given directory."""
-    language_extensions = {'c': ['.c', '.h']}
     language_files = []
+    language_extensions = {'c': ['.c', '.h'], 'go': ['.go', '.cgo']}
+
+    if language not in language_extensions:
+        logger.error(f'Language: {language} not supported yet.')
+        return language_files
+
     for dirpath, _dirnames, filenames in os.walk(directory_tree):
         for filename in filenames:
             for extensions in language_extensions[language]:
@@ -577,17 +592,15 @@ def capture_source_files_in_tree(directory_tree, language):
     return language_files
 
 
-def load_treesitter_trees(source_files, log_harnesses=True):
+def load_treesitter_trees(source_files: list[str], language: str, log_harnesses: bool = True):
     """Creates treesitter trees for all files in a given list of source files."""
     results = []
 
-    for language in source_files:
-        if language == 'c':
-            for code_file in source_files[language]:
-                source_cls = SourceCodeFile(code_file, language)
-                if log_harnesses:
-                    if source_cls.has_libfuzzer_harness():
-                        logger.info('harness: %s', code_file)
+    for code_file in source_files:
+        source_cls = SourceCodeFile(code_file, language)
+        if log_harnesses:
+            if source_cls.has_libfuzzer_harness():
+                logger.info('harness: %s', code_file)
                 results.append(source_cls)
     return results
 
@@ -601,7 +614,7 @@ def setup_logging():
     )
 
 
-def parse_args():
+def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--target-dir',
@@ -610,6 +623,9 @@ def parse_args():
     parser.add_argument('--entrypoint',
                         help='Entrypoint for the calltree',
                         default='LLVMFuzzerTestOneInput')
+    parser.add_argument('--language',
+                        help='Language of the target project',
+                        default='c')
 
     return parser.parse_args()
 
@@ -625,10 +641,9 @@ def analyse_source_code(source_content: str) -> Project:
 
 def analyse_folder(folder_path: str, language: str = 'c') -> Project:
     """Constructs a project based on the source code in a folder."""
-    source_files = {}
-    source_files[language] = capture_source_files_in_tree(
-        folder_path, language)
-    source_codes = load_treesitter_trees(source_files)
+    source_files = []
+    source_files = capture_source_files_in_tree(folder_path, language)
+    source_codes = load_treesitter_trees(source_files, language)
     project = Project(source_codes)
     return project
 
@@ -638,12 +653,16 @@ def main():
     setup_logging()
     args = parse_args()
 
-    source_files = {}
-    source_files['c'] = capture_source_files_in_tree(args.target_dir, 'c')
-    logger.info('Found %d files to include in analysis',
-                len(source_files['c']))
+    source_files = []
+    source_files = capture_source_files_in_tree(args.target_dir, args.language)
+    logger.info('Found %d files to include in analysis', len(source_files))
+
+    if not source_files:
+        logger.error('Failed to find any source files, exiting.')
+        return
+
     logger.info('Loading tree-sitter trees')
-    source_codes = load_treesitter_trees(source_files)
+    source_codes = load_treesitter_trees(source_files, args.language)
 
     logger.info('Creating base project.')
     project = Project(source_codes)
