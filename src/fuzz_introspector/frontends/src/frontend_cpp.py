@@ -274,8 +274,9 @@ class FunctionDefinition():
         self.tree_sitter_lang = tree_sitter_lang
         self.parent_source = source_code
 
-        logger.info('Identified function: %s :: %s :: %s', self.name(),
-                    self.parent_source.source_file, self.scope())
+        logger.info('Identified function: %s :: %s :: %s :: (%d,%d)',
+                    self.name(), self.parent_source.source_file, self.scope(),
+                    self.root.start_point.row, self.root.end_point.row)
 
     def scope(self):
         if not self.parent_source.namespaces:
@@ -314,17 +315,20 @@ class FunctionDefinition():
                 if tmp_node.child_by_field_name('scope'):
                     while tmp_node.child_by_field_name('name') is not None:
                         # TODO(David) handle
-                        if not tmp_node.child_by_field_name('scope'):
-                            print('Missing analysis')
-                            function_call = ''
-                            break
-                        function_call += tmp_node.child_by_field_name(
-                            'scope').text.decode() + '::'
                         if tmp_node.child_by_field_name(
                                 'name').type == 'identifier':
                             function_call += tmp_node.child_by_field_name(
                                 'name').text.decode()
                             break
+
+                        if not tmp_node.child_by_field_name('scope'):
+                            logger.info('Missing analysis: %s',
+                                        tmp_node.text.decode())
+                            function_call = ''
+                            break
+                        function_call += tmp_node.child_by_field_name(
+                            'scope').text.decode() + '::'
+
                         tmp_node = tmp_node.child_by_field_name('name')
                     if not function_call:
                         continue
