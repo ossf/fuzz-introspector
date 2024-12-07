@@ -592,15 +592,6 @@ def load_treesitter_trees(source_files, log_harnesses=True):
     return results
 
 
-def setup_logging():
-    """Initializes logging"""
-    logging.basicConfig(
-        level=logging.INFO,
-        format=LOG_FMT,
-        datefmt='%Y-%m-%d %H:%M:%S',
-    )
-
-
 def parse_args():
     parser = argparse.ArgumentParser()
 
@@ -631,46 +622,3 @@ def analyse_folder(folder_path: str, language: str = 'c') -> Project:
     source_codes = load_treesitter_trees(source_files)
     project = Project(source_codes)
     return project
-
-
-def main():
-    """Main"""
-    setup_logging()
-    args = parse_args()
-
-    source_files = {}
-    source_files['c'] = capture_source_files_in_tree(args.target_dir, 'c')
-    logger.info('Found %d files to include in analysis',
-                len(source_files['c']))
-    logger.info('Loading tree-sitter trees')
-    source_codes = load_treesitter_trees(source_files)
-
-    logger.info('Creating base project.')
-    project = Project(source_codes)
-    project.dump_module_logic('report.yaml')
-
-    if args.entrypoint != 'LLVMFuzzerTestOneInput':
-        calltree_source = project.get_source_code_with_target(args.entrypoint)
-        if calltree_source:
-            calltree = project.extract_calltree(calltree_source,
-                                                args.entrypoint)
-            with open('targetCalltree.txt', 'w') as f:
-                f.write(calltree)
-    else:
-        harnesses = []
-        for idx, harness in enumerate(
-                project.get_source_codes_with_harnesses()):
-            logger.info('Extracting calltree for %s', harness.source_file)
-            calltree = project.extract_calltree(harness, args.entrypoint)
-            harnesses.append({'calltree': calltree})
-            with open(f'fuzzer-calltree-{idx}', 'w', encoding='utf-8') as f:
-                f.write(calltree)
-
-        for idx, harness_dict in enumerate(harnesses):
-            with open('fuzzer-calltree-%d' % (idx), 'w',
-                      encoding='utf-8') as f:
-                f.write(harness_dict['calltree'])
-
-
-if __name__ == "__main__":
-    main()
