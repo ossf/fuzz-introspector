@@ -34,7 +34,7 @@ index 8f6486896..b4f50ac36 100644
  RUN rm /root/checkout_build_install_llvm.sh
  
 diff --git a/infra/base-images/base-builder/compile b/infra/base-images/base-builder/compile
-index d9077510f..5baa138a6 100755
+index d0f45bb73..388563180 100755
 --- a/infra/base-images/base-builder/compile
 +++ b/infra/base-images/base-builder/compile
 @@ -20,6 +20,7 @@ echo "---------------------------------------------------------------"
@@ -70,7 +70,7 @@ index d9077510f..5baa138a6 100755
    export RUSTFLAGS="--cfg fuzzing -Zsanitizer=${SANITIZER} -Cdebuginfo=1 -Cforce-frame-pointers"
  else
    export RUSTFLAGS="--cfg fuzzing -Cdebuginfo=1 -Cforce-frame-pointers"
-@@ -188,7 +196,7 @@ EOF
+@@ -188,7 +198,7 @@ EOF
    export CXXFLAGS="$CXXFLAGS -fno-sanitize=leak"
  fi
  
@@ -101,7 +101,7 @@ index d9077510f..5baa138a6 100755
    rsync -avu --delete "$SRC/inspector/" "$OUT/inspector"
  fi
  
-@@ -280,7 +288,7 @@ else
+@@ -280,7 +299,7 @@ else
    fi
  fi
  
@@ -110,7 +110,7 @@ index d9077510f..5baa138a6 100755
    unset CXXFLAGS
    unset CFLAGS
    export G_ANALYTICS_TAG="G-8WTFM1Y62J"
-@@ -295,6 +303,21 @@ if [ "$SANITIZER" = "introspector" ]; then
+@@ -295,6 +314,21 @@ if [ "$SANITIZER" = "introspector" ]; then
      mkdir -p $SRC/my-fi-data
      find $OUT/ -name *.data -exec mv {} $SRC/my-fi-data/ \;
      find $OUT/ -name *.data.yaml -exec mv {} $SRC/my-fi-data/ \;
@@ -132,10 +132,10 @@ index d9077510f..5baa138a6 100755
    fi
  
    mkdir -p $SRC/inspector
-@@ -335,6 +358,12 @@ if [ "$SANITIZER" = "introspector" ]; then
+@@ -335,6 +369,12 @@ if [ "$SANITIZER" = "introspector" ]; then
      REPORT_ARGS="$REPORT_ARGS --language=jvm"
      python3 /fuzz-introspector/src/main.py report $REPORT_ARGS
-     cp -rf $SRC/inspector $OUT/inspector
+     rsync -avu --delete "$SRC/inspector/" "$OUT/inspector"
 +  elif [ "$FUZZING_LANGUAGE" = "rust" ]; then
 +    echo "GOING rust route"
 +    REPORT_ARGS="$REPORT_ARGS --target_dir=$SRC/inspector"
@@ -145,3 +145,4 @@ index d9077510f..5baa138a6 100755
    else
      # C/C++
  
+
