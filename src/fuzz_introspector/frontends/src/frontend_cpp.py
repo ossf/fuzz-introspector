@@ -317,6 +317,9 @@ class FunctionDefinition():
                         # TODO(David) handle
                         if tmp_node.child_by_field_name(
                                 'name').type == 'identifier':
+                            if tmp_node.child_by_field_name('scope'):
+                                function_call += tmp_node.child_by_field_name(
+                                    'scopeq').text.decode() + '::'
                             function_call += tmp_node.child_by_field_name(
                                 'name').text.decode()
                             break
