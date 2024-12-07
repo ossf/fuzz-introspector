@@ -190,10 +190,10 @@ class SourceCodeFile():
 
     def get_function_node(self, target_function_name, exact=False):
         """Gets the tree-sitter node corresponding to a function."""
-        #logger.info('Gets node')
+
         # Find the first instance of the function name
         for func in self.func_defs:
-            if func.scope() != None:
+            if func.scope() is not None:
                 if func.scope() + '::' + func.name() == target_function_name:
                     return func
             else:
