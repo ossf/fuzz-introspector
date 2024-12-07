@@ -39,7 +39,7 @@ class Project():
         """Gets the source codes that holds libfuzzer harnesses."""
         harnesses = []
         for source_code in self.source_code_files:
-            logger.info('Checking: %s' % (source_code.source_file))
+            # logger.info('Checking: %s' % (source_code.source_file))
             if source_code.has_libfuzzer_harness():
                 harnesses.append(source_code)
         return harnesses
@@ -93,15 +93,30 @@ class Project():
 
     def find_source_with_func_def(self, target_function_name):
         """Finds the source code with a given function."""
+
         source_codes_with_target = []
         for source_code in self.source_code_files:
-            if source_code.has_function_definition(target_function_name):
+            if source_code.has_function_definition(target_function_name,
+                                                   exact=True):
                 source_codes_with_target.append(source_code)
 
         if len(source_codes_with_target) == 1:
             # We hav have, in this case it's trivial.
             return source_codes_with_target[0]
 
+        source_codes_with_target = []
+        for source_code in self.source_code_files:
+            if source_code.has_function_definition(target_function_name,
+                                                   exact=False):
+                source_codes_with_target.append(source_code)
+        if len(source_codes_with_target) == 1:
+            # We hav have, in this case it's trivial.
+            return source_codes_with_target[0]
+        if len(source_codes_with_target) > 1:
+            print("We have more than a single source %s" %
+                  (target_function_name))
+            for sc in source_codes_with_target:
+                print("- %s" % (sc.source_file))
         return None
 
 
@@ -120,6 +135,7 @@ class SourceCodeFile():
         self.struct_defs = []
         self.typedefs = []
         self.includes = set()
+        self.namespaces = []
 
         if source_content:
             self.source_content = source_content
@@ -132,26 +148,76 @@ class SourceCodeFile():
 
         # Initialization ruotines
         self.load_tree()
+        self.find_namespaces()
 
         # Load function definitions
         self._set_function_defintions()
-        # self.extract_types()
 
-    def get_function_node(self, target_function_name):
+    def find_namespaces(self) -> None:
+        """Sets self.namespaces"""
+        namespace_query = self.tree_sitter_lang.query(
+            '( namespace_definition ) @de')
+        namespace_res = namespace_query.captures(self.root)
+        for _, namespaces in namespace_res.items():
+            for namespace in namespaces:
+                # TODO(David) handle anonymous namespaces (no name).
+                if not namespace.child_by_field_name('name'):
+                    continue
+
+                namespace_name = ''
+                if namespace.child_by_field_name(
+                        'name').type == 'nested_namespace_specifier':
+                    for child in namespace.child_by_field_name(
+                            'name').children:
+                        if not child.is_named:
+                            continue
+                        namespace_name += child.text.decode() + '::'
+                    if namespace_name.endswith('::'):
+                        namespace_name = namespace_name[:-2]
+
+                if namespace.child_by_field_name(
+                        'name').type == 'namespace_identifier':
+                    logger.info(
+                        namespace.child_by_field_name('name').text.decode())
+                    namespace_name = namespace.child_by_field_name(
+                        'name').text.decode()
+
+                logger.info('Namespace name: %s', namespace_name)
+                self.namespaces.append(
+                    (namespace_name, namespace.byte_range, namespace))
+                # Get namespace
+                logger.info(namespace.byte_range)
+
+    def get_function_node(self, target_function_name, exact=False):
         """Gets the tree-sitter node corresponding to a function."""
 
         # Find the first instance of the function name
         for func in self.func_defs:
+            if func.scope() is not None:
+                if func.scope() + '::' + func.name() == target_function_name:
+                    return func
+            else:
+                if func.name() == target_function_name:
+                    return func
+
+        if exact:
+            return None
+
+        for func in self.func_defs:
+
             if func.name() == target_function_name:
+                return func
+
+        for func in self.func_defs:
+            if func.name() == target_function_name.split('::')[-1]:
                 return func
         return None
 
-    def has_function_definition(self, target_function_name):
+    def has_function_definition(self, target_function_name, exact=False):
         """Returns if the source file holds a given function definition."""
 
-        for func in self.func_defs:
-            if func.name() == target_function_name:
-                return True
+        if self.get_function_node(target_function_name, exact):
+            return True
         return False
 
     def load_tree(self) -> None:
@@ -208,7 +274,18 @@ class FunctionDefinition():
         self.tree_sitter_lang = tree_sitter_lang
         self.parent_source = source_code
 
-        logger.info(self.name())
+        logger.info('Identified function: %s :: %s :: %s', self.name(),
+                    self.parent_source.source_file, self.scope())
+
+    def scope(self):
+        if not self.parent_source.namespaces:
+            return None
+
+        for ns_name, ns_byte_range, ns in self.parent_source.namespaces:
+            if self.root.byte_range[0] > ns_byte_range[
+                    0] and self.root.byte_range[1] < ns_byte_range[1]:
+                return ns_name
+        return None
 
     def name(self):
         """Gets name of a function"""
@@ -228,10 +305,35 @@ class FunctionDefinition():
         call_res = call_query.captures(self.root)
         for _, call_exprs in call_res.items():
             for call_expr in call_exprs:
-                for call_child in call_expr.children:
-                    if call_child.type == 'identifier':
-                        callsites.append(
-                            (call_child.text.decode(), call_child.byte_range))
+
+                tmp_node = call_expr.child_by_field_name('function')
+
+                function_call = ''
+                # Handle callsites where the scope is not None, e.g.
+                # ns1::ns2::func1(...);
+                if tmp_node.child_by_field_name('scope'):
+                    while tmp_node.child_by_field_name('name') is not None:
+                        # TODO(David) handle
+                        if not tmp_node.child_by_field_name('scope'):
+                            print('Missing analysis')
+                            function_call = ''
+                            break
+                        function_call += tmp_node.child_by_field_name(
+                            'scope').text.decode() + '::'
+                        if tmp_node.child_by_field_name(
+                                'name').type == 'identifier':
+                            function_call += tmp_node.child_by_field_name(
+                                'name').text.decode()
+                            break
+                        tmp_node = tmp_node.child_by_field_name('name')
+                    if not function_call:
+                        continue
+                # Handle non-scoped function calls
+                if tmp_node.type == 'identifier':
+                    function_call = tmp_node.text.decode()
+
+                callsites.append((function_call, call_expr.byte_range))
+
         # Sort the callsites relative to their end position. End position
         # here makes sense to handle cases of e.g.
         # func1(func2(), func3())
@@ -245,7 +347,7 @@ def capture_source_files_in_tree(directory_tree, language):
     """Captures source code files in a given directory."""
     language_extensions = {'cpp': ['.cpp', '.cc', '.c++', '.h']}
     language_files = []
-    for dirpath, _dirnames, filenames in os.walk(directory_tree):
+    for dirpath, _, filenames in os.walk(directory_tree):
         for filename in filenames:
             if any([
                     ext for ext in language_extensions[language]
