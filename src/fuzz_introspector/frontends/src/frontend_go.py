@@ -63,17 +63,13 @@ class Project():
 
             for func_def in (source_code.functions + source_code.methods):
                 func_dict = {}
+                start, end = func_def.get_start_end_line()
                 func_dict['functionName'] = func_def.name()
                 func_dict['functionSourceFile'] = source_code.source_file
-                func_dict[
-                    'functionLinenumber'] = source_code.root.start_point.row
-                func_dict[
-                    'functionLinbernumberEnd'] = source_code.root.end_point.row
+                func_dict['functionLinenumber'] = start
+                func_dict['functionLinbernumberEnd'] = end
                 func_dict['linkageType'] = ''
-                func_dict['func_position'] = {
-                    'start': source_code.root.start_point.row,
-                    'end': source_code.root.end_point.row,
-                }
+                func_dict['func_position'] = {'start': start, 'end': end}
                 cc_str = 'CyclomaticComplexity'
                 func_dict[cc_str] = func_def.get_function_complexity()
                 func_dict['EdgeCount'] = func_dict['CyclomaticComplexity']
@@ -206,14 +202,13 @@ class FunctionMethod():
             function_name = name_node.text.decode()
         return function_name
 
-    def get_return_type(self) -> str:
-        """Gets a function's return type as a string"""
-        #TODO IN PROGRESS
-        return ''
+    def get_start_end_line(self) -> (int, int):
+        """Get start and end line of this function/method."""
+        # Go source file line start with 0
+        start = self.root.start_point.row + 1
+        end = self.root.end_point.row + 1
 
-    def position(self) -> tuple[int, int]:
-        """Gets the byte position of the root node"""
-        return self.root.byte_range
+        return (start, end)
 
     def get_function_complexity(self) -> int:
         """Gets complexity measure based on counting branch nodes in a
@@ -269,17 +264,53 @@ class FunctionMethod():
 
     def get_function_arg_names(self) -> list[str]:
         """Gets the same of a function's arguments"""
-        # TODO IN PROGRESS
-        return []
+        param_names = []
+        parameters_node = self.root.child_by_field_name('parameters')
+        if not parameters_node:
+            return param_names
+
+        for param in parameters_node.children:
+            if not param.is_named:
+                continue
+
+            param_tmp = param
+            while param_tmp.child_by_field_name('name') is not None:
+                param_tmp = param_tmp.child_by_field_name('name')
+            param_names.append(param_tmp.text.decode())
+
+        return param_names
 
     def get_function_arg_types(self) -> list[str]:
         """Gets the text of a function's types"""
-        # TODO IN PROGRESS
-        return []
+        param_types = []
+
+        parameters_node = self.root.child_by_field_name('parameters')
+
+        if not parameters_node:
+            return param_types
+
+        for param in parameters_node.children:
+            if not param.is_named:
+                continue
+
+            if not param.child_by_field_name('type'):
+                continue
+
+            type_str = param.child_by_field_name('type').text.decode()
+            param_tmp = param
+            while param_tmp.child_by_field_name('declarator') is not None:
+                if param_tmp.type == 'pointer_declarator':
+                    type_str += '*'
+                param_tmp = param_tmp.child_by_field_name('declarator')
+            param_types.append(type_str)
+
+        return param_types
 
     def get_function_return_type(self) -> str:
         """Gets a function's return type as a string"""
-        # TODO IN PROGRESS
+        result = self.root.child_by_field_name('result')
+        if result:
+            return result.text.decode()
         return ''
 
     def function_signature(self) -> str:
@@ -337,7 +368,6 @@ class SourceCodeFile():
 
         self.root = None
         self.function_names = []
-        self.line_range_pairs = []
         self.struct_defs = []
         self.typedefs = []
         self.includes = set()
@@ -436,26 +466,6 @@ class SourceCodeFile():
                 return func.name()
 
         return None
-
-    def get_linenumber(self, bytepos: int) -> int:
-        """Gets the line number corresponding to a byte range."""
-
-        # TODO(David): fix up encoding issues.
-        if not self.line_range_pairs:
-            source_content = self.source_content.decode()
-            payload_range = 1
-            for line in source_content.split('\n'):
-                end_line_pos = payload_range + len(line) + 1
-                self.line_range_pairs.append((payload_range, end_line_pos))
-                payload_range = end_line_pos
-
-        lineno = 1
-        for start, end in self.line_range_pairs:
-            if bytepos >= start and bytepos <= end:
-                return lineno
-            lineno += 1
-
-        return -1
 
 
 def capture_source_files_in_tree(directory_tree: str) -> list[str]:
