@@ -117,14 +117,10 @@ def process_go_project(args):
     logger.info('Loading tree-sitter trees')
     source_codes = frontend_go.load_treesitter_trees(source_files)
 
+    # Create and dump project
     logger.info('Creating base project.')
     project = frontend_go.Project(source_codes)
-    # project.dump_module_logic('report.yaml')
-    for idx, harness in enumerate(project.get_source_codes_with_harnesses()):
-        logger.info('Extracting calltree for %s', harness.source_file)
-
-        calltree = project.extract_calltree(harness, args.entrypoint)
-        logger.info('calltree: %s' % (calltree))
+    project.dump_module_logic('report.yaml')
 
 
 def main():
