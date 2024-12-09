@@ -269,13 +269,47 @@ class FunctionMethod():
 
     def get_function_arg_names(self) -> list[str]:
         """Gets the same of a function's arguments"""
-        # TODO IN PROGRESS
-        return []
+        param_names = []
+        parameters_node = self.root.child_by_field_name('parameters')
+        if not parameters_node:
+            return param_names
+
+        for param in parameters_node.children:
+            if not param.is_named:
+                continue
+
+            param_tmp = param
+            while param_tmp.child_by_field_name('name') is not None:
+                param_tmp = param_tmp.child_by_field_name('name')
+            param_names.append(param_tmp.text.decode())
+
+        return param_names
 
     def get_function_arg_types(self) -> list[str]:
         """Gets the text of a function's types"""
-        # TODO IN PROGRESS
-        return []
+        param_types = []
+
+        parameters_node = self.root.child_by_field_name('parameters')
+
+        if not parameters_node:
+            return param_types
+
+        for param in parameters_node.children:
+            if not param.is_named:
+                continue
+
+            if not param.child_by_field_name('type'):
+                continue
+
+            type_str = param.child_by_field_name('type').text.decode()
+            param_tmp = param
+            while param_tmp.child_by_field_name('declarator') is not None:
+                if param_tmp.type == 'pointer_declarator':
+                    type_str += '*'
+                param_tmp = param_tmp.child_by_field_name('declarator')
+            param_types.append(type_str)
+
+        return param_types
 
     def get_function_return_type(self) -> str:
         """Gets a function's return type as a string"""
