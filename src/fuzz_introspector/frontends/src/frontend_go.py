@@ -17,9 +17,10 @@
 
 from typing import List, Optional, Set, Tuple
 
+import argparse
 import os
 import pathlib
-import argparse
+import re
 
 import logging
 
@@ -45,20 +46,13 @@ class Project():
 
         # Find all functions
         function_list = []
-        included_header_files = set()
         for source_code in self.source_code_files:
-            for incl in source_code.includes:
-                included_header_files.add(incl)
 
             report['sources'].append({
                 'source_file':
                 source_code.source_file,
                 'function_names':
                 source_code.get_defined_function_names(),
-                'types': {
-                    'structs': source_code.struct_defs,
-                    'typedefs': source_code.typedefs
-                }
             })
 
             for func_def in (source_code.functions + source_code.methods):
@@ -70,8 +64,7 @@ class Project():
                 func_dict['functionLinbernumberEnd'] = end
                 func_dict['linkageType'] = ''
                 func_dict['func_position'] = {'start': start, 'end': end}
-                cc_str = 'CyclomaticComplexity'
-                func_dict[cc_str] = func_def.get_function_complexity()
+                func_dict['CyclomaticComplexity'] = func_def.get_function_complexity()
                 func_dict['EdgeCount'] = func_dict['CyclomaticComplexity']
                 func_dict['ICount'] = func_def.get_function_instr_count()
                 func_dict['argNames'] = func_def.get_function_arg_names()
@@ -79,12 +72,11 @@ class Project():
                 func_dict['argCount'] = len(func_dict['argTypes'])
                 func_dict['returnType'] = func_def.get_function_return_type()
                 func_dict['BranchProfiles'] = []
-                func_dict['functionUses'] = []
                 func_dict['Callsites'] = func_def.detailed_callsites()
+                func_dict['functionUses'] = 0
                 func_dict['functionDepth'] = 0
                 func_dict['constantsTouched'] = []
                 func_dict['BBCount'] = 0
-
                 func_dict['signature'] = func_def.function_signature()
                 func_callsites = func_def.callsites()
                 funcs_reached = set()
@@ -97,7 +89,6 @@ class Project():
         if function_list:
             report['All functions'] = {}
             report['All functions']['Elements'] = function_list
-        report['included-header-files'] = list(included_header_files)
 
         with open(report_name, 'w', encoding='utf-8') as f:
             f.write(yaml.dump(report))
@@ -110,23 +101,14 @@ class Project():
                 harnesses.append(source_code)
         return harnesses
 
-    def get_source_code_with_target(self, target_func_name: str) -> Optional['SourceCodeFile']:
-        for source_code in self.source_code_files:
-            tfunc = source_code.get_function_node(target_func_name)
-            if not tfunc:
-                continue
-            return source_code
-        return None
-
     def extract_calltree(self,
+                         source_file = str,
                          source_code: Optional['SourceCodeFile'] = None,
                          function: str = None,
                          visited_functions: set[str] = None,
                          depth: int = 0,
                          line_number: int = -1) -> str:
         """Extracts calltree string of a calltree so that FI core can use it."""
-        # Create calltree from a given function
-        # Find the function in the source code
         if not visited_functions:
             visited_functions = set()
 
@@ -136,11 +118,10 @@ class Project():
         line_to_print = '  ' * depth
         line_to_print += function
         line_to_print += ' '
+        line_to_print += source_file
 
         if not source_code:
             source_code = self.find_source_with_func_def(function)
-        if source_code:
-            line_to_print += source_code.source_file
 
         line_to_print += ' '
         line_to_print += str(line_number)
@@ -159,9 +140,9 @@ class Project():
             return line_to_print
 
         visited_functions.add(function)
-        for cs, byte_range in callsites:
-            line_number = source_code.get_linenumber(byte_range[0])
+        for cs, line_number in callsites:
             line_to_print += self.extract_calltree(
+                source_code.source_file,
                 function=cs,
                 visited_functions=visited_functions,
                 depth=depth + 1,
@@ -170,14 +151,10 @@ class Project():
 
     def find_source_with_func_def(self, target_function_name: str) -> Optional['SourceCodeFile']:
         """Finds the source code with a given function."""
-        source_codes_with_target = []
         for source_code in self.source_code_files:
             if source_code.has_function_definition(target_function_name):
+                return source_code
                 source_codes_with_target.append(source_code)
-
-        if len(source_codes_with_target) == 1:
-            # We hav have, in this case it's trivial.
-            return source_codes_with_target[0]
 
         return None
 
@@ -339,56 +316,74 @@ class FunctionMethod():
     def detailed_callsites(self) -> list[dict[str, str]]:
         """Captures the callsite details as used by Fuzz Introspector core."""
         callsites = []
-        call_query = self.tree_sitter_lang.query('( call_expression ) @ce')
-        call_res = call_query.captures(self.root)
-        for _, call_exprs in call_res.items():
-            for call_expr in call_exprs:
-                for call_child in call_expr.children:
-                    if call_child.type == 'identifier':
-                        src_line = call_child.start_point.row
-                        src_loc = self.parent_source.source_file + ':%d,1' % (
-                            src_line)
-                        callsites.append({
-                            'Src': src_loc,
-                            'Dst': call_child.text.decode()
-                        })
+        for dst, src_line in self.callsites():
+            src_loc = self.parent_source.source_file + ':%d,1' % (src_line)
+            callsites.append({'Src': src_loc, 'Dst': dst})
+
         return callsites
 
-    def callsites(self) -> list[tuple[str, tuple[int, int]]]:
+    def callsites(self) -> list[tuple[int, int]]:
         """Gets the callsites of the function."""
         callsites = []
-        call_query = self.tree_sitter_lang.query('( call_expression ) @ce')
+        call_query = self.tree_sitter_lang.query(
+            '( call_expression ) @ce'
+        )
         call_res = call_query.captures(self.root)
         for _, call_exprs in call_res.items():
             for call_expr in call_exprs:
                 for call_child in call_expr.children:
+                    # Ignore testing.F.Fuzz
+                    if 'Fuzz' in call_child.text.decode():
+                        continue
+
+                    # Simple call
                     if call_child.type == 'identifier':
                         callsites.append(
-                            (call_child.text.decode(), call_child.byte_range))
-        # Sort the callsites relative to their end position. End position
-        # here makes sense to handle cases of e.g.
-        # func1(func2(), func3())
-        # where the execution ordering is func2 -> func3 -> func1
-        callsites = list(sorted(callsites, key=lambda x: x[1][1]))
+                            (
+                                call_child.text.decode(),
+                                call_child.byte_range,
+                                call_child.start_point.row + 1,
+                            )
+                        )
 
-        return callsites
+                    # Package/method call
+                    if call_child.type == 'selector_expression':
+                        call = call_child.text.decode()
+
+                        # Variable call
+                        split_call = call.split('.', 1)
+                        if split_call[0] not in self.parent_source.imports and len(split_call) > 1:
+                            call = call.split('.')[-1]
+
+                        # Chain call
+                        split_call = call.rsplit(').', 1)
+                        if len(split_call) > 1:
+                            call = split_call[1]
+
+                        callsites.append(
+                            (
+                                call,
+                                call_child.byte_range,
+                                call_child.start_point.row + 1,
+                            )
+                        )
+
+        callsites = sorted(callsites, key=lambda x: x[1][1])
+
+        return [(x[0], x[2]) for x in callsites]
 
 
 class SourceCodeFile():
     """Class for holding file-specific information."""
 
-    def __init__(self, source_file: str, source_content: str = ""):
+    def __init__(self, source_file: str, source_content: Optional[bytes] = None):
         logger.info('Processing %s' % source_file)
 
+        self.root = None
+        self.imports = []
         self.source_file = source_file
         self.tree_sitter_lang = Language(tree_sitter_go.language())
         self.parser = Parser(self.tree_sitter_lang)
-
-        self.root = None
-        self.function_names = []
-        self.struct_defs = []
-        self.typedefs = []
-        self.includes = set()
 
         if source_content:
             self.source_content = source_content
@@ -407,13 +402,16 @@ class SourceCodeFile():
         self._set_function_declaration()
         self._set_method_declaration()
 
+        # Parse import package
+        self._set_imports()
+
     def load_tree(self):
         """Load the the source code into a treesitter tree, and set
         the root node."""
-        if not self.root:
-            self.root = self.parser.parse(self.source_content).root_node
+        self.root = self.parser.parse(self.source_content).root_node
 
-    def _set_function_declaration(self) -> list[FunctionMethod]:
+    def _set_function_declaration(self):
+        """Internal helper for retrieving all functions."""
         func_query_str = '( function_declaration ) @fd '
         func_query = self.tree_sitter_lang.query(func_query_str)
 
@@ -423,7 +421,8 @@ class SourceCodeFile():
                 self.functions.append(
                     FunctionMethod(func, self.tree_sitter_lang, self, True))
 
-    def _set_method_declaration(self) -> list[FunctionMethod]:
+    def _set_method_declaration(self):
+        """Internal helper for retrieving all methods."""
         func_query_str = '( method_declaration ) @fd '
         func_query = self.tree_sitter_lang.query(func_query_str)
 
@@ -432,6 +431,20 @@ class SourceCodeFile():
             for func in funcs:
                 self.methods.append(
                     FunctionMethod(func, self.tree_sitter_lang, self, False))
+
+    def _set_imports(self):
+        """Internal helper for retrieving all imports."""
+        import_pattern = r'^\s*import\s+(?:(?P<single>"[^"]+")|\((?P<multi>[^)]+)\))'
+
+        imports = []
+        for match in re.finditer(import_pattern, self.source_content.decode('utf8'), re.MULTILINE):
+            if match.group('single'):
+                imports.append(match.group('single'))
+            elif match.group('multi'):
+                multi_imports = [line.strip().strip('"') for line in match.group('multi').splitlines()]
+                imports.extend(multi_imports)
+
+        self.imports = [s.rsplit('/', 1)[-1] if '/' in s else s for s in imports]
 
     def get_defined_function_names(self) -> list[str]:
         """Gets the functions defined in the file, as a list of strings."""

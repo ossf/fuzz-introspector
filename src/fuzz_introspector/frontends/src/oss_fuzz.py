@@ -122,6 +122,13 @@ def process_go_project(args):
     project = frontend_go.Project(source_codes)
     project.dump_module_logic('report.yaml')
 
+    # Process calltree
+    for idx, harness in enumerate(project.get_source_codes_with_harnesses()):
+        logger.info('Extracting calltree for %s', harness.source_file)
+        calltree = project.extract_calltree(harness.source_file, harness)
+        with open(f'fuzzer-calltree-{idx}', 'w', encoding='utf-8') as f:
+            f.write(calltree)
+
 
 def main():
     """Main"""
