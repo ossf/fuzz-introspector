@@ -149,10 +149,12 @@ class SourceCodeFile():
     def has_function_definition(self, target_function_name: str) -> bool:
         """Returns if the source file holds a given function definition."""
 
-        if any(func.get_name() == target_function_name for func in self.functions):
+        if any(func.get_name() == target_function_name
+               for func in self.functions):
             return True
 
-        if any(meth.get_name() == target_function_name for meth in self.methods):
+        if any(meth.get_name() == target_function_name
+               for meth in self.methods):
             return True
 
         return False
@@ -172,8 +174,7 @@ class Project():
     def __init__(self, source_code_files: list[str]):
         self.source_code_files = source_code_files
         self.full_functions_methods = [
-            item
-            for src in source_code_files
+            item for src in source_code_files
             for item in src.functions + src.methods
         ]
 
@@ -203,7 +204,8 @@ class Project():
                 func_dict['functionLinbernumberEnd'] = func_def.end_line
                 func_dict['linkageType'] = ''
                 func_dict['func_position'] = {
-                    'start': func_def.start_line, 'end': func_def.end_line
+                    'start': func_def.start_line,
+                    'end': func_def.end_line
                 }
                 func_dict['CyclomaticComplexity'] = func_def.get_complexity()
                 func_dict['EdgeCount'] = func_dict['CyclomaticComplexity']
@@ -215,11 +217,9 @@ class Project():
                 func_dict['BranchProfiles'] = []
                 func_dict['Callsites'] = func_def.detailed_callsites()
                 func_dict['functionUses'] = func_def.get_function_uses(
-                    self.full_functions_methods
-                )
+                    self.full_functions_methods)
                 func_dict['functionDepth'] = func_def.get_function_depth(
-                    self.full_functions_methods
-                )
+                    self.full_functions_methods)
                 func_dict['constantsTouched'] = []
                 func_dict['BBCount'] = 0
                 func_dict['signature'] = func_def.function_signature()
@@ -340,7 +340,8 @@ class FunctionMethod():
 
         return self.function_name
 
-    def get_function_uses(self, all_funcs_meths: list['FunctionMethod']) -> int:
+    def get_function_uses(self,
+                          all_funcs_meths: list['FunctionMethod']) -> int:
         """Calculate how many function called this function."""
         if not self.function_uses:
             for func in all_funcs_meths:
@@ -354,7 +355,8 @@ class FunctionMethod():
 
         return self.function_uses
 
-    def get_function_depth(self, all_funcs_meths: list['FunctionMethod']) -> int:
+    def get_function_depth(self,
+                           all_funcs_meths: list['FunctionMethod']) -> int:
         """Calculate function depth of this function."""
 
         def _recursive_function_depth(func_meth: FunctionMethod) -> int:
