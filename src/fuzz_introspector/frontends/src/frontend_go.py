@@ -171,7 +171,11 @@ class Project():
 
     def __init__(self, source_code_files: list[str]):
         self.source_code_files = source_code_files
-        self.full_functions_methods = [item for src in source_code_files for item in src.functions + src.methods]
+        self.full_functions_methods = [
+            item
+            for src in source_code_files
+            for item in src.functions + src.methods
+        ]
 
     def dump_module_logic(self, report_name: str):
         """Dumps the data for the module in full."""
@@ -210,8 +214,12 @@ class Project():
                 func_dict['returnType'] = func_def.get_function_return_type()
                 func_dict['BranchProfiles'] = []
                 func_dict['Callsites'] = func_def.detailed_callsites()
-                func_dict['functionUses'] = func_def.get_function_uses(self.full_functions_methods)
-                func_dict['functionDepth'] = func_def.get_function_depth(self.full_functions_methods)
+                func_dict['functionUses'] = func_def.get_function_uses(
+                    self.full_functions_methods
+                )
+                func_dict['functionDepth'] = func_def.get_function_depth(
+                    self.full_functions_methods
+                )
                 func_dict['constantsTouched'] = []
                 func_dict['BBCount'] = 0
                 func_dict['signature'] = func_def.function_signature()
@@ -428,7 +436,7 @@ class FunctionMethod():
             return count
 
         if not self.icount:
-            self.icount =  _traverse_node_instr_count(self.root)
+            self.icount = _traverse_node_instr_count(self.root)
 
         return self.icount
 
