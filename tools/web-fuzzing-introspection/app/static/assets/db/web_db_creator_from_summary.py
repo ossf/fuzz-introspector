@@ -499,14 +499,14 @@ def extract_project_data(project_name, date_str, should_include_details,
         project_language = oss_fuzz.try_to_get_project_language(project_name)
         if project_language == 'jvm':
             project_language = 'java'
-    except:
+    except Exception:  # pylint: disable=W0718
         # Default set to c++ as this is OSS-Fuzz's default.
         project_language = 'c++'
 
     try:
         project_repository = oss_fuzz.try_to_get_project_repository(
             project_name)
-    except:
+    except Exception:  # pylint: disable=W0718
         project_repository = 'N/A'
 
     collect_debug_info = project_language in {'c', 'c++'}
@@ -1106,7 +1106,8 @@ def analyse_set_of_dates(dates, projects_to_analyse, output_directory,
         logging.info('Done updating DB files')
 
 
-def get_date_at_offset_as_str(day_offset=-1):
+def get_date_at_offset_as_str(day_offset=-1) -> str:
+    """Create string representing date based of offset from today."""
     datestr = (datetime.date.today() +
                datetime.timedelta(day_offset)).strftime("%Y-%m-%d")
     return datestr
@@ -1160,16 +1161,17 @@ def extract_oss_fuzz_build_status(output_directory):
 
     if FI_EXCLUDE_ALL_NON_MUSTS:
         new_build_status_dict = {}
-        for bs in build_status_dict:
+        for bs, bs_val in build_status_dict.items():
             if bs in MUST_INCLUDES:
-                new_build_status_dict[bs] = build_status_dict[bs]
+                new_build_status_dict[bs] = bs_val
         build_status_dict = new_build_status_dict
 
     update_build_status(build_status_dict)
     return build_status_dict
 
 
-def create_date_range(day_offset, days_to_analyse):
+def create_date_range(day_offset, days_to_analyse) -> List[str]:
+    """Gets list of strings representing dates to analyse."""
     date_range = []
     range_to_analyse = range(day_offset + days_to_analyse, day_offset, -1)
     for i in range_to_analyse:
@@ -1177,7 +1179,9 @@ def create_date_range(day_offset, days_to_analyse):
     return date_range
 
 
-def setup_github_cache():
+def setup_github_cache() -> bool:
+    """Prepares DB cache based on GitHub storage to avoid analysing
+    full OSS-Fuzz history."""
     if os.path.isdir("github_cache"):
         shutil.rmtree("github_cache")
 
@@ -1199,9 +1203,11 @@ def setup_github_cache():
     return False
 
 
-def setup_webapp_cache():
+def setup_webapp_cache() -> None:
+    """Prepares DB cache based on existing webapp to avoid analysing
+    full OSS-Fuzz history."""
     logger.info("Getting the db archive")
-    r = requests.get(INTROSPECTOR_WEBAPP_ZIP, stream=True)
+    r = requests.get(INTROSPECTOR_WEBAPP_ZIP, stream=True, timeout=45)
     db_archive = zipfile.ZipFile(io.BytesIO(r.content))
 
     if os.path.isdir("extracted-db-archive"):
