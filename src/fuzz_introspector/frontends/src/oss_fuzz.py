@@ -19,6 +19,7 @@ import logging
 
 import frontend_c
 import frontend_cpp
+import frontend_go
 
 logger = logging.getLogger(name=__name__)
 LOG_FMT = '%(asctime)s.%(msecs)03d %(levelname)s %(module)s - %(funcName)s: %(message)s'
@@ -106,6 +107,31 @@ def process_cpp_project(args):
         logger.info('calltree: %s' % (calltree))
 
 
+def process_go_project(args):
+    """Process a project in Go language"""
+    # Extract go source files
+    logger.info('Going Go route')
+    source_files = []
+    source_files = frontend_go.capture_source_files_in_tree(args.target_dir)
+
+    # Process tree sitter for go source files
+    logger.info('Found %d files to include in analysis', len(source_files))
+    logger.info('Loading tree-sitter trees')
+    source_codes = frontend_go.load_treesitter_trees(source_files)
+
+    # Create and dump project
+    logger.info('Creating base project.')
+    project = frontend_go.Project(source_codes)
+    project.dump_module_logic('report.yaml')
+
+    # Process calltree
+    for idx, harness in enumerate(project.get_source_codes_with_harnesses()):
+        logger.info('Extracting calltree for %s', harness.source_file)
+        calltree = project.extract_calltree(harness.source_file, harness)
+        with open(f'fuzzer-calltree-{idx}', 'w', encoding='utf-8') as f:
+            f.write(calltree)
+
+
 def main():
     """Main"""
 
@@ -116,6 +142,8 @@ def main():
         process_c_project(args)
     if args.language == 'cpp':
         process_cpp_project(args)
+    if args.language == 'go':
+        process_go_project(args)
 
 
 if __name__ == "__main__":

@@ -46,6 +46,7 @@ dependencies = [
 "tree-sitter-languages",
 "tree-sitter-c",
 "tree-sitter-cpp",
+"tree-sitter-go",
 ]
 
 [project.urls]
