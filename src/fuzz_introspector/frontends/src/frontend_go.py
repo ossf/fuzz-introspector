@@ -15,9 +15,8 @@
 ################################################################################
 """Fuzz Introspector Light frontend for Go"""
 
-from typing import List, Optional, Set, Tuple
+from typing import Optional
 
-import argparse
 import os
 import pathlib
 import re
@@ -30,6 +29,141 @@ import yaml
 
 logger = logging.getLogger(name=__name__)
 LOG_FMT = '%(asctime)s.%(msecs)03d %(levelname)s %(module)s - %(funcName)s: %(message)s'
+
+
+class SourceCodeFile():
+    """Class for holding file-specific information."""
+
+    def __init__(self,
+                 source_file: str,
+                 source_content: Optional[bytes] = None):
+        logger.info('Processing %s' % source_file)
+
+        self.root = None
+        self.imports = []
+        self.source_file = source_file
+        self.tree_sitter_lang = Language(tree_sitter_go.language())
+        self.parser = Parser(self.tree_sitter_lang)
+
+        if source_content:
+            self.source_content = source_content
+        else:
+            with open(self.source_file, 'rb') as f:
+                self.source_content = f.read()
+
+        # List of function definitions in the source file.
+        self.functions = []
+        self.methods = []
+
+        # Initialization ruotines
+        self.load_tree()
+
+        # Load function/method declaration
+        self._set_function_declaration()
+        self._set_method_declaration()
+
+        # Parse import package
+        self._set_imports()
+
+    def load_tree(self):
+        """Load the the source code into a treesitter tree, and set
+        the root node."""
+        self.root = self.parser.parse(self.source_content).root_node
+
+    def _set_function_declaration(self):
+        """Internal helper for retrieving all functions."""
+        func_query_str = '( function_declaration ) @fd '
+        func_query = self.tree_sitter_lang.query(func_query_str)
+
+        function_res = func_query.captures(self.root)
+        for _, funcs in function_res.items():
+            for func in funcs:
+                self.functions.append(
+                    FunctionMethod(func, self.tree_sitter_lang, self, True))
+
+    def _set_method_declaration(self):
+        """Internal helper for retrieving all methods."""
+        func_query_str = '( method_declaration ) @fd '
+        func_query = self.tree_sitter_lang.query(func_query_str)
+
+        function_res = func_query.captures(self.root)
+        for _, funcs in function_res.items():
+            for func in funcs:
+                self.methods.append(
+                    FunctionMethod(func, self.tree_sitter_lang, self, False))
+
+    def _set_imports(self):
+        """Internal helper for retrieving all imports."""
+        import_pattern = r'^\s*import\s+(?:(?P<single>"[^"]+")|\((?P<multi>[^)]+)\))'
+
+        imports = []
+        for match in re.finditer(import_pattern,
+                                 self.source_content.decode('utf8'),
+                                 re.MULTILINE):
+            if match.group('single'):
+                imports.append(match.group('single'))
+            elif match.group('multi'):
+                multi = [
+                    line.strip().strip('"')
+                    for line in match.group('multi').splitlines()
+                ]
+                imports.extend(multi)
+
+        self.imports = [
+            s.rsplit('/', 1)[-1] if '/' in s else s for s in imports
+        ]
+
+    def get_defined_function_names(self) -> list[str]:
+        """Gets the functions defined in the file, as a list of strings."""
+        func_names = []
+        for func in self.functions:
+            func_names.append(func.name())
+        for method in self.methods:
+            func_names.append(method.name())
+        return func_names
+
+    def get_function_node(self, target_function_name: str) -> 'FunctionMethod':
+        """Gets the tree-sitter node corresponding to a function."""
+
+        # Find the first instance of the function name
+        for func in self.functions:
+            if func.name() == target_function_name:
+                return func
+
+        for method in self.methods:
+            if method.name() == target_function_name:
+                return method
+
+        return None
+
+    def has_libfuzzer_harness(self) -> bool:
+        """Returns whether the source code holds a libfuzzer harness"""
+        if any(func.name().startswith('Fuzz') for func in self.functions):
+            return True
+
+        if any(meth.name().startswith('Fuzz') for meth in self.methods):
+            return True
+
+        return False
+
+    def has_function_definition(self, target_function_name: str) -> bool:
+        """Returns if the source file holds a given function definition."""
+
+        if any(func.name() == target_function_name for func in self.functions):
+            return True
+
+        if any(meth.name() == target_function_name for meth in self.methods):
+            return True
+
+        return False
+
+    def get_entry_function_name(self) -> Optional[str]:
+        """Returns the entry function name of the harness if found,"""
+        for func in (self.functions + self.methods):
+            if func.name().startswith('Fuzz'):
+                return func.name()
+
+        return None
 
 
 class Project():
@@ -64,7 +198,7 @@ class Project():
                 func_dict['functionLinbernumberEnd'] = end
                 func_dict['linkageType'] = ''
                 func_dict['func_position'] = {'start': start, 'end': end}
-                func_dict['CyclomaticComplexity'] = func_def.get_function_complexity()
+                func_dict['CyclomaticComplexity'] = func_def.get_complexity()
                 func_dict['EdgeCount'] = func_dict['CyclomaticComplexity']
                 func_dict['ICount'] = func_def.get_function_instr_count()
                 func_dict['argNames'] = func_def.get_function_arg_names()
@@ -93,7 +227,7 @@ class Project():
         with open(report_name, 'w', encoding='utf-8') as f:
             f.write(yaml.dump(report))
 
-    def get_source_codes_with_harnesses(self) -> list['SourceCodeFile']:
+    def get_source_codes_with_harnesses(self) -> list[SourceCodeFile]:
         """Gets the source codes that holds libfuzzer harnesses."""
         harnesses = []
         for source_code in self.source_code_files:
@@ -102,8 +236,8 @@ class Project():
         return harnesses
 
     def extract_calltree(self,
-                         source_file = str,
-                         source_code: Optional['SourceCodeFile'] = None,
+                         source_file: str,
+                         source_code: Optional[SourceCodeFile] = None,
                          function: str = None,
                          visited_functions: set[str] = None,
                          depth: int = 0,
@@ -149,12 +283,12 @@ class Project():
                 line_number=line_number)
         return line_to_print
 
-    def find_source_with_func_def(self, target_function_name: str) -> Optional['SourceCodeFile']:
+    def find_source_with_func_def(
+            self, target_function_name: str) -> Optional[SourceCodeFile]:
         """Finds the source code with a given function."""
         for source_code in self.source_code_files:
             if source_code.has_function_definition(target_function_name):
                 return source_code
-                source_codes_with_target.append(source_code)
 
         return None
 
@@ -162,7 +296,8 @@ class Project():
 class FunctionMethod():
     """Wrapper for a General Declaration for function/method"""
 
-    def __init__(self, root: Node, tree_sitter_lang: Language, source_code: 'SourceCodeFile', is_function: bool):
+    def __init__(self, root: Node, tree_sitter_lang: Language,
+                 source_code: SourceCodeFile, is_function: bool):
         self.root = root
         self.tree_sitter_lang = tree_sitter_lang
         self.parent_source = source_code
@@ -187,7 +322,7 @@ class FunctionMethod():
 
         return (start, end)
 
-    def get_function_complexity(self) -> int:
+    def get_complexity(self) -> int:
         """Gets complexity measure based on counting branch nodes in a
         function."""
 
@@ -325,9 +460,7 @@ class FunctionMethod():
     def callsites(self) -> list[tuple[int, int]]:
         """Gets the callsites of the function."""
         callsites = []
-        call_query = self.tree_sitter_lang.query(
-            '( call_expression ) @ce'
-        )
+        call_query = self.tree_sitter_lang.query('( call_expression ) @ce')
         call_res = call_query.captures(self.root)
         for _, call_exprs in call_res.items():
             for call_expr in call_exprs:
@@ -338,13 +471,11 @@ class FunctionMethod():
 
                     # Simple call
                     if call_child.type == 'identifier':
-                        callsites.append(
-                            (
-                                call_child.text.decode(),
-                                call_child.byte_range,
-                                call_child.start_point.row + 1,
-                            )
-                        )
+                        callsites.append((
+                            call_child.text.decode(),
+                            call_child.byte_range,
+                            call_child.start_point.row + 1,
+                        ))
 
                     # Package/method call
                     if call_child.type == 'selector_expression':
@@ -352,7 +483,9 @@ class FunctionMethod():
 
                         # Variable call
                         split_call = call.split('.', 1)
-                        if split_call[0] not in self.parent_source.imports and len(split_call) > 1:
+                        if split_call[
+                                0] not in self.parent_source.imports and len(
+                                    split_call) > 1:
                             call = call.split('.')[-1]
 
                         # Chain call
@@ -360,143 +493,15 @@ class FunctionMethod():
                         if len(split_call) > 1:
                             call = split_call[1]
 
-                        callsites.append(
-                            (
-                                call,
-                                call_child.byte_range,
-                                call_child.start_point.row + 1,
-                            )
-                        )
+                        callsites.append((
+                            call,
+                            call_child.byte_range,
+                            call_child.start_point.row + 1,
+                        ))
 
         callsites = sorted(callsites, key=lambda x: x[1][1])
 
         return [(x[0], x[2]) for x in callsites]
-
-
-class SourceCodeFile():
-    """Class for holding file-specific information."""
-
-    def __init__(self, source_file: str, source_content: Optional[bytes] = None):
-        logger.info('Processing %s' % source_file)
-
-        self.root = None
-        self.imports = []
-        self.source_file = source_file
-        self.tree_sitter_lang = Language(tree_sitter_go.language())
-        self.parser = Parser(self.tree_sitter_lang)
-
-        if source_content:
-            self.source_content = source_content
-        else:
-            with open(self.source_file, 'rb') as f:
-                self.source_content = f.read()
-
-        # List of function definitions in the source file.
-        self.functions = []
-        self.methods = []
-
-        # Initialization ruotines
-        self.load_tree()
-
-        # Load function/method declaration
-        self._set_function_declaration()
-        self._set_method_declaration()
-
-        # Parse import package
-        self._set_imports()
-
-    def load_tree(self):
-        """Load the the source code into a treesitter tree, and set
-        the root node."""
-        self.root = self.parser.parse(self.source_content).root_node
-
-    def _set_function_declaration(self):
-        """Internal helper for retrieving all functions."""
-        func_query_str = '( function_declaration ) @fd '
-        func_query = self.tree_sitter_lang.query(func_query_str)
-
-        function_res = func_query.captures(self.root)
-        for _, funcs in function_res.items():
-            for func in funcs:
-                self.functions.append(
-                    FunctionMethod(func, self.tree_sitter_lang, self, True))
-
-    def _set_method_declaration(self):
-        """Internal helper for retrieving all methods."""
-        func_query_str = '( method_declaration ) @fd '
-        func_query = self.tree_sitter_lang.query(func_query_str)
-
-        function_res = func_query.captures(self.root)
-        for _, funcs in function_res.items():
-            for func in funcs:
-                self.methods.append(
-                    FunctionMethod(func, self.tree_sitter_lang, self, False))
-
-    def _set_imports(self):
-        """Internal helper for retrieving all imports."""
-        import_pattern = r'^\s*import\s+(?:(?P<single>"[^"]+")|\((?P<multi>[^)]+)\))'
-
-        imports = []
-        for match in re.finditer(import_pattern, self.source_content.decode('utf8'), re.MULTILINE):
-            if match.group('single'):
-                imports.append(match.group('single'))
-            elif match.group('multi'):
-                multi_imports = [line.strip().strip('"') for line in match.group('multi').splitlines()]
-                imports.extend(multi_imports)
-
-        self.imports = [s.rsplit('/', 1)[-1] if '/' in s else s for s in imports]
-
-    def get_defined_function_names(self) -> list[str]:
-        """Gets the functions defined in the file, as a list of strings."""
-        func_names = []
-        for func in self.functions:
-            func_names.append(func.name())
-        for method in self.methods:
-            func_names.append(method.name())
-        return func_names
-
-    def get_function_node(self, target_function_name: str) -> FunctionMethod:
-        """Gets the tree-sitter node corresponding to a function."""
-
-        # Find the first instance of the function name
-        for func in self.functions:
-            if func.name() == target_function_name:
-                return func
-
-        for method in self.methods:
-            if method.name() == target_function_name:
-                return method
-
-        return None
-
-    def has_libfuzzer_harness(self) -> bool:
-        """Returns whether the source code holds a libfuzzer harness"""
-        if any(func.name().startswith('Fuzz') for func in self.functions):
-            return True
-
-        if any(meth.name().startswith('Fuzz') for meth in self.methods):
-            return True
-
-        return False
-
-    def has_function_definition(self, target_function_name: str) -> bool:
-        """Returns if the source file holds a given function definition."""
-
-        if any(func.name() == target_function_name for func in self.functions):
-            return True
-
-        if any(meth.name() == target_function_name for meth in self.methods):
-            return True
-
-        return False
-
-    def get_entry_function_name(self) -> Optional[str]:
-        """Returns the entry function name of the harness if found,"""
-        for func in (self.functions + self.methods):
-            if func.name().startswith('Fuzz'):
-                return func.name()
-
-        return None
 
 
 def capture_source_files_in_tree(directory_tree: str) -> list[str]:
@@ -510,13 +515,14 @@ def capture_source_files_in_tree(directory_tree: str) -> list[str]:
     return language_files
 
 
-def load_treesitter_trees(source_files: list[str], log_harnesses: bool = True) -> list[SourceCodeFile]:
+def load_treesitter_trees(source_files: list[str],
+                          is_log: bool = True) -> list[SourceCodeFile]:
     """Creates treesitter trees for all files in a given list of source files."""
     results = []
 
     for code_file in source_files:
         source_cls = SourceCodeFile(code_file)
-        if log_harnesses:
+        if is_log:
             if source_cls.has_libfuzzer_harness():
                 logger.info('harness: %s', code_file)
         results.append(source_cls)
