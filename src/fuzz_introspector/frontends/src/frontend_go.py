@@ -315,8 +315,26 @@ class FunctionMethod():
 
     def function_signature(self) -> str:
         """Returns the function signature of a function as a string."""
-        # TODO IN PROGRESS
-        return ''
+        # Go function signature format
+        # (Optional_Receiver) Func_Name(Argument_Types) Optional_Return_Type
+
+        # Base signature
+        name = self.name()
+        params = self.get_function_arg_types()
+        sig = f'{name}({",".join(params)})'
+
+        # Handles return type
+        rtn_type = self.get_function_return_type()
+        if rtn_type:
+            sig = f'{sig} {rtn_type}'
+
+        # Handles receiver
+        receiver = self.root.child_by_field_name('receiver')
+        if receiver:
+            receiver_type = receiver.text.decode().split(' ')[-1][:-1]
+            sig = f'({receiver_type}) {sig}'
+
+        return sig
 
     def detailed_callsites(self) -> list[dict[str, str]]:
         """Captures the callsite details as used by Fuzz Introspector core."""
