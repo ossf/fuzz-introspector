@@ -90,7 +90,7 @@ def process_c_project(target_dir, entrypoint, out):
                 f.write(harness_dict['calltree'])
 
 
-def process_cpp_project(target_dir, entrypoint):
+def process_cpp_project(target_dir, entrypoint, out):
     """Process a project in CPP language"""
     source_files = {}
     source_files['cpp'] = frontend_cpp.capture_source_files_in_tree(
@@ -110,7 +110,7 @@ def process_cpp_project(target_dir, entrypoint):
         logger.info('calltree: %s' % (calltree))
 
 
-def process_go_project(target_dir):
+def process_go_project(target_dir, out):
     """Process a project in Go language"""
     # Extract go source files
     logger.info('Going Go route')
@@ -125,13 +125,15 @@ def process_go_project(target_dir):
     # Create and dump project
     logger.info('Creating base project.')
     project = frontend_go.Project(source_codes)
-    project.dump_module_logic('report.yaml')
+    project.dump_module_logic(os.path.join(out, 'report.yaml'))
 
     # Process calltree
     for idx, harness in enumerate(project.get_source_codes_with_harnesses()):
         logger.info('Extracting calltree for %s', harness.source_file)
         calltree = project.extract_calltree(harness.source_file, harness)
-        with open(f'fuzzer-calltree-{idx}', 'w', encoding='utf-8') as f:
+        with open(os.path.join(out, f'fuzzer-calltree-{idx}'),
+                  'w',
+                  encoding='utf-8') as f:
             f.write(calltree)
 
 
