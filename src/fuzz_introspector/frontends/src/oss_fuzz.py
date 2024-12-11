@@ -50,11 +50,11 @@ def parse_args():
     return parser.parse_args()
 
 
-def process_c_project(args):
+def process_c_project(target_dir, entrypoint):
     """Process a project in C language"""
     source_files = {}
     source_files['c'] = frontend_c.capture_source_files_in_tree(
-        args.target_dir, 'c')
+        target_dir, 'c')
     logger.info('Found %d files to include in analysis',
                 len(source_files['c']))
     logger.info('Loading tree-sitter trees')
@@ -64,11 +64,10 @@ def process_c_project(args):
     project = frontend_c.Project(source_codes)
     project.dump_module_logic('report.yaml')
 
-    if args.entrypoint != 'LLVMFuzzerTestOneInput':
-        calltree_source = project.get_source_code_with_target(args.entrypoint)
+    if entrypoint != 'LLVMFuzzerTestOneInput':
+        calltree_source = project.get_source_code_with_target(entrypoint)
         if calltree_source:
-            calltree = project.extract_calltree(calltree_source,
-                                                args.entrypoint)
+            calltree = project.extract_calltree(calltree_source, entrypoint)
             with open('targetCalltree.txt', 'w') as f:
                 f.write(calltree)
     else:
@@ -76,7 +75,7 @@ def process_c_project(args):
         for idx, harness in enumerate(
                 project.get_source_codes_with_harnesses()):
             logger.info('Extracting calltree for %s', harness.source_file)
-            calltree = project.extract_calltree(harness, args.entrypoint)
+            calltree = project.extract_calltree(harness, entrypoint)
             harnesses.append({'calltree': calltree})
             with open(f'fuzzer-calltree-{idx}', 'w', encoding='utf-8') as f:
                 f.write(calltree)
@@ -87,11 +86,11 @@ def process_c_project(args):
                 f.write(harness_dict['calltree'])
 
 
-def process_cpp_project(args):
+def process_cpp_project(target_dir, entrypoint):
     """Process a project in CPP language"""
     source_files = {}
     source_files['cpp'] = frontend_cpp.capture_source_files_in_tree(
-        args.target_dir, 'cpp')
+        target_dir, 'cpp')
     logger.info('Found %d files to include in analysis',
                 len(source_files['cpp']))
     logger.info('Loading tree-sitter trees')
@@ -103,16 +102,16 @@ def process_cpp_project(args):
     for idx, harness in enumerate(project.get_source_codes_with_harnesses()):
         logger.info('Extracting calltree for %s', harness.source_file)
 
-        calltree = project.extract_calltree(harness, args.entrypoint)
+        calltree = project.extract_calltree(harness, entrypoint)
         logger.info('calltree: %s' % (calltree))
 
 
-def process_go_project(args):
+def process_go_project(target_dir):
     """Process a project in Go language"""
     # Extract go source files
     logger.info('Going Go route')
     source_files = []
-    source_files = frontend_go.capture_source_files_in_tree(args.target_dir)
+    source_files = frontend_go.capture_source_files_in_tree(target_dir)
 
     # Process tree sitter for go source files
     logger.info('Found %d files to include in analysis', len(source_files))
@@ -132,18 +131,22 @@ def process_go_project(args):
             f.write(calltree)
 
 
+def analyse_folder(language, directory, entrypoint):
+    if language == 'c':
+        process_c_project(directory, entrypoint)
+    if language == 'cpp':
+        process_cpp_project(directory, entrypoint)
+    if language == 'go':
+        process_go_project(directory)
+
+
 def main():
     """Main"""
 
     setup_logging()
     args = parse_args()
 
-    if args.language == 'c':
-        process_c_project(args)
-    if args.language == 'cpp':
-        process_cpp_project(args)
-    if args.language == 'go':
-        process_go_project(args)
+    analyse_folder(args.language, args.target_dir, args.entrypoint)
 
 
 if __name__ == "__main__":
