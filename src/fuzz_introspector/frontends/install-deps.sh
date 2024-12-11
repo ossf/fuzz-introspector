@@ -22,4 +22,4 @@ python3.11 -m virtualenv .venv
 . .venv/bin/activate
 python3 -m pip install \
   matplotlib tree-sitter tree-sitter-python networkx pygraphviz \
-  tree-sitter-languages tree-sitter-c pyyaml
+  tree-sitter-languages tree-sitter-c tree-sitter-cpp tree-sitter-go pyyaml
