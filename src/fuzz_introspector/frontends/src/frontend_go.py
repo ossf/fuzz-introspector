@@ -19,8 +19,6 @@ from typing import Optional
 
 import os
 import pathlib
-import re
-
 import logging
 
 from tree_sitter import Language, Parser, Node
