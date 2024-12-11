@@ -436,6 +436,8 @@ class SourceCodeFile():
                 # Go through each of the field declarations
                 fields = []
                 for child in struct.child_by_field_name('body').children:
+                    if not child.child_by_field_name('declarator'):
+                        continue
                     if child.type == 'field_declaration':
                         fields.append({
                             'type':
