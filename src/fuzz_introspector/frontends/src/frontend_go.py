@@ -94,24 +94,23 @@ class SourceCodeFile():
 
     def _set_imports(self):
         """Internal helper for retrieving all imports."""
-        import_pattern = r'^\s*import\s+(?:(?P<single>"[^"]+")|\((?P<multi>[^)]+)\))'
+        import_set = set()
 
-        imports = []
-        for match in re.finditer(import_pattern,
-                                 self.source_content.decode('utf8'),
-                                 re.MULTILINE):
-            if match.group('single'):
-                imports.append(match.group('single'))
-            elif match.group('multi'):
-                multi = [
-                    line.strip().strip('"')
-                    for line in match.group('multi').splitlines()
-                ]
-                imports.extend(multi)
+        import_query_str = '( import_declaration ) @imp'
+        import_query = self.tree_sitter_lang.query(import_query_str)
+        import_query_res = import_query.captures(self.root)
 
-        self.imports = [
-            s.rsplit('/', 1)[-1] if '/' in s else s for s in imports
-        ]
+        for _, imports in import_query_res.items():
+            for imp in imports:
+                for import_spec in imp.children:
+                    if import_spec.type == 'import_spec_list':
+                        for path in import_spec.children:
+                            if path.type == 'import_spec':
+                                path = path.text.decode().replace('"', '')
+                                # Only store the package name, not full path
+                                import_set.add(path.rsplit('/', 1)[-1])
+
+        self.imports = list(import_set)
 
     def get_defined_function_names(self) -> list[str]:
         """Gets the functions defined in the file, as a list of strings."""
@@ -545,10 +544,6 @@ class FunctionMethod():
         for _, call_exprs in call_res.items():
             for call_expr in call_exprs:
                 for call_child in call_expr.children:
-                    # Ignore testing.F.Fuzz
-                    if 'Fuzz' in call_child.text.decode():
-                        continue
-
                     # Simple call
                     if call_child.type == 'identifier':
                         callsites.append((
