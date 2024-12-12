@@ -1,5 +1,8 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = [
+  "setuptools>=65.0",
+  "setuptools-scm>=8.0"
+]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -16,6 +19,7 @@ classifiers = [
     "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
 ]
+
 dependencies = [
 "beautifulsoup4==4.10.0",
 "cxxfilt==0.3.0",
@@ -52,5 +56,3 @@ dependencies = [
 [project.urls]
 "Homepage" = "https://github.com/ossf/fuzz-introspector"
 "Bug Tracker" = "https://github.com/ossf/fuzz-introspector/issues"
-
-

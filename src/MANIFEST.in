@@ -1,0 +1,1 @@
+recursive-include fuzz_introspector *.js *.css
