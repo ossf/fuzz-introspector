@@ -594,19 +594,6 @@ def load_treesitter_trees(source_files, log_harnesses=True):
     return results
 
 
-def parse_args():
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument('--target-dir',
-                        help='Directory of which do analysis',
-                        required=True)
-    parser.add_argument('--entrypoint',
-                        help='Entrypoint for the calltree',
-                        default='LLVMFuzzerTestOneInput')
-
-    return parser.parse_args()
-
-
 def analyse_source_code(source_content: str) -> Project:
     """Returns a Project based on a single source string."""
     source_code = SourceCodeFile(source_file='in-memory string',
