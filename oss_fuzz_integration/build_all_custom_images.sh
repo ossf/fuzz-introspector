@@ -55,4 +55,5 @@ if [[ -z ${CLOUD_BUILD_ENV:+dummy} ]]; then
   docker build -t gcr.io/oss-fuzz-base/base-builder-python infra/base-images/base-builder-python
   docker build -t gcr.io/oss-fuzz-base/base-builder-jvm infra/base-images/base-builder-jvm
   docker build -t gcr.io/oss-fuzz-base/base-builder-rust infra/base-images/base-builder-rust
+  docker build -t gcr.io/oss-fuzz-base/base-builder-go infra/base-images/base-builder-go
 fi
