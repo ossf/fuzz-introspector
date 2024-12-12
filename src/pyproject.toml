@@ -42,7 +42,6 @@ dependencies = [
 "tree-sitter",
 "tree-sitter-python",
 "networkx",
-"pygraphviz",
 "tree-sitter-languages",
 "tree-sitter-c",
 "tree-sitter-cpp",
