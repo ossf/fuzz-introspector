@@ -17,7 +17,6 @@
 import os
 import argparse
 import logging
-import sys
 
 from fuzz_introspector.frontends.src import frontend_c
 from fuzz_introspector.frontends.src import frontend_cpp
