@@ -175,16 +175,19 @@ class Project():
             for item in src.functions + src.methods
         ]
 
-    def dump_module_logic(self, report_name: str):
+    def dump_module_logic(self, report_name: str, entry_function: str = ''):
         """Dumps the data for the module in full."""
         logger.info('Dumping project-wide logic.')
         report = {'report': 'name'}
         report['sources'] = []
 
+        # Log entry function if provided
+        if entry_function:
+            report['Fuzzing method'] = entry_function
+
         # Find all functions
         function_list = []
         for source_code in self.source_code_files:
-
             report['sources'].append({
                 'source_file':
                 source_code.source_file,

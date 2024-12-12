@@ -125,15 +125,18 @@ def process_go_project(target_dir, out):
     # Create and dump project
     logger.info('Creating base project.')
     project = frontend_go.Project(source_codes)
-    project.dump_module_logic(os.path.join(out, 'report.yaml'))
 
     # Process calltree
-    for idx, harness in enumerate(project.get_source_codes_with_harnesses()):
-        logger.info('Extracting calltree for %s', harness.source_file)
+    for harness in project.get_source_codes_with_harnesses():
+        harness_name = harness.source_file.split('/')[-1].split('.')[0]
+        logger.info(f'Dump functions/methods for {harness_name}')
+        target = os.path.join(out, f'fuzzerLogFile-{harness_name}.data.yaml')
+        project.dump_module_logic(target, harness.get_entry_function_name())
+
+        logger.info(f'Extracting calltree for {harness_name}')
         calltree = project.extract_calltree(harness.source_file, harness)
-        with open(os.path.join(out, f'fuzzer-calltree-{idx}'),
-                  'w',
-                  encoding='utf-8') as f:
+        target = os.path.join(out, f'fuzzerLogFile-{harness_name}.data')
+        with open(target, 'w', encoding='utf-8') as f:
             f.write(calltree)
 
 
