@@ -17,7 +17,6 @@
 
 import os
 import pathlib
-import argparse
 
 import logging
 
@@ -592,19 +591,6 @@ def load_treesitter_trees(source_files, log_harnesses=True):
                         logger.info('harness: %s', code_file)
                 results.append(source_cls)
     return results
-
-
-def parse_args():
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument('--target-dir',
-                        help='Directory of which do analysis',
-                        required=True)
-    parser.add_argument('--entrypoint',
-                        help='Entrypoint for the calltree',
-                        default='LLVMFuzzerTestOneInput')
-
-    return parser.parse_args()
 
 
 def analyse_source_code(source_content: str) -> Project:
