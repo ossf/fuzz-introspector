@@ -201,7 +201,7 @@ class Project():
                 func_dict['functionName'] = func_def.get_name()
                 func_dict['functionSourceFile'] = source_code.source_file
                 func_dict['functionLinenumber'] = func_def.start_line
-                func_dict['functionLinbernumberEnd'] = func_def.end_line
+                func_dict['functionLinenumberEnd'] = func_def.end_line
                 func_dict['linkageType'] = ''
                 func_dict['func_position'] = {
                     'start': func_def.start_line,

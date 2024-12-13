@@ -1,1 +1,3 @@
 *.yaml
+work/
+fuzzer-calltree-*

@@ -79,7 +79,7 @@ index d0f45bb73..388563180 100755
    export AR=llvm-ar
    export NM=llvm-nm
    export RANLIB=llvm-ranlib
-@@ -210,10 +220,27 @@ if [ "$SANITIZER" = "introspector" ]; then
+@@ -210,10 +220,26 @@ if [ "$SANITIZER" = "introspector" ]; then
  
    apt-get install -y libjpeg-dev zlib1g-dev libyaml-dev
    python3 -m pip install --upgrade pip setuptools
@@ -90,7 +90,6 @@ index d0f45bb73..388563180 100755
 -  python3 /fuzz-introspector/src/main.py light
 +  # Install Fuzz-Introspector
 +  pushd /fuzz-introspector/src
-+  python3 -m pip install -r /fuzz-introspector/requirements.txt
 +  python3 -m pip install .
 +  popd
 +
@@ -141,7 +140,7 @@ index d0f45bb73..388563180 100755
 +    echo "GOING go route"
 +
 +    # Run the go frontend
-+    python3 -m fuzz_introspector.frontends.src.oss_fuzz --language go --target-dir $SRC
++    python3 -m fuzz_introspector.frontends.oss_fuzz --language go --target-dir $SRC
 +
 +    # Move files temporarily to fix workflow of other languages.
 +    mkdir -p $SRC/my-fi-data
@@ -150,7 +149,7 @@ index d0f45bb73..388563180 100755
    fi
  
    mkdir -p $SRC/inspector
-@@ -335,6 +388,18 @@ if [ "$SANITIZER" = "introspector" ]; then
+@@ -335,6 +388,19 @@ if [ "$SANITIZER" = "introspector" ]; then
      REPORT_ARGS="$REPORT_ARGS --language=jvm"
      python3 /fuzz-introspector/src/main.py report $REPORT_ARGS
      rsync -avu --delete "$SRC/inspector/" "$OUT/inspector"
@@ -162,6 +161,7 @@ index d0f45bb73..388563180 100755
 +    rsync -avu --delete "$SRC/inspector/" "$OUT/inspector"
 +  elif [ "$FUZZING_LANGUAGE" = "go" ]; then
 +    echo "GOING go route"
++    find $OUT/ -name "fuzz.cov" -exec cp {} $SRC/inspector/ \;
 +    REPORT_ARGS="$REPORT_ARGS --target_dir=$SRC/inspector"
 +    REPORT_ARGS="$REPORT_ARGS --language=go"
 +    python3 /fuzz-introspector/src/main.py report $REPORT_ARGS

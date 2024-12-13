@@ -1,3 +1,6 @@
 __pycache__
 *.txt
 merged_profile.profile
+build
+dist
+*.egg-info
