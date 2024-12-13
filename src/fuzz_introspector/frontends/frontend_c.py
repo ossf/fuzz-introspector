@@ -184,6 +184,15 @@ class Project():
 
         return None
 
+    def get_function(self, target_function_name):
+        """Gets the first instance of a given function."""
+
+        for source_code in self.source_code_files:
+            func = source_code.get_function_node(target_function_name)
+            if func is not None:
+                return func
+        return None
+
 
 class FunctionDefinition():
     """Wrapper for a function definition"""
