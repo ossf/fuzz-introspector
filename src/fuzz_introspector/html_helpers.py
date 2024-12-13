@@ -183,6 +183,8 @@ def create_pfc_button(profiles: List[fuzzer_profile.FuzzerProfile],
             target_coverage_url += "/index.html"
         elif profile.target_lang == "rust":
             target_coverage_url += "/report.html"
+        elif profile.target_lang == "go":
+            target_coverage_url += "/index.html"
 
         html_string += f"""
             <a href="{target_coverage_url}">
@@ -208,6 +210,8 @@ def html_get_table_of_contents(
         cov_index = "index.html"
     elif proj_profile.target_lang == "rust":
         cov_index = "report.html"
+    elif proj_profile.target_lang == "go":
+        cov_index = "index.html"
 
     html_toc_string = ""
     html_toc_string += f"""<div class="left-sidebar">\

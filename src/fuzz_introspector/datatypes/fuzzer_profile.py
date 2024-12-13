@@ -73,7 +73,7 @@ class FuzzerProfile:
             self.entrypoint_mod = frontend_yaml['ep']['module']
 
         # Read entrypoint of fuzzer if this is a jvm module
-        if target_lang == "jvm":
+        if target_lang == "jvm" or target_lang == "go":
             self.entrypoint_method = frontend_yaml['Fuzzing method']
 
         self._set_function_list(frontend_yaml)
@@ -107,6 +107,8 @@ class FuzzerProfile:
             # macro and we manually considered it as
             # function in the frontend.
             return "fuzz_target"
+        elif self.target_lang == "go":
+            return self.entrypoint_method
         else:
             return None
 
@@ -123,6 +125,13 @@ class FuzzerProfile:
         elif self._target_lang == "jvm":
             # Class name is used for jvm identifier
             return os.path.basename(self.fuzzer_source_file)
+
+        elif self._target_lang == "rust":
+            return os.path.basename(self.fuzzer_source_file).replace(".rs", "")
+
+        elif self._target_lang == "go":
+            fuzzer_base_name = os.path.basename(self.fuzzer_source_file)
+            return fuzzer_base_name.replace(".go", "").replace(".cgo", "")
 
         return self.fuzzer_source_file
 
@@ -147,6 +156,11 @@ class FuzzerProfile:
         elif self.target_lang == "jvm":
             for name in self.all_class_functions:
                 if name.startswith(self.entrypoint_function):
+                    return True
+
+        elif self.target_lang == "go":
+            for name in self.all_class_functions:
+                if name == self.entrypoint_function:
                     return True
 
         return False
@@ -447,8 +461,8 @@ class FuzzerProfile:
         the fuzzer. This is based on identifying all functions reached by the
         fuzzer entrypoint function, e.g. LLVMFuzzerTestOneInput in C/C++.
         """
-        # Find C/CPP/Rust entry point
-        if self._target_lang == "c-cpp" or self.target_lang == "rust":
+        # Find C/CPP/Rust/Go entry point
+        if self._target_lang == "c-cpp" or self.target_lang == "rust" or self.target_lang == "go":
             if self.entrypoint_function in self.all_class_functions:
                 self.functions_reached_by_fuzzer = (self.all_class_functions[
                     self.entrypoint_function].functions_reached)
@@ -511,6 +525,9 @@ class FuzzerProfile:
         elif self.target_lang == "rust":
             self.coverage = code_coverage.load_llvm_coverage(
                 target_folder, self.identifier, True)
+        elif self.target_lang == "go":
+            self.coverage = code_coverage.load_go_coverage(
+                target_folder, self.all_class_functions)
         else:
             raise DataLoaderError(
                 "The profile target has no coverage loading support")
