@@ -16,6 +16,7 @@
 import logging
 
 from fuzz_introspector.frontends import frontend_c
+from fuzz_introspector.frontends import frontend_cpp
 
 logger = logging.getLogger(name=__name__)
 
@@ -32,7 +33,7 @@ def analyse_source_file(code: bytes, language: str):
     if language == 'c':
         return frontend_c.analyse_source_code(code)
     elif language == 'cpp':
-        logger.info('CPP is not implement yet.')
+        return frontend_cpp.analyse_source_code(code)
     elif language == 'go':
         logger.info('Go is not implement yet.')
     else:

@@ -377,3 +377,12 @@ def load_treesitter_trees(source_files, log_harnesses=True):
                         logger.info('harness: %s', code_file)
                 results.append(source_cls)
     return results
+
+
+def analyse_source_code(source_content: str) -> Project:
+    """Returns a Project based on a single source string."""
+    source_code = SourceCodeFile(source_file='in-memory string',
+                                 language='cpp',
+                                 source_content=source_content.encode())
+    project = Project([source_code])
+    return project
