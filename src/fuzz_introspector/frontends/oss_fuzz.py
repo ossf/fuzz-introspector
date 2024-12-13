@@ -18,9 +18,9 @@ import os
 import argparse
 import logging
 
-from fuzz_introspector.frontends.src import frontend_c
-from fuzz_introspector.frontends.src import frontend_cpp
-from fuzz_introspector.frontends.src import frontend_go
+from fuzz_introspector.frontends import frontend_c
+from fuzz_introspector.frontends import frontend_cpp
+from fuzz_introspector.frontends import frontend_go
 
 logger = logging.getLogger(name=__name__)
 LOG_FMT = '%(asctime)s.%(msecs)03d %(levelname)s %(module)s - %(funcName)s: %(message)s'
