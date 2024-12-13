@@ -70,7 +70,7 @@ class Project():
                 func_dict[
                     'functionLinenumber'] = source_code.root.start_point.row
                 func_dict[
-                    'functionLinbernumberEnd'] = source_code.root.end_point.row
+                    'functionLinenumberEnd'] = source_code.root.end_point.row
                 func_dict['linkageType'] = ''
                 func_dict['func_position'] = {
                     'start': source_code.root.start_point.row,
