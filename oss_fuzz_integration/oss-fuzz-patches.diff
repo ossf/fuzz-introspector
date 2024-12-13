@@ -141,7 +141,7 @@ index d0f45bb73..388563180 100755
 +    echo "GOING go route"
 +
 +    # Run the go frontend
-+    python3 -m fuzz_introspector.frontends.src.oss_fuzz --language go --target-dir $SRC
++    python3 -m fuzz_introspector.frontends.oss_fuzz --language go --target-dir $SRC
 +
 +    # Move files temporarily to fix workflow of other languages.
 +    mkdir -p $SRC/my-fi-data
