@@ -721,7 +721,7 @@ def load_go_coverage(target_dir: str,
         cov_line = f.readlines()[1:]
 
     # Process line coverage from fuzz.cov
-    line_coverage = {}
+    line_coverage: Dict[str, Dict[int, int]] = {}
     for line in cov_line:
         # Line format
         # <file>:<start_line>.<start_col>,<end_line>.<end_col> <stmts> <hit>
@@ -741,8 +741,8 @@ def load_go_coverage(target_dir: str,
     # Process coverage of each functions
     for function in functions.values():
         name = function.function_name
-        start_line = function.function_linenumber
-        end_line = function.function_line_number_end
+        start_line = int(function.function_linenumber)
+        end_line = int(function.function_line_number_end)
         source_file = function.function_source_file.split('/source-files')[-1]
 
         # Only process when we have correct start and end line number
@@ -751,8 +751,9 @@ def load_go_coverage(target_dir: str,
             cp.covmap[name] = []
             for file, coverage in line_coverage.items():
                 if file.endswith(source_file):
-                    for line in range(start_line, end_line + 1):
-                        cp.covmap[name].append((line, coverage.get(line, 0)))
+                    for line_no in range(start_line, end_line + 1):
+                        cp.covmap[name].append(
+                            (line_no, coverage.get(line_no, 0)))
 
     print(cp.covmap)
     return cp
