@@ -15,18 +15,18 @@
 
 import logging
 
-from fuzz_introspector.frontends.src import frontend_c
+from fuzz_introspector.frontends import frontend_c
 
 logger = logging.getLogger(name=__name__)
 
 
 def analyse_source_file(code: bytes, language: str):
     """Runs frontend analysis on a code snippet.
-    
+
     The code snippet should correspond to what you'd normally find in
     a source file, e.g. a number of functions, include statements and so
     on.
-    
+
     Returns a frontend Source code module if successful and None otherwise."""
 
     if language == 'c':
