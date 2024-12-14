@@ -319,7 +319,7 @@ class FunctionDefinition():
                                 'name').type == 'identifier':
                             if tmp_node.child_by_field_name('scope'):
                                 function_call += tmp_node.child_by_field_name(
-                                    'scopeq').text.decode() + '::'
+                                    'scope').text.decode() + '::'
                             function_call += tmp_node.child_by_field_name(
                                 'name').text.decode()
                             break
