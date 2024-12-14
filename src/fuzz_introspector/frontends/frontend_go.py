@@ -604,3 +604,10 @@ def load_treesitter_trees(source_files: list[str],
         results.append(source_cls)
 
     return results
+
+
+def analyse_source_code(source_content: str) -> SourceCodeFile:
+    """Returns a source abstraction based on a single source string."""
+    source_code = SourceCodeFile(source_file='in-memory string',
+                                 source_content=source_content.encode())
+    return source_code
