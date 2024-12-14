@@ -602,13 +602,12 @@ def load_treesitter_trees(source_files, log_harnesses=True):
     return results
 
 
-def analyse_source_code(source_content: str) -> Project:
-    """Returns a Project based on a single source string."""
+def analyse_source_code(source_content: str) -> SourceCodeFile:
+    """Returns a source abstraction based on a single source string."""
     source_code = SourceCodeFile(source_file='in-memory string',
                                  language='c',
                                  source_content=source_content.encode())
-    project = Project([source_code])
-    return project
+    return source_code
 
 
 def analyse_folder(folder_path: str, language: str = 'c') -> Project:
