@@ -87,7 +87,9 @@ def process_c_project(target_dir, entrypoint, out):
             with open(os.path.join(out, 'fuzzer-calltree-%d' % (idx)),
                       'w',
                       encoding='utf-8') as f:
+                f.write("Call tree\n")
                 f.write(harness_dict['calltree'])
+                f.write("====================================")
 
 
 def process_cpp_project(target_dir, entrypoint, out):
