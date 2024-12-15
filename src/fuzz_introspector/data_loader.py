@@ -55,7 +55,15 @@ def read_fuzzer_data_file_to_profile(
 
     # Must be  dictionary
     if data_dict_yaml is None or not isinstance(data_dict_yaml, dict):
-        return None
+        logger.info('Found no data yaml file')
+        if os.path.isfile('report.yaml'):
+            data_dict_yaml = utils.data_file_read_yaml('report.yaml')
+            if data_dict_yaml is None or not isinstance(data_dict_yaml, dict):
+                logger.info('Report.yaml is not a valid yaml file')
+                return None
+        else:
+            logger.info('Found no module yaml files')
+            return None
 
     profile = fuzzer_profile.FuzzerProfile(cfg_file, data_dict_yaml, language)
 
@@ -123,6 +131,9 @@ def load_all_profiles(
     profiles = []
     data_files = utils.get_all_files_in_tree_with_regex(
         target_folder, "fuzzerLogFile.*\.data$")
+    data_files.extend(
+        utils.get_all_files_in_tree_with_regex(target_folder,
+                                               "fuzzer-calltree-*"))
     target_calltrees = utils.get_all_files_in_tree_with_regex(
         target_folder, "targetCalltree.txt$")
     logger.info(target_calltrees)

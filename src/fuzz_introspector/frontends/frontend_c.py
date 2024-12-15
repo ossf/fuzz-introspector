@@ -346,8 +346,10 @@ class FunctionDefinition():
             if child.is_named:
                 if self.root.field_name_for_child(child_idx) == 'body':
                     break
-            function_signature += child.text.decode() + ' '
-
+            try:
+                function_signature += child.text.decode() + ' '
+            except UnicodeDecodeError:
+                pass
         function_signature = function_signature.replace('\n',
                                                         '').replace('\\n', '')
         while '  ' in function_signature:
