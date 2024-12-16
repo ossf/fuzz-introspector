@@ -358,6 +358,9 @@ def resolve_coverage_link(cov_url: str, source_file: str, lineno: int,
         source_file = source_file.split("$")[0]
 
         result = source_file + ".java.html#L" + str(lineno)
+    elif (target_lang == "go"):
+        # Go coverage report only have a single page with no line index
+        result = "index.html"
     else:
         logger.info("Unsupported language for coverage link resolve")
 
