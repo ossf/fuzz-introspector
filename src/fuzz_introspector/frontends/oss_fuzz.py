@@ -139,7 +139,7 @@ def process_go_project(target_dir, out):
         calltree = project.extract_calltree(harness.source_file, harness)
         target = os.path.join(out, f'fuzzerLogFile-{harness_name}.data')
         with open(target, 'w', encoding='utf-8') as f:
-            f.write(calltree)
+            f.write(f'Call tree\n{calltree}')
 
 
 def analyse_folder(language, directory, entrypoint, out=''):
