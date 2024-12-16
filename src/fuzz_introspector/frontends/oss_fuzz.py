@@ -72,23 +72,15 @@ def process_c_project(target_dir, entrypoint, out):
             with open(os.path.join(out, 'targetCalltree.txt'), 'w') as f:
                 f.write(calltree)
     else:
-        harnesses = []
         for idx, harness in enumerate(
                 project.get_source_codes_with_harnesses()):
             logger.info('Extracting calltree for %s', harness.source_file)
             calltree = project.extract_calltree(harness, entrypoint)
-            harnesses.append({'calltree': calltree})
-            with open(os.path.join(out, f'fuzzer-calltree-{idx}'),
-                      'w',
-                      encoding='utf-8') as f:
-                f.write(calltree)
-
-        for idx, harness_dict in enumerate(harnesses):
             with open(os.path.join(out, 'fuzzer-calltree-%d' % (idx)),
                       'w',
                       encoding='utf-8') as f:
                 f.write("Call tree\n")
-                f.write(harness_dict['calltree'])
+                f.write(calltree)
                 f.write("====================================")
 
 
