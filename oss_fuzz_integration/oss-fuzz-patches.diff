@@ -169,3 +169,35 @@ index d0f45bb73..388563180 100755
    else
      # C/C++
  
+diff --git a/infra/base-images/base-runner/coverage b/infra/base-images/base-runner/coverage
+index 585b4d457..014bdbce6 100755
+--- a/infra/base-images/base-runner/coverage
++++ b/infra/base-images/base-runner/coverage
+@@ -382,6 +382,26 @@ if [[ $FUZZING_LANGUAGE == "go" ]]; then
+   echo $DUMPS_DIR
+   $SYSGOPATH/bin/gocovmerge $DUMPS_DIR/*.profdata > fuzz.cov
+   gotoolcover -html=fuzz.cov -o $REPORT_ROOT_DIR/index.html
++
++  # Patch the html with additional javascript to allow direct url
++  # selection of target source file.
++  SCRIPT='<script>
++    function handleHashChange() {
++        const hash = location.hash.substr(1);
++        const files = document.getElementById("files");
++        if (files && hash) {
++            files.value = hash;
++            files.dispatchEvent(new Event("change"));
++        }
++    }
++    window.addEventListener("hashchange", handleHashChange);
++    window.addEventListener("DOMContentLoaded", handleHashChange);
++    </script>
++    </html>'
++  sed -i "/<\/html>/d" $REPORT_ROOT_DIR/index.html
++  echo $SCRIPT >> $REPORT_ROOT_DIR/index.html
++  echo "</html>" >> $REPORT_ROOT_DIR/index.html
++
+   $SYSGOPATH/bin/gocovsum fuzz.cov > $SUMMARY_FILE
+   cp $REPORT_ROOT_DIR/index.html $REPORT_PLATFORM_DIR/index.html
+   $SYSGOPATH/bin/pprof-merge $DUMPS_DIR/*.perf.cpu.prof
+

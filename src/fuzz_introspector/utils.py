@@ -22,6 +22,8 @@ import re
 import shutil
 import yaml
 
+from bs4 import BeautifulSoup
+
 from typing import (
     Any,
     List,
@@ -361,6 +363,25 @@ def resolve_coverage_link(cov_url: str, source_file: str, lineno: int,
     elif (target_lang == "go"):
         # Go coverage report only have a single page with no line index
         result = "index.html"
+
+        # Read the single coverage report html for processing
+        report_html = ''
+        report_path = os.path.join(os.environ.get('OUT', ''), 'report',
+                                   'linux', 'index.html')
+        if os.path.isfile(report_path):
+            with open(report_path, 'r') as f:
+                report_html = f.read()
+
+        # Obtain the correct file value for the needed source code file
+        if report_html:
+            soup = BeautifulSoup(report_html, 'html.parser')
+            select_element = soup.find('select', id='files')
+            for option in select_element.find_all('option'):
+                key = option['value']
+                file = option.text.strip().split(' ')[0]
+                if file.endswith(source_file):
+                    result = f'{result}#{key}'
+                    break
     else:
         logger.info("Unsupported language for coverage link resolve")
 
