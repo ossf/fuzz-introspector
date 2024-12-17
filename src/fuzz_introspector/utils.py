@@ -366,7 +366,8 @@ def resolve_coverage_link(cov_url: str, source_file: str, lineno: int,
 
         # Read the single coverage report html for processing
         report_html = ''
-        report_path = os.path.join(os.environ.get('OUT', ''), 'report', 'linux', 'index.html')
+        report_path = os.path.join(os.environ.get('OUT', ''), 'report',
+                                   'linux', 'index.html')
         if os.path.isfile(report_path):
             with open(report_path, 'r') as f:
                 report_html = f.read()
