@@ -1121,20 +1121,21 @@ def extract_oss_fuzz_total_history(date_range):
     for date in date_range:
         logging.info('Date: %s', date)
         subprocess.check_call(
-            'git checkout `git rev-list -n 1 --before="%s 13:00" master`'%(date),
+            'git checkout `git rev-list -n 1 --before="%s 13:00" master`' %
+            (date),
             cwd=of_tmp,
-            shell=True
-        )
+            shell=True)
         project_count = len(os.listdir(os.path.join(of_tmp, 'projects')))
-        oss_fuzz_project_count.append(
-            {'date': date,
-             'project-count': project_count}
-        )
+        oss_fuzz_project_count.append({
+            'date': date,
+            'project-count': project_count
+        })
 
     if os.path.isdir(of_tmp):
         shutil.rmtree(of_tmp)
     with open('full-oss-fuzz-project-count.json', 'w') as f:
         f.write(json.dumps(oss_fuzz_project_count))
+
 
 def get_date_at_offset_as_str(day_offset=-1) -> str:
     """Create string representing date based of offset from today."""
@@ -1483,7 +1484,6 @@ def create_db(max_projects, days_to_analyse, output_directory, input_directory,
 
     date_range = get_dates_to_analyse(since_date, days_to_analyse, day_offset)
     extract_oss_fuzz_total_history(date_range)
-
 
     logger.info("Creating a DB with the specifications:")
     logger.info("- Date range: [%s : %s]", str(date_range[0]),
