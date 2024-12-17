@@ -1405,7 +1405,7 @@ def api_cross_references(args):
     return {'result': 'success', 'callsites': xrefs}
 
 
-@api_blueprint.route('/api/get-project-language-from-souce-files')
+@api_blueprint.route('/api/get-project-language-from-source-files')
 @api_blueprint.arguments(ProjectSchema, location='query')
 def api_get_project_language_from_source_files(args):
     """Gets the project language based on the file extensions of the project"""
@@ -1423,23 +1423,25 @@ def api_get_project_language_from_source_files(args):
     with open(all_file_json, 'r') as f:
         all_files_list = json.loads(f.read())
 
-    languages = {'c': 0, 'c++': 0, 'python': 0, 'java': 0}
-
-    print("")
+    languages = {'c': 0, 'c++': 0, 'python': 0, 'java': 0, 'go': 0, 'rust': 0}
+    extensions = {
+        '.c': 'c',
+        '.cc': 'c++',
+        '.cpp': 'c++',
+        '.c++': 'c++',
+        '.cxx': 'c+',
+        '.py': 'python',
+        '.java': 'java',
+        '.go': 'go',
+        '.cgo': 'go',
+        '.rs': 'rust'
+    }
 
     for source_file in all_files_list:
-        print(source_file)
         _, file_ext = os.path.splitext(source_file)
-        if file_ext == '.c':
-            languages['c'] += 1
-        elif file_ext == '.cc' or file_ext == '.cpp' or file_ext == '.c++':
-            languages['c++'] += 1
-        elif file_ext == '.py':
-            languages['python'] += 1
-        elif file_ext == '.java':
-            languages['java'] += 1
+        if file_ext in extensions:
+            languages[extensions[file_ext]] += 1
 
-    print(json.dumps(languages, indent=2))
     max_language = ''
     max_language_count = -1
     for language, count in languages.items():
@@ -1479,7 +1481,7 @@ def api_project_all_project_source_files(args):
 
         if date_str:
             introspector_summary_url = get_introspector_report_url_source_base(
-                project_name, date_str.replace("-", "")) + 'index.json'
+                project_name, date_str.replace("-", "")) + '/index.json'
 
             print("URL: %s" % (introspector_summary_url))
 
