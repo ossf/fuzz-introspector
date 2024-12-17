@@ -1120,6 +1120,8 @@ def extract_tests_from_directories(directories, language) -> Set[str]:
     elif language == 'rust':
         # Get all rust source files
         test_extensions = ['.rs']
+    elif language == 'go':
+        test_extensions = ['.go', '.cgo']
     else:
         # Get all c/cpp source files
         test_extensions = ['.cc', '.cpp', '.cxx', '.c++', '.c']
@@ -1155,6 +1157,9 @@ def extract_tests_from_directories(directories, language) -> Set[str]:
                             continue
                         # For jvm projects
                         if 'fuzzerTestOneInput' in file_fp.read():
+                            continue
+                        # For go projects
+                        if 'Fuzz' in file_fp.read():
                             continue
                 except UnicodeDecodeError:
                     continue
