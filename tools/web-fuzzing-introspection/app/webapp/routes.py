@@ -415,6 +415,8 @@ def index():
     max_function_count = int(max_function_count * 1.2)
     max_line_count = int(max_line_count * 1.2)
 
+    all_integrated_projects = data_storage.ALL_INTEGRATED_PROJECTS
+
     oss_fuzz_total_number = len(data_storage.get_build_status())
     return render_template(
         'index.html',
@@ -430,7 +432,8 @@ def index():
         page_main_url=page_texts.get_page_main_url(),
         page_summary=page_texts.get_page_summary(),
         page_base_title=page_texts.get_page_base_title(),
-        project_type_string=page_texts.get_project_type_string())
+        project_type_string=page_texts.get_project_type_string(),
+        all_integrated_projects=all_integrated_projects)
 
 
 @blueprint.route('/function-profile', methods=['GET'])
