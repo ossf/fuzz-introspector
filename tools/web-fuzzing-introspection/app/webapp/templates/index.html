@@ -123,7 +123,7 @@
               <!-- single item -->
               <div class="single__graph">
                 <div class="graph__chart">
-                    <div id="functionCountPlot" style="width:100%;max-width:500px"></div>
+                    <div id="lineCountPlot" style="width:100%;max-width:500px"></div>
                 </div>
                 <p class="graph__title">Lines of code</p>
               </div>
@@ -142,16 +142,16 @@
 const db_timestamp_x_axis = [];
 const project_count_over_time = [];
 const fuzzer_count_over_time = [];
-const function_count_over_time = [];
-const function_count_over_time2 = [];
+const line_count_over_time = [];
+const line_counter_coverage_over_time = [];
 
 
 {% for db_timestamp in db_timestamps %}
 db_timestamp_x_axis.push("{{db_timestamp.date}}");
 project_count_over_time.push({{db_timestamp.project_count}})
 fuzzer_count_over_time.push({{db_timestamp.fuzzer_count}})
-function_count_over_time.push({{db_timestamp.accummulated_lines_total}})
-function_count_over_time2.push({{db_timestamp.accummulated_lines_covered}})
+line_count_over_time.push({{db_timestamp.accummulated_lines_total}})
+line_counter_coverage_over_time.push({{db_timestamp.accummulated_lines_covered}})
 {%endfor%}
 
 
@@ -186,17 +186,17 @@ const fuzzer_count_over_time_layout = {
 Plotly.newPlot("fuzzerCountPlot", fuzzer_count_over_time_data, fuzzer_count_over_time_layout);
 
 
-// Plot for function count over time
-const function_count_over_time_data = [
+// Plot for total line count and line coverage over time
+const line_count_over_time_data = [
   {
     x: db_timestamp_x_axis,
-    y: function_count_over_time,
+    y: line_count_over_time,
     mode:"lines",
     name: "Total",
   },
   {
     x: db_timestamp_x_axis,
-    y: function_count_over_time2,
+    y: line_counter_coverage_over_time,
     mode:"lines",
     name: "Covered",
     line: {
@@ -205,19 +205,13 @@ const function_count_over_time_data = [
   }
 ];
 
-const function_count_over_time_data2 = [{
-  x: db_timestamp_x_axis,
-  y: function_count_over_time2,
-  mode:"lines"
-}];
-
-const function_count_over_time_layout = {
+const line_count_over_time_layout = {
   xaxis: {title: "Date"},
         yaxis: {title: "Lines", range: [0.0, {{max_line_count}}]},
   type: "scatter",
   paper_bgcolor: "rgba(0,0,0,0)",
   plot_bgcolor: "rgba(0,0,0,0)"
 };
-Plotly.newPlot("functionCountPlot", function_count_over_time_data, function_count_over_time_layout);
+Plotly.newPlot("lineCountPlot", line_count_over_time_data, line_count_over_time_layout);
 </script>    
 {% endblock %}
