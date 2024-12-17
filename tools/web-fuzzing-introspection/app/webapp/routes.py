@@ -1425,9 +1425,16 @@ def api_get_project_language_from_source_files(args):
 
     languages = {'c': 0, 'c++': 0, 'python': 0, 'java': 0, 'go': 0, 'rust': 0}
     extensions = {
-        '.c': 'c', '.cc': 'c++', '.cpp': 'c++', '.c++': 'c++',
-        '.cxx': 'c+', '.py': 'python', '.java': 'java', '.go': 'go',
-        '.cgo': 'go', '.rs': 'rust'
+        '.c': 'c',
+        '.cc': 'c++',
+        '.cpp': 'c++',
+        '.c++': 'c++',
+        '.cxx': 'c+',
+        '.py': 'python',
+        '.java': 'java',
+        '.go': 'go',
+        '.cgo': 'go',
+        '.rs': 'rust'
     }
 
     for source_file in all_files_list:
