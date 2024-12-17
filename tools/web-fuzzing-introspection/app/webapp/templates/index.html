@@ -146,6 +146,8 @@ const line_count_over_time = [];
 const line_counter_coverage_over_time = [];
 
 
+
+
 {% for db_timestamp in db_timestamps %}
 db_timestamp_x_axis.push("{{db_timestamp.date}}");
 project_count_over_time.push({{db_timestamp.project_count}})
@@ -154,16 +156,40 @@ line_count_over_time.push({{db_timestamp.accummulated_lines_total}})
 line_counter_coverage_over_time.push({{db_timestamp.accummulated_lines_covered}})
 {%endfor%}
 
+all_integrated_projects_x = [];
+all_integrated_projects_y = [];
+max_project_count = 0
+{% for all_int_proj_ts  in all_integrated_projects %}
+all_integrated_projects_x.push("{{all_int_proj_ts.date}}")
+all_integrated_projects_y.push({{all_int_proj_ts.get("project-count")}})
+
+if ({{all_int_proj_ts.get("project-count")}}+50 > max_project_count) {
+  max_project_count = {{all_int_proj_ts.get("project-count")}}+50
+}
+{% endfor %}
+
 
 // Plot for code coverage in terms of lines over time
-const project_count_over_time_data = [{
-  x: db_timestamp_x_axis,
-  y: project_count_over_time,
-  mode:"lines"
-}];
+const project_count_over_time_data = [
+  {
+    x: db_timestamp_x_axis,
+    y: project_count_over_time,
+    mode:"lines",
+    name: "Coverage builds",
+  },
+  {
+    x: all_integrated_projects_x,
+    y: all_integrated_projects_y,
+    mode: "lines",
+    name: "Total projects",
+    line: {
+      color: 'rgb(0, 204, 0)',
+    }
+  }
+];
 const project_count_over_time_layout = {
   xaxis: {title: "Date"},
-  yaxis: {title: "Projects", range: [0.0, {{max_proj}}]},
+  yaxis: {title: "Projects", range: [0.0, max_project_count]},
   type: "scatter",
   paper_bgcolor: "rgba(0,0,0,0)",
   plot_bgcolor: "rgba(0,0,0,0)"

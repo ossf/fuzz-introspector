@@ -27,8 +27,16 @@ def load_db() -> None:
         os.path.dirname(__file__),
         "../static/assets/db/projects-not-in-oss-fuzz.json")
 
+    full_project_count = os.path.join(
+        os.path.dirname(__file__),
+        '../static/assets/db/full-oss-fuzz-project-count.json')
+
     if len(data_storage.DB_TIMESTAMPS) > 0:
         return
+
+    if os.path.isfile(full_project_count):
+        with open(full_project_count, 'r') as f:
+            data_storage.ALL_INTEGRATED_PROJECTS = json.load(f)
 
     with open(db_timestamps_file, 'r') as f:
         db_tss = json.load(f)

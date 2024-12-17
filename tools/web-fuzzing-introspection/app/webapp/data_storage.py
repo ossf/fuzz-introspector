@@ -36,6 +36,8 @@ JSON_TO_FUNCTION_CACHE: Dict[str, List[Function]] = dict()
 
 PROJECTS_NOT_IN_OSSFUZZ: List[str] = []
 
+ALL_INTEGRATED_PROJECTS = []
+
 
 def get_projects() -> List[Project]:
     return PROJECTS
