@@ -159,7 +159,6 @@ def process_jvm_project(target_dir, entrypoint, out):
         project.dump_module_logic(target, entrypoint)
 
 
-
 def analyse_folder(language, directory, entrypoint, out=''):
     if language == 'c':
         process_c_project(directory, entrypoint, out)

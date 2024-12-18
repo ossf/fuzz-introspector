@@ -78,7 +78,6 @@ class SourceCodeFile():
                     if package.type == 'scoped_identifier':
                         self.package = package.text.decode()
 
-
     def _set_class_interface_declaration(self):
         """Internal helper for retrieving all classes."""
         for node in self.root.children:
@@ -178,6 +177,24 @@ class Project():
                     reached.add(cs_dst)
                 method_dict['functionsReached'] = list(reached)
 
+                # Handles Java method properties
+                java_method_info = {}
+                java_method_info['exceptions'] = []
+                java_method_info['interfaces'] = []
+                java_method_info['classFields'] = []
+                java_method_info['argumentGenericTypes'] = []
+                java_method_info['returnValueGenericType'] = ''
+                java_method_info['superClass'] = ''
+                java_method_info['needClose'] = False
+                java_method_info['static'] = method.static
+                java_method_info['public'] = method.public
+                java_method_info['classPublic'] = method.class_interface.class_public
+                java_method_info['concrete'] = method.concrete
+                java_method_info['classConcrete'] = method.class_interface.class_concrete
+                java_method_info['javaLibraryMethod'] = False
+                java_method_info['classEnum'] = False
+                method_dict['JavaMethodInfo'] = java_method_info
+
                 method_list.append(method_dict)
 
         if method_list:
@@ -223,6 +240,7 @@ class JavaMethod():
         self.callsites = []
         self.public = False
         self.concrete = True
+        self.static = False
         self.is_entry_method = False
 
         # Process method declaration
@@ -246,6 +264,8 @@ class JavaMethod():
                         self.public = True
                     if modifier.text.decode() == 'abstract':
                         self.concrete = False
+                    if modifier.text.decode() == 'static':
+                        self.static = True
                     if modifier.text.decode() == '@FuzzTest':
                         self.is_entry_method = True
 
@@ -360,7 +380,7 @@ def capture_source_files_in_tree(directory_tree: str) -> list[str]:
     exclude_directories = [
         'target', 'test', 'node_modules', 'aflplusplus',
         'honggfuzz', 'inspector', 'libfuzzer'
-    ];
+    ]
     language_extensions = ['.java']
     language_files = []
     for dirpath, _, filenames in os.walk(directory_tree):
