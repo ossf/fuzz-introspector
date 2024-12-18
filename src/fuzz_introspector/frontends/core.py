@@ -15,7 +15,7 @@
 
 import logging
 
-from fuzz_introspector.frontends import (frontend_c, frontend_cpp, frontend_go)
+from fuzz_introspector.frontends import (frontend_c, frontend_cpp, frontend_go, frontend_jvm)
 
 logger = logging.getLogger(name=__name__)
 
@@ -35,6 +35,8 @@ def analyse_source_file(code: bytes, language: str):
         return frontend_cpp.analyse_source_code(code)
     elif language == 'go':
         return frontend_go.analyse_source_code(code)
+    elif language == 'jvm':
+        return frontend_jvm.analyse_source_code(code)
     else:
         logger.info('Language %s not supported', language)
     return None
