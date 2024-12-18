@@ -15,7 +15,8 @@
 
 import logging
 
-from fuzz_introspector.frontends import (frontend_c, frontend_cpp, frontend_go, frontend_jvm)
+from fuzz_introspector.frontends import (frontend_c, frontend_cpp, frontend_go,
+                                         frontend_jvm)
 
 logger = logging.getLogger(name=__name__)
 

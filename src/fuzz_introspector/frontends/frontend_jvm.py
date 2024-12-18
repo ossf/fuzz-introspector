@@ -13,7 +13,7 @@
 # limitations under the License.
 #
 ################################################################################
-"""Fuzz Introspector Light frontend for Go"""
+"""Fuzz Introspector Light frontend for Java"""
 
 from typing import Optional
 
@@ -53,6 +53,7 @@ class SourceCodeFile():
         # List of definitions in the source file.
         self.package = ''
         self.classes = []
+        self.imports = {}
 
         # Initialization ruotines
         self.load_tree()
@@ -63,13 +64,16 @@ class SourceCodeFile():
         # Load classes/interfaces delcaration
         self._set_class_interface_declaration()
 
+        # Load import statements
+        self._set_import_declaration()
+
     def load_tree(self):
         """Load the the source code into a treesitter tree, and set
         the root node."""
         self.root = self.parser.parse(self.source_content).root_node
 
     def _set_package_declaration(self):
-        """Internal helper for retrieving all classes."""
+        """Internal helper for retrieving the source package."""
         query = self.tree_sitter_lang.query('( package_declaration ) @fd ')
         res = query.captures(self.root)
         for _, nodes in res.items():
@@ -84,6 +88,29 @@ class SourceCodeFile():
             if node.type == 'class_declaration' or node.type == 'interface_declaration':
                 self.classes.append(
                     JavaClassInterface(node, self.tree_sitter_lang, self))
+
+    def _set_import_declaration(self):
+        """Internal helper for retrieving all import."""
+        # Process by import statements
+        query = self.tree_sitter_lang.query('( import_declaration ) @fd ')
+        res = query.captures(self.root)
+        for _, nodes in res.items():
+            for node in nodes:
+                package = ''
+                wildcard = False
+                for imp in node.children:
+                    if imp.type == 'scoped_identifier':
+                        package = imp.text.decode()
+                    if imp.type == 'asterisk':
+                        wildcard = True
+                if not wildcard and not package.startswith('java.lang'):
+                    self.imports[package.rsplit('.', 1)[-1]] = package
+
+        # Process by classes/interfaces
+        for cls in self.classes:
+            name = cls.name
+            if name.rsplit('.', 1)[-1] not in self.imports:
+                self.imports[name.rsplit('.', 1)[-1]] = name
 
     def get_all_methods(self) -> dict[str, 'JavaMethod']:
         """Gets all JavaMethod object of all classes in this source file,
@@ -109,7 +136,9 @@ class SourceCodeFile():
 
     def has_function_definition(self, target_name: str) -> bool:
         """Returns if the source file holds a given function definition."""
-        if any(cls.has_function_definition(target_name) for cls in self.classes):
+        if any(
+                cls.has_function_definition(target_name)
+                for cls in self.classes):
             return True
 
         return False
@@ -140,10 +169,8 @@ class Project():
         for source_code in self.source_code_files:
             methods = source_code.get_all_methods()
             report['sources'].append({
-                'source_file':
-                source_code.source_file,
-                'function_names':
-                list(methods.keys()),
+                'source_file': source_code.source_file,
+                'function_names': list(methods.keys()),
             })
 
             for method in methods.values():
@@ -160,8 +187,8 @@ class Project():
                 method_dict['CyclomaticComplexity'] = 0
                 method_dict['EdgeCount'] = method_dict['CyclomaticComplexity']
                 method_dict['ICount'] = 0
-                method_dict['argNames'] = []
-                method_dict['argTypes'] = []
+                method_dict['argNames'] = method.arg_names
+                method_dict['argTypes'] = method.arg_types
                 method_dict['argCount'] = len(method_dict['argTypes'])
                 method_dict['returnType'] = ''
                 method_dict['BranchProfiles'] = []
@@ -188,9 +215,11 @@ class Project():
                 java_method_info['needClose'] = False
                 java_method_info['static'] = method.static
                 java_method_info['public'] = method.public
-                java_method_info['classPublic'] = method.class_interface.class_public
+                java_method_info[
+                    'classPublic'] = method.class_interface.class_public
                 java_method_info['concrete'] = method.concrete
-                java_method_info['classConcrete'] = method.class_interface.class_concrete
+                java_method_info[
+                    'classConcrete'] = method.class_interface.class_concrete
                 java_method_info['javaLibraryMethod'] = False
                 java_method_info['classEnum'] = False
                 method_dict['JavaMethodInfo'] = java_method_info
@@ -269,11 +298,25 @@ class JavaMethod():
                     if modifier.text.decode() == '@FuzzTest':
                         self.is_entry_method = True
 
+            # Process arguments
+            elif child.type == 'formal_parameters':
+                for argument in child.children:
+                    if argument.type == 'formal_parameter':
+                        name = argument.child_by_field_name(
+                            'name').text.decode()
+                        type = argument.child_by_field_name(
+                            'type').text.decode()
+                        type = self.parent_source.imports.get(type, type)
+
+                        self.arg_names.append(name)
+                        self.arg_types.append(type)
+
 
 class JavaClassInterface():
     """Wrapper for a General Declaration for java classes"""
 
-    def __init__(self, root: Node,
+    def __init__(self,
+                 root: Node,
                  tree_sitter_lang: Optional[Language] = None,
                  source_code: Optional[SourceCodeFile] = None,
                  parent: Optional['JavaClassInterface'] = None):
@@ -332,8 +375,7 @@ class JavaClassInterface():
                 for body in child.children:
                     # Process methods
                     if body.type == 'method_declaration':
-                        self.methods.append(
-                            JavaMethod(body, self))
+                        self.methods.append(JavaMethod(body, self))
 
                     # Process inner classes or interfaces
                     elif body.type == 'class_declaration' or body.type == 'interface_declaration':
@@ -344,7 +386,8 @@ class JavaClassInterface():
     def _process_inner_classes(self, inner_class_nodes: list[Node]):
         """Internal helper to recursively process inner classes"""
         for node in inner_class_nodes:
-            self.inner_classes.append(JavaClassInterface(node, None, None, self))
+            self.inner_classes.append(
+                JavaClassInterface(node, None, None, self))
 
     def get_all_methods(self) -> list[JavaMethod]:
         all_methods = self.methods
@@ -369,7 +412,8 @@ class JavaClassInterface():
 
     def has_function_definition(self, target_name: str) -> bool:
         """Returns if the source file holds a given function definition."""
-        if any(method.name == target_name for method in self.get_all_methods()):
+        if any(method.name == target_name
+               for method in self.get_all_methods()):
             return True
 
         return False
@@ -378,8 +422,8 @@ class JavaClassInterface():
 def capture_source_files_in_tree(directory_tree: str) -> list[str]:
     """Captures source code files in a given directory."""
     exclude_directories = [
-        'target', 'test', 'node_modules', 'aflplusplus',
-        'honggfuzz', 'inspector', 'libfuzzer'
+        'target', 'test', 'node_modules', 'aflplusplus', 'honggfuzz',
+        'inspector', 'libfuzzer'
     ]
     language_extensions = ['.java']
     language_files = []
