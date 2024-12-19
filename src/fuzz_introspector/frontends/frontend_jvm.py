@@ -425,8 +425,8 @@ class JavaMethod():
 
             # Chained call
             elif stmt.type == 'method_invocation':
-                callsites.extend(self._process_callsites(stmt))
-                # TODO obtain correct return type
+                return_type, invoke_callsites = self._process_invoke(stmt)
+                callsites.extend(invoke_callsites)
 
             # Casting expression in Parenthesized statement
             elif stmt.type == 'parenthesized_expression':
@@ -437,7 +437,8 @@ class JavaMethod():
                         return_value = self.parent_source.get_full_qualified_name(
                             type)
                         if value and value.type == 'method_invocation':
-                            callsites.extend(self._process_callsites(value))
+                            return_type, invoke_callsites = self._process_invoke(stmt)
+                            callsites.extend(invoke_callsites)
 
         return return_value, callsites
 
@@ -449,6 +450,40 @@ class JavaMethod():
 
         return return_values, callsites
 
+    def _process_invoke(
+            self, expr: Node) -> tuple[list[str], list[tuple[int, int, int]]]:
+        """Internal helper for processing the method invocation statement."""
+        callsites = []
+
+        # JVM method_invocation separated into three main items
+        # <object>.<name>(<arguments>)
+        objects = expr.child_by_field_name('object')
+        name = expr.child_by_field_name('name')
+        arguments = expr.child_by_field_name('arguments')
+
+        # Recusive handling for method invocation in objects
+        if objects:
+            object_type, object_callsites = self._process_invoke_object(
+                objects)
+            callsites.extend(object_callsites)
+        else:
+            object_type = self.class_interface.name
+
+        # Recusive handling for method invocation in arguments
+        argument_types, argument_callsites = self._process_invoke_args(
+            arguments)
+        callsites.extend(argument_callsites)
+
+        # Process this method invocation
+        target_name = f'[{object_type}].{name}({",".join(argument_types)})'
+        callsites.append((target_name, expr.byte_range[1],
+                          expr.start_point.row + 1))
+
+        # Determine return value from method invocation
+        # TODO
+
+        return '', callsites
+
     def _process_callsites(self, stmt: Node) -> list[tuple[int, int, int]]:
         """Process and store the callsites of the method."""
         callsites = []
@@ -456,29 +491,8 @@ class JavaMethod():
         res = query.captures(stmt)
         for _, exprs in res.items():
             for expr in exprs:
-                # JVM method_invocation separated into three main items
-                # <object>.<name>(<arguments>)
-                objects = expr.child_by_field_name('object')
-                name = expr.child_by_field_name('name')
-                arguments = expr.child_by_field_name('arguments')
-
-                # Recusive handling for method invocation in objects
-                if objects:
-                    object_type, object_callsites = self._process_invoke_object(
-                        objects)
-                    callsites.extend(object_callsites)
-                else:
-                    object_type = self.class_interface.name
-
-                # Recusive handling for method invocation in arguments
-                argument_types, argument_callsites = self._process_invoke_args(
-                    arguments)
-                callsites.extend(argument_callsites)
-
-                # Process this method invocation
-                target_name = f'[{object_type}].{name}({",".join(argument_types)})'
-                callsites.append((target_name, expr.byte_range[1],
-                                  expr.start_point.row + 1))
+                _, invoke_callsites = self._process_invoke(expr)
+                callsites.extend(invoke_callsites)
 
         return callsites
 
