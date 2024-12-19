@@ -34,7 +34,7 @@ class SourceCodeFile():
 
     def __init__(self,
                  source_file: str,
-                 entrypoint: str,
+                 entrypoint: str = 'fuzzerTestOneInput',
                  source_content: Optional[bytes] = None):
         logger.info('Processing %s' % source_file)
 
@@ -147,6 +147,36 @@ class SourceCodeFile():
         """Returns the entry function name of the harness if found,"""
         return self.entrypoint
 
+    def get_full_qualified_name(self, type_str: str) -> str:
+        """Process the full qualified name for type from imports."""
+        processed_parts = []
+        buffer = ''
+
+        # Remove all spaces
+        type_str = type_str.replace(' ', '')
+
+        # Define delimiters for handling generic types
+        delimiters = ['<', '>', ',']
+
+        for char in type_str:
+            if char in delimiters:
+                if '.' not in buffer and buffer in self.imports:
+                    processed_parts.append(self.imports[buffer])
+                else:
+                    processed_parts.append(buffer)
+                processed_parts.append(char)
+                buffer = ''
+            else:
+                buffer += char
+
+        if buffer:
+            if '.' not in buffer and buffer in self.imports:
+                processed_parts.append(self.imports[buffer])
+            else:
+                processed_parts.append(buffer)
+
+        return ''.join(processed_parts)
+
 
 class Project():
     """Wrapper for doing analysis of a collection of source files."""
@@ -184,13 +214,13 @@ class Project():
                     'start': method.start_line,
                     'end': method.end_line
                 }
-                method_dict['CyclomaticComplexity'] = 0
+                method_dict['CyclomaticComplexity'] = method.complexity
                 method_dict['EdgeCount'] = method_dict['CyclomaticComplexity']
                 method_dict['ICount'] = 0
                 method_dict['argNames'] = method.arg_names
-                method_dict['argTypes'] = method.arg_types
+                method_dict['argTypes'] = method.arg_types[:]
                 method_dict['argCount'] = len(method_dict['argTypes'])
-                method_dict['returnType'] = ''
+                method_dict['returnType'] = method.return_type
                 method_dict['BranchProfiles'] = []
                 method_dict['Callsites'] = []
                 method_dict['functionUses'] = 0
@@ -209,7 +239,7 @@ class Project():
                 java_method_info['exceptions'] = []
                 java_method_info['interfaces'] = []
                 java_method_info['classFields'] = []
-                java_method_info['argumentGenericTypes'] = []
+                java_method_info['argumentGenericTypes'] = method.arg_types[:]
                 java_method_info['returnValueGenericType'] = ''
                 java_method_info['superClass'] = ''
                 java_method_info['needClose'] = False
@@ -272,8 +302,17 @@ class JavaMethod():
         self.static = False
         self.is_entry_method = False
 
+        # Other properties
+        self.stmts = []
+
         # Process method declaration
         self._process_declaration()
+
+        # Refine name
+        self.name = f'{self.name}({",".join(self.arg_types)})'
+
+        # Process complexity
+        self._process_complexity()
 
     def _process_declaration(self):
         """Internal helper to process the method declaration."""
@@ -302,14 +341,63 @@ class JavaMethod():
             elif child.type == 'formal_parameters':
                 for argument in child.children:
                     if argument.type == 'formal_parameter':
-                        name = argument.child_by_field_name(
+                        arg_name = argument.child_by_field_name(
                             'name').text.decode()
-                        type = argument.child_by_field_name(
+                        arg_type = argument.child_by_field_name(
                             'type').text.decode()
-                        type = self.parent_source.imports.get(type, type)
+                        arg_type = self.parent_source.get_full_qualified_name(arg_type)
 
-                        self.arg_names.append(name)
-                        self.arg_types.append(type)
+                        self.arg_names.append(arg_name)
+                        self.arg_types.append(arg_type)
+
+            # Process return type
+            elif child.type == 'type_identifier' or child.type.endswith('_type'):
+                return_type = child.text.decode()
+                self.return_type = self.parent_source.get_full_qualified_name(return_type)
+
+            # Process body and store statment nodes
+            elif child.type == 'block':
+                for stmt in child.children:
+                    if stmt.type not in ['{', '}'] and 'comment' not in stmt.type:
+                        self.stmts.append(stmt)
+
+    def _process_complexity(self):
+        """Gets complexity measure based on counting branch nodes in a
+        function."""
+
+        branch_nodes = [
+            'if_statement',
+            'while_statsment',
+            'for_statement',
+            'enhanced_for_statement',
+            'do_statement',
+            'break_statement',
+            'continue_statement',
+            'return_statement',
+            'yield_statement',
+            'switch_label',
+            'throw_statement',
+            'try_statement',
+            'try_with_resources_statement',
+            'catch_clause',
+            'finally_clause',
+            'lambda_expression',
+            'ternary_expression',
+            'switch_expression',
+            "&&",
+            "||",
+        ]
+
+        def _traverse_node_complexity(node: Node) -> int:
+            count = 0
+            if node.type in branch_nodes:
+                count += 1
+            for item in node.children:
+                count += _traverse_node_complexity(item)
+            return count
+
+        for stmt in self.stmts:
+            self.complexity += _traverse_node_complexity(stmt)
 
 
 class JavaClassInterface():
@@ -454,7 +542,7 @@ def load_treesitter_trees(source_files: list[str],
     return results
 
 
-def analyse_source_code(source_content: str) -> SourceCodeFile:
+def analyse_source_code(source_content: str, entrypoint: str) -> SourceCodeFile:
     """Returns a source abstraction based on a single source string."""
     source_code = SourceCodeFile(source_file='in-memory string',
                                  source_content=source_content.encode())
