@@ -437,7 +437,8 @@ class JavaMethod():
                         return_value = self.parent_source.get_full_qualified_name(
                             type)
                         if value and value.type == 'method_invocation':
-                            return_type, invoke_callsites = self._process_invoke(stmt)
+                            return_type, invoke_callsites = self._process_invoke(
+                                stmt)
                             callsites.extend(invoke_callsites)
 
         return return_value, callsites
@@ -476,8 +477,8 @@ class JavaMethod():
 
         # Process this method invocation
         target_name = f'[{object_type}].{name}({",".join(argument_types)})'
-        callsites.append((target_name, expr.byte_range[1],
-                          expr.start_point.row + 1))
+        callsites.append(
+            (target_name, expr.byte_range[1], expr.start_point.row + 1))
 
         # Determine return value from method invocation
         # TODO
