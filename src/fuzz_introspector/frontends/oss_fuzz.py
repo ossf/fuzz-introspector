@@ -151,12 +151,21 @@ def process_jvm_project(target_dir, entrypoint, out):
     logger.info('Creating base project.')
     project = frontend_jvm.Project(source_codes)
 
-    # Process calltree
+    # Process calltree and method data
     for harness in project.get_source_codes_with_harnesses():
         harness_name = harness.source_file.split('/')[-1].split('.')[0]
+
+        # Method data
         logger.info(f'Dump methods for {harness_name}')
         target = os.path.join(out, f'fuzzerLogFile-{harness_name}.data.yaml')
-        project.dump_module_logic(target, entrypoint)
+        project.dump_module_logic(target, harness_name)
+
+        # Calltree
+#        logger.info(f'Extracting calltree for {harness_name}')
+#        calltree = project.extract_calltree(harness.source_file, harness)
+#        target = os.path.join(out, f'fuzzerLogFile-{harness_name}.data')
+#        with open(target, 'w', encoding='utf-8') as f:
+#            f.write(f'Call tree\n{calltree}')
 
 
 def analyse_folder(language, directory, entrypoint, out=''):

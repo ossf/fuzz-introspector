@@ -72,6 +72,13 @@ class SourceCodeFile():
         the root node."""
         self.root = self.parser.parse(self.source_content).root_node
 
+    def post_process_imports(self, classes: list['JavaClassInterface']):
+        """Add in full qualified name for classes in projects."""
+        for cls in classes:
+            name = cls.name
+            if name.rsplit('.', 1)[-1] not in self.imports:
+                self.imports[name.rsplit('.', 1)[-1]] = name
+
     def _set_package_declaration(self):
         """Internal helper for retrieving the source package."""
         query = self.tree_sitter_lang.query('( package_declaration ) @fd ')
@@ -106,12 +113,6 @@ class SourceCodeFile():
                 if not wildcard and not package.startswith('java.lang'):
                     self.imports[package.rsplit('.', 1)[-1]] = package
 
-        # Process by classes/interfaces
-        for cls in self.classes:
-            name = cls.name
-            if name.rsplit('.', 1)[-1] not in self.imports:
-                self.imports[name.rsplit('.', 1)[-1]] = name
-
     def get_all_methods(self) -> dict[str, 'JavaMethod']:
         """Gets all JavaMethod object of all classes in this source file,
         mapped by its method name"""
@@ -127,25 +128,14 @@ class SourceCodeFile():
         methods = self.get_all_methods()
         return methods.get(target_name, None)
 
-    def has_libfuzzer_harness(self) -> bool:
-        """Returns whether the source code holds a libfuzzer harness"""
-        if any(cls.has_libfuzzer_harness() for cls in self.classes):
-            return True
-
-        return False
-
-    def has_function_definition(self, target_name: str) -> bool:
-        """Returns if the source file holds a given function definition."""
-        if any(
-                cls.has_function_definition(target_name)
-                for cls in self.classes):
-            return True
-
-        return False
-
-    def get_entry_function_name(self) -> Optional[str]:
+    def get_entry_method_name(self) -> Optional[str]:
         """Returns the entry function name of the harness if found,"""
-        return self.entrypoint
+        for cls in self.classes:
+            entry = cls.get_entry_method_name()
+            if entry:
+                return entry.split('].')[-1].split('(')[0]
+
+        return None
 
     def get_full_qualified_name(self, type_str: str) -> str:
         """Process the full qualified name for type from imports."""
@@ -177,26 +167,482 @@ class SourceCodeFile():
 
         return ''.join(processed_parts)
 
+    def has_libfuzzer_harness(self) -> bool:
+        """Returns whether the source code holds a libfuzzer harness"""
+        if any(cls.has_libfuzzer_harness() for cls in self.classes):
+            return True
+
+        return False
+
+    def has_function_definition(self, target_name: str) -> bool:
+        """Returns if the source file holds a given function definition."""
+        if any(
+                cls.has_function_definition(target_name)
+                for cls in self.classes):
+            return True
+
+        return False
+
+    def has_class(self, target_name: str) -> bool:
+        """Returns if the class exist in this source file."""
+        if any(
+                cls.name.endswith(target_name)
+                for cls in self.classes):
+            return True
+
+        return False
+
+
+class JavaMethod():
+    """Wrapper for a General Declaration for method"""
+
+    def __init__(self, root: Node, class_interface: 'JavaClassInterface'):
+        self.root = root
+        self.class_interface = class_interface
+        self.tree_sitter_lang = self.class_interface.tree_sitter_lang
+        self.parent_source = self.class_interface.parent_source
+
+        # Store method line information
+        self.start_line = self.root.start_point.row + 1
+        self.end_line = self.root.end_point.row + 1
+
+        # Other properties
+        self.name = ''
+        self.complexity = 0
+        self.icount = 0
+        self.arg_names = []
+        self.arg_types = []
+        self.return_type = ''
+        self.sig = ''
+        self.function_uses = 0
+        self.function_depth = 0
+        self.base_callsites = []
+        self.detailed_callsites = []
+        self.public = False
+        self.concrete = True
+        self.static = False
+        self.is_entry_method = False
+
+        # Other properties
+        self.stmts = []
+        self.var_map = {}
+
+        # Process method declaration
+        self._process_declaration()
+
+        # Process statements
+        self._process_statements()
+
+    def post_process_full_qualified_name(self):
+        """Post process the full qualified name for types."""
+        # Refine name
+        class_name = self.parent_source.get_full_qualified_name(self.class_interface.name)
+        self.name = f'[{class_name}].{self.name}({",".join(self.arg_types)})'
+
+        # Refine variable map
+        for key in self.var_map:
+            self.var_map[key] = self.parent_source.get_full_qualified_name(self.var_map[key])
+
+        # Refine argument types
+        self.arg_types = [self.parent_source.get_full_qualified_name(arg_type) for arg_type in self.arg_types]
+
+        # Refine return type
+        self.return_type = self.parent_source.get_full_qualified_name(self.return_type)
+
+    def _process_declaration(self):
+        """Internal helper to process the method declaration."""
+        for child in self.root.children:
+            # Process name
+            if child.type == 'identifier':
+                self.name = child.text.decode()
+                if self.name == self.parent_source.entrypoint:
+                    self.is_entry_method = True
+
+            # Process modifiers and annotations
+            elif child.type == 'modifiers':
+                for modifier in child.children:
+                    if modifier.text.decode() == 'public':
+                        self.public = True
+                    if modifier.text.decode() == 'abstract':
+                        self.concrete = False
+                    if modifier.text.decode() == 'static':
+                        self.static = True
+                    if modifier.text.decode() == '@FuzzTest':
+                        self.is_entry_method = True
+
+            # Process arguments
+            elif child.type == 'formal_parameters':
+                for argument in child.children:
+                    if argument.type == 'formal_parameter':
+                        arg_name = argument.child_by_field_name(
+                            'name').text.decode()
+                        arg_type = argument.child_by_field_name(
+                            'type').text.decode()
+
+                        self.arg_names.append(arg_name)
+                        self.arg_types.append(arg_type)
+                        self.var_map[arg_name] = arg_type
+
+            # Process return type
+            elif child.type == 'type_identifier' or child.type.endswith('_type'):
+                self.return_type = child.text.decode()
+
+            # Process body and store statment nodes
+            elif child.type == 'block':
+                for stmt in child.children:
+                    if stmt.type not in ['{', '}'] and 'comment' not in stmt.type:
+                        self.stmts.append(stmt)
+
+    def _process_statements(self):
+        """Loop through all statements and process them."""
+        for stmt in self.stmts:
+            self._process_complexity(stmt)
+            self._process_icount(stmt)
+            self._process_variable_declaration(stmt)
+
+    def _process_complexity(self, stmt: Node):
+        """Gets complexity measure based on counting branch nodes in a
+        function."""
+
+        branch_nodes = [
+            'if_statement',
+            'while_statsment',
+            'for_statement',
+            'enhanced_for_statement',
+            'do_statement',
+            'break_statement',
+            'continue_statement',
+            'return_statement',
+            'yield_statement',
+            'switch_label',
+            'throw_statement',
+            'try_statement',
+            'try_with_resources_statement',
+            'catch_clause',
+            'finally_clause',
+            'lambda_expression',
+            'ternary_expression',
+            'switch_expression',
+            '&&',
+            '||',
+        ]
+
+        def _traverse_node_complexity(node: Node):
+            count = 0
+            if node.type in branch_nodes:
+                count += 1
+            for item in node.children:
+                count += _traverse_node_complexity(item)
+            return count
+
+        self.complexity += _traverse_node_complexity(stmt)
+
+    def _process_icount(self, stmt: Node):
+        """Get a pseudo measurement of instruction count."""
+
+        instr_nodes = [
+            'assignment_expression',
+            'binary_expression',
+            'instanceof_expression',
+            'lambda_expression',
+            'ternary_expression',
+            'update_expression',
+            'primary_expression',
+            'unary_expression',
+            'cast_expression',
+            'switch_expression',
+            'object_creation_expression',
+            'array_creation_expression',
+            'method_invocation',
+        ]
+
+        def _traverse_node_instr_count(node: Node) -> int:
+            count = 0
+            if node.type in instr_nodes:
+                count += 1
+            for item in node.children:
+                count += _traverse_node_instr_count(item)
+            return count
+
+        self.icount += _traverse_node_instr_count(stmt)
+
+    def _process_variable_declaration(self, stmt: Node):
+        """Process the local variable declaration."""
+        variable_type = None
+        variable_name = None
+
+        if stmt.type == 'local_variable_declaration':
+            variable_type = stmt.child_by_field_name('type').text.decode()
+            for vars in stmt.children:
+                if vars.type == 'variable_declarator':
+                    varaible_name = vars.child_by_field_name('name').text.decode()
+
+        if variable_type and variable_name:
+            self.var_map[variable_name] = variable_type
+
+    def _process_invoke_object(self, stmt: Node) -> tuple[str, list[tuple[int, int, int]]]:
+        """Internal helper for processing the object from a invocation."""
+        callsites = []
+        return_value = ''
+
+        # Determine the type of the object
+        if stmt.child_count == 0:
+            # Class call
+            if stmt.type == 'this':
+                return_value = self.class_interface.name
+
+            # SuperClass call
+            elif stmt.type == 'super':
+                return_value = self.class_interface.super_class
+
+            # Variable call or static call
+            else:
+                return_value = self.var_map.get(stmt.text.decode(), '')
+                if not return_value:
+                    return_value = self.class_interface.class_fields.get(stmt.text.decode(), '')
+                if not return_value:
+                    return_value = self.parent_source.imports.get(stmt.text.decode(), self.class_interface.name)
+        else:
+            # Field access
+            if stmt.type == 'field_access':
+                for field in stmt.children:
+                    if field.type == 'identifier':
+                        return_value = self.var_map.get(field.text.decode(), '')
+                        if not return_value:
+                            return_value = self.class_interface.class_fields.get(field.text.decode(), self.class_interface.name)
+
+            # Chained call
+            elif stmt.type == 'method_invocation':
+                callsites.extend(self._process_callsites(stmt))
+                # TODO obtain correct return type
+
+            # Casting expression in Parenthesized statement
+            elif stmt.type == 'parenthesized_expression':
+                for cast in stmt.children:
+                    if cast.type == 'cast_expression':
+                        value = cast.child_by_field_name('value')
+                        type = cast.child_by_field_name('type').text.decode()
+                        return_value = self.parent_source.get_full_qualified_name(type)
+                        if value and value.type == 'method_invocation':
+                            callsites.extend(self._process_callsites(value))
+
+        return return_value, callsites
+
+    def _process_invoke_args(self, stmt: Node) -> tuple[list[str], list[tuple[int, int, int]]]:
+        """Internal helper for processing the object from a invocation."""
+        callsites = []
+        return_values = []
+
+        return return_values, callsites
+
+    def _process_callsites(self, stmt: Node) -> list[tuple[int, int, int]]:
+        """Process and store the callsites of the method."""
+        callsites = []
+        query = self.tree_sitter_lang.query('( method_invocation ) @mi')
+        res = query.captures(stmt)
+        for _, exprs in res.items():
+            for expr in exprs:
+                # JVM method_invocation separated into three main items
+                # <object>.<name>(<arguments>)
+                objects = expr.child_by_field_name('object')
+                name = expr.child_by_field_name('name')
+                arguments = expr.child_by_field_name('arguments')
+
+                # Recusive handling for method invocation in objects
+                if objects:
+                    object_type, object_callsites = self._process_invoke_object(objects)
+                    callsites.extend(object_callsites)
+                else:
+                    object_type = self.class_interface.name
+
+                # Recusive handling for method invocation in arguments
+                argument_types, argument_callsites = self._process_invoke_args(arguments)
+                callsites.extend(argument_callsites)
+
+
+                # Process this method invocation
+                target_name = f'[{object_type}].{name}({",".join(argument_types)})'
+                callsites.append((target_name, expr.byte_range[1], expr.start_point.row + 1))
+
+        return callsites
+
+    def extract_callsites(self):
+        """Extract callsites."""
+
+        if not self.base_callsites:
+            callsites = []
+            for stmt in self.stmts:
+                callsites.extend(self._process_callsites(stmt))
+            callsites = sorted(callsites, key=lambda x: x[1])
+            self.base_callsites = [(x[0], x[2]) for x in callsites]
+
+        if not self.detailed_callsites:
+            for dst, src_line in self.base_callsites:
+                src_loc = self.parent_source.source_file + ':%d,1' % (src_line)
+                self.detailed_callsites.append({'Src': src_loc, 'Dst': dst})
+
+
+class JavaClassInterface():
+    """Wrapper for a General Declaration for java classes"""
+
+    def __init__(self,
+                 root: Node,
+                 tree_sitter_lang: Optional[Language] = None,
+                 source_code: Optional[SourceCodeFile] = None,
+                 parent: Optional['JavaClassInterface'] = None):
+        self.root = root
+        self.parent = parent
+
+        if parent:
+            self.tree_sitter_lang = parent.tree_sitter_lang
+            self.parent_source = parent.parent_source
+            self.package = self.parent.name
+        else:
+            self.tree_sitter_lang = tree_sitter_lang
+            self.parent_source = source_code
+            self.package = self.parent_source.package
+
+        # Properties
+        self.name = ''
+        self.class_public = False
+        self.class_concrete = True
+        self.is_interface = False
+        self.methods = []
+        self.inner_classes = []
+        self.class_fields = {}
+        self.super_class = ''
+        self.super_interface = []
+
+        # Process the class/interface tree
+        inner_class_nodes = self._process_node()
+
+        # Process inner classes
+        self._process_inner_classes(inner_class_nodes)
+
+    def post_process_full_qualified_name(self):
+        """Post process the full qualified name for types."""
+        for key in self.class_fields:
+            self.class_fields[key] = self.parent_source.get_full_qualified_name(self.class_fields[key])
+
+        for method in self.methods:
+            method.post_process_full_qualified_name()
+
+    def _process_node(self) -> list[Node]:
+        """Internal helper to process the Java classes/interfaces."""
+        inner_class_nodes = []
+
+        for child in self.root.children:
+            # Process modifiers
+            if child.type == 'modifiers':
+                for modifier in child.children:
+                    if modifier.text.decode() == 'public':
+                        self.class_public = True
+                    if modifier.text.decode() == 'abstract':
+                        self.class_concrete = False
+
+            # Process modifiers for interface
+            elif child.type == 'interface':
+                self.is_interface = True
+                self.class_concrete = False
+
+            # Process name
+            elif child.type == 'identifier':
+                self.name = child.text.decode()
+                if self.package:
+                    self.name = f'{self.package}.{self.name}'
+
+            # Process body
+            elif child.type == 'class_body' or child.type == 'interface_body':
+                for body in child.children:
+                    # Process methods
+                    if body.type == 'method_declaration':
+                        self.methods.append(JavaMethod(body, self))
+
+                    # Process class fields
+                    elif body.type == 'field_declaration':
+                        field_name = None
+                        field_type = body.child_by_field_name('type').text.decode()
+                        for fields in body.children:
+                            # Process field_name
+                            if fields.type == 'variable_declarator':
+                                field_name = fields.child_by_field_name('name').text.decode()
+
+                        if field_name and field_type:
+                            self.class_fields[field_name] = field_type
+
+                    # Process inner classes or interfaces
+                    elif body.type == 'class_declaration' or body.type == 'interface_declaration':
+                        inner_class_nodes.append(body)
+
+        return inner_class_nodes
+
+    def _process_inner_classes(self, inner_class_nodes: list[Node]):
+        """Internal helper to recursively process inner classes"""
+        for node in inner_class_nodes:
+            self.inner_classes.append(
+                JavaClassInterface(node, None, None, self))
+
+    def get_all_methods(self) -> list[JavaMethod]:
+        all_methods = self.methods
+        for inner_class in self.inner_classes:
+            all_methods.extend(inner_class.get_all_methods())
+
+        return all_methods
+
+    def get_entry_method_name(self) -> Optional[str]:
+        """Get the entry method name for this class.
+        It can be the provided entrypoint of method with @FuzzTest annotation."""
+        for method in self.get_all_methods():
+            if method.is_entry_method:
+                return method.name
+
+        return None
+
+    def has_libfuzzer_harness(self) -> bool:
+        """Returns whether the source code holds a libfuzzer harness"""
+        if any(method.is_entry_method for method in self.get_all_methods()):
+            return True
+
+        return False
+
+    def has_function_definition(self, target_name: str) -> bool:
+        """Returns if the source file holds a given function definition."""
+        if any(method.name == target_name
+               for method in self.get_all_methods()):
+            return True
+
+        return False
+
 
 class Project():
     """Wrapper for doing analysis of a collection of source files."""
 
-    def __init__(self, source_code_files: list[str]):
+    def __init__(self, source_code_files: list[SourceCodeFile]):
         self.source_code_files = source_code_files
+        self.all_classes = []
+        for source_code in self.source_code_files:
+            self.all_classes.extend(source_code.classes)
 
-    def dump_module_logic(self, report_name: str, entry_method: str = ''):
+    def dump_module_logic(self, report_name: str, harness_name: Optional[str] = None):
         """Dumps the data for the module in full."""
         logger.info('Dumping project-wide logic.')
         report = {'report': 'name'}
         report['sources'] = []
 
-        # Log entry method if provided
-        if entry_method:
-            report['Fuzzing method'] = entry_method
-
         # Find all methods
         method_list = []
         for source_code in self.source_code_files:
+            # Refine names with full qualified names
+            source_code.post_process_imports(self.all_classes)
+            for cls in source_code.classes:
+                cls.post_process_full_qualified_name()
+
+            # Log entry method if provided
+            if harness_name and source_code.has_class(harness_name):
+                entry_method = source_code.get_entry_method_name()
+                if entry_method:
+                    report['Fuzzing method'] = entry_method
+
             methods = source_code.get_all_methods()
             report['sources'].append({
                 'source_file': source_code.source_file,
@@ -204,6 +650,9 @@ class Project():
             })
 
             for method in methods.values():
+                # Extract callsites of this method
+                method.extract_callsites()
+
                 method_dict = {}
                 method_dict['functionName'] = method.name
                 method_dict['functionSourceFile'] = method.class_interface.name
@@ -216,7 +665,7 @@ class Project():
                 }
                 method_dict['CyclomaticComplexity'] = method.complexity
                 method_dict['EdgeCount'] = method_dict['CyclomaticComplexity']
-                method_dict['ICount'] = 0
+                method_dict['ICount'] = method.icount
                 method_dict['argNames'] = method.arg_names
                 method_dict['argTypes'] = method.arg_types[:]
                 method_dict['argCount'] = len(method_dict['argTypes'])
@@ -271,240 +720,6 @@ class Project():
                 harnesses.append(source_code)
 
         return harnesses
-
-
-class JavaMethod():
-    """Wrapper for a General Declaration for method"""
-
-    def __init__(self, root: Node, class_interface: 'JavaClassInterface'):
-        self.root = root
-        self.class_interface = class_interface
-        self.tree_sitter_lang = self.class_interface.tree_sitter_lang
-        self.parent_source = self.class_interface.parent_source
-
-        # Store method line information
-        self.start_line = self.root.start_point.row + 1
-        self.end_line = self.root.end_point.row + 1
-
-        # Other properties
-        self.name = ''
-        self.complexity = 0
-        self.icount = 0
-        self.arg_names = []
-        self.arg_types = []
-        self.return_type = ''
-        self.sig = ''
-        self.function_uses = 0
-        self.function_depth = 0
-        self.callsites = []
-        self.public = False
-        self.concrete = True
-        self.static = False
-        self.is_entry_method = False
-
-        # Other properties
-        self.stmts = []
-
-        # Process method declaration
-        self._process_declaration()
-
-        # Refine name
-        self.name = f'{self.name}({",".join(self.arg_types)})'
-
-        # Process complexity
-        self._process_complexity()
-
-    def _process_declaration(self):
-        """Internal helper to process the method declaration."""
-        for child in self.root.children:
-            # Process name
-            if child.type == 'identifier':
-                self.name = child.text.decode()
-                if self.name == self.parent_source.entrypoint:
-                    self.is_entry_method = True
-                if self.class_interface.name:
-                    self.name = f'[{self.class_interface.name}].{self.name}'
-
-            # Process modifiers and annotations
-            elif child.type == 'modifiers':
-                for modifier in child.children:
-                    if modifier.text.decode() == 'public':
-                        self.public = True
-                    if modifier.text.decode() == 'abstract':
-                        self.concrete = False
-                    if modifier.text.decode() == 'static':
-                        self.static = True
-                    if modifier.text.decode() == '@FuzzTest':
-                        self.is_entry_method = True
-
-            # Process arguments
-            elif child.type == 'formal_parameters':
-                for argument in child.children:
-                    if argument.type == 'formal_parameter':
-                        arg_name = argument.child_by_field_name(
-                            'name').text.decode()
-                        arg_type = argument.child_by_field_name(
-                            'type').text.decode()
-                        arg_type = self.parent_source.get_full_qualified_name(arg_type)
-
-                        self.arg_names.append(arg_name)
-                        self.arg_types.append(arg_type)
-
-            # Process return type
-            elif child.type == 'type_identifier' or child.type.endswith('_type'):
-                return_type = child.text.decode()
-                self.return_type = self.parent_source.get_full_qualified_name(return_type)
-
-            # Process body and store statment nodes
-            elif child.type == 'block':
-                for stmt in child.children:
-                    if stmt.type not in ['{', '}'] and 'comment' not in stmt.type:
-                        self.stmts.append(stmt)
-
-    def _process_complexity(self):
-        """Gets complexity measure based on counting branch nodes in a
-        function."""
-
-        branch_nodes = [
-            'if_statement',
-            'while_statsment',
-            'for_statement',
-            'enhanced_for_statement',
-            'do_statement',
-            'break_statement',
-            'continue_statement',
-            'return_statement',
-            'yield_statement',
-            'switch_label',
-            'throw_statement',
-            'try_statement',
-            'try_with_resources_statement',
-            'catch_clause',
-            'finally_clause',
-            'lambda_expression',
-            'ternary_expression',
-            'switch_expression',
-            "&&",
-            "||",
-        ]
-
-        def _traverse_node_complexity(node: Node) -> int:
-            count = 0
-            if node.type in branch_nodes:
-                count += 1
-            for item in node.children:
-                count += _traverse_node_complexity(item)
-            return count
-
-        for stmt in self.stmts:
-            self.complexity += _traverse_node_complexity(stmt)
-
-
-class JavaClassInterface():
-    """Wrapper for a General Declaration for java classes"""
-
-    def __init__(self,
-                 root: Node,
-                 tree_sitter_lang: Optional[Language] = None,
-                 source_code: Optional[SourceCodeFile] = None,
-                 parent: Optional['JavaClassInterface'] = None):
-        self.root = root
-        self.parent = parent
-
-        if parent:
-            self.tree_sitter_lang = parent.tree_sitter_lang
-            self.parent_source = parent.parent_source
-            self.package = self.parent.name
-        else:
-            self.tree_sitter_lang = tree_sitter_lang
-            self.parent_source = source_code
-            self.package = self.parent_source.package
-
-        # Properties
-        self.name = ''
-        self.class_public = False
-        self.class_concrete = True
-        self.is_interface = False
-        self.methods = []
-        self.inner_classes = []
-
-        # Process the class/interface tree
-        inner_class_nodes = self._process_node()
-
-        # Process inner classes
-        self._process_inner_classes(inner_class_nodes)
-
-    def _process_node(self) -> list[Node]:
-        """Internal helper to process the Java classes/interfaces."""
-        inner_class_nodes = []
-
-        for child in self.root.children:
-            # Process modifiers
-            if child.type == 'modifiers':
-                for modifier in child.children:
-                    if modifier.text.decode() == 'public':
-                        self.class_public = True
-                    if modifier.text.decode() == 'abstract':
-                        self.class_concrete = False
-
-            # Process modifiers for interface
-            elif child.type == 'interface':
-                self.is_interface = True
-                self.class_concrete = False
-
-            # Process name
-            elif child.type == 'identifier':
-                self.name = child.text.decode()
-                if self.package:
-                    self.name = f'{self.package}.{self.name}'
-
-            # Process body
-            elif child.type == 'class_body' or child.type == 'interface_body':
-                for body in child.children:
-                    # Process methods
-                    if body.type == 'method_declaration':
-                        self.methods.append(JavaMethod(body, self))
-
-                    # Process inner classes or interfaces
-                    elif body.type == 'class_declaration' or body.type == 'interface_declaration':
-                        inner_class_nodes.append(body)
-
-        return inner_class_nodes
-
-    def _process_inner_classes(self, inner_class_nodes: list[Node]):
-        """Internal helper to recursively process inner classes"""
-        for node in inner_class_nodes:
-            self.inner_classes.append(
-                JavaClassInterface(node, None, None, self))
-
-    def get_all_methods(self) -> list[JavaMethod]:
-        all_methods = self.methods
-        for inner_class in self.inner_classes:
-            all_methods.extend(inner_class.get_all_methods())
-
-        return all_methods
-
-    def get_entry_method_name(self) -> str:
-        """Get the entry method name for this class.
-        It can be the provided entrypoint of method with @FuzzTest annotation."""
-        for method in self.get_all_methods():
-            if method.is_entry_method:
-                return method.name
-
-    def has_libfuzzer_harness(self) -> bool:
-        """Returns whether the source code holds a libfuzzer harness"""
-        if any(method.is_entry_method for method in self.get_all_methods()):
-            return True
-
-        return False
-
-    def has_function_definition(self, target_name: str) -> bool:
-        """Returns if the source file holds a given function definition."""
-        if any(method.name == target_name
-               for method in self.get_all_methods()):
-            return True
-
-        return False
 
 
 def capture_source_files_in_tree(directory_tree: str) -> list[str]:
