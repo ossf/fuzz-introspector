@@ -244,7 +244,10 @@ class JavaMethod():
             self.var_map[key] = self.parent_source.get_full_qualified_name(self.var_map[key])
 
         # Refine argument types
-        self.arg_types = [self.parent_source.get_full_qualified_name(arg_type) for arg_type in self.arg_types]
+        self.arg_types = [
+            self.parent_source.get_full_qualified_name(arg_type)
+            for arg_type in self.arg_types
+        ]
 
         # Refine return type
         self.return_type = self.parent_source.get_full_qualified_name(self.return_type)
@@ -375,7 +378,7 @@ class JavaMethod():
             variable_type = stmt.child_by_field_name('type').text.decode()
             for vars in stmt.children:
                 if vars.type == 'variable_declarator':
-                    varaible_name = vars.child_by_field_name('name').text.decode()
+                    variable_name = vars.child_by_field_name('name').text.decode()
 
         if variable_type and variable_name:
             self.var_map[variable_name] = variable_type
@@ -401,7 +404,8 @@ class JavaMethod():
                 if not return_value:
                     return_value = self.class_interface.class_fields.get(stmt.text.decode(), '')
                 if not return_value:
-                    return_value = self.parent_source.imports.get(stmt.text.decode(), self.class_interface.name)
+                    return_value = self.parent_source.imports.get(
+                        stmt.text.decode(), self.class_interface.name)
         else:
             # Field access
             if stmt.type == 'field_access':
@@ -409,7 +413,8 @@ class JavaMethod():
                     if field.type == 'identifier':
                         return_value = self.var_map.get(field.text.decode(), '')
                         if not return_value:
-                            return_value = self.class_interface.class_fields.get(field.text.decode(), self.class_interface.name)
+                            return_value = self.class_interface.class_fields.get(
+                                field.text.decode(), self.class_interface.name)
 
             # Chained call
             elif stmt.type == 'method_invocation':
@@ -458,7 +463,6 @@ class JavaMethod():
                 # Recusive handling for method invocation in arguments
                 argument_types, argument_callsites = self._process_invoke_args(arguments)
                 callsites.extend(argument_callsites)
-
 
                 # Process this method invocation
                 target_name = f'[{object_type}].{name}({",".join(argument_types)})'
@@ -522,7 +526,8 @@ class JavaClassInterface():
     def post_process_full_qualified_name(self):
         """Post process the full qualified name for types."""
         for key in self.class_fields:
-            self.class_fields[key] = self.parent_source.get_full_qualified_name(self.class_fields[key])
+            self.class_fields[key] = self.parent_source.get_full_qualified_name(
+                self.class_fields[key])
 
         for method in self.methods:
             method.post_process_full_qualified_name()
