@@ -185,9 +185,7 @@ class SourceCodeFile():
 
     def has_class(self, target_name: str) -> bool:
         """Returns if the class exist in this source file."""
-        if any(
-                cls.name.endswith(target_name)
-                for cls in self.classes):
+        if any(cls.name.endswith(target_name) for cls in self.classes):
             return True
 
         return False
@@ -236,12 +234,14 @@ class JavaMethod():
     def post_process_full_qualified_name(self):
         """Post process the full qualified name for types."""
         # Refine name
-        class_name = self.parent_source.get_full_qualified_name(self.class_interface.name)
+        class_name = self.parent_source.get_full_qualified_name(
+            self.class_interface.name)
         self.name = f'[{class_name}].{self.name}({",".join(self.arg_types)})'
 
         # Refine variable map
         for key in self.var_map:
-            self.var_map[key] = self.parent_source.get_full_qualified_name(self.var_map[key])
+            self.var_map[key] = self.parent_source.get_full_qualified_name(
+                self.var_map[key])
 
         # Refine argument types
         self.arg_types = [
@@ -250,7 +250,8 @@ class JavaMethod():
         ]
 
         # Refine return type
-        self.return_type = self.parent_source.get_full_qualified_name(self.return_type)
+        self.return_type = self.parent_source.get_full_qualified_name(
+            self.return_type)
 
     def _process_declaration(self):
         """Internal helper to process the method declaration."""
@@ -287,13 +288,15 @@ class JavaMethod():
                         self.var_map[arg_name] = arg_type
 
             # Process return type
-            elif child.type == 'type_identifier' or child.type.endswith('_type'):
+            elif child.type == 'type_identifier' or child.type.endswith(
+                    '_type'):
                 self.return_type = child.text.decode()
 
             # Process body and store statment nodes
             elif child.type == 'block':
                 for stmt in child.children:
-                    if stmt.type not in ['{', '}'] and 'comment' not in stmt.type:
+                    if stmt.type not in ['{', '}'
+                                         ] and 'comment' not in stmt.type:
                         self.stmts.append(stmt)
 
     def _process_statements(self):
@@ -378,12 +381,14 @@ class JavaMethod():
             variable_type = stmt.child_by_field_name('type').text.decode()
             for vars in stmt.children:
                 if vars.type == 'variable_declarator':
-                    variable_name = vars.child_by_field_name('name').text.decode()
+                    variable_name = vars.child_by_field_name(
+                        'name').text.decode()
 
         if variable_type and variable_name:
             self.var_map[variable_name] = variable_type
 
-    def _process_invoke_object(self, stmt: Node) -> tuple[str, list[tuple[int, int, int]]]:
+    def _process_invoke_object(
+            self, stmt: Node) -> tuple[str, list[tuple[int, int, int]]]:
         """Internal helper for processing the object from a invocation."""
         callsites = []
         return_value = ''
@@ -402,7 +407,8 @@ class JavaMethod():
             else:
                 return_value = self.var_map.get(stmt.text.decode(), '')
                 if not return_value:
-                    return_value = self.class_interface.class_fields.get(stmt.text.decode(), '')
+                    return_value = self.class_interface.class_fields.get(
+                        stmt.text.decode(), '')
                 if not return_value:
                     return_value = self.parent_source.imports.get(
                         stmt.text.decode(), self.class_interface.name)
@@ -411,7 +417,8 @@ class JavaMethod():
             if stmt.type == 'field_access':
                 for field in stmt.children:
                     if field.type == 'identifier':
-                        return_value = self.var_map.get(field.text.decode(), '')
+                        return_value = self.var_map.get(
+                            field.text.decode(), '')
                         if not return_value:
                             return_value = self.class_interface.class_fields.get(
                                 field.text.decode(), self.class_interface.name)
@@ -427,13 +434,15 @@ class JavaMethod():
                     if cast.type == 'cast_expression':
                         value = cast.child_by_field_name('value')
                         type = cast.child_by_field_name('type').text.decode()
-                        return_value = self.parent_source.get_full_qualified_name(type)
+                        return_value = self.parent_source.get_full_qualified_name(
+                            type)
                         if value and value.type == 'method_invocation':
                             callsites.extend(self._process_callsites(value))
 
         return return_value, callsites
 
-    def _process_invoke_args(self, stmt: Node) -> tuple[list[str], list[tuple[int, int, int]]]:
+    def _process_invoke_args(
+            self, stmt: Node) -> tuple[list[str], list[tuple[int, int, int]]]:
         """Internal helper for processing the object from a invocation."""
         callsites = []
         return_values = []
@@ -455,18 +464,21 @@ class JavaMethod():
 
                 # Recusive handling for method invocation in objects
                 if objects:
-                    object_type, object_callsites = self._process_invoke_object(objects)
+                    object_type, object_callsites = self._process_invoke_object(
+                        objects)
                     callsites.extend(object_callsites)
                 else:
                     object_type = self.class_interface.name
 
                 # Recusive handling for method invocation in arguments
-                argument_types, argument_callsites = self._process_invoke_args(arguments)
+                argument_types, argument_callsites = self._process_invoke_args(
+                    arguments)
                 callsites.extend(argument_callsites)
 
                 # Process this method invocation
                 target_name = f'[{object_type}].{name}({",".join(argument_types)})'
-                callsites.append((target_name, expr.byte_range[1], expr.start_point.row + 1))
+                callsites.append((target_name, expr.byte_range[1],
+                                  expr.start_point.row + 1))
 
         return callsites
 
@@ -526,8 +538,9 @@ class JavaClassInterface():
     def post_process_full_qualified_name(self):
         """Post process the full qualified name for types."""
         for key in self.class_fields:
-            self.class_fields[key] = self.parent_source.get_full_qualified_name(
-                self.class_fields[key])
+            self.class_fields[
+                key] = self.parent_source.get_full_qualified_name(
+                    self.class_fields[key])
 
         for method in self.methods:
             method.post_process_full_qualified_name()
@@ -566,11 +579,13 @@ class JavaClassInterface():
                     # Process class fields
                     elif body.type == 'field_declaration':
                         field_name = None
-                        field_type = body.child_by_field_name('type').text.decode()
+                        field_type = body.child_by_field_name(
+                            'type').text.decode()
                         for fields in body.children:
                             # Process field_name
                             if fields.type == 'variable_declarator':
-                                field_name = fields.child_by_field_name('name').text.decode()
+                                field_name = fields.child_by_field_name(
+                                    'name').text.decode()
 
                         if field_name and field_type:
                             self.class_fields[field_name] = field_type
@@ -628,7 +643,9 @@ class Project():
         for source_code in self.source_code_files:
             self.all_classes.extend(source_code.classes)
 
-    def dump_module_logic(self, report_name: str, harness_name: Optional[str] = None):
+    def dump_module_logic(self,
+                          report_name: str,
+                          harness_name: Optional[str] = None):
         """Dumps the data for the module in full."""
         logger.info('Dumping project-wide logic.')
         report = {'report': 'name'}
@@ -762,7 +779,8 @@ def load_treesitter_trees(source_files: list[str],
     return results
 
 
-def analyse_source_code(source_content: str, entrypoint: str) -> SourceCodeFile:
+def analyse_source_code(source_content: str,
+                        entrypoint: str) -> SourceCodeFile:
     """Returns a source abstraction based on a single source string."""
     source_code = SourceCodeFile(source_file='in-memory string',
                                  source_content=source_content.encode())
