@@ -155,7 +155,8 @@ class SourceCodeFile():
         methods = self.get_all_methods()
         return methods.get(target_name, None)
 
-    def get_entry_method_name(self, is_full_name: bool = False) -> Optional[str]:
+    def get_entry_method_name(self,
+                              is_full_name: bool = False) -> Optional[str]:
         """Returns the entry method name of the harness if found,"""
         for cls in self.classes:
             entry = cls.get_entry_method_name()
@@ -224,7 +225,10 @@ class SourceCodeFile():
 class JavaMethod():
     """Wrapper for a General Declaration for method"""
 
-    def __init__(self, root: Node, class_interface: 'JavaClassInterface', is_constructor: bool = False):
+    def __init__(self,
+                 root: Node,
+                 class_interface: 'JavaClassInterface',
+                 is_constructor: bool = False):
         self.root = root
         self.class_interface = class_interface
         self.tree_sitter_lang = self.class_interface.tree_sitter_lang
@@ -439,8 +443,8 @@ class JavaMethod():
             self.var_map[variable_name] = variable_type
 
     def _process_invoke_object(
-            self, stmt: Node,
-            classes: dict[str, 'JavaClassInterface']) -> tuple[str, list[tuple[str, int, int]]]:
+        self, stmt: Node, classes: dict[str, 'JavaClassInterface']
+    ) -> tuple[str, list[tuple[str, int, int]]]:
         """Internal helper for processing the object from a invocation."""
         callsites = []
         return_value = ''
@@ -470,7 +474,8 @@ class JavaMethod():
                 field = stmt.child_by_field_name('field')
 
                 if object and field:
-                    object_class, callsites = self._process_invoke_object(object, classes)
+                    object_class, callsites = self._process_invoke_object(
+                        object, classes)
                     cls = classes.get(object_class)
                     if cls:
                         return_value = cls.class_fields.get(
@@ -478,12 +483,18 @@ class JavaMethod():
 
             # Chained call
             elif stmt.type == 'method_invocation':
-                return_value, invoke_callsites = self._process_invoke(stmt, classes)
+                return_value, invoke_callsites = self._process_invoke(
+                    stmt, classes)
                 callsites.extend(invoke_callsites)
 
             # Chained call from constructor
-            elif stmt.type == 'object_creation_expression' or stmt.type == 'explicit_constructor_invocation':
-                return_value, invoke_callsites = self._process_invoke(stmt, classes, True)
+            elif stmt.type == 'object_creation_expression':
+                return_value, invoke_callsites = self._process_invoke(
+                    stmt, classes, True)
+                callsites.extend(invoke_callsites)
+            elif stmt.type == 'explicit_constructor_invocation':
+                return_value, invoke_callsites = self._process_invoke(
+                    stmt, classes, True)
                 callsites.extend(invoke_callsites)
 
             # Casting expression in Parenthesized statement
@@ -491,25 +502,28 @@ class JavaMethod():
                 for cast in stmt.children:
                     if cast.type == 'cast_expression':
                         value = cast.child_by_field_name('value')
-                        cast_type = cast.child_by_field_name('type').text.decode()
+                        cast_type = cast.child_by_field_name(
+                            'type').text.decode()
                         return_value = self.parent_source.get_full_qualified_name(
                             cast_type)
                         if value and value.type == 'method_invocation':
-                            _, invoke_callsites = self._process_invoke(value, classes)
+                            _, invoke_callsites = self._process_invoke(
+                                value, classes)
                             callsites.extend(invoke_callsites)
                         if value and value.type == 'object_creation_expression':
-                            _, invoke_callsites = self._process_invoke(value, classes, True)
+                            _, invoke_callsites = self._process_invoke(
+                                value, classes, True)
                             callsites.extend(invoke_callsites)
                         if value and value.type == 'explicit_constructor_invocation':
-                            _, invoke_callsites = self._process_invoke(value, classes, True)
+                            _, invoke_callsites = self._process_invoke(
+                                value, classes, True)
                             callsites.extend(invoke_callsites)
-
 
         return return_value, callsites
 
     def _process_invoke_args(
-            self, stmt: Node,
-            classes: dict[str, 'JavaClassInterface']) -> tuple[list[str], list[tuple[str, int, int]]]:
+        self, stmt: Node, classes: dict[str, 'JavaClassInterface']
+    ) -> tuple[list[str], list[tuple[str, int, int]]]:
         """Internal helper for processing the object from a invocation."""
         callsites = []
         return_values = []
@@ -527,13 +541,20 @@ class JavaMethod():
 
             # Method invocation
             elif argument.type == 'method_invocation':
-                return_value, invoke_callsites = self._process_invoke(argument, classes)
+                return_value, invoke_callsites = self._process_invoke(
+                    argument, classes)
                 callsites.extend(invoke_callsites)
                 return_values.append(return_value)
 
             # Constructor invocation
-            elif argument.type == 'object_creation_expression' or argument.type == 'explicit_constructor_invocation':
-                return_value, invoke_callsites = self._process_invoke(argument, classes, True)
+            elif argument.type == 'object_creation_expression':
+                return_value, invoke_callsites = self._process_invoke(
+                    argument, classes, True)
+                callsites.extend(invoke_callsites)
+                return_values.append(return_value)
+            elif argument.type == 'explicit_constructor_invocation':
+                return_value, invoke_callsites = self._process_invoke(
+                    argument, classes, True)
                 callsites.extend(invoke_callsites)
                 return_values.append(return_value)
 
@@ -543,7 +564,8 @@ class JavaMethod():
                 field = argument.child_by_field_name('field')
 
                 if object and field:
-                    object_class, callsites = self._process_invoke_object(object, classes)
+                    object_class, callsites = self._process_invoke_object(
+                        object, classes)
                     cls = classes.get(object_class)
                     if cls:
                         return_value = cls.class_fields.get(
@@ -554,15 +576,18 @@ class JavaMethod():
             elif argument.type == 'cast_expression':
                 value = argument.child_by_field_name('value')
                 cast_type = argument.child_by_field_name('type').text.decode()
-                return_value = self.parent_source.get_full_qualified_name(cast_type)
+                return_value = self.parent_source.get_full_qualified_name(
+                    cast_type)
                 if value and value.type == 'method_invocation':
                     _, invoke_callsites = self._process_invoke(value, classes)
                     callsites.extend(invoke_callsites)
                 if value and value.type == 'object_creation_expression':
-                    _, invoke_callsites = self._process_invoke(value, classes, True)
+                    _, invoke_callsites = self._process_invoke(
+                        value, classes, True)
                     callsites.extend(invoke_callsites)
                 if value and value.type == 'explicit_constructor_invocation':
-                    _, invoke_callsites = self._process_invoke(value, classes, True)
+                    _, invoke_callsites = self._process_invoke(
+                        value, classes, True)
                     callsites.extend(invoke_callsites)
 
                 return_values.append(return_value)
@@ -570,9 +595,11 @@ class JavaMethod():
         return return_values, callsites
 
     def _process_invoke(
-            self, expr: Node,
-            classes: dict[str, 'JavaClassInterface'],
-            is_constructor_call: bool = False) -> tuple[list[str], list[tuple[str, int, int]]]:
+        self,
+        expr: Node,
+        classes: dict[str, 'JavaClassInterface'],
+        is_constructor_call: bool = False
+    ) -> tuple[list[str], list[tuple[str, int, int]]]:
         """Internal helper for processing the method invocation statement."""
         callsites = []
 
@@ -600,10 +627,12 @@ class JavaMethod():
                 elif cls_type.type == 'super':
                     object_type = self.class_interface.super_class
 
-                elif cls_type.type == 'type_identifier' or cls_type.type.endswith('_type'):
+                elif cls_type.type == 'type_identifier' or cls_type.type.endswith(
+                        '_type'):
                     object_type = cls_type.text.decode().split('<')[0]
 
-            object_type = self.parent_source.get_full_qualified_name(object_type)
+            object_type = self.parent_source.get_full_qualified_name(
+                object_type)
             target_name = f'[{object_type}].<init>({",".join(argument_types)})'
             callsites.append(
                 (target_name, expr.byte_range[1], expr.start_point.row + 1))
@@ -627,21 +656,27 @@ class JavaMethod():
 
         # Determine return value from method invocation
         if object_type == 'com.code_intelligence.jazzer.api.FuzzedDataProvider':
-            return_type = FUZZING_METHOD_RETURN_TYPE_MAP.get(name.text.decode(), '')
+            return_type = FUZZING_METHOD_RETURN_TYPE_MAP.get(
+                name.text.decode(), '')
         else:
             return_type = self.class_interface.name
             if object_type in classes and target_name:
-                _, method = classes[object_type].has_method_definition(target_name, False)
+                _, method = classes[object_type].has_method_definition(
+                    target_name, False)
                 if method:
                     return_type = method.return_type
 
-                _, method = classes[object_type].has_method_definition(target_name, True)
+                _, method = classes[object_type].has_method_definition(
+                    target_name, True)
                 if method:
                     return_type = method.return_type
 
         return return_type, callsites
 
-    def _process_callsites(self, stmt: Node, classes: dict[str, 'JavaClassInterface']) -> list[tuple[str, int, int]]:
+    def _process_callsites(
+        self, stmt: Node,
+        classes: dict[str,
+                      'JavaClassInterface']) -> list[tuple[str, int, int]]:
         """Process and store the callsites of the method."""
         callsites = []
 
@@ -726,7 +761,8 @@ class JavaClassInterface():
             method.post_process_full_qualified_name()
 
         # Refine superclass
-        self.super_class = self.parent_source.get_full_qualified_name(self.super_class)
+        self.super_class = self.parent_source.get_full_qualified_name(
+            self.super_class)
 
         # Refine all super interfaces
         self.super_interfaces = [
@@ -834,7 +870,10 @@ class JavaClassInterface():
 
         return False
 
-    def has_method_definition(self, target_name: str, partial_match: bool = False) -> tuple[bool, Optional[JavaMethod]]:
+    def has_method_definition(
+            self,
+            target_name: str,
+            partial_match: bool = False) -> tuple[bool, Optional[JavaMethod]]:
         """Returns if the source file holds a given function definition.
         Also return the matching method object if found."""
         for method in self.get_all_methods():
@@ -925,11 +964,14 @@ class Project():
                 # Handles Java method properties
                 java_method_info = {}
                 java_method_info['exceptions'] = method.exceptions
-                java_method_info['interfaces'] = method.class_interface.super_interfaces[:]
-                java_method_info['classFields'] = list(method.class_interface.class_fields.values())
+                java_method_info[
+                    'interfaces'] = method.class_interface.super_interfaces[:]
+                java_method_info['classFields'] = list(
+                    method.class_interface.class_fields.values())
                 java_method_info['argumentGenericTypes'] = method.arg_types[:]
                 java_method_info['returnValueGenericType'] = method.return_type
-                java_method_info['superClass'] = method.class_interface.super_class
+                java_method_info[
+                    'superClass'] = method.class_interface.super_class
                 java_method_info['needClose'] = False
                 java_method_info['static'] = method.static
                 java_method_info['public'] = method.public
