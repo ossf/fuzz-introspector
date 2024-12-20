@@ -161,13 +161,11 @@ def process_jvm_project(target_dir, entrypoint, out):
         project.dump_module_logic(target, harness_name)
 
         # Calltree
-
-
-#        logger.info(f'Extracting calltree for {harness_name}')
-#        calltree = project.extract_calltree(harness.source_file, harness)
-#        target = os.path.join(out, f'fuzzerLogFile-{harness_name}.data')
-#        with open(target, 'w', encoding='utf-8') as f:
-#            f.write(f'Call tree\n{calltree}')
+        logger.info(f'Extracting calltree for {harness_name}')
+        calltree = project.extract_calltree(harness.source_file, harness)
+        target = os.path.join(out, f'fuzzerLogFile-{harness_name}.data')
+        with open(target, 'w', encoding='utf-8') as f:
+            f.write(f'Call tree\n{calltree}')
 
 
 def analyse_folder(language, directory, entrypoint, out=''):
