@@ -34,108 +34,33 @@ index 8f6486896..b4f50ac36 100644
  RUN rm /root/checkout_build_install_llvm.sh
  
 diff --git a/infra/base-images/base-builder/compile b/infra/base-images/base-builder/compile
-index d0f45bb73..388563180 100755
+index 1c10d9e23..6a97bc287 100755
 --- a/infra/base-images/base-builder/compile
 +++ b/infra/base-images/base-builder/compile
-@@ -20,6 +20,7 @@ echo "---------------------------------------------------------------"
- sysctl -w vm.mmap_rnd_bits=28
- 
- OSS_FUZZ_ON_DEMAND="${OSS_FUZZ_ON_DEMAND:-0}"
-+RUST_SANITIZER=$SANITIZER
- 
- if [ "$FUZZING_LANGUAGE" = "jvm" ]; then
-   if [ "$FUZZING_ENGINE" != "libfuzzer" ] && [ "$FUZZING_ENGINE" != "wycheproof" ]; then
-@@ -66,6 +67,13 @@ if [ "$FUZZING_LANGUAGE" = "python" ]; then
-   fi
- fi
- 
-+if [ "$FUZZING_LANGUAGE" = "rust" ]; then
-+  if [ "$SANITIZER" = "introspector" ]; then
-+    # introspector sanitizer flag will cause cargo build failed, remove it temporary and store it in separate variable
-+    export SANITIZER=address
-+  fi
-+fi
-+
- if [ -z "${SANITIZER_FLAGS-}" ]; then
-   FLAGS_VAR="SANITIZER_FLAGS_${SANITIZER}"
-   export SANITIZER_FLAGS=${!FLAGS_VAR-}
-@@ -111,7 +119,9 @@ fi
- # use RUSTFLAGS.
- # FIXME: Support code coverage once support is in.
- # See https://github.com/rust-lang/rust/issues/34701.
--if [ "$SANITIZER" != "undefined" ] && [ "$SANITIZER" != "coverage" ] && [ "$SANITIZER" != "none" ] && [ "$ARCHITECTURE" != 'i386' ]; then
-+if [ "$RUST_SANITIZER" == "introspector" ]; then
-+  export RUSTFLAGS="-Cdebuginfo=2 -Cforce-frame-pointers"
-+elif [ "$SANITIZER" != "undefined" ] && [ "$SANITIZER" != "coverage" ] && [ "$SANITIZER" != "none" ] && [ "$ARCHITECTURE" != 'i386' ]; then
-   export RUSTFLAGS="--cfg fuzzing -Zsanitizer=${SANITIZER} -Cdebuginfo=1 -Cforce-frame-pointers"
- else
-   export RUSTFLAGS="--cfg fuzzing -Cdebuginfo=1 -Cforce-frame-pointers"
-@@ -188,7 +198,7 @@ EOF
-   export CXXFLAGS="$CXXFLAGS -fno-sanitize=leak"
- fi
- 
--if [ "$SANITIZER" = "introspector" ]; then
-+if [ "$SANITIZER" = "introspector" ] || [ "$RUST_SANITIZER" = "introspector" ]; then
-   export AR=llvm-ar
-   export NM=llvm-nm
-   export RANLIB=llvm-ranlib
-@@ -210,10 +220,26 @@ if [ "$SANITIZER" = "introspector" ]; then
- 
-   apt-get install -y libjpeg-dev zlib1g-dev libyaml-dev
-   python3 -m pip install --upgrade pip setuptools
--  python3 -m pip install cxxfilt pyyaml beautifulsoup4 lxml soupsieve
-+  python3 -m pip install cxxfilt pyyaml beautifulsoup4 lxml soupsieve rust-demangler
-   python3 -m pip install --prefer-binary matplotlib
- 
--  python3 /fuzz-introspector/src/main.py light
-+  # Install Fuzz-Introspector
-+  pushd /fuzz-introspector/src
-+  python3 -m pip install .
-+  popd
-+
-+  if [ "$FUZZING_LANGUAGE" = "python" ]; then
-+    python3 /fuzz-introspector/src/main.py light --language=python
-+  elif [ "$FUZZING_LANGUAGE" = "jvm" ]; then
-+    python3 /fuzz-introspector/src/main.py light --language=jvm
-+  elif [ "$FUZZING_LANGUAGE" = "rust" ]; then
-+    python3 /fuzz-introspector/src/main.py light --language=rust
+@@ -238,6 +238,8 @@ if [ "$SANITIZER" = "introspector" ] || [ "$RUST_SANITIZER" = "introspector" ];
+     python3 /fuzz-introspector/src/main.py light --language=jvm
+   elif [ "$FUZZING_LANGUAGE" = "rust" ]; then
+     python3 /fuzz-introspector/src/main.py light --language=rust
 +  elif [ "$FUZZING_LANGUAGE" = "go" ]; then
 +    python3 /fuzz-introspector/src/main.py light --language=go
-+  else
-+    python3 /fuzz-introspector/src/main.py light
-+  fi
-+
-   rsync -avu --delete "$SRC/inspector/" "$OUT/inspector"
- fi
- 
-@@ -280,7 +299,7 @@ else
+   else
+     python3 /fuzz-introspector/src/main.py light
    fi
- fi
+@@ -318,7 +320,9 @@ if [ "$SANITIZER" = "introspector" ] || [ "$RUST_SANITIZER" = "introspector" ];
  
--if [ "$SANITIZER" = "introspector" ]; then
-+if [ "$SANITIZER" = "introspector" ] || [ "$RUST_SANITIZER" = "introspector" ]; then
-   unset CXXFLAGS
-   unset CFLAGS
-   export G_ANALYTICS_TAG="G-8WTFM1Y62J"
-@@ -295,6 +316,31 @@ if [ "$SANITIZER" = "introspector" ]; then
+     set -x
+     # Output will be put in /out/
+-    python3 /fuzz-introspector/frontends/java/oss-fuzz-main.py
++    # Using new approach
++    python3 -m fuzz_introspector.frontends.oss_fuzz --language jvm --target-dir $SRC
++    # python3 /fuzz-introspector/frontends/java/oss-fuzz-main.py
+     # Move files temporarily to fit workflow of other languages.
      mkdir -p $SRC/my-fi-data
      find $OUT/ -name *.data -exec mv {} $SRC/my-fi-data/ \;
-     find $OUT/ -name *.data.yaml -exec mv {} $SRC/my-fi-data/ \;
-+  elif [ "$FUZZING_LANGUAGE" = "rust" ]; then
-+    echo "GOING rust route"
-+
-+    # Run the rust frontend
-+    pushd /fuzz-introspector/frontends/rust/rust_function_analyser
-+    cargo run -- $SRC
-+
-+    # Move files temporarily to fix workflow of other languages.
-+    mkdir -p $SRC/my-fi-data
-+    find ./ -name "*.data" -exec mv {} $SRC/my-fi-data/ \;
-+    find ./ -name "*.data.yaml" -exec mv {} $SRC/my-fi-data/ \;
-+    popd
-+
-+    # Restore the sanitizer flag for rust
-+    export SANITIZER="introspector"
+@@ -338,6 +342,16 @@ if [ "$SANITIZER" = "introspector" ] || [ "$RUST_SANITIZER" = "introspector" ];
+ 
+     # Restore the sanitizer flag for rust
+     export SANITIZER="introspector"
 +  elif [ "$FUZZING_LANGUAGE" = "go" ]; then
 +    echo "GOING go route"
 +
@@ -149,16 +74,10 @@ index d0f45bb73..388563180 100755
    fi
  
    mkdir -p $SRC/inspector
-@@ -335,6 +388,19 @@ if [ "$SANITIZER" = "introspector" ]; then
-     REPORT_ARGS="$REPORT_ARGS --language=jvm"
+@@ -384,6 +398,13 @@ if [ "$SANITIZER" = "introspector" ] || [ "$RUST_SANITIZER" = "introspector" ];
+     REPORT_ARGS="$REPORT_ARGS --language=rust"
      python3 /fuzz-introspector/src/main.py report $REPORT_ARGS
      rsync -avu --delete "$SRC/inspector/" "$OUT/inspector"
-+  elif [ "$FUZZING_LANGUAGE" = "rust" ]; then
-+    echo "GOING rust route"
-+    REPORT_ARGS="$REPORT_ARGS --target_dir=$SRC/inspector"
-+    REPORT_ARGS="$REPORT_ARGS --language=rust"
-+    python3 /fuzz-introspector/src/main.py report $REPORT_ARGS
-+    rsync -avu --delete "$SRC/inspector/" "$OUT/inspector"
 +  elif [ "$FUZZING_LANGUAGE" = "go" ]; then
 +    echo "GOING go route"
 +    find $OUT/ -name "fuzz.cov" -exec cp {} $SRC/inspector/ \;

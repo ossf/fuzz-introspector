@@ -50,6 +50,7 @@ dependencies = [
 "tree-sitter-c",
 "tree-sitter-cpp",
 "tree-sitter-go",
+"tree-sitter-java"
 ]
 
 [project.urls]
