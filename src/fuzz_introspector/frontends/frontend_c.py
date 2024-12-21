@@ -595,7 +595,13 @@ def capture_source_files_in_tree(directory_tree, language):
     """Captures source code files in a given directory."""
     language_extensions = {'c': ['.c', '.h']}
     language_files = []
+    paths_to_avoid = [
+        '/src/aflplusplus', '/src/honggfuzz', '/src/libfuzzer', '/src/fuzztest'
+    ]
+
     for dirpath, _dirnames, filenames in os.walk(directory_tree):
+        if any([x for x in paths_to_avoid if dirpath.startswith(x)]):
+            continue
         for filename in filenames:
             for extensions in language_extensions[language]:
                 if pathlib.Path(filename).suffix in extensions:
@@ -610,6 +616,8 @@ def load_treesitter_trees(source_files, log_harnesses=True):
     for language in source_files:
         if language == 'c':
             for code_file in source_files[language]:
+                if not os.path.isfile(code_file):
+                    continue
                 source_cls = SourceCodeFile(code_file, language)
                 if log_harnesses:
                     if source_cls.has_libfuzzer_harness():
