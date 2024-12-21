@@ -38,11 +38,20 @@ class Project():
     def __init__(self, source_code_files):
         self.source_code_files = source_code_files
 
-    def dump_module_logic(self, report_name):
+    def dump_module_logic(self,
+                          report_name,
+                          entry_function: str = '',
+                          harness_source: str =''):
         """Dumps the data for the module in full."""
         logger.info('Dumping project-wide logic.')
         report = {'report': 'name'}
         report['sources'] = []
+
+        # Log entry function if provided
+        if entry_function:
+            report['Fuzzing method'] = entry_function
+
+        report['Fuzzer filename'] = harness_source
 
         # Find all functions
         function_list = []
@@ -64,6 +73,11 @@ class Project():
             })
 
             for func_def in source_code.func_defs:
+
+                if harness_source:
+                    if func_def.name(
+                    ) == 'LLVMFuzzerTestOneInput' and source_code.source_file != harness_source:
+                        continue
                 func_dict = {}
                 func_dict['functionName'] = func_def.name()
                 func_dict['functionSourceFile'] = source_code.source_file

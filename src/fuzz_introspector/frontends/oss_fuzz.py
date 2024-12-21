@@ -64,7 +64,6 @@ def process_c_project(target_dir, entrypoint, out):
 
     logger.info('Creating base project.')
     project = frontend_c.Project(source_codes)
-    project.dump_module_logic(os.path.join(out, 'report.yaml'))
 
     if entrypoint != 'LLVMFuzzerTestOneInput':
         calltree_source = project.get_source_code_with_target(entrypoint)
@@ -75,9 +74,14 @@ def process_c_project(target_dir, entrypoint, out):
     else:
         for idx, harness in enumerate(
                 project.get_source_codes_with_harnesses()):
+
+            target = os.path.join(out, f'fuzzerLogFile-{idx}.data.yaml')
+            project.dump_module_logic(target, 'LLVMFuzzerTestOneInput',
+                                      harness.source_file)
+
             logger.info('Extracting calltree for %s', harness.source_file)
             calltree = project.extract_calltree(harness, entrypoint)
-            with open(os.path.join(out, 'fuzzer-calltree-%d' % (idx)),
+            with open(os.path.join(out, 'fuzzerLogFile-%d.data' % (idx)),
                       'w',
                       encoding='utf-8') as f:
                 f.write("Call tree\n")
