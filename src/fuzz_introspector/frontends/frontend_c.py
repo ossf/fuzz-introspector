@@ -41,7 +41,7 @@ class Project():
     def dump_module_logic(self,
                           report_name,
                           entry_function: str = '',
-                          harness_source: str =''):
+                          harness_source: str = ''):
         """Dumps the data for the module in full."""
         logger.info('Dumping project-wide logic.')
         report = {'report': 'name'}
