@@ -371,6 +371,8 @@ def load_treesitter_trees(source_files, log_harnesses=True):
     for language in source_files:
         if language == 'cpp':
             for code_file in source_files[language]:
+                if not os.path.isfile(code_file):
+                    continue
                 source_cls = SourceCodeFile(code_file, language)
                 if log_harnesses:
                     if source_cls.has_libfuzzer_harness():
