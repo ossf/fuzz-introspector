@@ -175,7 +175,7 @@ def process_jvm_project(target_dir, entrypoint, out):
 def analyse_folder(language, directory, entrypoint, out=''):
     if language == 'c':
         process_c_project(directory, entrypoint, out)
-    if language == 'cpp':
+    if language.lower() in ['cpp', 'c++']:
         process_cpp_project(directory, entrypoint, out)
     if language == 'go':
         process_go_project(directory, out)
