@@ -67,7 +67,7 @@ def process_c_project(target_dir, entrypoint, out, module_only=False):
 
     if module_only:
         idx = 1
-        target = os.path.join(out, f'report.yaml')
+        target = os.path.join(out, 'report.yaml')
         project.dump_module_logic(target, '', target_dir)
 
     if entrypoint != 'LLVMFuzzerTestOneInput':
