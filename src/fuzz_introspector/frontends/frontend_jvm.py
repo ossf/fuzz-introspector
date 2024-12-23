@@ -959,8 +959,10 @@ class Project():
             method_dict['returnType'] = method.return_type
             method_dict['BranchProfiles'] = []
             method_dict['Callsites'] = method.detailed_callsites
-            method_dict['functionUses'] = self.calculate_method_uses(method.name, project_methods)
-            method_dict['functionDepth'] = self.calculate_method_depth(method, project_methods)
+            method_dict['functionUses'] = self.calculate_method_uses(
+                method.name, project_methods)
+            method_dict['functionDepth'] = self.calculate_method_depth(
+                method, project_methods)
             method_dict['constantsTouched'] = []
             method_dict['BBCount'] = 0
             method_dict['signature'] = method.name
@@ -979,8 +981,7 @@ class Project():
                 method.class_interface.class_fields.values())
             java_method_info['argumentGenericTypes'] = method.arg_types[:]
             java_method_info['returnValueGenericType'] = method.return_type
-            java_method_info[
-                'superClass'] = method.class_interface.super_class
+            java_method_info['superClass'] = method.class_interface.super_class
             java_method_info['needClose'] = False
             java_method_info['static'] = method.static
             java_method_info['public'] = method.public
@@ -1019,7 +1020,8 @@ class Project():
 
         return None
 
-    def calculate_method_uses(self, target_name: str, all_methods: list[JavaMethod]) -> int:
+    def calculate_method_uses(self, target_name: str,
+                              all_methods: list[JavaMethod]) -> int:
         """Calculate how many method called the target method."""
         method_use_count = 0
         for method in all_methods:
@@ -1033,9 +1035,8 @@ class Project():
 
         return method_use_count
 
-    def calculate_method_depth(
-        self, target_method: JavaMethod,
-        all_methods: list[JavaMethod]) -> int:
+    def calculate_method_depth(self, target_method: JavaMethod,
+                               all_methods: list[JavaMethod]) -> int:
         """Calculate method depth of the target method."""
 
         def _recursive_method_depth(method: JavaMethod) -> int:
