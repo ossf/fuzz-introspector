@@ -1033,7 +1033,9 @@ class Project():
 
         return method_use_count
 
-    def calculate_method_depth(self, target_method: JavaMethod, all_methods: list[JavaMethod]) -> int:
+    def calculate_method_depth(
+        self, target_method: JavaMethod,
+        all_methods: list[JavaMethod]) -> int:
         """Calculate method depth of the target method."""
 
         def _recursive_method_depth(method: JavaMethod) -> int:
