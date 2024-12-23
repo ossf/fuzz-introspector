@@ -52,7 +52,7 @@ def parse_args():
     return parser.parse_args()
 
 
-def process_c_project(target_dir, entrypoint, out):
+def process_c_project(target_dir, entrypoint, out, module_only=False):
     """Process a project in C language"""
     source_files = {}
     source_files['c'] = frontend_c.capture_source_files_in_tree(
@@ -65,12 +65,19 @@ def process_c_project(target_dir, entrypoint, out):
     logger.info('Creating base project.')
     project = frontend_c.Project(source_codes)
 
+    if module_only:
+        idx = 1
+        target = os.path.join(out, 'report.yaml')
+        project.dump_module_logic(target, '', target_dir)
+
     if entrypoint != 'LLVMFuzzerTestOneInput':
         calltree_source = project.get_source_code_with_target(entrypoint)
         if calltree_source:
             calltree = project.extract_calltree(calltree_source, entrypoint)
             with open(os.path.join(out, 'targetCalltree.txt'), 'w') as f:
+                f.write("Call tree\n")
                 f.write(calltree)
+                f.write("====================================")
     else:
         for idx, harness in enumerate(
                 project.get_source_codes_with_harnesses()):
@@ -172,9 +179,9 @@ def process_jvm_project(target_dir, entrypoint, out):
             f.write(f'Call tree\n{calltree}')
 
 
-def analyse_folder(language, directory, entrypoint, out=''):
+def analyse_folder(language, directory, entrypoint, out='', module_only=False):
     if language == 'c':
-        process_c_project(directory, entrypoint, out)
+        process_c_project(directory, entrypoint, out, module_only)
     if language.lower() in ['cpp', 'c++']:
         process_cpp_project(directory, entrypoint, out)
     if language == 'go':
