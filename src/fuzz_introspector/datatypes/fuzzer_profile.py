@@ -100,7 +100,12 @@ class FuzzerProfile:
         elif self.target_lang == "jvm":
             cname = self.fuzzer_source_file
             mname = self.entrypoint_method
-            return f"[{cname}].{mname}"
+            if '].' in mname:
+                # For new tree-sitter frontend
+                return mname
+            else:
+                # Backward compatible for old Soot frontend
+                return f"[{cname}].{mname}"
         elif self.target_lang == "rust":
             # For rust, there is no entry function
             # Instead, it is wrapped by the fuzz_target

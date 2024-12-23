@@ -755,7 +755,6 @@ def load_go_coverage(target_dir: str,
                         cp.covmap[name].append(
                             (line_no, coverage.get(line_no, 0)))
 
-    print(cp.covmap)
     return cp
 
 
