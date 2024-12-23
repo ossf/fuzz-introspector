@@ -905,86 +905,95 @@ class Project():
         report = {'report': 'name'}
         report['sources'] = []
 
-        # Find all methods
-        method_list = []
         all_classes = {}
+        project_methods = []
+
+        # Post process source code files with full qualified names
+        # Retrieve full project methods, classes and information
         for source_code in self.source_code_files:
-            # Refine names with full qualified names
+            # Post process source code imports
             source_code.post_process_imports(self.all_classes)
+
+            # Retrieve list of class and post process them
             for cls in source_code.classes:
                 cls.post_process_full_qualified_name()
                 all_classes[cls.name] = cls
 
             # Log entry method if provided
             if harness_name and source_code.has_class(harness_name):
-                entry_method = source_code.get_entry_method_name()
+                entry_method = source_code.get_entry_method_name(True)
                 if entry_method:
                     report['Fuzzing method'] = entry_method
 
+            # Retrieve full proejct methods and information
             methods = source_code.get_all_methods()
             report['sources'].append({
                 'source_file': source_code.source_file,
                 'function_names': list(methods.keys()),
             })
+            project_methods.extend(methods.values())
 
-            for method in methods.values():
-                # Extract callsites of this method
-                method.extract_callsites(all_classes)
+        # Extract callsites of methods
+        for method in project_methods:
+            method.extract_callsites(all_classes)
 
-                method_dict = {}
-                method_dict['functionName'] = method.name
-                method_dict['functionSourceFile'] = method.class_interface.name
-                method_dict['functionLinenumber'] = method.start_line
-                method_dict['functionLinenumberEnd'] = method.end_line
-                method_dict['linkageType'] = ''
-                method_dict['func_position'] = {
-                    'start': method.start_line,
-                    'end': method.end_line
-                }
-                method_dict['CyclomaticComplexity'] = method.complexity
-                method_dict['EdgeCount'] = method_dict['CyclomaticComplexity']
-                method_dict['ICount'] = method.icount
-                method_dict['argNames'] = method.arg_names
-                method_dict['argTypes'] = method.arg_types[:]
-                method_dict['argCount'] = len(method_dict['argTypes'])
-                method_dict['returnType'] = method.return_type
-                method_dict['BranchProfiles'] = []
-                method_dict['Callsites'] = method.detailed_callsites
-                method_dict['functionUses'] = 0
-                method_dict['functionDepth'] = 0
-                method_dict['constantsTouched'] = []
-                method_dict['BBCount'] = 0
-                method_dict['signature'] = method.name
-                callsites = method.base_callsites
-                reached = set()
-                for cs_dst, _ in callsites:
-                    reached.add(cs_dst)
-                method_dict['functionsReached'] = list(reached)
+        # Process all project methods
+        method_list = []
+        for method in project_methods:
+            method_dict = {}
+            method_dict['functionName'] = method.name
+            method_dict['functionSourceFile'] = method.class_interface.name
+            method_dict['functionLinenumber'] = method.start_line
+            method_dict['functionLinenumberEnd'] = method.end_line
+            method_dict['linkageType'] = ''
+            method_dict['func_position'] = {
+                'start': method.start_line,
+                'end': method.end_line
+            }
+            method_dict['CyclomaticComplexity'] = method.complexity
+            method_dict['EdgeCount'] = method_dict['CyclomaticComplexity']
+            method_dict['ICount'] = method.icount
+            method_dict['argNames'] = method.arg_names
+            method_dict['argTypes'] = method.arg_types[:]
+            method_dict['argCount'] = len(method_dict['argTypes'])
+            method_dict['returnType'] = method.return_type
+            method_dict['BranchProfiles'] = []
+            method_dict['Callsites'] = method.detailed_callsites
+            method_dict['functionUses'] = self.calculate_method_uses(method.name, project_methods)
+            method_dict['functionDepth'] = self.calculate_method_depth(method, project_methods)
+            method_dict['constantsTouched'] = []
+            method_dict['BBCount'] = 0
+            method_dict['signature'] = method.name
+            callsites = method.base_callsites
+            reached = set()
+            for cs_dst, _ in callsites:
+                reached.add(cs_dst)
+            method_dict['functionsReached'] = list(reached)
 
-                # Handles Java method properties
-                java_method_info = {}
-                java_method_info['exceptions'] = method.exceptions
-                java_method_info[
-                    'interfaces'] = method.class_interface.super_interfaces[:]
-                java_method_info['classFields'] = list(
-                    method.class_interface.class_fields.values())
-                java_method_info['argumentGenericTypes'] = method.arg_types[:]
-                java_method_info['returnValueGenericType'] = method.return_type
-                java_method_info[
-                    'superClass'] = method.class_interface.super_class
-                java_method_info['needClose'] = False
-                java_method_info['static'] = method.static
-                java_method_info['public'] = method.public
-                java_method_info[
-                    'classPublic'] = method.class_interface.class_public
-                java_method_info['concrete'] = method.concrete
-                java_method_info[
-                    'classConcrete'] = method.class_interface.class_concrete
-                java_method_info['javaLibraryMethod'] = False
-                java_method_info['classEnum'] = False
-                method_dict['JavaMethodInfo'] = java_method_info
+            # Handles Java method properties
+            java_method_info = {}
+            java_method_info['exceptions'] = method.exceptions
+            java_method_info[
+                'interfaces'] = method.class_interface.super_interfaces[:]
+            java_method_info['classFields'] = list(
+                method.class_interface.class_fields.values())
+            java_method_info['argumentGenericTypes'] = method.arg_types[:]
+            java_method_info['returnValueGenericType'] = method.return_type
+            java_method_info[
+                'superClass'] = method.class_interface.super_class
+            java_method_info['needClose'] = False
+            java_method_info['static'] = method.static
+            java_method_info['public'] = method.public
+            java_method_info[
+                'classPublic'] = method.class_interface.class_public
+            java_method_info['concrete'] = method.concrete
+            java_method_info[
+                'classConcrete'] = method.class_interface.class_concrete
+            java_method_info['javaLibraryMethod'] = False
+            java_method_info['classEnum'] = False
+            method_dict['JavaMethodInfo'] = java_method_info
 
-                method_list.append(method_dict)
+            method_list.append(method_dict)
 
         if method_list:
             report['All functions'] = {}
@@ -1009,6 +1018,47 @@ class Project():
                 return source_code
 
         return None
+
+    def calculate_method_uses(self, target_name: str, all_methods: list[JavaMethod]) -> int:
+        """Calculate how many method called the target method."""
+        method_use_count = 0
+        for method in all_methods:
+            found = False
+            for callsite in method.base_callsites:
+                if callsite[0] == target_name:
+                    found = True
+                    break
+            if found:
+                method_use_count += 1
+
+        return method_use_count
+
+    def calculate_method_depth(self, target_method: JavaMethod, all_methods: list[JavaMethod]) -> int:
+        """Calculate method depth of the target method."""
+
+        def _recursive_method_depth(method: JavaMethod) -> int:
+            callsites = method.base_callsites
+            if len(callsites) == 0:
+                return 0
+
+            depth = 0
+            visited.append(method.name)
+            for callsite in callsites:
+                target = method_dict.get(callsite[0])
+                if callsite[0] in visited:
+                    depth = max(depth, 1)
+                elif target:
+                    depth = max(depth, _recursive_method_depth(target) + 1)
+                else:
+                    visited.append(callsite[0])
+
+            return depth
+
+        visited = []
+        method_dict = {method.name: method for method in all_methods}
+        method_depth = _recursive_method_depth(target_method)
+
+        return method_depth
 
     def extract_calltree(self,
                          source_file: str,

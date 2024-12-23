@@ -142,7 +142,7 @@ def process_go_project(target_dir, out):
 def process_jvm_project(target_dir, entrypoint, out):
     """Process a project in JVM based language"""
     # Extract go source files
-    logger.info('Going Go route')
+    logger.info('Going JVM route')
     source_files = []
     source_files = frontend_jvm.capture_source_files_in_tree(target_dir)
 
