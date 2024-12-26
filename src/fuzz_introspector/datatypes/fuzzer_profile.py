@@ -209,8 +209,8 @@ class FuzzerProfile:
                     basefolder, "")
 
             new_dict = {}
-            for key in self.file_targets:
-                new_dict[key.replace(basefolder, "")] = self.file_targets[key]
+            for key, val in self.file_targets.items():
+                new_dict[key.replace(basefolder, "")] = val
             self.file_targets = new_dict
 
     def get_callsites(self):
@@ -277,18 +277,16 @@ class FuzzerProfile:
         new_all_class_functions: Dict[
             str, function_profile.FunctionProfile] = dict()
 
-        for func in self.all_class_functions:
+        for func, func_profile in self.all_class_functions.items():
             worklist = []
             max_depth = 0
-            for func_reached in self.all_class_functions[
-                    func].functions_reached:
+            for func_reached in func_profile.functions_reached:
                 worklist.append((func_reached, 1))
             visited = set()
 
             while len(worklist) > 0:
                 elem, depth = worklist.pop()
-                if depth > max_depth:
-                    max_depth = depth
+                max_depth = max(depth, max_depth)
 
                 if elem in visited:
                     continue
@@ -313,13 +311,13 @@ class FuzzerProfile:
                     pass
 
             # Save the work
-            new_all_class_functions[func] = self.all_class_functions[func]
+            new_all_class_functions[func] = func_profile
             new_all_class_functions[func].functions_reached = list(visited)
             new_all_class_functions[func].function_depth = max_depth
         self.all_class_functions = new_all_class_functions
 
     def _set_fd_cache(self):
-        for fd_k, fd in self.all_class_functions.items():
+        for _, fd in self.all_class_functions.items():
             self.dst_to_fd_cache[utils.demangle_jvm_func(
                 fd.function_source_file, fd.function_name)] = fd
             self.dst_to_fd_cache[utils.normalise_str(fd.function_name)] = fd
@@ -332,23 +330,23 @@ class FuzzerProfile:
         if semaphore is not None:
             semaphore.acquire()
 
-        logger.info("%s: propagating functions reached" % (self.identifier))
+        logger.info("%s: propagating functions reached", self.identifier)
         self._propagate_functions_reached()
-        logger.info("%s: setting reached funcs" % (self.identifier))
+        logger.info("%s: setting reached funcs", self.identifier)
         self._set_all_reached_functions()
-        logger.info("%s: setting unreached funcs" % (self.identifier))
+        logger.info("%s: setting unreached funcs", self.identifier)
         self._set_all_unreached_functions()
-        logger.info("%s: loading coverage" % (self.identifier))
+        logger.info("%s: loading coverage", self.identifier)
         self._load_coverage(target_folder)
-        logger.info("%s: setting file targets" % (self.identifier))
+        logger.info("%s: setting file targets", self.identifier)
         self._set_file_targets()
-        logger.info("%s: setting total basic blocks" % (self.identifier))
+        logger.info("%s: setting total basic blocks", self.identifier)
         self._set_total_basic_blocks()
-        logger.info("%s: setting cyclomatic complexity" % (self.identifier))
+        logger.info("%s: setting cyclomatic complexity", self.identifier)
         self._set_total_cyclomatic_complexity()
-        logger.info("%s: setting fd cache" % (self.identifier))
+        logger.info("%s: setting fd cache", self.identifier)
         self._set_fd_cache()
-        logger.info("%s: finished accummulating profile" % (self.identifier))
+        logger.info("%s: finished accummulating profile", self.identifier)
         if return_dict is not None:
             return_dict[uniq_id] = self
         if semaphore is not None:
@@ -368,8 +366,7 @@ class FuzzerProfile:
 
         uncovered_funcs = []
         for funcname in self.functions_reached_by_fuzzer:
-            total_func_lines, hit_lines, hit_percentage = self.get_cov_metrics(
-                funcname)
+            total_func_lines, hit_lines, _ = self.get_cov_metrics(funcname)
             if total_func_lines is None:
                 uncovered_funcs.append(funcname)
                 continue
@@ -401,20 +398,21 @@ class FuzzerProfile:
         else:
             new_file_name = file_name
 
-        for funcname in self.all_class_functions:
+        for funcname, func_profile in self.all_class_functions.items():
             # Check it's a relevant filename
-            func_file_name = self.all_class_functions[
-                funcname].function_source_file
+            func_file_name = func_profile.function_source_file
             if basefolder is not None and basefolder != "/":
                 new_func_file_name = func_file_name.replace(basefolder, "")
             else:
                 new_func_file_name = func_file_name
-            if func_file_name != file_name and new_func_file_name != new_file_name:
+            if (func_file_name != file_name
+                    and new_func_file_name != new_file_name):
                 continue
             # Return true if the function is hit
-            tf, hl, hp = self.get_cov_metrics(funcname)
+            _, _, hp = self.get_cov_metrics(funcname)
             if hp is not None and hp > 0.0:
-                if func_file_name in self.file_targets or new_file_name in self.file_targets:
+                if (func_file_name in self.file_targets
+                        or new_file_name in self.file_targets):
                     return True
         return False
 
@@ -510,7 +508,7 @@ class FuzzerProfile:
 
     def _load_coverage(self, target_folder: str) -> None:
         """Load coverage data for this profile"""
-        logger.info(f"Loading coverage of type {self.target_lang}")
+        logger.info("Loading coverage of type %s", self.target_lang)
         if self.target_lang == "c-cpp":
             if os.getenv('FI_KERNEL_COV', ''):
                 self.coverage = code_coverage.load_kernel_cov(
@@ -569,7 +567,6 @@ class FuzzerProfile:
                 total_basic_blocks += fd.bb_count
             except Exception as e:
                 logger.debug(e)
-                pass
         self.total_basic_blocks = total_basic_blocks
 
     def _set_total_cyclomatic_complexity(self) -> None:
@@ -583,7 +580,6 @@ class FuzzerProfile:
                 self.total_cyclomatic_complexity += fd.cyclomatic_complexity
             except Exception as e:
                 logger.debug(e)
-                pass
 
     def _set_function_list(self, frontend_yaml: Dict[Any, Any]) -> None:
         """Read all function field from yaml data dictionary into
@@ -591,12 +587,11 @@ class FuzzerProfile:
         """
         for elem in frontend_yaml['All functions']['Elements']:
             if self._is_func_name_missing_normalisation(elem['functionName']):
-                logger.info(
-                    f"May have non-normalised function: {elem['functionName']}"
-                )
+                logger.info("May have non-normalised function: %s",
+                            elem['functionName'])
 
             func_profile = function_profile.FunctionProfile(elem)
-            logger.debug(f"Adding {func_profile.function_name}")
+            logger.debug("Adding %s", func_profile.function_name)
 
             if self.target_lang == "jvm" and "<init>" in elem['functionName']:
                 # Store JVM constructor separately
