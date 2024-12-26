@@ -26,6 +26,8 @@ from fuzz_introspector import diff_report
 from fuzz_introspector import html_report
 from fuzz_introspector import utils
 
+from fuzz_introspector.frontends import oss_fuzz
+
 logger = logging.getLogger(name=__name__)
 
 
@@ -40,6 +42,19 @@ def correlate_binaries_to_logs(binaries_dir: str) -> int:
     with open("exe_to_fuzz_introspector_logs.yaml", "w+") as etf:
         etf.write(yaml.dump({'pairings': pairings}))
     return constants.APP_EXIT_SUCCESS
+
+
+def end_to_end(args) -> int:
+    """Runs both frontend and backend."""
+    oss_fuzz.analyse_folder(args.language, args.target_dir,
+                            'LLVMFuzzerTestOneInput')
+
+    if 'c' in args.language:
+        language = 'c-cpp'
+    else:
+        language = args.language
+    return run_analysis_on_dir(os.getcwd(), '', [], '', False, 'report-name',
+                               language)
 
 
 def run_analysis_on_dir(target_folder: str,

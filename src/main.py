@@ -40,6 +40,10 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
                               default="c-cpp",
                               help="Language of project")
 
+    full_parser = subparsers.add_parser('full', help='End to end run')
+    full_parser.add_argument('--target_dir')
+    full_parser.add_argument('--language')
+
     # Report generation command
     report_parser = subparsers.add_parser(
         "report",
@@ -155,6 +159,8 @@ def main() -> int:
         return_code = commands.diff_two_reports(args.report1, args.report2)
     elif args.command == 'light':
         return_code = commands.light_analysis(args)
+    elif args.command == 'full':
+        return_code = commands.end_to_end(args)
     else:
         return_code = constants.APP_EXIT_ERROR
     logger.info("Ending fuzz introspector post-processing")
