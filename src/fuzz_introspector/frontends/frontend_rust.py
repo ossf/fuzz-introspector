@@ -50,7 +50,7 @@ class SourceCodeFile():
                 self.source_content = f.read()
 
         # Definition initialisation
-        self.functions = []
+        self.functions: list['RustFunction'] = []
 
         # Initialization ruotines
         self.load_tree()
@@ -68,8 +68,6 @@ class SourceCodeFile():
     def _set_function_method_declaration(self):
         """Internal helper for retrieving all classes."""
         for node in self.root.children:
-#            if self.source_file == '/mnt/volume_lon1_01/test/fuzz-introspector/oss_fuzz_integration/oss-fuzz/build/out/httparse/src/httparse/fuzz/fuzz_targets/parse_request.rs':
-#                print(f'{node.type}:{node.text.decode()}')
 
             # Handle general functions
             if node.type == 'function_item':
@@ -138,15 +136,14 @@ class RustFunction():
         self.name = ''
         self.complexity = 0
         self.icount = 0
-        self.arg_names = []
-        self.arg_types = []
-        self.exceptions = []
+        self.arg_names: list[str] = []
+        self.arg_types: list[str] = []
         self.return_type = ''
         self.sig = ''
         self.function_uses = 0
         self.function_depth = 0
-        self.base_callsites = []
-        self.detailed_callsites = []
+        self.base_callsites: list[tuple[str, int]] = []
+        self.detailed_callsites: list[dict[str, str]] = []
         self.is_entry_method = False
 
         # Process method declaration
