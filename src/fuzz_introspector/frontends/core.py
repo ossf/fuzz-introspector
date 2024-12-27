@@ -38,6 +38,8 @@ def analyse_source_file(code: bytes, language: str):
         return frontend_go.analyse_source_code(code)
     elif language == 'jvm':
         return frontend_jvm.analyse_source_code(code)
+    elif language == 'rust':
+        return frontend_rust.analyse_source_code(code)
     else:
         logger.info('Language %s not supported', language)
     return None

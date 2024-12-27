@@ -22,6 +22,7 @@ from fuzz_introspector.frontends import frontend_c
 from fuzz_introspector.frontends import frontend_cpp
 from fuzz_introspector.frontends import frontend_go
 from fuzz_introspector.frontends import frontend_jvm
+from fuzz_introspector.frontends import frontend_rust
 
 logger = logging.getLogger(name=__name__)
 LOG_FMT = '%(asctime)s.%(msecs)03d %(levelname)s %(module)s - %(funcName)s: %(message)s'
@@ -148,7 +149,7 @@ def process_go_project(target_dir, out):
 
 def process_jvm_project(target_dir, entrypoint, out):
     """Process a project in JVM based language"""
-    # Extract go source files
+    # Extract java source files
     logger.info('Going JVM route')
     source_files = []
     source_files = frontend_jvm.capture_source_files_in_tree(target_dir)
@@ -179,6 +180,19 @@ def process_jvm_project(target_dir, entrypoint, out):
             f.write(f'Call tree\n{calltree}')
 
 
+def process_rust_project(target_dir, out):
+    """Process a project in Rust based language"""
+    # Extract rust source files
+    logger.info('Going Rust route')
+    source_files = []
+    source_files = frontend_rust.capture_source_files_in_tree(target_dir)
+
+    # Process tree sitter for go source files
+    logger.info('Found %d files to include in analysis', len(source_files))
+    logger.info('Loading tree-sitter trees')
+    source_codes = frontend_rust.load_treesitter_trees(source_files)
+
+
 def analyse_folder(language, directory, entrypoint, out='', module_only=False):
     if language == 'c':
         process_c_project(directory, entrypoint, out, module_only)
@@ -188,6 +202,8 @@ def analyse_folder(language, directory, entrypoint, out='', module_only=False):
         process_go_project(directory, out)
     if language == 'jvm':
         process_jvm_project(directory, entrypoint, out)
+    if language == 'rust':
+        process_rust_project(directory, out)
 
 
 def main():
