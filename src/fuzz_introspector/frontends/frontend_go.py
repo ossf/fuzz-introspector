@@ -188,7 +188,7 @@ class Project():
             report['Fuzzing method'] = entry_function
 
         # Find all functions
-        function_list = []
+        function_list: list[dict[str, Any]] = []
         for source_code in self.source_code_files:
             report['sources'].append({
                 'source_file':
@@ -199,7 +199,7 @@ class Project():
 
             functions_methods = source_code.functions + source_code.methods
             for func_def in functions_methods:
-                func_dict = {}
+                func_dict: dict[str, Any] = {}
                 func_dict['functionName'] = func_def.get_name()
                 func_dict['functionSourceFile'] = source_code.source_file
                 func_dict['functionLinenumber'] = func_def.start_line
