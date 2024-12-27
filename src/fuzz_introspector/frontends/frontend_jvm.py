@@ -233,7 +233,8 @@ class JavaMethod():
         self.root = root
         self.class_interface = class_interface
         self.tree_sitter_lang = self.class_interface.tree_sitter_lang
-        self.parent_source: Optional[SourceCodeFile] = self.class_interface.parent_source
+        self.parent_source: Optional[
+            SourceCodeFile] = self.class_interface.parent_source
         self.is_constructor = is_constructor
 
         # Store method line information
@@ -844,7 +845,8 @@ class JavaClassInterface():
         """Internal helper to recursively process inner classes"""
         for node in inner_class_nodes:
             self.inner_classes.append(
-                JavaClassInterface(node, self.tree_sitter_lang, self.parent_source, self))
+                JavaClassInterface(node, self.tree_sitter_lang,
+                                   self.parent_source, self))
 
     def get_all_methods(self) -> list[JavaMethod]:
         all_methods = self.methods
