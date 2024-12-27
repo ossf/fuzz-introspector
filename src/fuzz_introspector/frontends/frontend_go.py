@@ -36,10 +36,10 @@ class SourceCodeFile():
     def __init__(self,
                  source_file: str,
                  source_content: Optional[bytes] = None):
-        logger.info('Processing %s' % source_file)
+        logger.info('Processing %s', source_file)
 
         self.root = None
-        self.imports = []
+        self.imports: list[str] = []
         self.source_file = source_file
         self.tree_sitter_lang = Language(tree_sitter_go.language())
         self.parser = Parser(self.tree_sitter_lang)
@@ -51,8 +51,8 @@ class SourceCodeFile():
                 self.source_content = f.read()
 
         # List of function definitions in the source file.
-        self.functions = []
-        self.methods = []
+        self.functions: list['FunctionMethod'] = []
+        self.methods: list['FunctionMethod'] = []
 
         # Initialization ruotines
         self.load_tree()
@@ -251,8 +251,8 @@ class Project():
     def extract_calltree(self,
                          source_file: str,
                          source_code: Optional[SourceCodeFile] = None,
-                         function: str = None,
-                         visited_functions: set[str] = None,
+                         function: Optional[str] = None,
+                         visited_functions: Optional[set[str]] = None,
                          depth: int = 0,
                          line_number: int = -1) -> str:
         """Extracts calltree string of a calltree so that FI core can use it."""
@@ -324,13 +324,13 @@ class FunctionMethod():
         self.function_name = ''
         self.complexity = 0
         self.icount = 0
-        self.arg_names = []
-        self.arg_types = []
+        self.arg_names: list[str] = []
+        self.arg_types: list[str] = []
         self.return_type = ''
         self.sig = ''
         self.function_uses = 0
         self.function_depth = 0
-        self.callsites = []
+        self.callsites: list[tuple[str, int]] = []
 
     def get_name(self) -> str:
         """Gets name of a function"""
@@ -361,6 +361,12 @@ class FunctionMethod():
                            all_funcs_meths: list['FunctionMethod']) -> int:
         """Calculate function depth of this function."""
 
+        if self.function_depth:
+            return self.function_depth
+
+        visited: list[str] = []
+        func_meth_dict = {f.get_name(): f for f in all_funcs_meths}
+
         def _recursive_function_depth(func_meth: FunctionMethod) -> int:
             callsites = func_meth.base_callsites()
             if len(callsites) == 0:
@@ -379,11 +385,7 @@ class FunctionMethod():
 
             return depth
 
-        if not self.function_depth:
-            visited = []
-            func_meth_dict = {f.get_name(): f for f in all_funcs_meths}
-            self.function_depth = _recursive_function_depth(self)
-
+        self.function_depth = _recursive_function_depth(self)
         return self.function_depth
 
     def get_complexity(self) -> int:
@@ -536,7 +538,7 @@ class FunctionMethod():
 
         return callsites
 
-    def base_callsites(self) -> list[tuple[int, int]]:
+    def base_callsites(self) -> list[tuple[str, int]]:
         """Gets the callsites of the function."""
         if self.callsites:
             return self.callsites
