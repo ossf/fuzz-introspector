@@ -26,7 +26,6 @@ import tree_sitter_java
 import yaml
 
 logger = logging.getLogger(name=__name__)
-LOG_FMT = '%(asctime)s.%(msecs)03d %(levelname)s %(module)s - %(funcName)s: %(message)s'
 
 FUZZING_METHOD_RETURN_TYPE_MAP = {
     "consumeBoolean": "boolean",
