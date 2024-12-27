@@ -260,7 +260,12 @@ class Project():
             visited_functions = set()
 
         if not function:
+            if not source_code:
+                return ''
             function = source_code.get_entry_function_name()
+
+        if not function:
+            return ''
 
         line_to_print = '  ' * depth
         line_to_print += function
