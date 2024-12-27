@@ -24,8 +24,9 @@ from tree_sitter import Language, Parser
 import tree_sitter_c
 import yaml
 
+from typing import Any
+
 logger = logging.getLogger(name=__name__)
-LOG_FMT = '%(asctime)s.%(msecs)03d %(levelname)s %(module)s - %(funcName)s: %(message)s'
 
 tree_sitter_languages = {'c': Language(tree_sitter_c.language())}
 
@@ -44,7 +45,7 @@ class Project():
                           harness_source: str = ''):
         """Dumps the data for the module in full."""
         logger.info('Dumping project-wide logic.')
-        report = {'report': 'name'}
+        report: dict[str, Any] = {'report': 'name'}
         report['sources'] = []
 
         # Log entry function if provided

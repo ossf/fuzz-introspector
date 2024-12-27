@@ -25,8 +25,9 @@ from tree_sitter import Language, Parser, Node
 import tree_sitter_go
 import yaml
 
+from typing import Any
+
 logger = logging.getLogger(name=__name__)
-LOG_FMT = '%(asctime)s.%(msecs)03d %(levelname)s %(module)s - %(funcName)s: %(message)s'
 
 
 class SourceCodeFile():
@@ -119,7 +120,8 @@ class SourceCodeFile():
             func_names.append(method.get_name())
         return func_names
 
-    def get_function_node(self, target_function_name: str) -> 'FunctionMethod':
+    def get_function_node(
+            self, target_function_name: str) -> Optional['FunctionMethod']:
         """Gets the tree-sitter node corresponding to a function."""
 
         # Find the first instance of the function name
@@ -168,7 +170,7 @@ class SourceCodeFile():
 class Project():
     """Wrapper for doing analysis of a collection of source files."""
 
-    def __init__(self, source_code_files: list[str]):
+    def __init__(self, source_code_files: list[SourceCodeFile]):
         self.source_code_files = source_code_files
         self.full_functions_methods = [
             item for src in source_code_files
@@ -178,7 +180,7 @@ class Project():
     def dump_module_logic(self, report_name: str, entry_function: str = ''):
         """Dumps the data for the module in full."""
         logger.info('Dumping project-wide logic.')
-        report = {'report': 'name'}
+        report: dict[str, Any] = {'report': 'name'}
         report['sources'] = []
 
         # Log entry function if provided
@@ -591,7 +593,7 @@ def capture_source_files_in_tree(directory_tree: str) -> list[str]:
     return language_files
 
 
-def load_treesitter_trees(source_files: list[str],
+def load_treesitter_trees(source_files: list[SourceCodeFile],
                           is_log: bool = True) -> list[SourceCodeFile]:
     """Creates treesitter trees for all files in a given list of source files."""
     results = []

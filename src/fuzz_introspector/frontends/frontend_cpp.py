@@ -26,7 +26,6 @@ tree_sitter_languages = {'cpp': Language(tree_sitter_cpp.language())}
 language_parsers = {'cpp': Parser(Language(tree_sitter_cpp.language()))}
 
 logger = logging.getLogger(name=__name__)
-LOG_FMT = '%(asctime)s.%(msecs)03d %(levelname)s %(module)s - %(funcName)s: %(message)s'
 
 
 class Project():
