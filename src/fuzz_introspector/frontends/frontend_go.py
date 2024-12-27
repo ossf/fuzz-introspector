@@ -456,7 +456,7 @@ class FunctionMethod():
         if self.arg_names:
             return self.arg_names
 
-        param_names = []
+        param_names: list[str] = []
         parameters_node = self.root.child_by_field_name('parameters')
         if not parameters_node:
             return param_names
@@ -478,7 +478,7 @@ class FunctionMethod():
         if self.arg_types:
             return self.arg_types
 
-        param_types = []
+        param_types: list[str] = []
         parameters_node = self.root.child_by_field_name('parameters')
         if not parameters_node:
             return param_types
@@ -600,7 +600,7 @@ def capture_source_files_in_tree(directory_tree: str) -> list[str]:
     return language_files
 
 
-def load_treesitter_trees(source_files: list[SourceCodeFile],
+def load_treesitter_trees(source_files: list[str],
                           is_log: bool = True) -> list[SourceCodeFile]:
     """Creates treesitter trees for all files in a given list of source files."""
     results = []
