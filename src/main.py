@@ -15,8 +15,10 @@
 
 from fuzz_introspector import cli
 
+
 def main() -> int:
     cli.main()
+
 
 if __name__ == "__main__":
     main()
