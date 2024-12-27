@@ -187,10 +187,30 @@ def process_rust_project(target_dir, out):
     source_files = []
     source_files = frontend_rust.capture_source_files_in_tree(target_dir)
 
-    # Process tree sitter for go source files
+    # Process tree sitter for rust source files
     logger.info('Found %d files to include in analysis', len(source_files))
     logger.info('Loading tree-sitter trees')
     source_codes = frontend_rust.load_treesitter_trees(source_files)
+
+    # Create and dump project
+    logger.info('Creating base project.')
+    project = frontend_rust.Project(source_codes)
+
+    # Process calltree and method data
+    for harness in project.get_source_codes_with_harnesses():
+        harness_name = harness.source_file.split('/')[-1].split('.')[0]
+
+        # Method data
+        logger.info(f'Dump methods for {harness_name}')
+        target = os.path.join(out, f'fuzzerLogFile-{harness_name}.data.yaml')
+        project.dump_module_logic(target, harness_name)
+
+        # Calltree
+        logger.info(f'Extracting calltree for {harness_name}')
+        calltree = project.extract_calltree(harness.source_file, harness)
+        target = os.path.join(out, f'fuzzerLogFile-{harness_name}.data')
+        with open(target, 'w', encoding='utf-8') as f:
+            f.write(f'Call tree\n{calltree}')
 
 
 def analyse_folder(language, directory, entrypoint, out='', module_only=False):

@@ -15,7 +15,7 @@
 ################################################################################
 """Fuzz Introspector Light frontend for Rust"""
 
-from typing import Optional
+from typing import Any, Optional
 
 import os
 import pathlib
@@ -110,6 +110,15 @@ class SourceCodeFile():
 
         return False
 
+    def get_entry_method_name(self) -> Optional[str]:
+        """Returns the entry method name of the harness if found."""
+        if self.has_libfuzzer_harness():
+            for func in self.functions:
+                if func.is_entry_method:
+                    return func.name
+
+        return None
+
 
 class RustFunction():
     """Wrapper for a General Declaration for function"""
@@ -154,10 +163,41 @@ class RustFunction():
 
     def _process_declaration(self):
         """Internal helper to process the function/method declaration."""
-        for child in self.root.children:
-            # Process name
-            if child.type == 'identifier':
-                self.name = child.text.decode()
+        # Process name
+        self.name = self.root.child_by_field_name('name').text.decode()
+
+        # Process return type
+        return_type = self.root.child_by_field_name('return_type')
+        if return_type:
+            self.return_type = return_type.text.decode()
+        else:
+            self.return_type = 'void'
+
+        # Process arguments
+        parameters = self.root.child_by_field_name('parameters')
+        for param in parameters.children:
+            if param.type == 'parameter':
+                for item in param.children:
+                    if item.type == 'identifier':
+                        self.arg_names.append(item.text.decode())
+                    elif 'type' in item.type:
+                        self.arg_types.append(item.text.decode())
+
+        # Process signature
+        signature = self.root.text.decode().split('{')[0]
+        self.sig = ''.join(line.strip() for line in signature.splitlines() if line.strip())
+
+        print('@@@@@')
+        print(self.sig)
+        print(signature)
+        print('@@@@@')
+
+#        for child in self.root.children:
+#            # Process name
+#            if child.type == 'identifier':
+#                self.name = child.text.decode()
+#
+#            print(f'{child.type}:{child.text.decode()}')
 
     def _process_macro_declaration(self):
         """Internal helper to process the macro declaration for fuzzing
@@ -170,6 +210,103 @@ class RustFunction():
                     self.is_entry_method = True
 
             # token_tree for body
+
+
+class Project():
+    """Wrapper for doing analysis of a collection of source files."""
+
+    def __init__(self, source_code_files: list[SourceCodeFile]):
+        self.source_code_files = source_code_files
+
+    def dump_module_logic(self,
+                          report_name: str,
+                          harness_name: Optional[str] = None):
+        """Dumps the data for the module in full."""
+        logger.info('Dumping project-wide logic.')
+        report: dict[str, Any] = {'report': 'name'}
+        report['sources'] = []
+
+        func_list = []
+        for source_code in self.source_code_files:
+            # Log entry method if provided
+            entry_method = source_code.get_entry_method_name()
+            if entry_method:
+                report['Fuzzing method'] = entry_method
+
+            # Retrieve project information
+            func_names = [func.name for func in source_code.functions]
+            report['sources'].append({
+                'source_file': source_code.source_file,
+                'function_names': func_names,
+            })
+
+            # Process all project methods
+            for func in source_code.functions:
+                func_dict: dict[str, Any] = {}
+                func_dict['functionName'] = func.name
+                func_dict['functionSourceFile'] = source_code.source_file
+                func_dict['functionLinenumber'] = func.start_line
+                func_dict['functionLinenumberEnd'] = func.end_line
+                func_dict['linkageType'] = ''
+                func_dict['func_position'] = {
+                    'start': func.start_line,
+                    'end': func.end_line
+                }
+                func_dict['CyclomaticComplexity'] = func.complexity
+                func_dict['EdgeCount'] = func_dict['CyclomaticComplexity']
+                func_dict['ICount'] = func.icount
+                func_dict['argNames'] = func.arg_names
+                func_dict['argTypes'] = func.arg_types
+                func_dict['argCount'] = len(func_dict['argTypes'])
+                func_dict['returnType'] = func.return_type
+                func_dict['BranchProfiles'] = []
+                func_dict['Callsites'] = func.detailed_callsites
+                func_dict['functionUses'] = 0
+                func_dict['functionDepth'] = 0
+                func_dict['constantsTouched'] = []
+                func_dict['BBCount'] = 0
+                func_dict['signature'] = func.sig
+                callsites = func.base_callsites
+                reached = set()
+                for cs_dst, _ in callsites:
+                    reached.add(cs_dst)
+                func_dict['functionsReached'] = list(reached)
+
+                func_list.append(func_dict)
+
+        if func_list:
+            report['All functions'] = {}
+            report['All functions']['Elements'] = func_list
+
+        with open(report_name, 'w', encoding='utf-8') as f:
+            f.write(yaml.dump(report))
+
+    def extract_calltree(self,
+                         source_file: str,
+                         source_code: SourceCodeFile,
+                         func: Optional[str] = None,
+                         visited_funcs: Optional[set[str]] = None,
+                         depth: int = 0,
+                         line_number: int = -1) -> str:
+        """Extracts calltree string of a calltree so that FI core can use it."""
+        if not visited_funcs:
+            visited_funcs = set()
+
+        if not func:
+            func = source_code.get_entry_method_name()
+
+        # TODO Add calltree extraction logic
+
+        return ''
+
+    def get_source_codes_with_harnesses(self) -> list[SourceCodeFile]:
+        """Gets the source codes that holds libfuzzer harnesses."""
+        harnesses = []
+        for source_code in self.source_code_files:
+            if source_code.has_libfuzzer_harness():
+                harnesses.append(source_code)
+
+        return harnesses
 
 
 def capture_source_files_in_tree(directory_tree: str) -> list[str]:
