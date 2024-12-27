@@ -54,6 +54,9 @@ dependencies = [
 "tree-sitter-rust==0.23.2"
 ]
 
+[project.scripts]
+fuzz-introspector = "fuzz_introspector.cli:main"
+
 [project.urls]
 "Homepage" = "https://github.com/ossf/fuzz-introspector"
 "Bug Tracker" = "https://github.com/ossf/fuzz-introspector/issues"

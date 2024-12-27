@@ -80,8 +80,8 @@ class SourceCodeFile():
 
         # List of definitions in the source file.
         self.package = ''
-        self.classes = []
-        self.imports = {}
+        self.classes: list['JavaClassInterface'] = []
+        self.imports: dict[str, str] = {}
 
         # Initialization ruotines
         self.load_tree()
@@ -233,7 +233,8 @@ class JavaMethod():
         self.root = root
         self.class_interface = class_interface
         self.tree_sitter_lang = self.class_interface.tree_sitter_lang
-        self.parent_source = self.class_interface.parent_source
+        self.parent_source: Optional[
+            SourceCodeFile] = self.class_interface.parent_source
         self.is_constructor = is_constructor
 
         # Store method line information
@@ -241,26 +242,26 @@ class JavaMethod():
         self.end_line = self.root.end_point.row + 1
 
         # Other properties
-        self.name = ''
+        self.name: str = ''
         self.complexity = 0
         self.icount = 0
-        self.arg_names = []
-        self.arg_types = []
-        self.exceptions = []
+        self.arg_names: list[str] = []
+        self.arg_types: list[str] = []
+        self.exceptions: list[str] = []
         self.return_type = ''
         self.sig = ''
         self.function_uses = 0
         self.function_depth = 0
-        self.base_callsites = []
-        self.detailed_callsites = []
+        self.base_callsites: list[tuple[str, int]] = []
+        self.detailed_callsites: list[dict[str, str]] = []
         self.public = False
         self.concrete = True
         self.static = False
         self.is_entry_method = False
 
         # Other properties
-        self.stmts = []
-        self.var_map = {}
+        self.stmts: list[Node] = []
+        self.var_map: dict[str, str] = {}
 
         # Process method declaration
         self._process_declaration()
@@ -447,7 +448,7 @@ class JavaMethod():
         self, stmt: Node, classes: dict[str, 'JavaClassInterface']
     ) -> tuple[str, list[tuple[str, int, int]]]:
         """Internal helper for processing the object from a invocation."""
-        callsites = []
+        callsites: list[tuple[str, int, int]] = []
         return_value = ''
         # Determine the type of the object
         if stmt.child_count == 0:
@@ -465,7 +466,7 @@ class JavaMethod():
                 if not return_value:
                     return_value = self.class_interface.class_fields.get(
                         stmt.text.decode(), '')
-                if not return_value:
+                if not return_value and self.parent_source:
                     return_value = self.parent_source.imports.get(
                         stmt.text.decode(), self.class_interface.name)
         else:
@@ -501,7 +502,7 @@ class JavaMethod():
             # Casting expression in Parenthesized statement
             elif stmt.type == 'parenthesized_expression':
                 for cast in stmt.children:
-                    if cast.type == 'cast_expression':
+                    if cast.type == 'cast_expression' and self.parent_source:
                         value = cast.child_by_field_name('value')
                         cast_type = cast.child_by_field_name(
                             'type').text.decode()
@@ -574,7 +575,7 @@ class JavaMethod():
                 return_values.append(return_value)
 
             # Type casting expression
-            elif argument.type == 'cast_expression':
+            elif argument.type == 'cast_expression' and self.parent_source:
                 value = argument.child_by_field_name('value')
                 cast_type = argument.child_by_field_name('type').text.decode()
                 return_value = self.parent_source.get_full_qualified_name(
@@ -600,7 +601,7 @@ class JavaMethod():
         expr: Node,
         classes: dict[str, 'JavaClassInterface'],
         is_constructor_call: bool = False
-    ) -> tuple[list[str], list[tuple[str, int, int]]]:
+    ) -> tuple[str, list[tuple[str, int, int]]]:
         """Internal helper for processing the method invocation statement."""
         callsites = []
 
@@ -619,7 +620,7 @@ class JavaMethod():
             argument_types = []
 
         # Process constructor call
-        if is_constructor_call:
+        if is_constructor_call and self.parent_source:
             object_type = ''
             for cls_type in expr.children:
                 if cls_type.type == 'this':
@@ -717,31 +718,29 @@ class JavaClassInterface():
 
     def __init__(self,
                  root: Node,
-                 tree_sitter_lang: Optional[Language] = None,
-                 source_code: Optional[SourceCodeFile] = None,
+                 tree_sitter_lang: Language,
+                 source_code: SourceCodeFile,
                  parent: Optional['JavaClassInterface'] = None):
         self.root = root
         self.parent = parent
+        self.tree_sitter_lang = tree_sitter_lang
+        self.parent_source = source_code
 
-        if parent:
-            self.tree_sitter_lang = parent.tree_sitter_lang
-            self.parent_source = parent.parent_source
+        if self.parent:
             self.package = self.parent.name
         else:
-            self.tree_sitter_lang = tree_sitter_lang
-            self.parent_source = source_code
             self.package = self.parent_source.package
 
         # Properties
-        self.name = ''
+        self.name: str = ''
         self.class_public = False
         self.class_concrete = True
         self.is_interface = False
-        self.methods = []
-        self.inner_classes = []
-        self.class_fields = {}
+        self.methods: list[JavaMethod] = []
+        self.inner_classes: list[JavaClassInterface] = []
+        self.class_fields: dict[str, str] = {}
         self.super_class = 'Object'
-        self.super_interfaces = []
+        self.super_interfaces: list[str] = []
 
         # Process the class/interface tree
         inner_class_nodes = self._process_node()
@@ -846,7 +845,8 @@ class JavaClassInterface():
         """Internal helper to recursively process inner classes"""
         for node in inner_class_nodes:
             self.inner_classes.append(
-                JavaClassInterface(node, None, None, self))
+                JavaClassInterface(node, self.tree_sitter_lang,
+                                   self.parent_source, self))
 
     def get_all_methods(self) -> list[JavaMethod]:
         all_methods = self.methods
@@ -903,11 +903,11 @@ class Project():
                           harness_name: Optional[str] = None):
         """Dumps the data for the module in full."""
         logger.info('Dumping project-wide logic.')
-        report = {'report': 'name'}
-        report['sources']: dict[str, Any] = []
+        report: dict[str, Any] = {'report': 'name'}
+        report['sources'] = []
 
         all_classes = {}
-        project_methods = []
+        project_methods: list[JavaMethod] = []
 
         # Post process source code files with full qualified names
         # Retrieve full project methods, classes and information
@@ -941,7 +941,7 @@ class Project():
         # Process all project methods
         method_list = []
         for method in project_methods:
-            method_dict = {}
+            method_dict: dict[str, Any] = {}
             method_dict['functionName'] = method.name
             method_dict['functionSourceFile'] = method.class_interface.name
             method_dict['functionLinenumber'] = method.start_line
@@ -974,7 +974,7 @@ class Project():
             method_dict['functionsReached'] = list(reached)
 
             # Handles Java method properties
-            java_method_info = {}
+            java_method_info: dict[str, Any] = {}
             java_method_info['exceptions'] = method.exceptions
             java_method_info[
                 'interfaces'] = method.class_interface.super_interfaces[:]
@@ -1058,7 +1058,7 @@ class Project():
 
             return depth
 
-        visited = []
+        visited: list[str] = []
         method_dict = {method.name: method for method in all_methods}
         method_depth = _recursive_method_depth(target_method)
 
@@ -1067,24 +1067,27 @@ class Project():
     def extract_calltree(self,
                          source_file: str,
                          source_code: Optional[SourceCodeFile] = None,
-                         method: str = None,
-                         visited_methods: set[str] = None,
+                         method: Optional[str] = None,
+                         visited_methods: Optional[set[str]] = None,
                          depth: int = 0,
                          line_number: int = -1) -> str:
         """Extracts calltree string of a calltree so that FI core can use it."""
         if not visited_methods:
             visited_methods = set()
 
-        if not method:
+        if not source_code and method:
+            source_code = self.find_source_with_method(method)
+
+        if not method and source_code:
             method = source_code.get_entry_method_name(True)
+
+        if not method or not source_code:
+            return ''
 
         line_to_print = '  ' * depth
         line_to_print += method
         line_to_print += ' '
         line_to_print += source_file
-
-        if not source_code:
-            source_code = self.find_source_with_method(method)
 
         line_to_print += ' '
         line_to_print += str(line_number)
@@ -1093,11 +1096,11 @@ class Project():
         if not source_code:
             return line_to_print
 
-        method = source_code.get_method_node(method)
-        if not method:
+        method_node = source_code.get_method_node(method)
+        if not method_node:
             return line_to_print
 
-        callsites = method.base_callsites
+        callsites = method_node.base_callsites
 
         if method in visited_methods:
             return line_to_print
@@ -1110,6 +1113,7 @@ class Project():
                 visited_methods=visited_methods,
                 depth=depth + 1,
                 line_number=line_number)
+
         return line_to_print
 
 
