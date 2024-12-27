@@ -120,7 +120,8 @@ class SourceCodeFile():
             func_names.append(method.get_name())
         return func_names
 
-    def get_function_node(self, target_function_name: str) -> Optional['FunctionMethod']:
+    def get_function_node(
+            self, target_function_name: str) -> Optional['FunctionMethod']:
         """Gets the tree-sitter node corresponding to a function."""
 
         # Find the first instance of the function name
