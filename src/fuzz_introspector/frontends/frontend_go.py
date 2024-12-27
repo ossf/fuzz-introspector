@@ -168,7 +168,7 @@ class SourceCodeFile():
 class Project():
     """Wrapper for doing analysis of a collection of source files."""
 
-    def __init__(self, source_code_files: list[str]):
+    def __init__(self, source_code_files: list[SourceCodeFile]):
         self.source_code_files = source_code_files
         self.full_functions_methods = [
             item for src in source_code_files
@@ -591,7 +591,7 @@ def capture_source_files_in_tree(directory_tree: str) -> list[str]:
     return language_files
 
 
-def load_treesitter_trees(source_files: list[str],
+def load_treesitter_trees(source_files: list[SourceCodeFile],
                           is_log: bool = True) -> list[SourceCodeFile]:
     """Creates treesitter trees for all files in a given list of source files."""
     results = []
