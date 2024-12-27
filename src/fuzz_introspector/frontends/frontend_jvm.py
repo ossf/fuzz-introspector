@@ -25,6 +25,8 @@ from tree_sitter import Language, Parser, Node
 import tree_sitter_java
 import yaml
 
+from typing import Any
+
 logger = logging.getLogger(name=__name__)
 
 FUZZING_METHOD_RETURN_TYPE_MAP = {
@@ -902,7 +904,7 @@ class Project():
         """Dumps the data for the module in full."""
         logger.info('Dumping project-wide logic.')
         report = {'report': 'name'}
-        report['sources'] = []
+        report['sources']: dict[str, Any] = []
 
         all_classes = {}
         project_methods = []
