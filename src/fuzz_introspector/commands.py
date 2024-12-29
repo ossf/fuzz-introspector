@@ -47,8 +47,15 @@ def correlate_binaries_to_logs(binaries_dir: str) -> int:
 def end_to_end(args) -> int:
     """Runs both frontend and backend."""
     oss_fuzz.analyse_folder(args.language, args.target_dir,
-                            'LLVMFuzzerTestOneInput')
+                            'LLVMFuzzerTestOneInput',
+                            module_only=args.module_only)
 
+    if args.module_only:
+        if os.path.isfile('report.yaml'):
+            shutil.copy('report.yaml', 'fuzzerLogFile-1.data.yaml')
+            with open('fuzzerLogFile-1.data', 'w') as f:
+                f.write("Call tree\n")
+                f.write("====================================")
     if 'c' in args.language:
         language = 'c-cpp'
     else:

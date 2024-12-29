@@ -69,7 +69,7 @@ def read_fuzzer_data_file_to_profile(
 
     if not profile.has_entry_point():
         logger.info("Found no entrypoints")
-        return None
+        #return None
     logger.info("Returning profile")
     return profile
 

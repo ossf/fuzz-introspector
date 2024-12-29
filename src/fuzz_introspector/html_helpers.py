@@ -212,6 +212,8 @@ def html_get_table_of_contents(
         cov_index = "report.html"
     elif proj_profile.target_lang == "go":
         cov_index = "index.html"
+    else:
+        cov_index = 'report.html'
 
     html_toc_string = ""
     html_toc_string += f"""<div class="left-sidebar">\

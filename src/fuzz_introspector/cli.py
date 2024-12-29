@@ -43,6 +43,7 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
     full_parser = subparsers.add_parser('full', help='End to end run')
     full_parser.add_argument('--target_dir')
     full_parser.add_argument('--language')
+    full_parser.add_argument('--module-only', action='store_true')
 
     # Report generation command
     report_parser = subparsers.add_parser(

@@ -230,6 +230,8 @@ class MergedProjectProfile:
         if len(set_of_targets) > 1:
             raise exceptions.AnalysisError(
                 "Project has fuzzers with multiple targets")
+        if len(set_of_targets) == 0:
+            return 'c-cpp'
         return set_of_targets.pop()
 
     @property

@@ -493,8 +493,8 @@ class FuzzerProfile:
                     self.all_class_functions[entrypoint].functions_reached)
                 self.functions_reached_by_fuzzer.append(entrypoint)
                 return
-
-        raise DataLoaderError("Can not identify entrypoint")
+        self.functions_reached_by_fuzzer = []
+        #raise DataLoaderError("Can not identify entrypoint")
 
     def _set_all_unreached_functions(self) -> None:
         """Sets self.functions_unreached_by_fuzzer to all functions that are

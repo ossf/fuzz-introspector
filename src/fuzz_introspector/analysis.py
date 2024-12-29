@@ -65,9 +65,9 @@ class IntrospectionProject():
                                                       parallelise)
 
         logger.info(f"Found {len(self.profiles)} profiles")
-        if len(self.profiles) == 0:
-            logger.info("Found no profiles")
-            raise DataLoaderError("No fuzzer profiles")
+        #if len(self.profiles) == 0:
+        #    logger.info("Found no profiles")
+        #    raise DataLoaderError("No fuzzer profiles")
 
         self.input_bugs = data_loader.try_load_input_bugs()
         correlation_dict = utils.data_file_read_yaml(correlation_file)
