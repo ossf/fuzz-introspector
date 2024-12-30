@@ -42,6 +42,7 @@ class SourceCodeFile():
         self.source_file = source_file
         self.tree_sitter_lang = Language(tree_sitter_rust.language())
         self.parser = Parser(self.tree_sitter_lang)
+        self.uses: dict[str, str] = {}
 
         if source_content:
             self.source_content = source_content
@@ -56,7 +57,7 @@ class SourceCodeFile():
         self.load_tree()
 
         # Load functions/methods delcaration
-        self._set_function_method_declaration()
+        self._set_function_method_declaration(self.root)
 
         print(f'{source_file}:{len(self.functions)}')
 
@@ -65,43 +66,137 @@ class SourceCodeFile():
         the root node."""
         self.root = self.parser.parse(self.source_content).root_node
 
-    def _set_function_method_declaration(self):
+    def _set_function_method_declaration(
+            self, start_object: Node, start_prefix: list[str] = []):
         """Internal helper for retrieving all classes."""
-        for node in self.root.children:
+        for node in start_object.children:
+            # Reset prefix
+            prefix = start_prefix[:]
 
             # Handle general functions
             if node.type == 'function_item':
                 self.functions.append(
-                    RustFunction(node, self.tree_sitter_lang, self))
+                    RustFunction(node, self.tree_sitter_lang, self, prefix))
 
             # Handle impl methods
             elif node.type == 'impl_item':
+                # Basic info of this impl
+                impl_type = node.child_by_field_name('type')
                 impl_body = node.child_by_field_name('body')
+                if impl_type:
+                    prefix.append(impl_type.text.decode())
+
+                # Loop through the items in this impl
                 for impl in impl_body.children:
+                    # Handle general methods in this impl
                     if impl.type == 'function_item':
                         self.functions.append(
-                            RustFunction(impl, self.tree_sitter_lang, self, node))
+                            RustFunction(impl, self.tree_sitter_lang, self, prefix))
+
+                    # Handles inner impl
+                    elif impl.type == 'impl_item':
+                        self._set_function_method_declaration(impl, prefix)
 
             # Handle mod functions
             elif node.type == 'mod_item':
                 mod_body = node.child_by_field_name('body')
                 if mod_body:
+                    # Basic info of this mod
+                    mod_name = node.child_by_field_name('name')
+                    if mod_name:
+                        prefix.append(mod_name.text.decode())
+
+                    # Loop through the body of this mod
                     for mod in mod_body.children:
+                        # Handle general function in this mod
                         if mod.type == 'function_item':
                             self.functions.append(
-                                RustFunction(mod, self.tree_sitter_lang, self, mod=node))
+                                RustFunction(mod, self.tree_sitter_lang, self, prefix))
+
+                        # Handles inner impl
+                        elif mod.type == 'impl_item':
+                            self._set_function_method_declaration(mod, prefix)
+
+                        # Handles inner mod
+                        elif mod.type == 'mod_item':
+                            inner_body = mod.child_by_field_name('body')
+                            if inner_body:
+                                self._set_function_method_declaration(inner_body, prefix)
+
+            # Handling trait item
+            elif node.type == 'trait_item':
+                # Basic info of this trait
+                trait_name = node.child_by_field_name('name')
+                trait_body = node.child_by_field_name('body')
+                if trait_name:
+                    prefix.append(trait_name.text.decode())
+
+                # Loop through the items in this trait
+                for trait in trait_body.children:
+                    # Handle general methods in this trait
+                    if trait.type == 'function_item':
+                        self.functions.append(
+                            RustFunction(trait, self.tree_sitter_lang, self, prefix))
 
             # Handling for fuzzing harness entry point macro invocation
             elif node.type == 'expression_statement':
                 for macro in node.children:
                     if macro.type == 'macro_invocation':
                         rust_function = RustFunction(
-                            macro, self.tree_sitter_lang, self, is_macro=True)
+                            macro, self.tree_sitter_lang, self, prefix, is_macro=True)
 
                         # Only consider the macro as function if it is the
                         # fuzzing entry point (fuzz_target macro)
                         if rust_function.is_entry_method:
                             self.functions.append(rust_function)
+
+            # Handling specific use declaration
+            elif node.type == 'use_declaration':
+                use_stmt = node.child_by_field_name('argument')
+                if use_stmt:
+                    use_map = self._process_recursive_use(use_stmt.text.decode())
+                    self.uses.update(use_map)
+
+            # TODO handle static_item / const_item
+
+    def _split_use_stmt(self, use_stmt: str) -> list[str]:
+        """Internal helper for spliting use statement with nested structure."""
+        result = []
+        current: list[str] = []
+        brace_count = 0
+        for char in use_stmt:
+            if char == ',' and brace_count == 0:
+                result.append(''.join(current))
+                current = []
+            else:
+                current.append(char)
+                if char == '{':
+                    brace_count += 1
+                elif char == '}':
+                    brace_count -= 1
+
+        if current:
+            result.append(''.join(current))
+
+        return result
+
+    def _process_recursive_use(self, use_stmt: str, path: str = '') -> dict[str, str]:
+        """Internal recursive function to process use statement."""
+        result = {}
+
+        use_stmt = use_stmt.replace(' ','').removeprefix('crate::')
+        prefix, *suffix = use_stmt.split('::{', 1)
+        if suffix:
+            inner = suffix[0]
+            if inner.endswith('}'):
+                inner = inner[:-1]
+            for item in self._split_use_stmt(inner):
+                result.update(self._process_recursive_use(item, f'{path}{prefix}::'))
+        else:
+            name = prefix.split('::')[-1]
+            result[name] = f'{path}{prefix}'
+
+        return result
 
     def has_libfuzzer_harness(self) -> bool:
         """Returns whether the source code holds a libfuzzer harness"""
@@ -125,16 +220,14 @@ class RustFunction():
 
     def __init__(self,
                  root: Node,
-                 tree_sitter_lang: Optional[Language] = None,
-                 source_code: Optional[SourceCodeFile] = None,
-                 impl: Optional[Node] = None,
-                 mod: Optional[Node] = None,
+                 tree_sitter_lang: Language,
+                 source_code: SourceCodeFile,
+                 prefix: list[str],
                  is_macro: bool = False):
         self.root = root
         self.tree_sitter_lang = tree_sitter_lang
         self.parent_source = source_code
-        self.impl = impl
-        self.mod = mod
+        self.prefix = prefix
         self.is_macro = is_macro
 
         # Store method line information
@@ -154,6 +247,9 @@ class RustFunction():
         self.base_callsites: list[tuple[str, int]] = []
         self.detailed_callsites: list[dict[str, str]] = []
         self.is_entry_method = False
+        self.stmts: list[Node] = []
+        self.fuzzing_token_tree = None
+        self.var_map: dict[str, str] = {}
 
         # Process method declaration
         if is_macro:
@@ -161,10 +257,15 @@ class RustFunction():
         else:
             self._process_declaration()
 
+        # Process variable declaration
+        self._process_variables()
+
     def _process_declaration(self):
         """Internal helper to process the function/method declaration."""
         # Process name
         self.name = self.root.child_by_field_name('name').text.decode()
+        if self.prefix:
+            self.name = f'{"::".join(self.prefix)}::{self.name}'
 
         # Process return type
         return_type = self.root.child_by_field_name('return_type')
@@ -187,17 +288,12 @@ class RustFunction():
         signature = self.root.text.decode().split('{')[0]
         self.sig = ''.join(line.strip() for line in signature.splitlines() if line.strip())
 
-        print('@@@@@')
-        print(self.sig)
-        print(signature)
-        print('@@@@@')
-
-#        for child in self.root.children:
-#            # Process name
-#            if child.type == 'identifier':
-#                self.name = child.text.decode()
-#
-#            print(f'{child.type}:{child.text.decode()}')
+        # Process body
+        body = self.root.child_by_field_name('body')
+        if body:
+            for stmt in body.children:
+                if 'statement' in stmt.type or 'declaration' in stmt.type:
+                    self.stmts.append(stmt)
 
     def _process_macro_declaration(self):
         """Internal helper to process the macro declaration for fuzzing
@@ -209,7 +305,94 @@ class RustFunction():
                 if self.name == 'fuzz_target':
                     self.is_entry_method = True
 
-            # token_tree for body
+            # Store token tree
+            elif child.type == 'token_tree':
+                self.fuzzing_token_tree = child
+
+    def _process_variables(self):
+        """Process variable declaration and store them for reference."""
+        pass
+        #TODO process vairable declaration in parameter and local statement
+
+    def extract_callsites(self, functions: dict[str, 'RustFunction']):
+        """Extract callsites."""
+
+        def _process_invoke(expr: Node) -> tuple[str, list[tuple[str, int, int]]]:
+            """Internal helper for processing the function invocation statement."""
+            callsites = []
+            return_type = ''
+            target_name = ''
+
+            func = expr.child_by_field_name('function')
+            args = expr.child_by_field_name('arguments')
+
+            # Handle function call
+            if func:
+                # Simple function call
+                if func.type == 'identifier':
+                    target_name = func.text.decode()
+#                    print((self.parent_source.source_file, target_name, func.byte_range[1], func.start_point.row + 1))
+                # Chained or instance function call
+                elif func.type == 'field_expression':
+                    #TODO handle correct full function name
+                    #TODO Handle chained call
+                    target_name = func.text.decode()
+                    callsites.append(
+                        (target_name, func.byte_range[1], func.start_point.row + 1))
+
+            # Handle arguments
+            if args:
+                pass
+                 #TODO handles arguments and invocation in arguments
+
+            if target_name:
+                 callsites.append(
+                    (target_name, func.byte_range[1], func.start_point.row + 1))
+
+                #TODO Obtain return type from full function list (or empty)
+
+#            print('@@@@@')
+#            print(expr.text.decode().replace('\n','').replace(' ',''))
+#            for count,child in zip(range(expr.child_count),expr.children):
+#                print(f'{expr.field_name_for_child(count)}::{child.type}::{child.text.decode()}')
+
+            return return_type, callsites
+
+        def _process_token_tree(token_tree: Node) -> list[tuple[str, int, int]]:
+            """Process and store the callsites of token tree."""
+            callsites = []
+
+            # TODO process token tree, regroup stmt and process
+
+            return callsites
+
+        def _process_callsites(stmt: Node) -> list[tuple[str, int, int]]:
+            """Process and store the callsites of the function."""
+            callsites = []
+
+            if stmt.type == 'call_expression':
+                _, invoke_callsites = _process_invoke(stmt)
+                callsites.extend(invoke_callsites)
+            else:
+                for child in stmt.children:
+                    callsites.extend(_process_callsites(child))
+
+            return callsites
+
+        if not self.base_callsites:
+            callsites = []
+            if self.fuzzing_token_tree:
+                callsites.extend(_process_token_tree(self.fuzzing_token_tree))
+            else:
+                for stmt in self.stmts:
+                    callsites.extend(_process_callsites(stmt))
+            callsites = sorted(set(callsites), key=lambda x: x[1])
+            self.base_callsites = [(x[0], x[2]) for x in callsites]
+
+        if not self.detailed_callsites:
+            for dst, src_line in self.base_callsites:
+                src_loc = self.parent_source.source_file + ':%d,1' % (src_line)
+                self.detailed_callsites.append({'Src': src_loc, 'Dst': dst})
 
 
 class Project():
@@ -226,7 +409,7 @@ class Project():
         report: dict[str, Any] = {'report': 'name'}
         report['sources'] = []
 
-        func_list = []
+        all_functions = {}
         for source_code in self.source_code_files:
             # Log entry method if provided
             entry_method = source_code.get_entry_method_name()
@@ -240,39 +423,47 @@ class Project():
                 'function_names': func_names,
             })
 
-            # Process all project methods
-            for func in source_code.functions:
-                func_dict: dict[str, Any] = {}
-                func_dict['functionName'] = func.name
-                func_dict['functionSourceFile'] = source_code.source_file
-                func_dict['functionLinenumber'] = func.start_line
-                func_dict['functionLinenumberEnd'] = func.end_line
-                func_dict['linkageType'] = ''
-                func_dict['func_position'] = {
-                    'start': func.start_line,
-                    'end': func.end_line
-                }
-                func_dict['CyclomaticComplexity'] = func.complexity
-                func_dict['EdgeCount'] = func_dict['CyclomaticComplexity']
-                func_dict['ICount'] = func.icount
-                func_dict['argNames'] = func.arg_names
-                func_dict['argTypes'] = func.arg_types
-                func_dict['argCount'] = len(func_dict['argTypes'])
-                func_dict['returnType'] = func.return_type
-                func_dict['BranchProfiles'] = []
-                func_dict['Callsites'] = func.detailed_callsites
-                func_dict['functionUses'] = 0
-                func_dict['functionDepth'] = 0
-                func_dict['constantsTouched'] = []
-                func_dict['BBCount'] = 0
-                func_dict['signature'] = func.sig
-                callsites = func.base_callsites
-                reached = set()
-                for cs_dst, _ in callsites:
-                    reached.add(cs_dst)
-                func_dict['functionsReached'] = list(reached)
+            # Obtain all functions of the project
+            all_functions.update(
+                {func.name: func for func in source_code.functions}
+            )
 
-                func_list.append(func_dict)
+        # Process all project methods
+        func_list = []
+        for func in all_functions.values():
+            func.extract_callsites(all_functions)
+
+            func_dict: dict[str, Any] = {}
+            func_dict['functionName'] = func.name
+            func_dict['functionSourceFile'] = func.parent_source.source_file
+            func_dict['functionLinenumber'] = func.start_line
+            func_dict['functionLinenumberEnd'] = func.end_line
+            func_dict['linkageType'] = ''
+            func_dict['func_position'] = {
+                'start': func.start_line,
+                'end': func.end_line
+            }
+            func_dict['CyclomaticComplexity'] = func.complexity
+            func_dict['EdgeCount'] = func_dict['CyclomaticComplexity']
+            func_dict['ICount'] = func.icount
+            func_dict['argNames'] = func.arg_names
+            func_dict['argTypes'] = func.arg_types
+            func_dict['argCount'] = len(func_dict['argTypes'])
+            func_dict['returnType'] = func.return_type
+            func_dict['BranchProfiles'] = []
+            func_dict['Callsites'] = func.detailed_callsites
+            func_dict['functionUses'] = 0
+            func_dict['functionDepth'] = 0
+            func_dict['constantsTouched'] = []
+            func_dict['BBCount'] = 0
+            func_dict['signature'] = func.sig
+            callsites = func.base_callsites
+            reached = set()
+            for cs_dst, _ in callsites:
+                reached.add(cs_dst)
+            func_dict['functionsReached'] = list(reached)
+
+            func_list.append(func_dict)
 
         if func_list:
             report['All functions'] = {}
