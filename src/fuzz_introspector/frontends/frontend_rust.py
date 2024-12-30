@@ -361,25 +361,15 @@ class RustFunction():
 
         def _process_token_tree(token_tree: Node) -> list[tuple[str, int, int]]:
             """Process and store the callsites of token tree."""
-            callsites: list[tuple[str, int, int]] = []
+            callsites = []
 
             for child in token_tree.children:
                 content = child.text.decode()
                 if child.type == 'token_tree' and content.startswith('{'):
-                    # Logic block from fuzz_target macro
-                    for line in content[1:-1].split(';\n'):
-                        line = line.strip().replace('\n', ' ')
-
-                        # Let declaration
-                        if line.startswith('let'):
-                            lhs, rhs = line.split('=', 1)
-                            variable_name = lhs.strip().split(' ')[-1]
-
-                        # Function call
-                        else:
-                            pass
-
-            # TODO process token tree, regroup stmt and process
+                    content_bytes = content.encode('utf-8')
+                    root = self.parent_source.parser.parse(content_bytes)
+                    for child in root.root_node.children:
+                        callsites.extend(_process_callsites(child))
 
             return callsites
 
