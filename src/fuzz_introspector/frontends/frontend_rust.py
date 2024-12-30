@@ -292,8 +292,12 @@ class RustFunction():
         body = self.root.child_by_field_name('body')
         if body:
             for stmt in body.children:
-                if 'statement' in stmt.type or 'declaration' in stmt.type:
+                if 'expression' in stmt.type or 'declaration' in stmt.type:
                     self.stmts.append(stmt)
+                elif stmt.type == 'function_item':
+                    # Handle inner function:
+                    self.parent_source.functions.append(
+                        RustFunction(stmt, self.tree_sitter_lang, self.parent_source, self.name))
 
     def _process_macro_declaration(self):
         """Internal helper to process the macro declaration for fuzzing
@@ -311,8 +315,11 @@ class RustFunction():
 
     def _process_variables(self):
         """Process variable declaration and store them for reference."""
-        pass
-        #TODO process vairable declaration in parameter and local statement
+        # Parameters
+        for arg_name, arg_type in zip(self.arg_names, self.arg_types):
+            self.var_map[arg_name] = arg_type
+
+        #TODO process vairable declaration in local statement
 
     def extract_callsites(self, functions: dict[str, 'RustFunction']):
         """Extract callsites."""
@@ -324,43 +331,53 @@ class RustFunction():
             target_name = ''
 
             func = expr.child_by_field_name('function')
-            args = expr.child_by_field_name('arguments')
 
             # Handle function call
             if func:
                 # Simple function call
                 if func.type == 'identifier':
                     target_name = func.text.decode()
-#                    print((self.parent_source.source_file, target_name, func.byte_range[1], func.start_point.row + 1))
+
+                    # Ignore lambda function calls
+                    if target_name in self.var_map:
+                        lambda_prefix = ('impl', 'fn', 'unsafe fn')
+                        if self.var_map[target_name].startswith(lambda_prefix):
+                            target_name = ''
+
                 # Chained or instance function call
-                elif func.type == 'field_expression':
+                elif func.type == 'field_expression' or func.type == 'scoped_identifier':
                     #TODO handle correct full function name
                     #TODO Handle chained call
-                    target_name = func.text.decode()
+                    target_name = func.text.decode().replace(' ', '').replace('\n', '')
                     callsites.append(
                         (target_name, func.byte_range[1], func.start_point.row + 1))
-
-            # Handle arguments
-            if args:
-                pass
-                 #TODO handles arguments and invocation in arguments
+                    #TODO Obtain return type from full function list (or empty)
 
             if target_name:
                  callsites.append(
                     (target_name, func.byte_range[1], func.start_point.row + 1))
 
-                #TODO Obtain return type from full function list (or empty)
-
-#            print('@@@@@')
-#            print(expr.text.decode().replace('\n','').replace(' ',''))
-#            for count,child in zip(range(expr.child_count),expr.children):
-#                print(f'{expr.field_name_for_child(count)}::{child.type}::{child.text.decode()}')
-
             return return_type, callsites
 
         def _process_token_tree(token_tree: Node) -> list[tuple[str, int, int]]:
             """Process and store the callsites of token tree."""
-            callsites = []
+            callsites: list[tuple[str, int, int]] = []
+
+            for child in token_tree.children:
+                content = child.text.decode()
+                if child.type == 'token_tree' and content.startswith('{'):
+                    # Logic block from fuzz_target macro
+                    for line in content[1:-1].split(';\n'):
+                        line = line.strip().replace('\n', ' ')
+
+                        # Let declaration
+                        if line.startswith('let'):
+                            lhs, rhs = line.split('=', 1)
+                            variable_name = lhs.strip().split(' ')[-1]
+
+                        # Function call
+                        else:
+                            pass
 
             # TODO process token tree, regroup stmt and process
 
@@ -373,9 +390,9 @@ class RustFunction():
             if stmt.type == 'call_expression':
                 _, invoke_callsites = _process_invoke(stmt)
                 callsites.extend(invoke_callsites)
-            else:
-                for child in stmt.children:
-                    callsites.extend(_process_callsites(child))
+
+            for child in stmt.children:
+                callsites.extend(_process_callsites(child))
 
             return callsites
 
