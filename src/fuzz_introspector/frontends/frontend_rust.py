@@ -59,8 +59,6 @@ class SourceCodeFile():
         # Load functions/methods delcaration
         self._set_function_method_declaration(self.root)
 
-        print(f'{source_file}:{len(self.functions)}')
-
     def load_tree(self):
         """Load the the source code into a treesitter tree, and set
         the root node."""
@@ -84,7 +82,7 @@ class SourceCodeFile():
                 impl_type = node.child_by_field_name('type')
                 impl_body = node.child_by_field_name('body')
                 if impl_type:
-                    prefix.append(impl_type.text.decode())
+                    prefix.append(impl_type.text.decode().split('<')[0])
 
                 # Loop through the items in this impl
                 for impl in impl_body.children:
@@ -129,7 +127,7 @@ class SourceCodeFile():
                 trait_name = node.child_by_field_name('name')
                 trait_body = node.child_by_field_name('body')
                 if trait_name:
-                    prefix.append(trait_name.text.decode())
+                    prefix.append(trait_name.text.decode().split('<')[0])
 
                 # Loop through the items in this trait
                 for trait in trait_body.children:
@@ -205,8 +203,8 @@ class SourceCodeFile():
 
         return False
 
-    def get_entry_method_name(self) -> Optional[str]:
-        """Returns the entry method name of the harness if found."""
+    def get_entry_function_name(self) -> Optional[str]:
+        """Returns the entry function name of the harness if found."""
         if self.has_libfuzzer_harness():
             for func in self.functions:
                 if func.is_entry_method:
@@ -260,6 +258,12 @@ class RustFunction():
         # Process variable declaration
         self._process_variables()
 
+        # Process complexity
+        self._process_complexity()
+
+        # Process instr count
+        self._process_icount()
+
     def _process_declaration(self):
         """Internal helper to process the function/method declaration."""
         # Process name
@@ -270,7 +274,7 @@ class RustFunction():
         # Process return type
         return_type = self.root.child_by_field_name('return_type')
         if return_type:
-            self.return_type = return_type.text.decode()
+            self.return_type = return_type.text.decode().split('<')[0]
         else:
             self.return_type = 'void'
 
@@ -311,7 +315,13 @@ class RustFunction():
 
             # Store token tree
             elif child.type == 'token_tree':
-                self.fuzzing_token_tree = child
+                for token_tree in child.children:
+                    if token_tree.type == 'token_tree':
+                        content = token_tree.text.decode()
+                        if content.startswith('{'):
+                            bytes = content.encode('utf-8')
+                            root = self.parent_source.parser.parse(bytes)
+                            self.fuzzing_token_tree = root.root_node
 
     def _process_variables(self):
         """Process variable declaration and store them for reference."""
@@ -319,23 +329,71 @@ class RustFunction():
         for arg_name, arg_type in zip(self.arg_names, self.arg_types):
             self.var_map[arg_name] = arg_type
 
-        #TODO process vairable declaration in local statement
+    def _process_complexity(self):
+        """Gets complexity measure based on counting branch nodes in a
+        function."""
+
+        branch_nodes = [
+            'if_expression',
+            'match_expression',
+            'while_expression',
+            'loop_expression',
+            'for_expression',
+            'try_expression',
+            'try_block',
+            'async_block',
+            'await_expression',
+            'unsafe_block',
+            'gen_block',
+            'break_expression',
+            'continue_expression',
+            '&&',
+            '||',
+        ]
+
+        def _traverse_node_complexity(node: Node):
+            count = 0
+            if node.type in branch_nodes:
+                count += 1
+            for item in node.children:
+                count += _traverse_node_complexity(item)
+            return count
+
+        if self.fuzzing_token_tree:
+            self.complexity += _traverse_node_complexity(self.fuzzing_token_tree)
+        else:
+            self.complexity += _traverse_node_complexity(self.root)
+
+    def _process_icount(self):
+        """Get a pseudo measurement of instruction count."""
+
+        def _traverse_node_instr_count(node: Node) -> int:
+            count = 0
+            if 'expression' in node.type:
+                count += 1
+            for item in node.children:
+                count += _traverse_node_instr_count(item)
+            return count
+
+        if self.fuzzing_token_tree:
+            self.icount += _traverse_node_instr_count(self.fuzzing_token_tree)
+        else:
+            self.icount += _traverse_node_instr_count(self.root)
 
     def extract_callsites(self, functions: dict[str, 'RustFunction']):
         """Extract callsites."""
 
-        def _process_invoke(expr: Node) -> tuple[str, list[tuple[str, int, int]]]:
+        def _process_invoke(expr: Node) -> list[tuple[str, int, int]]:
             """Internal helper for processing the function invocation statement."""
             callsites = []
-            return_type = ''
-            target_name = ''
+            target_name: str = ''
 
             func = expr.child_by_field_name('function')
 
             # Handle function call
             if func:
                 # Simple function call
-                if func.type == 'identifier':
+                if func.type in ['identifier', 'scoped_identifier']:
                     target_name = func.text.decode()
 
                     # Ignore lambda function calls
@@ -345,41 +403,102 @@ class RustFunction():
                             target_name = ''
 
                 # Chained or instance function call
-                elif func.type == 'field_expression' or func.type == 'scoped_identifier':
-                    #TODO handle correct full function name
-                    #TODO Handle chained call
-                    target_name = func.text.decode().replace(' ', '').replace('\n', '')
+                elif func.type == 'field_expression':
+                    _, target_name = _process_field_expr_return_type(func)
                     callsites.append(
                         (target_name, func.byte_range[1], func.start_point.row + 1))
-                    #TODO Obtain return type from full function list (or empty)
 
             if target_name:
                  callsites.append(
                     (target_name, func.byte_range[1], func.start_point.row + 1))
 
-            return return_type, callsites
+            return callsites
 
         def _process_token_tree(token_tree: Node) -> list[tuple[str, int, int]]:
             """Process and store the callsites of token tree."""
             callsites = []
 
             for child in token_tree.children:
-                content = child.text.decode()
-                if child.type == 'token_tree' and content.startswith('{'):
-                    content_bytes = content.encode('utf-8')
-                    root = self.parent_source.parser.parse(content_bytes)
-                    for child in root.root_node.children:
-                        callsites.extend(_process_callsites(child))
+                callsites.extend(_process_callsites(child))
 
             return callsites
+
+        def _process_field_expr_return_type(field_expr: Node) -> tuple[Optional[str], str]:
+            """Helper for determining the return type of a field expression
+            in a chained call and its full qualified name."""
+            type = None
+
+            name = field_expr.child_by_field_name('field').text.decode()
+            object = field_expr.child_by_field_name('value')
+            full_name = name
+
+            object_type = None
+            if object.type == 'call_expression':
+                object_type = _retrieve_return_type(object)
+            elif object.type in ['identifier', 'scoped_identifier']:
+                object_text = object.text.decode()
+                node = get_function_node(object_text, functions)
+                if node:
+                    object_type = node.return_type
+                else:
+                    object_type = self.var_map.get(object_text)
+            elif object.type == 'self':
+                object_type = self.name.rsplit('::', 1)[0]
+
+            if object_type:
+                if object_type == 'void':
+                    full_name = name
+                else:
+                    full_name = f'{object_type}::{name}'
+
+                node = get_function_node(full_name, functions)
+                if node:
+                    type = node.return_type
+
+            return ((type, full_name))
+
+        def _retrieve_return_type(call_expr: Node) -> Optional[str]:
+            """Helper for determining the return type of a call expression."""
+            type = None
+
+            func = call_expr.child_by_field_name('function')
+            if func:
+                if func.type in ['identifier', 'scoped_identifier']:
+                    func_name = func.text.decode()
+                    node = get_function_node(func_name, functions)
+                    if node:
+                        type = node.return_type
+                elif func.type == 'field_expression':
+                    type, _ = _process_field_expr_return_type(func)
+
+            return type
 
         def _process_callsites(stmt: Node) -> list[tuple[str, int, int]]:
             """Process and store the callsites of the function."""
             callsites = []
 
             if stmt.type == 'call_expression':
-                _, invoke_callsites = _process_invoke(stmt)
-                callsites.extend(invoke_callsites)
+                callsites.extend(_process_invoke(stmt))
+
+            elif stmt.type == 'let_declaration':
+                param_name = stmt.child_by_field_name('pattern')
+                param_type = stmt.child_by_field_name('value')
+                if param_name and param_type:
+                    name = param_name.text.decode()
+                    type = None
+                    if param_type.type == 'identifier':
+                        type = self.var_map.get(param_type.text.decode())
+                    elif param_type.type == 'type_cast_expression':
+                        # In general, type casted object are not callable
+                        # This exists for type safety in case variable tracing for
+                        # pointers and primitive types are needed.
+                        type = param_type.child_by_field_name('type').text.decode()
+                    elif param_type.type == 'call_expression':
+                        type = _retrieve_return_type(param_type)
+
+                    if type:
+                        self.var_map[name] = type
+
 
             for child in stmt.children:
                 callsites.extend(_process_callsites(child))
@@ -416,10 +535,10 @@ class Project():
         report: dict[str, Any] = {'report': 'name'}
         report['sources'] = []
 
-        all_functions = {}
+        self.all_functions = {}
         for source_code in self.source_code_files:
             # Log entry method if provided
-            entry_method = source_code.get_entry_method_name()
+            entry_method = source_code.get_entry_function_name()
             if entry_method:
                 report['Fuzzing method'] = entry_method
 
@@ -431,14 +550,21 @@ class Project():
             })
 
             # Obtain all functions of the project
-            all_functions.update(
-                {func.name: func for func in source_code.functions}
-            )
+            source_code_functions = {
+                func.name: func for func in source_code.functions
+            }
 
-        # Process all project methods
+            # Process entry method
+            if source_code.has_libfuzzer_harness():
+                if f'{harness_name}.rs' not in source_code.source_file:
+                    del source_code_functions['fuzz_target']
+
+            self.all_functions.update(source_code_functions)
+
+        # Process all project functions
         func_list = []
-        for func in all_functions.values():
-            func.extract_callsites(all_functions)
+        for func in self.all_functions.values():
+            func.extract_callsites(self.all_functions)
 
             func_dict: dict[str, Any] = {}
             func_dict['functionName'] = func.name
@@ -459,8 +585,12 @@ class Project():
             func_dict['returnType'] = func.return_type
             func_dict['BranchProfiles'] = []
             func_dict['Callsites'] = func.detailed_callsites
-            func_dict['functionUses'] = 0
-            func_dict['functionDepth'] = 0
+            func_dict['functionUses'] = self.calculate_function_uses(
+                func.name, list(self.all_functions.values())
+            )
+            func_dict['functionDepth'] = self.calculate_function_depth(
+                func, self.all_functions
+            )
             func_dict['constantsTouched'] = []
             func_dict['BBCount'] = 0
             func_dict['signature'] = func.sig
@@ -479,9 +609,63 @@ class Project():
         with open(report_name, 'w', encoding='utf-8') as f:
             f.write(yaml.dump(report))
 
+    def _find_source_with_function(self, name: str) -> Optional[SourceCodeFile]:
+        """Finds the source code with a given function name."""
+        for source_code in self.source_code_files:
+            if get_function_node(
+                name, {func.name: func for func in source_code.functions}):
+                return source_code
+
+        return None
+
+    def calculate_function_uses(self, target_name: str,
+                               all_functions: list[RustFunction]) -> int:
+        """Calculate how many functions called the target function."""
+        func_use_count = 0
+        for function in all_functions:
+            found = False
+            for callsite in function.base_callsites:
+                if callsite[0] == target_name:
+                    found = True
+                    break
+                elif callsite[0].endswith(target_name):
+                    found = True
+                    break
+            if found:
+                func_use_count += 1
+
+        return func_use_count
+
+    def calculate_function_depth(self, target_function: RustFunction,
+                                all_functions: dict[str, RustFunction]) -> int:
+        """Calculate function depth of the target function."""
+
+        def _recursive_function_depth(function: RustFunction) -> int:
+            callsites = function.base_callsites
+            if len(callsites) == 0:
+                return 0
+
+            depth = 0
+            visited.append(function.name)
+            for callsite in callsites:
+                target = get_function_node(callsite[0], all_functions, True)
+                if target and target.name in visited:
+                    depth = max(depth, 1)
+                elif target:
+                    depth = max(depth, _recursive_function_depth(target) + 1)
+                else:
+                    visited.append(callsite[0])
+
+            return depth
+
+        visited: list[str] = []
+        func_depth = _recursive_function_depth(target_function)
+
+        return func_depth
+
     def extract_calltree(self,
                          source_file: str,
-                         source_code: SourceCodeFile,
+                         source_code: Optional[SourceCodeFile] = None,
                          func: Optional[str] = None,
                          visited_funcs: Optional[set[str]] = None,
                          depth: int = 0,
@@ -490,12 +674,48 @@ class Project():
         if not visited_funcs:
             visited_funcs = set()
 
-        if not func:
-            func = source_code.get_entry_method_name()
+        if not source_code and func:
+            source_code = self._find_source_with_function(func)
 
-        # TODO Add calltree extraction logic
+        if not func and source_code:
+            func = source_code.get_entry_function_name()
 
-        return ''
+        func_node = None
+        if func:
+            func_node = get_function_node(func, self.all_functions)
+            if func_node:
+                func_name = func_node.name
+            else:
+                func_name = func
+        else:
+            return ''
+
+        line_to_print = '  ' * depth
+        line_to_print += func_name
+        line_to_print += ' '
+        line_to_print += source_file
+
+        line_to_print += ' '
+        line_to_print += str(line_number)
+
+        line_to_print += '\n'
+
+        if func in visited_funcs or not func_node or not source_code or not func:
+            return line_to_print
+
+        callsites = func_node.base_callsites
+        visited_funcs.add(func)
+
+        for cs, line_number in callsites:
+            line_to_print += self.extract_calltree(
+                source_code.source_file,
+                func=cs,
+                visited_funcs=visited_funcs,
+                depth=depth + 1,
+                line_number=line_number)
+
+        return line_to_print
+
 
     def get_source_codes_with_harnesses(self) -> list[SourceCodeFile]:
         """Gets the source codes that holds libfuzzer harnesses."""
@@ -511,7 +731,8 @@ def capture_source_files_in_tree(directory_tree: str) -> list[str]:
     """Captures source code files in a given directory."""
     exclude_directories = [
         'tests', 'examples', 'benches', 'node_modules',
-        'aflplusplus', 'honggfuzz', 'inspector', 'libfuzzer'
+        'aflplusplus', 'honggfuzz', 'inspector', 'libfuzzer',
+        'source-code'
     ]
     language_extensions = ['.rs']
     language_files = []
@@ -547,3 +768,28 @@ def analyse_source_code(source_content: str,
     source_code = SourceCodeFile(source_file='in-memory string',
                                  source_content=source_content.encode())
     return source_code
+
+def get_function_node(
+    target_name: str,
+    function_map: dict[str, RustFunction],
+    one_layer_only: bool = False
+) -> Optional[RustFunction]:
+    """Helper to retrieve the RustFunction object of a function."""
+
+    # Exact match
+    if target_name in function_map:
+        return function_map[target_name]
+
+    # Match any key that ends with target_name, then
+    # split the target_name by :: and check one by one
+    if one_layer_only:
+        name_split = target_name.split('::', 1)
+    else:
+        name_split = target_name.split('::')
+    for count in range(len(name_split)):
+        for func_name, func in function_map.items():
+            if func_name.endswith('::'.join(name_split[count:])):
+                return func
+
+    return None
+
