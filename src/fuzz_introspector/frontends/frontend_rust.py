@@ -635,7 +635,7 @@ class Project():
         return func_use_count
 
     def calculate_function_depth(self, target_function: RustFunction,
-                                all_functions: dict[str, RustFunction]) -> int:
+                                 all_functions: dict[str, RustFunction]) -> int:
         """Calculate function depth of the target function."""
         def _recursive_function_depth(function: RustFunction) -> int:
             callsites = function.base_callsites
