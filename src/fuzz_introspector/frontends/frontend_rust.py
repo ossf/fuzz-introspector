@@ -64,8 +64,9 @@ class SourceCodeFile():
         the root node."""
         self.root = self.parser.parse(self.source_content).root_node
 
-    def _set_function_method_declaration(
-            self, start_object: Node, start_prefix: list[str] = []):
+    def _set_function_method_declaration(self,
+                                         start_object: Node,
+                                         start_prefix: list[str] = []):
         """Internal helper for retrieving all classes."""
         for node in start_object.children:
             # Reset prefix
@@ -89,7 +90,8 @@ class SourceCodeFile():
                     # Handle general methods in this impl
                     if impl.type == 'function_item':
                         self.functions.append(
-                            RustFunction(impl, self.tree_sitter_lang, self, prefix))
+                            RustFunction(impl, self.tree_sitter_lang, self,
+                                         prefix))
 
                     # Handles inner impl
                     elif impl.type == 'impl_item':
@@ -109,7 +111,8 @@ class SourceCodeFile():
                         # Handle general function in this mod
                         if mod.type == 'function_item':
                             self.functions.append(
-                                RustFunction(mod, self.tree_sitter_lang, self, prefix))
+                                RustFunction(mod, self.tree_sitter_lang, self,
+                                             prefix))
 
                         # Handles inner impl
                         elif mod.type == 'impl_item':
@@ -119,7 +122,8 @@ class SourceCodeFile():
                         elif mod.type == 'mod_item':
                             inner_body = mod.child_by_field_name('body')
                             if inner_body:
-                                self._set_function_method_declaration(inner_body, prefix)
+                                self._set_function_method_declaration(
+                                    inner_body, prefix)
 
             # Handling trait item
             elif node.type == 'trait_item':
@@ -134,14 +138,18 @@ class SourceCodeFile():
                     # Handle general methods in this trait
                     if trait.type == 'function_item':
                         self.functions.append(
-                            RustFunction(trait, self.tree_sitter_lang, self, prefix))
+                            RustFunction(trait, self.tree_sitter_lang, self,
+                                         prefix))
 
             # Handling for fuzzing harness entry point macro invocation
             elif node.type == 'expression_statement':
                 for macro in node.children:
                     if macro.type == 'macro_invocation':
-                        rust_function = RustFunction(
-                            macro, self.tree_sitter_lang, self, prefix, is_macro=True)
+                        rust_function = RustFunction(macro,
+                                                     self.tree_sitter_lang,
+                                                     self,
+                                                     prefix,
+                                                     is_macro=True)
 
                         # Only consider the macro as function if it is the
                         # fuzzing entry point (fuzz_target macro)
@@ -152,7 +160,8 @@ class SourceCodeFile():
             elif node.type == 'use_declaration':
                 use_stmt = node.child_by_field_name('argument')
                 if use_stmt:
-                    use_map = self._process_recursive_use(use_stmt.text.decode())
+                    use_map = self._process_recursive_use(
+                        use_stmt.text.decode())
                     self.uses.update(use_map)
 
             # TODO handle static_item / const_item
@@ -178,7 +187,9 @@ class SourceCodeFile():
 
         return result
 
-    def _process_recursive_use(self, use_stmt: str, path: str = '') -> dict[str, str]:
+    def _process_recursive_use(self,
+                               use_stmt: str,
+                               path: str = '') -> dict[str, str]:
         """Internal recursive function to process use statement."""
         result = {}
 
@@ -189,7 +200,8 @@ class SourceCodeFile():
             if inner.endswith('}'):
                 inner = inner[:-1]
             for item in self._split_use_stmt(inner):
-                result.update(self._process_recursive_use(item, f'{path}{prefix}::'))
+                result.update(
+                    self._process_recursive_use(item, f'{path}{prefix}::'))
         else:
             name = prefix.split('::')[-1]
             result[name] = f'{path}{prefix}'
@@ -290,7 +302,8 @@ class RustFunction():
 
         # Process signature
         signature = self.root.text.decode().split('{')[0]
-        self.sig = ''.join(line.strip() for line in signature.splitlines() if line.strip())
+        self.sig = ''.join(line.strip() for line in signature.splitlines()
+                           if line.strip())
 
         # Process body
         body = self.root.child_by_field_name('body')
@@ -301,7 +314,8 @@ class RustFunction():
                 elif stmt.type == 'function_item':
                     # Handle inner function:
                     self.parent_source.functions.append(
-                        RustFunction(stmt, self.tree_sitter_lang, self.parent_source, self.name))
+                        RustFunction(stmt, self.tree_sitter_lang,
+                                     self.parent_source, self.name))
 
     def _process_macro_declaration(self):
         """Internal helper to process the macro declaration for fuzzing
@@ -360,7 +374,8 @@ class RustFunction():
             return count
 
         if self.fuzzing_token_tree:
-            self.complexity += _traverse_node_complexity(self.fuzzing_token_tree)
+            self.complexity += _traverse_node_complexity(
+                self.fuzzing_token_tree)
         else:
             self.complexity += _traverse_node_complexity(self.root)
 
@@ -405,15 +420,17 @@ class RustFunction():
                 # Chained or instance function call
                 elif func.type == 'field_expression':
                     _, target_name = _process_field_expr_return_type(func)
-                    callsites.append(
-                        (target_name, func.byte_range[1], func.start_point.row + 1))
+                    callsites.append((target_name, func.byte_range[1],
+                                      func.start_point.row + 1))
 
             if target_name:
-                callsites.append((target_name, func.byte_range[1], func.start_point.row + 1))
+                callsites.append((target_name, func.byte_range[1],
+                                  func.start_point.row + 1))
 
             return callsites
 
-        def _process_token_tree(token_tree: Node) -> list[tuple[str, int, int]]:
+        def _process_token_tree(
+                token_tree: Node) -> list[tuple[str, int, int]]:
             """Process and store the callsites of token tree."""
             callsites = []
 
@@ -422,7 +439,8 @@ class RustFunction():
 
             return callsites
 
-        def _process_field_expr_return_type(field_expr: Node) -> tuple[Optional[str], str]:
+        def _process_field_expr_return_type(
+                field_expr: Node) -> tuple[Optional[str], str]:
             """Helper for determining the return type of a field expression
             in a chained call and its full qualified name."""
             type = None
@@ -491,7 +509,8 @@ class RustFunction():
                         # In general, type casted object are not callable
                         # This exists for type safety in case variable tracing for
                         # pointers and primitive types are needed.
-                        type = param_type.child_by_field_name('type').text.decode()
+                        type = param_type.child_by_field_name(
+                            'type').text.decode()
                     elif param_type.type == 'call_expression':
                         type = _retrieve_return_type(param_type)
 
@@ -549,7 +568,8 @@ class Project():
 
             # Obtain all functions of the project
             source_code_functions = {
-                func.name: func for func in source_code.functions
+                func.name: func
+                for func in source_code.functions
             }
 
             # Process entry method
@@ -584,11 +604,9 @@ class Project():
             func_dict['BranchProfiles'] = []
             func_dict['Callsites'] = func.detailed_callsites
             func_dict['functionUses'] = self.calculate_function_uses(
-                func.name, list(self.all_functions.values())
-            )
+                func.name, list(self.all_functions.values()))
             func_dict['functionDepth'] = self.calculate_function_depth(
-                func, self.all_functions
-            )
+                func, self.all_functions)
             func_dict['constantsTouched'] = []
             func_dict['BBCount'] = 0
             func_dict['signature'] = func.sig
@@ -607,11 +625,13 @@ class Project():
         with open(report_name, 'w', encoding='utf-8') as f:
             f.write(yaml.dump(report))
 
-    def _find_source_with_function(self, name: str) -> Optional[SourceCodeFile]:
+    def _find_source_with_function(self,
+                                   name: str) -> Optional[SourceCodeFile]:
         """Finds the source code with a given function name."""
         for source_code in self.source_code_files:
             if get_function_node(
-                name, {func.name: func for func in source_code.functions}):
+                    name, {func.name: func
+                           for func in source_code.functions}):
                 return source_code
 
         return None
@@ -634,9 +654,11 @@ class Project():
 
         return func_use_count
 
-    def calculate_function_depth(self, target_function: RustFunction,
-                                 all_functions: dict[str, RustFunction]) -> int:
+    def calculate_function_depth(
+            self, target_function: RustFunction,
+            all_functions: dict[str, RustFunction]) -> int:
         """Calculate function depth of the target function."""
+
         def _recursive_function_depth(function: RustFunction) -> int:
             callsites = function.base_callsites
             if len(callsites) == 0:
@@ -704,12 +726,11 @@ class Project():
         visited_funcs.add(func)
 
         for cs, line_number in callsites:
-            line_to_print += self.extract_calltree(
-                source_code.source_file,
-                func=cs,
-                visited_funcs=visited_funcs,
-                depth=depth + 1,
-                line_number=line_number)
+            line_to_print += self.extract_calltree(source_code.source_file,
+                                                   func=cs,
+                                                   visited_funcs=visited_funcs,
+                                                   depth=depth + 1,
+                                                   line_number=line_number)
 
         return line_to_print
 
@@ -726,9 +747,8 @@ class Project():
 def capture_source_files_in_tree(directory_tree: str) -> list[str]:
     """Captures source code files in a given directory."""
     exclude_directories = [
-        'tests', 'examples', 'benches', 'node_modules',
-        'aflplusplus', 'honggfuzz', 'inspector', 'libfuzzer',
-        'source-code'
+        'tests', 'examples', 'benches', 'node_modules', 'aflplusplus',
+        'honggfuzz', 'inspector', 'libfuzzer', 'source-code'
     ]
     language_extensions = ['.rs']
     language_files = []
@@ -766,11 +786,9 @@ def analyse_source_code(source_content: str,
     return source_code
 
 
-def get_function_node(
-    target_name: str,
-    function_map: dict[str, RustFunction],
-    one_layer_only: bool = False
-) -> Optional[RustFunction]:
+def get_function_node(target_name: str,
+                      function_map: dict[str, RustFunction],
+                      one_layer_only: bool = False) -> Optional[RustFunction]:
     """Helper to retrieve the RustFunction object of a function."""
 
     # Exact match
