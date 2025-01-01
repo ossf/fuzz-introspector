@@ -182,7 +182,7 @@ class SourceCodeFile():
         """Internal recursive function to process use statement."""
         result = {}
 
-        use_stmt = use_stmt.replace(' ','').removeprefix('crate::')
+        use_stmt = use_stmt.replace(' ', '').removeprefix('crate::')
         prefix, *suffix = use_stmt.split('::{', 1)
         if suffix:
             inner = suffix[0]
@@ -409,8 +409,7 @@ class RustFunction():
                         (target_name, func.byte_range[1], func.start_point.row + 1))
 
             if target_name:
-                 callsites.append(
-                    (target_name, func.byte_range[1], func.start_point.row + 1))
+                callsites.append((target_name, func.byte_range[1], func.start_point.row + 1))
 
             return callsites
 
@@ -498,7 +497,6 @@ class RustFunction():
 
                     if type:
                         self.var_map[name] = type
-
 
             for child in stmt.children:
                 callsites.extend(_process_callsites(child))
@@ -619,7 +617,7 @@ class Project():
         return None
 
     def calculate_function_uses(self, target_name: str,
-                               all_functions: list[RustFunction]) -> int:
+                                all_functions: list[RustFunction]) -> int:
         """Calculate how many functions called the target function."""
         func_use_count = 0
         for function in all_functions:
@@ -639,7 +637,6 @@ class Project():
     def calculate_function_depth(self, target_function: RustFunction,
                                 all_functions: dict[str, RustFunction]) -> int:
         """Calculate function depth of the target function."""
-
         def _recursive_function_depth(function: RustFunction) -> int:
             callsites = function.base_callsites
             if len(callsites) == 0:
@@ -716,7 +713,6 @@ class Project():
 
         return line_to_print
 
-
     def get_source_codes_with_harnesses(self) -> list[SourceCodeFile]:
         """Gets the source codes that holds libfuzzer harnesses."""
         harnesses = []
@@ -769,6 +765,7 @@ def analyse_source_code(source_content: str,
                                  source_content=source_content.encode())
     return source_code
 
+
 def get_function_node(
     target_name: str,
     function_map: dict[str, RustFunction],
@@ -792,4 +789,3 @@ def get_function_node(
                 return func
 
     return None
-
