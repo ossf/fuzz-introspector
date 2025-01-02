@@ -223,7 +223,13 @@ def process_rust_project(target_dir, out):
             f.write(f'Call tree\n{calltree}')
 
 
-def analyse_folder(language, directory, entrypoint, out='', module_only=False):
+def analyse_folder(language: str = '',
+                   directory: str = '',
+                   entrypoint: str = '',
+                   out='',
+                   module_only=False):
+    """Runs a full frontend analysis on a given directory"""
+
     if language == 'c':
         process_c_project(directory, entrypoint, out, module_only)
     if language.lower() in ['cpp', 'c++']:
