@@ -28,7 +28,7 @@ from datetime import datetime
 from enum import Enum
 
 from fuzz_introspector import utils, constants
-from fuzz_introspector.datatypes import fuzzer_profile, project_profile
+from fuzz_introspector.datatypes import fuzzer_profile
 
 logger = logging.getLogger(name=__name__)
 
@@ -157,8 +157,9 @@ def html_get_navbar(title: str) -> str:
     return navbar
 
 
-def create_pfc_button(profiles: List[fuzzer_profile.FuzzerProfile],
-                      coverage_url: str) -> str:
+def create_pfc_button(introspection_proj, coverage_url: str) -> str:
+    """Creates the box holding fuzzer coverage links, including links
+    to coverage reports per fuzzer."""
     html_string = ""
     html_string += """
                     <div class="yellow-button-wrapper"
@@ -168,7 +169,7 @@ def create_pfc_button(profiles: List[fuzzer_profile.FuzzerProfile],
                             Per-fuzzer coverage
                         </div>
                     <div class="per-fuzzer-coverage-dropdown" id="per-fuzzer-coverage-dropdown">"""
-    for profile in profiles:
+    for profile in introspection_proj.profiles:
         target_name = profile.identifier
         target_coverage_url = utils.get_target_coverage_url(
             coverage_url, target_name, profile.target_lang)
@@ -196,22 +197,24 @@ def create_pfc_button(profiles: List[fuzzer_profile.FuzzerProfile],
     return html_string
 
 
-def html_get_table_of_contents(
-        table_of_contents: HtmlTableOfContents, coverage_url: str,
-        profiles: List[fuzzer_profile.FuzzerProfile],
-        proj_profile: project_profile.MergedProjectProfile) -> str:
-    per_fuzzer_coverage_button = create_pfc_button(profiles, coverage_url)
+def html_get_table_of_contents(table_of_contents: HtmlTableOfContents,
+                               coverage_url: str, introspection_proj) -> str:
+    """Getst HTML string for table of contents bar."""
+    per_fuzzer_coverage_button = create_pfc_button(introspection_proj,
+                                                   coverage_url)
 
-    if proj_profile.target_lang == "c-cpp":
+    if introspection_proj.proj_profile.target_lang == "c-cpp":
         cov_index = "report.html"
-    elif proj_profile.target_lang == "python":
+    elif introspection_proj.proj_profile.target_lang == "python":
         cov_index = "index.html"
-    elif proj_profile.target_lang == "jvm":
+    elif introspection_proj.proj_profile.target_lang == "jvm":
         cov_index = "index.html"
-    elif proj_profile.target_lang == "rust":
+    elif introspection_proj.proj_profile.target_lang == "rust":
         cov_index = "report.html"
-    elif proj_profile.target_lang == "go":
+    elif introspection_proj.proj_profile.target_lang == "go":
         cov_index = "index.html"
+    else:
+        cov_index = 'report.html'
 
     html_toc_string = ""
     html_toc_string += f"""<div class="left-sidebar">\
@@ -227,7 +230,7 @@ def html_get_table_of_contents(
                                     </a>
                                 </div>
                         """
-    if proj_profile.target_lang != "python":
+    if introspection_proj.proj_profile.target_lang != "python":
         html_toc_string += f"{per_fuzzer_coverage_button}"
 
     html_toc_string += """</div>
