@@ -16,6 +16,7 @@ hidden_imports="--hidden-import=yaml \
                --hidden-import=tree_sitter_c \
                --hidden-import=tree_sitter_go \
                --hidden-import=tree_sitter_java \
+               --hidden-import=tree_sitter_rust \
                --hidden-import=pkg_resources.extern \
                --hidden-import=rust_demangler"
 #fuzzers="test_fuzz_cfg_load.py test_fuzz_report_generation.py"
