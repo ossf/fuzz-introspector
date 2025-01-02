@@ -18,7 +18,7 @@ import os
 import json
 import yaml
 import shutil
-from typing import List
+from typing import List, Optional
 
 from fuzz_introspector import analysis
 from fuzz_introspector import constants
@@ -38,7 +38,7 @@ def diff_two_reports(report1: str, report2: str) -> int:
 
 def correlate_binaries_to_logs(binaries_dir: str) -> int:
     pairings = utils.scan_executables_for_fuzz_introspector_logs(binaries_dir)
-    logger.info(f"Pairings: {str(pairings)}")
+    logger.info("Pairings: %s", str(pairings))
     with open("exe_to_fuzz_introspector_logs.yaml", "w+") as etf:
         etf.write(yaml.dump({'pairings': pairings}))
     return constants.APP_EXIT_SUCCESS
@@ -64,9 +64,13 @@ def run_analysis_on_dir(target_folder: str,
                         enable_all_analyses: bool,
                         report_name: str,
                         language: str,
-                        output_json: List[str] = [],
+                        output_json: Optional[List[str]] = None,
                         parallelise: bool = True,
                         dump_files: bool = True) -> int:
+    """Runs Fuzz Introspector analysis from based on the results
+    from a frontend run. The primary task is to aggregate the data
+    and generate a HTML report."""
+
     constants.should_dump_files = dump_files
 
     if enable_all_analyses:
@@ -80,6 +84,8 @@ def run_analysis_on_dir(target_folder: str,
 
     logger.info("Analyses to run: %s", str(analyses_to_run))
     logger.info("[+] Creating HTML report")
+    if output_json is None:
+        output_json = []
     html_report.create_html_report(introspection_proj, analyses_to_run,
                                    output_json, report_name, dump_files)
 
