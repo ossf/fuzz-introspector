@@ -64,7 +64,7 @@ class IntrospectionProject():
                                                       self.language,
                                                       parallelise)
 
-        logger.info(f"Found {len(self.profiles)} profiles")
+        logger.info(f"Found %d profiles", len(self.profiles))
         if len(self.profiles) == 0:
             logger.info("Found no profiles")
             raise DataLoaderError("No fuzzer profiles")
