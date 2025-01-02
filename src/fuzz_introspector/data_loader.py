@@ -69,7 +69,7 @@ def read_fuzzer_data_file_to_profile(
 
     if not profile.has_entry_point():
         logger.info("Found no entrypoints")
-        return None
+
     logger.info("Returning profile")
     return profile
 
@@ -80,10 +80,10 @@ def _load_profile(data_file: str, language: str, manager, semaphore=None):
         semaphore.acquire()
 
     profile = read_fuzzer_data_file_to_profile(data_file, language)
-    logger.info('profile is none')
     if profile is not None:
         manager[data_file] = profile
-
+    else:
+        logger.error('profile is none')
     if semaphore is not None:
         semaphore.release()
 

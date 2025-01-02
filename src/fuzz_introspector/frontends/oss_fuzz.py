@@ -66,6 +66,16 @@ def process_c_project(target_dir, entrypoint, out, module_only=False):
     logger.info('Creating base project.')
     project = frontend_c.Project(source_codes)
 
+    # We may not need to do this, but will do it while refactoring into
+    # the new frontends.
+    if not project.get_source_codes_with_harnesses():
+        target = os.path.join(out, 'fuzzerLogFile-0.data.yaml')
+        project.dump_module_logic(target, 'no-harness-in-project', target_dir)
+
+        with open(os.path.join(out, 'fuzzerLogFile-0.data'), 'w') as f:
+            f.write("Call tree\n")
+            f.write("====================================")
+
     if module_only:
         idx = 1
         target = os.path.join(out, 'report.yaml')

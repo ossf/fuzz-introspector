@@ -37,7 +37,8 @@ class MergedProjectProfile:
     digesting data from all the fuzzers in the project.
     """
 
-    def __init__(self, profiles: List[fuzzer_profile.FuzzerProfile]):
+    def __init__(self, profiles: List[fuzzer_profile.FuzzerProfile],
+                 language: str):
         self.name = None
         self.profiles = profiles
         self.all_functions: Dict[str,
@@ -49,6 +50,7 @@ class MergedProjectProfile:
         self.coverage_url = "#"
         self.dst_to_fd_cache: Dict[str,
                                    function_profile.FunctionProfile] = dict()
+        self.language = language
 
         logger.info(
             f"Creating merged profile of {len(self.profiles)} profiles")
@@ -230,6 +232,8 @@ class MergedProjectProfile:
         if len(set_of_targets) > 1:
             raise exceptions.AnalysisError(
                 "Project has fuzzers with multiple targets")
+        if not set_of_targets:
+            return self.language
         return set_of_targets.pop()
 
     @property
