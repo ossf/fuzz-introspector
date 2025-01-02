@@ -101,7 +101,8 @@ class IntrospectionProject():
         self.profiles = new_profiles
 
         logger.info("[+] Creating project profile")
-        self.proj_profile = project_profile.MergedProjectProfile(self.profiles)
+        self.proj_profile = project_profile.MergedProjectProfile(
+            self.profiles, self.language)
         self.proj_profile.coverage_url = self.coverage_url
 
         logger.info("[+] Refining profiles")
