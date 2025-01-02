@@ -46,6 +46,9 @@ def correlate_binaries_to_logs(binaries_dir: str) -> int:
 
 def end_to_end(args) -> int:
     """Runs both frontend and backend."""
+    if not args.language:
+        args.language = utils.detect_language(args.target_dir)
+
     oss_fuzz.analyse_folder(args.language, args.target_dir,
                             'LLVMFuzzerTestOneInput')
 
