@@ -35,12 +35,13 @@ from fuzz_introspector.datatypes import project_profile, fuzzer_profile
 logger = logging.getLogger(name=__name__)
 
 
-def create_overview_table(tables: List[str],
-                          profiles: List[fuzzer_profile.FuzzerProfile]) -> str:
+def create_overview_table(
+        tables: List[str],
+        introspection_proj: analysis.IntrospectionProject) -> str:
     """Table with an overview of all the fuzzers"""
     html_string = html_helpers.html_create_table_head(
         tables[-1], html_constants.FUZZER_OVERVIEW_TABLE_COLUMNS)
-    for profile in profiles:  # create a row for each fuzzer.
+    for profile in introspection_proj.profiles:  # Create a row for each fuzzer.
         fuzzer_filename = profile.fuzzer_source_file
         html_string += html_helpers.html_table_add_row([
             profile.identifier, fuzzer_filename,
@@ -532,8 +533,9 @@ def write_content_to_html_files(html_full_doc, all_functions_json_html,
     styling.copy_style_files(os.getcwd())
 
 
-def create_section_fuzzers_overview(table_of_contents, tables,
-                                    profiles) -> str:
+def create_section_fuzzers_overview(
+        table_of_contents, tables,
+        introspection_proj: analysis.IntrospectionProject) -> str:
     """Section with table with overview of all fuzzers."""
     logger.info(" - Creating table with overview of all fuzzers")
     html_report_core = "<div class=\"report-box\">"
@@ -541,7 +543,7 @@ def create_section_fuzzers_overview(table_of_contents, tables,
         "Fuzzers overview", html_helpers.HTML_HEADING.H1, table_of_contents)
     html_report_core += "<div class=\"collapsible\">"
     tables.append(f"myTable{len(tables)}")
-    html_report_core += create_overview_table(tables, profiles)
+    html_report_core += create_overview_table(tables, introspection_proj)
 
     # report-box
     html_report_core += "</div>"  # .collapsible
@@ -583,9 +585,9 @@ def create_section_project_overview(table_of_contents, proj_profile,
     return html_overview, html_report_top, html_report_core
 
 
-def create_section_fuzzer_detailed_section(table_of_contents, profiles,
-                                           proj_profile, tables, conclusions,
-                                           fuzzer_table_data, dump_files):
+def create_section_fuzzer_detailed_section(
+        table_of_contents, introspection_proj: analysis.IntrospectionProject,
+        tables, conclusions, fuzzer_table_data, dump_files):
     """Section with details about each fuzzer, including calltree."""
     logger.info(" - Creating section with details about each fuzzer")
     html_report_core = "<div class=\"report-box\">"
@@ -593,10 +595,11 @@ def create_section_fuzzer_detailed_section(table_of_contents, profiles,
         "Fuzzer details", html_helpers.HTML_HEADING.H1, table_of_contents)
 
     html_report_core += "<div class=\"collapsible\">"
-    for profile_idx in range(len(profiles)):
+    for profile_idx, harness_profile in enumerate(introspection_proj.profiles):
         html_report_core += create_fuzzer_detailed_section(
-            proj_profile, profiles[profile_idx], table_of_contents, tables,
-            profile_idx, conclusions, True, fuzzer_table_data, dump_files)
+            introspection_proj.proj_profile, harness_profile,
+            table_of_contents, tables, profile_idx, conclusions, True,
+            fuzzer_table_data, dump_files)
     html_report_core += "</div>"  # .collapsible
     html_report_core += "</div>"  # report box
     return html_report_core
@@ -626,10 +629,10 @@ def create_section_all_functions(table_of_contents, tables, proj_profile,
     return all_function_table, all_functions_json_html, all_functions_json_report, html_report_core
 
 
-def create_section_optional_analyses(table_of_contents, analyses_to_run,
-                                     output_json, tables, proj_profile,
-                                     profiles, basefolder, coverage_url,
-                                     conclusions, dump_files) -> str:
+def create_section_optional_analyses(
+        table_of_contents, analyses_to_run, output_json, tables,
+        introspection_proj: analysis.IntrospectionProject, basefolder,
+        coverage_url, conclusions, dump_files) -> str:
     """Creates the HTML sections containing optional analyses."""
     html_report_core = ""
     logger.info(" - Handling optional analyses")
@@ -639,7 +642,8 @@ def create_section_optional_analyses(table_of_contents, analyses_to_run,
         table_of_contents)
     html_report_core += "<div class=\"collapsible\">"
 
-    # Combine and distinguish analyser requires output in html or both (html and json)
+    # Combine and distinguish analyser requires output in html or both
+    # (html and json)
     combined_analyses = analyses_to_run + [
         x for x in output_json if x not in analyses_to_run
     ]
@@ -655,8 +659,9 @@ def create_section_optional_analyses(table_of_contents, analyses_to_run,
                 analysis_name in analyses_to_run)
 
             html_string = analysis_instance.analysis_func(
-                table_of_contents, tables, proj_profile, profiles, basefolder,
-                coverage_url, conclusions)
+                table_of_contents, tables, introspection_proj.proj_profile,
+                introspection_proj.profiles, basefolder, coverage_url,
+                conclusions)
 
             # Only add the HTML content if it's an analysis that we want
             # the non-json output from.
@@ -716,10 +721,6 @@ def create_html_report(introspection_proj: analysis.IntrospectionProject,
     mapping that requires separate json report generation to avoid
     reruning those analysing process.
     """
-    profiles = introspection_proj.profiles
-    proj_profile = introspection_proj.proj_profile
-    coverage_url = introspection_proj.proj_profile.coverage_url
-    basefolder = introspection_proj.proj_profile.basefolder
 
     # Main logic
     tables: List[str] = list()
@@ -742,28 +743,32 @@ def create_html_report(introspection_proj: analysis.IntrospectionProject,
     # Create overview section
     (html_overview, html_report_top,
      html_report_core) = create_section_project_overview(
-         table_of_contents, proj_profile, conclusions, report_name)
+         table_of_contents, introspection_proj.proj_profile, conclusions,
+         report_name)
 
     # Create section with overview of all fuzzers
     html_report_core += create_section_fuzzers_overview(
-        table_of_contents, tables, profiles)
+        table_of_contents, tables, introspection_proj)
 
     # Create section with table of all functions in project.
     (all_function_table, all_functions_json_html, all_functions_json_report,
      html_all_function_section) = create_section_all_functions(
-         table_of_contents, tables, proj_profile, coverage_url, basefolder)
+         table_of_contents, tables, introspection_proj.proj_profile,
+         introspection_proj.proj_profile.coverage_url,
+         introspection_proj.proj_profile.basefolder)
     html_report_core += html_all_function_section
 
     # Section with details of each fuzzer.
     fuzzer_table_data: Dict[str, Any] = dict()
     html_report_core += create_section_fuzzer_detailed_section(
-        table_of_contents, profiles, proj_profile, tables, conclusions,
+        table_of_contents, introspection_proj, tables, conclusions,
         fuzzer_table_data, dump_files)
 
     # Generate sections for all optional analyses
     html_report_core += create_section_optional_analyses(
-        table_of_contents, analyses_to_run, output_json, tables, proj_profile,
-        profiles, basefolder, coverage_url, conclusions, dump_files)
+        table_of_contents, analyses_to_run, output_json, tables,
+        introspection_proj, introspection_proj.proj_profile.basefolder,
+        introspection_proj.proj_profile.coverage_url, conclusions, dump_files)
 
     # Create HTML showing the conclusions at the top of the report.
     html_report_top += html_helpers.create_conclusions_box(conclusions)
@@ -776,7 +781,8 @@ def create_html_report(introspection_proj: analysis.IntrospectionProject,
     # Make table of contents. We can first do this now because it should be
     # done after assembling all entires in the table of contents.
     html_toc_string = html_helpers.html_get_table_of_contents(
-        table_of_contents, coverage_url, profiles, proj_profile)
+        table_of_contents, introspection_proj.proj_profile.coverage_url,
+        introspection_proj)
 
     # Close content-wrapper.
     html_content_end = "</div>"
@@ -797,27 +803,30 @@ def create_html_report(introspection_proj: analysis.IntrospectionProject,
     # Correlate debug info to introspector functions
     analysis.correlate_introspection_functions_to_debug_info(
         all_functions_json_report, introspection_proj.debug_all_functions,
-        proj_profile.target_lang, introspection_proj.debug_report)
+        introspection_proj.proj_profile.target_lang,
+        introspection_proj.debug_report)
 
     all_test_files = analysis.extract_test_information(
-        introspection_proj.debug_report, proj_profile.target_lang)
+        introspection_proj.debug_report,
+        introspection_proj.proj_profile.target_lang)
     with open(constants.TEST_FILES_JSON, 'w') as test_file_fd:
         test_file_fd.write(json.dumps(list(all_test_files)))
 
-    all_source_files = analysis.extract_all_sources(proj_profile.target_lang)
+    all_source_files = analysis.extract_all_sources(
+        introspection_proj.proj_profile.target_lang)
     with open(constants.ALL_SOURCE_FILES, 'w') as source_fd:
         source_fd.write(json.dumps(list(all_source_files)))
 
     # Write various stats and all-functions data to summary.json
-    proj_profile.write_stats_to_summary_file()
+    introspection_proj.proj_profile.write_stats_to_summary_file()
 
     # Write all functions to all-fuzz-introspector-functions.json
     json_report.create_all_fi_functions_json(all_functions_json_report)
 
     # Write jvm constructor details to all-fuzz-introspector-jvm-constructor.json
-    if proj_profile.target_lang == 'jvm' and all_functions_json_report:
+    if introspection_proj.proj_profile.target_lang == 'jvm' and all_functions_json_report:
         jvm_constructor_json_report = []
-        for fd in proj_profile.all_constructors.values():
+        for fd in introspection_proj.proj_profile.all_constructors.values():
             json_copy = dict()
             json_copy['Func name'] = fd.function_name
             json_copy['func_url'] = 'N/A'
