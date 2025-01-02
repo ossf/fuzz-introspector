@@ -579,7 +579,7 @@ def detect_language(directory) -> str:
         '/src/aflplusplus', '/src/honggfuzz', '/src/libfuzzer', '/src/fuzztest'
     ]
 
-    language_counts = {}
+    language_counts: Dict[str, int] = {}
 
     for dirpath, _, filenames in os.walk(directory):
         if any([x for x in paths_to_avoid if dirpath.startswith(x)]):
