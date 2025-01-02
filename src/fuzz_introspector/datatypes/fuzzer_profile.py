@@ -56,7 +56,7 @@ class FuzzerProfile:
         self._target_lang = target_lang
         self.introspector_data_file = cfg_file
 
-        self.functions_reached_by_fuzzer = []
+        self.functions_reached_by_fuzzer: List[str] = []
 
         # Load calltree file
         self.fuzzer_callsite_calltree = cfg_load.data_file_read_calltree(
