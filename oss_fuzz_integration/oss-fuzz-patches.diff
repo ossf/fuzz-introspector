@@ -52,7 +52,7 @@ index 1c10d9e23..6a97bc287 100755
      # Output will be put in /out/
 -    python3 /fuzz-introspector/frontends/java/oss-fuzz-main.py
 +    # Using new approach
-+    python3 -m fuzz_introspector.frontends.oss_fuzz --language jvm --target-dir $SRC
++    python3 -m fuzz_introspector.frontends.oss_fuzz --language jvm --target-dir $SRC --entrypoint fuzzerTestOneInput
 +    # python3 /fuzz-introspector/frontends/java/oss-fuzz-main.py
      # Move files temporarily to fit workflow of other languages.
      mkdir -p $SRC/my-fi-data
