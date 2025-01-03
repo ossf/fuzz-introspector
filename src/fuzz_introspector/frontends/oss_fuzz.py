@@ -148,9 +148,8 @@ def process_go_project(target_dir, out):
         harness_name = harness.source_file.split('/')[-1].split('.')[0]
         logger.info(f'Dump functions/methods for {harness_name}')
         target = os.path.join(out, f'fuzzerLogFile-{harness_name}.data.yaml')
-        project.dump_module_logic(
-            target, harness.get_entry_function_name(), harness.source_file
-        )
+        project.dump_module_logic(target, harness.get_entry_function_name(),
+                                  harness.source_file)
 
         logger.info(f'Extracting calltree for {harness_name}')
         calltree = project.extract_calltree(harness.source_file, harness)
