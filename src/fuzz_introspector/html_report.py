@@ -134,6 +134,11 @@ def create_all_function_table(
             fd.total_cyclomatic_complexity,
             "Undiscovered complexity": fd.new_unreached_complexity
         }
+
+        # Add function signature if exist
+        if fd.signature:
+            row_element['function_signature'] = fd.signature
+
         table_rows_json_html.append(row_element)
 
         # Add the entry to json list.

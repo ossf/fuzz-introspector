@@ -55,6 +55,7 @@ class FunctionProfile:
         self.constants_touched = elem['constantsTouched']
         self.branch_profiles = self.load_func_branch_profiles(
             elem['BranchProfiles'])
+        self.signature = elem.get('signature', '')
 
         # Duplication of functions_reached to keep the original sets
         # of call trees for further processing and analysis. This

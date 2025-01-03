@@ -1009,7 +1009,7 @@ def correlate_introspection_functions_to_debug_info(all_functions_json_report,
         else:
             if proj_lang == 'jvm':
                 if_func['function_signature'] = if_func['Func name']
-            else:
+            elif not if_func.get('function_signature'):
                 if_func['function_signature'] = 'N/A'
             if_func['debug_function_info'] = dict()
 
