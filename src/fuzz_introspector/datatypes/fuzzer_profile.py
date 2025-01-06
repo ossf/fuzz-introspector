@@ -130,8 +130,9 @@ class FuzzerProfile:
             return os.path.basename(self.fuzzer_source_file).replace(".py", "")
 
         elif self._target_lang == "jvm":
-            # Class name is used for jvm identifier
-            return os.path.basename(self.fuzzer_source_file)
+            # Class name is used for jvm identifier for old frontend
+            return os.path.basename(self.fuzzer_source_file).replace(
+                ".java", "")
 
         elif self._target_lang == "rust":
             return os.path.basename(self.fuzzer_source_file).replace(".rs", "")

@@ -177,11 +177,15 @@ class Project():
             for item in src.functions + src.methods
         ]
 
-    def dump_module_logic(self, report_name: str, entry_function: str = ''):
+    def dump_module_logic(self,
+                          report_name: str,
+                          entry_function: str = '',
+                          harness_source: str = ''):
         """Dumps the data for the module in full."""
         logger.info('Dumping project-wide logic.')
         report: dict[str, Any] = {'report': 'name'}
         report['sources'] = []
+        report['Fuzzer filename'] = harness_source
 
         # Log entry function if provided
         if entry_function:
