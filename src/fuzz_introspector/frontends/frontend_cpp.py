@@ -41,9 +41,9 @@ class SourceCodeFile():
         self.parser = Parser(self.tree_sitter_lang)
 
         self.root = None
-#        self.struct_defs = []
-#        self.typedefs = []
-#        self.includes = set()
+        #        self.struct_defs = []
+        #        self.typedefs = []
+        #        self.includes = set()
         self.func_defs: list['FunctionDefinition'] = []
 
         if source_content:
@@ -100,7 +100,9 @@ class SourceCodeFile():
         self.func_defs.append(
             FunctionDefinition(node, self.tree_sitter_lang, self, namespace))
 
-    def get_function_node(self, target_function_name: str, exact: bool = False):
+    def get_function_node(self,
+                          target_function_name: str,
+                          exact: bool = False):
         """Gets the tree-sitter node corresponding to a function."""
 
         # Find the first instance of the function name
@@ -125,7 +127,9 @@ class SourceCodeFile():
                 return func
         return None
 
-    def has_function_definition(self, target_function_name: str, exact: bool = False):
+    def has_function_definition(self,
+                                target_function_name: str,
+                                exact: bool = False):
         """Returns if the source file holds a given function definition."""
 
         if self.get_function_node(target_function_name, exact):
@@ -144,11 +148,8 @@ class SourceCodeFile():
 class FunctionDefinition():
     """Wrapper for a function definition"""
 
-    def __init__(
-        self, root: Node,
-        tree_sitter_lang: Language,
-        source_code: 'SourceCodeFile',
-        namespace: str):
+    def __init__(self, root: Node, tree_sitter_lang: Language,
+                 source_code: 'SourceCodeFile', namespace: str):
         self.root = root
         self.tree_sitter_lang = tree_sitter_lang
         self.parent_source = source_code
