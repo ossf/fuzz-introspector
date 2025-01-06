@@ -90,7 +90,7 @@ class SourceCodeFile():
             elif new_namespace.type == 'namespace_identifier':
                 namespace += '::' + new_namespace.text.decode()
                 if namespace.startswith('::'):
-                    namespac = namespace[2:]
+                    namespace = namespace[2:]
 
         # Continue to process the tree of the namespace
         self.process_tree(node, namespace)
