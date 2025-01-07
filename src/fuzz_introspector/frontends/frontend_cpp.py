@@ -204,8 +204,8 @@ class FunctionDefinition():
             else:
                 self.namespace_or_class = prefix
 
-       # Handles param
-       self.arg_type = param_list_node.text.decode().split(',')
+        # Handles param
+        self.arg_type = param_list_node.text.decode().split(',')
 
     def extract_callsites(self, functions: dict[str, 'FunctionDefinition']):
         """Gets the callsites of the function."""
