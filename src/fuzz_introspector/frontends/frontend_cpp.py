@@ -223,7 +223,10 @@ class FunctionDefinition():
                 # identifier indicates general function calls
                 # qualified_identifier indicates namespace function calls
                 # template_function indicates standard function calls
-                if func.type in ['identifier', 'qualified_identifier', 'template_function']:
+                if func.type in [
+                        'identifier', 'qualified_identifier',
+                        'template_function'
+                ]:
                     target_name = func.text.decode()
 
                 # Chained or method calls
@@ -281,9 +284,9 @@ class FunctionDefinition():
             elif stmt.type == 'new_expression':
                 ctr_type = stmt.child_by_field_name('type')
                 if ctr_type:
-                    callsites.append((ctr_type.text.decode(),
-                                      stmt.byte_range[1],
-                                      stmt.start_point.row + 1))
+                    callsites.append(
+                        (ctr_type.text.decode(), stmt.byte_range[1],
+                         stmt.start_point.row + 1))
 
             for child in stmt.children:
                 callsites.extend(_process_callsites(child))
@@ -520,9 +523,10 @@ def analyse_source_code(source_content: str) -> SourceCodeFile:
     return source_code
 
 
-def get_function_node(target_name: str,
-                      function_map: dict[str, FunctionDefinition],
-                      one_layer_only: bool = False) -> Optional[FunctionDefinition]:
+def get_function_node(
+        target_name: str,
+        function_map: dict[str, FunctionDefinition],
+        one_layer_only: bool = False) -> Optional[FunctionDefinition]:
     """Helper to retrieve the RustFunction object of a function."""
 
     # Exact match

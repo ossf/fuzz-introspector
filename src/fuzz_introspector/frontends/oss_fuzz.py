@@ -134,7 +134,8 @@ def process_cpp_project(target_dir, entrypoint, out):
 
         # Calltree
         logger.info(f'Extracting calltree for {harness_name}')
-        calltree = project.extract_calltree(harness.source_file, harness, entrypoint)
+        calltree = project.extract_calltree(harness.source_file, harness,
+                                            entrypoint)
         target = os.path.join(out, f'fuzzerLogFile-{harness_name}.data')
         with open(target, 'w', encoding='utf-8') as f:
             f.write(f'Call tree\n{calltree}')
