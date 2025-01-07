@@ -1106,7 +1106,7 @@ def analyse_set_of_dates(dates, projects_to_analyse, output_directory,
         logging.info('Done updating DB files')
 
 
-def extract_oss_fuzz_total_history(date_range):
+def extract_oss_fuzz_total_history(date_range, must_include):
     """Creates an OSS-Fuzz history project history"""
 
     logging.info('Cloning temporary OSS-Fuzz')
@@ -1125,7 +1125,15 @@ def extract_oss_fuzz_total_history(date_range):
             (date),
             cwd=of_tmp,
             shell=True)
-        project_count = len(os.listdir(os.path.join(of_tmp, 'projects')))
+        if must_include:
+            # count the projects we mean
+            project_count = 0
+            for project_name in os.listdir(os.path.join(of_tmp, 'projects')):
+                if project_name in must_include:
+                    project_count += 1
+        else:
+            # Count all projects
+            project_count = len(os.listdir(os.path.join(of_tmp, 'projects')))
         oss_fuzz_project_count.append({
             'date': date,
             'project-count': project_count
@@ -1483,7 +1491,7 @@ def create_db(max_projects, days_to_analyse, output_directory, input_directory,
         cleanup(output_directory)
 
     date_range = get_dates_to_analyse(since_date, days_to_analyse, day_offset)
-    extract_oss_fuzz_total_history(date_range)
+    extract_oss_fuzz_total_history(date_range, must_include)
 
     logger.info("Creating a DB with the specifications:")
     logger.info("- Date range: [%s : %s]", str(date_range[0]),
