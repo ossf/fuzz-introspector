@@ -204,6 +204,9 @@ class FunctionDefinition():
             else:
                 self.namespace_or_class = prefix
 
+       # Handles param
+       self.arg_type = param_list_node.text.decode().split(',')
+
     def extract_callsites(self, functions: dict[str, 'FunctionDefinition']):
         """Gets the callsites of the function."""
 
@@ -299,6 +302,7 @@ class FunctionDefinition():
             for dst, src_line in self.base_callsites:
                 src_loc = self.parent_source.source_file + ':%d,1' % (src_line)
                 self.detailed_callsites.append({'Src': src_loc, 'Dst': dst})
+
 
 class Project():
     """Wrapper for doing analysis of a collection of source files."""
