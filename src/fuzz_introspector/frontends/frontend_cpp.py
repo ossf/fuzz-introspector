@@ -107,8 +107,8 @@ class SourceCodeFile():
 
         # Find the first instance of the function name
         for func in self.func_defs:
-            if func.namespace is not None:
-                if func.namespace + '::' + func.name == target_function_name:
+            if func.namespace_or_class:
+                if func.namespace_or_class + '::' + func.name == target_function_name:
                     return func
             else:
                 if func.name == target_function_name:
@@ -153,7 +153,7 @@ class FunctionDefinition():
         self.root = root
         self.tree_sitter_lang = tree_sitter_lang
         self.parent_source = source_code
-        self.namespace = namespace
+        self.namespace_or_class = namespace
 
         # Store method line information
         self.start_line = self.root.start_point.row + 1
@@ -171,7 +171,6 @@ class FunctionDefinition():
         self.function_depth = 0
         self.base_callsites: list[tuple[str, int]] = []
         self.detailed_callsites: list[dict[str, str]] = []
-        self.callsites: list[tuple[str, int]] = []
 
         # Extract information from tree-sitter node
         self._extract_information()
@@ -179,61 +178,127 @@ class FunctionDefinition():
     def _extract_information(self):
         """Extract information from tree-sitter node."""
         # Extract function name
-        name_node = self.root
-        while name_node.child_by_field_name('declarator') is not None:
-            name_node = name_node.child_by_field_name('declarator')
-            self.name = name_node.text.decode()
+        name_node = self.root.child_by_field_name('declarator')
+        self.sig = name_node.text.decode()
+        param_list_node = None
+        for child in name_node.children:
+            if 'identifier' in child.type:
+                self.name = child.text.decode()
 
-    def extract_callsites(self):
+            elif child.type == 'function_declarator':
+                for decl in child.children:
+                    if 'identifier' in decl.type:
+                        self.name = decl.text.decode()
+
+                    elif decl.type == 'parameter_list':
+                        param_list_node = decl
+
+            elif child.type == 'parameter_list':
+                param_list_node = child
+
+        # Handles class or namespace in the function name
+        if '::' in self.name:
+            prefix, self.name = self.name.rsplit('::', 1)
+            if self.namespace_or_class and prefix:
+                self.namespace_or_class += f'::{prefix}'
+            else:
+                self.namespace_or_class = prefix
+
+    def extract_callsites(self, functions: dict[str, 'FunctionDefinition']):
         """Gets the callsites of the function."""
-        callsites = []
-        call_query = self.tree_sitter_lang.query('( call_expression ) @ce')
-        call_res = call_query.captures(self.root)
-        for _, call_exprs in call_res.items():
-            for call_expr in call_exprs:
 
-                tmp_node = call_expr.child_by_field_name('function')
+        def _process_invoke(expr: Node) -> list[tuple[str, int, int]]:
+            """Internal helper for processing the function invocation statement."""
+            callsites = []
+            target_name: str = ''
 
-                function_call = ''
-                # Handle callsites where the scope is not None, e.g.
-                # ns1::ns2::func1(...);
-                if tmp_node.child_by_field_name('scope'):
-                    while tmp_node.child_by_field_name('name') is not None:
-                        # TODO(David) handle
-                        if tmp_node.child_by_field_name(
-                                'name').type == 'identifier':
-                            if tmp_node.child_by_field_name('scope'):
-                                function_call += tmp_node.child_by_field_name(
-                                    'scope').text.decode() + '::'
-                            function_call += tmp_node.child_by_field_name(
-                                'name').text.decode()
-                            break
+            func = expr.child_by_field_name('function')
 
-                        if not tmp_node.child_by_field_name('scope'):
-                            logger.info('Missing analysis: %s',
-                                        tmp_node.text.decode())
-                            function_call = ''
-                            break
-                        function_call += tmp_node.child_by_field_name(
-                            'scope').text.decode() + '::'
+            # Handle function call
+            if func:
+                # Simple function call
+                # identifier indicates general function calls
+                # qualified_identifier indicates namespace function calls
+                # template_function indicates standard function calls
+                if func.type in ['identifier', 'qualified_identifier', 'template_function']:
+                    target_name = func.text.decode()
 
-                        tmp_node = tmp_node.child_by_field_name('name')
-                    if not function_call:
-                        continue
-                # Handle non-scoped function calls
-                if tmp_node.type == 'identifier':
-                    function_call = tmp_node.text.decode()
+                # Chained or method calls
+                elif func.type == 'field_expression':
+                    _, target_name = _process_field_expr_return_type(func)
+                    callsites.append((target_name, func.byte_range[1],
+                                      func.start_point.row + 1))
 
-                callsites.append((function_call, call_expr.byte_range))
+            if target_name:
+                callsites.append((target_name, func.byte_range[1],
+                                  func.start_point.row + 1))
 
-        # Sort the callsites relative to their end position. End position
-        # here makes sense to handle cases of e.g.
-        # func1(func2(), func3())
-        # where the execution ordering is func2 -> func3 -> func1
-        callsites = list(sorted(callsites, key=lambda x: x[1][1]))
+            return callsites
 
-        self.callsites = callsites
+        def _process_field_expr_return_type(
+                field_expr: Node) -> tuple[Optional[str], str]:
+            """Helper for determining the return type of a field expression
+            in a chained call and its full qualified name."""
+            type = None
+            object_type = None
 
+            arg = field_expr.child_by_field_name('argument')
+            name = field_expr.child_by_field_name('field').text.decode()
+            full_name = name
+
+            # Chained field access
+            if arg.type == 'field_expression':
+                _, object_type = _process_field_expr_return_type(arg)
+
+            # Internal call
+            elif arg.type == 'this':
+                object_type = self.namespace_or_class
+
+            if object_type:
+                if object_type == 'void':
+                    full_name = name
+                else:
+                    full_name = f'{object_type}::{name}'
+
+                node = get_function_node(full_name, functions)
+                if node:
+                    type = node.return_type
+
+            return (type, full_name)
+
+        def _process_callsites(stmt: Node) -> list[tuple[str, int, int]]:
+            """Process and store the callsites of the function."""
+            callsites = []
+
+            # Call statement
+            if stmt.type == 'call_expression':
+                callsites.extend(_process_invoke(stmt))
+
+            # Constructor call statement
+            elif stmt.type == 'new_expression':
+                ctr_type = stmt.child_by_field_name('type')
+                if ctr_type:
+                    callsites.append((ctr_type.text.decode(),
+                                      stmt.byte_range[1],
+                                      stmt.start_point.row + 1))
+
+            for child in stmt.children:
+                callsites.extend(_process_callsites(child))
+
+            return callsites
+
+        if not self.base_callsites:
+            callsites = []
+            for child in self.root.children:
+                callsites.extend(_process_callsites(child))
+
+            callsites = sorted(set(callsites), key=lambda x: x[1])
+            self.base_callsites = [(x[0], x[2]) for x in callsites]
+
+        if not self.detailed_callsites:
+            for dst, src_line in self.base_callsites:
+                src_loc = self.parent_source.source_file + ':%d,1' % (src_line)
+                self.detailed_callsites.append({'Src': src_loc, 'Dst': dst})
 
 class Project():
     """Wrapper for doing analysis of a collection of source files."""
@@ -256,6 +321,7 @@ class Project():
 
             # Retrieve project information
             func_names = [func.name for func in source_code.func_defs]
+
             report['sources'].append({
                 'source_file': source_code.source_file,
                 'function_names': func_names,
@@ -272,7 +338,7 @@ class Project():
         # Process all project functions
         func_list = []
         for func in self.all_functions.values():
-            func.extract_callsites()
+            func.extract_callsites(self.all_functions)
 
             func_dict: dict[str, Any] = {}
             func_dict['functionName'] = func.name
@@ -337,46 +403,52 @@ class Project():
         if not function:
             return ''
 
-        line_to_print = '  ' * depth
-        line_to_print += function
-        line_to_print += ' '
-
         if not source_code:
             source_code = self.find_source_with_func_def(function)
-        if source_code:
-            line_to_print += source_code.source_file
+
+        func_node = None
+        if function:
+            func_node = get_function_node(function, self.all_functions)
+            if func_node:
+                func_name = func_node.name
+                prefix = func_node.namespace_or_class
+                if prefix:
+                    func_name = f'{prefix}::{func_name}'
+            else:
+                func_name = function
+        else:
+            return ''
+
+        line_to_print = '  ' * depth
+        line_to_print += func_name
+        line_to_print += ' '
+        line_to_print += source_file
 
         line_to_print += ' '
         line_to_print += str(line_number)
 
         line_to_print += '\n'
-        if not source_code:
-            return line_to_print
 
-        func = source_code.get_function_node(function)
-        callsites = func.callsites
-
-        if function in visited_functions:
+        if function in visited_functions or not func_node or not source_code:
             return line_to_print
 
         visited_functions.add(function)
-        for cs, byte_range in callsites:
-            line_number = 0
+        for cs, line in func_node.base_callsites:
             line_to_print += self.extract_calltree(
-                source_file=source_file,
+                source_file=source_code.source_file,
                 function=cs,
                 visited_functions=visited_functions,
                 depth=depth + 1,
-                line_number=line_number)
+                line_number=line)
+
         return line_to_print
 
-    def find_source_with_func_def(self, target_function_name):
+    def find_source_with_func_def(self, name: str) -> Optional[SourceCodeFile]:
         """Finds the source code with a given function."""
 
         source_codes_with_target = []
         for source_code in self.source_code_files:
-            if source_code.has_function_definition(target_function_name,
-                                                   exact=True):
+            if source_code.has_function_definition(name, exact=True):
                 source_codes_with_target.append(source_code)
 
         if len(source_codes_with_target) == 1:
@@ -385,17 +457,14 @@ class Project():
 
         source_codes_with_target = []
         for source_code in self.source_code_files:
-            if source_code.has_function_definition(target_function_name,
-                                                   exact=False):
+            if source_code.has_function_definition(name, exact=False):
                 source_codes_with_target.append(source_code)
         if len(source_codes_with_target) == 1:
             # We hav have, in this case it's trivial.
             return source_codes_with_target[0]
-        if len(source_codes_with_target) > 1:
-            print("We have more than a single source %s" %
-                  (target_function_name))
-            for sc in source_codes_with_target:
-                print("- %s" % (sc.source_file))
+
+        # TODO Handle multiple match (matching the namespace and class also
+
         return None
 
 
@@ -445,3 +514,26 @@ def analyse_source_code(source_content: str) -> SourceCodeFile:
     source_code = SourceCodeFile(source_file='in-memory string',
                                  source_content=source_content.encode())
     return source_code
+
+
+def get_function_node(target_name: str,
+                      function_map: dict[str, FunctionDefinition],
+                      one_layer_only: bool = False) -> Optional[FunctionDefinition]:
+    """Helper to retrieve the RustFunction object of a function."""
+
+    # Exact match
+    if target_name in function_map:
+        return function_map[target_name]
+
+    # Match any key that ends with target_name, then
+    # split the target_name by :: and check one by one
+    if one_layer_only:
+        name_split = target_name.split('::', 1)
+    else:
+        name_split = target_name.split('::')
+    for count in range(len(name_split)):
+        for func_name, func in function_map.items():
+            if func_name.endswith('::'.join(name_split[count:])):
+                return func
+
+    return None
