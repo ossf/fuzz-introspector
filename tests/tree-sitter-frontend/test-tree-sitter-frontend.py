@@ -52,10 +52,8 @@ def test_tree_sitter_frontend():
     for testcase in testcases:
         language = testcase.get('language')
         project = testcase.get('project')
-        assert language and project
 
         for dir, sample_list in project.items():
-            # Run the tree-sitter-frontend
             calltrees = oss_fuzz.analyse_folder(language, dir, entrypoints.get(language))
 
             function_depth_map = {}
