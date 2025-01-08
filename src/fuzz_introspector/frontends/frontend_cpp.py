@@ -97,9 +97,10 @@ class SourceCodeFile():
         self.func_defs.append(
             FunctionDefinition(node, self.tree_sitter_lang, self, namespace))
 
-    def get_function_node(self,
-                          target_function_name: str,
-                          exact: bool = False) -> Optional['FunctionDefinition']:
+    def get_function_node(
+            self,
+            target_function_name: str,
+            exact: bool = False) -> Optional['FunctionDefinition']:
         """Gets the tree-sitter node corresponding to a function."""
 
         # Find the first instance of the function name
@@ -221,7 +222,9 @@ class FunctionDefinition():
                     array_count += 1
                     param_name = param_name.child_by_field_name('declarator')
 
-                self.arg_types.append(f'{param_type.text.decode()}{"*" * pointer_count}{"[]" * array_count}')
+                self.arg_types.append(
+                    f'{param_type.text.decode()}{"*" * pointer_count}{"[]" * array_count}'
+                )
                 self.arg_names.append(param_name.text.decode())
 
         # Handles other fields
@@ -233,22 +236,11 @@ class FunctionDefinition():
         function."""
 
         branch_nodes = [
-            'if_statement',
-            'switch_statement',
-            'do_statement',
-            'while_statement',
-            'for_statement',
-            'for_range_loop',
-            'try_statement',
-            'seh_try_statement',
-            'throw_statement',
-            'goto_statement',
-            'co_return_statement',
-            'co_yield_statement',
-            'break_statement',
-            'continue_statement',
-            '&&',
-            '||'
+            'if_statement', 'switch_statement', 'do_statement',
+            'while_statement', 'for_statement', 'for_range_loop',
+            'try_statement', 'seh_try_statement', 'throw_statement',
+            'goto_statement', 'co_return_statement', 'co_yield_statement',
+            'break_statement', 'continue_statement', '&&', '||'
         ]
 
         def _traverse_node_complexity(node: Node):
@@ -520,7 +512,8 @@ class Project():
         return line_to_print
 
     def find_source_with_func_def(
-        self, name: str) -> Optional[tuple[SourceCodeFile, FunctionDefinition]]:
+            self,
+            name: str) -> Optional[tuple[SourceCodeFile, FunctionDefinition]]:
         """Finds the source code with a given function."""
 
         return_func = None
@@ -570,8 +563,8 @@ class Project():
 
         return func_use_count
 
-    def calculate_function_depth(
-            self, target_function: FunctionDefinition) -> int:
+    def calculate_function_depth(self,
+                                 target_function: FunctionDefinition) -> int:
         """Calculate function depth of the target function."""
 
         def _recursive_function_depth(function: FunctionDefinition) -> int:
@@ -586,7 +579,8 @@ class Project():
                 if target and target[1].name in visited:
                     depth = max(depth, 1)
                 elif target:
-                    depth = max(depth, _recursive_function_depth(target[1]) + 1)
+                    depth = max(depth,
+                                _recursive_function_depth(target[1]) + 1)
                 else:
                     visited.append(callsite[0])
 
