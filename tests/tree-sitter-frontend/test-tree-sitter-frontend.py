@@ -34,16 +34,10 @@ testcases = [
     {
         'language': 'c++',
         'project': {
-            'cpp/test-project-1': [
-                {
-                     'name':'LLVMFuzzerTestOneInput',
-                     'depth': 0
-                },
-                {
-                     'name':'OuterNamespace::MyClass::memberFunction',
-                     'depth': 1
-                }
-            ]
+            'cpp/test-project-1': {
+                 'count': 5,
+                 'reaches': '    isPositive'
+            }
         }
     }
 ]
@@ -53,22 +47,16 @@ def test_tree_sitter_frontend():
         language = testcase.get('language')
         project = testcase.get('project')
 
-        for dir, sample_list in project.items():
+        for dir, sample_map in project.items():
             calltrees = oss_fuzz.analyse_folder(language, dir, entrypoints.get(language))
 
-            function_depth_map = {}
+            found = False
             for calltree in calltrees:
-                for line in calltree.split('\n'):
-                    depth = 0
-                    while line.startswith("  "):
-                        depth += 1
-                        line = line[2:]
-                    func_name = line.split(' ')[0]
-                    function_depth_map[func_name] = depth
+                count = sample_map['count']
+                reaches = sample_map['reaches']
+                lines = calltree.split('\n')[1:]
 
-            for items in sample_list:
-                name = items.get('name')
-                depth = items.get('depth')
+                if len(lines) == count and reaches in calltree:
+                    found = True
 
-                assert function_depth_map.get(name) == depth
-
+            assert found

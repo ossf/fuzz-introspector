@@ -32,7 +32,7 @@ namespace OuterNamespace {
     }
 
     void MyClass::memberFunction(int x) {
-        if (x > 0) {
+        if (isPositive(x)) {
             std::cout << "Positive value: " << x << std::endl;
         } else {
             std::cout << "Non-positive value: " << x << std::endl;
