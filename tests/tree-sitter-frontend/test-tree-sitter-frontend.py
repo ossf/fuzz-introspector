@@ -25,4 +25,4 @@ def test_tree_sitter_cpp_sample1():
     callsites = oss_fuzz.analyse_folder('c++', 'cpp/test-project-1', 'LLVMFuzzerTestOneInput')
 
     assert len(callsites[0].split('\n')) == 6
-    assert '    isPositive' in callsites[0]
+    assert '    isPositive cpp/test-project-1/sample.cpp' in callsites[0]
