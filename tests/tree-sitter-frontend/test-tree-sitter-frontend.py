@@ -35,7 +35,7 @@ testcases = [
         'language': 'c++',
         'project': {
             'cpp/test-project-1': {
-                 'count': 5,
+                 'count': 6,
                  'reaches': '    isPositive'
             }
         }
@@ -54,7 +54,7 @@ def test_tree_sitter_frontend():
             for calltree in calltrees:
                 count = sample_map['count']
                 reaches = sample_map['reaches']
-                lines = calltree.split('\n')[1:]
+                lines = calltree.split('\n')
 
                 if len(lines) == count and reaches in calltree:
                     found = True
