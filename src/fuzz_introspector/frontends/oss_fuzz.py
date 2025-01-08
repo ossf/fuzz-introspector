@@ -109,22 +109,36 @@ def process_c_project(target_dir, entrypoint, out, module_only=False):
 
 def process_cpp_project(target_dir, entrypoint, out):
     """Process a project in CPP language"""
-    source_files = {}
-    source_files['cpp'] = frontend_cpp.capture_source_files_in_tree(
-        target_dir, 'cpp')
-    logger.info('Found %d files to include in analysis',
-                len(source_files['cpp']))
+    # Extract c++ source files
+    logger.info('Going C++ route')
+    source_files = []
+    source_files = frontend_cpp.capture_source_files_in_tree(target_dir)
+
+    # Process tree sitter for c++ source files
+    logger.info('Found %d files to include in analysis', len(source_files))
     logger.info('Loading tree-sitter trees')
     source_codes = frontend_cpp.load_treesitter_trees(source_files)
 
+    # Create and dump project
     logger.info('Creating base project.')
     project = frontend_cpp.Project(source_codes)
-    # project.dump_module_logic('report.yaml')
-    for idx, harness in enumerate(project.get_source_codes_with_harnesses()):
-        logger.info('Extracting calltree for %s', harness.source_file)
 
-        calltree = project.extract_calltree(harness, entrypoint)
-        logger.info('calltree: %s' % (calltree))
+    # Process calltree and method data
+    for harness in project.get_source_codes_with_harnesses():
+        harness_name = harness.source_file.split('/')[-1].split('.')[0]
+
+        # Method data
+        logger.info(f'Dump methods for {harness_name}')
+        target = os.path.join(out, f'fuzzerLogFile-{harness_name}.data.yaml')
+        project.dump_module_logic(target, harness_name)
+
+        # Calltree
+        logger.info(f'Extracting calltree for {harness_name}')
+        calltree = project.extract_calltree(harness.source_file, harness,
+                                            entrypoint)
+        target = os.path.join(out, f'fuzzerLogFile-{harness_name}.data')
+        with open(target, 'w', encoding='utf-8') as f:
+            f.write(f'Call tree\n{calltree}')
 
 
 def process_go_project(target_dir, out):
