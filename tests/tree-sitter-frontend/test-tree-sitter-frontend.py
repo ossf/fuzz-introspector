@@ -21,41 +21,8 @@ sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../../")
 
 from fuzz_introspector.frontends import oss_fuzz  # noqa: E402
 
-entrypoints = {
-    'c': 'LLVMFuzzerTestOneInput',
-    'c++': 'LLVMFuzzerTestOneInput',
-    'go': '',
-    'rust': 'fuzz_target',
-    'jvm': 'fuzzerTestOneInput'
-}
+def test_tree_sitter_cpp_sample1():
+    callsites = oss_fuzz.analyse_folder('c++', 'cpp/test-project-1', 'LLVMFuzzerTestOneInput')
 
-testcases = [
-    {
-        'language': 'c++',
-        'project': {
-            'cpp/test-project-1': {
-                 'count': 6,
-                 'reaches': '    isPositive'
-            }
-        }
-    }
-]
-
-def test_tree_sitter_frontend():
-    for testcase in testcases:
-        language = testcase.get('language')
-        project = testcase.get('project')
-
-        for dir, sample_map in project.items():
-            calltrees = oss_fuzz.analyse_folder(language, dir, entrypoints.get(language))
-
-            found = False
-            for calltree in calltrees:
-                count = sample_map['count']
-                reaches = sample_map['reaches']
-                lines = calltree.split('\n')
-
-                if len(lines) == count and reaches in calltree:
-                    found = True
-
-            assert found
+    assert len(callsites[0].split('\n')) == 6
+    assert '    isPositive' in callsites[0]
