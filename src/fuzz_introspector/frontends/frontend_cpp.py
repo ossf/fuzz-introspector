@@ -41,9 +41,6 @@ class SourceCodeFile():
         self.parser = Parser(self.tree_sitter_lang)
 
         self.root = None
-        #        self.struct_defs = []
-        #        self.typedefs = []
-        #        self.includes = set()
         self.func_defs: list['FunctionDefinition'] = []
 
         if source_content:
@@ -102,7 +99,7 @@ class SourceCodeFile():
 
     def get_function_node(self,
                           target_function_name: str,
-                          exact: bool = False):
+                          exact: bool = False) -> Optional['FunctionDefinition']:
         """Gets the tree-sitter node corresponding to a function."""
 
         # Find the first instance of the function name
@@ -126,15 +123,6 @@ class SourceCodeFile():
             if func.name == target_function_name.split('::')[-1]:
                 return func
         return None
-
-    def has_function_definition(self,
-                                target_function_name: str,
-                                exact: bool = False):
-        """Returns if the source file holds a given function definition."""
-
-        if self.get_function_node(target_function_name, exact):
-            return True
-        return False
 
     def has_libfuzzer_harness(self) -> bool:
         """Returns whether the source code holds a libfuzzer harness"""
@@ -177,7 +165,7 @@ class FunctionDefinition():
 
     def _extract_information(self):
         """Extract information from tree-sitter node."""
-        # Extract function name
+        # Extract function name and return type
         name_node = self.root.child_by_field_name('declarator')
         self.sig = name_node.text.decode()
         param_list_node = None
@@ -204,8 +192,87 @@ class FunctionDefinition():
             else:
                 self.namespace_or_class = prefix
 
-        # Handles param
-        self.arg_type = param_list_node.text.decode().split(',')
+        # Handles return type
+        type_node = self.root.child_by_field_name('type')
+        if type_node:
+            self.return_type = type_node.text.decode()
+        else:
+            self.return_type = 'void'
+
+        # Handles parameters
+        for param in param_list_node.children:
+            if param.type == 'parameter_declaration':
+                param_type = param.child_by_field_name('type')
+                param_name = param.child_by_field_name('declarator')
+
+                # Skip empty param name and type
+                if not param_type or not param_name:
+                    continue
+
+                # Count pointer
+                pointer_count = 0
+                while param_name.type == 'pointer_declarator':
+                    pointer_count += 1
+                    param_name = param_name.child_by_field_name('declarator')
+
+                # Count array
+                array_count = 0
+                while param_name.type == 'array_declarator':
+                    array_count += 1
+                    param_name = param_name.child_by_field_name('declarator')
+
+                self.arg_types.append(f'{param_type.text.decode()}{"*" * pointer_count}{"[]" * array_count}')
+                self.arg_names.append(param_name.text.decode())
+
+        # Handles other fields
+        self._process_complexity()
+        self._process_icount()
+
+    def _process_complexity(self):
+        """Gets complexity measure based on counting branch nodes in a
+        function."""
+
+        branch_nodes = [
+            'if_statement',
+            'switch_statement',
+            'do_statement',
+            'while_statement',
+            'for_statement',
+            'for_range_loop',
+            'try_statement',
+            'seh_try_statement',
+            'throw_statement',
+            'goto_statement',
+            'co_return_statement',
+            'co_yield_statement',
+            'break_statement',
+            'continue_statement',
+            '&&',
+            '||'
+        ]
+
+        def _traverse_node_complexity(node: Node):
+            count = 0
+            if node.type in branch_nodes:
+                count += 1
+            for item in node.children:
+                count += _traverse_node_complexity(item)
+            return count
+
+        self.complexity += _traverse_node_complexity(self.root)
+
+    def _process_icount(self):
+        """Get a pseudo measurement of instruction count."""
+
+        def _traverse_node_instr_count(node: Node) -> int:
+            count = 0
+            if 'statement' in node.type:
+                count += 1
+            for item in node.children:
+                count += _traverse_node_instr_count(item)
+            return count
+
+        self.icount += _traverse_node_instr_count(self.root)
 
     def extract_callsites(self, functions: dict[str, 'FunctionDefinition']):
         """Gets the callsites of the function."""
@@ -366,8 +433,8 @@ class Project():
             func_dict['returnType'] = func.return_type
             func_dict['BranchProfiles'] = []
             func_dict['Callsites'] = func.detailed_callsites
-            func_dict['functionUses'] = 0
-            func_dict['functionDepth'] = 0
+            func_dict['functionUses'] = self.calculate_function_uses(func.name)
+            func_dict['functionDepth'] = self.calculate_function_depth(func)
             func_dict['constantsTouched'] = []
             func_dict['BBCount'] = 0
             func_dict['signature'] = func.sig
@@ -411,7 +478,9 @@ class Project():
             return ''
 
         if not source_code:
-            source_code = self.find_source_with_func_def(function)
+            result = self.find_source_with_func_def(function)
+            if result:
+                source_code = result[0]
 
         func_node = None
         if function:
@@ -450,29 +519,83 @@ class Project():
 
         return line_to_print
 
-    def find_source_with_func_def(self, name: str) -> Optional[SourceCodeFile]:
+    def find_source_with_func_def(
+        self, name: str) -> Optional[tuple[SourceCodeFile, FunctionDefinition]]:
         """Finds the source code with a given function."""
 
+        return_func = None
         source_codes_with_target = []
         for source_code in self.source_code_files:
-            if source_code.has_function_definition(name, exact=True):
+            func = source_code.get_function_node(name, exact=True)
+            if func:
+                return_func = func
                 source_codes_with_target.append(source_code)
 
-        if len(source_codes_with_target) == 1:
+        if len(source_codes_with_target) == 1 and return_func:
             # We hav have, in this case it's trivial.
-            return source_codes_with_target[0]
+            return (source_codes_with_target[0], return_func)
 
+        return_func = None
         source_codes_with_target = []
         for source_code in self.source_code_files:
-            if source_code.has_function_definition(name, exact=False):
+            func = source_code.get_function_node(name, exact=False)
+            if func:
+                return_func = func
                 source_codes_with_target.append(source_code)
-        if len(source_codes_with_target) == 1:
+
+        if len(source_codes_with_target) == 1 and return_func:
             # We hav have, in this case it's trivial.
-            return source_codes_with_target[0]
+            return (source_codes_with_target[0], return_func)
 
         # TODO Handle multiple match (matching the namespace and class also
 
         return None
+
+    def calculate_function_uses(self, target_name: str) -> int:
+        """Calculate how many functions called the target function."""
+        func_use_count = 0
+
+        for source_file in self.source_code_files:
+            for function in source_file.func_defs:
+                found = False
+                for callsite in function.base_callsites:
+                    if callsite[0] == target_name:
+                        found = True
+                        break
+                    elif callsite[0].endswith(target_name):
+                        found = True
+                        break
+                if found:
+                    func_use_count += 1
+
+        return func_use_count
+
+    def calculate_function_depth(
+            self, target_function: FunctionDefinition) -> int:
+        """Calculate function depth of the target function."""
+
+        def _recursive_function_depth(function: FunctionDefinition) -> int:
+            callsites = function.base_callsites
+            if len(callsites) == 0:
+                return 0
+
+            depth = 0
+            visited.append(function.name)
+            for callsite in callsites:
+                target = self.find_source_with_func_def(callsite[0])
+                if target and target[1].name in visited:
+                    depth = max(depth, 1)
+                elif target:
+                    depth = max(depth, _recursive_function_depth(target[1]) + 1)
+                else:
+                    visited.append(callsite[0])
+
+            return depth
+
+        visited: list[str] = []
+        func_depth = _recursive_function_depth(target_function)
+
+        return func_depth
 
 
 def capture_source_files_in_tree(directory_tree):
