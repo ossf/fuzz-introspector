@@ -26,3 +26,25 @@ def test_tree_sitter_cpp_sample1():
 
     assert len(callsites[0].split('\n')) == 6
     assert '    isPositive cpp/test-project-1/sample.cpp' in callsites[0]
+
+def test_tree_sitter_cpp_sample2():
+    callsites = oss_fuzz.analyse_folder('c++', 'cpp/test-project-2', 'LLVMFuzzerTestOneInput')
+
+    assert len(callsites[0].split('\n')) == 13
+    assert '      RecursiveNamespace::fibonacci cpp/test-project-2/recursive.cpp' in callsites[0]
+    assert '    File2Namespace::functionInFile2 cpp/test-project-2/crossfile.cpp' in callsites[0]
+
+def test_tree_sitter_cpp_sample3():
+    callsites = oss_fuzz.analyse_folder('c++', 'cpp/test-project-3', 'LLVMFuzzerTestOneInput')
+
+    assert len(callsites[0].split('\n')) == 14
+    assert '      std::reverse cpp/test-project-3/deep_chain.cpp' in callsites[0]
+    assert '          DeepNamespace::level5 cpp/test-project-3/deep_chain.cpp' in callsites[0]
+
+def test_tree_sitter_cpp_sample4():
+    callsites = oss_fuzz.analyse_folder('c++', 'cpp/test-project-4', 'LLVMFuzzerTestOneInput')
+
+    assert len(callsites[0].split('\n')) == 6
+    assert '    Level1::Level2::Level3::Level4::DeepClass::deepMethod2 cpp/test-project-4/deep_nested.cc' in callsites[0]
+
+
