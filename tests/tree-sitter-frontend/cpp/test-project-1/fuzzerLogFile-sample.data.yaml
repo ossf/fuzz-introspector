@@ -1,0 +1,274 @@
+All functions:
+  Elements:
+  - BBCount: 0
+    BranchProfiles: []
+    Callsites: []
+    CyclomaticComplexity: 0
+    EdgeCount: 0
+    ICount: 2
+    argCount: 2
+    argNames:
+    - a
+    - b
+    argTypes:
+    - int
+    - int
+    constantsTouched: []
+    func_position:
+      end: 23
+      start: 21
+    functionDepth: 0
+    functionLinenumber: 21
+    functionLinenumberEnd: 23
+    functionName: nestedFunction
+    functionSourceFile: cpp/test-project-1/sample.cpp
+    functionUses: 0
+    functionsReached: []
+    linkageType: ''
+    returnType: int
+    signature: nestedFunction(int a, int b)
+  - BBCount: 0
+    BranchProfiles: []
+    Callsites: []
+    CyclomaticComplexity: 0
+    EdgeCount: 0
+    ICount: 2
+    argCount: 0
+    argNames: []
+    argTypes: []
+    constantsTouched: []
+    func_position:
+      end: 28
+      start: 26
+    functionDepth: 0
+    functionLinenumber: 26
+    functionLinenumberEnd: 28
+    functionName: MyClass
+    functionSourceFile: cpp/test-project-1/sample.cpp
+    functionUses: 0
+    functionsReached: []
+    linkageType: ''
+    returnType: void
+    signature: MyClass::MyClass()
+  - BBCount: 0
+    BranchProfiles: []
+    Callsites: []
+    CyclomaticComplexity: 0
+    EdgeCount: 0
+    ICount: 2
+    argCount: 0
+    argNames: []
+    argTypes: []
+    constantsTouched: []
+    func_position:
+      end: 32
+      start: 30
+    functionDepth: 0
+    functionLinenumber: 30
+    functionLinenumberEnd: 32
+    functionName: ~MyClass
+    functionSourceFile: cpp/test-project-1/sample.cpp
+    functionUses: 0
+    functionsReached: []
+    linkageType: ''
+    returnType: void
+    signature: MyClass::~MyClass()
+  - BBCount: 0
+    BranchProfiles: []
+    Callsites: []
+    CyclomaticComplexity: 1
+    EdgeCount: 1
+    ICount: 6
+    argCount: 1
+    argNames:
+    - x
+    argTypes:
+    - int
+    constantsTouched: []
+    func_position:
+      end: 40
+      start: 34
+    functionDepth: 0
+    functionLinenumber: 34
+    functionLinenumberEnd: 40
+    functionName: memberFunction
+    functionSourceFile: cpp/test-project-1/sample.cpp
+    functionUses: 0
+    functionsReached: []
+    linkageType: ''
+    returnType: void
+    signature: MyClass::memberFunction(int x)
+  - BBCount: 0
+    BranchProfiles: []
+    Callsites: []
+    CyclomaticComplexity: 0
+    EdgeCount: 0
+    ICount: 2
+    argCount: 0
+    argNames: []
+    argTypes: []
+    constantsTouched: []
+    func_position:
+      end: 44
+      start: 42
+    functionDepth: 0
+    functionLinenumber: 42
+    functionLinenumberEnd: 44
+    functionName: getString
+    functionSourceFile: cpp/test-project-1/sample.cpp
+    functionUses: 0
+    functionsReached: []
+    linkageType: ''
+    returnType: std::string
+    signature: MyClass::getString() const
+  - BBCount: 0
+    BranchProfiles: []
+    Callsites: []
+    CyclomaticComplexity: 0
+    EdgeCount: 0
+    ICount: 2
+    argCount: 0
+    argNames: []
+    argTypes: []
+    constantsTouched: []
+    func_position:
+      end: 48
+      start: 46
+    functionDepth: 0
+    functionLinenumber: 46
+    functionLinenumberEnd: 48
+    functionName: staticFunction
+    functionSourceFile: cpp/test-project-1/sample.cpp
+    functionUses: 0
+    functionsReached: []
+    linkageType: ''
+    returnType: void
+    signature: MyClass::staticFunction()
+  - BBCount: 0
+    BranchProfiles: []
+    Callsites: []
+    CyclomaticComplexity: 0
+    EdgeCount: 0
+    ICount: 2
+    argCount: 0
+    argNames: []
+    argTypes: []
+    constantsTouched: []
+    func_position:
+      end: 52
+      start: 50
+    functionDepth: 0
+    functionLinenumber: 50
+    functionLinenumberEnd: 52
+    functionName: print
+    functionSourceFile: cpp/test-project-1/sample.cpp
+    functionUses: 0
+    functionsReached: []
+    linkageType: ''
+    returnType: void
+    signature: MyStruct::print() const
+  - BBCount: 0
+    BranchProfiles: []
+    Callsites: []
+    CyclomaticComplexity: 2
+    EdgeCount: 2
+    ICount: 6
+    argCount: 2
+    argNames:
+    - param1
+    - param2
+    argTypes:
+    - int
+    - double
+    constantsTouched: []
+    func_position:
+      end: 61
+      start: 55
+    functionDepth: 0
+    functionLinenumber: 55
+    functionLinenumberEnd: 61
+    functionName: globalFunction
+    functionSourceFile: cpp/test-project-1/sample.cpp
+    functionUses: 0
+    functionsReached: []
+    linkageType: ''
+    returnType: void
+    signature: globalFunction(int param1, double param2)
+  - BBCount: 0
+    BranchProfiles: []
+    Callsites: []
+    CyclomaticComplexity: 0
+    EdgeCount: 0
+    ICount: 2
+    argCount: 1
+    argNames:
+    - value
+    argTypes:
+    - int
+    constantsTouched: []
+    func_position:
+      end: 65
+      start: 63
+    functionDepth: 0
+    functionLinenumber: 63
+    functionLinenumberEnd: 65
+    functionName: isPositive
+    functionSourceFile: cpp/test-project-1/sample.cpp
+    functionUses: 0
+    functionsReached: []
+    linkageType: ''
+    returnType: bool
+    signature: isPositive(int value)
+  - BBCount: 0
+    BranchProfiles: []
+    Callsites:
+    - Dst: reinterpret_cast<const int*>
+      Src: cpp/test-project-1/sample.cpp:72,1
+    - Dst: globalFunction
+      Src: cpp/test-project-1/sample.cpp:74,1
+    - Dst: memberFunction
+      Src: cpp/test-project-1/sample.cpp:77,1
+    CyclomaticComplexity: 1
+    EdgeCount: 1
+    ICount: 7
+    argCount: 2
+    argNames:
+    - data
+    - size
+    argTypes:
+    - uint8_t*
+    - size_t
+    constantsTouched: []
+    func_position:
+      end: 80
+      start: 67
+    functionDepth: 1
+    functionLinenumber: 67
+    functionLinenumberEnd: 80
+    functionName: LLVMFuzzerTestOneInput
+    functionSourceFile: cpp/test-project-1/sample.cpp
+    functionUses: 0
+    functionsReached:
+    - reinterpret_cast<const int*>
+    - memberFunction
+    - globalFunction
+    linkageType: ''
+    returnType: int
+    signature: LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
+Fuzzing method: LLVMFuzzerTestOneInput
+report: name
+sources:
+- function_names: []
+  source_file: cpp/test-project-1/sample.h
+- function_names:
+  - nestedFunction
+  - MyClass
+  - ~MyClass
+  - memberFunction
+  - getString
+  - staticFunction
+  - print
+  - globalFunction
+  - isPositive
+  - LLVMFuzzerTestOneInput
+  source_file: cpp/test-project-1/sample.cpp
