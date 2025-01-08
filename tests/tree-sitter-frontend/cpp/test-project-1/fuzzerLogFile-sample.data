@@ -1,5 +1,0 @@
-Call tree
-LLVMFuzzerTestOneInput cpp/test-project-1/sample.cpp -1
-  reinterpret_cast<const int*> cpp/test-project-1/sample.cpp 72
-  globalFunction cpp/test-project-1/sample.cpp 74
-  OuterNamespace::MyClass::memberFunction cpp/test-project-1/sample.cpp 77

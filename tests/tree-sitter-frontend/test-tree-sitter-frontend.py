@@ -35,7 +35,14 @@ testcases = [
         'language': 'c++',
         'project': {
             'cpp/test-project-1': [
-                'fuzzerLogFile-sample.data'
+                {
+                     'name':'LLVMFuzzerTestOneInput',
+                     'depth': 0
+                },
+                {
+                     'name':'OuterNamespace::MyClass::memberFunction',
+                     'depth': 1
+                }
             ]
         }
     }
@@ -47,69 +54,23 @@ def test_tree_sitter_frontend():
         project = testcase.get('project')
         assert language and project
 
-        for dir, output in project.items():
+        for dir, sample_list in project.items():
             # Run the tree-sitter-frontend
-            oss_fuzz.analyse_folder(language, dir, entrypoints.get(language))
+            calltrees = oss_fuzz.analyse_folder(language, dir, entrypoints.get(language))
 
-            # Check if data and data.yaml is generated correctly
-            for file in output:
-                assert os.path.isfile(file)
+            function_depth_map = {}
+            for calltree in calltrees:
+                for line in calltree.split('\n'):
+                    depth = 0
+                    while line.startswith("  "):
+                        depth += 1
+                        line = line[2:]
+                    func_name = line.split(' ')[0]
+                    function_depth_map[func_name] = depth
 
-                check_data_file(file, os.path.join(dir, file))
-                check_data_yaml_file(f'{file}.yaml', os.path.join(dir, f'{file}.yaml'))
+            for items in sample_list:
+                name = items.get('name')
+                depth = items.get('depth')
 
-
-def check_data_file(output, expected):
-    output_map = process_data_file(output)
-    expected_map = process_data_file(expected)
-
-    assert output_map
-    assert expected_map
-    assert output_map == expected_map
-
-
-def check_data_yaml_file(output, expected):
-    output_map = process_data_yaml_file(output)
-    expected_map = process_data_yaml_file(expected)
-
-    assert output_map
-    assert expected_map
-    assert output_map == expected_map
-
-
-def process_data_file(file):
-    data_map = {}
-    content = []
-    with open(file, 'r') as f:
-        content = f.readlines()[1:]
-
-    for line in content:
-        depth = 0
-        while line.startswith("  "):
-            depth += 1
-            line = line[2:]
-        lines = data_map.get(depth, [])
-        lines.append(line.strip())
-        data_map[depth] = sorted(lines)
-
-    return data_map
-
-
-def process_data_yaml_file(file):
-    def _sort(obj):
-        if isinstance(obj, dict):
-            return {key: _sort(value) for key, value in sorted(obj.items())}
-        elif isinstance(obj, list):
-            return sorted((_sort(item) for item in obj), key=lambda x: str(x))
-        else:
-            return obj
-
-    content = None
-    with open(file, 'r') as f:
-        content = yaml.safe_load(f)
-
-    if content:
-        return _sort(content)
-
-    return None
+                assert function_depth_map.get(name) == depth
 

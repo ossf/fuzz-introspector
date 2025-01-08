@@ -158,13 +158,13 @@ class SourceCodeFile():
 
         return False
 
-    def get_entry_function_name(self) -> Optional[str]:
+    def get_entry_function_name(self) -> str:
         """Returns the entry function name of the harness if found,"""
         for func in (self.functions + self.methods):
             if func.get_name().startswith('Fuzz'):
                 return func.get_name()
 
-        return None
+        return ''
 
 
 class Project():
