@@ -50,11 +50,16 @@ def parse_args():
     parser.add_argument('--language',
                         help='Language of target project',
                         required=True)
+
     return parser.parse_args()
 
 
-def process_c_project(target_dir, entrypoint, out, module_only=False):
+def process_c_project(target_dir: str,
+                      entrypoint: str,
+                      out: str,
+                      module_only: bool = False) -> list[str]:
     """Process a project in C language"""
+    calltrees = []
     source_files = {}
     source_files['c'] = frontend_c.capture_source_files_in_tree(
         target_dir, 'c')
@@ -99,6 +104,7 @@ def process_c_project(target_dir, entrypoint, out, module_only=False):
 
             logger.info('Extracting calltree for %s', harness.source_file)
             calltree = project.extract_calltree(harness, entrypoint)
+            calltrees.append(calltree)
             with open(os.path.join(out, 'fuzzerLogFile-%d.data' % (idx)),
                       'w',
                       encoding='utf-8') as f:
@@ -106,11 +112,15 @@ def process_c_project(target_dir, entrypoint, out, module_only=False):
                 f.write(calltree)
                 f.write("====================================")
 
+    return calltrees
 
-def process_cpp_project(target_dir, entrypoint, out):
+
+def process_cpp_project(target_dir: str, entrypoint: str,
+                        out: str) -> list[str]:
     """Process a project in CPP language"""
     # Extract c++ source files
     logger.info('Going C++ route')
+    calltrees = []
     source_files = []
     source_files = frontend_cpp.capture_source_files_in_tree(target_dir)
 
@@ -136,15 +146,19 @@ def process_cpp_project(target_dir, entrypoint, out):
         logger.info(f'Extracting calltree for {harness_name}')
         calltree = project.extract_calltree(harness.source_file, harness,
                                             entrypoint)
+        calltrees.append(calltree)
         target = os.path.join(out, f'fuzzerLogFile-{harness_name}.data')
         with open(target, 'w', encoding='utf-8') as f:
             f.write(f'Call tree\n{calltree}')
 
+    return calltrees
 
-def process_go_project(target_dir, out):
+
+def process_go_project(target_dir: str, out: str) -> list[str]:
     """Process a project in Go language"""
     # Extract go source files
     logger.info('Going Go route')
+    calltrees = []
     source_files = []
     source_files = frontend_go.capture_source_files_in_tree(target_dir)
 
@@ -167,15 +181,20 @@ def process_go_project(target_dir, out):
 
         logger.info(f'Extracting calltree for {harness_name}')
         calltree = project.extract_calltree(harness.source_file, harness)
+        calltrees.append(calltree)
         target = os.path.join(out, f'fuzzerLogFile-{harness_name}.data')
         with open(target, 'w', encoding='utf-8') as f:
             f.write(f'Call tree\n{calltree}')
 
+    return calltrees
 
-def process_jvm_project(target_dir, entrypoint, out):
+
+def process_jvm_project(target_dir: str, entrypoint: str,
+                        out: str) -> list[str]:
     """Process a project in JVM based language"""
     # Extract java source files
     logger.info('Going JVM route')
+    calltrees = []
     source_files = []
     source_files = frontend_jvm.capture_source_files_in_tree(target_dir)
 
@@ -200,15 +219,19 @@ def process_jvm_project(target_dir, entrypoint, out):
         # Calltree
         logger.info(f'Extracting calltree for {harness_name}')
         calltree = project.extract_calltree(harness.source_file, harness)
+        calltrees.append(calltree)
         target = os.path.join(out, f'fuzzerLogFile-{harness_name}.data')
         with open(target, 'w', encoding='utf-8') as f:
             f.write(f'Call tree\n{calltree}')
 
+    return calltrees
 
-def process_rust_project(target_dir, out):
+
+def process_rust_project(target_dir: str, out: str) -> list[str]:
     """Process a project in Rust based language"""
     # Extract rust source files
     logger.info('Going Rust route')
+    calltrees = []
     source_files = []
     source_files = frontend_rust.capture_source_files_in_tree(target_dir)
 
@@ -233,28 +256,33 @@ def process_rust_project(target_dir, out):
         # Calltree
         logger.info(f'Extracting calltree for {harness_name}')
         calltree = project.extract_calltree(harness.source_file, harness)
+        calltrees.append(calltree)
         target = os.path.join(out, f'fuzzerLogFile-{harness_name}.data')
         with open(target, 'w', encoding='utf-8') as f:
             f.write(f'Call tree\n{calltree}')
+
+    return calltrees
 
 
 def analyse_folder(language: str = '',
                    directory: str = '',
                    entrypoint: str = '',
                    out='',
-                   module_only=False):
+                   module_only=False) -> list[str]:
     """Runs a full frontend analysis on a given directory"""
 
     if language == 'c':
-        process_c_project(directory, entrypoint, out, module_only)
-    if language.lower() in ['cpp', 'c++']:
-        process_cpp_project(directory, entrypoint, out)
-    if language == 'go':
-        process_go_project(directory, out)
-    if language == 'jvm':
-        process_jvm_project(directory, entrypoint, out)
-    if language == 'rust':
-        process_rust_project(directory, out)
+        return process_c_project(directory, entrypoint, out, module_only)
+    elif language.lower() in ['cpp', 'c++']:
+        return process_cpp_project(directory, entrypoint, out)
+    elif language == 'go':
+        return process_go_project(directory, out)
+    elif language == 'jvm':
+        return process_jvm_project(directory, entrypoint, out)
+    elif language == 'rust':
+        return process_rust_project(directory, out)
+
+    return []
 
 
 def main():
