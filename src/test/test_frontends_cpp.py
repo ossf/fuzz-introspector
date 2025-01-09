@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Unit testing script for tree-sitter-frontend."""
+"""Unit testing script for the CPP frontend"""
 
 from fuzz_introspector.frontends import oss_fuzz  # noqa: E402
 
@@ -19,7 +19,7 @@ from fuzz_introspector.frontends import oss_fuzz  # noqa: E402
 def test_tree_sitter_cpp_sample1():
     callsites, project = oss_fuzz.analyse_folder(
         'c++',
-        'src/test/tree-sitter-frontend/cpp/test-project-1',
+        'src/test/data/source-code/cpp/test-project-1',
         'LLVMFuzzerTestOneInput',
         dump_output=False,
     )
@@ -30,35 +30,35 @@ def test_tree_sitter_cpp_sample1():
     # Callsite check
     assert len(callsites[0].split('\n')) == 6
     assert ('    isPositive '
-            'src/test/tree-sitter-frontend/cpp/test-project-1/sample.cpp'
+            'src/test/data/source-code/cpp/test-project-1/sample.cpp'
             in callsites[0])
 
 
 def test_tree_sitter_cpp_sample2():
     callsites, project = oss_fuzz.analyse_folder(
         'c++',
-        'src/test/tree-sitter-frontend/cpp/test-project-2',
+        'src/test/data/source-code/cpp/test-project-2',
         'LLVMFuzzerTestOneInput',
         dump_output=False,
     )
 
-    # Project check
+    # Project checkdata/source-code
     assert len(project.get_source_codes_with_harnesses()) == 1
 
     # Callsite check
     assert len(callsites[0].split('\n')) == 13
     assert ('      RecursiveNamespace::fibonacci '
-            'src/test/tree-sitter-frontend/cpp/test-project-2/recursive.cpp'
+            'src/test/data/source-code/cpp/test-project-2/recursive.cpp'
             in callsites[0])
     assert ('    File2Namespace::functionInFile2 '
-            'src/test/tree-sitter-frontend/cpp/test-project-2/crossfile.cpp'
+            'src/test/data/source-code/cpp/test-project-2/crossfile.cpp'
             in callsites[0])
 
 
 def test_tree_sitter_cpp_sample3():
     callsites, project = oss_fuzz.analyse_folder(
         'c++',
-        'src/test/tree-sitter-frontend/cpp/test-project-3',
+        'src/test/data/source-code/cpp/test-project-3',
         'LLVMFuzzerTestOneInput',
         dump_output=False,
     )
@@ -69,17 +69,17 @@ def test_tree_sitter_cpp_sample3():
     # Callsite check
     assert len(callsites[0].split('\n')) == 14
     assert ('      std::reverse '
-            'src/test/tree-sitter-frontend/cpp/test-project-3/deep_chain.cpp'
+            'src/test/data/source-code/cpp/test-project-3/deep_chain.cpp'
             in callsites[0])
     assert ('          DeepNamespace::level5 '
-            'src/test/tree-sitter-frontend/cpp/test-project-3/deep_chain.cpp'
+            'src/test/data/source-code/cpp/test-project-3/deep_chain.cpp'
             in callsites[0])
 
 
 def test_tree_sitter_cpp_sample4():
     callsites, project = oss_fuzz.analyse_folder(
         'c++',
-        'src/test/tree-sitter-frontend/cpp/test-project-4',
+        'src/test/data/source-code/cpp/test-project-4',
         'LLVMFuzzerTestOneInput',
         dump_output=False,
     )
@@ -90,7 +90,7 @@ def test_tree_sitter_cpp_sample4():
     # Callsite check
     assert len(callsites[0].split('\n')) == 7
     assert ('    Level1::Level2::Level3::Level4::DeepClass::deepMethod2 '
-            'src/test/tree-sitter-frontend/cpp/test-project-4/deep_nested.cc'
+            'src/test/data/source-code/cpp/test-project-4/deep_nested.cc'
             in callsites[0])
 
 
@@ -98,7 +98,7 @@ def test_frontend_reachability1():
     """Test reachability of a nested namespace."""
     _, project = oss_fuzz.analyse_folder(
         'c++',
-        'src/test/tree-sitter-frontend/cpp/test-project-4',
+        'src/test/data/source-code/cpp/test-project-4',
         'LLVMFuzzerTestOneInput',
         dump_output=False,
     )
