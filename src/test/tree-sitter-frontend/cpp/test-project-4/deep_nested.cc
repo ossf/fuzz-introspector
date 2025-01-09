@@ -23,6 +23,7 @@ namespace Level1 {
 
                 DeepClass::DeepClass() {
                     std::cout << "DeepClass Constructor" << std::endl;
+                    atoi("12");
                 }
 
                 DeepClass::~DeepClass() {
@@ -41,6 +42,7 @@ namespace Level1 {
 
                 void DeepClass::deepMethod2(std::string y) {
                     std::cout << "DeepMethod2: " << y << std::endl;
+                    printf("Hello\n");
                 }
 
             }

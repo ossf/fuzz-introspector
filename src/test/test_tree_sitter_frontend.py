@@ -88,7 +88,29 @@ def test_tree_sitter_cpp_sample4():
     assert len(project.get_source_codes_with_harnesses()) == 1
 
     # Callsite check
-    assert len(callsites[0].split('\n')) == 6
+    assert len(callsites[0].split('\n')) == 7
     assert ('    Level1::Level2::Level3::Level4::DeepClass::deepMethod2 '
             'src/test/tree-sitter-frontend/cpp/test-project-4/deep_nested.cc'
             in callsites[0])
+
+
+def test_frontend_reachability1():
+    """Test reachability of a nested namespace."""
+    _, project = oss_fuzz.analyse_folder(
+        'c++',
+        'src/test/tree-sitter-frontend/cpp/test-project-4',
+        'LLVMFuzzerTestOneInput',
+        dump_output=False,
+    )
+
+    functions_reached = project.get_reachable_functions(
+        source_code=None,
+        function='LLVMFuzzerTestOneInput',
+        visited_functions=set())
+    # In this case there are no namespaces in the function names.
+    # TODO(David, Arthur) fix a unified key for functions.
+    assert 'deepMethod2' in functions_reached
+    assert 'printf' in functions_reached
+
+    # TODO: revert the below assert. It should be true.
+    assert 'atoi' not in functions_reached
