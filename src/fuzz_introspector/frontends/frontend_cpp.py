@@ -374,7 +374,8 @@ class Project():
 
     def dump_module_logic(self,
                           report_name: str,
-                          harness_name: Optional[str] = None):
+                          harness_name: Optional[str] = None,
+                          dump_output=True):
         """Dumps the data for the module in full."""
         logger.info('Dumping project-wide logic.')
         report: dict[str, Any] = {'report': 'name'}
@@ -442,8 +443,9 @@ class Project():
             report['All functions'] = {}
             report['All functions']['Elements'] = func_list
 
-        with open(report_name, 'w', encoding='utf-8') as f:
-            f.write(yaml.dump(report))
+        if dump_output:
+            with open(report_name, 'w', encoding='utf-8') as f:
+                f.write(yaml.dump(report))
 
     def get_source_codes_with_harnesses(self) -> list[SourceCodeFile]:
         """Gets the source codes that holds libfuzzer harnesses."""

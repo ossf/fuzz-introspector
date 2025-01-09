@@ -57,7 +57,8 @@ def parse_args():
 def process_c_project(target_dir: str,
                       entrypoint: str,
                       out: str,
-                      module_only: bool = False) -> list[str]:
+                      module_only: bool = False,
+                      dump_output=True) -> list[str]:
     """Process a project in C language"""
     calltrees = []
     source_files = {}
@@ -115,8 +116,10 @@ def process_c_project(target_dir: str,
     return calltrees
 
 
-def process_cpp_project(target_dir: str, entrypoint: str,
-                        out: str) -> list[str]:
+def process_cpp_project(target_dir: str,
+                        entrypoint: str,
+                        out: str,
+                        dump_output=True) -> list[str]:
     """Process a project in CPP language"""
     # Extract c++ source files
     logger.info('Going C++ route')
@@ -140,21 +143,27 @@ def process_cpp_project(target_dir: str, entrypoint: str,
         # Method data
         logger.info(f'Dump methods for {harness_name}')
         target = os.path.join(out, f'fuzzerLogFile-{harness_name}.data.yaml')
-        project.dump_module_logic(target, harness_name)
+        project.dump_module_logic(target,
+                                  harness_name,
+                                  dump_output=dump_output)
 
         # Calltree
         logger.info(f'Extracting calltree for {harness_name}')
         calltree = project.extract_calltree(harness.source_file, harness,
                                             entrypoint)
         calltrees.append(calltree)
-        target = os.path.join(out, f'fuzzerLogFile-{harness_name}.data')
-        with open(target, 'w', encoding='utf-8') as f:
-            f.write(f'Call tree\n{calltree}')
+        if dump_output:
+            project.dump_module_logic(target, harness_name)
+            target = os.path.join(out, f'fuzzerLogFile-{harness_name}.data')
+            with open(target, 'w', encoding='utf-8') as f:
+                f.write(f'Call tree\n{calltree}')
 
     return calltrees
 
 
-def process_go_project(target_dir: str, out: str) -> list[str]:
+def process_go_project(target_dir: str,
+                       out: str,
+                       dump_output=True) -> list[str]:
     """Process a project in Go language"""
     # Extract go source files
     logger.info('Going Go route')
@@ -189,8 +198,10 @@ def process_go_project(target_dir: str, out: str) -> list[str]:
     return calltrees
 
 
-def process_jvm_project(target_dir: str, entrypoint: str,
-                        out: str) -> list[str]:
+def process_jvm_project(target_dir: str,
+                        entrypoint: str,
+                        out: str,
+                        dump_output=True) -> list[str]:
     """Process a project in JVM based language"""
     # Extract java source files
     logger.info('Going JVM route')
@@ -227,7 +238,9 @@ def process_jvm_project(target_dir: str, entrypoint: str,
     return calltrees
 
 
-def process_rust_project(target_dir: str, out: str) -> list[str]:
+def process_rust_project(target_dir: str,
+                         out: str,
+                         dump_output=True) -> list[str]:
     """Process a project in Rust based language"""
     # Extract rust source files
     logger.info('Going Rust route')
@@ -268,19 +281,30 @@ def analyse_folder(language: str = '',
                    directory: str = '',
                    entrypoint: str = '',
                    out='',
-                   module_only=False) -> list[str]:
+                   module_only=False,
+                   dump_output=True) -> list[str]:
     """Runs a full frontend analysis on a given directory"""
 
     if language == 'c':
-        return process_c_project(directory, entrypoint, out, module_only)
+        return process_c_project(directory,
+                                 entrypoint,
+                                 out,
+                                 module_only,
+                                 dump_output=dump_output)
     elif language.lower() in ['cpp', 'c++']:
-        return process_cpp_project(directory, entrypoint, out)
+        return process_cpp_project(directory,
+                                   entrypoint,
+                                   out,
+                                   dump_output=dump_output)
     elif language == 'go':
-        return process_go_project(directory, out)
+        return process_go_project(directory, out, dump_output=dump_output)
     elif language == 'jvm':
-        return process_jvm_project(directory, entrypoint, out)
+        return process_jvm_project(directory,
+                                   entrypoint,
+                                   out,
+                                   dump_output=dump_output)
     elif language == 'rust':
-        return process_rust_project(directory, out)
+        return process_rust_project(directory, out, dump_output=dump_output)
 
     return []
 
