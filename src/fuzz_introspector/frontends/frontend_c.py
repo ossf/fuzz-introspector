@@ -24,7 +24,7 @@ from tree_sitter import Language, Parser
 import tree_sitter_c
 import yaml
 
-from typing import Any
+from typing import Any, Optional, Set
 
 logger = logging.getLogger(name=__name__)
 
@@ -185,6 +185,40 @@ class Project():
                 depth=depth + 1,
                 line_number=line_number)
         return line_to_print
+
+    def get_reachable_functions(
+            self,
+            source_code: Optional['SourceCodeFile'] = None,
+            function: Optional[str] = None,
+            visited_functions: Optional[set[str]] = None) -> Set[str]:
+        """Gets the reachable frunctions from a given function."""
+        # Create calltree from a given function
+        # Find the function in the source code
+        if not visited_functions:
+            visited_functions = set()
+
+        if not function:
+            return visited_functions
+
+        if function in visited_functions:
+            return visited_functions
+
+        if not source_code:
+            source_code = self.find_source_with_func_def(function)
+
+        if not source_code:
+            return visited_functions
+
+        func = source_code.get_function_node(function)
+        if not func:
+            return visited_functions
+
+        callsites = func.callsites()
+        visited_functions.add(function)
+        for cs, _ in callsites:
+            visited_functions = self.get_reachable_functions(
+                function=cs, visited_functions=visited_functions)
+        return visited_functions
 
     def find_source_with_func_def(self, target_function_name):
         """Finds the source code with a given function."""
