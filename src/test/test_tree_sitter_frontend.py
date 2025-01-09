@@ -88,7 +88,7 @@ def test_tree_sitter_cpp_sample4():
     assert len(project.get_source_codes_with_harnesses()) == 1
 
     # Callsite check
-    assert len(callsites[0].split('\n')) == 6
+    assert len(callsites[0].split('\n')) == 7
     assert ('    Level1::Level2::Level3::Level4::DeepClass::deepMethod2 '
             'src/test/tree-sitter-frontend/cpp/test-project-4/deep_nested.cc'
             in callsites[0])
