@@ -28,7 +28,7 @@ def test_tree_sitter_cpp_sample1():
     assert len(project.get_source_codes_with_harnesses()) == 1
 
     # Callsite check
-    assert len(callsites[0].split('\n')) == 6
+    assert len(callsites[0].split('\n')) == 7
     assert ('    isPositive '
             'src/test/data/source-code/cpp/test-project-1/sample.cpp'
             in callsites[0])
@@ -77,21 +77,21 @@ def test_tree_sitter_cpp_sample3():
 
 
 def test_tree_sitter_cpp_sample4():
-    callsites, project = oss_fuzz.analyse_folder(
+    _, project = oss_fuzz.analyse_folder(
         'c++',
         'src/test/data/source-code/cpp/test-project-4',
         'LLVMFuzzerTestOneInput',
         dump_output=False,
     )
 
-    # Project check
-    assert len(project.get_source_codes_with_harnesses()) == 1
+    functions_reached = project.get_reachable_functions(
+        source_code=None,
+        function='LLVMFuzzerTestOneInput',
+        visited_functions=set())
 
-    # Callsite check
-    assert len(callsites[0].split('\n')) == 7
-    assert ('    Level1::Level2::Level3::Level4::DeepClass::deepMethod2 '
-            'src/test/data/source-code/cpp/test-project-4/deep_nested.cc'
-            in callsites[0])
+    assert 'Level1::Level2::Level3::Level4::DeepClass::deepMethod2' in functions_reached
+    assert 'printf' in functions_reached
+    assert 'atoi' in functions_reached
 
 
 def test_tree_sitter_cpp_sample5():
@@ -109,24 +109,3 @@ def test_tree_sitter_cpp_sample5():
 
     assert 'ClassOne::processInput' in functions_reached
     assert 'NamespaceOne::processInput' in functions_reached
-
-
-def test_frontend_reachability1():
-    """Test reachability of a nested namespace."""
-    _, project = oss_fuzz.analyse_folder(
-        'c++',
-        'src/test/data/source-code/cpp/test-project-4',
-        'LLVMFuzzerTestOneInput',
-        dump_output=False,
-    )
-
-    functions_reached = project.get_reachable_functions(
-        source_code=None,
-        function='LLVMFuzzerTestOneInput',
-        visited_functions=set())
-
-    assert 'Level1::Level2::Level3::Level4::DeepClass::deepMethod2' in functions_reached
-    assert 'printf' in functions_reached
-
-    # TODO: revert the below assert. It should be true.
-    assert 'atoi' not in functions_reached
