@@ -158,7 +158,7 @@ class FunctionDefinition():
         self.sig = ''
         self.function_uses = 0
         self.function_depth = 0
-        self.base_callsites: list[tuple[str, int, str]] = []
+        self.base_callsites: list[tuple[str, int]] = []
         self.detailed_callsites: list[dict[str, str]] = []
         self.var_map: dict[str, str] = {}
 
@@ -166,7 +166,7 @@ class FunctionDefinition():
         self._extract_information()
 
     def _extract_pointer_array_from_type(
-        self, param_name: Node) -> tuple[int, int, Node]:
+            self, param_name: Node) -> tuple[int, int, Node]:
         """Extract the pointer, array count from type and return the pain type."""
         # Count pointer
         pointer_count = 0
@@ -181,7 +181,6 @@ class FunctionDefinition():
             param_name = param_name.child_by_field_name('declarator')
 
         return (pointer_count, array_count, param_name)
-
 
     def _extract_information(self):
         """Extract information from tree-sitter node."""
@@ -233,8 +232,9 @@ class FunctionDefinition():
                     continue
 
                 while param_name.type not in [
-                    'identifier', 'qualified_identifier', 'pointer_declarator',
-                    'array_declarator', 'reference_declarator'
+                        'identifier', 'qualified_identifier',
+                        'pointer_declarator', 'array_declarator',
+                        'reference_declarator'
                 ]:
                     param_name = param_name.child_by_field_name('declarator')
 
@@ -242,9 +242,9 @@ class FunctionDefinition():
                 pcount, acount, param_name = result
 
                 self.arg_types.append(
-                    f'{param_type.text.decode()}{"*" * pcount}{"[]" * acount}'
-                )
-                self.arg_names.append(param_name.text.decode().replace('&', ''))
+                    f'{param_type.text.decode()}{"*" * pcount}{"[]" * acount}')
+                self.arg_names.append(param_name.text.decode().replace(
+                    '&', ''))
                 self.var_map[self.arg_names[-1]] = self.arg_types[-1]
 
         # Handles other fields
@@ -289,7 +289,7 @@ class FunctionDefinition():
     def extract_callsites(self, functions: dict[str, 'FunctionDefinition']):
         """Gets the callsites of the function."""
 
-        def _process_invoke(expr: Node) -> list[tuple[str, int, int, str]]:
+        def _process_invoke(expr: Node) -> list[tuple[str, int, int]]:
             """Internal helper for processing the function invocation statement."""
             callsites = []
             target_name: str = ''
@@ -313,9 +313,14 @@ class FunctionDefinition():
                     _, target_name = _process_field_expr_return_type(func)
 
             if target_name:
+                # Handles in scope invocation
+                if '::' not in target_name and self.namespace_or_class:
+                    full_target_name = f'{self.namespace_or_class}::{target_name}'
+                    if full_target_name in functions:
+                        target_name = full_target_name
+
                 callsites.append((target_name, func.byte_range[1],
-                                  func.start_point.row + 1, ''))
-                # TODO GET Correct Class name
+                                  func.start_point.row + 1))
 
             return callsites
 
@@ -354,7 +359,7 @@ class FunctionDefinition():
 
             return (type, full_name)
 
-        def _process_callsites(stmt: Node) -> list[tuple[str, int, int, str]]:
+        def _process_callsites(stmt: Node) -> list[tuple[str, int, int]]:
             """Process and store the callsites of the function."""
             callsites = []
 
@@ -367,23 +372,26 @@ class FunctionDefinition():
                 ctr_type = stmt.child_by_field_name('type')
                 if ctr_type:
                     cls = ctr_type.text.decode()
+                    cls = f'{cls}::{cls}'
                     callsites.append(
-                        (cls, stmt.byte_range[1], stmt.start_point.row + 1, cls))
+                        (cls, stmt.byte_range[1], stmt.start_point.row + 1))
 
             elif stmt.type == 'declaration':
                 var_type = stmt.child_by_field_name('type').text.decode()
                 var_name = stmt.child_by_field_name('declarator')
 
                 while var_name.type not in [
-                    'identifier', 'qualified_identifier', 'pointer_declarator',
-                    'array_declarator', 'reference_declarator'
+                        'identifier', 'qualified_identifier',
+                        'pointer_declarator', 'array_declarator',
+                        'reference_declarator'
                 ]:
                     var_name = var_name.child_by_field_name('declarator')
 
                 result = self._extract_pointer_array_from_type(var_name)
                 pcount, acount, var_name = result
                 var_type = f'{var_type}{"*" * pcount}{"[]" * acount}'
-                self.var_map[var_name.text.decode().replace('&', '')] = var_type
+                self.var_map[var_name.text.decode().replace('&',
+                                                            '')] = var_type
 
             for child in stmt.children:
                 callsites.extend(_process_callsites(child))
@@ -396,10 +404,10 @@ class FunctionDefinition():
                 callsites.extend(_process_callsites(child))
 
             callsites = sorted(set(callsites), key=lambda x: x[1])
-            self.base_callsites = [(x[0], x[2], x[3]) for x in callsites]
+            self.base_callsites = [(x[0], x[2]) for x in callsites]
 
         if not self.detailed_callsites:
-            for dst, src_line, _ in self.base_callsites:
+            for dst, src_line in self.base_callsites:
                 src_loc = self.parent_source.source_file + ':%d,1' % (src_line)
                 self.detailed_callsites.append({'Src': src_loc, 'Dst': dst})
 
@@ -471,7 +479,7 @@ class Project():
             func_dict['signature'] = func.sig
             callsites = func.base_callsites
             reached = set()
-            for cs_dst, _, _ in callsites:
+            for cs_dst, _ in callsites:
                 reached.add(cs_dst)
             func_dict['functionsReached'] = list(reached)
 
@@ -519,9 +527,6 @@ class Project():
             func_node = get_function_node(function, self.all_functions)
             if func_node:
                 func_name = func_node.name
-                prefix = func_node.namespace_or_class
-                if prefix:
-                    func_name = f'{prefix}::{func_name}'
             else:
                 func_name = function
         else:
@@ -541,7 +546,7 @@ class Project():
             return line_to_print
 
         visited_functions.add(function)
-        for cs, line, _ in func_node.base_callsites:
+        for cs, line in func_node.base_callsites:
             line_to_print += self.extract_calltree(
                 source_file=source_code.source_file,
                 function=cs,

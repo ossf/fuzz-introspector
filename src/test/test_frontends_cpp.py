@@ -46,8 +46,8 @@ def test_tree_sitter_cpp_sample2():
     assert len(project.get_source_codes_with_harnesses()) == 1
 
     # Callsite check
-    assert len(callsites[0].split('\n')) == 13
-    assert ('      RecursiveNamespace::fibonacci '
+    assert len(callsites[0].split('\n')) == 10
+    assert ('    RecursiveNamespace::fibonacci '
             'src/test/data/source-code/cpp/test-project-2/recursive.cpp'
             in callsites[0])
     assert ('    File2Namespace::functionInFile2 '
@@ -94,6 +94,23 @@ def test_tree_sitter_cpp_sample4():
             in callsites[0])
 
 
+def test_tree_sitter_cpp_sample5():
+    _, project = oss_fuzz.analyse_folder(
+        'c++',
+        'src/test/data/source-code/cpp/test-project-5',
+        'LLVMFuzzerTestOneInput',
+        dump_output=False,
+    )
+
+    functions_reached = project.get_reachable_functions(
+        source_code=None,
+        function='LLVMFuzzerTestOneInput',
+        visited_functions=set())
+
+    assert 'ClassOne::processInput' in functions_reached
+    assert 'NamespaceOne::processInput' in functions_reached
+
+
 def test_frontend_reachability1():
     """Test reachability of a nested namespace."""
     _, project = oss_fuzz.analyse_folder(
@@ -107,9 +124,8 @@ def test_frontend_reachability1():
         source_code=None,
         function='LLVMFuzzerTestOneInput',
         visited_functions=set())
-    # In this case there are no namespaces in the function names.
-    # TODO(David, Arthur) fix a unified key for functions.
-    assert 'deepMethod2' in functions_reached
+
+    assert 'Level1::Level2::Level3::Level4::DeepClass::deepMethod2' in functions_reached
     assert 'printf' in functions_reached
 
     # TODO: revert the below assert. It should be true.
