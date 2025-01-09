@@ -384,8 +384,8 @@ class FunctionDefinition():
                 if var_name.type == 'identifier':
                     cls = f'{var_type}::{var_type.rsplit("::")[-1]}'
                     if cls in functions:
-                        callsites.append(
-                            (cls, stmt.byte_range[1], stmt.start_point.row + 1))
+                        callsites.append((cls, stmt.byte_range[1],
+                                          stmt.start_point.row + 1))
 
                 while var_name.type not in [
                         'identifier', 'qualified_identifier',
