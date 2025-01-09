@@ -17,13 +17,17 @@ from fuzz_introspector.frontends import oss_fuzz  # noqa: E402
 
 
 def test_tree_sitter_cpp_sample1():
-    callsites = oss_fuzz.analyse_folder(
+    callsites, project = oss_fuzz.analyse_folder(
         'c++',
         'src/test/tree-sitter-frontend/cpp/test-project-1',
         'LLVMFuzzerTestOneInput',
         dump_output=False,
     )
 
+    # Project check
+    assert len(project.get_source_codes_with_harnesses()) == 1
+
+    # Callsite check
     assert len(callsites[0].split('\n')) == 6
     assert ('    isPositive '
             'src/test/tree-sitter-frontend/cpp/test-project-1/sample.cpp'
@@ -31,13 +35,17 @@ def test_tree_sitter_cpp_sample1():
 
 
 def test_tree_sitter_cpp_sample2():
-    callsites = oss_fuzz.analyse_folder(
+    callsites, project = oss_fuzz.analyse_folder(
         'c++',
         'src/test/tree-sitter-frontend/cpp/test-project-2',
         'LLVMFuzzerTestOneInput',
         dump_output=False,
     )
 
+    # Project check
+    assert len(project.get_source_codes_with_harnesses()) == 1
+
+    # Callsite check
     assert len(callsites[0].split('\n')) == 13
     assert ('      RecursiveNamespace::fibonacci '
             'src/test/tree-sitter-frontend/cpp/test-project-2/recursive.cpp'
@@ -48,13 +56,17 @@ def test_tree_sitter_cpp_sample2():
 
 
 def test_tree_sitter_cpp_sample3():
-    callsites = oss_fuzz.analyse_folder(
+    callsites, project = oss_fuzz.analyse_folder(
         'c++',
         'src/test/tree-sitter-frontend/cpp/test-project-3',
         'LLVMFuzzerTestOneInput',
         dump_output=False,
     )
 
+    # Project check
+    assert len(project.get_source_codes_with_harnesses()) == 1
+
+    # Callsite check
     assert len(callsites[0].split('\n')) == 14
     assert ('      std::reverse '
             'src/test/tree-sitter-frontend/cpp/test-project-3/deep_chain.cpp'
@@ -65,13 +77,17 @@ def test_tree_sitter_cpp_sample3():
 
 
 def test_tree_sitter_cpp_sample4():
-    callsites = oss_fuzz.analyse_folder(
+    callsites, project = oss_fuzz.analyse_folder(
         'c++',
         'src/test/tree-sitter-frontend/cpp/test-project-4',
         'LLVMFuzzerTestOneInput',
         dump_output=False,
     )
 
+    # Project check
+    assert len(project.get_source_codes_with_harnesses()) == 1
+
+    # Callsite check
     assert len(callsites[0].split('\n')) == 6
     assert ('    Level1::Level2::Level3::Level4::DeepClass::deepMethod2 '
             'src/test/tree-sitter-frontend/cpp/test-project-4/deep_nested.cc'
