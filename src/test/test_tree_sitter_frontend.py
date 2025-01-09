@@ -21,14 +21,13 @@ def test_tree_sitter_cpp_sample1():
         'c++',
         'src/test/tree-sitter-frontend/cpp/test-project-1',
         'LLVMFuzzerTestOneInput',
+        dump_output=False,
     )
 
     assert len(callsites[0].split('\n')) == 6
-    assert (
-        '    isPositive '
-        'src/test/tree-sitter-frontend/cpp/test-project-1/sample.cpp'
-        in callsites[0]
-    )
+    assert ('    isPositive '
+            'src/test/tree-sitter-frontend/cpp/test-project-1/sample.cpp'
+            in callsites[0])
 
 
 def test_tree_sitter_cpp_sample2():
@@ -36,19 +35,16 @@ def test_tree_sitter_cpp_sample2():
         'c++',
         'src/test/tree-sitter-frontend/cpp/test-project-2',
         'LLVMFuzzerTestOneInput',
+        dump_output=False,
     )
 
     assert len(callsites[0].split('\n')) == 13
-    assert (
-        '      RecursiveNamespace::fibonacci '
-        'src/test/tree-sitter-frontend/cpp/test-project-2/recursive.cpp'
-        in callsites[0]
-    )
-    assert (
-        '    File2Namespace::functionInFile2 '
-        'src/test/tree-sitter-frontend/cpp/test-project-2/crossfile.cpp'
-        in callsites[0]
-    )
+    assert ('      RecursiveNamespace::fibonacci '
+            'src/test/tree-sitter-frontend/cpp/test-project-2/recursive.cpp'
+            in callsites[0])
+    assert ('    File2Namespace::functionInFile2 '
+            'src/test/tree-sitter-frontend/cpp/test-project-2/crossfile.cpp'
+            in callsites[0])
 
 
 def test_tree_sitter_cpp_sample3():
@@ -56,19 +52,16 @@ def test_tree_sitter_cpp_sample3():
         'c++',
         'src/test/tree-sitter-frontend/cpp/test-project-3',
         'LLVMFuzzerTestOneInput',
+        dump_output=False,
     )
 
     assert len(callsites[0].split('\n')) == 14
-    assert (
-        '      std::reverse '
-        'src/test/tree-sitter-frontend/cpp/test-project-3/deep_chain.cpp'
-        in callsites[0]
-    )
-    assert (
-        '          DeepNamespace::level5 '
-        'src/test/tree-sitter-frontend/cpp/test-project-3/deep_chain.cpp'
-        in callsites[0]
-    )
+    assert ('      std::reverse '
+            'src/test/tree-sitter-frontend/cpp/test-project-3/deep_chain.cpp'
+            in callsites[0])
+    assert ('          DeepNamespace::level5 '
+            'src/test/tree-sitter-frontend/cpp/test-project-3/deep_chain.cpp'
+            in callsites[0])
 
 
 def test_tree_sitter_cpp_sample4():
@@ -76,11 +69,10 @@ def test_tree_sitter_cpp_sample4():
         'c++',
         'src/test/tree-sitter-frontend/cpp/test-project-4',
         'LLVMFuzzerTestOneInput',
+        dump_output=False,
     )
 
     assert len(callsites[0].split('\n')) == 6
-    assert (
-        '    Level1::Level2::Level3::Level4::DeepClass::deepMethod2 '
-        'src/test/tree-sitter-frontend/cpp/test-project-4/deep_nested.cc'
-        in callsites[0]
-    )
+    assert ('    Level1::Level2::Level3::Level4::DeepClass::deepMethod2 '
+            'src/test/tree-sitter-frontend/cpp/test-project-4/deep_nested.cc'
+            in callsites[0])

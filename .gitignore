@@ -12,3 +12,7 @@ __pycache__/
 *.py[cod]
 .*$py.class
 *.so
+.coverage
+tests/java/.coverage
+tests/java/result/
+tests/tree-sitter-frontend/
