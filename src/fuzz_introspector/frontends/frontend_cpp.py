@@ -14,7 +14,7 @@
 #
 ################################################################################
 
-from typing import Any, Optional
+from typing import Any, Optional, Set
 
 import os
 import pathlib
@@ -512,6 +512,53 @@ class Project():
                 line_number=line)
 
         return line_to_print
+
+    def get_reachable_functions(self,
+                                source_code: Optional[SourceCodeFile] = None,
+                                function: Optional[str] = None,
+                                visited_functions: Optional[set[str]] = None,
+                                depth: int = 0) -> Set[str]:
+        """Gets the reachable frunctions from a given function."""
+        # Create calltree from a given function
+        # Find the function in the source code
+        if not visited_functions:
+            visited_functions = set()
+
+        if not function:
+            return visited_functions
+
+        source_code = None
+        result = self.find_source_with_func_def(function)
+        if result:
+            source_code = result[0]
+
+        func_node = None
+        if function:
+            func_node = get_function_node(function, self.all_functions)
+            if func_node:
+                func_name = func_node.name
+                prefix = func_node.namespace_or_class
+                if prefix:
+                    func_name = f'{prefix}::{func_name}'
+            else:
+                func_name = function
+        else:
+            visited_functions.add(function)
+            return visited_functions
+
+        visited_functions.add(function)
+        if not func_node or not source_code:
+            return visited_functions
+
+        for cs, _ in func_node.base_callsites:
+            visited_functions = self.get_reachable_functions(
+                source_code=source_code,
+                function=cs,
+                visited_functions=visited_functions,
+                depth=depth + 1,
+            )
+
+        return visited_functions
 
     def find_source_with_func_def(
             self,
