@@ -160,9 +160,27 @@ class FunctionDefinition():
         self.function_depth = 0
         self.base_callsites: list[tuple[str, int]] = []
         self.detailed_callsites: list[dict[str, str]] = []
+        self.var_map: dict[str, str] = {}
 
         # Extract information from tree-sitter node
         self._extract_information()
+
+    def _extract_pointer_array_from_type(
+            self, param_name: Node) -> tuple[int, int, Node]:
+        """Extract the pointer, array count from type and return the pain type."""
+        # Count pointer
+        pointer_count = 0
+        while param_name.type == 'pointer_declarator':
+            pointer_count += 1
+            param_name = param_name.child_by_field_name('declarator')
+
+        # Count array
+        array_count = 0
+        while param_name.type == 'array_declarator':
+            array_count += 1
+            param_name = param_name.child_by_field_name('declarator')
+
+        return (pointer_count, array_count, param_name)
 
     def _extract_information(self):
         """Extract information from tree-sitter node."""
@@ -193,6 +211,9 @@ class FunctionDefinition():
             else:
                 self.namespace_or_class = prefix
 
+        if self.namespace_or_class:
+            self.name = f'{self.namespace_or_class}::{self.name}'
+
         # Handles return type
         type_node = self.root.child_by_field_name('type')
         if type_node:
@@ -210,22 +231,21 @@ class FunctionDefinition():
                 if not param_type or not param_name:
                     continue
 
-                # Count pointer
-                pointer_count = 0
-                while param_name.type == 'pointer_declarator':
-                    pointer_count += 1
+                while param_name.type not in [
+                        'identifier', 'qualified_identifier',
+                        'pointer_declarator', 'array_declarator',
+                        'reference_declarator'
+                ]:
                     param_name = param_name.child_by_field_name('declarator')
 
-                # Count array
-                array_count = 0
-                while param_name.type == 'array_declarator':
-                    array_count += 1
-                    param_name = param_name.child_by_field_name('declarator')
+                result = self._extract_pointer_array_from_type(param_name)
+                pcount, acount, param_name = result
 
                 self.arg_types.append(
-                    f'{param_type.text.decode()}{"*" * pointer_count}{"[]" * array_count}'
-                )
-                self.arg_names.append(param_name.text.decode())
+                    f'{param_type.text.decode()}{"*" * pcount}{"[]" * acount}')
+                self.arg_names.append(param_name.text.decode().replace(
+                    '&', ''))
+                self.var_map[self.arg_names[-1]] = self.arg_types[-1]
 
         # Handles other fields
         self._process_complexity()
@@ -291,10 +311,14 @@ class FunctionDefinition():
                 # Chained or method calls
                 elif func.type == 'field_expression':
                     _, target_name = _process_field_expr_return_type(func)
-                    callsites.append((target_name, func.byte_range[1],
-                                      func.start_point.row + 1))
 
             if target_name:
+                # Handles in scope invocation
+                if '::' not in target_name and self.namespace_or_class:
+                    full_target_name = f'{self.namespace_or_class}::{target_name}'
+                    if full_target_name in functions:
+                        target_name = full_target_name
+
                 callsites.append((target_name, func.byte_range[1],
                                   func.start_point.row + 1))
 
@@ -318,6 +342,10 @@ class FunctionDefinition():
             # Internal call
             elif arg.type == 'this':
                 object_type = self.namespace_or_class
+
+            # Named object
+            elif arg.type in ['identifier', 'qualified_identifier']:
+                object_type = self.var_map.get(arg.text.decode())
 
             if object_type:
                 if object_type == 'void':
@@ -343,9 +371,27 @@ class FunctionDefinition():
             elif stmt.type == 'new_expression':
                 ctr_type = stmt.child_by_field_name('type')
                 if ctr_type:
+                    cls = ctr_type.text.decode()
+                    cls = f'{cls}::{cls}'
                     callsites.append(
-                        (ctr_type.text.decode(), stmt.byte_range[1],
-                         stmt.start_point.row + 1))
+                        (cls, stmt.byte_range[1], stmt.start_point.row + 1))
+
+            elif stmt.type == 'declaration':
+                var_type = stmt.child_by_field_name('type').text.decode()
+                var_name = stmt.child_by_field_name('declarator')
+
+                while var_name.type not in [
+                        'identifier', 'qualified_identifier',
+                        'pointer_declarator', 'array_declarator',
+                        'reference_declarator'
+                ]:
+                    var_name = var_name.child_by_field_name('declarator')
+
+                result = self._extract_pointer_array_from_type(var_name)
+                pcount, acount, var_name = result
+                var_type = f'{var_type}{"*" * pcount}{"[]" * acount}'
+                self.var_map[var_name.text.decode().replace('&',
+                                                            '')] = var_type
 
             for child in stmt.children:
                 callsites.extend(_process_callsites(child))
@@ -481,9 +527,6 @@ class Project():
             func_node = get_function_node(function, self.all_functions)
             if func_node:
                 func_name = func_node.name
-                prefix = func_node.namespace_or_class
-                if prefix:
-                    func_name = f'{prefix}::{func_name}'
             else:
                 func_name = function
         else:
