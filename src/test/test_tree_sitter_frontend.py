@@ -13,8 +13,6 @@
 # limitations under the License.
 """Unit testing script for tree-sitter-frontend."""
 
-import os
-
 from fuzz_introspector.frontends import oss_fuzz  # noqa: E402
 
 
