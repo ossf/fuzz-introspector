@@ -372,13 +372,20 @@ class FunctionDefinition():
                 ctr_type = stmt.child_by_field_name('type')
                 if ctr_type:
                     cls = ctr_type.text.decode()
-                    cls = f'{cls}::{cls}'
+                    cls = f'{cls}::{cls.rsplit("::")[-1]}'
                     callsites.append(
                         (cls, stmt.byte_range[1], stmt.start_point.row + 1))
 
             elif stmt.type == 'declaration':
                 var_type = stmt.child_by_field_name('type').text.decode()
                 var_name = stmt.child_by_field_name('declarator')
+
+                # Handles implicit default constructor call
+                if var_name.type == 'identifier':
+                    cls = f'{var_type}::{var_type.rsplit("::")[-1]}'
+                    if cls in functions:
+                        callsites.append((cls, stmt.byte_range[1],
+                                          stmt.start_point.row + 1))
 
                 while var_name.type not in [
                         'identifier', 'qualified_identifier',
