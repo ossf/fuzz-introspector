@@ -70,6 +70,7 @@ LITERAL_MAP = {
     "null_literal": "null"
 }
 
+
 class SourceCodeFile():
     """Class for holding file-specific information."""
 
@@ -570,8 +571,7 @@ class JavaMethod():
 
                 # Only store type value is not found
                 for node in other_type_node:
-                    return_value, invoke = self._process_invoke(
-                        node, classes)
+                    return_value, invoke = self._process_invoke(node, classes)
 
                     if return_value and not found:
                         found = True
@@ -674,8 +674,8 @@ class JavaMethod():
                 elif cls_type.type == 'super':
                     object_type = self.class_interface.super_class
 
-                elif cls_type.type.endswith('type_identifier') or cls_type.type.endswith(
-                        '_type'):
+                elif cls_type.type.endswith(
+                        'type_identifier') or cls_type.type.endswith('_type'):
                     object_type = cls_type.text.decode().split('<')[0]
 
             object_type = self.parent_source.get_full_qualified_name(
@@ -745,9 +745,8 @@ class JavaMethod():
         return return_type, callsites
 
     def _process_callsites(
-        self, stmt: Node,
-        classes: dict[str,
-                      'JavaClassInterface']) -> tuple[str, list[tuple[str, int, int]]]:
+        self, stmt: Node, classes: dict[str, 'JavaClassInterface']
+    ) -> tuple[str, list[tuple[str, int, int]]]:
         """Process and store the callsites of the method."""
         type = ''
         callsites = []
@@ -1172,6 +1171,9 @@ class Project():
         if not method and source_code:
             method = source_code.get_entry_method_name(True)
 
+        if not method:
+            return ''
+
         line_to_print = '  ' * depth
         line_to_print += method
         line_to_print += ' '
@@ -1204,11 +1206,12 @@ class Project():
 
         return line_to_print
 
-    def get_reachable_methods(self,
-                        source_file: str,
-                        source_code: Optional[SourceCodeFile] = None,
-                        method: Optional[str] = None,
-                        visited_methods: Optional[set[str]] = None) -> set[str]:
+    def get_reachable_methods(
+            self,
+            source_file: str,
+            source_code: Optional[SourceCodeFile] = None,
+            method: Optional[str] = None,
+            visited_methods: Optional[set[str]] = None) -> set[str]:
         """Get a list of reachable functions for a provided function name."""
         if not visited_methods:
             visited_methods = set()
@@ -1225,7 +1228,8 @@ class Project():
                 visited_methods.add(method)
                 return visited_methods
         else:
-            visited_methods.add(method)
+            if method:
+                visited_methods.add(method)
             return visited_methods
 
         visited_methods.add(method)
@@ -1244,8 +1248,8 @@ class Project():
 def capture_source_files_in_tree(directory_tree: str) -> list[str]:
     """Captures source code files in a given directory."""
     exclude_directories = [
-        'target', 'node_modules', 'aflplusplus', 'honggfuzz',
-        'inspector', 'libfuzzer'
+        'target', 'node_modules', 'aflplusplus', 'honggfuzz', 'inspector',
+        'libfuzzer'
     ]
     language_extensions = ['.java']
     language_files = []
