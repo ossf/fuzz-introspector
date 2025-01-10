@@ -743,7 +743,7 @@ class JavaMethod():
     ) -> tuple[str, list[tuple[str, int, int]]]:
         """Process and store the callsites of the method."""
         type = ''
-        callsites = []
+        callsites: list[tuple[str, int, int]] = []
 
         if not stmt:
             return type, callsites
