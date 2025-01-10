@@ -243,32 +243,40 @@ class JavaMethod():
     def __init__(self,
                  root: Node,
                  class_interface: 'JavaClassInterface',
-                 is_constructor: bool = False):
+                 is_constructor: bool = False,
+                 is_default_constructor: bool = False):
         self.root = root
         self.class_interface = class_interface
         self.tree_sitter_lang = self.class_interface.tree_sitter_lang
         self.parent_source: Optional[
             SourceCodeFile] = self.class_interface.parent_source
         self.is_constructor = is_constructor
+        self.is_default_constructor = is_default_constructor
+        self.name: str = ''
 
         # Store method line information
-        self.start_line = self.root.start_point.row + 1
-        self.end_line = self.root.end_point.row + 1
+        if self.is_default_constructor:
+            self.start_line = -1
+            self.end_line = -1
+            self.name = '<init>'
+            self.public = True
+        else:
+            self.start_line = self.root.start_point.row + 1
+            self.end_line = self.root.end_point.row + 1
+            self.name = ''
+            self.public = False
 
         # Other properties
-        self.name: str = ''
         self.complexity = 0
         self.icount = 0
         self.arg_names: list[str] = []
         self.arg_types: list[str] = []
         self.exceptions: list[str] = []
         self.return_type = ''
-        self.sig = ''
         self.function_uses = 0
         self.function_depth = 0
         self.base_callsites: list[tuple[str, int]] = []
         self.detailed_callsites: list[dict[str, str]] = []
-        self.public = False
         self.concrete = True
         self.static = False
         self.is_entry_method = False
@@ -277,11 +285,12 @@ class JavaMethod():
         self.stmts: list[Node] = []
         self.var_map: dict[str, str] = {}
 
-        # Process method declaration
-        self._process_declaration()
+        if not self.is_default_constructor:
+            # Process method declaration
+            self._process_declaration()
 
-        # Process statements
-        self._process_statements()
+            # Process statements
+            self._process_statements()
 
     def post_process_full_qualified_name(self):
         """Post process the full qualified name for types."""
@@ -374,7 +383,6 @@ class JavaMethod():
         for stmt in self.stmts:
             self._process_complexity(stmt)
             self._process_icount(stmt)
-            self._process_variable_declaration(stmt)
 
     def _process_complexity(self, stmt: Node):
         """Gets complexity measure based on counting branch nodes in a
@@ -442,21 +450,6 @@ class JavaMethod():
             return count
 
         self.icount += _traverse_node_instr_count(stmt)
-
-    def _process_variable_declaration(self, stmt: Node):
-        """Process the local variable declaration."""
-        variable_type = None
-        variable_name = None
-
-        if stmt.type == 'local_variable_declaration':
-            variable_type = stmt.child_by_field_name('type').text.decode()
-            for vars in stmt.children:
-                if vars.type == 'variable_declarator':
-                    variable_name = vars.child_by_field_name(
-                        'name').text.decode()
-
-        if variable_type and variable_name:
-            self.var_map[variable_name] = variable_type
 
     def _process_invoke_object(
         self, stmt: Node, classes: dict[str, 'JavaClassInterface']
@@ -752,6 +745,9 @@ class JavaMethod():
         type = ''
         callsites = []
 
+        if not stmt:
+            return type, callsites
+
         if stmt.type == 'method_invocation':
             type, invoke_callsites = self._process_invoke(stmt, classes)
             callsites.extend(invoke_callsites)
@@ -769,6 +765,24 @@ class JavaMethod():
             type, invoke_callsites = self._process_callsites(right, classes)
             self.var_map[var_name] = type
             callsites.extend(invoke_callsites)
+        elif stmt.type.endswith('local_variable_declarattion'):
+            for vars in stmt.children:
+                if vars.type == 'variable_declarator':
+                    var_name = vars.child_by_field_name('name').text.decode()
+                    value_node = vars.child_by_field_name('value')
+
+                    type, invoke_callsites = self._process_callsites(
+                        value_node, classes)
+                    self.var_map[var_name] = type
+                    callsites.extend(invoke_callsites)
+        elif stmt.type.endswith('variable_declarator'):
+            var_name = stmt.child_by_field_name('name').text.decode()
+            value_node = stmt.child_by_field_name('value')
+
+            type, invoke_callsites = self._process_callsites(
+                value_node, classes)
+            self.var_map[var_name] = type
+            callsites.extend(invoke_callsites)
         else:
             for child in stmt.children:
                 callsites.extend(self._process_callsites(child, classes)[1])
@@ -782,6 +796,9 @@ class JavaMethod():
             callsites = []
             for stmt in self.stmts:
                 callsites.extend(self._process_callsites(stmt, classes)[1])
+            if self.is_constructor:
+                for stmt in self.class_interface.constructor_callsites:
+                    callsites.extend(self._process_callsites(stmt, classes)[1])
             callsites = sorted(set(callsites), key=lambda x: x[1])
             self.base_callsites = [(x[0], x[2]) for x in callsites]
 
@@ -819,12 +836,17 @@ class JavaClassInterface():
         self.class_fields: dict[str, str] = {}
         self.super_class = 'Object'
         self.super_interfaces: list[str] = []
+        self.constructor_callsites: list[Node] = []
 
         # Process the class/interface tree
         inner_class_nodes = self._process_node()
 
         # Process inner classes
         self._process_inner_classes(inner_class_nodes)
+
+        # Add in default constructor if no deinition of constructors
+        if not self._has_constructor_defined():
+            self.methods.append(JavaMethod(self.root, self, True, True))
 
     def add_package_to_class_name(self, name: str) -> Optional[str]:
         """Helper for finding a specific class name."""
@@ -918,6 +940,7 @@ class JavaClassInterface():
                         for fields in body.children:
                             # Process field_name
                             if fields.type == 'variable_declarator':
+                                self.constructor_callsites.append(fields)
                                 field_name = fields.child_by_field_name(
                                     'name').text.decode()
 
@@ -936,6 +959,14 @@ class JavaClassInterface():
             self.inner_classes.append(
                 JavaClassInterface(node, self.tree_sitter_lang,
                                    self.parent_source, self))
+
+    def _has_constructor_defined(self) -> bool:
+        """Helper method to determine if any constructor is defined."""
+        for method in self.methods:
+            if method.is_constructor:
+                return True
+
+        return False
 
     def get_all_methods(self) -> list[JavaMethod]:
         all_methods = self.methods
