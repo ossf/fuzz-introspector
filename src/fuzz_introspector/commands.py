@@ -49,15 +49,22 @@ def end_to_end(args) -> int:
     if not args.language:
         args.language = utils.detect_language(args.target_dir)
 
-    oss_fuzz.analyse_folder(args.language, args.target_dir,
-                            'LLVMFuzzerTestOneInput')
+    oss_fuzz.analyse_folder(language=args.language,
+                            directory=args.target_dir,
+                            entrypoint='LLVMFuzzerTestOneInput',
+                            out=args.out_dir)
 
     if 'c' in args.language:
         language = 'c-cpp'
     else:
         language = args.language
-    return run_analysis_on_dir(os.getcwd(), '', [], '', False, 'report-name',
-                               language)
+    return run_analysis_on_dir(target_folder=os.getcwd(),
+                               coverage_url=args.coverage_url,
+                               analyses_to_run=[],
+                               correlation_file='',
+                               enable_all_analyses=False,
+                               report_name=args.name,
+                               language=language)
 
 
 def run_analysis_on_dir(target_folder: str,
