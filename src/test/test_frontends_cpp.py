@@ -17,7 +17,7 @@ from fuzz_introspector.frontends import oss_fuzz  # noqa: E402
 
 
 def test_tree_sitter_cpp_sample1():
-    callsites, project = oss_fuzz.analyse_folder(
+    project = oss_fuzz.analyse_folder(
         'c++',
         'src/test/data/source-code/cpp/test-project-1',
         'LLVMFuzzerTestOneInput',
@@ -27,36 +27,38 @@ def test_tree_sitter_cpp_sample1():
     # Project check
     assert len(project.get_source_codes_with_harnesses()) == 1
 
+    functions_reached = project.get_reachable_functions(
+        source_code=None,
+        function='LLVMFuzzerTestOneInput',
+        visited_functions=set())
+
     # Callsite check
-    assert len(callsites[0].split('\n')) == 7
-    assert ('    isPositive '
-            'src/test/data/source-code/cpp/test-project-1/sample.cpp'
-            in callsites[0])
+    assert 'isPositive' in functions_reached
 
 
 def test_tree_sitter_cpp_sample2():
-    callsites, project = oss_fuzz.analyse_folder(
+    project = oss_fuzz.analyse_folder(
         'c++',
         'src/test/data/source-code/cpp/test-project-2',
         'LLVMFuzzerTestOneInput',
         dump_output=False,
     )
 
-    # Project checkdata/source-code
+    # Project check
     assert len(project.get_source_codes_with_harnesses()) == 1
 
+    functions_reached = project.get_reachable_functions(
+        source_code=None,
+        function='LLVMFuzzerTestOneInput',
+        visited_functions=set())
+
     # Callsite check
-    assert len(callsites[0].split('\n')) == 10
-    assert ('    RecursiveNamespace::fibonacci '
-            'src/test/data/source-code/cpp/test-project-2/recursive.cpp'
-            in callsites[0])
-    assert ('    File2Namespace::functionInFile2 '
-            'src/test/data/source-code/cpp/test-project-2/crossfile.cpp'
-            in callsites[0])
+    assert 'RecursiveNamespace::fibonacci' in functions_reached
+    assert 'File2Namespace::functionInFile2' in functions_reached
 
 
 def test_tree_sitter_cpp_sample3():
-    callsites, project = oss_fuzz.analyse_folder(
+    project = oss_fuzz.analyse_folder(
         'c++',
         'src/test/data/source-code/cpp/test-project-3',
         'LLVMFuzzerTestOneInput',
@@ -66,46 +68,54 @@ def test_tree_sitter_cpp_sample3():
     # Project check
     assert len(project.get_source_codes_with_harnesses()) == 1
 
+    functions_reached = project.get_reachable_functions(
+        source_code=None,
+        function='LLVMFuzzerTestOneInput',
+        visited_functions=set())
+
     # Callsite check
-    assert len(callsites[0].split('\n')) == 14
-    assert ('      std::reverse '
-            'src/test/data/source-code/cpp/test-project-3/deep_chain.cpp'
-            in callsites[0])
-    assert ('          DeepNamespace::level5 '
-            'src/test/data/source-code/cpp/test-project-3/deep_chain.cpp'
-            in callsites[0])
+    assert 'std::reverse' in functions_reached
+    assert 'DeepNamespace::level5' in functions_reached
 
 
 def test_tree_sitter_cpp_sample4():
-    _, project = oss_fuzz.analyse_folder(
+    project = oss_fuzz.analyse_folder(
         'c++',
         'src/test/data/source-code/cpp/test-project-4',
         'LLVMFuzzerTestOneInput',
         dump_output=False,
     )
 
+    # Project check
+    assert len(project.get_source_codes_with_harnesses()) == 1
+
     functions_reached = project.get_reachable_functions(
         source_code=None,
         function='LLVMFuzzerTestOneInput',
         visited_functions=set())
 
+    # Callsite check
     assert 'Level1::Level2::Level3::Level4::DeepClass::deepMethod2' in functions_reached
     assert 'printf' in functions_reached
     assert 'atoi' in functions_reached
 
 
 def test_tree_sitter_cpp_sample5():
-    _, project = oss_fuzz.analyse_folder(
+    project = oss_fuzz.analyse_folder(
         'c++',
         'src/test/data/source-code/cpp/test-project-5',
         'LLVMFuzzerTestOneInput',
         dump_output=False,
     )
 
+    # Project check
+    assert len(project.get_source_codes_with_harnesses()) == 1
+
     functions_reached = project.get_reachable_functions(
         source_code=None,
         function='LLVMFuzzerTestOneInput',
         visited_functions=set())
 
+    # Callsite check
     assert 'ClassOne::processInput' in functions_reached
     assert 'NamespaceOne::processInput' in functions_reached

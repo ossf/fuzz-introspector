@@ -216,6 +216,9 @@ class Project():
         callsites = func.callsites()
         visited_functions.add(function)
         for cs, _ in callsites:
+            if cs in visited_functions:
+                continue
+
             visited_functions = self.get_reachable_functions(
                 function=cs, visited_functions=visited_functions)
         return visited_functions

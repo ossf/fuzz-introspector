@@ -17,7 +17,7 @@ from fuzz_introspector.frontends import oss_fuzz  # noqa: E402
 
 
 def test_simple_sample1():
-    callsites, project = oss_fuzz.analyse_folder(
+    project = oss_fuzz.analyse_folder(
         language='c',
         directory='src/test/data/source-code/c/simple-sample-1/',
         entrypoint='LLVMFuzzerTestOneInput',

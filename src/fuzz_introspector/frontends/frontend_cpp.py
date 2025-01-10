@@ -601,6 +601,9 @@ class Project():
             return visited_functions
 
         for cs, _ in func_node.base_callsites:
+            if cs in visited_functions:
+                continue
+
             visited_functions = self.get_reachable_functions(
                 source_code=source_code,
                 function=cs,

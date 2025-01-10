@@ -18,7 +18,7 @@ import os
 import argparse
 import logging
 
-from typing import Any, Tuple
+from typing import Any
 
 from fuzz_introspector.frontends import frontend_c
 from fuzz_introspector.frontends import frontend_cpp
@@ -60,7 +60,7 @@ def process_c_project(target_dir: str,
                       entrypoint: str,
                       out: str,
                       module_only: bool = False,
-                      dump_output=True) -> Tuple[list[str], Any]:
+                      dump_output=True) -> frontend_c.Project:
     """Process a project in C language"""
     calltrees = []
     source_files = {}
@@ -115,13 +115,13 @@ def process_c_project(target_dir: str,
                 f.write(calltree)
                 f.write("====================================")
 
-    return calltrees, project
+    return project
 
 
 def process_cpp_project(target_dir: str,
                         entrypoint: str,
                         out: str,
-                        dump_output=True) -> Tuple[list[str], Any]:
+                        dump_output=True) -> frontend_cpp.Project:
     """Process a project in CPP language"""
     # Extract c++ source files
     logger.info('Going C++ route')
@@ -160,12 +160,12 @@ def process_cpp_project(target_dir: str,
             with open(target, 'w', encoding='utf-8') as f:
                 f.write(f'Call tree\n{calltree}')
 
-    return calltrees, project
+    return project
 
 
 def process_go_project(target_dir: str,
                        out: str,
-                       dump_output=True) -> Tuple[list[str], Any]:
+                       dump_output=True) -> frontend_go.Project:
     """Process a project in Go language"""
     # Extract go source files
     logger.info('Going Go route')
@@ -197,13 +197,13 @@ def process_go_project(target_dir: str,
         with open(target, 'w', encoding='utf-8') as f:
             f.write(f'Call tree\n{calltree}')
 
-    return calltrees, project
+    return project
 
 
 def process_jvm_project(target_dir: str,
                         entrypoint: str,
                         out: str,
-                        dump_output=True) -> Tuple[list[str], Any]:
+                        dump_output=True) -> frontend_jvm.Project:
     """Process a project in JVM based language"""
     # Extract java source files
     logger.info('Going JVM route')
@@ -237,12 +237,12 @@ def process_jvm_project(target_dir: str,
         with open(target, 'w', encoding='utf-8') as f:
             f.write(f'Call tree\n{calltree}')
 
-    return calltrees, project
+    return project
 
 
 def process_rust_project(target_dir: str,
                          out: str,
-                         dump_output=True) -> Tuple[list[str], Any]:
+                         dump_output=True) -> frontend_rust.Project:
     """Process a project in Rust based language"""
     # Extract rust source files
     logger.info('Going Rust route')
@@ -276,7 +276,7 @@ def process_rust_project(target_dir: str,
         with open(target, 'w', encoding='utf-8') as f:
             f.write(f'Call tree\n{calltree}')
 
-    return calltrees, project
+    return project
 
 
 def analyse_folder(language: str = '',
@@ -284,7 +284,7 @@ def analyse_folder(language: str = '',
                    entrypoint: str = '',
                    out='',
                    module_only=False,
-                   dump_output=True) -> Tuple[list[str], Any]:
+                   dump_output=True) -> Any:
     """Runs a full frontend analysis on a given directory"""
 
     if language == 'c':
