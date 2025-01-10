@@ -56,6 +56,20 @@ FUZZING_METHOD_RETURN_TYPE_MAP = {
     "remainingBytes": "int"
 }
 
+LITERAL_MAP = {
+    "decimal_integer_literal": "int",
+    "hex_integer_literal": "int",
+    "octal_integer_literal": "int",
+    "binary_integer_literal": "int",
+    "decimal_floating_point_literal": "float",
+    "hex_floating_point_literal": "float",
+    "true": "boolean",
+    "false": "boolean",
+    "character_literal": "char",
+    "string_literal": "String",
+    "null_literal": "null"
+}
+
 
 class SourceCodeFile():
     """Class for holding file-specific information."""
@@ -114,7 +128,7 @@ class SourceCodeFile():
         for _, nodes in res.items():
             for node in nodes:
                 for package in node.children:
-                    if package.type == 'scoped_identifier':
+                    if package.type in ['scoped_identifier', 'identifier']:
                         self.package = package.text.decode()
 
     def _set_class_interface_declaration(self):
@@ -229,32 +243,40 @@ class JavaMethod():
     def __init__(self,
                  root: Node,
                  class_interface: 'JavaClassInterface',
-                 is_constructor: bool = False):
+                 is_constructor: bool = False,
+                 is_default_constructor: bool = False):
         self.root = root
         self.class_interface = class_interface
         self.tree_sitter_lang = self.class_interface.tree_sitter_lang
         self.parent_source: Optional[
             SourceCodeFile] = self.class_interface.parent_source
         self.is_constructor = is_constructor
+        self.is_default_constructor = is_default_constructor
+        self.name: str = ''
 
         # Store method line information
-        self.start_line = self.root.start_point.row + 1
-        self.end_line = self.root.end_point.row + 1
+        if self.is_default_constructor:
+            self.start_line = -1
+            self.end_line = -1
+            self.name = '<init>'
+            self.public = True
+        else:
+            self.start_line = self.root.start_point.row + 1
+            self.end_line = self.root.end_point.row + 1
+            self.name = ''
+            self.public = False
 
         # Other properties
-        self.name: str = ''
         self.complexity = 0
         self.icount = 0
         self.arg_names: list[str] = []
         self.arg_types: list[str] = []
         self.exceptions: list[str] = []
         self.return_type = ''
-        self.sig = ''
         self.function_uses = 0
         self.function_depth = 0
         self.base_callsites: list[tuple[str, int]] = []
         self.detailed_callsites: list[dict[str, str]] = []
-        self.public = False
         self.concrete = True
         self.static = False
         self.is_entry_method = False
@@ -263,11 +285,12 @@ class JavaMethod():
         self.stmts: list[Node] = []
         self.var_map: dict[str, str] = {}
 
-        # Process method declaration
-        self._process_declaration()
+        if not self.is_default_constructor:
+            # Process method declaration
+            self._process_declaration()
 
-        # Process statements
-        self._process_statements()
+            # Process statements
+            self._process_statements()
 
     def post_process_full_qualified_name(self):
         """Post process the full qualified name for types."""
@@ -338,7 +361,7 @@ class JavaMethod():
                         self.var_map[arg_name] = arg_type
 
             # Process return type
-            elif child.type == 'type_identifier' or child.type.endswith(
+            elif child.type.endswith('type_identifier') or child.type.endswith(
                     '_type'):
                 self.return_type = child.text.decode()
 
@@ -352,7 +375,7 @@ class JavaMethod():
             # Process exceptions
             elif child.type == 'throws':
                 for exception in child.children:
-                    if exception.type == 'type_identifier':
+                    if exception.type.endswith('type_identifier'):
                         self.exceptions.append(exception.text.decode())
 
     def _process_statements(self):
@@ -360,7 +383,6 @@ class JavaMethod():
         for stmt in self.stmts:
             self._process_complexity(stmt)
             self._process_icount(stmt)
-            self._process_variable_declaration(stmt)
 
     def _process_complexity(self, stmt: Node):
         """Gets complexity measure based on counting branch nodes in a
@@ -429,29 +451,19 @@ class JavaMethod():
 
         self.icount += _traverse_node_instr_count(stmt)
 
-    def _process_variable_declaration(self, stmt: Node):
-        """Process the local variable declaration."""
-        variable_type = None
-        variable_name = None
-
-        if stmt.type == 'local_variable_declaration':
-            variable_type = stmt.child_by_field_name('type').text.decode()
-            for vars in stmt.children:
-                if vars.type == 'variable_declarator':
-                    variable_name = vars.child_by_field_name(
-                        'name').text.decode()
-
-        if variable_type and variable_name:
-            self.var_map[variable_name] = variable_type
-
     def _process_invoke_object(
         self, stmt: Node, classes: dict[str, 'JavaClassInterface']
     ) -> tuple[str, list[tuple[str, int, int]]]:
         """Internal helper for processing the object from a invocation."""
         callsites: list[tuple[str, int, int]] = []
         return_value = ''
+
+        # Handle literal value
+        if stmt.type in LITERAL_MAP:
+            return_value = LITERAL_MAP[stmt.type]
+
         # Determine the type of the object
-        if stmt.child_count == 0:
+        elif stmt.child_count == 0:
             # Class call
             if stmt.type == 'this':
                 return_value = self.class_interface.name
@@ -468,7 +480,7 @@ class JavaMethod():
                         stmt.text.decode(), '')
                 if not return_value and self.parent_source:
                     return_value = self.parent_source.imports.get(
-                        stmt.text.decode(), self.class_interface.name)
+                        stmt.text.decode(), '')
         else:
             # Field access
             if stmt.type == 'field_access':
@@ -533,8 +545,34 @@ class JavaMethod():
         for argument in stmt.children:
             return_value = self.class_interface.name
 
+            # Handling literal value
+            if argument.type in LITERAL_MAP:
+                return_values.append(LITERAL_MAP[argument.type])
+
+            # Binary expression
+            elif argument.type == 'binary_expression':
+                found = False
+                other_type_node = []
+
+                # Try locate literal values
+                for child in argument.children:
+                    if child.type in LITERAL_MAP:
+                        return_values.append(LITERAL_MAP[child.type])
+                        found = True
+                    else:
+                        other_type_node.append(child)
+
+                # Only store type value is not found
+                for node in other_type_node:
+                    return_value, invoke = self._process_invoke(node, classes)
+
+                    if return_value and not found:
+                        found = True
+                        return_values.append(return_value)
+                    callsites.extend(invoke)
+
             # Variables
-            if argument.type == 'identifier':
+            elif argument.type == 'identifier':
                 return_value = self.var_map.get(argument.text.decode(), '')
                 if not return_value:
                     return_value = self.class_interface.class_fields.get(
@@ -629,12 +667,19 @@ class JavaMethod():
                 elif cls_type.type == 'super':
                     object_type = self.class_interface.super_class
 
-                elif cls_type.type == 'type_identifier' or cls_type.type.endswith(
-                        '_type'):
+                elif cls_type.type.endswith(
+                        'type_identifier') or cls_type.type.endswith('_type'):
                     object_type = cls_type.text.decode().split('<')[0]
 
             object_type = self.parent_source.get_full_qualified_name(
                 object_type)
+
+            for cls in classes.values():
+                packaged_type = cls.add_package_to_class_name(object_type)
+                if packaged_type:
+                    object_type = packaged_type
+                    break
+
             target_name = f'[{object_type}].<init>({",".join(argument_types)})'
             callsites.append(
                 (target_name, expr.byte_range[1], expr.start_point.row + 1))
@@ -652,7 +697,25 @@ class JavaMethod():
         # Process this method invocation
         target_name = ''
         if object_type and name:
+            for cls in classes.values():
+                packaged_type = cls.add_package_to_class_name(object_type)
+                if packaged_type:
+                    object_type = packaged_type
+                    break
+
             target_name = f'[{object_type}].{name.text.decode()}({",".join(argument_types)})'
+            callsites.append(
+                (target_name, expr.byte_range[1], expr.start_point.row + 1))
+
+        # Calling to library outside of project
+        # Preserve the full method call
+        elif name:
+            if objects:
+                target_name = (f'{objects.text.decode()}.{name.text.decode()}'
+                               f'({",".join(argument_types)})')
+            else:
+                target_name = f'{name.text.decode()}({",".join(argument_types)})'
+
             callsites.append(
                 (target_name, expr.byte_range[1], expr.start_point.row + 1))
 
@@ -676,26 +739,55 @@ class JavaMethod():
         return return_type, callsites
 
     def _process_callsites(
-        self, stmt: Node,
-        classes: dict[str,
-                      'JavaClassInterface']) -> list[tuple[str, int, int]]:
+        self, stmt: Node, classes: dict[str, 'JavaClassInterface']
+    ) -> tuple[str, list[tuple[str, int, int]]]:
         """Process and store the callsites of the method."""
-        callsites = []
+        type = ''
+        callsites: list[tuple[str, int, int]] = []
+
+        if not stmt:
+            return type, callsites
 
         if stmt.type == 'method_invocation':
-            _, invoke_callsites = self._process_invoke(stmt, classes)
+            type, invoke_callsites = self._process_invoke(stmt, classes)
             callsites.extend(invoke_callsites)
         elif stmt.type == 'object_creation_expression':
-            _, invoke_callsites = self._process_invoke(stmt, classes, True)
+            type, invoke_callsites = self._process_invoke(stmt, classes, True)
             callsites.extend(invoke_callsites)
         elif stmt.type == 'explicit_constructor_invocation':
-            _, invoke_callsites = self._process_invoke(stmt, classes, True)
+            type, invoke_callsites = self._process_invoke(stmt, classes, True)
+            callsites.extend(invoke_callsites)
+        elif stmt.type == 'assignment_expression':
+            left = stmt.child_by_field_name('left')
+            right = stmt.child_by_field_name('right')
+
+            var_name = left.text.decode().split(' ')[-1]
+            type, invoke_callsites = self._process_callsites(right, classes)
+            self.var_map[var_name] = type
+            callsites.extend(invoke_callsites)
+        elif stmt.type.endswith('local_variable_declarattion'):
+            for vars in stmt.children:
+                if vars.type == 'variable_declarator':
+                    var_name = vars.child_by_field_name('name').text.decode()
+                    value_node = vars.child_by_field_name('value')
+
+                    type, invoke_callsites = self._process_callsites(
+                        value_node, classes)
+                    self.var_map[var_name] = type
+                    callsites.extend(invoke_callsites)
+        elif stmt.type.endswith('variable_declarator'):
+            var_name = stmt.child_by_field_name('name').text.decode()
+            value_node = stmt.child_by_field_name('value')
+
+            type, invoke_callsites = self._process_callsites(
+                value_node, classes)
+            self.var_map[var_name] = type
             callsites.extend(invoke_callsites)
         else:
             for child in stmt.children:
-                callsites.extend(self._process_callsites(child, classes))
+                callsites.extend(self._process_callsites(child, classes)[1])
 
-        return callsites
+        return type, callsites
 
     def extract_callsites(self, classes: dict[str, 'JavaClassInterface']):
         """Extract callsites."""
@@ -703,7 +795,10 @@ class JavaMethod():
         if not self.base_callsites:
             callsites = []
             for stmt in self.stmts:
-                callsites.extend(self._process_callsites(stmt, classes))
+                callsites.extend(self._process_callsites(stmt, classes)[1])
+            if self.is_constructor:
+                for stmt in self.class_interface.constructor_callsites:
+                    callsites.extend(self._process_callsites(stmt, classes)[1])
             callsites = sorted(set(callsites), key=lambda x: x[1])
             self.base_callsites = [(x[0], x[2]) for x in callsites]
 
@@ -741,12 +836,28 @@ class JavaClassInterface():
         self.class_fields: dict[str, str] = {}
         self.super_class = 'Object'
         self.super_interfaces: list[str] = []
+        self.constructor_callsites: list[Node] = []
 
         # Process the class/interface tree
         inner_class_nodes = self._process_node()
 
         # Process inner classes
         self._process_inner_classes(inner_class_nodes)
+
+        # Add in default constructor if no deinition of constructors
+        if not self._has_constructor_defined():
+            self.methods.append(JavaMethod(self.root, self, True, True))
+
+    def add_package_to_class_name(self, name: str) -> Optional[str]:
+        """Helper for finding a specific class name."""
+        if self.name == f'{self.package}.{name.rsplit(".")[-1]}':
+            if self.name.endswith(name):
+                return self.name
+
+        for inner_class in self.inner_classes:
+            return inner_class.add_package_to_class_name(name)
+
+        return None
 
     def post_process_full_qualified_name(self):
         """Post process the full qualified name for types."""
@@ -778,7 +889,7 @@ class JavaClassInterface():
             # Process super class
             if child.type == 'superclass':
                 for cls in child.children:
-                    if cls.type == 'type_identifier':
+                    if cls.type.endswith('type_identifier'):
                         self.super_class = cls.text.decode()
 
             # Process super interfaces
@@ -787,7 +898,7 @@ class JavaClassInterface():
                     if interfaces.type == 'type_list':
                         type_set = set()
                         for interface in interfaces.children:
-                            if interface.type == 'type_identifier':
+                            if interface.type.endswith('type_identifier'):
                                 type_set.add(interface.text.decode())
                         self.super_interfaces = list(type_set)
 
@@ -829,6 +940,7 @@ class JavaClassInterface():
                         for fields in body.children:
                             # Process field_name
                             if fields.type == 'variable_declarator':
+                                self.constructor_callsites.append(fields)
                                 field_name = fields.child_by_field_name(
                                     'name').text.decode()
 
@@ -847,6 +959,14 @@ class JavaClassInterface():
             self.inner_classes.append(
                 JavaClassInterface(node, self.tree_sitter_lang,
                                    self.parent_source, self))
+
+    def _has_constructor_defined(self) -> bool:
+        """Helper method to determine if any constructor is defined."""
+        for method in self.methods:
+            if method.is_constructor:
+                return True
+
+        return False
 
     def get_all_methods(self) -> list[JavaMethod]:
         all_methods = self.methods
@@ -1083,7 +1203,7 @@ class Project():
         if not method and source_code:
             method = source_code.get_entry_method_name(True)
 
-        if not method or not source_code:
+        if not method:
             return ''
 
         line_to_print = '  ' * depth
@@ -1118,12 +1238,50 @@ class Project():
 
         return line_to_print
 
+    def get_reachable_methods(
+            self,
+            source_file: str,
+            source_code: Optional[SourceCodeFile] = None,
+            method: Optional[str] = None,
+            visited_methods: Optional[set[str]] = None) -> set[str]:
+        """Get a list of reachable functions for a provided function name."""
+        if not visited_methods:
+            visited_methods = set()
+
+        if not source_code and method:
+            source_code = self.find_source_with_method(method)
+
+        if not method and source_code:
+            method = source_code.get_entry_method_name(True)
+
+        if source_code and method:
+            method_node = source_code.get_method_node(method)
+            if not method_node:
+                visited_methods.add(method)
+                return visited_methods
+        else:
+            if method:
+                visited_methods.add(method)
+            return visited_methods
+
+        visited_methods.add(method)
+        for cs, _ in method_node.base_callsites:
+            if cs in visited_methods:
+                continue
+
+            visited_methods = self.get_reachable_methods(
+                source_code.source_file,
+                method=cs,
+                visited_methods=visited_methods)
+
+        return visited_methods
+
 
 def capture_source_files_in_tree(directory_tree: str) -> list[str]:
     """Captures source code files in a given directory."""
     exclude_directories = [
-        'target', 'test', 'node_modules', 'aflplusplus', 'honggfuzz',
-        'inspector', 'libfuzzer'
+        'target', 'node_modules', 'aflplusplus', 'honggfuzz', 'inspector',
+        'libfuzzer'
     ]
     language_extensions = ['.java']
     language_files = []
