@@ -75,7 +75,9 @@ def test_tree_sitter_jvm_sample3():
     functions_reached = project.get_reachable_methods(harness[0].source_file, harness[0])
 
     # Callsite check
-    assert '[nested.Fuzzer].test(com.code_intelligence.jazzer.api.FuzzedDataProvider)' in functions_reached
+    assert (
+        '[nested.Fuzzer].test'
+        '(com.code_intelligence.jazzer.api.FuzzedDataProvider)') in functions_reached
     assert 'System.out.println(String)' in functions_reached
     assert '[nested.NestedClass.InnerClass].innerMethod()' in functions_reached
     assert '[nested.RecursiveClass].recursiveMethod(int)' in functions_reached
@@ -185,5 +187,7 @@ def test_tree_sitter_jvm_sample7():
     assert '[combined.ConcreteClass].abstractMethod()' in functions_reached
     assert '[combined.AbstractBase].abstractMethod()' not in functions_reached
     assert '[combined.ConcreteClass].unreachableConcreteMethod()' not in functions_reached
-    assert '[combined.NestedClass.InnerClass].unreachableInnerClassMethod()' not in functions_reached
+    assert (
+        '[combined.NestedClass.InnerClass]'
+        '.unreachableInnerClassMethod()') not in functions_reached
     assert '[combined.AbstractBase].unreachableAbstractBaseMethod()' not in functions_reached
