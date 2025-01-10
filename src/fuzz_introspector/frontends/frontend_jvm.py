@@ -718,7 +718,10 @@ class JavaMethod():
         # Preserve the full method call
         elif name:
             if objects:
-                target_name = f'{objects.text.decode()}.{name.text.decode()}({",".join(argument_types)})'
+                target_name = (
+                    f'{objects.text.decode()}.{name.text.decode()}'
+                    '({",".join(argument_types)})'
+                )
             else:
                 target_name = f'{name.text.decode()}({",".join(argument_types)})'
 
