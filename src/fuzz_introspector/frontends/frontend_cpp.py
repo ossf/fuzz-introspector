@@ -492,7 +492,7 @@ class FunctionDefinition():
                     # added = True
                     callsites.append(
                         (cls, stmt.byte_range[1], stmt.start_point.row + 1))
-                #if not added:
+                # if not added:
                 #    logger.debug('Trying a hacky match.')
                 #    # Hack to make sure we add in case our analysis of contructors was
                 #    # wrong. TODO(David) fix.
@@ -577,8 +577,10 @@ class Project():
         # Process all project functions
         func_list = []
         for func in self.all_functions.values():
+            logger.debug('Iterating %s', func.name)
+            logger.debug('Extracing callsites')
             func.extract_callsites(self)
-
+            logger.debug('Done extracting callsites')
             func_dict: dict[str, Any] = {}
             func_dict['functionName'] = func.name
             func_dict['functionSourceFile'] = func.parent_source.source_file
@@ -598,7 +600,9 @@ class Project():
             func_dict['returnType'] = func.return_type
             func_dict['BranchProfiles'] = []
             func_dict['Callsites'] = func.detailed_callsites
+            logger.debug('Calculating function uses')
             func_dict['functionUses'] = self.calculate_function_uses(func.name)
+            logger.debug('Getting function depth')
             func_dict['functionDepth'] = self.calculate_function_depth(func)
             func_dict['constantsTouched'] = []
             func_dict['BBCount'] = 0
@@ -609,6 +613,7 @@ class Project():
                 reached.add(cs_dst)
             func_dict['functionsReached'] = list(reached)
 
+            logger.debug('Done')
             func_list.append(func_dict)
 
         if func_list:
@@ -650,10 +655,17 @@ class Project():
 
         func_node = None
         if function:
-            func_node = get_function_node(function, self.all_functions)
+            if source_code:
+                logger.debug('Using source code var to extract node')
+                func_node = source_code.get_function_node(function)
+            else:
+                logger.debug('Extracting node using lookup table.')
+                func_node = get_function_node(function, self.all_functions)
             if func_node:
+                logger.debug('Found function node')
                 func_name = func_node.name
             else:
+                logger.debug('Found no function node')
                 func_name = function
         else:
             return ''
@@ -673,13 +685,14 @@ class Project():
 
         visited_functions.add(function)
         for cs, line in func_node.base_callsites:
+            logger.debug('Callsites: %s', cs)
             line_to_print += self.extract_calltree(
                 source_file=source_code.source_file,
                 function=cs,
                 visited_functions=visited_functions,
                 depth=depth + 1,
                 line_number=line)
-
+        logger.debug('Done')
         return line_to_print
 
     def get_reachable_functions(self,
