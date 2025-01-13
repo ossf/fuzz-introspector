@@ -420,8 +420,9 @@ class RustFunction():
                 # Chained or instance function call
                 elif func.type == 'field_expression':
                     _, target_name = _process_field_expr_return_type(func)
-                    callsites.append((target_name, func.byte_range[1],
-                                      func.start_point.row + 1))
+
+                elif func.type == 'generic_function':
+                    target_name = func.text.decode().split('.', 1)[-1]
 
             if target_name:
                 callsites.append((target_name, func.byte_range[1],
@@ -745,12 +746,51 @@ class Project():
 
         return harnesses
 
+    def get_reachable_functions(
+            self,
+            source_file: str,
+            source_code: Optional[SourceCodeFile] = None,
+            func: Optional[str] = None,
+            visited_funcs: Optional[set[str]] = None) -> set[str]:
+        """Get a list of reachable functions for a provided function name."""
+        if not visited_funcs:
+            visited_funcs = set()
+
+        if not source_code and func:
+            source_code = self._find_source_with_function(func)
+
+        if not func and source_code:
+            func = source_code.get_entry_function_name()
+
+        func_node = None
+        if source_code and func:
+            func_node = get_function_node(func, self.all_functions)
+            if not func_node:
+                visited_funcs.add(func)
+                return visited_funcs
+        else:
+            if func:
+                visited_funcs.add(func)
+            return visited_funcs
+
+        visited_funcs.add(func)
+        for cs, _ in func_node.base_callsites:
+            if cs in visited_funcs:
+                continue
+
+            visited_funcs = self.get_reachable_functions(
+                source_code.source_file,
+                func=cs,
+                visited_funcs=visited_funcs)
+
+        return visited_funcs
+
 
 def capture_source_files_in_tree(directory_tree: str) -> list[str]:
     """Captures source code files in a given directory."""
     exclude_directories = [
         'tests', 'examples', 'benches', 'node_modules', 'aflplusplus',
-        'honggfuzz', 'inspector', 'libfuzzer', 'source-code'
+        'honggfuzz', 'inspector', 'libfuzzer'
     ]
     language_extensions = ['.rs']
     language_files = []
