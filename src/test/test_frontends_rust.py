@@ -33,3 +33,28 @@ def test_tree_sitter_rust_sample1():
     assert 'and_then' in functions_reached
     assert 'parse::<u32>' in functions_reached
     assert 'factorial' in functions_reached
+
+
+def test_tree_sitter_rust_sample2():
+    """
+    Similar to test_tree_sitter_jvm_sample6, for macro_deinition of
+    general expr type, it is not possible to determine which function
+    is being called specifically as that is determine in runtime when
+    the data is passed in. Thus only plain function name is meaningful
+    in this situation.
+    """
+    project = oss_fuzz.analyse_folder(
+        'rust',
+        'src/test/data/source-code/rust/test-project-2',
+        dump_output=False,
+    )
+
+    # Project check
+    harness = project.get_source_codes_with_harnesses()
+    assert len(harness) == 1
+
+    functions_reached = project.get_reachable_functions(harness[0].source_file, harness[0])
+
+    # Callsite check
+    assert 'double_add' in functions_reached
+    assert 'add' in functions_reached
