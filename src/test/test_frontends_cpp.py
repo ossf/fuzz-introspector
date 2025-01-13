@@ -119,3 +119,23 @@ def test_tree_sitter_cpp_sample5():
     # Callsite check
     assert 'ClassOne::processInput' in functions_reached
     assert 'NamespaceOne::processInput' in functions_reached
+
+
+def test_tree_sitter_cpp_sample6():
+    project = oss_fuzz.analyse_folder(
+        'c++',
+        'src/test/data/source-code/cpp/test-project-6',
+        'LLVMFuzzerTestOneInput',
+        dump_output=False,
+    )
+
+    # Project check
+    assert len(project.get_source_codes_with_harnesses()) == 1
+
+    functions_reached = project.get_reachable_functions(
+        source_code=None,
+        function='LLVMFuzzerTestOneInput',
+        visited_functions=set())
+
+    # Callsite check
+    assert 'atoi' in functions_reached
