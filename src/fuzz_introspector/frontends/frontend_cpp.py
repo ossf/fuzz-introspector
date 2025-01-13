@@ -14,7 +14,7 @@
 #
 ################################################################################
 
-from typing import Any, Optional, Set
+from typing import Any, Optional, Set, List
 
 import os
 import pathlib
@@ -384,8 +384,11 @@ class FunctionDefinition():
             # Handles in scope invocation
             if '::' not in target_name and self.namespace_or_class:
                 full_target_name = f'{self.namespace_or_class}::{target_name}'
-                if full_target_name in project.all_functions:
-                    target_name = full_target_name
+                for tmp_func in project.all_functions:
+                    if tmp_func.name == full_target_name:
+                        # if full_target_name in project.all_functions:
+                        target_name = full_target_name
+                        break
 
             callsites.append(
                 (target_name, func.byte_range[1], func.start_point.row + 1))
@@ -487,7 +490,8 @@ class FunctionDefinition():
                 cls = f'{var_type}::{var_type.rsplit("::")[-1]}'
                 logger.debug('Trying to find class %s', cls)
                 # added = False
-                if cls in project.all_functions:
+                # if cls in project.all_functions:
+                if project.get_function_from_name(cls):
                     logger.debug('Adding callsite')
                     # added = True
                     callsites.append(
@@ -553,7 +557,7 @@ class Project():
         report: dict[str, Any] = {'report': 'name'}
         report['sources'] = []
 
-        self.all_functions = {}
+        self.all_functions = []
         for source_code in self.source_code_files:
             # Log entry method if provided
             report['Fuzzing method'] = 'LLVMFuzzerTestOneInput'
@@ -567,16 +571,18 @@ class Project():
             })
 
             # Obtain all functions of the project
-            source_code_functions = {
-                func.name: func
-                for func in source_code.func_defs
-            }
+            #source_code_functions = {
+            #    func.name: func
+            #    for func in source_code.func_defs
+            #}
 
-            self.all_functions.update(source_code_functions)
+            for func in source_code.func_defs:
+                self.all_functions.append(func)
+            #self.all_functionsupdate(source_code_functions)
 
         # Process all project functions
         func_list = []
-        for func in self.all_functions.values():
+        for func in self.all_functions:
             logger.debug('Iterating %s', func.name)
             logger.debug('Extracing callsites')
             func.extract_callsites(self)
@@ -631,6 +637,13 @@ class Project():
             if source_code.has_libfuzzer_harness():
                 harnesses.append(source_code)
         return harnesses
+
+    def get_function_from_name(self, function_name):
+        for func in self.all_functions:
+            if func.name == function_name:
+                return func
+
+        return None
 
     def extract_calltree(self,
                          source_file: str,
@@ -748,14 +761,14 @@ class Project():
     def find_function_from_approximate_name(
             self, function_name: str) -> Optional['FunctionDefinition']:
         function_names = []
-        for func in self.all_functions.values():
+        for func in self.all_functions:
             if func.name == function_name:
                 function_names.append(func)
         if len(function_names) == 1:
             return function_names[0]
 
         function_names = []
-        for func in self.all_functions.values():
+        for func in self.all_functions:
             if func.name.endswith(function_name):
                 function_names.append(func)
         if len(function_names) == 1:
@@ -895,13 +908,17 @@ def analyse_source_code(source_content: str) -> SourceCodeFile:
 
 def get_function_node(
         target_name: str,
-        function_map: dict[str, FunctionDefinition],
+        function_list: List[FunctionDefinition],
         one_layer_only: bool = False) -> Optional[FunctionDefinition]:
     """Helper to retrieve the RustFunction object of a function."""
 
+    for function in function_list:
+        if target_name == function.name:
+            return function
+
     # Exact match
-    if target_name in function_map:
-        return function_map[target_name]
+    # if target_name in function_map:
+    #     return function_map[target_name]
 
     # Match any key that ends with target_name, then
     # split the target_name by :: and check one by one
@@ -910,8 +927,9 @@ def get_function_node(
     else:
         name_split = target_name.split('::')
     for count in range(len(name_split)):
-        for func_name, func in function_map.items():
-            if func_name.endswith('::'.join(name_split[count:])):
+
+        for func in function_list:
+            if func.name.endswith('::'.join(name_split[count:])):
                 return func
 
     return None
