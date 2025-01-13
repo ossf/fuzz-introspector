@@ -223,12 +223,12 @@ class SourceCodeFile():
 
         return False
 
-    def get_entry_function_name(self) -> Optional[str]:
-        """Returns the entry function name of the harness if found."""
+    def get_entry_function(self) -> Optional['RustFunction']:
+        """Returns the entry function of the harness if found."""
         if self.has_libfuzzer_harness():
             for func in self.functions:
                 if func.is_entry_method:
-                    return func.name
+                    return func
 
         return None
 
@@ -593,9 +593,9 @@ class Project():
         self.all_functions = {}
         for source_code in self.source_code_files:
             # Log entry method if provided
-            entry_method = source_code.get_entry_function_name()
+            entry_method = source_code.get_entry_function()
             if entry_method:
-                report['Fuzzing method'] = entry_method
+                report['Fuzzing method'] = entry_method.name
 
             # Retrieve project information
             func_names = [func.name for func in source_code.functions]
@@ -729,6 +729,8 @@ class Project():
                          line_number: int = -1,
                          is_macro: bool = False) -> str:
         """Extracts calltree string of a calltree so that FI core can use it."""
+        func_node = None
+
         if not visited_funcs:
             visited_funcs = set()
 
@@ -736,11 +738,14 @@ class Project():
             source_code = self._find_source_with_function(func)
 
         if not func and source_code:
-            func = source_code.get_entry_function_name()
+            func_node = source_code.get_entry_function()
+            if func_node:
+                func = func_node.name
 
-        func_node = None
         if func:
-            func_node = get_function_node(func, self.all_functions)
+            if not func_node:
+                func_node = get_function_node(func, self.all_functions)
+
             if func_node and not is_macro:
                 func_name = func_node.name
                 if func.count('::') > func_name.count('::'):
@@ -795,6 +800,8 @@ class Project():
             func: Optional[str] = None,
             visited_funcs: Optional[set[str]] = None) -> set[str]:
         """Get a list of reachable functions for a provided function name."""
+        func_node = None
+
         if not visited_funcs:
             visited_funcs = set()
 
@@ -802,11 +809,14 @@ class Project():
             source_code = self._find_source_with_function(func)
 
         if not func and source_code:
-            func = source_code.get_entry_function_name()
+            func_node = source_code.get_entry_function()
+            if func_node:
+                func = func_node.name
 
-        func_node = None
         if source_code and func:
-            func_node = get_function_node(func, self.all_functions)
+            if not func_node:
+                func_node = get_function_node(func, self.all_functions)
+
             if not func_node:
                 visited_funcs.add(func)
                 return visited_funcs

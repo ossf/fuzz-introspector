@@ -78,3 +78,32 @@ def test_tree_sitter_rust_sample3():
     assert 'mod_b::function_b' in functions_reached
     assert 'is_uppercase' in functions_reached
     assert '&str::to_uppercase' in functions_reached
+
+
+def test_tree_sitter_rust_sample9():
+    project = oss_fuzz.analyse_folder(
+        'rust',
+        'src/test/data/source-code/rust/test-project-9',
+        dump_output=False,
+    )
+
+    # Project check
+    harness = project.get_source_codes_with_harnesses()
+    assert len(harness) == 2
+
+    functions_reached_one = project.get_reachable_functions(harness[0].source_file, harness[0])
+    functions_reached_two = project.get_reachable_functions(harness[1].source_file, harness[1])
+
+    # Callsite check
+    if 'fuzzer_one' in harness[0].source_file:
+        assert 'add_one' in functions_reached_one
+        assert 'multiply_by_two' not in functions_reached_one
+
+        assert 'multiply_by_two' in functions_reached_two
+        assert 'add_one' not in functions_reached_two
+    else:
+        assert 'multiply_by_two' in functions_reached_one
+        assert 'add_one' not in functions_reached_one
+
+        assert 'add_one' in functions_reached_two
+        assert 'multiply_by_two' not in functions_reached_two
