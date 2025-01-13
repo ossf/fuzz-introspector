@@ -220,20 +220,31 @@ class FunctionDefinition():
                 full_name = new_parent.child_by_field_name(
                     'name').text.decode() + '::' + full_name
             tmp_root = new_parent
-        logger.debug('Full function scope: %s', full_name)
+        logger.debug('Full function scope not from name: %s', full_name)
 
         tmp_name = ''
         tmp_node = self.root.child_by_field_name('declarator')
+        scope_to_add = ''
         while True:
             if tmp_node is None:
                 break
+            if tmp_node.child_by_field_name('scope') is not None:
+                scope_to_add = tmp_node.child_by_field_name(
+                    'scope').text.decode() + '::'
+
             if tmp_node.type == 'identifier':
                 tmp_name = tmp_node.text.decode()
                 break
+            if tmp_node.child_by_field_name(
+                    'name') is not None and tmp_node.child_by_field_name(
+                        'name').type == 'identifier':
+                tmp_name = tmp_node.child_by_field_name('name').text.decode()
             tmp_node = tmp_node.child_by_field_name('declarator')
         if tmp_name:
-            full_name = full_name + tmp_name
+            logger.debug('Assigning name')
+            full_name = full_name + scope_to_add + tmp_name
         else:
+            logger.debug('Assigning name as signature')
             full_name = self.sig
 
         #try:
