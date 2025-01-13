@@ -203,16 +203,36 @@ class FunctionDefinition():
             elif child.type == 'parameter_list':
                 param_list_node = child
 
+        # Handle the full name
+        logger.info('Iterating parents')
+        tmp_root = self.root
+        full_name = ''
+        while True:
+            logger.info('step')
+            new_parent = tmp_root.parent
+            if new_parent is None:
+                break
+            if new_parent.type == 'class_specifier':
+                full_name = new_parent.child_by_field_name(
+                    'name').text.decode() + '::' + full_name
+            if new_parent.type == 'namespace_definition':
+                full_name = new_parent.child_by_field_name(
+                    'name').text.decode() + '::' + full_name
+            tmp_root = new_parent
+        logger.debug('Full function scope: %s', full_name)
+        full_name = full_name + self.root.child_by_field_name(
+            'declarator').child_by_field_name('declarator').text.decode()
+        logger.debug('Full function name: %s', full_name)
+        self.name = full_name
+        logger.info('Done walking')
+
         # Handles class or namespace in the function name
         if '::' in self.name:
-            prefix, self.name = self.name.rsplit('::', 1)
+            prefix, _ = self.name.rsplit('::', 1)
             if self.namespace_or_class and prefix:
                 self.namespace_or_class += f'::{prefix}'
             else:
                 self.namespace_or_class = prefix
-
-        if self.namespace_or_class:
-            self.name = f'{self.namespace_or_class}::{self.name}'
 
         # Handles return type
         type_node = self.root.child_by_field_name('type')
