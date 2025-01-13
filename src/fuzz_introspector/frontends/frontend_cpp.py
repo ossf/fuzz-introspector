@@ -333,6 +333,12 @@ class FunctionDefinition():
             ]:
                 target_name = func.text.decode()
 
+                # Find the matching function in our project
+                matched_func = project.find_function_from_approximate_name(
+                    target_name)
+                if matched_func:
+                    target_name = matched_func.name
+
             # Chained or method calls
             elif func.type == 'field_expression':
                 _, target_name = self._process_field_expr_return_type(
@@ -683,6 +689,24 @@ class Project():
             )
 
         return visited_functions
+
+    def find_function_from_approximate_name(
+            self, function_name: str) -> Optional['FunctionDefinition']:
+        function_names = []
+        for func in self.all_functions.values():
+            if func.name == function_name:
+                function_names.append(func)
+        if len(function_names) == 1:
+            return function_names[0]
+
+        function_names = []
+        for func in self.all_functions.values():
+            if func.name.endswith(function_name):
+                function_names.append(func)
+        if len(function_names) == 1:
+            return function_names[0]
+
+        return None
 
     def find_source_with_func_def(
             self,
