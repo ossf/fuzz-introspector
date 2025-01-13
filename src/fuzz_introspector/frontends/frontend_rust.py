@@ -541,8 +541,9 @@ class RustFunction():
                         macro_name = child.text.decode()
                         target_func = get_function_node(macro_name, functions)
                         if target_func.is_macro:
-                            callsites.append((target_func.name, stmt.byte_range[1],
-                                             stmt.start_point.row + 1))
+                            callsites.append(
+                                (target_func.name, stmt.byte_range[1],
+                                 stmt.start_point.row + 1))
 
             for child in stmt.children:
                 callsites.extend(_process_callsites(child))
@@ -757,7 +758,8 @@ class Project():
         visited_funcs.add(func)
 
         for cs, line_number in callsites:
-            is_macro = (func_node and func_node.is_macro and func_node.name != 'fuzz_target')
+            is_macro = (func_node and func_node.is_macro
+                        and func_node.name != 'fuzz_target')
             line_to_print += self.extract_calltree(source_code.source_file,
                                                    func=cs,
                                                    visited_funcs=visited_funcs,
