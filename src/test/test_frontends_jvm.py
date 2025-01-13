@@ -191,3 +191,23 @@ def test_tree_sitter_jvm_sample7():
         '[combined.NestedClass.InnerClass]'
         '.unreachableInnerClassMethod()') not in functions_reached
     assert '[combined.AbstractBase].unreachableAbstractBaseMethod()' not in functions_reached
+
+
+def test_tree_sitter_jvm_sample8():
+    project = oss_fuzz.analyse_folder(
+        'jvm',
+        'src/test/data/source-code/jvm/test-project-8',
+        'fuzzerTestOneInput',
+        dump_output=False,
+    )
+
+    # Project check
+    harness = project.get_source_codes_with_harnesses()
+    assert len(harness) == 1
+
+    functions_reached = project.get_reachable_methods(harness[0].source_file, harness[0])
+
+    # Callsite check
+    assert '[variable.B].callInstanceMethod(variable.test.A)' in functions_reached
+    assert '[variable.test.A].instanceMethod()' in functions_reached
+    assert 'System.out.println(String)' in functions_reached
