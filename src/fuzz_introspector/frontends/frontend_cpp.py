@@ -570,15 +570,8 @@ class Project():
                 'function_names': func_names,
             })
 
-            # Obtain all functions of the project
-            #source_code_functions = {
-            #    func.name: func
-            #    for func in source_code.func_defs
-            #}
-
             for func in source_code.func_defs:
                 self.all_functions.append(func)
-            #self.all_functionsupdate(source_code_functions)
 
         # Process all project functions
         func_list = []
