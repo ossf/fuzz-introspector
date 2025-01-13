@@ -164,6 +164,14 @@ class SourceCodeFile():
                         use_stmt.text.decode())
                     self.uses.update(use_map)
 
+            # Handling macro definition
+            elif node.type == 'macro_definition':
+                rust_function = RustFunction(node,
+                                             self.tree_sitter_lang,
+                                             self,
+                                             prefix,
+                                             is_macro=True)
+                self.functions.append(rust_function)
             # TODO handle static_item / const_item
 
     def _split_use_stmt(self, use_stmt: str) -> list[str]:
@@ -336,6 +344,15 @@ class RustFunction():
                             bytes = content.encode('utf-8')
                             root = self.parent_source.parser.parse(bytes)
                             self.fuzzing_token_tree = root.root_node
+
+            elif child.type == 'macro_rule':
+                token_tree = child.child_by_field_name('right')
+                if token_tree:
+                    content = token_tree.text.decode()
+                    if content.startswith('{'):
+                        bytes = content.encode('utf-8')
+                        root = self.parent_source.parser.parse(bytes)
+                        self.fuzzing_token_tree = root.root_node
 
     def _process_variables(self):
         """Process variable declaration and store them for reference."""
@@ -518,6 +535,15 @@ class RustFunction():
                     if type:
                         self.var_map[name] = type
 
+            elif stmt.type == 'macro_invocation':
+                for child in stmt.children:
+                    if child.type == 'identifier':
+                        macro_name = child.text.decode()
+                        target_func = get_function_node(macro_name, functions)
+                        if target_func.is_macro:
+                            callsites.append((target_func.name, stmt.byte_range[1],
+                                             stmt.start_point.row + 1))
+
             for child in stmt.children:
                 callsites.extend(_process_callsites(child))
 
@@ -691,7 +717,8 @@ class Project():
                          func: Optional[str] = None,
                          visited_funcs: Optional[set[str]] = None,
                          depth: int = 0,
-                         line_number: int = -1) -> str:
+                         line_number: int = -1,
+                         is_macro: bool = False) -> str:
         """Extracts calltree string of a calltree so that FI core can use it."""
         if not visited_funcs:
             visited_funcs = set()
@@ -705,9 +732,10 @@ class Project():
         func_node = None
         if func:
             func_node = get_function_node(func, self.all_functions)
-            if func_node:
+            if func_node and not is_macro:
                 func_name = func_node.name
             else:
+                func_node = None
                 func_name = func
         else:
             return ''
@@ -729,11 +757,13 @@ class Project():
         visited_funcs.add(func)
 
         for cs, line_number in callsites:
+            is_macro = (func_node and func_node.is_macro and func_node.name != 'fuzz_target')
             line_to_print += self.extract_calltree(source_code.source_file,
                                                    func=cs,
                                                    visited_funcs=visited_funcs,
                                                    depth=depth + 1,
-                                                   line_number=line_number)
+                                                   line_number=line_number,
+                                                   is_macro=is_macro)
 
         return line_to_print
 
