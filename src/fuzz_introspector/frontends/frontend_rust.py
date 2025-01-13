@@ -558,7 +558,15 @@ class RustFunction():
                 for stmt in self.stmts:
                     callsites.extend(_process_callsites(stmt))
             callsites = sorted(set(callsites), key=lambda x: x[1])
-            self.base_callsites = [(x[0], x[2]) for x in callsites]
+
+            # Post process callsites with use statement
+            processed_callsites = []
+            for item in callsites:
+                crate_name = self.parent_source.uses.get(item[0], item[0])
+                new_item = (crate_name, item[1], item[2])
+                processed_callsites.append(new_item)
+
+            self.base_callsites = [(x[0], x[2]) for x in processed_callsites]
 
         if not self.detailed_callsites:
             for dst, src_line in self.base_callsites:
@@ -735,6 +743,8 @@ class Project():
             func_node = get_function_node(func, self.all_functions)
             if func_node and not is_macro:
                 func_name = func_node.name
+                if func.count('::') > func_name.count('::'):
+                    func_name = func
             else:
                 func_node = None
                 func_name = func
