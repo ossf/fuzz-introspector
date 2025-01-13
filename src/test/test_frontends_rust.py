@@ -98,7 +98,7 @@ def test_tree_sitter_rust_sample4():
     assert '&[u8]::len' in functions_reached
     assert 'reachable_function' in functions_reached
     assert 'unused_function' not in functions_reached
-    
+
 
 def test_tree_sitter_rust_sample5():
     project = oss_fuzz.analyse_folder(
@@ -117,3 +117,4 @@ def test_tree_sitter_rust_sample5():
     assert '&str::is_empty' in functions_reached
     assert 'RecursiveStruct::new' in functions_reached
     assert 'RecursiveStruct::process' in functions_reached
+
