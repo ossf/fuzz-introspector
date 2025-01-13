@@ -779,9 +779,7 @@ class Project():
                 continue
 
             visited_funcs = self.get_reachable_functions(
-                source_code.source_file,
-                func=cs,
-                visited_funcs=visited_funcs)
+                source_code.source_file, func=cs, visited_funcs=visited_funcs)
 
         return visited_funcs
 
