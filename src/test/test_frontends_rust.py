@@ -117,4 +117,3 @@ def test_tree_sitter_rust_sample5():
     assert '&str::is_empty' in functions_reached
     assert 'RecursiveStruct::new' in functions_reached
     assert 'RecursiveStruct::process' in functions_reached
-
