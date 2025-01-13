@@ -91,19 +91,19 @@ def test_tree_sitter_rust_sample9():
     harness = project.get_source_codes_with_harnesses()
     assert len(harness) == 2
 
-    functions_reached_one = project.get_reachable_functions(harness[0].source_file, harness[0])
-    functions_reached_two = project.get_reachable_functions(harness[1].source_file, harness[1])
+    result_one = project.get_reachable_functions(harness[0].source_file, harness[0])
+    result_two = project.get_reachable_functions(harness[1].source_file, harness[1])
 
     # Callsite check
     if 'fuzzer_one' in harness[0].source_file:
-        assert 'add_one' in functions_reached_one
-        assert 'multiply_by_two' not in functions_reached_one
-
-        assert 'multiply_by_two' in functions_reached_two
-        assert 'add_one' not in functions_reached_two
+        functions_reached_one = result_one
+        functions_reached_two = result_two
     else:
-        assert 'multiply_by_two' in functions_reached_one
-        assert 'add_one' not in functions_reached_one
+        functions_reached_one = result_two
+        functions_reached_two = result_one
 
-        assert 'add_one' in functions_reached_two
-        assert 'multiply_by_two' not in functions_reached_two
+    assert 'add_one' in functions_reached_one
+    assert 'multiply_by_two' not in functions_reached_one
+
+    assert 'multiply_by_two' in functions_reached_two
+    assert 'add_one' not in functions_reached_two
