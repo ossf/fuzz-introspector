@@ -416,12 +416,26 @@ class FunctionDefinition():
                          var_type, var_name)
             # Handles implicit default constructor call
             if var_name.type == 'identifier':
-                cls = var_type
+                # We're looking for a constructor, so add the name as it should be
+                # the name of the constructor.
+                cls = f'{var_type}::{var_type.rsplit("::")[-1]}'
                 logger.debug('Trying to find class %s', cls)
+                added = False
                 if cls in project.all_functions:
                     logger.debug('Adding callsite')
+                    added = True
                     callsites.append(
                         (cls, stmt.byte_range[1], stmt.start_point.row + 1))
+                if not added:
+                    logger.debug('Trying a hacky match.')
+                    # Hack to make sure we add in case our analysis of contructors was
+                    # wrong. TODO(David) fix.
+                    cls = var_type
+                    if cls in project.all_functions:
+                        logger.debug('Adding callsite')
+                        added = True
+                        callsites.append((cls, stmt.byte_range[1],
+                                          stmt.start_point.row + 1))
 
             while var_name.type not in [
                     'identifier', 'qualified_identifier', 'pointer_declarator',
