@@ -211,3 +211,39 @@ def test_tree_sitter_jvm_sample8():
     assert '[variable.B].callInstanceMethod(variable.test.A)' in functions_reached
     assert '[variable.test.A].instanceMethod()' in functions_reached
     assert 'System.out.println(String)' in functions_reached
+
+
+def test_tree_sitter_jvm_sample9():
+    project = oss_fuzz.analyse_folder(
+        'jvm',
+        'src/test/data/source-code/jvm/test-project-9',
+        'fuzzerTestOneInput',
+        dump_output=False,
+    )
+
+    # Project check
+    harness = project.get_source_codes_with_harnesses()
+    assert len(harness) == 2
+
+    result_one = project.get_reachable_methods(harness[0].source_file, harness[0])
+    result_two = project.get_reachable_methods(harness[1].source_file, harness[1])
+
+    # Callsite check
+    if 'FuzzerOne' in harness[0].source_file:
+        functions_reached_one = result_one
+        functions_reached_two = result_two
+    else:
+        functions_reached_one = result_two
+        functions_reached_two = result_one
+
+    assert '[multiple.SimpleClass].<init>(String)' in functions_reached_one
+    assert '[multiple.SimpleClass].simpleMethodOne()' in functions_reached_one
+    assert '[multiple.SimpleClass].<init>()' not in functions_reached_one
+    assert '[multiple.SimpleClass].simpleMethodTwo()' not in functions_reached_one
+    assert '[multiple.SimpleClass].unreachableMethod()' not in functions_reached_one
+
+    assert '[multiple.SimpleClass].<init>()' in functions_reached_two
+    assert '[multiple.SimpleClass].simpleMethodTwo()' in functions_reached_two
+    assert '[multiple.SimpleClass].<init>(String)' not in functions_reached_two
+    assert '[multiple.SimpleClass].simpleMethodOne()' not in functions_reached_two
+    assert '[multiple.SimpleClass].unreachableMethod()' not in functions_reached_two
