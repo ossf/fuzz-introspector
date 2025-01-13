@@ -391,7 +391,7 @@ class FunctionDefinition():
             var_type_obj = stmt.child_by_field_name('type')
 
             while True:
-                if var_type_obj == None:
+                if var_type_obj is None:
                     return []
                 if var_type_obj.type == 'qualified_identifier':
                     var_type += var_type_obj.child_by_field_name(
