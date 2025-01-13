@@ -34,7 +34,7 @@ class SourceCodeFile():
     def __init__(self,
                  source_file: str,
                  source_content: Optional[bytes] = None):
-        logger.info('Processing %s' % source_file)
+        logger.info('Processing %s', source_file)
 
         self.source_file = source_file
         self.tree_sitter_lang = Language(tree_sitter_cpp.language())
@@ -222,30 +222,38 @@ class FunctionDefinition():
             self.return_type = 'void'
 
         # Handles parameters
-        for param in param_list_node.children:
-            if param.type == 'parameter_declaration':
-                param_type = param.child_by_field_name('type')
-                param_name = param.child_by_field_name('declarator')
+        if param_list_node:
+            for param in param_list_node.children:
+                if param.type == 'parameter_declaration':
+                    param_type = param.child_by_field_name('type')
+                    param_name = param.child_by_field_name('declarator')
 
-                # Skip empty param name and type
-                if not param_type or not param_name:
-                    continue
+                    # Skip empty param name and type
+                    if not param_type or param_name:
+                        continue
 
-                while param_name.type not in [
-                        'identifier', 'qualified_identifier',
-                        'pointer_declarator', 'array_declarator',
-                        'reference_declarator'
-                ]:
-                    param_name = param_name.child_by_field_name('declarator')
+                    while param_name is not None and param_name.type not in [
+                            'identifier', 'qualified_identifier',
+                            'pointer_declarator', 'array_declarator',
+                            'reference_declarator'
+                    ]:
+                        param_name = param_name.child_by_field_name(
+                            'declarator')
+                        if param_name is None:
+                            break
 
-                result = self._extract_pointer_array_from_type(param_name)
-                pcount, acount, param_name = result
+                    if not param_name:
+                        continue
 
-                self.arg_types.append(
-                    f'{param_type.text.decode()}{"*" * pcount}{"[]" * acount}')
-                self.arg_names.append(param_name.text.decode().replace(
-                    '&', ''))
-                self.var_map[self.arg_names[-1]] = self.arg_types[-1]
+                    result = self._extract_pointer_array_from_type(param_name)
+                    pcount, acount, param_name = result
+
+                    self.arg_types.append(
+                        f'{param_type.text.decode()}{"*" * pcount}{"[]" * acount}'
+                    )
+                    self.arg_names.append(param_name.text.decode().replace(
+                        '&', ''))
+                    self.var_map[self.arg_names[-1]] = self.arg_types[-1]
 
         # Handles other fields
         self._process_complexity()
@@ -286,129 +294,158 @@ class FunctionDefinition():
 
         self.icount += _traverse_node_instr_count(self.root)
 
-    def extract_callsites(self, functions: dict[str, 'FunctionDefinition']):
-        """Gets the callsites of the function."""
+    def _process_invoke(self, expr: Node,
+                        project) -> list[tuple[str, int, int]]:
+        """Internal helper for processing the function invocation statement."""
+        callsites = []
+        target_name: str = ''
 
-        def _process_invoke(expr: Node) -> list[tuple[str, int, int]]:
-            """Internal helper for processing the function invocation statement."""
-            callsites = []
-            target_name: str = ''
+        func = expr.child_by_field_name('function')
 
-            func = expr.child_by_field_name('function')
+        # Handle function call
+        if func:
+            # Simple function call
+            # identifier indicates general function calls
+            # qualified_identifier indicates namespace function calls
+            # template_function indicates standard function calls
+            if func.type in [
+                    'identifier', 'qualified_identifier', 'template_function'
+            ]:
+                target_name = func.text.decode()
 
-            # Handle function call
-            if func:
-                # Simple function call
-                # identifier indicates general function calls
-                # qualified_identifier indicates namespace function calls
-                # template_function indicates standard function calls
-                if func.type in [
-                        'identifier', 'qualified_identifier',
-                        'template_function'
-                ]:
-                    target_name = func.text.decode()
+            # Chained or method calls
+            elif func.type == 'field_expression':
+                _, target_name = self._process_field_expr_return_type(
+                    func, project)
 
-                # Chained or method calls
-                elif func.type == 'field_expression':
-                    _, target_name = _process_field_expr_return_type(func)
+        if target_name:
+            # Handles in scope invocation
+            if '::' not in target_name and self.namespace_or_class:
+                full_target_name = f'{self.namespace_or_class}::{target_name}'
+                if full_target_name in project.all_functions:
+                    target_name = full_target_name
 
-            if target_name:
-                # Handles in scope invocation
-                if '::' not in target_name and self.namespace_or_class:
-                    full_target_name = f'{self.namespace_or_class}::{target_name}'
-                    if full_target_name in functions:
-                        target_name = full_target_name
+            callsites.append(
+                (target_name, func.byte_range[1], func.start_point.row + 1))
 
-                callsites.append((target_name, func.byte_range[1],
-                                  func.start_point.row + 1))
+        return callsites
 
-            return callsites
+    def _process_field_expr_return_type(self, field_expr: Node,
+                                        project) -> tuple[Optional[str], str]:
+        """Helper for determining the return type of a field expression
+        in a chained call and its full qualified name."""
+        ret_type = None
+        object_type = None
 
-        def _process_field_expr_return_type(
-                field_expr: Node) -> tuple[Optional[str], str]:
-            """Helper for determining the return type of a field expression
-            in a chained call and its full qualified name."""
-            type = None
-            object_type = None
+        arg = field_expr.child_by_field_name('argument')
+        name = field_expr.child_by_field_name('field').text.decode()
+        full_name = name
 
-            arg = field_expr.child_by_field_name('argument')
-            name = field_expr.child_by_field_name('field').text.decode()
-            full_name = name
+        # Chained field access
+        if arg.type == 'field_expression':
+            _, object_type = self._process_field_expr_return_type(arg, project)
 
-            # Chained field access
-            if arg.type == 'field_expression':
-                _, object_type = _process_field_expr_return_type(arg)
+        # Internal call
+        elif arg.type == 'this':
+            object_type = self.namespace_or_class
 
-            # Internal call
-            elif arg.type == 'this':
-                object_type = self.namespace_or_class
+        # Named object
+        elif arg.type in ['identifier', 'qualified_identifier']:
+            object_type = self.var_map.get(arg.text.decode())
 
-            # Named object
-            elif arg.type in ['identifier', 'qualified_identifier']:
-                object_type = self.var_map.get(arg.text.decode())
+        if object_type:
+            if object_type == 'void':
+                full_name = name
+            else:
+                full_name = f'{object_type}::{name}'
 
-            if object_type:
-                if object_type == 'void':
-                    full_name = name
+            node = get_function_node(full_name, project.all_functions)
+            if node:
+                ret_type = node.return_type
+
+        return (ret_type, full_name)
+
+    def _process_callsites(self, stmt: Node,
+                           project) -> list[tuple[str, int, int]]:
+        """Process and store the callsites of the function."""
+        callsites = []
+
+        # Call statement
+        if stmt.type == 'call_expression':
+            logger.debug('Handling call expression: %s', stmt.text.decode())
+            callsites.extend(self._process_invoke(stmt, project))
+
+        # Constructor call statement
+        elif stmt.type == 'new_expression':
+            logger.debug('Handling new_expression: %s', stmt.text.decode())
+            ctr_type = stmt.child_by_field_name('type')
+            if ctr_type:
+                cls = ctr_type.text.decode()
+                cls = f'{cls}::{cls.rsplit("::")[-1]}'
+                callsites.append(
+                    (cls, stmt.byte_range[1], stmt.start_point.row + 1))
+
+        elif stmt.type == 'declaration':
+            logger.debug('Handling declaration: %s', stmt.text.decode())
+            var_type = ''
+            var_type_obj = stmt.child_by_field_name('type')
+
+            while True:
+                if var_type_obj == None:
+                    return []
+                if var_type_obj.type == 'qualified_identifier':
+                    var_type += var_type_obj.child_by_field_name(
+                        'scope').text.decode() + '::'
+                    var_type_obj = var_type_obj.child_by_field_name('name')
+
+                if var_type_obj.type == 'template_type':
+                    var_type += var_type_obj.child_by_field_name(
+                        'name').text.decode()
                 else:
-                    full_name = f'{object_type}::{name}'
+                    var_type += var_type_obj.text.decode()
 
-                node = get_function_node(full_name, functions)
-                if node:
-                    type = node.return_type
+                break
 
-            return (type, full_name)
+            try:
+                var_name = stmt.child_by_field_name('declarator')
+            except AttributeError:
+                logger.debug('Could not extract necessary attributes')
+                return []
 
-        def _process_callsites(stmt: Node) -> list[tuple[str, int, int]]:
-            """Process and store the callsites of the function."""
-            callsites = []
-
-            # Call statement
-            if stmt.type == 'call_expression':
-                callsites.extend(_process_invoke(stmt))
-
-            # Constructor call statement
-            elif stmt.type == 'new_expression':
-                ctr_type = stmt.child_by_field_name('type')
-                if ctr_type:
-                    cls = ctr_type.text.decode()
-                    cls = f'{cls}::{cls.rsplit("::")[-1]}'
+            logger.debug('Extracted declaration: Type `%s` : Name `%s`',
+                         var_type, var_name)
+            # Handles implicit default constructor call
+            if var_name.type == 'identifier':
+                cls = var_type
+                logger.debug('Trying to find class %s', cls)
+                if cls in project.all_functions:
+                    logger.debug('Adding callsite')
                     callsites.append(
                         (cls, stmt.byte_range[1], stmt.start_point.row + 1))
 
-            elif stmt.type == 'declaration':
-                var_type = stmt.child_by_field_name('type').text.decode()
-                var_name = stmt.child_by_field_name('declarator')
+            while var_name.type not in [
+                    'identifier', 'qualified_identifier', 'pointer_declarator',
+                    'array_declarator', 'reference_declarator'
+            ]:
+                var_name = var_name.child_by_field_name('declarator')
 
-                # Handles implicit default constructor call
-                if var_name.type == 'identifier':
-                    cls = f'{var_type}::{var_type.rsplit("::")[-1]}'
-                    if cls in functions:
-                        callsites.append((cls, stmt.byte_range[1],
-                                          stmt.start_point.row + 1))
+            result = self._extract_pointer_array_from_type(var_name)
+            pcount, acount, var_name = result
+            var_type = f'{var_type}{"*" * pcount}{"[]" * acount}'
+            self.var_map[var_name.text.decode().replace('&', '')] = var_type
 
-                while var_name.type not in [
-                        'identifier', 'qualified_identifier',
-                        'pointer_declarator', 'array_declarator',
-                        'reference_declarator'
-                ]:
-                    var_name = var_name.child_by_field_name('declarator')
+        for child in stmt.children:
+            callsites.extend(self._process_callsites(child, project))
 
-                result = self._extract_pointer_array_from_type(var_name)
-                pcount, acount, var_name = result
-                var_type = f'{var_type}{"*" * pcount}{"[]" * acount}'
-                self.var_map[var_name.text.decode().replace('&',
-                                                            '')] = var_type
+        return callsites
 
-            for child in stmt.children:
-                callsites.extend(_process_callsites(child))
-
-            return callsites
+    def extract_callsites(self, project):
+        """Gets the callsites of the function."""
 
         if not self.base_callsites:
             callsites = []
             for child in self.root.children:
-                callsites.extend(_process_callsites(child))
+                callsites.extend(self._process_callsites(child, project))
 
             callsites = sorted(set(callsites), key=lambda x: x[1])
             self.base_callsites = [(x[0], x[2]) for x in callsites]
@@ -458,7 +495,7 @@ class Project():
         # Process all project functions
         func_list = []
         for func in self.all_functions.values():
-            func.extract_callsites(self.all_functions)
+            func.extract_callsites(self)
 
             func_dict: dict[str, Any] = {}
             func_dict['functionName'] = func.name
