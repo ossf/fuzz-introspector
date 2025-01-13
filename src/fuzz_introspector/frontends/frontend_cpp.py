@@ -247,10 +247,10 @@ class FunctionDefinition():
             logger.debug('Assigning name as signature')
             full_name = self.sig
 
-        #try:
+        # try:
         #    full_name = full_name + self.root.child_by_field_name(
         #    'declarator').child_by_field_name('declarator').child_by_field_name('declarator').text.decode()
-        #except:
+        # except:
         #    try:
         #        full_name = full_name + self.root.child_by_field_name(
         #        'declarator').child_by_field_name('declarator').text.decode()
@@ -486,10 +486,10 @@ class FunctionDefinition():
                 # the name of the constructor.
                 cls = f'{var_type}::{var_type.rsplit("::")[-1]}'
                 logger.debug('Trying to find class %s', cls)
-                added = False
+                # added = False
                 if cls in project.all_functions:
                     logger.debug('Adding callsite')
-                    added = True
+                    # added = True
                     callsites.append(
                         (cls, stmt.byte_range[1], stmt.start_point.row + 1))
                 #if not added:
