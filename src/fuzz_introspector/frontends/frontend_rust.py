@@ -480,6 +480,9 @@ class RustFunction():
             elif object.type == 'self':
                 object_type = self.name.rsplit('::', 1)[0]
 
+            elif object.type == 'string_literal':
+                object_type = '&str'
+
             if object_type:
                 if object_type == 'void':
                     full_name = name
