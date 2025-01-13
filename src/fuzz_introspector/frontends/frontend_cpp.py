@@ -187,6 +187,7 @@ class FunctionDefinition():
         # Extract function name and return type
         name_node = self.root.child_by_field_name('declarator')
         self.sig = name_node.text.decode()
+        logger.debug('Extracting information for %s', self.sig)
         param_list_node = None
         for child in name_node.children:
             if 'identifier' in child.type:
@@ -220,8 +221,32 @@ class FunctionDefinition():
                     'name').text.decode() + '::' + full_name
             tmp_root = new_parent
         logger.debug('Full function scope: %s', full_name)
-        full_name = full_name + self.root.child_by_field_name(
-            'declarator').child_by_field_name('declarator').text.decode()
+
+        tmp_name = ''
+        tmp_node = self.root.child_by_field_name('declarator')
+        while True:
+            if tmp_node is None:
+                break
+            if tmp_node.type == 'identifier':
+                tmp_name = tmp_node.text.decode()
+                break
+            tmp_node = tmp_node.child_by_field_name('declarator')
+        if tmp_name:
+            full_name = full_name + tmp_name
+        else:
+            full_name = self.sig
+
+        #try:
+        #    full_name = full_name + self.root.child_by_field_name(
+        #    'declarator').child_by_field_name('declarator').child_by_field_name('declarator').text.decode()
+        #except:
+        #    try:
+        #        full_name = full_name + self.root.child_by_field_name(
+        #        'declarator').child_by_field_name('declarator').text.decode()
+        #    except:
+
+        # This can happen for e.g. operators
+        #    full_name = self.sig
         logger.debug('Full function name: %s', full_name)
         self.name = full_name
         logger.info('Done walking')
@@ -416,6 +441,10 @@ class FunctionDefinition():
             var_type = ''
             var_type_obj = stmt.child_by_field_name('type')
 
+            if var_type_obj.type == 'primitive_type' or var_type_obj.type == 'sized_type_specifier':
+                logger.debug('Skipping.')
+                return []
+
             while True:
                 if var_type_obj is None:
                     return []
@@ -452,22 +481,24 @@ class FunctionDefinition():
                     added = True
                     callsites.append(
                         (cls, stmt.byte_range[1], stmt.start_point.row + 1))
-                if not added:
-                    logger.debug('Trying a hacky match.')
-                    # Hack to make sure we add in case our analysis of contructors was
-                    # wrong. TODO(David) fix.
-                    cls = var_type
-                    if cls in project.all_functions:
-                        logger.debug('Adding callsite')
-                        added = True
-                        callsites.append((cls, stmt.byte_range[1],
-                                          stmt.start_point.row + 1))
-
-            while var_name.type not in [
+                #if not added:
+                #    logger.debug('Trying a hacky match.')
+                #    # Hack to make sure we add in case our analysis of contructors was
+                #    # wrong. TODO(David) fix.
+                #    cls = var_type
+                #    if cls in project.all_functions:
+                #        logger.debug('Adding callsite')
+                #        added = True
+                #        callsites.append((cls, stmt.byte_range[1],
+                #                          stmt.start_point.row + 1))
+            while var_name is not None and var_name.type not in [
                     'identifier', 'qualified_identifier', 'pointer_declarator',
                     'array_declarator', 'reference_declarator'
             ]:
                 var_name = var_name.child_by_field_name('declarator')
+
+            if var_name is None:
+                return []
 
             result = self._extract_pointer_array_from_type(var_name)
             pcount, acount, var_name = result
@@ -793,7 +824,8 @@ def capture_source_files_in_tree(directory_tree):
     """Captures source code files in a given directory."""
     language_files = []
     language_extensions = [
-        '.cpp', '.cc', '.c++', '.cxx', '.h', '.hpp', '.hh', '.hxx', '.inl'
+        '.c', '.cpp', '.cc', '.c++', '.cxx', '.h', '.hpp', '.hh', '.hxx',
+        '.inl'
     ]
     exclude_directories = [
         'build', 'target', 'tests', 'node_modules', 'aflplusplus', 'honggfuzz',
