@@ -98,3 +98,22 @@ def test_tree_sitter_rust_sample4():
     assert '&[u8]::len' in functions_reached
     assert 'reachable_function' in functions_reached
     assert 'unused_function' not in functions_reached
+
+
+def test_tree_sitter_rust_sample5():
+    project = oss_fuzz.analyse_folder(
+        'rust',
+        'src/test/data/source-code/rust/test-project-5',
+        dump_output=False,
+    )
+
+    # Project check
+    harness = project.get_source_codes_with_harnesses()
+    assert len(harness) == 1
+
+    functions_reached = project.get_reachable_functions(harness[0].source_file, harness[0])
+
+    # Callsite check
+    assert '&str::is_empty' in functions_reached
+    assert 'RecursiveStruct::new' in functions_reached
+    assert 'RecursiveStruct::process' in functions_reached
