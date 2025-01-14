@@ -208,4 +208,3 @@ def test_tree_sitter_rust_sample9():
 
     assert 'multiply_by_two' in functions_reached_two
     assert 'add_one' not in functions_reached_two
-
