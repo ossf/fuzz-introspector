@@ -222,6 +222,11 @@ class Project():
             for func_def in functions_methods:
                 func_def.extract_local_variable_type(
                     self.functions_methods_map)
+                # Need a second pass because the processing may out of order
+                # That could affect some local variable types that are
+                # relying on other variables
+                func_def.extract_local_variable_type(
+                    self.functions_methods_map)
                 func_def.extract_callsites(self.functions_methods_map)
                 func_dict: dict[str, Any] = {}
                 func_dict['functionName'] = func_def.function_name
@@ -663,10 +668,15 @@ class FunctionMethod():
                 if target_name:
                     return target_name
 
-                # TODO Handles the following type
-                # index_expression slice_expression
-                # type_assertion_expression type_conversion_expression
-                # type_instantiation_expression
+            # Index expression / Slice expression
+            elif child.type in ['index_expression', 'slice_expression']:
+                op = child.child_by_field_name('operand')
+                parent_type = self.var_map.get(op.text.decode())
+                if parent_type:
+                    if '[' in parent_type and ']' in parent_type:
+                        return parent_type.rsplit(']', 1)[-1]
+                    elif parent_type == 'string':
+                        return 'uint8'
 
             # Other expression that need to recursive deeper
             # unary_expression binary_expression
@@ -680,8 +690,6 @@ class FunctionMethod():
                                     all_funcs_meths: dict[str,
                                                           'FunctionMethod']):
         """Gets the local variable types of the function."""
-        # TODO The handling of all kind of variable declaration approach is not done.
-        # There are some requires extensive search to determine a type.
 
         query = self.tree_sitter_lang.query('( var_declaration ) @vd')
         for _, exprs in query.captures(self.root).items():
