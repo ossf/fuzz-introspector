@@ -138,3 +138,24 @@ def test_tree_sitter_rust_sample6():
     assert 'utils::process_str' in functions_reached
     assert '&str::is_empty' in functions_reached
     assert '&str::to_string' in functions_reached
+
+
+def test_tree_sitter_rust_sample7():
+    project = oss_fuzz.analyse_folder(
+        'rust',
+        'src/test/data/source-code/rust/test-project-7',
+        dump_output=False,
+    )
+
+    # Project check
+    harness = project.get_source_codes_with_harnesses()
+    assert len(harness) == 1
+
+    functions_reached = project.get_reachable_functions(harness[0].source_file, harness[0])
+
+    # Callsite check
+    assert 'poly::Derived::action' in functions_reached
+    assert '&[u8]::first' in functions_reached
+    assert 'Base::action' not in functions_reached
+    assert 'poly::Unreached::action' not in functions_reached
+    assert '&[u8]::len' not in functions_reached
