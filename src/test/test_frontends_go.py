@@ -44,6 +44,7 @@ def test_tree_sitter_go_sample2():
 
     # Project check
     harness = project.get_source_codes_with_harnesses()
+    assert len(harness) == 0
 
 
 def test_tree_sitter_go_sample3():
@@ -55,6 +56,7 @@ def test_tree_sitter_go_sample3():
 
     # Project check
     harness = project.get_source_codes_with_harnesses()
+    assert len(harness) == 0
 
 
 def test_tree_sitter_go_sample4():
@@ -66,6 +68,7 @@ def test_tree_sitter_go_sample4():
 
     # Project check
     harness = project.get_source_codes_with_harnesses()
+    assert len(harness) == 0
 
 
 def test_tree_sitter_go_sample5():
@@ -77,6 +80,7 @@ def test_tree_sitter_go_sample5():
 
     # Project check
     harness = project.get_source_codes_with_harnesses()
+    assert len(harness) == 0
 
 
 def test_tree_sitter_go_sample6():
@@ -88,6 +92,7 @@ def test_tree_sitter_go_sample6():
 
     # Project check
     harness = project.get_source_codes_with_harnesses()
+    assert len(harness) == 0
 
 
 def test_tree_sitter_go_sample7():
@@ -99,6 +104,7 @@ def test_tree_sitter_go_sample7():
 
     # Project check
     harness = project.get_source_codes_with_harnesses()
+    assert len(harness) == 0
 
 
 def test_tree_sitter_go_sample8():
@@ -110,3 +116,4 @@ def test_tree_sitter_go_sample8():
 
     # Project check
     harness = project.get_source_codes_with_harnesses()
+    assert len(harness) == 0
