@@ -29,6 +29,17 @@ from typing import Any
 
 logger = logging.getLogger(name=__name__)
 
+LITERAL_TYPE_MAP = {
+    "_string_literal": "string",
+    "int_literal": "int",
+    "float_literal": "float64",
+    "imaginary_literal": "complex128",
+    "rune_literal": "rune",
+    "true": "bool",
+    "false": "bool",
+    "iota": "int"
+}
+
 
 class SourceCodeFile():
     """Class for holding file-specific information."""
@@ -115,9 +126,9 @@ class SourceCodeFile():
         """Gets the functions defined in the file, as a list of strings."""
         func_names = []
         for func in self.functions:
-            func_names.append(func.get_name())
+            func_names.append(func.function_name)
         for method in self.methods:
-            func_names.append(method.get_name())
+            func_names.append(method.function_name)
         return func_names
 
     def get_function_node(
@@ -126,21 +137,21 @@ class SourceCodeFile():
 
         # Find the first instance of the function name
         for func in self.functions:
-            if func.get_name() == target_function_name:
+            if func.function_name == target_function_name:
                 return func
 
         for method in self.methods:
-            if method.get_name() == target_function_name:
+            if method.function_name == target_function_name:
                 return method
 
         return None
 
     def has_libfuzzer_harness(self) -> bool:
         """Returns whether the source code holds a libfuzzer harness"""
-        if any(func.get_name().startswith('Fuzz') for func in self.functions):
+        if any(func.function_name.startswith('Fuzz') for func in self.functions):
             return True
 
-        if any(meth.get_name().startswith('Fuzz') for meth in self.methods):
+        if any(meth.function_name.startswith('Fuzz') for meth in self.methods):
             return True
 
         return False
@@ -148,11 +159,11 @@ class SourceCodeFile():
     def has_function_definition(self, target_function_name: str) -> bool:
         """Returns if the source file holds a given function definition."""
 
-        if any(func.get_name() == target_function_name
+        if any(func.function_name == target_function_name
                for func in self.functions):
             return True
 
-        if any(meth.get_name() == target_function_name
+        if any(meth.function_name == target_function_name
                for meth in self.methods):
             return True
 
@@ -161,8 +172,8 @@ class SourceCodeFile():
     def get_entry_function_name(self) -> str:
         """Returns the entry function name of the harness if found,"""
         for func in (self.functions + self.methods):
-            if func.get_name().startswith('Fuzz'):
-                return func.get_name()
+            if func.function_name.startswith('Fuzz'):
+                return func.function_name
 
         return ''
 
@@ -203,8 +214,10 @@ class Project():
 
             functions_methods = source_code.functions + source_code.methods
             for func_def in functions_methods:
+                func_def.extract_local_variable_type(self.full_functions_methods)
+                func_def.extract_callsites()
                 func_dict: dict[str, Any] = {}
-                func_dict['functionName'] = func_def.get_name()
+                func_dict['functionName'] = func_def.function_name
                 func_dict['functionSourceFile'] = source_code.source_file
                 func_dict['functionLinenumber'] = func_def.start_line
                 func_dict['functionLinenumberEnd'] = func_def.end_line
@@ -213,23 +226,23 @@ class Project():
                     'start': func_def.start_line,
                     'end': func_def.end_line
                 }
-                func_dict['CyclomaticComplexity'] = func_def.get_complexity()
+                func_dict['CyclomaticComplexity'] = func_def.complexity
                 func_dict['EdgeCount'] = func_dict['CyclomaticComplexity']
-                func_dict['ICount'] = func_def.get_function_instr_count()
-                func_dict['argNames'] = func_def.get_function_arg_names()
-                func_dict['argTypes'] = func_def.get_function_arg_types()
+                func_dict['ICount'] = func_def.icount
+                func_dict['argNames'] = func_def.arg_names[:]
+                func_dict['argTypes'] = func_def.arg_types[:]
                 func_dict['argCount'] = len(func_dict['argTypes'])
-                func_dict['returnType'] = func_def.get_function_return_type()
+                func_dict['returnType'] = func_def.return_type
                 func_dict['BranchProfiles'] = []
-                func_dict['Callsites'] = func_def.detailed_callsites()
+                func_dict['Callsites'] = func_def.detailed_callsites
                 func_dict['functionUses'] = func_def.get_function_uses(
                     self.full_functions_methods)
                 func_dict['functionDepth'] = func_def.get_function_depth(
                     self.full_functions_methods)
                 func_dict['constantsTouched'] = []
                 func_dict['BBCount'] = 0
-                func_dict['signature'] = func_def.function_signature()
-                func_callsites = func_def.base_callsites()
+                func_dict['signature'] = func_def.sig
+                func_callsites = func_def.base_callsites
                 funcs_reached = set()
                 for cs_dst, _ in func_callsites:
                     funcs_reached.add(cs_dst)
@@ -294,7 +307,7 @@ class Project():
             return line_to_print
 
         visited_functions.add(function)
-        for cs, line_number in func.base_callsites():
+        for cs, line_number in func.base_callsites:
             line_to_print += self.extract_calltree(
                 source_code.source_file,
                 function=cs,
@@ -325,7 +338,7 @@ class Project():
         if not source_code:
             visited_functions.add(function)
             return visited_functions
-        print(function)
+
         func = source_code.get_function_node(function)
         if not func or function in visited_functions:
             visited_functions.add(function)
@@ -366,6 +379,7 @@ class FunctionMethod():
 
         # Other properties
         self.function_name = ''
+        self.receiver = ''
         self.complexity = 0
         self.icount = 0
         self.arg_names: list[str] = []
@@ -374,17 +388,18 @@ class FunctionMethod():
         self.sig = ''
         self.function_uses = 0
         self.function_depth = 0
-        self.callsites: list[tuple[str, int]] = []
+        self.base_callsites: list[tuple[str, int]] = []
+        self.detailed_callsites: list[tuple[str, int]] = []
+        self.var_map: dict[str, str] = {}
 
-    def get_name(self) -> str:
-        """Gets name of a function"""
-        if not self.function_name:
-            name_node = self.root
-            while name_node.child_by_field_name('name') is not None:
-                name_node = name_node.child_by_field_name('name')
-                self.function_name = name_node.text.decode()
+        # Process properties
+        self._process_properties()
 
-        return self.function_name
+        # Process complexity
+        self._process_complexity()
+
+        # Process icount
+        self._process_icount()
 
     def get_function_uses(self,
                           all_funcs_meths: list['FunctionMethod']) -> int:
@@ -392,8 +407,8 @@ class FunctionMethod():
         if not self.function_uses:
             for func in all_funcs_meths:
                 found = False
-                for callsite in func.base_callsites():
-                    if callsite[0] == self.get_name():
+                for callsite in func.base_callsites:
+                    if callsite[0] == self.function_name:
                         found = True
                         break
                 if found:
@@ -409,14 +424,14 @@ class FunctionMethod():
             return self.function_depth
 
         visited: list[str] = []
-        func_meth_dict = {f.get_name(): f for f in all_funcs_meths}
+        func_meth_dict = {f.function_name: f for f in all_funcs_meths}
 
         def _recursive_function_depth(func_meth: FunctionMethod) -> int:
-            callsites = func_meth.base_callsites()
+            callsites = func_meth.base_callsites
             if len(callsites) == 0:
                 return 0
 
-            visited.append(func_meth.get_name())
+            visited.append(func_meth.function_name)
             depth = 0
             for callsite in callsites:
                 target = func_meth_dict.get(callsite[0])
@@ -432,7 +447,80 @@ class FunctionMethod():
         self.function_depth = _recursive_function_depth(self)
         return self.function_depth
 
-    def get_complexity(self) -> int:
+    def _process_properties(self):
+        """Process properties."""
+
+        # Process receiver
+        receiver = self.root.child_by_field_name('receiver')
+        if receiver:
+            for child in receiver.children:
+                receiver_name = child.child_by_field_name('name')
+                receiver_type = child.child_by_field_name('type')
+
+            if receiver_name and receiver_type:
+                self.receiver = receiver_type.text.decode()
+                self.var_map[receiver_name.text.decode()] = self.receiver
+
+        # Process name
+        name_node = self.root
+        while name_node.child_by_field_name('name') is not None:
+            name_node = name_node.child_by_field_name('name')
+            self.function_name = name_node.text.decode()
+        if self.receiver:
+            self.function_name = f'{self.receiver}.{self.function_name}'
+
+        # Process arguments
+        param_names: list[str] = []
+        param_types: list[str] = []
+        query = self.tree_sitter_lang.query('( parameter_list ) @pl')
+        for _, exprs in query.captures(self.root).items():
+            for param_node in exprs:
+                for param in param_node.children:
+                    if not param.is_named:
+                        continue
+
+                    # Param name
+                    param_tmp = param
+                    while param_tmp.child_by_field_name('name') is not None:
+                        param_tmp = param_tmp.child_by_field_name('name')
+                    param_names.append(param_tmp.text.decode())
+
+                    # Param type
+                    if not param.child_by_field_name('type'):
+                        param_types.append('')
+                    else:
+                        type_str = param.child_by_field_name('type').text.decode()
+                        param_tmp = param
+                        while param_tmp.child_by_field_name('declarator') is not None:
+                            if param_tmp.type == 'pointer_declarator':
+                                type_str += '*'
+                            param_tmp = param_tmp.child_by_field_name('declarator')
+                        param_types.append(type_str)
+
+                    self.var_map[param_names[-1]] = param_types[-1]
+
+        self.arg_names = param_names
+        self.arg_types = param_types
+
+        # Process return value
+        result = self.root.child_by_field_name('result')
+        if result:
+            self.return_type = result.text.decode()
+        else:
+            self.return_type = 'void'
+
+        # Process signature
+        # Go function signature format
+        # (Optional_Receiver) Func_Name(Argument_Types) Optional_Return_Type
+        self.sig = f'{self.function_name}({",".join(self.arg_types)})'
+
+        if self.return_type != 'void':
+            self.sig = f'{self.sig} {self.return_type}'
+
+        if self.receiver:
+            self.sig = f'({self.receiver}) {self.sig}'
+
+    def _process_complexity(self):
         """Gets complexity measure based on counting branch nodes in a
         function."""
 
@@ -461,12 +549,9 @@ class FunctionMethod():
                 count += _traverse_node_complexity(item)
             return count
 
-        if not self.complexity:
-            self.complexity = _traverse_node_complexity(self.root)
+        self.complexity = _traverse_node_complexity(self.root)
 
-        return self.complexity
-
-    def get_function_instr_count(self) -> int:
+    def _process_icount(self):
         """Returns a pseudo measurement of instruction count."""
 
         instr_nodes = [
@@ -485,107 +570,60 @@ class FunctionMethod():
                 count += _traverse_node_instr_count(item)
             return count
 
-        if not self.icount:
-            self.icount = _traverse_node_instr_count(self.root)
+        self.icount = _traverse_node_instr_count(self.root)
 
-        return self.icount
+    def extract_local_variable_type(
+            self,
+            all_funcs_meths: list['FunctionMethod']):
+        """Gets the local variable types of the function."""
+        # TODO The handling of all kind of variable declaration approach is not done.
+        # There are some requires extensive search to determine a type.
 
-    def get_function_arg_names(self) -> list[str]:
-        """Gets the same of a function's arguments"""
-        if self.arg_names:
-            return self.arg_names
+        query = self.tree_sitter_lang.query('( var_declaration ) @vd')
+        for _, exprs in query.captures(self.root).items():
+            for decl_node in exprs:
+                # TODO Handle long variable declaration
+                pass
 
-        param_names: list[str] = []
-        parameters_node = self.root.child_by_field_name('parameters')
-        if not parameters_node:
-            return param_names
+        query = self.tree_sitter_lang.query('( short_var_declaration ) @vd')
+        for _, exprs in query.captures(self.root).items():
+            for decl_node in exprs:
+                decl_name = ''
+                decl_type = ''
+                left = decl_node.child_by_field_name('left')
+                right = decl_node.child_by_field_name('right')
+                for child in left.children:
+                    if child.type == 'identifier':
+                        decl_name = child.text.decode()
 
-        for param in parameters_node.children:
-            if not param.is_named:
-                continue
+                for child in right.children:
+                    # Literals
+                    if child.type in LITERAL_TYPE_MAP:
+                        decl_type = LITERAL_TYPE_MAP[child.type]
 
-            param_tmp = param
-            while param_tmp.child_by_field_name('name') is not None:
-                param_tmp = param_tmp.child_by_field_name('name')
-            param_names.append(param_tmp.text.decode())
+                    # Identifier
+                    elif child.type == 'identifier':
+                        if child.text.decode() in self.var_map:
+                            decl_type = self.var_map[child.text.decode()]
 
-        self.arg_names = param_names
-        return self.arg_names
+                    # Composite Literal
+                    elif child.type == 'composite_literal':
+                        composite_type = child.child_by_field_name('type')
+                        if composite_type:
+                            decl_type = composite_type.text.decode()
 
-    def get_function_arg_types(self) -> list[str]:
-        """Gets the text of a function's types"""
-        if self.arg_types:
-            return self.arg_types
+                   # TODO Handles the following type
+                   # unary_expression binary_expression	selector_expression
+                   # index_expression slice_expression call_expression
+                   # type_assertion_expression type_conversion_expression
+                   # type_instantiation_expression new make
+                   # parenthesized_expression
 
-        param_types: list[str] = []
-        parameters_node = self.root.child_by_field_name('parameters')
-        if not parameters_node:
-            return param_types
+                if decl_name and decl_type:
+                    self.var_map[decl_name] = decl_type
 
-        for param in parameters_node.children:
-            if not param.is_named:
-                continue
-
-            if not param.child_by_field_name('type'):
-                continue
-
-            type_str = param.child_by_field_name('type').text.decode()
-            param_tmp = param
-            while param_tmp.child_by_field_name('declarator') is not None:
-                if param_tmp.type == 'pointer_declarator':
-                    type_str += '*'
-                param_tmp = param_tmp.child_by_field_name('declarator')
-            param_types.append(type_str)
-
-        self.arg_types = param_types
-        return self.arg_types
-
-    def get_function_return_type(self) -> str:
-        """Gets a function's return type as a string"""
-        if not self.return_type:
-            result = self.root.child_by_field_name('result')
-            if result:
-                self.return_type = result.text.decode()
-
-        return self.return_type
-
-    def function_signature(self) -> str:
-        """Returns the function signature of a function as a string."""
-        # Go function signature format
-        # (Optional_Receiver) Func_Name(Argument_Types) Optional_Return_Type
-
-        if not self.sig:
-            # Base signature
-            name = self.get_name()
-            params = self.get_function_arg_types()
-            self.sig = f'{name}({",".join(params)})'
-
-            # Handles return type
-            rtn_type = self.get_function_return_type()
-            if rtn_type:
-                self.sig = f'{self.sig} {rtn_type}'
-
-            # Handles receiver
-            receiver = self.root.child_by_field_name('receiver')
-            if receiver:
-                receiver_type = receiver.text.decode().split(' ')[-1][:-1]
-                self.sig = f'({receiver_type}) {self.sig}'
-
-        return self.sig
-
-    def detailed_callsites(self) -> list[dict[str, str]]:
-        """Captures the callsite details as used by Fuzz Introspector core."""
-        callsites = []
-        for dst, src_line in self.base_callsites():
-            src_loc = self.parent_source.source_file + ':%d,1' % (src_line)
-            callsites.append({'Src': src_loc, 'Dst': dst})
-
-        return callsites
-
-    def base_callsites(self) -> list[tuple[str, int]]:
+    def extract_callsites(self):
         """Gets the callsites of the function."""
-        if self.callsites:
-            return self.callsites
 
         callsites = []
         call_query = self.tree_sitter_lang.query('( call_expression ) @ce')
@@ -593,39 +631,45 @@ class FunctionMethod():
         for _, call_exprs in call_res.items():
             for call_expr in call_exprs:
                 for call_child in call_expr.children:
+                    target_name = None
+
                     # Simple call
                     if call_child.type == 'identifier':
-                        callsites.append((
-                            call_child.text.decode(),
-                            call_child.byte_range,
-                            call_child.start_point.row + 1,
-                        ))
+                        target_name = call_child.text.decode()
 
                     # Package/method call
                     if call_child.type == 'selector_expression':
-                        call = call_child.text.decode()
+                        target_name = call_child.text.decode()
 
                         # Variable call
-                        split_call = call.split('.', 1)
-                        if split_call[
-                                0] not in self.parent_source.imports and len(
-                                    split_call) > 1:
-                            call = call.split('.')[-1]
+                        split_call = target_name.split('.')
+                        if len(split_call) > 1:
+                            var_name = self.var_map.get(split_call[-2])
+                            if var_name:
+                                target_name = f'{var_name}.{split_call[-1]}'
+
+                            elif split_call[0] not in self.parent_source.imports:
+                                target_name = target_name.split('.')[-1]
 
                         # Chain call
-                        split_call = call.rsplit(').', 1)
+                        split_call = target_name.rsplit(').', 1)
                         if len(split_call) > 1:
-                            call = split_call[1]
+                            target_name = split_call[1]
 
+                    if target_name:
                         callsites.append((
-                            call,
+                            target_name,
                             call_child.byte_range,
                             call_child.start_point.row + 1,
                         ))
 
         callsites = sorted(callsites, key=lambda x: x[1][1])
-        self.callsites = [(x[0], x[2]) for x in callsites]
-        return self.callsites
+        self.base_callsites = [(x[0], x[2]) for x in callsites]
+
+        # Process detailed callsites
+        for dst, src_line in self.base_callsites:
+            src_loc = self.parent_source.source_file + ':%d,1' % (src_line)
+            self.detailed_callsites.append({'Src': src_loc, 'Dst': dst})
 
 
 def capture_source_files_in_tree(directory_tree: str) -> list[str]:
