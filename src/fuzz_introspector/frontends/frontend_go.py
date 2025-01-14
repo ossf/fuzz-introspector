@@ -148,7 +148,9 @@ class SourceCodeFile():
 
     def has_libfuzzer_harness(self) -> bool:
         """Returns whether the source code holds a libfuzzer harness"""
-        if any(func.function_name.startswith('Fuzz') for func in self.functions):
+        if any(
+                func.function_name.startswith('Fuzz')
+                for func in self.functions):
             return True
 
         if any(meth.function_name.startswith('Fuzz') for meth in self.methods):
@@ -214,7 +216,8 @@ class Project():
 
             functions_methods = source_code.functions + source_code.methods
             for func_def in functions_methods:
-                func_def.extract_local_variable_type(self.full_functions_methods)
+                func_def.extract_local_variable_type(
+                    self.full_functions_methods)
                 func_def.extract_callsites()
                 func_dict: dict[str, Any] = {}
                 func_dict['functionName'] = func_def.function_name
@@ -345,7 +348,7 @@ class Project():
             return visited_functions
 
         visited_functions.add(function)
-        for cs, line_number in func.base_callsites():
+        for cs, line_number in func.base_callsites:
             visited_functions = self.get_reachable_functions(
                 source_code.source_file,
                 function=cs,
@@ -489,12 +492,15 @@ class FunctionMethod():
                     if not param.child_by_field_name('type'):
                         param_types.append('')
                     else:
-                        type_str = param.child_by_field_name('type').text.decode()
+                        type_str = param.child_by_field_name(
+                            'type').text.decode()
                         param_tmp = param
-                        while param_tmp.child_by_field_name('declarator') is not None:
+                        while param_tmp.child_by_field_name(
+                                'declarator') is not None:
                             if param_tmp.type == 'pointer_declarator':
                                 type_str += '*'
-                            param_tmp = param_tmp.child_by_field_name('declarator')
+                            param_tmp = param_tmp.child_by_field_name(
+                                'declarator')
                         param_types.append(type_str)
 
                     self.var_map[param_names[-1]] = param_types[-1]
@@ -572,9 +578,8 @@ class FunctionMethod():
 
         self.icount = _traverse_node_instr_count(self.root)
 
-    def extract_local_variable_type(
-            self,
-            all_funcs_meths: list['FunctionMethod']):
+    def extract_local_variable_type(self,
+                                    all_funcs_meths: list['FunctionMethod']):
         """Gets the local variable types of the function."""
         # TODO The handling of all kind of variable declaration approach is not done.
         # There are some requires extensive search to determine a type.
@@ -612,12 +617,12 @@ class FunctionMethod():
                         if composite_type:
                             decl_type = composite_type.text.decode()
 
-                   # TODO Handles the following type
-                   # unary_expression binary_expression	selector_expression
-                   # index_expression slice_expression call_expression
-                   # type_assertion_expression type_conversion_expression
-                   # type_instantiation_expression new make
-                   # parenthesized_expression
+                # TODO Handles the following type
+                # unary_expression binary_expression	selector_expression
+                # index_expression slice_expression call_expression
+                # type_assertion_expression type_conversion_expression
+                # type_instantiation_expression new make
+                # parenthesized_expression
 
                 if decl_name and decl_type:
                     self.var_map[decl_name] = decl_type
@@ -648,7 +653,8 @@ class FunctionMethod():
                             if var_name:
                                 target_name = f'{var_name}.{split_call[-1]}'
 
-                            elif split_call[0] not in self.parent_source.imports:
+                            elif split_call[
+                                    0] not in self.parent_source.imports:
                                 target_name = target_name.split('.')[-1]
 
                         # Chain call
