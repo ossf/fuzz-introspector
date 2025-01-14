@@ -548,7 +548,7 @@ class Project():
 
     def __init__(self, source_code_files: list[SourceCodeFile]):
         self.source_code_files = source_code_files
-        self.all_functions = []
+        self.all_functions: List[FunctionDefinition] = []
 
     def dump_module_logic(self,
                           report_name: str,
