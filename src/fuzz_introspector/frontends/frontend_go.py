@@ -227,6 +227,7 @@ class Project():
                 # relying on other variables
                 func_def.extract_local_variable_type(
                     self.functions_methods_map)
+                
                 func_def.extract_callsites(self.functions_methods_map)
                 func_dict: dict[str, Any] = {}
                 func_dict['functionName'] = func_def.function_name
