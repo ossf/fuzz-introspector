@@ -64,7 +64,22 @@ def test_tree_sitter_go_sample3():
 
     # Project check
     harness = project.get_source_codes_with_harnesses()
-    assert len(harness) == 0
+    assert len(harness) == 1
+
+    functions_reached = project.get_reachable_functions(harness[0].source_file, harness[0])
+
+    # Callsite check
+    assert 'strconv.Atoi' in functions_reached
+    assert 'NewDog' in functions_reached
+    assert 'Person.Greet' in functions_reached
+    assert 'Dog.Introduce' in functions_reached
+    assert 'Robot.Describe' in functions_reached
+    assert 'Person.Introduce' not in functions_reached
+    assert 'Person.Describe' not in functions_reached
+    assert 'Dog.Greet' not in functions_reached
+    assert 'Dog.Describe' not in functions_reached
+    assert 'Robot.Greet' not in functions_reached
+    assert 'Robot.Introduce' not in functions_reached
 
 
 def test_tree_sitter_go_sample4():
