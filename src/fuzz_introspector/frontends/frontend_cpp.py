@@ -161,6 +161,7 @@ class FunctionDefinition():
         self.base_callsites: list[tuple[str, int]] = []
         self.detailed_callsites: list[dict[str, str]] = []
         self.var_map: dict[str, str] = {}
+        self.depth = -1
 
         # Extract information from tree-sitter node
         self._extract_information()
@@ -547,6 +548,7 @@ class Project():
 
     def __init__(self, source_code_files: list[SourceCodeFile]):
         self.source_code_files = source_code_files
+        self.all_functions: List[FunctionDefinition] = []
 
     def dump_module_logic(self,
                           report_name: str,
@@ -556,11 +558,15 @@ class Project():
         logger.info('Dumping project-wide logic.')
         report: dict[str, Any] = {'report': 'name'}
         report['sources'] = []
+        report['Fuzzing method'] = 'LLVMFuzzerTestOneInput'
+
+        # Don't do this again if already done.
+        if self.all_functions:
+            return
 
         self.all_functions = []
         for source_code in self.source_code_files:
             # Log entry method if provided
-            report['Fuzzing method'] = 'LLVMFuzzerTestOneInput'
 
             # Retrieve project information
             func_names = [func.name for func in source_code.func_defs]
@@ -826,6 +832,9 @@ class Project():
         """Calculate function depth of the target function."""
 
         def _recursive_function_depth(function: FunctionDefinition) -> int:
+            if function.depth != -1:
+                return function.depth
+
             callsites = function.base_callsites
             if len(callsites) == 0:
                 return 0
@@ -839,6 +848,7 @@ class Project():
                 elif target:
                     depth = max(depth,
                                 _recursive_function_depth(target[1]) + 1)
+                    function.depth = depth
                 else:
                     visited.append(callsite[0])
 
