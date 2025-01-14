@@ -13,6 +13,7 @@
 # limitations under the License.
 """Unit testing script for the CPP frontend"""
 
+import os
 from fuzz_introspector.frontends import oss_fuzz  # noqa: E402
 
 
@@ -139,3 +140,27 @@ def test_tree_sitter_cpp_sample6():
 
     # Callsite check
     assert 'atoi' in functions_reached
+
+
+def test_tree_sitter_cpp_sample7():
+    project = oss_fuzz.analyse_folder(
+        'c++',
+        'src/test/data/source-code/cpp/test-project-7',
+        'LLVMFuzzerTestOneInput',
+        dump_output=False,
+    )
+
+    # Project check
+    assert len(project.get_source_codes_with_harnesses()) == 2
+    project.dump_module_logic('', dump_output=False)
+
+    calltrees = dict()
+    for harness in project.get_source_codes_with_harnesses():
+        calltree = project.extract_calltree(harness.source_file, harness,
+                                            'LLVMFuzzerTestOneInput')
+        calltrees[os.path.basename(harness.source_file)] = calltree
+
+    assert 'func2' in calltrees['sample2.cpp'] and 'func1' not in calltrees[
+        'sample2.cpp']
+    assert 'func1' in calltrees['sample1.cpp'] and 'func2' not in calltrees[
+        'sample1.cpp']
