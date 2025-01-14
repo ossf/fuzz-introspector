@@ -290,13 +290,11 @@ class Project():
         if not func:
             return line_to_print
 
-        callsites = func.base_callsites()
-
         if function in visited_functions:
             return line_to_print
 
         visited_functions.add(function)
-        for cs, line_number in callsites:
+        for cs, line_number in func.base_callsites():
             line_to_print += self.extract_calltree(
                 source_code.source_file,
                 function=cs,
@@ -304,6 +302,43 @@ class Project():
                 depth=depth + 1,
                 line_number=line_number)
         return line_to_print
+
+    def get_reachable_functions(
+            self,
+            source_file: str,
+            source_code: Optional[SourceCodeFile] = None,
+            function: Optional[str] = None,
+            visited_functions: Optional[set[str]] = None) -> set[str]:
+        """Get a list of reachable functions for a provided function name."""
+        if not visited_functions:
+            visited_functions = set()
+
+        if not function and source_code:
+            function = source_code.get_entry_function_name()
+
+        if not function:
+            return visited_functions
+
+        if not source_code and function:
+            source_code = self.find_source_with_func_def(function)
+
+        if not source_code:
+            visited_functions.add(function)
+            return visited_functions
+        print(function)
+        func = source_code.get_function_node(function)
+        if not func or function in visited_functions:
+            visited_functions.add(function)
+            return visited_functions
+
+        visited_functions.add(function)
+        for cs, line_number in func.base_callsites():
+            visited_functions = self.get_reachable_functions(
+                source_code.source_file,
+                function=cs,
+                visited_functions=visited_functions)
+
+        return visited_functions
 
     def find_source_with_func_def(
             self, target_function_name: str) -> Optional[SourceCodeFile]:

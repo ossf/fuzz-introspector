@@ -14,7 +14,7 @@
 #
 ################################################################################
 
-from typing import Any, Optional, Set
+from typing import Any, Optional, Set, List
 
 import os
 import pathlib
@@ -161,6 +161,7 @@ class FunctionDefinition():
         self.base_callsites: list[tuple[str, int]] = []
         self.detailed_callsites: list[dict[str, str]] = []
         self.var_map: dict[str, str] = {}
+        self.depth = -1
 
         # Extract information from tree-sitter node
         self._extract_information()
@@ -187,6 +188,7 @@ class FunctionDefinition():
         # Extract function name and return type
         name_node = self.root.child_by_field_name('declarator')
         self.sig = name_node.text.decode()
+        logger.debug('Extracting information for %s', self.sig)
         param_list_node = None
         for child in name_node.children:
             if 'identifier' in child.type:
@@ -219,9 +221,44 @@ class FunctionDefinition():
                 full_name = new_parent.child_by_field_name(
                     'name').text.decode() + '::' + full_name
             tmp_root = new_parent
-        logger.debug('Full function scope: %s', full_name)
-        full_name = full_name + self.root.child_by_field_name(
-            'declarator').child_by_field_name('declarator').text.decode()
+        logger.debug('Full function scope not from name: %s', full_name)
+
+        tmp_name = ''
+        tmp_node = self.root.child_by_field_name('declarator')
+        scope_to_add = ''
+        while True:
+            if tmp_node is None:
+                break
+            if tmp_node.child_by_field_name('scope') is not None:
+                scope_to_add = tmp_node.child_by_field_name(
+                    'scope').text.decode() + '::'
+
+            if tmp_node.type == 'identifier':
+                tmp_name = tmp_node.text.decode()
+                break
+            if tmp_node.child_by_field_name(
+                    'name') is not None and tmp_node.child_by_field_name(
+                        'name').type == 'identifier':
+                tmp_name = tmp_node.child_by_field_name('name').text.decode()
+            tmp_node = tmp_node.child_by_field_name('declarator')
+        if tmp_name:
+            logger.debug('Assigning name')
+            full_name = full_name + scope_to_add + tmp_name
+        else:
+            logger.debug('Assigning name as signature')
+            full_name = self.sig
+
+        # try:
+        #    full_name = full_name + self.root.child_by_field_name(
+        #    'declarator').child_by_field_name('declarator').child_by_field_name('declarator').text.decode()
+        # except:
+        #    try:
+        #        full_name = full_name + self.root.child_by_field_name(
+        #        'declarator').child_by_field_name('declarator').text.decode()
+        #    except:
+
+        # This can happen for e.g. operators
+        #    full_name = self.sig
         logger.debug('Full function name: %s', full_name)
         self.name = full_name
         logger.info('Done walking')
@@ -348,8 +385,11 @@ class FunctionDefinition():
             # Handles in scope invocation
             if '::' not in target_name and self.namespace_or_class:
                 full_target_name = f'{self.namespace_or_class}::{target_name}'
-                if full_target_name in project.all_functions:
-                    target_name = full_target_name
+                for tmp_func in project.all_functions:
+                    if tmp_func.name == full_target_name:
+                        # if full_target_name in project.all_functions:
+                        target_name = full_target_name
+                        break
 
             callsites.append(
                 (target_name, func.byte_range[1], func.start_point.row + 1))
@@ -416,6 +456,10 @@ class FunctionDefinition():
             var_type = ''
             var_type_obj = stmt.child_by_field_name('type')
 
+            if var_type_obj.type == 'primitive_type' or var_type_obj.type == 'sized_type_specifier':
+                logger.debug('Skipping.')
+                return []
+
             while True:
                 if var_type_obj is None:
                     return []
@@ -446,28 +490,31 @@ class FunctionDefinition():
                 # the name of the constructor.
                 cls = f'{var_type}::{var_type.rsplit("::")[-1]}'
                 logger.debug('Trying to find class %s', cls)
-                added = False
-                if cls in project.all_functions:
+                # added = False
+                # if cls in project.all_functions:
+                if project.get_function_from_name(cls):
                     logger.debug('Adding callsite')
-                    added = True
+                    # added = True
                     callsites.append(
                         (cls, stmt.byte_range[1], stmt.start_point.row + 1))
-                if not added:
-                    logger.debug('Trying a hacky match.')
-                    # Hack to make sure we add in case our analysis of contructors was
-                    # wrong. TODO(David) fix.
-                    cls = var_type
-                    if cls in project.all_functions:
-                        logger.debug('Adding callsite')
-                        added = True
-                        callsites.append((cls, stmt.byte_range[1],
-                                          stmt.start_point.row + 1))
-
-            while var_name.type not in [
+                # if not added:
+                #    logger.debug('Trying a hacky match.')
+                #    # Hack to make sure we add in case our analysis of contructors was
+                #    # wrong. TODO(David) fix.
+                #    cls = var_type
+                #    if cls in project.all_functions:
+                #        logger.debug('Adding callsite')
+                #        added = True
+                #        callsites.append((cls, stmt.byte_range[1],
+                #                          stmt.start_point.row + 1))
+            while var_name is not None and var_name.type not in [
                     'identifier', 'qualified_identifier', 'pointer_declarator',
                     'array_declarator', 'reference_declarator'
             ]:
                 var_name = var_name.child_by_field_name('declarator')
+
+            if var_name is None:
+                return []
 
             result = self._extract_pointer_array_from_type(var_name)
             pcount, acount, var_name = result
@@ -501,6 +548,7 @@ class Project():
 
     def __init__(self, source_code_files: list[SourceCodeFile]):
         self.source_code_files = source_code_files
+        self.all_functions: List[FunctionDefinition] = []
 
     def dump_module_logic(self,
                           report_name: str,
@@ -510,11 +558,11 @@ class Project():
         logger.info('Dumping project-wide logic.')
         report: dict[str, Any] = {'report': 'name'}
         report['sources'] = []
+        report['Fuzzing method'] = 'LLVMFuzzerTestOneInput'
 
-        self.all_functions = {}
+        self.all_functions = []
         for source_code in self.source_code_files:
             # Log entry method if provided
-            report['Fuzzing method'] = 'LLVMFuzzerTestOneInput'
 
             # Retrieve project information
             func_names = [func.name for func in source_code.func_defs]
@@ -524,19 +572,16 @@ class Project():
                 'function_names': func_names,
             })
 
-            # Obtain all functions of the project
-            source_code_functions = {
-                func.name: func
-                for func in source_code.func_defs
-            }
-
-            self.all_functions.update(source_code_functions)
+            for func in source_code.func_defs:
+                self.all_functions.append(func)
 
         # Process all project functions
         func_list = []
-        for func in self.all_functions.values():
+        for func in self.all_functions:
+            logger.debug('Iterating %s', func.name)
+            logger.debug('Extracing callsites')
             func.extract_callsites(self)
-
+            logger.debug('Done extracting callsites')
             func_dict: dict[str, Any] = {}
             func_dict['functionName'] = func.name
             func_dict['functionSourceFile'] = func.parent_source.source_file
@@ -556,7 +601,9 @@ class Project():
             func_dict['returnType'] = func.return_type
             func_dict['BranchProfiles'] = []
             func_dict['Callsites'] = func.detailed_callsites
+            logger.debug('Calculating function uses')
             func_dict['functionUses'] = self.calculate_function_uses(func.name)
+            logger.debug('Getting function depth')
             func_dict['functionDepth'] = self.calculate_function_depth(func)
             func_dict['constantsTouched'] = []
             func_dict['BBCount'] = 0
@@ -567,6 +614,7 @@ class Project():
                 reached.add(cs_dst)
             func_dict['functionsReached'] = list(reached)
 
+            logger.debug('Done')
             func_list.append(func_dict)
 
         if func_list:
@@ -584,6 +632,13 @@ class Project():
             if source_code.has_libfuzzer_harness():
                 harnesses.append(source_code)
         return harnesses
+
+    def get_function_from_name(self, function_name):
+        for func in self.all_functions:
+            if func.name == function_name:
+                return func
+
+        return None
 
     def extract_calltree(self,
                          source_file: str,
@@ -608,10 +663,17 @@ class Project():
 
         func_node = None
         if function:
-            func_node = get_function_node(function, self.all_functions)
+            if source_code:
+                logger.debug('Using source code var to extract node')
+                func_node = source_code.get_function_node(function)
+            else:
+                logger.debug('Extracting node using lookup table.')
+                func_node = get_function_node(function, self.all_functions)
             if func_node:
+                logger.debug('Found function node')
                 func_name = func_node.name
             else:
+                logger.debug('Found no function node')
                 func_name = function
         else:
             return ''
@@ -631,13 +693,14 @@ class Project():
 
         visited_functions.add(function)
         for cs, line in func_node.base_callsites:
+            logger.debug('Callsites: %s', cs)
             line_to_print += self.extract_calltree(
                 source_file=source_code.source_file,
                 function=cs,
                 visited_functions=visited_functions,
                 depth=depth + 1,
                 line_number=line)
-
+        logger.debug('Done')
         return line_to_print
 
     def get_reachable_functions(self,
@@ -693,14 +756,14 @@ class Project():
     def find_function_from_approximate_name(
             self, function_name: str) -> Optional['FunctionDefinition']:
         function_names = []
-        for func in self.all_functions.values():
+        for func in self.all_functions:
             if func.name == function_name:
                 function_names.append(func)
         if len(function_names) == 1:
             return function_names[0]
 
         function_names = []
-        for func in self.all_functions.values():
+        for func in self.all_functions:
             if func.name.endswith(function_name):
                 function_names.append(func)
         if len(function_names) == 1:
@@ -765,6 +828,9 @@ class Project():
         """Calculate function depth of the target function."""
 
         def _recursive_function_depth(function: FunctionDefinition) -> int:
+            if function.depth != -1:
+                return function.depth
+
             callsites = function.base_callsites
             if len(callsites) == 0:
                 return 0
@@ -778,6 +844,7 @@ class Project():
                 elif target:
                     depth = max(depth,
                                 _recursive_function_depth(target[1]) + 1)
+                    function.depth = depth
                 else:
                     visited.append(callsite[0])
 
@@ -793,7 +860,8 @@ def capture_source_files_in_tree(directory_tree):
     """Captures source code files in a given directory."""
     language_files = []
     language_extensions = [
-        '.cpp', '.cc', '.c++', '.cxx', '.h', '.hpp', '.hh', '.hxx', '.inl'
+        '.c', '.cpp', '.cc', '.c++', '.cxx', '.h', '.hpp', '.hh', '.hxx',
+        '.inl'
     ]
     exclude_directories = [
         'build', 'target', 'tests', 'node_modules', 'aflplusplus', 'honggfuzz',
@@ -839,13 +907,17 @@ def analyse_source_code(source_content: str) -> SourceCodeFile:
 
 def get_function_node(
         target_name: str,
-        function_map: dict[str, FunctionDefinition],
+        function_list: List[FunctionDefinition],
         one_layer_only: bool = False) -> Optional[FunctionDefinition]:
     """Helper to retrieve the RustFunction object of a function."""
 
+    for function in function_list:
+        if target_name == function.name:
+            return function
+
     # Exact match
-    if target_name in function_map:
-        return function_map[target_name]
+    # if target_name in function_map:
+    #     return function_map[target_name]
 
     # Match any key that ends with target_name, then
     # split the target_name by :: and check one by one
@@ -854,8 +926,9 @@ def get_function_node(
     else:
         name_split = target_name.split('::')
     for count in range(len(name_split)):
-        for func_name, func in function_map.items():
-            if func_name.endswith('::'.join(name_split[count:])):
+
+        for func in function_list:
+            if func.name.endswith('::'.join(name_split[count:])):
                 return func
 
     return None

@@ -29,7 +29,7 @@ index 64d11095b..ec8ad457c 100644
  # /ccache/bin will contain the compiler wrappers, and /ccache/cache will
  # contain the actual cache, which can be saved.
 diff --git a/infra/base-images/base-builder/compile b/infra/base-images/base-builder/compile
-index 1c10d9e23..df11635d3 100755
+index 1c10d9e23..25caa5897 100755
 --- a/infra/base-images/base-builder/compile
 +++ b/infra/base-images/base-builder/compile
 @@ -209,9 +209,9 @@ if [ "$SANITIZER" = "introspector" ] || [ "$RUST_SANITIZER" = "introspector" ];
@@ -156,7 +156,7 @@ index 1c10d9e23..df11635d3 100755
    else
      # C/C++
 +    mkdir -p $SRC/inspector
-+    fuzz-introspector full --target_dir=$SRC --language=c --out-dir=$SRC/inspector ${REPORT_ARGS}
++    fuzz-introspector full --target_dir=$SRC --language=${FUZZING_LANGUAGE} --out-dir=$SRC/inspector ${REPORT_ARGS}
 +    #fuzz-introspector full --target_dir $SRC --language=${FUZZING_LANGUAGE}
  
      # Correlate fuzzer binaries to fuzz-introspector's raw data

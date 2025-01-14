@@ -480,6 +480,9 @@ class RustFunction():
             elif object.type == 'self':
                 object_type = self.name.rsplit('::', 1)[0]
 
+            elif object.type == 'string_literal':
+                object_type = '&str'
+
             if object_type:
                 if object_type == 'void':
                     full_name = name
@@ -511,7 +514,6 @@ class RustFunction():
         def _process_callsites(stmt: Node) -> list[tuple[str, int, int]]:
             """Process and store the callsites of the function."""
             callsites = []
-
             if stmt.type == 'call_expression':
                 callsites.extend(_process_invoke(stmt))
 
@@ -522,7 +524,12 @@ class RustFunction():
                     name = param_name.text.decode()
                     type = None
                     if param_type.type == 'identifier':
-                        type = self.var_map.get(param_type.text.decode())
+                        target = param_type.text.decode()
+                        type = self.var_map.get(target)
+                        if not type:
+                            type = self.parent_source.uses.get(target)
+                        if not type:
+                            type = target
                     elif param_type.type == 'type_cast_expression':
                         # In general, type casted object are not callable
                         # This exists for type safety in case variable tracing for
@@ -531,6 +538,12 @@ class RustFunction():
                             'type').text.decode()
                     elif param_type.type == 'call_expression':
                         type = _retrieve_return_type(param_type)
+                    elif param_type.type == 'reference_expression':
+                        for ref_type in param_type.children:
+                            if ref_type.type == 'identifier':
+                                type = self.var_map.get(ref_type.text.decode())
+                            elif ref_type.type == 'call_expression':
+                                type = _retrieve_return_type(ref_type)
 
                     if type:
                         self.var_map[name] = type
