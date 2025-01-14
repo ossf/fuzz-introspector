@@ -303,7 +303,8 @@ class JavaMethod():
         # Refine name
         class_name = self.parent_source.get_full_qualified_name(
             self.class_interface.name)
-        self.name = f'[{class_name}].{self.name}({",".join(self.arg_types)})'
+        if '[' not in self.name and '].' not in self.name:
+            self.name = f'[{class_name}].{self.name}({",".join(self.arg_types)})'
 
         # Refine variable map
         for key in self.var_map:
