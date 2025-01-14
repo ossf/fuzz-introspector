@@ -560,10 +560,6 @@ class Project():
         report['sources'] = []
         report['Fuzzing method'] = 'LLVMFuzzerTestOneInput'
 
-        # Don't do this again if already done.
-        if self.all_functions:
-            return
-
         self.all_functions = []
         for source_code in self.source_code_files:
             # Log entry method if provided
