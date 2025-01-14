@@ -179,4 +179,4 @@ def test_tree_sitter_rust_sample8():
     assert '&str::to_uppercase' in functions_reached
     assert 'CombinedStruct::new' in functions_reached
     assert 'CombinedStruct::complex_process' in functions_reached
-    
+
