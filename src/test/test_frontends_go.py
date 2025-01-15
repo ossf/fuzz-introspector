@@ -178,3 +178,36 @@ def test_tree_sitter_go_sample8():
     # Project check
     harness = project.get_source_codes_with_harnesses()
     assert len(harness) == 0
+
+
+def test_tree_sitter_go_sample9():
+    project = oss_fuzz.analyse_folder(
+        'go',
+        'src/test/data/source-code/go/test-project-9',
+        dump_output=False,
+    )
+
+    # Project check
+    harness = project.get_source_codes_with_harnesses()
+    assert len(harness) == 2
+
+    result_one = project.get_reachable_functions(harness[0].source_file, harness[0])
+    result_two = project.get_reachable_functions(harness[1].source_file, harness[1])
+
+    # Callsite check
+    if 'fuzzer_one' in harness[0].source_file:
+        functions_reached_one = result_one
+        functions_reached_two = result_two
+    else:
+        functions_reached_one = result_two
+        functions_reached_two = result_one
+
+    assert 'SharedFunctionA' in functions_reached_one
+    assert 'unreachableMethodA' not in functions_reached_one
+    assert 'unreachableMethodB' not in functions_reached_one
+    assert 'SharedFunctionB' not in functions_reached_one
+
+    assert 'SharedFunctionB' in functions_reached_two
+    assert 'unreachableMethodA' not in functions_reached_two
+    assert 'unreachableMethodB' not in functions_reached_two
+    assert 'SharedFunctionA' not in functions_reached_two
