@@ -179,7 +179,8 @@ class AnalysisInterface(abc.ABC):
                       proj_profile: project_profile.MergedProjectProfile,
                       profiles: List[fuzzer_profile.FuzzerProfile],
                       basefolder: str, coverage_url: str,
-                      conclusions: List[html_helpers.HTMLConclusion]) -> str:
+                      conclusions: List[html_helpers.HTMLConclusion],
+                      out_dir: str) -> str:
         """Entrypoint for analysis instance. This function can have side effects
         on many of the arguments passed to it.
 

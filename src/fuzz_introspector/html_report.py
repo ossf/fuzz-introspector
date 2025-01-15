@@ -267,7 +267,8 @@ def create_fuzzer_profile_runtime_coverage_section(proj_profile, profile,
                                                    profile_idx,
                                                    fuzzer_table_data,
                                                    extract_conclusion,
-                                                   conclusions, tables) -> str:
+                                                   conclusions, tables,
+                                                   out_dir) -> str:
     html_string = ""
     # Table with all functions hit by this fuzzer
     html_string += html_helpers.html_add_header_with_link(
@@ -328,7 +329,7 @@ def create_fuzzer_profile_runtime_coverage_section(proj_profile, profile,
             "reachable-funcs": reachable_funcs,
             "reached-funcs": reached_funcs,
             "cov-reach-proportion": cov_reach_proportion,
-        })
+        }, out_dir)
     if extract_conclusion:
         if cov_reach_proportion < 30.0:
             conclusions.append(
@@ -422,12 +423,12 @@ def create_fuzzer_detailed_section(
         profile, profile_idx, tables, calltree_file_name, table_of_contents,
         calltree_analysis)
 
-    profile.write_stats_to_summary_file()
+    profile.write_stats_to_summary_file(out_dir)
 
     # Runtime code coverage section
     html_string += create_fuzzer_profile_runtime_coverage_section(
         proj_profile, profile, table_of_contents, profile_idx,
-        fuzzer_table_data, extract_conclusion, conclusions, tables)
+        fuzzer_table_data, extract_conclusion, conclusions, tables, out_dir)
 
     # Section about files hit by fuzzers.
     html_string += create_fuzzer_profile_section_files_hit(
@@ -669,7 +670,7 @@ def create_section_optional_analyses(
             html_string = analysis_instance.analysis_func(
                 table_of_contents, tables, introspection_proj.proj_profile,
                 introspection_proj.profiles, basefolder, coverage_url,
-                conclusions)
+                conclusions, out_dir)
 
             # Only add the HTML content if it's an analysis that we want
             # the non-json output from.
@@ -779,7 +780,8 @@ def create_html_report(introspection_proj: analysis.IntrospectionProject,
     html_report_core += create_section_optional_analyses(
         table_of_contents, analyses_to_run, output_json, tables,
         introspection_proj, introspection_proj.proj_profile.basefolder,
-        introspection_proj.proj_profile.coverage_url, conclusions, dump_files)
+        introspection_proj.proj_profile.coverage_url, conclusions, dump_files,
+        out_dir)
 
     # Create HTML showing the conclusions at the top of the report.
     html_report_top += html_helpers.create_conclusions_box(conclusions)

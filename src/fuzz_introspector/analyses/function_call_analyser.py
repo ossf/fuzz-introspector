@@ -146,7 +146,8 @@ class ThirdPartyAPICoverageAnalyser(analysis.AnalysisInterface):
                       proj_profile: project_profile.MergedProjectProfile,
                       profiles: List[fuzzer_profile.FuzzerProfile],
                       basefolder: str, coverage_url: str,
-                      conclusions: List[html_helpers.HTMLConclusion]) -> str:
+                      conclusions: List[html_helpers.HTMLConclusion],
+                      out_dir) -> str:
         """
         Performs an analysis for all third party API call in the target project.
         Finds the set of third party API call in the project code and provide

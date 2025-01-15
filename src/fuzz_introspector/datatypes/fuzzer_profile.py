@@ -451,7 +451,7 @@ class FuzzerProfile:
         except Exception:
             return None, None, None
 
-    def write_stats_to_summary_file(self) -> None:
+    def write_stats_to_summary_file(self, out_dir) -> None:
         file_target_count = len(
             self.file_targets) if self.file_targets is not None else 0
         json_report.add_fuzzer_key_value_to_report(
@@ -460,7 +460,7 @@ class FuzzerProfile:
                 "total-cyclomatic-complexity":
                 self.total_cyclomatic_complexity,
                 "file-target-count": file_target_count,
-            })
+            }, out_dir)
 
     def _set_all_reached_functions(self) -> None:
         """Sets self.functions_reached_by_fuzzer to all functions reached by

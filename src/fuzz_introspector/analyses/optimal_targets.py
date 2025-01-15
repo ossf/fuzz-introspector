@@ -133,6 +133,7 @@ class OptimalTargets(analysis.AnalysisInterface):
                       basefolder: str,
                       coverage_url: str,
                       conclusions: List[html_helpers.HTMLConclusion],
+                      out_dir,
                       should_synthetise: bool = False) -> str:
         """
         Performs an analysis based on optimal target selection.

@@ -62,7 +62,8 @@ class FuzzCalltreeAnalysis(analysis.AnalysisInterface):
                       proj_profile: project_profile.MergedProjectProfile,
                       profiles: List[fuzzer_profile.FuzzerProfile],
                       basefolder: str, coverage_url: str,
-                      conclusions: List[html_helpers.HTMLConclusion]) -> str:
+                      conclusions: List[html_helpers.HTMLConclusion],
+                      out_dir) -> str:
         """
         Creates the HTML of the calltree. Returns the HTML as a string.
         """
