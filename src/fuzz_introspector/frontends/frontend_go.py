@@ -609,11 +609,19 @@ class FunctionMethod():
         # Package/method call
         if call_child.type == 'selector_expression':
             target_name = call_child.text.decode()
-
             # Variable call
             split_call = target_name.split('.')
             if len(split_call) > 1:
-                var_name = self.var_map.get(split_call[-2])
+                # For indexing selector
+                if '[' in split_call[-2] and ']' in split_call[-2]:
+                    var_name = self.var_map.get(split_call[-2].split('[')[0])
+                    if var_name:
+                        if '[' in var_name and ']' in var_name:
+                            var_name = var_name.split(']')[-1]
+                        elif var_name == 'string':
+                            var_name = 'uint8'
+                else:
+                    var_name = self.var_map.get(split_call[-2])
                 if var_name:
                     target_name = f'{var_name}.{split_call[-1]}'
 
@@ -692,12 +700,6 @@ class FunctionMethod():
                                                           'FunctionMethod']):
         """Gets the local variable types of the function."""
 
-        query = self.tree_sitter_lang.query('( var_declaration ) @vd')
-        for _, exprs in query.captures(self.root).items():
-            for decl_node in exprs:
-                # TODO Handle long variable declaration
-                pass
-
         query = self.tree_sitter_lang.query('( short_var_declaration ) @vd')
         for _, exprs in query.captures(self.root).items():
             for decl_node in exprs:
@@ -712,6 +714,31 @@ class FunctionMethod():
 
                 if decl_name and decl_type:
                     self.var_map[decl_name] = decl_type
+
+        query = self.tree_sitter_lang.query('( for_statement ) @fd')
+        for _, exprs in query.captures(self.root).items():
+            for for_node in exprs:
+                for child in for_node.children:
+                    if child.type == 'range_clause':
+                        left = child.child_by_field_name('left')
+                        right = child.child_by_field_name('right')
+
+                        for left_child in left.children:
+                            if left_child.type == 'identifier':
+                                decl_name = left_child.text.decode()
+
+                        if right.type == 'identifier':
+                            decl_type = self.var_map[right.text.decode()]
+                            if '[' in decl_type and ']' in decl_type:
+                                decl_type = decl_type.split(']', 1)[-1]
+                            elif decl_type == 'string':
+                                decl_type = 'uint8'
+                        else:
+                            decl_type = self._detect_variable_type(
+                                right, all_funcs_meths)
+
+                        if decl_name and decl_type:
+                            self.var_map[decl_name] = decl_type
 
     def extract_callsites(self, all_funcs_meths: dict[str, 'FunctionMethod']):
         """Gets the callsites of the function."""
@@ -735,9 +762,8 @@ class FunctionMethod():
                         call_expr.start_point.row + 1,
                     ))
 
-        callsites = sorted(callsites, key=lambda x: x[1][1])
+        callsites = sorted(callsites, key=lambda x: x[1][0])
         self.base_callsites = [(x[0], x[2]) for x in callsites]
-
         # Process detailed callsites
         for dst, src_line in self.base_callsites:
             src_loc = self.parent_source.source_file + ':%d,1' % (src_line)
