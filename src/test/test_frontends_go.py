@@ -109,6 +109,10 @@ def test_tree_sitter_go_sample4():
 
 
 def test_tree_sitter_go_sample5():
+    """
+    Similar to test_tree_sitter_rust_sample2, it is not able to
+    deteremine what instance the item is used until runtime.
+    """
     project = oss_fuzz.analyse_folder(
         'go',
         'src/test/data/source-code/go/test-project-5',
@@ -117,7 +121,14 @@ def test_tree_sitter_go_sample5():
 
     # Project check
     harness = project.get_source_codes_with_harnesses()
-    assert len(harness) == 0
+    assert len(harness) == 1
+
+    functions_reached = project.get_reachable_functions(harness[0].source_file, harness[0])
+
+    # Callsite check
+    assert 'strconv.ParseFloat' in functions_reached
+    assert 'Shape.Area' in functions_reached
+    assert 'Shape.Perimeter' in functions_reached
 
 
 def test_tree_sitter_go_sample6():
