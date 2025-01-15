@@ -154,13 +154,18 @@ def test_tree_sitter_go_sample6():
 def test_tree_sitter_go_sample7():
     project = oss_fuzz.analyse_folder(
         'go',
-        'src/test/data/source-code/go/test-project-8',
+        'src/test/data/source-code/go/test-project-7',
         dump_output=False,
     )
 
     # Project check
     harness = project.get_source_codes_with_harnesses()
-    assert len(harness) == 0
+    assert len(harness) == 1
+
+    functions_reached = project.get_reachable_functions(harness[0].source_file, harness[0])
+
+    # Callsite check
+    assert 'package.SayHello' in functions_reached
 
 
 def test_tree_sitter_go_sample8():
