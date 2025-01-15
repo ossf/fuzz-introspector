@@ -130,6 +130,7 @@ def test_tree_sitter_go_sample5():
     assert 'Shape.Area' in functions_reached
     assert 'Shape.Perimeter' in functions_reached
 
+
 def test_tree_sitter_go_sample6():
     project = oss_fuzz.analyse_folder(
         'go',
