@@ -778,7 +778,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
         html_string += "</div>"  # report-box
 
         json_report.add_analysis_json_str_as_dict_to_report(
-            self.get_name(), self.get_json_string_result())
+            self.get_name(), self.get_json_string_result(), out_dir)
 
         logger.info(f" - Finish running analysis {self.get_name()}")
 
