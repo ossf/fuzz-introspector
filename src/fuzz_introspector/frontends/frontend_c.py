@@ -74,7 +74,6 @@ class Project():
             })
 
             for func_def in source_code.func_defs:
-
                 if harness_source:
                     if func_def.name(
                     ) == 'LLVMFuzzerTestOneInput' and source_code.source_file != harness_source:
@@ -82,10 +81,9 @@ class Project():
                 func_dict = {}
                 func_dict['functionName'] = func_def.name()
                 func_dict['functionSourceFile'] = source_code.source_file
+                func_dict['functionLinenumber'] = func_def.root.start_point.row
                 func_dict[
-                    'functionLinenumber'] = source_code.root.start_point.row
-                func_dict[
-                    'functionLinenumberEnd'] = source_code.root.end_point.row
+                    'functionLinenumberEnd'] = func_def.root.end_point.row
                 func_dict['linkageType'] = ''
                 func_dict['func_position'] = {
                     'start': source_code.root.start_point.row,
@@ -104,7 +102,7 @@ class Project():
                 func_dict['Callsites'] = func_def.detailed_callsites()
                 func_dict['functionDepth'] = 0
                 func_dict['constantsTouched'] = []
-                func_dict['BBCount'] = 0
+                func_dict['BBCount'] = func_def.get_basic_block_count()
 
                 func_dict['signature'] = func_def.function_signature()
                 func_callsites = func_def.callsites()
@@ -253,6 +251,22 @@ class FunctionDefinition():
         self.root = root
         self.tree_sitter_lang = tree_sitter_lang
         self.parent_source = source_code
+
+    def get_basic_block_count(self) -> int:
+        """Returns the approximate number of basic blocks in a function"""
+        total_count = 1
+
+        if_query = self.tree_sitter_lang.query('( if_statement ) @fi')
+        if_res = if_query.captures(self.root)
+        for _, if_exprs in if_res.items():
+            total_count += len(if_exprs)
+
+        case_query = self.tree_sitter_lang.query('( case_statement ) @ci')
+        case_res = case_query.captures(self.root)
+        for _, case_exprs in case_res.items():
+            total_count += len(case_exprs)
+
+        return total_count
 
     def name(self):
         """Gets name of a function"""
