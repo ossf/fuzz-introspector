@@ -53,7 +53,8 @@ class EngineInput(analysis.AnalysisInterface):
                       project_profile: project_profile.MergedProjectProfile,
                       profiles: List[fuzzer_profile.FuzzerProfile],
                       basefolder: str, coverage_url: str,
-                      conclusions: List[html_helpers.HTMLConclusion]) -> str:
+                      conclusions: List[html_helpers.HTMLConclusion],
+                      out_dir) -> str:
         logger.info(f" - Running analysis {self.get_name()}")
 
         if not self.display_html:
@@ -80,7 +81,8 @@ class EngineInput(analysis.AnalysisInterface):
 
             # Create dictionary section
             html_string += self.get_dictionary_section(profiles[profile_idx],
-                                                       table_of_contents)
+                                                       table_of_contents,
+                                                       out_dir)
 
             html_string += "<br>"
 
@@ -98,7 +100,8 @@ class EngineInput(analysis.AnalysisInterface):
 
         return html_string
 
-    def get_dictionary(self, profile: fuzzer_profile.FuzzerProfile) -> str:
+    def get_dictionary(self, profile: fuzzer_profile.FuzzerProfile,
+                       out_dir) -> str:
         """Extracts a fuzzer dictionary"""
         kn = 0
         dictionary_content = ""
@@ -118,12 +121,13 @@ class EngineInput(analysis.AnalysisInterface):
                 kn += 1
         self.set_json_string_result(json.dumps(dictionary))
         json_report.add_analysis_json_str_as_dict_to_report(
-            self.get_name(), self.get_json_string_result())
+            self.get_name(), self.get_json_string_result(), out_dir)
         return dictionary_content
 
     def get_dictionary_section(
             self, profile: fuzzer_profile.FuzzerProfile,
-            table_of_contents: html_helpers.HtmlTableOfContents) -> str:
+            table_of_contents: html_helpers.HtmlTableOfContents,
+            out_dir) -> str:
         """
         Returns a HTML string with dictionary content, and adds the section
         link to the table_of_contents.
@@ -133,7 +137,7 @@ class EngineInput(analysis.AnalysisInterface):
             "Dictionary", html_helpers.HTML_HEADING.H3, table_of_contents)
         html_string += "<p>Use this with the libFuzzer -dict=DICT.file flag</p>"
         html_string += "<pre><code class='language-clike'>"
-        html_string += self.get_dictionary(profile)
+        html_string += self.get_dictionary(profile, out_dir)
         html_string += "</code></pre>"
         return html_string
 

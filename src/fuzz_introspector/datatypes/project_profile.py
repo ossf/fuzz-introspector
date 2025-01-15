@@ -392,7 +392,7 @@ class MergedProjectProfile:
                         result_name_list.append(name_list)
         return (result_list, result_name_list)
 
-    def write_stats_to_summary_file(self) -> None:
+    def write_stats_to_summary_file(self, out_dir) -> None:
         (total_complexity, complexity_reached, complexity_unreached,
          reached_complexity_percentage,
          unreached_complexity_percentage) = self.get_complexity_summaries()
@@ -424,9 +424,9 @@ class MergedProjectProfile:
                 'unreached-function-percentage': unreached_func_percentage,
                 'code-coverage-function-count': len(covered_funcs),
                 'code-coverage-function-percentage': cov_percentage
-            })
+            }, out_dir)
         json_report.add_project_key_value_to_report(
-            'overview', {'language': self.target_lang})
+            'overview', {'language': self.target_lang}, out_dir)
 
     def _set_basefolder(self) -> None:
         """Identifies a common path-prefix amongst source files in. This is

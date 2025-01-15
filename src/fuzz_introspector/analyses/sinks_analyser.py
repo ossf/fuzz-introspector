@@ -625,7 +625,8 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
                       proj_profile: project_profile.MergedProjectProfile,
                       profiles: List[fuzzer_profile.FuzzerProfile],
                       basefolder: str, coverage_url: str,
-                      conclusions: List[html_helpers.HTMLConclusion]) -> str:
+                      conclusions: List[html_helpers.HTMLConclusion],
+                      out_dir) -> str:
         """
         Performs an analysis based on the sink function discovery and analysis.
         Show all possible sensitive sink functions/methods for each supported
@@ -777,7 +778,7 @@ class SinkCoverageAnalyser(analysis.AnalysisInterface):
         html_string += "</div>"  # report-box
 
         json_report.add_analysis_json_str_as_dict_to_report(
-            self.get_name(), self.get_json_string_result())
+            self.get_name(), self.get_json_string_result(), out_dir)
 
         logger.info(f" - Finish running analysis {self.get_name()}")
 

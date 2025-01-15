@@ -54,7 +54,8 @@ class FuzzAnnotatedCFG(analysis.AnalysisInterface):
                       proj_profile: project_profile.MergedProjectProfile,
                       profiles: List[fuzzer_profile.FuzzerProfile],
                       basefolder: str, coverage_url: str,
-                      conclusions: List[html_helpers.HTMLConclusion]) -> str:
+                      conclusions: List[html_helpers.HTMLConclusion],
+                      out_dir: str) -> str:
         """
         Creates the HTML of the calltree. Returns the HTML as a string.
         """
@@ -142,7 +143,7 @@ class FuzzAnnotatedCFG(analysis.AnalysisInterface):
 
         # Write the results to the json report
         json_report.add_analysis_json_str_as_dict_to_report(
-            self.get_name(), self.get_json_string_result())
+            self.get_name(), self.get_json_string_result(), out_dir)
         return ""
 
     def get_profile_sourcefile(self, profile, func_name):

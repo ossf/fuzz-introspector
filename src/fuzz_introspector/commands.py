@@ -49,22 +49,29 @@ def end_to_end(args) -> int:
     if not args.language:
         args.language = utils.detect_language(args.target_dir)
 
+    if args.out_dir:
+        out_dir = args.out_dir
+    else:
+        out_dir = os.getcwd()
+
     oss_fuzz.analyse_folder(language=args.language,
                             directory=args.target_dir,
                             entrypoint='LLVMFuzzerTestOneInput',
-                            out=args.out_dir)
+                            out=out_dir)
 
     if 'c' in args.language:
         language = 'c-cpp'
     else:
         language = args.language
-    return run_analysis_on_dir(target_folder=os.getcwd(),
+
+    return run_analysis_on_dir(target_folder=out_dir,
                                coverage_url=args.coverage_url,
                                analyses_to_run=[],
                                correlation_file='',
                                enable_all_analyses=False,
                                report_name=args.name,
-                               language=language)
+                               language=language,
+                               out_dir=out_dir)
 
 
 def run_analysis_on_dir(target_folder: str,
@@ -76,7 +83,8 @@ def run_analysis_on_dir(target_folder: str,
                         language: str,
                         output_json: Optional[List[str]] = None,
                         parallelise: bool = True,
-                        dump_files: bool = True) -> int:
+                        dump_files: bool = True,
+                        out_dir: str = '') -> int:
     """Runs Fuzz Introspector analysis from based on the results
     from a frontend run. The primary task is to aggregate the data
     and generate a HTML report."""
@@ -90,14 +98,18 @@ def run_analysis_on_dir(target_folder: str,
 
     introspection_proj = analysis.IntrospectionProject(language, target_folder,
                                                        coverage_url)
-    introspection_proj.load_data_files(parallelise, correlation_file)
+    introspection_proj.load_data_files(parallelise, correlation_file, out_dir)
 
     logger.info("Analyses to run: %s", str(analyses_to_run))
     logger.info("[+] Creating HTML report")
     if output_json is None:
         output_json = []
-    html_report.create_html_report(introspection_proj, analyses_to_run,
-                                   output_json, report_name, dump_files)
+    html_report.create_html_report(introspection_proj,
+                                   analyses_to_run,
+                                   output_json,
+                                   report_name,
+                                   dump_files,
+                                   out_dir=out_dir)
 
     return constants.APP_EXIT_SUCCESS
 

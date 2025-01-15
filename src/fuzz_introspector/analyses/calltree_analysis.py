@@ -62,7 +62,8 @@ class FuzzCalltreeAnalysis(analysis.AnalysisInterface):
                       proj_profile: project_profile.MergedProjectProfile,
                       profiles: List[fuzzer_profile.FuzzerProfile],
                       basefolder: str, coverage_url: str,
-                      conclusions: List[html_helpers.HTMLConclusion]) -> str:
+                      conclusions: List[html_helpers.HTMLConclusion],
+                      out_dir) -> str:
         """
         Creates the HTML of the calltree. Returns the HTML as a string.
         """
@@ -88,7 +89,8 @@ class FuzzCalltreeAnalysis(analysis.AnalysisInterface):
         </span>"""
         return span_row
 
-    def create_calltree(self, profile: fuzzer_profile.FuzzerProfile) -> str:
+    def create_calltree(self, profile: fuzzer_profile.FuzzerProfile,
+                        out_dir) -> str:
         logger.info("In calltree")
         # Generate HTML for the calltree
         calltree_html_string = "<h1>Fuzzer calltree</h1>"
@@ -190,10 +192,12 @@ class FuzzCalltreeAnalysis(analysis.AnalysisInterface):
 
         # Write the HTML to a file called calltree_view_XX.html where XX is a counter.
         calltree_file_idx = 0
-        calltree_html_file = f"calltree_view_{calltree_file_idx}.html"
+        calltree_html_file = os.path.join(
+            out_dir, f"calltree_view_{calltree_file_idx}.html")
         while os.path.isfile(calltree_html_file):
             calltree_file_idx += 1
-            calltree_html_file = f"calltree_view_{calltree_file_idx}.html"
+            calltree_html_file = os.path.join(
+                out_dir, f"calltree_view_{calltree_file_idx}.html")
 
         self.html_create_dedicated_calltree_file(
             calltree_html_string,

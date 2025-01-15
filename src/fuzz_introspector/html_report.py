@@ -267,7 +267,8 @@ def create_fuzzer_profile_runtime_coverage_section(proj_profile, profile,
                                                    profile_idx,
                                                    fuzzer_table_data,
                                                    extract_conclusion,
-                                                   conclusions, tables) -> str:
+                                                   conclusions, tables,
+                                                   out_dir) -> str:
     html_string = ""
     # Table with all functions hit by this fuzzer
     html_string += html_helpers.html_add_header_with_link(
@@ -328,7 +329,7 @@ def create_fuzzer_profile_runtime_coverage_section(proj_profile, profile,
             "reachable-funcs": reachable_funcs,
             "reached-funcs": reached_funcs,
             "cov-reach-proportion": cov_reach_proportion,
-        })
+        }, out_dir)
     if extract_conclusion:
         if cov_reach_proportion < 30.0:
             conclusions.append(
@@ -367,7 +368,7 @@ def create_fuzzer_detailed_section(
         table_of_contents: html_helpers.HtmlTableOfContents, tables: List[str],
         profile_idx: int, conclusions: List[html_helpers.HTMLConclusion],
         extract_conclusion: bool, fuzzer_table_data: Dict[str, Any],
-        dump_files: bool) -> str:
+        dump_files: bool, out_dir) -> str:
     html_string = ""
     html_string += html_helpers.html_add_header_with_link(
         f"Fuzzer: {profile.identifier}", html_helpers.HTML_HEADING.H2,
@@ -383,12 +384,12 @@ def create_fuzzer_detailed_section(
     from fuzz_introspector.analyses import calltree_analysis as cta
     calltree_analysis = cta.FuzzCalltreeAnalysis()
     calltree_analysis.dump_files = dump_files
-    calltree_file_name = calltree_analysis.create_calltree(profile)
+    calltree_file_name = calltree_analysis.create_calltree(profile, out_dir)
 
     html_string += "<p class='no-top-margin'>"
     html_string += html_constants.INFO_CALLTREE_DESCRIPTION
     html_string += html_constants.INFO_CALLTREE_LINK_BUTTON.format(
-        calltree_file_name)
+        os.path.basename(calltree_file_name))
 
     html_string += ("<p class='no-top-margin'>"
                     "Call tree overview bitmap:"
@@ -400,7 +401,7 @@ def create_fuzzer_detailed_section(
     image_name = f"{colormap_file_prefix}_colormap.png"
 
     color_list = html_helpers.create_horisontal_calltree_image(
-        image_name, profile, dump_files)
+        image_name, profile, dump_files, out_dir)
     html_string += f"<img class=\"colormap\" src=\"{image_name}\">"
 
     # At this point we want to ensure there is coverage in order to proceed.
@@ -422,12 +423,12 @@ def create_fuzzer_detailed_section(
         profile, profile_idx, tables, calltree_file_name, table_of_contents,
         calltree_analysis)
 
-    profile.write_stats_to_summary_file()
+    profile.write_stats_to_summary_file(out_dir)
 
     # Runtime code coverage section
     html_string += create_fuzzer_profile_runtime_coverage_section(
         proj_profile, profile, table_of_contents, profile_idx,
-        fuzzer_table_data, extract_conclusion, conclusions, tables)
+        fuzzer_table_data, extract_conclusion, conclusions, tables, out_dir)
 
     # Section about files hit by fuzzers.
     html_string += create_fuzzer_profile_section_files_hit(
@@ -506,7 +507,7 @@ def create_html_footer(tables):
 
 
 def write_content_to_html_files(html_full_doc, all_functions_json_html,
-                                fuzzer_table_data):
+                                fuzzer_table_data, out_dir):
     """Writes the content of the HTML static website to the relevant files.
 
     :param html_full_doc: content of the main fuzz_report.html file
@@ -521,21 +522,24 @@ def write_content_to_html_files(html_full_doc, all_functions_json_html,
       dynamically.
     """
     # Dump the HTML report.
-    with open(constants.HTML_REPORT, 'w') as report_file:
+    with open(os.path.join(out_dir, constants.HTML_REPORT),
+              'w') as report_file:
         report_file.write(html_helpers.prettify_html(html_full_doc))
 
     # Dump function data to the relevant javascript file.
-    with open(constants.ALL_FUNCTION_JS, 'w') as all_function_file:
+    with open(os.path.join(out_dir, constants.ALL_FUNCTION_JS),
+              'w') as all_function_file:
         all_function_file.write("var all_functions_table_data = ")
         all_function_file.write(json.dumps(all_functions_json_html))
 
     # Dump table data to relevant javascript file.
-    with open(constants.FUZZER_TABLE_JS, 'w') as js_file_fd:
+    with open(os.path.join(out_dir, constants.FUZZER_TABLE_JS),
+              'w') as js_file_fd:
         js_file_fd.write("var fuzzer_table_data = ")
         js_file_fd.write(json.dumps(fuzzer_table_data))
 
     # Copy all of the styling into the directory.
-    styling.copy_style_files(os.getcwd())
+    styling.copy_style_files(out_dir)
 
 
 def create_section_fuzzers_overview(
@@ -592,7 +596,7 @@ def create_section_project_overview(table_of_contents, proj_profile,
 
 def create_section_fuzzer_detailed_section(
         table_of_contents, introspection_proj: analysis.IntrospectionProject,
-        tables, conclusions, fuzzer_table_data, dump_files):
+        tables, conclusions, fuzzer_table_data, dump_files, out_dir):
     """Section with details about each fuzzer, including calltree."""
     logger.info(" - Creating section with details about each fuzzer")
     html_report_core = "<div class=\"report-box\">"
@@ -604,7 +608,7 @@ def create_section_fuzzer_detailed_section(
         html_report_core += create_fuzzer_detailed_section(
             introspection_proj.proj_profile, harness_profile,
             table_of_contents, tables, profile_idx, conclusions, True,
-            fuzzer_table_data, dump_files)
+            fuzzer_table_data, dump_files, out_dir)
     html_report_core += "</div>"  # .collapsible
     html_report_core += "</div>"  # report box
     return html_report_core
@@ -637,7 +641,7 @@ def create_section_all_functions(table_of_contents, tables, proj_profile,
 def create_section_optional_analyses(
         table_of_contents, analyses_to_run, output_json, tables,
         introspection_proj: analysis.IntrospectionProject, basefolder,
-        coverage_url, conclusions, dump_files) -> str:
+        coverage_url, conclusions, dump_files, out_dir) -> str:
     """Creates the HTML sections containing optional analyses."""
     html_report_core = ""
     logger.info(" - Handling optional analyses")
@@ -666,7 +670,7 @@ def create_section_optional_analyses(
             html_string = analysis_instance.analysis_func(
                 table_of_contents, tables, introspection_proj.proj_profile,
                 introspection_proj.profiles, basefolder, coverage_url,
-                conclusions)
+                conclusions, out_dir)
 
             # Only add the HTML content if it's an analysis that we want
             # the non-json output from.
@@ -717,8 +721,11 @@ def get_body_script_tags(all_functions_json, fuzzer_table_data) -> str:
 
 
 def create_html_report(introspection_proj: analysis.IntrospectionProject,
-                       analyses_to_run, output_json, report_name,
-                       dump_files) -> None:
+                       analyses_to_run,
+                       output_json,
+                       report_name,
+                       dump_files,
+                       out_dir: str = '') -> None:
     """
     Logs a complete report. This is the current main place for looking at
     data produced by fuzz introspector.
@@ -767,13 +774,14 @@ def create_html_report(introspection_proj: analysis.IntrospectionProject,
     fuzzer_table_data: Dict[str, Any] = dict()
     html_report_core += create_section_fuzzer_detailed_section(
         table_of_contents, introspection_proj, tables, conclusions,
-        fuzzer_table_data, dump_files)
+        fuzzer_table_data, dump_files, out_dir)
 
     # Generate sections for all optional analyses
     html_report_core += create_section_optional_analyses(
         table_of_contents, analyses_to_run, output_json, tables,
         introspection_proj, introspection_proj.proj_profile.basefolder,
-        introspection_proj.proj_profile.coverage_url, conclusions, dump_files)
+        introspection_proj.proj_profile.coverage_url, conclusions, dump_files,
+        out_dir)
 
     # Create HTML showing the conclusions at the top of the report.
     html_report_top += html_helpers.create_conclusions_box(conclusions)
@@ -803,7 +811,7 @@ def create_html_report(introspection_proj: analysis.IntrospectionProject,
 
     # Load debug informaiton because it will be correlated to the introspector
     # functions.
-    introspection_proj.load_debug_report()
+    introspection_proj.load_debug_report(out_dir)
 
     # Correlate debug info to introspector functions
     analysis.correlate_introspection_functions_to_debug_info(
@@ -814,25 +822,28 @@ def create_html_report(introspection_proj: analysis.IntrospectionProject,
     all_test_files = analysis.extract_test_information(
         introspection_proj.debug_report,
         introspection_proj.proj_profile.target_lang)
-    with open(constants.TEST_FILES_JSON, 'w') as test_file_fd:
+    with open(os.path.join(out_dir, constants.TEST_FILES_JSON),
+              'w') as test_file_fd:
         test_file_fd.write(json.dumps(list(all_test_files)))
 
     all_source_files = analysis.extract_all_sources(
         introspection_proj.proj_profile.target_lang)
-    with open(constants.ALL_SOURCE_FILES, 'w') as source_fd:
+    with open(os.path.join(out_dir, constants.ALL_SOURCE_FILES),
+              'w') as source_fd:
         source_fd.write(json.dumps(list(all_source_files)))
 
     # Write various stats and all-functions data to summary.json
-    introspection_proj.proj_profile.write_stats_to_summary_file()
+    introspection_proj.proj_profile.write_stats_to_summary_file(out_dir)
 
     # Write all functions to all-fuzz-introspector-functions.json
-    json_report.create_all_fi_functions_json(all_functions_json_report)
+    json_report.create_all_fi_functions_json(all_functions_json_report,
+                                             out_dir)
 
     # Write jvm constructor details to all-fuzz-introspector-jvm-constructor.json
     if introspection_proj.proj_profile.target_lang == 'jvm' and all_functions_json_report:
-        jvm_constructor_json_report = []
+        jvm_constructor_json_report: List[Dict[str, Any]] = []
         for fd in introspection_proj.proj_profile.all_constructors.values():
-            json_copy = dict()
+            json_copy: Dict[str, Any] = dict()
             json_copy['Func name'] = fd.function_name
             json_copy['func_url'] = 'N/A'
             json_copy['function_signature'] = fd.function_name
@@ -867,13 +878,13 @@ def create_html_report(introspection_proj: analysis.IntrospectionProject,
 
         if jvm_constructor_json_report:
             json_report.create_all_jvm_constructor_json(
-                jvm_constructor_json_report)
+                jvm_constructor_json_report, out_dir)
 
     if dump_files:
         write_content_to_html_files(html_full_doc, all_functions_json_html,
-                                    fuzzer_table_data)
+                                    fuzzer_table_data, out_dir)
 
-        introspection_proj.dump_debug_report()
+        introspection_proj.dump_debug_report(out_dir)
 
     # Determine the source files required for the java project
     source_file_list = []
@@ -889,4 +900,5 @@ def create_html_report(introspection_proj: analysis.IntrospectionProject,
         logger.info(source_file_list)
 
     # Copy source files (Only for Java/Python projects)
-    utils.copy_source_files(source_file_list, introspection_proj.language)
+    utils.copy_source_files(source_file_list, introspection_proj.language,
+                            out_dir)

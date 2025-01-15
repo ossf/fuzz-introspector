@@ -53,7 +53,8 @@ class BugDigestor(analysis.AnalysisInterface):
                       proj_profile: project_profile.MergedProjectProfile,
                       profiles: List[fuzzer_profile.FuzzerProfile],
                       basefolder: str, coverage_url: str,
-                      conclusions: List[html_helpers.HTMLConclusion]) -> str:
+                      conclusions: List[html_helpers.HTMLConclusion],
+                      out_dir) -> str:
         """Digests and creates HTML about bugs found by the fuzzers."""
         logger.info(f" - Running analysis {self.get_name()}")
         input_bugs = data_loader.try_load_input_bugs()

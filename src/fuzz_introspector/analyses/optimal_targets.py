@@ -133,6 +133,7 @@ class OptimalTargets(analysis.AnalysisInterface):
                       basefolder: str,
                       coverage_url: str,
                       conclusions: List[html_helpers.HTMLConclusion],
+                      out_dir,
                       should_synthetise: bool = False) -> str:
         """
         Performs an analysis based on optimal target selection.
@@ -161,7 +162,7 @@ class OptimalTargets(analysis.AnalysisInterface):
             proj_profile)
         html_string += self.get_optimal_target_section(
             optimal_target_functions, table_of_contents, tables, coverage_url,
-            profiles[0].target_lang)
+            out_dir, profiles[0].target_lang)
 
         # Create section for how the state of the project will be if
         # the optimal target functions are hit.
@@ -290,6 +291,7 @@ class OptimalTargets(analysis.AnalysisInterface):
             table_of_contents: html_helpers.HtmlTableOfContents,
             tables: List[str],
             coverage_url: str,
+            out_dir,
             target_lang: str = 'c-cpp') -> str:
         # Table with details about optimal target functions
         html_string = html_helpers.html_add_header_with_link(
@@ -349,7 +351,7 @@ class OptimalTargets(analysis.AnalysisInterface):
         self.set_json_string_result(json.dumps(json_dict))
 
         json_report.add_analysis_json_str_as_dict_to_report(
-            self.get_name(), self.get_json_string_result())
+            self.get_name(), self.get_json_string_result(), out_dir)
         html_string += ("</table>\n")
         return html_string
 

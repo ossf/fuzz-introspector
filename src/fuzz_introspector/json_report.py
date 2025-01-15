@@ -23,18 +23,19 @@ from fuzz_introspector import constants
 logger = logging.getLogger(name=__name__)
 
 
-def _get_summary_dict() -> Dict[Any, Any]:
+def _get_summary_dict(out_dir) -> Dict[Any, Any]:
     """Returns the current json report on disk as a dictionary."""
-    if not os.path.isfile(constants.SUMMARY_FILE):
+    if not os.path.isfile(os.path.join(out_dir, constants.SUMMARY_FILE)):
         existing_contents = dict()
     else:
-        with open(constants.SUMMARY_FILE, "r") as report_fd:
+        with open(os.path.join(out_dir, constants.SUMMARY_FILE),
+                  "r") as report_fd:
             existing_contents = json.load(report_fd)
 
     return existing_contents
 
 
-def _overwrite_report_with_dict(new_dict: Dict[Any, Any]) -> None:
+def _overwrite_report_with_dict(new_dict: Dict[Any, Any], out_dir) -> None:
     """Writes `new_dict` as contents to the report on disk. Will overwrite any
     contents of the existing report.
     """
@@ -42,86 +43,92 @@ def _overwrite_report_with_dict(new_dict: Dict[Any, Any]) -> None:
         return
 
     # Write back the json file
-    with open(constants.SUMMARY_FILE, 'w') as report_fd:
+    with open(os.path.join(out_dir, constants.SUMMARY_FILE), 'w') as report_fd:
         json.dump(dict(new_dict), report_fd)
 
 
 def add_analysis_dict_to_json_report(analysis_name: str,
-                                     dict_to_add: Dict[Any, Any]) -> None:
+                                     dict_to_add: Dict[Any,
+                                                       Any], out_dir) -> None:
     """Wraps dictionary into an appropriate format
 
     Will overwrite the existing key/value pair for the analysis if it already
     exists as an analysis in the report.
     """
-    contents = _get_summary_dict()
+    contents = _get_summary_dict(out_dir)
     if 'analyses' not in contents:
         contents['analyses'] = {}
     contents['analyses'][analysis_name] = dict_to_add
 
-    _overwrite_report_with_dict(contents)
+    _overwrite_report_with_dict(contents, out_dir)
 
 
-def add_analysis_json_str_as_dict_to_report(analysis_name: str,
-                                            json_str: str) -> None:
+def add_analysis_json_str_as_dict_to_report(analysis_name: str, json_str: str,
+                                            out_dir) -> None:
     """Converts a json string to a dictionary and add it to the report.
 
     Will overwrite the existing key/value pair for the analysis if it already
     exists as an analysis in the report."""
-    add_analysis_dict_to_json_report(analysis_name, json.loads(json_str))
+    add_analysis_dict_to_json_report(analysis_name, json.loads(json_str),
+                                     out_dir)
 
 
-def add_fuzzer_key_value_to_report(fuzzer_name: str, key: str,
-                                   value: Any) -> None:
+def add_fuzzer_key_value_to_report(fuzzer_name: str, key: str, value: Any,
+                                   out_dir) -> None:
     """Add the key/value pair to the json report under the fuzzer key.
 
     Will overwrite the existing key/value pair under the fuzzer if it already
     exists in the report.
     """
-    contents = _get_summary_dict()
+    contents = _get_summary_dict(out_dir)
 
     # Update the report accordingly
     if fuzzer_name not in contents:
         contents[fuzzer_name] = dict()
     contents[fuzzer_name][key] = value
 
-    _overwrite_report_with_dict(contents)
+    _overwrite_report_with_dict(contents, out_dir)
 
 
-def add_project_key_value_to_report(key: str, value: Any) -> None:
+def add_project_key_value_to_report(key: str, value: Any, out_dir) -> None:
     """Add the key/value pair to the json report under the project key.
 
     Will overwrite the existing key/value pair if the key already exists in
     the report.
     """
-    contents = _get_summary_dict()
+    contents = _get_summary_dict(out_dir)
 
     # Update the report accordingly
     if constants.JSON_REPORT_KEY_PROJECT not in contents:
         contents[constants.JSON_REPORT_KEY_PROJECT] = dict()
     contents[constants.JSON_REPORT_KEY_PROJECT][key] = value
 
-    _overwrite_report_with_dict(contents)
+    _overwrite_report_with_dict(contents, out_dir)
 
 
-def create_all_fi_functions_json(functions_dict) -> None:
-    with open(constants.ALL_FUNCTIONS_JSON, 'w') as f:
+def create_all_fi_functions_json(functions_dict, out_dir) -> None:
+    with open(os.path.join(out_dir, constants.ALL_FUNCTIONS_JSON), 'w') as f:
         json.dump(functions_dict, f)
 
 
-def create_all_jvm_constructor_json(functions_dict) -> None:
-    with open(constants.ALL_JVM_CONSTRUCTOR_JSON, 'w') as f:
+def create_all_jvm_constructor_json(functions_dict, out_dir) -> None:
+    with open(os.path.join(out_dir, constants.ALL_JVM_CONSTRUCTOR_JSON),
+              'w') as f:
         json.dump(functions_dict, f)
 
 
 def add_branch_blocker_key_value_to_report(profile_identifier, key,
-                                           branch_blockers_list):
+                                           branch_blockers_list, out_dir):
     """Returns the current json report on disk as a dictionary."""
-    if not os.path.isfile(constants.BRANCH_BLOCKERS_FILE):
+    if not os.path.isfile(os.path.join(out_dir,
+                                       constants.BRANCH_BLOCKERS_FILE)):
         existing_contents = dict()
     else:
-        with open(constants.BRANCH_BLOCKERS_FILE, "r") as report_fd:
+        with open(os.path.join(out_dir, constants.BRANCH_BLOCKERS_FILE),
+                  "r") as report_fd:
             existing_contents = json.load(report_fd)
 
     existing_contents[profile_identifier] = branch_blockers_list
-    with open(constants.BRANCH_BLOCKERS_FILE, 'w') as branch_fd:
+    with open(os.path.join(out_dir, constants.BRANCH_BLOCKERS_FILE),
+              'w') as branch_fd:
         json.dump(existing_contents, branch_fd)
