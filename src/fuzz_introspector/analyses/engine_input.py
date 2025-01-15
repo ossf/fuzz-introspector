@@ -53,7 +53,8 @@ class EngineInput(analysis.AnalysisInterface):
                       project_profile: project_profile.MergedProjectProfile,
                       profiles: List[fuzzer_profile.FuzzerProfile],
                       basefolder: str, coverage_url: str,
-                      conclusions: List[html_helpers.HTMLConclusion]) -> str:
+                      conclusions: List[html_helpers.HTMLConclusion],
+                      out_dir) -> str:
         logger.info(f" - Running analysis {self.get_name()}")
 
         if not self.display_html:

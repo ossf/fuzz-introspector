@@ -641,7 +641,7 @@ def create_section_all_functions(table_of_contents, tables, proj_profile,
 def create_section_optional_analyses(
         table_of_contents, analyses_to_run, output_json, tables,
         introspection_proj: analysis.IntrospectionProject, basefolder,
-        coverage_url, conclusions, dump_files) -> str:
+        coverage_url, conclusions, dump_files, out_dir) -> str:
     """Creates the HTML sections containing optional analyses."""
     html_report_core = ""
     logger.info(" - Handling optional analyses")
