@@ -206,6 +206,7 @@ class FunctionDefinition():
                 param_list_node = child
 
         # Handle the full name
+        # Extract the scope that the function is defined in
         logger.info('Iterating parents')
         tmp_root = self.root
         full_name = ''
@@ -218,11 +219,14 @@ class FunctionDefinition():
                 full_name = new_parent.child_by_field_name(
                     'name').text.decode() + '::' + full_name
             if new_parent.type == 'namespace_definition':
-                full_name = new_parent.child_by_field_name(
-                    'name').text.decode() + '::' + full_name
+                # Ignore anonymous namespaces
+                if new_parent.child_by_field_name('name') is not None:
+                    full_name = new_parent.child_by_field_name(
+                        'name').text.decode() + '::' + full_name
             tmp_root = new_parent
         logger.debug('Full function scope not from name: %s', full_name)
 
+        # Extract the name from the function declarator
         tmp_name = ''
         tmp_node = self.root.child_by_field_name('declarator')
         scope_to_add = ''
@@ -234,6 +238,9 @@ class FunctionDefinition():
                     'scope').text.decode() + '::'
 
             if tmp_node.type == 'identifier':
+                tmp_name = tmp_node.text.decode()
+                break
+            if tmp_node.type == 'field_identifier':
                 tmp_name = tmp_node.text.decode()
                 break
             if tmp_node.child_by_field_name(
@@ -456,6 +463,9 @@ class FunctionDefinition():
             var_type = ''
             var_type_obj = stmt.child_by_field_name('type')
 
+            if var_type_obj is None:
+                return []
+
             if var_type_obj.type == 'primitive_type' or var_type_obj.type == 'sized_type_specifier':
                 logger.debug('Skipping.')
                 return []
@@ -464,8 +474,11 @@ class FunctionDefinition():
                 if var_type_obj is None:
                     return []
                 if var_type_obj.type == 'qualified_identifier':
-                    var_type += var_type_obj.child_by_field_name(
-                        'scope').text.decode() + '::'
+                    # logger.debug('qualified idenfitier: %s', var_type_obj.text.decode())
+                    if var_type_obj.child_by_field_name('scope') is not None:
+                        var_type += var_type_obj.child_by_field_name(
+                            'scope').text.decode()
+                    var_type += '::'
                     var_type_obj = var_type_obj.child_by_field_name('name')
 
                 if var_type_obj.type == 'template_type':
@@ -650,10 +663,12 @@ class Project():
         """Extracts calltree string of a calltree so that FI core can use it."""
         # Create calltree from a given function
         # Find the function in the source code
+        logger.debug('Extracting calltree for %s', str(function))
         if not visited_functions:
             visited_functions = set()
 
         if not function:
+            logger.debug('No function')
             return ''
 
         if not source_code:
@@ -676,6 +691,7 @@ class Project():
                 logger.debug('Found no function node')
                 func_name = function
         else:
+            logger.debug('Could not find function')
             return ''
 
         line_to_print = '  ' * depth
@@ -689,9 +705,11 @@ class Project():
         line_to_print += '\n'
 
         if function in visited_functions or not func_node or not source_code:
+            logger.debug('Function visited or no function node')
             return line_to_print
 
         visited_functions.add(function)
+        logger.debug('Iterating %s callsites', len(func_node.base_callsites))
         for cs, line in func_node.base_callsites:
             logger.debug('Callsites: %s', cs)
             line_to_print += self.extract_calltree(
