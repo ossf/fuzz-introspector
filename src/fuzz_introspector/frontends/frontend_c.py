@@ -74,7 +74,6 @@ class Project():
             })
 
             for func_def in source_code.func_defs:
-
                 if harness_source:
                     if func_def.name(
                     ) == 'LLVMFuzzerTestOneInput' and source_code.source_file != harness_source:
@@ -82,8 +81,7 @@ class Project():
                 func_dict = {}
                 func_dict['functionName'] = func_def.name()
                 func_dict['functionSourceFile'] = source_code.source_file
-                func_dict[
-                    'functionLinenumber'] = func_def.root.start_point.row
+                func_dict['functionLinenumber'] = func_def.root.start_point.row
                 func_dict[
                     'functionLinenumberEnd'] = func_def.root.end_point.row
                 func_dict['linkageType'] = ''
