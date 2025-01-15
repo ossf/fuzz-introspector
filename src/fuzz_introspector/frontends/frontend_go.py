@@ -662,6 +662,7 @@ class FunctionMethod():
                 args = child.child_by_field_name('arguments')
                 target_name = self._process_call_expr_child(
                     call, all_funcs_meths)
+
                 if target_name in all_funcs_meths:
                     return all_funcs_meths[target_name].return_type
 
@@ -669,6 +670,16 @@ class FunctionMethod():
                     for arg in args.children:
                         if arg.type.endswith('identifier'):
                             return arg.text.decode()
+
+                elif target_name == 'make':
+                    for arg in args.children:
+                        type_node = arg.child_by_field_name('value')
+                        if type_node:
+                            return type_node.text.decode()
+
+                        type_node = arg.child_by_field_name('element')
+                        if type_node:
+                            return type_node.text.decode()
 
             # Selector expression
             elif child.type == 'selector_expression':
@@ -705,6 +716,8 @@ class FunctionMethod():
             for decl_node in exprs:
                 left = decl_node.child_by_field_name('left')
                 right = decl_node.child_by_field_name('right')
+                if not left or not right:
+                    continue
 
                 for child in left.children:
                     if child.type == 'identifier':
@@ -722,13 +735,16 @@ class FunctionMethod():
                     if child.type == 'range_clause':
                         left = child.child_by_field_name('left')
                         right = child.child_by_field_name('right')
+                        if not left or not right:
+                            continue
 
                         for left_child in left.children:
                             if left_child.type == 'identifier':
                                 decl_name = left_child.text.decode()
 
                         if right.type == 'identifier':
-                            decl_type = self.var_map[right.text.decode()]
+                            decl_type = self.var_map.get(
+                                right.text.decode(), '')
                             if '[' in decl_type and ']' in decl_type:
                                 decl_type = decl_type.split(']', 1)[-1]
                             elif decl_type == 'string':
