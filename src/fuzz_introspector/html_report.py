@@ -841,9 +841,9 @@ def create_html_report(introspection_proj: analysis.IntrospectionProject,
 
     # Write jvm constructor details to all-fuzz-introspector-jvm-constructor.json
     if introspection_proj.proj_profile.target_lang == 'jvm' and all_functions_json_report:
-        jvm_constructor_json_report = []
+        jvm_constructor_json_report: List[Dict[str, Any]] = []
         for fd in introspection_proj.proj_profile.all_constructors.values():
-            json_copy = dict()
+            json_copy: Dict[str, Any] = dict()
             json_copy['Func name'] = fd.function_name
             json_copy['func_url'] = 'N/A'
             json_copy['function_signature'] = fd.function_name
