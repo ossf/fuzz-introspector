@@ -309,23 +309,25 @@ def load_debug_report(debug_files):
     return report_dict
 
 
-def dump_debug_report(report_dict):
+def dump_debug_report(report_dict, out_dir):
     # Extract all files
     # Place this import here because it makes it easier to run this module
     # as a main module.
     from fuzz_introspector import constants
-    if not os.path.isdir(constants.SAVED_SOURCE_FOLDER):
-        os.mkdir(constants.SAVED_SOURCE_FOLDER)
+    if not os.path.isdir(os.path.join(out_dir, constants.SAVED_SOURCE_FOLDER)):
+        os.mkdir(os.path.join(out_dir, constants.SAVED_SOURCE_FOLDER))
 
     for file_elem in report_dict['all_files_in_project']:
         if not os.path.isfile(file_elem['source_file']):
             logger.info("No such file: %s" % (file_elem['source_file']))
             continue
-        dst = constants.SAVED_SOURCE_FOLDER + '/' + file_elem['source_file']
+        dst = os.path.join(out_dir, constants.SAVED_SOURCE_FOLDER,
+                           +file_elem['source_file'])
         os.makedirs(os.path.dirname(dst), exist_ok=True)
         shutil.copy(file_elem['source_file'], dst)
 
-    with open(constants.DEBUG_INFO_DUMP, 'w') as debug_dump:
+    with open(os.path.join(out_dir, constants.DEBUG_INFO_DUMP),
+              'w') as debug_dump:
         debug_dump.write(json.dumps(report_dict))
 
 
@@ -461,7 +463,7 @@ def is_enumeration(param_list):
     return False
 
 
-def create_friendly_debug_types(debug_type_dictionary):
+def create_friendly_debug_types(debug_type_dictionary, out_dir):
     """Create an address-indexed json dictionary. The goal is to use this for
     fast iteration over types using e.g. recursive lookups."""
     friendly_name_sig = dict()
@@ -512,12 +514,13 @@ def create_friendly_debug_types(debug_type_dictionary):
             }
         }
 
-    with open("all-friendly-debug-types.json", "w") as f:
+    with open(os.path.join(out_dir, "all-friendly-debug-types.json"),
+              "w") as f:
         json.dump(friendly_name_sig, f)
 
 
 def correlate_debugged_function_to_debug_types(all_debug_types,
-                                               all_debug_functions):
+                                               all_debug_functions, out_dir):
     """Correlate debug information about all functions and all types. The
     result is a lot of atomic debug-information-extracted types are correlated
     to the debug function."""
@@ -533,7 +536,7 @@ def correlate_debugged_function_to_debug_types(all_debug_types,
     # Create json file with addresses as indexes for type information.
     # This can be used to lookup types fast.
     logger.info("Creating dictionary")
-    create_friendly_debug_types(debug_type_dictionary)
+    create_friendly_debug_types(debug_type_dictionary, out_dir)
     logger.info("Finished creating dictionary")
 
     for dfunc in all_debug_functions:

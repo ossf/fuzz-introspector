@@ -55,7 +55,10 @@ class IntrospectionProject():
         self.base_folder = target_folder
         self.coverage_url = coverage_url
 
-    def load_data_files(self, parallelise=True, correlation_file=None):
+    def load_data_files(self,
+                        parallelise=True,
+                        correlation_file=None,
+                        out_dir: str = ''):
         """Generates the `proj_profile` and `profiles` elements of this class
         based on the raw data given as arguments. This function must be called
         before any real use of `IntrospectionProject` can happen.
@@ -111,7 +114,8 @@ class IntrospectionProject():
 
         for profile in self.profiles:
             overlay_calltree_with_coverage(profile, self.proj_profile,
-                                           self.coverage_url, self.base_folder)
+                                           self.coverage_url, self.base_folder,
+                                           out_dir)
         # Load all debug files
         self.debug_files = data_loader.load_all_debug_files(self.base_folder)
 
@@ -121,7 +125,7 @@ class IntrospectionProject():
         self.debug_function_files = data_loader.find_all_debug_function_files(
             self.base_folder)
 
-    def load_debug_report(self):
+    def load_debug_report(self, out_dir):
         """Load and digest debug information."""
         self.debug_report = debug_info.load_debug_report(self.debug_files)
 
@@ -156,11 +160,11 @@ class IntrospectionProject():
         # Extract the raw function signature. This propagates types into all of
         # the debug functions.
         debug_info.correlate_debugged_function_to_debug_types(
-            self.debug_all_types, self.debug_all_functions)
+            self.debug_all_types, self.debug_all_functions, out_dir)
 
-    def dump_debug_report(self):
+    def dump_debug_report(self, out_dir):
         if self.debug_report is not None:
-            debug_info.dump_debug_report(self.debug_report)
+            debug_info.dump_debug_report(self.debug_report, out_dir)
 
 
 class AnalysisInterface(abc.ABC):
@@ -430,7 +434,7 @@ def get_parent_callsite_link(node, callstack, profile, target_coverage_url):
 def overlay_calltree_with_coverage(
         profile: fuzzer_profile.FuzzerProfile,
         proj_profile: project_profile.MergedProjectProfile, coverage_url: str,
-        basefolder: str) -> None:
+        basefolder: str, out_dir) -> None:
     # We use the callstack to keep track of all function parents. We need this
     # when looking up if a callsite was hit or not. This is because the coverage
     # information about a callsite is located in coverage data of the function
@@ -572,7 +576,8 @@ def overlay_calltree_with_coverage(
 
     json_report.add_branch_blocker_key_value_to_report(profile.identifier,
                                                        'branch_blockers',
-                                                       branch_blockers_list)
+                                                       branch_blockers_list,
+                                                       out_dir)
 
 
 def update_branch_complexities(

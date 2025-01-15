@@ -447,7 +447,7 @@ def create_calltree_color_distribution_table(color_list: List[str]) -> str:
 
 def create_horisontal_calltree_image(image_name: str,
                                      profile: fuzzer_profile.FuzzerProfile,
-                                     dump_files: bool) -> List[str]:
+                                     dump_files: bool, out_dir) -> List[str]:
     """
     Creates a horisontal image of the calltree. The height is fixed and
     each element on the x-axis shows a node in the calltree in the form
@@ -508,7 +508,8 @@ def create_horisontal_calltree_image(image_name: str,
 
         plt.title(image_name.replace(".png", "").replace("_colormap", ""))
         fig.tight_layout()
-        fig.savefig(image_name, bbox_extra_artists=[xlabel])
+        fig.savefig(os.path.join(out_dir, image_name),
+                    bbox_extra_artists=[xlabel])
         logger.info("- image saved")
     return color_list
 
