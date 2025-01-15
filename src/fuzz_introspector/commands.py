@@ -68,7 +68,7 @@ def end_to_end(args) -> int:
                                coverage_url=args.coverage_url,
                                analyses_to_run=[],
                                correlation_file='',
-                               enable_all_analyses=False,
+                               enable_all_analyses=True,
                                report_name=args.name,
                                language=language,
                                out_dir=out_dir)

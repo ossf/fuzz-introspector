@@ -184,6 +184,7 @@ class OptimalTargets(analysis.AnalysisInterface):
         will still pick a subset of all functions that satisfy the
         conditions.
         """
+
         if fd.hitcount != 0:
             return False
 
@@ -194,7 +195,7 @@ class OptimalTargets(analysis.AnalysisInterface):
             return False
 
         # We do not care about "main2" functions
-        if "main2" in fd.function_name:
+        if "main2" in fd.function_name or fd.function_name == 'main':
             return False
 
         if fd.total_cyclomatic_complexity < 20:
@@ -219,11 +220,13 @@ class OptimalTargets(analysis.AnalysisInterface):
         logger.info("    - in analysis_get_optimal_targets")
 
         target_fds: List[function_profile.FunctionProfile] = list()
+        logger.info('Filtering optimal functions from %d functions',
+                    len(merged_profile.all_functions.values()))
         for fd in merged_profile.all_functions.values():
             if not self.qualifies_as_optimal_target(fd):
                 continue
             target_fds.append(fd)
-
+        logger.info('Found a total of %d potential targets', len(target_fds))
         return target_fds
 
     def iteratively_get_optimal_targets(
