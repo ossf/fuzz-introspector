@@ -177,7 +177,18 @@ def test_tree_sitter_go_sample8():
 
     # Project check
     harness = project.get_source_codes_with_harnesses()
-    assert len(harness) == 0
+    assert len(harness) == 1
+
+    functions_reached = project.get_reachable_functions(harness[0].source_file, harness[0])
+
+    # Callsite check
+    assert 'Person.Greet' in functions_reached
+    assert 'Shape.Area' in functions_reached
+    assert 'Shape.Perimeter' in functions_reached
+    assert 'close' in functions_reached
+    assert 'unreachableGoroutine' not in functions_reached
+    assert 'processValue' not in functions_reached
+    assert 'Person.GoodBye' not in functions_reached
 
 
 def test_tree_sitter_go_sample9():
