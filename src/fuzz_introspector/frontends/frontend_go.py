@@ -743,7 +743,8 @@ class FunctionMethod():
                                 decl_name = left_child.text.decode()
 
                         if right.type == 'identifier':
-                            decl_type = self.var_map.get(right.text.decode(), '')
+                            decl_type = self.var_map.get(
+                                right.text.decode(), '')
                             if '[' in decl_type and ']' in decl_type:
                                 decl_type = decl_type.split(']', 1)[-1]
                             elif decl_type == 'string':
