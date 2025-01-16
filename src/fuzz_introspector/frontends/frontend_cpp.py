@@ -963,14 +963,14 @@ def get_function_node(
     # if target_name in function_map:
     #     return function_map[target_name]
     if not '::' in target_name:
-        return ''
+        return None
 
     # Avoid all references to std library for the heuristics that are follow.
     # This is because we do approximate namespace matching, and functions
     # from standard library are definitely not imlemented in any library we
     # analyse.
     if target_name.startswith('std::'):
-        return ''
+        return None
 
     # Match any key that ends with target_name, then
     # split the target_name by :: and check one by one
