@@ -398,6 +398,8 @@ def create_fuzzer_detailed_section(
     colormap_file_prefix = profile.identifier
     if "/" in colormap_file_prefix:
         colormap_file_prefix = colormap_file_prefix.replace("/", "_")
+    if not colormap_file_prefix:
+        colormap_file_prefix = str(random.randint(0, 99999))
     image_name = f"{colormap_file_prefix}_colormap.png"
 
     color_list = html_helpers.create_horisontal_calltree_image(
