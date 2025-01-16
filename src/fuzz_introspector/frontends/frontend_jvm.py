@@ -15,8 +15,6 @@
 ################################################################################
 """Fuzz Introspector Light frontend for Java"""
 
-from typing import Any, Optional
-
 import os
 import pathlib
 import logging
@@ -25,7 +23,7 @@ from tree_sitter import Language, Parser, Node
 import tree_sitter_java
 import yaml
 
-from typing import Any
+from typing import Any, Optional
 
 logger = logging.getLogger(name=__name__)
 
@@ -302,25 +300,44 @@ class JavaMethod():
     def to_dict(self) -> dict[str, Any]:
         """Converts the JavaMethod instance into a dictionary representation."""
         return {
-            'func_name': self.name,
-            'start_line': self.start_line,
-            'end_line': self.end_line,
-            'is_constructor': self.is_constructor,
-            'public': self.public,
-            'static': self.static,
-            'complexity': self.complexity,
-            'icount': self.icount,
-            'arg_names': self.arg_names,
-            'arg_types': self.arg_types,
-            'return_type': self.return_type,
-            'exceptions': self.exceptions,
-            'function_depth': self.function_depth,
-            'function_uses': self.function_uses,
-            'base_callsites': self.base_callsites,
-            'detailed_callsites': self.detailed_callsites,
-            'is_entry_method': self.is_entry_method,
-            'class_interface': self.class_interface.to_dict(),
-            'source_code': self.parent_source.to_dict()
+            'func_name':
+            self.name,
+            'start_line':
+            self.start_line,
+            'end_line':
+            self.end_line,
+            'is_constructor':
+            self.is_constructor,
+            'public':
+            self.public,
+            'static':
+            self.static,
+            'complexity':
+            self.complexity,
+            'icount':
+            self.icount,
+            'arg_names':
+            self.arg_names,
+            'arg_types':
+            self.arg_types,
+            'return_type':
+            self.return_type,
+            'exceptions':
+            self.exceptions,
+            'function_depth':
+            self.function_depth,
+            'function_uses':
+            self.function_uses,
+            'base_callsites':
+            self.base_callsites,
+            'detailed_callsites':
+            self.detailed_callsites,
+            'is_entry_method':
+            self.is_entry_method,
+            'class_interface':
+            self.class_interface.to_dict(),
+            'source_code':
+            self.parent_source.to_dict() if self.parent_source else None
         }
 
     def post_process_full_qualified_name(self):
@@ -883,22 +900,14 @@ class JavaClassInterface():
     def to_dict(self) -> dict[str, Any]:
         """Converts the JavaClassInterface instance into a dictionary representation."""
         return {
-            'class_name':
-            self.name,
-            'class_package':
-            self.package,
-            'class_public':
-            self.class_public,
-            'class_concrete':
-            self.class_concrete,
-            'is_interface':
-            self.is_interface,
-            'class_fields':
-            self.class_fields,
-            'super_class':
-            self.super_class,
-            'super_interfaces':
-            self.super_interfaces
+            'class_name': self.name,
+            'class_package': self.package,
+            'class_public': self.class_public,
+            'class_concrete': self.class_concrete,
+            'is_interface': self.is_interface,
+            'class_fields': self.class_fields,
+            'super_class': self.super_class,
+            'super_interfaces': self.super_interfaces
         }
 
     def add_package_to_class_name(self, name: str) -> Optional[str]:
@@ -1086,7 +1095,7 @@ class Project():
         result_list = []
         result_list.extend(cls.methods)
         for inner_class in cls.inner_classes:
-            rersult_list.extend(self._get_all_functions(inner_class))
+            result_list.extend(self._get_all_functions(inner_class))
 
         return result_list
 

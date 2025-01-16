@@ -193,15 +193,15 @@ def extract_function_details(args) -> int:
 
         if source_file == target_file:
             if func['start_line'] <= target_line <= func['end_line']:
-                logger.info('Target function found in line %d of file %s.' % (target_line, target_file))
+                logger.info('Target function found in line %d of file %s.' %
+                            (target_line, target_file))
 
                 with open(output, 'w') as f:
                     json.dump(func, f, indent=4)
 
                 return 0
 
-    logger.info(
-        'Failed to extract functions from source file %s line: %d' %
-        (args.target_file, target_line))
+    logger.info('Failed to extract functions from source file %s line: %d' %
+                (args.target_file, target_line))
 
     return -1

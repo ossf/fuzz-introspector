@@ -33,9 +33,8 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
 
     function_parser = subparsers.add_parser(
         'function',
-        help=
-        'Perform analysis of specific functions in sepcific line of specific source file.'
-    )
+        help=('Perform analysis of specific functions in sepcific '
+              'line of specific source file.'))
     function_parser.add_argument('--language',
                                  type=str,
                                  default='c-cpp',
