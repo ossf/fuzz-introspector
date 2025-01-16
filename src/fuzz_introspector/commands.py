@@ -166,6 +166,9 @@ def extract_function_details(args) -> int:
         entrypoint = 'fuzzerTestOneInput'
     else:
         entrypoint = 'LLVMFuzzerTestOneInput'
+        # Only support JVM right now.
+        logger.info('Only support JVM right now.')
+        return 0
 
     project = oss_fuzz.analyse_folder(language=args.language,
                                       directory=args.target_dir,
