@@ -379,8 +379,8 @@ class FunctionDefinition():
 
                 # Find the matching function in our project
                 logger.debug('Matching function %s', target_name)
-               matched_func = get_function_node(target_name,
-                                                project.all_functions)
+                matched_func = get_function_node(target_name,
+                                                 project.all_functions)
                 if matched_func:
                     logger.debug('Matched function: %s', matched_func.name)
                     target_name = matched_func.name
