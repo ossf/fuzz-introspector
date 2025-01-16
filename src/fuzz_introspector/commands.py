@@ -150,3 +150,55 @@ def light_analysis(args) -> int:
         f.write(json.dumps(list(all_source_files)))
 
     return 0
+
+
+def extract_function_details(args) -> int:
+    """Perform a frontend analysis, then locate the specified line
+    number from the target file to retrieve details of the function
+    that covers the specific line."""
+
+    if args.out_dir:
+        out_dir = args.out_dir
+    else:
+        out_dir = os.getcwd()
+
+    if args.language == 'jvm':
+        entrypoint = 'fuzzerTestOneInput'
+    else:
+        entrypoint = 'LLVMFuzzerTestOneInput'
+
+    project = oss_fuzz.analyse_folder(language=args.language,
+                                      directory=args.target_dir,
+                                      entrypoint=entrypoint,
+                                      dump_output=False)
+
+    if not os.path.isdir(out_dir):
+        os.makedirs(out_dir, exist_ok=True)
+
+    output = os.path.join(out_dir, 'function_details')
+
+    function_dict = project.get_function_dict()
+    target_file = args.target_file
+    target_line = int(args.target_line)
+
+    for func in function_dict:
+        source_file = func['source_code']['source_file']
+
+        # File name only
+        if os.sep not in target_file:
+            source_file = os.path.basename(source_file)
+
+        if source_file == target_file:
+            if func['start_line'] <= target_line <= func['end_line']:
+                logger.info('Target function found in line %d of file %s.' % (target_line, target_file))
+
+                with open(output, 'w') as f:
+                    json.dump(func, f, indent=4)
+
+                return 0
+
+    logger.info(
+        'Failed to extract functions from source file %s line: %d' %
+        (args.target_file, target_line))
+
+    return -1

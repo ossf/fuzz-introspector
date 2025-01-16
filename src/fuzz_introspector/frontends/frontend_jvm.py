@@ -15,7 +15,7 @@
 ################################################################################
 """Fuzz Introspector Light frontend for Java"""
 
-from typing import Optional
+from typing import Any, Optional
 
 import os
 import pathlib
@@ -108,6 +108,13 @@ class SourceCodeFile():
 
         # Load import statements
         self._set_import_declaration()
+
+    def to_dict(self) -> dict[str, Any]:
+        """Converts the SourceCodeFile instance into a dictionary representation."""
+        return {
+            'source_file': self.source_file,
+            'imports': self.imports,
+        }
 
     def load_tree(self):
         """Load the the source code into a treesitter tree, and set
@@ -291,6 +298,30 @@ class JavaMethod():
 
             # Process statements
             self._process_statements()
+
+    def to_dict(self) -> dict[str, Any]:
+        """Converts the JavaMethod instance into a dictionary representation."""
+        return {
+            'func_name': self.name,
+            'start_line': self.start_line,
+            'end_line': self.end_line,
+            'is_constructor': self.is_constructor,
+            'public': self.public,
+            'static': self.static,
+            'complexity': self.complexity,
+            'icount': self.icount,
+            'arg_names': self.arg_names,
+            'arg_types': self.arg_types,
+            'return_type': self.return_type,
+            'exceptions': self.exceptions,
+            'function_depth': self.function_depth,
+            'function_uses': self.function_uses,
+            'base_callsites': self.base_callsites,
+            'detailed_callsites': self.detailed_callsites,
+            'is_entry_method': self.is_entry_method,
+            'class_interface': self.class_interface.to_dict(),
+            'source_code': self.parent_source.to_dict()
+        }
 
     def post_process_full_qualified_name(self):
         """Post process the full qualified name for types."""
@@ -849,6 +880,27 @@ class JavaClassInterface():
         if not self._has_constructor_defined():
             self.methods.append(JavaMethod(self.root, self, True, True))
 
+    def to_dict(self) -> dict[str, Any]:
+        """Converts the JavaClassInterface instance into a dictionary representation."""
+        return {
+            'class_name':
+            self.name,
+            'class_package':
+            self.package,
+            'class_public':
+            self.class_public,
+            'class_concrete':
+            self.class_concrete,
+            'is_interface':
+            self.is_interface,
+            'class_fields':
+            self.class_fields,
+            'super_class':
+            self.super_class,
+            'super_interfaces':
+            self.super_interfaces
+        }
+
     def add_package_to_class_name(self, name: str) -> Optional[str]:
         """Helper for finding a specific class name."""
         if self.name == f'{self.package}.{name.rsplit(".")[-1]}':
@@ -1019,6 +1071,25 @@ class Project():
         for source_code in self.source_code_files:
             self.all_classes.extend(source_code.classes)
 
+    def get_function_dict(self) -> list[dict[str, Any]]:
+        """Returns a dict representation of all functions in this project."""
+        result_list = []
+
+        for cls in self.all_classes:
+            for func in self._get_all_functions(cls):
+                result_list.append(func.to_dict())
+
+        return result_list
+
+    def _get_all_functions(self, cls: JavaClassInterface) -> list[JavaMethod]:
+        """Recursive function to extract all method from java class."""
+        result_list = []
+        result_list.extend(cls.methods)
+        for inner_class in cls.inner_classes:
+            rersult_list.extend(self._get_all_functions(inner_class))
+
+        return result_list
+
     def dump_module_logic(self,
                           report_name: str,
                           harness_name: Optional[str] = None,
@@ -1029,7 +1100,7 @@ class Project():
         report['sources'] = []
         report['Fuzzer filename'] = harness_source
 
-        all_classes = {}
+        classes_dict = {}
         project_methods: list[JavaMethod] = []
 
         # Post process source code files with full qualified names
@@ -1041,7 +1112,7 @@ class Project():
             # Retrieve list of class and post process them
             for cls in source_code.classes:
                 cls.post_process_full_qualified_name()
-                all_classes[cls.name] = cls
+                classes_dict[cls.name] = cls
 
             # Log entry method if provided
             if harness_name and source_code.has_class(harness_name):
@@ -1059,7 +1130,7 @@ class Project():
 
         # Extract callsites of methods
         for method in project_methods:
-            method.extract_callsites(all_classes)
+            method.extract_callsites(classes_dict)
 
         # Process all project methods
         method_list = []

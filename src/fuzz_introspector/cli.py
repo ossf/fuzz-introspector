@@ -31,6 +31,31 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
 
     subparsers = parser.add_subparsers(dest='command')
 
+    function_parser = subparsers.add_parser(
+        'function',
+        help=
+        'Perform analysis of specific functions in sepcific line of specific source file.'
+    )
+    function_parser.add_argument('--language',
+                                 type=str,
+                                 default='c-cpp',
+                                 help='Language of project')
+    function_parser.add_argument('--out-dir', type=str, default='')
+    function_parser.add_argument('--target_dir',
+                                 type=str,
+                                 help='Directory where the source files are',
+                                 required=True)
+    function_parser.add_argument(
+        '--target_file',
+        type=str,
+        help='Relative path or file name of target file',
+        required=True)
+    function_parser.add_argument(
+        '--target_line',
+        type=str,
+        help='Target line for the target function to analyse',
+        required=True)
+
     light_parser = subparsers.add_parser(
         "light",
         help="Perform light analysis of project. This involves no compilaiton.",
@@ -164,6 +189,8 @@ def main() -> int:
         return_code = commands.light_analysis(args)
     elif args.command == 'full':
         return_code = commands.end_to_end(args)
+    elif args.command == 'function':
+        return_code = commands.extract_function_details(args)
     else:
         return_code = constants.APP_EXIT_ERROR
     logger.info("Ending fuzz introspector post-processing")
