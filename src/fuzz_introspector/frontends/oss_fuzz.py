@@ -46,8 +46,7 @@ def parse_args():
     parser.add_argument('--target-dir',
                         help='Directory of which do analysis',
                         required=True)
-    parser.add_argument('--entrypoint',
-                        help='Entrypoint for the calltree')
+    parser.add_argument('--entrypoint', help='Entrypoint for the calltree')
     parser.add_argument('--language',
                         help='Language of target project',
                         required=True)
