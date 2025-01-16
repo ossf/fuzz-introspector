@@ -378,10 +378,14 @@ class FunctionDefinition():
                 target_name = func.text.decode()
 
                 # Find the matching function in our project
+                logger.debug('Matching function %s', target_name)
                 matched_func = project.find_function_from_approximate_name(
                     target_name)
                 if matched_func:
+                    logger.debug('Matched function')
                     target_name = matched_func.name
+                else:
+                    logger.debug('Did not find matching function')
 
             # Chained or method calls
             elif func.type == 'field_expression':
@@ -407,11 +411,16 @@ class FunctionDefinition():
                                         project) -> tuple[Optional[str], str]:
         """Helper for determining the return type of a field expression
         in a chained call and its full qualified name."""
+        logger.debug('Handling field expression: %s', field_expr.text.decode())
         ret_type = None
         object_type = None
 
         arg = field_expr.child_by_field_name('argument')
-        name = field_expr.child_by_field_name('field').text.decode()
+        if field_expr.child_by_field_name('field').type == 'template_method':
+            name = field_expr.child_by_field_name('field').child_by_field_name(
+                'name').text.decode()
+        else:
+            name = field_expr.child_by_field_name('field').text.decode()
         full_name = name
 
         # Chained field access
@@ -425,6 +434,12 @@ class FunctionDefinition():
         # Named object
         elif arg.type in ['identifier', 'qualified_identifier']:
             object_type = self.var_map.get(arg.text.decode())
+        elif arg.type == 'call_expression':
+            # Bail, we do not support this yet. Examples of code:
+            # "static_cast<impl::xpath_query_impl*>(_impl)->root->eval_string(c, sd.stack);""
+            # We give up here.
+            logger.debug('Cant analyse this.')
+            return ('', '')
 
         if object_type:
             if object_type == 'void':
@@ -684,8 +699,9 @@ class Project():
             else:
                 logger.debug('Extracting node using lookup table.')
                 func_node = get_function_node(function, self.all_functions)
+
             if func_node:
-                logger.debug('Found function node')
+                logger.debug('Found function node: %s', func_node.name)
                 func_name = func_node.name
             else:
                 logger.debug('Found no function node')
@@ -703,15 +719,23 @@ class Project():
         line_to_print += str(line_number)
 
         line_to_print += '\n'
+        if func_node and not source_code:
+            source_code = func_node.parent_source
 
         if function in visited_functions or not func_node or not source_code:
+            if function in visited_functions:
+                logger.debug('Function in visited ')
+            if not func_node:
+                logger.debug('Not func_node')
+            if not source_code:
+                logger.debug('Not source code')
             logger.debug('Function visited or no function node')
             return line_to_print
 
         visited_functions.add(function)
         logger.debug('Iterating %s callsites', len(func_node.base_callsites))
         for cs, line in func_node.base_callsites:
-            logger.debug('Callsites: %s', cs)
+            logger.debug('Callsite: %s', cs)
             line_to_print += self.extract_calltree(
                 source_file=source_code.source_file,
                 function=cs,
@@ -882,7 +906,7 @@ def capture_source_files_in_tree(directory_tree):
         '.inl'
     ]
     exclude_directories = [
-        'build', 'target', 'tests', 'node_modules', 'aflplusplus', 'honggfuzz',
+        'build', 'target', 'node_modules', 'aflplusplus', 'honggfuzz',
         'inspector', 'libfuzzer', 'fuzztest'
     ]
 
@@ -929,13 +953,24 @@ def get_function_node(
         one_layer_only: bool = False) -> Optional[FunctionDefinition]:
     """Helper to retrieve the RustFunction object of a function."""
 
+    logger.debug('Finding match for %s', target_name)
     for function in function_list:
         if target_name == function.name:
+            logger.debug('Found exact match')
             return function
 
     # Exact match
     # if target_name in function_map:
     #     return function_map[target_name]
+    if not '::' in target_name:
+        return ''
+
+    # Avoid all references to std library for the heuristics that are follow.
+    # This is because we do approximate namespace matching, and functions
+    # from standard library are definitely not imlemented in any library we
+    # analyse.
+    if target_name.startswith('std::'):
+        return ''
 
     # Match any key that ends with target_name, then
     # split the target_name by :: and check one by one
@@ -943,10 +978,13 @@ def get_function_node(
         name_split = target_name.split('::', 1)
     else:
         name_split = target_name.split('::')
-    for count in range(len(name_split)):
 
+    for count in range(len(name_split)):
+        logger.debug('Testing %s', '::'.join(name_split[count:]))
         for func in function_list:
             if func.name.endswith('::'.join(name_split[count:])):
+                logger.debug('Found match: %s', func.name)
                 return func
 
+    logger.debug('Found no matching function node')
     return None
