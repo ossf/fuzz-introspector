@@ -272,11 +272,7 @@ class FunctionDefinition():
 
         # Handles class or namespace in the function name
         if '::' in self.name:
-            prefix, _ = self.name.rsplit('::', 1)
-            if self.namespace_or_class and prefix:
-                self.namespace_or_class += f'::{prefix}'
-            else:
-                self.namespace_or_class = prefix
+            self.namespace_or_class, _ = self.name.rsplit('::', 1)
 
         # Handles return type
         type_node = self.root.child_by_field_name('type')
@@ -361,6 +357,8 @@ class FunctionDefinition():
     def _process_invoke(self, expr: Node,
                         project) -> list[tuple[str, int, int]]:
         """Internal helper for processing the function invocation statement."""
+        logger.debug('Handling invoke statmenet: %s', expr.text.decode())
+        logger.debug('Current namespace: %s', self.namespace_or_class)
         callsites = []
         target_name: str = ''
 
@@ -379,10 +377,12 @@ class FunctionDefinition():
 
                 # Find the matching function in our project
                 logger.debug('Matching function %s', target_name)
-                matched_func = project.find_function_from_approximate_name(
-                    target_name)
+                matched_func = get_function_node(
+                    target_name,
+                    project.all_functions,
+                    namespace=self.namespace_or_class)
                 if matched_func:
-                    logger.debug('Matched function')
+                    logger.debug('Matched function: %s', matched_func.name)
                     target_name = matched_func.name
                 else:
                     logger.debug('Did not find matching function')
@@ -947,10 +947,10 @@ def analyse_source_code(source_content: str) -> SourceCodeFile:
     return source_code
 
 
-def get_function_node(
-        target_name: str,
-        function_list: List[FunctionDefinition],
-        one_layer_only: bool = False) -> Optional[FunctionDefinition]:
+def get_function_node(target_name: str,
+                      function_list: List[FunctionDefinition],
+                      one_layer_only: bool = False,
+                      namespace: str = '') -> Optional[FunctionDefinition]:
     """Helper to retrieve the RustFunction object of a function."""
 
     logger.debug('Finding match for %s', target_name)
@@ -958,6 +958,13 @@ def get_function_node(
         if target_name == function.name:
             logger.debug('Found exact match')
             return function
+
+    if namespace:
+        logger.debug('Finding function within namespace %s', namespace)
+        for function in function_list:
+            if namespace + '::' + target_name == function.name:
+                logger.debug('Found namespace match')
+                return function
 
     # Exact match
     # if target_name in function_map:
