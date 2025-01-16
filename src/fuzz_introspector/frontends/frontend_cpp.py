@@ -962,7 +962,7 @@ def get_function_node(
     # Exact match
     # if target_name in function_map:
     #     return function_map[target_name]
-    if not '::' in target_name:
+    if '::' not in target_name:
         return None
 
     # Avoid all references to std library for the heuristics that are follow.
