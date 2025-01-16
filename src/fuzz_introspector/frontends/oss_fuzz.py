@@ -160,6 +160,7 @@ def process_cpp_project(target_dir: str,
             with open(target, 'w', encoding='utf-8') as f:
                 f.write(f'Call tree\n{calltree}')
 
+    logger.info('Complete cpp frontend.')
     return project
 
 
