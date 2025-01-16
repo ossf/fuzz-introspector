@@ -54,9 +54,14 @@ def end_to_end(args) -> int:
     else:
         out_dir = os.getcwd()
 
+    if args.language == 'jvm':
+        entrypoint = 'fuzzerTestOneInput'
+    else:
+        entrypoint = 'LLVMFuzzerTestOneInput'
+
     oss_fuzz.analyse_folder(language=args.language,
                             directory=args.target_dir,
-                            entrypoint='LLVMFuzzerTestOneInput',
+                            entrypoint=entrypoint,
                             out=out_dir)
 
     if 'c' in args.language:

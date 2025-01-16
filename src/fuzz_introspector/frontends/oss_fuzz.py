@@ -46,9 +46,7 @@ def parse_args():
     parser.add_argument('--target-dir',
                         help='Directory of which do analysis',
                         required=True)
-    parser.add_argument('--entrypoint',
-                        help='Entrypoint for the calltree',
-                        default='LLVMFuzzerTestOneInput')
+    parser.add_argument('--entrypoint', help='Entrypoint for the calltree')
     parser.add_argument('--language',
                         help='Language of target project',
                         required=True)
@@ -62,6 +60,10 @@ def process_c_project(target_dir: str,
                       module_only: bool = False,
                       dump_output=True) -> frontend_c.Project:
     """Process a project in C language"""
+    # Default entrypoint
+    if not entrypoint:
+        entrypoint = 'LLVMFuzzerTestOneInput'
+
     calltrees = []
     source_files = {}
     source_files['c'] = frontend_c.capture_source_files_in_tree(
@@ -123,6 +125,10 @@ def process_cpp_project(target_dir: str,
                         out: str,
                         dump_output=True) -> frontend_cpp.Project:
     """Process a project in CPP language"""
+    # Default entrypoint
+    if not entrypoint:
+        entrypoint = 'LLVMFuzzerTestOneInput'
+
     # Extract c++ source files
     logger.info('Going C++ route')
     calltrees = []
@@ -206,6 +212,10 @@ def process_jvm_project(target_dir: str,
                         out: str,
                         dump_output=True) -> frontend_jvm.Project:
     """Process a project in JVM based language"""
+    # Default entrypoint
+    if not entrypoint:
+        entrypoint = 'fuzzerTestOneInput'
+
     # Extract java source files
     logger.info('Going JVM route')
     calltrees = []
