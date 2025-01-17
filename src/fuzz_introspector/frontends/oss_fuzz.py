@@ -15,7 +15,6 @@
 ################################################################################
 
 import os
-import argparse
 import pathlib
 import logging
 
@@ -26,19 +25,9 @@ from fuzz_introspector.frontends import frontend_jvm
 from fuzz_introspector.frontends import frontend_rust
 from fuzz_introspector.frontends.datatypes import Project
 
-logger = logging.getLogger(name=__name__)
-LOG_FMT = '%(asctime)s.%(msecs)03d %(levelname)s %(module)s - %(funcName)s: %(message)s'
+from fuzz_introspector import constants
 
-LANGUAGE_EXTENSION_MAP = {
-    'c': ['.c', '.h'],
-    'c++':
-    ['.c', '.cpp', '.cc', '.c++', '.cxx', '.h', '.hpp', '.hh', '.hxx', '.inl'],
-    'cpp':
-    ['.c', '.cpp', '.cc', '.c++', '.cxx', '.h', '.hpp', '.hh', '.hxx', '.inl'],
-    'go': ['.go', '.cgo'],
-    'jvm': ['.java'],
-    'rust': ['.rs'],
-}
+logger = logging.getLogger(name=__name__)
 
 EXCLUDE_DIRECTORIES = [
     'node_modules', 'aflplusplus', 'honggfuzz', 'inspector', 'libfuzzer',
@@ -46,35 +35,12 @@ EXCLUDE_DIRECTORIES = [
 ]
 
 
-def setup_logging():
-    """Initializes logging"""
-    logging.basicConfig(
-        level=logging.INFO,
-        format=LOG_FMT,
-        datefmt='%Y-%m-%d %H:%M:%S',
-    )
-
-
-def parse_args():
-    """Parse command line arguments."""
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument('--target-dir',
-                        help='Directory of which do analysis',
-                        required=True)
-    parser.add_argument('--entrypoint', help='Entrypoint for the calltree')
-    parser.add_argument('--language',
-                        help='Language of target project',
-                        required=True)
-
-    return parser.parse_args()
-
-
 def capture_source_files_in_tree(directory_tree: str,
                                  language: str) -> list[str]:
     """Captures source code files in a given directory."""
     language_files = []
-    language_extensions = LANGUAGE_EXTENSION_MAP.get(language.lower(), [])
+    language_extensions = constants.LANGUAGE_EXTENSIONS.get(
+        language.lower(), [])
 
     for dirpath, _, filenames in os.walk(directory_tree):
         # Skip some non project directories
@@ -242,7 +208,7 @@ def analyse_folder(language: str = '',
     # Extract source files for target language
     source_files = capture_source_files_in_tree(directory, language)
 
-    if language == 'c':
+    if language == constants.LANGUAGES.C:
         project = process_c_project(directory,
                                     entrypoint,
                                     out,
@@ -251,26 +217,26 @@ def analyse_folder(language: str = '',
                                     dump_output=dump_output)
     else:
         # Process for different language
-        if language.lower() in ['cpp', 'c++']:
+        if language == constants.LANGUAGES.CPP:
             project = process_cpp_project(entrypoint,
                                           out,
                                           source_files,
                                           dump_output=dump_output)
-        elif language == 'go':
+        elif language == constants.LANGUAGES.GO:
             project = process_go_project(out,
                                          source_files,
                                          dump_output=dump_output)
-        elif language == 'jvm':
+        elif language == constants.LANGUAGES.JAVA:
             project = process_jvm_project(entrypoint,
                                           out,
                                           source_files,
                                           dump_output=dump_output)
-        elif language == 'rust':
+        elif language == constants.LANGUAGES.RUST:
             project = process_rust_project(out,
                                            source_files,
                                            dump_output=dump_output)
         else:
-            logger.error('Unsupported language: %s' % language)
+            logger.error('Unsupported language: %s', language)
             return Project([])
 
         # Process calltree and method data
@@ -303,16 +269,3 @@ def analyse_folder(language: str = '',
                     f.write(f'Call tree\n{calltree}')
 
     return project
-
-
-def main():
-    """Main"""
-
-    setup_logging()
-    args = parse_args()
-
-    analyse_folder(args.language, args.target_dir, args.entrypoint)
-
-
-if __name__ == "__main__":
-    main()

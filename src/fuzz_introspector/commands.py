@@ -54,7 +54,7 @@ def end_to_end(args) -> int:
     else:
         out_dir = os.getcwd()
 
-    if args.language == 'jvm':
+    if args.language == constants.LANGUAGES.JAVA:
         entrypoint = 'fuzzerTestOneInput'
     else:
         entrypoint = 'LLVMFuzzerTestOneInput'
