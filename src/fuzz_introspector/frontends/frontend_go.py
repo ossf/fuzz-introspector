@@ -18,7 +18,6 @@
 from typing import Optional
 
 import os
-import pathlib
 import logging
 
 from tree_sitter import Language, Parser, Node
@@ -784,17 +783,6 @@ class FunctionMethod():
         for dst, src_line in self.base_callsites:
             src_loc = self.parent_source.source_file + ':%d,1' % (src_line)
             self.detailed_callsites.append({'Src': src_loc, 'Dst': dst})
-
-
-def capture_source_files_in_tree(directory_tree: str) -> list[str]:
-    """Captures source code files in a given directory."""
-    language_extensions = ['.go', '.cgo']
-    language_files = []
-    for dirpath, _dirnames, filenames in os.walk(directory_tree):
-        for filename in filenames:
-            if pathlib.Path(filename).suffix in language_extensions:
-                language_files.append(os.path.join(dirpath, filename))
-    return language_files
 
 
 def load_treesitter_trees(source_files: list[str],

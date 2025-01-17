@@ -17,7 +17,6 @@
 from typing import Any, Optional, Set, List
 
 import os
-import pathlib
 import logging
 
 from tree_sitter import Language, Parser, Node
@@ -896,30 +895,6 @@ class Project():
         func_depth = _recursive_function_depth(target_function)
 
         return func_depth
-
-
-def capture_source_files_in_tree(directory_tree):
-    """Captures source code files in a given directory."""
-    language_files = []
-    language_extensions = [
-        '.c', '.cpp', '.cc', '.c++', '.cxx', '.h', '.hpp', '.hh', '.hxx',
-        '.inl'
-    ]
-    exclude_directories = [
-        'build', 'target', 'node_modules', 'aflplusplus', 'honggfuzz',
-        'inspector', 'libfuzzer', 'fuzztest'
-    ]
-
-    for dirpath, _, filenames in os.walk(directory_tree):
-        # Skip some non project directories
-        if any(exclude in dirpath for exclude in exclude_directories):
-            continue
-
-        for filename in filenames:
-            if pathlib.Path(filename).suffix.lower() in language_extensions:
-                language_files.append(os.path.join(dirpath, filename))
-
-    return language_files
 
 
 def load_treesitter_trees(source_files, is_log=True):

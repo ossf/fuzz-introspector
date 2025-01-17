@@ -18,7 +18,6 @@
 from typing import Any, Optional
 
 import os
-import pathlib
 import logging
 
 from tree_sitter import Language, Parser, Node
@@ -847,25 +846,6 @@ class Project():
                 source_code.source_file, func=cs, visited_funcs=visited_funcs)
 
         return visited_funcs
-
-
-def capture_source_files_in_tree(directory_tree: str) -> list[str]:
-    """Captures source code files in a given directory."""
-    exclude_directories = [
-        'tests', 'examples', 'benches', 'node_modules', 'aflplusplus',
-        'honggfuzz', 'inspector', 'libfuzzer'
-    ]
-    language_extensions = ['.rs']
-    language_files = []
-    for dirpath, _, filenames in os.walk(directory_tree):
-        # Skip some non project directories
-        if any(exclude in dirpath for exclude in exclude_directories):
-            continue
-
-        for filename in filenames:
-            if pathlib.Path(filename).suffix in language_extensions:
-                language_files.append(os.path.join(dirpath, filename))
-    return language_files
 
 
 def load_treesitter_trees(source_files: list[str],
