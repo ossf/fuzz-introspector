@@ -26,7 +26,6 @@ import yaml
 from fuzz_introspector.frontends.datatypes import Project
 
 logger = logging.getLogger(name=__name__)
-LOG_FMT = '%(asctime)s.%(msecs)03d %(levelname)s %(module)s - %(funcName)s: %(message)s'
 
 
 class SourceCodeFile():

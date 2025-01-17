@@ -23,10 +23,12 @@ from fuzz_introspector import commands, constants
 sys.setrecursionlimit(10000)
 
 logger = logging.getLogger(name=__name__)
-LOG_FMT = '%(asctime)s.%(msecs)03d %(levelname)s %(module)s - %(funcName)s: %(message)s'
+LOG_FMT = ('%(asctime)s.%(msecs)03d %(levelname)s '
+           '%(module)s - %(funcName)s: %(message)s')
 
 
 def get_cmdline_parser() -> argparse.ArgumentParser:
+    """Parse the commandline"""
     parser = argparse.ArgumentParser()
 
     subparsers = parser.add_subparsers(dest='command')
@@ -49,7 +51,7 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
     full_parser.add_argument('--language',
                              type=str,
                              help='Programming of the source code to analyse.',
-                             choices=constants.LANGUAGES)
+                             choices=constants.LANGUAGES_SUPPORTED)
     full_parser.add_argument('--out-dir',
                              default='',
                              type=str,
@@ -136,20 +138,13 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
 
 
 def set_logging_level() -> None:
-    if os.environ.get("FUZZ_LOGLEVEL"):
-        level = os.environ.get("FUZZ_LOGLEVEL")
-        if level == "debug":
-            logging.basicConfig(
-                level=logging.DEBUG,
-                format=LOG_FMT,
-                datefmt='%Y-%m-%d %H:%M:%S',
-            )
-        else:
-            logging.basicConfig(
-                level=logging.INFO,
-                format=LOG_FMT,
-                datefmt='%Y-%m-%d %H:%M:%S',
-            )
+    """Sets logging level."""
+    if os.environ.get('FUZZ_LOGLEVEL', 'info') == 'debug':
+        logging.basicConfig(
+            level=logging.DEBUG,
+            format=LOG_FMT,
+            datefmt='%Y-%m-%d %H:%M:%S',
+        )
     else:
         logging.basicConfig(
             level=logging.INFO,
@@ -160,6 +155,7 @@ def set_logging_level() -> None:
 
 
 def main() -> int:
+    """Main CLI entrypoint."""
     set_logging_level()
 
     parser = get_cmdline_parser()
