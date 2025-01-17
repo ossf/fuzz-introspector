@@ -16,6 +16,7 @@
 
 import os
 import argparse
+import pathlib
 import logging
 
 from typing import Any
@@ -28,6 +29,22 @@ from fuzz_introspector.frontends import frontend_rust
 
 logger = logging.getLogger(name=__name__)
 LOG_FMT = '%(asctime)s.%(msecs)03d %(levelname)s %(module)s - %(funcName)s: %(message)s'
+
+LANGUAGE_EXTENSION_MAP = {
+    'c': ['.c', '.h'],
+    'c++':
+    ['.c', '.cpp', '.cc', '.c++', '.cxx', '.h', '.hpp', '.hh', '.hxx', '.inl'],
+    'cpp':
+    ['.c', '.cpp', '.cc', '.c++', '.cxx', '.h', '.hpp', '.hh', '.hxx', '.inl'],
+    'go': ['.go', '.cgo'],
+    'jvm': ['.java'],
+    'rust': ['.rs'],
+}
+
+EXCLUDE_DIRECTORIES = [
+    'node_modules', 'aflplusplus', 'honggfuzz', 'inspector', 'libfuzzer',
+    'fuzztest', 'target', 'build'
+]
 
 
 def setup_logging():
@@ -54,22 +71,38 @@ def parse_args():
     return parser.parse_args()
 
 
+def capture_source_files_in_tree(directory_tree: str,
+                                 language: str) -> list[str]:
+    """Captures source code files in a given directory."""
+    language_files = []
+    language_extensions = LANGUAGE_EXTENSION_MAP.get(language.lower(), [])
+
+    for dirpath, _, filenames in os.walk(directory_tree):
+        # Skip some non project directories
+        if any(exclude in dirpath for exclude in EXCLUDE_DIRECTORIES):
+            continue
+
+        for filename in filenames:
+            if pathlib.Path(filename).suffix in language_extensions:
+                language_files.append(os.path.join(dirpath, filename))
+    return language_files
+
+
 def process_c_project(target_dir: str,
                       entrypoint: str,
                       out: str,
+                      source_files: list[str],
                       module_only: bool = False,
                       dump_output=True) -> frontend_c.Project:
     """Process a project in C language"""
+    calltrees = []
+
     # Default entrypoint
     if not entrypoint:
         entrypoint = 'LLVMFuzzerTestOneInput'
 
-    calltrees = []
-    source_files = {}
-    source_files['c'] = frontend_c.capture_source_files_in_tree(
-        target_dir, 'c')
-    logger.info('Found %d files to include in analysis',
-                len(source_files['c']))
+    logger.info('Going C route')
+    logger.info('Found %d files to include in analysis', len(source_files))
     logger.info('Loading tree-sitter trees')
     source_codes = frontend_c.load_treesitter_trees(source_files)
 
@@ -120,22 +153,19 @@ def process_c_project(target_dir: str,
     return project
 
 
-def process_cpp_project(target_dir: str,
-                        entrypoint: str,
+def process_cpp_project(entrypoint: str,
                         out: str,
+                        source_files: list[str],
                         dump_output=True) -> frontend_cpp.Project:
     """Process a project in CPP language"""
+    calltrees = []
+
     # Default entrypoint
     if not entrypoint:
         entrypoint = 'LLVMFuzzerTestOneInput'
 
-    # Extract c++ source files
-    logger.info('Going C++ route')
-    calltrees = []
-    source_files = []
-    source_files = frontend_cpp.capture_source_files_in_tree(target_dir)
-
     # Process tree sitter for c++ source files
+    logger.info('Going C++ route')
     logger.info('Found %d files to include in analysis', len(source_files))
     logger.info('Loading tree-sitter trees')
     source_codes = frontend_cpp.load_treesitter_trees(source_files)
@@ -170,17 +200,14 @@ def process_cpp_project(target_dir: str,
     return project
 
 
-def process_go_project(target_dir: str,
-                       out: str,
+def process_go_project(out: str,
+                       source_files: list[str],
                        dump_output=True) -> frontend_go.Project:
     """Process a project in Go language"""
-    # Extract go source files
-    logger.info('Going Go route')
     calltrees = []
-    source_files = []
-    source_files = frontend_go.capture_source_files_in_tree(target_dir)
 
     # Process tree sitter for go source files
+    logger.info('Going Go route')
     logger.info('Found %d files to include in analysis', len(source_files))
     logger.info('Loading tree-sitter trees')
     source_codes = frontend_go.load_treesitter_trees(source_files)
@@ -207,22 +234,19 @@ def process_go_project(target_dir: str,
     return project
 
 
-def process_jvm_project(target_dir: str,
-                        entrypoint: str,
+def process_jvm_project(entrypoint: str,
                         out: str,
+                        source_files: list[str],
                         dump_output=True) -> frontend_jvm.Project:
     """Process a project in JVM based language"""
+    calltrees = []
+
     # Default entrypoint
     if not entrypoint:
         entrypoint = 'fuzzerTestOneInput'
 
-    # Extract java source files
-    logger.info('Going JVM route')
-    calltrees = []
-    source_files = []
-    source_files = frontend_jvm.capture_source_files_in_tree(target_dir)
-
     # Process tree sitter for go source files
+    logger.info('Going JVM route')
     logger.info('Found %d files to include in analysis', len(source_files))
     logger.info('Loading tree-sitter trees')
     source_codes = frontend_jvm.load_treesitter_trees(source_files, entrypoint)
@@ -251,17 +275,14 @@ def process_jvm_project(target_dir: str,
     return project
 
 
-def process_rust_project(target_dir: str,
-                         out: str,
+def process_rust_project(out: str,
+                         source_files: list[str],
                          dump_output=True) -> frontend_rust.Project:
     """Process a project in Rust based language"""
-    # Extract rust source files
-    logger.info('Going Rust route')
     calltrees = []
-    source_files = []
-    source_files = frontend_rust.capture_source_files_in_tree(target_dir)
 
     # Process tree sitter for rust source files
+    logger.info('Going Rust route')
     logger.info('Found %d files to include in analysis', len(source_files))
     logger.info('Loading tree-sitter trees')
     source_codes = frontend_rust.load_treesitter_trees(source_files)
@@ -298,26 +319,30 @@ def analyse_folder(language: str = '',
                    dump_output=True) -> Any:
     """Runs a full frontend analysis on a given directory"""
 
+    # Extract source files for target language
+    source_files = capture_source_files_in_tree(directory, language)
+
     if language == 'c':
         return process_c_project(directory,
                                  entrypoint,
                                  out,
+                                 source_files,
                                  module_only,
                                  dump_output=dump_output)
     elif language.lower() in ['cpp', 'c++']:
-        return process_cpp_project(directory,
-                                   entrypoint,
+        return process_cpp_project(entrypoint,
                                    out,
+                                   source_files,
                                    dump_output=dump_output)
     elif language == 'go':
-        return process_go_project(directory, out, dump_output=dump_output)
+        return process_go_project(out, source_files, dump_output=dump_output)
     elif language == 'jvm':
-        return process_jvm_project(directory,
-                                   entrypoint,
+        return process_jvm_project(entrypoint,
                                    out,
+                                   source_files,
                                    dump_output=dump_output)
     elif language == 'rust':
-        return process_rust_project(directory, out, dump_output=dump_output)
+        return process_rust_project(out, source_files, dump_output=dump_output)
 
     return [], None
 
