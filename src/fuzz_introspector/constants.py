@@ -31,7 +31,27 @@ DEBUG_INFO_DUMP = "all_debug_info.json"
 
 SAVED_SOURCE_FOLDER = 'source-code'
 
-LANGUAGES = ['c', 'c++', 'jvm', 'go', 'rust']
+
+class LANGUAGES:
+    C = 'c'
+    CPP = 'c++'
+    JAVA = 'jvm'
+    GO = 'go'
+    RUST = 'rust'
+
+
+LANGUAGES_SUPPORTED = [
+    LANGUAGES.C, LANGUAGES.CPP, LANGUAGES.JAVA, LANGUAGES.GO, LANGUAGES.RUST
+]
+
+LANGUAGE_EXTENSIONS = {
+    LANGUAGES.C: ['.c', '.h'],
+    LANGUAGES.CPP:
+    ['.c', '.cpp', '.cc', '.c++', '.cxx', '.h', '.hpp', '.hh', '.hxx'],
+    LANGUAGES.JAVA: ['.java'],
+    LANGUAGES.RUST: ['.rs'],
+    LANGUAGES.GO: ['.go', '.cgo'],
+}
 
 # Holds data about all functions in javascript, to ease loading of static
 # website.
