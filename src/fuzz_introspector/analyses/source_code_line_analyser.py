@@ -16,15 +16,11 @@
 import json
 import logging
 
-from bs4 import BeautifulSoup as bs
+from typing import (Any, List, Dict)
 
-from typing import (Any, List, Tuple, Dict, Optional)
+from fuzz_introspector import (analysis, html_helpers)
 
-from fuzz_introspector import (analysis, code_coverage, constants, cfg_load,
-                               html_helpers, json_report, utils)
-
-from fuzz_introspector.datatypes import (project_profile, fuzzer_profile,
-                                         function_profile)
+from fuzz_introspector.datatypes import (project_profile, fuzzer_profile)
 
 logger = logging.getLogger(name=__name__)
 
