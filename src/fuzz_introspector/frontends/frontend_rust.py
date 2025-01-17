@@ -23,6 +23,8 @@ from tree_sitter import Language, Parser, Node
 import tree_sitter_rust
 import yaml
 
+from fuzz_introspector.frontends.datatypes import Project
+
 logger = logging.getLogger(name=__name__)
 LOG_FMT = '%(asctime)s.%(msecs)03d %(levelname)s %(module)s - %(funcName)s: %(message)s'
 
@@ -585,16 +587,15 @@ class RustFunction():
                 self.detailed_callsites.append({'Src': src_loc, 'Dst': dst})
 
 
-class Project():
+class RustProject(Project):
     """Wrapper for doing analysis of a collection of source files."""
-
-    def __init__(self, source_code_files: list[SourceCodeFile]):
-        self.source_code_files = source_code_files
 
     def dump_module_logic(self,
                           report_name: str,
-                          harness_name: Optional[str] = None,
-                          harness_source: str = ''):
+                          entry_function: str = '',
+                          harness_name: str = '',
+                          harness_source: str = '',
+                          dump_output: bool = True):
         """Dumps the data for the module in full."""
         logger.info('Dumping project-wide logic.')
         report: dict[str, Any] = {'report': 'name'}
@@ -671,8 +672,9 @@ class Project():
             report['All functions'] = {}
             report['All functions']['Elements'] = func_list
 
-        with open(report_name, 'w', encoding='utf-8') as f:
-            f.write(yaml.dump(report))
+        if dump_output:
+            with open(report_name, 'w', encoding='utf-8') as f:
+                f.write(yaml.dump(report))
 
     def _find_source_with_function(self,
                                    name: str) -> Optional[SourceCodeFile]:
@@ -732,38 +734,43 @@ class Project():
         return func_depth
 
     def extract_calltree(self,
-                         source_file: str,
-                         source_code: Optional[SourceCodeFile] = None,
-                         func: Optional[str] = None,
-                         visited_funcs: Optional[set[str]] = None,
+                         source_file: str = '',
+                         source_code: Optional[Any] = None,
+                         function: Optional[str] = None,
+                         visited_functions: Optional[set[str]] = None,
                          depth: int = 0,
                          line_number: int = -1,
-                         is_macro: bool = False) -> str:
+                         other_props: Optional[dict[str, Any]] = None) -> str:
         """Extracts calltree string of a calltree so that FI core can use it."""
         func_node = None
 
-        if not visited_funcs:
-            visited_funcs = set()
+        if other_props:
+            is_macro = other_props.get('is_macro', False)
+        else:
+            is_macro = False
 
-        if not source_code and func:
-            source_code = self._find_source_with_function(func)
+        if not visited_functions:
+            visited_functions = set()
 
-        if not func and source_code:
+        if not source_code and function:
+            source_code = self._find_source_with_function(function)
+
+        if not function and source_code:
             func_node = source_code.get_entry_function()
             if func_node:
-                func = func_node.name
+                function = func_node.name
 
-        if func:
+        if function:
             if not func_node:
-                func_node = get_function_node(func, self.all_functions)
+                func_node = get_function_node(function, self.all_functions)
 
             if func_node and not is_macro:
                 func_name = func_node.name
-                if func.count('::') > func_name.count('::'):
-                    func_name = func
+                if function.count('::') > func_name.count('::'):
+                    func_name = function
             else:
                 func_node = None
-                func_name = func
+                func_name = function
         else:
             return ''
 
@@ -771,27 +778,28 @@ class Project():
         line_to_print += func_name
         line_to_print += ' '
         line_to_print += source_file
-
         line_to_print += ' '
         line_to_print += str(line_number)
-
         line_to_print += '\n'
 
-        if func in visited_funcs or not func_node or not source_code or not func:
+        if function in visited_functions or not func_node or not source_code or not function:
             return line_to_print
 
         callsites = func_node.base_callsites
-        visited_funcs.add(func)
+        visited_functions.add(function)
 
         for cs, line_number in callsites:
             is_macro = bool(func_node and func_node.is_macro
                             and func_node.name != 'fuzz_target')
-            line_to_print += self.extract_calltree(source_code.source_file,
-                                                   func=cs,
-                                                   visited_funcs=visited_funcs,
-                                                   depth=depth + 1,
-                                                   line_number=line_number,
-                                                   is_macro=is_macro)
+            other_props = {}
+            other_props['is_macro'] = is_macro
+            line_to_print += self.extract_calltree(
+                source_code.source_file,
+                function=cs,
+                visited_functions=visited_functions,
+                depth=depth + 1,
+                line_number=line_number,
+                other_props=other_props)
 
         return line_to_print
 
@@ -806,45 +814,47 @@ class Project():
 
     def get_reachable_functions(
             self,
-            source_file: str,
-            source_code: Optional[SourceCodeFile] = None,
-            func: Optional[str] = None,
-            visited_funcs: Optional[set[str]] = None) -> set[str]:
+            source_file: str = '',
+            source_code: Optional[Any] = None,
+            function: Optional[str] = None,
+            visited_functions: Optional[set[str]] = None) -> set[str]:
         """Get a list of reachable functions for a provided function name."""
         func_node = None
 
-        if not visited_funcs:
-            visited_funcs = set()
+        if not visited_functions:
+            visited_functions = set()
 
-        if not source_code and func:
-            source_code = self._find_source_with_function(func)
+        if not source_code and function:
+            source_code = self._find_source_with_function(function)
 
-        if not func and source_code:
+        if not function and source_code:
             func_node = source_code.get_entry_function()
             if func_node:
-                func = func_node.name
+                function = func_node.name
 
-        if source_code and func:
+        if source_code and function:
             if not func_node:
-                func_node = get_function_node(func, self.all_functions)
+                func_node = get_function_node(function, self.all_functions)
 
             if not func_node:
-                visited_funcs.add(func)
-                return visited_funcs
+                visited_functions.add(function)
+                return visited_functions
         else:
-            if func:
-                visited_funcs.add(func)
-            return visited_funcs
+            if function:
+                visited_functions.add(function)
+            return visited_functions
 
-        visited_funcs.add(func)
+        visited_functions.add(function)
         for cs, _ in func_node.base_callsites:
-            if cs in visited_funcs:
+            if cs in visited_functions:
                 continue
 
-            visited_funcs = self.get_reachable_functions(
-                source_code.source_file, func=cs, visited_funcs=visited_funcs)
+            visited_functions = self.get_reachable_functions(
+                source_code.source_file,
+                function=cs,
+                visited_functions=visited_functions)
 
-        return visited_funcs
+        return visited_functions
 
 
 def load_treesitter_trees(source_files: list[str],

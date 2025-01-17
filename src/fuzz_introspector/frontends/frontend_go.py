@@ -15,7 +15,7 @@
 ################################################################################
 """Fuzz Introspector Light frontend for Go"""
 
-from typing import Optional
+from typing import Any, Optional
 
 import logging
 
@@ -23,7 +23,7 @@ from tree_sitter import Language, Parser, Node
 import tree_sitter_go
 import yaml
 
-from typing import Any
+from fuzz_introspector.frontends.datatypes import Project
 
 logger = logging.getLogger(name=__name__)
 
@@ -178,11 +178,12 @@ class SourceCodeFile():
         return ''
 
 
-class Project():
+class GoProject(Project):
     """Wrapper for doing analysis of a collection of source files."""
 
     def __init__(self, source_code_files: list[SourceCodeFile]):
-        self.source_code_files = source_code_files
+        super().__init__(source_code_files)
+
         full_functions_methods = [
             item for src in source_code_files
             for item in src.functions + src.methods
@@ -195,7 +196,9 @@ class Project():
     def dump_module_logic(self,
                           report_name: str,
                           entry_function: str = '',
-                          harness_source: str = ''):
+                          harness_name: str = '',
+                          harness_source: str = '',
+                          dump_output: bool = True):
         """Dumps the data for the module in full."""
         logger.info('Dumping project-wide logic.')
         report: dict[str, Any] = {'report': 'name'}
@@ -265,24 +268,18 @@ class Project():
             report['All functions'] = {}
             report['All functions']['Elements'] = function_list
 
-        with open(report_name, 'w', encoding='utf-8') as f:
-            f.write(yaml.dump(report))
-
-    def get_source_codes_with_harnesses(self) -> list[SourceCodeFile]:
-        """Gets the source codes that holds libfuzzer harnesses."""
-        harnesses = []
-        for source_code in self.source_code_files:
-            if source_code.has_libfuzzer_harness():
-                harnesses.append(source_code)
-        return harnesses
+        if dump_output:
+            with open(report_name, 'w', encoding='utf-8') as f:
+                f.write(yaml.dump(report))
 
     def extract_calltree(self,
-                         source_file: str,
-                         source_code: Optional[SourceCodeFile] = None,
+                         source_file: str = '',
+                         source_code: Optional[Any] = None,
                          function: Optional[str] = None,
                          visited_functions: Optional[set[str]] = None,
                          depth: int = 0,
-                         line_number: int = -1) -> str:
+                         line_number: int = -1,
+                         other_props: Optional[dict[str, Any]] = None) -> str:
         """Extracts calltree string of a calltree so that FI core can use it."""
         if not visited_functions:
             visited_functions = set()
@@ -329,8 +326,8 @@ class Project():
 
     def get_reachable_functions(
             self,
-            source_file: str,
-            source_code: Optional[SourceCodeFile] = None,
+            source_file: str = '',
+            source_code: Optional[Any] = None,
             function: Optional[str] = None,
             visited_functions: Optional[set[str]] = None) -> set[str]:
         """Get a list of reachable functions for a provided function name."""
