@@ -23,7 +23,7 @@ from tree_sitter import Language, Parser, Node
 import tree_sitter_java
 import yaml
 
-from fuzz_introspector.frontends.datatypes import Project
+from fuzz_introspector.frontends.datatypes import Project, SourceCodeFile
 
 logger = logging.getLogger(name=__name__)
 
@@ -69,27 +69,11 @@ LITERAL_MAP = {
 }
 
 
-class SourceCodeFile():
+class JvmSourceCodeFile(SourceCodeFile):
     """Class for holding file-specific information."""
 
-    def __init__(self,
-                 source_file: str,
-                 entrypoint: str = 'fuzzerTestOneInput',
-                 source_content: Optional[bytes] = None):
-        logger.info('Processing %s' % source_file)
-
-        self.root = None
-        self.source_file = source_file
-        self.entrypoint = entrypoint
-        self.tree_sitter_lang = Language(tree_sitter_java.language())
-        self.parser = Parser(self.tree_sitter_lang)
-
-        if source_content:
-            self.source_content = source_content
-        else:
-            with open(self.source_file, 'rb') as f:
-                self.source_content = f.read()
-
+    def language_specific_process(self):
+        """Perform some language specific processes in subclasses."""
         # List of definitions in the source file.
         self.package = ''
         self.classes: list['JavaClassInterface'] = []
@@ -106,11 +90,6 @@ class SourceCodeFile():
 
         # Load import statements
         self._set_import_declaration()
-
-    def load_tree(self):
-        """Load the the source code into a treesitter tree, and set
-        the root node."""
-        self.root = self.parser.parse(self.source_content).root_node
 
     def post_process_imports(self, classes: list['JavaClassInterface']):
         """Add in full qualified name for classes in projects."""
@@ -247,7 +226,7 @@ class JavaMethod():
         self.class_interface = class_interface
         self.tree_sitter_lang = self.class_interface.tree_sitter_lang
         self.parent_source: Optional[
-            SourceCodeFile] = self.class_interface.parent_source
+            JvmSourceCodeFile] = self.class_interface.parent_source
         self.is_constructor = is_constructor
         self.is_default_constructor = is_default_constructor
         self.name: str = ''
@@ -813,7 +792,7 @@ class JavaClassInterface():
     def __init__(self,
                  root: Node,
                  tree_sitter_lang: Language,
-                 source_code: SourceCodeFile,
+                 source_code: JvmSourceCodeFile,
                  parent: Optional['JavaClassInterface'] = None):
         self.root = root
         self.parent = parent
@@ -1008,10 +987,10 @@ class JavaClassInterface():
         return False, None
 
 
-class JvmProject(Project):
+class JvmProject(Project[JvmSourceCodeFile]):
     """Wrapper for doing analysis of a collection of source files."""
 
-    def __init__(self, source_code_files: list[SourceCodeFile]):
+    def __init__(self, source_code_files: list[JvmSourceCodeFile]):
         super().__init__(source_code_files)
         self.all_classes = []
         for source_code in self.source_code_files:
@@ -1045,9 +1024,9 @@ class JvmProject(Project):
 
             # Log entry method if provided
             if harness_name and source_code.has_class(harness_name):
-                entry_function = source_code.get_entry_method_name(True)
-                if entry_function:
-                    report['Fuzzing method'] = entry_function
+                entry_func = source_code.get_entry_method_name(True)
+                if entry_func:
+                    report['Fuzzing method'] = entry_func
 
             # Retrieve full proejct methods and information
             methods = source_code.get_all_methods()
@@ -1128,7 +1107,8 @@ class JvmProject(Project):
             with open(report_name, 'w', encoding='utf-8') as f:
                 f.write(yaml.dump(report))
 
-    def find_source_with_method(self, name: str) -> Optional[SourceCodeFile]:
+    def find_source_with_method(self,
+                                name: str) -> Optional[JvmSourceCodeFile]:
         """Finds the source code with a given method name."""
         for source_code in self.source_code_files:
             if source_code.has_method_definition(name):
@@ -1181,7 +1161,7 @@ class JvmProject(Project):
 
     def extract_calltree(self,
                          source_file: str = '',
-                         source_code: Optional[Any] = None,
+                         source_code: Optional[JvmSourceCodeFile] = None,
                          function: Optional[str] = None,
                          visited_functions: Optional[set[str]] = None,
                          depth: int = 0,
@@ -1231,10 +1211,13 @@ class JvmProject(Project):
 
         return line_to_print
 
+    def get_source_codes_with_harnesses(self) -> list[JvmSourceCodeFile]:
+        return super().get_source_codes_with_harnesses()
+
     def get_reachable_functions(
             self,
             source_file: str = '',
-            source_code: Optional[Any] = None,
+            source_code: Optional[JvmSourceCodeFile] = None,
             function: Optional[str] = None,
             visited_functions: Optional[set[str]] = None) -> set[str]:
         """Get a list of reachable functions for a provided function name."""
@@ -1272,23 +1255,24 @@ class JvmProject(Project):
 
 def load_treesitter_trees(source_files: list[str],
                           entrypoint: str,
-                          is_log: bool = True) -> list[SourceCodeFile]:
+                          is_log: bool = True) -> JvmProject:
     """Creates treesitter trees for all files in a given list of source files."""
     results = []
 
     for code_file in source_files:
-        source_cls = SourceCodeFile(code_file, entrypoint)
+        source_cls = JvmSourceCodeFile('jvm', code_file, entrypoint)
         if is_log:
             if source_cls.has_libfuzzer_harness():
                 logger.info('harness: %s', code_file)
         results.append(source_cls)
 
-    return results
+    return JvmProject(results)
 
 
 def analyse_source_code(source_content: str,
-                        entrypoint: str) -> SourceCodeFile:
+                        entrypoint: str) -> JvmSourceCodeFile:
     """Returns a source abstraction based on a single source string."""
-    source_code = SourceCodeFile(source_file='in-memory string',
-                                 source_content=source_content.encode())
+    source_code = JvmSourceCodeFile('jvm',
+                                    source_file='in-memory string',
+                                    source_content=source_content.encode())
     return source_code

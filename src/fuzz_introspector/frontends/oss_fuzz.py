@@ -100,11 +100,8 @@ def process_c_project(target_dir: str,
 
     logger.info('Going C route')
     logger.info('Found %d files to include in analysis', len(source_files))
-    logger.info('Loading tree-sitter trees')
-    source_codes = frontend_c.load_treesitter_trees(source_files)
-
-    logger.info('Creating base project.')
-    project = frontend_c.CProject(source_codes)
+    logger.info('Loading tree-sitter trees and create base project')
+    project = frontend_c.load_treesitter_trees(source_files)
 
     # We may not need to do this, but will do it while refactoring into
     # the new frontends.
@@ -140,7 +137,6 @@ def process_c_project(target_dir: str,
                                       harness.source_file, dump_output)
 
             logger.info('Extracting calltree for %s', harness.source_file)
-            calltree = project.extract_calltree(harness, entrypoint)
             calltree = project.extract_calltree(source_code=harness,
                                                 function=entrypoint)
             with open(os.path.join(out, 'fuzzerLogFile-%d.data' % (idx)),
@@ -149,84 +145,6 @@ def process_c_project(target_dir: str,
                 f.write("Call tree\n")
                 f.write(calltree)
                 f.write("====================================")
-
-    return project
-
-
-def process_cpp_project(entrypoint: str,
-                        out: str,
-                        source_files: list[str],
-                        dump_output: bool = True) -> Project:
-    """Process a project in CPP language"""
-    # Default entrypoint
-    if not entrypoint:
-        entrypoint = 'LLVMFuzzerTestOneInput'
-
-    # Process tree sitter for c++ source files
-    logger.info('Going C++ route')
-    logger.info('Found %d files to include in analysis', len(source_files))
-    logger.info('Loading tree-sitter trees')
-    source_codes = frontend_cpp.load_treesitter_trees(source_files)
-
-    # Create and dump project
-    logger.info('Creating base project.')
-    project = frontend_cpp.CppProject(source_codes)
-
-    return project
-
-
-def process_go_project(out: str,
-                       source_files: list[str],
-                       dump_output: bool = True) -> Project:
-    """Process a project in Go language"""
-    # Process tree sitter for go source files
-    logger.info('Going Go route')
-    logger.info('Found %d files to include in analysis', len(source_files))
-    logger.info('Loading tree-sitter trees')
-    source_codes = frontend_go.load_treesitter_trees(source_files)
-
-    # Create and dump project
-    logger.info('Creating base project.')
-    project = frontend_go.GoProject(source_codes)
-
-    return project
-
-
-def process_jvm_project(entrypoint: str,
-                        out: str,
-                        source_files: list[str],
-                        dump_output: bool = True) -> Project:
-    """Process a project in JVM based language"""
-    # Default entrypoint
-    if not entrypoint:
-        entrypoint = 'fuzzerTestOneInput'
-
-    # Process tree sitter for go source files
-    logger.info('Going JVM route')
-    logger.info('Found %d files to include in analysis', len(source_files))
-    logger.info('Loading tree-sitter trees')
-    source_codes = frontend_jvm.load_treesitter_trees(source_files, entrypoint)
-
-    # Create and dump project
-    logger.info('Creating base project.')
-    project = frontend_jvm.JvmProject(source_codes)
-
-    return project
-
-
-def process_rust_project(out: str,
-                         source_files: list[str],
-                         dump_output: bool = True) -> Project:
-    """Process a project in Rust based language"""
-    # Process tree sitter for rust source files
-    logger.info('Going Rust route')
-    logger.info('Found %d files to include in analysis', len(source_files))
-    logger.info('Loading tree-sitter trees')
-    source_codes = frontend_rust.load_treesitter_trees(source_files)
-
-    # Create and dump project
-    logger.info('Creating base project.')
-    project = frontend_rust.RustProject(source_codes)
 
     return project
 
@@ -241,6 +159,7 @@ def analyse_folder(language: str = '',
 
     # Extract source files for target language
     source_files = capture_source_files_in_tree(directory, language)
+    logger.info('Found %d files to include in analysis', len(source_files))
 
     if language == 'c':
         project = process_c_project(directory,
@@ -252,23 +171,26 @@ def analyse_folder(language: str = '',
     else:
         # Process for different language
         if language.lower() in ['cpp', 'c++']:
-            project = process_cpp_project(entrypoint,
-                                          out,
-                                          source_files,
-                                          dump_output=dump_output)
+            logger.info('Going C++ route')
+            logger.info('Loading tree-sitter trees')
+            if not entrypoint:
+                entrypoint = 'LLVMFuzzerTestOneInput'
+            project = frontend_cpp.load_treesitter_trees(source_files)
         elif language == 'go':
-            project = process_go_project(out,
-                                         source_files,
-                                         dump_output=dump_output)
+            logger.info('Going Go route')
+            logger.info('Loading tree-sitter trees and create base project')
+            project = frontend_go.load_treesitter_trees(source_files)
         elif language == 'jvm':
-            project = process_jvm_project(entrypoint,
-                                          out,
-                                          source_files,
-                                          dump_output=dump_output)
+            logger.info('Going JVM route')
+            logger.info('Loading tree-sitter trees and create base project')
+            if not entrypoint:
+                entrypoint = 'fuzzerTestOneInput'
+            project = frontend_jvm.load_treesitter_trees(
+                source_files, entrypoint)
         elif language == 'rust':
-            project = process_rust_project(out,
-                                           source_files,
-                                           dump_output=dump_output)
+            logger.info('Going Rust route')
+            logger.info('Loading tree-sitter trees and create base project')
+            project = frontend_rust.load_treesitter_trees(source_files)
         else:
             logger.error('Unsupported language: %s' % language)
             return Project([])

@@ -23,46 +23,24 @@ from tree_sitter import Language, Parser, Node
 import tree_sitter_rust
 import yaml
 
-from fuzz_introspector.frontends.datatypes import Project
+from fuzz_introspector.frontends.datatypes import Project, SourceCodeFile
 
 logger = logging.getLogger(name=__name__)
 LOG_FMT = '%(asctime)s.%(msecs)03d %(levelname)s %(module)s - %(funcName)s: %(message)s'
 
 
-class SourceCodeFile():
+class RustSourceCodeFile(SourceCodeFile):
     """Class for holding file-specific information."""
 
-    def __init__(self,
-                 source_file: str,
-                 source_content: Optional[bytes] = None):
-        logger.info('Processing %s' % source_file)
-
-        self.root = None
-        self.entrypoint = None
-        self.source_file = source_file
-        self.tree_sitter_lang = Language(tree_sitter_rust.language())
-        self.parser = Parser(self.tree_sitter_lang)
+    def language_specific_process(self):
+        """Perform some language specific processes in subclasses."""
         self.uses: dict[str, str] = {}
-
-        if source_content:
-            self.source_content = source_content
-        else:
-            with open(self.source_file, 'rb') as f:
-                self.source_content = f.read()
 
         # Definition initialisation
         self.functions: list['RustFunction'] = []
 
-        # Initialization ruotines
-        self.load_tree()
-
         # Load functions/methods delcaration
         self._set_function_method_declaration(self.root)
-
-    def load_tree(self):
-        """Load the the source code into a treesitter tree, and set
-        the root node."""
-        self.root = self.parser.parse(self.source_content).root_node
 
     def _set_function_method_declaration(self,
                                          start_object: Node,
@@ -239,7 +217,7 @@ class RustFunction():
     def __init__(self,
                  root: Node,
                  tree_sitter_lang: Language,
-                 source_code: SourceCodeFile,
+                 source_code: RustSourceCodeFile,
                  prefix: list[str],
                  is_macro: bool = False):
         self.root = root
@@ -587,8 +565,11 @@ class RustFunction():
                 self.detailed_callsites.append({'Src': src_loc, 'Dst': dst})
 
 
-class RustProject(Project):
+class RustProject(Project[RustSourceCodeFile]):
     """Wrapper for doing analysis of a collection of source files."""
+
+    def __init__(self, source_code_files: list[RustSourceCodeFile]):
+        self.source_code_files = source_code_files
 
     def dump_module_logic(self,
                           report_name: str,
@@ -677,7 +658,7 @@ class RustProject(Project):
                 f.write(yaml.dump(report))
 
     def _find_source_with_function(self,
-                                   name: str) -> Optional[SourceCodeFile]:
+                                   name: str) -> Optional[RustSourceCodeFile]:
         """Finds the source code with a given function name."""
         for source_code in self.source_code_files:
             if get_function_node(
@@ -735,7 +716,7 @@ class RustProject(Project):
 
     def extract_calltree(self,
                          source_file: str = '',
-                         source_code: Optional[Any] = None,
+                         source_code: Optional[RustSourceCodeFile] = None,
                          function: Optional[str] = None,
                          visited_functions: Optional[set[str]] = None,
                          depth: int = 0,
@@ -803,19 +784,13 @@ class RustProject(Project):
 
         return line_to_print
 
-    def get_source_codes_with_harnesses(self) -> list[SourceCodeFile]:
-        """Gets the source codes that holds libfuzzer harnesses."""
-        harnesses = []
-        for source_code in self.source_code_files:
-            if source_code.has_libfuzzer_harness():
-                harnesses.append(source_code)
-
-        return harnesses
+    def get_source_codes_with_harnesses(self) -> list[RustSourceCodeFile]:
+        return super().get_source_codes_with_harnesses()
 
     def get_reachable_functions(
             self,
             source_file: str = '',
-            source_code: Optional[Any] = None,
+            source_code: Optional[RustSourceCodeFile] = None,
             function: Optional[str] = None,
             visited_functions: Optional[set[str]] = None) -> set[str]:
         """Get a list of reachable functions for a provided function name."""
@@ -858,25 +833,26 @@ class RustProject(Project):
 
 
 def load_treesitter_trees(source_files: list[str],
-                          is_log: bool = True) -> list[SourceCodeFile]:
+                          is_log: bool = True) -> RustProject:
     """Creates treesitter trees for all files in a given list of source files."""
     results = []
 
     for code_file in source_files:
-        source_cls = SourceCodeFile(code_file)
+        source_cls = RustSourceCodeFile('rust', code_file)
         if is_log:
             if source_cls.has_libfuzzer_harness():
                 logger.info('harness: %s', code_file)
         results.append(source_cls)
 
-    return results
+    return RustProject(results)
 
 
 def analyse_source_code(source_content: str,
-                        entrypoint: str) -> SourceCodeFile:
+                        entrypoint: str) -> RustSourceCodeFile:
     """Returns a source abstraction based on a single source string."""
-    source_code = SourceCodeFile(source_file='in-memory string',
-                                 source_content=source_content.encode())
+    source_code = RustSourceCodeFile('rust',
+                                     source_file='in-memory string',
+                                     source_content=source_content.encode())
     return source_code
 
 

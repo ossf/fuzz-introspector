@@ -23,7 +23,7 @@ from tree_sitter import Language, Parser, Node
 import tree_sitter_go
 import yaml
 
-from fuzz_introspector.frontends.datatypes import Project
+from fuzz_introspector.frontends.datatypes import Project, SourceCodeFile
 
 logger = logging.getLogger(name=__name__)
 
@@ -39,32 +39,15 @@ LITERAL_TYPE_MAP = {
 }
 
 
-class SourceCodeFile():
+class GoSourceCodeFile(SourceCodeFile):
     """Class for holding file-specific information."""
 
-    def __init__(self,
-                 source_file: str,
-                 source_content: Optional[bytes] = None):
-        logger.info('Processing %s', source_file)
-
-        self.root = None
+    def language_specific_process(self):
+        """Perform some language specific processes in subclasses."""
         self.imports: list[str] = []
-        self.source_file = source_file
-        self.tree_sitter_lang = Language(tree_sitter_go.language())
-        self.parser = Parser(self.tree_sitter_lang)
-
-        if source_content:
-            self.source_content = source_content
-        else:
-            with open(self.source_file, 'rb') as f:
-                self.source_content = f.read()
-
         # List of function definitions in the source file.
         self.functions: list['FunctionMethod'] = []
         self.methods: list['FunctionMethod'] = []
-
-        # Initialization ruotines
-        self.load_tree()
 
         # Load function/method declaration
         self._set_function_declaration()
@@ -72,11 +55,6 @@ class SourceCodeFile():
 
         # Parse import package
         self._set_imports()
-
-    def load_tree(self):
-        """Load the the source code into a treesitter tree, and set
-        the root node."""
-        self.root = self.parser.parse(self.source_content).root_node
 
     def _set_function_declaration(self):
         """Internal helper for retrieving all functions."""
@@ -178,10 +156,10 @@ class SourceCodeFile():
         return ''
 
 
-class GoProject(Project):
+class GoProject(Project[GoSourceCodeFile]):
     """Wrapper for doing analysis of a collection of source files."""
 
-    def __init__(self, source_code_files: list[SourceCodeFile]):
+    def __init__(self, source_code_files: list[GoSourceCodeFile]):
         super().__init__(source_code_files)
 
         full_functions_methods = [
@@ -274,7 +252,7 @@ class GoProject(Project):
 
     def extract_calltree(self,
                          source_file: str = '',
-                         source_code: Optional[Any] = None,
+                         source_code: Optional[GoSourceCodeFile] = None,
                          function: Optional[str] = None,
                          visited_functions: Optional[set[str]] = None,
                          depth: int = 0,
@@ -324,10 +302,13 @@ class GoProject(Project):
                 line_number=line_number)
         return line_to_print
 
+    def get_source_codes_with_harnesses(self) -> list[GoSourceCodeFile]:
+        return super().get_source_codes_with_harnesses()
+
     def get_reachable_functions(
             self,
             source_file: str = '',
-            source_code: Optional[Any] = None,
+            source_code: Optional[GoSourceCodeFile] = None,
             function: Optional[str] = None,
             visited_functions: Optional[set[str]] = None) -> set[str]:
         """Get a list of reachable functions for a provided function name."""
@@ -362,7 +343,7 @@ class GoProject(Project):
         return visited_functions
 
     def find_source_with_func_def(
-            self, target_function_name: str) -> Optional[SourceCodeFile]:
+            self, target_function_name: str) -> Optional[GoSourceCodeFile]:
         """Finds the source code with a given function."""
         for source_code in self.source_code_files:
             if source_code.has_function_definition(target_function_name):
@@ -375,7 +356,7 @@ class FunctionMethod():
     """Wrapper for a General Declaration for function/method"""
 
     def __init__(self, root: Node, tree_sitter_lang: Language,
-                 source_code: SourceCodeFile, is_function: bool):
+                 source_code: GoSourceCodeFile, is_function: bool):
         self.root = root
         self.tree_sitter_lang = tree_sitter_lang
         self.parent_source = source_code
@@ -782,22 +763,23 @@ class FunctionMethod():
 
 
 def load_treesitter_trees(source_files: list[str],
-                          is_log: bool = True) -> list[SourceCodeFile]:
+                          is_log: bool = True) -> GoProject:
     """Creates treesitter trees for all files in a given list of source files."""
     results = []
 
     for code_file in source_files:
-        source_cls = SourceCodeFile(code_file)
+        source_cls = GoSourceCodeFile('go', code_file)
         if is_log:
             if source_cls.has_libfuzzer_harness():
                 logger.info('harness: %s', code_file)
         results.append(source_cls)
 
-    return results
+    return GoProject(results)
 
 
-def analyse_source_code(source_content: str) -> SourceCodeFile:
+def analyse_source_code(source_content: str) -> GoSourceCodeFile:
     """Returns a source abstraction based on a single source string."""
-    source_code = SourceCodeFile(source_file='in-memory string',
-                                 source_content=source_content.encode())
+    source_code = GoSourceCodeFile('go',
+                                   source_file='in-memory string',
+                                   source_content=source_content.encode())
     return source_code

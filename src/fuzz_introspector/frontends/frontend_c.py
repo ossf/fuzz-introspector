@@ -20,22 +20,20 @@ import os
 import logging
 
 from tree_sitter import Language, Parser
-import tree_sitter_c
 import yaml
 
-from typing import Any, Optional, Set
+from typing import Any, Optional
 
-from fuzz_introspector.frontends.datatypes import Project
+from fuzz_introspector.frontends.datatypes import Project, SourceCodeFile
 
 logger = logging.getLogger(name=__name__)
 
-tree_sitter_languages = {'c': Language(tree_sitter_c.language())}
 
-language_parsers = {'c': Parser(Language(tree_sitter_c.language()))}
-
-
-class CProject(Project):
+class CProject(Project['CSourceCodeFile']):
     """Wrapper for doing analysis of a collection of source files."""
+
+    def __init__(self, source_code_files: list['CSourceCodeFile']):
+        super().__init__(source_code_files)
 
     def dump_module_logic(self,
                           report_name,
@@ -86,8 +84,8 @@ class CProject(Project):
                     'functionLinenumberEnd'] = func_def.root.end_point.row
                 func_dict['linkageType'] = ''
                 func_dict['func_position'] = {
-                    'start': source_code.root.start_point.row,
-                    'end': source_code.root.end_point.row,
+                    'start': func_def.root.start_point.row,
+                    'end': func_def.root.end_point.row,
                 }
                 cc_str = 'CyclomaticComplexity'
                 func_dict[cc_str] = func_def.get_function_complexity()
@@ -130,9 +128,12 @@ class CProject(Project):
             return source_code
         return None
 
+    def get_source_codes_with_harnesses(self) -> list['CSourceCodeFile']:
+        return super().get_source_codes_with_harnesses()
+
     def extract_calltree(self,
                          source_file: str = '',
-                         source_code: Optional[Any] = None,
+                         source_code: Optional['CSourceCodeFile'] = None,
                          function: Optional[str] = None,
                          visited_functions: Optional[set[str]] = None,
                          depth: int = 0,
@@ -182,9 +183,9 @@ class CProject(Project):
     def get_reachable_functions(
             self,
             source_file: str = '',
-            source_code: Optional[Any] = None,
+            source_code: Optional['CSourceCodeFile'] = None,
             function: Optional[str] = None,
-            visited_functions: Optional[set[str]] = None) -> Set[str]:
+            visited_functions: Optional[set[str]] = None) -> set[str]:
         """Gets the reachable frunctions from a given function."""
         # Create calltree from a given function
         # Find the function in the source code
@@ -456,27 +457,16 @@ class FunctionDefinition():
         return callsites
 
 
-class SourceCodeFile():
+class CSourceCodeFile(SourceCodeFile):
     """Class for holding file-specific information."""
 
-    def __init__(self, source_file, language, source_content=""):
-        self.source_file = source_file
-        self.language = language
-        self.parser = language_parsers.get(self.language)
-        self.tree_sitter_lang = tree_sitter_languages[self.language]
-
-        self.root = None
+    def language_specific_process(self):
+        """Perform some language specific processes in subclasses."""
         self.function_names = []
         self.line_range_pairs = []
         self.struct_defs = []
         self.typedefs = []
         self.includes = set()
-
-        if source_content:
-            self.source_content = source_content
-        else:
-            with open(self.source_file, 'rb') as f:
-                self.source_content = f.read()
 
         # List of function definitions in the source file.
         self.func_defs = []
@@ -487,12 +477,6 @@ class SourceCodeFile():
         # Load function definitions
         self._set_function_defintions()
         self.extract_types()
-
-    def load_tree(self) -> None:
-        """Load the the source code into a treesitter tree, and set
-        the root node."""
-        if self.language == 'c' and not self.root:
-            self.root = self.parser.parse(self.source_content).root_node
 
     def extract_types(self):
         """Extracts the types of the source code"""
@@ -640,7 +624,7 @@ class SourceCodeFile():
 
 
 def load_treesitter_trees(source_files: list[str],
-                          is_log: bool = True) -> list[SourceCodeFile]:
+                          is_log: bool = True) -> CProject:
     """Creates treesitter trees for all files in a given list of source files."""
     results = []
 
@@ -648,7 +632,7 @@ def load_treesitter_trees(source_files: list[str],
         if not os.path.isfile(code_file):
             continue
 
-        source_cls = SourceCodeFile(code_file, 'c')
+        source_cls = CSourceCodeFile('c', code_file)
 
         if is_log:
             if source_cls.has_libfuzzer_harness():
@@ -656,12 +640,12 @@ def load_treesitter_trees(source_files: list[str],
 
         results.append(source_cls)
 
-    return results
+    return CProject(results)
 
 
-def analyse_source_code(source_content: str) -> SourceCodeFile:
+def analyse_source_code(source_content: str) -> CSourceCodeFile:
     """Returns a source abstraction based on a single source string."""
-    source_code = SourceCodeFile(source_file='in-memory string',
-                                 language='c',
-                                 source_content=source_content.encode())
+    source_code = CSourceCodeFile('c',
+                                  source_file='in-memory string',
+                                  source_content=source_content.encode())
     return source_code
