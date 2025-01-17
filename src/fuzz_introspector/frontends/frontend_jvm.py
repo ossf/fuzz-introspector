@@ -15,7 +15,7 @@
 ################################################################################
 """Fuzz Introspector Light frontend for Java"""
 
-from typing import Optional
+from typing import Any, Optional
 
 import logging
 
@@ -23,7 +23,7 @@ from tree_sitter import Language, Parser, Node
 import tree_sitter_java
 import yaml
 
-from typing import Any
+from fuzz_introspector.frontends.datatypes import Project
 
 logger = logging.getLogger(name=__name__)
 
@@ -1008,19 +1008,21 @@ class JavaClassInterface():
         return False, None
 
 
-class Project():
+class JvmProject(Project):
     """Wrapper for doing analysis of a collection of source files."""
 
     def __init__(self, source_code_files: list[SourceCodeFile]):
-        self.source_code_files = source_code_files
+        super().__init__(source_code_files)
         self.all_classes = []
         for source_code in self.source_code_files:
             self.all_classes.extend(source_code.classes)
 
     def dump_module_logic(self,
                           report_name: str,
-                          harness_name: Optional[str] = None,
-                          harness_source: str = ''):
+                          entry_function: str = '',
+                          harness_name: str = '',
+                          harness_source: str = '',
+                          dump_output: bool = True):
         """Dumps the data for the module in full."""
         logger.info('Dumping project-wide logic.')
         report: dict[str, Any] = {'report': 'name'}
@@ -1043,9 +1045,9 @@ class Project():
 
             # Log entry method if provided
             if harness_name and source_code.has_class(harness_name):
-                entry_method = source_code.get_entry_method_name(True)
-                if entry_method:
-                    report['Fuzzing method'] = entry_method
+                entry_function = source_code.get_entry_method_name(True)
+                if entry_function:
+                    report['Fuzzing method'] = entry_function
 
             # Retrieve full proejct methods and information
             methods = source_code.get_all_methods()
@@ -1122,17 +1124,9 @@ class Project():
             report['All functions'] = {}
             report['All functions']['Elements'] = method_list
 
-        with open(report_name, 'w', encoding='utf-8') as f:
-            f.write(yaml.dump(report))
-
-    def get_source_codes_with_harnesses(self) -> list[SourceCodeFile]:
-        """Gets the source codes that holds libfuzzer harnesses."""
-        harnesses = []
-        for source_code in self.source_code_files:
-            if source_code.has_libfuzzer_harness():
-                harnesses.append(source_code)
-
-        return harnesses
+        if dump_output:
+            with open(report_name, 'w', encoding='utf-8') as f:
+                f.write(yaml.dump(report))
 
     def find_source_with_method(self, name: str) -> Optional[SourceCodeFile]:
         """Finds the source code with a given method name."""
@@ -1186,94 +1180,94 @@ class Project():
         return method_depth
 
     def extract_calltree(self,
-                         source_file: str,
-                         source_code: Optional[SourceCodeFile] = None,
-                         method: Optional[str] = None,
-                         visited_methods: Optional[set[str]] = None,
+                         source_file: str = '',
+                         source_code: Optional[Any] = None,
+                         function: Optional[str] = None,
+                         visited_functions: Optional[set[str]] = None,
                          depth: int = 0,
-                         line_number: int = -1) -> str:
+                         line_number: int = -1,
+                         other_props: Optional[dict[str, Any]] = None) -> str:
         """Extracts calltree string of a calltree so that FI core can use it."""
-        if not visited_methods:
-            visited_methods = set()
+        if not visited_functions:
+            visited_functions = set()
 
-        if not source_code and method:
-            source_code = self.find_source_with_method(method)
+        if not source_code and function:
+            source_code = self.find_source_with_method(function)
 
-        if not method and source_code:
-            method = source_code.get_entry_method_name(True)
+        if not function and source_code:
+            function = source_code.get_entry_method_name(True)
 
-        if not method:
+        if not function:
             return ''
 
         line_to_print = '  ' * depth
-        line_to_print += method
+        line_to_print += function
         line_to_print += ' '
         line_to_print += source_file
-
         line_to_print += ' '
         line_to_print += str(line_number)
-
         line_to_print += '\n'
+
         if not source_code:
             return line_to_print
 
-        method_node = source_code.get_method_node(method)
-        if not method_node:
+        function_node = source_code.get_method_node(function)
+        if not function_node:
             return line_to_print
 
-        callsites = method_node.base_callsites
+        callsites = function_node.base_callsites
 
-        if method in visited_methods:
+        if function in visited_functions:
             return line_to_print
 
-        visited_methods.add(method)
+        visited_functions.add(function)
         for cs, line_number in callsites:
             line_to_print += self.extract_calltree(
                 source_code.source_file,
-                method=cs,
-                visited_methods=visited_methods,
+                function=cs,
+                visited_functions=visited_functions,
                 depth=depth + 1,
                 line_number=line_number)
 
         return line_to_print
 
-    def get_reachable_methods(
+    def get_reachable_functions(
             self,
-            source_file: str,
-            source_code: Optional[SourceCodeFile] = None,
-            method: Optional[str] = None,
-            visited_methods: Optional[set[str]] = None) -> set[str]:
+            source_file: str = '',
+            source_code: Optional[Any] = None,
+            function: Optional[str] = None,
+            visited_functions: Optional[set[str]] = None) -> set[str]:
         """Get a list of reachable functions for a provided function name."""
-        if not visited_methods:
-            visited_methods = set()
+        if not visited_functions:
+            visited_functions = set()
 
-        if not source_code and method:
-            source_code = self.find_source_with_method(method)
+        if not source_code and function:
+            source_code = self.find_source_with_method(function)
 
-        if not method and source_code:
-            method = source_code.get_entry_method_name(True)
+        if not function and source_code:
+            function = source_code.get_entry_method_name(True)
 
-        if source_code and method:
-            method_node = source_code.get_method_node(method)
-            if not method_node:
-                visited_methods.add(method)
-                return visited_methods
+        if source_code and function:
+            function_node = source_code.get_method_node(function)
+            if not function_node:
+                visited_functions.add(function)
+                return visited_functions
         else:
-            if method:
-                visited_methods.add(method)
-            return visited_methods
+            if function:
+                visited_functions.add(function)
+            return visited_functions
 
-        visited_methods.add(method)
-        for cs, _ in method_node.base_callsites:
-            if cs in visited_methods:
+        visited_functions.add(function)
+        for cs, _ in function_node.base_callsites:
+            if cs in visited_functions:
                 continue
 
-            visited_methods = self.get_reachable_methods(
+            visited_functions = self.get_reachable_functions(
                 source_code.source_file,
-                method=cs,
-                visited_methods=visited_methods)
+                function=cs,
+                visited_functions=visited_functions)
 
-        return visited_methods
+        return visited_functions
 
 
 def load_treesitter_trees(source_files: list[str],

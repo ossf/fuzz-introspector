@@ -14,7 +14,7 @@
 #
 ################################################################################
 
-from typing import Any, Optional, Set, List
+from typing import Any, Optional
 
 import os
 import logging
@@ -22,6 +22,8 @@ import logging
 from tree_sitter import Language, Parser, Node
 import tree_sitter_cpp
 import yaml
+
+from fuzz_introspector.frontends.datatypes import Project
 
 logger = logging.getLogger(name=__name__)
 LOG_FMT = '%(asctime)s.%(msecs)03d %(levelname)s %(module)s - %(funcName)s: %(message)s'
@@ -570,16 +572,18 @@ class FunctionDefinition():
                 self.detailed_callsites.append({'Src': src_loc, 'Dst': dst})
 
 
-class Project():
+class CppProject(Project):
     """Wrapper for doing analysis of a collection of source files."""
 
     def __init__(self, source_code_files: list[SourceCodeFile]):
-        self.source_code_files = source_code_files
-        self.all_functions: List[FunctionDefinition] = []
+        super().__init__(source_code_files)
+        self.all_functions: list[FunctionDefinition] = []
 
     def dump_module_logic(self,
                           report_name: str,
-                          harness_name: Optional[str] = None,
+                          entry_function: str = '',
+                          harness_name: str = '',
+                          harness_source: str = '',
                           dump_output=True):
         """Dumps the data for the module in full."""
         logger.info('Dumping project-wide logic.')
@@ -652,14 +656,6 @@ class Project():
             with open(report_name, 'w', encoding='utf-8') as f:
                 f.write(yaml.dump(report))
 
-    def get_source_codes_with_harnesses(self) -> list[SourceCodeFile]:
-        """Gets the source codes that holds libfuzzer harnesses."""
-        harnesses = []
-        for source_code in self.source_code_files:
-            if source_code.has_libfuzzer_harness():
-                harnesses.append(source_code)
-        return harnesses
-
     def get_function_from_name(self, function_name):
         for func in self.all_functions:
             if func.name == function_name:
@@ -668,12 +664,13 @@ class Project():
         return None
 
     def extract_calltree(self,
-                         source_file: str,
-                         source_code: Optional[SourceCodeFile] = None,
+                         source_file: str = '',
+                         source_code: Optional[Any] = None,
                          function: Optional[str] = None,
                          visited_functions: Optional[set[str]] = None,
                          depth: int = 0,
-                         line_number: int = -1) -> str:
+                         line_number: int = -1,
+                         other_props: Optional[dict[str, Any]] = None) -> str:
         """Extracts calltree string of a calltree so that FI core can use it."""
         # Create calltree from a given function
         # Find the function in the source code
@@ -744,11 +741,12 @@ class Project():
         logger.debug('Done')
         return line_to_print
 
-    def get_reachable_functions(self,
-                                source_code: Optional[SourceCodeFile] = None,
-                                function: Optional[str] = None,
-                                visited_functions: Optional[set[str]] = None,
-                                depth: int = 0) -> Set[str]:
+    def get_reachable_functions(
+            self,
+            source_file: str = '',
+            source_code: Optional[Any] = None,
+            function: Optional[str] = None,
+            visited_functions: Optional[set[str]] = None) -> set[str]:
         """Gets the reachable frunctions from a given function."""
         # Create calltree from a given function
         # Find the function in the source code
@@ -789,7 +787,6 @@ class Project():
                 source_code=source_code,
                 function=cs,
                 visited_functions=visited_functions,
-                depth=depth + 1,
             )
 
         return visited_functions
@@ -923,7 +920,7 @@ def analyse_source_code(source_content: str) -> SourceCodeFile:
 
 
 def get_function_node(target_name: str,
-                      function_list: List[FunctionDefinition],
+                      function_list: list[FunctionDefinition],
                       one_layer_only: bool = False,
                       namespace: str = '') -> Optional[FunctionDefinition]:
     """Helper to retrieve the RustFunction object of a function."""

@@ -25,6 +25,8 @@ import yaml
 
 from typing import Any, Optional, Set
 
+from fuzz_introspector.frontends.datatypes import Project
+
 logger = logging.getLogger(name=__name__)
 
 tree_sitter_languages = {'c': Language(tree_sitter_c.language())}
@@ -32,16 +34,15 @@ tree_sitter_languages = {'c': Language(tree_sitter_c.language())}
 language_parsers = {'c': Parser(Language(tree_sitter_c.language()))}
 
 
-class Project():
+class CProject(Project):
     """Wrapper for doing analysis of a collection of source files."""
-
-    def __init__(self, source_code_files):
-        self.source_code_files = source_code_files
 
     def dump_module_logic(self,
                           report_name,
                           entry_function: str = '',
-                          harness_source: str = ''):
+                          harness_name: str = '',
+                          harness_source: str = '',
+                          dump_output: bool = True):
         """Dumps the data for the module in full."""
         logger.info('Dumping project-wide logic.')
         report: dict[str, Any] = {'report': 'name'}
@@ -117,16 +118,9 @@ class Project():
             report['All functions']['Elements'] = function_list
         report['included-header-files'] = list(included_header_files)
 
-        with open(report_name, 'w', encoding='utf-8') as f:
-            f.write(yaml.dump(report))
-
-    def get_source_codes_with_harnesses(self):
-        """Gets the source codes that holds libfuzzer harnesses."""
-        harnesses = []
-        for source_code in self.source_code_files:
-            if source_code.has_libfuzzer_harness():
-                harnesses.append(source_code)
-        return harnesses
+        if dump_output:
+            with open(report_name, 'w', encoding='utf-8') as f:
+                f.write(yaml.dump(report))
 
     def get_source_code_with_target(self, target_func_name):
         for source_code in self.source_code_files:
@@ -137,11 +131,13 @@ class Project():
         return None
 
     def extract_calltree(self,
-                         source_code=None,
-                         function=None,
-                         visited_functions=None,
-                         depth=0,
-                         line_number=-1):
+                         source_file: str = '',
+                         source_code: Optional[Any] = None,
+                         function: Optional[str] = None,
+                         visited_functions: Optional[set[str]] = None,
+                         depth: int = 0,
+                         line_number: int = -1,
+                         other_props: Optional[dict[str, Any]] = None) -> str:
         """Extracts calltree string of a calltree so that FI core can use it."""
         # Create calltree from a given function
         # Find the function in the source code
@@ -185,7 +181,8 @@ class Project():
 
     def get_reachable_functions(
             self,
-            source_code: Optional['SourceCodeFile'] = None,
+            source_file: str = '',
+            source_code: Optional[Any] = None,
             function: Optional[str] = None,
             visited_functions: Optional[set[str]] = None) -> Set[str]:
         """Gets the reachable frunctions from a given function."""

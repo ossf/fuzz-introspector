@@ -28,7 +28,7 @@ def test_tree_sitter_jvm_sample1():
     harness = project.get_source_codes_with_harnesses()
     assert len(harness) == 1
 
-    functions_reached = project.get_reachable_methods(harness[0].source_file, harness[0])
+    functions_reached = project.get_reachable_functions(harness[0].source_file, harness[0])
 
     # Callsite check
     assert '[simple.SimpleClass].<init>(String)' in functions_reached
@@ -49,7 +49,7 @@ def test_tree_sitter_jvm_sample2():
     harness = project.get_source_codes_with_harnesses()
     assert len(harness) == 1
 
-    functions_reached = project.get_reachable_methods(harness[0].source_file, harness[0])
+    functions_reached = project.get_reachable_functions(harness[0].source_file, harness[0])
 
     # Callsite check
     assert '[String].equals(String)' in functions_reached
@@ -72,7 +72,7 @@ def test_tree_sitter_jvm_sample3():
     harness = project.get_source_codes_with_harnesses()
     assert len(harness) == 1
 
-    functions_reached = project.get_reachable_methods(harness[0].source_file, harness[0])
+    functions_reached = project.get_reachable_functions(harness[0].source_file, harness[0])
 
     # Callsite check
     assert (
@@ -97,7 +97,7 @@ def test_tree_sitter_jvm_sample4():
     harness = project.get_source_codes_with_harnesses()
     assert len(harness) == 1
 
-    functions_reached = project.get_reachable_methods(harness[0].source_file, harness[0])
+    functions_reached = project.get_reachable_functions(harness[0].source_file, harness[0])
 
     # Callsite check
     assert '[crosspackage.helper.HelperClass].helperMethod()' in functions_reached
@@ -117,7 +117,7 @@ def test_tree_sitter_jvm_sample5():
     harness = project.get_source_codes_with_harnesses()
     assert len(harness) == 1
 
-    functions_reached = project.get_reachable_methods(harness[0].source_file, harness[0])
+    functions_reached = project.get_reachable_functions(harness[0].source_file, harness[0])
 
     # Callsite check
     assert '[complex.C].<init>()' in functions_reached
@@ -157,7 +157,7 @@ def test_tree_sitter_jvm_sample6():
     harness = project.get_source_codes_with_harnesses()
     assert len(harness) == 1
 
-    functions_reached = project.get_reachable_methods(harness[0].source_file, harness[0])
+    functions_reached = project.get_reachable_functions(harness[0].source_file, harness[0])
 
     # Callsite check
     assert '[inheritance.SubClass].<init>()' in functions_reached
@@ -179,7 +179,7 @@ def test_tree_sitter_jvm_sample7():
     harness = project.get_source_codes_with_harnesses()
     assert len(harness) == 1
 
-    functions_reached = project.get_reachable_methods(harness[0].source_file, harness[0])
+    functions_reached = project.get_reachable_functions(harness[0].source_file, harness[0])
 
     # Callsite check
     assert '[combined.ConcreteClass].chainMethod()' in functions_reached
@@ -205,7 +205,7 @@ def test_tree_sitter_jvm_sample8():
     harness = project.get_source_codes_with_harnesses()
     assert len(harness) == 1
 
-    functions_reached = project.get_reachable_methods(harness[0].source_file, harness[0])
+    functions_reached = project.get_reachable_functions(harness[0].source_file, harness[0])
 
     # Callsite check
     assert '[variable.B].callInstanceMethod(variable.test.A)' in functions_reached
@@ -225,8 +225,8 @@ def test_tree_sitter_jvm_sample9():
     harness = project.get_source_codes_with_harnesses()
     assert len(harness) == 2
 
-    result_one = project.get_reachable_methods(harness[0].source_file, harness[0])
-    result_two = project.get_reachable_methods(harness[1].source_file, harness[1])
+    result_one = project.get_reachable_functions(harness[0].source_file, harness[0])
+    result_two = project.get_reachable_functions(harness[1].source_file, harness[1])
 
     # Callsite check
     if 'FuzzerOne' in harness[0].source_file:
