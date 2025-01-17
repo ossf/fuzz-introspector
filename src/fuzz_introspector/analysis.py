@@ -293,7 +293,7 @@ def get_node_coverage_hitcount(demangled_name: str, callstack: Dict[int, str],
     if is_first:
         # As this is the first node ensure it is indeed the entrypoint.
         # The difference is this node has node "parent" or prior nodes.
-        logger.info(demangled_name)
+
         if not profile.func_is_entrypoint(demangled_name):
             raise AnalysisError(
                 "First node in calltree is non-fuzzer function")
