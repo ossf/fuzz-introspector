@@ -27,7 +27,6 @@ import logging
 
 logger = logging.getLogger(name=__name__)
 
-
 T = TypeVar('T', bound='SourceCodeFile')
 
 
