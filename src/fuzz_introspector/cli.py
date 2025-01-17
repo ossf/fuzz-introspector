@@ -40,23 +40,39 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
                               default="c-cpp",
                               help="Language of project")
 
-    full_parser = subparsers.add_parser('full', help='End to end run')
-    full_parser.add_argument('--target_dir')
-    full_parser.add_argument('--language')
-    full_parser.add_argument('--out-dir', default='')
-    full_parser.add_argument('--name', default='no-name')
-    full_parser.add_argument('--coverage_url', default='')
+    full_parser = subparsers.add_parser(
+        'full', help='Analyse folder and generate HTML report and analyses.')
+    full_parser.add_argument('--target-dir',
+                             type=str,
+                             help='Directory holding source to analyse.',
+                             required=True)
+    full_parser.add_argument('--language',
+                             type=str,
+                             help='Programming of the source code to analyse.',
+                             choices=constants.LANGUAGES)
+    full_parser.add_argument('--out-dir',
+                             default='',
+                             type=str,
+                             help='Folder to store analysis results.')
+    full_parser.add_argument('--name',
+                             default='no-name',
+                             type=str,
+                             help='Name of the report.')
+    full_parser.add_argument('--coverage-url',
+                             default='',
+                             type=str,
+                             help='Base coverage URL.')
 
     # Report generation command
     report_parser = subparsers.add_parser(
         "report",
         help="generate fuzz-introspector HTML report",
     )
-    report_parser.add_argument("--target_dir",
+    report_parser.add_argument("--target-dir",
                                type=str,
                                help="Directory where the data files are",
                                required=True)
-    report_parser.add_argument("--coverage_url",
+    report_parser.add_argument("--coverage-url",
                                type=str,
                                help="URL with coverage information",
                                default="/covreport/linux")
@@ -76,7 +92,7 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
                                action='store_true',
                                default=False,
                                help="Enables all analyses")
-    report_parser.add_argument("--correlation_file",
+    report_parser.add_argument("--correlation-file",
                                type=str,
                                default="",
                                help="File with correlation data")
@@ -99,7 +115,7 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
         "correlate",
         help="correlate executable files to fuzzer introspector logs")
     correlate_parser.add_argument(
-        "--binaries_dir",
+        "--binaries-dir",
         type=str,
         required=True,
         help="Directory with binaries to scan for Fuzz introspector tags")
