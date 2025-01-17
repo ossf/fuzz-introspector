@@ -575,23 +575,17 @@ def locate_rust_fuzz_item(funcname: str, item_list: List[str]) -> str:
 
 def detect_language(directory) -> str:
     """Given a folder finds the likely programming language of the project"""
-    language_extensions = {
-        'c': ['.c', '.h'],
-        'cpp': ['.cpp', '.cc', '.c++', '.h', '.hpp'],
-        'jvm': ['.java'],
-        'rust': ['.rs']
-    }
+
     paths_to_avoid = [
         '/src/aflplusplus', '/src/honggfuzz', '/src/libfuzzer', '/src/fuzztest'
     ]
 
     language_counts: Dict[str, int] = {}
-
     for dirpath, _, filenames in os.walk(directory):
         if any([x for x in paths_to_avoid if dirpath.startswith(x)]):
             continue
         for filename in filenames:
-            for language, extensions in language_extensions.items():
+            for language, extensions in constants.LANGUAGE_EXTENSIONS.items():
                 if pathlib.Path(filename).suffix in extensions:
                     curr_count = language_counts.get(language, 0)
                     language_counts[language] = curr_count + 1
