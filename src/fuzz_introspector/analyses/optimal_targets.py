@@ -13,6 +13,7 @@
 # limitations under the License.
 """Analysis for identifying optimal targets"""
 
+import os
 import copy
 import json
 import logging
@@ -166,10 +167,13 @@ class OptimalTargets(analysis.AnalysisInterface):
 
         # Create section for how the state of the project will be if
         # the optimal target functions are hit.
-        html_string += self.get_consequential_section(new_profile, conclusions,
+        html_string += self.get_consequential_section(new_profile,
+                                                      conclusions,
                                                       tables,
                                                       table_of_contents,
-                                                      coverage_url, basefolder)
+                                                      coverage_url,
+                                                      basefolder,
+                                                      out_dir=out_dir)
 
         logger.info(f" - Completed analysis {self.get_name()}")
         html_string += "</div>"  # .collapsible
@@ -379,10 +383,14 @@ class OptimalTargets(analysis.AnalysisInterface):
         return html_string
 
     def get_consequential_section(
-            self, new_profile: project_profile.MergedProjectProfile,
-            conclusions: List[html_helpers.HTMLConclusion], tables: List[str],
+            self,
+            new_profile: project_profile.MergedProjectProfile,
+            conclusions: List[html_helpers.HTMLConclusion],
+            tables: List[str],
             table_of_contents: html_helpers.HtmlTableOfContents,
-            coverage_url: str, basefolder: str) -> str:
+            coverage_url: str,
+            basefolder: str,
+            out_dir: str = '') -> str:
         """Create section showing state of project if optimal targets are hit"""
         html_string = (
             "<p>Implementing fuzzers that target the above functions "
@@ -406,8 +414,10 @@ class OptimalTargets(analysis.AnalysisInterface):
 
         # Write all functions to the .js file
         if self.dump_files:
-            with open(constants.OPTIMAL_TARGETS_ALL_FUNCTIONS,
-                      'w') as func_file:
+            with open(
+                    os.path.join(out_dir,
+                                 constants.OPTIMAL_TARGETS_ALL_FUNCTIONS),
+                    'w') as func_file:
                 func_file.write("var analysis_1_data = ")
                 func_file.write(json.dumps(all_functions_json))
         return html_string
