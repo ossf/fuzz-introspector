@@ -8,6 +8,7 @@ from fuzz_introspector.analyses import optimal_targets
 from fuzz_introspector.analyses import runtime_coverage_analysis
 from fuzz_introspector.analyses import sinks_analyser
 from fuzz_introspector.analyses import annotated_cfg
+from fuzz_introspector.analyses import source_code_line_analyser
 
 # All optional analyses.
 # Ordering here is important as top analysis will be shown first in the report
@@ -22,4 +23,5 @@ all_analyses = [
     metadata.MetadataAnalysis,
     sinks_analyser.SinkCoverageAnalyser,
     annotated_cfg.FuzzAnnotatedCFG,
+    source_code_line_analyser.SourceCodeLineFunctionAnalyser,
 ]

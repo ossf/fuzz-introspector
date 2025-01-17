@@ -69,14 +69,21 @@ def end_to_end(args) -> int:
     else:
         language = args.language
 
+    props: dict[str, str] = {}
+    for property in args.properties:
+        if property.count('=') == 1:
+            key, value = property.split('=', 1)
+            props[key] = value
+
     return run_analysis_on_dir(target_folder=out_dir,
                                coverage_url=args.coverage_url,
-                               analyses_to_run=[],
+                               analyses_to_run=args.analyses,
                                correlation_file='',
-                               enable_all_analyses=True,
+                               enable_all_analyses=(not args.analyses),
                                report_name=args.name,
                                language=language,
-                               out_dir=out_dir)
+                               out_dir=out_dir,
+                               props=props)
 
 
 def run_analysis_on_dir(target_folder: str,
@@ -89,7 +96,8 @@ def run_analysis_on_dir(target_folder: str,
                         output_json: Optional[List[str]] = None,
                         parallelise: bool = True,
                         dump_files: bool = True,
-                        out_dir: str = '') -> int:
+                        out_dir: str = '',
+                        props: dict[str, str] = {}) -> int:
     """Runs Fuzz Introspector analysis from based on the results
     from a frontend run. The primary task is to aggregate the data
     and generate a HTML report."""
@@ -114,7 +122,8 @@ def run_analysis_on_dir(target_folder: str,
                                    output_json,
                                    report_name,
                                    dump_files,
-                                   out_dir=out_dir)
+                                   out_dir=out_dir,
+                                   props=props)
 
     return constants.APP_EXIT_SUCCESS
 

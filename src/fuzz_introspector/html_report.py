@@ -643,7 +643,7 @@ def create_section_all_functions(table_of_contents, tables, proj_profile,
 def create_section_optional_analyses(
         table_of_contents, analyses_to_run, output_json, tables,
         introspection_proj: analysis.IntrospectionProject, basefolder,
-        coverage_url, conclusions, dump_files, out_dir) -> str:
+        coverage_url, conclusions, dump_files, out_dir, props) -> str:
     """Creates the HTML sections containing optional analyses."""
     html_report_core = ""
     logger.info(" - Handling optional analyses")
@@ -662,7 +662,7 @@ def create_section_optional_analyses(
         analysis_name = analysis_interface.get_name()
         if analysis_name in combined_analyses:
             analysis_instance = analysis.instantiate_analysis_interface(
-                analysis_interface)
+                analysis_interface, props)
             analysis_instance.dump_files = dump_files
 
             # Set display_html flag for the analysis_instance
@@ -727,7 +727,8 @@ def create_html_report(introspection_proj: analysis.IntrospectionProject,
                        output_json,
                        report_name,
                        dump_files,
-                       out_dir: str = '') -> None:
+                       out_dir: str = '',
+                       props: dict[str, str] = {}) -> None:
     """
     Logs a complete report. This is the current main place for looking at
     data produced by fuzz introspector.
@@ -783,7 +784,7 @@ def create_html_report(introspection_proj: analysis.IntrospectionProject,
         table_of_contents, analyses_to_run, output_json, tables,
         introspection_proj, introspection_proj.proj_profile.basefolder,
         introspection_proj.proj_profile.coverage_url, conclusions, dump_files,
-        out_dir)
+        out_dir, props)
 
     # Create HTML showing the conclusions at the top of the report.
     html_report_top += html_helpers.create_conclusions_box(conclusions)

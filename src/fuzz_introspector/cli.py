@@ -1,4 +1,3 @@
-# Copyright 2024 Fuzz Introspector Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -46,6 +45,21 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
     full_parser.add_argument('--out-dir', default='')
     full_parser.add_argument('--name', default='no-name')
     full_parser.add_argument('--coverage_url', default='')
+    full_parser.add_argument('--analyses',
+                             nargs='+',
+                             default=[],
+                             help='''
+            Analyses to run. Available options:
+            AnnotatedCFG, BugDigestorAnalysis, FuzzCalltreeAnalysis,
+            FuzzDriverSynthesizerAnalysis, FuzzEngineInputAnalysis,
+            FilePathAnalyser, ThirdPartyAPICoverageAnalyser,
+            MetadataAnalysis, OptimalTargets, RuntimeCoverageAnalysis,
+            SinkCoverageAnalyser, FunctionSourceLineAnalyser
+        ''')
+    full_parser.add_argument('--properties',
+                             nargs='*',
+                             default=[],
+                             help='Additional properties for analysis')
 
     # Report generation command
     report_parser = subparsers.add_parser(
@@ -70,7 +84,11 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
                                ],
                                help="""
             Analyses to run. Available options:
-            OptimalTargets, FuzzEngineInput, ThirdPartyAPICoverageAnalyser
+            AnnotatedCFG, BugDigestorAnalysis, FuzzCalltreeAnalysis,
+            FuzzDriverSynthesizerAnalysis, FuzzEngineInputAnalysis,
+            FilePathAnalyser, ThirdPartyAPICoverageAnalyser,
+            MetadataAnalysis, OptimalTargets, RuntimeCoverageAnalysis,
+            SinkCoverageAnalyser, FunctionSourceLineAnalyser
         """)
     report_parser.add_argument("--enable-all-analyses",
                                action='store_true',
@@ -93,6 +111,10 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
         nargs="+",
         default=["FuzzEngineInputAnalysis"],
         help="State which analysis requires separate json report output")
+    report_parser.add_argument('--properties',
+                               nargs='*',
+                               default=[],
+                               help='Additional properties for analysis')
 
     # Command for correlating binary files to fuzzerLog files
     correlate_parser = subparsers.add_parser(
@@ -151,10 +173,21 @@ def main() -> int:
 
     logger.info("Running fuzz introspector post-processing")
     if args.command == 'report':
-        return_code = commands.run_analysis_on_dir(
-            args.target_dir, args.coverage_url, args.analyses,
-            args.correlation_file, args.enable_all_analyses, args.name,
-            args.language, args.output_json)
+        props: dict[str, str] = {}
+        for property in args.properties:
+            if property.count('=') == 1:
+                key, value = property.split('=', 1)
+                props[key] = value
+
+        return_code = commands.run_analysis_on_dir(args.target_dir,
+                                                   args.coverage_url,
+                                                   args.analyses,
+                                                   args.correlation_file,
+                                                   args.enable_all_analyses,
+                                                   args.name,
+                                                   args.language,
+                                                   args.output_json,
+                                                   props=props)
         logger.info("Ending fuzz introspector report generation")
     elif args.command == 'correlate':
         return_code = commands.correlate_binaries_to_logs(args.binaries_dir)
@@ -172,3 +205,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     main()
+"--enable-all-analyses",

@@ -172,6 +172,10 @@ class AnalysisInterface(abc.ABC):
     json_string_result: str = ""
     display_html: bool = False
 
+    def set_additional_properties(self, properties: dict[str, str]):
+        """Allow setting additional properties for this analysis."""
+        self.properties = properties
+
     @abc.abstractmethod
     def analysis_func(self,
                       table_of_contents: html_helpers.HtmlTableOfContents,
@@ -230,9 +234,12 @@ class AnalysisInterface(abc.ABC):
         self.display_html = is_display_html
 
 
-def instantiate_analysis_interface(cls: Type[AnalysisInterface]):
+def instantiate_analysis_interface(cls: Type[AnalysisInterface],
+                                   props: dict[str, str]):
     """Wrapper function to satisfy Mypy semantics"""
-    return cls()
+    analysis_interface = cls()
+    analysis_interface.set_additional_properties(props)
+    return analysis_interface
 
 
 class FuzzBranchBlocker:
@@ -286,7 +293,7 @@ def get_node_coverage_hitcount(demangled_name: str, callstack: Dict[int, str],
     if is_first:
         # As this is the first node ensure it is indeed the entrypoint.
         # The difference is this node has node "parent" or prior nodes.
-
+        logger.info(demangled_name)
         if not profile.func_is_entrypoint(demangled_name):
             raise AnalysisError(
                 "First node in calltree is non-fuzzer function")
