@@ -31,6 +31,8 @@ DEBUG_INFO_DUMP = "all_debug_info.json"
 
 SAVED_SOURCE_FOLDER = 'source-code'
 
+LANGUAGES = ['c', 'c++', 'jvm', 'go', 'rust']
+
 # Holds data about all functions in javascript, to ease loading of static
 # website.
 ALL_FUNCTION_JS = "all_functions.js"
