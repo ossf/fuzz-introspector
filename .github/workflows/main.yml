@@ -36,3 +36,6 @@ jobs:
           yapf -d -r ./tools/web-fuzzing-introspection/app/webapp/
           yapf -d ./tools/web-fuzzing-introspection/app/*.py
           yapf -d -r ./tools/web-fuzzing-introspection/app/static/assets/db
+      - name: pylint
+        run: |
+          cd src && pylint --recursive=y fuzz_introspector main.py
