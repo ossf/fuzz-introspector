@@ -94,8 +94,6 @@ def process_c_project(target_dir: str,
                       module_only: bool = False,
                       dump_output: bool = True) -> Project:
     """Process a project in C language"""
-    calltrees = []
-
     # Default entrypoint
     if not entrypoint:
         entrypoint = 'LLVMFuzzerTestOneInput'
@@ -160,8 +158,6 @@ def process_cpp_project(entrypoint: str,
                         source_files: list[str],
                         dump_output: bool = True) -> Project:
     """Process a project in CPP language"""
-    calltrees = []
-
     # Default entrypoint
     if not entrypoint:
         entrypoint = 'LLVMFuzzerTestOneInput'
@@ -222,7 +218,6 @@ def process_rust_project(out: str,
                          source_files: list[str],
                          dump_output: bool = True) -> Project:
     """Process a project in Rust based language"""
-
     # Process tree sitter for rust source files
     logger.info('Going Rust route')
     logger.info('Found %d files to include in analysis', len(source_files))
