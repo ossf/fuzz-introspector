@@ -15,14 +15,11 @@
 ################################################################################
 """Fuzz Introspector Light frontend"""
 
-import os
-
-import logging
-
-from tree_sitter import Language, Parser
-import yaml
-
 from typing import Any, Optional
+
+import os
+import logging
+import yaml
 
 from fuzz_introspector.frontends.datatypes import Project, SourceCodeFile
 

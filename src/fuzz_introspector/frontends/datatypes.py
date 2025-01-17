@@ -14,6 +14,8 @@
 #
 ################################################################################
 
+from typing import Any, Optional, Generic, TypeVar
+
 from tree_sitter import Language, Parser
 import tree_sitter_c
 import tree_sitter_cpp
@@ -25,7 +27,6 @@ import logging
 
 logger = logging.getLogger(name=__name__)
 
-from typing import Any, Optional, Generic, TypeVar
 
 T = TypeVar('T', bound='SourceCodeFile')
 

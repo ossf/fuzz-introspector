@@ -16,11 +16,10 @@
 
 from typing import Any, Optional
 
+from tree_sitter import Language, Node
+
 import os
 import logging
-
-from tree_sitter import Language, Parser, Node
-import tree_sitter_cpp
 import yaml
 
 from fuzz_introspector.frontends.datatypes import Project, SourceCodeFile

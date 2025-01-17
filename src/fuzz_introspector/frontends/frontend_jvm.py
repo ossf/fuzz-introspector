@@ -17,10 +17,9 @@
 
 from typing import Any, Optional
 
-import logging
+from tree_sitter import Language, Node
 
-from tree_sitter import Language, Parser, Node
-import tree_sitter_java
+import logging
 import yaml
 
 from fuzz_introspector.frontends.datatypes import Project, SourceCodeFile
