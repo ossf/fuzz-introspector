@@ -16,49 +16,27 @@
 
 from typing import Any, Optional
 
+from tree_sitter import Language, Node
+
 import os
 import logging
-
-from tree_sitter import Language, Parser, Node
-import tree_sitter_cpp
 import yaml
 
-from fuzz_introspector.frontends.datatypes import Project
+from fuzz_introspector.frontends.datatypes import Project, SourceCodeFile
 
 logger = logging.getLogger(name=__name__)
 
 
-class SourceCodeFile():
+class CppSourceCodeFile(SourceCodeFile):
     """Class for holding file-specific information."""
 
-    def __init__(self,
-                 source_file: str,
-                 source_content: Optional[bytes] = None):
-        logger.info('Processing %s', source_file)
-
-        self.source_file = source_file
-        self.tree_sitter_lang = Language(tree_sitter_cpp.language())
-        self.parser = Parser(self.tree_sitter_lang)
-
-        self.root = None
+    def language_specific_process(self):
+        """Function to perform some language specific processes in subclasses."""
         self.func_defs: list['FunctionDefinition'] = []
-
-        if source_content:
-            self.source_content = source_content
-        else:
-            with open(self.source_file, 'rb') as f:
-                self.source_content = f.read()
-
         if self.source_content:
             # Initialization routines
             self.load_tree()
             self.process_tree(self.root)
-
-    def load_tree(self):
-        """Load the the source code into a treesitter tree, and set
-        the root node."""
-        if not self.root:
-            self.root = self.parser.parse(self.source_content).root_node
 
     def process_tree(self, node: Node, namespace: str = ''):
         """Process the node from the parsed tree."""
@@ -138,7 +116,7 @@ class FunctionDefinition():
     """Wrapper for a function definition"""
 
     def __init__(self, root: Node, tree_sitter_lang: Language,
-                 source_code: 'SourceCodeFile', namespace: str):
+                 source_code: CppSourceCodeFile, namespace: str):
         self.root = root
         self.tree_sitter_lang = tree_sitter_lang
         self.parent_source = source_code
@@ -571,10 +549,10 @@ class FunctionDefinition():
                 self.detailed_callsites.append({'Src': src_loc, 'Dst': dst})
 
 
-class CppProject(Project):
+class CppProject(Project[CppSourceCodeFile]):
     """Wrapper for doing analysis of a collection of source files."""
 
-    def __init__(self, source_code_files: list[SourceCodeFile]):
+    def __init__(self, source_code_files: list[CppSourceCodeFile]):
         super().__init__(source_code_files)
         self.all_functions: list[FunctionDefinition] = []
 
@@ -664,7 +642,7 @@ class CppProject(Project):
 
     def extract_calltree(self,
                          source_file: str = '',
-                         source_code: Optional[Any] = None,
+                         source_code: Optional[CppSourceCodeFile] = None,
                          function: Optional[str] = None,
                          visited_functions: Optional[set[str]] = None,
                          depth: int = 0,
@@ -743,7 +721,7 @@ class CppProject(Project):
     def get_reachable_functions(
             self,
             source_file: str = '',
-            source_code: Optional[Any] = None,
+            source_code: Optional[CppSourceCodeFile] = None,
             function: Optional[str] = None,
             visited_functions: Optional[set[str]] = None) -> set[str]:
         """Gets the reachable frunctions from a given function."""
@@ -808,9 +786,12 @@ class CppProject(Project):
 
         return None
 
+    def get_source_codes_with_harnesses(self) -> list[CppSourceCodeFile]:
+        return super().get_source_codes_with_harnesses()
+
     def find_source_with_func_def(
-            self,
-            name: str) -> Optional[tuple[SourceCodeFile, FunctionDefinition]]:
+            self, name: str
+    ) -> Optional[tuple[CppSourceCodeFile, FunctionDefinition]]:
         """Finds the source code with a given function."""
 
         return_func = None
@@ -893,7 +874,7 @@ class CppProject(Project):
         return func_depth
 
 
-def load_treesitter_trees(source_files, is_log=True):
+def load_treesitter_trees(source_files, is_log=True) -> CppProject:
     """Creates treesitter trees for all files in a given list of source files."""
     results = []
 
@@ -901,20 +882,21 @@ def load_treesitter_trees(source_files, is_log=True):
         if not os.path.isfile(code_file):
             continue
 
-        source_cls = SourceCodeFile(code_file)
+        source_cls = CppSourceCodeFile('c++', code_file)
         results.append(source_cls)
 
         if is_log:
             if source_cls.has_libfuzzer_harness():
                 logger.info('harness: %s', code_file)
 
-    return results
+    return CppProject(results)
 
 
-def analyse_source_code(source_content: str) -> SourceCodeFile:
+def analyse_source_code(source_content: str) -> CppSourceCodeFile:
     """Returns a source abstraction based on a single source string."""
-    source_code = SourceCodeFile(source_file='in-memory string',
-                                 source_content=source_content.encode())
+    source_code = CppSourceCodeFile('c++',
+                                    source_file='in-memory string',
+                                    source_content=source_content.encode())
     return source_code
 
 
