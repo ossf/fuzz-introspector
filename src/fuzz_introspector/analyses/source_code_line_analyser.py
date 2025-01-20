@@ -106,7 +106,7 @@ class SourceCodeLineAnalyser(analysis.AnalysisInterface):
 
         if not target_func_list:
             logger.error('Failed to locate the target source file '
-                         f'{target_source} from the project.')
+                         f'{self.source_file} from the project.')
 
         result_list = []
         for func in target_func_list:
@@ -115,13 +115,13 @@ class SourceCodeLineAnalyser(analysis.AnalysisInterface):
             if start <= self.source_line <= end:
                 logger.info(f'Found function {func.function_name} from line '
                             f'{self.source_line} in {self.source_file}')
-                result_list.append(func)
+                result_list.append(func.to_dict())
 
         if result_list:
             self.json_results['functions'] = result_list
             result_json_path = os.path.join(out_dir, 'functions.json')
             logger.info(f'Dumping result to {result_json_path}')
-            with open(result_json_path, w) as f:
+            with open(result_json_path, 'w') as f:
                 json.dump(self.json_results, f)
         else:
             logger.info(f'No functions found from line {self.source_line}'

@@ -23,6 +23,7 @@ from typing import Optional
 from fuzz_introspector import analysis
 from fuzz_introspector import constants
 from fuzz_introspector import diff_report
+from fuzz_introspector import html_helpers
 from fuzz_introspector import html_report
 from fuzz_introspector import utils
 

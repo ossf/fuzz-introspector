@@ -1,3 +1,18 @@
+# Copyright 2025 Fuzz Introspector Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+from fuzz_introspector import analysis
 from fuzz_introspector.analyses import bug_digestor
 from fuzz_introspector.analyses import driver_synthesizer
 from fuzz_introspector.analyses import engine_input
@@ -12,7 +27,7 @@ from fuzz_introspector.analyses import source_code_line_analyser
 
 # All optional analyses.
 # Ordering here is important as top analysis will be shown first in the report
-all_analyses = [
+all_analyses: list[type[analysis.AnalysisInterface]] = [
     optimal_targets.OptimalTargets,
     engine_input.EngineInput,
     runtime_coverage_analysis.RuntimeCoverageAnalysis,
@@ -27,6 +42,6 @@ all_analyses = [
 
 # This is the list of analyses that are meant to run
 # directly from CLI without the need to generate HTML reports
-standalone_analyses = [
+standalone_analyses: list[type[analysis.AnalysisInterface]] = [
     source_code_line_analyser.SourceCodeLineAnalyser,
 ]

@@ -171,7 +171,7 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
         type=str,
         help='Target file path or name for SourceCodeLineAnalyser')
     source_code_line_analyser_parser.add_argument(
-        '--line',
+        '--source-line',
         default=-1,
         type=int,
         help='Target line for SourceCodeLineAnalyser')
