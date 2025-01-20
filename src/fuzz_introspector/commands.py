@@ -18,7 +18,7 @@ import os
 import json
 import yaml
 import shutil
-from typing import List, Optional
+from typing import Optional, Union
 
 from fuzz_introspector import analysis
 from fuzz_introspector import constants
@@ -54,6 +54,9 @@ def end_to_end(args) -> int:
     else:
         out_dir = os.getcwd()
 
+    if not os.path.exists(out_dir):
+        os.mkdir(out_dir)
+
     if args.language == constants.LANGUAGES.JAVA:
         entrypoint = 'fuzzerTestOneInput'
     else:
@@ -69,11 +72,9 @@ def end_to_end(args) -> int:
     else:
         language = args.language
 
-    props: dict[str, str] = {}
-    for property in args.properties:
-        if property.count('=') == 1:
-            key, value = property.split('=', 1)
-            props[key] = value
+    props: dict[str, Union[str, int]] = {}
+    props['source_file'] = args.source_file
+    props['line'] = args.line
 
     return run_analysis_on_dir(target_folder=out_dir,
                                coverage_url=args.coverage_url,
@@ -88,16 +89,16 @@ def end_to_end(args) -> int:
 
 def run_analysis_on_dir(target_folder: str,
                         coverage_url: str,
-                        analyses_to_run: List[str],
+                        analyses_to_run: list[str],
                         correlation_file: str,
                         enable_all_analyses: bool,
                         report_name: str,
                         language: str,
-                        output_json: Optional[List[str]] = None,
+                        output_json: Optional[list[str]] = None,
                         parallelise: bool = True,
                         dump_files: bool = True,
                         out_dir: str = '',
-                        props: dict[str, str] = {}) -> int:
+                        props: dict[str, Union[str, int]] = {}) -> int:
     """Runs Fuzz Introspector analysis from based on the results
     from a frontend run. The primary task is to aggregate the data
     and generate a HTML report."""

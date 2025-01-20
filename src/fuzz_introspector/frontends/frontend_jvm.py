@@ -232,6 +232,9 @@ class JavaMethod():
 
         # Store method line information
         if self.is_default_constructor:
+#            print('FUCK')
+#            print(self.root.text.decode())
+#            print('ENDFUCK')
             self.start_line = -1
             self.end_line = -1
             self.name = '<init>'
@@ -1045,6 +1048,7 @@ class JvmProject(Project[JvmSourceCodeFile]):
             method_dict: dict[str, Any] = {}
             method_dict['functionName'] = method.name
             method_dict['functionSourceFile'] = method.class_interface.name
+            method_dict['functionSourceFilePath'] = method.parent_source.source_file
             method_dict['functionLinenumber'] = method.start_line
             method_dict['functionLinenumberEnd'] = method.end_line
             method_dict['linkageType'] = ''

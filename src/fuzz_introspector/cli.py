@@ -1,3 +1,4 @@
+# Copyright 2024 Fuzz Introspector Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,6 +19,8 @@ import os
 import sys
 
 from fuzz_introspector import commands, constants
+
+from typing import Union
 
 sys.setrecursionlimit(10000)
 
@@ -72,12 +75,16 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
             FuzzDriverSynthesizerAnalysis, FuzzEngineInputAnalysis,
             FilePathAnalyser, ThirdPartyAPICoverageAnalyser,
             MetadataAnalysis, OptimalTargets, RuntimeCoverageAnalysis,
-            SinkCoverageAnalyser, FunctionSourceLineAnalyser
+            SinkCoverageAnalyser, SourceCodeLineAnalyser
         ''')
-    full_parser.add_argument('--properties',
-                             nargs='*',
-                             default=[],
-                             help='Additional properties for analysis')
+    full_parser.add_argument('--source-file',
+                             default='',
+                             type=str,
+                             help='Target file path or name for SourceCodeLineAnalyser')
+    full_parser.add_argument('--line',
+                             default=-1,
+                             type=int,
+                             help='Target line for SourceCodeLineAnalyser')
 
     # Report generation command
     report_parser = subparsers.add_parser(
@@ -106,7 +113,7 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
             FuzzDriverSynthesizerAnalysis, FuzzEngineInputAnalysis,
             FilePathAnalyser, ThirdPartyAPICoverageAnalyser,
             MetadataAnalysis, OptimalTargets, RuntimeCoverageAnalysis,
-            SinkCoverageAnalyser, FunctionSourceLineAnalyser
+            SinkCoverageAnalyser, SourceCodeLineAnalyser
         """)
     report_parser.add_argument("--enable-all-analyses",
                                action='store_true',
@@ -129,10 +136,14 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
         nargs="+",
         default=["FuzzEngineInputAnalysis"],
         help="State which analysis requires separate json report output")
-    report_parser.add_argument('--properties',
-                               nargs='*',
-                               default=[],
-                               help='Additional properties for analysis')
+    report_parser.add_argument('--source-file',
+                               default='',
+                               type=str,
+                               help='Target file path or name for SourceCodeLineAnalyser')
+    report_parser.add_argument('--line',
+                               default=-1,
+                               type=int,
+                               help='Target line for SourceCodeLineAnalyser')
 
     # Command for correlating binary files to fuzzerLog files
     correlate_parser = subparsers.add_parser(
@@ -185,11 +196,9 @@ def main() -> int:
 
     logger.info("Running fuzz introspector post-processing")
     if args.command == 'report':
-        props: dict[str, str] = {}
-        for property in args.properties:
-            if property.count('=') == 1:
-                key, value = property.split('=', 1)
-                props[key] = value
+        props: dict[str, Union[str, int]] = {}
+        props['source_file'] = args.source_file
+        props['line'] = args.line
 
         return_code = commands.run_analysis_on_dir(args.target_dir,
                                                    args.coverage_url,

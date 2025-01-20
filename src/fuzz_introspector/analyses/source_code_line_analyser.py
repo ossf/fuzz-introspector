@@ -13,6 +13,7 @@
 # limitations under the License.
 """Analysis plugin for introspection of the function on target line in target source file."""
 
+import os
 import json
 import logging
 
@@ -25,8 +26,8 @@ from fuzz_introspector.datatypes import (project_profile, fuzzer_profile)
 logger = logging.getLogger(name=__name__)
 
 
-class SourceCodeLineFunctionAnalyser(analysis.AnalysisInterface):
-    name: str = 'SourceCodeLineFunctionAnalyser'
+class SourceCodeLineAnalyser(analysis.AnalysisInterface):
+    name: str = 'SourceCodeLineAnalyser'
 
     def __init__(self):
         self.json_results: Dict[str, Any] = dict()
@@ -70,17 +71,49 @@ class SourceCodeLineFunctionAnalyser(analysis.AnalysisInterface):
                       basefolder: str, coverage_url: str,
                       conclusions: List[html_helpers.HTMLConclusion],
                       out_dir) -> str:
-        logger.info(f" - Running analysis {self.get_name()}")
-        logger.info(self.properties)
+        logger.info(f' - Running analysis {self.get_name()}')
+
+        # Get target source file and line
+        target_source = self.properties.get('source_file')
+        target_line = self.properties.get('line')
+
+        if not target_source or not isinstance(target_line, int) or target_line <= 0:
+            logger.error('No valid source code or target line are provided')
+            return ''
+
         # Get all functions from the profiles
         all_functions = list(proj_profile.all_functions.values())
         all_functions.extend(proj_profile.all_constructors.values())
 
         # Generate a Source File to Function Profile map and store in JSON Result
+        func_file_map = {}
         for function in all_functions:
-            func_list = self.json_results.get(function.function_source_file,
+            func_list = func_file_map.get(function.function_source_file_path,
                                               [])
             func_list.append(function)
-            self.json_results[function.function_source_file] = func_list
+            func_file_map[function.function_source_file_path] = func_list
+
+        if os.sep in target_source:
+            # File path
+            target_func_list = func_file_map.get(target_source, [])
+        else:
+            # File name
+            target_func_list = []
+            for key, value in func_file_map.items():
+                if os.path.basename(key) == target_source:
+                    target_func_list.extend(value)
+
+        if not target_func_list:
+            logger.error('Failed to locate the target source file '
+                         f'{target_source} from the project.')
+
+        result_list = []
+        for func in target_func_list:
+            if func.function_linenumber <= target_line <= func.function_line_number_end:
+                logger.info(f'Found function {func.function_name} from line {target_line} in {target_source}')
+                result_list.append(func)
+
+        if result_list:
+            self.json_results['functions'] = result_list
 
         return ''

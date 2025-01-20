@@ -23,5 +23,5 @@ all_analyses = [
     metadata.MetadataAnalysis,
     sinks_analyser.SinkCoverageAnalyser,
     annotated_cfg.FuzzAnnotatedCFG,
-    source_code_line_analyser.SourceCodeLineFunctionAnalyser,
+    source_code_line_analyser.SourceCodeLineAnalyser,
 ]

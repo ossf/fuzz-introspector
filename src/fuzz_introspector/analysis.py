@@ -24,6 +24,7 @@ from typing import (
     List,
     Type,
     Set,
+    Union
 )
 
 from fuzz_introspector import (cfg_load, code_coverage, constants, data_loader,
@@ -172,7 +173,7 @@ class AnalysisInterface(abc.ABC):
     json_string_result: str = ""
     display_html: bool = False
 
-    def set_additional_properties(self, properties: dict[str, str]):
+    def set_additional_properties(self, properties: dict[str, Union[str, int]]):
         """Allow setting additional properties for this analysis."""
         self.properties = properties
 
@@ -235,7 +236,7 @@ class AnalysisInterface(abc.ABC):
 
 
 def instantiate_analysis_interface(cls: Type[AnalysisInterface],
-                                   props: dict[str, str]):
+                                   props: dict[str, Union[str, int]]):
     """Wrapper function to satisfy Mypy semantics"""
     analysis_interface = cls()
     analysis_interface.set_additional_properties(props)

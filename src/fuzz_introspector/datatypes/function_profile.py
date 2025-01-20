@@ -57,6 +57,10 @@ class FunctionProfile:
             elem['BranchProfiles'])
         self.signature = elem.get('signature', '')
 
+        # For backward compatibility on jvm project
+        # that the function_source_file stored the class name instead of file path.
+        self.function_source_file_path = elem.get('functionSourceFilePath', self.function_source_file)
+
         # Duplication of functions_reached to keep the original sets
         # of call trees for further processing and analysis. This
         # could avoid loss of call tree information when functions_reached

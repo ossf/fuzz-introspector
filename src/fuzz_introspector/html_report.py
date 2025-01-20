@@ -25,6 +25,7 @@ from typing import (
     List,
     Optional,
     Tuple,
+    Union,
 )
 
 from fuzz_introspector import (analysis, constants, html_constants,
@@ -728,7 +729,7 @@ def create_html_report(introspection_proj: analysis.IntrospectionProject,
                        report_name,
                        dump_files,
                        out_dir: str = '',
-                       props: dict[str, str] = {}) -> None:
+                       props: dict[str, Union[str, int]] = {}) -> None:
     """
     Logs a complete report. This is the current main place for looking at
     data produced by fuzz introspector.
