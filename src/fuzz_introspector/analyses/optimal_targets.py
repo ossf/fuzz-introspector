@@ -76,8 +76,8 @@ def add_func_to_reached_and_clone(
             f.reached_by_fuzzers.append(
                 utils.demangle_cpp_func(func_to_add.function_name))
 
-    # Recompute all analysis that is based on hitcounts in all functions as hitcount has
-    # changed for elements in the dictionary.
+    # Recompute all analysis that is based on hitcounts in all functions as
+    # hitcount has changed for elements in the dictionary.
     logger.info("Updating hitcount-related data")
     for f_profile in merged_profile.all_functions.values():
         cc = 0
@@ -266,7 +266,7 @@ class OptimalTargets(analysis.AnalysisInterface):
             if len(merged_profile.all_functions) > top:
                 drivers_to_create = count
                 break
-        logger.info(f"Getting {drivers_to_create} optimal targets")
+        logger.info('Getting %d optimal targets', drivers_to_create)
         while len(optimal_functions_targeted) < drivers_to_create:
             logger.info("  - sorting by unreached complexity. ")
             if len(target_fds) == 0:
@@ -289,9 +289,8 @@ class OptimalTargets(analysis.AnalysisInterface):
                 target_fds = self.analysis_get_optimal_targets(
                     new_merged_profile)
 
-        logger.info("Found the following optimal functions: { %s }" %
-                    (str([f.function_name
-                          for f in optimal_functions_targeted])))
+        logger.info("Found the following optimal functions: { %s }",
+                    str([f.function_name for f in optimal_functions_targeted]))
 
         return new_merged_profile, optimal_functions_targeted
 

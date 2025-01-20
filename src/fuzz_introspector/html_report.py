@@ -308,7 +308,7 @@ def create_fuzzer_profile_runtime_coverage_section(proj_profile, profile,
                     "%.5s" % (str(hit_percentage)) + "%"
                 })
             else:
-                logger.error("Could not write coverage line for function %s" %
+                logger.error('Could not write coverage line for function %s',
                              funcname)
     func_hit_table_string += "</table>"
 
@@ -737,7 +737,7 @@ def create_html_report(introspection_proj: analysis.IntrospectionProject,
     """
 
     # Main logic
-    tables: List[str] = list()
+    tables: List[str] = []
     table_of_contents: html_helpers.HtmlTableOfContents = html_helpers.HtmlTableOfContents(
     )
     conclusions: List[html_helpers.HTMLConclusion] = []
@@ -773,7 +773,7 @@ def create_html_report(introspection_proj: analysis.IntrospectionProject,
     html_report_core += html_all_function_section
 
     # Section with details of each fuzzer.
-    fuzzer_table_data: Dict[str, Any] = dict()
+    fuzzer_table_data: Dict[str, Any] = {}
     html_report_core += create_section_fuzzer_detailed_section(
         table_of_contents, introspection_proj, tables, conclusions,
         fuzzer_table_data, dump_files, out_dir)
@@ -845,7 +845,7 @@ def create_html_report(introspection_proj: analysis.IntrospectionProject,
     if introspection_proj.proj_profile.target_lang == 'jvm' and all_functions_json_report:
         jvm_constructor_json_report: List[Dict[str, Any]] = []
         for fd in introspection_proj.proj_profile.all_constructors.values():
-            json_copy: Dict[str, Any] = dict()
+            json_copy: Dict[str, Any] = {}
             json_copy['Func name'] = fd.function_name
             json_copy['func_url'] = 'N/A'
             json_copy['function_signature'] = fd.function_name
