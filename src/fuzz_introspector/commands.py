@@ -18,11 +18,12 @@ import os
 import json
 import yaml
 import shutil
-from typing import List, Optional
+from typing import Optional
 
 from fuzz_introspector import analysis
 from fuzz_introspector import constants
 from fuzz_introspector import diff_report
+from fuzz_introspector import html_helpers
 from fuzz_introspector import html_report
 from fuzz_introspector import utils
 
@@ -54,6 +55,9 @@ def end_to_end(args) -> int:
     else:
         out_dir = os.getcwd()
 
+    if not os.path.exists(out_dir):
+        os.mkdir(out_dir)
+
     if args.language == constants.LANGUAGES.JAVA:
         entrypoint = 'fuzzerTestOneInput'
     else:
@@ -81,12 +85,12 @@ def end_to_end(args) -> int:
 
 def run_analysis_on_dir(target_folder: str,
                         coverage_url: str,
-                        analyses_to_run: List[str],
+                        analyses_to_run: list[str],
                         correlation_file: str,
                         enable_all_analyses: bool,
                         report_name: str,
                         language: str,
-                        output_json: Optional[List[str]] = None,
+                        output_json: Optional[list[str]] = None,
                         parallelise: bool = True,
                         dump_files: bool = True,
                         out_dir: str = '') -> int:
@@ -150,3 +154,64 @@ def light_analysis(args) -> int:
         f.write(json.dumps(list(all_source_files)))
 
     return 0
+
+
+def analyse(args) -> int:
+    """Perform a light analysis using the chosen Analyser and return
+    json results."""
+    # Retrieve the correct analyser
+    target_analyser = None
+    for analyser in analysis.get_all_standalone_analyses():
+        if analyser.get_name() == args.analyser:
+            target_analyser = analysis.instantiate_analysis_interface(analyser)
+            break
+
+    # Return error if analyser not found
+    if not target_analyser:
+        logger.error('Analyser %s not found.', args.analyser)
+        return constants.APP_EXIT_ERROR
+
+    # Auto detect project language is not provided
+    if not args.language:
+        args.language = utils.detect_language(args.target_dir)
+
+    # Prepare out directory
+    if args.out_dir:
+        out_dir = args.out_dir
+    else:
+        out_dir = os.getcwd()
+
+    if not os.path.exists(out_dir):
+        os.mkdir(out_dir)
+
+    # Fix entrypoint default for languages
+    if args.language == constants.LANGUAGES.JAVA:
+        entrypoint = 'fuzzerTestOneInput'
+    else:
+        entrypoint = 'LLVMFuzzerTestOneInput'
+
+    # Run the frontend
+    oss_fuzz.analyse_folder(language=args.language,
+                            directory=args.target_dir,
+                            entrypoint=entrypoint,
+                            out=out_dir)
+
+    # Perform the FI backend project analysis from the frontend
+    introspection_proj = analysis.IntrospectionProject(args.language, out_dir,
+                                                       '')
+    introspection_proj.load_data_files(True, '', out_dir)
+
+    # Perform the chosen standalone analysis
+    if target_analyser.get_name() == 'SourceCodeLineAnalyser':
+        source_file = args.source_file
+        source_line = args.source_line
+
+        target_analyser.set_source_file_line(source_file, source_line)
+        target_analyser.analysis_func(html_helpers.HtmlTableOfContents(), [],
+                                      introspection_proj.proj_profile,
+                                      introspection_proj.profiles, '', '', [],
+                                      out_dir)
+
+    # TODO Add more analyser for standalone run
+
+    return constants.APP_EXIT_SUCCESS

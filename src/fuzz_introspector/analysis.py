@@ -19,12 +19,7 @@ import multiprocessing
 import os
 import shutil
 
-from typing import (
-    Dict,
-    List,
-    Type,
-    Set,
-)
+from typing import (Dict, List, Type, Set, Union)
 
 from fuzz_introspector import (cfg_load, code_coverage, constants, data_loader,
                                debug_info, html_helpers, json_report, utils)
@@ -173,6 +168,11 @@ class AnalysisInterface(abc.ABC):
     json_string_result: str = ""
     display_html: bool = False
 
+    def set_additional_properties(self, properties: dict[str, Union[str,
+                                                                    int]]):
+        """Allow setting additional properties for this analysis."""
+        self.properties = properties
+
     @abc.abstractmethod
     def analysis_func(self,
                       table_of_contents: html_helpers.HtmlTableOfContents,
@@ -259,6 +259,11 @@ class FuzzBranchBlocker:
 def get_all_analyses() -> List[Type[AnalysisInterface]]:
     from fuzz_introspector import analyses
     return analyses.all_analyses
+
+
+def get_all_standalone_analyses() -> List[Type[AnalysisInterface]]:
+    from fuzz_introspector import analyses
+    return analyses.standalone_analyses
 
 
 def callstack_get_parent(n: cfg_load.CalltreeCallsite, c: Dict[int,

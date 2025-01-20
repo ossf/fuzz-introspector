@@ -88,7 +88,11 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
                                ],
                                help="""
             Analyses to run. Available options:
-            OptimalTargets, FuzzEngineInput, ThirdPartyAPICoverageAnalyser
+            AnnotatedCFG, BugDigestorAnalysis, FuzzCalltreeAnalysis,
+            FuzzDriverSynthesizerAnalysis, FuzzEngineInputAnalysis,
+            FilePathAnalyser, ThirdPartyAPICoverageAnalyser,
+            MetadataAnalysis, OptimalTargets, RuntimeCoverageAnalysis,
+            SinkCoverageAnalyser
         """)
     report_parser.add_argument("--enable-all-analyses",
                                action='store_true',
@@ -134,6 +138,46 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
                              required=True,
                              help='Path to the second report')
 
+    # Standalone analyser
+    analyse_parser = subparsers.add_parser(
+        'analyse',
+        help='Standlone analyser commands to run on the target project.')
+
+    analyser_parser = analyse_parser.add_subparsers(
+        dest='analyser',
+        required=True,
+        help='Available analyser: SourceCodeLineAnalyser')
+
+    source_code_line_analyser_parser = analyser_parser.add_parser(
+        'SourceCodeLineAnalyser',
+        help=('Provide information in out-dir/function.json for the function'
+              ' found in the given target file and line number'))
+    source_code_line_analyser_parser.add_argument(
+        '--source-file',
+        default='',
+        type=str,
+        help='Target file path or name for SourceCodeLineAnalyser')
+    source_code_line_analyser_parser.add_argument(
+        '--source-line',
+        default=-1,
+        type=int,
+        help='Target line for SourceCodeLineAnalyser')
+    source_code_line_analyser_parser.add_argument(
+        '--target-dir',
+        type=str,
+        help='Directory holding source to analyse.',
+        required=True)
+    source_code_line_analyser_parser.add_argument(
+        '--language',
+        type=str,
+        help='Programming of the source code to analyse.',
+        choices=constants.LANGUAGES_SUPPORTED)
+    source_code_line_analyser_parser.add_argument(
+        '--out-dir',
+        default='',
+        type=str,
+        help='Folder to store analysis results.')
+
     return parser
 
 
@@ -176,6 +220,8 @@ def main() -> int:
         return_code = commands.light_analysis(args)
     elif args.command == 'full':
         return_code = commands.end_to_end(args)
+    elif args.command == 'analyse':
+        return_code = commands.analyse(args)
     else:
         return_code = constants.APP_EXIT_ERROR
     logger.info("Ending fuzz introspector post-processing")
