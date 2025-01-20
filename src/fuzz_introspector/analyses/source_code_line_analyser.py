@@ -11,7 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Analysis plugin for introspection of the function on target line in target source file."""
+"""Analysis plugin for introspection of the function on target line in
+target source file."""
 
 import os
 import json
@@ -28,10 +29,12 @@ logger = logging.getLogger(name=__name__)
 
 
 class SourceCodeLineAnalyser(analysis.AnalysisInterface):
+    """Locate for the function in given line of given source file."""
+
     name: str = 'SourceCodeLineAnalyser'
 
     def __init__(self):
-        self.json_results: Dict[str, Any] = dict()
+        self.json_results: Dict[str, Any] = {}
         self.json_string_result = ''
 
     @classmethod
@@ -54,7 +57,7 @@ class SourceCodeLineAnalyser(analysis.AnalysisInterface):
             return self.json_string_result
         return json.dumps(self.json_results)
 
-    def set_json_string_result(self, json_string):
+    def set_json_string_result(self, string):
         """Store the result of this analyser as json string result
         for further processing in a later time.
 
@@ -62,7 +65,7 @@ class SourceCodeLineAnalyser(analysis.AnalysisInterface):
             processing result of the analyser for future use
         :type json_string: str
         """
-        self.json_string_result = json_string
+        self.json_string_result = string
 
     def set_source_file_line(self, source_file: str, source_line: int):
         """Configure the source file and source line for this analyser."""
@@ -77,7 +80,7 @@ class SourceCodeLineAnalyser(analysis.AnalysisInterface):
                       basefolder: str, coverage_url: str,
                       conclusions: List[html_helpers.HTMLConclusion],
                       out_dir: str) -> str:
-        logger.info(f' - Running analysis {self.get_name()}')
+        logger.info(' - Running analysis %s', self.get_name())
 
         if not self.source_file or self.source_line <= 0:
             logger.error('No valid source code or target line are provided')
@@ -87,7 +90,7 @@ class SourceCodeLineAnalyser(analysis.AnalysisInterface):
         all_functions = list(proj_profile.all_functions.values())
         all_functions.extend(proj_profile.all_constructors.values())
 
-        # Generate a Source File to Function Profile map and store in JSON Result
+        # Generate SourceFile to Function Profile map and store in JSON Result
         func_file_map: dict[str, list[function_profile.FunctionProfile]] = {}
         for function in all_functions:
             func_list = func_file_map.get(function.function_source_file, [])
@@ -105,26 +108,28 @@ class SourceCodeLineAnalyser(analysis.AnalysisInterface):
                     target_func_list.extend(value)
 
         if not target_func_list:
-            logger.error('Failed to locate the target source file '
-                         f'{self.source_file} from the project.')
+            logger.error(
+                'Failed to locate the target source file %s from the project.',
+                self.source_file)
 
         result_list = []
         for func in target_func_list:
             start = func.function_linenumber
             end = func.function_line_number_end
             if start <= self.source_line <= end:
-                logger.info(f'Found function {func.function_name} from line '
-                            f'{self.source_line} in {self.source_file}')
+                logger.info('Found function %s from line %d in %s',
+                            func.function_name, self.source_line,
+                            self.source_file)
                 result_list.append(func.to_dict())
 
         if result_list:
             self.json_results['functions'] = result_list
             result_json_path = os.path.join(out_dir, 'functions.json')
-            logger.info(f'Dumping result to {result_json_path}')
+            logger.info('Dumping result to %s', result_json_path)
             with open(result_json_path, 'w') as f:
                 json.dump(self.json_results, f)
         else:
-            logger.info(f'No functions found from line {self.source_line}'
-                        f' in {self.source_file}')
+            logger.info('No functions found from line %d in %s',
+                        self.source_line, self.source_file)
 
         return ''

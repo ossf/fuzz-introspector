@@ -168,7 +168,7 @@ def analyse(args) -> int:
 
     # Return error if analyser not found
     if not target_analyser:
-        logger.error(f'Analyser {args.analyser} not found.')
+        logger.error('Analyser %s not found.', args.analyser)
         return constants.APP_EXIT_ERROR
 
     # Auto detect project language is not provided
