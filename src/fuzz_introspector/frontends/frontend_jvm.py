@@ -1045,7 +1045,8 @@ class JvmProject(Project[JvmSourceCodeFile]):
             method_dict: dict[str, Any] = {}
 
             if method.parent_source:
-                method_dict['functionSourceFile'] = method.parent_source.source_file
+                method_dict[
+                    'functionSourceFile'] = method.parent_source.source_file
             else:
                 method_dict['functionSourceFile'] = method.class_interface.name
 
