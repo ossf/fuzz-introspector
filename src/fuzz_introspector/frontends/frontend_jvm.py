@@ -1170,6 +1170,9 @@ class JvmProject(Project[JvmSourceCodeFile]):
         if not visited_functions:
             visited_functions = set()
 
+        if function and '].' not in function:
+            function = None
+
         if not source_code and function:
             source_code = self.find_source_with_method(function)
 
