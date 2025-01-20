@@ -73,7 +73,7 @@ class EngineInput(analysis.AnalysisInterface):
                        "to a fuzz engine when running a given fuzz target. The current " \
                        "focus is on providing input that is usable by libFuzzer.</p>"
 
-        for prof in profiles.values():
+        for prof in profiles:
             logger.info('Generating input for %s', prof.identifier)
             html_string += html_helpers.html_add_header_with_link(
                 prof.fuzzer_source_file, html_helpers.HTML_HEADING.H2,
