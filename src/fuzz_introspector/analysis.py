@@ -222,7 +222,7 @@ class AnalysisInterface(abc.ABC):
         """Return json_string_result"""
 
     @abc.abstractmethod
-    def set_json_string_result(self, string):
+    def set_json_string_result(self, json_string):
         """Set json_string_result"""
 
     def set_display_html(self, is_display_html):

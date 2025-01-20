@@ -51,9 +51,11 @@ class FuzzCalltreeAnalysis(analysis.AnalysisInterface):
         return cls.name
 
     def get_json_string_result(self):
+        """Helper for getting json string"""
         return self.json_string_result
 
     def set_json_string_result(self, json_string):
+        """Helper for setting json string"""
         self.json_string_result = json_string
 
     def analysis_func(self,
@@ -100,14 +102,12 @@ class FuzzCalltreeAnalysis(analysis.AnalysisInterface):
         nodes = cfg_load.extract_all_callsites(
             profile.fuzzer_callsite_calltree)
 
-        for i in range(len(nodes)):
+        for i, node in enumerate(nodes):
             # All divs created in this loop must also be closed in this loop.
-            node = nodes[i]
-
-            if (profile.target_lang == "jvm"):
+            if profile.target_lang == "jvm":
                 demangled_name = utils.demangle_jvm_func(
                     node.dst_function_source_file, node.dst_function_name)
-            elif (profile.target_lang == "rust"):
+            elif profile.target_lang == "rust":
                 demangled_name = utils.demangle_rust_func(
                     node.dst_function_name)
             else:
@@ -120,7 +120,8 @@ class FuzzCalltreeAnalysis(analysis.AnalysisInterface):
             link = node.cov_link
             ct_idx_str = self.create_str_node_ctx_idx(str(node.cov_ct_idx))
 
-            # Only display [function] link if we have, otherwhise show no [function] text.
+            # Only display [function] link if we have, otherwhise show no
+            # [function] text.
             if node.dst_function_source_file.replace(" ", "") != "":
                 func_href = f"""<a href="{link}">[function]</a>"""
             else:
@@ -154,8 +155,8 @@ class FuzzCalltreeAnalysis(analysis.AnalysisInterface):
             if i < len(nodes) - 1:
                 next_node = nodes[i + 1]
 
-                # If depth is increasing then we should open a new div for folding
-                # the calltree.
+                # If depth is increasing then we should open a new div for
+                # folding the calltree.
                 if next_node.depth > node.depth:
                     calltree_html_section_string += f"""<div
         class="calltree-line-wrapper open level-{int(node.depth)}"
@@ -183,9 +184,9 @@ class FuzzCalltreeAnalysis(analysis.AnalysisInterface):
         # visualisation happens in javascript rather than here.
         calltree_html_section_string += "<div id=\"side-overview-wrapper\"></div>"
 
-        logger.info("calltree_html_section_string: <divs>: %d -- </divs>: %d" %
-                    (calltree_html_section_string.count("<div"),
-                     calltree_html_section_string.count("</div>")))
+        logger.info('calltree_html_section_string: <divs>: %d -- </divs>: %d',
+                    calltree_html_section_string.count("<div"),
+                    calltree_html_section_string.count("</div>"))
 
         calltree_html_string += calltree_html_section_string + "</div>"  # calltree-wrapper
         logger.info("Calltree created")
@@ -220,7 +221,7 @@ class FuzzCalltreeAnalysis(analysis.AnalysisInterface):
                 "the blocker table won't have correct links to calltree.")
 
         blocker_node_map: Dict[analysis.FuzzBranchBlocker,
-                               cfg_load.CalltreeCallsite] = dict()
+                               cfg_load.CalltreeCallsite] = {}
         for blocker in branch_blockers:
             func_name = blocker.function_name
             branch_linenumber = int(blocker.branch_line_number)
@@ -228,12 +229,14 @@ class FuzzCalltreeAnalysis(analysis.AnalysisInterface):
                 if func_name == node.dst_function_name:
                     depth = node.depth + 1
                     found_node = node
-                    # Try to adjust the blocker node in the callees of current func
+                    # Try to adjust the blocker node in the callees of the
+                    # current func.
                     for i in range(idx + 1, nodes_num):
                         new_node = all_callsites[i]
                         if depth > new_node.depth:
                             break  # Reached the caller of the node
-                        if depth == new_node.depth and branch_linenumber >= new_node.src_linenumber:
+                        if (depth == new_node.depth and
+                                branch_linenumber >= new_node.src_linenumber):
                             found_node = new_node
                     blocker_node_map[blocker] = found_node
                     break
@@ -246,7 +249,8 @@ class FuzzCalltreeAnalysis(analysis.AnalysisInterface):
         """
         Write a wrapped HTML file with the tags needed from fuzz-introspector
         We use this only for wrapping calltrees at the moment, however, down
-        the line it makes sense to have an easy wrapper for other HTML pages too.
+        the line it makes sense to have an easy wrapper for other HTML pages
+        too.
         """
         complete_html_string = ""
         blocker_infos = {}
@@ -319,7 +323,7 @@ class FuzzCalltreeAnalysis(analysis.AnalysisInterface):
             max_blockers_to_extract: int = 999
     ) -> List[cfg_load.CalltreeCallsite]:
         """Gets a list of fuzz blockers"""
-        blocker_list: List[cfg_load.CalltreeCallsite] = list()
+        blocker_list: List[cfg_load.CalltreeCallsite] = []
 
         # Extract all callsites in calltree and exit early if none
         all_callsites = cfg_load.extract_all_callsites(
@@ -327,7 +331,8 @@ class FuzzCalltreeAnalysis(analysis.AnalysisInterface):
         if len(all_callsites) == 0:
             return blocker_list
 
-        # Filter nodes that has forward reds. Extract maximum max_blockers_to_extract nodes.
+        # Filter nodes that has forward reds. Extract maximum
+        # max_blockers_to_extract nodes.
         nodes_sorted_by_red_ahead = sorted(all_callsites,
                                            key=lambda x: x.cov_forward_reds,
                                            reverse=True)
@@ -377,7 +382,7 @@ class FuzzCalltreeAnalysis(analysis.AnalysisInterface):
             sort_order="desc")
         for node in fuzz_blockers:
             link_prefix = "0" * (5 - len(str(node.cov_ct_idx)))
-            node_id = "%s%s" % (link_prefix, node.cov_ct_idx)
+            node_id = f'{link_prefix}{node.cov_ct_idx}'
             if file_link is not None:
                 cs_link = (
                     "<span class=\"text-link\">"
