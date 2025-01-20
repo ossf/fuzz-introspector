@@ -78,7 +78,8 @@ class SourceCodeLineAnalyser(analysis.AnalysisInterface):
         target_source = str(self.properties.get('source_file'))
         target_line = self.properties.get('line')
 
-        if not target_source or not isinstance(target_line, int) or target_line <= 0:
+        if not target_source or not isinstance(target_line,
+                                               int) or target_line <= 0:
             logger.error('No valid source code or target line are provided')
             return ''
 
