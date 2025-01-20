@@ -18,7 +18,7 @@ import os
 import json
 import yaml
 import shutil
-from typing import Optional, Union
+from typing import Optional
 
 from fuzz_introspector import analysis
 from fuzz_introspector import constants
@@ -72,10 +72,6 @@ def end_to_end(args) -> int:
     else:
         language = args.language
 
-    props: dict[str, Union[str, int]] = {}
-    props['source_file'] = args.source_file
-    props['line'] = args.line
-
     return run_analysis_on_dir(target_folder=out_dir,
                                coverage_url=args.coverage_url,
                                analyses_to_run=args.analyses,
@@ -83,8 +79,7 @@ def end_to_end(args) -> int:
                                enable_all_analyses=(not args.analyses),
                                report_name=args.name,
                                language=language,
-                               out_dir=out_dir,
-                               props=props)
+                               out_dir=out_dir)
 
 
 def run_analysis_on_dir(target_folder: str,
@@ -97,8 +92,7 @@ def run_analysis_on_dir(target_folder: str,
                         output_json: Optional[list[str]] = None,
                         parallelise: bool = True,
                         dump_files: bool = True,
-                        out_dir: str = '',
-                        props: dict[str, Union[str, int]] = {}) -> int:
+                        out_dir: str = '') -> int:
     """Runs Fuzz Introspector analysis from based on the results
     from a frontend run. The primary task is to aggregate the data
     and generate a HTML report."""
@@ -123,8 +117,7 @@ def run_analysis_on_dir(target_folder: str,
                                    output_json,
                                    report_name,
                                    dump_files,
-                                   out_dir=out_dir,
-                                   props=props)
+                                   out_dir=out_dir)
 
     return constants.APP_EXIT_SUCCESS
 
@@ -160,3 +153,64 @@ def light_analysis(args) -> int:
         f.write(json.dumps(list(all_source_files)))
 
     return 0
+
+
+def analyse(args) -> int:
+    """Perform a light analysis using the chosen Analyser and return
+    json results."""
+    # Retrieve the correct analyser
+    target_analyser = None
+    for analyser in analysis.get_all_standalone_analyses():
+        if analyser.get_name() == args.analyser:
+            target_analyser = analysis.instantiate_analysis_interface(analyser)
+            break
+
+    # Return error if analyser not found
+    if not target_analyser:
+        logger.error(f'Analyser {args.analyser} not found.')
+        return constants.APP_EXIT_ERROR
+
+    # Auto detect project language is not provided
+    if not args.language:
+        args.language = utils.detect_language(args.target_dir)
+
+    # Prepare out directory
+    if args.out_dir:
+        out_dir = args.out_dir
+    else:
+        out_dir = os.getcwd()
+
+    if not os.path.exists(out_dir):
+        os.mkdir(out_dir)
+
+    # Fix entrypoint default for languages
+    if args.language == constants.LANGUAGES.JAVA:
+        entrypoint = 'fuzzerTestOneInput'
+    else:
+        entrypoint = 'LLVMFuzzerTestOneInput'
+
+    # Run the frontend
+    oss_fuzz.analyse_folder(language=args.language,
+                            directory=args.target_dir,
+                            entrypoint=entrypoint,
+                            out=out_dir)
+
+    # Perform the FI backend project analysis from the frontend
+    introspection_proj = analysis.IntrospectionProject(args.language, out_dir,
+                                                       '')
+    introspection_proj.load_data_files(True, '', out_dir)
+
+    # Perform the chosen standalone analysis
+    if target_analyser.get_name() == 'SourceCodeLineAnalyser':
+        source_file = args.source_file
+        source_line = args.source_line
+
+        target_analyser.set_source_file_line(source_file, source_line)
+        target_analyser.analysis_func(html_helpers.HtmlTableOfContents(), [],
+                                      introspection_proj.proj_profile,
+                                      introspection_proj.profiles, '', '', [],
+                                      out_dir)
+
+    #TODO Add more analyser for standalone run
+
+    return constants.APP_EXIT_SUCCESS

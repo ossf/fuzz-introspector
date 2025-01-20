@@ -64,6 +64,11 @@ class SourceCodeLineAnalyser(analysis.AnalysisInterface):
         """
         self.json_string_result = json_string
 
+    def set_source_file_line(self, source_file: str, source_line: int):
+        """Configure the source file and source line for this analyser."""
+        self.source_file = source_file
+        self.source_line = source_line
+
     def analysis_func(self,
                       table_of_contents: html_helpers.HtmlTableOfContents,
                       tables: List[str],
@@ -71,15 +76,10 @@ class SourceCodeLineAnalyser(analysis.AnalysisInterface):
                       profiles: List[fuzzer_profile.FuzzerProfile],
                       basefolder: str, coverage_url: str,
                       conclusions: List[html_helpers.HTMLConclusion],
-                      out_dir) -> str:
+                      out_dir: str) -> str:
         logger.info(f' - Running analysis {self.get_name()}')
 
-        # Get target source file and line
-        target_source = str(self.properties.get('source_file'))
-        target_line = self.properties.get('line')
-
-        if not target_source or not isinstance(target_line,
-                                               int) or target_line <= 0:
+        if not self.source_file or self.source_line <= 0:
             logger.error('No valid source code or target line are provided')
             return ''
 
@@ -94,14 +94,14 @@ class SourceCodeLineAnalyser(analysis.AnalysisInterface):
             func_list.append(function)
             func_file_map[function.function_source_file] = func_list
 
-        if os.sep in target_source:
+        if os.sep in self.source_file:
             # File path
-            target_func_list = func_file_map.get(target_source, [])
+            target_func_list = func_file_map.get(self.source_file, [])
         else:
             # File name
             target_func_list = []
             for key, value in func_file_map.items():
-                if os.path.basename(key) == target_source:
+                if os.path.basename(key) == self.source_file:
                     target_func_list.extend(value)
 
         if not target_func_list:
@@ -110,12 +110,21 @@ class SourceCodeLineAnalyser(analysis.AnalysisInterface):
 
         result_list = []
         for func in target_func_list:
-            if func.function_linenumber <= target_line <= func.function_line_number_end:
+            start = func.function_linenumber
+            end = func.function_line_number_end
+            if start <= self.source_line <= end:
                 logger.info(f'Found function {func.function_name} from line '
-                            f'{target_line} in {target_source}')
+                            f'{self.source_line} in {self.source_file}')
                 result_list.append(func)
 
         if result_list:
             self.json_results['functions'] = result_list
+            result_json_path = os.path.join(out_dir, 'functions.json')
+            logger.info(f'Dumping result to {result_json_path}')
+            with open(result_json_path, w) as f:
+                json.dump(self.json_results, f)
+        else:
+            logger.info(f'No functions found from line {self.source_line}'
+                        f' in {self.source_file}')
 
         return ''

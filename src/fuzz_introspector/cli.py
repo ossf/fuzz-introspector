@@ -153,29 +153,18 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
 
     # Standalone analyser
     analyse_parser = subparsers.add_parser(
-        'analyse', help='Standlone analyser commands to run on the target project.')
-    analyse_parser.add_argument('--target-dir',
-                                type=str,
-                                help='Directory holding source to analyse.',
-                                required=True)
-    analyse_parser.add_argument('--language',
-                                type=str,
-                                help='Programming of the source code to analyse.',
-                                choices=constants.LANGUAGES_SUPPORTED)
-    analyse_parser.add_argument('--out-dir',
-                                default='',
-                                type=str,
-                                help='Folder to store analysis results.')
+        'analyse',
+        help='Standlone analyser commands to run on the target project.')
 
-    analyser_parser = analyse_parser.add_subparsers((
+    analyser_parser = analyse_parser.add_subparsers(
         dest='analyser',
         required=True,
         help='Available analyser: SourceCodeLineAnalyser')
+
     source_code_line_analyser_parser = analyser_parser.add_parser(
         'SourceCodeLineAnalyser',
         help=('Provide information in out-dir/function.json for the function'
               ' found in the given target file and line number'))
-
     source_code_line_analyser_parser.add_argument(
         '--source-file',
         default='',
@@ -186,7 +175,21 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
         default=-1,
         type=int,
         help='Target line for SourceCodeLineAnalyser')
-
+    source_code_line_analyser_parser.add_argument(
+        '--target-dir',
+        type=str,
+        help='Directory holding source to analyse.',
+        required=True)
+    source_code_line_analyser_parser.add_argument(
+        '--language',
+        type=str,
+        help='Programming of the source code to analyse.',
+        choices=constants.LANGUAGES_SUPPORTED)
+    source_code_line_analyser_parser.add_argument(
+        '--out-dir',
+        default='',
+        type=str,
+        help='Folder to store analysis results.')
 
     return parser
 
@@ -217,14 +220,10 @@ def main() -> int:
 
     logger.info("Running fuzz introspector post-processing")
     if args.command == 'report':
-        return_code = commands.run_analysis_on_dir(args.target_dir,
-                                                   args.coverage_url,
-                                                   args.analyses,
-                                                   args.correlation_file,
-                                                   args.enable_all_analyses,
-                                                   args.name,
-                                                   args.language,
-                                                   args.output_json)
+        return_code = commands.run_analysis_on_dir(
+            args.target_dir, args.coverage_url, args.analyses,
+            args.correlation_file, args.enable_all_analyses, args.name,
+            args.language, args.output_json)
         logger.info("Ending fuzz introspector report generation")
     elif args.command == 'correlate':
         return_code = commands.correlate_binaries_to_logs(args.binaries_dir)

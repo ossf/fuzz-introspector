@@ -230,12 +230,9 @@ class AnalysisInterface(abc.ABC):
         self.display_html = is_display_html
 
 
-def instantiate_analysis_interface(cls: Type[AnalysisInterface],
-                                   props: dict[str, Union[str, int]]):
+def instantiate_analysis_interface(cls: Type[AnalysisInterface]):
     """Wrapper function to satisfy Mypy semantics"""
-    analysis_interface = cls()
-    analysis_interface.set_additional_properties(props)
-    return analysis_interface
+    return cls()
 
 
 class FuzzBranchBlocker:
@@ -260,6 +257,11 @@ class FuzzBranchBlocker:
 def get_all_analyses() -> List[Type[AnalysisInterface]]:
     from fuzz_introspector import analyses
     return analyses.all_analyses
+
+
+def get_all_standalone_analyses() -> List[Type[AnalysisInterface]]:
+    from fuzz_introspector import analyses
+    return analyses.standalone_analyses
 
 
 def callstack_get_parent(n: cfg_load.CalltreeCallsite, c: Dict[int,
