@@ -58,7 +58,7 @@ class FilePathAnalysis(analysis.AnalysisInterface):
                       basefolder: str, coverage_url: str,
                       conclusions: List[html_helpers.HTMLConclusion],
                       out_dir) -> str:
-        logger.info(f" - Running analysis {self.get_name()}")
+        logger.info('- Running analysis %s', self.get_name())
 
         all_proj_files = self.all_files_targeted(proj_profile)
         all_proj_dirs = set()
