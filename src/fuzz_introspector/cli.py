@@ -64,17 +64,6 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
                              default='',
                              type=str,
                              help='Base coverage URL.')
-    full_parser.add_argument('--analyses',
-                             nargs='+',
-                             default=[],
-                             help='''
-            Analyses to run. Available options:
-            AnnotatedCFG, BugDigestorAnalysis, FuzzCalltreeAnalysis,
-            FuzzDriverSynthesizerAnalysis, FuzzEngineInputAnalysis,
-            FilePathAnalyser, ThirdPartyAPICoverageAnalyser,
-            MetadataAnalysis, OptimalTargets, RuntimeCoverageAnalysis,
-            SinkCoverageAnalyser
-        ''')
 
     # Report generation command
     report_parser = subparsers.add_parser(

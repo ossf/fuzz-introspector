@@ -75,9 +75,9 @@ def end_to_end(args) -> int:
 
     return run_analysis_on_dir(target_folder=out_dir,
                                coverage_url=args.coverage_url,
-                               analyses_to_run=args.analyses,
+                               analyses_to_run=[],
                                correlation_file='',
-                               enable_all_analyses=(not args.analyses),
+                               enable_all_analyses=True,
                                report_name=args.name,
                                language=language,
                                out_dir=out_dir)
