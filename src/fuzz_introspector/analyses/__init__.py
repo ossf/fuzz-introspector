@@ -23,5 +23,10 @@ all_analyses = [
     metadata.MetadataAnalysis,
     sinks_analyser.SinkCoverageAnalyser,
     annotated_cfg.FuzzAnnotatedCFG,
+]
+
+# This is the list of analyses that are meant to run
+# directly from CLI without the need to generate HTML reports
+standalone_analyses = [
     source_code_line_analyser.SourceCodeLineAnalyser,
 ]
