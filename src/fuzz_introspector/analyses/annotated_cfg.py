@@ -110,6 +110,9 @@ class FuzzAnnotatedCFG(analysis.AnalysisInterface):
                 #    1b) Have calldepth 1 (i.e. directly from
                 #        LLVMFuzzerTestOneInput),
                 #        since we know parent then is in fuzzer source file.
+                if dst_fd is None:
+                    continue
+
                 cond1 = dst_fd is not None and dst_fd.function_source_file != src_file
                 cond2 = (par_fd is not None and par_fd.function_source_file
                          == src_file) or callsite.depth == 1
