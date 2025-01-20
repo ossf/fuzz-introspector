@@ -212,6 +212,6 @@ def analyse(args) -> int:
                                       introspection_proj.profiles, '', '', [],
                                       out_dir)
 
-    #TODO Add more analyser for standalone run
+    # TODO Add more analyser for standalone run
 
     return constants.APP_EXIT_SUCCESS
