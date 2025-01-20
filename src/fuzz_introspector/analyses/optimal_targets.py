@@ -41,13 +41,13 @@ def add_func_to_reached_and_clone(
     func_to_add: function_profile.FunctionProfile
 ) -> project_profile.MergedProjectProfile:
     """
-    Add new functions as "reached" in a merged profile, and returns
-    a new copy of the merged profile with reachability information as if the
-    functions in func_to_add are added to the merged profile.
-    The use of this is to calculate what the state will be of a merged profile
-    by targetting a new set of functions.
-    We can use this function in a computation of "optimum fuzzer target analysis", which
-    computes what the combination of ideal function targets.
+    Add new functions as "reached" in a merged profile, and returns a new copy
+    of the merged profile with reachability information as if the functions in
+    func_to_add are added to the merged profile. The use of this is to
+    calculate what the state will be of a merged profile by targetting a new
+    set of functions. We can use this function in a computation of "optimum
+    fuzzer target analysis", which computes what the combination of ideal
+    function targets.
     """
     logger.info("Creating a deepcopy")
     merged_profile = copy.deepcopy(merged_profile_old)
@@ -61,10 +61,10 @@ def add_func_to_reached_and_clone(
     # Update hitcount of all functions reached by the function
     for func_name in func_to_add.functions_reached:
         if func_name not in merged_profile.all_functions:
-            if merged_profile_old.profiles[0].target_lang == "jvm":
-                logger.debug(f"{func_name} not provided within classpath")
+            if merged_profile_old.profiles[0].target_lang == 'jvm':
+                logger.debug('%s not provided within classpath', func_name)
             else:
-                logger.debug(f"Mismatched function name: {func_name}")
+                logger.debug('Mismatched function name: %s', func_name)
             continue
         f = merged_profile.all_functions[func_name]
         f.hitcount += 1
@@ -76,8 +76,8 @@ def add_func_to_reached_and_clone(
             f.reached_by_fuzzers.append(
                 utils.demangle_cpp_func(func_to_add.function_name))
 
-    # Recompute all analysis that is based on hitcounts in all functions as hitcount has
-    # changed for elements in the dictionary.
+    # Recompute all analysis that is based on hitcounts in all functions as
+    # hitcount has changed for elements in the dictionary.
     logger.info("Updating hitcount-related data")
     for f_profile in merged_profile.all_functions.values():
         cc = 0
@@ -85,11 +85,11 @@ def add_func_to_reached_and_clone(
         for reached_func_name in f_profile.functions_reached:
             if reached_func_name not in merged_profile.all_functions:
                 if merged_profile_old.profiles[0].target_lang == "jvm":
-                    logger.debug(
-                        f"{reached_func_name} not provided within classpath")
+                    logger.debug('%s not provided within classpath',
+                                 reached_func_name)
                 else:
-                    logger.debug(
-                        f"Mismatched function name: {reached_func_name}")
+                    logger.debug('Mismatched function name: %s',
+                                 reached_func_name)
                 continue
             f_reached = merged_profile.all_functions[reached_func_name]
             cc += f_reached.cyclomatic_complexity
@@ -110,6 +110,7 @@ def add_func_to_reached_and_clone(
 
 
 class OptimalTargets(analysis.AnalysisInterface):
+    """Analysis for capturing optimal set of targets."""
     name: str = "OptimalTargets"
 
     def __init__(self) -> None:
@@ -120,10 +121,12 @@ class OptimalTargets(analysis.AnalysisInterface):
     def get_name(cls):
         return cls.name
 
-    def get_json_string_result(self):
+    def get_json_string_result(self) -> str:
+        """Helper for getting json string"""
         return self.json_string_result
 
-    def set_json_string_result(self, json_string):
+    def set_json_string_result(self, json_string: str) -> None:
+        """Helper for setting json string"""
         self.json_string_result = json_string
 
     def analysis_func(self,
@@ -141,17 +144,17 @@ class OptimalTargets(analysis.AnalysisInterface):
         Finds a set of optimal functions based on complexity reach and:
 
         1) Displays the functions in a table.
-        2) Calculates how the new all-function table will be in case the optimal
-           targets are implemented.
-        3) Performs a simple synthesis on how to create fuzzers that target the
-           optimal functions.
+        2) Calculates how the new all-function table will be in case the
+           optimal targets are implemented.
+        3) Performs a simple synthesis on how to create fuzzers that
+           target the ptimal functions.
 
-        The "optimal target function" is focused on code that is currently *not hit* by
-        any fuzzers. This means it can be used to expand the current fuzzing harness
-        rather than substitute it.
+        The "optimal target function" is focused on code that is currently
+        *not hit* by any fuzzers. This means it can be used to expand the
+        current fuzzing harness rather than substitute it.
         """
 
-        logger.info(f" - Running analysis {self.get_name()}")
+        logger.info('- Running analysis %s', self.get_name())
 
         html_string = ""
         html_string += html_helpers.html_add_header_with_link(
@@ -175,7 +178,7 @@ class OptimalTargets(analysis.AnalysisInterface):
                                                       basefolder,
                                                       out_dir=out_dir)
 
-        logger.info(f" - Completed analysis {self.get_name()}")
+        logger.info(' - Completed analysis %s', self.get_name())
         html_string += "</div>"  # .collapsible
 
         return html_string
@@ -263,7 +266,7 @@ class OptimalTargets(analysis.AnalysisInterface):
             if len(merged_profile.all_functions) > top:
                 drivers_to_create = count
                 break
-        logger.info(f"Getting {drivers_to_create} optimal targets")
+        logger.info('Getting %d optimal targets', drivers_to_create)
         while len(optimal_functions_targeted) < drivers_to_create:
             logger.info("  - sorting by unreached complexity. ")
             if len(target_fds) == 0:
@@ -286,9 +289,8 @@ class OptimalTargets(analysis.AnalysisInterface):
                 target_fds = self.analysis_get_optimal_targets(
                     new_merged_profile)
 
-        logger.info("Found the following optimal functions: { %s }" %
-                    (str([f.function_name
-                          for f in optimal_functions_targeted])))
+        logger.info("Found the following optimal functions: { %s }",
+                    str([f.function_name for f in optimal_functions_targeted]))
 
         return new_merged_profile, optimal_functions_targeted
 

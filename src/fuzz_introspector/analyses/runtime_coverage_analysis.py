@@ -86,7 +86,7 @@ class RuntimeCoverageAnalysis(analysis.AnalysisInterface):
                              ("Reached by fuzzers", "")])
 
             for funcname in functions_of_interest:
-                logger.debug(f"Iterating the function {funcname}")
+                logger.debug('Iterating the function %s', funcname)
                 func_lines, hit_lines = proj_profile.runtime_coverage.get_hit_summary(
                     funcname)
 
@@ -114,7 +114,7 @@ class RuntimeCoverageAnalysis(analysis.AnalysisInterface):
         html_string += "</div>"  # .collapsible
         html_string += "</div>"  # report-box
 
-        logger.info(f" - Completed analysis {self.get_name()}")
+        logger.info(' - Completed analysis %s', self.get_name())
 
         return html_string
 
@@ -132,12 +132,12 @@ class RuntimeCoverageAnalysis(analysis.AnalysisInterface):
         logger.info("Extracting low cov high line funcs")
         functions_of_interest: List[str] = []
         for funcname in merged_profile.runtime_coverage.covmap.keys():
-            logger.debug(f"Going through {funcname}")
+            logger.debug("Going through %s", funcname)
 
             total_lines, hit_lines = merged_profile.runtime_coverage.get_hit_summary(
                 funcname)
-            logger.debug(
-                f"Total lines: {total_lines} -- hit_lines: {hit_lines}")
+            logger.debug("Total lines: %d -- hit_lines: %d", total_lines,
+                         hit_lines)
             if total_lines is None or hit_lines is None or total_lines == 0:
                 continue
 

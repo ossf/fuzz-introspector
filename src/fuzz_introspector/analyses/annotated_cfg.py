@@ -17,14 +17,14 @@ import os
 import logging
 import json
 
-from typing import (Any, Dict, List)
+from typing import (Any, Dict, List, Optional)
 
 from fuzz_introspector import analysis
 from fuzz_introspector import utils
 from fuzz_introspector import cfg_load
 from fuzz_introspector import json_report
 from fuzz_introspector import html_helpers
-from fuzz_introspector.datatypes import project_profile, fuzzer_profile
+from fuzz_introspector.datatypes import project_profile, fuzzer_profile, function_profile
 
 logger = logging.getLogger(name=__name__)
 
@@ -35,7 +35,7 @@ class FuzzAnnotatedCFG(analysis.AnalysisInterface):
     def __init__(self) -> None:
         logger.info("Creating annotated CFG")
         self.json_string_result = ""
-        self.json_results: Dict[str, Any] = dict()
+        self.json_results: Dict[str, Any] = {}
         self.dump_files = False
 
     @classmethod
@@ -62,13 +62,13 @@ class FuzzAnnotatedCFG(analysis.AnalysisInterface):
         logger.info("Creating annotated CFGs")
 
         for profile in profiles:
-            logger.info("Analysing: %s" % (profile.identifier))
+            logger.info('Analysing: %s', profile.identifier)
             destinations = []
             src_file = None
             is_first = True
             # We must haev a high number here initially, to trigger the first
             # catch.
-            callsite_stack = dict()
+            callsite_stack = {}
             for callsite in cfg_load.extract_all_callsites(
                     profile.fuzzer_callsite_calltree):
 
@@ -103,11 +103,16 @@ class FuzzAnnotatedCFG(analysis.AnalysisInterface):
                                      parent_callsite.dst_function_name))
 
                 # To be a top level target a callsite should:
-                # 1.0) Not be in the fuzzer source file and one of the following:
+                # 1.0) Not be in the fuzzer source file and one of the
+                #    following:
                 #    1a) have parent callsite be in the fuzzer, i.e. transition
                 #        from files.
-                #    1b) Have calldepth 1 (i.e. directly from LLVMFuzzerTestOneInput),
+                #    1b) Have calldepth 1 (i.e. directly from
+                #        LLVMFuzzerTestOneInput),
                 #        since we know parent then is in fuzzer source file.
+                if dst_fd is None:
+                    continue
+
                 cond1 = dst_fd is not None and dst_fd.function_source_file != src_file
                 cond2 = (par_fd is not None and par_fd.function_source_file
                          == src_file) or callsite.depth == 1
@@ -146,7 +151,10 @@ class FuzzAnnotatedCFG(analysis.AnalysisInterface):
             self.get_name(), self.get_json_string_result(), out_dir)
         return ""
 
-    def get_profile_sourcefile(self, profile, func_name):
+    def get_profile_sourcefile(
+            self, profile,
+            func_name) -> Optional[function_profile.FunctionProfile]:
+        """Gets the source file of a function within a project profile"""
         dst_options = [
             func_name,
             utils.demangle_cpp_func(func_name),
@@ -165,7 +173,11 @@ class FuzzAnnotatedCFG(analysis.AnalysisInterface):
                 pass
         return None
 
-    def get_profile_sourcefile_merged(self, merged_profile, func_name):
+    def get_profile_sourcefile_merged(
+            self, merged_profile,
+            func_name) -> Optional[function_profile.FunctionProfile]:
+        """Gets the source file of a function withing a merged project
+        profile"""
         dst_options = [
             func_name,
             utils.demangle_cpp_func(func_name),

@@ -30,6 +30,7 @@ logger = logging.getLogger(name=__name__)
 
 
 class MetadataAnalysis(analysis.AnalysisInterface):
+    """Creates HTML logic for saving metadata files used."""
     name: str = "MetadataAnalysis"
 
     def __init__(self) -> None:
@@ -48,12 +49,12 @@ class MetadataAnalysis(analysis.AnalysisInterface):
     def analysis_func(self,
                       table_of_contents: html_helpers.HtmlTableOfContents,
                       tables: List[str],
-                      project_profile: project_profile.MergedProjectProfile,
+                      proj_profile: project_profile.MergedProjectProfile,
                       profiles: List[fuzzer_profile.FuzzerProfile],
                       basefolder: str, coverage_url: str,
                       conclusions: List[html_helpers.HTMLConclusion],
                       out_dir) -> str:
-        logger.info(f" - Running analysis {self.get_name()}")
+        logger.info('- Running analysis %s', self.get_name())
 
         html_string = ""
         html_string += "<div class=\"report-box\">"
@@ -77,7 +78,7 @@ class MetadataAnalysis(analysis.AnalysisInterface):
             full_yaml_path = profile.introspector_data_file + ".yaml"
             base_yamlfile = os.path.basename(full_yaml_path)
             coverage_file_link_str = ""
-            for idx in range(len(profile.coverage.coverage_files)):
+            for idx, cov_prof in enumerate(profile.coverage.coverage_files):
                 cov_prof = profile.coverage.coverage_files[idx]
                 cov_prof = os.path.basename(cov_prof)
                 coverage_file_link_str += f"<a href=\"{cov_prof}\">{cov_prof}</a>"
@@ -96,6 +97,6 @@ class MetadataAnalysis(analysis.AnalysisInterface):
         html_string += "</div>"  # .collapsible
         html_string += "</div>"  # report-box
 
-        logger.info(f" - Completed analysis {self.get_name()}")
+        logger.info('- Completed analysis %s', self.get_name())
 
         return html_string

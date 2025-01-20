@@ -1043,8 +1043,14 @@ class JvmProject(Project[JvmSourceCodeFile]):
         method_list = []
         for method in project_methods:
             method_dict: dict[str, Any] = {}
+
+            if method.parent_source:
+                method_dict[
+                    'functionSourceFile'] = method.parent_source.source_file
+            else:
+                method_dict['functionSourceFile'] = method.class_interface.name
+
             method_dict['functionName'] = method.name
-            method_dict['functionSourceFile'] = method.class_interface.name
             method_dict['functionLinenumber'] = method.start_line
             method_dict['functionLinenumberEnd'] = method.end_line
             method_dict['linkageType'] = ''
@@ -1169,6 +1175,9 @@ class JvmProject(Project[JvmSourceCodeFile]):
         """Extracts calltree string of a calltree so that FI core can use it."""
         if not visited_functions:
             visited_functions = set()
+
+        if function and '].' not in function:
+            function = None
 
         if not source_code and function:
             source_code = self.find_source_with_method(function)
