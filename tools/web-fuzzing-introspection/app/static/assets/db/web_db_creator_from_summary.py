@@ -1287,7 +1287,7 @@ def extract_must_includes(must_include_arg):
         for filename in os.listdir(must_include_arg):
             if filename.endswith(".yaml"):
                 must_include.add(filename.replace(".yaml", ""))
-    else:
+    elif must_include_arg:
         for elem in must_include_arg.split(","):
             must_include.add(elem.strip())
     return must_include
