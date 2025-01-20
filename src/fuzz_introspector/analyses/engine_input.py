@@ -31,6 +31,7 @@ logger = logging.getLogger(name=__name__)
 
 
 class EngineInput(analysis.AnalysisInterface):
+    """Generates content that can be used by fuzz engines."""
     name: str = "FuzzEngineInputAnalysis"
 
     def __init__(self) -> None:
@@ -50,12 +51,12 @@ class EngineInput(analysis.AnalysisInterface):
     def analysis_func(self,
                       table_of_contents: html_helpers.HtmlTableOfContents,
                       tables: List[str],
-                      project_profile: project_profile.MergedProjectProfile,
+                      proj_profile: project_profile.MergedProjectProfile,
                       profiles: List[fuzzer_profile.FuzzerProfile],
                       basefolder: str, coverage_url: str,
                       conclusions: List[html_helpers.HTMLConclusion],
                       out_dir) -> str:
-        logger.info(f" - Running analysis {self.get_name()}")
+        logger.info('- Running analysis %s', self.get_name())
 
         if not self.display_html:
             # Overwrite the table of contents variable, to avoid displaying
@@ -72,29 +73,27 @@ class EngineInput(analysis.AnalysisInterface):
                        "to a fuzz engine when running a given fuzz target. The current " \
                        "focus is on providing input that is usable by libFuzzer.</p>"
 
-        for profile_idx in range(len(profiles)):
-            logger.info(
-                f"Generating input for {profiles[profile_idx].identifier}")
+        for prof in profiles:
+            logger.info('Generating input for %s', prof.identifier)
             html_string += html_helpers.html_add_header_with_link(
-                profiles[profile_idx].fuzzer_source_file,
-                html_helpers.HTML_HEADING.H2, table_of_contents)
+                prof.fuzzer_source_file, html_helpers.HTML_HEADING.H2,
+                table_of_contents)
 
             # Create dictionary section
-            html_string += self.get_dictionary_section(profiles[profile_idx],
-                                                       table_of_contents,
+            html_string += self.get_dictionary_section(prof, table_of_contents,
                                                        out_dir)
 
             html_string += "<br>"
 
             # Create focus function section
             html_string += self.get_fuzzer_focus_function_section(
-                profiles[profile_idx],
+                prof,
                 table_of_contents,
             )
         html_string += "</div>"  # .collapsible
         html_string += "</div>"  # report-box
 
-        logger.info(f" - Completed analysis {self.get_name()}")
+        logger.info('- Completed analysis %s', self.get_name())
         if not self.display_html:
             html_string = ""
 
@@ -167,8 +166,8 @@ class EngineInput(analysis.AnalysisInterface):
                     focus_functions.append(utils.demangle_rust_func(ffname))
                 else:
                     focus_functions.append(utils.demangle_cpp_func(ffname))
-                logger.info(
-                    f"Found focus function: {fuzz_blocker.src_function_name}")
+                logger.info('Found focus function: %s',
+                            fuzz_blocker.src_function_name)
 
         if len(focus_functions) == 0:
             return ""
@@ -186,18 +185,19 @@ class EngineInput(analysis.AnalysisInterface):
 
     def add_to_json_file(self, json_file_path: str, fuzzer_name: str, key: str,
                          val: List[str]) -> None:
+        """Add key to json dictionary in `json_file_path`."""
         # Create file if it does not exist
         if not os.path.isfile(json_file_path):
-            json_data = dict()
+            json_data = {}
         else:
             json_fd = open(json_file_path)
             json_data = json.load(json_fd)
             json_fd.close()
         if 'fuzzers' not in json_data:
-            json_data['fuzzers'] = dict()
+            json_data['fuzzers'] = {}
 
         if fuzzer_name not in json_data['fuzzers']:
-            json_data['fuzzers'][fuzzer_name] = dict()
+            json_data['fuzzers'][fuzzer_name] = {}
 
         json_data['fuzzers'][fuzzer_name][key] = val
 

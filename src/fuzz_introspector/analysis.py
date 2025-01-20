@@ -140,8 +140,8 @@ class IntrospectionProject():
         # quickly looking up debug function details based on their file
         # locations, which we can get from the function data collected by
         # the LLVM module.
-        tmp_debug_functions = dict()
-        no_path_debug_funcs = list()
+        tmp_debug_functions = {}
+        no_path_debug_funcs = []
         for func in self.debug_all_functions:
             if func['file_location'].strip() == '':
                 no_path_debug_funcs.append(func)
@@ -168,6 +168,7 @@ class IntrospectionProject():
 
 
 class AnalysisInterface(abc.ABC):
+    """Plugin interface class."""
     name: str = ""
     json_string_result: str = ""
     display_html: bool = False
@@ -181,10 +182,11 @@ class AnalysisInterface(abc.ABC):
                       basefolder: str, coverage_url: str,
                       conclusions: List[html_helpers.HTMLConclusion],
                       out_dir: str) -> str:
-        """Entrypoint for analysis instance. This function can have side effects
-        on many of the arguments passed to it.
+        """Entrypoint for analysis instance. This function can have side
+        effects on many of the arguments passed to it.
 
-        :param table_of_contents: table of content list for adding sections to HTML report.
+        :param table_of_contents: table of content list for adding sections
+         to HTML report.
         :type table_of_contents: html_helpers.HtmlTableOfContents
 
         :param tables: list of table ids to be styled in the report.
@@ -440,7 +442,7 @@ def overlay_calltree_with_coverage(
     # when looking up if a callsite was hit or not. This is because the coverage
     # information about a callsite is located in coverage data of the function
     # in which the callsite is placed.
-    callstack: Dict[int, str] = dict()
+    callstack: Dict[int, str] = {}
 
     if profile.coverage is None:
         return
@@ -501,7 +503,7 @@ def overlay_calltree_with_coverage(
     all_callsites = cfg_load.extract_all_callsites(
         profile.fuzzer_callsite_calltree)
     prev_end = -1
-    for idx1 in range(len(all_callsites)):
+    for idx1, n1 in enumerate(all_callsites):
         n1 = all_callsites[idx1]
         prev = None
         if idx1 > 0:
@@ -521,10 +523,11 @@ def overlay_calltree_with_coverage(
             # Check if we should break or increment forward_red
             n2 = all_callsites[idx2]
 
-            # break if the node is visited. We *could* change this to another metric, e.g.
-            # all nodes underneath n1 that are off, i.e. instead of breaking here we would
-            # increment forward_red iff cov-hitcount != 0. This, however, would prioritise
-            # blockers at the top rather than precisely locate them in the calltree.
+            # break if the node is visited. We *could* change this to another
+            # metric, e.g. all nodes underneath n1 that are off, i.e. instead
+            # of breaking here we would increment forward_red iff
+            # cov-hitcount != 0. This, however, would prioritise blockers at
+            # the top rather than precisely locate them in the calltree.
             if n2.cov_hitcount != 0:
                 break
 
@@ -625,8 +628,8 @@ def detect_branch_level_blockers(
 
     if fuzz_profile.coverage is None:
         logger.error(
-            f"No coverage for fuzzer {fuzz_profile.binary_executable}."
-            "Skipping branch blocker detection.")
+            "No coverage for fuzzer %s. Skipping branch blocker detection.",
+            fuzz_profile.binary_executable)
         return []
     coverage = fuzz_profile.coverage
 
@@ -961,8 +964,8 @@ def correlate_introspection_functions_to_debug_info(all_functions_json_report,
     # A lot of look-ups are needed when matching LLVM functions to debug
     # functions. Start with creating two indexes to make these look-ups
     # faster.
-    debug_dict_by_name = dict()
-    debug_dict_by_filename = dict()
+    debug_dict_by_name = {}
+    debug_dict_by_filename = {}
     for df in debug_all_functions:
         # Normalize the source file
         df['source']['source_file'] = os.path.normpath(df['source'].get(
@@ -1017,7 +1020,7 @@ def correlate_introspection_functions_to_debug_info(all_functions_json_report,
                 if_func['function_signature'] = if_func['Func name']
             elif not if_func.get('function_signature'):
                 if_func['function_signature'] = 'N/A'
-            if_func['debug_function_info'] = dict()
+            if_func['debug_function_info'] = {}
 
 
 def extract_all_sources(language):
