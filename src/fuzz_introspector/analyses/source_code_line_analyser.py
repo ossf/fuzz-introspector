@@ -87,10 +87,9 @@ class SourceCodeLineAnalyser(analysis.AnalysisInterface):
         all_functions.extend(proj_profile.all_constructors.values())
 
         # Generate a Source File to Function Profile map and store in JSON Result
-        func_file_map: dict[str, list[function_profile.FunctionProfile]]  = {}
+        func_file_map: dict[str, list[function_profile.FunctionProfile]] = {}
         for function in all_functions:
-            func_list  = func_file_map.get(function.function_source_file,
-                                          [])
+            func_list = func_file_map.get(function.function_source_file, [])
             func_list.append(function)
             func_file_map[function.function_source_file] = func_list
 
@@ -111,7 +110,8 @@ class SourceCodeLineAnalyser(analysis.AnalysisInterface):
         result_list = []
         for func in target_func_list:
             if func.function_linenumber <= target_line <= func.function_line_number_end:
-                logger.info(f'Found function {func.function_name} from line {target_line} in {target_source}')
+                logger.info(f'Found function {func.function_name} from line '
+                            f'{target_line} in {target_source}')
                 result_list.append(func)
 
         if result_list:
