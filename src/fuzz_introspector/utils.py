@@ -354,7 +354,7 @@ def resolve_coverage_link(cov_url: str, source_file: str, lineno: int,
         source_file = match.group(1) if match else source_file
 
         # Handle source class for jvm
-        if '.' in source_file):
+        if '.' in source_file:
             # Source file has package, change package.class to package/class
             source_file = os.sep.join(source_file.rsplit(".", 1))
         else:
