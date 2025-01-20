@@ -77,10 +77,11 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
             MetadataAnalysis, OptimalTargets, RuntimeCoverageAnalysis,
             SinkCoverageAnalyser, SourceCodeLineAnalyser
         ''')
-    full_parser.add_argument('--source-file',
-                             default='',
-                             type=str,
-                             help='Target file path or name for SourceCodeLineAnalyser')
+    full_parser.add_argument(
+        '--source-file',
+        default='',
+        type=str,
+        help='Target file path or name for SourceCodeLineAnalyser')
     full_parser.add_argument('--line',
                              default=-1,
                              type=int,
@@ -136,10 +137,11 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
         nargs="+",
         default=["FuzzEngineInputAnalysis"],
         help="State which analysis requires separate json report output")
-    report_parser.add_argument('--source-file',
-                               default='',
-                               type=str,
-                               help='Target file path or name for SourceCodeLineAnalyser')
+    report_parser.add_argument(
+        '--source-file',
+        default='',
+        type=str,
+        help='Target file path or name for SourceCodeLineAnalyser')
     report_parser.add_argument('--line',
                                default=-1,
                                type=int,

@@ -21,7 +21,8 @@ from typing import (Any, List, Dict)
 
 from fuzz_introspector import (analysis, html_helpers)
 
-from fuzz_introspector.datatypes import (project_profile, fuzzer_profile)
+from fuzz_introspector.datatypes import (project_profile, fuzzer_profile,
+                                         function_profile)
 
 logger = logging.getLogger(name=__name__)
 
@@ -74,7 +75,7 @@ class SourceCodeLineAnalyser(analysis.AnalysisInterface):
         logger.info(f' - Running analysis {self.get_name()}')
 
         # Get target source file and line
-        target_source = self.properties.get('source_file')
+        target_source = str(self.properties.get('source_file'))
         target_line = self.properties.get('line')
 
         if not target_source or not isinstance(target_line, int) or target_line <= 0:
@@ -86,12 +87,12 @@ class SourceCodeLineAnalyser(analysis.AnalysisInterface):
         all_functions.extend(proj_profile.all_constructors.values())
 
         # Generate a Source File to Function Profile map and store in JSON Result
-        func_file_map = {}
+        func_file_map: dict[str, list[function_profile.FunctionProfile]]  = {}
         for function in all_functions:
-            func_list = func_file_map.get(function.function_source_file_path,
-                                              [])
+            func_list  = func_file_map.get(function.function_source_file,
+                                          [])
             func_list.append(function)
-            func_file_map[function.function_source_file_path] = func_list
+            func_file_map[function.function_source_file] = func_list
 
         if os.sep in target_source:
             # File path

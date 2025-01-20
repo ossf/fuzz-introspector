@@ -19,13 +19,7 @@ import multiprocessing
 import os
 import shutil
 
-from typing import (
-    Dict,
-    List,
-    Type,
-    Set,
-    Union
-)
+from typing import (Dict, List, Type, Set, Union)
 
 from fuzz_introspector import (cfg_load, code_coverage, constants, data_loader,
                                debug_info, html_helpers, json_report, utils)
@@ -173,7 +167,8 @@ class AnalysisInterface(abc.ABC):
     json_string_result: str = ""
     display_html: bool = False
 
-    def set_additional_properties(self, properties: dict[str, Union[str, int]]):
+    def set_additional_properties(self, properties: dict[str, Union[str,
+                                                                    int]]):
         """Allow setting additional properties for this analysis."""
         self.properties = properties
 
