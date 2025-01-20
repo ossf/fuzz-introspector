@@ -347,10 +347,14 @@ def resolve_coverage_link(cov_url: str, source_file: str, lineno: int,
                 result = found_target + ".html" + "#t" + str(lineno)
         else:
             logger.info("Could not find any html_status.json file")
-    elif (target_lang == "jvm"):
+    elif (target_lang == 'jvm'):
         """Resolves link to HTML coverage report for JVM targets"""
+        # Retrieve class name for jvm function
+        match = re.search(r'\[(.*?)\]\.', function_name)
+        source_file = match.group(1) if match else source_file
+
         # Handle source class for jvm
-        if ("." in source_file):
+        if '.' in source_file):
             # Source file has package, change package.class to package/class
             source_file = os.sep.join(source_file.rsplit(".", 1))
         else:

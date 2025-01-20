@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import re
 import sys
 from typing import Dict, List, Set, Any
 
@@ -65,8 +66,10 @@ def get_public_class_list(target_list: List[models.Function]) -> Set[str]:
     class_set = set()
     for function in target_list:
         if function.is_accessible and not function.is_jvm_library:
-            if '/' not in function.function_filename:
-                class_set.add(function.function_filename.split('$')[0])
+            # Extract class name from function
+            match = re.search(f'\[(.*?)\]\.', function.name)
+            if match:
+                class_set.add(match.group(1))
 
     return class_set
 

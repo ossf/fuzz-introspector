@@ -1043,8 +1043,13 @@ class JvmProject(Project[JvmSourceCodeFile]):
         method_list = []
         for method in project_methods:
             method_dict: dict[str, Any] = {}
+
+            if method.parent_source:
+                method_dict['functionSourceFile'] = method.parent_source.source_file
+            else:
+                method_dict['functionSourceFile'] = method.class_interface.name
+
             method_dict['functionName'] = method.name
-            method_dict['functionSourceFile'] = method.class_interface.name
             method_dict['functionLinenumber'] = method.start_line
             method_dict['functionLinenumberEnd'] = method.end_line
             method_dict['linkageType'] = ''
