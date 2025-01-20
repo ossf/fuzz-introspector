@@ -29,7 +29,7 @@ index 64d11095b..ec8ad457c 100644
  # /ccache/bin will contain the compiler wrappers, and /ccache/cache will
  # contain the actual cache, which can be saved.
 diff --git a/infra/base-images/base-builder/compile b/infra/base-images/base-builder/compile
-index 1c10d9e23..25caa5897 100755
+index 1c10d9e23..5e10ccc14 100755
 --- a/infra/base-images/base-builder/compile
 +++ b/infra/base-images/base-builder/compile
 @@ -209,9 +209,9 @@ if [ "$SANITIZER" = "introspector" ] || [ "$RUST_SANITIZER" = "introspector" ];
@@ -143,7 +143,7 @@ index 1c10d9e23..25caa5897 100755
  
    # Move coverage report.
    if [ -d "$OUT/textcov_reports" ]
-@@ -356,6 +373,7 @@ if [ "$SANITIZER" = "introspector" ] || [ "$RUST_SANITIZER" = "introspector" ];
+@@ -356,17 +373,18 @@ if [ "$SANITIZER" = "introspector" ] || [ "$RUST_SANITIZER" = "introspector" ];
    cd $SRC/inspector
  
    # Make fuzz-introspector HTML report.
@@ -151,12 +151,39 @@ index 1c10d9e23..25caa5897 100755
    REPORT_ARGS="--name=$PROJECT_NAME"
    # Only pass coverage_url when COVERAGE_URL is set (in cloud builds)
    if [[ ! -z "${COVERAGE_URL+x}" ]]; then
-@@ -386,16 +404,19 @@ if [ "$SANITIZER" = "introspector" ] || [ "$RUST_SANITIZER" = "introspector" ];
+-    REPORT_ARGS="$REPORT_ARGS --coverage_url=${COVERAGE_URL}"
++    REPORT_ARGS="$REPORT_ARGS --coverage-url=${COVERAGE_URL}"
+   fi
+ 
+   # Do different things depending on languages
+   if [ "$FUZZING_LANGUAGE" = "python" ]; then
+     echo "GOING python route"
+     set -x
+-    REPORT_ARGS="$REPORT_ARGS --target_dir=$SRC/inspector"
++    REPORT_ARGS="$REPORT_ARGS --target-dir=$SRC/inspector"
+     REPORT_ARGS="$REPORT_ARGS --language=python"
+     python3 /fuzz-introspector/src/main.py report $REPORT_ARGS
+     rsync -avu --delete "$SRC/inspector/" "$OUT/inspector"
+@@ -374,28 +392,31 @@ if [ "$SANITIZER" = "introspector" ] || [ "$RUST_SANITIZER" = "introspector" ];
+     echo "GOING jvm route"
+     set -x
+     find $OUT/ -name "jacoco.xml" -exec cp {} $SRC/inspector/ \;
+-    REPORT_ARGS="$REPORT_ARGS --target_dir=$SRC/inspector"
++    REPORT_ARGS="$REPORT_ARGS --target-dir=$SRC/inspector"
+     REPORT_ARGS="$REPORT_ARGS --language=jvm"
+     python3 /fuzz-introspector/src/main.py report $REPORT_ARGS
+     rsync -avu --delete "$SRC/inspector/" "$OUT/inspector"
+   elif [ "$FUZZING_LANGUAGE" = "rust" ]; then
+     echo "GOING rust route"
+-    REPORT_ARGS="$REPORT_ARGS --target_dir=$SRC/inspector"
++    REPORT_ARGS="$REPORT_ARGS --target-dir=$SRC/inspector"
+     REPORT_ARGS="$REPORT_ARGS --language=rust"
+     python3 /fuzz-introspector/src/main.py report $REPORT_ARGS
      rsync -avu --delete "$SRC/inspector/" "$OUT/inspector"
    else
      # C/C++
 +    mkdir -p $SRC/inspector
-+    fuzz-introspector full --target_dir=$SRC --language=${FUZZING_LANGUAGE} --out-dir=$SRC/inspector ${REPORT_ARGS}
++    fuzz-introspector full --target-dir=$SRC --language=${FUZZING_LANGUAGE} --out-dir=$SRC/inspector ${REPORT_ARGS}
 +    #fuzz-introspector full --target_dir $SRC --language=${FUZZING_LANGUAGE}
  
      # Correlate fuzzer binaries to fuzz-introspector's raw data
