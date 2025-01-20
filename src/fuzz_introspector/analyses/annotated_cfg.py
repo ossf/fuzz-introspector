@@ -24,7 +24,7 @@ from fuzz_introspector import utils
 from fuzz_introspector import cfg_load
 from fuzz_introspector import json_report
 from fuzz_introspector import html_helpers
-from fuzz_introspector.datatypes import project_profile, fuzzer_profile
+from fuzz_introspector.datatypes import project_profile, fuzzer_profile, function_profile
 
 logger = logging.getLogger(name=__name__)
 
@@ -148,7 +148,9 @@ class FuzzAnnotatedCFG(analysis.AnalysisInterface):
             self.get_name(), self.get_json_string_result(), out_dir)
         return ""
 
-    def get_profile_sourcefile(self, profile, func_name) -> Optional[str]:
+    def get_profile_sourcefile(
+            self, profile,
+            func_name) -> Optional[function_profile.FunctionProfile]:
         """Gets the source file of a function within a project profile"""
         dst_options = [
             func_name,
@@ -168,8 +170,9 @@ class FuzzAnnotatedCFG(analysis.AnalysisInterface):
                 pass
         return None
 
-    def get_profile_sourcefile_merged(self, merged_profile,
-                                      func_name) -> Optional[str]:
+    def get_profile_sourcefile_merged(
+            self, merged_profile,
+            func_name) -> Optional[function_profile.FunctionProfile]:
         """Gets the source file of a function withing a merged project
         profile"""
         dst_options = [
