@@ -294,8 +294,7 @@ class FunctionDefinition():
 
                     self.arg_types.append(
                         f'{param_type.text.decode()}{"*" * pcount}'
-                        f'{"[]" * acount}'
-                    )
+                        f'{"[]" * acount}')
                     self.arg_names.append(param_name.text.decode().replace(
                         '&', ''))
                     self.var_map[self.arg_names[-1]] = self.arg_types[-1]
