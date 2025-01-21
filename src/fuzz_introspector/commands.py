@@ -196,9 +196,13 @@ def analyse(args) -> int:
                             entrypoint=entrypoint,
                             out=out_dir)
 
+    if 'c' in args.language:
+        language = 'c-cpp'
+    else:
+        language = args.language
+
     # Perform the FI backend project analysis from the frontend
-    introspection_proj = analysis.IntrospectionProject(args.language, out_dir,
-                                                       '')
+    introspection_proj = analysis.IntrospectionProject(language, out_dir, '')
     introspection_proj.load_data_files(True, '', out_dir)
 
     # Perform the chosen standalone analysis
