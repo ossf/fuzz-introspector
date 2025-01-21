@@ -143,10 +143,11 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
         'analyse',
         help='Standlone analyser commands to run on the target project.')
 
-    analyser_parser = analyse_parser.add_subparsers(
-        dest='analyser',
-        required=True,
-        help='Available analyser: SourceCodeLineAnalyser')
+    analyser_parser = analyse_parser.add_subparsers(dest='analyser',
+                                                    required=True,
+                                                    help="""
+        Available analyser:
+        SourceCodeLineAnalyser FarReachLowCoverageAnalyser""")
 
     source_code_line_analyser_parser = analyser_parser.add_parser(
         'SourceCodeLineAnalyser',
@@ -173,6 +174,45 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
         help='Programming of the source code to analyse.',
         choices=constants.LANGUAGES_SUPPORTED)
     source_code_line_analyser_parser.add_argument(
+        '--out-dir',
+        default='',
+        type=str,
+        help='Folder to store analysis results.')
+
+    far_reach_low_coverage_analyser_parser = analyser_parser.add_parser(
+        'FarReachLowCoverageAnalyser',
+        help=('Provide interesting functions in the project that '
+              'are good targets for fuzzing with low runtime coverage.'))
+
+    far_reach_low_coverage_analyser_parser.add_argument(
+        '--exclude-static-functions',
+        action='store_true',
+        help='Excluding static functions in the analysing result.')
+    far_reach_low_coverage_analyser_parser.add_argument(
+        '--only-referenced-functions',
+        action='store_true',
+        help='Excluding non-referenced functions in the analysing result.')
+    far_reach_low_coverage_analyser_parser.add_argument(
+        '--only-header-functions',
+        action='store_true',
+        help=('Excluding functions without header declaration in the '
+              'analysing result.'))
+    far_reach_low_coverage_analyser_parser.add_argument(
+        '--max-functions',
+        default=30,
+        type=int,
+        help='The max number of functions returned by this analysis.')
+    far_reach_low_coverage_analyser_parser.add_argument(
+        '--target-dir',
+        type=str,
+        help='Directory holding source to analyse.',
+        required=True)
+    far_reach_low_coverage_analyser_parser.add_argument(
+        '--language',
+        type=str,
+        help='Programming of the source code to analyse.',
+        choices=constants.LANGUAGES_SUPPORTED)
+    far_reach_low_coverage_analyser_parser.add_argument(
         '--out-dir',
         default='',
         type=str,

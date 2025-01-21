@@ -209,6 +209,9 @@ class AnalysisInterface(abc.ABC):
                            be shown at the top of the report page.
         :type conclusions: List[html_helpers.HTMLConclusion]
 
+        :param out_dir: Output directory of analysis report.
+        :type out_dir: str
+
         :rtype: str
         :returns:  A string that corresponds to HTML that can be embedded in the
                    html report.
