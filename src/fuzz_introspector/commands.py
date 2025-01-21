@@ -202,8 +202,7 @@ def analyse(args) -> int:
         language = args.language
 
     # Perform the FI backend project analysis from the frontend
-    introspection_proj = analysis.IntrospectionProject(language, out_dir,
-                                                       '')
+    introspection_proj = analysis.IntrospectionProject(language, out_dir, '')
     introspection_proj.load_data_files(True, '', out_dir)
 
     # Perform the chosen standalone analysis
