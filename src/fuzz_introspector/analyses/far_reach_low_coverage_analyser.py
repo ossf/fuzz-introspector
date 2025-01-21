@@ -127,8 +127,8 @@ class FarReachLowCoverageAnalyser(analysis.AnalysisInterface):
                 break
 
             # Check for only_referenced_functions flag
-            if (self.only_referenced_functions and
-                   function.function_name not in xref_dict):
+            if (self.only_referenced_functions
+                    and function.function_name not in xref_dict):
                 continue
 
             # Check for only_header_functions
@@ -151,8 +151,7 @@ class FarReachLowCoverageAnalyser(analysis.AnalysisInterface):
         return ''
 
     def _get_cross_reference_dict(
-            self,
-            functions: List[function_profile.FunctionProfile]
+            self, functions: List[function_profile.FunctionProfile]
     ) -> Dict[str, int]:
         """Internal helper function to build up a function cross reference
         dict."""
