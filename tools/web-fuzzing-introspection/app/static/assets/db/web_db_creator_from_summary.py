@@ -1298,9 +1298,12 @@ def reduce_projects_to_analyse(projects_to_analyse, max_projects,
     if max_projects <= 0:
         tmp_dictionary = dict()
         for k in projects_to_analyse:
-            for p in must_include:
-                if p in k:
-                    tmp_dictionary[k] = projects_to_analyse[k]
+            if must_include:
+                for p in must_include:
+                    if p in k:
+                        tmp_dictionary[k] = projects_to_analyse[k]
+            else:
+                tmp_dictionary[k] = projects_to_analyse[k]
         projects_to_analyse = tmp_dictionary
     elif max_projects > 0 and len(projects_to_analyse) > max_projects:
         tmp_dictionary = dict()
