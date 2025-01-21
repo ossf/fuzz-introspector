@@ -295,8 +295,9 @@ def get_node_coverage_hitcount(demangled_name: str, callstack: Dict[int, str],
         # The difference is this node has node "parent" or prior nodes.
 
         if not profile.func_is_entrypoint(demangled_name):
-            raise AnalysisError(
+            logger.warning(
                 "First node in calltree is non-fuzzer function")
+            return 0
         if profile.coverage.get_type() == 'kernel':
             # For now, assume EP is hit. TODO(David) adjust this.
             return 100
