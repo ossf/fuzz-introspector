@@ -80,7 +80,7 @@ class RustSourceCodeFile(SourceCodeFile):
             elif node.type == 'mod_item':
                 mod_body = node.child_by_field_name('body')
                 if not mod_body:
-                    return
+                    continue
 
                 # Basic info of this mod
                 mod_name = node.child_by_field_name('name')
