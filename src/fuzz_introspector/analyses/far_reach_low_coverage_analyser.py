@@ -69,12 +69,13 @@ class FarReachLowCoverageAnalyser(analysis.AnalysisInterface):
         self.json_string_result = string
 
     def set_flags(self, exclude_static_functions: bool,
-                  only_referenced_functions: bool,
-                  only_header_functions: bool):
+                  only_referenced_functions: bool, only_header_functions: bool,
+                  only_interesting_functions: bool):
         """Configure the flags from the CLI."""
         self.exclude_static_functions = exclude_static_functions
         self.only_referenced_functions = only_referenced_functions
         self.only_header_functions = only_header_functions
+        self.only_interesting_functions = only_interesting_functions
 
     def set_max_functions(self, max_functions: int):
         """Configure the max functions to return from CLI."""
@@ -96,12 +97,13 @@ class FarReachLowCoverageAnalyser(analysis.AnalysisInterface):
                       out_dir: str) -> str:
         logger.info(' - Running analysis %s', self.get_name())
         logger.info(
-            ' - Settings: exclude_static_functions: %s,'
-            'only_referenced_functions: %s,'
-            'only_header_functions: %s,'
+            ' - Settings: exclude_static_functions: %s, '
+            'only_referenced_functions: %s, '
+            'only_header_functions: %s, '
+            'only_interesting_functions: %s, '
             'max_functions: %d', self.exclude_static_functions,
             self.only_referenced_functions, self.only_header_functions,
-            self.max_functions)
+            self.only_interesting_functions, self.max_functions)
 
         result_list: List[Dict[str, Any]] = []
 
@@ -123,7 +125,7 @@ class FarReachLowCoverageAnalyser(analysis.AnalysisInterface):
         # configured flags
         for function in filtered_functions:
             # Check for max_functions count
-            if len(result_list) > self.max_functions:
+            if len(result_list) >= self.max_functions:
                 break
 
             # Check for only_referenced_functions flag
@@ -138,6 +140,12 @@ class FarReachLowCoverageAnalyser(analysis.AnalysisInterface):
             # Check for exclude_static_functions flag
             # TODO No Debug information from the new frontend yet.
             # Handle this later
+
+            # Check for interesting functions with fuzz keywords
+            if (self.only_interesting_functions
+                    and not self._is_interesting_function_with_fuzz_keywords(
+                        function)):
+                continue
 
             result_list.append(
                 function.to_dict(
@@ -195,3 +203,29 @@ class FarReachLowCoverageAnalyser(analysis.AnalysisInterface):
             proj_profile.get_func_hit_percentage(x.function_name)))
 
         return filtered_functions
+
+    def _is_interesting_function_with_fuzz_keywords(
+            self, function: function_profile.FunctionProfile) -> bool:
+        """Internal helper to determine if it is interesting for fuzzing."""
+        interesting_fuzz_keywords = [
+            'deserialize',
+            'parse',
+            'parse_xml',
+            'read_file',
+            'read_json',
+            'read_xml',
+            'request',
+            'parse_header',
+            'parse_request',
+            'compress',
+            'file_read',
+            'read_message',
+            'load_image',
+        ]
+
+        if any(fuzz_keyword in function.function_name.lower() or
+               fuzz_keyword.replace('_', '') in function.function_name.lower()
+               for fuzz_keyword in interesting_fuzz_keywords):
+            return True
+
+        return False
