@@ -138,7 +138,7 @@ def data_file_read_calltree(filename: str) -> Optional[CalltreeCallsite]:
                     # Special case in the root parent case, where we have no
                     # parent in the current node and also no children.
                     if (curr_ctcs_node.parent_calltree_callsite is not None
-                        or curr_ctcs_node.children):
+                            or curr_ctcs_node.children):
                         curr_ctcs_node = curr_ctcs_node.children[-1]
 
                 elif depth < curr_depth and curr_ctcs_node is not None:
