@@ -378,9 +378,9 @@ class FunctionDefinition():
                     logger.debug('Matched function: %s', matched_func.name)
                     target_name = matched_func.name
                 else:
-                    if func.child_by_field_name('name') is not None:
-                        target_name2 = func.child_by_field_name(
-                            'name').text.decode()
+                    name_node = func.child_by_field_name('name')
+                    if name_node and name_node.text:
+                        target_name2 = name_node.text.decode()
                         matched_func2 = get_function_node(
                             target_name2,
                             project.all_functions,
