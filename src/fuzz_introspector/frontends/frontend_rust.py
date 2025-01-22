@@ -22,15 +22,16 @@ from tree_sitter import Language, Node
 import logging
 import yaml
 
-from fuzz_introspector.frontends.datatypes import Project, SourceCodeFile
+#pylint: disable=no-name-in-module
+from fuzz_introspector.frontends import datatypes
 
 logger = logging.getLogger(name=__name__)
 
 
-class RustSourceCodeFile(SourceCodeFile):
+class RustSourceCodeFile(datatypes.SourceCodeFile):
     """Class for holding file-specific information."""
 
-    def language_specific_process(self):
+    def language_specific_process(self) -> None:
         """Perform some language specific processes in subclasses."""
         self.uses: dict[str, str] = {}
 
@@ -38,7 +39,8 @@ class RustSourceCodeFile(SourceCodeFile):
         self.functions: list['RustFunction'] = []
 
         # Load functions/methods delcaration
-        self._set_function_method_declaration(self.root)
+        if self.root:
+            self._set_function_method_declaration(self.root)
 
     def _set_function_method_declaration(
             self,
@@ -61,8 +63,12 @@ class RustSourceCodeFile(SourceCodeFile):
                 # Basic info of this impl
                 impl_type = node.child_by_field_name('type')
                 impl_body = node.child_by_field_name('body')
-                if impl_type:
+                if impl_type and impl_type.text:
                     prefix.append(impl_type.text.decode().split('<')[0])
+
+                # Check impl_bdoy
+                if not impl_body:
+                    continue
 
                 # Loop through the items in this impl
                 for impl in impl_body.children:
@@ -84,7 +90,7 @@ class RustSourceCodeFile(SourceCodeFile):
 
                 # Basic info of this mod
                 mod_name = node.child_by_field_name('name')
-                if mod_name:
+                if mod_name and mod_name.text:
                     prefix.append(mod_name.text.decode())
 
                 # Loop through the body of this mod
@@ -110,8 +116,12 @@ class RustSourceCodeFile(SourceCodeFile):
                 # Basic info of this trait
                 trait_name = node.child_by_field_name('name')
                 trait_body = node.child_by_field_name('body')
-                if trait_name:
+                if trait_name and trait_name.text:
                     prefix.append(trait_name.text.decode().split('<')[0])
+
+                # Check trait_body
+                if not trait_body:
+                    continue
 
                 # Loop through the items in this trait
                 for trait in trait_body.children:
@@ -139,7 +149,7 @@ class RustSourceCodeFile(SourceCodeFile):
             # Handling specific use declaration
             elif node.type == 'use_declaration':
                 use_stmt = node.child_by_field_name('argument')
-                if use_stmt:
+                if use_stmt and use_stmt.text:
                     use_map = self._process_recursive_use(
                         use_stmt.text.decode())
                     self.uses.update(use_map)
@@ -407,7 +417,8 @@ class RustFunction():
             if func:
                 # Simple function call
                 if func.type in ['identifier', 'scoped_identifier']:
-                    target_name = func.text.decode()
+                    if func.text:
+                        target_name = func.text.decode()
 
                     # Ignore lambda function calls
                     if target_name in self.var_map:
@@ -419,12 +430,12 @@ class RustFunction():
                 elif func.type == 'field_expression':
                     _, target_name = _process_field_expr_return_type(func)
 
-                elif func.type == 'generic_function':
+                elif func.type == 'generic_function' and func.text:
                     target_name = func.text.decode().split('.', 1)[-1]
 
-            if target_name:
-                callsites.append((target_name, func.byte_range[1],
-                                  func.start_point.row + 1))
+                if target_name and func.byte_range and func.start_point:
+                    callsites.append((target_name, func.byte_range[1],
+                                      func.start_point.row + 1))
 
             return callsites
 
@@ -444,15 +455,18 @@ class RustFunction():
             in a chained call and its full qualified name."""
             return_type = None
 
-            name = field_expr.child_by_field_name('field').text.decode()
+            name = field_expr.child_by_field_name('field')
             obj = field_expr.child_by_field_name('value')
-            full_name = name
+            full_name = name.text.decode() if name and name.text else ''
+
+            if not obj:
+                return (return_type, full_name)
 
             object_type = None
             if obj.type == 'call_expression':
                 object_type = _retrieve_return_type(obj)
             elif obj.type in ['identifier', 'scoped_identifier']:
-                object_text = obj.text.decode()
+                object_text = obj.text.decode() if obj.text else ''
                 node = get_function_node(object_text, functions)
                 if node:
                     object_type = node.return_type
@@ -465,16 +479,14 @@ class RustFunction():
                 object_type = '&str'
 
             if object_type:
-                if object_type == 'void':
-                    full_name = name
-                else:
-                    full_name = f'{object_type}::{name}'
+                if object_type != 'void':
+                    full_name = f'{object_type}::{full_name}'
 
                 node = get_function_node(full_name, functions)
                 if node:
                     return_type = node.return_type
 
-            return ((return_type, full_name))
+            return (return_type, full_name)
 
         def _retrieve_return_type(call_expr: Node) -> Optional[str]:
             """Helper for determining the return type of a call expression."""
@@ -483,7 +495,7 @@ class RustFunction():
             func = call_expr.child_by_field_name('function')
             if func:
                 if func.type in ['identifier', 'scoped_identifier']:
-                    func_name = func.text.decode()
+                    func_name = func.text.decode() if func.text else ''
                     node = get_function_node(func_name, functions)
                     if node:
                         return_type = node.return_type
@@ -502,10 +514,11 @@ class RustFunction():
                 param_name = stmt.child_by_field_name('pattern')
                 param_type = stmt.child_by_field_name('value')
                 if param_name and param_type:
-                    name = param_name.text.decode()
+                    name = param_name.text.decode() if param_name.text else ''
                     return_type = None
                     if param_type.type == 'identifier':
-                        target = param_type.text.decode()
+                        target = (param_type.text.decode()
+                                  if param_type.text else '')
                         return_type = self.var_map.get(target)
                         if not return_type:
                             return_type = self.parent_source.uses.get(target)
@@ -515,15 +528,17 @@ class RustFunction():
                         # In general, type casted object are not callable
                         # This exists for type safety in case variable tracing
                         # for pointers and primitive types are needed.
-                        return_type = param_type.child_by_field_name(
-                            'type').text.decode()
+                        return_node = param_type.child_by_field_name('type')
+                        if return_node and return_node.text:
+                            return_type = return_node.text.decode()
                     elif param_type.type == 'call_expression':
                         return_type = _retrieve_return_type(param_type)
                     elif param_type.type == 'reference_expression':
                         for ref_type in param_type.children:
                             if ref_type.type == 'identifier':
-                                return_type = self.var_map.get(
-                                    ref_type.text.decode())
+                                key_bytes = ref_type.text
+                                key = key_bytes.decode() if key_bytes else ''
+                                return_type = self.var_map.get(key)
                             elif ref_type.type == 'call_expression':
                                 return_type = _retrieve_return_type(ref_type)
 
@@ -532,7 +547,7 @@ class RustFunction():
 
             elif stmt.type == 'macro_invocation':
                 for child in stmt.children:
-                    if child.type == 'identifier':
+                    if child.type == 'identifier' and child.text:
                         macro_name = child.text.decode()
                         target_func = get_function_node(macro_name, functions)
                         if target_func and target_func.is_macro:
@@ -569,7 +584,7 @@ class RustFunction():
                 self.detailed_callsites.append({'Src': src_loc, 'Dst': dst})
 
 
-class RustProject(Project[RustSourceCodeFile]):
+class RustProject(datatypes.Project[RustSourceCodeFile]):
     """Wrapper for doing analysis of a collection of source files."""
 
     def __init__(self, source_code_files: list[RustSourceCodeFile]):
@@ -582,8 +597,7 @@ class RustProject(Project[RustSourceCodeFile]):
                           harness_source: str = '',
                           dump_output: bool = True):
         """Dumps the data for the module in full."""
-        _ = entry_function
-
+        # pylint: disable=unused-argument
         logger.info('Dumping project-wide logic.')
         report: dict[str, Any] = {'report': 'name'}
         report['sources'] = []
@@ -791,9 +805,6 @@ class RustProject(Project[RustSourceCodeFile]):
 
         return line_to_print
 
-    def get_source_codes_with_harnesses(self) -> list[RustSourceCodeFile]:
-        return super().get_source_codes_with_harnesses()
-
     def get_reachable_functions(
             self,
             source_file: str = '',
@@ -801,8 +812,7 @@ class RustProject(Project[RustSourceCodeFile]):
             function: Optional[str] = None,
             visited_functions: Optional[set[str]] = None) -> set[str]:
         """Get a list of reachable functions for a provided function name."""
-        _ = source_file
-
+        # pylint: disable=unused-argument
         func_node = None
 
         if not visited_functions:
@@ -860,7 +870,7 @@ def load_treesitter_trees(source_files: list[str],
 def analyse_source_code(source_content: str,
                         entrypoint: str) -> RustSourceCodeFile:
     """Returns a source abstraction based on a single source string."""
-    _ = entrypoint
+    # pylint: disable=unused-argument
     source_code = RustSourceCodeFile('rust',
                                      source_file='in-memory string',
                                      source_content=source_content.encode())
