@@ -56,9 +56,8 @@ class CalltreeCallsite():
 def extract_all_callsites_recursive(
         calltree: CalltreeCallsite,
         callsite_nodes: List[CalltreeCallsite]) -> None:
-    """
-    Given a node, will assemble all callsites in the children. Recursive function.
-    """
+    """Given a node, will assemble all callsites in the children.
+    Recursive function."""
     callsite_nodes.append(calltree)
     for c in calltree.children:
         extract_all_callsites_recursive(c, callsite_nodes)
@@ -129,19 +128,17 @@ def data_file_read_calltree(filename: str) -> Optional[CalltreeCallsite]:
                 ctcs = CalltreeCallsite(target_func, filename, depth,
                                         linenumber, curr_ctcs_node)
 
-                # Check if this node is still a child of the current parent node and handle if not.
+                # Check if this node is still a child of the current parent node
+                # and handle if not.
                 if curr_depth == -1:
                     # First node
                     curr_ctcs_node = ctcs
                 elif depth > curr_depth and curr_ctcs_node is not None:
                     # We are going one calldepth deeper
-                    # Special case in the root parent case, where we have no parent in the current
-                    # node
-                    # and also no children.
-                    if (curr_ctcs_node.parent_calltree_callsite is None
-                            and len(curr_ctcs_node.children) == 0):
-                        None
-                    else:
+                    # Special case in the root parent case, where we have no
+                    # parent in the current node and also no children.
+                    if (curr_ctcs_node.parent_calltree_callsite is not None
+                            or curr_ctcs_node.children):
                         curr_ctcs_node = curr_ctcs_node.children[-1]
 
                 elif depth < curr_depth and curr_ctcs_node is not None:
@@ -149,14 +146,16 @@ def data_file_read_calltree(filename: str) -> Optional[CalltreeCallsite]:
                     depth_diff = int(curr_depth - depth)
                     tmp_node = curr_ctcs_node
                     idx = 0
-                    while idx < depth_diff and tmp_node.parent_calltree_callsite is not None:
+                    while (idx < depth_diff
+                           and tmp_node.parent_calltree_callsite is not None):
                         tmp_node = tmp_node.parent_calltree_callsite
                         idx += 1
                     curr_ctcs_node = tmp_node
                 # Add the node to the current parent
                 if curr_depth != -1 and curr_ctcs_node is not None:
                     ctcs.parent_calltree_callsite = curr_ctcs_node
-                    ctcs.src_function_name = ctcs.parent_calltree_callsite.dst_function_name
+                    ctcs.src_function_name = (
+                        ctcs.parent_calltree_callsite.dst_function_name)
                     curr_ctcs_node.children.append(ctcs)
                 curr_depth = depth
 

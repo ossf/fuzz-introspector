@@ -59,23 +59,25 @@ def _compare_numericals(num1, num2, title="", to_print=True) -> int:
       0 if num1 == num2
       1 if num1 > num2
     """
+    msg = ''
+    ret_val = -1
     if num1 < num2:
-        msg = "Report 2 has a larger %s than report 1" % (title)
+        msg = f"Report 2 has a larger {title} than report 1"
         ret_val = -1
     if num1 == num2:
-        msg = "Report 2 has similar %s to report 1" % (title)
+        msg = f"Report 2 has similar {title} to report 1"
         ret_val = 0
     if num1 > num2:
-        msg = "Report 2 has less %s than report 1" % (title)
+        msg = f"Report 2 has less {title} than report 1"
         ret_val = 1
     if to_print:
-        print("%s - {report 1: %s / report 2: %s})" %
-              (msg, str(num1), str(num2)))
+        print(f"{msg} - {{report 1: {num1} / report 2: {num2}}}")
 
     return ret_val
 
 
 def _compare_summary_of_all_functions(first_report, second_report):
+    """Internal helper to compare summary of all functions."""
     all_funcs1 = first_report['MergedProjectProfile']['all-functions']
     all_funcs2 = second_report['MergedProjectProfile']['all-functions']
 
@@ -138,9 +140,8 @@ def _compare_summary_of_all_functions(first_report, second_report):
             for func_name in report1_reached_only:
                 print(func_name)
         else:
-            print(
-                "- All functions reachable in report 1 are reachable in report 2"
-            )
+            print("- All functions reachable in report 1 are reachable"
+                  " in report 2")
 
         print("")
         print("The following functions are only reachable in report 2:")
@@ -148,9 +149,8 @@ def _compare_summary_of_all_functions(first_report, second_report):
             for func_name in report2_reached_only:
                 print(func_name)
         else:
-            print(
-                "- All functions reachable in report 2 are reachable in report 1"
-            )
+            print("- All functions reachable in report 2 are reachable"
+                  " in report 1")
 
 
 def _compare_report_dictionaries(first_report, second_report):
