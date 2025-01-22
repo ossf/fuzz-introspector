@@ -198,6 +198,11 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
         help=('Excluding functions without header declaration in the '
               'analysing result.'))
     far_reach_low_coverage_analyser_parser.add_argument(
+        '--only-interesting-functions',
+        action='store_true',
+        help=('Excluding functions without interesting fuzz keywords, like'
+              'parse or deserialise'))
+    far_reach_low_coverage_analyser_parser.add_argument(
         '--max-functions',
         default=30,
         type=int,
