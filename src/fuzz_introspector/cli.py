@@ -147,7 +147,8 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
                                                     required=True,
                                                     help="""
         Available analyser:
-        SourceCodeLineAnalyser FarReachLowCoverageAnalyser""")
+        SourceCodeLineAnalyser FarReachLowCoverageAnalyser
+        PublicCandidateAnalyser""")
 
     source_code_line_analyser_parser = analyser_parser.add_parser(
         'SourceCodeLineAnalyser',
@@ -213,6 +214,27 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
         help='Programming of the source code to analyse.',
         choices=constants.LANGUAGES_SUPPORTED)
     far_reach_low_coverage_analyser_parser.add_argument(
+        '--out-dir',
+        default='',
+        type=str,
+        help='Folder to store analysis results.')
+
+    public_candidate_analyser_parser = analyser_parser.add_parser(
+        'PublicCandidateAnalyser',
+        help=('Provide publicly accessible non-standard library functions '
+              'for the project that are good targets for fuzzing.'))
+
+    public_candidate_analyser_parser.add_argument(
+        '--target-dir',
+        type=str,
+        help='Directory holding source to analyse.',
+        required=True)
+    public_candidate_analyser_parser.add_argument(
+        '--language',
+        type=str,
+        help='Programming of the source code to analyse.',
+        choices=constants.LANGUAGES_SUPPORTED)
+    public_candidate_analyser_parser.add_argument(
         '--out-dir',
         default='',
         type=str,
