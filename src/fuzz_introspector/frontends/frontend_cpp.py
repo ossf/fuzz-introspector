@@ -13,6 +13,7 @@
 # limitations under the License.
 #
 ################################################################################
+"""Tree-sitter frontend for cpp."""
 
 from typing import Any, Optional
 
@@ -22,21 +23,23 @@ import os
 import logging
 import yaml
 
-from fuzz_introspector.frontends.datatypes import Project, SourceCodeFile
+from fuzz_introspector.frontends import datatypes
 
 logger = logging.getLogger(name=__name__)
 
 
-class CppSourceCodeFile(SourceCodeFile):
+class CppSourceCodeFile(datatypes.SourceCodeFile):
     """Class for holding file-specific information."""
 
-    def language_specific_process(self):
-        """Function to perform some language specific processes in subclasses."""
+    def language_specific_process(self) -> None:
+        """Function to perform some language specific processes in
+        subclasses."""
         self.func_defs: list['FunctionDefinition'] = []
         if self.source_content:
             # Initialization routines
             self.load_tree()
-            self.process_tree(self.root)
+            if self.root:
+                self.process_tree(self.root)
 
     def process_tree(self, node: Node, namespace: str = ''):
         """Process the node from the parsed tree."""
@@ -55,7 +58,7 @@ class CppSourceCodeFile(SourceCodeFile):
             # Nested namespace
             if new_namespace.type == 'nested_namespace_specifier':
                 for child in new_namespace.children:
-                    if not child.is_named:
+                    if not child.is_named or not child.text:
                         continue
                     namespace += '::' + child.text.decode()
                     if namespace.startswith('::'):
@@ -63,9 +66,10 @@ class CppSourceCodeFile(SourceCodeFile):
 
             # General namespace
             elif new_namespace.type == 'namespace_identifier':
-                namespace += '::' + new_namespace.text.decode()
-                if namespace.startswith('::'):
-                    namespace = namespace[2:]
+                if new_namespace.text:
+                    namespace += '::' + new_namespace.text.decode()
+                    if namespace.startswith('::'):
+                        namespace = namespace[2:]
 
         # Continue to process the tree of the namespace
         self.process_tree(node, namespace)
@@ -84,7 +88,8 @@ class CppSourceCodeFile(SourceCodeFile):
         # Find the first instance of the function name
         for func in self.func_defs:
             if func.namespace_or_class:
-                if func.namespace_or_class + '::' + func.name == target_function_name:
+                check_name = func.namespace_or_class + '::' + func.name
+                if check_name == target_function_name:
                     return func
             else:
                 if func.name == target_function_name:
@@ -146,18 +151,27 @@ class FunctionDefinition():
 
     def _extract_pointer_array_from_type(
             self, param_name: Node) -> tuple[int, int, Node]:
-        """Extract the pointer, array count from type and return the pain type."""
+        """Extract the pointer, array count from type and return the
+        pain type."""
         # Count pointer
         pointer_count = 0
         while param_name.type == 'pointer_declarator':
             pointer_count += 1
-            param_name = param_name.child_by_field_name('declarator')
+            child = param_name.child_by_field_name('declarator')
+            if child:
+                param_name = child
+            else:
+                break
 
         # Count array
         array_count = 0
         while param_name.type == 'array_declarator':
             array_count += 1
-            param_name = param_name.child_by_field_name('declarator')
+            child = param_name.child_by_field_name('declarator')
+            if child:
+                param_name = child
+            else:
+                break
 
         return (pointer_count, array_count, param_name)
 
@@ -235,7 +249,9 @@ class FunctionDefinition():
 
         # try:
         #    full_name = full_name + self.root.child_by_field_name(
-        #    'declarator').child_by_field_name('declarator').child_by_field_name('declarator').text.decode()
+        #    'declarator').child_by_field_name(
+        #    'declarator').child_by_field_name(
+        #    'declarator').text.decode()
         # except:
         #    try:
         #        full_name = full_name + self.root.child_by_field_name(
@@ -287,8 +303,8 @@ class FunctionDefinition():
                     pcount, acount, param_name = result
 
                     self.arg_types.append(
-                        f'{param_type.text.decode()}{"*" * pcount}{"[]" * acount}'
-                    )
+                        f'{param_type.text.decode()}{"*" * pcount}'
+                        f'{"[]" * acount}')
                     self.arg_names.append(param_name.text.decode().replace(
                         '&', ''))
                     self.var_map[self.arg_names[-1]] = self.arg_types[-1]
@@ -335,8 +351,8 @@ class FunctionDefinition():
     def _process_invoke(self, expr: Node,
                         project) -> list[tuple[str, int, int]]:
         """Internal helper for processing the function invocation statement."""
-        logger.debug('Handling invoke statmenet: %s', expr.text.decode())
-        logger.debug('Current namespace: %s', self.namespace_or_class)
+        # logger.debug('Handling invoke statmenet: %s', expr.text.decode())
+        # logger.debug('Current namespace: %s', self.namespace_or_class)
         callsites = []
         target_name: str = ''
 
@@ -350,7 +366,7 @@ class FunctionDefinition():
             # template_function indicates standard function calls
             if func.type in [
                     'identifier', 'qualified_identifier', 'template_function'
-            ]:
+            ] and func.text:
                 target_name = func.text.decode()
 
                 # Find the matching function in our project
@@ -390,8 +406,9 @@ class FunctionDefinition():
                         target_name = full_target_name
                         break
 
-            callsites.append(
-                (target_name, func.byte_range[1], func.start_point.row + 1))
+            if func and func.start_point:
+                callsites.append((target_name, func.byte_range[1],
+                                  func.start_point.row + 1))
 
         return callsites
 
@@ -399,17 +416,22 @@ class FunctionDefinition():
                                         project) -> tuple[Optional[str], str]:
         """Helper for determining the return type of a field expression
         in a chained call and its full qualified name."""
-        logger.debug('Handling field expression: %s', field_expr.text.decode())
+        # logger.debug('Handling field expression: %s',field_expr.text.decode())
         ret_type = None
         object_type = None
 
         arg = field_expr.child_by_field_name('argument')
-        if field_expr.child_by_field_name('field').type == 'template_method':
-            name = field_expr.child_by_field_name('field').child_by_field_name(
-                'name').text.decode()
+        field = field_expr.child_by_field_name('field')
+
+        if not arg or not field:
+            return (None, '')
+
+        if field.type == 'template_method':
+            name_node = field.child_by_field_name('name')
+            full_name = (name_node.text.decode()
+                         if name_node and name_node.text else '')
         else:
-            name = field_expr.child_by_field_name('field').text.decode()
-        full_name = name
+            full_name = field.text.decode() if field.text else ''
 
         # Chained field access
         if arg.type == 'field_expression':
@@ -421,19 +443,19 @@ class FunctionDefinition():
 
         # Named object
         elif arg.type in ['identifier', 'qualified_identifier']:
-            object_type = self.var_map.get(arg.text.decode())
+            if arg.text:
+                object_type = self.var_map.get(arg.text.decode())
         elif arg.type == 'call_expression':
             # Bail, we do not support this yet. Examples of code:
-            # "static_cast<impl::xpath_query_impl*>(_impl)->root->eval_string(c, sd.stack);""
+            # "static_cast<impl::xpath_query_impl*>(_impl)->root->eval_string
+            # (c, sd.stack);""
             # We give up here.
             logger.debug('Cant analyse this.')
             return ('', '')
 
         if object_type:
-            if object_type == 'void':
-                full_name = name
-            else:
-                full_name = f'{object_type}::{name}'
+            if object_type != 'void':
+                full_name = f'{object_type}::{full_name}'
 
             node = get_function_node(full_name, project.all_functions)
             if node:
@@ -448,28 +470,28 @@ class FunctionDefinition():
 
         # Call statement
         if stmt.type == 'call_expression':
-            logger.debug('Handling call expression: %s', stmt.text.decode())
+            # logger.debug('Handling call expression: %s', stmt.text.decode())
             callsites.extend(self._process_invoke(stmt, project))
 
         # Constructor call statement
         elif stmt.type == 'new_expression':
-            logger.debug('Handling new_expression: %s', stmt.text.decode())
+            # logger.debug('Handling new_expression: %s', stmt.text.decode())
             ctr_type = stmt.child_by_field_name('type')
-            if ctr_type:
+            if ctr_type and ctr_type.text:
                 cls = ctr_type.text.decode()
                 cls = f'{cls}::{cls.rsplit("::")[-1]}'
                 callsites.append(
                     (cls, stmt.byte_range[1], stmt.start_point.row + 1))
 
         elif stmt.type == 'declaration':
-            logger.debug('Handling declaration: %s', stmt.text.decode())
+            # logger.debug('Handling declaration: %s', stmt.text.decode())
             var_type = ''
             var_type_obj = stmt.child_by_field_name('type')
 
             if var_type_obj is None:
                 return []
 
-            if var_type_obj.type == 'primitive_type' or var_type_obj.type == 'sized_type_specifier':
+            if var_type_obj.type in ['primitive_type', 'sized_type_specifier']:
                 logger.debug('Skipping.')
                 return []
 
@@ -477,24 +499,29 @@ class FunctionDefinition():
                 if var_type_obj is None:
                     return []
                 if var_type_obj.type == 'qualified_identifier':
-                    # logger.debug('qualified idenfitier: %s', var_type_obj.text.decode())
                     if var_type_obj.child_by_field_name('scope') is not None:
-                        var_type += var_type_obj.child_by_field_name(
-                            'scope').text.decode()
+                        scope = var_type_obj.child_by_field_name('scope')
+                        if scope and scope.text:
+                            var_type += scope.text.decode()
                     var_type += '::'
                     var_type_obj = var_type_obj.child_by_field_name('name')
 
-                if var_type_obj.type == 'template_type':
-                    var_type += var_type_obj.child_by_field_name(
-                        'name').text.decode()
+                if var_type_obj and var_type_obj.type == 'template_type':
+                    template_name = var_type_obj.child_by_field_name('name')
+                    if template_name and template_name.text:
+                        var_type += template_name.text.decode()
                 else:
-                    var_type += var_type_obj.text.decode()
+                    var_type += (var_type_obj.text.decode()
+                                 if var_type_obj and var_type_obj.text else '')
 
                 break
 
             try:
                 var_name = stmt.child_by_field_name('declarator')
             except AttributeError:
+                var_name = None
+
+            if not var_name:
                 logger.debug('Could not extract necessary attributes')
                 return []
 
@@ -502,8 +529,8 @@ class FunctionDefinition():
                          var_type, var_name)
             # Handles implicit default constructor call
             if var_name.type == 'identifier':
-                # We're looking for a constructor, so add the name as it should be
-                # the name of the constructor.
+                # We're looking for a constructor, so add the name as it
+                # should be the name of the constructor.
                 cls = f'{var_type}::{var_type.rsplit("::")[-1]}'
                 logger.debug('Trying to find class %s', cls)
                 # added = False
@@ -515,8 +542,8 @@ class FunctionDefinition():
                         (cls, stmt.byte_range[1], stmt.start_point.row + 1))
                 # if not added:
                 #    logger.debug('Trying a hacky match.')
-                #    # Hack to make sure we add in case our analysis of contructors was
-                #    # wrong. TODO(David) fix.
+                #    # Hack to make sure we add in case our analysis of
+                #    # constructors was wrong. TODO(David) fix.
                 #    cls = var_type
                 #    if cls in project.all_functions:
                 #        logger.debug('Adding callsite')
@@ -535,7 +562,9 @@ class FunctionDefinition():
             result = self._extract_pointer_array_from_type(var_name)
             pcount, acount, var_name = result
             var_type = f'{var_type}{"*" * pcount}{"[]" * acount}'
-            self.var_map[var_name.text.decode().replace('&', '')] = var_type
+            name_text = var_name.text
+            if name_text:
+                self.var_map[name_text.decode().replace('&', '')] = var_type
 
         for child in stmt.children:
             callsites.extend(self._process_callsites(child, project))
@@ -555,11 +584,11 @@ class FunctionDefinition():
 
         if not self.detailed_callsites:
             for dst, src_line in self.base_callsites:
-                src_loc = self.parent_source.source_file + ':%d,1' % (src_line)
+                src_loc = self.parent_source.source_file + f':{src_line},1'
                 self.detailed_callsites.append({'Src': src_loc, 'Dst': dst})
 
 
-class CppProject(Project[CppSourceCodeFile]):
+class CppProject(datatypes.Project[CppSourceCodeFile]):
     """Wrapper for doing analysis of a collection of source files."""
 
     def __init__(self, source_code_files: list[CppSourceCodeFile]):
@@ -573,6 +602,8 @@ class CppProject(Project[CppSourceCodeFile]):
                           harness_source: str = '',
                           dump_output=True):
         """Dumps the data for the module in full."""
+        # pylint: disable=unused-argument
+
         logger.info('Dumping project-wide logic.')
         report: dict[str, Any] = {'report': 'name'}
         report['sources'] = []
@@ -659,6 +690,8 @@ class CppProject(Project[CppSourceCodeFile]):
                          line_number: int = -1,
                          other_props: Optional[dict[str, Any]] = None) -> str:
         """Extracts calltree string of a calltree so that FI core can use it."""
+        # pylint: disable=unused-argument
+
         # Create calltree from a given function
         # Find the function in the source code
         logger.debug('Extracting calltree for %s', str(function))
@@ -735,6 +768,8 @@ class CppProject(Project[CppSourceCodeFile]):
             function: Optional[str] = None,
             visited_functions: Optional[set[str]] = None) -> set[str]:
         """Gets the reachable frunctions from a given function."""
+        # pylint: disable=unused-argument
+
         # Create calltree from a given function
         # Find the function in the source code
         if not visited_functions:
@@ -780,6 +815,7 @@ class CppProject(Project[CppSourceCodeFile]):
 
     def find_function_from_approximate_name(
             self, function_name: str) -> Optional['FunctionDefinition']:
+        """Locate a function element with name approximately."""
         function_names = []
         for func in self.all_functions:
             if func.name == function_name:
@@ -795,9 +831,6 @@ class CppProject(Project[CppSourceCodeFile]):
             return function_names[0]
 
         return None
-
-    def get_source_codes_with_harnesses(self) -> list[CppSourceCodeFile]:
-        return super().get_source_codes_with_harnesses()
 
     def find_source_with_func_def(
             self, name: str
@@ -843,7 +876,7 @@ class CppProject(Project[CppSourceCodeFile]):
                     if callsite[0] == target_name:
                         found = True
                         break
-                    elif callsite[0].endswith(target_name):
+                    if callsite[0].endswith(target_name):
                         found = True
                         break
                 if found:
@@ -885,7 +918,8 @@ class CppProject(Project[CppSourceCodeFile]):
 
 
 def load_treesitter_trees(source_files, is_log=True) -> CppProject:
-    """Creates treesitter trees for all files in a given list of source files."""
+    """Creates treesitter trees for all files in a given list of
+    source files."""
     results = []
 
     for code_file in source_files:
