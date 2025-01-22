@@ -584,7 +584,7 @@ class FunctionDefinition():
 
         if not self.detailed_callsites:
             for dst, src_line in self.base_callsites:
-                src_loc = self.parent_source.source_file + f':{src_line},1'
+                src_loc = f'{self.parent_source.source_file}:{src_line},1'
                 self.detailed_callsites.append({'Src': src_loc, 'Dst': dst})
 
 
