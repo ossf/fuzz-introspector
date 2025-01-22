@@ -354,7 +354,10 @@ class FunctionDefinition():
                 target_name = func.text.decode()
 
                 # Find the matching function in our project
-                logger.debug('Matching function %s', target_name)
+                logger.debug('Matching2 function %s', target_name)
+                if func.child_by_field_name('name') is not None:
+                    target_name = func.child_by_field_name(
+                        'name').text.decode()
                 matched_func = get_function_node(
                     target_name,
                     project.all_functions,
