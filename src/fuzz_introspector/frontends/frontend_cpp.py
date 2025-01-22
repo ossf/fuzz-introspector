@@ -23,22 +23,23 @@ import os
 import logging
 import yaml
 
-from fuzz_introspector.frontends.datatypes import Project, SourceCodeFile
+from fuzz_introspector.frontends import datatypes
 
 logger = logging.getLogger(name=__name__)
 
 
-class CppSourceCodeFile(SourceCodeFile):
+class CppSourceCodeFile(datatypes.SourceCodeFile):
     """Class for holding file-specific information."""
 
-    def language_specific_process(self):
+    def language_specific_process(self) -> None:
         """Function to perform some language specific processes in
         subclasses."""
         self.func_defs: list['FunctionDefinition'] = []
         if self.source_content:
             # Initialization routines
             self.load_tree()
-            self.process_tree(self.root)
+            if self.root:
+                self.process_tree(self.root)
 
     def process_tree(self, node: Node, namespace: str = ''):
         """Process the node from the parsed tree."""
@@ -57,7 +58,7 @@ class CppSourceCodeFile(SourceCodeFile):
             # Nested namespace
             if new_namespace.type == 'nested_namespace_specifier':
                 for child in new_namespace.children:
-                    if not child.is_named:
+                    if not child.is_named or not child.text:
                         continue
                     namespace += '::' + child.text.decode()
                     if namespace.startswith('::'):
@@ -65,9 +66,10 @@ class CppSourceCodeFile(SourceCodeFile):
 
             # General namespace
             elif new_namespace.type == 'namespace_identifier':
-                namespace += '::' + new_namespace.text.decode()
-                if namespace.startswith('::'):
-                    namespace = namespace[2:]
+                if new_namespace.text:
+                    namespace += '::' + new_namespace.text.decode()
+                    if namespace.startswith('::'):
+                        namespace = namespace[2:]
 
         # Continue to process the tree of the namespace
         self.process_tree(node, namespace)
@@ -155,13 +157,21 @@ class FunctionDefinition():
         pointer_count = 0
         while param_name.type == 'pointer_declarator':
             pointer_count += 1
-            param_name = param_name.child_by_field_name('declarator')
+            child = param_name.child_by_field_name('declarator')
+            if child:
+                param_name = child
+            else:
+                break
 
         # Count array
         array_count = 0
         while param_name.type == 'array_declarator':
             array_count += 1
-            param_name = param_name.child_by_field_name('declarator')
+            child = param_name.child_by_field_name('declarator')
+            if child:
+                param_name = child
+            else:
+                break
 
         return (pointer_count, array_count, param_name)
 
@@ -341,8 +351,8 @@ class FunctionDefinition():
     def _process_invoke(self, expr: Node,
                         project) -> list[tuple[str, int, int]]:
         """Internal helper for processing the function invocation statement."""
-        logger.debug('Handling invoke statmenet: %s', expr.text.decode())
-        logger.debug('Current namespace: %s', self.namespace_or_class)
+        # logger.debug('Handling invoke statmenet: %s', expr.text.decode())
+        # logger.debug('Current namespace: %s', self.namespace_or_class)
         callsites = []
         target_name: str = ''
 
@@ -356,7 +366,7 @@ class FunctionDefinition():
             # template_function indicates standard function calls
             if func.type in [
                     'identifier', 'qualified_identifier', 'template_function'
-            ]:
+            ] and func.text:
                 target_name = func.text.decode()
 
                 # Find the matching function in our project
@@ -386,8 +396,9 @@ class FunctionDefinition():
                         target_name = full_target_name
                         break
 
-            callsites.append(
-                (target_name, func.byte_range[1], func.start_point.row + 1))
+            if func and func.start_point:
+                callsites.append((target_name, func.byte_range[1],
+                                  func.start_point.row + 1))
 
         return callsites
 
@@ -395,17 +406,22 @@ class FunctionDefinition():
                                         project) -> tuple[Optional[str], str]:
         """Helper for determining the return type of a field expression
         in a chained call and its full qualified name."""
-        logger.debug('Handling field expression: %s', field_expr.text.decode())
+        # logger.debug('Handling field expression: %s',field_expr.text.decode())
         ret_type = None
         object_type = None
 
         arg = field_expr.child_by_field_name('argument')
-        if field_expr.child_by_field_name('field').type == 'template_method':
-            name = field_expr.child_by_field_name('field').child_by_field_name(
-                'name').text.decode()
+        field = field_expr.child_by_field_name('field')
+
+        if not arg or not field:
+            return (None, '')
+
+        if field.type == 'template_method':
+            name_node = field.child_by_field_name('name')
+            full_name = (name_node.text.decode()
+                         if name_node and name_node.text else '')
         else:
-            name = field_expr.child_by_field_name('field').text.decode()
-        full_name = name
+            full_name = field.text.decode() if field.text else ''
 
         # Chained field access
         if arg.type == 'field_expression':
@@ -417,7 +433,8 @@ class FunctionDefinition():
 
         # Named object
         elif arg.type in ['identifier', 'qualified_identifier']:
-            object_type = self.var_map.get(arg.text.decode())
+            if arg.text:
+                object_type = self.var_map.get(arg.text.decode())
         elif arg.type == 'call_expression':
             # Bail, we do not support this yet. Examples of code:
             # "static_cast<impl::xpath_query_impl*>(_impl)->root->eval_string
@@ -427,10 +444,8 @@ class FunctionDefinition():
             return ('', '')
 
         if object_type:
-            if object_type == 'void':
-                full_name = name
-            else:
-                full_name = f'{object_type}::{name}'
+            if object_type != 'void':
+                full_name = f'{object_type}::{full_name}'
 
             node = get_function_node(full_name, project.all_functions)
             if node:
@@ -445,21 +460,21 @@ class FunctionDefinition():
 
         # Call statement
         if stmt.type == 'call_expression':
-            logger.debug('Handling call expression: %s', stmt.text.decode())
+            # logger.debug('Handling call expression: %s', stmt.text.decode())
             callsites.extend(self._process_invoke(stmt, project))
 
         # Constructor call statement
         elif stmt.type == 'new_expression':
-            logger.debug('Handling new_expression: %s', stmt.text.decode())
+            # logger.debug('Handling new_expression: %s', stmt.text.decode())
             ctr_type = stmt.child_by_field_name('type')
-            if ctr_type:
+            if ctr_type and ctr_type.text:
                 cls = ctr_type.text.decode()
                 cls = f'{cls}::{cls.rsplit("::")[-1]}'
                 callsites.append(
                     (cls, stmt.byte_range[1], stmt.start_point.row + 1))
 
         elif stmt.type == 'declaration':
-            logger.debug('Handling declaration: %s', stmt.text.decode())
+            # logger.debug('Handling declaration: %s', stmt.text.decode())
             var_type = ''
             var_type_obj = stmt.child_by_field_name('type')
 
@@ -475,22 +490,28 @@ class FunctionDefinition():
                     return []
                 if var_type_obj.type == 'qualified_identifier':
                     if var_type_obj.child_by_field_name('scope') is not None:
-                        var_type += var_type_obj.child_by_field_name(
-                            'scope').text.decode()
+                        scope = var_type_obj.child_by_field_name('scope')
+                        if scope and scope.text:
+                            var_type += scope.text.decode()
                     var_type += '::'
                     var_type_obj = var_type_obj.child_by_field_name('name')
 
-                if var_type_obj.type == 'template_type':
-                    var_type += var_type_obj.child_by_field_name(
-                        'name').text.decode()
+                if var_type_obj and var_type_obj.type == 'template_type':
+                    template_name = var_type_obj.child_by_field_name('name')
+                    if template_name and template_name.text:
+                        var_type += template_name.text.decode()
                 else:
-                    var_type += var_type_obj.text.decode()
+                    var_type += (var_type_obj.text.decode()
+                                 if var_type_obj and var_type_obj.text else '')
 
                 break
 
             try:
                 var_name = stmt.child_by_field_name('declarator')
             except AttributeError:
+                var_name = None
+
+            if not var_name:
                 logger.debug('Could not extract necessary attributes')
                 return []
 
@@ -531,7 +552,9 @@ class FunctionDefinition():
             result = self._extract_pointer_array_from_type(var_name)
             pcount, acount, var_name = result
             var_type = f'{var_type}{"*" * pcount}{"[]" * acount}'
-            self.var_map[var_name.text.decode().replace('&', '')] = var_type
+            name_text = var_name.text
+            if name_text:
+                self.var_map[name_text.decode().replace('&', '')] = var_type
 
         for child in stmt.children:
             callsites.extend(self._process_callsites(child, project))
@@ -555,7 +578,7 @@ class FunctionDefinition():
                 self.detailed_callsites.append({'Src': src_loc, 'Dst': dst})
 
 
-class CppProject(Project[CppSourceCodeFile]):
+class CppProject(datatypes.Project[CppSourceCodeFile]):
     """Wrapper for doing analysis of a collection of source files."""
 
     def __init__(self, source_code_files: list[CppSourceCodeFile]):
@@ -569,9 +592,7 @@ class CppProject(Project[CppSourceCodeFile]):
                           harness_source: str = '',
                           dump_output=True):
         """Dumps the data for the module in full."""
-        _ = entry_function
-        _ = harness_name
-        _ = harness_source
+        # pylint: disable=unused-argument
 
         logger.info('Dumping project-wide logic.')
         report: dict[str, Any] = {'report': 'name'}
@@ -659,7 +680,7 @@ class CppProject(Project[CppSourceCodeFile]):
                          line_number: int = -1,
                          other_props: Optional[dict[str, Any]] = None) -> str:
         """Extracts calltree string of a calltree so that FI core can use it."""
-        _ = other_props
+        # pylint: disable=unused-argument
 
         # Create calltree from a given function
         # Find the function in the source code
@@ -737,7 +758,7 @@ class CppProject(Project[CppSourceCodeFile]):
             function: Optional[str] = None,
             visited_functions: Optional[set[str]] = None) -> set[str]:
         """Gets the reachable frunctions from a given function."""
-        _ = source_file
+        # pylint: disable=unused-argument
 
         # Create calltree from a given function
         # Find the function in the source code
@@ -800,9 +821,6 @@ class CppProject(Project[CppSourceCodeFile]):
             return function_names[0]
 
         return None
-
-    def get_source_codes_with_harnesses(self) -> list[CppSourceCodeFile]:
-        return super().get_source_codes_with_harnesses()
 
     def find_source_with_func_def(
             self, name: str
