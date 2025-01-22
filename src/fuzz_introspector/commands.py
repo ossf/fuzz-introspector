@@ -225,10 +225,6 @@ def analyse(args) -> int:
         target_analyser.set_max_functions(max_functions)
         target_analyser.set_introspection_project(introspection_proj)
 
-        target_analyser.analysis_func(html_helpers.HtmlTableOfContents(), [],
-                                      introspection_proj.proj_profile,
-                                      introspection_proj.profiles, '', '', [],
-                                      out_dir)
     # Run the analyser
     target_analyser.analysis_func(html_helpers.HtmlTableOfContents(), [],
                                   introspection_proj.proj_profile,
