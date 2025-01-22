@@ -22,7 +22,7 @@ from tree_sitter import Language, Node
 import logging
 import yaml
 
-#pylint: disable=no-name-in-module
+# pylint: disable=no-name-in-module
 from fuzz_introspector.frontends import datatypes
 
 logger = logging.getLogger(name=__name__)
