@@ -33,7 +33,7 @@ class SourceCodeLineAnalyser(analysis.AnalysisInterface):
 
     name: str = 'SourceCodeLineAnalyser'
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.json_results: Dict[str, Any] = {}
         self.json_string_result = ''
 
@@ -120,7 +120,10 @@ class SourceCodeLineAnalyser(analysis.AnalysisInterface):
                 logger.info('Found function %s from line %d in %s',
                             func.function_name, self.source_line,
                             self.source_file)
-                result_list.append(func.to_dict())
+                result_list.append(
+                    func.to_dict(
+                        proj_profile.get_func_hit_percentage(
+                            func.function_name)))
 
         if result_list:
             self.json_results['functions'] = result_list

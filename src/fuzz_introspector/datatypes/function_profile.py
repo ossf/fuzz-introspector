@@ -98,43 +98,25 @@ class FunctionProfile:
         self.new_unreached_complexity: int = 0
         self.total_cyclomatic_complexity: int = 0
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self, coverage: float = 0.0) -> Dict[str, Any]:
         return {
-            "function_name": self.function_name,
-            "raw_function_name": self.raw_function_name,
-            "function_source_file": self.function_source_file,
-            "linkage_type": self.linkage_type,
-            "function_linenumber": self.function_linenumber,
-            "function_line_number_end": self.function_line_number_end,
-            "return_type": self.return_type,
-            "arg_count": self.arg_count,
-            "arg_types": self.arg_types,
-            "arg_names": self.arg_names,
-            "bb_count": self.bb_count,
-            "i_count": self.i_count,
-            "edge_count": self.edge_count,
-            "cyclomatic_complexity": self.cyclomatic_complexity,
-            "functions_reached": self.functions_reached,
-            "function_uses": self.function_uses,
-            "function_depth": self.function_depth,
-            "constants_touched": self.constants_touched,
-            "branch_profiles":
-            {k: str(v)
-             for k, v in self.branch_profiles.items()},
-            "signature": self.signature,
-            "functions_called": self.functions_called,
-            "is_accessible": self.is_accessible,
-            "is_jvm_library": self.is_jvm_library,
-            "is_enum": self.is_enum,
-            "is_static": self.is_static,
-            "exceptions": self.exceptions,
-            "need_close": self.need_close,
-            "callsite": self.callsite,
-            "hitcount": self.hitcount,
-            "reached_by_fuzzers": self.reached_by_fuzzers,
-            "incoming_references": self.incoming_references,
-            "new_unreached_complexity": self.new_unreached_complexity,
-            "total_cyclomatic_complexity": self.total_cyclomatic_complexity
+            'project': 'UnknownProject',
+            'function_name': self.function_name,
+            'function_filename': self.function_source_file,
+            'raw_function_name': self.raw_function_name,
+            'is_reached': bool(self.reached_by_fuzzers),
+            'is_enum_class': self.is_enum,
+            'accummulated_complexity': self.cyclomatic_complexity,
+            'function_argument_names': self.arg_names,
+            'function_arguments': self.arg_types,
+            'function_signature': self.signature,
+            'reached_by_fuzzers': self.reached_by_fuzzers,
+            'return_type': self.return_type,
+            'runtime_coverage_percent': coverage,
+            'source_line_begin': self.function_linenumber,
+            'source_line_endvv': self.function_line_number_end,
+            'debug_summary': '',  # No debug summary from new frontend yet
+            'total_cyclomatic_complexity': self.total_cyclomatic_complexity
         }
 
     @property

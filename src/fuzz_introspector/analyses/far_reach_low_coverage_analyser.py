@@ -33,7 +33,7 @@ class FarReachLowCoverageAnalyser(analysis.AnalysisInterface):
 
     name: str = 'FarReachLowCoverageAnalyser'
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.json_results: Dict[str, Any] = {}
         self.json_string_result = ''
 
@@ -106,7 +106,7 @@ class FarReachLowCoverageAnalyser(analysis.AnalysisInterface):
         result_list: List[Dict[str, Any]] = []
 
         # Get all functions from the profiles
-        all_functions = List(proj_profile.all_functions.values())
+        all_functions = list(proj_profile.all_functions.values())
         all_functions.extend(proj_profile.all_constructors.values())
 
         # Get cross reference function dict
@@ -139,7 +139,10 @@ class FarReachLowCoverageAnalyser(analysis.AnalysisInterface):
             # TODO No Debug information from the new frontend yet.
             # Handle this later
 
-            result_list.append(function.to_dict())
+            result_list.append(
+                function.to_dict(
+                    proj_profile.get_func_hit_percentage(
+                        function.function_name)))
 
         self.json_results['functions'] = result_list
         result_json_path = os.path.join(out_dir, 'result.json')
