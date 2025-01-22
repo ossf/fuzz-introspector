@@ -363,15 +363,15 @@ class FunctionDefinition():
                     target_name = matched_func.name
                 else:
                     if func.child_by_field_name('name') is not None:
-                        target_name = func.child_by_field_name(
+                        target_name2 = func.child_by_field_name(
                             'name').text.decode()
                         matched_func2 = get_function_node(
-                            target_name,
+                            target_name2,
                             project.all_functions,
                             namespace=self.namespace_or_class)
                         if matched_func2:
                             logger.debug('Matched function: %s',
-                                         matched_func.name)
+                                         matched_func2.name)
                             target_name = matched_func2.name
                     logger.debug('Did not find matching function')
 
