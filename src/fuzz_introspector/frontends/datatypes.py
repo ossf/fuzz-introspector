@@ -13,6 +13,9 @@
 # limitations under the License.
 #
 ################################################################################
+"""Datatype classes for tree-sitter frontend."""
+
+# pylint: disable=unnecessary-pass, unused-argument
 
 from typing import Any, Optional, Generic, TypeVar
 
@@ -46,13 +49,14 @@ class SourceCodeFile():
                  source_file: str,
                  entrypoint: str = '',
                  source_content: Optional[bytes] = None):
-        logger.info('Processing %s' % source_file)
+        logger.info('Processing %s', source_file)
 
         self.root = None
         self.source_file = source_file
         self.language = language
         self.entrypoint = entrypoint
-        self.tree_sitter_lang = self.LANGUAGE.get(language)
+        self.tree_sitter_lang = self.LANGUAGE.get(language,
+                                                  self.LANGUAGE['cpp'])
         self.parser = Parser(self.tree_sitter_lang)
 
         if source_content:
