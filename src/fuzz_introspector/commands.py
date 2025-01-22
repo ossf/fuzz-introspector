@@ -205,16 +205,12 @@ def analyse(args) -> int:
     introspection_proj = analysis.IntrospectionProject(language, out_dir, '')
     introspection_proj.load_data_files(True, '', out_dir)
 
-    # Perform the chosen standalone analysis
+    # Perform specific actions for certain standalone analyser
     if target_analyser.get_name() == 'SourceCodeLineAnalyser':
         source_file = args.source_file
         source_line = args.source_line
 
         target_analyser.set_source_file_line(source_file, source_line)
-        target_analyser.analysis_func(html_helpers.HtmlTableOfContents(), [],
-                                      introspection_proj.proj_profile,
-                                      introspection_proj.profiles, '', '', [],
-                                      out_dir)
     elif target_analyser.get_name() == 'FarReachLowCoverageAnalyser':
         exclude_static_functions = args.exclude_static_functions
         only_referenced_functions = args.only_referenced_functions
@@ -229,11 +225,10 @@ def analyse(args) -> int:
         target_analyser.set_max_functions(max_functions)
         target_analyser.set_introspection_project(introspection_proj)
 
-        target_analyser.analysis_func(html_helpers.HtmlTableOfContents(), [],
-                                      introspection_proj.proj_profile,
-                                      introspection_proj.profiles, '', '', [],
-                                      out_dir)
-
-    # TODO Add more analyser for standalone run
+    # Run the analyser
+    target_analyser.analysis_func(html_helpers.HtmlTableOfContents(), [],
+                                  introspection_proj.proj_profile,
+                                  introspection_proj.profiles, '', '', [],
+                                  out_dir)
 
     return constants.APP_EXIT_SUCCESS
