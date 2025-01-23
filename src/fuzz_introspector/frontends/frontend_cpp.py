@@ -76,6 +76,7 @@ class CppSourceCodeFile(datatypes.SourceCodeFile):
 
     def _process_function_node(self, node: Node, namespace: str = ''):
         """Internal helper for processing function node."""
+
         self.func_defs.append(
             FunctionDefinition(node, self.tree_sitter_lang, self, namespace))
 
@@ -225,6 +226,13 @@ class FunctionDefinition():
         while True:
             if tmp_node is None:
                 break
+            if tmp_node.type == 'reference_declarator':
+                for child in tmp_node.children:
+                    if child.type == 'function_declarator':
+                        if child.child_by_field_name(
+                                'declarator').type == 'identifier':
+                            tmp_name = child.child_by_field_name(
+                                'declarator').text.decode()
             if tmp_node.child_by_field_name('scope') is not None:
                 scope_to_add = tmp_node.child_by_field_name(
                     'scope').text.decode() + '::'
@@ -353,6 +361,7 @@ class FunctionDefinition():
         """Internal helper for processing the function invocation statement."""
         # logger.debug('Handling invoke statmenet: %s', expr.text.decode())
         # logger.debug('Current namespace: %s', self.namespace_or_class)
+        logger.debug('Processing invoke: %s', expr.text.decode())
         callsites = []
         target_name: str = ''
 
@@ -466,6 +475,7 @@ class FunctionDefinition():
     def _process_callsites(self, stmt: Node,
                            project) -> list[tuple[str, int, int]]:
         """Process and store the callsites of the function."""
+        logger.debug('Processing callsite: %s', stmt.text.decode())
         callsites = []
 
         # Call statement
@@ -526,7 +536,7 @@ class FunctionDefinition():
                 return []
 
             logger.debug('Extracted declaration: Type `%s` : Name `%s`',
-                         var_type, var_name)
+                         var_type, var_name.text.decode())
             # Handles implicit default constructor call
             if var_name.type == 'identifier':
                 # We're looking for a constructor, so add the name as it
