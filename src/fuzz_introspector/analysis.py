@@ -1052,7 +1052,8 @@ def extract_all_sources(language):
     to_avoid = [
         'fuzztest', 'aflplusplus', 'libfuzzer', 'googletest', 'thirdparty',
         'third_party', '/build/', '/usr/local/', '/fuzz-introspector/',
-        '/root/.cache/', 'honggfuzz', '/src/inspector/', '/src/.venv'
+        '/root/.cache/', 'honggfuzz', '/src/inspector/', '/src/.venv',
+        '/src/source-code/'
     ]
 
     for file in all_files:
@@ -1071,12 +1072,12 @@ def extract_all_sources(language):
     return interesting_source_files
 
 
-def extract_test_information(report_dict=None, language='c-cpp'):
+def extract_test_information(report_dict=None, language='c-cpp', out_dir='/'):
     """Extract test information for different project language."""
     if not report_dict:
         report_dict = {}
     if language == 'c-cpp':
-        return _extract_test_information_cpp(report_dict)
+        return _extract_test_information_cpp(report_dict, out_dir)
     elif language == 'jvm':
         return _extract_test_information_jvm()
     else:
@@ -1084,7 +1085,7 @@ def extract_test_information(report_dict=None, language='c-cpp'):
         return set()
 
 
-def _extract_test_information_cpp(report_dict):
+def _extract_test_information_cpp(report_dict, out_dir):
     """Correlates function data collected by debug information to function
     data collected by LLVMs module, and uses the correlated data to generate
     function signatures for each function based on debug information."""
@@ -1100,11 +1101,13 @@ def _extract_test_information_cpp(report_dict):
     for path in normalized_paths:
         if path.startswith('/usr/'):
             continue
+        if path.startswith('/tmp/inspector-saved/'):
+            continue
         directories.add('/'.join(path.split('/')[:-1]))
-    return extract_tests_from_directories(directories, 'c-cpp')
+    return extract_tests_from_directories(directories, 'c-cpp', out_dir)
 
 
-def extract_tests_from_directories(directories, language) -> Set[str]:
+def extract_tests_from_directories(directories, language, out_dir) -> Set[str]:
     """Extracts test files from a given collection of directory paths and also
     copies them to the `constants.SAVED_SOURCE_FOLDER` folder with the same
     absolute path appended."""
@@ -1148,7 +1151,7 @@ def extract_tests_from_directories(directories, language) -> Set[str]:
     to_avoid = [
         'fuzztest', 'aflplusplus', 'libfuzzer', 'googletest', 'thirdparty',
         'third_party', '/build/', '/usr/local/', '/fuzz-introspector/',
-        '/root/.cache/', '/usr/'
+        '/root/.cache/', '/usr/', '/tmp/', '/src/inspector'
     ]
     for directory in all_inspiration_dirs:
         for root, dirs, files in os.walk(directory):
@@ -1211,7 +1214,8 @@ def extract_tests_from_directories(directories, language) -> Set[str]:
     logger.info("All test files")
     for test_file in all_test_files:
         logger.info(test_file)
-        dst = constants.SAVED_SOURCE_FOLDER + '/' + test_file
+        dst = os.path.join(out_dir,
+                           constants.SAVED_SOURCE_FOLDER + '/' + test_file)
         os.makedirs(os.path.dirname(dst), exist_ok=True)
         shutil.copy(test_file, dst)
 

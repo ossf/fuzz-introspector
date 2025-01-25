@@ -824,7 +824,7 @@ def create_html_report(introspection_proj: analysis.IntrospectionProject,
 
     all_test_files = analysis.extract_test_information(
         introspection_proj.debug_report,
-        introspection_proj.proj_profile.target_lang)
+        introspection_proj.proj_profile.target_lang, out_dir)
     with open(os.path.join(out_dir, constants.TEST_FILES_JSON),
               'w') as test_file_fd:
         test_file_fd.write(json.dumps(list(all_test_files)))
