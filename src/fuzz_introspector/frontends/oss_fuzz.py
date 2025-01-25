@@ -15,6 +15,7 @@
 ################################################################################
 
 import os
+import yaml
 import pathlib
 import logging
 
@@ -161,6 +162,14 @@ def analyse_folder(language: str = '',
             logger.error('Unsupported language: %s', language)
             return Project([])
 
+        pairings = []
+        textcov_reports = []
+        if os.environ.get('OUT', ''):
+            textcovs_path = os.path.join(os.environ.get('OUT', '/out/'),
+                                         'textcov_reports')
+            for report_name in os.listdir(textcovs_path):
+                textcov_reports.append(report_name)
+
         # Process calltree and method data
         for harness in project.get_source_codes_with_harnesses():
             if language == 'go':
@@ -189,5 +198,20 @@ def analyse_folder(language: str = '',
                                       f'fuzzerLogFile-{harness_name}.data')
                 with open(target, 'w', encoding='utf-8') as f:
                     f.write(f'Call tree\n{calltree}')
+
+            for textcov in textcov_reports:
+                cov_name = textcov.replace('.covreport', '')
+                if cov_name == harness_name:
+                    pairings.append({
+                        'executable_path':
+                        f'/out/{cov_name}',
+                        'fuzzer_log_file':
+                        f'fuzzerLogFile-{harness_name}.data'
+                    })
+
+        if pairings:
+            with open(os.path.join(out, 'exe_to_fuzz_introspector_logs.yaml'),
+                      'w') as f:
+                f.write(yaml.dump({'pairings': pairings}))
 
     return project

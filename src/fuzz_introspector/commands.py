@@ -73,10 +73,15 @@ def end_to_end(args) -> int:
     else:
         language = args.language
 
+    correlation_file = os.path.join(out_dir,
+                                    'exe_to_fuzz_introspector_logs.yaml')
+    if not os.path.isfile(correlation_file):
+        correlation_file = ''
+
     return run_analysis_on_dir(target_folder=out_dir,
                                coverage_url=args.coverage_url,
                                analyses_to_run=[],
-                               correlation_file='',
+                               correlation_file=correlation_file,
                                enable_all_analyses=True,
                                report_name=args.name,
                                language=language,
