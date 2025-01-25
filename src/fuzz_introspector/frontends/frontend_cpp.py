@@ -618,6 +618,7 @@ class CppProject(datatypes.Project[CppSourceCodeFile]):
         report: dict[str, Any] = {'report': 'name'}
         report['sources'] = []
         report['Fuzzing method'] = 'LLVMFuzzerTestOneInput'
+        report['Fuzzer filename'] = harness_source
 
         self.all_functions = []
         for source_code in self.source_code_files:

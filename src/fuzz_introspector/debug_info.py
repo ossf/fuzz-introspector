@@ -321,8 +321,9 @@ def dump_debug_report(report_dict, out_dir):
         if not os.path.isfile(file_elem['source_file']):
             logger.info("No such file: %s" % (file_elem['source_file']))
             continue
-        dst = os.path.join(out_dir, constants.SAVED_SOURCE_FOLDER,
-                           +file_elem['source_file'])
+        dst = os.path.join(
+            out_dir,
+            constants.SAVED_SOURCE_FOLDER + '/' + file_elem['source_file'])
         os.makedirs(os.path.dirname(dst), exist_ok=True)
         shutil.copy(file_elem['source_file'], dst)
 

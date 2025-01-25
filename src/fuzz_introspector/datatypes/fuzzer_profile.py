@@ -123,7 +123,7 @@ class FuzzerProfile:
     def identifier(self):
         """Fuzzer identifier"""
         if self._target_lang == "c-cpp":
-            if self.binary_executable != "" and not os.path.basename(
+            if self.binary_executable != "" and os.path.basename(
                     self.binary_executable) != '':
                 return os.path.basename(self.binary_executable)
 
