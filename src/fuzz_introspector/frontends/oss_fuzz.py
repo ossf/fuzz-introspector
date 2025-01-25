@@ -167,8 +167,9 @@ def analyse_folder(language: str = '',
         if os.environ.get('OUT', ''):
             textcovs_path = os.path.join(os.environ.get('OUT', '/out/'),
                                          'textcov_reports')
-            for report_name in os.listdir(textcovs_path):
-                textcov_reports.append(report_name)
+            if os.path.isdir(textcovs_path):
+                for report_name in os.listdir(textcovs_path):
+                    textcov_reports.append(report_name)
 
         # Process calltree and method data
         for harness in project.get_source_codes_with_harnesses():
