@@ -1100,6 +1100,8 @@ def _extract_test_information_cpp(report_dict):
     for path in normalized_paths:
         if path.startswith('/usr/'):
             continue
+        if path.startswirth('/tmp/inspector-saved/'):
+            continue
         directories.add('/'.join(path.split('/')[:-1]))
     return extract_tests_from_directories(directories, 'c-cpp')
 
