@@ -200,11 +200,11 @@ class FunctionDefinition():
 
         # Handle the full name
         # Extract the scope that the function is defined in
-        logger.info('Iterating parents')
+        logger.debug('Iterating parents')
         tmp_root = self.root
         full_name = ''
         while True:
-            logger.info('step')
+            logger.debug('step')
             new_parent = tmp_root.parent
             if new_parent is None:
                 break
@@ -270,7 +270,7 @@ class FunctionDefinition():
         #    full_name = self.sig
         logger.debug('Full function name: %s', full_name)
         self.name = full_name
-        logger.info('Done walking')
+        logger.debug('Done walking')
 
         # Handles class or namespace in the function name
         if '::' in self.name:
