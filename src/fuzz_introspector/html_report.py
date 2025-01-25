@@ -18,6 +18,7 @@ import json
 import typing
 import random
 import string
+import shutil
 
 from typing import (
     Any,
@@ -887,6 +888,14 @@ def create_html_report(introspection_proj: analysis.IntrospectionProject,
                                     fuzzer_table_data, out_dir)
 
         introspection_proj.dump_debug_report(out_dir)
+
+        # Double check source files have been copied
+        for elem in all_source_files:
+            dst = os.path.join(out_dir,
+                               constants.SAVED_SOURCE_FOLDER + '/' + elem)
+            if not os.path.isfile(dst):
+                os.makedirs(os.path.dirname(dst), exist_ok=True)
+                shutil.copy(elem, dst)
 
     # Determine the source files required for the java project
     source_file_list = []
