@@ -1150,7 +1150,7 @@ def extract_tests_from_directories(directories, language) -> Set[str]:
     to_avoid = [
         'fuzztest', 'aflplusplus', 'libfuzzer', 'googletest', 'thirdparty',
         'third_party', '/build/', '/usr/local/', '/fuzz-introspector/',
-        '/root/.cache/', '/usr/'
+        '/root/.cache/', '/usr/', '/tmp/'
     ]
     for directory in all_inspiration_dirs:
         for root, dirs, files in os.walk(directory):
