@@ -29,7 +29,7 @@ from fuzz_introspector.datatypes import (
     fuzzer_profile,
     function_profile,
 )
-from fuzz_introspector.exceptions import AnalysisError, DataLoaderError
+from fuzz_introspector.exceptions import DataLoaderError
 
 logger = logging.getLogger(name=__name__)
 
