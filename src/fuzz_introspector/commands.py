@@ -27,6 +27,7 @@ from fuzz_introspector import html_helpers
 from fuzz_introspector import html_report
 from fuzz_introspector import utils
 
+from fuzz_introspector.exceptions import DataLoaderError
 from fuzz_introspector.frontends import oss_fuzz
 
 logger = logging.getLogger(name=__name__)
@@ -78,14 +79,19 @@ def end_to_end(args) -> int:
     if not os.path.isfile(correlation_file):
         correlation_file = ''
 
-    return run_analysis_on_dir(target_folder=out_dir,
-                               coverage_url=args.coverage_url,
-                               analyses_to_run=[],
-                               correlation_file=correlation_file,
-                               enable_all_analyses=True,
-                               report_name=args.name,
-                               language=language,
-                               out_dir=out_dir)
+    try:
+        exit_code = run_analysis_on_dir(target_folder=out_dir,
+                                        coverage_url=args.coverage_url,
+                                        analyses_to_run=[],
+                                        correlation_file=correlation_file,
+                                        enable_all_analyses=True,
+                                        report_name=args.name,
+                                        language=language,
+                                        out_dir=out_dir)
+    except DataLoaderError:
+        logger.info('Found data issues. Exiting gracefully.')
+        exit_code = 0
+    return exit_code
 
 
 def run_analysis_on_dir(target_folder: str,

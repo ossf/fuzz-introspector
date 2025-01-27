@@ -29,7 +29,7 @@ from fuzz_introspector.datatypes import (
     fuzzer_profile,
     function_profile,
 )
-from fuzz_introspector.exceptions import AnalysisError, DataLoaderError
+from fuzz_introspector.exceptions import DataLoaderError
 
 logger = logging.getLogger(name=__name__)
 
@@ -366,8 +366,7 @@ def get_node_coverage_hitcount(demangled_name: str, callstack: Dict[int, str],
     else:
         logger.error(
             "A node should either be the first or it must have a parent")
-        raise AnalysisError(
-            "A node should either be the first or it must have a parent")
+        return 0
 
     return node_hitcount
 

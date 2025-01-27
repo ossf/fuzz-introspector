@@ -84,8 +84,10 @@ class FuzzAnnotatedCFG(analysis.AnalysisInterface):
                         continue
                     continue
 
-                parent_callsite = callsite_stack[callsite.depth - 1]
-
+                try:
+                    parent_callsite = callsite_stack[callsite.depth - 1]
+                except KeyError:
+                    continue
                 dst_fd = self.get_profile_sourcefile_merged(
                     proj_profile, callsite.dst_function_name)
                 if dst_fd is None:

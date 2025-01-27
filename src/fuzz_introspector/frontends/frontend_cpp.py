@@ -208,7 +208,8 @@ class FunctionDefinition():
             new_parent = tmp_root.parent
             if new_parent is None:
                 break
-            if new_parent.type == 'class_specifier':
+            if (new_parent.type == 'class_specifier'
+                    and new_parent.child_by_field_name('name') is not None):
                 full_name = new_parent.child_by_field_name(
                     'name').text.decode() + '::' + full_name
             if new_parent.type == 'namespace_definition':
@@ -940,7 +941,10 @@ def load_treesitter_trees(source_files, is_log=True) -> CppProject:
         if not os.path.isfile(code_file):
             continue
 
-        source_cls = CppSourceCodeFile('c++', code_file)
+        try:
+            source_cls = CppSourceCodeFile('c++', code_file)
+        except RecursionError:
+            continue
         results.append(source_cls)
 
         if is_log:
