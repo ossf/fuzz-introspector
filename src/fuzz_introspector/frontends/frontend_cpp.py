@@ -940,7 +940,10 @@ def load_treesitter_trees(source_files, is_log=True) -> CppProject:
         if not os.path.isfile(code_file):
             continue
 
-        source_cls = CppSourceCodeFile('c++', code_file)
+        try:
+            source_cls = CppSourceCodeFile('c++', code_file)
+        except RecursionError:
+            continue
         results.append(source_cls)
 
         if is_log:
