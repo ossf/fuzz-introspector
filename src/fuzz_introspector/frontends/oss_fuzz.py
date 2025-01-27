@@ -121,11 +121,13 @@ def analyse_folder(language: str = '',
                    entrypoint: str = '',
                    out='',
                    module_only=False,
-                   dump_output=True) -> Project:
+                   dump_output=True,
+                   files_to_include: list[str] = []) -> Project:
     """Runs a full frontend analysis on a given directory"""
 
     # Extract source files for target language
     source_files = capture_source_files_in_tree(directory, language)
+    source_files.extend(files_to_include)
     logger.info('Found %d files to include in analysis', len(source_files))
 
     if language == constants.LANGUAGES.C:
