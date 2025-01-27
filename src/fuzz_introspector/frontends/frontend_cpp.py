@@ -587,7 +587,10 @@ class FunctionDefinition():
         if not self.base_callsites:
             callsites = []
             for child in self.root.children:
-                callsites.extend(self._process_callsites(child, project))
+                try:
+                    callsites.extend(self._process_callsites(child, project))
+                except UnicodeDecodeError:
+                    logger.debug('Error decoding statement.')
 
             callsites = sorted(set(callsites), key=lambda x: x[1])
             self.base_callsites = [(x[0], x[2]) for x in callsites]
