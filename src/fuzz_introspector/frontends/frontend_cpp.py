@@ -208,7 +208,8 @@ class FunctionDefinition():
             new_parent = tmp_root.parent
             if new_parent is None:
                 break
-            if new_parent.type == 'class_specifier':
+            if (new_parent.type == 'class_specifier'
+                    and new_parent.child_by_field_name('name') is not None):
                 full_name = new_parent.child_by_field_name(
                     'name').text.decode() + '::' + full_name
             if new_parent.type == 'namespace_definition':
