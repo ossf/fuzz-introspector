@@ -150,6 +150,10 @@ class FunctionDefinition():
         # Extract information from tree-sitter node
         self._extract_information()
 
+    def function_source_code_as_text(self) -> str:
+        """Returns the source code the function."""
+        return self.root.text.decode()
+
     def _extract_pointer_array_from_type(
             self, param_name: Node) -> tuple[int, int, Node]:
         """Extract the pointer, array count from type and return the
@@ -695,6 +699,17 @@ class CppProject(datatypes.Project[CppSourceCodeFile]):
                 return func
 
         return None
+
+    def get_cross_references(self, src_func) -> list[FunctionDefinition]:
+        """Gets list of functions that reference src_func"""
+        xrefs = []
+        for func in self.all_functions:
+            if func.sig == src_func:
+                continue
+            for callsite in func.base_callsites:
+                if callsite[0] == src_func.name:
+                    xrefs.append(func)
+        return xrefs
 
     def extract_calltree(self,
                          source_file: str = '',
