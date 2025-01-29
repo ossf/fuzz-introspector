@@ -65,8 +65,12 @@ def read_fuzzer_data_file_to_profile(
             logger.info('Found no module yaml files')
             return None
 
-    with open(cfg_file, 'r') as f:
-        cfg_content = f.read()
+    try:
+        with open(cfg_file, 'r') as f:
+            cfg_content = f.read()
+    except UnicodeDecodeError:
+        logger.info('CFG file not valid.')
+        return None
 
     profile = fuzzer_profile.FuzzerProfile(cfg_file,
                                            data_dict_yaml,
