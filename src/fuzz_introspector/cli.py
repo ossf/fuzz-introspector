@@ -278,7 +278,7 @@ def main() -> int:
 
     logger.info("Running fuzz introspector post-processing")
     if args.command == 'report':
-        return_code = commands.run_analysis_on_dir(
+        return_code, _ = commands.run_analysis_on_dir(
             args.target_dir, args.coverage_url, args.analyses,
             args.correlation_file, args.enable_all_analyses, args.name,
             args.language, args.output_json)
