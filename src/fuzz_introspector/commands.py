@@ -94,9 +94,7 @@ def analyse_end_to_end(arg_language,
     if not os.path.isfile(correlation_file):
         correlation_file = ''
 
-    print('test')
     try:
-        print('test 2')
         exit_code, return_values2 = run_analysis_on_dir(
             target_folder=out_dir,
             coverage_url=coverage_url,
@@ -106,7 +104,6 @@ def analyse_end_to_end(arg_language,
             report_name=report_name,
             language=language,
             out_dir=out_dir)
-        print('test 3')
         for k, v in return_values2.items():
             return_values[k] = v
     except DataLoaderError:
