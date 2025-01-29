@@ -64,34 +64,55 @@ def end_to_end(args) -> int:
     else:
         entrypoint = 'LLVMFuzzerTestOneInput'
 
-    oss_fuzz.analyse_folder(language=args.language,
-                            directory=args.target_dir,
-                            entrypoint=entrypoint,
-                            out=out_dir)
+    analyse_end_to_end(args.language, args.target_dir,
+                       'LLVMFuzzerTestOneInput', args.out_dir,
+                       args.coverage_url, args.name, args.module_only)
 
-    if 'c' in args.language:
+
+def analyse_end_to_end(arg_language,
+                       target_dir,
+                       entrypoint,
+                       out_dir,
+                       coverage_url,
+                       report_name,
+                       module_only=False):
+    return_values = {}
+    project = oss_fuzz.analyse_folder(language=arg_language,
+                                      directory=target_dir,
+                                      entrypoint=entrypoint,
+                                      out=out_dir,
+                                      module_only=module_only)
+
+    return_values['light-project'] = project
+    if 'c' in arg_language:
         language = 'c-cpp'
     else:
-        language = args.language
+        language = arg_language
 
     correlation_file = os.path.join(out_dir,
                                     'exe_to_fuzz_introspector_logs.yaml')
     if not os.path.isfile(correlation_file):
         correlation_file = ''
 
+    print('test')
     try:
-        exit_code = run_analysis_on_dir(target_folder=out_dir,
-                                        coverage_url=args.coverage_url,
-                                        analyses_to_run=[],
-                                        correlation_file=correlation_file,
-                                        enable_all_analyses=True,
-                                        report_name=args.name,
-                                        language=language,
-                                        out_dir=out_dir)
+        print('test 2')
+        exit_code, return_values2 = run_analysis_on_dir(
+            target_folder=out_dir,
+            coverage_url=coverage_url,
+            analyses_to_run=[],
+            correlation_file=correlation_file,
+            enable_all_analyses=True,
+            report_name=report_name,
+            language=language,
+            out_dir=out_dir)
+        print('test 3')
+        for k, v in return_values2.items():
+            return_values[k] = v
     except DataLoaderError:
         logger.info('Found data issues. Exiting gracefully.')
         exit_code = 0
-    return exit_code
+    return exit_code, return_values
 
 
 def run_analysis_on_dir(target_folder: str,
@@ -131,7 +152,9 @@ def run_analysis_on_dir(target_folder: str,
                                    dump_files,
                                    out_dir=out_dir)
 
-    return constants.APP_EXIT_SUCCESS
+    return_values = {'introspector-project': introspection_proj}
+
+    return constants.APP_EXIT_SUCCESS, return_values
 
 
 def light_analysis(args) -> int:

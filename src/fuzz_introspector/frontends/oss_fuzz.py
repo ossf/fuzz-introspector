@@ -173,6 +173,20 @@ def analyse_folder(language: str = '',
                 for report_name in os.listdir(textcovs_path):
                     textcov_reports.append(report_name)
 
+        if not project.get_source_codes_with_harnesses() and module_only:
+            logger.info('Found no harnesses')
+            target = os.path.join(out, f'fuzzerLogFile-empty.data.yaml')
+            project.dump_module_logic(target,
+                                      entry_function='',
+                                      harness_name='empty',
+                                      harness_source='empty-file.cpp',
+                                      dump_output=dump_output)
+            with open(os.path.join(out, 'fuzzerLogFile-empty.data'),
+                      'w',
+                      encoding='utf-8') as f:
+                f.write("Call tree\n")
+                f.write("====================================")
+
         # Process calltree and method data
         for harness in project.get_source_codes_with_harnesses():
             if language == 'go':

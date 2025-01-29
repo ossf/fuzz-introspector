@@ -64,6 +64,10 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
                              default='',
                              type=str,
                              help='Base coverage URL.')
+    full_parser.add_argument(
+        '--module-only',
+        action='store_true',
+        help='Will dump program analysis data even if not harness exists.')
 
     # Report generation command
     report_parser = subparsers.add_parser(
