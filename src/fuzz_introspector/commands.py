@@ -18,7 +18,7 @@ import os
 import json
 import yaml
 import shutil
-from typing import Optional
+from typing import Optional, Dict, Any, Tuple
 
 from fuzz_introspector import analysis
 from fuzz_introspector import constants
@@ -125,7 +125,7 @@ def run_analysis_on_dir(target_folder: str,
                         output_json: Optional[list[str]] = None,
                         parallelise: bool = True,
                         dump_files: bool = True,
-                        out_dir: str = '') -> int:
+                        out_dir: str = '') -> Tuple[int, Dict[str, Any]]:
     """Runs Fuzz Introspector analysis from based on the results
     from a frontend run. The primary task is to aggregate the data
     and generate a HTML report."""
