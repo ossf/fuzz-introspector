@@ -43,6 +43,7 @@ def test_TestOneInput(data):
     except exceptions.FuzzIntrospectorError:
         pass
 
+
 def is_this_a_reproducer_run(argvs):
     """Hack to check if the argvs command shows this is a reproducer run
     This is to bypass https://github.com/google/oss-fuzz/issues/9222 for now
