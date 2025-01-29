@@ -111,7 +111,7 @@ def test_full_jvm_report_generation(tmpdir, testcase):
         "MetadataAnalysis"
     ]
 
-    assert commands.run_analysis_on_dir(
+    exit_code, _ = commands.run_analysis_on_dir(
         tmpdir,
         coverage_link,
         analyses_to_run,
@@ -119,7 +119,8 @@ def test_full_jvm_report_generation(tmpdir, testcase):
         False,
         project_name,
         "jvm"
-    ) == constants.APP_EXIT_SUCCESS
+    )
+    assert exit_code == constants.APP_EXIT_SUCCESS
 
     # Checking starts here
     files = os.listdir(tmpdir)

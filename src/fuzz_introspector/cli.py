@@ -64,6 +64,10 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
                              default='',
                              type=str,
                              help='Base coverage URL.')
+    full_parser.add_argument(
+        '--module-only',
+        action='store_true',
+        help='Will dump program analysis data even if not harness exists.')
 
     # Report generation command
     report_parser = subparsers.add_parser(
@@ -274,7 +278,7 @@ def main() -> int:
 
     logger.info("Running fuzz introspector post-processing")
     if args.command == 'report':
-        return_code = commands.run_analysis_on_dir(
+        return_code, _ = commands.run_analysis_on_dir(
             args.target_dir, args.coverage_url, args.analyses,
             args.correlation_file, args.enable_all_analyses, args.name,
             args.language, args.output_json)
