@@ -51,7 +51,8 @@ def base_cpp_profile(tmpdir, sample_cfg1, fake_yaml_func_elem):
     fp = fuzzer_profile.FuzzerProfile(
         os.path.join(tmpdir, "test_file.data"),
         fake_frontend_yaml,
-        "c-cpp"
+        "c-cpp",
+        cfg_content=sample_cfg1
     )
 
     return fp

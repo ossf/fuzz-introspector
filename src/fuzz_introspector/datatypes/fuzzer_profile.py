@@ -42,7 +42,8 @@ class FuzzerProfile:
     def __init__(self,
                  cfg_file: str,
                  frontend_yaml: Dict[Any, Any],
-                 target_lang: str = "c-cpp") -> None:
+                 target_lang: str = "c-cpp",
+                 cfg_content='') -> None:
         # Defaults
         self.binary_executable: str = ""
         self.file_targets: Dict[str, Set[str]] = dict()
@@ -60,7 +61,7 @@ class FuzzerProfile:
 
         # Load calltree file
         self.fuzzer_callsite_calltree = cfg_load.data_file_read_calltree(
-            cfg_file)
+            cfg_content)
 
         # Read yaml data (as dictionary) from frontend
         try:

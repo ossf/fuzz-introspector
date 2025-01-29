@@ -34,18 +34,14 @@ from fuzz_introspector import exceptions  # noqa: E402
 @atheris.instrument_func
 def test_TestOneInput(data):
     """Fuzz cfg_load.data_file_read_calltree"""
-    cfg_file = "/tmp/test_file.data"
-    with open(cfg_file, "wb") as f:
-        f.write(data)
+    fdp = atheris.FuzzedDataProvider(data)
+    cfg_content = fdp.ConsumeUnicodeNoSurrogates(256)
 
     # Read the file as a calltree
     try:
-        cfg_load.data_file_read_calltree(cfg_file)
+        cfg_load.data_file_read_calltree(cfg_content)
     except exceptions.FuzzIntrospectorError:
         pass
-
-    if os.path.isfile(cfg_file):
-        os.remove(cfg_file)
 
 
 def is_this_a_reproducer_run(argvs):
