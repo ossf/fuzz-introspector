@@ -96,7 +96,8 @@ def data_file_read_calltree(cfg_content: str) -> Optional[CalltreeCallsite]:
     all_lines = []
     try:
         for line in cfg_content.split('\n'):
-            all_lines.append(line)
+            if line.strip():
+                all_lines.append(line)
     except UnicodeDecodeError:
         raise CalltreeError("Decoding error when reading CFG file")
 

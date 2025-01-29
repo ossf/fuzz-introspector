@@ -52,7 +52,7 @@ def base_cpp_profile(tmpdir, sample_cfg1, fake_yaml_func_elem):
         os.path.join(tmpdir, "test_file.data"),
         fake_frontend_yaml,
         "c-cpp",
-        cfg_content = sample_cfg1
+        cfg_content=sample_cfg1
     )
 
     return fp
