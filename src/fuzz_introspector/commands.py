@@ -64,9 +64,11 @@ def end_to_end(args) -> int:
     else:
         entrypoint = 'LLVMFuzzerTestOneInput'
 
-    analyse_end_to_end(args.language, args.target_dir,
-                       entrypoint, args.out_dir,
-                       args.coverage_url, args.name, args.module_only)
+    exit_code, _ = analyse_end_to_end(args.language, args.target_dir,
+                                      entrypoint, args.out_dir,
+                                      args.coverage_url, args.name,
+                                      args.module_only)
+    return exit_code
 
 
 def analyse_end_to_end(arg_language,
@@ -76,6 +78,7 @@ def analyse_end_to_end(arg_language,
                        coverage_url,
                        report_name,
                        module_only=False):
+    """End to end analysis helper function."""
     return_values = {}
     project = oss_fuzz.analyse_folder(language=arg_language,
                                       directory=target_dir,
