@@ -65,7 +65,7 @@ def end_to_end(args) -> int:
         entrypoint = 'LLVMFuzzerTestOneInput'
 
     analyse_end_to_end(args.language, args.target_dir,
-                       'LLVMFuzzerTestOneInput', args.out_dir,
+                       entrypoint, args.out_dir,
                        args.coverage_url, args.name, args.module_only)
 
 

@@ -175,7 +175,7 @@ def analyse_folder(language: str = '',
 
         if not project.get_source_codes_with_harnesses() and module_only:
             logger.info('Found no harnesses')
-            target = os.path.join(out, f'fuzzerLogFile-empty.data.yaml')
+            target = os.path.join(out, 'fuzzerLogFile-empty.data.yaml')
             project.dump_module_logic(target,
                                       entry_function='',
                                       harness_name='empty',
