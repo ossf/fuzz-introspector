@@ -65,7 +65,13 @@ def read_fuzzer_data_file_to_profile(
             logger.info('Found no module yaml files')
             return None
 
-    profile = fuzzer_profile.FuzzerProfile(cfg_file, data_dict_yaml, language)
+    with open(cfg_file, 'r') as f:
+        cfg_content = f.read()
+
+    profile = fuzzer_profile.FuzzerProfile(cfg_file,
+                                           data_dict_yaml,
+                                           language,
+                                           cfg_content=cfg_content)
 
     if not profile.has_entry_point():
         logger.info("Found no entrypoints")

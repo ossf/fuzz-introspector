@@ -82,7 +82,7 @@ def print_ctcs_tree(ctcs: CalltreeCallsite) -> None:
         print_ctcs_tree(c)
 
 
-def data_file_read_calltree(filename: str) -> Optional[CalltreeCallsite]:
+def data_file_read_calltree(cfg_content: str) -> Optional[CalltreeCallsite]:
     """
     Extracts the calltree of a fuzzer from a .data file.
     This is for C/C++ files
@@ -92,77 +92,75 @@ def data_file_read_calltree(filename: str) -> Optional[CalltreeCallsite]:
     read_tree = False
     curr_ctcs_node = None
     curr_depth = -1
-    with open(filename, "r") as flog:
-        # Read in all lines catching decode errors
-        all_lines = []
-        try:
-            for line in flog:
-                all_lines.append(line)
-        except UnicodeDecodeError:
-            raise CalltreeError("Decoding error when reading CFG file")
 
-        for line in all_lines:
-            line = line.replace("\n", "")
-            if read_tree and "======" not in line:
-                stripped_line = line.strip().split(" ")
-                # Parse the line
-                # Type: {spacing depth} {target filename} {line count}
-                if len(stripped_line) == 3:
-                    target_func = stripped_line[0]
-                    filename = stripped_line[1]
-                    linenumber = int(stripped_line[2].replace(
-                        "linenumber=", ""))
-                else:
-                    target_func = stripped_line[0]
-                    filename = ""
-                    linenumber = 0
+    all_lines = []
+    try:
+        for line in cfg_content.split('\n'):
+            all_lines.append(line)
+    except UnicodeDecodeError:
+        raise CalltreeError("Decoding error when reading CFG file")
 
-                if "......" in filename or "......" in target_func:
-                    filename = filename.replace("......", "")
-                    target_func = target_func.replace("......", "")
+    for line in all_lines:
+        line = line.replace("\n", "")
+        if read_tree and "======" not in line:
+            stripped_line = line.strip().split(" ")
+            # Parse the line
+            # Type: {spacing depth} {target filename} {line count}
+            if len(stripped_line) == 3:
+                target_func = stripped_line[0]
+                filename = stripped_line[1]
+                linenumber = int(stripped_line[2].replace("linenumber=", ""))
+            else:
+                target_func = stripped_line[0]
+                filename = ""
+                linenumber = 0
 
-                space_count = len(line) - len(line.lstrip(' '))
-                depth = int(space_count / 2)
+            if "......" in filename or "......" in target_func:
+                filename = filename.replace("......", "")
+                target_func = target_func.replace("......", "")
 
-                # Create a callsite nide
-                ctcs = CalltreeCallsite(target_func, filename, depth,
-                                        linenumber, curr_ctcs_node)
+            space_count = len(line) - len(line.lstrip(' '))
+            depth = int(space_count / 2)
 
-                # Check if this node is still a child of the current parent node
-                # and handle if not.
-                if curr_depth == -1:
-                    # First node
-                    curr_ctcs_node = ctcs
-                elif depth > curr_depth and curr_ctcs_node is not None:
-                    # We are going one calldepth deeper
-                    # Special case in the root parent case, where we have no
-                    # parent in the current node and also no children.
-                    if (curr_ctcs_node.parent_calltree_callsite is not None
-                            or curr_ctcs_node.children):
-                        curr_ctcs_node = curr_ctcs_node.children[-1]
+            # Create a callsite nide
+            ctcs = CalltreeCallsite(target_func, filename, depth, linenumber,
+                                    curr_ctcs_node)
 
-                elif depth < curr_depth and curr_ctcs_node is not None:
-                    # We are going up, find out how much
-                    depth_diff = int(curr_depth - depth)
-                    tmp_node = curr_ctcs_node
-                    idx = 0
-                    while (idx < depth_diff
-                           and tmp_node.parent_calltree_callsite is not None):
-                        tmp_node = tmp_node.parent_calltree_callsite
-                        idx += 1
-                    curr_ctcs_node = tmp_node
-                # Add the node to the current parent
-                if curr_depth != -1 and curr_ctcs_node is not None:
-                    ctcs.parent_calltree_callsite = curr_ctcs_node
-                    ctcs.src_function_name = (
-                        ctcs.parent_calltree_callsite.dst_function_name)
-                    curr_ctcs_node.children.append(ctcs)
-                curr_depth = depth
+            # Check if this node is still a child of the current parent node
+            # and handle if not.
+            if curr_depth == -1:
+                # First node
+                curr_ctcs_node = ctcs
+            elif depth > curr_depth and curr_ctcs_node is not None:
+                # We are going one calldepth deeper
+                # Special case in the root parent case, where we have no
+                # parent in the current node and also no children.
+                if (curr_ctcs_node.parent_calltree_callsite is not None
+                        or curr_ctcs_node.children):
+                    curr_ctcs_node = curr_ctcs_node.children[-1]
 
-            if "====================================" in line:
-                read_tree = False
-            if "Call tree" in line:
-                read_tree = True
+            elif depth < curr_depth and curr_ctcs_node is not None:
+                # We are going up, find out how much
+                depth_diff = int(curr_depth - depth)
+                tmp_node = curr_ctcs_node
+                idx = 0
+                while (idx < depth_diff
+                       and tmp_node.parent_calltree_callsite is not None):
+                    tmp_node = tmp_node.parent_calltree_callsite
+                    idx += 1
+                curr_ctcs_node = tmp_node
+            # Add the node to the current parent
+            if curr_depth != -1 and curr_ctcs_node is not None:
+                ctcs.parent_calltree_callsite = curr_ctcs_node
+                ctcs.src_function_name = (
+                    ctcs.parent_calltree_callsite.dst_function_name)
+                curr_ctcs_node.children.append(ctcs)
+            curr_depth = depth
+
+        if "====================================" in line:
+            read_tree = False
+        if "Call tree" in line:
+            read_tree = True
 
     # move upwards from any node in the tree
     ctcs_root: Optional[CalltreeCallsite] = curr_ctcs_node
