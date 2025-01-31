@@ -178,9 +178,9 @@ def scan_file_for_ioctls(file_to_scan: str, basefolder: str) -> List[IOCTL]:
 def find_file(target_file: str) -> str:
     """Finds a file amongst all source files. Uses heuristics to improve
     matching."""
-    logging.debug('Target f: %s' % (target_file))
+    logging.info('Target f: %s', target_file)
     suffix_path = target_file.split('../')[-1]
-    logging.debug('suffix_path: %s' % (suffix_path))
+    logging.info('suffix_path: %s', suffix_path)
     if len(suffix_path) < 2:
         raise Exception("Filename too short")
     matching_files = set()
@@ -200,6 +200,7 @@ def find_file(target_file: str) -> str:
         return ''
 
     if len(matching_files) == 1:
+        logging.info('Found a single file')
         return matching_files.pop()
 
     # We found more than 1 matching file. Try and filter based on
@@ -211,7 +212,13 @@ def find_file(target_file: str) -> str:
     if len(src_files_without_out) == 1:
         return src_files_without_out[0]
 
-    logging.debug('Matching files: %s' % (matching_files))
+    files_in_uapi = []
+    for src_file in src_files_without_out:
+        if 'uapi' in src_file:
+            files_in_uapi.append(src_file)
+    if len(files_in_uapi) == 1:
+        return files_in_uapi[0]
+    logging.debug('Matching files: %s', matching_files)
 
     # We could do a loti more here, but am not sure if we want to start
     # doing that.
@@ -226,10 +233,10 @@ def extract_raw_ioctls_text_from_header_files(
     definitions."""
     ioctls = []
     for header_file in all_header_files:
-        logging.debug('Analysing: %s' % (header_file))
+        logging.info('Analysing: %s', header_file)
         # Get the path after last relative
         refined_path = find_file(header_file)
-        logging.debug('Refined path: %s' % (refined_path))
+        logging.info('Refined path: %s', refined_path)
         if refined_path:
             discovered_ioctls = scan_file_for_ioctls(refined_path,
                                                      kernel_folder)

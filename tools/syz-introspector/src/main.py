@@ -103,7 +103,7 @@ def extract_source_loc_analysis(workdir: str, all_sources: List[str],
     report['loc'] = total_loc
 
 
-def run_light_fi(target_dir, workdir, additional_files = []):
+def run_light_fi(target_dir, workdir, additional_files=[]):
     """Light introspector run"""
     logging.info('Running introspector on: %s', workdir)
     oss_fuzz.analyse_folder(language='c',
@@ -111,7 +111,7 @@ def run_light_fi(target_dir, workdir, additional_files = []):
                             entrypoint='',
                             out=workdir,
                             module_only=True,
-                            files_to_include = additional_files)
+                            files_to_include=additional_files)
 
 
 def analyse_kernel_source_files(kernel_folder):
@@ -236,7 +236,7 @@ def main() -> None:
         logging.info('- %s', header_file)
 
     new_headers = []
-    logging.info('Refining')
+    logging.info('Refining header files')
     for header_file in report['header_files']:
         logging.info('r: %s', header_file)
         vt = textual_source_analysis.find_file(header_file)
@@ -256,7 +256,7 @@ def main() -> None:
             report['header_files'], kernel_folder)
 
     for ioctl in report['ioctls']:
-        logging.info('%s ::: %s' % (ioctl.raw_definition, ioctl.name))
+        logging.info('%s ::: %s', ioctl.raw_definition, ioctl.name)
 
     logging.info('[+] Scanning for ioctl handler using text analysis')
     ioctl_handlers = syz_core.get_ioctl_handlers(report['ioctls'],
