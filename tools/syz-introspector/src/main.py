@@ -27,6 +27,10 @@ import fuzz_introspector_utils
 
 from fuzz_introspector.frontends import oss_fuzz
 
+logger = logging.getLogger(name=__name__)
+LOG_FMT = ('%(asctime)s.%(msecs)03d %(levelname)s '
+           '%(module)s - %(funcName)s: %(message)s')
+
 
 def create_workdir() -> str:
     """Creates the next available auto-syzkaller-XXX dir."""
@@ -35,21 +39,30 @@ def create_workdir() -> str:
         idx += 1
     workdir = os.path.abspath("auto-syzkaller-%d" % (idx))
 
-    logging.info('[+] workdir: %s' % (workdir))
+    logger.info('[+] workdir: %s', workdir)
     os.mkdir(workdir)
     return workdir
 
 
 def setup_logging(debug: bool) -> None:
-    """Sets logging based on `debug`"""
-    logging.basicConfig()
+    """Sets logging level."""
     if debug:
-        logging.getLogger().setLevel(logging.DEBUG)
+        logging.basicConfig(
+            level=logging.DEBUG,
+            format=LOG_FMT,
+            datefmt='%Y-%m-%d %H:%M:%S',
+        )
     else:
-        logging.getLogger().setLevel(logging.INFO)
+        logging.basicConfig(
+            level=logging.INFO,
+            format=LOG_FMT,
+            datefmt='%Y-%m-%d %H:%M:%S',
+        )
+    logger.debug("Logging level set")
 
 
 def parse_args() -> argparse.Namespace:
+    """CLI parser"""
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '--headers-file',
@@ -89,11 +102,11 @@ def extract_source_loc_analysis(workdir: str, all_sources: List[str],
                                 report) -> None:
     all_c_files = fuzz_introspector_utils.get_all_c_files_mentioned_in_light(
         workdir, all_sources)
-    logging.info('[+] Source files:')
+    logger.info('[+] Source files:')
     source_files = []
     total_loc = 0
     for c_file in all_c_files:
-        logging.info('- %s' % (c_file))
+        logger.info('- %s', c_file)
         with open(c_file, 'r') as f:
             content = f.read()
         loc = len(content.split('\n'))
@@ -103,9 +116,11 @@ def extract_source_loc_analysis(workdir: str, all_sources: List[str],
     report['loc'] = total_loc
 
 
-def run_light_fi(target_dir, workdir, additional_files=[]):
+def run_light_fi(target_dir, workdir, additional_files=None):
     """Light introspector run"""
-    logging.info('Running introspector on: %s', workdir)
+    if not additional_files:
+        additional_files = []
+    logger.info('Running introspector on: %s', workdir)
     oss_fuzz.analyse_folder(language='c',
                             directory=target_dir,
                             entrypoint='',
@@ -115,10 +130,10 @@ def run_light_fi(target_dir, workdir, additional_files=[]):
 
 
 def analyse_kernel_source_files(kernel_folder):
-    logging.info('Finding all header files')
+    logger.info('Finding all header files')
     all_headers = textual_source_analysis.find_all_files_with_extension(
         kernel_folder, '.h')
-    logging.info('Finding all source files')
+    logger.info('Finding all source files')
     all_c_files = textual_source_analysis.find_all_files_with_extension(
         kernel_folder, '.c')
     all_sources = all_headers.union(all_c_files)
@@ -128,18 +143,19 @@ def analyse_kernel_source_files(kernel_folder):
 
 
 def get_possible_devnodes(ioctl_handlers):
+    """Gets the devnodes of all ioctl handlers as a set."""
     all_devnodes = set()
     for ih in ioctl_handlers:
         for devnode in ih['possible-dev-names']:
             all_devnodes.add(devnode)
-    logging.info('All possible dev nodes')
+    logger.info('All possible dev nodes')
     for devnode in all_devnodes:
-        logging.info('- %s' % (devnode))
+        logger.info('- %s', devnode)
     return all_devnodes
 
 
 def analyse_ioctl_handler(ioctl_handler, workdir, kernel_folder, target_path):
-    logging.info('- %s', ioctl_handler['func']['functionName'])
+    logger.info('- %s', ioctl_handler['func']['functionName'])
 
     # Get the next index that we will use to store data in the target
     # workdir.
@@ -148,7 +164,7 @@ def analyse_ioctl_handler(ioctl_handler, workdir, kernel_folder, target_path):
     fi_data_dir = os.path.join(workdir,
                                'handler-analysis-%d' % (next_workdir_idx),
                                'fi-data')
-    logging.info('Creating handler dir: %s', fi_data_dir)
+    logger.info('Creating handler dir: %s', fi_data_dir)
     os.makedirs(fi_data_dir)
 
     # Extract the calltree. Do this by running an introspector run
@@ -199,6 +215,7 @@ def analyse_ioctl_handler(ioctl_handler, workdir, kernel_folder, target_path):
 
 
 def main() -> None:
+    """Main entrypoint"""
     args = parse_args()
     setup_logging(args.debug)
 
@@ -207,8 +224,8 @@ def main() -> None:
     kernel_folder = os.path.abspath(args.kernel_folder)
     target_path = os.path.abspath(args.target)
 
-    logging.info('Kernel folder: %s', kernel_folder)
-    logging.info('Target: %s', target_path)
+    logger.info('Kernel folder: %s', kernel_folder)
+    logger.info('Target: %s', target_path)
 
     if args.compare_to:
         print('[+] Parsing existing description %s', args.compare_to)
@@ -227,38 +244,38 @@ def main() -> None:
     extract_source_loc_analysis(workdir, all_sources, report)
 
     # Find all header files.
-    logging.info('[+] Finding header files')
+    logger.info('[+] Finding header files')
     report['header_files'] = syz_core.extract_header_files_referenced(
         workdir, all_sources)
-    logging.info('Found a total of %d header files',
-                 len(report['header_files']))
+    logger.info('Found a total of %d header files',
+                len(report['header_files']))
     for header_file in report['header_files']:
-        logging.info('- %s', header_file)
+        logger.info('- %s', header_file)
 
     new_headers = []
-    logging.info('Refining header files')
+    logger.info('Refining header files')
     for header_file in report['header_files']:
-        logging.info('r: %s', header_file)
+        logger.info('r: %s', header_file)
         vt = textual_source_analysis.find_file(header_file)
         if vt:
-            logging.info('--- %s', vt)
+            logger.info('--- %s', vt)
             new_headers.append(vt)
-    logging.info('Refined to %d', len(new_headers))
+    logger.info('Refined to %d', len(new_headers))
 
     # Run the analysis again. This is needed to ensure the types from header
     # files are included in the analysis.
     run_light_fi(target_path, workdir, new_headers)
 
     # Extract ioctls.
-    logging.info('[+] Extracting raw ioctls')
+    logger.info('[+] Extracting raw ioctls')
     report[
         'ioctls'] = textual_source_analysis.extract_raw_ioctls_text_from_header_files(
             report['header_files'], kernel_folder)
 
     for ioctl in report['ioctls']:
-        logging.info('%s ::: %s', ioctl.raw_definition, ioctl.name)
+        logger.info('%s ::: %s', ioctl.raw_definition, ioctl.name)
 
-    logging.info('[+] Scanning for ioctl handler using text analysis')
+    logger.info('[+] Scanning for ioctl handler using text analysis')
     ioctl_handlers = syz_core.get_ioctl_handlers(report['ioctls'],
                                                  kernel_folder, report,
                                                  workdir)
@@ -273,19 +290,19 @@ def main() -> None:
         analyse_ioctl_handler(ioctl_handler, workdir, kernel_folder,
                               target_path)
 
-    logging.info('[+] Showing complexity of ioctl handlers')
+    logger.info('[+] Showing complexity of ioctl handlers')
     syz_core.interpret_complexity_of_ioctl_handlers(report['ioctl_handlers'])
 
-    logging.info('[+] Creating and dumping syzkaller description.')
+    logger.info('[+] Creating and dumping syzkaller description.')
     syz_core.create_and_dump_syzkaller_description(report['ioctls'], workdir,
                                                    all_devnodes, workdir,
                                                    target_path)
 
-    logging.info('[+] Dumping full report.')
+    logger.info('[+] Dumping full report.')
     syz_core.dump_report(workdir, report, args)
 
     if args.compare_to:
-        logging.info('[+] Comparing analysis to existing description')
+        logger.info('[+] Comparing analysis to existing description')
         syz_core.diff_analysis_to_existing_ioctl(existing_ioctl_commands,
                                                  report['all_ioctls'])
 

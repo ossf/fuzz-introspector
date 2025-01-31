@@ -28,6 +28,8 @@ import syzkaller_util
 from fuzz_introspector import commands
 from fuzz_introspector import debug_info
 
+logger = logging.getLogger(name=__name__)
+
 
 def find_ioctl_first_case_uses(ioctl_handler, kernel_folder):
     """Finds the source file of a given ioctl handler function and scans
@@ -54,7 +56,7 @@ def find_ioctl_first_case_uses(ioctl_handler, kernel_folder):
         already_seen = set()
         for ioctl in ioctl_handler['ioctls']:
             if ioctl.name in line and ioctl.name not in already_seen and 'case' in line:
-                print("%s :: %d" % (line.replace("\n", ""), idx))
+                logger.debug("%s :: %d" % (line.replace("\n", ""), idx))
                 already_seen.add(ioctl.name)
                 pair_starts.append((ioctl.name, idx + 1))
     return pair_starts
@@ -68,21 +70,21 @@ def extract_header_files_referenced(workdir, all_sources) -> Set[str]:
 
     all_files = set()
     for raw_file_reference in raw_header_file_references:
-        logging.info('Header file -: %s' % (raw_file_reference))
+        logger.info('Header file -: %s' % (raw_file_reference))
         path2 = raw_file_reference.replace('file_location:',
                                            '').strip().split(':')[0].replace(
                                                "'", '')
         normalized = os.path.normpath(path2)
-        logging.info('Adding %s', normalized)
+        logger.info('Adding %s', normalized)
         all_files.add(normalized)
 
-    logging.debug('Files found')
+    logger.debug('Files found')
     for normalized_path in all_files:
-        logging.debug('normalized_path: %s' % (normalized_path))
+        logger.debug('normalized_path: %s' % (normalized_path))
 
     new_files = set()
     for header_file in all_files:
-        logging.debug("- %s" % (header_file))
+        logger.debug("- %s" % (header_file))
         if not os.path.isfile(header_file):
             continue
         with open(header_file, 'r') as f:
@@ -101,18 +103,18 @@ def extract_header_files_referenced(workdir, all_sources) -> Set[str]:
                 #header_included_path = os.path.join(
                 #    os.path.dirname(header_file), header_included)
 
-                logging.info('Including: %s', header_included)
+                logger.info('Including: %s', header_included)
                 new_files.add(header_included)
     all_files = all_files.union(new_files)
 
     found_files = []
     for header_file in all_files:
-        logging.info('Finding F1')
+        logger.info('Finding F1')
         valid_target = textual_source_analysis.find_file(header_file)
         if valid_target:
             found_files.append(valid_target)
     for header_file in found_files:
-        logging.debug('- %s' % (header_file))
+        logger.debug('- %s' % (header_file))
 
     return found_files
 
@@ -126,10 +128,10 @@ def extract_all_types_from_basedir(fi_data_dir):
             debug_type_files.append(os.path.join(fi_data_dir, filename))
 
     if len(debug_type_files) == 0:
-        print('Could not find debug type file')
+        logger.debug('Could not find debug type file')
         return []
     if len(debug_type_files) > 1:
-        print('Too many debug type files')
+        logger.debug('Too many debug type files')
         # sys.exit(1)
         return []
 
@@ -181,25 +183,25 @@ def extract_syzkaller_types_to_analyze(ioctls, syzkaller_description,
                             all_types_to_print.add(field['type'].replace(
                                 'struct', '').replace(' ', ''))
                             visited.add(to_add)
-    logging.info('Found all types to print:')
+    logger.info('Found all types to print:')
 
     description_types = dict()
     for dtype in all_types:
-        logging.info('- %s', dtype)
+        logger.info('- %s', dtype)
 
         if dtype in description_types:
             continue
 
         for struct_type in typedict['structs']:
             if struct_type['name'] == dtype:
-                logging.info('Creating syzkaller type for: %s', elem)
+                logger.info('Creating syzkaller type for: %s', elem)
                 description_str = '# Source code: %s (%d, %d)\n' % (
                     struct_type['source_file'],
                     struct_type['pos']['line_start'],
                     struct_type['pos']['line_end'])
                 description_str += '%s {\n' % (dtype)
                 for field in struct_type['fields']:
-                    logging.debug(' -- field type: %s', field['type'])
+                    logger.debug(' -- field type: %s', field['type'])
                     if field['type'] not in all_types:
                         all_types_to_print.add(field['type'])
                     syz_type = syzkaller_util.convert_raw_type_to_syzkaller_type(
@@ -240,10 +242,10 @@ def extract_individual_types(all_types_to_decipher, syzkaller_description,
         if syzkaller_util.is_raw(type_to_dump):
             continue
 
-        print('To dump: %s' % (type_to_dump))
+        logger.debug('To dump: %s' % (type_to_dump))
         type_context = debug_info.syzkaller_get_type_implementation(
             type_to_dump, all_types)
-        logging.debug(type_context)
+        logger.debug(type_context)
         if type_context:
             syzkaller_description['types'][type_to_dump] = type_context
 
@@ -325,7 +327,7 @@ def check_source_files_for_ioctl(kernel_folder, src_file, ioctls,
     in the source file from the `all_files_with_func` that uses the IOCTLs."""
     all_ioctl_func_handlers = list()
 
-    logging.info('Finding F2')
+    logger.info('Finding F2')
     target_file = textual_source_analysis.find_file(src_file)
     if not target_file:
         return []
@@ -345,8 +347,8 @@ def check_source_files_for_ioctl(kernel_folder, src_file, ioctls,
         ioctls_in_line = []
         for ioctl in ioctls:
             if ioctl.name in line:
-                logging.info('%s :: found {%s} on line {%s} {line no: %d}',
-                             target_file, ioctl.name, line, line_idx)
+                logger.info('%s :: found {%s} on line {%s} {line no: %d}',
+                            target_file, ioctl.name, line, line_idx)
                 ioctls_in_line.append(ioctl)
 
         # Extract the functions holding the lines
@@ -367,16 +369,16 @@ def check_source_files_for_ioctl(kernel_folder, src_file, ioctls,
                 func_with_ioctl['functionName']]['ioctls'].append(ioctl)
 
     if len(functions_with_ioctls_in_them) > 0:
-        logging.debug('Functions with ioctls in them')
+        logger.debug('Functions with ioctls in them')
         for interesting_func in functions_with_ioctls_in_them:
             all_ioctl_func_handlers.append(
                 functions_with_ioctls_in_them[interesting_func])
-            logging.debug(
-                "- %s" %
-                (functions_with_ioctls_in_them[interesting_func]['func']))
+            logger.debug(
+                "- %s",
+                functions_with_ioctls_in_them[interesting_func]['func'])
             for ioctl in functions_with_ioctls_in_them[interesting_func][
                     'ioctls']:
-                logging.debug("  - %s" % (ioctl.name))
+                logger.debug("  - %s" % (ioctl.name))
 
     return all_ioctl_func_handlers
 
@@ -408,12 +410,12 @@ def find_all_unlocked_ioctls(source_files_to_functions_mapping):
         with open(target_file, 'r') as f:
             content = f.read()
         if ".unlocked_ioctl" in content:
-            logging.info('Found unlocked ioctl: %s', target_file)
+            logger.info('Found unlocked ioctl: %s', target_file)
             ioctl_func = ''
             for line in content.split('\n'):
                 line = line.replace('\t', ' ')
                 if '.unlocked_ioctl =' in line:
-                    logging.info('unlocked line: %s', line)
+                    logger.info('unlocked line: %s', line)
                     ioctl_func = line.split('=')[-1].replace(' ', '').replace(
                         ',', '')
                     unlocked_ioctl_functions.append(ioctl_func)
@@ -423,29 +425,29 @@ def find_all_unlocked_ioctls(source_files_to_functions_mapping):
 def get_ioctl_handlers(ioctls, kernel_folder, report, fi_data_dir):
     """Finds the places in the source code where IOCTL commands are used."""
 
-    logging.info('Handle 1')
+    logger.info('Handle 1')
     # Look through all of the functions in the output
     all_functions = fuzz_introspector_utils.get_light_functions(fi_data_dir)
 
     source_files_to_functions_mapping = fuzz_introspector_utils.get_source_to_functions_mapping(
         all_functions)
-    logging.info('Handle 2')
+    logger.info('Handle 2')
 
     unlocked_ioctls = find_all_unlocked_ioctls(
         source_files_to_functions_mapping)
     unlocked_ioctl_handlers = []
     for unlocked_ioctl in unlocked_ioctls:
-        logging.info('Checking unlocked: %s' % (unlocked_ioctl))
+        logger.info('Checking unlocked: %s', unlocked_ioctl)
         for func in all_functions:
             if unlocked_ioctl == func['functionName']:
-                logging.info('Found function')
-                logging.info(json.dumps(func, indent=2))
+                logger.info('Found function')
+                logger.info(json.dumps(func, indent=2))
                 unlocked_ioctl_handlers.append({'func': func, 'ioctls': []})
 
-    logging.info('Handle 3')
+    logger.info('Handle 3')
     ioctl_handlers = []
     if not unlocked_ioctl_handlers:
-        logging.info(
+        logger.info(
             'Found no unlocked ioctl handlers. Trying to search for ioctls.')
 
         for src_file in source_files_to_functions_mapping:
@@ -454,19 +456,19 @@ def get_ioctl_handlers(ioctls, kernel_folder, report, fi_data_dir):
                 source_files_to_functions_mapping)
             ioctl_handlers += tmp_ioctl_handlers
 
-    logging.info('Handle 4')
+    logger.info('Handle 4')
     for unlocked_ioctl_handler in unlocked_ioctl_handlers:
         ioctl_handlers.append(unlocked_ioctl_handler)
 
-    logging.info('Handle 5')
+    logger.info('Handle 5')
     # Find the module names
     for ioctl_handler in ioctl_handlers:
-        logging.info('Finding devnodes for %s',
-                     ioctl_handler['func']['analysis']['source_file'])
+        logger.info('Finding devnodes for %s',
+                    ioctl_handler['func']['analysis']['source_file'])
         possible_dev_names = textual_source_analysis.get_possible_devnames(
             ioctl_handler['func']['analysis']['source_file'], kernel_folder)
         ioctl_handler['possible-dev-names'] = possible_dev_names
-    logging.info('Handle 6')
+    logger.info('Handle 6')
 
     return ioctl_handlers
 
@@ -484,57 +486,56 @@ def interpret_complexity_of_ioctl_handlers(ioctl_handlers):
 
 def parse_existing_description(existing_description: str):
     if not os.path.isfile(existing_description):
-        logging.info('Provided description does not exist. Aborting')
+        logger.info('Provided description does not exist. Aborting')
         sys.exit(0)
     with open(existing_description) as f:
         contents = f.read()
     ioctl_cmds = list()
     for line in contents.split('\n'):
         if line.startswith('ioctl') and '$' in line:
-            # print(line)
+
             # Get the ioctl cmd
             args = '('.join(line.split('(')[1:])
             second_arg = args.split(',')[1]
-            # print(second_arg)
             ioctl_cmd = second_arg.split('[')[-1].replace(']', '')
-            # print(ioctl_cmd)
             ioctl_type_arg = ','.join(args.split(',')[2:]).strip()
-            # print(ioctl_type_arg)
             ioctl_cmds.append({'name': ioctl_cmd, 'type': ioctl_type_arg})
     return ioctl_cmds
 
 
 def diff_analysis_to_existing_ioctl(existing_ioctl_commands, all_ioctls):
-    print('[+] Existing ioctls:')
+    logger.info('[+] Existing ioctls:')
     for ioctl in existing_ioctl_commands:
-        print(ioctl['name'])
+        logger.info(ioctl['name'])
 
-    print('[+] Ioctls from analysis:')
+    logger.info('[+] Ioctls from analysis:')
     for ioctl in all_ioctls:
-        print(json.dumps(ioctl, indent=2))
+        logger.info(json.dumps(ioctl, indent=2))
 
-    print('[+] Checking diff:')
+    logger.info('[+] Checking diff:')
     all_ioctls_in_description = [io['name'] for io in existing_ioctl_commands]
     all_ioctls_from_analysis = [io['name'] for io in all_ioctls]
 
-    print('[+] Diffing ioctls')
+    logger.info('[+] Diffing ioctls')
     if list(sorted(all_ioctls_in_description)) == list(
             sorted(all_ioctls_from_analysis)):
-        print('All ioctls are the same between description and analysis')
+        logger.info('All ioctls are the same between description and analysis')
     else:
-        print('Found a discrepancy')
+        logger.info('Found a discrepancy')
         for description_ioctl in all_ioctls_in_description:
             if description_ioctl not in all_ioctls_from_analysis:
-                print('Missing from analysis but found in description: %s' %
-                      (description_ioctl))
+                logger.info(
+                    'Missing from analysis but found in description: %s',
+                    description_ioctl)
         for analysis_ioctl in all_ioctls_from_analysis:
             if analysis_ioctl not in all_ioctls_in_description:
-                print('Missing from description but found in analysis: %s' %
-                      (analysis_ioctl))
+                logger.info(
+                    'Missing from description but found in analysis: %s',
+                    analysis_ioctl)
 
 
 def dump_report(workdir, report, args):
-    logging.info('[+] Workdir with results: %s' % (workdir))
+    logger.info('[+] Workdir with results: %s', workdir)
     report_json_path = os.path.join(workdir, 'report.json')
     ioctl_list = []
     for ioctl in report['ioctls']:
@@ -548,7 +549,7 @@ def dump_report(workdir, report, args):
         f.write(json.dumps(report_to_dump))
 
     report_path = os.path.join(workdir, 'report.txt')
-    logging.info('[+] - report: %s', report_path)
+    logger.info('[+] - report: %s', report_path)
     with open(report_path, 'w') as f:
         # Log summary of files used
         f.write('Kernel driver analysis\n')
@@ -595,7 +596,7 @@ def highlight_ioctl_entrypoints_in_calltree(ioctl_handler, kernel_folder,
     """For a given IOCTL handler and its calltree this function highlights
     where in the calltree the IOCTLs are in the calltree."""
     pair_starts = find_ioctl_first_case_uses(ioctl_handler, kernel_folder)
-    # print('Doing calltree: %s' % (calltree))
+
     ioctl_handler_start = int(
         ioctl_handler['func']['file_location'].split(':')[-1])
     idxs = []
@@ -606,22 +607,21 @@ def highlight_ioctl_entrypoints_in_calltree(ioctl_handler, kernel_folder,
         if 'linenumber' not in line:
             continue
         curr_idx = int(line.split('linenumber=')[-1])
-        print('- %d' % (curr_idx))
+        logger.info('- %d', curr_idx)
         if curr_idx < ioctl_handler_start:
             continue
         idxs.append(curr_idx)
 
     starting_points = []
-    for idx_to_count in range(len(idxs)):
-        curr_idx = idxs[idx_to_count]
+    for idx_to_count, curr_idx in enumerate(idxs):
         try:
             next_idx = idxs[idx_to_count + 1]
         except Exception:
             continue
         for ioctl_name, ioctl_idx in pair_starts:
             if ioctl_idx > curr_idx and ioctl_idx < next_idx:
-                print('Found starting point of: %s : %d' %
-                      (ioctl_name, next_idx))
+                logger.info('Found starting point of: %s : %d', ioctl_name,
+                            next_idx)
                 starting_points.append((ioctl_name, next_idx))
 
     new_calltree = ''
@@ -653,7 +653,8 @@ def get_next_handler_workdir_idx(workdir: str) -> int:
 
 
 def create_fuzz_introspector_html_report(workdir, target, entry_point_func,
-                                         html_idx):
+                                         html_idx) -> None:
+    """Runs HTML report generation based of FI frontend data."""
     # Create Fuzz Introspector HTML report
     fi_html_dir = os.path.join(workdir, 'handler-analysis-%d' % (html_idx),
                                'html-report')
@@ -688,8 +689,8 @@ def extract_types_of_syzkaller_description(ioctls, fi_data_dir):
     """
 
     # Extract type information.
-    logging.info('[+] Extracting type information for each ioctl: %s',
-                 fi_data_dir)
+    logger.info('[+] Extracting type information for each ioctl: %s',
+                fi_data_dir)
 
     with open(os.path.join(fi_data_dir, 'report.yaml'), 'r') as f:
         report_dict = yaml.safe_load(f)
@@ -711,8 +712,8 @@ def extract_types_of_syzkaller_description(ioctls, fi_data_dir):
     all_types_to_decipher = extract_syzkaller_types_to_analyze(
         ioctls, syzkaller_description, type_dict)
 
-    logging.info('All types extracted from struct to include in description:')
-    print(json.dumps(list(all_types_to_decipher), indent=2))
+    logger.info('All types extracted from struct to include in description:')
+    logger.info(json.dumps(list(all_types_to_decipher), indent=2))
 
     return syzkaller_description
 
@@ -724,9 +725,9 @@ def create_and_dump_syzkaller_description(ioctls_per_fp, workdir: str,
     and extracting type information dumped by Fuzz Introspector. Then writes
     this to a file in workdir/description.txt."""
 
-    logging.info('Creating and dumping syzkaller descriptions')
+    logger.info('Creating and dumping syzkaller descriptions')
     handled_headers = set()
-    header_files_to_ioctls: Dict[str, List[Any]] = dict()
+    header_files_to_ioctls: Dict[str, List[Any]] = {}
     for ioctl in ioctls_per_fp:
         definition_list = header_files_to_ioctls.get(ioctl.definition_src_file,
                                                      [])
@@ -734,15 +735,15 @@ def create_and_dump_syzkaller_description(ioctls_per_fp, workdir: str,
         header_files_to_ioctls[ioctl.definition_src_file] = definition_list
 
     for header_file, ioctls in header_files_to_ioctls.items():
-        logging.info('Header file:')
-        logging.info(header_file)
+        logger.info('Header file:')
+        logger.info(header_file)
 
         syzkaller_description_types = extract_types_of_syzkaller_description(
             ioctls, fi_data_dir)
 
         # Write the syzkaller description.
-        logging.info('[+] Generating a syzkaller description')
-        logging.info('[+] Creating syzkaller description for %s', header_file)
+        logger.info('[+] Generating a syzkaller description')
+        logger.info('[+] Creating syzkaller description for %s', header_file)
         if os.path.basename(header_file) in handled_headers:
             continue
         handled_headers.add(os.path.basename(header_file))
@@ -750,7 +751,7 @@ def create_and_dump_syzkaller_description(ioctls_per_fp, workdir: str,
             ioctls, syzkaller_description_types, workdir, all_devnodes,
             header_file, target_path)
         if syzkaller_description_path:
-            logging.info('[+] - auto-generated description: %s',
-                         syzkaller_description_path)
+            logger.info('[+] - auto-generated description: %s',
+                        syzkaller_description_path)
         else:
-            logging.info('[+] - auto-generated description: None')
+            logger.info('[+] - auto-generated description: None')

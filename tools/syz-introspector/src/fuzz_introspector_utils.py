@@ -23,6 +23,8 @@ import textual_source_analysis
 
 from fuzz_introspector.frontends import oss_fuzz
 
+logger = logging.getLogger(name=__name__)
+
 
 def get_light_functions(workdir):
     with open(os.path.join(workdir, 'report.yaml'), 'r') as f:
@@ -91,7 +93,7 @@ def get_all_header_files_in_light(workdir, all_sources) -> List[str]:
         content = yaml.safe_load(f)
     header_files = content.get('included-header-files', [])
     for h in header_files:
-        logging.info('Finding f2')
+        logger.debug('Finding file %s', h)
         header_path = textual_source_analysis.find_file(h)
         if header_path:
             all_header_files.append(header_path)
