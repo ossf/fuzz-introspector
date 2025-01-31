@@ -15,6 +15,7 @@
 import os
 import shutil
 import yaml
+import logging
 
 from typing import List
 
@@ -90,6 +91,7 @@ def get_all_header_files_in_light(workdir, all_sources) -> List[str]:
         content = yaml.safe_load(f)
     header_files = content.get('included-header-files', [])
     for h in header_files:
+        logging.info('Finding f2')
         header_path = textual_source_analysis.find_file(h)
         if header_path:
             all_header_files.append(header_path)
