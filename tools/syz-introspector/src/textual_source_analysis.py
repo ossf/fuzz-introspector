@@ -20,6 +20,8 @@ import logging
 
 from typing import List, Optional, Set
 
+logger = logging.getLogger(name=__name__)
+
 ALL_SOURCE_FILES: Set[str] = set()
 
 
@@ -153,7 +155,7 @@ def scan_file_for_ioctls(file_to_scan: str, basefolder: str) -> List[IOCTL]:
         file_path = file_to_scan
 
     if not os.path.isfile(file_path):
-        logging.debug('Could not find file: %s', file_path)
+        logger.debug('Could not find file: %s', file_path)
         return ioctl_lines
 
     with open(file_path, 'r') as file_fd:
@@ -178,9 +180,9 @@ def scan_file_for_ioctls(file_to_scan: str, basefolder: str) -> List[IOCTL]:
 def find_file(target_file: str) -> str:
     """Finds a file amongst all source files. Uses heuristics to improve
     matching."""
-    logging.info('Target f: %s', target_file)
+    logger.info('Target f: %s', target_file)
     suffix_path = target_file.split('../')[-1]
-    logging.info('suffix_path: %s', suffix_path)
+    logger.info('suffix_path: %s', suffix_path)
     if len(suffix_path) < 2:
         raise Exception("Filename too short")
     matching_files = set()
@@ -196,11 +198,11 @@ def find_file(target_file: str) -> str:
             matching_files.add(target_file)
 
     if not matching_files:
-        logging.info('Did not find %s' % (target_file))
+        logger.info('Did not find %s', target_file)
         return ''
 
     if len(matching_files) == 1:
-        logging.info('Found a single file')
+        logger.info('Found a single file')
         return matching_files.pop()
 
     # We found more than 1 matching file. Try and filter based on
@@ -218,11 +220,11 @@ def find_file(target_file: str) -> str:
             files_in_uapi.append(src_file)
     if len(files_in_uapi) == 1:
         return files_in_uapi[0]
-    logging.debug('Matching files: %s', matching_files)
+    logger.debug('Matching files: %s', matching_files)
 
     # We could do a loti more here, but am not sure if we want to start
     # doing that.
-    logging.debug('Error: cannot find %s' % (target_file))
+    logger.debug('Error: cannot find %s', target_file)
     # logging.info('Found: %s' % (str(list(matching_files))))
     return ''
 
@@ -233,10 +235,10 @@ def extract_raw_ioctls_text_from_header_files(
     definitions."""
     ioctls = []
     for header_file in all_header_files:
-        logging.info('Analysing: %s', header_file)
+        logger.info('Analysing: %s', header_file)
         # Get the path after last relative
         refined_path = find_file(header_file)
-        logging.info('Refined path: %s', refined_path)
+        logger.info('Refined path: %s', refined_path)
         if refined_path:
             discovered_ioctls = scan_file_for_ioctls(refined_path,
                                                      kernel_folder)
@@ -244,12 +246,12 @@ def extract_raw_ioctls_text_from_header_files(
             if discovered_ioctls:
                 continue
 
-    logging.info('Found %d ioctls', len(ioctls))
+    logger.info('Found %d ioctls', len(ioctls))
 
-    logging.info('[+] Found ioctl macro defintions')
+    logger.info('[+] Found ioctl macro defintions')
     for ioctl in ioctls:
-        logging.info('- %s : %s', ioctl.definition_src_file,
-                     ioctl.raw_definition)
+        logger.info('- %s : %s', ioctl.definition_src_file,
+                    ioctl.raw_definition)
     return ioctls
 
 
@@ -265,7 +267,7 @@ def find_basefile_in_kernel(kernel_folder: str, basename: str) -> str:
 def get_possible_devnames(source_file: str, kernel_folder: str) -> List[str]:
     """Reads a source file and scans for possible devnames."""
 
-    logging.info('Finding possible dev nodes: %s', source_file)
+    logger.info('Finding possible dev nodes: %s', source_file)
     possible_dev_names = set()
     if not os.path.isfile(source_file):
         refined_source_file = find_basefile_in_kernel(
@@ -277,19 +279,19 @@ def get_possible_devnames(source_file: str, kernel_folder: str) -> List[str]:
     with open(source_file, 'r') as f:
         for line in f:
             if '.name =' in line:
-                print(line)
+                logger.debug(line)
                 split_line = line.split('.name =')
-                print(split_line)
-                print(split_line[-1].split('"'))
+                logger.debug(split_line)
+                logger.debug(split_line[-1].split('"'))
                 try:
                     possible_dev_name = split_line[-1].split('"')
-                    print('-' * 30)
-                    print(possible_dev_name[1])
+                    logger.debug('-' * 30)
+                    logger.debug(possible_dev_name[1])
                     possible_dev_names.add(possible_dev_name[1])
                 except (IndexError, KeyError):
                     pass
-    print("List of possible dev names")
-    print(list(possible_dev_names))
+    logger.debug("List of possible dev names")
+    logger.debug(list(possible_dev_names))
     return list(possible_dev_names)
 
 
