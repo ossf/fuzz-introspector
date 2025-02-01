@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Fuzz Introspector helper utility functions."""
 
 import os
 import shutil
@@ -58,6 +59,7 @@ def get_source_to_functions_mapping(all_functions):
 
 
 def copy_introspector_artifacts(src_dir, dst_dir):
+    """Copies introspector artifacts from src to dst."""
     # Copy in the generated introspector files
     for filename in os.listdir(src_dir):
         if filename.startswith('fuzzerLogFile-'):
@@ -79,6 +81,7 @@ def cleanup_files(workdir: str = ""):
 
 
 def get_all_c_files_mentioned_in_light(workdir, all_source) -> List[str]:
+    """Gets C source files mention in light FI report."""
     with open(os.path.join(workdir, 'report.yaml'), 'r',
               encoding='utf-8') as f:
         content = yaml.safe_load(f)
