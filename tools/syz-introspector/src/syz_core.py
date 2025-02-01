@@ -711,10 +711,8 @@ def create_and_dump_syzkaller_description(ioctls_per_fp, workdir: str,
 
     # Write the syzkaller description.
     logger.info('[+] Generating a syzkaller description')
-    logger.info('[+] Creating syzkaller description for ')  #%s', header_file)
-    #if os.path.basename(header_file) in handled_headers:
-    #    continue
-    # handled_headers.add(os.path.basename(header_file))
+    logger.info('[+] Creating syzkaller description for ')
+
     syzkaller_description_path = write_syzkaller_description(
         all_ioctls, syzkaller_description_types, workdir, all_devnodes, '',
         target_path)
