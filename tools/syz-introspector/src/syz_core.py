@@ -98,8 +98,6 @@ def extract_header_files_referenced(workdir, all_sources) -> Set[str]:
                 header_included = line.replace('#include', '').replace(
                     '>', '').replace('<', '').replace('\"',
                                                       '').replace(' ', '')
-                #header_included_path = os.path.join(
-                #    os.path.dirname(header_file), header_included)
 
                 logger.info('Including: %s', header_included)
                 new_files.add(header_included)
@@ -380,13 +378,12 @@ def find_all_unlocked_ioctls(source_files_to_functions_mapping):
 def get_ioctl_handlers(ioctls, kernel_folder, report, fi_data_dir):
     """Finds the places in the source code where IOCTL commands are used."""
 
-    logger.info('Handle 1')
+    logger.info('Getting ioctl handlers')
     # Look through all of the functions in the output
     all_functions = fuzz_introspector_utils.get_light_functions(fi_data_dir)
 
     source_files_to_functions_mapping = fuzz_introspector_utils.get_source_to_functions_mapping(
         all_functions)
-    logger.info('Handle 2')
 
     # Get functions assigned in a statement of .unlocked_ioctl = ...
     unlocked_ioctls = find_all_unlocked_ioctls(
@@ -400,7 +397,8 @@ def get_ioctl_handlers(ioctls, kernel_folder, report, fi_data_dir):
                 logger.info(json.dumps(func, indent=2))
                 unlocked_ioctl_handlers.append({'func': func, 'ioctls': []})
 
-    logger.info('Handle 3')
+    logger.info('Found a total of %d ioctl handlers',
+                len(unlocked_ioctl_handlers))
     # In case no unlocked_ioctl assignments are found, search for source files
     # that reference that use of the IOCTLs.
     ioctl_handlers = []
@@ -414,11 +412,9 @@ def get_ioctl_handlers(ioctls, kernel_folder, report, fi_data_dir):
                 source_files_to_functions_mapping)
             ioctl_handlers += tmp_ioctl_handlers
 
-    logger.info('Handle 4')
     for unlocked_ioctl_handler in unlocked_ioctl_handlers:
         ioctl_handlers.append(unlocked_ioctl_handler)
 
-    logger.info('Handle 5')
     # Find the module names
     for ioctl_handler in ioctl_handlers:
         logger.info('Finding devnodes for %s',
@@ -689,7 +685,7 @@ def create_and_dump_syzkaller_description(ioctls_per_fp, workdir: str,
     this to a file in workdir/description.txt."""
 
     logger.info('Creating and dumping syzkaller descriptions')
-    handled_headers = set()
+
     header_files_to_ioctls: Dict[str, List[Any]] = {}
     for ioctl in ioctls_per_fp:
         definition_list = header_files_to_ioctls.get(ioctl.definition_src_file,
