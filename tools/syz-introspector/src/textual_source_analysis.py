@@ -17,7 +17,6 @@ Utilities for analysing source code purely based on textual analysis.
 
 import os
 import logging
-
 from typing import List, Optional, Set
 
 logger = logging.getLogger(name=__name__)
@@ -26,6 +25,7 @@ ALL_SOURCE_FILES: Set[str] = set()
 
 
 class IOCTL:
+    """Helper class for IOCTL handling."""
 
     def __init__(self, definition_src_file_full, definition_src_file,
                  definition_src_line, raw_definition):
@@ -39,10 +39,12 @@ class IOCTL:
         self.direction = ''
         self.deconstruct_ioctl()
 
-    def is_valid(self):
+    def is_valid(self) -> bool:
+        """Returns if this is considered a valid IOCTL"""
         return self.name != ''
 
     def to_dict(self):
+        """To dictionary"""
         return {
             'name': self.name,
             'type': self.type,
@@ -103,7 +105,7 @@ def scan_line_for_ioctl(idx: int, split_lines: List[str]) -> Optional[str]:
     line = split_lines[idx]
 
     ioctl_defs = ['_IOWR(', '_IO(', '_IOW(', '_IOR(']
-    if not (any(ioctl in line for ioctl in ioctl_defs)):
+    if not any(ioctl in line for ioctl in ioctl_defs):
         return None
 
     # IOCTL macro was found, it's likely this is a IOCTL definition
@@ -257,7 +259,7 @@ def extract_raw_ioctls_text_from_header_files(
 
 def find_basefile_in_kernel(kernel_folder: str, basename: str) -> str:
     """Goes through the kernel source code to find a basename."""
-    for root, dirs, files in os.walk(kernel_folder):
+    for root, _, files in os.walk(kernel_folder):
         for filename in files:
             if basename == filename:
                 return os.path.join(root, filename)
@@ -296,8 +298,9 @@ def get_possible_devnames(source_file: str, kernel_folder: str) -> List[str]:
 
 
 def find_all_files_with_extension(kernel_folder, extension) -> Set[str]:
+    """Finds all files with an extension in the kernel folder"""
     extension_files = set()
-    for path, folders, files in os.walk(kernel_folder):
+    for path, _, files in os.walk(kernel_folder):
         for file in files:
             if os.path.splitext(file)[1] == extension:
                 extension_files.add(os.path.join(path, file))

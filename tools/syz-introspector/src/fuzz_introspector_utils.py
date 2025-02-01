@@ -14,14 +14,13 @@
 
 import os
 import shutil
-import yaml
 import logging
-
 from typing import List
 
-import textual_source_analysis
-
+import yaml
 from fuzz_introspector.frontends import oss_fuzz
+
+import textual_source_analysis
 
 logger = logging.getLogger(name=__name__)
 

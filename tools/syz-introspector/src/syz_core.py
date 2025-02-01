@@ -15,18 +15,16 @@
 
 import os
 import sys
-import yaml
 import json
 import logging
-
 from typing import Any, Dict, List, Set
+
+import yaml
+from fuzz_introspector import commands
 
 import textual_source_analysis
 import fuzz_introspector_utils
 import syzkaller_util
-
-from fuzz_introspector import commands
-from fuzz_introspector import debug_info
 
 logger = logging.getLogger(name=__name__)
 
@@ -70,7 +68,7 @@ def extract_header_files_referenced(workdir, all_sources) -> Set[str]:
 
     all_files = set()
     for raw_file_reference in raw_header_file_references:
-        logger.info('Header file -: %s' % (raw_file_reference))
+        logger.info('Header file -: %s', raw_file_reference)
         path2 = raw_file_reference.replace('file_location:',
                                            '').strip().split(':')[0].replace(
                                                "'", '')
@@ -80,11 +78,11 @@ def extract_header_files_referenced(workdir, all_sources) -> Set[str]:
 
     logger.debug('Files found')
     for normalized_path in all_files:
-        logger.debug('normalized_path: %s' % (normalized_path))
+        logger.debug('normalized_path: %s', normalized_path)
 
     new_files = set()
     for header_file in all_files:
-        logger.debug("- %s" % (header_file))
+        logger.debug('- %s', header_file)
         if not os.path.isfile(header_file):
             continue
         with open(header_file, 'r') as f:
@@ -114,43 +112,9 @@ def extract_header_files_referenced(workdir, all_sources) -> Set[str]:
         if valid_target:
             found_files.append(valid_target)
     for header_file in found_files:
-        logger.debug('- %s' % (header_file))
+        logger.debug('- %s', header_file)
 
     return found_files
-
-
-def extract_all_types_from_basedir(fi_data_dir):
-    """Finds all debug type files in basedir, reads the types and returns them."""
-    # Find all types files
-    debug_type_files = []
-    for filename in os.listdir(fi_data_dir):
-        if filename.endswith('debug_all_types'):
-            debug_type_files.append(os.path.join(fi_data_dir, filename))
-
-    if len(debug_type_files) == 0:
-        logger.debug('Could not find debug type file')
-        return []
-    if len(debug_type_files) > 1:
-        logger.debug('Too many debug type files')
-        # sys.exit(1)
-        return []
-
-    all_dbg_types = debug_info.load_debug_all_yaml_files([debug_type_files[0]])
-    return all_dbg_types
-
-
-def get_type_members_recursively(type_to_print, all_types,
-                                 all_types_to_decipher):
-    # get the members of the struct
-    members = debug_info.syzkaller_get_struct_type_elems(
-        type_to_print, all_types)
-    if members:
-        member_types = [elem['syzkaller_type'] for elem in members]
-        for elem in member_types:
-            if elem not in all_types_to_decipher:
-                all_types_to_decipher.add(elem)
-                get_type_members_recursively(elem, all_types,
-                                             all_types_to_decipher)
 
 
 def extract_syzkaller_types_to_analyze(ioctls, syzkaller_description,
@@ -229,28 +193,8 @@ def extract_syzkaller_types_to_analyze(ioctls, syzkaller_description,
     return set()
 
 
-def extract_individual_types(all_types_to_decipher, syzkaller_description,
-                             all_types) -> None:
-    """Sets the 'types' field of syzkaller_description """
-    # Add the remainder types.
-    # TODO: this should be recursive
-    for type_to_dump in all_types_to_decipher:
-        if type_to_dump in syzkaller_description['types']:
-            continue
-        if syzkaller_util.is_basic_type(type_to_dump):
-            continue
-        if syzkaller_util.is_raw(type_to_dump):
-            continue
-
-        logger.debug('To dump: %s' % (type_to_dump))
-        type_context = debug_info.syzkaller_get_type_implementation(
-            type_to_dump, all_types)
-        logger.debug(type_context)
-        if type_context:
-            syzkaller_description['types'][type_to_dump] = type_context
-
-
 def get_next_syzkaller_workdir():
+    """Get next working directory."""
     idx = 0
     while True:
         filename = 'auto-syzkaller-%d' % (idx)
@@ -261,6 +205,7 @@ def get_next_syzkaller_workdir():
 
 def write_syzkaller_description(ioctls, syzkaller_description, workdir,
                                 all_devnodes, header_file, target_path):
+    """Writes a description-X.txt representing syzkaller description."""
 
     # Ensure there are actually ioctls to generate
     if not ioctls:
@@ -281,26 +226,26 @@ def write_syzkaller_description(ioctls, syzkaller_description, workdir,
             source_files.add(header_file)
         f.write('# Auto-generated syzkaller description by Syz-Introspector\n')
         f.write('#\n')
-        f.write('# Target: %s\n' % (target_path))
+        f.write(f'# Target: {target_path}\n')
         f.write('#\n\n')
         f.write('include <uapi/linux/fcntl.h>\n')
         for source_file in source_files:
-            f.write('include <%s>\n' % (source_file))
+            f.write(f'include <{source_file}>\n')
         f.write('\n' * 2)
 
         f.write('resource fd_target[fd]\n\n')
 
         for devnode in all_devnodes:
-            f.write(
-                f'openat${devnode}_target(fd const[AT_FDCWD], file ptr[in, string["/dev/{devnode}"]], flag flags[open_flags]) fd_target\n'
-            )
+            f.write(f'openat${devnode}_target(fd const[AT_FDCWD], '
+                    f'file ptr[in, string["/dev/{devnode}"]], '
+                    'flag flags[open_flags]) fd_target\n')
         f.write('\n' * 2)
 
         # Describe the ioctls
         for ioctl in ioctls:
             ioctl_type = syzkaller_util.get_type_ptr_of_syzkaller(ioctl)
-            f.write('ioctl$auto_%s(fd fd_target, cmd const [%s], %s)\n' %
-                    (ioctl.name, ioctl.name, ioctl_type))
+            f.write('ioctl$auto_%s(fd fd_target, cmd const [%s], %s)\n'%(
+                    ioctl.name, ioctl.name, ioctl_type))
         f.write('\n' * 2)
 
         # Describe the types
@@ -485,12 +430,14 @@ def interpret_complexity_of_ioctl_handlers(ioctl_handlers):
 
 
 def parse_existing_description(existing_description: str):
+    """Reads the ioctls of existing description"""
     if not os.path.isfile(existing_description):
         logger.info('Provided description does not exist. Aborting')
         sys.exit(0)
-    with open(existing_description) as f:
+
+    with open(existing_description, 'r') as f:
         contents = f.read()
-    ioctl_cmds = list()
+    ioctl_cmds = []
     for line in contents.split('\n'):
         if line.startswith('ioctl') and '$' in line:
 
@@ -504,6 +451,7 @@ def parse_existing_description(existing_description: str):
 
 
 def diff_analysis_to_existing_ioctl(existing_ioctl_commands, all_ioctls):
+    """Diff two syzkaller descriptions."""
     logger.info('[+] Existing ioctls:')
     for ioctl in existing_ioctl_commands:
         logger.info(ioctl['name'])
@@ -535,6 +483,7 @@ def diff_analysis_to_existing_ioctl(existing_ioctl_commands, all_ioctls):
 
 
 def dump_report(workdir, report, args):
+    """Writes the generate report as a .txt file"""
     logger.info('[+] Workdir with results: %s', workdir)
     report_json_path = os.path.join(workdir, 'report.json')
     ioctl_list = []
@@ -642,6 +591,7 @@ def highlight_ioctl_entrypoints_in_calltree(ioctl_handler, kernel_folder,
 
 
 def get_next_handler_workdir_idx(workdir: str) -> int:
+    """Gets next handler work directory index"""
     handler_idx = 0
     raw_fi_data = os.path.join(workdir, 'handler-analysis-%d' % (handler_idx))
     while os.path.isdir(raw_fi_data):

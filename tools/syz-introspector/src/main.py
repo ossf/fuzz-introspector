@@ -18,14 +18,13 @@ import logging
 import argparse
 import shutil
 import subprocess
-
 from typing import Any, Dict, List
+
+from fuzz_introspector.frontends import oss_fuzz
 
 import syz_core
 import textual_source_analysis
 import fuzz_introspector_utils
-
-from fuzz_introspector.frontends import oss_fuzz
 
 logger = logging.getLogger(name=__name__)
 LOG_FMT = ('%(asctime)s.%(msecs)03d %(levelname)s '

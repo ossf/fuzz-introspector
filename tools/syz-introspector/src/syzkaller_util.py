@@ -14,7 +14,8 @@
 """Helper methods related to syzkaller."""
 
 
-def convert_raw_type_to_syzkaller_type(raw_type):
+def convert_raw_type_to_syzkaller_type(raw_type) -> str:
+    """Converts type seen llvm ir/debug data to syzkaller type"""
     if raw_type == '__s32':
         return 'int32'
     if raw_type == '__u32':
@@ -38,27 +39,19 @@ def convert_raw_type_to_syzkaller_type(raw_type):
     return raw_type
 
 
-def get_type_ptr_of_syzkaller(ioctl):
-    returnType = 'arg ptr ['
+def get_type_ptr_of_syzkaller(ioctl) -> str:
+    """Returns syzkaller type of an ioctl pointer."""
+    return_type = 'arg ptr ['
     if ioctl.direction == 'IOWR':
-        returnType += 'inout, '
+        return_type += 'inout, '
     if ioctl.direction == 'IOW':
-        returnType += 'in, '
+        return_type += 'in, '
     if ioctl.direction == 'IOR':
-        returnType += 'out, '
+        return_type += 'out, '
     if ioctl.direction == 'IO':
-        returnType += 'inout, '
+        return_type += 'inout, '
 
-    returnType += '%s]' % (convert_raw_type_to_syzkaller_type(
+    return_type += '%s]' % (convert_raw_type_to_syzkaller_type(
         ioctl.type.replace('struct', '').strip()))
 
-    return returnType
-
-
-def is_basic_type(typename):
-    basic_types = {'int8', 'int32', 'ptr [in, int8]'}
-    return typename in basic_types
-
-
-def is_raw(typename):
-    return 'DW_TAG' in typename
+    return return_type
