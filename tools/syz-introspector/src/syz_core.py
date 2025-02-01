@@ -53,18 +53,19 @@ def find_ioctl_first_case_uses(ioctl_handler, kernel_folder):
     for idx, line in enumerate(content.split('\n')):
         already_seen = set()
         for ioctl in ioctl_handler['ioctls']:
-            if ioctl.name in line and ioctl.name not in already_seen and 'case' in line:
+            if (ioctl.name in line and ioctl.name not in already_seen
+                    and 'case' in line):
                 logger.debug("%s :: %d", line.replace("\n", ""), idx)
                 already_seen.add(ioctl.name)
                 pair_starts.append((ioctl.name, idx + 1))
     return pair_starts
 
 
-def extract_header_files_referenced(workdir, all_sources) -> Set[str]:
+def extract_header_files_referenced(workdir) -> Set[str]:
     """extract the source of all header files from FI output."""
 
     raw_header_file_references = fuzz_introspector_utils.get_all_header_files_in_light(
-        workdir, all_sources)
+        workdir)
 
     all_files = set()
     for raw_file_reference in raw_header_file_references:
@@ -115,8 +116,7 @@ def extract_header_files_referenced(workdir, all_sources) -> Set[str]:
     return found_files
 
 
-def extract_syzkaller_types_to_analyze(ioctls, syzkaller_description,
-                                       typedict) -> Dict[str, str]:
+def extract_syzkaller_types_to_analyze(ioctls, typedict) -> Dict[str, str]:
     """goes through ioctls_per_fp and syzkaller_description, and sets something
     in syzkaller_description and returns a set of types to analyse."""
 
@@ -181,8 +181,8 @@ def extract_syzkaller_types_to_analyze(ioctls, syzkaller_description,
                         target = '%s  array[%s, %s]' % (field_name, arr_type,
                                                         array_count)
                     else:
-                        target = '%s     %s' % (syz_name, syz_type)
-                    description_str += ' %s\n' % (target)
+                        target = f'{syz_name}     {syz_type}'
+                    description_str += f' {target}\n'
 
                 description_str += '}'
                 description_types[dtype] = description_str
@@ -201,7 +201,7 @@ def get_next_syzkaller_workdir():
 
 
 def write_syzkaller_description(ioctls, syzkaller_description, workdir,
-                                all_devnodes, header_file, target_path):
+                                all_devnodes, target_path):
     """Writes a description-X.txt representing syzkaller description."""
 
     # Ensure there are actually ioctls to generate
@@ -257,7 +257,7 @@ def write_syzkaller_description(ioctls, syzkaller_description, workdir,
         f.write('\n' * 2)
 
         # Describe the types
-        for st, text in syzkaller_description.items():  #['types']:
+        for _, text in syzkaller_description.items():  #['types']:
             f.write(text)
             f.write('\n' * 2)
     return next_syz_descr
@@ -274,8 +274,7 @@ def get_function_containing_line_idx(line_idx, sorted_functions):
     return None
 
 
-def check_source_files_for_ioctl(kernel_folder, src_file, ioctls,
-                                 all_files_with_func):
+def check_source_files_for_ioctl(src_file, ioctls, all_files_with_func):
     """For a given set of of IOCTLs and a source file, finds the functions
     in the source file from the `all_files_with_func` that uses the IOCTLs."""
     all_ioctl_func_handlers = list()
@@ -323,14 +322,10 @@ def check_source_files_for_ioctl(kernel_folder, src_file, ioctls,
 
     if len(functions_with_ioctls_in_them) > 0:
         logger.debug('Functions with ioctls in them')
-        for interesting_func in functions_with_ioctls_in_them:
-            all_ioctl_func_handlers.append(
-                functions_with_ioctls_in_them[interesting_func])
-            logger.debug(
-                "- %s",
-                functions_with_ioctls_in_them[interesting_func]['func'])
-            for ioctl in functions_with_ioctls_in_them[interesting_func][
-                    'ioctls']:
+        for func_obj in functions_with_ioctls_in_them.values():
+            all_ioctl_func_handlers.append(func_obj)
+            logger.debug("- %s", func_obj['func'])
+            for ioctl in func_obj['ioctls']:
                 logger.debug('  - %s', (ioctl.name))
 
     return all_ioctl_func_handlers
@@ -375,7 +370,7 @@ def find_all_unlocked_ioctls(source_files_to_functions_mapping):
     return unlocked_ioctl_functions
 
 
-def get_ioctl_handlers(ioctls, kernel_folder, report, fi_data_dir):
+def get_ioctl_handlers(ioctls, kernel_folder, fi_data_dir):
     """Finds the places in the source code where IOCTL commands are used."""
 
     logger.info('Getting ioctl handlers')
@@ -408,8 +403,7 @@ def get_ioctl_handlers(ioctls, kernel_folder, report, fi_data_dir):
 
         for src_file in source_files_to_functions_mapping:
             tmp_ioctl_handlers = check_source_files_for_ioctl(
-                kernel_folder, src_file, ioctls,
-                source_files_to_functions_mapping)
+                src_file, ioctls, source_files_to_functions_mapping)
             ioctl_handlers += tmp_ioctl_handlers
 
     for unlocked_ioctl_handler in unlocked_ioctl_handlers:
@@ -667,9 +661,8 @@ def extract_types_of_syzkaller_description(ioctls, fi_data_dir):
         type_dict['structs'] += struct_list
         type_dict['typedefs'] += typedefs
 
-    syzkaller_description = {'types': dict()}
     all_types_to_decipher = extract_syzkaller_types_to_analyze(
-        ioctls, syzkaller_description, type_dict)
+        ioctls, type_dict)
 
     logger.info('All types extracted from struct to include in description:')
     logger.info(json.dumps(list(all_types_to_decipher), indent=2))
@@ -707,7 +700,7 @@ def create_and_dump_syzkaller_description(ioctls_per_fp, workdir: str,
     logger.info('[+] Creating syzkaller description for ')
 
     syzkaller_description_path = write_syzkaller_description(
-        all_ioctls, syzkaller_description_types, workdir, all_devnodes, '',
+        all_ioctls, syzkaller_description_types, workdir, all_devnodes,
         target_path)
     if syzkaller_description_path:
         logger.info('[+] - auto-generated description: %s',

@@ -102,11 +102,10 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def extract_source_loc_analysis(workdir: str, all_sources: List[str],
-                                report) -> None:
+def extract_source_loc_analysis(workdir: str, report) -> None:
     """Extracts the lines of code in each C source code file."""
-    all_c_files = fuzz_introspector_utils.get_all_c_files_mentioned_in_light(
-        workdir, all_sources)
+    all_c_files = fuzz_introspector_utils.get_c_files_mentioned_in_light(
+        workdir)
     logger.info('[+] Source files:')
     source_files = []
     total_loc = 0
@@ -161,7 +160,7 @@ def get_possible_devnodes(ioctl_handlers):
     return all_devnodes
 
 
-def analyse_ioctl_handler(ioctl_handler, workdir, kernel_folder, target_path):
+def analyse_ioctl_handler(ioctl_handler, workdir, target_path):
     """Extracts the calltree from a given ioctl handler and creates a Fuzz
     Introspector HTML report for it as well. The data will be written in a
     folder within the working directory.
@@ -180,8 +179,7 @@ def analyse_ioctl_handler(ioctl_handler, workdir, kernel_folder, target_path):
     # Extract the calltree. Do this by running an introspector run
     # to generate the calltree as well as analysis files.
     calltree = fuzz_introspector_utils.extract_calltree_light(
-        ioctl_handler['func']['functionName'], kernel_folder, fi_data_dir,
-        target_path)
+        ioctl_handler['func']['functionName'], fi_data_dir, target_path)
 
     if calltree:
         ioctl_handler['calltree'] = calltree
@@ -224,13 +222,12 @@ def analyse_ioctl_handler(ioctl_handler, workdir, kernel_folder, target_path):
         ioctl_handler['calltree'] = ''
 
 
-def extract_ioctls_in_driver(kernel_folder, report, workdir, all_sources,
-                             strict_ioctls):
+def extract_ioctls_in_driver(kernel_folder, report, workdir, strict_ioctls):
     """Extracts ioctls defined/used in driver"""
-    ioctls_defined = textual_source_analysis.extract_raw_ioctls_text_from_header_files(
+    ioctls_defined = textual_source_analysis.extract_ioctls_from_files(
         report['header_files'], kernel_folder)
-    c_files_in_driver = fuzz_introspector_utils.get_all_c_files_mentioned_in_light(
-        workdir, all_sources)
+    c_files_in_driver = fuzz_introspector_utils.get_c_files_mentioned_in_light(
+        workdir)
     if strict_ioctls:
         refined_ioctls = []
         for ioctl in ioctls_defined:
@@ -269,16 +266,15 @@ def main() -> None:
         os.environ['FI_KERNEL_COV'] = args.coverage_report
 
     # Extract source file structure.
-    all_sources = identify_kernel_source_files(kernel_folder)
+    identify_kernel_source_files(kernel_folder)
 
     # Run base introspector. In this run there are no entrypoints analysed.
     run_light_fi(target_path, workdir)
-    extract_source_loc_analysis(workdir, all_sources, report)
+    extract_source_loc_analysis(workdir, report)
 
     # Find all header files.
     logger.info('[+] Finding header files')
-    report['header_files'] = syz_core.extract_header_files_referenced(
-        workdir, all_sources)
+    report['header_files'] = syz_core.extract_header_files_referenced(workdir)
     logger.debug('Found a total of %d header files',
                  len(report['header_files']))
     for header_file in report['header_files']:
@@ -301,7 +297,6 @@ def main() -> None:
     # Extract ioctls.
     logger.info('[+] Extracting raw ioctls')
     report['ioctls'] = extract_ioctls_in_driver(kernel_folder, report, workdir,
-                                                all_sources,
                                                 args.strict_ioctls)
     logger.info('[+] Found the following ioctls')
     for ioctl in report['ioctls']:
@@ -309,8 +304,7 @@ def main() -> None:
 
     logger.info('[+] Scanning for ioctl handler using text analysis')
     ioctl_handlers = syz_core.get_ioctl_handlers(report['ioctls'],
-                                                 kernel_folder, report,
-                                                 workdir)
+                                                 kernel_folder, workdir)
 
     # Get possible set of devnodes.
     all_devnodes = get_possible_devnodes(ioctl_handlers)
@@ -319,8 +313,7 @@ def main() -> None:
 
     # extract calltrees
     for ioctl_handler in report['ioctl_handlers']:
-        analyse_ioctl_handler(ioctl_handler, workdir, kernel_folder,
-                              target_path)
+        analyse_ioctl_handler(ioctl_handler, workdir, target_path)
 
     logger.info('[+] Showing complexity of ioctl handlers')
     syz_core.interpret_complexity_of_ioctl_handlers(report['ioctl_handlers'])

@@ -237,8 +237,8 @@ def find_file(target_file: str) -> str:
     return ''
 
 
-def extract_raw_ioctls_text_from_header_files(
-        all_header_files: List[str], kernel_folder: str) -> list[IOCTL]:
+def extract_ioctls_from_files(all_header_files: List[str],
+                              kernel_folder: str) -> list[IOCTL]:
     """Scans a list of header files and finds the lines of code having IOCTL
     definitions."""
     ioctls = []
