@@ -26,6 +26,7 @@ logger = logging.getLogger(name=__name__)
 
 
 def get_light_functions(workdir):
+    """Gets list of functions in a light introspector report."""
     with open(os.path.join(workdir, 'report.yaml'), 'r',
               encoding='utf-8') as f:
         contents = yaml.safe_load(f)
@@ -89,6 +90,8 @@ def get_all_c_files_mentioned_in_light(workdir, all_source) -> List[str]:
 
 
 def get_all_header_files_in_light(workdir, all_sources) -> List[str]:
+    """Gets list of header files in light introspector report and
+    finds them in the target kernel folder."""
     all_header_files = []
     with open(os.path.join(workdir, 'report.yaml'), 'r',
               encoding='utf-8') as f:

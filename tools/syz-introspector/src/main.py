@@ -99,6 +99,7 @@ def parse_args() -> argparse.Namespace:
 
 def extract_source_loc_analysis(workdir: str, all_sources: List[str],
                                 report) -> None:
+    """Extracts the lines of code in each C source code file."""
     all_c_files = fuzz_introspector_utils.get_all_c_files_mentioned_in_light(
         workdir, all_sources)
     logger.info('[+] Source files:')
@@ -128,7 +129,9 @@ def run_light_fi(target_dir, workdir, additional_files=None):
                             files_to_include=additional_files)
 
 
-def analyse_kernel_source_files(kernel_folder):
+def identify_kernel_source_files(kernel_folder) -> List[str]:
+    """Identifies the source code files in the kernel and stores in
+    global variable."""
     logger.info('Finding all header files')
     all_headers = textual_source_analysis.find_all_files_with_extension(
         kernel_folder, '.h')
@@ -235,7 +238,7 @@ def main() -> None:
         os.environ['FI_KERNEL_COV'] = args.coverage_report
 
     # Extract source file structure.
-    all_sources = analyse_kernel_source_files(kernel_folder)
+    all_sources = identify_kernel_source_files(kernel_folder)
 
     # Run base introspector. In this run there are no entrypoints analysed.
 

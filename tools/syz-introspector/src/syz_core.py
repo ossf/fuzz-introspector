@@ -197,7 +197,7 @@ def get_next_syzkaller_workdir():
     """Get next working directory."""
     idx = 0
     while True:
-        filename = 'auto-syzkaller-%d' % (idx)
+        filename = f'auto-syzkaller-{idx}'
         if not os.path.isdir(filename):
             return filename
         idx += 1
@@ -213,11 +213,11 @@ def write_syzkaller_description(ioctls, syzkaller_description, workdir,
 
     curr_descr_idx = 0
     next_syz_descr = os.path.join(workdir,
-                                  'description-%d.txt' % (curr_descr_idx))
+                                  f'description-{curr_descr_idx}.txt')
     while os.path.isfile(next_syz_descr):
         curr_descr_idx += 1
         next_syz_descr = os.path.join(workdir,
-                                      'description-%d.txt' % (curr_descr_idx))
+                                      f'description-{curr_descr_idx}.txt')
     with open(next_syz_descr, 'w', encoding='utf-8') as f:
         # Define the header files to include
         source_files = set()
@@ -244,8 +244,8 @@ def write_syzkaller_description(ioctls, syzkaller_description, workdir,
         # Describe the ioctls
         for ioctl in ioctls:
             ioctl_type = syzkaller_util.get_type_ptr_of_syzkaller(ioctl)
-            f.write('ioctl$auto_%s(fd fd_target, cmd const [%s], %s)\n' %
-                    (ioctl.name, ioctl.name, ioctl_type))
+            f.write('ioctl$auto_%s(fd fd_target, cmd const [%s], %s)\n'%(
+                    ioctl.name, ioctl.name, ioctl_type))
         f.write('\n' * 2)
 
         # Describe the types
@@ -323,7 +323,7 @@ def check_source_files_for_ioctl(kernel_folder, src_file, ioctls,
                 functions_with_ioctls_in_them[interesting_func]['func'])
             for ioctl in functions_with_ioctls_in_them[interesting_func][
                     'ioctls']:
-                logger.debug("  - %s" % (ioctl.name))
+                logger.debug('  - %s', (ioctl.name))
 
     return all_ioctl_func_handlers
 
@@ -533,7 +533,7 @@ def dump_report(workdir, report, args):
             f.write('\n')
             f.write('ioctls:\n')
             for ioctl in ioctl_handler.get('ioctls', []):
-                f.write('%s\n' % (str(ioctl)))
+                f.write(f'{str(ioctl)}\n')
 
         f.write('\n\n# Calltrees of these IOCTL handlers:\n')
         for ioctl_handler in report['ioctl_handlers']:
@@ -585,7 +585,7 @@ def highlight_ioctl_entrypoints_in_calltree(ioctl_handler, kernel_folder,
         curr_idx = int(line.split('linenumber=')[-1])
         for ioctl_name, idx_to_start in starting_points:
             if idx_to_start == curr_idx:
-                new_calltree += 'IOCTL command start: %s\n' % (ioctl_name)
+                new_calltree += f'IOCTL command start: {ioctl_name}\n'
         new_calltree += line + '\n'
     return new_calltree
 
@@ -593,11 +593,11 @@ def highlight_ioctl_entrypoints_in_calltree(ioctl_handler, kernel_folder,
 def get_next_handler_workdir_idx(workdir: str) -> int:
     """Gets next handler work directory index"""
     handler_idx = 0
-    raw_fi_data = os.path.join(workdir, 'handler-analysis-%d' % (handler_idx))
+    raw_fi_data = os.path.join(workdir, f'handler-analysis-{handler_idx}')
     while os.path.isdir(raw_fi_data):
         handler_idx += 1
         raw_fi_data = os.path.join(workdir,
-                                   'handler-analysis-%d' % (handler_idx))
+                                   f'handler-analysis-{handler_idx}')
 
     return handler_idx
 
@@ -606,11 +606,11 @@ def create_fuzz_introspector_html_report(workdir, target, entry_point_func,
                                          html_idx) -> None:
     """Runs HTML report generation based of FI frontend data."""
     # Create Fuzz Introspector HTML report
-    fi_html_dir = os.path.join(workdir, 'handler-analysis-%d' % (html_idx),
+    fi_html_dir = os.path.join(workdir, f'handler-analysis-{html_idx}',
                                'html-report')
     os.mkdir(fi_html_dir)
 
-    raw_fi_data = os.path.join(workdir, 'handler-analysis-%d' % (html_idx),
+    raw_fi_data = os.path.join(workdir, f'handler-analysis-{html_idx}',
                                'fi-data')
 
     analyses_to_run = [
@@ -642,8 +642,7 @@ def extract_types_of_syzkaller_description(ioctls, fi_data_dir):
     logger.info('[+] Extracting type information for each ioctl: %s',
                 fi_data_dir)
 
-    with open(os.path.join(fi_data_dir, 'report.yaml'), 'r',
-              encoding='utf-8') as f:
+    with open(os.path.join(fi_data_dir, 'report.yaml'), 'r', encoding='utf-8') as f:
         report_dict = yaml.safe_load(f)
 
     type_dict = {'structs': [], 'typedefs': []}
