@@ -34,9 +34,9 @@ LOG_FMT = ('%(asctime)s.%(msecs)03d %(levelname)s '
 def create_workdir() -> str:
     """Creates the next available auto-syzkaller-XXX dir."""
     idx = 0
-    while os.path.isdir("auto-syzkaller-%d" % (idx)):
+    while os.path.isdir(f"auto-syzkaller-{idx}"):
         idx += 1
-    workdir = os.path.abspath("auto-syzkaller-%d" % (idx))
+    workdir = os.path.abspath(f"auto-syzkaller-{idx}")
 
     logger.info('[+] workdir: %s', workdir)
     os.mkdir(workdir)
@@ -92,6 +92,11 @@ def parse_args() -> argparse.Namespace:
                         '-cr',
                         help='JSON file holding kernel coverage',
                         default='')
+    parser.add_argument(
+        '--strict-ioctls',
+        '-s',
+        help='will limit ioctl inclusion to ioctls mention in driver\'s C code',
+        action='store_true')
 
     args = parser.parse_args()
     return args
@@ -157,14 +162,17 @@ def get_possible_devnodes(ioctl_handlers):
 
 
 def analyse_ioctl_handler(ioctl_handler, workdir, kernel_folder, target_path):
+    """Extracts the calltree from a given ioctl handler and creates a Fuzz
+    Introspector HTML report for it as well. The data will be written in a
+    folder within the working directory.
+    """
     logger.info('- %s', ioctl_handler['func']['functionName'])
 
     # Get the next index that we will use to store data in the target
     # workdir.
     next_workdir_idx = syz_core.get_next_handler_workdir_idx(workdir)
 
-    fi_data_dir = os.path.join(workdir,
-                               'handler-analysis-%d' % (next_workdir_idx),
+    fi_data_dir = os.path.join(workdir, f'handler-analysis-{next_workdir_idx}',
                                'fi-data')
     logger.info('Creating handler dir: %s', fi_data_dir)
     os.makedirs(fi_data_dir)
@@ -184,7 +192,7 @@ def analyse_ioctl_handler(ioctl_handler, workdir, kernel_folder, target_path):
         for filename in os.listdir(fi_data_dir):
             if filename.endswith('.data'):
                 dst = os.path.join(workdir,
-                                   'handler-analysis-%d' % (next_workdir_idx),
+                                   f'handler-analysis-{next_workdir_idx}',
                                    'fi-data', filename)
                 shutil.copy(os.path.join(fi_data_dir, 'targetCalltree.txt'),
                             dst)
@@ -216,6 +224,29 @@ def analyse_ioctl_handler(ioctl_handler, workdir, kernel_folder, target_path):
         ioctl_handler['calltree'] = ''
 
 
+def extract_ioctls_in_driver(kernel_folder, report, workdir, all_sources,
+                             strict_ioctls):
+    """Extracts ioctls defined/used in driver"""
+    ioctls_defined = textual_source_analysis.extract_raw_ioctls_text_from_header_files(
+        report['header_files'], kernel_folder)
+    c_files_in_driver = fuzz_introspector_utils.get_all_c_files_mentioned_in_light(
+        workdir, all_sources)
+    if strict_ioctls:
+        refined_ioctls = []
+        for ioctl in ioctls_defined:
+            is_used = False
+            for src_file in c_files_in_driver:
+                with open(src_file, 'r', encoding='utf-8') as f:
+                    if ioctl.name in f.read():
+                        is_used = True
+                if is_used:
+                    break
+            if is_used:
+                refined_ioctls.append(ioctl)
+        ioctls_defined = refined_ioctls
+    return ioctls_defined
+
+
 def main() -> None:
     """Main entrypoint"""
     args = parse_args()
@@ -241,7 +272,6 @@ def main() -> None:
     all_sources = identify_kernel_source_files(kernel_folder)
 
     # Run base introspector. In this run there are no entrypoints analysed.
-
     run_light_fi(target_path, workdir)
     extract_source_loc_analysis(workdir, all_sources, report)
 
@@ -270,10 +300,9 @@ def main() -> None:
 
     # Extract ioctls.
     logger.info('[+] Extracting raw ioctls')
-    report[
-        'ioctls'] = textual_source_analysis.extract_raw_ioctls_text_from_header_files(
-            report['header_files'], kernel_folder)
-
+    report['ioctls'] = extract_ioctls_in_driver(kernel_folder, report, workdir,
+                                                all_sources,
+                                                args.strict_ioctls)
     for ioctl in report['ioctls']:
         logger.info('%s ::: %s', ioctl.raw_definition, ioctl.name)
 
