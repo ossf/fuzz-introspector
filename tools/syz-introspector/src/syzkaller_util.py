@@ -16,27 +16,26 @@
 
 def convert_raw_type_to_syzkaller_type(raw_type) -> str:
     """Converts type seen llvm ir/debug data to syzkaller type"""
-    if raw_type == '__s32':
-        return 'int32'
-    if raw_type == '__u32':
-        return 'int32'
-    if raw_type == 'unsigned int':
-        return 'int32'
-    if raw_type == '__u64':
-        return 'int64'
-    if raw_type == 'int32_t' or raw_type == 'int':
-        return 'int32'
-    if raw_type == 'uint32_t':
-        return 'int32'
-    if raw_type == '__u64 *':
-        return 'int64'
-    if raw_type == 'char *':
-        return 'int8'
-    if raw_type == 'char':
-        return 'int8'
-    if raw_type == '__u16':
-        return 'int16'
-    return raw_type
+    type_mapping = {
+        '__u8': 'int8',
+        '__s8': 'int8',
+        'char': 'int8',
+        'char *': 'int8',
+        '__s16': 'int16',
+        '__u16': 'int16',
+        'short': 'int16',
+        '__s32': 'int32',
+        '__u32': 'int32',
+        'int': 'int32',
+        'int32_t': 'int32',
+        'uint32_t': 'int32',
+        'unsigned int': 'int32',
+        '__s64': 'int64',
+        '__u64': 'int64',
+        '__u64 *': 'int64',
+    }
+
+    return type_mapping.get(raw_type, raw_type)
 
 
 def get_type_ptr_of_syzkaller(ioctl) -> str:

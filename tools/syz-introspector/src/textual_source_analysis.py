@@ -188,9 +188,9 @@ def scan_file_for_ioctls(file_to_scan: str, basefolder: str) -> List[IOCTL]:
 def find_file(target_file: str) -> str:
     """Finds a file amongst all source files. Uses heuristics to improve
     matching."""
-    logger.info('Target f: %s', target_file)
+    logger.debug('Target f: %s', target_file)
     suffix_path = target_file.split('../')[-1]
-    logger.info('suffix_path: %s', suffix_path)
+    logger.debug('suffix_path: %s', suffix_path)
     if len(suffix_path) < 2:
         raise Exception("Filename too short")
     matching_files = set()
@@ -206,11 +206,11 @@ def find_file(target_file: str) -> str:
             matching_files.add(target_file)
 
     if not matching_files:
-        logger.info('Did not find %s', target_file)
+        logger.debug('Did not find %s', target_file)
         return ''
 
     if len(matching_files) == 1:
-        logger.info('Found a single file')
+        logger.debug('Found a single file')
         return matching_files.pop()
 
     # We found more than 1 matching file. Try and filter based on
@@ -237,16 +237,16 @@ def find_file(target_file: str) -> str:
     return ''
 
 
-def extract_raw_ioctls_text_from_header_files(
-        all_header_files: List[str], kernel_folder: str) -> list[IOCTL]:
+def extract_ioctls_from_files(all_header_files: List[str],
+                              kernel_folder: str) -> list[IOCTL]:
     """Scans a list of header files and finds the lines of code having IOCTL
     definitions."""
     ioctls = []
     for header_file in all_header_files:
-        logger.info('Analysing: %s', header_file)
+        logger.debug('Analysing: %s', header_file)
         # Get the path after last relative
         refined_path = find_file(header_file)
-        logger.info('Refined path: %s', refined_path)
+        logger.debug('Refined path: %s', refined_path)
         if refined_path:
             discovered_ioctls = scan_file_for_ioctls(refined_path,
                                                      kernel_folder)
@@ -256,7 +256,7 @@ def extract_raw_ioctls_text_from_header_files(
 
     logger.info('Found %d ioctls', len(ioctls))
 
-    logger.info('[+] Found ioctl macro defintions')
+    logger.info('[+] Found the following ioctl macro defintions')
     for ioctl in ioctls:
         logger.info('- %s : %s', ioctl.definition_src_file,
                     ioctl.raw_definition)

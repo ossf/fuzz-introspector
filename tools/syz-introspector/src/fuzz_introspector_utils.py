@@ -80,7 +80,7 @@ def cleanup_files(workdir: str = ""):
         os.remove('targetCalltree.txt')
 
 
-def get_all_c_files_mentioned_in_light(workdir, all_source) -> List[str]:
+def get_c_files_mentioned_in_light(workdir) -> List[str]:
     """Gets C source files mention in light FI report."""
     with open(os.path.join(workdir, 'report.yaml'), 'r',
               encoding='utf-8') as f:
@@ -92,7 +92,7 @@ def get_all_c_files_mentioned_in_light(workdir, all_source) -> List[str]:
     return all_files
 
 
-def get_all_header_files_in_light(workdir, all_sources) -> List[str]:
+def get_all_header_files_in_light(workdir) -> List[str]:
     """Gets list of header files in light introspector report and
     finds them in the target kernel folder."""
     all_header_files = []
@@ -108,7 +108,7 @@ def get_all_header_files_in_light(workdir, all_sources) -> List[str]:
     return all_header_files
 
 
-def extract_calltree_light(target_function, kernel_dir, workdir, target_dir):
+def extract_calltree_light(target_function, workdir, target_dir):
     """Light introspector run"""
 
     # logging.info('Analysing: %s' % (workdir))
