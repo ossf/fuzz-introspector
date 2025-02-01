@@ -279,7 +279,7 @@ def check_source_files_for_ioctl(src_file, ioctls, all_files_with_func):
     in the source file from the `all_files_with_func` that uses the IOCTLs."""
     all_ioctl_func_handlers = list()
 
-    logger.info('Finding F2')
+    logger.info('Finding source files with ioctls usage.')
     target_file = textual_source_analysis.find_file(src_file)
     if not target_file:
         return []
