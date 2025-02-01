@@ -106,7 +106,7 @@ def extract_source_loc_analysis(workdir: str, all_sources: List[str],
     total_loc = 0
     for c_file in all_c_files:
         logger.info('- %s', c_file)
-        with open(c_file, 'r') as f:
+        with open(c_file, 'r', encoding='utf-8') as f:
             content = f.read()
         loc = len(content.split('\n'))
         total_loc += loc

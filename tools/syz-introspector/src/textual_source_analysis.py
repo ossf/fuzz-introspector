@@ -160,7 +160,7 @@ def scan_file_for_ioctls(file_to_scan: str, basefolder: str) -> List[IOCTL]:
         logger.debug('Could not find file: %s', file_path)
         return ioctl_lines
 
-    with open(file_path, 'r') as file_fd:
+    with open(file_path, 'r', encoding='utf-8') as file_fd:
         file_content = file_fd.read()
     file_lines = file_content.split('\n')
 
@@ -278,7 +278,7 @@ def get_possible_devnames(source_file: str, kernel_folder: str) -> List[str]:
             return []
         source_file = refined_source_file
 
-    with open(source_file, 'r') as f:
+    with open(source_file, 'r', encoding='utf-8') as f:
         for line in f:
             if '.name =' in line:
                 logger.debug(line)

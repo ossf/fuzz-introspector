@@ -26,7 +26,8 @@ logger = logging.getLogger(name=__name__)
 
 
 def get_light_functions(workdir):
-    with open(os.path.join(workdir, 'report.yaml'), 'r') as f:
+    with open(os.path.join(workdir, 'report.yaml'), 'r',
+              encoding='utf-8') as f:
         contents = yaml.safe_load(f)
     return contents['All functions']['Elements']
 
@@ -77,7 +78,8 @@ def cleanup_files(workdir: str = ""):
 
 
 def get_all_c_files_mentioned_in_light(workdir, all_source) -> List[str]:
-    with open(os.path.join(workdir, 'report.yaml'), 'r') as f:
+    with open(os.path.join(workdir, 'report.yaml'), 'r',
+              encoding='utf-8') as f:
         content = yaml.safe_load(f)
     all_files = []
     for source_file in content['sources']:
@@ -88,7 +90,8 @@ def get_all_c_files_mentioned_in_light(workdir, all_source) -> List[str]:
 
 def get_all_header_files_in_light(workdir, all_sources) -> List[str]:
     all_header_files = []
-    with open(os.path.join(workdir, 'report.yaml'), 'r') as f:
+    with open(os.path.join(workdir, 'report.yaml'), 'r',
+              encoding='utf-8') as f:
         content = yaml.safe_load(f)
     header_files = content.get('included-header-files', [])
     for h in header_files:
@@ -106,7 +109,7 @@ def extract_calltree_light(target_function, kernel_dir, workdir, target_dir):
     oss_fuzz.analyse_folder('c', target_dir, target_function, workdir)
     calltree_file = os.path.join(workdir, 'targetCalltree.txt')
     if os.path.isfile(calltree_file):
-        with open(calltree_file, 'r') as f:
+        with open(calltree_file, 'r', encoding='utf-8') as f:
             calltree = f.read()
         return calltree
     return None

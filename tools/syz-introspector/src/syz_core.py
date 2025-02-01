@@ -46,7 +46,7 @@ def find_ioctl_first_case_uses(ioctl_handler, kernel_folder):
     if not src_file:
         return []
 
-    with open(src_file, 'r') as f:
+    with open(src_file, 'r', encoding='utf-8') as f:
         content = f.read()
 
     pair_starts = list()
@@ -54,7 +54,7 @@ def find_ioctl_first_case_uses(ioctl_handler, kernel_folder):
         already_seen = set()
         for ioctl in ioctl_handler['ioctls']:
             if ioctl.name in line and ioctl.name not in already_seen and 'case' in line:
-                logger.debug("%s :: %d" % (line.replace("\n", ""), idx))
+                logger.debug("%s :: %d", line.replace("\n", ""), idx)
                 already_seen.add(ioctl.name)
                 pair_starts.append((ioctl.name, idx + 1))
     return pair_starts
@@ -85,7 +85,7 @@ def extract_header_files_referenced(workdir, all_sources) -> Set[str]:
         logger.debug('- %s', header_file)
         if not os.path.isfile(header_file):
             continue
-        with open(header_file, 'r') as f:
+        with open(header_file, 'r', encoding='utf-8') as f:
             try:
                 content = f.read()
             except UnicodeDecodeError:
@@ -218,7 +218,7 @@ def write_syzkaller_description(ioctls, syzkaller_description, workdir,
         curr_descr_idx += 1
         next_syz_descr = os.path.join(workdir,
                                       'description-%d.txt' % (curr_descr_idx))
-    with open(next_syz_descr, 'w') as f:
+    with open(next_syz_descr, 'w', encoding='utf-8') as f:
         # Define the header files to include
         source_files = set()
 
@@ -244,8 +244,8 @@ def write_syzkaller_description(ioctls, syzkaller_description, workdir,
         # Describe the ioctls
         for ioctl in ioctls:
             ioctl_type = syzkaller_util.get_type_ptr_of_syzkaller(ioctl)
-            f.write('ioctl$auto_%s(fd fd_target, cmd const [%s], %s)\n'%(
-                    ioctl.name, ioctl.name, ioctl_type))
+            f.write('ioctl$auto_%s(fd fd_target, cmd const [%s], %s)\n' %
+                    (ioctl.name, ioctl.name, ioctl_type))
         f.write('\n' * 2)
 
         # Describe the types
@@ -276,7 +276,7 @@ def check_source_files_for_ioctl(kernel_folder, src_file, ioctls,
     target_file = textual_source_analysis.find_file(src_file)
     if not target_file:
         return []
-    with open(target_file, 'r') as f:
+    with open(target_file, 'r', encoding='utf-8') as f:
         content = f.read()
 
     functions_with_ioctls_in_them = dict()
@@ -334,7 +334,7 @@ def load_all_funcs():
     for filename in os.listdir(os.getcwd()):
         if (filename.startswith('fuzzerLogFile')
                 and filename.endswith('.data.yaml')):
-            with open(filename, 'r') as f:
+            with open(filename, 'r', encoding='utf-8') as f:
                 all_funcs = yaml.safe_load(f)
     if not all_funcs:
         return False
@@ -352,7 +352,7 @@ def find_all_unlocked_ioctls(source_files_to_functions_mapping):
         if not target_file:
             continue
         # logging.info('Reading: %s'%(src_file))
-        with open(target_file, 'r') as f:
+        with open(target_file, 'r', encoding='utf-8') as f:
             content = f.read()
         if ".unlocked_ioctl" in content:
             logger.info('Found unlocked ioctl: %s', target_file)
@@ -435,7 +435,7 @@ def parse_existing_description(existing_description: str):
         logger.info('Provided description does not exist. Aborting')
         sys.exit(0)
 
-    with open(existing_description, 'r') as f:
+    with open(existing_description, 'r', encoding='utf-8') as f:
         contents = f.read()
     ioctl_cmds = []
     for line in contents.split('\n'):
@@ -494,12 +494,12 @@ def dump_report(workdir, report, args):
         'c-files': report['c_files'],
         'loc': report['loc'],
     }
-    with open(report_json_path, 'w') as f:
+    with open(report_json_path, 'w', encoding='utf-8') as f:
         f.write(json.dumps(report_to_dump))
 
     report_path = os.path.join(workdir, 'report.txt')
     logger.info('[+] - report: %s', report_path)
-    with open(report_path, 'w') as f:
+    with open(report_path, 'w', encoding='utf-8') as f:
         # Log summary of files used
         f.write('Kernel driver analysis\n')
         f.write(f'Target: \n- {args.target}\n')
@@ -642,7 +642,8 @@ def extract_types_of_syzkaller_description(ioctls, fi_data_dir):
     logger.info('[+] Extracting type information for each ioctl: %s',
                 fi_data_dir)
 
-    with open(os.path.join(fi_data_dir, 'report.yaml'), 'r') as f:
+    with open(os.path.join(fi_data_dir, 'report.yaml'), 'r',
+              encoding='utf-8') as f:
         report_dict = yaml.safe_load(f)
 
     type_dict = {'structs': [], 'typedefs': []}
