@@ -279,18 +279,18 @@ def main() -> None:
     logger.info('[+] Finding header files')
     report['header_files'] = syz_core.extract_header_files_referenced(
         workdir, all_sources)
-    logger.info('Found a total of %d header files',
-                len(report['header_files']))
+    logger.debug('Found a total of %d header files',
+                 len(report['header_files']))
     for header_file in report['header_files']:
-        logger.info('- %s', header_file)
+        logger.debug('- %s', header_file)
 
     new_headers = []
     logger.info('Refining header files')
     for header_file in report['header_files']:
-        logger.info('r: %s', header_file)
+        logger.debug('r: %s', header_file)
         vt = textual_source_analysis.find_file(header_file)
         if vt:
-            logger.info('--- %s', vt)
+            logger.debug('--- %s', vt)
             new_headers.append(vt)
     logger.info('Refined to %d', len(new_headers))
 
@@ -303,6 +303,7 @@ def main() -> None:
     report['ioctls'] = extract_ioctls_in_driver(kernel_folder, report, workdir,
                                                 all_sources,
                                                 args.strict_ioctls)
+    logger.info('[+] Found the following ioctls')
     for ioctl in report['ioctls']:
         logger.info('%s ::: %s', ioctl.raw_definition, ioctl.name)
 

@@ -68,12 +68,12 @@ def extract_header_files_referenced(workdir, all_sources) -> Set[str]:
 
     all_files = set()
     for raw_file_reference in raw_header_file_references:
-        logger.info('Header file -: %s', raw_file_reference)
+        logger.debug('Header file -: %s', raw_file_reference)
         path2 = raw_file_reference.replace('file_location:',
                                            '').strip().split(':')[0].replace(
                                                "'", '')
         normalized = os.path.normpath(path2)
-        logger.info('Adding %s', normalized)
+        logger.debug('Adding %s', normalized)
         all_files.add(normalized)
 
     logger.debug('Files found')
@@ -99,13 +99,13 @@ def extract_header_files_referenced(workdir, all_sources) -> Set[str]:
                     '>', '').replace('<', '').replace('\"',
                                                       '').replace(' ', '')
 
-                logger.info('Including: %s', header_included)
+                logger.debug('Including: %s', header_included)
                 new_files.add(header_included)
     all_files = all_files.union(new_files)
 
     found_files = []
     for header_file in all_files:
-        logger.info('Finding F1')
+        logger.debug('Finding F1')
         valid_target = textual_source_analysis.find_file(header_file)
         if valid_target:
             found_files.append(valid_target)
@@ -695,11 +695,8 @@ def create_and_dump_syzkaller_description(ioctls_per_fp, workdir: str,
 
     syzkaller_description_types = {}
     all_ioctls = []
-    for header_file, ioctls in header_files_to_ioctls.items():
-        logger.info('Header file:')
-        logger.info(header_file)
+    for _, ioctls in header_files_to_ioctls.items():
         all_ioctls.extend(ioctls)
-
         types_to_dump = extract_types_of_syzkaller_description(
             ioctls, fi_data_dir)
         for type_to_dump, type_text in types_to_dump.items():
