@@ -41,7 +41,13 @@ class IOCTL:
 
     def is_valid(self) -> bool:
         """Returns if this is considered a valid IOCTL"""
-        return self.name != ''
+        if not self.name:
+            return False
+
+        if '*' in self.name or '/' in self.name or ';' in self.name:
+            return False
+
+        return True
 
     def to_dict(self):
         """To dictionary"""
