@@ -98,8 +98,6 @@ def extract_header_files_referenced(workdir, all_sources) -> Set[str]:
                 header_included = line.replace('#include', '').replace(
                     '>', '').replace('<', '').replace('\"',
                                                       '').replace(' ', '')
-                #header_included_path = os.path.join(
-                #    os.path.dirname(header_file), header_included)
 
                 logger.info('Including: %s', header_included)
                 new_files.add(header_included)
@@ -118,7 +116,7 @@ def extract_header_files_referenced(workdir, all_sources) -> Set[str]:
 
 
 def extract_syzkaller_types_to_analyze(ioctls, syzkaller_description,
-                                       typedict) -> Set[str]:
+                                       typedict) -> Dict[str, str]:
     """goes through ioctls_per_fp and syzkaller_description, and sets something
     in syzkaller_description and returns a set of types to analyse."""
 
@@ -189,8 +187,7 @@ def extract_syzkaller_types_to_analyze(ioctls, syzkaller_description,
                 description_str += '}'
                 description_types[dtype] = description_str
 
-    syzkaller_description['types'] = description_types
-    return set()
+    return description_types
 
 
 def get_next_syzkaller_workdir():
@@ -212,8 +209,7 @@ def write_syzkaller_description(ioctls, syzkaller_description, workdir,
         return None
 
     curr_descr_idx = 0
-    next_syz_descr = os.path.join(workdir,
-                                  f'description-{curr_descr_idx}.txt')
+    next_syz_descr = os.path.join(workdir, f'description-{curr_descr_idx}.txt')
     while os.path.isfile(next_syz_descr):
         curr_descr_idx += 1
         next_syz_descr = os.path.join(workdir,
@@ -223,7 +219,8 @@ def write_syzkaller_description(ioctls, syzkaller_description, workdir,
         source_files = set()
 
         for ioctl_content in ioctls:
-            source_files.add(header_file)
+            source_files.add(ioctl_content.definition_src_file)
+
         f.write('# Auto-generated syzkaller description by Syz-Introspector\n')
         f.write('#\n')
         f.write(f'# Target: {target_path}\n')
@@ -242,15 +239,26 @@ def write_syzkaller_description(ioctls, syzkaller_description, workdir,
         f.write('\n' * 2)
 
         # Describe the ioctls
+        # Write ioctls in groups of the files they are defined in
+        ioctl_src_files = set()
         for ioctl in ioctls:
-            ioctl_type = syzkaller_util.get_type_ptr_of_syzkaller(ioctl)
-            f.write('ioctl$auto_%s(fd fd_target, cmd const [%s], %s)\n'%(
-                    ioctl.name, ioctl.name, ioctl_type))
+            ioctl_src_files.add(ioctl.definition_src_file)
+
+        for src_file in ioctl_src_files:
+            f.write(f'# ioctls defined in {src_file}\n')
+            for ioctl in ioctls:
+                if ioctl.definition_src_file == src_file:
+                    ioctl_type = syzkaller_util.get_type_ptr_of_syzkaller(
+                        ioctl)
+                    f.write(
+                        'ioctl$auto_%s(fd fd_target, cmd const [%s], %s)\n' %
+                        (ioctl.name, ioctl.name, ioctl_type))
+            f.write('\n\n')
         f.write('\n' * 2)
 
         # Describe the types
-        for st in syzkaller_description['types']:
-            f.write(syzkaller_description['types'][st])
+        for st, text in syzkaller_description.items():  #['types']:
+            f.write(text)
             f.write('\n' * 2)
     return next_syz_descr
 
@@ -370,14 +378,14 @@ def find_all_unlocked_ioctls(source_files_to_functions_mapping):
 def get_ioctl_handlers(ioctls, kernel_folder, report, fi_data_dir):
     """Finds the places in the source code where IOCTL commands are used."""
 
-    logger.info('Handle 1')
+    logger.info('Getting ioctl handlers')
     # Look through all of the functions in the output
     all_functions = fuzz_introspector_utils.get_light_functions(fi_data_dir)
 
     source_files_to_functions_mapping = fuzz_introspector_utils.get_source_to_functions_mapping(
         all_functions)
-    logger.info('Handle 2')
 
+    # Get functions assigned in a statement of .unlocked_ioctl = ...
     unlocked_ioctls = find_all_unlocked_ioctls(
         source_files_to_functions_mapping)
     unlocked_ioctl_handlers = []
@@ -389,7 +397,10 @@ def get_ioctl_handlers(ioctls, kernel_folder, report, fi_data_dir):
                 logger.info(json.dumps(func, indent=2))
                 unlocked_ioctl_handlers.append({'func': func, 'ioctls': []})
 
-    logger.info('Handle 3')
+    logger.info('Found a total of %d ioctl handlers',
+                len(unlocked_ioctl_handlers))
+    # In case no unlocked_ioctl assignments are found, search for source files
+    # that reference that use of the IOCTLs.
     ioctl_handlers = []
     if not unlocked_ioctl_handlers:
         logger.info(
@@ -401,11 +412,9 @@ def get_ioctl_handlers(ioctls, kernel_folder, report, fi_data_dir):
                 source_files_to_functions_mapping)
             ioctl_handlers += tmp_ioctl_handlers
 
-    logger.info('Handle 4')
     for unlocked_ioctl_handler in unlocked_ioctl_handlers:
         ioctl_handlers.append(unlocked_ioctl_handler)
 
-    logger.info('Handle 5')
     # Find the module names
     for ioctl_handler in ioctl_handlers:
         logger.info('Finding devnodes for %s',
@@ -596,8 +605,7 @@ def get_next_handler_workdir_idx(workdir: str) -> int:
     raw_fi_data = os.path.join(workdir, f'handler-analysis-{handler_idx}')
     while os.path.isdir(raw_fi_data):
         handler_idx += 1
-        raw_fi_data = os.path.join(workdir,
-                                   f'handler-analysis-{handler_idx}')
+        raw_fi_data = os.path.join(workdir, f'handler-analysis-{handler_idx}')
 
     return handler_idx
 
@@ -642,7 +650,8 @@ def extract_types_of_syzkaller_description(ioctls, fi_data_dir):
     logger.info('[+] Extracting type information for each ioctl: %s',
                 fi_data_dir)
 
-    with open(os.path.join(fi_data_dir, 'report.yaml'), 'r', encoding='utf-8') as f:
+    with open(os.path.join(fi_data_dir, 'report.yaml'), 'r',
+              encoding='utf-8') as f:
         report_dict = yaml.safe_load(f)
 
     type_dict = {'structs': [], 'typedefs': []}
@@ -665,7 +674,7 @@ def extract_types_of_syzkaller_description(ioctls, fi_data_dir):
     logger.info('All types extracted from struct to include in description:')
     logger.info(json.dumps(list(all_types_to_decipher), indent=2))
 
-    return syzkaller_description
+    return all_types_to_decipher
 
 
 def create_and_dump_syzkaller_description(ioctls_per_fp, workdir: str,
@@ -676,7 +685,7 @@ def create_and_dump_syzkaller_description(ioctls_per_fp, workdir: str,
     this to a file in workdir/description.txt."""
 
     logger.info('Creating and dumping syzkaller descriptions')
-    handled_headers = set()
+
     header_files_to_ioctls: Dict[str, List[Any]] = {}
     for ioctl in ioctls_per_fp:
         definition_list = header_files_to_ioctls.get(ioctl.definition_src_file,
@@ -684,24 +693,27 @@ def create_and_dump_syzkaller_description(ioctls_per_fp, workdir: str,
         definition_list.append(ioctl)
         header_files_to_ioctls[ioctl.definition_src_file] = definition_list
 
+    syzkaller_description_types = {}
+    all_ioctls = []
     for header_file, ioctls in header_files_to_ioctls.items():
         logger.info('Header file:')
         logger.info(header_file)
+        all_ioctls.extend(ioctls)
 
-        syzkaller_description_types = extract_types_of_syzkaller_description(
+        types_to_dump = extract_types_of_syzkaller_description(
             ioctls, fi_data_dir)
+        for type_to_dump, type_text in types_to_dump.items():
+            syzkaller_description_types[type_to_dump] = type_text
 
-        # Write the syzkaller description.
-        logger.info('[+] Generating a syzkaller description')
-        logger.info('[+] Creating syzkaller description for %s', header_file)
-        if os.path.basename(header_file) in handled_headers:
-            continue
-        handled_headers.add(os.path.basename(header_file))
-        syzkaller_description_path = write_syzkaller_description(
-            ioctls, syzkaller_description_types, workdir, all_devnodes,
-            header_file, target_path)
-        if syzkaller_description_path:
-            logger.info('[+] - auto-generated description: %s',
-                        syzkaller_description_path)
-        else:
-            logger.info('[+] - auto-generated description: None')
+    # Write the syzkaller description.
+    logger.info('[+] Generating a syzkaller description')
+    logger.info('[+] Creating syzkaller description for ')
+
+    syzkaller_description_path = write_syzkaller_description(
+        all_ioctls, syzkaller_description_types, workdir, all_devnodes, '',
+        target_path)
+    if syzkaller_description_path:
+        logger.info('[+] - auto-generated description: %s',
+                    syzkaller_description_path)
+    else:
+        logger.info('[+] - auto-generated description: None')
