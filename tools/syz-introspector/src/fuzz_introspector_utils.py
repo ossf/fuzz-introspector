@@ -11,23 +11,25 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Fuzz Introspector helper utility functions."""
 
 import os
 import shutil
-import yaml
 import logging
-
 from typing import List
 
-import textual_source_analysis
-
+import yaml
 from fuzz_introspector.frontends import oss_fuzz
+
+import textual_source_analysis
 
 logger = logging.getLogger(name=__name__)
 
 
 def get_light_functions(workdir):
-    with open(os.path.join(workdir, 'report.yaml'), 'r') as f:
+    """Gets list of functions in a light introspector report."""
+    with open(os.path.join(workdir, 'report.yaml'), 'r',
+              encoding='utf-8') as f:
         contents = yaml.safe_load(f)
     return contents['All functions']['Elements']
 
@@ -57,6 +59,7 @@ def get_source_to_functions_mapping(all_functions):
 
 
 def copy_introspector_artifacts(src_dir, dst_dir):
+    """Copies introspector artifacts from src to dst."""
     # Copy in the generated introspector files
     for filename in os.listdir(src_dir):
         if filename.startswith('fuzzerLogFile-'):
@@ -78,7 +81,9 @@ def cleanup_files(workdir: str = ""):
 
 
 def get_all_c_files_mentioned_in_light(workdir, all_source) -> List[str]:
-    with open(os.path.join(workdir, 'report.yaml'), 'r') as f:
+    """Gets C source files mention in light FI report."""
+    with open(os.path.join(workdir, 'report.yaml'), 'r',
+              encoding='utf-8') as f:
         content = yaml.safe_load(f)
     all_files = []
     for source_file in content['sources']:
@@ -88,8 +93,11 @@ def get_all_c_files_mentioned_in_light(workdir, all_source) -> List[str]:
 
 
 def get_all_header_files_in_light(workdir, all_sources) -> List[str]:
+    """Gets list of header files in light introspector report and
+    finds them in the target kernel folder."""
     all_header_files = []
-    with open(os.path.join(workdir, 'report.yaml'), 'r') as f:
+    with open(os.path.join(workdir, 'report.yaml'), 'r',
+              encoding='utf-8') as f:
         content = yaml.safe_load(f)
     header_files = content.get('included-header-files', [])
     for h in header_files:
@@ -107,7 +115,7 @@ def extract_calltree_light(target_function, kernel_dir, workdir, target_dir):
     oss_fuzz.analyse_folder('c', target_dir, target_function, workdir)
     calltree_file = os.path.join(workdir, 'targetCalltree.txt')
     if os.path.isfile(calltree_file):
-        with open(calltree_file, 'r') as f:
+        with open(calltree_file, 'r', encoding='utf-8') as f:
             calltree = f.read()
         return calltree
     return None
