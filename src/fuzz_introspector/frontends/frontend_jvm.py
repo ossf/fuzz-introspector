@@ -742,7 +742,7 @@ class JavaMethod():
             type, invoke_callsites = self._process_callsites(right, classes)
             self.var_map[var_name] = type
             callsites.extend(invoke_callsites)
-        elif stmt.type.endswith('local_variable_declarattion'):
+        elif stmt.type.endswith('local_variable_declaration'):
             for vars in stmt.children:
                 if vars.type == 'variable_declarator':
                     var_name = vars.child_by_field_name('name').text.decode()
