@@ -866,10 +866,8 @@ def load_treesitter_trees(source_files: list[str],
     return RustProject(results)
 
 
-def analyse_source_code(source_content: str,
-                        entrypoint: str) -> RustSourceCodeFile:
+def analyse_source_code(source_content: str) -> RustSourceCodeFile:
     """Returns a source abstraction based on a single source string."""
-    # pylint: disable=unused-argument
     source_code = RustSourceCodeFile('rust',
                                      source_file='in-memory string',
                                      source_content=source_content.encode())
