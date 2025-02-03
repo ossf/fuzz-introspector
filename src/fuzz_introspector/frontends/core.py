@@ -17,11 +17,12 @@ import logging
 
 from fuzz_introspector.frontends import (frontend_c, frontend_cpp, frontend_go,
                                          frontend_jvm, frontend_rust)
+from fuzz_introspector.frontends.datatypes import SourceCodeFile
 
 logger = logging.getLogger(name=__name__)
 
 
-def analyse_source_file(code: bytes, language: str):
+def analyse_source_file(code: bytes, language: str) -> SourceCodeFile:
     """Runs frontend analysis on a code snippet.
 
     The code snippet should correspond to what you'd normally find in
@@ -32,14 +33,18 @@ def analyse_source_file(code: bytes, language: str):
 
     if language == 'c':
         return frontend_c.analyse_source_code(code)
-    elif language == 'cpp':
+
+    if language == 'cpp':
         return frontend_cpp.analyse_source_code(code)
-    elif language == 'go':
+
+    if language == 'go':
         return frontend_go.analyse_source_code(code)
-    elif language == 'jvm':
+
+    if language == 'jvm':
         return frontend_jvm.analyse_source_code(code)
-    elif language == 'rust':
+
+    if language == 'rust':
         return frontend_rust.analyse_source_code(code)
-    else:
-        logger.info('Language %s not supported', language)
+
+    logger.info('Language %s not supported', language)
     return None
