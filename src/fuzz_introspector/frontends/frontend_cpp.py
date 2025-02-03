@@ -152,7 +152,10 @@ class FunctionDefinition():
 
     def function_source_code_as_text(self) -> str:
         """Returns the source code the function."""
-        return self.root.text.decode()
+        if self.root and self.root.text:
+            return self.root.text.decode()
+
+        return ''
 
     def _extract_pointer_array_from_type(
             self, param_name: Node) -> tuple[int, int, Node]:
@@ -364,9 +367,9 @@ class FunctionDefinition():
     def _process_invoke(self, expr: Node,
                         project) -> list[tuple[str, int, int]]:
         """Internal helper for processing the function invocation statement."""
-        # logger.debug('Handling invoke statmenet: %s', expr.text.decode())
         # logger.debug('Current namespace: %s', self.namespace_or_class)
-        logger.debug('Processing invoke: %s', expr.text.decode())
+        logger.debug('Processing invoke: %s',
+                     expr.text.decode() if expr.text else '')
         callsites = []
         target_name: str = ''
 
@@ -480,7 +483,8 @@ class FunctionDefinition():
     def _process_callsites(self, stmt: Node,
                            project) -> list[tuple[str, int, int]]:
         """Process and store the callsites of the function."""
-        logger.debug('Processing callsite: %s', stmt.text.decode())
+        logger.debug('Processing callsite: %s',
+                     stmt.text.decode() if stmt.text else '')
         callsites = []
 
         # Call statement
@@ -536,7 +540,7 @@ class FunctionDefinition():
             except AttributeError:
                 var_name = None
 
-            if not var_name:
+            if not var_name or not var_name.text:
                 logger.debug('Could not extract necessary attributes')
                 return []
 
