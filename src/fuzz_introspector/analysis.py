@@ -217,6 +217,23 @@ class AnalysisInterface(abc.ABC):
                    html report.
         """
 
+    def standalone_analysis(self,
+                            proj_profile: project_profile.MergedProjectProfile,
+                            profiles: List[fuzzer_profile.FuzzerProfile],
+                            out_dir: str) -> None:
+        """Second entrypoint for analysis instance which are meant to run
+        alone without html or json report generation.
+        :param proj_profile: project profile involved in the analysis.
+        :type proj_profile: project_profile.MergedProjectProfile
+
+        :param profiles: all fuzzer profiles involved in the current analysis.
+        :type profiles: List[fuzzer_profile.FuzzerProfile]
+
+        :param out_dir: Output directory of analysis report.
+        :type out_dir: str
+        """
+        self.set_display_html(False)
+
     @classmethod
     @abc.abstractmethod
     def get_name(cls):
