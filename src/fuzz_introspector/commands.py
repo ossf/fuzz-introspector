@@ -251,15 +251,19 @@ def analyse(args) -> int:
         only_referenced_functions = args.only_referenced_functions
         only_header_functions = args.only_header_functions
         only_interesting_functions = args.only_interesting_functions
+        only_easy_fuzz_params = args.only_easy_fuzz_params
         max_functions = args.max_functions
+        min_complexity = args.min_complexity
 
         introspection_proj.load_debug_report(out_dir)
 
         target_analyser.set_flags(exclude_static_functions,
                                   only_referenced_functions,
                                   only_header_functions,
-                                  only_interesting_functions)
+                                  only_interesting_functions,
+                                  only_easy_fuzz_params)
         target_analyser.set_max_functions(max_functions)
+        target_analyser.set_min_complexity(min_complexity)
         target_analyser.set_introspection_project(introspection_proj)
 
     # Run the analyser
