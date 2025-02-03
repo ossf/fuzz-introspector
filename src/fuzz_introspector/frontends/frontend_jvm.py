@@ -760,7 +760,7 @@ class JavaMethod():
                 right, classes)
             self.var_map[var_name] = type_str
             callsites.extend(invoke_callsites)
-        elif stmt.type.endswith('local_variable_declarattion'):
+        elif stmt.type.endswith('local_variable_declaration'):
             for var_del in stmt.children:
                 if var_del.type == 'variable_declarator':
                     name_node = var_del.child_by_field_name('name')
