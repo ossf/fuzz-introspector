@@ -1277,8 +1277,7 @@ def load_treesitter_trees(source_files: list[str],
     return JvmProject(results)
 
 
-def analyse_source_code(source_content: str,
-                        entrypoint: str) -> JvmSourceCodeFile:
+def analyse_source_code(source_content: str) -> JvmSourceCodeFile:
     """Returns a source abstraction based on a single source string."""
     source_code = JvmSourceCodeFile('jvm',
                                     source_file='in-memory string',
