@@ -75,6 +75,15 @@ class PublicCandidateAnalyser(analysis.AnalysisInterface):
                       basefolder: str, coverage_url: str,
                       conclusions: List[html_helpers.HTMLConclusion],
                       out_dir: str) -> str:
+        self.standalone_analysis(proj_profile, profiles, out_dir)
+        return ''
+
+    def standalone_analysis(self,
+                            proj_profile: project_profile.MergedProjectProfile,
+                            profiles: List[fuzzer_profile.FuzzerProfile],
+                            out_dir: str) -> None:
+        super().standalone_analysis(proj_profile, profiles, out_dir)
+
         logger.info(' - Running analysis %s', self.get_name())
 
         # Get all functions from the profiles
@@ -98,8 +107,6 @@ class PublicCandidateAnalyser(analysis.AnalysisInterface):
         logger.info('Dumping result to %s', result_json_path)
         with open(result_json_path, 'w') as f:
             json.dump(result_list, f)
-
-        return ''
 
     def _filter_functions(
         self, functions: list[function_profile.FunctionProfile]

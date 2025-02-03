@@ -80,11 +80,20 @@ class SourceCodeLineAnalyser(analysis.AnalysisInterface):
                       basefolder: str, coverage_url: str,
                       conclusions: List[html_helpers.HTMLConclusion],
                       out_dir: str) -> str:
+        self.standalone_analysis(proj_profile, profiles, out_dir)
+        return ''
+
+    def standalone_analysis(self,
+                            proj_profile: project_profile.MergedProjectProfile,
+                            profiles: List[fuzzer_profile.FuzzerProfile],
+                            out_dir: str) -> None:
+        super().standalone_analysis(proj_profile, profiles, out_dir)
+
         logger.info(' - Running analysis %s', self.get_name())
 
         if not self.source_file or self.source_line <= 0:
             logger.error('No valid source code or target line are provided')
-            return ''
+            return
 
         # Get all functions from the profiles
         all_functions = list(proj_profile.all_functions.values())
@@ -134,5 +143,3 @@ class SourceCodeLineAnalyser(analysis.AnalysisInterface):
         else:
             logger.info('No functions found from line %d in %s',
                         self.source_line, self.source_file)
-
-        return ''

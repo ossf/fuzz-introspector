@@ -23,7 +23,6 @@ from typing import Optional, Dict, Any, Tuple
 from fuzz_introspector import analysis
 from fuzz_introspector import constants
 from fuzz_introspector import diff_report
-from fuzz_introspector import html_helpers
 from fuzz_introspector import html_report
 from fuzz_introspector import utils
 
@@ -263,9 +262,7 @@ def analyse(args) -> int:
         target_analyser.set_introspection_project(introspection_proj)
 
     # Run the analyser
-    target_analyser.analysis_func(html_helpers.HtmlTableOfContents(), [],
-                                  introspection_proj.proj_profile,
-                                  introspection_proj.profiles, '', '', [],
-                                  out_dir)
+    target_analyser.standalone_analysis(introspection_proj.proj_profile,
+                                        introspection_proj.profiles, out_dir)
 
     return constants.APP_EXIT_SUCCESS
