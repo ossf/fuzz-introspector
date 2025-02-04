@@ -18,6 +18,7 @@ import random
 import re
 import json
 import signal
+import logging
 from typing import Dict, List, Optional
 import requests
 
@@ -42,6 +43,19 @@ gtag = None
 is_local = False
 allow_shutdown = False
 local_oss_fuzz = ''
+
+LOG_FMT = ('%(asctime)s.%(msecs)03d %(levelname)s '
+           '%(module)s - %(funcName)s: %(message)s')
+
+log_level = logging.INFO
+logging.basicConfig(
+    level=log_level,
+    format=LOG_FMT,
+    datefmt='%Y-%m-%d %H:%M:%S',
+)
+# Set the base logger level
+logging.getLogger('').setLevel(log_level)
+logger = logging.getLogger(__name__)
 
 NO_KEY_MSG = '<Error><Code>NoSuchKey</Code><Message>The specified key does not exist.'
 
@@ -160,7 +174,7 @@ def extract_introspector_raw_source_code(project_name, date_str,
                                                 date_str.replace("-", "")),
         target_file)
 
-    print("URL: %s" % (introspector_summary_url))
+    logger.info("URL1: %s" % (introspector_summary_url))
     # Read the introspector atifact
     try:
         raw_source = requests.get(introspector_summary_url, timeout=10).text
@@ -206,6 +220,7 @@ def extract_lines_from_source_code(
         sanity_check_function_end=False) -> Optional[str]:
     """Extracts source from a given file of a given date for a given Project."""
 
+    logger.info('Extracting raw sources')
     project = get_project_with_name(project_name)
     if project is None:
         return None
@@ -230,7 +245,7 @@ def extract_lines_from_source_code(
 
     # Return None if source is not found.
     if not raw_source:
-        print("Did not found source")
+        logger.info("Did not found source")
         return None
 
     return_source = ""
@@ -396,7 +411,7 @@ def index():
     """Renders index page"""
     db_summary = get_frontpage_summary_stats()
     db_timestamps = data_storage.DB_TIMESTAMPS
-    print("Length of timestamps: %d" % (len(db_timestamps)))
+    logger.info("Length of timestamps: %d" % (len(db_timestamps)))
     # Maximum projects
     max_proj = 0
     max_fuzzer_count = 0
@@ -613,7 +628,7 @@ def project_profile():
                 page_main_url=page_texts.get_page_main_url(),
                 page_base_title=page_texts.get_page_base_title(),
                 base_cov_url=page_texts.get_default_coverage_base())
-    print("Nothing to do. We shuold probably have a 404")
+    logger.info("Nothing to do. We shuold probably have a 404")
     return redirect("/")
 
 
@@ -622,7 +637,7 @@ def function_search():
     """Renders function search page"""
     info_msg = None
     query = request.args.get('q', '')
-    print("query: { %s }" % (query))
+    logger.info("query: { %s }" % (query))
     if query == '':
         # Pick a random interesting query
         # Some queries involving fuzzing-interesting targets.
@@ -914,6 +929,8 @@ def oracle_2(all_functions,
 
     # If indicated only include functions with cross references
     if only_referenced_functions and len(all_projects) == 1:
+        logger.info('Getting cross references from project %s',
+                    all_projects[0].name)
         xref_dict = get_cross_reference_dict_from_project(all_projects[0].name)
 
         functions_with_xref = []
@@ -928,6 +945,7 @@ def oracle_2(all_functions,
         functions_to_analyse = remove_functions_with_header_declarations(
             functions_to_analyse)
 
+    logger.info('Matching fuzz arguments in functions.')
     for function in functions_to_analyse:
         if project_to_target:
             if function.project != project_to_target.name:
@@ -948,6 +966,7 @@ def oracle_2(all_functions,
         current_count = project_count.get(function.project, 0)
         current_count += 1
         project_count[function.project] = current_count
+    logger.info('Matched fuzz arguments')
 
     functions_to_display = tmp_list
 
@@ -1022,7 +1041,7 @@ def indexing_overview():
         languages_summarised[bs.language][
             'introspector_build'] += 1 if bs.introspector_build_status == True else 0
 
-    print(json.dumps(languages_summarised))
+    logger.info(json.dumps(languages_summarised))
 
     return render_template('indexing-overview.html',
                            gtag=gtag,
@@ -1211,8 +1230,8 @@ def harness_source_and_executable(args):
         if len(found_harnesses) == 1:
             harness_dict['source'] = found_harnesses[0]
         else:
-            print("Did not find one matching harness")
-            print(str(found_harnesses))
+            logger.info("Did not find one matching harness")
+            logger.info(str(found_harnesses))
 
     return {'result': 'success', 'pairs': source_harness_pairs}
 
@@ -1486,7 +1505,7 @@ def api_project_all_project_source_files(args):
             introspector_summary_url = get_introspector_report_url_source_base(
                 project_name, date_str.replace("-", "")) + '/index.json'
 
-            print("URL: %s" % (introspector_summary_url))
+            logger.info("URL2: %s" % (introspector_summary_url))
 
             # Read the introspector atifact
             try:
@@ -1711,7 +1730,7 @@ def api_project_test_code():
     if latest_closing > 0:
         content_to_return = "\n".join(split_lines[:latest_closing + 1])
 
-    print("Latest closing: %d" % (latest_closing))
+    logger.info("Latest closing: %d" % (latest_closing))
     return {'result': 'success', 'source_code': content_to_return}
 
 
@@ -1980,6 +1999,7 @@ def get_build_status_of_project(
 def api_oracle_2(args):
     """API for getting fuzz targets with easy fuzzable arguments."""
     err_msgs = list()
+    logger.info('easy-params-far-reach 1')
     project_name = args.get('project', '')
     if not project_name:
         return {
@@ -2030,6 +2050,7 @@ def api_oracle_2(args):
     if ALLOWED_ORACLE_RETURNS:
         functions_to_return = sort_funtions_to_return(functions_to_return)
 
+    logger.info('easy-params-far-reach 2')
     result_status = 'success'
     return {
         'result': result_status,
@@ -2212,7 +2233,7 @@ def far_reach_but_low_coverage(args):
             functions_to_return)
 
     new_functions_to_return = []
-    print("Iterating")
+    logger.info("Iterating")
     for i in range(len(functions_to_return)):
         function = functions_to_return[i]
         if len(new_functions_to_return) >= max_functions_to_show:
@@ -2276,7 +2297,7 @@ def get_full_recursive_types(debug_type_dictionary, resulting_types,
                              target_type):
     """Recursively iterates atomic type elements to construct a friendly
     string representing the type."""
-    print("Target type: %s" % (str(target_type)))
+    logger.info("Target type: %s" % (str(target_type)))
     if int(target_type) == 0:
         return ['void']
 
@@ -2294,17 +2315,17 @@ def get_full_recursive_types(debug_type_dictionary, resulting_types,
 
         target_type = debug_type_dictionary.get(type_to_query, None)
         if target_type is None:
-            print("Target is None")
+            logger.info("Target is None")
             continue
 
-        print("adding")
+        logger.info("adding")
         resulting_types[type_to_query] = target_type
-        print(target_type)
+        logger.info(target_type)
 
         addresses_visited.add(type_to_query)
         type_to_query = str(target_type.get('base_type_addr', ''))
 
-        print("Type to query: " + type_to_query)
+        logger.info("Type to query: " + type_to_query)
         if int(type_to_query) == 0:
             continue
 
