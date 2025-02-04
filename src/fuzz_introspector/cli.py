@@ -208,10 +208,20 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
         help=('Excluding functions without interesting fuzz keywords, like'
               'parse or deserialise'))
     far_reach_low_coverage_analyser_parser.add_argument(
+        '--only-easy-fuzz-params',
+        action='store_true',
+        help=('Only include functions with easy fuzz parameters, like char*'
+              'int, or string'))
+    far_reach_low_coverage_analyser_parser.add_argument(
         '--max-functions',
         default=30,
         type=int,
         help='The max number of functions returned by this analysis.')
+    far_reach_low_coverage_analyser_parser.add_argument(
+        '--min-complexity',
+        default=0,
+        type=int,
+        help='The min cyclomatic complexity of the functions returned.')
     far_reach_low_coverage_analyser_parser.add_argument(
         '--target-dir',
         type=str,
