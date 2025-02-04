@@ -602,7 +602,7 @@ class RustProject(datatypes.Project[RustSourceCodeFile]):
         report['sources'] = []
         report['Fuzzer filename'] = harness_source
 
-        self.all_functions = {}
+        self.all_functions_dict = {}
         for source_code in self.source_code_files:
             # Log entry method if provided
             entry_method = source_code.get_entry_function()
@@ -627,12 +627,13 @@ class RustProject(datatypes.Project[RustSourceCodeFile]):
                 if f'{harness_name}.rs' not in source_code.source_file:
                     del source_code_functions['fuzz_target']
 
-            self.all_functions.update(source_code_functions)
+            self.all_functions_dict.update(source_code_functions)
 
         # Process all project functions
         func_list = []
-        for func in self.all_functions.values():
-            func.extract_callsites(self.all_functions)
+        self.all_functions = list(self.all_functions_dict.values())
+        for func in self.all_functions:
+            func.extract_callsites(self.all_functions_dict)
 
             func_dict: dict[str, Any] = {}
             func_dict['functionName'] = func.name
@@ -654,9 +655,9 @@ class RustProject(datatypes.Project[RustSourceCodeFile]):
             func_dict['BranchProfiles'] = []
             func_dict['Callsites'] = func.detailed_callsites
             func_dict['functionUses'] = self.calculate_function_uses(
-                func.name, list(self.all_functions.values()))
+                func.name, self.all_functions)
             func_dict['functionDepth'] = self.calculate_function_depth(
-                func, self.all_functions)
+                func, self.all_functions_dict)
             func_dict['constantsTouched'] = []
             func_dict['BBCount'] = 0
             func_dict['signature'] = func.sig
@@ -762,7 +763,8 @@ class RustProject(datatypes.Project[RustSourceCodeFile]):
 
         if function:
             if not func_node:
-                func_node = get_function_node(function, self.all_functions)
+                func_node = get_function_node(function,
+                                              self.all_functions_dict)
 
             if func_node and not is_macro:
                 func_name = func_node.name
@@ -827,7 +829,8 @@ class RustProject(datatypes.Project[RustSourceCodeFile]):
 
         if source_code and function:
             if not func_node:
-                func_node = get_function_node(function, self.all_functions)
+                func_node = get_function_node(function,
+                                              self.all_functions_dict)
 
             if not func_node:
                 visited_functions.add(function)

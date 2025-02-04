@@ -1149,6 +1149,9 @@ class JvmProject(Project[JvmSourceCodeFile]):
             with open(report_name, 'w', encoding='utf-8') as f:
                 f.write(yaml.dump(report))
 
+        # Store method list to all_functions for the project
+        self.all_functions = project_methods[:]
+
     def find_source_with_method(self,
                                 name: str) -> Optional[JvmSourceCodeFile]:
         """Finds the source code with a given method name."""

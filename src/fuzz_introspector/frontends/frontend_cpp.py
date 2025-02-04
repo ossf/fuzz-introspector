@@ -615,7 +615,6 @@ class CppProject(datatypes.Project[CppSourceCodeFile]):
 
     def __init__(self, source_code_files: list[CppSourceCodeFile]):
         super().__init__(source_code_files)
-        self.all_functions: list[FunctionDefinition] = []
 
     def dump_module_logic(self,
                           report_name: str,
