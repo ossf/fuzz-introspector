@@ -249,6 +249,7 @@ class JavaMethod():
         self.arg_types: list[str] = []
         self.exceptions: list[str] = []
         self.return_type = ''
+        self.sig = ''
         self.function_uses = 0
         self.function_depth = 0
         self.base_callsites: list[tuple[str, int]] = []
@@ -268,6 +269,13 @@ class JavaMethod():
             # Process statements
             self._process_statements()
 
+    def function_source_code_as_text(self) -> str:
+        """Returns the source code the function."""
+        if self.root and self.root.text:
+            return self.root.text.decode()
+
+        return ''
+
     def post_process_full_qualified_name(self):
         """Post process the full qualified name for types."""
         # Refine argument types
@@ -282,6 +290,7 @@ class JavaMethod():
         if '[' not in self.name and '].' not in self.name:
             self.name = (f'[{class_name}].{self.name}'
                          f'({",".join(self.arg_types)})')
+        self.sig = self.name
 
         # Refine variable map
         for key in self.var_map:
@@ -1110,7 +1119,7 @@ class JvmProject(Project[JvmSourceCodeFile]):
                 method, project_methods)
             method_dict['constantsTouched'] = []
             method_dict['BBCount'] = 0
-            method_dict['signature'] = method.name
+            method_dict['signature'] = method.sig
             callsites = method.base_callsites
             reached = set()
             for cs_dst, _ in callsites:
