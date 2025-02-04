@@ -67,7 +67,7 @@ curl --silent http://localhost:8080/api/shutdown || true
 
 echo "[+] Launching FI webapp"
 cd $ROOT_FI/tools/web-fuzzing-introspection/app/
-FUZZ_INTROSPECTOR_SHUTDOWN=1 python3 ./main.py >> /dev/null &
+FUZZ_INTROSPECTOR_SHUTDOWN=1 python3 ./main.py > /tmp/fi-weblog.txt 2>&1 &
 
 SECONDS=5
 while true
