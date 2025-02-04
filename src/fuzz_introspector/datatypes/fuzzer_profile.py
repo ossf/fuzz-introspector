@@ -71,13 +71,13 @@ class FuzzerProfile:
             self.fuzzer_source_file = ''
 
         # Read entrypoint of fuzzer if this is a Python module
-        if target_lang == "python":
+        if target_lang == 'python':
             self.entrypoint_fun = frontend_yaml['ep']['func_name']
             self.entrypoint_mod = frontend_yaml['ep']['module']
 
-        # Read entrypoint of fuzzer if this is a jvm module
-        if target_lang == "jvm" or target_lang == "go":
-            self.entrypoint_method = frontend_yaml['Fuzzing method']
+        # Read entrypoint of fuzzer if this is a jvm/go module
+        if target_lang == 'jvm' or target_lang == 'go':
+            self.entrypoint_method = frontend_yaml.get('Fuzzing method', '')
 
         self._set_function_list(frontend_yaml)
         self.dst_to_fd_cache: Dict[str,
@@ -103,6 +103,9 @@ class FuzzerProfile:
         elif self.target_lang == "jvm":
             cname = self.fuzzer_source_file
             mname = self.entrypoint_method
+            if not mname:
+                return 'fuzzerTestOneInput'
+
             if '].' in mname:
                 # For new tree-sitter frontend
                 return mname
