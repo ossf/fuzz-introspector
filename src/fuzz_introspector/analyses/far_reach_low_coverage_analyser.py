@@ -70,16 +70,22 @@ class FarReachLowCoverageAnalyser(analysis.AnalysisInterface):
 
     def set_flags(self, exclude_static_functions: bool,
                   only_referenced_functions: bool, only_header_functions: bool,
-                  only_interesting_functions: bool):
+                  only_interesting_functions: bool,
+                  only_easy_fuzz_params: bool):
         """Configure the flags from the CLI."""
         self.exclude_static_functions = exclude_static_functions
         self.only_referenced_functions = only_referenced_functions
         self.only_header_functions = only_header_functions
         self.only_interesting_functions = only_interesting_functions
+        self.only_easy_fuzz_params = only_easy_fuzz_params
 
     def set_max_functions(self, max_functions: int):
         """Configure the max functions to return from CLI."""
         self.max_functions = max_functions
+
+    def set_min_complexity(self, min_complexity: int):
+        """Configure the min complexity of functions to return from CLI."""
+        self.min_complexity = min_complexity
 
     def set_introspection_project(
             self, introspection_project: analysis.IntrospectionProject):
@@ -110,9 +116,12 @@ class FarReachLowCoverageAnalyser(analysis.AnalysisInterface):
             'only_referenced_functions: %s, '
             'only_header_functions: %s, '
             'only_interesting_functions: %s, '
-            'max_functions: %d', self.exclude_static_functions,
-            self.only_referenced_functions, self.only_header_functions,
-            self.only_interesting_functions, self.max_functions)
+            'only_easy_fuzz_params: %s, '
+            'min_complexity: %d, max_functions: %d',
+            self.exclude_static_functions, self.only_referenced_functions,
+            self.only_header_functions, self.only_interesting_functions,
+            self.only_easy_fuzz_params, self.min_complexity,
+            self.max_functions)
 
         result_list: List[Dict[str, Any]] = []
 
@@ -154,6 +163,11 @@ class FarReachLowCoverageAnalyser(analysis.AnalysisInterface):
             if (self.only_interesting_functions
                     and not self._is_interesting_function_with_fuzz_keywords(
                         function)):
+                continue
+
+            # Check for functions with easy fuzz parameters
+            if (self.only_easy_fuzz_params
+                    and not self._is_function_with_easy_fuzz_params(function)):
                 continue
 
             result_list.append(
@@ -201,8 +215,15 @@ class FarReachLowCoverageAnalyser(analysis.AnalysisInterface):
             coverage = proj_profile.get_func_hit_percentage(
                 function.function_name)
 
-            if coverage < 20.0:
-                filtered_functions.append(function)
+            # Skip high coverage
+            if coverage > 20.0:
+                continue
+
+            # Skip low complexity by configured value
+            if function.cyclomatic_complexity < self.min_complexity:
+                continue
+
+            filtered_functions.append(function)
 
         # Sort the filtered functions
         filtered_functions.sort(key=lambda x: (
@@ -234,5 +255,19 @@ class FarReachLowCoverageAnalyser(analysis.AnalysisInterface):
                fuzz_keyword.replace('_', '') in function.function_name.lower()
                for fuzz_keyword in interesting_fuzz_keywords):
             return True
+
+        return False
+
+    def _is_function_with_easy_fuzz_params(
+            self, function: function_profile.FunctionProfile) -> bool:
+        """Internal helper to determine if the function only contains
+        parameters that are easy to fuzz."""
+        if len(function.arg_types) == 2:
+            return ('char *' in function.arg_types[0]
+                    and 'int' in function.arg_types[1])
+
+        if len(function.arg_types) == 1:
+            return ('char *' in function.arg_types[0]
+                    or 'string' in function.arg_types[0])
 
         return False

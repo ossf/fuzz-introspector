@@ -91,6 +91,7 @@ class Project(Generic[T]):
 
     def __init__(self, source_code_files: list[T]):
         self.source_code_files = source_code_files
+        self.all_functions: list[Any] = []
 
     def dump_module_logic(self,
                           report_name: str,
