@@ -133,3 +133,17 @@ class Project(Generic[T]):
                 harnesses.append(source_code)
 
         return harnesses
+
+    def get_cross_references(self, src_func: Any) -> list[Any]:
+        """Gets list of functions that reference src_func"""
+        # TODO specify type after generalisation of FunctionDefinition
+        xrefs = []
+        for func in self.all_functions:
+            if func.sig == src_func:
+                continue
+
+            for callsite in func.base_callsites:
+                if callsite[0] == src_func.name:
+                    xrefs.append(func)
+
+        return xrefs
