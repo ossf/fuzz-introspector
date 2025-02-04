@@ -704,17 +704,6 @@ class CppProject(datatypes.Project[CppSourceCodeFile]):
 
         return None
 
-    def get_cross_references(self, src_func) -> list[FunctionDefinition]:
-        """Gets list of functions that reference src_func"""
-        xrefs = []
-        for func in self.all_functions:
-            if func.sig == src_func:
-                continue
-            for callsite in func.base_callsites:
-                if callsite[0] == src_func.name:
-                    xrefs.append(func)
-        return xrefs
-
     def extract_calltree(self,
                          source_file: str = '',
                          source_code: Optional[CppSourceCodeFile] = None,
