@@ -763,7 +763,8 @@ class RustProject(datatypes.Project[RustSourceCodeFile]):
 
         if function:
             if not func_node:
-                func_node = get_function_node(function, self.all_functions_dict)
+                func_node = get_function_node(function,
+                                              self.all_functions_dict)
 
             if func_node and not is_macro:
                 func_name = func_node.name
@@ -828,7 +829,8 @@ class RustProject(datatypes.Project[RustSourceCodeFile]):
 
         if source_code and function:
             if not func_node:
-                func_node = get_function_node(function, self.all_functions_dict)
+                func_node = get_function_node(function,
+                                              self.all_functions_dict)
 
             if not func_node:
                 visited_functions.add(function)
