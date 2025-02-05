@@ -392,6 +392,13 @@ class FunctionMethod():
         # Process icount
         self._process_icount()
 
+    def function_source_code_as_text(self) -> str:
+        """Returns the source code the function."""
+        if self.root and self.root.text:
+            return self.root.text.decode()
+
+        return ''
+
     def get_function_uses(self,
                           all_funcs_meths: list['FunctionMethod']) -> int:
         """Calculate how many function called this function."""
