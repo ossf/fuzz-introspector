@@ -273,6 +273,13 @@ class RustFunction():
         # Process instr count
         self._process_icount()
 
+    def function_source_code_as_text(self) -> str:
+        """Returns the source code the function."""
+        if self.root and self.root.text:
+            return self.root.text.decode()
+
+        return ''
+
     def _process_declaration(self):
         """Internal helper to process the function/method declaration."""
         # Process name
