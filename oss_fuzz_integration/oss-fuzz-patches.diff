@@ -67,7 +67,7 @@ index e05d0e6ea..2554b9d3f 100755
      set -x
      find $OUT/ -name "jacoco.xml" -exec cp {} $SRC/inspector/ \;
 -    REPORT_ARGS="$REPORT_ARGS --target-dir=$SRC/inspector"
-+    REPORT_ARGS="$REPORT_ARGS --target-dir=$SRC"
++    REPORT_ARGS="$REPORT_ARGS --target-dir=$SRC --out-dir=$SRC/inspector"
      REPORT_ARGS="$REPORT_ARGS --language=jvm"
 -    fuzz-introspector report $REPORT_ARGS
 +    fuzz-introspector full $REPORT_ARGS
@@ -75,14 +75,14 @@ index e05d0e6ea..2554b9d3f 100755
    elif [ "$FUZZING_LANGUAGE" = "rust" ]; then
      echo "GOING rust route"
 -    REPORT_ARGS="$REPORT_ARGS --target-dir=$SRC/inspector"
-+    REPORT_ARGS="$REPORT_ARGS --target-dir=$SRC"
++    REPORT_ARGS="$REPORT_ARGS --target-dir=$SRC --out-dir=$SRC/inspector"
      REPORT_ARGS="$REPORT_ARGS --language=rust"
 -    fuzz-introspector report $REPORT_ARGS
 +    fuzz-introspector full $REPORT_ARGS
 +    rsync -avu --delete "$SRC/inspector/" "$OUT/inspector"
 +  elif [ "$FUZZING_LANGUAGE" = "go" ]; then
 +    echo "GOING go route"
-+    REPORT_ARGS="$REPORT_ARGS --target-dir=$SRC"
++    REPORT_ARGS="$REPORT_ARGS --target-dir=$SRC --out-dir=$SRC/inspector"
 +    REPORT_ARGS="$REPORT_ARGS --language=go"
 +    fuzz-introspector full $REPORT_ARGS
      rsync -avu --delete "$SRC/inspector/" "$OUT/inspector"
