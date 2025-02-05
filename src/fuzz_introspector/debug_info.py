@@ -464,7 +464,9 @@ def is_enumeration(param_list):
     return False
 
 
-def create_friendly_debug_types(debug_type_dictionary, out_dir):
+def create_friendly_debug_types(debug_type_dictionary,
+                                out_dir,
+                                dump_files=True):
     """Create an address-indexed json dictionary. The goal is to use this for
     fast iteration over types using e.g. recursive lookups."""
     friendly_name_sig = dict()
@@ -515,13 +517,16 @@ def create_friendly_debug_types(debug_type_dictionary, out_dir):
             }
         }
 
-    with open(os.path.join(out_dir, "all-friendly-debug-types.json"),
-              "w") as f:
-        json.dump(friendly_name_sig, f)
+    if dump_files:
+        with open(os.path.join(out_dir, "all-friendly-debug-types.json"),
+                  "w") as f:
+            json.dump(friendly_name_sig, f)
 
 
 def correlate_debugged_function_to_debug_types(all_debug_types,
-                                               all_debug_functions, out_dir):
+                                               all_debug_functions,
+                                               out_dir,
+                                               dump_files=True):
     """Correlate debug information about all functions and all types. The
     result is a lot of atomic debug-information-extracted types are correlated
     to the debug function."""
@@ -537,7 +542,9 @@ def correlate_debugged_function_to_debug_types(all_debug_types,
     # Create json file with addresses as indexes for type information.
     # This can be used to lookup types fast.
     logger.info("Creating dictionary")
-    create_friendly_debug_types(debug_type_dictionary, out_dir)
+    create_friendly_debug_types(debug_type_dictionary,
+                                out_dir,
+                                dump_files=dump_files)
     logger.info("Finished creating dictionary")
 
     for dfunc in all_debug_functions:

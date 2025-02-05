@@ -76,7 +76,8 @@ def analyse_end_to_end(arg_language,
                        out_dir,
                        coverage_url,
                        report_name,
-                       module_only=False):
+                       module_only=False,
+                       dump_files=True):
     """End to end analysis helper function."""
     return_values = {}
     project = oss_fuzz.analyse_folder(language=arg_language,
@@ -105,7 +106,8 @@ def analyse_end_to_end(arg_language,
             enable_all_analyses=True,
             report_name=report_name,
             language=language,
-            out_dir=out_dir)
+            out_dir=out_dir,
+            dump_files=dump_files)
         for k, v in return_values2.items():
             return_values[k] = v
     except DataLoaderError:
@@ -128,7 +130,7 @@ def run_analysis_on_dir(target_folder: str,
     """Runs Fuzz Introspector analysis from based on the results
     from a frontend run. The primary task is to aggregate the data
     and generate a HTML report."""
-
+    logger.info('Running analysis')
     constants.should_dump_files = dump_files
 
     if enable_all_analyses:
