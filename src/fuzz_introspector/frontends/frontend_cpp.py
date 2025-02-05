@@ -19,6 +19,7 @@ from typing import Any, Optional
 
 from tree_sitter import Language, Node
 
+import copy
 import os
 import logging
 import yaml
@@ -616,20 +617,12 @@ class CppProject(datatypes.Project[CppSourceCodeFile]):
     def __init__(self, source_code_files: list[CppSourceCodeFile]):
         super().__init__(source_code_files)
 
-    def dump_module_logic(self,
-                          report_name: str,
-                          entry_function: str = '',
-                          harness_name: str = '',
-                          harness_source: str = '',
-                          dump_output=True):
-        """Dumps the data for the module in full."""
-        # pylint: disable=unused-argument
-
-        logger.info('Dumping project-wide logic.')
-        report: dict[str, Any] = {'report': 'name'}
-        report['sources'] = []
-        report['Fuzzing method'] = 'LLVMFuzzerTestOneInput'
-        report['Fuzzer filename'] = harness_source
+    def _generate_report(self, harness_source):
+        """Creates the report used for passing to backend."""
+        self.report['report'] = 'name'
+        self.report['sources'] = []
+        self.report['Fuzzing method'] = 'LLVMFuzzerTestOneInput'
+        self.report['Fuzzer filename'] = harness_source
 
         self.all_functions = []
         for source_code in self.source_code_files:
@@ -638,7 +631,7 @@ class CppProject(datatypes.Project[CppSourceCodeFile]):
             # Retrieve project information
             func_names = [func.name for func in source_code.func_defs]
 
-            report['sources'].append({
+            self.report['sources'].append({
                 'source_file': source_code.source_file,
                 'function_names': func_names,
             })
@@ -689,12 +682,30 @@ class CppProject(datatypes.Project[CppSourceCodeFile]):
             func_list.append(func_dict)
 
         if func_list:
-            report['All functions'] = {}
-            report['All functions']['Elements'] = func_list
+            self.report['All functions'] = {}
+            self.report['All functions']['Elements'] = func_list
+
+    def dump_module_logic(self,
+                          report_name: str,
+                          entry_function: str = '',
+                          harness_name: str = '',
+                          harness_source: str = '',
+                          dump_output=True):
+        """Dumps the data for the module in full."""
+
+        if not self.report:
+            self._generate_report(harness_source)
+
+        new_report = copy.deepcopy(self.report)
+        new_report['Fuzzing method'] = 'LLVMFuzzerTestOneInput'
+        new_report['Fuzzer filename'] = harness_source
+
+        # pylint: disable=unused-argument
+        logger.info('Dumping project-wide logic.')
 
         if dump_output:
             with open(report_name, 'w', encoding='utf-8') as f:
-                f.write(yaml.dump(report))
+                f.write(yaml.dump(new_report))
 
     def get_function_from_name(self, function_name):
         for func in self.all_functions:
