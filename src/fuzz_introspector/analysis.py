@@ -53,14 +53,26 @@ class IntrospectionProject():
     def load_data_files(self,
                         parallelise=True,
                         correlation_file=None,
-                        out_dir: str = ''):
+                        out_dir: str = '',
+                        harness_lists=None):
         """Generates the `proj_profile` and `profiles` elements of this class
         based on the raw data given as arguments. This function must be called
         before any real use of `IntrospectionProject` can happen.
         """
-        self.profiles = data_loader.load_all_profiles(self.base_folder,
-                                                      self.language,
-                                                      parallelise)
+
+        if harness_lists:
+            logger.info('Loading profiles using harness list')
+            self.profiles = []
+            for report_yaml, calltree_text in harness_lists:
+                self.profiles.append(
+                    fuzzer_profile.FuzzerProfile('cfg_file',
+                                                 report_yaml,
+                                                 self.language,
+                                                 cfg_content=calltree_text))
+        else:
+            logger.info('Loading profiles using files')
+            self.profiles = data_loader.load_all_profiles(
+                self.base_folder, self.language, parallelise)
 
         logger.info("Found %d profiles", len(self.profiles))
         if len(self.profiles) == 0:
