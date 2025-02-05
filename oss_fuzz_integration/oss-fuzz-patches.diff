@@ -62,18 +62,28 @@ index e05d0e6ea..2554b9d3f 100755
      # Restore the sanitizer flag for rust
      export SANITIZER="introspector"
    fi
-@@ -415,13 +396,13 @@ if [ "$SANITIZER" = "introspector" ] || [ "$RUST_SANITIZER" = "introspector" ];
+@@ -413,15 +394,21 @@ if [ "$SANITIZER" = "introspector" ] || [ "$RUST_SANITIZER" = "introspector" ];
+     echo "GOING jvm route"
+     set -x
      find $OUT/ -name "jacoco.xml" -exec cp {} $SRC/inspector/ \;
-     REPORT_ARGS="$REPORT_ARGS --target-dir=$SRC/inspector"
+-    REPORT_ARGS="$REPORT_ARGS --target-dir=$SRC/inspector"
++    REPORT_ARGS="$REPORT_ARGS --target-dir=$SRC"
      REPORT_ARGS="$REPORT_ARGS --language=jvm"
 -    fuzz-introspector report $REPORT_ARGS
 +    fuzz-introspector full $REPORT_ARGS
      rsync -avu --delete "$SRC/inspector/" "$OUT/inspector"
    elif [ "$FUZZING_LANGUAGE" = "rust" ]; then
      echo "GOING rust route"
-     REPORT_ARGS="$REPORT_ARGS --target-dir=$SRC/inspector"
+-    REPORT_ARGS="$REPORT_ARGS --target-dir=$SRC/inspector"
++    REPORT_ARGS="$REPORT_ARGS --target-dir=$SRC"
      REPORT_ARGS="$REPORT_ARGS --language=rust"
 -    fuzz-introspector report $REPORT_ARGS
++    fuzz-introspector full $REPORT_ARGS
++    rsync -avu --delete "$SRC/inspector/" "$OUT/inspector"
++  elif [ "$FUZZING_LANGUAGE" = "go" ]; then
++    echo "GOING go route"
++    REPORT_ARGS="$REPORT_ARGS --target-dir=$SRC"
++    REPORT_ARGS="$REPORT_ARGS --language=go"
 +    fuzz-introspector full $REPORT_ARGS
      rsync -avu --delete "$SRC/inspector/" "$OUT/inspector"
    else
