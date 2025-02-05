@@ -17,7 +17,7 @@ from fuzz_introspector.frontends import oss_fuzz  # noqa: E402
 
 
 def test_tree_sitter_go_sample1():
-    project = oss_fuzz.analyse_folder(
+    project, _ = oss_fuzz.analyse_folder(
         'go',
         'src/test/data/source-code/go/test-project-1',
         dump_output=False,
@@ -36,7 +36,7 @@ def test_tree_sitter_go_sample1():
 
 
 def test_tree_sitter_go_sample2():
-    project = oss_fuzz.analyse_folder(
+    project, _ = oss_fuzz.analyse_folder(
         'go',
         'src/test/data/source-code/go/test-project-2',
         dump_output=False,
@@ -56,7 +56,7 @@ def test_tree_sitter_go_sample2():
 
 
 def test_tree_sitter_go_sample3():
-    project = oss_fuzz.analyse_folder(
+    project, _ = oss_fuzz.analyse_folder(
         'go',
         'src/test/data/source-code/go/test-project-3',
         dump_output=False,
@@ -83,7 +83,7 @@ def test_tree_sitter_go_sample3():
 
 
 def test_tree_sitter_go_sample4():
-    project = oss_fuzz.analyse_folder(
+    project, _ = oss_fuzz.analyse_folder(
         'go',
         'src/test/data/source-code/go/test-project-4',
         dump_output=False,
@@ -113,7 +113,7 @@ def test_tree_sitter_go_sample5():
     Similar to test_tree_sitter_rust_sample2, it is not able to
     deteremine what instance the item is used until runtime.
     """
-    project = oss_fuzz.analyse_folder(
+    project, _ = oss_fuzz.analyse_folder(
         'go',
         'src/test/data/source-code/go/test-project-5',
         dump_output=False,
@@ -132,7 +132,7 @@ def test_tree_sitter_go_sample5():
 
 
 def test_tree_sitter_go_sample6():
-    project = oss_fuzz.analyse_folder(
+    project, _ = oss_fuzz.analyse_folder(
         'go',
         'src/test/data/source-code/go/test-project-6',
         dump_output=False,
@@ -152,7 +152,7 @@ def test_tree_sitter_go_sample6():
 
 
 def test_tree_sitter_go_sample7():
-    project = oss_fuzz.analyse_folder(
+    project, _ = oss_fuzz.analyse_folder(
         'go',
         'src/test/data/source-code/go/test-project-7',
         dump_output=False,
@@ -169,7 +169,7 @@ def test_tree_sitter_go_sample7():
 
 
 def test_tree_sitter_go_sample8():
-    project = oss_fuzz.analyse_folder(
+    project, _ = oss_fuzz.analyse_folder(
         'go',
         'src/test/data/source-code/go/test-project-8',
         dump_output=False,
@@ -192,7 +192,7 @@ def test_tree_sitter_go_sample8():
 
 
 def test_tree_sitter_go_sample9():
-    project = oss_fuzz.analyse_folder(
+    project, _ = oss_fuzz.analyse_folder(
         'go',
         'src/test/data/source-code/go/test-project-9',
         dump_output=False,

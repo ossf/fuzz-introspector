@@ -18,7 +18,7 @@ from fuzz_introspector.frontends import oss_fuzz  # noqa: E402
 
 
 def test_tree_sitter_cpp_sample1():
-    project = oss_fuzz.analyse_folder(
+    project, _ = oss_fuzz.analyse_folder(
         'c++',
         'src/test/data/source-code/cpp/test-project-1',
         'LLVMFuzzerTestOneInput',
@@ -38,7 +38,7 @@ def test_tree_sitter_cpp_sample1():
 
 
 def test_tree_sitter_cpp_sample2():
-    project = oss_fuzz.analyse_folder(
+    project, _ = oss_fuzz.analyse_folder(
         'c++',
         'src/test/data/source-code/cpp/test-project-2',
         'LLVMFuzzerTestOneInput',
@@ -59,7 +59,7 @@ def test_tree_sitter_cpp_sample2():
 
 
 def test_tree_sitter_cpp_sample3():
-    project = oss_fuzz.analyse_folder(
+    project, _ = oss_fuzz.analyse_folder(
         'c++',
         'src/test/data/source-code/cpp/test-project-3',
         'LLVMFuzzerTestOneInput',
@@ -80,7 +80,7 @@ def test_tree_sitter_cpp_sample3():
 
 
 def test_tree_sitter_cpp_sample4():
-    project = oss_fuzz.analyse_folder(
+    project, _ = oss_fuzz.analyse_folder(
         'c++',
         'src/test/data/source-code/cpp/test-project-4',
         'LLVMFuzzerTestOneInput',
@@ -102,7 +102,7 @@ def test_tree_sitter_cpp_sample4():
 
 
 def test_tree_sitter_cpp_sample5():
-    project = oss_fuzz.analyse_folder(
+    project, _ = oss_fuzz.analyse_folder(
         'c++',
         'src/test/data/source-code/cpp/test-project-5',
         'LLVMFuzzerTestOneInput',
@@ -123,7 +123,7 @@ def test_tree_sitter_cpp_sample5():
 
 
 def test_tree_sitter_cpp_sample6():
-    project = oss_fuzz.analyse_folder(
+    project, _ = oss_fuzz.analyse_folder(
         'c++',
         'src/test/data/source-code/cpp/test-project-6',
         'LLVMFuzzerTestOneInput',
@@ -143,7 +143,7 @@ def test_tree_sitter_cpp_sample6():
 
 
 def test_tree_sitter_cpp_sample7():
-    project = oss_fuzz.analyse_folder(
+    project, _ = oss_fuzz.analyse_folder(
         'c++',
         'src/test/data/source-code/cpp/test-project-7',
         'LLVMFuzzerTestOneInput',

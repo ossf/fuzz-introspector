@@ -17,7 +17,7 @@ from fuzz_introspector.frontends import oss_fuzz  # noqa: E402
 
 
 def test_tree_sitter_jvm_sample1():
-    project = oss_fuzz.analyse_folder(
+    project, _ = oss_fuzz.analyse_folder(
         'jvm',
         'src/test/data/source-code/jvm/test-project-1',
         'fuzzerTestOneInput',
@@ -38,7 +38,7 @@ def test_tree_sitter_jvm_sample1():
 
 
 def test_tree_sitter_jvm_sample2():
-    project = oss_fuzz.analyse_folder(
+    project, _ = oss_fuzz.analyse_folder(
         'jvm',
         'src/test/data/source-code/jvm/test-project-2',
         'fuzzerTestOneInput',
@@ -61,7 +61,7 @@ def test_tree_sitter_jvm_sample2():
 
 
 def test_tree_sitter_jvm_sample3():
-    project = oss_fuzz.analyse_folder(
+    project, _ = oss_fuzz.analyse_folder(
         'jvm',
         'src/test/data/source-code/jvm/test-project-3',
         'fuzzerTestOneInput',
@@ -86,7 +86,7 @@ def test_tree_sitter_jvm_sample3():
 
 
 def test_tree_sitter_jvm_sample4():
-    project = oss_fuzz.analyse_folder(
+    project, _ = oss_fuzz.analyse_folder(
         'jvm',
         'src/test/data/source-code/jvm/test-project-4',
         'fuzzerTestOneInput',
@@ -106,7 +106,7 @@ def test_tree_sitter_jvm_sample4():
 
 
 def test_tree_sitter_jvm_sample5():
-    project = oss_fuzz.analyse_folder(
+    project, _ = oss_fuzz.analyse_folder(
         'jvm',
         'src/test/data/source-code/jvm/test-project-5',
         'fuzzerTestOneInput',
@@ -146,7 +146,7 @@ def test_tree_sitter_jvm_sample6():
     By just parsing the code, we have no way to confirm it.
     """
 
-    project = oss_fuzz.analyse_folder(
+    project, _ = oss_fuzz.analyse_folder(
         'jvm',
         'src/test/data/source-code/jvm/test-project-6',
         'fuzzerTestOneInput',
@@ -168,7 +168,7 @@ def test_tree_sitter_jvm_sample6():
 
 
 def test_tree_sitter_jvm_sample7():
-    project = oss_fuzz.analyse_folder(
+    project, _ = oss_fuzz.analyse_folder(
         'jvm',
         'src/test/data/source-code/jvm/test-project-7',
         'fuzzerTestOneInput',
@@ -194,7 +194,7 @@ def test_tree_sitter_jvm_sample7():
 
 
 def test_tree_sitter_jvm_sample8():
-    project = oss_fuzz.analyse_folder(
+    project, _ = oss_fuzz.analyse_folder(
         'jvm',
         'src/test/data/source-code/jvm/test-project-8',
         'fuzzerTestOneInput',
@@ -214,7 +214,7 @@ def test_tree_sitter_jvm_sample8():
 
 
 def test_tree_sitter_jvm_sample9():
-    project = oss_fuzz.analyse_folder(
+    project, _ = oss_fuzz.analyse_folder(
         'jvm',
         'src/test/data/source-code/jvm/test-project-9',
         'fuzzerTestOneInput',
