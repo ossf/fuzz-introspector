@@ -164,7 +164,7 @@ def analyse_folder(language: str = '',
             project = frontend_rust.load_treesitter_trees(source_files)
         else:
             logger.error('Unsupported language: %s', language)
-            return Project([])
+            return Project([]), []
 
         pairings = []
         textcov_reports = []
