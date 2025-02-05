@@ -90,6 +90,7 @@ class Project(Generic[T]):
     """Wrapper for doing analysis of a collection of source files."""
 
     def __init__(self, source_code_files: list[T]):
+        self.report: dict[str, Any] = {}
         self.source_code_files = source_code_files
         self.all_functions: list[Any] = []
 
