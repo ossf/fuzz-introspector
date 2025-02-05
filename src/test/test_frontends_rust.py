@@ -17,7 +17,7 @@ from fuzz_introspector.frontends import oss_fuzz  # noqa: E402
 
 
 def test_tree_sitter_rust_sample1():
-    project = oss_fuzz.analyse_folder(
+    project, _ = oss_fuzz.analyse_folder(
         'rust',
         'src/test/data/source-code/rust/test-project-1',
         dump_output=False,
@@ -43,7 +43,7 @@ def test_tree_sitter_rust_sample2():
     the data is passed in. Thus only plain function name is meaningful
     in this situation.
     """
-    project = oss_fuzz.analyse_folder(
+    project, _ = oss_fuzz.analyse_folder(
         'rust',
         'src/test/data/source-code/rust/test-project-2',
         dump_output=False,
@@ -61,7 +61,7 @@ def test_tree_sitter_rust_sample2():
 
 
 def test_tree_sitter_rust_sample3():
-    project = oss_fuzz.analyse_folder(
+    project, _ = oss_fuzz.analyse_folder(
         'rust',
         'src/test/data/source-code/rust/test-project-3',
         dump_output=False,
@@ -81,7 +81,7 @@ def test_tree_sitter_rust_sample3():
 
 
 def test_tree_sitter_rust_sample4():
-    project = oss_fuzz.analyse_folder(
+    project, _ = oss_fuzz.analyse_folder(
         'rust',
         'src/test/data/source-code/rust/test-project-4',
         dump_output=False,
@@ -101,7 +101,7 @@ def test_tree_sitter_rust_sample4():
 
 
 def test_tree_sitter_rust_sample5():
-    project = oss_fuzz.analyse_folder(
+    project, _ = oss_fuzz.analyse_folder(
         'rust',
         'src/test/data/source-code/rust/test-project-5',
         dump_output=False,
@@ -120,7 +120,7 @@ def test_tree_sitter_rust_sample5():
 
 
 def test_tree_sitter_rust_sample6():
-    project = oss_fuzz.analyse_folder(
+    project, _ = oss_fuzz.analyse_folder(
         'rust',
         'src/test/data/source-code/rust/test-project-6',
         dump_output=False,
@@ -141,7 +141,7 @@ def test_tree_sitter_rust_sample6():
 
 
 def test_tree_sitter_rust_sample7():
-    project = oss_fuzz.analyse_folder(
+    project, _ = oss_fuzz.analyse_folder(
         'rust',
         'src/test/data/source-code/rust/test-project-7',
         dump_output=False,
@@ -162,7 +162,7 @@ def test_tree_sitter_rust_sample7():
 
 
 def test_tree_sitter_rust_sample8():
-    project = oss_fuzz.analyse_folder(
+    project, _ = oss_fuzz.analyse_folder(
         'rust',
         'src/test/data/source-code/rust/test-project-8',
         dump_output=False,
@@ -182,7 +182,7 @@ def test_tree_sitter_rust_sample8():
 
 
 def test_tree_sitter_rust_sample9():
-    project = oss_fuzz.analyse_folder(
+    project, _ = oss_fuzz.analyse_folder(
         'rust',
         'src/test/data/source-code/rust/test-project-9',
         dump_output=False,

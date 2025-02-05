@@ -80,11 +80,16 @@ def analyse_end_to_end(arg_language,
                        dump_files=True):
     """End to end analysis helper function."""
     return_values = {}
-    project = oss_fuzz.analyse_folder(language=arg_language,
-                                      directory=target_dir,
-                                      entrypoint=entrypoint,
-                                      out=out_dir,
-                                      module_only=module_only)
+    project, harness_lists = oss_fuzz.analyse_folder(language=arg_language,
+                                                     directory=target_dir,
+                                                     entrypoint=entrypoint,
+                                                     out=out_dir,
+                                                     module_only=module_only,
+                                                     dump_output=dump_files)
+    if harness_lists:
+        logger.info('We have a harness list')
+    else:
+        logger.info('No harness list at place')
 
     return_values['light-project'] = project
     if 'c' in arg_language:
@@ -107,7 +112,8 @@ def analyse_end_to_end(arg_language,
             report_name=report_name,
             language=language,
             out_dir=out_dir,
-            dump_files=dump_files)
+            dump_files=dump_files,
+            harness_lists=harness_lists)
         for k, v in return_values2.items():
             return_values[k] = v
     except DataLoaderError:
@@ -126,7 +132,8 @@ def run_analysis_on_dir(target_folder: str,
                         output_json: Optional[list[str]] = None,
                         parallelise: bool = True,
                         dump_files: bool = True,
-                        out_dir: str = '') -> Tuple[int, Dict[str, Any]]:
+                        out_dir: str = '',
+                        harness_lists=None) -> Tuple[int, Dict[str, Any]]:
     """Runs Fuzz Introspector analysis from based on the results
     from a frontend run. The primary task is to aggregate the data
     and generate a HTML report."""
@@ -140,7 +147,8 @@ def run_analysis_on_dir(target_folder: str,
 
     introspection_proj = analysis.IntrospectionProject(language, target_folder,
                                                        coverage_url)
-    introspection_proj.load_data_files(parallelise, correlation_file, out_dir)
+    introspection_proj.load_data_files(parallelise, correlation_file, out_dir,
+                                       harness_lists)
 
     logger.info("Analyses to run: %s", str(analyses_to_run))
     logger.info("[+] Creating HTML report")

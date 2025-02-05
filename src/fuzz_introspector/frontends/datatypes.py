@@ -148,3 +148,7 @@ class Project(Generic[T]):
                     xrefs.append(func)
 
         return xrefs
+
+    def get_report(self, harness_source: str = ''):
+        """Runs analysis if needed and gets a report wrt a given harness"""
+        return {}

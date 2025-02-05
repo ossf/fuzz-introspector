@@ -45,7 +45,6 @@ def read_fuzzer_data_file_to_profile(
         target_data_f = '/'.join(cfg_file.split('/')[:-1]) + '/report'
 
     logging.info('target data f: %s' % (target_data_f))
-
     if not os.path.isfile(target_data_f) and not os.path.isfile(target_data_f +
                                                                 ".yaml"):
         logger.info('R1')

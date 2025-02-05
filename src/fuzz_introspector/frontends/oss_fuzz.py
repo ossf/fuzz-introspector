@@ -19,6 +19,8 @@ import yaml
 import pathlib
 import logging
 
+from typing import Tuple, Any
+
 from fuzz_introspector.frontends import frontend_c
 from fuzz_introspector.frontends import frontend_cpp
 from fuzz_introspector.frontends import frontend_go
@@ -122,7 +124,7 @@ def analyse_folder(language: str = '',
                    out='',
                    module_only=False,
                    dump_output=True,
-                   files_to_include: list[str] = []) -> Project:
+                   files_to_include: list[str] = []) -> Tuple[Project, Any]:
     """Runs a full frontend analysis on a given directory"""
 
     # Extract source files for target language
@@ -162,7 +164,7 @@ def analyse_folder(language: str = '',
             project = frontend_rust.load_treesitter_trees(source_files)
         else:
             logger.error('Unsupported language: %s', language)
-            return Project([])
+            return Project([]), []
 
         pairings = []
         textcov_reports = []
@@ -173,7 +175,14 @@ def analyse_folder(language: str = '',
                 for report_name in os.listdir(textcovs_path):
                     textcov_reports.append(report_name)
 
+        # Perform analysis where there is no harness and only do the module
         if not project.get_source_codes_with_harnesses() and module_only:
+            if not dump_output:
+                logger.info('Running in-memory analysis')
+                report = project.get_report('empty')
+                calltree = 'Call tree\n===================================='
+                return project, [(report, calltree)]
+
             logger.info('Found no harnesses')
             target = os.path.join(out, 'fuzzerLogFile-empty.data.yaml')
             project.dump_module_logic(target,
@@ -231,4 +240,4 @@ def analyse_folder(language: str = '',
                       'w') as f:
                 f.write(yaml.dump({'pairings': pairings}))
 
-    return project
+    return project, None
