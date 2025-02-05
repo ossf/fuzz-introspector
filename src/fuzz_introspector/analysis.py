@@ -120,7 +120,7 @@ class IntrospectionProject():
         self.debug_function_files = data_loader.find_all_debug_function_files(
             self.base_folder)
 
-    def load_debug_report(self, out_dir):
+    def load_debug_report(self, out_dir, dump_files=True):
         """Load and digest debug information."""
         self.debug_report = debug_info.load_debug_report(self.debug_files)
 
@@ -155,7 +155,10 @@ class IntrospectionProject():
         # Extract the raw function signature. This propagates types into all of
         # the debug functions.
         debug_info.correlate_debugged_function_to_debug_types(
-            self.debug_all_types, self.debug_all_functions, out_dir)
+            self.debug_all_types,
+            self.debug_all_functions,
+            out_dir,
+            dump_files=dump_files)
 
     def dump_debug_report(self, out_dir):
         if self.debug_report is not None:

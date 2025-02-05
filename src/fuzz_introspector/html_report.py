@@ -524,6 +524,7 @@ def write_content_to_html_files(html_full_doc, all_functions_json_html,
       fuzzer section. To be written in a javascript file that is loaded
       dynamically.
     """
+    logger.info('Dumping report')
     # Dump the HTML report.
     with open(os.path.join(out_dir, constants.HTML_REPORT),
               'w') as report_file:
@@ -814,7 +815,7 @@ def create_html_report(introspection_proj: analysis.IntrospectionProject,
 
     # Load debug informaiton because it will be correlated to the introspector
     # functions.
-    introspection_proj.load_debug_report(out_dir)
+    introspection_proj.load_debug_report(out_dir, dump_files=dump_files)
 
     # Correlate debug info to introspector functions
     analysis.correlate_introspection_functions_to_debug_info(
@@ -825,22 +826,26 @@ def create_html_report(introspection_proj: analysis.IntrospectionProject,
     all_test_files = analysis.extract_test_information(
         introspection_proj.debug_report,
         introspection_proj.proj_profile.target_lang, out_dir)
-    with open(os.path.join(out_dir, constants.TEST_FILES_JSON),
-              'w') as test_file_fd:
-        test_file_fd.write(json.dumps(list(all_test_files)))
+    if dump_files:
+        with open(os.path.join(out_dir, constants.TEST_FILES_JSON),
+                  'w') as test_file_fd:
+            test_file_fd.write(json.dumps(list(all_test_files)))
 
     all_source_files = analysis.extract_all_sources(
         introspection_proj.proj_profile.target_lang)
-    with open(os.path.join(out_dir, constants.ALL_SOURCE_FILES),
-              'w') as source_fd:
-        source_fd.write(json.dumps(list(all_source_files)))
+
+    if dump_files:
+        with open(os.path.join(out_dir, constants.ALL_SOURCE_FILES),
+                  'w') as source_fd:
+            source_fd.write(json.dumps(list(all_source_files)))
 
     # Write various stats and all-functions data to summary.json
     introspection_proj.proj_profile.write_stats_to_summary_file(out_dir)
 
     # Write all functions to all-fuzz-introspector-functions.json
-    json_report.create_all_fi_functions_json(all_functions_json_report,
-                                             out_dir)
+    if dump_files:
+        json_report.create_all_fi_functions_json(all_functions_json_report,
+                                                 out_dir)
 
     # Write jvm constructor details to all-fuzz-introspector-jvm-constructor.json
     if introspection_proj.proj_profile.target_lang == 'jvm' and all_functions_json_report:
@@ -879,7 +884,7 @@ def create_html_report(introspection_proj: analysis.IntrospectionProject,
             json_copy['Func lines hit %'] = '0.0%'
             jvm_constructor_json_report.append(json_copy)
 
-        if jvm_constructor_json_report:
+        if jvm_constructor_json_report and dump_files:
             json_report.create_all_jvm_constructor_json(
                 jvm_constructor_json_report, out_dir)
 
