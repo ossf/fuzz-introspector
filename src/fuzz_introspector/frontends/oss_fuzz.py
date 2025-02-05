@@ -32,7 +32,7 @@ logger = logging.getLogger(name=__name__)
 
 EXCLUDE_DIRECTORIES = [
     'node_modules', 'aflplusplus', 'honggfuzz', 'inspector', 'libfuzzer',
-    'fuzztest', 'target', 'build'
+    'fuzztest', 'build'
 ]
 
 
