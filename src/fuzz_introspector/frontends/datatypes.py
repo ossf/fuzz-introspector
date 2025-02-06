@@ -94,15 +94,20 @@ class Project(Generic[T]):
         self.source_code_files = source_code_files
         self.all_functions: list[Any] = []
 
+    def get_report(self, harness_source: str = '') -> dict[str, Any]:
+        """Runs analysis if needed and gets a report yaml"""
+        return self.dump_module_logic(harness_source=harness_source,
+                                      dump_output=False)
+
     def dump_module_logic(self,
-                          report_name: str,
+                          report_name: str = '',
                           entry_function: str = '',
                           harness_name: str = '',
                           harness_source: str = '',
-                          dump_output: bool = True):
+                          dump_output: bool = True) -> dict[str, Any]:
         """Dumps the data for the module in full."""
         # Dummy function for subclasses
-        pass
+        return {}
 
     def extract_calltree(self,
                          source_file: str = '',
@@ -148,7 +153,3 @@ class Project(Generic[T]):
                     xrefs.append(func)
 
         return xrefs
-
-    def get_report(self, harness_source: str = ''):
-        """Runs analysis if needed and gets a report wrt a given harness"""
-        return {}

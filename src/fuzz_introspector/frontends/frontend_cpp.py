@@ -685,7 +685,7 @@ class CppProject(datatypes.Project[CppSourceCodeFile]):
             self.report['All functions'] = {}
             self.report['All functions']['Elements'] = func_list
 
-    def get_report(self, harness_source):
+    def get_report(self, harness_source: str = '') -> dict[str, Any]:
         """Runs analysis if needed and gets a report wrt a given harness"""
         if not self.report:
             self.generate_report()
@@ -695,11 +695,11 @@ class CppProject(datatypes.Project[CppSourceCodeFile]):
         return new_report
 
     def dump_module_logic(self,
-                          report_name: str,
+                          report_name: str = '',
                           entry_function: str = '',
                           harness_name: str = '',
                           harness_source: str = '',
-                          dump_output=True):
+                          dump_output=True) -> dict[str, Any]:
         """Dumps the data for the module in full."""
 
         if not self.report:
@@ -715,6 +715,8 @@ class CppProject(datatypes.Project[CppSourceCodeFile]):
         if dump_output:
             with open(report_name, 'w', encoding='utf-8') as f:
                 f.write(yaml.dump(new_report))
+
+        return new_report
 
     def get_function_from_name(self, function_name):
         for func in self.all_functions:

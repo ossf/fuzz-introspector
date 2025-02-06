@@ -597,11 +597,11 @@ class RustProject(datatypes.Project[RustSourceCodeFile]):
         self.source_code_files = source_code_files
 
     def dump_module_logic(self,
-                          report_name: str,
+                          report_name: str = '',
                           entry_function: str = '',
                           harness_name: str = '',
                           harness_source: str = '',
-                          dump_output: bool = True):
+                          dump_output: bool = True) -> dict[str, Any]:
         """Dumps the data for the module in full."""
         # pylint: disable=unused-argument
         logger.info('Dumping project-wide logic.')
@@ -683,6 +683,8 @@ class RustProject(datatypes.Project[RustSourceCodeFile]):
         if dump_output:
             with open(report_name, 'w', encoding='utf-8') as f:
                 f.write(yaml.dump(report))
+
+        return report
 
     def _find_source_with_function(self,
                                    name: str) -> Optional[RustSourceCodeFile]:
