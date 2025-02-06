@@ -479,6 +479,10 @@ def _copy_java_source_files(required_class_list: list[str], out_dir):
                 copied_source_path_list.append(required_file)
                 break
 
+    if not count:
+        logger.info('No java source files copied.')
+        return
+
     # Store a list of existing source file paths for reference
     with open(
             os.path.join(out_dir, constants.SAVED_SOURCE_FOLDER, 'index.json'),
