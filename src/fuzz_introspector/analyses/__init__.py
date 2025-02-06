@@ -41,6 +41,9 @@ all_analyses: list[type[analysis.AnalysisInterface]] = [
     metadata.MetadataAnalysis,
     sinks_analyser.SinkCoverageAnalyser,
     annotated_cfg.FuzzAnnotatedCFG,
+    source_code_line_analyser.SourceCodeLineAnalyser,
+    far_reach_low_coverage_analyser.FarReachLowCoverageAnalyser,
+    public_candidate_analyser.PublicCandidateAnalyser,
 ]
 
 # This is the list of analyses that are meant to run
