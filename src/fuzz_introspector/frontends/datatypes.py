@@ -107,7 +107,7 @@ class Project(Generic[T]):
                           dump_output: bool = True) -> dict[str, Any]:
         """Dumps the data for the module in full."""
         # Dummy function for subclasses
-        pass
+        return {}
 
     def extract_calltree(self,
                          source_file: str = '',

@@ -685,7 +685,7 @@ class CppProject(datatypes.Project[CppSourceCodeFile]):
             self.report['All functions'] = {}
             self.report['All functions']['Elements'] = func_list
 
-    def get_report(self, harness_source: str) -> dict[str, Any]:
+    def get_report(self, harness_source: str = '') -> dict[str, Any]:
         """Runs analysis if needed and gets a report wrt a given harness"""
         if not self.report:
             self.generate_report()
