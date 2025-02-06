@@ -1042,11 +1042,11 @@ class JvmProject(Project[JvmSourceCodeFile]):
             self.all_classes.extend(source_code.classes)
 
     def dump_module_logic(self,
-                          report_name: str,
+                          report_name: str = '',
                           entry_function: str = '',
                           harness_name: str = '',
                           harness_source: str = '',
-                          dump_output: bool = True):
+                          dump_output: bool = True) -> dict[str, Any]:
         """Dumps the data for the module in full."""
         logger.info('Dumping project-wide logic.')
         report: dict[str, Any] = {'report': 'name'}
@@ -1160,6 +1160,8 @@ class JvmProject(Project[JvmSourceCodeFile]):
 
         # Store method list to all_functions for the project
         self.all_functions = project_methods[:]
+
+        return report
 
     def find_source_with_method(self,
                                 name: str) -> Optional[JvmSourceCodeFile]:
