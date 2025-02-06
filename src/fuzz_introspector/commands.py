@@ -264,8 +264,6 @@ def analyse(args) -> int:
         max_functions = args.max_functions
         min_complexity = args.min_complexity
 
-        introspection_proj.load_debug_report(out_dir)
-
         target_analyser.set_flags(exclude_static_functions,
                                   only_referenced_functions,
                                   only_header_functions,

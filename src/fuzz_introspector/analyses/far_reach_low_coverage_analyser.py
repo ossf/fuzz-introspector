@@ -37,6 +37,15 @@ class FarReachLowCoverageAnalyser(analysis.AnalysisInterface):
         self.json_results: Dict[str, Any] = {}
         self.json_string_result = ''
 
+        # Default value for standalone analysis
+        self.exclude_static_functions = False
+        self.only_referenced_functions = False
+        self.only_header_functions = False
+        self.only_interesting_functions = False
+        self.only_easy_fuzz_params = False
+        self.max_functions = 10
+        self.min_complexity = 0
+
     @classmethod
     def get_name(cls):
         """Return the analyser identifying name for processing.
@@ -86,12 +95,6 @@ class FarReachLowCoverageAnalyser(analysis.AnalysisInterface):
     def set_min_complexity(self, min_complexity: int):
         """Configure the min complexity of functions to return from CLI."""
         self.min_complexity = min_complexity
-
-    def set_introspection_project(
-            self, introspection_project: analysis.IntrospectionProject):
-        """Configure the introspection project wrapper for retrieving
-        debug data."""
-        self.introspection_project = introspection_project
 
     def analysis_func(self,
                       table_of_contents: html_helpers.HtmlTableOfContents,

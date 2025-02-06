@@ -37,6 +37,10 @@ class SourceCodeLineAnalyser(analysis.AnalysisInterface):
         self.json_results: Dict[str, Any] = {}
         self.json_string_result = ''
 
+        # Default value for standalone analysis
+        self.source_file = ''
+        self.source_line = -1
+
     @classmethod
     def get_name(cls):
         """Return the analyser identifying name for processing.
