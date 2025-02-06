@@ -36,6 +36,7 @@ class PublicCandidateAnalyser(analysis.AnalysisInterface):
     def __init__(self) -> None:
         self.json_results: Dict[str, Any] = {}
         self.json_string_result = ''
+        self.dump_files = True
 
     @classmethod
     def get_name(cls):
@@ -102,11 +103,12 @@ class PublicCandidateAnalyser(analysis.AnalysisInterface):
             for function in sorted_functions
         ]
 
-        result_json_path = os.path.join(out_dir, 'result.json')
-        logger.info('Found %d function candidiates.', len(result_list))
-        logger.info('Dumping result to %s', result_json_path)
-        with open(result_json_path, 'w') as f:
-            json.dump(result_list, f)
+        if self.dump_files:
+            result_json_path = os.path.join(out_dir, 'result.json')
+            logger.info('Found %d function candidiates.', len(result_list))
+            logger.info('Dumping result to %s', result_json_path)
+            with open(result_json_path, 'w') as f:
+                json.dump(result_list, f)
 
     def _filter_functions(
         self, functions: list[function_profile.FunctionProfile]
