@@ -671,6 +671,8 @@ def create_section_optional_analyses(
             analysis_instance.set_display_html(
                 analysis_name in analyses_to_run)
 
+            introspection_proj.optional_analyses.append(analysis_instance)
+
             html_string = analysis_instance.analysis_func(
                 table_of_contents, tables, introspection_proj.proj_profile,
                 introspection_proj.profiles, basefolder, coverage_url,

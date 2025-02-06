@@ -49,6 +49,7 @@ class IntrospectionProject():
         self.language = language
         self.base_folder = target_folder
         self.coverage_url = coverage_url
+        self.optional_analyses = []
 
     def load_data_files(self,
                         parallelise=True,
