@@ -45,6 +45,7 @@ class FarReachLowCoverageAnalyser(analysis.AnalysisInterface):
         self.only_easy_fuzz_params = False
         self.max_functions = 10
         self.min_complexity = 0
+        self.dump_files = True
 
     @classmethod
     def get_name(cls):
@@ -179,11 +180,12 @@ class FarReachLowCoverageAnalyser(analysis.AnalysisInterface):
                         function.function_name)))
 
         self.json_results['functions'] = result_list
-        result_json_path = os.path.join(out_dir, 'result.json')
-        logger.info('Found %d function candidiates.', len(result_list))
-        logger.info('Dumping result to %s', result_json_path)
-        with open(result_json_path, 'w') as f:
-            json.dump(self.json_results, f)
+        if self.dump_files:
+            result_json_path = os.path.join(out_dir, 'result.json')
+            logger.info('Found %d function candidiates.', len(result_list))
+            logger.info('Dumping result to %s', result_json_path)
+            with open(result_json_path, 'w') as f:
+                json.dump(self.json_results, f)
 
     def _get_cross_reference_dict(
             self, functions: List[function_profile.FunctionProfile]

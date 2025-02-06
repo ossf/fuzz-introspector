@@ -40,6 +40,7 @@ class SourceCodeLineAnalyser(analysis.AnalysisInterface):
         # Default value for standalone analysis
         self.source_file = ''
         self.source_line = -1
+        self.dump_files = True
 
     @classmethod
     def get_name(cls):
@@ -138,7 +139,7 @@ class SourceCodeLineAnalyser(analysis.AnalysisInterface):
                         proj_profile.get_func_hit_percentage(
                             func.function_name)))
 
-        if result_list:
+        if result_list and self.dump_files:
             self.json_results['functions'] = result_list
             result_json_path = os.path.join(out_dir, 'functions.json')
             logger.info('Dumping result to %s', result_json_path)
