@@ -19,7 +19,6 @@ from typing import Any, Optional
 
 import os
 import logging
-import yaml
 
 from fuzz_introspector.frontends.datatypes import Project, SourceCodeFile
 
@@ -110,7 +109,7 @@ class CProject(Project['CSourceCodeFile']):
             report['All functions']['Elements'] = function_list
         report['included-header-files'] = list(included_header_files)
 
-        self.report = report[:]
+        self.report = report
 
     def get_source_code_with_target(self, target_func_name):
         for source_code in self.source_code_files:

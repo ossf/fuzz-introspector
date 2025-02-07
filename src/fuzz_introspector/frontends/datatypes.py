@@ -27,6 +27,7 @@ import tree_sitter_java
 import tree_sitter_rust
 
 import logging
+import yaml
 
 logger = logging.getLogger(name=__name__)
 
@@ -101,15 +102,13 @@ class Project(Generic[T]):
         """Helper function for generating yaml function report."""
         return
 
-    def get_report(self
+    def get_report(self,
                    entry_function: str = '',
                    harness_name: str = '',
                    harness_source: str = '') -> dict[str, Any]:
         """Runs analysis if needed and gets a report yaml"""
         if not self.report:
-            self.generate_report(entry_function,
-                                 harness_name,
-                                 harness_source)
+            self.generate_report(entry_function, harness_name, harness_source)
 
         return self.report
 
@@ -120,8 +119,14 @@ class Project(Generic[T]):
                           harness_source: str = '',
                           dump_output: bool = True) -> None:
         """Dumps the data for the module in full."""
-        # Dummy function for subclasses
-        return
+        if not self.report:
+            self.generate_report(entry_function, harness_name, harness_source)
+
+        logger.info('Dumping project-wide logic.')
+
+        if dump_output:
+            with open(report_name, 'w', encoding='utf-8') as f:
+                f.write(yaml.dump(self.report))
 
     def extract_calltree(self,
                          source_file: str = '',

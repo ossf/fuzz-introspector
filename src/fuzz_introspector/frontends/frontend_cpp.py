@@ -19,10 +19,8 @@ from typing import Any, Optional
 
 from tree_sitter import Language, Node
 
-import copy
 import os
 import logging
-import yaml
 
 from fuzz_introspector.frontends import datatypes
 

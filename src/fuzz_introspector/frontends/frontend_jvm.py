@@ -20,7 +20,6 @@ from typing import Any, Optional
 from tree_sitter import Language, Node
 
 import logging
-import yaml
 
 from fuzz_introspector.frontends.datatypes import Project, SourceCodeFile
 
@@ -1155,7 +1154,7 @@ class JvmProject(Project[JvmSourceCodeFile]):
         self.all_functions = project_methods[:]
 
         # Store report to avoid regeneration
-        self.report = report[:]
+        self.report = report
 
     def find_source_with_method(self,
                                 name: str) -> Optional[JvmSourceCodeFile]:

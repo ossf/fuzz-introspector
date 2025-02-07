@@ -20,7 +20,6 @@ from typing import Any, Optional
 from tree_sitter import Language, Node
 
 import logging
-import yaml
 
 from fuzz_introspector.frontends.datatypes import Project, SourceCodeFile
 
@@ -245,7 +244,7 @@ class GoProject(Project[GoSourceCodeFile]):
             report['All functions'] = {}
             report['All functions']['Elements'] = function_list
 
-        self.report = report[:]
+        self.report = report
 
     def extract_calltree(self,
                          source_file: str = '',
