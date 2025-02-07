@@ -60,6 +60,8 @@ def end_to_end(args) -> int:
 
     if args.language == constants.LANGUAGES.JAVA:
         entrypoint = 'fuzzerTestOneInput'
+    elif args.language == constants.LANGUAGES.RUST:
+        entrypoint = 'fuzz_target'
     else:
         entrypoint = 'LLVMFuzzerTestOneInput'
 
