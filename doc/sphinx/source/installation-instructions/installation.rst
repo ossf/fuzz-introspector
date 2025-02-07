@@ -1,6 +1,15 @@
 Installation
 ============
 
+Fuzz Introspector provides two different modes of operation. The first mode, which is the
+traditional mode and the one that started Fuzz Introspector, is using compiler extension
+to perform program analysis. The second more, which is a very recent 2025 mode, is a pure
+static analysis mode that relies on no build infrastructure or similar. The second mode is
+not as mature as the first mode, however, it provides a new set of capabilities, such as
+easy analysis of any target code, as well as can be used as a library for analysis.
+
+In this installation guide we will show the first mode.
+
 Clone latest Fuzz Introspector and create virtual environment
 
 .. code-block:: bash
@@ -133,7 +142,7 @@ repository:
    mkdir web
    cd web
    python3 ../../../../src/main.py report \
-     --target_dir=$PWD/../work \
+     --target-dir=$PWD/../work \
      --language=python
 
    # Launch srver to view the generated HTML report
@@ -179,7 +188,7 @@ following steps starting from the root of the Fuzz Introspector repository:
     mkdir web
     cd web
     python3 ../../../src/main.py report \
-      --target_dir=$PWD/../result/test1
+      --target-dir=$PWD/../result/test1
       --language=jvm
 
     # Launch srver to view the generated HTML report
