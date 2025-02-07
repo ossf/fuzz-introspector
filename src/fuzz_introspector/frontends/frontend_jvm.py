@@ -1041,14 +1041,11 @@ class JvmProject(Project[JvmSourceCodeFile]):
         for source_code in self.source_code_files:
             self.all_classes.extend(source_code.classes)
 
-    def dump_module_logic(self,
-                          report_name: str = '',
-                          entry_function: str = '',
-                          harness_name: str = '',
-                          harness_source: str = '',
-                          dump_output: bool = True) -> dict[str, Any]:
-        """Dumps the data for the module in full."""
-        logger.info('Dumping project-wide logic.')
+    def generate_report(self,
+                        entry_function: str = '',
+                        harness_name: str = '',
+                        harness_source: str = '') -> None:
+        """Helper function for generating yaml function report."""
         report: dict[str, Any] = {'report': 'name'}
         report['sources'] = []
         report['Fuzzer filename'] = harness_source
@@ -1154,14 +1151,11 @@ class JvmProject(Project[JvmSourceCodeFile]):
             report['All functions'] = {}
             report['All functions']['Elements'] = method_list
 
-        if dump_output:
-            with open(report_name, 'w', encoding='utf-8') as f:
-                f.write(yaml.dump(report))
-
         # Store method list to all_functions for the project
         self.all_functions = project_methods[:]
 
-        return report
+        # Store report to avoid regeneration
+        self.report = report[:]
 
     def find_source_with_method(self,
                                 name: str) -> Optional[JvmSourceCodeFile]:

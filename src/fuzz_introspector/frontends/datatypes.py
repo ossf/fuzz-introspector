@@ -94,20 +94,34 @@ class Project(Generic[T]):
         self.source_code_files = source_code_files
         self.all_functions: list[Any] = []
 
-    def get_report(self, harness_source: str = '') -> dict[str, Any]:
+    def generate_report(self,
+                        entry_function: str = '',
+                        harness_name: str = '',
+                        harness_source: str = '') -> None:
+        """Helper function for generating yaml function report."""
+        return
+
+    def get_report(self
+                   entry_function: str = '',
+                   harness_name: str = '',
+                   harness_source: str = '') -> dict[str, Any]:
         """Runs analysis if needed and gets a report yaml"""
-        return self.dump_module_logic(harness_source=harness_source,
-                                      dump_output=False)
+        if not self.report:
+            self.generate_report(entry_function,
+                                 harness_name,
+                                 harness_source)
+
+        return self.report
 
     def dump_module_logic(self,
                           report_name: str = '',
                           entry_function: str = '',
                           harness_name: str = '',
                           harness_source: str = '',
-                          dump_output: bool = True) -> dict[str, Any]:
+                          dump_output: bool = True) -> None:
         """Dumps the data for the module in full."""
         # Dummy function for subclasses
-        return {}
+        return
 
     def extract_calltree(self,
                          source_file: str = '',

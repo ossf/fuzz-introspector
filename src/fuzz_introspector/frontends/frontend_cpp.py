@@ -617,8 +617,13 @@ class CppProject(datatypes.Project[CppSourceCodeFile]):
     def __init__(self, source_code_files: list[CppSourceCodeFile]):
         super().__init__(source_code_files)
 
-    def generate_report(self, harness_source: str = ''):
-        """Creates the report used for passing to backend."""
+    def generate_report(self,
+                        entry_function: str = '',
+                        harness_name: str = '',
+                        harness_source: str = '') -> None:
+        """Helper function for generating yaml function report."""
+        # pylint: disable=unused-argument
+
         self.report['report'] = 'name'
         self.report['sources'] = []
         self.report['Fuzzing method'] = 'LLVMFuzzerTestOneInput'
@@ -685,38 +690,8 @@ class CppProject(datatypes.Project[CppSourceCodeFile]):
             self.report['All functions'] = {}
             self.report['All functions']['Elements'] = func_list
 
-    def get_report(self, harness_source: str = '') -> dict[str, Any]:
-        """Runs analysis if needed and gets a report wrt a given harness"""
-        if not self.report:
-            self.generate_report()
-        new_report = copy.deepcopy(self.report)
-        new_report['Fuzzing method'] = 'LLVMFuzzerTestOneInput'
-        new_report['Fuzzer filename'] = harness_source
-        return new_report
-
-    def dump_module_logic(self,
-                          report_name: str = '',
-                          entry_function: str = '',
-                          harness_name: str = '',
-                          harness_source: str = '',
-                          dump_output=True) -> dict[str, Any]:
-        """Dumps the data for the module in full."""
-
-        if not self.report:
-            self.generate_report(harness_source)
-
-        new_report = copy.deepcopy(self.report)
-        new_report['Fuzzing method'] = 'LLVMFuzzerTestOneInput'
-        new_report['Fuzzer filename'] = harness_source
-
-        # pylint: disable=unused-argument
-        logger.info('Dumping project-wide logic.')
-
-        if dump_output:
-            with open(report_name, 'w', encoding='utf-8') as f:
-                f.write(yaml.dump(new_report))
-
-        return new_report
+        self.report['Fuzzing method'] = 'LLVMFuzzerTestOneInput'
+        self.report['Fuzzer filename'] = harness_source
 
     def get_function_from_name(self, function_name):
         for func in self.all_functions:
