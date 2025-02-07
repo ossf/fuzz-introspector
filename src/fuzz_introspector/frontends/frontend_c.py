@@ -19,7 +19,6 @@ from typing import Any, Optional
 
 import os
 import logging
-import yaml
 
 from fuzz_introspector.frontends.datatypes import Project, SourceCodeFile
 
@@ -32,14 +31,11 @@ class CProject(Project['CSourceCodeFile']):
     def __init__(self, source_code_files: list['CSourceCodeFile']):
         super().__init__(source_code_files)
 
-    def dump_module_logic(self,
-                          report_name: str = '',
-                          entry_function: str = '',
-                          harness_name: str = '',
-                          harness_source: str = '',
-                          dump_output: bool = True) -> dict[str, Any]:
-        """Dumps the data for the module in full."""
-        logger.info('Dumping project-wide logic.')
+    def generate_report(self,
+                        entry_function: str = '',
+                        harness_name: str = '',
+                        harness_source: str = '') -> None:
+        """Helper function for generating yaml function report."""
         report: dict[str, Any] = {'report': 'name'}
         report['sources'] = []
 
@@ -113,11 +109,7 @@ class CProject(Project['CSourceCodeFile']):
             report['All functions']['Elements'] = function_list
         report['included-header-files'] = list(included_header_files)
 
-        if dump_output:
-            with open(report_name, 'w', encoding='utf-8') as f:
-                f.write(yaml.dump(report))
-
-        return report
+        self.report = report
 
     def get_source_code_with_target(self, target_func_name):
         for source_code in self.source_code_files:

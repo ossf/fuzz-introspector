@@ -594,17 +594,15 @@ class RustProject(datatypes.Project[RustSourceCodeFile]):
     """Wrapper for doing analysis of a collection of source files."""
 
     def __init__(self, source_code_files: list[RustSourceCodeFile]):
-        self.source_code_files = source_code_files
+        super().__init__(source_code_files)
 
-    def dump_module_logic(self,
-                          report_name: str = '',
-                          entry_function: str = '',
-                          harness_name: str = '',
-                          harness_source: str = '',
-                          dump_output: bool = True) -> dict[str, Any]:
-        """Dumps the data for the module in full."""
+    def generate_report(self,
+                        entry_function: str = '',
+                        harness_name: str = '',
+                        harness_source: str = '') -> None:
+        """Helper function for generating yaml function report."""
         # pylint: disable=unused-argument
-        logger.info('Dumping project-wide logic.')
+
         report: dict[str, Any] = {'report': 'name'}
         report['sources'] = []
         report['Fuzzer filename'] = harness_source
@@ -680,11 +678,22 @@ class RustProject(datatypes.Project[RustSourceCodeFile]):
             report['All functions'] = {}
             report['All functions']['Elements'] = func_list
 
+        self.report = report
+
+    def dump_module_logic(self,
+                          report_name: str = '',
+                          entry_function: str = '',
+                          harness_name: str = '',
+                          harness_source: str = '',
+                          dump_output: bool = True) -> None:
+        """Dumps the data for the module in full."""
+        self.generate_report(entry_function, harness_name, harness_source)
+
+        logger.info('Dumping project-wide logic.')
+
         if dump_output:
             with open(report_name, 'w', encoding='utf-8') as f:
-                f.write(yaml.dump(report))
-
-        return report
+                f.write(yaml.dump(self.report))
 
     def _find_source_with_function(self,
                                    name: str) -> Optional[RustSourceCodeFile]:

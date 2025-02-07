@@ -26,7 +26,9 @@ import tree_sitter_go
 import tree_sitter_java
 import tree_sitter_rust
 
+import copy
 import logging
+import yaml
 
 logger = logging.getLogger(name=__name__)
 
@@ -94,20 +96,44 @@ class Project(Generic[T]):
         self.source_code_files = source_code_files
         self.all_functions: list[Any] = []
 
-    def get_report(self, harness_source: str = '') -> dict[str, Any]:
+    def generate_report(self,
+                        entry_function: str = '',
+                        harness_name: str = '',
+                        harness_source: str = '') -> None:
+        """Helper function for generating yaml function report."""
+        return
+
+    def get_report(self,
+                   entry_function: str = '',
+                   harness_name: str = '',
+                   harness_source: str = '') -> dict[str, Any]:
         """Runs analysis if needed and gets a report yaml"""
-        return self.dump_module_logic(harness_source=harness_source,
-                                      dump_output=False)
+        if not self.report:
+            self.generate_report(entry_function, harness_name, harness_source)
+
+        new_report = copy.deepcopy(self.report)
+        new_report['Fuzzer filename'] = harness_source
+
+        return new_report
 
     def dump_module_logic(self,
                           report_name: str = '',
                           entry_function: str = '',
                           harness_name: str = '',
                           harness_source: str = '',
-                          dump_output: bool = True) -> dict[str, Any]:
+                          dump_output: bool = True) -> None:
         """Dumps the data for the module in full."""
-        # Dummy function for subclasses
-        return {}
+        if not self.report:
+            self.generate_report(entry_function, harness_name, harness_source)
+
+        new_report = copy.deepcopy(self.report)
+        new_report['Fuzzer filename'] = harness_source
+
+        logger.info('Dumping project-wide logic.')
+
+        if dump_output:
+            with open(report_name, 'w', encoding='utf-8') as f:
+                f.write(yaml.dump(new_report))
 
     def extract_calltree(self,
                          source_file: str = '',

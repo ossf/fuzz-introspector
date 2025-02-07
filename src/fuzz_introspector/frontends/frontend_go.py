@@ -20,7 +20,6 @@ from typing import Any, Optional
 from tree_sitter import Language, Node
 
 import logging
-import yaml
 
 from fuzz_introspector.frontends.datatypes import Project, SourceCodeFile
 
@@ -172,15 +171,12 @@ class GoProject(Project[GoSourceCodeFile]):
             for item in full_functions_methods
         }
 
-    def dump_module_logic(self,
-                          report_name: str = '',
-                          entry_function: str = '',
-                          harness_name: str = '',
-                          harness_source: str = '',
-                          dump_output: bool = True) -> dict[str, Any]:
-        """Dumps the data for the module in full."""
+    def generate_report(self,
+                        entry_function: str = '',
+                        harness_name: str = '',
+                        harness_source: str = '') -> None:
+        """Helper function for generating yaml function report."""
         # pylint: disable=unused-argument
-        logger.info('Dumping project-wide logic.')
         report: dict[str, Any] = {'report': 'name'}
         report['sources'] = []
         report['Fuzzer filename'] = harness_source
@@ -248,11 +244,7 @@ class GoProject(Project[GoSourceCodeFile]):
             report['All functions'] = {}
             report['All functions']['Elements'] = function_list
 
-        if dump_output:
-            with open(report_name, 'w', encoding='utf-8') as f:
-                f.write(yaml.dump(report))
-
-        return report
+        self.report = report
 
     def extract_calltree(self,
                          source_file: str = '',
