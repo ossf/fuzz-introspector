@@ -26,6 +26,7 @@ import tree_sitter_go
 import tree_sitter_java
 import tree_sitter_rust
 
+import copy
 import logging
 import yaml
 
@@ -110,7 +111,10 @@ class Project(Generic[T]):
         if not self.report:
             self.generate_report(entry_function, harness_name, harness_source)
 
-        return self.report
+        new_report = copy.deepcopy(self.report)
+        new_report['Fuzzer filename'] = harness_source
+
+        return new_report
 
     def dump_module_logic(self,
                           report_name: str = '',
@@ -122,11 +126,14 @@ class Project(Generic[T]):
         if not self.report:
             self.generate_report(entry_function, harness_name, harness_source)
 
+        new_report = copy.deepcopy(self.report)
+        new_report['Fuzzer filename'] = harness_source
+
         logger.info('Dumping project-wide logic.')
 
         if dump_output:
             with open(report_name, 'w', encoding='utf-8') as f:
-                f.write(yaml.dump(self.report))
+                f.write(yaml.dump(new_report))
 
     def extract_calltree(self,
                          source_file: str = '',
