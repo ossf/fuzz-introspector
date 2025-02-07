@@ -7,9 +7,11 @@ Clone latest Fuzz Introspector and create virtual environment
 
     git clone --recurse-submodules https://github.com/ossf/fuzz-introspector
     cd fuzz-introspector
-    python3 -m virtualenv .venv
+    python3.11 -m virtualenv .venv
     . .venv/bin/activate
-    pip3 install -r requirements.txt
+    cd src
+    python3 -m pip install .
+    cd ../
 
 At this point you can test Fuzz Introspector with different frontends depending
 on the type of language you want to analyse:
@@ -47,17 +49,14 @@ Build a test case
     # From the root of the fuzz-introspector repository
     cd tests/simple-example-0
 
-    # Run compiler pass to generate *.data and *.data.yaml files
-    mkdir work
-    cd work
-    FUZZ_INTROSPECTOR=1 ../../../build/llvm-build/bin/clang -fsanitize=fuzzer \
-      -fuse-ld=gold -flto -g ../fuzzer.c -o fuzzer
+    # Build the target using Fuzz Introspector instrumentation
+    ./build_all.sh
 
     # Run post-processing to analyse data files and generate HTML report
-    python3 ../../../src/main.py correlate --binaries_dir=.
+    python3 ../../../src/main.py correlate --binaries-dir=.
     python3 ../../../src/main.py report \
-      --target_dir=. \
-      --correlation_file=./exe_to_fuzz_introspector_logs.yaml
+      --target-dir=. \
+      --correlation-file=./exe_to_fuzz_introspector_logs.yaml
 
     # The post-processing will have generated various .html, .js, .css and .png fies,
     # and these are accessible in the current folder. Simply start a webserver and 
@@ -87,10 +86,10 @@ This is option 2.
       -fuse-ld=gold -flto -g ../fuzzer.c -o fuzzer
 
     # Run post-processing to analyse data files and generate HTML report
-    python3 ../../../src/main.py correlate --binaries_dir=.
+    python3 ../../../src/main.py correlate --binaries-dir=.
     python3 ../../../src/main.py report \
-      --target_dir=. \
-      --correlation_file=./exe_to_fuzz_introspector_logs.yaml
+      --target-dir=. \
+      --correlation-file=./exe_to_fuzz_introspector_logs.yaml
 
     # The post-processing will have generated various .html, .js, .css and .png fies,
     # and these are accessible in the current folder. Simply start a webserver and
