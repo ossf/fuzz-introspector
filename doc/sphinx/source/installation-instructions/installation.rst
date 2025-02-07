@@ -27,48 +27,15 @@ C/C++
 Fuzz-introspector relies on an LTO LLVM pass and this requires us to build a
 custom Clang where the LTO pass is part of the compiler tool chain.
 Additionally, we rely on the Gold linker, which means we need to build this too,
-which comes as part of the binutils project. The next step is, therefore, to
-do to this:
+which comes as part of the binutils project. To install these things and patch
+LLVM with our pass, we have a wrapper script for building/installing:
 
 .. code-block:: bash
 
-    mkdir build
-    cd build
+   ./build_all.sh
 
-    # Build binutils
-    apt install texinfo
-    git clone --depth 1 git://sourceware.org/git/binutils-gdb.git binutils
-    mkdir build
-    cd ./build
-    ../binutils/configure --enable-gold --enable-plugins --disable-werror
-    make all-gold
-    cd ../
-
-    # Build LLVM and Clang
-    git clone https://github.com/llvm/llvm-project/
-    cd llvm-project/
-    git checkout release/15.x
-
-    # Patch Clang to run fuzz introspector
-    ../../frontends/llvm/patch-llvm.sh
-    cp -rf ../../frontends/llvm/include/llvm/Transforms/FuzzIntrospector/ \
-           ./llvm/include/llvm/Transforms/FuzzIntrospector
-    cp -rf ../../frontends/llvm/lib/Transforms/FuzzIntrospector \
-           ./llvm/lib/Transforms/FuzzIntrospector
-    cd ../
-
-    # Build LLVM and clang
-    mkdir llvm-build
-    cd llvm-build
-    cmake -G "Unix Makefiles" -DLLVM_ENABLE_PROJECTS="clang;compiler-rt"  \
-          -DCMAKE_BUILD_TYPE=Debug \
-          -DLLVM_BINUTILS_INCDIR=../binutils/include \
-          -DLLVM_TARGETS_TO_BUILD="X86" ../llvm-project/llvm/
-    make llvm-headers
-    make
-
-We now have the LLVM frontend build and this will be used to extract data
-about the software we analyse.
+Running the above script, we now have the LLVM frontend build and this will be
+used to extract data about the software we analyse.
 
 Option 1: only static analysis
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
