@@ -179,3 +179,28 @@ class Project(Generic[T]):
                     xrefs.append(func)
 
         return xrefs
+
+    def find_function_by_name(self, target_function_name, only_exact_match):
+        """Helper function to find the matching function."""
+        for function in self.all_functions:
+            if function.name == target_function_name:
+                return function
+
+        if not only_exact_match:
+            for function in self.all_functions:
+                if target_function_name in function.name:
+                    return function
+
+        return None
+
+    def get_function_by_source_suffix_line(self, target_source_file,
+                                           target_source_line):
+        """Helper function to find the matchin function by source
+        file and source file."""
+        for function in self.all_functions:
+            source_file = function.parent_source.source_file
+            if source_file.endswith(target_source_file):
+                if function.start_line <= target_source_line <= function.end_line:
+                    return function
+
+        return None
