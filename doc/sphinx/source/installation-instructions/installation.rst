@@ -7,9 +7,11 @@ Clone latest Fuzz Introspector and create virtual environment
 
     git clone --recurse-submodules https://github.com/ossf/fuzz-introspector
     cd fuzz-introspector
-    python3 -m virtualenv .venv
+    python3.11 -m virtualenv .venv
     . .venv/bin/activate
-    pip3 install -r requirements.txt
+    cd src
+    python3 -m pip install .
+    cd ../
 
 At this point you can test Fuzz Introspector with different frontends depending
 on the type of language you want to analyse:
@@ -27,48 +29,15 @@ C/C++
 Fuzz-introspector relies on an LTO LLVM pass and this requires us to build a
 custom Clang where the LTO pass is part of the compiler tool chain.
 Additionally, we rely on the Gold linker, which means we need to build this too,
-which comes as part of the binutils project. The next step is, therefore, to
-do to this:
+which comes as part of the binutils project. To install these things and patch
+LLVM with our pass, we have a wrapper script for building/installing:
 
 .. code-block:: bash
 
-    mkdir build
-    cd build
+   ./build_all.sh
 
-    # Build binutils
-    apt install texinfo
-    git clone --depth 1 git://sourceware.org/git/binutils-gdb.git binutils
-    mkdir build
-    cd ./build
-    ../binutils/configure --enable-gold --enable-plugins --disable-werror
-    make all-gold
-    cd ../
-
-    # Build LLVM and Clang
-    git clone https://github.com/llvm/llvm-project/
-    cd llvm-project/
-    git checkout release/15.x
-
-    # Patch Clang to run fuzz introspector
-    ../../frontends/llvm/patch-llvm.sh
-    cp -rf ../../frontends/llvm/include/llvm/Transforms/FuzzIntrospector/ \
-           ./llvm/include/llvm/Transforms/FuzzIntrospector
-    cp -rf ../../frontends/llvm/lib/Transforms/FuzzIntrospector \
-           ./llvm/lib/Transforms/FuzzIntrospector
-    cd ../
-
-    # Build LLVM and clang
-    mkdir llvm-build
-    cd llvm-build
-    cmake -G "Unix Makefiles" -DLLVM_ENABLE_PROJECTS="clang;compiler-rt"  \
-          -DCMAKE_BUILD_TYPE=Debug \
-          -DLLVM_BINUTILS_INCDIR=../binutils/include \
-          -DLLVM_TARGETS_TO_BUILD="X86" ../llvm-project/llvm/
-    make llvm-headers
-    make
-
-We now have the LLVM frontend build and this will be used to extract data
-about the software we analyse.
+Running the above script, we now have the LLVM frontend build and this will be
+used to extract data about the software we analyse.
 
 Option 1: only static analysis
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -80,17 +49,14 @@ Build a test case
     # From the root of the fuzz-introspector repository
     cd tests/simple-example-0
 
-    # Run compiler pass to generate *.data and *.data.yaml files
-    mkdir work
-    cd work
-    FUZZ_INTROSPECTOR=1 ../../../build/llvm-build/bin/clang -fsanitize=fuzzer \
-      -fuse-ld=gold -flto -g ../fuzzer.c -o fuzzer
+    # Build the target using Fuzz Introspector instrumentation
+    ./build_all.sh
 
     # Run post-processing to analyse data files and generate HTML report
-    python3 ../../../src/main.py correlate --binaries_dir=.
+    python3 ../../../src/main.py correlate --binaries-dir=.
     python3 ../../../src/main.py report \
-      --target_dir=. \
-      --correlation_file=./exe_to_fuzz_introspector_logs.yaml
+      --target-dir=. \
+      --correlation-file=./exe_to_fuzz_introspector_logs.yaml
 
     # The post-processing will have generated various .html, .js, .css and .png fies,
     # and these are accessible in the current folder. Simply start a webserver and 
@@ -120,10 +86,10 @@ This is option 2.
       -fuse-ld=gold -flto -g ../fuzzer.c -o fuzzer
 
     # Run post-processing to analyse data files and generate HTML report
-    python3 ../../../src/main.py correlate --binaries_dir=.
+    python3 ../../../src/main.py correlate --binaries-dir=.
     python3 ../../../src/main.py report \
-      --target_dir=. \
-      --correlation_file=./exe_to_fuzz_introspector_logs.yaml
+      --target-dir=. \
+      --correlation-file=./exe_to_fuzz_introspector_logs.yaml
 
     # The post-processing will have generated various .html, .js, .css and .png fies,
     # and these are accessible in the current folder. Simply start a webserver and

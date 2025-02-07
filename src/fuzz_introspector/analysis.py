@@ -1129,6 +1129,10 @@ def _extract_test_information_cpp(report_dict, out_dir):
 
     directories = set()
 
+    # If this is run locally and not in OSS-Fuzz, let's skip for now.
+    if not os.path.isdir('/src/'):
+        return directories
+
     # All directories added
     for path in normalized_paths:
         if path.startswith('/usr/'):
