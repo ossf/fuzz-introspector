@@ -108,8 +108,7 @@ class Project(Generic[T]):
                    harness_name: str = '',
                    harness_source: str = '') -> dict[str, Any]:
         """Runs analysis if needed and gets a report yaml"""
-        if not self.report:
-            self.generate_report(entry_function, harness_name, harness_source)
+        self.generate_report(entry_function, harness_name, harness_source)
 
         new_report = copy.deepcopy(self.report)
         new_report['Fuzzer filename'] = harness_source
@@ -122,9 +121,8 @@ class Project(Generic[T]):
                           harness_name: str = '',
                           harness_source: str = '',
                           dump_output: bool = True) -> None:
-        """Dumps the data for the module in full."""
-        if not self.report:
-            self.generate_report(entry_function, harness_name, harness_source)
+        """Dumps the data    for the module in full."""
+        self.generate_report(entry_function, harness_name, harness_source)
 
         new_report = copy.deepcopy(self.report)
         new_report['Fuzzer filename'] = harness_source

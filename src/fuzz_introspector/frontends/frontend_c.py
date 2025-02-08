@@ -68,6 +68,9 @@ class CProject(Project['CSourceCodeFile']):
                 if harness_source:
                     if func_def.name(
                     ) == 'LLVMFuzzerTestOneInput' and source_code.source_file != harness_source:
+                        logger.debug('Skipping harness: %s -- %s -- %s',
+                                     func_def.name(), source_code.source_file,
+                                     harness_source)
                         continue
                 func_dict = {}
                 func_dict['functionName'] = func_def.name()
