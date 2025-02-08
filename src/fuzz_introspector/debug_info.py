@@ -284,7 +284,6 @@ def load_debug_report(debug_files):
     all_functions_in_debug = dict()
     all_global_variables = dict()
     all_types = dict()
-    print("Loading report:")
 
     # Extract all of the details
     for debug_file in debug_files:
@@ -530,8 +529,6 @@ def correlate_debugged_function_to_debug_types(all_debug_types,
     """Correlate debug information about all functions and all types. The
     result is a lot of atomic debug-information-extracted types are correlated
     to the debug function."""
-    print("Correlating")
-
     # Index debug types by address. We need to do a lot of look ups when
     # refining data types where the address is the key, so a fast
     # look-up mechanism is useful here.

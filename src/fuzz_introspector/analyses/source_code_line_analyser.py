@@ -97,7 +97,7 @@ class SourceCodeLineAnalyser(analysis.AnalysisInterface):
         logger.info(' - Running analysis %s', self.get_name())
 
         if not self.source_file or self.source_line <= 0:
-            logger.error('No valid source code or target line are provided')
+            logger.debug('No valid source code or target line are provided')
             return
 
         # Get all functions from the profiles
