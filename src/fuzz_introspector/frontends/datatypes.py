@@ -121,7 +121,7 @@ class Project(Generic[T]):
                           harness_name: str = '',
                           harness_source: str = '',
                           dump_output: bool = True) -> None:
-        """Dumps the data    for the module in full."""
+        """Dumps the data for the module in full."""
         self.generate_report(entry_function, harness_name, harness_source)
 
         new_report = copy.deepcopy(self.report)
