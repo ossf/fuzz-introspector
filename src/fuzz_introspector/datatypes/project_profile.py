@@ -115,6 +115,15 @@ class MergedProjectProfile:
                     continue
                 reached_func_obj.incoming_references.append(
                     fp_obj.function_name)
+
+                # Skip complexity additions if this is a recursive call
+                if (fp_obj.function_source_file
+                        == reached_func_obj.function_source_file
+                        and fp_obj.function_linenumber
+                        == reached_func_obj.function_linenumber
+                        and fp_obj.function_line_number_end
+                        == reached_func_obj.function_line_number_end):
+                    continue
                 total_cyclomatic_complexity += reached_func_obj.cyclomatic_complexity
                 if reached_func_obj.hitcount == 0:
                     total_new_complexity += reached_func_obj.cyclomatic_complexity

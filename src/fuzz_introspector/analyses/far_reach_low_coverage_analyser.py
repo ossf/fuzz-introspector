@@ -179,6 +179,11 @@ class FarReachLowCoverageAnalyser(analysis.AnalysisInterface):
                     proj_profile.get_func_hit_percentage(
                         function.function_name)))
 
+        # Sort the result list
+        result_list = sorted(result_list,
+                             key=lambda d: d['total_cyclomatic_complexity'],
+                             reverse=True)
+
         self.json_results['functions'] = result_list
         if self.dump_files:
             result_json_path = os.path.join(out_dir, 'result.json')

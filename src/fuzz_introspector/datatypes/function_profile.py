@@ -106,7 +106,7 @@ class FunctionProfile:
             'raw_function_name': self.raw_function_name,
             'is_reached': bool(self.reached_by_fuzzers),
             'is_enum_class': self.is_enum,
-            'accummulated_complexity': self.cyclomatic_complexity,
+            'cyclomatic_complexity': self.cyclomatic_complexity,
             'function_argument_names': self.arg_names,
             'function_arguments': self.arg_types,
             'function_signature': self.signature,
@@ -114,7 +114,7 @@ class FunctionProfile:
             'return_type': self.return_type,
             'runtime_coverage_percent': coverage,
             'source_line_begin': self.function_linenumber,
-            'source_line_endvv': self.function_line_number_end,
+            'source_line_end': self.function_line_number_end,
             'debug_summary': '',  # No debug summary from new frontend yet
             'total_cyclomatic_complexity': self.total_cyclomatic_complexity
         }
