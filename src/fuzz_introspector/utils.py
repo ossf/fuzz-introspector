@@ -537,8 +537,8 @@ def copy_source_files(required_class_list: list[str],
     elif language == 'python':
         _copy_python_source_files(out_dir)
     else:
-        logger.warning('Language: %s not support. Skipping source file copy.',
-                       language)
+        logger.debug('Language: %s not support. Skipping source file copy.',
+                     language)
 
 
 def locate_rust_fuzz_key(funcname: str, fuzz_map: dict[str,

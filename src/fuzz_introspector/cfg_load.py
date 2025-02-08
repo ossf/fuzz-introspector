@@ -66,7 +66,7 @@ def extract_all_callsites_recursive(
 def extract_all_callsites(
         calltree: Optional[CalltreeCallsite]) -> List[CalltreeCallsite]:
     if calltree is None:
-        logger.error("Trying to extract from a None calltree")
+        logger.debug("Trying to extract from a None calltree")
         return []
 
     cs_list: List[CalltreeCallsite] = []

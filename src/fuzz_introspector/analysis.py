@@ -340,7 +340,7 @@ def get_node_coverage_hitcount(demangled_name: str, callstack: Dict[int, str],
         coverage_data = profile.coverage.get_hit_details(demangled_name)
 
         if len(coverage_data) == 0:
-            logger.error("There is no coverage data (not even all negative).")
+            logger.info("There is no coverage data (not even all negative).")
         node.cov_parent = "EP"
 
         node_hitcount = 0

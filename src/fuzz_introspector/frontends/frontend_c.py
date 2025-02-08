@@ -519,7 +519,6 @@ class CSourceCodeFile(SourceCodeFile):
         type_query_res = type_query.captures(self.root)
         for _, types in type_query_res.items():
             for typedef in types:
-                print(typedef.text.decode())
                 # Skip if this is an anonymous struct.
                 # TODO(David): handle this
                 if typedef.child_by_field_name('declarator') is None:
