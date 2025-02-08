@@ -336,8 +336,13 @@ class FunctionDefinition():
     def get_function_arg_names(self):
         """Gets the same of a function's arguments"""
         param_names = []
-        parameters_node = self.root.child_by_field_name(
-            'declarator').child_by_field_name('parameters')
+
+        tmp_node = self.root.child_by_field_name('declarator')
+        while (tmp_node.child_by_field_name('declarator') is not None
+               and tmp_node.child_by_field_name('parameters') is None):
+            tmp_node = tmp_node.child_by_field_name('declarator')
+
+        parameters_node = tmp_node.child_by_field_name('parameters')
         if not parameters_node:
             return param_names
 
@@ -356,9 +361,12 @@ class FunctionDefinition():
         """Gets the text of a function's types"""
         param_types = []
 
-        parameters_node = self.root.child_by_field_name(
-            'declarator').child_by_field_name('parameters')
+        tmp_node = self.root.child_by_field_name('declarator')
+        while (tmp_node.child_by_field_name('declarator') is not None
+               and tmp_node.child_by_field_name('parameters') is None):
+            tmp_node = tmp_node.child_by_field_name('declarator')
 
+        parameters_node = tmp_node.child_by_field_name('parameters')
         if not parameters_node:
             return param_types
 
