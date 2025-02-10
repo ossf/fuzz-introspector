@@ -124,9 +124,7 @@ class GoSourceCodeFile(SourceCodeFile):
 
     def has_libfuzzer_harness(self) -> bool:
         """Returns whether the source code holds a libfuzzer harness"""
-        if any(
-                func.name.startswith('Fuzz')
-                for func in self.functions):
+        if any(func.name.startswith('Fuzz') for func in self.functions):
             return True
 
         if any(meth.name.startswith('Fuzz') for meth in self.methods):
@@ -137,12 +135,10 @@ class GoSourceCodeFile(SourceCodeFile):
     def has_function_definition(self, target_function_name: str) -> bool:
         """Returns if the source file holds a given function definition."""
 
-        if any(func.name == target_function_name
-               for func in self.functions):
+        if any(func.name == target_function_name for func in self.functions):
             return True
 
-        if any(meth.name == target_function_name
-               for meth in self.methods):
+        if any(meth.name == target_function_name for meth in self.methods):
             return True
 
         return False
