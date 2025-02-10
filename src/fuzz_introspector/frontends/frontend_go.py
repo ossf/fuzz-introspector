@@ -102,9 +102,9 @@ class GoSourceCodeFile(SourceCodeFile):
         """Gets the functions defined in the file, as a list of strings."""
         func_names = []
         for func in self.functions:
-            func_names.append(func.function_name)
+            func_names.append(func.name)
         for method in self.methods:
-            func_names.append(method.function_name)
+            func_names.append(method.name)
         return func_names
 
     def get_function_node(
@@ -113,11 +113,11 @@ class GoSourceCodeFile(SourceCodeFile):
 
         # Find the first instance of the function name
         for func in self.functions:
-            if func.function_name == target_function_name:
+            if func.name == target_function_name:
                 return func
 
         for method in self.methods:
-            if method.function_name == target_function_name:
+            if method.name == target_function_name:
                 return method
 
         return None
@@ -125,11 +125,11 @@ class GoSourceCodeFile(SourceCodeFile):
     def has_libfuzzer_harness(self) -> bool:
         """Returns whether the source code holds a libfuzzer harness"""
         if any(
-                func.function_name.startswith('Fuzz')
+                func.name.startswith('Fuzz')
                 for func in self.functions):
             return True
 
-        if any(meth.function_name.startswith('Fuzz') for meth in self.methods):
+        if any(meth.name.startswith('Fuzz') for meth in self.methods):
             return True
 
         return False
@@ -137,11 +137,11 @@ class GoSourceCodeFile(SourceCodeFile):
     def has_function_definition(self, target_function_name: str) -> bool:
         """Returns if the source file holds a given function definition."""
 
-        if any(func.function_name == target_function_name
+        if any(func.name == target_function_name
                for func in self.functions):
             return True
 
-        if any(meth.function_name == target_function_name
+        if any(meth.name == target_function_name
                for meth in self.methods):
             return True
 
@@ -150,8 +150,8 @@ class GoSourceCodeFile(SourceCodeFile):
     def get_entry_function_name(self) -> str:
         """Returns the entry function name of the harness if found,"""
         for func in (self.functions + self.methods):
-            if func.function_name.startswith('Fuzz'):
-                return func.function_name
+            if func.name.startswith('Fuzz'):
+                return func.name
 
         return ''
 
@@ -167,7 +167,7 @@ class GoProject(Project[GoSourceCodeFile]):
             for item in src.functions + src.methods
         ]
         self.functions_methods_map = {
-            item.function_name: item
+            item.name: item
             for item in full_functions_methods
         }
 
@@ -207,7 +207,7 @@ class GoProject(Project[GoSourceCodeFile]):
 
                 func_def.extract_callsites(self.functions_methods_map)
                 func_dict: dict[str, Any] = {}
-                func_dict['functionName'] = func_def.function_name
+                func_dict['functionName'] = func_def.name
                 func_dict['functionSourceFile'] = source_code.source_file
                 func_dict['functionLinenumber'] = func_def.start_line
                 func_dict['functionLinenumberEnd'] = func_def.end_line
@@ -243,6 +243,9 @@ class GoProject(Project[GoSourceCodeFile]):
         if function_list:
             report['All functions'] = {}
             report['All functions']['Elements'] = function_list
+
+        # Store functions/methods globally
+        self.all_functions = functions_methods[:]
 
         self.report = report
 
@@ -362,7 +365,7 @@ class FunctionMethod():
         self.end_line = self.root.end_point.row + 1
 
         # Other properties
-        self.function_name = ''
+        self.name = ''
         self.receiver = ''
         self.receiver_name = ''
         self.complexity = 0
@@ -400,7 +403,7 @@ class FunctionMethod():
             for func in all_funcs_meths:
                 found = False
                 for callsite in func.base_callsites:
-                    if callsite[0] == self.function_name:
+                    if callsite[0] == self.name:
                         found = True
                         break
                 if found:
@@ -416,14 +419,14 @@ class FunctionMethod():
             return self.function_depth
 
         visited: list[str] = []
-        func_meth_dict = {f.function_name: f for f in all_funcs_meths}
+        func_meth_dict = {f.name: f for f in all_funcs_meths}
 
         def _recursive_function_depth(func_meth: FunctionMethod) -> int:
             callsites = func_meth.base_callsites
             if len(callsites) == 0:
                 return 0
 
-            visited.append(func_meth.function_name)
+            visited.append(func_meth.name)
             depth = 0
             for callsite in callsites:
                 target = func_meth_dict.get(callsite[0])
@@ -459,9 +462,9 @@ class FunctionMethod():
         name_node = self.root
         while name_node.child_by_field_name('name') is not None:
             name_node = name_node.child_by_field_name('name')
-            self.function_name = name_node.text.decode()
+            self.name = name_node.text.decode()
         if self.receiver:
-            self.function_name = f'{self.receiver}.{self.function_name}'
+            self.name = f'{self.receiver}.{self.name}'
 
         # Process arguments
         param_names = []
@@ -513,7 +516,7 @@ class FunctionMethod():
         # Process signature
         # Go function signature format
         # (Optional_Receiver) Func_Name(Argument_Types) Optional_Return_Type
-        self.sig = f'{self.function_name}({",".join(self.arg_types)})'
+        self.sig = f'{self.name}({",".join(self.arg_types)})'
 
         if self.return_type != 'void':
             self.sig = f'{self.sig} {self.return_type}'
