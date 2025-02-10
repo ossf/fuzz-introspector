@@ -23,12 +23,13 @@ diff --git a/infra/base-images/base-builder/compile b/infra/base-images/base-bui
 index e05d0e6ea..2554b9d3f 100755
 --- a/infra/base-images/base-builder/compile
 +++ b/infra/base-images/base-builder/compile
-@@ -235,6 +235,8 @@ if [ "$SANITIZER" = "introspector" ] || [ "$RUST_SANITIZER" = "introspector" ];
+@@ -235,6 +235,9 @@ if [ "$SANITIZER" = "introspector" ] || [ "$RUST_SANITIZER" = "introspector" ];
    if [ "$FUZZING_LANGUAGE" = "python" ]; then
      python3 /fuzz-introspector/src/main.py light --language=python
      cp -rf $SRC/inspector/ /tmp/inspector-saved
 +  elif [ "$FUZZING_LANGUAGE" = "go" ]; then
 +    python3 /fuzz-introspector/src/main.py light --language=go
++    cp -rf $SRC/inspector/ /tmp/inspector-saved
    elif [ "$FUZZING_LANGUAGE" = "jvm" ]; then
      python3 /fuzz-introspector/src/main.py light --language=jvm
      cp -rf $SRC/inspector/ /tmp/inspector-saved
@@ -62,7 +63,7 @@ index e05d0e6ea..2554b9d3f 100755
      # Restore the sanitizer flag for rust
      export SANITIZER="introspector"
    fi
-@@ -413,15 +394,21 @@ if [ "$SANITIZER" = "introspector" ] || [ "$RUST_SANITIZER" = "introspector" ];
+@@ -413,15 +394,22 @@ if [ "$SANITIZER" = "introspector" ] || [ "$RUST_SANITIZER" = "introspector" ];
      echo "GOING jvm route"
      set -x
      find $OUT/ -name "jacoco.xml" -exec cp {} $SRC/inspector/ \;
@@ -82,6 +83,7 @@ index e05d0e6ea..2554b9d3f 100755
 +    rsync -avu --delete "$SRC/inspector/" "$OUT/inspector"
 +  elif [ "$FUZZING_LANGUAGE" = "go" ]; then
 +    echo "GOING go route"
++    find $OUT/ -name "fuzz.cov" -exec cp {} $SRC/inspector/ \;
 +    REPORT_ARGS="$REPORT_ARGS --target-dir=$SRC --out-dir=$SRC/inspector"
 +    REPORT_ARGS="$REPORT_ARGS --language=go"
 +    fuzz-introspector full $REPORT_ARGS
