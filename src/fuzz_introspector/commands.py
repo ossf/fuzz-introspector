@@ -65,19 +65,22 @@ def end_to_end(args) -> int:
     else:
         entrypoint = 'LLVMFuzzerTestOneInput'
 
-    exit_code, _ = analyse_end_to_end(args.language, args.target_dir,
-                                      entrypoint, args.out_dir,
-                                      args.coverage_url, args.name,
-                                      args.module_only)
+    exit_code, _ = analyse_end_to_end(arg_language=args.language,
+                                      target_dir=args.target_dir,
+                                      entrypoint=entrypoint,
+                                      out_dir=args.out_dir,
+                                      coverage_url=args.coverage_url,
+                                      report_name=args.name,
+                                      module_only=args.module_only)
     return exit_code
 
 
 def analyse_end_to_end(arg_language,
                        target_dir,
-                       entrypoint,
-                       out_dir,
-                       coverage_url,
-                       report_name,
+                       entrypoint='',
+                       out_dir='.',
+                       coverage_url='',
+                       report_name='default-report',
                        module_only=False,
                        dump_files=True):
     """End to end analysis helper function."""
