@@ -5,7 +5,13 @@ Jinja2==3.1.5
 MarkupSafe==2.1.2
 Werkzeug==3.0.6
 requests==2.32.3
-pyyaml==6.0
+pyyaml==6.0.2
 orjson==3.10.0
 flask_smorest==0.44.0
 marshmallow==3.21.0
+apispec==6.8
+webargs==8.6
+blinker==1.9
+certifi==2025.1.31
+idna==3.10
+urllib3==2.3

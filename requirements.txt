@@ -3,7 +3,7 @@ cxxfilt==0.3.0
 lxml==4.9.1
 matplotlib==3.10.0
 numpy==2.1.0
-PyYAML==6.0
+PyYAML==6.0.2
 soupsieve==2.2.1
 yapf==0.32.0
 pylint==3.0.0
