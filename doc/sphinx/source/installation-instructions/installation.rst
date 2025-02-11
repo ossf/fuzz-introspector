@@ -60,6 +60,7 @@ Build a test case
 
     # Build the target using Fuzz Introspector instrumentation
     ./build_all.sh
+    cd work
 
     # Run post-processing to analyse data files and generate HTML report
     python3 ../../../src/main.py correlate --binaries-dir=.
