@@ -1,4 +1,4 @@
-# Fuzz Introspetor macro website UI
+# Fuzz Introspector macro website UI
 
 
 This app is used to display fuzz introspector data for many projects in a single
@@ -19,7 +19,7 @@ To launch the web app locally you need to:
 3. Launch the web app.
 
 The following commands can be used to launch a version of the webapp using
-a subet of the projects on OSS-Fuzz.
+a subset of the projects on OSS-Fuzz.
 
 ```bash
 # Get source
