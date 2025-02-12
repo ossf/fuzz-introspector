@@ -26,6 +26,10 @@ On this page you'll see a list of all the projects that are currently analysed b
 
 
 ## Docs and demonstrations
+
+Fuzz Introspector is build, tested and run with Python3.11. Other versions may
+work, but they are not officially supported.
+
 The main Fuzz Introspector documentation is available here: https://fuzz-introspector.readthedocs.io This documentation includes user guides, OSS-Fuzz instructions, tutorials, development docs and more.
 Additionally, there is more information:
 - [Video demonstration](https://www.youtube.com/watch?v=cheo-liJhuE)
