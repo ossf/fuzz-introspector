@@ -11,10 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Common sink functions for Top 10 CWE in different languages."""
 
-from typing import Any, Dict
+from typing import Any
 
-SINK_FUNCTION: Dict[str, Dict[str, Dict[str, Any]]] = {
+SINK_FUNCTION: dict[str, dict[str, dict[str, Any]]] = {
     'CWE78': {
         'metadata': {
             'id': 78,
@@ -312,9 +313,8 @@ SINK_FUNCTION: Dict[str, Dict[str, Dict[str, Any]]] = {
              ('django.middleware.csrf.CsrfViewMiddleware', 'process_view'),
              ('django.middleware.csrf.CsrfViewMiddleware', 'process_response')
              ],
-            'jvm':
-            [('org.springframework.security.config.annotation.web.builders.HttpSecurity',
-              'csrf')]
+            'jvm': [(('org.springframework.security.config.annotation.web.'
+                      'builders.HttpSecurity'), 'csrf')]
         }
     },
     'CWE434': {
