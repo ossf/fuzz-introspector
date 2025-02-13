@@ -313,9 +313,8 @@ SINK_FUNCTION: dict[str, dict[str, dict[str, Any]]] = {
              ('django.middleware.csrf.CsrfViewMiddleware', 'process_view'),
              ('django.middleware.csrf.CsrfViewMiddleware', 'process_response')
              ],
-            'jvm':
-            [(('org.springframework.security.config.annotation.web.'
-               'builders.HttpSecurity'), 'csrf')]
+            'jvm': [(('org.springframework.security.config.annotation.web.'
+                      'builders.HttpSecurity'), 'csrf')]
         }
     },
     'CWE434': {
