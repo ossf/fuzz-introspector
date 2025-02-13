@@ -66,8 +66,8 @@ class CProject(Project['CSourceCodeFile']):
 
             for func_def in source_code.func_defs:
                 if harness_source:
-                    if func_def.name(
-                    ) == 'LLVMFuzzerTestOneInput' and source_code.source_file != harness_source:
+                    if (func_def.name() == 'LLVMFuzzerTestOneInput'
+                            and source_code.source_file != harness_source):
                         logger.debug('Skipping harness: %s -- %s -- %s',
                                      func_def.name(), source_code.source_file,
                                      harness_source)
@@ -265,8 +265,8 @@ class FunctionDefinition():
         name_node = self.root
         while name_node.child_by_field_name('declarator') is not None:
             name_node = name_node.child_by_field_name('declarator')
-            # Assign function name here because we want to make sure that there is a
-            # declarator when defining the name.
+            # Assign function name here because we want to make sure that
+            # there is a declarator when defining the name.
             function_name = name_node.text.decode()
         return function_name
 
@@ -431,8 +431,8 @@ class FunctionDefinition():
                 for call_child in call_expr.children:
                     if call_child.type == 'identifier':
                         src_line = call_child.start_point.row
-                        src_loc = self.parent_source.source_file + ':%d,1' % (
-                            src_line)
+                        src_loc = (f'{self.parent_source.source_file}:'
+                                   f'{src_line},1')
                         callsites.append({
                             'Src': src_loc,
                             'Dst': call_child.text.decode()
@@ -617,7 +617,7 @@ class CSourceCodeFile(SourceCodeFile):
 
         lineno = 1
         for start, end in self.line_range_pairs:
-            if bytepos >= start and bytepos <= end:
+            if start <= bytepos <= end:
                 return lineno
             lineno += 1
 
@@ -626,7 +626,8 @@ class CSourceCodeFile(SourceCodeFile):
 
 def load_treesitter_trees(source_files: list[str],
                           is_log: bool = True) -> CProject:
-    """Creates treesitter trees for all files in a given list of source files."""
+    """Creates treesitter trees for all files in a given list of
+    source files."""
     results = []
 
     for code_file in source_files:

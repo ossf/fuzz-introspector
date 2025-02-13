@@ -198,7 +198,9 @@ class Project(Generic[T]):
         for function in self.all_functions:
             source_file = function.parent_source.source_file
             if source_file.endswith(target_source_file):
-                if function.start_line <= target_source_line <= function.end_line:
+                start_line = function.start_line
+                end_line = function.end_line
+                if start_line <= target_source_line <= end_line:
                     return function
 
         return None

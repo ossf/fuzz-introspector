@@ -635,6 +635,7 @@ class JavaMethod():
         is_constructor_call: bool = False
     ) -> tuple[str, list[tuple[str, int, int]]]:
         """Internal helper for processing the method invocation statement."""
+        return_type = ''
         callsites = []
 
         # JVM method_invocation separated into three main items

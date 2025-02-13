@@ -13,13 +13,14 @@
 # limitations under the License.
 #
 ################################################################################
+"""Entrypoint for tree-sitter frontends."""
 
 import os
 import yaml
 import pathlib
 import logging
 
-from typing import Tuple, Any
+from typing import Any, Optional
 
 from fuzz_introspector.frontends import frontend_c
 from fuzz_introspector.frontends import frontend_cpp
@@ -108,7 +109,7 @@ def process_c_project(target_dir: str,
             logger.info('Extracting calltree for %s', harness.source_file)
             calltree = project.extract_calltree(source_code=harness,
                                                 function=entrypoint)
-            with open(os.path.join(out, 'fuzzerLogFile-%d.data' % (idx)),
+            with open(os.path.join(out, f'fuzzerLogFile-{idx}.data'),
                       'w',
                       encoding='utf-8') as f:
                 f.write("Call tree\n")
@@ -118,14 +119,18 @@ def process_c_project(target_dir: str,
     return project
 
 
-def analyse_folder(language: str = '',
-                   directory: str = '',
-                   entrypoint: str = '',
-                   out='',
-                   module_only=False,
-                   dump_output=True,
-                   files_to_include: list[str] = []) -> Tuple[Project, Any]:
+def analyse_folder(
+        language: str = '',
+        directory: str = '',
+        entrypoint: str = '',
+        out='',
+        module_only=False,
+        dump_output=True,
+        files_to_include: Optional[list[str]] = None) -> tuple[Project, Any]:
     """Runs a full frontend analysis on a given directory"""
+
+    if not files_to_include:
+        files_to_include = []
 
     # Extract source files for target language
     source_files = capture_source_files_in_tree(directory, language)
@@ -206,7 +211,7 @@ def analyse_folder(language: str = '',
             harness_name = harness.source_file.split('/')[-1].split('.')[0]
 
             # Functions/Methods data
-            logger.info(f'Dump methods for {harness_name}')
+            logger.info('Dump methods for %s', harness_name)
             target = os.path.join(out,
                                   f'fuzzerLogFile-{harness_name}.data.yaml')
             project.dump_module_logic(target,
@@ -216,7 +221,7 @@ def analyse_folder(language: str = '',
                                       dump_output=dump_output)
 
             # Calltree
-            logger.info(f'Extracting calltree for {harness_name}')
+            logger.info('Extracting calltree for %s', harness_name)
             calltree = project.extract_calltree(harness.source_file, harness,
                                                 entry_function)
             if dump_output:
