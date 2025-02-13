@@ -740,7 +740,7 @@ class FunctionMethod():
                             continue
 
                         decl_type = self.var_map.get(right.text.decode(), '')
-                        if '[' in decl_type and ']' in decl_type:
+                        if decl_type and '[' in decl_type and ']' in decl_type:
                             decl_type = decl_type.split(']', 1)[-1]
                         elif decl_type == 'string':
                             decl_type = 'uint8'
