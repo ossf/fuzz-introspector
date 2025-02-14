@@ -17,25 +17,24 @@ import os
 import logging
 import json
 
-from typing import (Any, Dict, List, Optional)
+from typing import (Any, Optional)
 
-from fuzz_introspector import analysis
-from fuzz_introspector import utils
-from fuzz_introspector import cfg_load
-from fuzz_introspector import json_report
-from fuzz_introspector import html_helpers
-from fuzz_introspector.datatypes import project_profile, fuzzer_profile, function_profile
+from fuzz_introspector import (analysis, cfg_load, html_helpers, json_report,
+                               utils)
+from fuzz_introspector.datatypes import (project_profile, fuzzer_profile,
+                                         function_profile)
 
 logger = logging.getLogger(name=__name__)
 
 
 class FuzzAnnotatedCFG(analysis.AnalysisInterface):
+    """Analysis for annotated configurations of fuzzing."""
     name: str = "AnnotatedCFG"
 
     def __init__(self) -> None:
         logger.info("Creating annotated CFG")
         self.json_string_result = ""
-        self.json_results: Dict[str, Any] = {}
+        self.json_results: dict[str, Any] = {}
         self.dump_files = False
 
     @classmethod
@@ -50,11 +49,11 @@ class FuzzAnnotatedCFG(analysis.AnalysisInterface):
 
     def analysis_func(self,
                       table_of_contents: html_helpers.HtmlTableOfContents,
-                      tables: List[str],
+                      tables: list[str],
                       proj_profile: project_profile.MergedProjectProfile,
-                      profiles: List[fuzzer_profile.FuzzerProfile],
+                      profiles: list[fuzzer_profile.FuzzerProfile],
                       basefolder: str, coverage_url: str,
-                      conclusions: List[html_helpers.HTMLConclusion],
+                      conclusions: list[html_helpers.HTMLConclusion],
                       out_dir: str) -> str:
         """
         Creates the HTML of the calltree. Returns the HTML as a string.
@@ -92,17 +91,16 @@ class FuzzAnnotatedCFG(analysis.AnalysisInterface):
                     proj_profile, callsite.dst_function_name)
                 if dst_fd is None:
                     dst_fd = self.get_profile_sourcefile_merged(
-                        proj_profile,
-                        "[%s].%s" % (callsite.dst_function_source_file,
-                                     callsite.dst_function_name))
+                        proj_profile, (f'[{callsite.dst_function_source_file}]'
+                                       f'.{callsite.dst_function_name}'))
 
                 par_fd = self.get_profile_sourcefile_merged(
                     proj_profile, parent_callsite.dst_function_name)
                 if par_fd is None:
                     par_fd = self.get_profile_sourcefile_merged(
                         proj_profile,
-                        "[%s].%s" % (parent_callsite.dst_function_source_file,
-                                     parent_callsite.dst_function_name))
+                        (f'[{parent_callsite.dst_function_source_file}]'
+                         f'.{parent_callsite.dst_function_name}'))
 
                 # To be a top level target a callsite should:
                 # 1.0) Not be in the fuzzer source file and one of the
@@ -115,7 +113,8 @@ class FuzzAnnotatedCFG(analysis.AnalysisInterface):
                 if dst_fd is None:
                     continue
 
-                cond1 = dst_fd is not None and dst_fd.function_source_file != src_file
+                cond1 = (dst_fd is not None
+                         and dst_fd.function_source_file != src_file)
                 cond2 = (par_fd is not None and par_fd.function_source_file
                          == src_file) or callsite.depth == 1
                 if (cond1 and cond2):
