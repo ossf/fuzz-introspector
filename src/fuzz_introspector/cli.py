@@ -61,7 +61,7 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
                              type=str,
                              help='Name of the report.')
     full_parser.add_argument('--coverage-url',
-                             default='',
+                             default='/covreport/linux',
                              type=str,
                              help='Base coverage URL.')
     full_parser.add_argument(
