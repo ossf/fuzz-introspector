@@ -68,7 +68,7 @@ def end_to_end(args) -> int:
     exit_code, _ = analyse_end_to_end(arg_language=args.language,
                                       target_dir=args.target_dir,
                                       entrypoint=entrypoint,
-                                      out_dir=args.out_dir,
+                                      out_dir=out_dir,
                                       coverage_url=args.coverage_url,
                                       report_name=args.name,
                                       module_only=args.module_only)

@@ -129,7 +129,7 @@ def load_all_profiles(
         language: str,
         parallelise: bool = True) -> List[fuzzer_profile.FuzzerProfile]:
     """Loads all profiles in target_folder in a multi-threaded manner"""
-
+    logger.info('Loading profiles from %s', target_folder)
     if language == "jvm":
         # Java targets tend to be quite large, so we try to avoid memory
         # exhaustion here.
