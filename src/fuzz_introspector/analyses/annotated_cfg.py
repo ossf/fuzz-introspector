@@ -91,9 +91,8 @@ class FuzzAnnotatedCFG(analysis.AnalysisInterface):
                     proj_profile, callsite.dst_function_name)
                 if dst_fd is None:
                     dst_fd = self.get_profile_sourcefile_merged(
-                        proj_profile,
-                        (f'[{callsite.dst_function_source_file}]'
-                         f'.{callsite.dst_function_name}'))
+                        proj_profile, (f'[{callsite.dst_function_source_file}]'
+                                       f'.{callsite.dst_function_name}'))
 
                 par_fd = self.get_profile_sourcefile_merged(
                     proj_profile, parent_callsite.dst_function_name)
@@ -114,8 +113,8 @@ class FuzzAnnotatedCFG(analysis.AnalysisInterface):
                 if dst_fd is None:
                     continue
 
-                cond1 = (dst_fd is not None and
-                         dst_fd.function_source_file != src_file)
+                cond1 = (dst_fd is not None
+                         and dst_fd.function_source_file != src_file)
                 cond2 = (par_fd is not None and par_fd.function_source_file
                          == src_file) or callsite.depth == 1
                 if (cond1 and cond2):
