@@ -20,6 +20,7 @@ from typing import Any, Optional
 from tree_sitter import Language, Node
 
 import os
+import copy
 import logging
 
 from fuzz_introspector.frontends import datatypes
@@ -614,6 +615,7 @@ class CppProject(datatypes.Project[CppSourceCodeFile]):
 
     def __init__(self, source_code_files: list[CppSourceCodeFile]):
         super().__init__(source_code_files)
+        self.internal_func_list: list[dict[str, Any]] = []
 
     def generate_report(self,
                         entry_function: str = '',
@@ -643,46 +645,53 @@ class CppProject(datatypes.Project[CppSourceCodeFile]):
                 self.all_functions.append(func)
 
         # Process all project functions
-        func_list = []
-        for func in self.all_functions:
-            logger.debug('Iterating %s', func.name)
-            logger.debug('Extracing callsites')
-            func.extract_callsites(self)
-            logger.debug('Done extracting callsites')
-            func_dict: dict[str, Any] = {}
-            func_dict['functionName'] = func.name
-            func_dict['functionSourceFile'] = func.parent_source.source_file
-            func_dict['functionLinenumber'] = func.start_line
-            func_dict['functionLinenumberEnd'] = func.end_line
-            func_dict['linkageType'] = ''
-            func_dict['func_position'] = {
-                'start': func.start_line,
-                'end': func.end_line
-            }
-            func_dict['CyclomaticComplexity'] = func.complexity
-            func_dict['EdgeCount'] = func_dict['CyclomaticComplexity']
-            func_dict['ICount'] = func.icount
-            func_dict['argNames'] = func.arg_names
-            func_dict['argTypes'] = func.arg_types
-            func_dict['argCount'] = len(func_dict['argTypes'])
-            func_dict['returnType'] = func.return_type
-            func_dict['BranchProfiles'] = []
-            func_dict['Callsites'] = func.detailed_callsites
-            logger.debug('Calculating function uses')
-            func_dict['functionUses'] = self.calculate_function_uses(func.name)
-            logger.debug('Getting function depth')
-            func_dict['functionDepth'] = self.calculate_function_depth(func)
-            func_dict['constantsTouched'] = []
-            func_dict['BBCount'] = 0
-            func_dict['signature'] = func.sig
-            callsites = func.base_callsites
-            reached = set()
-            for cs_dst, _ in callsites:
-                reached.add(cs_dst)
-            func_dict['functionsReached'] = list(reached)
+        if not self.internal_func_list:
+            func_list = []
+            for func in self.all_functions:
+                logger.debug('Iterating %s', func.name)
+                logger.debug('Extracing callsites')
+                func.extract_callsites(self)
+                logger.debug('Done extracting callsites')
+                func_dict: dict[str, Any] = {}
+                func_dict['functionName'] = func.name
+                func_dict[
+                    'functionSourceFile'] = func.parent_source.source_file
+                func_dict['functionLinenumber'] = func.start_line
+                func_dict['functionLinenumberEnd'] = func.end_line
+                func_dict['linkageType'] = ''
+                func_dict['func_position'] = {
+                    'start': func.start_line,
+                    'end': func.end_line
+                }
+                func_dict['CyclomaticComplexity'] = func.complexity
+                func_dict['EdgeCount'] = func_dict['CyclomaticComplexity']
+                func_dict['ICount'] = func.icount
+                func_dict['argNames'] = func.arg_names
+                func_dict['argTypes'] = func.arg_types
+                func_dict['argCount'] = len(func_dict['argTypes'])
+                func_dict['returnType'] = func.return_type
+                func_dict['BranchProfiles'] = []
+                func_dict['Callsites'] = func.detailed_callsites
+                logger.debug('Calculating function uses')
+                func_dict['functionUses'] = self.calculate_function_uses(
+                    func.name)
+                logger.debug('Getting function depth')
+                func_dict['functionDepth'] = self.calculate_function_depth(
+                    func)
+                func_dict['constantsTouched'] = []
+                func_dict['BBCount'] = 0
+                func_dict['signature'] = func.sig
+                callsites = func.base_callsites
+                reached = set()
+                for cs_dst, _ in callsites:
+                    reached.add(cs_dst)
+                func_dict['functionsReached'] = list(reached)
 
-            logger.debug('Done')
-            func_list.append(func_dict)
+                logger.debug('Done')
+                func_list.append(func_dict)
+            self.internal_func_list = copy.deepcopy(func_list)
+        else:
+            func_list = copy.deepcopy(self.internal_func_list)
 
         if func_list:
             self.report['All functions'] = {}
