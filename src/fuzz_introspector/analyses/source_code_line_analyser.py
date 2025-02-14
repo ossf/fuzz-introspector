@@ -18,7 +18,7 @@ import os
 import json
 import logging
 
-from typing import (Any, List, Dict)
+from typing import Any
 
 from fuzz_introspector import (analysis, html_helpers)
 
@@ -34,7 +34,7 @@ class SourceCodeLineAnalyser(analysis.AnalysisInterface):
     name: str = 'SourceCodeLineAnalyser'
 
     def __init__(self) -> None:
-        self.json_results: Dict[str, Any] = {}
+        self.json_results: dict[str, Any] = {}
         self.json_string_result = ''
 
         # Default value for standalone analysis
@@ -62,7 +62,7 @@ class SourceCodeLineAnalyser(analysis.AnalysisInterface):
             return self.json_string_result
         return json.dumps(self.json_results)
 
-    def set_json_string_result(self, string):
+    def set_json_string_result(self, json_string: str):
         """Store the result of this analyser as json string result
         for further processing in a later time.
 
@@ -70,7 +70,7 @@ class SourceCodeLineAnalyser(analysis.AnalysisInterface):
             processing result of the analyser for future use
         :type json_string: str
         """
-        self.json_string_result = string
+        self.json_string_result = json_string
 
     def set_source_file_line(self, source_file: str, source_line: int):
         """Configure the source file and source line for this analyser."""
@@ -79,18 +79,18 @@ class SourceCodeLineAnalyser(analysis.AnalysisInterface):
 
     def analysis_func(self,
                       table_of_contents: html_helpers.HtmlTableOfContents,
-                      tables: List[str],
+                      tables: list[str],
                       proj_profile: project_profile.MergedProjectProfile,
-                      profiles: List[fuzzer_profile.FuzzerProfile],
+                      profiles: list[fuzzer_profile.FuzzerProfile],
                       basefolder: str, coverage_url: str,
-                      conclusions: List[html_helpers.HTMLConclusion],
+                      conclusions: list[html_helpers.HTMLConclusion],
                       out_dir: str) -> str:
         self.standalone_analysis(proj_profile, profiles, out_dir)
         return ''
 
     def standalone_analysis(self,
                             proj_profile: project_profile.MergedProjectProfile,
-                            profiles: List[fuzzer_profile.FuzzerProfile],
+                            profiles: list[fuzzer_profile.FuzzerProfile],
                             out_dir: str) -> None:
         super().standalone_analysis(proj_profile, profiles, out_dir)
 

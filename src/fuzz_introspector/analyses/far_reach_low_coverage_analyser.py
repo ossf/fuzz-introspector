@@ -68,7 +68,7 @@ class FarReachLowCoverageAnalyser(analysis.AnalysisInterface):
 
         return json.dumps(self.json_results)
 
-    def set_json_string_result(self, string):
+    def set_json_string_result(self, json_string: str):
         """Store the result of this analyser as json string result
         for further processing in a later time.
 
@@ -76,7 +76,7 @@ class FarReachLowCoverageAnalyser(analysis.AnalysisInterface):
             processing result of the analyser for future use
         :type json_string: str
         """
-        self.json_string_result = string
+        self.json_string_result = json_string
 
     def set_flags(self, exclude_static_functions: bool,
                   only_referenced_functions: bool, only_header_functions: bool,
