@@ -615,7 +615,7 @@ class CppProject(datatypes.Project[CppSourceCodeFile]):
 
     def __init__(self, source_code_files: list[CppSourceCodeFile]):
         super().__init__(source_code_files)
-        self.internal_func_list = []
+        self.internal_func_list: list[dict[str, Any]] = []
 
     def generate_report(self,
                         entry_function: str = '',
@@ -654,7 +654,8 @@ class CppProject(datatypes.Project[CppSourceCodeFile]):
                 logger.debug('Done extracting callsites')
                 func_dict: dict[str, Any] = {}
                 func_dict['functionName'] = func.name
-                func_dict['functionSourceFile'] = func.parent_source.source_file
+                func_dict[
+                    'functionSourceFile'] = func.parent_source.source_file
                 func_dict['functionLinenumber'] = func.start_line
                 func_dict['functionLinenumberEnd'] = func.end_line
                 func_dict['linkageType'] = ''
@@ -672,9 +673,11 @@ class CppProject(datatypes.Project[CppSourceCodeFile]):
                 func_dict['BranchProfiles'] = []
                 func_dict['Callsites'] = func.detailed_callsites
                 logger.debug('Calculating function uses')
-                func_dict['functionUses'] = self.calculate_function_uses(func.name)
+                func_dict['functionUses'] = self.calculate_function_uses(
+                    func.name)
                 logger.debug('Getting function depth')
-                func_dict['functionDepth'] = self.calculate_function_depth(func)
+                func_dict['functionDepth'] = self.calculate_function_depth(
+                    func)
                 func_dict['constantsTouched'] = []
                 func_dict['BBCount'] = 0
                 func_dict['signature'] = func.sig
