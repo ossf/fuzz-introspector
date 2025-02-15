@@ -91,7 +91,7 @@ def generate_temp_elem(name, func):
     return {
         "functionName": name,
         "functionsReached": func,
-        "functionSourceFile": None,
+        "functionSourceFile": '/src/wuffs/fuzz/c/fuzzlib/fuzzlib.c',
         "linkageType": None,
         "functionLinenumber": None,
         "returnType": None,
