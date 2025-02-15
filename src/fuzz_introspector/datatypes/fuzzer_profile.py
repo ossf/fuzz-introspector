@@ -599,6 +599,12 @@ class FuzzerProfile:
             func_profile = function_profile.FunctionProfile(elem)
             logger.debug("Adding %s", func_profile.function_name)
 
+            # Avoid loading more entrypoints as this will cause issues when
+            # propagating reachability. TODO(David): make this more robust.
+            if 'LLVMFuzzerTestOneInput' in func_profile.function_name:
+                if func_profile.function_source_file not in self.fuzzer_source_file:
+                    continue
+
             if self.target_lang == "jvm" and "<init>" in elem['functionName']:
                 # Store JVM constructor separately
                 self.all_class_constructors[
