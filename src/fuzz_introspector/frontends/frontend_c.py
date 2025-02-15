@@ -19,6 +19,7 @@ from typing import Any, Optional
 
 import os
 import logging
+import copy
 
 from fuzz_introspector.frontends.datatypes import Project, SourceCodeFile
 
@@ -30,6 +31,10 @@ class CProject(Project['CSourceCodeFile']):
 
     def __init__(self, source_code_files: list['CSourceCodeFile']):
         super().__init__(source_code_files)
+        self.function_to_source: dict[str, Optional['CSourceCodeFile']] = {}
+
+        self.no_fuzz_function_list: list[dict[str, Any]] = []
+        self.source_codes_with_harness: list['CSourceCodeFile'] = []
 
     def generate_report(self,
                         entry_function: str = '',
@@ -39,16 +44,83 @@ class CProject(Project['CSourceCodeFile']):
         report: dict[str, Any] = {'report': 'name'}
         report['sources'] = []
 
-        # Log entry function if provided
-        if entry_function:
-            report['Fuzzing method'] = entry_function
+        if not self.source_codes_with_harness:
+            for source_code in self.source_code_files:
+                found_fuzz = False
+                for func_def in source_code.func_defs:
+                    if func_def.name() == 'LLVMFuzzerTestOneInput':
+                        found_fuzz = True
 
-        report['Fuzzer filename'] = harness_source
+                if found_fuzz:
+                    self.source_codes_with_harness.append(source_code)
 
-        # Find all functions
-        function_list = []
-        included_header_files = set()
-        for source_code in self.source_code_files:
+        if not self.no_fuzz_function_list:
+            self.no_fuzz_function_list = []
+            self.included_header_files = set()
+            for source_code in self.source_code_files:
+                source_code.extract_imported_header_files()
+                for incl in source_code.includes:
+                    self.included_header_files.add(incl)
+
+                report['sources'].append({
+                    'source_file':
+                    source_code.source_file,
+                    'function_names':
+                    source_code.get_defined_function_names(),
+                    'types': {
+                        'structs': source_code.struct_defs,
+                        'typedefs': source_code.typedefs
+                    }
+                })
+                found_harness = False
+                for func_def in source_code.func_defs:
+                    if func_def.name() == 'LLVMFuzzerTestOneInput':
+                        found_harness = True
+                if found_harness:
+                    continue
+
+                for func_def in source_code.func_defs:
+                    func_dict = {}
+                    func_dict['functionName'] = func_def.name()
+                    func_dict['functionSourceFile'] = source_code.source_file
+                    func_dict[
+                        'functionLinenumber'] = func_def.root.start_point.row
+                    func_dict[
+                        'functionLinenumberEnd'] = func_def.root.end_point.row
+                    func_dict['linkageType'] = ''
+                    func_dict['func_position'] = {
+                        'start': func_def.root.start_point.row,
+                        'end': func_def.root.end_point.row,
+                    }
+                    cc_str = 'CyclomaticComplexity'
+                    func_dict[cc_str] = func_def.get_function_complexity()
+                    func_dict['EdgeCount'] = func_dict['CyclomaticComplexity']
+                    func_dict['ICount'] = func_def.get_function_instr_count()
+                    func_dict['argNames'] = func_def.get_function_arg_names()
+                    func_dict['argTypes'] = func_def.get_function_arg_types()
+                    func_dict['argCount'] = len(func_dict['argTypes'])
+                    func_dict[
+                        'returnType'] = func_def.get_function_return_type()
+                    func_dict['BranchProfiles'] = []
+                    func_dict['functionUses'] = []
+                    func_dict['Callsites'] = func_def.detailed_callsites()
+                    func_dict['functionDepth'] = 0
+                    func_dict['constantsTouched'] = []
+                    func_dict['BBCount'] = func_def.get_basic_block_count()
+
+                    func_dict['signature'] = func_def.function_signature()
+                    func_callsites = func_def.callsites()
+                    funcs_reached = set()
+                    for cs_dst, _ in func_callsites:
+                        funcs_reached.add(cs_dst)
+                    func_dict['functionsReached'] = list(funcs_reached)
+
+                    self.no_fuzz_function_list.append(func_dict)
+
+        function_list = copy.deepcopy(self.no_fuzz_function_list)
+        included_header_files = self.included_header_files
+
+        for source_code in self.source_codes_with_harness:
             source_code.extract_imported_header_files()
             for incl in source_code.includes:
                 included_header_files.add(incl)
@@ -107,6 +179,12 @@ class CProject(Project['CSourceCodeFile']):
 
                 function_list.append(func_dict)
 
+        # Log entry function if provided
+        if entry_function:
+            report['Fuzzing method'] = entry_function
+
+        report['Fuzzer filename'] = harness_source
+
         if function_list:
             report['All functions'] = {}
             report['All functions']['Elements'] = function_list
@@ -150,17 +228,14 @@ class CProject(Project['CSourceCodeFile']):
             source_code = self.find_source_with_func_def(function)
         if source_code:
             line_to_print += source_code.source_file
-
         line_to_print += ' '
         line_to_print += str(line_number)
 
         line_to_print += '\n'
         if not source_code:
             return line_to_print
-
         func = source_code.get_function_node(function)
         callsites = func.callsites()
-
         if function in visited_functions:
             return line_to_print
 
@@ -172,6 +247,7 @@ class CProject(Project['CSourceCodeFile']):
                 visited_functions=visited_functions,
                 depth=depth + 1,
                 line_number=line_number)
+
         return line_to_print
 
     def get_reachable_functions(
@@ -214,6 +290,9 @@ class CProject(Project['CSourceCodeFile']):
 
     def find_source_with_func_def(self, target_function_name):
         """Finds the source code with a given function."""
+        if target_function_name in self.function_to_source:
+            return self.function_to_source[target_function_name]
+
         source_codes_with_target = []
         for source_code in self.source_code_files:
             if source_code.has_function_definition(target_function_name):
@@ -221,8 +300,13 @@ class CProject(Project['CSourceCodeFile']):
 
         if len(source_codes_with_target) == 1:
             # We hav have, in this case it's trivial.
+            # caching.
+            if target_function_name not in self.function_to_source:
+                self.function_to_source[
+                    target_function_name] = source_codes_with_target[0]
             return source_codes_with_target[0]
 
+        self.function_to_source[target_function_name] = None
         return None
 
     def get_function(self, target_function_name):

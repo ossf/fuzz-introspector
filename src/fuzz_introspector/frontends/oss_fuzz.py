@@ -102,20 +102,22 @@ def process_c_project(target_dir: str,
         for idx, harness in enumerate(
                 project.get_source_codes_with_harnesses()):
 
+            logger.info('handling harness, step 1')
             target = os.path.join(out, f'fuzzerLogFile-{idx}.data.yaml')
             project.dump_module_logic(target, 'LLVMFuzzerTestOneInput', '',
                                       harness.source_file, dump_output)
-
+            logger.info('handling harness, step 2')
             logger.info('Extracting calltree for %s', harness.source_file)
             calltree = project.extract_calltree(source_code=harness,
                                                 function=entrypoint)
+            logger.info('handling harness, step 3')
             with open(os.path.join(out, f'fuzzerLogFile-{idx}.data'),
                       'w',
                       encoding='utf-8') as f:
                 f.write("Call tree\n")
                 f.write(calltree)
                 f.write("====================================")
-
+            logger.info('handling harness, step 4')
     return project
 
 
@@ -224,6 +226,7 @@ def analyse_folder(
             logger.info('Extracting calltree for %s', harness_name)
             calltree = project.extract_calltree(harness.source_file, harness,
                                                 entry_function)
+            logger.info('Calltree extracted')
             if dump_output:
                 target = os.path.join(out,
                                       f'fuzzerLogFile-{harness_name}.data')

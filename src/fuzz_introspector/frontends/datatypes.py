@@ -51,7 +51,7 @@ class SourceCodeFile():
                  source_file: str,
                  entrypoint: str = '',
                  source_content: Optional[bytes] = None):
-        logger.info('Processing %s', source_file)
+        logger.debug('Processing %s', source_file)
 
         self.root = None
         self.source_file = source_file
@@ -122,16 +122,24 @@ class Project(Generic[T]):
                           harness_source: str = '',
                           dump_output: bool = True) -> None:
         """Dumps the data for the module in full."""
+        logger.info('Generating report')
         self.generate_report(entry_function, harness_name, harness_source)
-
+        logger.info('Report generated')
         new_report = copy.deepcopy(self.report)
         new_report['Fuzzer filename'] = harness_source
 
         logger.info('Dumping project-wide logic.')
+        try:
+            yaml.SafeDumper = yaml.CSafeDumper  # type: ignore[assignment, misc]
+            logger.info('Using safe yaml safe C dumper.')
+        except Exception:
+            logger.info('Using non-c dumper.')
+            pass
 
         if dump_output:
             with open(report_name, 'w', encoding='utf-8') as f:
-                f.write(yaml.dump(new_report))
+                f.write(yaml.safe_dump(new_report))
+        logger.info('Dumped')
 
     def extract_calltree(self,
                          source_file: str = '',
