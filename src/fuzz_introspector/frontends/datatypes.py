@@ -130,7 +130,7 @@ class Project(Generic[T]):
 
         logger.info('Dumping project-wide logic.')
         try:
-            yaml.SafeDumper = yaml.CSafeDumper
+            yaml.SafeDumper = yaml.CSafeDumper  # type: ignore[assignment, misc]
             logger.info('Using safe yaml safe C dumper.')
         except Exception:
             logger.info('Using non-c dumper.')

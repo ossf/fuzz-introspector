@@ -31,10 +31,10 @@ class CProject(Project['CSourceCodeFile']):
 
     def __init__(self, source_code_files: list['CSourceCodeFile']):
         super().__init__(source_code_files)
-        self.function_to_source = {}
+        self.function_to_source: dict[str, Optional['CSourceCodeFile']] = {}
 
-        self.no_fuzz_function_list = []
-        self.source_codes_with_harness = []
+        self.no_fuzz_function_list: list[dict[str, Any]] = []
+        self.source_codes_with_harness: list['CSourceCodeFile'] = []
 
     def generate_report(self,
                         entry_function: str = '',
