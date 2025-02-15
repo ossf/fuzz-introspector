@@ -186,6 +186,15 @@ class Project(Generic[T]):
 
         return xrefs
 
+    def get_cross_references_by_name(self, function_name) -> list[Any]:
+        """Get cross reference functions by a target function name."""
+        xrefs = []
+        for func in self.all_functions:
+            for callsite in func.base_callsites:
+                if callsite[0] == function_name:
+                    xrefs.append(func)
+        return xrefs
+
     def find_function_by_name(self, target_function_name, only_exact_match):
         """Helper function to find the matching function."""
         for function in self.all_functions:
