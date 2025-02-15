@@ -132,7 +132,7 @@ class Project(Generic[T]):
         try:
             yaml.SafeDumper = yaml.CSafeDumper
             logger.info('Using safe yaml safe C dumper.')
-        except:
+        except Exception:
             logger.info('Using non-c dumper.')
             pass
 
