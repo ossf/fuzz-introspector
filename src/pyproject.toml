@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fuzz-introspector"
-version = "0.1.9"
+version = "0.1.10"
 authors = [
   { name="David Korczynski", email="david@adalogics.com" },
 ]
@@ -25,9 +25,9 @@ dependencies = [
 "cxxfilt==0.3.0",
 "lxml==4.9.1",
 "matplotlib==3.10.0",
-"PyYAML==6.0",
+"PyYAML==6.0.1",
 "soupsieve==2.2.1",
-"yapf==0.32.0",
+"yapf==0.40.1",
 "flake8",
 "pep8",
 "mypy",
