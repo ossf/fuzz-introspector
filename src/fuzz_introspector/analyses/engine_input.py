@@ -69,9 +69,10 @@ class EngineInput(analysis.AnalysisInterface):
             "Fuzz engine guidance", html_helpers.HTML_HEADING.H1,
             table_of_contents)
         html_string += "<div class=\"collapsible\">"
-        html_string += "<p>This sections provides heuristics that can be used as input " \
-                       "to a fuzz engine when running a given fuzz target. The current " \
-                       "focus is on providing input that is usable by libFuzzer.</p>"
+        html_string += ("<p>This sections provides heuristics that can be used"
+                        " as input to a fuzz engine when running a given fuzz "
+                        "target. The current focus is on providing input that "
+                        "is usable by libFuzzer.</p>")
 
         for prof in profiles:
             logger.info('Generating input for %s', prof.identifier)

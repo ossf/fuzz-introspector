@@ -99,8 +99,10 @@ def add_func_to_reached_and_clone(
         # set complexity fields in the function
         f_profile.new_unreached_complexity = uncovered_cc
         if f_profile.hitcount == 0:
-            f_profile.new_unreached_complexity += f_profile.cyclomatic_complexity
-        f_profile.total_cyclomatic_complexity = cc + f_profile.cyclomatic_complexity
+            f_profile.new_unreached_complexity += (
+                f_profile.cyclomatic_complexity)
+        f_profile.total_cyclomatic_complexity = (
+            cc + f_profile.cyclomatic_complexity)
 
     if merged_profile.all_functions[func_to_add.function_name].hitcount == 0:
         logger.info("Error. Hitcount did not get set for some reason. Exiting")
@@ -153,7 +155,7 @@ class OptimalTargets(analysis.AnalysisInterface):
         *not hit* by any fuzzers. This means it can be used to expand the
         current fuzzing harness rather than substitute it.
         """
-
+        # pylint: disable=unused-argument
         logger.info('- Running analysis %s', self.get_name())
 
         html_string = ""
@@ -162,8 +164,8 @@ class OptimalTargets(analysis.AnalysisInterface):
             table_of_contents)
 
         # Create optimal target section
-        new_profile, optimal_target_functions = self.iteratively_get_optimal_targets(
-            proj_profile)
+        new_profile, optimal_target_functions = (
+            self.iteratively_get_optimal_targets(proj_profile))
         html_string += self.get_optimal_target_section(
             optimal_target_functions, table_of_contents, tables, coverage_url,
             out_dir, profiles[0].target_lang)
@@ -226,7 +228,7 @@ class OptimalTargets(analysis.AnalysisInterface):
         """
         logger.info("    - in analysis_get_optimal_targets")
 
-        target_fds: List[function_profile.FunctionProfile] = list()
+        target_fds: List[function_profile.FunctionProfile] = []
         logger.info('Filtering optimal functions from %d functions',
                     len(merged_profile.all_functions.values()))
         for fd in merged_profile.all_functions.values():
@@ -241,12 +243,12 @@ class OptimalTargets(analysis.AnalysisInterface):
     ) -> Tuple[project_profile.MergedProjectProfile,
                List[function_profile.FunctionProfile]]:
         '''
-        Function for synthesizing fuzz targets. The way this one works is by finding
-        optimal targets that don't overlap too much with each other. The fuzz targets
-        are created to target functions in specific files, so all functions targeted
-        in each fuzzer will be from the same source file.
-        In a sense, this is more of a PoC wy to do some analysis on the data we have.
-        It is likely that we could do something much better.
+        Function for synthesizing fuzz targets. The way this one works is by
+        finding optimal targets that don't overlap too much with each other.
+        The fuzz targets are created to target functions in specific files,
+        so all functions targeted in each fuzzer will be from the same source
+        file. In a sense, this is more of a PoC wy to do some analysis on the
+        data we have. It is likely that we could do something much better.
         '''
         logger.info("  - in iteratively_get_optimal_targets")
         new_merged_profile = copy.deepcopy(merged_profile)
@@ -302,14 +304,15 @@ class OptimalTargets(analysis.AnalysisInterface):
             coverage_url: str,
             out_dir,
             target_lang: str = 'c-cpp') -> str:
+        """Create optimal taget section in html report."""
         # Table with details about optimal target functions
         html_string = html_helpers.html_add_header_with_link(
             "Remaining optimal interesting functions",
             html_helpers.HTML_HEADING.H3, table_of_contents)
-        html_string += "<p> The following table shows a list of functions that "   \
-                       "are optimal targets. Optimal targets are identified by "   \
-                       "finding the functions that in combination, yield a high " \
-                       "code coverage. </p>"
+        html_string += ("<p> The following table shows a list of functions "
+                        "that are optimal targets. Optimal targets are "
+                        "identified by finding the functions that in "
+                        "combination, yield a high code coverage. </p>")
         table_id = "remaining_optimal_interesting_functions"
         tables.append(table_id)
         html_string += html_helpers.html_create_table_head(
@@ -327,10 +330,11 @@ class OptimalTargets(analysis.AnalysisInterface):
                                                        fd.function_linenumber,
                                                        fd.function_name,
                                                        target_lang)
+            demangled = utils.demangle_cpp_func(fd.function_name)
+            demangled = utils.demangle_rust_func(demangled)
             html_func_row = (
                 f"<a href=\"{ func_cov_url }\"><code class='language-clike'>"
-                f"{utils.demangle_rust_func(utils.demangle_cpp_func(fd.function_name))}"
-                f"</code></a>")
+                f"{demangled}</code></a>")
             html_string += html_helpers.html_table_add_row([
                 html_func_row, fd.function_source_file, fd.arg_count,
                 fd.arg_types, fd.function_depth, fd.hitcount, fd.i_count,
@@ -340,7 +344,7 @@ class OptimalTargets(analysis.AnalysisInterface):
                 fd.new_unreached_complexity
             ])
 
-        json_dict = list()
+        json_dict = []
         for fd in optimal_target_functions:
             json_dict.append({
                 'name':
@@ -367,6 +371,8 @@ class OptimalTargets(analysis.AnalysisInterface):
     def create_top_summary_info(
             self, tables: List[str],
             proj_profile: project_profile.MergedProjectProfile) -> str:
+        """Create summary info in html report."""
+        # pylint: disable=unused-argument
         html_string = ""
 
         # Display reachability information
@@ -394,6 +400,7 @@ class OptimalTargets(analysis.AnalysisInterface):
             basefolder: str,
             out_dir: str = '') -> str:
         """Create section showing state of project if optimal targets are hit"""
+        # pylint: disable=unused-argument
         html_string = (
             "<p>Implementing fuzzers that target the above functions "
             "will improve reachability such that it becomes:</p>")
@@ -405,12 +412,14 @@ class OptimalTargets(analysis.AnalysisInterface):
         html_string += html_helpers.html_add_header_with_link(
             "All functions overview", html_helpers.HTML_HEADING.H4,
             table_of_contents)
-        html_string += "<p> If you implement fuzzers for these functions, the status of all " \
-                       "functions in the project will be:</p>"
+        html_string += ("<p> If you implement fuzzers for these functions, the"
+                        " status of all functions in the project will be:</p>")
         table_id = "all_functions_overview_table"
         tables.append(table_id)
-        all_function_table, all_functions_json, _ = html_report.create_all_function_table(
-            tables, new_profile, coverage_url, basefolder, table_id)
+        all_function_table, all_functions_json, _ = (
+            html_report.create_all_function_table(tables, new_profile,
+                                                  coverage_url, basefolder,
+                                                  table_id))
         html_string += all_function_table
         html_string += "</div>"  # close report-box
 
