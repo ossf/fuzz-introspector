@@ -56,7 +56,7 @@ class BugDigestor(analysis.AnalysisInterface):
                       conclusions: List[html_helpers.HTMLConclusion],
                       out_dir) -> str:
         """Digests and creates HTML about bugs found by the fuzzers."""
-        logger.info(f" - Running analysis {self.get_name()}")
+        logger.info(' - Running analysis %s', self.get_name())
         input_bugs = data_loader.try_load_input_bugs()
         if len(input_bugs) == 0:
             return ""
