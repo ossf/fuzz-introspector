@@ -163,6 +163,9 @@
                 </div>
               </div>
             </div>
+            <h2>Per fuzzer progression</h2>
+            <div id="progress_graphs" class="progress__graph">
+            </div>
               {% else %}
             </div>
             <p>
@@ -255,6 +258,7 @@ const code_coverage_lines_y = [];
 const code_coverage_functions_y = [];
 const code_reachability_y = [];
 const fuzzer_count_y = [];
+const fuzzers = new Map();
 max_fuzzer_count = 0;
 
 
@@ -269,6 +273,17 @@ max_fuzzer_count = 0;
     {% if project.has_introspector() %}
       code_coverage_functions_y.push({{project_timestamp.introspector_data.functions_covered_estimate}});
       code_reachability_y.push({{project_timestamp.introspector_data.static_reachability}});
+    {% endif %}
+
+    {% if project_timestamp.per_fuzzer_coverage_data != None %}
+      {% for (fuzzer, cov_data) in project_timestamp.per_fuzzer_coverage_data.items() %}
+        if (fuzzers.get("{{fuzzer}}") === undefined) {
+          fuzzers.set("{{fuzzer}}", {x: [], y: []});
+        }
+        var vv = fuzzers.get("{{fuzzer}}");
+        vv.x.push("{{project_timestamp.date}}");
+        vv.y.push({{cov_data.percent}});
+      {%endfor%}
     {% endif %}
   {% endif %}
 {%endfor%}
@@ -286,6 +301,39 @@ const code_coverage_lines_layout = {
   type: "scatter"
 };
 Plotly.newPlot("codeCoverageLinesOverTimePlot", code_coverage_lines_data, code_coverage_lines_layout);
+
+const progress_graph_div = document.getElementById("progress_graphs")
+
+for (const [fuzzer_name, coverage_percentage] of fuzzers) {
+  const per_fuzzer_id = 'perFuzzerCoverageLinesOverTimePlot' + fuzzer_name;
+
+  const sg_div = document.createElement('div');
+  sg_div.classList.add('single__graph');
+  progress_graph_div.appendChild(sg_div);
+
+  const gc_div = document.createElement('div');
+  gc_div.classList.add('graph__chart')
+  sg_div.appendChild(gc_div);
+
+  const the_div = document.createElement('div')
+  the_div.id = per_fuzzer_id
+  the_div.style = "width:100%;max-width:500px"
+  gc_div.appendChild(the_div);
+
+  // Plot for fuzzer counter over time
+  const per_fuzzer_code_coverage_lines_data = [{
+    x: coverage_percentage.x,
+    y: coverage_percentage.y,
+    mode:"lines"
+  }];
+  const per_fuzzer_code_coverage_lines_layout = {
+    xaxis: {title: "Date"},
+    yaxis: {title: "Coverage", range: [0.0, 100.0]},
+    title: "Code Coverage (lines) %<br>" + fuzzer_name,
+    type: "scatter"
+  };
+  Plotly.newPlot(per_fuzzer_id, per_fuzzer_code_coverage_lines_data, per_fuzzer_code_coverage_lines_layout);
+}
 
 // Plot for fuzzer counter over time
 const fuzzer_count_data = [{

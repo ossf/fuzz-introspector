@@ -283,9 +283,8 @@ def extract_and_refine_functions(all_function_list, date_str):
     return refined_proj_list
 
 
-def extract_code_coverage_data(code_coverage_summary, project_name, date_str,
-                               project_language) -> Optional[Dict[str, Any]]:
-    """Gets coverage URL and line coverage total of a project"""
+def extract_code_coverage_data(code_coverage_summary):
+    """Extract the coverage data from a loaded coverage summary.json"""
     # Extract data from the code coverage reports
     if code_coverage_summary is None:
         return None
@@ -306,6 +305,14 @@ def extract_code_coverage_data(code_coverage_summary, project_name, date_str,
                      float(line_total_summary['count'])), 2)
     except:
         pass
+
+    return line_total_summary
+
+
+def prepare_code_coverage_dict(code_coverage_summary, project_name: str, date_str: str,
+                               project_language: str) -> Optional[Dict[str, Any]]:
+    """Gets coverage URL and line coverage total of a project"""
+    line_total_summary = extract_code_coverage_data(code_coverage_summary)
 
     coverage_url = oss_fuzz.get_coverage_report_url(project_name,
                                                     date_str.replace("-", ""),
@@ -442,7 +449,7 @@ def extract_local_project_data(project_name, oss_fuzz_path,
         project_name
     }
 
-    code_coverage_data_dict = extract_code_coverage_data(
+    code_coverage_data_dict = prepare_code_coverage_dict(
         code_coverage_summary, project_name, '', project_language)
 
     if cov_fuzz_stats is not None:
@@ -704,20 +711,29 @@ def extract_project_data(project_name, date_str, should_include_details,
             'project_name': project_name
         }
 
-    code_coverage_data_dict = extract_code_coverage_data(
+    code_coverage_data_dict = prepare_code_coverage_dict(
         code_coverage_summary, project_name, date_str, project_language)
 
+    per_fuzzer_cov = {}
     if cov_fuzz_stats is not None:
         all_fuzzers = cov_fuzz_stats.split("\n")
         if all_fuzzers[-1] == '':
             all_fuzzers = all_fuzzers[0:-1]
         amount_of_fuzzers = len(all_fuzzers)
+        for ff in all_fuzzers:
+            try:
+                fuzzer_cov = oss_fuzz.get_fuzzer_code_coverage_summary(project_name, date_str.replace("-", ""), ff)
+                fuzzer_cov_data = extract_code_coverage_data(fuzzer_cov)
+                per_fuzzer_cov[ff] = fuzzer_cov_data
+            except:
+                pass
 
     project_timestamp = {
         "project_name": project_name,
         "date": date_str,
         'language': project_language,
         'coverage-data': code_coverage_data_dict,
+        'per-fuzzer-coverage-data': per_fuzzer_cov,
         'introspector-data': introspector_data_dict,
         'fuzzer-count': amount_of_fuzzers,
         'project_repository': project_repository,

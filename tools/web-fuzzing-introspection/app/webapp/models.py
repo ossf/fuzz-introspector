@@ -78,6 +78,7 @@ class ProjectTimestamp:
                  date: str,
                  language: str,
                  coverage_data: Optional[Dict[str, Any]],
+                 per_fuzzer_coverage_data: Optional[Dict[str, Dict[str, Any]]],
                  introspector_data: Optional[Dict[str, Any]],
                  fuzzer_count: int,
                  introspector_url: Optional[str] = None,
@@ -88,6 +89,7 @@ class ProjectTimestamp:
         self.date = date
         self.language = language
         self.coverage_data = coverage_data
+        self.per_fuzzer_coverage_data = per_fuzzer_coverage_data
         self.introspector_data = introspector_data
         self.fuzzer_count = fuzzer_count
         self.introspector_url = introspector_url
