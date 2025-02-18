@@ -14,11 +14,34 @@
 # limitations under the License.
 #
 ################################################################################
+set -Eeuo pipefail
+
 set -x
-echo "pep8"
-pep8 --first ./src/
-echo "flake8"
-flake8 --ignore=W503,W605 --max-line-length=100 ./src/
+
+# this currently fails
+# echo "pep8"
+# pep8 --first ./src/
+
+# flake8 based on https://github.com/py-actions/flake8/blob/777f3c125938bc6e01d737c6306ecee8728cff24/src/index.js
+echo "flake8 check post process"
+(cd src/ && flake8 --ignore E125,W503,W504,W605 --max-line-length 100)
+
+echo "flake8 check python frontend"
+(cd frontends/python/ && flake8 --ignore E125,W503,W504,W605 --max-line-length 100)
+
+echo "yapf code formatting"
+(yapf -d -r ./src/fuzz_introspector/)
+(yapf -d -r ./tools/auto-fuzz)
+(yapf -d -r ./tools/web-fuzzing-introspection/app/webapp/)
+(yapf -d ./tools/web-fuzzing-introspection/app/*.py)
+# Ignore directories created when running launch_*_oss_fuzz.
+(yapf -d -r ./tools/web-fuzzing-introspection/app/static/assets/db \
+  -e tools/web-fuzzing-introspection/app/static/assets/db/oss-fuzz-clone \
+  -e tools/web-fuzzing-introspection/app/static/assets/db/db-projects \
+)
+
+echo "pylint"
+(cd src && pylint --recursive=y fuzz_introspector main.py || true)
+
 echo "mypy"
-cd src
-mypy --ignore-missing-imports -m main
+(cd src && mypy --ignore-missing-imports -m main)

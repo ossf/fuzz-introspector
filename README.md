@@ -50,6 +50,15 @@ A more detailed description is available in [doc/Architecture](/doc/Architecture
 ### Code of Conduct
 Before contributing, please follow our [Code of Conduct](CODE_OF_CONDUCT.md).
 
+### Preparing the PR for CI
+
+You can run the `ci_checks.sh` script to run the linting and api tests that are
+run during CI. Make sure to activate the Python virtual environment as it is
+not done by the script to allow more flexibility for the local dev setup.
+
+The commit message **needs** to contain a signoff line with your data, this is
+supported by Git see [here](https://git-scm.com/docs/git-commit#Documentation/git-commit.txt---signoff).
+
 ### Connect with the Fuzzing Community
 If you want to get involved in the Fuzzing community or have ideas to chat about, we discuss
 this project in the
