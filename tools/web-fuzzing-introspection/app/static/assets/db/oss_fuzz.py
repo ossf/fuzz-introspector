@@ -153,10 +153,12 @@ def get_code_coverage_summary_url(project_name, datestr):
     project_url = base_url.format(project_name, datestr)
     return project_url
 
+
 def get_fuzzer_code_coverage_summary_url(project_name, datestr, fuzzer):
     base_url = 'https://storage.googleapis.com/oss-fuzz-coverage/{0}/reports-by-target/{1}/{2}/linux/summary.json'
     project_url = base_url.format(project_name, datestr, fuzzer)
     return project_url
+
 
 def get_coverage_report_url(project_name, datestr, language):
     if language == 'java' or language == 'python' or language == 'go':
@@ -259,8 +261,10 @@ def get_code_coverage_summary(project_name, datestr):
     except:
         return None
 
+
 def get_fuzzer_code_coverage_summary(project_name, datestr, fuzzer):
-    cov_summary_url = get_fuzzer_code_coverage_summary_url(project_name, datestr, fuzzer)
+    cov_summary_url = get_fuzzer_code_coverage_summary_url(
+        project_name, datestr, fuzzer)
     try:
         coverage_summary_raw = requests.get(cov_summary_url, timeout=20).text
     except:

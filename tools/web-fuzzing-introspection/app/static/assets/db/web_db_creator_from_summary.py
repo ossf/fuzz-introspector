@@ -309,13 +309,14 @@ def extract_code_coverage_data(code_coverage_summary):
     return line_total_summary
 
 
-def prepare_code_coverage_dict(code_coverage_summary, project_name: str, date_str: str,
-                               project_language: str) -> Optional[Dict[str, Any]]:
+def prepare_code_coverage_dict(
+        code_coverage_summary, project_name: str, date_str: str,
+        project_language: str) -> Optional[Dict[str, Any]]:
     """Gets coverage URL and line coverage total of a project"""
     line_total_summary = extract_code_coverage_data(code_coverage_summary)
 
     coverage_url = oss_fuzz.get_coverage_report_url(project_name,
-                                                    date_str.replace("-", ""),
+                                                    date_str.replace('-', ''),
                                                     project_language)
     code_coverage_data_dict = {
         'coverage_url': coverage_url,
@@ -472,8 +473,8 @@ def extract_local_project_data(project_name, oss_fuzz_path,
     dictionary_key = '%s###%s' % (project_name, '')
     manager_return_dict[dictionary_key] = {
         'project_timestamp': project_timestamp,
-        "introspector-data-dict": introspector_data_dict,
-        "coverage-data-dict": code_coverage_data_dict,
+        'introspector-data-dict': introspector_data_dict,
+        'coverage-data-dict': code_coverage_data_dict,
         'all-header-files': all_header_files,
     }
 
@@ -722,7 +723,8 @@ def extract_project_data(project_name, date_str, should_include_details,
         amount_of_fuzzers = len(all_fuzzers)
         for ff in all_fuzzers:
             try:
-                fuzzer_cov = oss_fuzz.get_fuzzer_code_coverage_summary(project_name, date_str.replace("-", ""), ff)
+                fuzzer_cov = oss_fuzz.get_fuzzer_code_coverage_summary(
+                    project_name, date_str.replace("-", ""), ff)
                 fuzzer_cov_data = extract_code_coverage_data(fuzzer_cov)
                 per_fuzzer_cov[ff] = fuzzer_cov_data
             except:
