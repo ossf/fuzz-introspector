@@ -45,3 +45,4 @@ echo "pylint"
 
 echo "mypy"
 (cd src && mypy --ignore-missing-imports -m main)
+(cd tools/web-fuzzing-introspection && mypy --ignore-missing-imports --explicit-package-bases --exclude app/static/assets/db/oss-fuzz-clone/ .)
