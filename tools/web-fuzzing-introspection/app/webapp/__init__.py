@@ -60,8 +60,6 @@ def load_db() -> None:
                 project_name=project_timestamp['project_name'],
                 language=project_timestamp['language'],
                 coverage_data=project_timestamp['coverage-data'],
-                per_fuzzer_coverage_data=project_timestamp.get(
-                    'per-fuzzer-coverage-data', None),
                 introspector_data=project_timestamp['introspector-data'],
                 fuzzer_count=project_timestamp['fuzzer-count'],
                 introspector_url=project_timestamp.get('introspector_url',
@@ -87,8 +85,9 @@ def load_db() -> None:
                 introspector_data=project_timestamp['introspector-data'],
                 fuzzer_count=project_timestamp['fuzzer-count'],
                 project_repository=project_timestamp['project_repository'],
-                light_analysis=project_timestamp.get('light-introspector',
-                                                     {})))
+                light_analysis=project_timestamp.get('light-introspector', {}),
+                recent_results=project_timestamp.get('recent_results'),
+            ))
 
         introspector_data = project_timestamp.get('introspector-data', None)
         if introspector_data is None:

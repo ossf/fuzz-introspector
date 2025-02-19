@@ -10,8 +10,7 @@
             <div class="pr__profile-header">
               <h2>Project: <a href="{{project_url}}"> {{ project.name }}</a></h2>
             </div>
-            <div class="profile__table" style="max-width: 450px">
-              <table>
+              <table class="profile__table" style="max-width: 450px">
                 <tbody>
                   <tr>
                     <td>Language</td>
@@ -131,11 +130,57 @@
                   </tr> 
                 </tbody>
               </table>
+
+              {% if project.has_recent_results() %}
+              <div style="max-height: 30rem; overflow: auto; margin-top: 1.5rem">
+                <table class="profile__table" style="max-width: 80%;">
+                  <thead>
+                    <th>Fuzzer</th>
+                    <th>Code coverage (lines)</th>
+                    <th>Latest Report</th>
+                    <th>Comments</th>
+                  </thead>
+                  <tbody>
+                    {% for fuzzer, fuzzer_data in project.recent_results.items()
+                      |sort(attribute='0')
+                      |sort(reverse=true, attribute='1.got_lost,1.has_degraded')
+                    %}
+                      <tr
+                        {% if fuzzer_data['got_lost'] or fuzzer_data['has_degraded'] %}
+                          class="alert alert-danger" role="alert"
+                        {% endif %}
+                      >
+                        <td>
+                          {{ fuzzer }}
+                        </td>
+                        <td>
+                          <code style="color: unset; white-space: nowrap;">
+                            {{ fuzzer_data['current'] }}% (avg: {{ fuzzer_data['avg'] }}%, max: {{ fuzzer_data['max'] }}%)
+                          </code>
+                        </td>
+                        <td>
+                          <a href="{{fuzzer_data['report_url']}}">{{ fuzzer_data['report_date'] }}</a>
+                        </td>
+                        <td>
+                          {% if fuzzer_data['got_lost'] %}
+                            Fuzzer no longer available!
+                          {% endif %}
+                          {% if fuzzer_data['has_degraded'] %}
+                            Coverage has degraded!
+                          {% endif %}
+                        </td>
+                      </tr>
+                    {%endfor%}
+                  </tbody>
+                </table>
+              </div>
+              {% endif %}
+
             </div>
           </div>
           <!-- project profile table -->
           <div class="project__progress">
-            <h2>Historical progression</h2>
+            <h2>Historical Progression</h2>
             <div class="progress__graph">
               <!-- single graph -->
               <div class="single__graph">
@@ -163,9 +208,6 @@
                 </div>
               </div>
             </div>
-            <h2>Per fuzzer progression</h2>
-            <div id="progress_graphs" class="progress__graph">
-            </div>
               {% else %}
             </div>
             <p>
@@ -176,6 +218,14 @@
           {% endif %}
           </div> <!-- project historical progress -->
         </div>
+
+        {% if project.has_recent_results() %}
+        <div class="project__progress">
+          <h2>Per Fuzzer Progression</h2>
+          <div id="progress_graphs" class="progress__graph">
+          </div>
+        </div>
+        {% endif %}
       </section>
 
       <!-- Functions of interest forthe given project -->
@@ -258,7 +308,6 @@ const code_coverage_lines_y = [];
 const code_coverage_functions_y = [];
 const code_reachability_y = [];
 const fuzzer_count_y = [];
-const fuzzers = new Map();
 max_fuzzer_count = 0;
 
 
@@ -273,17 +322,6 @@ max_fuzzer_count = 0;
     {% if project.has_introspector() %}
       code_coverage_functions_y.push({{project_timestamp.introspector_data.functions_covered_estimate}});
       code_reachability_y.push({{project_timestamp.introspector_data.static_reachability}});
-    {% endif %}
-
-    {% if project_timestamp.per_fuzzer_coverage_data != None %}
-      {% for (fuzzer, cov_data) in project_timestamp.per_fuzzer_coverage_data.items() %}
-        if (fuzzers.get('{{fuzzer}}') === undefined) {
-          fuzzers.set('{{fuzzer}}', {x: [], y: []});
-        }
-        var vv = fuzzers.get('{{fuzzer}}');
-        vv.x.push('{{project_timestamp.date}}');
-        vv.y.push({{cov_data.percent}});
-      {%endfor%}
     {% endif %}
   {% endif %}
 {%endfor%}
@@ -302,8 +340,29 @@ const code_coverage_lines_layout = {
 };
 Plotly.newPlot('codeCoverageLinesOverTimePlot', code_coverage_lines_data, code_coverage_lines_layout);
 
-const progress_graph_div = document.getElementById('progress_graphs')
+// Plot for fuzzer counter over time
+const fuzzer_count_data = [{
+  x: code_coverage_lines_x,
+  y: fuzzer_count_y,
+  mode:'lines'
+}];
+const fuzzer_count_layout = {
+  xaxis: {title: 'Date'},
+  yaxis: {title: 'Fuzzers', range: [0.0, max_fuzzer_count + 5]},
+  title: 'Fuzzer count',
+  type: 'scatter'
+};
+Plotly.newPlot('fuzzerCountOverTimePlot', fuzzer_count_data, fuzzer_count_layout);
 
+{% endif %} // has_project_stats
+
+{% if project.has_recent_results() %}
+const fuzzers = new Map();
+  {% for fuzzer, fuzzer_data in project.recent_results.items() %}
+    fuzzers.set('{{fuzzer}}', {x: {{fuzzer_data['coverages_dates']|tojson}}, y: {{fuzzer_data['coverages_values']|tojson}}});
+  {% endfor %}
+
+const progress_graph_div = document.getElementById('progress_graphs')
 for (const [fuzzer_name, coverage_percentage] of fuzzers) {
   const per_fuzzer_id = 'perFuzzerCoverageLinesOverTimePlot' + fuzzer_name;
 
@@ -334,22 +393,7 @@ for (const [fuzzer_name, coverage_percentage] of fuzzers) {
   };
   Plotly.newPlot(per_fuzzer_id, per_fuzzer_code_coverage_lines_data, per_fuzzer_code_coverage_lines_layout);
 }
-
-// Plot for fuzzer counter over time
-const fuzzer_count_data = [{
-  x: code_coverage_lines_x,
-  y: fuzzer_count_y,
-  mode:'lines'
-}];
-const fuzzer_count_layout = {
-  xaxis: {title: 'Date'},
-  yaxis: {title: 'Fuzzers', range: [0.0, max_fuzzer_count + 5]},
-  title: 'Fuzzer count',
-  type: 'scatter'
-};
-Plotly.newPlot('fuzzerCountOverTimePlot', fuzzer_count_data, fuzzer_count_layout);
-
-{% endif %} // has_project_stats
+{% endif %} // has_recent_results
 
 {% if project.has_introspector() %}
 // Plots dependend on Fuzz Introspector

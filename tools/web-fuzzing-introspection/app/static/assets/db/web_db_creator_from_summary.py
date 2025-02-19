@@ -24,8 +24,10 @@ import requests
 import subprocess
 import zipfile
 import tarfile
+import statistics
+from pathlib import Path
 from threading import Thread
-from typing import List, Any, Optional, Dict
+from typing import List, Any, Optional, Dict, Tuple, Set
 
 import constants
 import oss_fuzz
@@ -34,7 +36,7 @@ DB_JSON_DB_TIMESTAMP = 'db-timestamps.json'
 DB_JSON_ALL_PROJECT_TIMESTAMP = 'all-project-timestamps.json'
 DB_JSON_ALL_FUNCTIONS = 'all-functions-db-{PROJ}.json'
 DB_JSON_ALL_CONSTRUCTORS = 'all-constructors-db-{PROJ}.json'
-DB_JSON_ALL_CURRENT_FUNCS = 'all-project-current.json'
+DB_JSON_ALL_CURRENT = 'all-project-current.json'
 DB_JSON_ALL_BRANCH_BLOCKERS = 'all-branch-blockers.json'
 DB_BUILD_STATUS_JSON = 'build-status.json'
 #DB_RAW_INTROSPECTOR_REPORTS = 'raw-introspector-reports'
@@ -44,7 +46,7 @@ ALL_JSON_FILES = [
     DB_JSON_ALL_PROJECT_TIMESTAMP,
     DB_JSON_ALL_FUNCTIONS,
     DB_JSON_ALL_CONSTRUCTORS,
-    DB_JSON_ALL_CURRENT_FUNCS,
+    DB_JSON_ALL_CURRENT,
 ]
 
 INTROSPECTOR_WEBAPP_ZIP = (
@@ -52,6 +54,9 @@ INTROSPECTOR_WEBAPP_ZIP = (
 
 FI_EXCLUDE_ALL_NON_MUSTS = bool(int(os.getenv('FI_EXCLUDE_ALL_NON_MUSTS',
                                               '0')))
+
+NUM_RECENT_DAYS = 30
+FUZZER_COVERAGE_IS_DEGRADED = 5  # 5% or more is a degradation
 
 MUST_INCLUDES = set()
 MUST_INCLUDE_WITH_LANG: List[Any] = []
@@ -896,11 +901,105 @@ def extend_db_timestamps(db_timestamp, output_directory):
             json.dump(existing_timestamps, f)
 
 
-def extend_db_json_files(project_timestamps, output_directory):
+def per_fuzzer_coverage_analysis(project_name: str,
+                                 coverages: Dict[str, List[Tuple[int, str]]],
+                                 lost_fuzzers):
+    """Go through the recent coverage results and combine them into a short summary.
+    Including an assessment if the fuzzer got worse over time.
+    """
+
+    # TODO This might not be a good metric when coverage is not meaningful,
+    # for example for very small projects or projects that have low coverage
+    # already. Though, this might not be super bad as we are taking a look
+    # at per fuzzer coverage, which is should already be normalized to what
+    # can be reached.
+    # TODO What would be a good percentage to mark as coverage degradation,
+    # taking 5% for now but should be observed, maybe per it should be
+    # configurable per project as well.
+    results = {}
+    for ff, data in coverages.items():
+        if len(data) > 0:
+            values = [dd[0] for dd in data]
+            dates = [dd[1] for dd in data]
+            latest_date_with_value = next(dd[1] for dd in reversed(data)
+                                          if dd[0] is not None)
+            if latest_date_with_value is not None:
+                report_url = oss_fuzz.get_fuzzer_code_coverage_summary_url(
+                    project_name, latest_date_with_value.replace('-', ''), ff)
+                report_url = report_url[:-len('summary.json')] + 'index.html'
+            else:
+                report_url = None
+            max_cov = max(values[:-1], default=0)
+            avg_cov = round(statistics.fmean(values), 2)
+            current = values[-1]
+            results[ff] = {
+                'report_url': report_url,
+                'report_date': latest_date_with_value,
+                'coverages_values': values,
+                'coverages_dates': dates,
+                'max': max_cov,
+                'avg': avg_cov,
+                'current': current,
+                'has_degraded':
+                (max_cov - current) > FUZZER_COVERAGE_IS_DEGRADED,
+                'got_lost': ff in lost_fuzzers,
+            }
+    return results
+
+
+def calculate_recent_results(projects_with_new_results, timestamps,
+                             num_days: int):
+    """Analyse recent project data to detect possible degradations of fuzzer efficiency."""
+    from collections import defaultdict
+
+    data: Dict[str, Dict[str, Dict[str, Any]]] = defaultdict(dict)
+    for pt in timestamps:
+        project_name = pt['project_name']
+        if project_name in projects_with_new_results:
+            data[project_name][pt['date']] = pt
+
+    results = {}
+    for project_name, project_data in data.items():
+        fuzzers_past = set()
+        fuzzers_current: Set[str] = set()
+        per_fuzzer_coverages = defaultdict(list)
+
+        for do in (get_date_at_offset_as_str(ii)
+                   for ii in range(-num_days, 0, 1)):
+            try:
+                date_data = project_data[do]
+                per_fuzzer_coverage_data = date_data[
+                    'per-fuzzer-coverage-data']
+
+                fuzzers_past |= fuzzers_current
+                fuzzers_current = set(per_fuzzer_coverage_data.keys())
+
+                for ff, cov_data in per_fuzzer_coverage_data.items():
+                    try:
+                        perc = round(
+                            100 * cov_data['covered'] / cov_data['count'], 2)
+                    except:
+                        perc = 0
+
+                    per_fuzzer_coverages[ff].append((perc, do))
+            except:
+                continue
+
+        fuzzer_diff = fuzzers_past - fuzzers_current
+        per_fuzzer_coverages = per_fuzzer_coverage_analysis(
+            project_name, per_fuzzer_coverages, fuzzer_diff)
+
+        results[project_name] = per_fuzzer_coverages
+
+    return results
+
+
+def extend_db_json_files(project_timestamps, output_directory,
+                         should_include_details):
     """Extends a set of DB .json files."""
 
     existing_timestamps = []
-    logging.info('Loading existing timestamps 1')
+    logging.info('Loading existing timestamps')
     if os.path.isfile(
             os.path.join(output_directory, DB_JSON_ALL_PROJECT_TIMESTAMP)):
         with open(
@@ -919,10 +1018,11 @@ def extend_db_json_files(project_timestamps, output_directory):
     existing_timestamp_mapping = dict()
 
     for es in existing_timestamps:
-        if not es['project_name'] in existing_timestamp_mapping:
+        if es['project_name'] not in existing_timestamp_mapping:
             existing_timestamp_mapping[es['project_name']] = set()
         existing_timestamp_mapping[es['project_name']].add(es['date'])
 
+    projects_with_new_results = set()
     for new_ts in project_timestamps:
         to_add = True
 
@@ -932,24 +1032,44 @@ def extend_db_json_files(project_timestamps, output_directory):
                 to_add = False
         if to_add:
             existing_timestamps.append(new_ts)
+            projects_with_new_results.add(new_ts['project_name'])
             have_added = True
 
     if FI_EXCLUDE_ALL_NON_MUSTS:
-        new_timestamps = []
+        # Filter existing timstamps to to only those in MUST_INCLUDES.
+        kept_timestamps = []
         for ts in existing_timestamps:
             if ts['project_name'] in MUST_INCLUDES:
-                new_timestamps.append(ts)
-        existing_timestamps = new_timestamps
+                kept_timestamps.append(ts)
+        existing_timestamps = kept_timestamps
 
-        new_project_stamps = []
+        # Also filter the current project results.
+        kept_project_stamps = []
         for project_stamp in project_timestamps:
             if project_stamp['project_name'] in MUST_INCLUDES:
-                new_project_stamps.append(project_stamp)
-        project_timestamps = new_project_stamps
+                kept_project_stamps.append(project_stamp)
+        project_timestamps = kept_project_stamps
 
-    logging.info('Dumping all current projects')
-    with open(os.path.join(output_directory, DB_JSON_ALL_CURRENT_FUNCS),
-              'w') as f:
+    if should_include_details:
+        recent_results = calculate_recent_results(projects_with_new_results,
+                                                  existing_timestamps,
+                                                  NUM_RECENT_DAYS)
+        # TODO these results might detect issues that should be communicated with
+        # project maintainers. The best approach might be to load the
+        # project_timestamps file (all-project-current.json)
+        # separately and load recent results there and maybe issue warnings.
+        for pt in project_timestamps:
+            try:
+                pt['recent_results'] = recent_results.get(pt['project_name'])
+            except Exception as exc:
+                logger.warning(
+                    f'Could not get recent results for {pt["project_name"]}: {exc}'
+                )
+    else:
+        recent_results = None
+
+    logging.info('Dumping current project data')
+    with open(os.path.join(output_directory, DB_JSON_ALL_CURRENT), 'w') as f:
         json.dump(project_timestamps, f)
 
     # Remove any light-introspector files because they should not be saved in the
@@ -1017,7 +1137,8 @@ def update_db_files(db_timestamp,
         f.write(json.dumps(all_header_files))
 
     logging.info('Extending DB json files')
-    extend_db_json_files(project_timestamps, output_directory)
+    extend_db_json_files(project_timestamps, output_directory,
+                         should_include_details)
 
     logging.info('Extending DB time stamps')
     extend_db_timestamps(db_timestamp, output_directory)
