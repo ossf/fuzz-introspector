@@ -319,6 +319,8 @@ def prepare_code_coverage_dict(
         project_language: str) -> Optional[Dict[str, Any]]:
     """Gets coverage URL and line coverage total of a project"""
     line_total_summary = extract_code_coverage_data(code_coverage_summary)
+    if line_total_summary is None:
+        return None
 
     coverage_url = oss_fuzz.get_coverage_report_url(project_name,
                                                     date_str.replace('-', ''),
