@@ -46,7 +46,8 @@ class Project:
         return self.introspector_data is not None
 
     def has_recent_results(self) -> bool:
-        return self.recent_results is not None
+        return self.recent_results is not None and sum(
+            len(ff) for ff in self.recent_results) > 0
 
 
 class DBTimestamp:
