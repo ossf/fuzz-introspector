@@ -21,6 +21,7 @@ from typing import (
 
 from fuzz_introspector import analysis
 from fuzz_introspector import html_helpers
+from fuzz_introspector import json_report
 from fuzz_introspector.datatypes import (
     project_profile,
     fuzzer_profile,
@@ -78,13 +79,21 @@ class MetadataAnalysis(analysis.AnalysisInterface):
             full_yaml_path = profile.introspector_data_file + ".yaml"
             base_yamlfile = os.path.basename(full_yaml_path)
             coverage_file_link_str = ""
+            cov_prof_files = []
             for idx, cov_prof in enumerate(profile.coverage.coverage_files):
                 cov_prof = profile.coverage.coverage_files[idx]
                 cov_prof = os.path.basename(cov_prof)
+                cov_prof_files.append(cov_prof)
                 coverage_file_link_str += f"<a href=\"{cov_prof}\">{cov_prof}</a>"
                 if idx < len(profile.coverage.coverage_files) - 1:
                     coverage_file_link_str += ","
 
+            json_report.add_fuzzer_key_value_to_report(
+                profile.identifier, "metadata-files", {
+                    "calltree": base_datafile,
+                    "program-data": base_yamlfile,
+                    "coverage": cov_prof_files
+                }, out_dir)
             html_string += html_helpers.html_table_add_row([
                 profile.identifier,
                 f"<a href=\"{base_datafile}\">{base_datafile}</a>",
