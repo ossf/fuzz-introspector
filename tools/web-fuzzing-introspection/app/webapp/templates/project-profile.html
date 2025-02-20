@@ -57,7 +57,7 @@
                         succeeding:
                       {% endif %}
                       <a href="{{project_build_status.introspector_build_log}}">Build log</a></td>
-                  </tr>                                    
+                  </tr>
                   <tr>
                     <td>Fuzzer count</td>
                     {% if latest_statistics != None %}
@@ -135,10 +135,10 @@
               <div style="max-height: 30rem; overflow: auto; margin-top: 1.5rem">
                 <table class="profile__table" style="max-width: 80%;">
                   <thead>
-                    <th>Fuzzer</th>
-                    <th>Code coverage (lines)</th>
-                    <th>Latest Report</th>
-                    <th>Comments</th>
+                    <th style="padding: 0 0.5rem;">Fuzzer</th>
+                    <th style="padding: 0 0.5rem;">Code coverage (lines)</th>
+                    <th style="padding: 0 0.5rem;">Latest Report</th>
+                    <th style="padding: 0 0.5rem;">Comments</th>
                   </thead>
                   <tbody>
                     {% for fuzzer, fuzzer_data in project.recent_results.items()
@@ -146,31 +146,35 @@
                       |sort(reverse=true, attribute='1.got_lost,1.has_degraded')
                     %}
                       <tr
-                        {% if fuzzer_data['got_lost'] or fuzzer_data['has_degraded'] %}
+                        {% if fuzzer_data['got_lost'] or fuzzer_data['max_has_degraded'] %}
                           class="alert alert-danger" role="alert"
                         {% endif %}
                       >
-                        <td>
-                          {{ fuzzer }}
+                        <td style="padding: 0 0.5rem;">
+                          {{fuzzer}} (<a href="#perFuzzerCoverageLinesOverTimePlot{{ fuzzer_data['hashed_name'] }}">plot</a>)
                         </td>
-                        <td>
+                        <td style="padding: 0 0.5rem;">
                           <code style="color: unset; white-space: nowrap;">
                             {{ fuzzer_data['current'] }}% (avg: {{ fuzzer_data['avg'] }}%, max: {{ fuzzer_data['max'] }}%)
                           </code>
                         </td>
-                        <td>
+                        <td style="padding: 0 0.5rem;">
                           <a href="{{fuzzer_data['report_url']}}">{{ fuzzer_data['report_date'] }}</a>
                         </td>
-                        <td>
+                        <td style="padding: 0 0.5rem;">
                           {% if fuzzer_data['got_lost'] %}
-                            Fuzzer no longer available!
+                            Fuzzer no longer available!<br>
                           {% endif %}
-                          {% if fuzzer_data['has_degraded'] %}
-                            Coverage has degraded!
+                          {% if fuzzer_data['max_has_degraded'] %}
+                            Coverage has degraded!<br>
                           {% endif %}
+                          {% for day_degraded in fuzzer_data['days_degraded'] %}
+                            Degraded from <a href="{{ day_degraded['before_url'] }}">{{day_degraded['before_date']}} ({{day_degraded['before_perc']}}%)</a>
+                            to <a href="{{ day_degraded['current_url'] }}">{{day_degraded['current_date']}} ({{day_degraded['current_perc']}}%)</a>!<br>
+                          {% endfor %}
                         </td>
                       </tr>
-                    {%endfor%}
+                    {% endfor %}
                   </tbody>
                 </table>
               </div>
@@ -181,30 +185,32 @@
           <!-- project profile table -->
           <div class="project__progress">
             <h2>Historical Progression</h2>
-            <div class="progress__graph">
-              <!-- single graph -->
-              <div class="single__graph">
-                <div class="graph__chart">
-                    <div id="codeCoverageLinesOverTimePlot" style="width:100%;max-width:500px"></div>
+            <div class="container">
+              <div class="progress__graph">
+                <!-- single graph -->
+                <div class="single__graph">
+                  <div class="graph__chart">
+                      <div id="codeCoverageLinesOverTimePlot" style="width:100%;max-width:500px"></div>
+                  </div>
                 </div>
-              </div>
-              <!-- single graph -->
-              <div class="single__graph">
-                <div class="graph__chart">
-                    <div id="fuzzerCountOverTimePlot" style="width:100%;max-width:500px"></div>
+                <!-- single graph -->
+                <div class="single__graph">
+                  <div class="graph__chart">
+                      <div id="fuzzerCountOverTimePlot" style="width:100%;max-width:500px"></div>
+                  </div>
                 </div>
-              </div>
-              <!-- single graph -->
-              {% if project.has_introspector() %}
-              <div class="single__graph">
-                <div class="graph__chart">
-                    <div id="codeCoverageFunctionsOverTimePlot" style="width:100%;max-width:500px"></div>
+                <!-- single graph -->
+                {% if project.has_introspector() %}
+                <div class="single__graph">
+                  <div class="graph__chart">
+                      <div id="codeCoverageFunctionsOverTimePlot" style="width:100%;max-width:500px"></div>
+                  </div>
                 </div>
-              </div>
-              <!-- single graph -->
-              <div class="single__graph">
-                <div class="graph__chart">
-                    <div id="staticReachabilityOverTimePlot" style="width:100%;max-width:500px"></div>
+                <!-- single graph -->
+                <div class="single__graph">
+                  <div class="graph__chart">
+                      <div id="staticReachabilityOverTimePlot" style="width:100%;max-width:500px"></div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -220,9 +226,20 @@
         </div>
 
         {% if project.has_recent_results() %}
-        <div class="project__progress">
-          <h2>Per Fuzzer Progression</h2>
-          <div id="progress_graphs" class="progress__graph">
+        <div class="container">
+          <div class="project__progress">
+            <h2>Per Fuzzer Progression</h2>
+            <p>
+              This section shows graphs for the coverage results per fuzz target over the past 30 days. Included are the
+              coverage percentage, 
+              <span style="text-decoration: underline; cursor: help;" title="Note that this number is for dead code elimininated lines and are not representative of all lines in the project."
+                >total number of lines</span>,
+              covered number of lines, and the number of
+              <span style="text-decoration: underline; cursor: help;" title="The coverage inputs are all inputs that have been used during coverage collection. They can be severely reduced when coverage exits early due to out-of-memory or timeouts, which should be cause to look into the causes. They can also be used to estimate roughly estimate how thoroughly the fuzzer has evaluated the fuzz target, while they can be higher or lower than covered lines, should the number of coverage inputs be more than a magnitude lower than covered lines this should be cause for a closer look. The issue is that the fuzzer might not be able to find new inputs through mutation. For example, if a checksum of the input needs to be correct a fuzzer might not be able to effectively function even if seed inputs cover large parts of a target."
+                >coverage inputs</span>.
+            </p>
+            <div id="progress_graphs" class="progress__graph" style="max-height: 90vh; overflow-y: auto; padding: 1rem; box-sizing: border-box; margin-right: 1rem;">
+            </div>
           </div>
         </div>
         {% endif %}
@@ -359,12 +376,19 @@ Plotly.newPlot('fuzzerCountOverTimePlot', fuzzer_count_data, fuzzer_count_layout
 {% if project.has_recent_results() %}
 const fuzzers = new Map();
   {% for fuzzer, fuzzer_data in project.recent_results.items() %}
-    fuzzers.set('{{fuzzer}}', {x: {{fuzzer_data['coverages_dates']|tojson}}, y: {{fuzzer_data['coverages_values']|tojson}}});
+    fuzzers.set('{{fuzzer}}', {
+      hashed_name: {{fuzzer_data['hashed_name']|tojson}},
+      dates: {{fuzzer_data['coverages_dates']|tojson}},
+      percentages: {{fuzzer_data['coverages_perc']|tojson}},
+      covered: {{fuzzer_data['coverages_covered']|tojson}},
+      totals: {{fuzzer_data['coverages_totals']|tojson}},
+      corpus: {{fuzzer_data['coverages_corpus']|tojson}},
+    });
   {% endfor %}
 
 const progress_graph_div = document.getElementById('progress_graphs')
-for (const [fuzzer_name, coverage_percentage] of fuzzers) {
-  const per_fuzzer_id = 'perFuzzerCoverageLinesOverTimePlot' + fuzzer_name;
+for (const [fuzzer_name, data] of fuzzers) {
+  const per_fuzzer_id = 'perFuzzerCoverageLinesOverTimePlot' + data.hashed_name;
 
   const sg_div = document.createElement('div');
   sg_div.classList.add('single__graph');
@@ -380,16 +404,95 @@ for (const [fuzzer_name, coverage_percentage] of fuzzers) {
   gc_div.appendChild(the_div);
 
   // Plot for fuzzer counter over time
-  const per_fuzzer_code_coverage_lines_data = [{
-    x: coverage_percentage.x,
-    y: coverage_percentage.y,
-    mode:'lines'
-  }];
+  const per_fuzzer_code_coverage_lines_data = [
+    {
+      x: data.dates,
+      y: data.percentages,
+      mode:'lines',
+      name: 'Percentage',
+      line: {
+        dash: 'solid',
+        width: 2,
+      },
+    },
+    {
+      x: data.dates,
+      y: data.covered,
+      mode:'lines',
+      yaxis: 'y2',
+      name: 'Covered Lines',
+      line: {
+        dash: 'dash',
+        width: 2,
+      },
+    },
+    {
+      x: data.dates,
+      y: data.totals,
+      mode:'lines',
+      yaxis: 'y2',
+      name: 'Total Lines',
+      line: {
+        dash: 'dash',
+        width: 2,
+      },
+    },
+    {
+      x: data.dates,
+      y: data.corpus,
+      mode:'lines',
+      yaxis: 'y3',
+      name: 'Coverage Inputs',
+      line: {
+        dash: 'dot',
+        width: 2,
+      },
+    },
+  ];
   const per_fuzzer_code_coverage_lines_layout = {
-    xaxis: {title: 'Date'},
-    yaxis: {title: 'Coverage', range: [0.0, 100.0]},
-    title: 'Code Coverage (lines) %<br>' + fuzzer_name,
-    type: 'scatter'
+    xaxis: { title: 'Date' },
+    yaxis: {
+      title: {
+        text: 'Coverage %',
+        standoff: 20,
+      },
+      range: [0.0, 100.0],
+      side: 'left',
+      ticklabelposition: 'inside',
+    },
+    yaxis2: {
+      title: {
+        text: 'Coverage Totals',
+        standoff: 15,
+      },
+      anchor: 'x',
+      overlaying: 'y',
+      side: 'left',
+      ticklabelposition: 'outside',
+      rangemode: 'tozero',
+      autorange: true,
+    },
+    yaxis3: {
+      title: {
+        text: 'Coverage Inputs',
+        standoff: 20,
+      },
+      anchor: 'x',
+      overlaying: 'y',
+      side: 'right',
+      position: 0.85,
+      rangemode: 'tozero',
+      autorange: true,
+    },
+    title: fuzzer_name + '<br>Code Coverage (lines)',
+    legend: {
+      orientation: 'h',
+      x: 0.5,
+      xanchor: 'center',
+      y: -0.22,
+      yanchor: 'top',
+      traceorder: 'normal',
+    },
   };
   Plotly.newPlot(per_fuzzer_id, per_fuzzer_code_coverage_lines_data, per_fuzzer_code_coverage_lines_layout);
 }
@@ -431,3 +534,4 @@ Plotly.newPlot('staticReachabilityOverTimePlot', code_reachability_data, code_re
 </script>
 
 {% endblock %}
+

@@ -180,6 +180,23 @@ def get_introspector_report_url_debug_info(project_name, datestr):
                                             datestr) + "all_debug_info.json"
 
 
+def get_introspector_report_url_fuzzer_log_file(project_name, datestr, fuzzer):
+    return get_introspector_report_url_base(
+        project_name, datestr) + f"fuzzerLogFile-{fuzzer}.data.yaml"
+
+
+def get_introspector_report_url_fuzzer_program_data(project_name, datestr,
+                                                    program_data_filename):
+    return get_introspector_report_url_base(project_name,
+                                            datestr) + program_data_filename
+
+
+def get_introspector_report_url_fuzzer_coverage_urls(project_name, datestr,
+                                                     coverage_files):
+    prefix = get_introspector_report_url_base(project_name, datestr)
+    return [prefix + ff for ff in coverage_files]
+
+
 def extract_introspector_debug_info(project_name, date_str):
     debug_data_url = get_introspector_report_url_debug_info(
         project_name, date_str.replace("-", ""))
@@ -281,6 +298,59 @@ def get_fuzzer_code_coverage_summary(project_name, datestr, fuzzer):
         return None
 
 
+MAGNITUDES = {
+    "k": 10**(3 * 1),
+    "M": 10**(3 * 2),
+    "G": 10**(3 * 3),
+    "T": 10**(3 * 4),
+    "P": 10**(3 * 5),
+    "E": 10**(3 * 6),
+    "Z": 10**(3 * 7),
+    "Y": 10**(3 * 8),
+}
+
+
+def get_fuzzer_corpus_size(project_name, datestr, fuzzer, introspector_report):
+    """Go through coverage reports to find the LLVMFuzzerTestOneInput function. The first hit count equals the number inputs found."""
+
+    if introspector_report["MergedProjectProfile"]["overview"][
+            "language"] != "c-cpp":
+        return None
+
+    metadata_files = introspector_report[fuzzer]["metadata-files"]
+
+    fuzzer_program_coverage_urls = get_introspector_report_url_fuzzer_coverage_urls(
+        project_name, datestr, metadata_files["coverage"])
+
+    for url in fuzzer_program_coverage_urls:
+        found = False
+        try:
+            cov_res = requests.get(url, timeout=20).text
+            for ll in cov_res.splitlines():
+                if found:
+                    # Letters used is implemented here:
+                    # https://github.com/llvm/llvm-project/blob/7569de527298a52618239ef68b9374a5c35c8b97/llvm/tools/llvm-cov/SourceCoverageView.cpp#L117
+                    # Used from here:
+                    # https://github.com/llvm/llvm-project/blob/35ed9a32d58bc8cbace31dc7c3bba79d0e3a9256/llvm/tools/llvm-cov/SourceCoverageView.h#L269
+                    try:
+                        count_str = ll.split("|")[1].strip()
+                        magnitude_char = count_str[-1]
+                        if magnitude_char.isalpha():
+                            magnitude = MAGNITUDES[magnitude_char]
+                            count = float(count_str[:-1])
+                        else:
+                            magnitude = 1
+                            count = float(count_str)
+                        return int(magnitude * count)
+                    except:
+                        # Something went wrong, maybe another file has correct data.
+                        break
+                if ll == "LLVMFuzzerTestOneInput:":
+                    found = True
+        except:
+            return None
+
+
 def extract_new_introspector_functions(project_name, date_str):
     introspector_functions_url = get_introspector_report_url_all_functions(
         project_name, date_str.replace("-", ""))
@@ -372,7 +442,7 @@ def extract_introspector_report(project_name, date_str):
     introspector_report_url = get_introspector_report_url_report(
         project_name, date_str.replace("-", ""))
 
-    # Read the introspector atifact
+    # Read the introspector artifact
     try:
         raw_introspector_json_request = requests.get(introspector_summary_url,
                                                      timeout=10)
