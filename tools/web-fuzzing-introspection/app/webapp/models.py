@@ -30,7 +30,8 @@ class Project:
                  introspector_data: Optional[Dict[str,
                                                   Any]], fuzzer_count: int,
                  project_repository: Optional[str], light_analysis: Dict[Any,
-                                                                         Any]):
+                                                                         Any],
+                 recent_results: Optional[Dict[str, Any]]):
         self.name = name
         self.language = language
         self.date = date
@@ -39,9 +40,13 @@ class Project:
         self.fuzzer_count = fuzzer_count
         self.project_repository = project_repository
         self.light_analysis = light_analysis
+        self.recent_results = recent_results
 
     def has_introspector(self) -> bool:
-        return self.introspector_data != None
+        return self.introspector_data is not None
+
+    def has_recent_results(self) -> bool:
+        return self.recent_results is not None
 
 
 class DBTimestamp:

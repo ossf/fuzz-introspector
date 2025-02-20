@@ -574,7 +574,8 @@ def project_profile():
                                      coverage_data=None,
                                      introspector_data=None,
                                      project_repository=None,
-                                     light_analysis={})
+                                     light_analysis={},
+                                     recent_results=None)
 
             # Get statistics of the project
             project_statistics = data_storage.PROJECT_TIMESTAMPS

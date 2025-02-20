@@ -85,8 +85,9 @@ def load_db() -> None:
                 introspector_data=project_timestamp['introspector-data'],
                 fuzzer_count=project_timestamp['fuzzer-count'],
                 project_repository=project_timestamp['project_repository'],
-                light_analysis=project_timestamp.get('light-introspector',
-                                                     {})))
+                light_analysis=project_timestamp.get('light-introspector', {}),
+                recent_results=project_timestamp.get('recent_results'),
+            ))
 
         introspector_data = project_timestamp.get('introspector-data', None)
         if introspector_data is None:
