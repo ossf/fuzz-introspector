@@ -26,7 +26,9 @@ import zipfile
 import tarfile
 import statistics
 from pathlib import Path
-from threading import Thread
+import concurrent
+import concurrent.futures
+from concurrent.futures import ThreadPoolExecutor
 from typing import List, Any, Optional, Dict, Tuple, Set
 
 import constants
@@ -502,7 +504,6 @@ def extract_project_data(project_name, date_str, should_include_details,
         - Lines of code covered at runtime
     """
     amount_of_fuzzers = None
-
     # TODO (David): handle the case where there is neither code coverage or introspector reports.
     # In this case we should simply return an error so it will not be included. This is also useful
     # for creating history
@@ -727,6 +728,7 @@ def extract_project_data(project_name, date_str, should_include_details,
         all_fuzzers = cov_fuzz_stats.split("\n")
         if all_fuzzers[-1] == '':
             all_fuzzers = all_fuzzers[0:-1]
+
         amount_of_fuzzers = len(all_fuzzers)
         for ff in all_fuzzers:
             try:
@@ -756,6 +758,7 @@ def extract_project_data(project_name, date_str, should_include_details,
         "coverage-data-dict": code_coverage_data_dict,
         'all-header-files': all_header_files,
     }
+
     return
 
 
@@ -791,27 +794,23 @@ def analyse_list_of_projects(date, projects_to_analyse,
     idx = 0
     jobs = []
     analyses_dictionary = dict()
-
+    sem_count = 20 if not should_include_details else 1
     project_name_list = list(projects_to_analyse.keys())
 
-    batch_size = 6 if not should_include_details else 1
-    all_batches = [
-        project_name_list[x:x + batch_size]
-        for x in range(0, len(project_name_list), batch_size)
-    ]
+    executor = ThreadPoolExecutor(max_workers=sem_count)
+    futures = []
+    logger.info('Extracting data for all')
+    for project_name in project_name_list:
+        futures.append(
+            executor.submit(extract_project_data, project_name, date,
+                            should_include_details, analyses_dictionary))
 
-    # Extract data from all of the projects using multi-threaded approach.
-    for batch in all_batches:
-        for project_name in batch:
-            idx += 1
-            t = Thread(target=extract_project_data,
-                       args=(project_name, date, should_include_details,
-                             analyses_dictionary))
-            jobs.append(t)
-            t.start()
-
-        for proc in jobs:
-            proc.join()
+    # wait for all tasks to complete
+    logger.info('Waiting for completion.')
+    concurrent.futures.wait(futures,
+                            return_when=concurrent.futures.ALL_COMPLETED)
+    logger.info('Completion done.')
+    executor.shutdown()
 
     # Accummulate the data from all the projects.
     for project_info in analyses_dictionary.values():
