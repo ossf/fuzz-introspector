@@ -27,6 +27,7 @@ import tarfile
 import statistics
 from pathlib import Path
 import concurrent
+import concurrent.futures
 from concurrent.futures import ThreadPoolExecutor
 from typing import List, Any, Optional, Dict, Tuple, Set
 
@@ -940,8 +941,8 @@ def per_fuzzer_coverage_analysis(project_name: str,
                 'max': max_cov,
                 'avg': avg_cov,
                 'current': current,
-                'has_degraded': (max_cov - current)
-                > FUZZER_COVERAGE_IS_DEGRADED,
+                'has_degraded':
+                (max_cov - current) > FUZZER_COVERAGE_IS_DEGRADED,
                 'got_lost': ff in lost_fuzzers,
             }
     return results
