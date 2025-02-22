@@ -299,7 +299,7 @@ class FunctionDefinition():
                     param_name = param.child_by_field_name('declarator')
 
                     # Skip empty param name and type
-                    if not param_type or param_name:
+                    if not param_type and not param_name:
                         continue
 
                     while param_name is not None and param_name.type not in [
