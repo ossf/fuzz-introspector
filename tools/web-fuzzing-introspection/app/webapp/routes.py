@@ -2224,12 +2224,13 @@ def far_reach_but_low_coverage(args):
 
     max_functions_to_show = 30
     functions_to_return = list()
+    logger.info('Functions of interest: %d', len(sorted_functions_of_interest))
     for function in sorted_functions_of_interest:
         if only_referenced_functions and function.name not in xref_dict:
             continue
         functions_to_return.append(function)
-
-    if only_functions_declared_in_header_files:
+    # Disable the below for a moment
+    if only_functions_declared_in_header_files and False:
         functions_to_return = remove_functions_with_header_declarations(
             functions_to_return)
 
@@ -2255,13 +2256,8 @@ def far_reach_but_low_coverage(args):
         bs = get_build_status_of_project(project_name)
 
         if bs is None:
-            return {
-                'result':
-                'error',
-                'extended_msgs': [
-                    'Project not in OSS-Fuzz (likely only contains a project.yaml file).'
-                ]
-            }
+            err_msgs.append('No build status of project')
+            return {'result': 'error', 'extended_msgs': err_msgs}
 
         # Check that builds are failing
         if bs.introspector_build_status is False:
