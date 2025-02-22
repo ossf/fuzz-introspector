@@ -1087,7 +1087,7 @@ def api_optimal_targets():
         only_functions_declared_in_header_files = True
     else:
         only_functions_declared_in_header_files = False
-
+    only_functions_declared_in_header_files = False
     target_project = get_project_with_name(project_name)
     if target_project is None:
         return {'result': 'error', 'msg': 'Project not in the database'}
@@ -2022,6 +2022,8 @@ def api_oracle_2(args):
     else:
         only_functions_declared_in_header_files = False
 
+    only_functions_declared_in_header_files = False
+
     # Only refernced args
     only_referenced_functions_arg = request.args.get(
         'only-referenced-functions', 'false').lower()
@@ -2176,7 +2178,7 @@ def far_reach_but_low_coverage(args):
         only_functions_declared_in_header_files = True
     else:
         only_functions_declared_in_header_files = False
-
+    only_functions_declared_in_header_files = False
     target_project = get_project_with_name(project_name)
     if target_project is None:
         # Is the project a ghost project: a project that no longer
