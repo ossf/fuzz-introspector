@@ -908,14 +908,16 @@ def create_html_report(introspection_proj: analysis.IntrospectionProject,
     source_file_list = []
     if introspection_proj.language == 'jvm':
         source_file_list = [
-            func_item['Functions filename']
+            # Extract full class name from jvm method name
+            # Sample: [Full.class.name].methodName(params)
+            func_item['Func name'].split('].', 1)[0][1:]
             for func_item in (all_functions_json_report +
                               jvm_constructor_json_report)
         ]
 
         # Also add test sources
         source_file_list.extend(list(all_test_files))
-        logger.info(source_file_list)
+        logger.debug(source_file_list)
 
     # Copy source files (Only for Java/Python projects)
     utils.copy_source_files(source_file_list, introspection_proj.language,
