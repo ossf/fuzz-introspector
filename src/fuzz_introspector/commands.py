@@ -47,6 +47,11 @@ def correlate_binaries_to_logs(binaries_dir: str) -> int:
 
 def end_to_end(args) -> int:
     """Runs both frontend and backend."""
+
+    if os.environ.get('FI_DISABLE_LIGHT', ''):
+        logger.info('Fuzz Introspector light is disabled')
+        return 0
+
     if not args.language:
         args.language = utils.detect_language(args.target_dir)
 
