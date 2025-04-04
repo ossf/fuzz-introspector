@@ -387,7 +387,6 @@ def get_coverage(project_name, corpus_dir):
 
 
 def setup_next_corpus_dir(project_name):
-    fuzzer_names = get_fuzzers(project_name)
     corpus_dir = get_next_corpus_dir()
     if not os.path.isdir(corpus_dir):
         os.mkdir(corpus_dir)
@@ -427,6 +426,10 @@ def introspector_run(
     collect_coverage: bool,
     start_webserver: bool = True
 ):
+    
+    if corpus_dir is None:
+        corpus_dir = setup_next_corpus_dir(project_name)
+
     if collect_coverage:
         complete_coverage_check(
             project_name,
@@ -438,15 +441,11 @@ def introspector_run(
         )
     else:
         build_project(project_name, source_dir, to_clean=True)
-        setup_next_corpus_dir(project_name)
 
     curr_dir = os.path.abspath(".")
 
     # Build sanitizers with introspector
     build_project(project_name, source_dir, sanitizer="introspector")
-
-    # get the latest corpus
-    latest_corpus_dir = get_recent_corpus_dir()
 
     # copy over inpsoector and coverage reports
 
@@ -454,25 +453,25 @@ def introspector_run(
     # - introspector
     # - project coverage
     # - per-fuzzer coverage
-    if os.path.isdir(os.path.join(latest_corpus_dir, "inspector-report")):
-        shutil.rmtree(os.path.join(latest_corpus_dir, "inspector-report"))
+    if os.path.isdir(os.path.join(corpus_dir, "inspector-report")):
+        shutil.rmtree(os.path.join(corpus_dir, "inspector-report"))
 
     shutil.copytree(
         os.path.join(curr_dir, "build", "out", project_name, "inspector"),
-        os.path.join(latest_corpus_dir, "inspector-report")
+        os.path.join(corpus_dir, "inspector-report")
     )
     if collect_coverage:
         shutil.copytree(
-            os.path.join(latest_corpus_dir, "report"),
-            os.path.join(latest_corpus_dir, "inspector-report", "covreport")
+            os.path.join(corpus_dir, "report"),
+            os.path.join(corpus_dir, "inspector-report", "covreport")
         )
 
-        for target_coverage_dir in os.listdir(os.path.join(latest_corpus_dir, "report_target")):
+        for target_coverage_dir in os.listdir(os.path.join(corpus_dir, "report_target")):
             shutil.copytree(
-                os.path.join(latest_corpus_dir, "report_target", target_coverage_dir),
-                os.path.join(latest_corpus_dir, "inspector-report", "covreport", target_coverage_dir)
+                os.path.join(corpus_dir, "report_target", target_coverage_dir),
+                os.path.join(corpus_dir, "inspector-report", "covreport", target_coverage_dir)
             )
-    server_directory = os.path.join(latest_corpus_dir, "inspector-report")
+    server_directory = os.path.join(corpus_dir, "inspector-report")
 
     # Patch all jacoco source html report for JVM project
     if get_project_lang(project_name) == 'jvm':
