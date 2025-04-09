@@ -291,6 +291,9 @@ class FunctionDefinition():
         else:
             self.return_type = 'void'
 
+        # Re-assign signature
+        self.sig = self.return_type + ' ' + self.sig
+
         # Handles parameters
         if param_list_node:
             for param in param_list_node.children:
