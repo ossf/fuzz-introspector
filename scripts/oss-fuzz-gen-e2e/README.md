@@ -1,6 +1,6 @@
 # OSS-Fuzz-gen helper scripts
 
-This foler contains various helper scripts to run [OSS-Fuzz-gen](https://github.com/google/oss-fuzz-gen).
+This folder contains various helper scripts to run [OSS-Fuzz-gen](https://github.com/google/oss-fuzz-gen).
 OSS-Fuzz-gen relies on Fuzz Introspector to provide data about the target under
 analysis, and relies on the web API to make the data available. The benefit
 of this is that the web API makes it possible to easily query data about
