@@ -24,6 +24,7 @@ jobs:
           python -m pip install --upgrade pip
           cd src
           python -m pip install -e .
+          python -m pip install atheris
           cd ..
       - name: Prepare test case files
         run: |
