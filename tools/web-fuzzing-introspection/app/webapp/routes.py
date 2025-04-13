@@ -2418,7 +2418,7 @@ def ofg_validity_check():
         harness_mapping = _get_harness_source_and_executable(project.name)
 
         mapping_success = True
-        pairs = harness_mapping.get('pairs', [])
+        pairs: List[str, str] = harness_mapping.get('pairs', [])
         for pair in pairs:
             if '/' in pair.get('executable', ''):
                 mapping_success = False
@@ -2444,7 +2444,7 @@ def _get_fi_context_validity(project_name):
 
 def extract_project_tests(project_name,
                           refine: bool = True,
-                          try_ignore_irrelevant=True) -> List[str]:
+                          try_ignore_irrelevant=True) -> List[Optional[str]]:
     """Extracts the tests in terms of file paths of a given project"""
     tests_file = os.path.join(
         os.path.dirname(__file__),
@@ -2613,6 +2613,11 @@ def project_tests(args):
 
     light_tests = _light_project_tests(project)
     test_file_list = extract_project_tests(project)
+    if light_tests is None:
+        light_tests = []
+    if test_file_list is None:
+        test_file_list = []
+
     combined = list(set(test_file_list + light_tests))
     if not combined:
         return {
