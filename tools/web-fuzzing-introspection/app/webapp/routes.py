@@ -2418,7 +2418,7 @@ def ofg_validity_check():
         harness_mapping = _get_harness_source_and_executable(project.name)
 
         mapping_success = True
-        pairs: List[Dict[str, str]] = harness_mapping.get('pairs', [])
+        pairs: list[dict[str, str]] = harness_mapping.get('pairs', [])
         for pair in pairs:
             if '/' in pair.get('executable', ''):
                 mapping_success = False
