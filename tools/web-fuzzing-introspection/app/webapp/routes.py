@@ -2472,6 +2472,8 @@ def extract_project_tests(project_name,
                                                    target_project,
                                                    project_name)
 
+    if not isinstance(tests_file_list, list):
+        return []
     return tests_file_list
 
 
