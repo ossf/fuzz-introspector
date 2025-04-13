@@ -1174,6 +1174,10 @@ def harness_source_and_executable(args):
     if project_name is None:
         return {'result': 'error', 'msg': 'Please provide project name'}
 
+    return _get_harness_source_and_executable(project_name)
+
+
+def _get_harness_source_and_executable(project_name):
     target_project = get_project_with_name(project_name)
     if target_project is None:
         return {'result': 'error', 'msg': 'Project not in the database'}
@@ -1218,7 +1222,7 @@ def harness_source_and_executable(args):
             harness_executable
         })
 
-    # Ensure the files are present in the soruce code
+    # Ensure the files are present in the source code
     with open(all_file_json, 'r') as f:
         all_files_list = json.loads(f.read())
 
@@ -2404,6 +2408,38 @@ def should_ignore_testpath(test_path: str) -> bool:
     return False
 
 
+@api_blueprint.route('/api/ofg-validity-check')
+def ofg_validity_check():
+    """Returns OFG validity check for all projects."""
+
+    results = []
+    for project in data_storage.get_projects():
+        harness_mapping = _get_harness_source_and_executable(project.name)
+
+        mapping_success = True
+        pairs = harness_mapping.get('pairs', [])
+        for pair in pairs:
+            if '/' in pair.get('executable', ''):
+                mapping_success = False
+
+        # Verify fuzz introspector context retrieval
+        fi_context_analysis = _get_fi_context_validity(project.name)
+        results.append({
+            'project': project.name,
+            'mapping_source': mapping_success,
+            'context_status': fi_context_analysis
+        })
+    return {'result': 'success', 'data': results}
+
+
+def _get_fi_context_validity(project_name):
+    xref_dict = get_cross_reference_dict_from_project(project_name)
+    total_ref_count = 0
+    for dst, ref_count in xref_dict.items():
+        total_ref_count += ref_count
+    return {'cross-reference-counts': total_ref_count}
+
+
 def extract_project_tests(project_name,
                           refine: bool = True,
                           try_ignore_irrelevant=True) -> List[str]:
@@ -2459,7 +2495,10 @@ def _light_project_tests(project_name, try_ignore_irrelevant=True):
     return returner_list
 
 
-def _ignore_irrelevant_tests(tests_file_list, project, project_name, enable_jvm = False):
+def _ignore_irrelevant_tests(tests_file_list,
+                             project,
+                             project_name,
+                             enable_jvm=False):
     """Helper function to ignore irrelevant tests"""
     repo_match = []
 
@@ -2490,7 +2529,7 @@ def _ignore_irrelevant_tests(tests_file_list, project, project_name, enable_jvm 
                                          project_name):
                 result_list.append(test_file)
 
-        return  
+        return
 
     return repo_match
 
