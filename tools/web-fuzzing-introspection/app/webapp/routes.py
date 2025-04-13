@@ -2459,7 +2459,7 @@ def _light_project_tests(project_name, try_ignore_irrelevant=True):
     return returner_list
 
 
-def _ignore_irrelevant_tests(tests_file_list, project, project_name):
+def _ignore_irrelevant_tests(tests_file_list, project, project_name, enable_jvm = False):
     """Helper function to ignore irrelevant tests"""
     repo_match = []
 
@@ -2470,7 +2470,9 @@ def _ignore_irrelevant_tests(tests_file_list, project, project_name):
     # Extra filtering for Java project
     # This is to filter irrelevant java test/example sources that does
     # not call any public classes of the project
-    if project and project.language == 'java':
+    # We need to set enable_jvm here because takes a huge amount of
+    # processing time. Must exclude in most cases.
+    if project and project.language == 'java' and enable_jvm:
         result_list = []
 
         # Determine a list of relevant import statements
@@ -2488,7 +2490,7 @@ def _ignore_irrelevant_tests(tests_file_list, project, project_name):
                                          project_name):
                 result_list.append(test_file)
 
-        return result_list
+        return  
 
     return repo_match
 
