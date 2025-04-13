@@ -2420,6 +2420,8 @@ def ofg_validity_check():
         mapping_success = True
         pairs = harness_mapping.get('pairs', [])
         for pair in pairs:
+            if not isinstance(pair, dict):
+                continue
             if '/' in pair.get('executable', ''):
                 mapping_success = False
 
