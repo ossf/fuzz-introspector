@@ -1178,6 +1178,7 @@ def harness_source_and_executable(args):
 
 
 def _get_harness_source_and_executable(project_name):
+    """Get the binary-to-source pairs of a project."""
     target_project = get_project_with_name(project_name)
     if target_project is None:
         return {'result': 'error', 'msg': 'Project not in the database'}
@@ -2433,6 +2434,7 @@ def ofg_validity_check():
 
 
 def _get_fi_context_validity(project_name):
+    """Get context validity for a project."""
     xref_dict = get_cross_reference_dict_from_project(project_name)
     total_ref_count = 0
     for dst, ref_count in xref_dict.items():
