@@ -25,6 +25,6 @@ for PROJ in jsoncpp kamailio xpdf croaring kamailio htslib dng_sdk; do
   mkdir web
   cd web
 
-  python3 ${ROOT}/../post-processing/main.py correlate --binaries_dir=../work/
-  python3 ${ROOT}/../post-processing/main.py report --correlation_file=./exe_to_fuzz_introspector_logs.yaml --target_dir=../
+  python3 ${ROOT}/../post-processing/main.py correlate --binaries-dir=../work/
+  python3 ${ROOT}/../post-processing/main.py report --correlation-file=./exe_to_fuzz_introspector_logs.yaml --target-dir=../
 done

@@ -35,6 +35,6 @@ for PROJ in test1 test2 test3 test4; do
   rm -rf ./web
   mkdir web
   cd web
-  python3 $ROOT/../../post-processing/main.py report --target_dir=$PWD/../work/
+  python3 $ROOT/../../post-processing/main.py report --target-dir=$PWD/../work/
 
 done
