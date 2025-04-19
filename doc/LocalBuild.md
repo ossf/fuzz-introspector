@@ -101,8 +101,8 @@ cd work
 FUZZ_INTROSPECTOR=1 ../../../build/llvm-build/bin/clang -fsanitize=fuzzer -fuse-ld=gold -flto -g ../fuzzer.c -o fuzzer
 
 # Run post-processing to analyse data files and generate HTML report
-python3 ../../../src/main.py correlate --binaries_dir=.
-python3 ../../../src/main.py report --target_dir=. --correlation_file=./exe_to_fuzz_introspector_logs.yaml
+python3 ../../../src/main.py correlate --binaries-dir=.
+python3 ../../../src/main.py report --target-dir=. --correlation-file=./exe_to_fuzz_introspector_logs.yaml
 
 # The post-processing will have generated various .html, .js, .css and .png fies,
 # and these are accessible in the current folder. Simply start a webserver and 
@@ -128,8 +128,8 @@ cd work
 FUZZ_INTROSPECTOR=1 ../../../build/llvm-build/bin/clang -fsanitize=fuzzer -fuse-ld=gold -flto -g ../fuzzer.c -o fuzzer
 
 # Run post-processing to analyse data files and generate HTML report
-python3 ../../../src/main.py correlate --binaries_dir=.
-python3 ../../../src/main.py report --target_dir=. --correlation_file=./exe_to_fuzz_introspector_logs.yaml
+python3 ../../../src/main.py correlate --binaries-dir=.
+python3 ../../../src/main.py report --target-dir=. --correlation-file=./exe_to_fuzz_introspector_logs.yaml
 
 # The post-processing will have generated various .html, .js, .css and .png fies,
 # and these are accessible in the current folder. Simply start a webserver and
