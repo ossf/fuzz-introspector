@@ -120,7 +120,7 @@ class FuzzCalltreeAnalysis(analysis.AnalysisInterface):
             link = node.cov_link
             ct_idx_str = self.create_str_node_ctx_idx(str(node.cov_ct_idx))
 
-            # Only display [function] link if we have, otherwhise show no
+            # Only display [function] link if we have, otherwise show no
             # [function] text.
             if node.dst_function_source_file.replace(" ", "") != "":
                 func_href = f"""<a href="{link}">[function]</a>"""
@@ -391,7 +391,7 @@ class FuzzCalltreeAnalysis(analysis.AnalysisInterface):
             else:
                 cs_link = ("<span class=\"text-link\" "
                            f"onclick=\" scrollToNodeInCT('{node_id}')\">"
-                           "call site: {node_id}</span>")
+                           f"call site: {node_id}</span>")
             html_table_string += html_helpers.html_table_add_row([
                 str(node.cov_forward_reds),
                 str(node.cov_ct_idx), node.cov_parent, cs_link,
@@ -441,7 +441,7 @@ class FuzzCalltreeAnalysis(analysis.AnalysisInterface):
             ("Function Callsite",
              "The blocking function callsite in the calltree"),
             ("Blocked Branch",
-             "The line of code correspoinding to the blocked branch"),
+             "The line of code corresponding to the blocked branch"),
         ]
         html_table_string += html_helpers.html_create_table_head(
             tables[-1], branch_table_rows, sort_by_column=0, sort_order="desc")
