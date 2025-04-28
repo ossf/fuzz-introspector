@@ -1,5 +1,5 @@
 diff --git a/infra/base-images/base-builder/Dockerfile b/infra/base-images/base-builder/Dockerfile
-index 64d11095b..34bee0c13 100644
+index 62c47b9b7..5e6570a5a 100644
 --- a/infra/base-images/base-builder/Dockerfile
 +++ b/infra/base-images/base-builder/Dockerfile
 @@ -193,6 +193,16 @@ COPY llvmsymbol.diff $SRC
@@ -20,19 +20,20 @@ index 64d11095b..34bee0c13 100644
  # /ccache/bin will contain the compiler wrappers, and /ccache/cache will
  # contain the actual cache, which can be saved.
 diff --git a/infra/base-images/base-clang/Dockerfile b/infra/base-images/base-clang/Dockerfile
-index 296b1f7fb..9c6b1ff55 100644
+index f8ac7df0d..b6edcfc75 100644
 --- a/infra/base-images/base-clang/Dockerfile
 +++ b/infra/base-images/base-clang/Dockerfile
-@@ -45,6 +45,9 @@ RUN apt-get update && apt-get install -y git && \
+@@ -43,6 +43,10 @@ RUN apt-get update && apt-get install -y git && \
+     rm -rf .git
+ 
  COPY checkout_build_install_llvm.sh /root/
- # Keep all steps in the same script to decrease the number of intermediate
- # layes in docker file.
++
 +RUN rm -rf /fuzz-introspector
 +COPY fuzz-introspector fuzz-introspector
 +
- RUN /root/checkout_build_install_llvm.sh
- RUN rm /root/checkout_build_install_llvm.sh
- 
+ # Keep all steps in the same script to decrease the number of intermediate
+ # layes in docker file.
+ ARG FULL_LLVM_BUILD
 diff --git a/infra/base-images/base-runner/coverage b/infra/base-images/base-runner/coverage
 index 585b4d457..014bdbce6 100755
 --- a/infra/base-images/base-runner/coverage
@@ -64,35 +65,3 @@ index 585b4d457..014bdbce6 100755
    $SYSGOPATH/bin/gocovsum fuzz.cov > $SUMMARY_FILE
    cp $REPORT_ROOT_DIR/index.html $REPORT_PLATFORM_DIR/index.html
    $SYSGOPATH/bin/pprof-merge $DUMPS_DIR/*.perf.cpu.prof
-diff --git a/projects/cjson/build.sh b/projects/cjson/build.sh
-index 7d6cea020..fd92b97c5 100644
---- a/projects/cjson/build.sh
-+++ b/projects/cjson/build.sh
-@@ -14,5 +14,10 @@
- # limitations under the License.
- #
- ################################################################################
-+
-+if [[ "$SANITIZER" == introspector ]]; then
-+        exit 1
-+fi
-+
- # Run the OSS-Fuzz script in the project
--$SRC/cjson/fuzzing/ossfuzz.sh
-\ No newline at end of file
-+$SRC/cjson/fuzzing/ossfuzz.sh
-diff --git a/projects/htslib/build.sh b/projects/htslib/build.sh
-index a0bbdfd69..8580e7895 100755
---- a/projects/htslib/build.sh
-+++ b/projects/htslib/build.sh
-@@ -14,7 +14,9 @@
- # limitations under the License.
- #
- ################################################################################
--
-+if [[ "$SANITIZER" == introspector ]]; then
-+	exit 1
-+fi
- # build project
- autoconf
- autoheader
