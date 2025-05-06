@@ -1143,7 +1143,10 @@ def _extract_test_information_cpp(report_dict, out_dir):
     return extract_tests_from_directories(directories, 'c-cpp', out_dir)
 
 
-def extract_tests_from_directories(directories, language, out_dir, need_copy=True) -> Set[str]:
+def extract_tests_from_directories(directories,
+                                   language,
+                                   out_dir,
+                                   need_copy=True) -> Set[str]:
     """Extracts test files from a given collection of directory paths and also
     copies them to the `constants.SAVED_SOURCE_FOLDER` folder with the same
     absolute path appended."""
@@ -1166,7 +1169,8 @@ def extract_tests_from_directories(directories, language, out_dir, need_copy=Tru
                         break
 
                     assembled_dir += dd2
-                    if os.path.isdir(assembled_dir) and assembled_dir.startswith(directory):
+                    if os.path.isdir(assembled_dir
+                                     ) and assembled_dir.startswith(directory):
                         all_directories.add(assembled_dir)
                     assembled_dir += '/'
 
