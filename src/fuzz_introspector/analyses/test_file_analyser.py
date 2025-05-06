@@ -33,7 +33,6 @@ class TestFileAnalyser(analysis.AnalysisInterface):
     def __init__(self) -> None:
         self.json_results: Dict[str, Any] = {}
         self.json_string_result = ''
-        self.test_file_paths = set()
 
     @classmethod
     def get_name(cls):
