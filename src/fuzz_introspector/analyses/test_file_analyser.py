@@ -90,8 +90,8 @@ class TestFileAnalyser(analysis.AnalysisInterface):
         """Standalone analysis."""
         super().standalone_analysis(proj_profile, profiles, out_dir)
 
-        all_test_files = analysis.extract_tests_from_directories(
-            {self.directory}, self.language, out_dir, False)
+        all_test_files: set[str] = analysis.extract_tests_from_directories(
+            {self.directory}, self.language, out_dir)
 
         with open(os.path.join(out_dir, 'all_tests.json'), 'w') as f:
             f.write(json.dumps(list(all_test_files)))
