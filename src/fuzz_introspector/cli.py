@@ -279,8 +279,6 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
         type=str,
         help='Folder to store analysis results.')
 
-
-
     return parser
 
 
