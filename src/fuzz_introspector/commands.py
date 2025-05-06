@@ -282,6 +282,8 @@ def analyse(args) -> int:
         target_analyser.set_max_functions(max_functions)
         target_analyser.set_min_complexity(min_complexity)
         target_analyser.set_introspection_project(introspection_proj)
+    elif target_analyser.get_name() == 'TestFileAnalyser':
+        target_analyser.set_base_information(args.target_dir, language)
 
     # Run the analyser
     target_analyser.standalone_analysis(introspection_proj.proj_profile,

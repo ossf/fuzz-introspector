@@ -27,6 +27,7 @@ from fuzz_introspector.analyses import annotated_cfg
 from fuzz_introspector.analyses import source_code_line_analyser
 from fuzz_introspector.analyses import far_reach_low_coverage_analyser
 from fuzz_introspector.analyses import public_candidate_analyser
+from fuzz_introspector.analyses import test_file_analyser
 
 # All optional analyses.
 # Ordering here is important as top analysis will be shown first in the report
@@ -44,6 +45,7 @@ all_analyses: list[type[analysis.AnalysisInterface]] = [
     source_code_line_analyser.SourceCodeLineAnalyser,
     far_reach_low_coverage_analyser.FarReachLowCoverageAnalyser,
     public_candidate_analyser.PublicCandidateAnalyser,
+    test_file_analyser.TestFileAnalyser,
 ]
 
 # This is the list of analyses that are meant to run
@@ -52,4 +54,5 @@ standalone_analyses: list[type[analysis.AnalysisInterface]] = [
     source_code_line_analyser.SourceCodeLineAnalyser,
     far_reach_low_coverage_analyser.FarReachLowCoverageAnalyser,
     public_candidate_analyser.PublicCandidateAnalyser,
+    test_file_analyser.TestFileAnalyser,
 ]
