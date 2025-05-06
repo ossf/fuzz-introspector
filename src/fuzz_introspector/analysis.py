@@ -1143,24 +1143,32 @@ def _extract_test_information_cpp(report_dict, out_dir):
     return extract_tests_from_directories(directories, 'c-cpp', out_dir)
 
 
-def extract_tests_from_directories(directories, language, out_dir) -> Set[str]:
+def extract_tests_from_directories(directories, language, out_dir, need_copy=True) -> Set[str]:
     """Extracts test files from a given collection of directory paths and also
     copies them to the `constants.SAVED_SOURCE_FOLDER` folder with the same
     absolute path appended."""
+    all_directories = set()
     all_files_in_subtree = set()
     for directory in directories:
         for root, _, files in os.walk(directory):
             for f in files:
-                all_files_in_subtree.add(os.path.join(root, f))
+                file_path = os.path.join(root, f)
+                all_files_in_subtree.add(file_path)
 
-    all_directories = set()
-    for file in all_files_in_subtree:
-        assembled_dir = '/'
-        for dd2 in file.split('/'):
-            assembled_dir += dd2
-            if os.path.isdir(assembled_dir):
-                all_directories.add(assembled_dir)
-            assembled_dir += '/'
+                assembled_dir = '/'
+                for dd2 in file_path.split('/'):
+                    # Skip empty dd2
+                    if not dd2:
+                        continue
+
+                    # Skip hidden directories
+                    if dd2.startswith('.'):
+                        break
+
+                    assembled_dir += dd2
+                    if os.path.isdir(assembled_dir) and assembled_dir.startswith(directory):
+                        all_directories.add(assembled_dir)
+                    assembled_dir += '/'
 
     inspirations = ["sample", "test", "example"]
     all_inspiration_dirs = set()
@@ -1250,10 +1258,11 @@ def extract_tests_from_directories(directories, language, out_dir) -> Set[str]:
     logger.info("All test files")
     for test_file in all_test_files:
         logger.info(test_file)
-        dst = os.path.join(out_dir,
-                           constants.SAVED_SOURCE_FOLDER + '/' + test_file)
-        os.makedirs(os.path.dirname(dst), exist_ok=True)
-        shutil.copy(test_file, dst)
+        if need_copy:
+            dst = os.path.join(out_dir,
+                               constants.SAVED_SOURCE_FOLDER + '/' + test_file)
+            os.makedirs(os.path.dirname(dst), exist_ok=True)
+            shutil.copy(test_file, dst)
 
     return all_test_files
 
