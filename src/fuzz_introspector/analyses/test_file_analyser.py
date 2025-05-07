@@ -105,8 +105,10 @@ class TestFileAnalyser(analysis.AnalysisInterface):
         if not self.language:
             self.language = proj_profile.language
 
-        test_files.update(analysis.extract_tests_from_directories(
-            {self.directory}, self.language, out_dir, False))
+        test_files.update(
+            analysis.extract_tests_from_directories({self.directory},
+                                                    self.language, out_dir,
+                                                    False))
 
         # Get all functions within test files
         test_functions: dict[str, list[dict[str, object]]] = {}
@@ -146,7 +148,8 @@ class TestFileAnalyser(analysis.AnalysisInterface):
             f.write(json.dumps(list(test_files)))
 
         # Store test files with cross reference information
-        with open(os.path.join(out_dir, 'all_tests_with_xreference.json'), 'w') as f:
+        with open(os.path.join(out_dir, 'all_tests_with_xreference.json'),
+                  'w') as f:
             f.write(json.dumps(test_functions))
 
         return None
