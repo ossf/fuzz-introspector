@@ -88,7 +88,7 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
                                    "OptimalTargets", "RuntimeCoverageAnalysis",
                                    "FuzzEngineInputAnalysis",
                                    "FilePathAnalyser", "MetadataAnalysis",
-                                   "AnnotatedCFG"
+                                   "AnnotatedCFG", "TestFileAnalyser"
                                ],
                                help="""
             Analyses to run. Available options:
@@ -96,7 +96,7 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
             FuzzDriverSynthesizerAnalysis, FuzzEngineInputAnalysis,
             FilePathAnalyser, ThirdPartyAPICoverageAnalyser,
             MetadataAnalysis, OptimalTargets, RuntimeCoverageAnalysis,
-            SinkCoverageAnalyser
+            SinkCoverageAnalyser, TestFileAnalyser
         """)
     report_parser.add_argument("--enable-all-analyses",
                                action='store_true',
@@ -152,7 +152,7 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
                                                     help="""
         Available analyser:
         SourceCodeLineAnalyser FarReachLowCoverageAnalyser
-        PublicCandidateAnalyser""")
+        PublicCandidateAnalyser TestFileAnalyser""")
 
     source_code_line_analyser_parser = analyser_parser.add_parser(
         'SourceCodeLineAnalyser',
