@@ -59,8 +59,8 @@ def get_introspector_project_tests_url(project_name, datestr):
 
 
 def get_introspector_project_tests_xref_url(project_name, datestr):
-    return get_introspector_report_url_base(project_name,
-                                            datestr) + "all_tests_with_xreference.json"
+    return get_introspector_report_url_base(
+        project_name, datestr) + "all_tests_with_xreference.json"
 
 
 def get_introspector_project_all_files(project_name, datestr):
