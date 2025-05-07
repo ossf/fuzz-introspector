@@ -58,6 +58,11 @@ def get_introspector_project_tests_url(project_name, datestr):
                                             datestr) + "light/all_tests.json"
 
 
+def get_introspector_project_tests_xref_url(project_name, datestr):
+    return get_introspector_report_url_base(project_name,
+                                            datestr) + "all_tests_with_xreference.json"
+
+
 def get_introspector_project_all_files(project_name, datestr):
     return get_introspector_report_url_base(project_name,
                                             datestr) + "light/all_files.json"
@@ -343,6 +348,24 @@ def extract_introspector_test_files(project_name, date_str):
     return test_files
 
 
+def extract_introspector_test_files_xref(project_name, date_str):
+    introspector_test_url = get_introspector_project_tests_xref_url(
+        project_name, date_str.replace("-", ""))
+
+    # Read the introspector atifact
+    try:
+        raw_introspector_json_request = requests.get(introspector_test_url,
+                                                     timeout=10)
+    except:
+        return None
+    try:
+        test_files = json.loads(raw_introspector_json_request.text)
+    except:
+        return None
+
+    return test_files
+
+
 def extract_introspector_report(project_name, date_str):
     introspector_summary_url = get_introspector_report_url_summary(
         project_name, date_str.replace("-", ""))
@@ -376,6 +399,16 @@ def extract_local_introspector_all_files(project_name, oss_fuzz_folder):
 def extract_local_introspector_test_files(project_name, oss_fuzz_folder):
     summary_json = os.path.join(oss_fuzz_folder, 'build', 'out', project_name,
                                 'inspector', 'test-files.json')
+    if not os.path.isfile(summary_json):
+        return {}
+    with open(summary_json, 'r') as f:
+        json_list = json.load(f)
+    return json_list
+
+
+def extract_local_introspector_test_files_xref(project_name, oss_fuzz_folder):
+    summary_json = os.path.join(oss_fuzz_folder, 'build', 'out', project_name,
+                                'inspector', 'all_tests_with_xreference.json')
     if not os.path.isfile(summary_json):
         return {}
     with open(summary_json, 'r') as f:

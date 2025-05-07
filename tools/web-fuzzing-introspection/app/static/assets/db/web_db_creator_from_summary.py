@@ -126,6 +126,15 @@ def save_test_files_report(test_files, project_name):
         json.dump(test_files, report_fd)
 
 
+def save_test_files_xref_report(test_files, project_name):
+    project_db_dir = os.path.join(constants.DB_PROJECT_DIR, project_name)
+    os.makedirs(project_db_dir, exist_ok=True)
+
+    report_dst = os.path.join(project_db_dir, 'test_files_xref.json')
+    with open(report_dst, 'w') as report_fd:
+        json.dump(test_files, report_fd)
+
+
 def save_all_files_report(all_files, project_name):
     project_db_dir = os.path.join(constants.DB_PROJECT_DIR, project_name)
     os.makedirs(project_db_dir, exist_ok=True)
@@ -360,6 +369,10 @@ def extract_local_project_data(project_name, oss_fuzz_path,
         project_name, oss_fuzz_path)
     if test_files:
         save_test_files_report(test_files, project_name)
+    test_files_xref = oss_fuzz.extract_local_introspector_test_files_xref(
+        project_name, oss_fuzz_path)
+    if test_files_xref:
+        save_test_files_xref_report(test_files_xref, project_name)
 
     light_test_files = oss_fuzz.extract_local_introspector_light_test_files(
         project_name, oss_fuzz_path)
@@ -547,6 +560,10 @@ def extract_project_data(project_name, date_str, should_include_details,
         project_name, date_str.replace("-", ""))
     if test_files:
         save_test_files_report(test_files, project_name)
+    test_files_xref = oss_fuzz.extract_introspector_test_files_xref(
+        project_name, date_str.replace("-", ""))
+    if test_files_xref:
+        save_test_files_xref_report(test_files_xref, project_name)
 
     all_files = oss_fuzz.extract_introspector_all_files(
         project_name, date_str.replace("-", ""))
