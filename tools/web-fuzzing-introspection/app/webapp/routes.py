@@ -2501,6 +2501,7 @@ def extract_project_tests_xref(project_name: str,
 
     return result
 
+
 def _light_project_tests(project_name, try_ignore_irrelevant=True):
     """Returns the list of test files in a project based on FI light."""
     target_project = get_project_with_name(project_name)
@@ -2684,8 +2685,10 @@ def project_tests(args):
 
     if not test_file_list:
         return {
-            'result': 'error',
-            'extended_msgs': [f'Could not find test files matching the requirements']
+            'result':
+            'error',
+            'extended_msgs':
+            [f'Could not find test files matching the requirements']
         }
 
     return {'result': 'success', 'test-files': test_files}
