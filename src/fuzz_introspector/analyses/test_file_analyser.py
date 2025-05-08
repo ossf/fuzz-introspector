@@ -122,7 +122,7 @@ class TestFileAnalyser(analysis.AnalysisInterface):
             common_path = os.path.commonpath(paths)
             if os.path.isfile(common_path):
                 common_path = os.path.dirname(common_path)
-            self.directory.add(common_path))
+            self.directory.add(common_path)
 
         if not self.language:
             self.language = proj_profile.language
