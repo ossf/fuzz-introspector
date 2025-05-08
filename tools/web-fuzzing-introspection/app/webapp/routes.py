@@ -19,7 +19,7 @@ import re
 import json
 import signal
 import logging
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional
 import requests
 
 from flask import render_template, request, redirect
@@ -2478,10 +2478,10 @@ def extract_project_tests(project_name,
 
 
 def extract_project_tests_xref(project_name: str,
-                               funcs: List[str]) -> Dict[str, Set[str]]:
+                               funcs: List[str]) -> Dict[str, List[str]]:
     """Extracts test files that invoke the target functions or all functions
     if target functions are not provided."""
-    result: Dict[str, Set[str]] = {}
+    result: Dict[str, List[str]] = {}
     test_files: Dict[str, List[Dict[str, Any]]] = {}
 
     # Check existing test_files_xref.json
@@ -2492,7 +2492,7 @@ def extract_project_tests_xref(project_name: str,
         return result
 
     with open(test_json, 'r') as f:
-        tests_file_list = json.load(f)
+        test_files = json.load(f)
 
     if not test_files:
         return result
@@ -2501,7 +2501,7 @@ def extract_project_tests_xref(project_name: str,
         for target in reach_list:
             func_name = target['function_name']
             if not funcs or func_name in funcs:
-                result.setdefault(func_name, set()).add(file)
+                result.setdefault(func_name, []).append(file)
 
     return result
 
@@ -2684,9 +2684,6 @@ def project_tests_xref(args):
     funcs = [func for func in funcs if func]
 
     test_files = extract_project_tests_xref(project, funcs)
-    if test_files is None:
-        test_files = []
-
     if not test_files:
         return {
             'result':
@@ -2695,7 +2692,7 @@ def project_tests_xref(args):
             [f'Could not find test files matching the requirements']
         }
 
-    return {'result': 'success', 'test-files': test_files}
+    return {'result': 'success', 'test-files-xref': test_files}
 
 
 @api_blueprint.route('/api/addr-to-recursive-dwarf-info')
