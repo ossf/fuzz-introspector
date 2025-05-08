@@ -95,7 +95,8 @@ class TestFileAnalyser(analysis.AnalysisInterface):
 
         # Generate comple FI backend profile analysis report from updated frontend result
         src_dir = out_dir if out_dir else os.environ.get('SRC', '/src')
-        introspection_proj = analysis.IntrospectionProject(proj_profile.language, src_dir, '')
+        introspection_proj = analysis.IntrospectionProject(
+            proj_profile.language, src_dir, '')
         introspection_proj.load_data_files(True, '', src_dir)
 
         # Calls standalone analysis
