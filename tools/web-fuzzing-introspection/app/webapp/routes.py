@@ -2481,19 +2481,23 @@ def extract_project_tests_xref(project_name: str,
                                funcs: List[str]) -> Dict[str, List[str]]:
     """Extracts test files that invoke the target functions or all functions
     if target functions are not provided."""
-    result = {}
+    result: Dict[str, Set[str]] = {}
+    test_files: Dict[str, List[Dict[str, Any]]] = {}
 
     # Check existing test_files_xref.json
-    test_files = os.path.join(
+    test_json = os.path.join(
         os.path.dirname(__file__),
         f"../static/assets/db/db-projects/{project_name}/test_files_xref.json")
-    if not os.path.isfile(tests_file):
+    if not os.path.isfile(test_json):
         return result
 
-    with open(tests_file, 'r') as f:
+    with open(test_json, 'r') as f:
         tests_file_list = json.load(f)
 
-    for file, reach_list in tests_file_list.items():
+    if not test_files:
+        return result
+
+    for file, reach_list in test_files.items():
         for target in reach_list:
             func_name = target['function_name']
             if not funcs or func_name in funcs:
@@ -2663,7 +2667,7 @@ def project_tests(args):
 
 @api_blueprint.route('/api/project-tests-for-functions')
 @api_blueprint.arguments(ProjectSchema, location='query')
-def project_tests(args):
+def project_tests_xref(args):
     """Gets the tests of a given project.
 
     Returns a list of source files corresponding to tests of a project."""
