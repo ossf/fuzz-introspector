@@ -19,7 +19,7 @@ import re
 import json
 import signal
 import logging
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set
 import requests
 
 from flask import render_template, request, redirect
@@ -2478,7 +2478,7 @@ def extract_project_tests(project_name,
 
 
 def extract_project_tests_xref(project_name: str,
-                               funcs: List[str]) -> Dict[str, List[str]]:
+                               funcs: List[str]) -> Dict[str, Set[str]]:
     """Extracts test files that invoke the target functions or all functions
     if target functions are not provided."""
     result: Dict[str, Set[str]] = {}
