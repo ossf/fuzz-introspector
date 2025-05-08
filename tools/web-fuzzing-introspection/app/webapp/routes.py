@@ -19,7 +19,7 @@ import re
 import json
 import signal
 import logging
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set
 import requests
 
 from flask import render_template, request, redirect
@@ -2477,6 +2477,35 @@ def extract_project_tests(project_name,
     return tests_file_list
 
 
+def extract_project_tests_xref(project_name: str,
+                               funcs: List[str]) -> Dict[str, Set[str]]:
+    """Extracts test files that invoke the target functions or all functions
+    if target functions are not provided."""
+    result: Dict[str, Set[str]] = {}
+    test_files: Dict[str, List[Dict[str, Any]]] = {}
+
+    # Check existing test_files_xref.json
+    test_json = os.path.join(
+        os.path.dirname(__file__),
+        f"../static/assets/db/db-projects/{project_name}/test_files_xref.json")
+    if not os.path.isfile(test_json):
+        return result
+
+    with open(test_json, 'r') as f:
+        tests_file_list = json.load(f)
+
+    if not test_files:
+        return result
+
+    for file, reach_list in test_files.items():
+        for target in reach_list:
+            func_name = target['function_name']
+            if not funcs or func_name in funcs:
+                result.setdefault(func_name, set()).add(file)
+
+    return result
+
+
 def _light_project_tests(project_name, try_ignore_irrelevant=True):
     """Returns the list of test files in a project based on FI light."""
     target_project = get_project_with_name(project_name)
@@ -2634,6 +2663,39 @@ def project_tests(args):
         }
 
     return {'result': 'success', 'test-file-list': combined}
+
+
+@api_blueprint.route('/api/project-tests-for-functions')
+@api_blueprint.arguments(ProjectSchema, location='query')
+def project_tests_xref(args):
+    """Gets the tests of a given project.
+
+    Returns a list of source files corresponding to tests of a project."""
+    # Get project name
+    project = args.get('project', '')
+    if not project:
+        return {
+            'result': 'error',
+            'extended_msgs': ['Please provide project name']
+        }
+
+    # Get target functions if provided
+    funcs = args.get('functions', '').split(',')
+    funcs = [func for func in funcs if func]
+
+    test_files = extract_project_tests_xref(project, funcs)
+    if test_files is None:
+        test_files = []
+
+    if not test_files:
+        return {
+            'result':
+            'error',
+            'extended_msgs':
+            [f'Could not find test files matching the requirements']
+        }
+
+    return {'result': 'success', 'test-files': test_files}
 
 
 @api_blueprint.route('/api/addr-to-recursive-dwarf-info')
