@@ -2683,11 +2683,11 @@ def project_tests_xref(args):
     funcs = args.get('functions', '').split(',')
     funcs = [func for func in funcs if func]
 
-    test_files = extract_project_tests(project, funcs)
+    test_files = extract_project_tests_xref(project, funcs)
     if test_files is None:
         test_files = []
 
-    if not test_file_list:
+    if not test_files:
         return {
             'result':
             'error',
