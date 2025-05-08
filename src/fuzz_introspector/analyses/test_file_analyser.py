@@ -18,9 +18,11 @@ import os
 
 from typing import (Any, List, Dict)
 
-from fuzz_introspector import (analysis, html_helpers)
+from fuzz_introspector import (analysis, html_helpers, utils)
 
 from fuzz_introspector.datatypes import (project_profile, fuzzer_profile)
+
+from fuzz_introspector.frontends import oss_fuzz
 
 logger = logging.getLogger(name=__name__)
 
@@ -33,8 +35,10 @@ class TestFileAnalyser(analysis.AnalysisInterface):
     def __init__(self) -> None:
         self.json_results: Dict[str, Any] = {}
         self.json_string_result = ''
-        self.directory = ''
         self.language = ''
+        self.directory = set()
+        if os.path.isdir('/src/'):
+            self.directory.add('/src/')
 
     @classmethod
     def get_name(cls):
@@ -69,7 +73,7 @@ class TestFileAnalyser(analysis.AnalysisInterface):
 
     def set_base_information(self, directory: str, language: str):
         """Setter for base information."""
-        self.directory = os.path.abspath(directory)
+        self.directory.add(os.path.abspath(directory))
         self.language = language
 
     def analysis_func(self,
@@ -81,7 +85,23 @@ class TestFileAnalyser(analysis.AnalysisInterface):
                       conclusions: List[html_helpers.HTMLConclusion],
                       out_dir: str) -> str:
         """Analysis function."""
-        self.standalone_analysis(proj_profile, profiles, out_dir)
+        language = utils.detect_language(basefolder)
+
+        # Calls frontend for report or full approach
+        oss_fuzz.analyse_folder(language=language,
+                                directory=basefolder,
+                                out=out_dir,
+                                module_only=True)
+
+        # Generate comple FI backend profile analysis report from updated frontend result
+        src_dir = out_dir if out_dir else os.environ.get('SRC', '/src')
+        introspection_proj = analysis.IntrospectionProject(
+            proj_profile.language, src_dir, '')
+        introspection_proj.load_data_files(True, '', src_dir)
+
+        # Calls standalone analysis
+        self.standalone_analysis(introspection_proj.proj_profile,
+                                 introspection_proj.profiles, out_dir)
         return ''
 
     def standalone_analysis(self,
@@ -100,13 +120,16 @@ class TestFileAnalyser(analysis.AnalysisInterface):
         # Auto determine base information if not provided
         if not self.directory:
             paths = [func.function_source_file for func in functions.values()]
-            self.directory = os.path.commonpath(paths)
+            common_path = os.path.commonpath(paths)
+            if os.path.isfile(common_path):
+                common_path = os.path.dirname(common_path)
+            self.directory.add(common_path)
 
         if not self.language:
             self.language = proj_profile.language
 
         test_files.update(
-            analysis.extract_tests_from_directories({self.directory},
+            analysis.extract_tests_from_directories(self.directory,
                                                     self.language, out_dir,
                                                     False))
 
