@@ -2511,6 +2511,10 @@ def _ignore_irrelevant_tests(tests_file_list,
     for test_file in tests_file_list:
         if f'/src/{project_name.lower()}' in test_file.lower():
             repo_match.append(test_file)
+        elif '-' in project_name.lower():
+            # This is to support OFG generated projects, where we always
+            # include '-' in the project name.
+            repo_match.append(test_file)
 
     # Extra filtering for Java project
     # This is to filter irrelevant java test/example sources that does
