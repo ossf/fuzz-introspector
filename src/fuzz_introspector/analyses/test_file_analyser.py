@@ -18,7 +18,7 @@ import os
 
 from typing import (Any, List, Dict)
 
-from fuzz_introspector import (analysis, constants, html_helpers, utils)
+from fuzz_introspector import (analysis, html_helpers, utils)
 
 from fuzz_introspector.datatypes import (project_profile, fuzzer_profile)
 
@@ -175,4 +175,3 @@ class TestFileAnalyser(analysis.AnalysisInterface):
             f.write(json.dumps(test_functions))
 
         return None
-
