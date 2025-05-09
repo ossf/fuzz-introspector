@@ -85,6 +85,9 @@ class TestFileAnalyser(analysis.AnalysisInterface):
                       conclusions: List[html_helpers.HTMLConclusion],
                       out_dir: str) -> str:
         """Analysis function."""
+        if not basefolder:
+            basefolder = os.environ.get('SRC', '/src')
+
         language = utils.detect_language(basefolder)
 
         # Calls frontend for report or full approach
@@ -94,10 +97,9 @@ class TestFileAnalyser(analysis.AnalysisInterface):
                                 module_only=True)
 
         # Generate comple FI backend profile analysis report from updated frontend result
-        src_dir = out_dir if out_dir else os.environ.get('SRC', '/src')
         introspection_proj = analysis.IntrospectionProject(
-            proj_profile.language, src_dir, '')
-        introspection_proj.load_data_files(True, '', src_dir)
+            proj_profile.language, basefolder, out_dir)
+        introspection_proj.load_data_files(True, out_dir, basefolder)
 
         # Calls standalone analysis
         self.standalone_analysis(introspection_proj.proj_profile,
@@ -110,7 +112,7 @@ class TestFileAnalyser(analysis.AnalysisInterface):
                             out_dir: str) -> None:
         """Standalone analysis."""
         super().standalone_analysis(proj_profile, profiles, out_dir)
-        functions = proj_profile.get_all_functions_with_source()
+        functions = proj_profile.get_all_functions()
 
         test_files = set()
         if os.path.isfile(os.path.join(out_dir, 'all_tests.json')):
