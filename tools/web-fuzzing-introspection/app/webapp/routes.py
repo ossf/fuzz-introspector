@@ -2666,13 +2666,12 @@ def project_tests(args):
 
 
 @api_blueprint.route('/api/project-tests-for-functions')
-@api_blueprint.arguments(ProjectSchema, location='query')
-def project_tests_xref(args):
+def project_tests_xref():
     """Gets the tests of a given project.
 
     Returns a list of source files corresponding to tests of a project."""
     # Get project name
-    project = args.get('project', '')
+    project = request.args.get('project', '')
     if not project:
         return {
             'result': 'error',
@@ -2680,9 +2679,8 @@ def project_tests_xref(args):
         }
 
     # Get target functions if provided
-    funcs = args.get('functions', '').split(',')
+    funcs = request.args.get('functions', '').split(',')
     funcs = [func for func in funcs if func]
-
     test_files = extract_project_tests_xref(project, funcs)
     if not test_files:
         return {
