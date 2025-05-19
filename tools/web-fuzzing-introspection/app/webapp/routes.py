@@ -304,6 +304,7 @@ def extract_lines_from_source_code(
 
 
 def get_target_function(project_name: str, function_name: str):
+    """Gets information about a specific function."""
     all_functions = data_storage.get_functions_by_project(project_name)
     all_functions = all_functions + data_storage.get_constructors_by_project(
         project_name)
@@ -324,7 +325,7 @@ def get_target_function(project_name: str, function_name: str):
 @api_blueprint.route('/api/get-target-function')
 @api_blueprint.arguments(ProjectFunctionNameQuerySchema, location='query')
 def api_get_target_function(args):
-    """Gets functions with far reach but low code coverage."""
+    """Gets details about a specific function."""
     err_msgs = list()
     project_name = args.get('project', '')
     if not project_name:
