@@ -303,6 +303,53 @@ def extract_lines_from_source_code(
     return return_source
 
 
+def get_target_function(project_name: str, function_name: str):
+    """Gets information about a specific function."""
+    all_functions = data_storage.get_functions_by_project(project_name)
+    all_functions = all_functions + data_storage.get_constructors_by_project(
+        project_name)
+
+    for function in all_functions:
+        # Skipping non-related jvm methods and methods from enum classes
+        # is_accessible is True by default, i.e. for non jvm projects
+        if (not function.is_accessible or function.is_jvm_library
+                or function.is_enum_class):
+            continue
+        if function.project == project_name:
+            if function.name == function_name:
+                return function
+    return None
+
+
+@api_blueprint.route('/api/get-target-function')
+@api_blueprint.arguments(ProjectFunctionNameQuerySchema, location='query')
+def api_get_target_function(args):
+    """Gets details about a specific function."""
+    err_msgs = list()
+    project_name = args.get('project', '')
+    if not project_name:
+        return {
+            'result': 'error',
+            'extended_msgs': ['Please provide project name']
+        }
+
+    function_name = request.args.get('function', '')
+    if not function_name:
+        return {'result': 'error', 'msg': 'No function name provided.'}
+
+    function_of_interest = get_target_function(project_name, function_name)
+    if not function_of_interest:
+        return {'result': 'error', 'msg': 'Unable to find function.'}
+
+    try:
+        converted_function = function_helper.convert_functions_to_list_of_dict(
+            [function_of_interest])[0]
+    except:
+        return {'result': 'error', 'msg': 'Failed to convert function.'}
+
+    return {'result': 'success', 'function': converted_function}
+
+
 def get_functions_of_interest(
         project_name: str) -> List[data_storage.Function]:
     """Returns functions that are publicly available sorted by cyclomatic
