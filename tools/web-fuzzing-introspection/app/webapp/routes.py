@@ -309,7 +309,6 @@ def get_target_function(project_name: str, function_name: str):
     all_functions = all_functions + data_storage.get_constructors_by_project(
         project_name)
 
-    project_functions = []
     for function in all_functions:
         # Skipping non-related jvm methods and methods from enum classes
         # is_accessible is True by default, i.e. for non jvm projects
