@@ -568,7 +568,6 @@ class CSourceCodeFile(SourceCodeFile):
         self.extract_types()
         self.process_type_defs()
 
-
     def process_type_defs(self):
         """Helper to gather all custom type definitions."""
         self.full_type_defs.extend(self.struct_defs)
@@ -576,7 +575,6 @@ class CSourceCodeFile(SourceCodeFile):
         self.full_type_defs.extend(self.enum_defs)
         self.full_type_defs.extend(self.union_defs)
         self.full_type_defs.extend(self.preproc_defs)
-
 
     def extract_types(self):
         """Extracts the types of the source code"""
@@ -724,11 +722,8 @@ class CSourceCodeFile(SourceCodeFile):
                         child_type = child.child_by_field_name(
                             'declarator').text.decode()
                         fields.append({
-                            'type':
-                            child.child_by_field_name('type').text.decode(),
-                            'name':
-                            child.child_by_field_name(
-                                'declarator').text.decode()
+                            'type': child_name,
+                            'name': child_type,
                         })
                 self.union_defs.append({
                     'name':

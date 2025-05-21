@@ -18,7 +18,6 @@
 # pylint: disable=unnecessary-pass, unused-argument
 
 from typing import Any, Optional, Generic, TypeVar
-from collections import defaultdict
 
 from tree_sitter import Language, Parser
 import tree_sitter_c
