@@ -597,7 +597,8 @@ class CSourceCodeFile(SourceCodeFile):
                     enum_name_field.text.decode(),
                     'definition':
                     enum_body_field.text.decode(),
-                    'item_type': 'enum',
+                    'item_type':
+                    'enum',
                     'pos': {
                         'source_file': self.source_file,
                         'line_start': enum.start_point.row,
@@ -621,7 +622,8 @@ class CSourceCodeFile(SourceCodeFile):
                     preproc_name_field.text.decode(),
                     'type_or_value':
                     preproc_body_field.text.decode(),
-                    'item_type': 'preproc',
+                    'item_type':
+                    'preproc',
                     'pos': {
                         'source_file': self.source_file,
                         'line_start': preproc.start_point.row,
@@ -641,13 +643,13 @@ class CSourceCodeFile(SourceCodeFile):
                 # Extract name for struct or anonymous struct
                 struct_name_field = struct.child_by_field_name('name')
                 if struct_name_field:
-                    struct_name = struct.child_by_field_name('name').text.decode()
+                    struct_name = struct.child_by_field_name(
+                        'name').text.decode()
                 else:
                     parent = struct.parent
                     declarator = None
-                    if parent and (
-                        parent.type in ['declaration', 'type_definition']
-                    ):
+                    if parent and (parent.type
+                                   in ['declaration', 'type_definition']):
                         declarator = parent.child_by_field_name('declarator')
                     if declarator:
                         struct_name = declarator.text.decode()
@@ -673,10 +675,8 @@ class CSourceCodeFile(SourceCodeFile):
                                 'declarator').text.decode()
                         })
                 self.struct_defs.append({
-                    'name':
-                    struct_name,
-                    'fields':
-                    fields,
+                    'name': struct_name,
+                    'fields': fields,
                     'item_type': 'struct',
                     'pos': {
                         'source_file': self.source_file,
@@ -697,13 +697,13 @@ class CSourceCodeFile(SourceCodeFile):
                 # Extract name for union or anonymous union
                 union_name_field = union.child_by_field_name('name')
                 if union_name_field:
-                    union_name = union.child_by_field_name('name').text.decode()
+                    union_name = union.child_by_field_name(
+                        'name').text.decode()
                 else:
                     parent = union.parent
                     declarator = None
-                    if parent and (
-                        parent.type in ['declaration', 'type_definition']
-                    ):
+                    if parent and (parent.type
+                                   in ['declaration', 'type_definition']):
                         declarator = parent.child_by_field_name('declarator')
                     if declarator:
                         union_name = declarator.text.decode()
@@ -726,10 +726,8 @@ class CSourceCodeFile(SourceCodeFile):
                             'name': child_type,
                         })
                 self.union_defs.append({
-                    'name':
-                    union_name,
-                    'fields':
-                    fields,
+                    'name': union_name,
+                    'fields': fields,
                     'item_type': 'union',
                     'pos': {
                         'source_file': self.source_file,
@@ -758,7 +756,9 @@ class CSourceCodeFile(SourceCodeFile):
                     'line_end': typedef.end_point.row,
                 }
                 typedef_type = typedef.child_by_field_name('type')
-                if typedef_type.type in ['struct_specifier', 'union_specifier']:
+                if typedef_type.type in [
+                        'struct_specifier', 'union_specifier'
+                ]:
                     # Already handled in the above struct/union section
                     continue
 
