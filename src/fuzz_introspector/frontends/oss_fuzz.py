@@ -79,6 +79,8 @@ def process_c_project(target_dir: str,
         target = os.path.join(out, 'fuzzerLogFile-0.data.yaml')
         project.dump_module_logic(target, 'no-harness-in-project', '',
                                   target_dir, dump_output)
+        target = os.path.join(out, f'full_type_defs.json')
+        project.dump_type_definition(target, dump_output)
 
         with open(os.path.join(out, 'fuzzerLogFile-0.data'), 'w') as f:
             f.write("Call tree\n")
@@ -88,6 +90,8 @@ def process_c_project(target_dir: str,
         idx = 1
         target = os.path.join(out, 'report.yaml')
         project.dump_module_logic(target, harness_source=target_dir)
+        target = os.path.join(out, f'full_type_defs.json')
+        project.dump_type_definition(target, dump_output)
 
     if entrypoint != 'LLVMFuzzerTestOneInput':
         calltree_source = project.get_source_code_with_target(entrypoint)
@@ -106,6 +110,8 @@ def process_c_project(target_dir: str,
             target = os.path.join(out, f'fuzzerLogFile-{idx}.data.yaml')
             project.dump_module_logic(target, 'LLVMFuzzerTestOneInput', '',
                                       harness.source_file, dump_output)
+            target = os.path.join(out, f'full_type_defs.json')
+            project.dump_type_definition(target, dump_output)
             logger.info('handling harness, step 2')
             logger.info('Extracting calltree for %s', harness.source_file)
             calltree = project.extract_calltree(source_code=harness,

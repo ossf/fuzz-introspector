@@ -18,6 +18,7 @@
 # pylint: disable=unnecessary-pass, unused-argument
 
 from typing import Any, Optional, Generic, TypeVar
+from collections import defaultdict
 
 from tree_sitter import Language, Parser
 import tree_sitter_c
@@ -27,6 +28,7 @@ import tree_sitter_java
 import tree_sitter_rust
 
 import copy
+import json
 import logging
 import yaml
 
@@ -60,6 +62,7 @@ class SourceCodeFile():
         self.tree_sitter_lang = self.LANGUAGE.get(language,
                                                   self.LANGUAGE['cpp'])
         self.parser = Parser(self.tree_sitter_lang)
+        self.full_type_defs: list[dict[str, Any]] = []
 
         if source_content:
             self.source_content = source_content
@@ -114,6 +117,22 @@ class Project(Generic[T]):
         new_report['Fuzzer filename'] = harness_source
 
         return new_report
+
+    def dump_type_definition(self,
+                             report_name: str = '',
+                             dump_output: bool = True) -> None:
+        """Dumps the type definition for this project if exists."""
+        result = []
+        for source_code in self.source_code_files:
+            result.extend(source_code.full_type_defs)
+
+        if not result or not dump_output:
+            return
+
+        logger.info('Dumping custom type definitions.')
+        with open(report_name, 'w', encoding='utf-8') as f:
+            f.write(json.dumps(result))
+        logger.info('Custom type definitions dumping completed.')
 
     def dump_module_logic(self,
                           report_name: str = '',

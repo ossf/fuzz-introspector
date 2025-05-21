@@ -551,6 +551,9 @@ class CSourceCodeFile(SourceCodeFile):
         self.function_names = []
         self.line_range_pairs = []
         self.struct_defs = []
+        self.union_defs = []
+        self.enum_defs = []
+        self.preproc_defs = []
         self.typedefs = []
         self.includes = set()
 
@@ -563,24 +566,107 @@ class CSourceCodeFile(SourceCodeFile):
         # Load function definitions
         self._set_function_defintions()
         self.extract_types()
+        self.process_type_defs()
+
+
+    def process_type_defs(self):
+        """Helper to gather all custom type definitions."""
+        self.full_type_defs.extend(self.struct_defs)
+        self.full_type_defs.extend(self.typedefs)
+        self.full_type_defs.extend(self.enum_defs)
+        self.full_type_defs.extend(self.union_defs)
+        self.full_type_defs.extend(self.preproc_defs)
+
 
     def extract_types(self):
         """Extracts the types of the source code"""
+        # Extract all enum
+        enum_query = self.tree_sitter_lang.query('( enum_specifier ) @sp')
+        enum_query_res = enum_query.captures(self.root)
+        for _, enums in enum_query_res.items():
+            for enum in enums:
+                enum_name_field = enum.child_by_field_name('name')
+                enum_body_field = enum.child_by_field_name('body')
+                if not enum_name_field:
+                    # Skip anonymous enum
+                    continue
+                if not enum_body_field:
+                    # Skip forward declaration
+                    continue
+
+                self.enum_defs.append({
+                    'name':
+                    enum_name_field.text.decode(),
+                    'definition':
+                    enum_body_field.text.decode(),
+                    'item_type': 'enum',
+                    'pos': {
+                        'source_file': self.source_file,
+                        'line_start': enum.start_point.row,
+                        'line_end': enum.end_point.row,
+                    }
+                })
+
+        # Extract all preproc definitions
+        prep_query = self.tree_sitter_lang.query('( preproc_def ) @sp')
+        preproc_query_res = prep_query.captures(self.root)
+        for _, preprocs in preproc_query_res.items():
+            for preproc in preprocs:
+                preproc_name_field = preproc.child_by_field_name('name')
+                preproc_body_field = preproc.child_by_field_name('value')
+                if not preproc_name_field or not preproc_body_field:
+                    # Skip invalid preproc definition
+                    continue
+
+                self.preproc_defs.append({
+                    'name':
+                    preproc_name_field.text.decode(),
+                    'type_or_value':
+                    preproc_body_field.text.decode(),
+                    'item_type': 'preproc',
+                    'pos': {
+                        'source_file': self.source_file,
+                        'line_start': preproc.start_point.row,
+                        'line_end': preproc.end_point.row,
+                    }
+                })
+
         # Extract all structs
         struct_query = self.tree_sitter_lang.query('( struct_specifier ) @sp')
         struct_query_res = struct_query.captures(self.root)
         for _, structs in struct_query_res.items():
             for struct in structs:
                 if struct.child_by_field_name('body') is None:
+                    # Skip forward declaration
                     continue
-                if struct.child_by_field_name('name') is None:
-                    continue
+
+                # Extract name for struct or anonymous struct
+                struct_name_field = struct.child_by_field_name('name')
+                if struct_name_field:
+                    struct_name = struct.child_by_field_name('name').text.decode()
+                else:
+                    parent = struct.parent
+                    declarator = None
+                    if parent and (
+                        parent.type in ['declaration', 'type_definition']
+                    ):
+                        declarator = parent.child_by_field_name('declarator')
+                    if declarator:
+                        struct_name = declarator.text.decode()
+                    else:
+                        # Skip anonymous struct with no name
+                        continue
+
                 # Go through each of the field declarations
                 fields = []
                 for child in struct.child_by_field_name('body').children:
                     if not child.child_by_field_name('declarator'):
                         continue
                     if child.type == 'field_declaration':
+                        child_name = child.child_by_field_name(
+                            'type').text.decode()
+                        child_type = child.child_by_field_name(
+                            'declarator').text.decode()
                         fields.append({
                             'type':
                             child.child_by_field_name('type').text.decode(),
@@ -590,39 +676,97 @@ class CSourceCodeFile(SourceCodeFile):
                         })
                 self.struct_defs.append({
                     'name':
-                    struct.child_by_field_name('name').text.decode(),
+                    struct_name,
                     'fields':
                     fields,
+                    'item_type': 'struct',
                     'pos': {
+                        'source_file': self.source_file,
                         'line_start': struct.start_point.row,
                         'line_end': struct.end_point.row,
                     }
                 })
 
+        # Extract all unions
+        union_query = self.tree_sitter_lang.query('( union_specifier ) @sp')
+        union_query_res = union_query.captures(self.root)
+        for _, unions in union_query_res.items():
+            for union in unions:
+                if union.child_by_field_name('body') is None:
+                    # Skip forward declaration
+                    continue
+
+                # Extract name for union or anonymous union
+                union_name_field = union.child_by_field_name('name')
+                if union_name_field:
+                    union_name = union.child_by_field_name('name').text.decode()
+                else:
+                    parent = union.parent
+                    declarator = None
+                    if parent and (
+                        parent.type in ['declaration', 'type_definition']
+                    ):
+                        declarator = parent.child_by_field_name('declarator')
+                    if declarator:
+                        union_name = declarator.text.decode()
+                    else:
+                        # Skip anonymous union with no name
+                        continue
+
+                # Go through each of the field declarations
+                fields = []
+                for child in union.child_by_field_name('body').children:
+                    if not child.child_by_field_name('declarator'):
+                        continue
+                    if child.type == 'field_declaration':
+                        child_name = child.child_by_field_name(
+                            'type').text.decode()
+                        child_type = child.child_by_field_name(
+                            'declarator').text.decode()
+                        fields.append({
+                            'type':
+                            child.child_by_field_name('type').text.decode(),
+                            'name':
+                            child.child_by_field_name(
+                                'declarator').text.decode()
+                        })
+                self.union_defs.append({
+                    'name':
+                    union_name,
+                    'fields':
+                    fields,
+                    'item_type': 'union',
+                    'pos': {
+                        'source_file': self.source_file,
+                        'line_start': union.start_point.row,
+                        'line_end': union.end_point.row,
+                    }
+                })
+
+        # Extract all type definition
         type_query = self.tree_sitter_lang.query('( type_definition ) @tp')
         type_query_res = type_query.captures(self.root)
         for _, types in type_query_res.items():
             for typedef in types:
-                # Skip if this is an anonymous struct.
-                # TODO(David): handle this
+                # Skip if this is an anonymous type.
                 if typedef.child_by_field_name('declarator') is None:
                     continue
                 typedef_struct = {
                     'name':
-                    typedef.child_by_field_name('declarator').text.decode()
+                    typedef.child_by_field_name('declarator').text.decode(),
+                    'item_type': 'typedef',
                 }
 
                 typedef_struct['pos'] = {
+                    'source_file': self.source_file,
                     'line_start': typedef.start_point.row,
                     'line_end': typedef.end_point.row,
                 }
                 typedef_type = typedef.child_by_field_name('type')
-                if typedef_type.type == 'struct_specifier':
-                    if typedef.child_by_field_name('name') is not None:
-                        typedef_struct[
-                            'type'] = typedef_type.child_by_field_name(
-                                'name').text.decode()
-                    # TODO(David): handle the else branch here.
+                if typedef_type.type in ['struct_specifier', 'union_specifier']:
+                    # Already handled in the above struct/union section
+                    continue
+
                 elif typedef_type.type == 'primitive_type':
                     typedef_struct['type'] = typedef_type.text.decode()
                 elif typedef_type.type == 'sized_type_specifier':
