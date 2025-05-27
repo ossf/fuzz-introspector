@@ -449,6 +449,10 @@ def extract_local_project_data(project_name, oss_fuzz_path,
     except:
         project_repository = 'N/A'
 
+    # Extract type definition
+    typedef_list = oss_fuzz.extract_local_introspector_typedef(
+        project_name, oss_fuzz_path)
+
     introspector_data_dict = {
         "introspector_report_url":
         'introspector_url',
@@ -469,7 +473,9 @@ def extract_local_project_data(project_name, oss_fuzz_path,
         'annotated_cfg':
         annotated_cfg,
         'project_name':
-        project_name
+        project_name,
+        'typedef_list':
+        typedef_list
     }
 
     code_coverage_data_dict = prepare_code_coverage_dict(
@@ -721,6 +727,10 @@ def extract_project_data(project_name, date_str, should_include_details,
         # Dump things we dont want to accummulate.
         save_branch_blockers(branch_pairs, project_name)
 
+        # Extract type definition
+        typedef_list = oss_fuzz.extract_introspector_typedef(
+            project_name, date_str)
+
         introspector_data_dict = {
             "introspector_report_url": introspector_report_url,
             "coverage_lines":
@@ -734,7 +744,8 @@ def extract_project_data(project_name, date_str, should_include_details,
             'refined_constructor_list': refined_constructor_list,
             'annotated_cfg': annotated_cfg,
             'optimal_targets': optimal_targets,
-            'project_name': project_name
+            'project_name': project_name,
+            'typedef_list': typedef_list
         }
 
     code_coverage_data_dict = prepare_code_coverage_dict(
