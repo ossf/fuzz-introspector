@@ -117,6 +117,7 @@ class CProject(Project['CSourceCodeFile']):
                     for cs_dst, _ in func_callsites:
                         funcs_reached.add(cs_dst)
                     func_dict['functionsReached'] = list(funcs_reached)
+                    func_dict['assertStmts'] = func_def.assert_stmts()
 
                     self.no_fuzz_function_list.append(func_dict)
 
@@ -182,6 +183,7 @@ class CProject(Project['CSourceCodeFile']):
                 for cs_dst, _ in func_callsites:
                     funcs_reached.add(cs_dst)
                 func_dict['functionsReached'] = list(funcs_reached)
+                func_dict['assertStmts'] = func_def.assert_stmts()
 
                 function_list.append(func_dict)
 
@@ -547,6 +549,27 @@ class FunctionDefinition():
         callsites = list(sorted(callsites, key=lambda x: x[1][1]))
 
         return callsites
+
+    def assert_stmts(self):
+        """Gets a list of assert statements in the function."""
+        assert_stmts = []
+        call_query = self.tree_sitter_lang.query('( call_expression ) @ce')
+        call_res = call_query.captures(self.root)
+        for _, call_exprs in call_res.items():
+            for call_expr in call_exprs:
+                func_call = call_expr.child_by_field_name('function')
+                args = call_expr.child_by_field_name('arguments')
+                if func_call and func_call.text.decode() == 'assert':
+                    assert_stmts.append({
+                        'condition': args.text.decode(),
+                        'pos': {
+                            'source_file': self.parent_source.source_file,
+                            'line_start': call_expr.start_point.row,
+                            'line_end': call_expr.end_point.row,
+                        }
+                    })
+
+        return assert_stmts
 
 
 class CSourceCodeFile(SourceCodeFile):
