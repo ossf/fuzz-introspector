@@ -728,7 +728,8 @@ def extract_project_data(project_name, date_str, should_include_details,
         save_branch_blockers(branch_pairs, project_name)
 
         # Extract type definition
-        typedef_list = oss_fuzz.extract_introspector_typedef(project_name, date_str)
+        typedef_list = oss_fuzz.extract_introspector_typedef(
+            project_name, date_str)
 
         introspector_data_dict = {
             "introspector_report_url": introspector_report_url,
