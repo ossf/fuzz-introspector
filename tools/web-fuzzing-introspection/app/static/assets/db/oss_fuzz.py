@@ -47,6 +47,11 @@ def get_introspector_report_url_report(project_name, datestr):
                                             datestr) + "fuzz_report.html"
 
 
+def get_introspector_report_url_typedef(project_name, datestr):
+    return get_introspector_report_url_base(project_name,
+                                            datestr) + "full_type_defs.json"
+
+
 def get_fuzzer_stats_fuzz_count_url(project_name, date_str):
     base_url = 'https://storage.googleapis.com/oss-fuzz-coverage/{0}/fuzzer_stats/{1}/coverage_targets.txt'
     coverage_targets = base_url.format(project_name, date_str)
@@ -233,6 +238,17 @@ def extract_local_introspector_report(project_name, oss_fuzz_folder):
     return json_dict
 
 
+def extract_local_introspector_typedef(project_name, oss_fuzz_folder):
+    summary_json = os.path.join(oss_fuzz_folder, 'build', 'out', project_name,
+                                'inspector', 'full_type_defs.json')
+    if not os.path.isfile(summary_json):
+        return {}
+
+    with open(summary_json, 'r') as f:
+        json_list = json.load(f)
+    return json_list
+
+
 def get_local_code_coverage_summary(project_name, oss_fuzz_folder):
     summary_json = os.path.join(oss_fuzz_folder, 'build', 'out', project_name,
                                 'report', 'linux', 'summary.json')
@@ -364,6 +380,24 @@ def extract_introspector_test_files_xref(project_name, date_str):
         return None
 
     return test_files
+
+
+def extract_introspector_typedef(project_name, date_str):
+    introspector_test_url = get_introspector_report_url_typedef(
+        project_name, date_str.replace("-", ""))
+
+    # Read the introspector atifact
+    try:
+        raw_introspector_json_request = requests.get(introspector_test_url,
+                                                     timeout=10)
+    except:
+        return []
+    try:
+        typedef_list = json.loads(raw_introspector_json_request.text)
+    except:
+        return []
+
+    return typedef_list
 
 
 def extract_introspector_report(project_name, date_str):

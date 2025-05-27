@@ -1319,6 +1319,36 @@ def api_annotated_cfg(args):
         return {'result': 'error', 'msg': 'Found no introspector data.'}
 
 
+@api_blueprint.route('/api/full-type-definition')
+@api_blueprint.arguments(ProjectSchema, location='query')
+def api_full_type_definition(args):
+    """API that returns the full type definition of a project."""
+    project_name = args.get('project', '')
+    if not project_name:
+        return {'result': 'error', 'msg': 'Please provide project name'}
+
+    target_project = get_project_with_name(project_name)
+    if target_project is None:
+        return {'result': 'error', 'msg': 'Project not in the database'}
+
+    if target_project.introspector_data is None:
+        return {'result': 'error', 'msg': 'Found no introspector data.'}
+
+    try:
+        return {
+            'result': 'success',
+            'project': {
+                'name': project_name,
+                'typedef_list':
+                target_project.introspector_data['typedef_list'],
+            }
+        }
+    except KeyError:
+        return {'result': 'error', 'msg': 'Found no type definition data.'}
+    except TypeError:
+        return {'result': 'error', 'msg': 'Found no introspector data.'}
+
+
 @api_blueprint.route('/api/project-summary')
 @api_blueprint.arguments(ProjectSchema, location='query')
 def api_project_summary(args):
