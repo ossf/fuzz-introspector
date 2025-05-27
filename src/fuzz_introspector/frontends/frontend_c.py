@@ -592,13 +592,16 @@ class CSourceCodeFile(SourceCodeFile):
                     # Skip forward declaration
                     continue
 
-                enum_item_query = self.tree_sitter_lang.query('( enumerator ) @en')
+                enum_item_query = self.tree_sitter_lang.query(
+                    '( enumerator ) @en')
                 enumerator_list = []
-                for _, enumerators in enum_item_query.captures(enum_body).items():
+                for _, enumerators in enum_item_query.captures(
+                        enum_body).items():
                     for enumerator in enumerators:
                         item_dict = {}
                         enum_item_name = enumerator.child_by_field_name('name')
-                        enum_item_value = enumerator.child_by_field_name('value')
+                        enum_item_value = enumerator.child_by_field_name(
+                            'value')
 
                         if not enum_item_name:
                             # Skip anonymous enum items
@@ -611,12 +614,9 @@ class CSourceCodeFile(SourceCodeFile):
                         enumerator_list.append(item_dict)
 
                 self.enum_defs.append({
-                    'name':
-                    enum_name_field.text.decode(),
-                    'enumerators':
-                    enumerator_list,
-                    'item_type':
-                    'enum',
+                    'name': enum_name_field.text.decode(),
+                    'enumerators': enumerator_list,
+                    'item_type': 'enum',
                     'pos': {
                         'source_file': self.source_file,
                         'line_start': enum.start_point.row,
