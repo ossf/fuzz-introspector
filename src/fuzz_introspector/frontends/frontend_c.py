@@ -613,21 +613,39 @@ class CSourceCodeFile(SourceCodeFile):
         for _, enums in enum_query_res.items():
             for enum in enums:
                 enum_name_field = enum.child_by_field_name('name')
-                enum_body_field = enum.child_by_field_name('body')
+                enum_body = enum.child_by_field_name('body')
                 if not enum_name_field:
                     # Skip anonymous enum
                     continue
-                if not enum_body_field:
+                if not enum_body:
                     # Skip forward declaration
                     continue
 
+                enum_item_query = self.tree_sitter_lang.query(
+                    '( enumerator ) @en')
+                enumerator_list = []
+                for _, enumerators in enum_item_query.captures(
+                        enum_body).items():
+                    for enumerator in enumerators:
+                        item_dict = {}
+                        enum_item_name = enumerator.child_by_field_name('name')
+                        enum_item_value = enumerator.child_by_field_name(
+                            'value')
+
+                        if not enum_item_name:
+                            # Skip anonymous enum items
+                            continue
+                        item_dict['name'] = enum_item_name.text.decode()
+
+                        if enum_item_value:
+                            item_dict['value'] = enum_item_value.text.decode()
+
+                        enumerator_list.append(item_dict)
+
                 self.enum_defs.append({
-                    'name':
-                    enum_name_field.text.decode(),
-                    'definition':
-                    enum_body_field.text.decode(),
-                    'item_type':
-                    'enum',
+                    'name': enum_name_field.text.decode(),
+                    'enumerators': enumerator_list,
+                    'item_type': 'enum',
                     'pos': {
                         'source_file': self.source_file,
                         'line_start': enum.start_point.row,
