@@ -69,7 +69,10 @@ class CProject(Project['CSourceCodeFile']):
                     source_code.get_defined_function_names(),
                     'types': {
                         'structs': source_code.struct_defs,
-                        'typedefs': source_code.typedefs
+                        'typedefs': source_code.typedefs,
+                        'preproc_defs': source_code.preproc_defs,
+                        'enum': source_code.enum_defs,
+                        'union': source_code.union_defs,
                     }
                 })
                 found_harness = False
@@ -132,7 +135,10 @@ class CProject(Project['CSourceCodeFile']):
                 source_code.get_defined_function_names(),
                 'types': {
                     'structs': source_code.struct_defs,
-                    'typedefs': source_code.typedefs
+                    'typedefs': source_code.typedefs,
+                    'preproc_defs': source_code.preproc_defs,
+                    'enum': source_code.enum_defs,
+                    'union': source_code.union_defs,
                 }
             })
 
@@ -623,7 +629,7 @@ class CSourceCodeFile(SourceCodeFile):
                     'type_or_value':
                     preproc_body_field.text.decode(),
                     'item_type':
-                    'preproc',
+                    'preproc_def',
                     'pos': {
                         'source_file': self.source_file,
                         'line_start': preproc.start_point.row,
