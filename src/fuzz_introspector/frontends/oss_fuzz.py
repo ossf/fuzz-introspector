@@ -57,76 +57,6 @@ def capture_source_files_in_tree(directory_tree: str,
     return language_files
 
 
-def process_c_project(target_dir: str,
-                      entrypoint: str,
-                      out: str,
-                      source_files: list[str],
-                      module_only: bool = False,
-                      dump_output: bool = True) -> Project:
-    """Process a project in C language"""
-    # Default entrypoint
-    if not entrypoint:
-        entrypoint = 'LLVMFuzzerTestOneInput'
-
-    logger.info('Going C route')
-    logger.info('Found %d files to include in analysis', len(source_files))
-    logger.info('Loading tree-sitter trees and create base project')
-    project = frontend_c.load_treesitter_trees(source_files)
-
-    # We may not need to do this, but will do it while refactoring into
-    # the new frontends.
-    if not project.get_source_codes_with_harnesses():
-        target = os.path.join(out, 'fuzzerLogFile-0.data.yaml')
-        project.dump_module_logic(target, 'no-harness-in-project', '',
-                                  target_dir, dump_output)
-        target = os.path.join(out, 'full_type_defs.json')
-        project.dump_type_definition(target, dump_output)
-
-        with open(os.path.join(out, 'fuzzerLogFile-0.data'), 'w') as f:
-            f.write("Call tree\n")
-            f.write("====================================")
-
-    if module_only:
-        idx = 1
-        target = os.path.join(out, 'report.yaml')
-        project.dump_module_logic(target, harness_source=target_dir)
-        target = os.path.join(out, 'full_type_defs.json')
-        project.dump_type_definition(target, dump_output)
-
-    if entrypoint != 'LLVMFuzzerTestOneInput':
-        calltree_source = project.get_source_code_with_target(entrypoint)
-        if calltree_source:
-            calltree = project.extract_calltree(source_code=calltree_source,
-                                                function=entrypoint)
-            with open(os.path.join(out, 'targetCalltree.txt'), 'w') as f:
-                f.write("Call tree\n")
-                f.write(calltree)
-                f.write("====================================")
-    else:
-        for idx, harness in enumerate(
-                project.get_source_codes_with_harnesses()):
-
-            logger.info('handling harness, step 1')
-            target = os.path.join(out, f'fuzzerLogFile-{idx}.data.yaml')
-            project.dump_module_logic(target, 'LLVMFuzzerTestOneInput', '',
-                                      harness.source_file, dump_output)
-            target = os.path.join(out, 'full_type_defs.json')
-            project.dump_type_definition(target, dump_output)
-            logger.info('handling harness, step 2')
-            logger.info('Extracting calltree for %s', harness.source_file)
-            calltree = project.extract_calltree(source_code=harness,
-                                                function=entrypoint)
-            logger.info('handling harness, step 3')
-            with open(os.path.join(out, f'fuzzerLogFile-{idx}.data'),
-                      'w',
-                      encoding='utf-8') as f:
-                f.write("Call tree\n")
-                f.write(calltree)
-                f.write("====================================")
-            logger.info('handling harness, step 4')
-    return project
-
-
 def analyse_folder(
         language: str = '',
         directory: str = '',
@@ -145,113 +75,131 @@ def analyse_folder(
     source_files.extend(files_to_include)
     logger.info('Found %d files to include in analysis', len(source_files))
 
+    # Process for different language
     if language == constants.LANGUAGES.C:
-        project = process_c_project(directory,
-                                    entrypoint,
-                                    out,
-                                    source_files,
-                                    module_only,
-                                    dump_output=dump_output)
+        logger.info('Going C route')
+        logger.info('Loading tree-sitter trees')
+        if not entrypoint:
+            entrypoint = 'LLVMFuzzerTestOneInput'
+        project = frontend_c.load_treesitter_trees(source_files)
+        if not project.get_source_codes_with_harnesses():
+            module_only = True
+    elif language == constants.LANGUAGES.CPP:
+        logger.info('Going C++ route')
+        logger.info('Loading tree-sitter trees')
+        if not entrypoint:
+            entrypoint = 'LLVMFuzzerTestOneInput'
+        project = frontend_cpp.load_treesitter_trees(source_files)
+    elif language == constants.LANGUAGES.GO:
+        logger.info('Going Go route')
+        logger.info('Loading tree-sitter trees and create base project')
+        project = frontend_go.load_treesitter_trees(source_files)
+    elif language == constants.LANGUAGES.JAVA:
+        logger.info('Going JVM route')
+        logger.info('Loading tree-sitter trees and create base project')
+        if not entrypoint:
+            entrypoint = 'fuzzerTestOneInput'
+        project = frontend_jvm.load_treesitter_trees(
+            source_files, entrypoint)
+    elif language == constants.LANGUAGES.RUST:
+        logger.info('Going Rust route')
+        logger.info('Loading tree-sitter trees and create base project')
+        project = frontend_rust.load_treesitter_trees(source_files)
     else:
-        # Process for different language
-        if language == constants.LANGUAGES.CPP:
-            logger.info('Going C++ route')
-            logger.info('Loading tree-sitter trees')
-            if not entrypoint:
-                entrypoint = 'LLVMFuzzerTestOneInput'
-            project = frontend_cpp.load_treesitter_trees(source_files)
-        elif language == constants.LANGUAGES.GO:
-            logger.info('Going Go route')
-            logger.info('Loading tree-sitter trees and create base project')
-            project = frontend_go.load_treesitter_trees(source_files)
-        elif language == constants.LANGUAGES.JAVA:
-            logger.info('Going JVM route')
-            logger.info('Loading tree-sitter trees and create base project')
-            if not entrypoint:
-                entrypoint = 'fuzzerTestOneInput'
-            project = frontend_jvm.load_treesitter_trees(
-                source_files, entrypoint)
-        elif language == constants.LANGUAGES.RUST:
-            logger.info('Going Rust route')
-            logger.info('Loading tree-sitter trees and create base project')
-            project = frontend_rust.load_treesitter_trees(source_files)
+        logger.error('Unsupported language: %s', language)
+        return Project([]), []
+
+    # Extract textcov pairing
+    pairings = []
+    textcov_reports = []
+    if os.environ.get('OUT', ''):
+        textcovs_path = os.path.join(os.environ.get('OUT', '/out/'),
+                                     'textcov_reports')
+        if os.path.isdir(textcovs_path):
+            for report_name in os.listdir(textcovs_path):
+                textcov_reports.append(report_name)
+
+    # Perform analysis where there is no harness and only do the module
+    if not project.get_source_codes_with_harnesses() and module_only:
+        if not dump_output:
+            logger.info('Running in-memory analysis')
+            report = project.get_report('empty')
+            calltree = 'Call tree\n===================================='
+            return project, [(report, calltree)]
+
+        logger.info('Found no harnesses')
+        target = os.path.join(out, 'fuzzerLogFile-empty.data.yaml')
+        project.dump_module_logic(target,
+                                  entry_function='',
+                                  harness_name='empty',
+                                  harness_source='empty-file.cpp',
+                                  dump_output=dump_output)
+        with open(os.path.join(out, 'fuzzerLogFile-empty.data'),
+                  'w',
+                  encoding='utf-8') as f:
+            f.write("Call tree\n")
+            f.write("====================================")
+
+
+        target = os.path.join(out, 'full_type_defs.json')
+        project.dump_type_definition(target, dump_output)
+
+# TODO Initialise once it is ready
+#        target = os.path.join(out, 'macro_block_info.json')
+#        project.dump_macro_block_info(target, dump_output)
+
+    # Process calltree and method data
+    for harness in project.get_source_codes_with_harnesses():
+        if language == 'go':
+            entry_function = harness.get_entry_function_name()
         else:
-            logger.error('Unsupported language: %s', language)
-            return Project([]), []
+            entry_function = entrypoint
 
-        pairings = []
-        textcov_reports = []
-        if os.environ.get('OUT', ''):
-            textcovs_path = os.path.join(os.environ.get('OUT', '/out/'),
-                                         'textcov_reports')
-            if os.path.isdir(textcovs_path):
-                for report_name in os.listdir(textcovs_path):
-                    textcov_reports.append(report_name)
+        harness_name = harness.source_file.split('/')[-1].split('.')[0]
 
-        # Perform analysis where there is no harness and only do the module
-        if not project.get_source_codes_with_harnesses() and module_only:
-            if not dump_output:
-                logger.info('Running in-memory analysis')
-                report = project.get_report('empty')
-                calltree = 'Call tree\n===================================='
-                return project, [(report, calltree)]
+        # Functions/Methods data
+        logger.info('Dump methods for %s', harness_name)
+        target = os.path.join(out,
+                              f'fuzzerLogFile-{harness_name}.data.yaml')
+        project.dump_module_logic(target,
+                                  entry_function=entry_function,
+                                  harness_name=harness_name,
+                                  harness_source=harness.source_file,
+                                  dump_output=dump_output)
 
-            logger.info('Found no harnesses')
-            target = os.path.join(out, 'fuzzerLogFile-empty.data.yaml')
-            project.dump_module_logic(target,
-                                      entry_function='',
-                                      harness_name='empty',
-                                      harness_source='empty-file.cpp',
-                                      dump_output=dump_output)
-            with open(os.path.join(out, 'fuzzerLogFile-empty.data'),
-                      'w',
-                      encoding='utf-8') as f:
-                f.write("Call tree\n")
-                f.write("====================================")
-
-        # Process calltree and method data
-        for harness in project.get_source_codes_with_harnesses():
-            if language == 'go':
-                entry_function = harness.get_entry_function_name()
-            else:
-                entry_function = entrypoint
-
-            harness_name = harness.source_file.split('/')[-1].split('.')[0]
-
-            # Functions/Methods data
-            logger.info('Dump methods for %s', harness_name)
+        # Calltree
+        logger.info('Extracting calltree for %s', harness_name)
+        calltree = project.extract_calltree(harness.source_file, harness,
+                                            entry_function)
+        logger.info('Calltree extracted')
+        if dump_output:
             target = os.path.join(out,
-                                  f'fuzzerLogFile-{harness_name}.data.yaml')
-            project.dump_module_logic(target,
-                                      entry_function=entry_function,
-                                      harness_name=harness_name,
-                                      harness_source=harness.source_file,
-                                      dump_output=dump_output)
+                                  f'fuzzerLogFile-{harness_name}.data')
+            with open(target, 'w', encoding='utf-8') as f:
+                f.write(f'Call tree\n{calltree}')
 
-            # Calltree
-            logger.info('Extracting calltree for %s', harness_name)
-            calltree = project.extract_calltree(harness.source_file, harness,
-                                                entry_function)
-            logger.info('Calltree extracted')
-            if dump_output:
-                target = os.path.join(out,
-                                      f'fuzzerLogFile-{harness_name}.data')
-                with open(target, 'w', encoding='utf-8') as f:
-                    f.write(f'Call tree\n{calltree}')
+        for textcov in textcov_reports:
+            cov_name = textcov.replace('.covreport', '')
+            if cov_name == harness_name:
+                pairings.append({
+                    'executable_path':
+                    f'/out/{cov_name}',
+                    'fuzzer_log_file':
+                    f'fuzzerLogFile-{harness_name}.data'
+                })
 
-            for textcov in textcov_reports:
-                cov_name = textcov.replace('.covreport', '')
-                if cov_name == harness_name:
-                    pairings.append({
-                        'executable_path':
-                        f'/out/{cov_name}',
-                        'fuzzer_log_file':
-                        f'fuzzerLogFile-{harness_name}.data'
-                    })
+        # Type definition
+        target = os.path.join(out, 'full_type_defs.json')
+        project.dump_type_definition(target, dump_output)
 
-        if pairings:
-            with open(os.path.join(out, 'exe_to_fuzz_introspector_logs.yaml'),
-                      'w') as f:
-                f.write(yaml.dump({'pairings': pairings}))
+# TODO Initialise once it is ready
+#        # Macro block information
+#        target = os.path.join(out, 'macro_block_info.json')
+#        project.dump_macro_block_info(target, dump_output)
+
+    if pairings:
+        with open(os.path.join(out, 'exe_to_fuzz_introspector_logs.yaml'),
+                  'w') as f:
+            f.write(yaml.dump({'pairings': pairings}))
 
     return project, None
