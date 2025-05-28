@@ -91,6 +91,22 @@ class FunctionProfile:
         except Exception:
             self.callsite = dict()
 
+        # Set assert statement handling if exist
+        assert_stmts = elem.get('assertStmts', [])
+        self.assert_list = []
+        for stmt in assert_stmts:
+            condition = stmt.get('condition', '')
+            location = stmt.get('pos', {})
+            if location and condition:
+                self.assert_list.append({
+                    'condition':
+                    condition,
+                    'start_line':
+                    location.get('line_start', -1),
+                    'end_line':
+                    location.get('line_end', -1),
+                })
+
         # These are set later.
         self.hitcount: int = 0
         self.reached_by_fuzzers: List[str] = []
@@ -116,7 +132,8 @@ class FunctionProfile:
             'source_line_begin': self.function_linenumber,
             'source_line_end': self.function_line_number_end,
             'debug_summary': '',  # No debug summary from new frontend yet
-            'total_cyclomatic_complexity': self.total_cyclomatic_complexity
+            'total_cyclomatic_complexity': self.total_cyclomatic_complexity,
+            'assert_stmts': self.assert_list,
         }
 
     @property
