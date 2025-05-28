@@ -75,6 +75,8 @@ def analyse_folder(
     source_files.extend(files_to_include)
     logger.info('Found %d files to include in analysis', len(source_files))
 
+    project: Project = Project([])
+
     # Process for different language
     if language == constants.LANGUAGES.C:
         logger.info('Going C route')

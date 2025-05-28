@@ -85,9 +85,14 @@ class SourceCodeFile():
         """Dummy function to perform some specific processes in subclasses."""
         pass
 
+    def get_entry_function_name(self) -> str:
+        """Dummy function for getting the entry function name."""
+        return ''
+
     def has_libfuzzer_harness(self) -> bool:
         """Dummy function for source code files."""
         return False
+
 
 
 class Project(Generic[T]):
