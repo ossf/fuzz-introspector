@@ -25,7 +25,6 @@ import copy
 
 from fuzz_introspector.frontends.datatypes import Project, SourceCodeFile
 
-
 logger = logging.getLogger(name=__name__)
 
 
@@ -855,7 +854,8 @@ class CSourceCodeFile(SourceCodeFile):
             for macro in macros:
                 self._process_macro_node(macro, [])
 
-    def _process_macro_node(self, macro: Node, conditions: list[dict[str, str]]):
+    def _process_macro_node(self, macro: Node, conditions: list[dict[str,
+                                                                     str]]):
         """Recursive function to process macro nodes and extract all #elif
         and #else macro sub-branches."""
         # if it is the #elif or #else branches, previous condition must be reversed.
@@ -874,7 +874,8 @@ class CSourceCodeFile(SourceCodeFile):
             if not var_name or not var_name.text:
                 return
 
-            if macro and macro.text and macro.text.decode().startswith('#ifdef'):
+            if macro and macro.text and macro.text.decode().startswith(
+                    '#ifdef'):
                 type = 'ifdef'
             else:
                 type = 'ifndef'
