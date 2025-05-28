@@ -101,8 +101,7 @@ def analyse_folder(
         logger.info('Loading tree-sitter trees and create base project')
         if not entrypoint:
             entrypoint = 'fuzzerTestOneInput'
-        project = frontend_jvm.load_treesitter_trees(
-            source_files, entrypoint)
+        project = frontend_jvm.load_treesitter_trees(source_files, entrypoint)
     elif language == constants.LANGUAGES.RUST:
         logger.info('Going Rust route')
         logger.info('Loading tree-sitter trees and create base project')
@@ -149,7 +148,7 @@ def analyse_folder(
 #        target = os.path.join(out, 'macro_block_info.json')
 #        project.dump_macro_block_info(target, dump_output)
 
-    # Process calltree and method data
+# Process calltree and method data
     for harness in project.get_source_codes_with_harnesses():
         if language == 'go':
             entry_function = harness.get_entry_function_name()
@@ -160,8 +159,7 @@ def analyse_folder(
 
         # Functions/Methods data
         logger.info('Dump methods for %s', harness_name)
-        target = os.path.join(out,
-                              f'fuzzerLogFile-{harness_name}.data.yaml')
+        target = os.path.join(out, f'fuzzerLogFile-{harness_name}.data.yaml')
         project.dump_module_logic(target,
                                   entry_function=entry_function,
                                   harness_name=harness_name,
@@ -174,8 +172,7 @@ def analyse_folder(
                                             entry_function)
         logger.info('Calltree extracted')
         if dump_output:
-            target = os.path.join(out,
-                                  f'fuzzerLogFile-{harness_name}.data')
+            target = os.path.join(out, f'fuzzerLogFile-{harness_name}.data')
             with open(target, 'w', encoding='utf-8') as f:
                 f.write(f'Call tree\n{calltree}')
 
@@ -192,6 +189,7 @@ def analyse_folder(
         # Type definition
         target = os.path.join(out, 'full_type_defs.json')
         project.dump_type_definition(target, dump_output)
+
 
 # TODO Initialise once it is ready
 #        # Macro block information
