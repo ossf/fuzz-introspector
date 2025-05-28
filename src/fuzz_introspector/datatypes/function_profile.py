@@ -99,9 +99,12 @@ class FunctionProfile:
             location = stmt.get('pos', {})
             if location and condition:
                 self.assert_list.append({
-                    'condition': condition,
-                    'start_line': location.get('line_start', -1),
-                    'end_line': location.get('line_end', -1),
+                    'condition':
+                    condition,
+                    'start_line':
+                    location.get('line_start', -1),
+                    'end_line':
+                    location.get('line_end', -1),
                 })
 
         # These are set later.
