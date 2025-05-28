@@ -17,6 +17,8 @@
 
 from typing import Any, Optional
 
+from tree_sitter import Node
+
 import os
 import logging
 import copy
@@ -594,8 +596,13 @@ class CSourceCodeFile(SourceCodeFile):
 
         # Load function definitions
         self._set_function_defintions()
+
+        # Extract type definition
         self.extract_types()
         self.process_type_defs()
+
+        # Extract macro blocks information
+        self.extract_macros()
 
     def process_type_defs(self):
         """Helper to gather all custom type definitions."""
@@ -830,6 +837,91 @@ class CSourceCodeFile(SourceCodeFile):
                 include_path = include_path_node.text.decode().replace(
                     '"', '').replace('>', '').replace('<', '')
                 self.includes.add(include_path)
+
+    def extract_macros(self):
+        """Extracts the macro blocks in the source code"""
+        # Process #ifdef and #ifndef
+        macro_query = self.tree_sitter_lang.query('( preproc_ifdef ) @sp')
+        macro_query_res = macro_query.captures(self.root)
+        for _, macros in macro_query_res.items():
+            for macro in macros:
+                self._process_macro_node(macro, [])
+
+        # Process #if
+        macro_query = self.tree_sitter_lang.query('( preproc_if ) @sp')
+        macro_query_res = macro_query.captures(self.root)
+        for _, macros in macro_query_res.items():
+            for macro in macros:
+                self._process_macro_node(macro, [])
+
+    def _process_macro_node(self, macro: Node, conditions: list[dict[str,
+                                                                     str]]):
+        """Recursive function to process macro nodes and extract all #elif
+        and #else macro sub-branches."""
+        # if it is the #elif or #else branches, previous condition must be reversed.
+        if conditions:
+            if conditions[-1]['type'] == 'ifdef':
+                conditions[-1]['type'] = 'ifndef'
+            elif conditions[-1]['type'] == 'ifndef':
+                conditions[-1]['type'] = 'ifdef'
+            else:
+                conditions[-1]['type'] = 'not'
+
+        if macro.type == 'preproc_ifdef':
+            var_name = macro.child_by_field_name('name')
+
+            # Skip invalid macro
+            if not var_name or not var_name.text:
+                return
+
+            if macro and macro.text and macro.text.decode().startswith(
+                    '#ifdef'):
+                type = 'ifdef'
+            else:
+                type = 'ifndef'
+            conditions.append({
+                'type': type,
+                'condition': var_name.text.decode(),
+            })
+        elif macro.type in ['preproc_if', 'preproc_elif']:
+            condition = macro.child_by_field_name('condition')
+
+            # Skip invalid macro
+            if not condition or not condition.text:
+                return
+
+            conditions.append({
+                'type': 'if',
+                'condition': condition.text.decode(),
+            })
+
+        # Extract #else #elif branches
+        alternative = macro.child_by_field_name('alternative')
+
+        if alternative:
+            # Have #elif or #else branches
+            self.macro_blocks.append({
+                'conditions': conditions,
+                'pos': {
+                    'source_file': self.source_file,
+                    'line_start': macro.start_point.row,
+                    'line_end': alternative.start_point.row,
+                }
+            })
+        else:
+            # No more #elif or #else branches
+            self.macro_blocks.append({
+                'conditions': conditions,
+                'pos': {
+                    'source_file': self.source_file,
+                    'line_start': macro.start_point.row,
+                    'line_end': macro.end_point.row,
+                }
+            })
+            return
+
+        # Recursively extract more #else or #elseif branches
+        self._process_macro_node(alternative, copy.deepcopy(conditions))
 
     def _set_function_defintions(self):
         func_def_query_str = '( function_definition ) @fd '

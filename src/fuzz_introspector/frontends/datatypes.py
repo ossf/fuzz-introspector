@@ -62,6 +62,7 @@ class SourceCodeFile():
                                                   self.LANGUAGE['cpp'])
         self.parser = Parser(self.tree_sitter_lang)
         self.full_type_defs: list[dict[str, Any]] = []
+        self.macro_blocks: list[dict[str, Any]] = []
 
         if source_content:
             self.source_content = source_content
@@ -136,6 +137,22 @@ class Project(Generic[T]):
         with open(report_name, 'w', encoding='utf-8') as f:
             f.write(json.dumps(result))
         logger.info('Custom type definitions dumping completed.')
+
+    def dump_macro_block_info(self,
+                              report_name: str = '',
+                              dump_output: bool = True) -> None:
+        """Dumps the macro block information for this project if exists."""
+        result = []
+        for source_code in self.source_code_files:
+            result.extend(source_code.macro_blocks)
+
+        if not result or not dump_output:
+            return
+
+        logger.info('Dumping macro blocks information.')
+        with open(report_name, 'w', encoding='utf-8') as f:
+            f.write(json.dumps(result))
+        logger.info('Macro blocks information dumping completed.')
 
     def dump_module_logic(self,
                           report_name: str = '',
