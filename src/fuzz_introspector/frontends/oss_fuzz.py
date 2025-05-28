@@ -142,7 +142,6 @@ def analyse_folder(
             f.write("Call tree\n")
             f.write("====================================")
 
-
         target = os.path.join(out, 'full_type_defs.json')
         project.dump_type_definition(target, dump_output)
 

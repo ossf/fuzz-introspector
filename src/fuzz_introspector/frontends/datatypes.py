@@ -94,7 +94,6 @@ class SourceCodeFile():
         return False
 
 
-
 class Project(Generic[T]):
     """Wrapper for doing analysis of a collection of source files."""
 
