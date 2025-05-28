@@ -856,7 +856,8 @@ class CSourceCodeFile(SourceCodeFile):
                 self._process_macro_node(macro, [])
 
     def _process_macro_node(self, macro: Node, conditions: list[dict[str, str]]):
-        """Recursive function to process macro nodes and extract all #elif and #else macro sub-branches."""
+        """Recursive function to process macro nodes and extract all #elif
+        and #else macro sub-branches."""
         # if it is the #elif or #else branches, previous condition must be reversed.
         if conditions:
             if conditions[-1]['type'] == 'ifdef':
