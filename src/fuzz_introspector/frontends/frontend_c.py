@@ -870,10 +870,10 @@ class CSourceCodeFile(SourceCodeFile):
             var_name = macro.child_by_field_name('name')
 
             # Skip invalid macro
-            if not var_name:
+            if not var_name or not var_name.text:
                 return
 
-            if macro.text.decode().startswith('#ifdef'):
+            if macro and macro.text and macro.text.decode().startswith('#ifdef'):
                 type = 'ifdef'
             else:
                 type = 'ifndef'
@@ -885,7 +885,7 @@ class CSourceCodeFile(SourceCodeFile):
             condition = macro.child_by_field_name('condition')
 
             # Skip invalid macro
-            if not condition:
+            if not condition or not condition.text:
                 return
 
             conditions.append({
