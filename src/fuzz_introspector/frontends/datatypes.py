@@ -182,7 +182,7 @@ class Project(Generic[T]):
 
     def extract_calltree(self,
                          source_file: str = '',
-                         source_code: Optional[T] = None,
+                         source_code: Optional[SourceCodeFile] = None,
                          function: Optional[str] = None,
                          visited_functions: Optional[set[str]] = None,
                          depth: int = 0,
@@ -195,7 +195,7 @@ class Project(Generic[T]):
     def get_reachable_functions(
             self,
             source_file: str = '',
-            source_code: Optional[T] = None,
+            source_code: Optional[SourceCodefile] = None,
             function: Optional[str] = None,
             visited_functions: Optional[set[str]] = None) -> set[str]:
         """Get a list of reachable functions for a provided function name."""

@@ -20,7 +20,7 @@ import yaml
 import pathlib
 import logging
 
-from typing import Any, Optional
+from typing import Any, Optional, TypeVar
 
 from fuzz_introspector.frontends import frontend_c
 from fuzz_introspector.frontends import frontend_cpp
@@ -37,7 +37,6 @@ EXCLUDE_DIRECTORIES = [
     'node_modules', 'aflplusplus', 'honggfuzz', 'inspector', 'libfuzzer',
     'fuzztest', 'build'
 ]
-
 
 def capture_source_files_in_tree(directory_tree: str,
                                  language: str) -> list[str]:
@@ -75,7 +74,7 @@ def analyse_folder(
     source_files.extend(files_to_include)
     logger.info('Found %d files to include in analysis', len(source_files))
 
-    project: Project = Project([])
+    project: Project
 
     # Process for different language
     if language == constants.LANGUAGES.C:
@@ -188,7 +187,6 @@ def analyse_folder(
         # Type definition
         target = os.path.join(out, 'full_type_defs.json')
         project.dump_type_definition(target, dump_output)
-
 
         # Macro block information
         target = os.path.join(out, 'macro_block_info.json')

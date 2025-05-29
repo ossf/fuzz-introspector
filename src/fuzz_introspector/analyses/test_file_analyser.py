@@ -121,7 +121,10 @@ class TestFileAnalyser(analysis.AnalysisInterface):
 
         # Auto determine base information if not provided
         if not self.directory:
-            paths = [os.path.abspath(func.function_source_file) for func in functions.values()]
+            paths = [
+                os.path.abspath(func.function_source_file)
+                for func in functions.values()
+            ]
             common_path = os.path.commonpath(paths)
             if os.path.isfile(common_path):
                 common_path = os.path.dirname(common_path)
