@@ -28,552 +28,6 @@ from fuzz_introspector.frontends.datatypes import Project, SourceCodeFile
 logger = logging.getLogger(name=__name__)
 
 
-class CProject(Project['CSourceCodeFile']):
-    """Wrapper for doing analysis of a collection of source files."""
-
-    def __init__(self, source_code_files: list['CSourceCodeFile']):
-        super().__init__(source_code_files)
-        self.function_to_source: dict[str, Optional['CSourceCodeFile']] = {}
-
-        self.no_fuzz_function_list: list[dict[str, Any]] = []
-        self.source_codes_with_harness: list['CSourceCodeFile'] = []
-
-    def generate_report(self,
-                        entry_function: str = '',
-                        harness_name: str = '',
-                        harness_source: str = '') -> None:
-        """Helper function for generating yaml function report."""
-        report: dict[str, Any] = {'report': 'name'}
-        report['sources'] = []
-
-        if not self.source_codes_with_harness:
-            for source_code in self.source_code_files:
-                found_fuzz = False
-                for func_def in source_code.func_defs:
-                    if func_def.name() == 'LLVMFuzzerTestOneInput':
-                        found_fuzz = True
-
-                if found_fuzz:
-                    self.source_codes_with_harness.append(source_code)
-
-        if not self.no_fuzz_function_list:
-            self.no_fuzz_function_list = []
-            self.included_header_files = set()
-            for source_code in self.source_code_files:
-                source_code.extract_imported_header_files()
-                for incl in source_code.includes:
-                    self.included_header_files.add(incl)
-
-                report['sources'].append({
-                    'source_file':
-                    source_code.source_file,
-                    'function_names':
-                    source_code.get_defined_function_names(),
-                    'types': {
-                        'structs': source_code.struct_defs,
-                        'typedefs': source_code.typedefs,
-                        'preproc_defs': source_code.preproc_defs,
-                        'enum': source_code.enum_defs,
-                        'union': source_code.union_defs,
-                    }
-                })
-                found_harness = False
-                for func_def in source_code.func_defs:
-                    if func_def.name() == 'LLVMFuzzerTestOneInput':
-                        found_harness = True
-                if found_harness:
-                    continue
-
-                for func_def in source_code.func_defs:
-                    func_dict = {}
-                    func_dict['functionName'] = func_def.name()
-                    func_dict['functionSourceFile'] = source_code.source_file
-                    func_dict[
-                        'functionLinenumber'] = func_def.root.start_point.row
-                    func_dict[
-                        'functionLinenumberEnd'] = func_def.root.end_point.row
-                    func_dict['linkageType'] = ''
-                    func_dict['func_position'] = {
-                        'start': func_def.root.start_point.row,
-                        'end': func_def.root.end_point.row,
-                    }
-                    cc_str = 'CyclomaticComplexity'
-                    func_dict[cc_str] = func_def.get_function_complexity()
-                    func_dict['EdgeCount'] = func_dict['CyclomaticComplexity']
-                    func_dict['ICount'] = func_def.get_function_instr_count()
-                    func_dict['argNames'] = func_def.get_function_arg_names()
-                    func_dict['argTypes'] = func_def.get_function_arg_types()
-                    func_dict['argCount'] = len(func_dict['argTypes'])
-                    func_dict[
-                        'returnType'] = func_def.get_function_return_type()
-                    func_dict['BranchProfiles'] = []
-                    func_dict['functionUses'] = []
-                    func_dict['Callsites'] = func_def.detailed_callsites()
-                    func_dict['functionDepth'] = 0
-                    func_dict['constantsTouched'] = []
-                    func_dict['BBCount'] = func_def.get_basic_block_count()
-
-                    func_dict['signature'] = func_def.function_signature()
-                    func_callsites = func_def.callsites()
-                    funcs_reached = set()
-                    for cs_dst, _ in func_callsites:
-                        funcs_reached.add(cs_dst)
-                    func_dict['functionsReached'] = list(funcs_reached)
-                    func_dict['assertStmts'] = func_def.assert_stmts()
-
-                    self.no_fuzz_function_list.append(func_dict)
-
-        function_list = copy.deepcopy(self.no_fuzz_function_list)
-        included_header_files = self.included_header_files
-
-        for source_code in self.source_codes_with_harness:
-            source_code.extract_imported_header_files()
-            for incl in source_code.includes:
-                included_header_files.add(incl)
-
-            report['sources'].append({
-                'source_file':
-                source_code.source_file,
-                'function_names':
-                source_code.get_defined_function_names(),
-                'types': {
-                    'structs': source_code.struct_defs,
-                    'typedefs': source_code.typedefs,
-                    'preproc_defs': source_code.preproc_defs,
-                    'enum': source_code.enum_defs,
-                    'union': source_code.union_defs,
-                }
-            })
-
-            for func_def in source_code.func_defs:
-                if harness_source:
-                    if (func_def.name() == 'LLVMFuzzerTestOneInput'
-                            and source_code.source_file != harness_source):
-                        logger.debug('Skipping harness: %s -- %s -- %s',
-                                     func_def.name(), source_code.source_file,
-                                     harness_source)
-                        continue
-                func_dict = {}
-                func_dict['functionName'] = func_def.name()
-                func_dict['functionSourceFile'] = source_code.source_file
-                func_dict['functionLinenumber'] = func_def.root.start_point.row
-                func_dict[
-                    'functionLinenumberEnd'] = func_def.root.end_point.row
-                func_dict['linkageType'] = ''
-                func_dict['func_position'] = {
-                    'start': func_def.root.start_point.row,
-                    'end': func_def.root.end_point.row,
-                }
-                cc_str = 'CyclomaticComplexity'
-                func_dict[cc_str] = func_def.get_function_complexity()
-                func_dict['EdgeCount'] = func_dict['CyclomaticComplexity']
-                func_dict['ICount'] = func_def.get_function_instr_count()
-                func_dict['argNames'] = func_def.get_function_arg_names()
-                func_dict['argTypes'] = func_def.get_function_arg_types()
-                func_dict['argCount'] = len(func_dict['argTypes'])
-                func_dict['returnType'] = func_def.get_function_return_type()
-                func_dict['BranchProfiles'] = []
-                func_dict['functionUses'] = []
-                func_dict['Callsites'] = func_def.detailed_callsites()
-                func_dict['functionDepth'] = 0
-                func_dict['constantsTouched'] = []
-                func_dict['BBCount'] = func_def.get_basic_block_count()
-
-                func_dict['signature'] = func_def.function_signature()
-                func_callsites = func_def.callsites()
-                funcs_reached = set()
-                for cs_dst, _ in func_callsites:
-                    funcs_reached.add(cs_dst)
-                func_dict['functionsReached'] = list(funcs_reached)
-                func_dict['assertStmts'] = func_def.assert_stmts()
-
-                function_list.append(func_dict)
-
-        # Log entry function if provided
-        if entry_function:
-            report['Fuzzing method'] = entry_function
-
-        report['Fuzzer filename'] = harness_source
-
-        if function_list:
-            report['All functions'] = {}
-            report['All functions']['Elements'] = function_list
-        report['included-header-files'] = list(included_header_files)
-
-        self.report = report
-
-    def get_source_code_with_target(self, target_func_name):
-        for source_code in self.source_code_files:
-            tfunc = source_code.get_function_node(target_func_name)
-            if not tfunc:
-                continue
-            return source_code
-        return None
-
-    def get_source_codes_with_harnesses(self) -> list['CSourceCodeFile']:
-        return super().get_source_codes_with_harnesses()
-
-    def extract_calltree(self,
-                         source_file: str = '',
-                         source_code: Optional['CSourceCodeFile'] = None,
-                         function: Optional[str] = None,
-                         visited_functions: Optional[set[str]] = None,
-                         depth: int = 0,
-                         line_number: int = -1,
-                         other_props: Optional[dict[str, Any]] = None) -> str:
-        """Extracts calltree string of a calltree so that FI core can use it."""
-        # Create calltree from a given function
-        # Find the function in the source code
-        if not visited_functions:
-            visited_functions = set()
-
-        if not function:
-            return ''
-
-        line_to_print = '  ' * depth
-        line_to_print += function
-        line_to_print += ' '
-
-        if not source_code:
-            source_code = self.find_source_with_func_def(function)
-        if source_code:
-            line_to_print += source_code.source_file
-        line_to_print += ' '
-        line_to_print += str(line_number)
-
-        line_to_print += '\n'
-        if not source_code:
-            return line_to_print
-        func = source_code.get_function_node(function)
-        callsites = func.callsites()
-        if function in visited_functions:
-            return line_to_print
-
-        visited_functions.add(function)
-        for cs, byte_range in callsites:
-            line_number = source_code.get_linenumber(byte_range[0])
-            line_to_print += self.extract_calltree(
-                function=cs,
-                visited_functions=visited_functions,
-                depth=depth + 1,
-                line_number=line_number)
-
-        return line_to_print
-
-    def get_reachable_functions(
-            self,
-            source_file: str = '',
-            source_code: Optional['CSourceCodeFile'] = None,
-            function: Optional[str] = None,
-            visited_functions: Optional[set[str]] = None) -> set[str]:
-        """Gets the reachable frunctions from a given function."""
-        # Create calltree from a given function
-        # Find the function in the source code
-        if not visited_functions:
-            visited_functions = set()
-
-        if not function:
-            return visited_functions
-
-        if function in visited_functions:
-            return visited_functions
-
-        if not source_code:
-            source_code = self.find_source_with_func_def(function)
-
-        if not source_code:
-            return visited_functions
-
-        func = source_code.get_function_node(function)
-        if not func:
-            return visited_functions
-
-        callsites = func.callsites()
-        visited_functions.add(function)
-        for cs, _ in callsites:
-            if cs in visited_functions:
-                continue
-
-            visited_functions = self.get_reachable_functions(
-                function=cs, visited_functions=visited_functions)
-        return visited_functions
-
-    def find_source_with_func_def(self, target_function_name):
-        """Finds the source code with a given function."""
-        if target_function_name in self.function_to_source:
-            return self.function_to_source[target_function_name]
-
-        source_codes_with_target = []
-        for source_code in self.source_code_files:
-            if source_code.has_function_definition(target_function_name):
-                source_codes_with_target.append(source_code)
-
-        if len(source_codes_with_target) == 1:
-            # We hav have, in this case it's trivial.
-            # caching.
-            if target_function_name not in self.function_to_source:
-                self.function_to_source[
-                    target_function_name] = source_codes_with_target[0]
-            return source_codes_with_target[0]
-
-        self.function_to_source[target_function_name] = None
-        return None
-
-    def get_function(self, target_function_name):
-        """Gets the first instance of a given function."""
-
-        for source_code in self.source_code_files:
-            func = source_code.get_function_node(target_function_name)
-            if func is not None:
-                return func
-        return None
-
-
-class FunctionDefinition():
-    """Wrapper for a function definition"""
-
-    def __init__(self, root, tree_sitter_lang, source_code):
-        self.root = root
-        self.tree_sitter_lang = tree_sitter_lang
-        self.parent_source = source_code
-
-    def get_basic_block_count(self) -> int:
-        """Returns the approximate number of basic blocks in a function"""
-        total_count = 1
-
-        if_query = self.tree_sitter_lang.query('( if_statement ) @fi')
-        if_res = if_query.captures(self.root)
-        for _, if_exprs in if_res.items():
-            total_count += len(if_exprs)
-
-        case_query = self.tree_sitter_lang.query('( case_statement ) @ci')
-        case_res = case_query.captures(self.root)
-        for _, case_exprs in case_res.items():
-            total_count += len(case_exprs)
-
-        return total_count
-
-    def name(self):
-        """Gets name of a function"""
-        function_name = ''
-        name_node = self.root
-        while name_node.child_by_field_name('declarator') is not None:
-            name_node = name_node.child_by_field_name('declarator')
-            # Assign function name here because we want to make sure that
-            # there is a declarator when defining the name.
-            function_name = name_node.text.decode()
-        return function_name
-
-    def get_return_type(self):
-        """Gets a function's return type as a string"""
-        ret_type = self.root.child_by_field_name('type').text.decode()
-        tmp_decl = self.root
-        while tmp_decl.child_by_field_name(
-                'declarator').type == 'pointer_declarator':
-            ret_type += '*'
-            tmp_decl = tmp_decl.child_by_field_name('declarator')
-        return ret_type
-
-    def position(self):
-        """Gets the byte position of the root node"""
-        return self.root.byte_range
-
-    def get_function_complexity(self):
-        """Gets complexity measure based on counting branch nodes in a
-        function."""
-
-        branch_nodes = [
-            "if_statement",
-            "case_statement",
-            "do_statement",
-            "for_range_loop",
-            "for_statement",
-            "goto_statement",
-            "function_declarator",
-            "pointer_declarator",
-            "struct_specifier",
-            "preproc_elif",
-            "while_statement",
-            "switch_statement",
-            "&&",
-            "||",
-        ]
-
-        def _traverse_node_complexity(node):
-            count = 0
-            if node.type in branch_nodes:
-                count += 1
-            for item in node.children:
-                count += _traverse_node_complexity(item)
-            return count
-
-        return _traverse_node_complexity(self.root)
-
-    def get_function_instr_count(self):
-        """Returns a pseudo measurement of instruction count."""
-
-        instr_nodes = [
-            "binary_expression",
-            "unary_expression",
-            "call_expression",
-            "compound_statement",
-            "assignment_expression",
-        ]
-
-        def _traverse_node_instr_count(node):
-            count = 0
-            if node.type in instr_nodes:
-                count += 1
-            for item in node.children:
-                count += _traverse_node_instr_count(item)
-            return count
-
-        return _traverse_node_instr_count(self.root)
-
-    def get_function_arg_names(self):
-        """Gets the same of a function's arguments"""
-        param_names = []
-
-        tmp_node = self.root.child_by_field_name('declarator')
-        while (tmp_node.child_by_field_name('declarator') is not None
-               and tmp_node.child_by_field_name('parameters') is None):
-            tmp_node = tmp_node.child_by_field_name('declarator')
-
-        parameters_node = tmp_node.child_by_field_name('parameters')
-        if not parameters_node:
-            return param_names
-
-        for param in parameters_node.children:
-            if not param.is_named:
-                continue
-
-            param_tmp = param
-            while param_tmp.child_by_field_name('declarator') is not None:
-                param_tmp = param_tmp.child_by_field_name('declarator')
-            param_names.append(param_tmp.text.decode())
-
-        return param_names
-
-    def get_function_arg_types(self):
-        """Gets the text of a function's types"""
-        param_types = []
-
-        tmp_node = self.root.child_by_field_name('declarator')
-        while (tmp_node.child_by_field_name('declarator') is not None
-               and tmp_node.child_by_field_name('parameters') is None):
-            tmp_node = tmp_node.child_by_field_name('declarator')
-
-        parameters_node = tmp_node.child_by_field_name('parameters')
-        if not parameters_node:
-            return param_types
-
-        for param in parameters_node.children:
-            if not param.is_named:
-                continue
-
-            if not param.child_by_field_name('type'):
-                continue
-
-            type_str = param.child_by_field_name('type').text.decode()
-            param_tmp = param
-            while param_tmp.child_by_field_name('declarator') is not None:
-                if param_tmp.type == 'pointer_declarator':
-                    type_str += '*'
-                param_tmp = param_tmp.child_by_field_name('declarator')
-            param_types.append(type_str)
-
-        return param_types
-
-    def get_function_return_type(self):
-        """Gets a function's return type as a string"""
-        ret_type = self.root.child_by_field_name('type').text.decode()
-
-        tmp_decl = self.root
-        while tmp_decl.child_by_field_name(
-                'declarator').type == 'pointer_declarator':
-            ret_type += '*'
-            tmp_decl = tmp_decl.child_by_field_name('declarator')
-
-        return ret_type
-
-    def function_signature(self):
-        """Returns the function signature of a function as a string."""
-
-        function_signature = ''
-        for child_idx in range(len(self.root.children)):
-            child = self.root.child(child_idx)
-            if child.is_named:
-                if self.root.field_name_for_child(child_idx) == 'body':
-                    break
-            try:
-                function_signature += child.text.decode() + ' '
-            except UnicodeDecodeError:
-                pass
-        function_signature = function_signature.replace('\n',
-                                                        '').replace('\\n', '')
-        while '  ' in function_signature:
-            function_signature = function_signature.replace('  ', ' ')
-        return function_signature
-
-    def detailed_callsites(self):
-        """Captures the callsite details as used by Fuzz Introspector core."""
-        callsites = []
-        call_query = self.tree_sitter_lang.query('( call_expression ) @ce')
-        call_res = call_query.captures(self.root)
-        for _, call_exprs in call_res.items():
-            for call_expr in call_exprs:
-                for call_child in call_expr.children:
-                    if call_child.type == 'identifier':
-                        src_line = call_child.start_point.row
-                        src_loc = (f'{self.parent_source.source_file}:'
-                                   f'{src_line},1')
-                        callsites.append({
-                            'Src': src_loc,
-                            'Dst': call_child.text.decode()
-                        })
-        return callsites
-
-    def callsites(self):
-        """Gets the callsites of the function."""
-        callsites = []
-        call_query = self.tree_sitter_lang.query('( call_expression ) @ce')
-        call_res = call_query.captures(self.root)
-        for _, call_exprs in call_res.items():
-            for call_expr in call_exprs:
-                for call_child in call_expr.children:
-                    if call_child.type == 'identifier':
-                        callsites.append(
-                            (call_child.text.decode(), call_child.byte_range))
-        # Sort the callsites relative to their end position. End position
-        # here makes sense to handle cases of e.g.
-        # func1(func2(), func3())
-        # where the execution ordering is func2 -> func3 -> func1
-        callsites = list(sorted(callsites, key=lambda x: x[1][1]))
-
-        return callsites
-
-    def assert_stmts(self):
-        """Gets a list of assert statements in the function."""
-        assert_stmts = []
-        call_query = self.tree_sitter_lang.query('( call_expression ) @ce')
-        call_res = call_query.captures(self.root)
-        for _, call_exprs in call_res.items():
-            for call_expr in call_exprs:
-                func_call = call_expr.child_by_field_name('function')
-                args = call_expr.child_by_field_name('arguments')
-                if func_call and func_call.text.decode() == 'assert':
-                    assert_stmts.append({
-                        'condition': args.text.decode(),
-                        'pos': {
-                            'source_file': self.parent_source.source_file,
-                            'line_start': call_expr.start_point.row,
-                            'line_end': call_expr.end_point.row,
-                        }
-                    })
-
-        return assert_stmts
-
-
 class CSourceCodeFile(SourceCodeFile):
     """Class for holding file-specific information."""
 
@@ -984,6 +438,556 @@ class CSourceCodeFile(SourceCodeFile):
             lineno += 1
 
         return -1
+
+
+class CProject(Project[CSourceCodeFile]):
+    """Wrapper for doing analysis of a collection of source files."""
+
+    def __init__(self, source_code_files: list['CSourceCodeFile']):
+        super().__init__(source_code_files)
+        self.function_to_source: dict[str, Optional['CSourceCodeFile']] = {}
+
+        self.no_fuzz_function_list: list[dict[str, Any]] = []
+        self.source_codes_with_harness: list['CSourceCodeFile'] = []
+
+    def generate_report(self,
+                        entry_function: str = '',
+                        harness_name: str = '',
+                        harness_source: str = '') -> None:
+        """Helper function for generating yaml function report."""
+        report: dict[str, Any] = {'report': 'name'}
+        report['sources'] = []
+
+        if not self.source_codes_with_harness:
+            for source_code in self.source_code_files:
+                found_fuzz = False
+                for func_def in source_code.func_defs:
+                    if func_def.name() == 'LLVMFuzzerTestOneInput':
+                        found_fuzz = True
+
+                if found_fuzz:
+                    self.source_codes_with_harness.append(source_code)
+
+        if not self.no_fuzz_function_list:
+            self.no_fuzz_function_list = []
+            self.included_header_files = set()
+            for source_code in self.source_code_files:
+                source_code.extract_imported_header_files()
+                for incl in source_code.includes:
+                    self.included_header_files.add(incl)
+
+                report['sources'].append({
+                    'source_file':
+                    source_code.source_file,
+                    'function_names':
+                    source_code.get_defined_function_names(),
+                    'types': {
+                        'structs': source_code.struct_defs,
+                        'typedefs': source_code.typedefs,
+                        'preproc_defs': source_code.preproc_defs,
+                        'enum': source_code.enum_defs,
+                        'union': source_code.union_defs,
+                    }
+                })
+                found_harness = False
+                for func_def in source_code.func_defs:
+                    if func_def.name() == 'LLVMFuzzerTestOneInput':
+                        found_harness = True
+                if found_harness:
+                    continue
+
+                for func_def in source_code.func_defs:
+                    func_dict = {}
+                    func_dict['functionName'] = func_def.name()
+                    func_dict['functionSourceFile'] = source_code.source_file
+                    func_dict[
+                        'functionLinenumber'] = func_def.root.start_point.row
+                    func_dict[
+                        'functionLinenumberEnd'] = func_def.root.end_point.row
+                    func_dict['linkageType'] = ''
+                    func_dict['func_position'] = {
+                        'start': func_def.root.start_point.row,
+                        'end': func_def.root.end_point.row,
+                    }
+                    cc_str = 'CyclomaticComplexity'
+                    func_dict[cc_str] = func_def.get_function_complexity()
+                    func_dict['EdgeCount'] = func_dict['CyclomaticComplexity']
+                    func_dict['ICount'] = func_def.get_function_instr_count()
+                    func_dict['argNames'] = func_def.get_function_arg_names()
+                    func_dict['argTypes'] = func_def.get_function_arg_types()
+                    func_dict['argCount'] = len(func_dict['argTypes'])
+                    func_dict[
+                        'returnType'] = func_def.get_function_return_type()
+                    func_dict['BranchProfiles'] = []
+                    func_dict['functionUses'] = []
+                    func_dict['Callsites'] = func_def.detailed_callsites()
+                    func_dict['functionDepth'] = 0
+                    func_dict['constantsTouched'] = []
+                    func_dict['BBCount'] = func_def.get_basic_block_count()
+
+                    func_dict['signature'] = func_def.function_signature()
+                    func_callsites = func_def.callsites()
+                    funcs_reached = set()
+                    for cs_dst, _ in func_callsites:
+                        funcs_reached.add(cs_dst)
+                    func_dict['functionsReached'] = list(funcs_reached)
+                    func_dict['assertStmts'] = func_def.assert_stmts()
+
+                    self.no_fuzz_function_list.append(func_dict)
+
+        function_list = copy.deepcopy(self.no_fuzz_function_list)
+        included_header_files = self.included_header_files
+
+        for source_code in self.source_codes_with_harness:
+            source_code.extract_imported_header_files()
+            for incl in source_code.includes:
+                included_header_files.add(incl)
+
+            report['sources'].append({
+                'source_file':
+                source_code.source_file,
+                'function_names':
+                source_code.get_defined_function_names(),
+                'types': {
+                    'structs': source_code.struct_defs,
+                    'typedefs': source_code.typedefs,
+                    'preproc_defs': source_code.preproc_defs,
+                    'enum': source_code.enum_defs,
+                    'union': source_code.union_defs,
+                }
+            })
+
+            for func_def in source_code.func_defs:
+                if harness_source:
+                    if (func_def.name() == 'LLVMFuzzerTestOneInput'
+                            and source_code.source_file != harness_source):
+                        logger.debug('Skipping harness: %s -- %s -- %s',
+                                     func_def.name(), source_code.source_file,
+                                     harness_source)
+                        continue
+                func_dict = {}
+                func_dict['functionName'] = func_def.name()
+                func_dict['functionSourceFile'] = source_code.source_file
+                func_dict['functionLinenumber'] = func_def.root.start_point.row
+                func_dict[
+                    'functionLinenumberEnd'] = func_def.root.end_point.row
+                func_dict['linkageType'] = ''
+                func_dict['func_position'] = {
+                    'start': func_def.root.start_point.row,
+                    'end': func_def.root.end_point.row,
+                }
+                cc_str = 'CyclomaticComplexity'
+                func_dict[cc_str] = func_def.get_function_complexity()
+                func_dict['EdgeCount'] = func_dict['CyclomaticComplexity']
+                func_dict['ICount'] = func_def.get_function_instr_count()
+                func_dict['argNames'] = func_def.get_function_arg_names()
+                func_dict['argTypes'] = func_def.get_function_arg_types()
+                func_dict['argCount'] = len(func_dict['argTypes'])
+                func_dict['returnType'] = func_def.get_function_return_type()
+                func_dict['BranchProfiles'] = []
+                func_dict['functionUses'] = []
+                func_dict['Callsites'] = func_def.detailed_callsites()
+                func_dict['functionDepth'] = 0
+                func_dict['constantsTouched'] = []
+                func_dict['BBCount'] = func_def.get_basic_block_count()
+
+                func_dict['signature'] = func_def.function_signature()
+                func_callsites = func_def.callsites()
+                funcs_reached = set()
+                for cs_dst, _ in func_callsites:
+                    funcs_reached.add(cs_dst)
+                func_dict['functionsReached'] = list(funcs_reached)
+                func_dict['assertStmts'] = func_def.assert_stmts()
+
+                function_list.append(func_dict)
+
+        # Log entry function if provided
+        if entry_function:
+            report['Fuzzing method'] = entry_function
+
+        report['Fuzzer filename'] = harness_source
+
+        if function_list:
+            report['All functions'] = {}
+            report['All functions']['Elements'] = function_list
+        report['included-header-files'] = list(included_header_files)
+
+        self.report = report
+
+    def get_source_code_with_target(self, target_func_name):
+        for source_code in self.source_code_files:
+            tfunc = source_code.get_function_node(target_func_name)
+            if not tfunc:
+                continue
+            return source_code
+        return None
+
+    def get_source_codes_with_harnesses(self) -> list['CSourceCodeFile']:
+        return super().get_source_codes_with_harnesses()
+
+    def extract_calltree(self,
+                         source_file: str = '',
+                         source_code: Optional[SourceCodeFile] = None,
+                         function: Optional[str] = None,
+                         visited_functions: Optional[set[str]] = None,
+                         depth: int = 0,
+                         line_number: int = -1,
+                         other_props: Optional[dict[str, Any]] = None) -> str:
+        """Extracts calltree string of a calltree so that FI core can use it."""
+        # Create calltree from a given function
+        # Find the function in the source code
+        if not visited_functions:
+            visited_functions = set()
+
+        if not function:
+            return ''
+
+        line_to_print = '  ' * depth
+        line_to_print += function
+        line_to_print += ' '
+
+        if not source_code:
+            source_code = self.find_source_with_func_def(function)
+        if source_code:
+            line_to_print += source_code.source_file
+
+        if not isinstance(source_code, CSourceCodeFile):
+            return ''
+
+        line_to_print += ' '
+        line_to_print += str(line_number)
+
+        line_to_print += '\n'
+        if not source_code:
+            return line_to_print
+        func = source_code.get_function_node(function)
+        callsites = func.callsites()
+        if function in visited_functions:
+            return line_to_print
+
+        visited_functions.add(function)
+        for cs, byte_range in callsites:
+            line_number = source_code.get_linenumber(byte_range[0])
+            line_to_print += self.extract_calltree(
+                function=cs,
+                visited_functions=visited_functions,
+                depth=depth + 1,
+                line_number=line_number)
+
+        return line_to_print
+
+    def get_reachable_functions(
+            self,
+            source_file: str = '',
+            source_code: Optional[SourceCodeFile] = None,
+            function: Optional[str] = None,
+            visited_functions: Optional[set[str]] = None) -> set[str]:
+        """Gets the reachable frunctions from a given function."""
+        # Create calltree from a given function
+        # Find the function in the source code
+        if not visited_functions:
+            visited_functions = set()
+
+        if not function:
+            return visited_functions
+
+        if function in visited_functions:
+            return visited_functions
+
+        if not source_code:
+            source_code = self.find_source_with_func_def(function)
+
+        if not source_code or not isinstance(source_code, CSourceCodeFile):
+            return visited_functions
+
+        func = source_code.get_function_node(function)
+        if not func:
+            return visited_functions
+
+        callsites = func.callsites()
+        visited_functions.add(function)
+        for cs, _ in callsites:
+            if cs in visited_functions:
+                continue
+
+            visited_functions = self.get_reachable_functions(
+                function=cs, visited_functions=visited_functions)
+        return visited_functions
+
+    def find_source_with_func_def(self, target_function_name):
+        """Finds the source code with a given function."""
+        if target_function_name in self.function_to_source:
+            return self.function_to_source[target_function_name]
+
+        source_codes_with_target = []
+        for source_code in self.source_code_files:
+            if source_code.has_function_definition(target_function_name):
+                source_codes_with_target.append(source_code)
+
+        if len(source_codes_with_target) == 1:
+            # We hav have, in this case it's trivial.
+            # caching.
+            if target_function_name not in self.function_to_source:
+                self.function_to_source[
+                    target_function_name] = source_codes_with_target[0]
+            return source_codes_with_target[0]
+
+        self.function_to_source[target_function_name] = None
+        return None
+
+    def get_function(self, target_function_name):
+        """Gets the first instance of a given function."""
+
+        for source_code in self.source_code_files:
+            func = source_code.get_function_node(target_function_name)
+            if func is not None:
+                return func
+        return None
+
+
+class FunctionDefinition():
+    """Wrapper for a function definition"""
+
+    def __init__(self, root, tree_sitter_lang, source_code):
+        self.root = root
+        self.tree_sitter_lang = tree_sitter_lang
+        self.parent_source = source_code
+
+    def get_basic_block_count(self) -> int:
+        """Returns the approximate number of basic blocks in a function"""
+        total_count = 1
+
+        if_query = self.tree_sitter_lang.query('( if_statement ) @fi')
+        if_res = if_query.captures(self.root)
+        for _, if_exprs in if_res.items():
+            total_count += len(if_exprs)
+
+        case_query = self.tree_sitter_lang.query('( case_statement ) @ci')
+        case_res = case_query.captures(self.root)
+        for _, case_exprs in case_res.items():
+            total_count += len(case_exprs)
+
+        return total_count
+
+    def name(self):
+        """Gets name of a function"""
+        function_name = ''
+        name_node = self.root
+        while name_node.child_by_field_name('declarator') is not None:
+            name_node = name_node.child_by_field_name('declarator')
+            # Assign function name here because we want to make sure that
+            # there is a declarator when defining the name.
+            function_name = name_node.text.decode()
+        return function_name
+
+    def get_return_type(self):
+        """Gets a function's return type as a string"""
+        ret_type = self.root.child_by_field_name('type').text.decode()
+        tmp_decl = self.root
+        while tmp_decl.child_by_field_name(
+                'declarator').type == 'pointer_declarator':
+            ret_type += '*'
+            tmp_decl = tmp_decl.child_by_field_name('declarator')
+        return ret_type
+
+    def position(self):
+        """Gets the byte position of the root node"""
+        return self.root.byte_range
+
+    def get_function_complexity(self):
+        """Gets complexity measure based on counting branch nodes in a
+        function."""
+
+        branch_nodes = [
+            "if_statement",
+            "case_statement",
+            "do_statement",
+            "for_range_loop",
+            "for_statement",
+            "goto_statement",
+            "function_declarator",
+            "pointer_declarator",
+            "struct_specifier",
+            "preproc_elif",
+            "while_statement",
+            "switch_statement",
+            "&&",
+            "||",
+        ]
+
+        def _traverse_node_complexity(node):
+            count = 0
+            if node.type in branch_nodes:
+                count += 1
+            for item in node.children:
+                count += _traverse_node_complexity(item)
+            return count
+
+        return _traverse_node_complexity(self.root)
+
+    def get_function_instr_count(self):
+        """Returns a pseudo measurement of instruction count."""
+
+        instr_nodes = [
+            "binary_expression",
+            "unary_expression",
+            "call_expression",
+            "compound_statement",
+            "assignment_expression",
+        ]
+
+        def _traverse_node_instr_count(node):
+            count = 0
+            if node.type in instr_nodes:
+                count += 1
+            for item in node.children:
+                count += _traverse_node_instr_count(item)
+            return count
+
+        return _traverse_node_instr_count(self.root)
+
+    def get_function_arg_names(self):
+        """Gets the same of a function's arguments"""
+        param_names = []
+
+        tmp_node = self.root.child_by_field_name('declarator')
+        while (tmp_node.child_by_field_name('declarator') is not None
+               and tmp_node.child_by_field_name('parameters') is None):
+            tmp_node = tmp_node.child_by_field_name('declarator')
+
+        parameters_node = tmp_node.child_by_field_name('parameters')
+        if not parameters_node:
+            return param_names
+
+        for param in parameters_node.children:
+            if not param.is_named:
+                continue
+
+            param_tmp = param
+            while param_tmp.child_by_field_name('declarator') is not None:
+                param_tmp = param_tmp.child_by_field_name('declarator')
+            param_names.append(param_tmp.text.decode())
+
+        return param_names
+
+    def get_function_arg_types(self):
+        """Gets the text of a function's types"""
+        param_types = []
+
+        tmp_node = self.root.child_by_field_name('declarator')
+        while (tmp_node.child_by_field_name('declarator') is not None
+               and tmp_node.child_by_field_name('parameters') is None):
+            tmp_node = tmp_node.child_by_field_name('declarator')
+
+        parameters_node = tmp_node.child_by_field_name('parameters')
+        if not parameters_node:
+            return param_types
+
+        for param in parameters_node.children:
+            if not param.is_named:
+                continue
+
+            if not param.child_by_field_name('type'):
+                continue
+
+            type_str = param.child_by_field_name('type').text.decode()
+            param_tmp = param
+            while param_tmp.child_by_field_name('declarator') is not None:
+                if param_tmp.type == 'pointer_declarator':
+                    type_str += '*'
+                param_tmp = param_tmp.child_by_field_name('declarator')
+            param_types.append(type_str)
+
+        return param_types
+
+    def get_function_return_type(self):
+        """Gets a function's return type as a string"""
+        ret_type = self.root.child_by_field_name('type').text.decode()
+
+        tmp_decl = self.root
+        while tmp_decl.child_by_field_name(
+                'declarator').type == 'pointer_declarator':
+            ret_type += '*'
+            tmp_decl = tmp_decl.child_by_field_name('declarator')
+
+        return ret_type
+
+    def function_signature(self):
+        """Returns the function signature of a function as a string."""
+
+        function_signature = ''
+        for child_idx in range(len(self.root.children)):
+            child = self.root.child(child_idx)
+            if child.is_named:
+                if self.root.field_name_for_child(child_idx) == 'body':
+                    break
+            try:
+                function_signature += child.text.decode() + ' '
+            except UnicodeDecodeError:
+                pass
+        function_signature = function_signature.replace('\n',
+                                                        '').replace('\\n', '')
+        while '  ' in function_signature:
+            function_signature = function_signature.replace('  ', ' ')
+        return function_signature
+
+    def detailed_callsites(self):
+        """Captures the callsite details as used by Fuzz Introspector core."""
+        callsites = []
+        call_query = self.tree_sitter_lang.query('( call_expression ) @ce')
+        call_res = call_query.captures(self.root)
+        for _, call_exprs in call_res.items():
+            for call_expr in call_exprs:
+                for call_child in call_expr.children:
+                    if call_child.type == 'identifier':
+                        src_line = call_child.start_point.row
+                        src_loc = (f'{self.parent_source.source_file}:'
+                                   f'{src_line},1')
+                        callsites.append({
+                            'Src': src_loc,
+                            'Dst': call_child.text.decode()
+                        })
+        return callsites
+
+    def callsites(self):
+        """Gets the callsites of the function."""
+        callsites = []
+        call_query = self.tree_sitter_lang.query('( call_expression ) @ce')
+        call_res = call_query.captures(self.root)
+        for _, call_exprs in call_res.items():
+            for call_expr in call_exprs:
+                for call_child in call_expr.children:
+                    if call_child.type == 'identifier':
+                        callsites.append(
+                            (call_child.text.decode(), call_child.byte_range))
+        # Sort the callsites relative to their end position. End position
+        # here makes sense to handle cases of e.g.
+        # func1(func2(), func3())
+        # where the execution ordering is func2 -> func3 -> func1
+        callsites = list(sorted(callsites, key=lambda x: x[1][1]))
+
+        return callsites
+
+    def assert_stmts(self):
+        """Gets a list of assert statements in the function."""
+        assert_stmts = []
+        call_query = self.tree_sitter_lang.query('( call_expression ) @ce')
+        call_res = call_query.captures(self.root)
+        for _, call_exprs in call_res.items():
+            for call_expr in call_exprs:
+                func_call = call_expr.child_by_field_name('function')
+                args = call_expr.child_by_field_name('arguments')
+                if func_call and func_call.text.decode() == 'assert':
+                    assert_stmts.append({
+                        'condition': args.text.decode(),
+                        'pos': {
+                            'source_file': self.parent_source.source_file,
+                            'line_start': call_expr.start_point.row,
+                            'line_end': call_expr.end_point.row,
+                        }
+                    })
+
+        return assert_stmts
 
 
 def load_treesitter_trees(source_files: list[str],

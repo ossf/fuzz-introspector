@@ -712,7 +712,8 @@ class CppProject(datatypes.Project[CppSourceCodeFile]):
 
     def extract_calltree(self,
                          source_file: str = '',
-                         source_code: Optional[CppSourceCodeFile] = None,
+                         source_code: Optional[
+                             datatypes.SourceCodeFile] = None,
                          function: Optional[str] = None,
                          visited_functions: Optional[set[str]] = None,
                          depth: int = 0,
@@ -738,7 +739,7 @@ class CppProject(datatypes.Project[CppSourceCodeFile]):
 
         func_node = None
         if function:
-            if source_code:
+            if source_code and isinstance(source_code, CppSourceCodeFile):
                 logger.debug('Using source code var to extract node')
                 func_node = source_code.get_function_node(function)
             else:
@@ -793,7 +794,7 @@ class CppProject(datatypes.Project[CppSourceCodeFile]):
     def get_reachable_functions(
             self,
             source_file: str = '',
-            source_code: Optional[CppSourceCodeFile] = None,
+            source_code: Optional[datatypes.SourceCodeFile] = None,
             function: Optional[str] = None,
             visited_functions: Optional[set[str]] = None) -> set[str]:
         """Gets the reachable frunctions from a given function."""

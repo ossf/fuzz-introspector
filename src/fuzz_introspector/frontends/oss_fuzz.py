@@ -20,7 +20,7 @@ import yaml
 import pathlib
 import logging
 
-from typing import Any, Optional, TypeVar
+from typing import Any, Optional
 
 from fuzz_introspector.frontends import frontend_c
 from fuzz_introspector.frontends import frontend_cpp
@@ -37,6 +37,7 @@ EXCLUDE_DIRECTORIES = [
     'node_modules', 'aflplusplus', 'honggfuzz', 'inspector', 'libfuzzer',
     'fuzztest', 'build'
 ]
+
 
 def capture_source_files_in_tree(directory_tree: str,
                                  language: str) -> list[str]:
