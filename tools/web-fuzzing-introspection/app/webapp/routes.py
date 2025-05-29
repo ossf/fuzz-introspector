@@ -1349,11 +1349,65 @@ def api_full_type_definition(args):
         return {'result': 'error', 'msg': 'Found no introspector data.'}
 
 
+@blueprint.route('/api/check_macro')
+def api_check_macro():
+    """API that returns all macro block wrapper for a line range in a
+    specific source file of a project."""
+    source_file = request.args.get('source', '')
+    if not source_file:
+        return {'result': 'error', 'msg': 'Please provide source file path'}
+
+    project_name = request.args.get('project', '')
+    if not project_name:
+        return {'result': 'error', 'msg': 'Please provide project name'}
+
+    target_project = get_project_with_name(project_name)
+    if target_project is None:
+        return {'result': 'error', 'msg': 'Project not in the database'}
+
+    line_start = int(request.args.get('start', 0))
+    line_end = int(request.args.get('end', 999999))
+
+    if target_project.introspector_data is None:
+        return {'result': 'error', 'msg': 'Found no introspector data.'}
+
+    try:
+        result_list = []
+        macro_list = target_project.introspector_data.get('macro_block')
+
+        if not macro_list:
+            return {'result': 'error', 'msg': 'Found no introspector data.'}
+
+        for macro in macro_list:
+            pos = macro.get('pos')
+            if not pos:
+                continue
+
+            macro_source = pos.get('source_file')
+            macro_start = pos.get('line_start', -1)
+            macro_end = pos.get('line_end', -1)
+
+            if source_file != macro_source:
+                continue
+
+            if line_start <= macro_end and macro_start <= line_end:
+                result_list.append(macro)
+        return {
+            'result': 'success',
+            'project': {
+                'name': project_name,
+                'macro_block_info': result_list
+            }
+        }
+    except TypeError:
+        return {'result': 'error', 'msg': 'Found no introspector data.'}
+
+
 @api_blueprint.route('/api/project-summary')
 @api_blueprint.arguments(ProjectSchema, location='query')
 def api_project_summary(args):
     """Returns high-level fuzzing stats of a given project.
-    
+
     # Examples
 
     ## Example 1
