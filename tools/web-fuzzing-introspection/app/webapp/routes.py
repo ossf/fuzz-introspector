@@ -120,22 +120,29 @@ class ProjectSourceCodeSpecificationSchema(marshmallow.Schema):
 
 class ProjectTestCodeQuerySchema(marshmallow.Schema):
     """Schema for project test code queries"""
-    project = marshmallow.fields.String(description='Name of the OSS-Fuzz project.')
-    filepath = marshmallow.fields.String(description='Test file path to extract.')
-    max_size = marshmallow.fields.String(missing=str(MAX_TEST_SIZE), description="Maximum content size to return.")
+    project = marshmallow.fields.String(
+        description='Name of the OSS-Fuzz project.')
+    filepath = marshmallow.fields.String(
+        description='Test file path to extract.')
+    max_size = marshmallow.fields.String(
+        missing=str(MAX_TEST_SIZE),
+        description="Maximum content size to return.")
 
 
 class ProjectReturnTypeQuerySchema(marshmallow.Schema):
     """Schema for project return type queries"""
-    project = marshmallow.fields.String(description='Name of the OSS-Fuzz project.')
-    return_type = marshmallow.fields.String(data_key='return-type', description='Return type to match.')
+    project = marshmallow.fields.String(
+        description='Name of the OSS-Fuzz project.')
+    return_type = marshmallow.fields.String(
+        data_key='return-type', description='Return type to match.')
 
 
 class ProjectFunctionsQuerySchema(marshmallow.Schema):
     """Schema for project functions queries"""
-    project = marshmallow.fields.String(description='Name of the OSS-Fuzz project.')
-    functions = marshmallow.fields.String(missing='', description='Comma-separated list of function names.')
-
+    project = marshmallow.fields.String(
+        description='Name of the OSS-Fuzz project.')
+    functions = marshmallow.fields.String(
+        missing='', description='Comma-separated list of function names.')
 
 
 def get_introspector_report_url_base(project_name, datestr):
