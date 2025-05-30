@@ -754,7 +754,8 @@ class RustProject(datatypes.Project[RustSourceCodeFile]):
 
     def extract_calltree(self,
                          source_file: str = '',
-                         source_code: Optional[RustSourceCodeFile] = None,
+                         source_code: Optional[
+                             datatypes.SourceCodeFile] = None,
                          function: Optional[str] = None,
                          visited_functions: Optional[set[str]] = None,
                          depth: int = 0,
@@ -775,6 +776,9 @@ class RustProject(datatypes.Project[RustSourceCodeFile]):
             source_code = self._find_source_with_function(function)
 
         if not function and source_code:
+            if not isinstance(source_code, RustSourceCodeFile):
+                return ''
+
             func_node = source_code.get_entry_function()
             if func_node:
                 function = func_node.name
@@ -827,7 +831,7 @@ class RustProject(datatypes.Project[RustSourceCodeFile]):
     def get_reachable_functions(
             self,
             source_file: str = '',
-            source_code: Optional[RustSourceCodeFile] = None,
+            source_code: Optional[datatypes.SourceCodeFile] = None,
             function: Optional[str] = None,
             visited_functions: Optional[set[str]] = None) -> set[str]:
         """Get a list of reachable functions for a provided function name."""
@@ -841,6 +845,9 @@ class RustProject(datatypes.Project[RustSourceCodeFile]):
             source_code = self._find_source_with_function(function)
 
         if not function and source_code:
+            if not isinstance(source_code, RustSourceCodeFile):
+                return visited_functions
+
             func_node = source_code.get_entry_function()
             if func_node:
                 function = func_node.name
