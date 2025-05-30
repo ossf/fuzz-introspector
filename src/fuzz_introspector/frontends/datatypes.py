@@ -19,8 +19,7 @@
 
 from typing import Any, Optional, Generic, TypeVar
 
-from tree_sitter import Language, Parser
-import tree_sitter_c
+from tree_sitter import Language, Parser, Node
 import tree_sitter_cpp
 import tree_sitter_go
 import tree_sitter_java
@@ -39,7 +38,7 @@ T = TypeVar('T', bound='SourceCodeFile')
 class SourceCodeFile():
     """Class for holding file-specific information."""
     LANGUAGE: dict[str, Language] = {
-        'c': Language(tree_sitter_c.language()),
+        'c': Language(tree_sitter_cpp.language()),
         'cpp': Language(tree_sitter_cpp.language()),
         'c++': Language(tree_sitter_cpp.language()),
         'go': Language(tree_sitter_go.language()),
@@ -54,7 +53,6 @@ class SourceCodeFile():
                  source_content: Optional[bytes] = None):
         logger.debug('Processing %s', source_file)
 
-        self.root = None
         self.source_file = source_file
         self.language = language
         self.entrypoint = entrypoint
@@ -79,8 +77,7 @@ class SourceCodeFile():
     def load_tree(self):
         """Load the the source code into a treesitter tree, and set
         the root node."""
-        if not self.root:
-            self.root = self.parser.parse(self.source_content).root_node
+        self.root = self.parser.parse(self.source_content).root_node
 
     def language_specific_process(self):
         """Dummy function to perform some specific processes in subclasses."""

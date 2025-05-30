@@ -45,7 +45,8 @@ LANGUAGES_SUPPORTED = [
 ]
 
 LANGUAGE_EXTENSIONS = {
-    LANGUAGES.C: ['.c', '.h'],
+    LANGUAGES.C:
+    ['.c', '.cpp', '.cc', '.c++', '.cxx', '.h', '.hpp', '.hh', '.hxx'],
     LANGUAGES.CPP:
     ['.c', '.cpp', '.cc', '.c++', '.cxx', '.h', '.hpp', '.hh', '.hxx'],
     LANGUAGES.JAVA: ['.java'],
