@@ -1066,6 +1066,138 @@ class CppProject(Project[CppSourceCodeFile]):
         self.report['Fuzzing method'] = 'LLVMFuzzerTestOneInput'
         self.report['Fuzzer filename'] = harness_source
 
+    def extract_calltree(self,
+                         source_file: str = '',
+                         source_code: Optional[SourceCodeFile] = None,
+                         function: Optional[str] = None,
+                         visited_functions: Optional[set[str]] = None,
+                         depth: int = 0,
+                         line_number: int = -1,
+                         other_props: Optional[dict[str, Any]] = None) -> str:
+        """Extracts calltree string of a calltree so that FI core can use it."""
+        # pylint: disable=unused-argument
+
+        # Create calltree from a given function
+        # Find the function in the source code
+        logger.debug('Extracting calltree for %s', str(function))
+        if not visited_functions:
+            visited_functions = set()
+
+        if not function:
+            logger.debug('No function')
+            return ''
+
+        if not source_code:
+            result = self._find_source_with_func_def(function)
+            if result:
+                source_code = result[0]
+
+        func_node = None
+        if function:
+            if source_code and isinstance(source_code, CppSourceCodeFile):
+                logger.debug('Using source code var to extract node')
+                func_node = source_code.get_function_node(function)
+            else:
+                logger.debug('Extracting node using lookup table.')
+                func_node = get_function_node(function, self.all_functions)
+
+            if func_node:
+                logger.debug('Found function node: %s', func_node.name)
+                func_name = func_node.name
+            else:
+                logger.debug('Found no function node')
+                func_name = function
+        else:
+            logger.debug('Could not find function')
+            return ''
+
+        line_to_print = '  ' * depth
+        line_to_print += func_name
+        line_to_print += ' '
+        line_to_print += source_file
+
+        line_to_print += ' '
+        line_to_print += str(line_number)
+
+        line_to_print += '\n'
+        if func_node and not source_code:
+            source_code = func_node.parent_source
+
+        if function in visited_functions or not func_node or not source_code:
+            if function in visited_functions:
+                logger.debug('Function in visited ')
+            if not func_node:
+                logger.debug('Not func_node')
+            if not source_code:
+                logger.debug('Not source code')
+            logger.debug('Function visited or no function node')
+            return line_to_print
+
+        visited_functions.add(function)
+        logger.debug('Iterating %s callsites', len(func_node.base_callsites))
+        for cs, line in func_node.base_callsites:
+            logger.debug('Callsite: %s', cs)
+            line_to_print += self.extract_calltree(
+                source_file=source_code.source_file,
+                function=cs,
+                visited_functions=visited_functions,
+                depth=depth + 1,
+                line_number=line)
+        logger.debug('Done')
+        return line_to_print
+
+    def get_reachable_functions(
+            self,
+            source_file: str = '',
+            source_code: Optional[SourceCodeFile] = None,
+            function: Optional[str] = None,
+            visited_functions: Optional[set[str]] = None) -> set[str]:
+        """Gets the reachable frunctions from a given function."""
+        # pylint: disable=unused-argument
+
+        # Create calltree from a given function
+        # Find the function in the source code
+        if not visited_functions:
+            visited_functions = set()
+
+        if not function:
+            return visited_functions
+
+        source_code = None
+        result = self._find_source_with_func_def(function)
+        if result:
+            source_code = result[0]
+
+        func_node = None
+        if function:
+            func_node = get_function_node(function, self.all_functions)
+            if func_node:
+                func_name = func_node.name
+                prefix = func_node.namespace_or_class
+                if prefix:
+                    func_name = f'{prefix}::{func_name}'
+            else:
+                func_name = function
+        else:
+            visited_functions.add(function)
+            return visited_functions
+
+        visited_functions.add(function)
+        if not func_node or not source_code:
+            return visited_functions
+
+        for cs, _ in func_node.base_callsites:
+            if cs in visited_functions:
+                continue
+
+            visited_functions = self.get_reachable_functions(
+                source_code=source_code,
+                function=cs,
+                visited_functions=visited_functions,
+            )
+
+        return visited_functions
+
     def _calculate_function_uses(self, target_name: str) -> int:
         """Calculate how many functions called the target function."""
         func_use_count = 0
