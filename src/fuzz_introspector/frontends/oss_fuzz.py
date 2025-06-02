@@ -189,7 +189,6 @@ def analyse_folder(
         target = os.path.join(out, 'full_type_defs.json')
         project.dump_type_definition(target, dump_output)
 
-
         # Macro block information
         target = os.path.join(out, 'macro_block_info.json')
         project.dump_macro_block_info(target, dump_output)
