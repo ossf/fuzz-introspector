@@ -190,8 +190,8 @@ class CppSourceCodeFile(SourceCodeFile):
         """Internal helper for processing macro definition."""
         preproc_name_field = preproc.child_by_field_name('name')
         preproc_body_field = preproc.child_by_field_name('value')
-        if (not preproc_name_field or not preproc_name_field.text or
-                not preproc_body_field or not preproc_body_field.text):
+        if (not preproc_name_field or not preproc_name_field.text
+                or not preproc_body_field or not preproc_body_field.text):
             # Skip invalid preproc definition
             return
 
