@@ -47,7 +47,7 @@ class CppSourceCodeFile(SourceCodeFile):
         self.process_tree(self.root, '')
 
         # Combine full type definitions
-        self.process_type_defs()
+        self.store_full_type_defs()
 
     def get_function_node(
             self,
@@ -113,7 +113,7 @@ class CppSourceCodeFile(SourceCodeFile):
             else:
                 self.process_tree(child, namespace)
 
-    def process_type_defs(self) -> None:
+    def store_full_type_defs(self) -> None:
         """Helper to gather all custom type definitions."""
         self.full_type_defs.extend(self.struct_defs)
         self.full_type_defs.extend(self.typedefs)

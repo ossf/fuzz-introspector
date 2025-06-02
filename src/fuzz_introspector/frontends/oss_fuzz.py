@@ -82,7 +82,7 @@ def analyse_folder(
         logger.info('Loading tree-sitter trees')
         if not entrypoint:
             entrypoint = 'LLVMFuzzerTestOneInput'
-        project = frontend_cpp.load_treesitter_trees(source_files)
+        project = frontend_c_cpp.load_treesitter_trees(source_files)
     elif language == constants.LANGUAGES.GO:
         logger.info('Going Go route')
         logger.info('Loading tree-sitter trees and create base project')
