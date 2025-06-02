@@ -19,7 +19,7 @@
 
 from typing import Any, Optional, Generic, TypeVar
 
-from tree_sitter import Language, Parser, Node
+from tree_sitter import Language, Parser
 import tree_sitter_cpp
 import tree_sitter_go
 import tree_sitter_java
@@ -90,16 +90,6 @@ class SourceCodeFile():
     def has_libfuzzer_harness(self) -> bool:
         """Dummy function for source code files."""
         return False
-
-    # TODO To be removed after combning treesitter for C and C++
-    def get_c_function_node(self, target_function_name):
-        """Dummy function for retrieving tree-sitter node of a function"""
-        return None
-
-    # TODO To be removed after combning treesitter for C and C++
-    def get_linenumber(self, bytepos) -> int:
-        """Dummy function to get line number from byte range"""
-        return -1
 
 
 class Project(Generic[T]):

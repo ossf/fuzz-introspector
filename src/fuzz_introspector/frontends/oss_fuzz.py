@@ -22,8 +22,7 @@ import logging
 
 from typing import Any, Optional
 
-from fuzz_introspector.frontends import frontend_c
-from fuzz_introspector.frontends import frontend_cpp
+from fuzz_introspector.frontends import frontend_c_cpp
 from fuzz_introspector.frontends import frontend_go
 from fuzz_introspector.frontends import frontend_jvm
 from fuzz_introspector.frontends import frontend_rust
@@ -78,16 +77,8 @@ def analyse_folder(
     project: Project = Project([])
 
     # Process for different language
-    if language == constants.LANGUAGES.C:
-        logger.info('Going C route')
-        logger.info('Loading tree-sitter trees')
-        if not entrypoint:
-            entrypoint = 'LLVMFuzzerTestOneInput'
-        project = frontend_c.load_treesitter_trees(source_files)
-        if not project.get_source_codes_with_harnesses():
-            module_only = True
-    elif language == constants.LANGUAGES.CPP:
-        logger.info('Going C++ route')
+    if language in [constants.LANGUAGES.C, constants.LANGUAGES.CPP]:
+        logger.info('Going C/C++ route')
         logger.info('Loading tree-sitter trees')
         if not entrypoint:
             entrypoint = 'LLVMFuzzerTestOneInput'
