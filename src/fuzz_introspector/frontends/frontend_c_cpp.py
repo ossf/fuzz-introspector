@@ -110,8 +110,9 @@ class CppSourceCodeFile(SourceCodeFile):
                 self._process_include(child, namespace)
             elif child.type in ['preproc_ifdef', 'preproc_if']:
                 self._process_macro_block(child, namespace, [])
-            else:
-                self.process_tree(child, namespace)
+
+            # Ensure recursive into nested items
+            self.process_tree(child, namespace)
 
     def store_full_type_defs(self) -> None:
         """Helper to gather all custom type definitions."""
