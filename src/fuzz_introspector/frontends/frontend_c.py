@@ -204,7 +204,7 @@ class CProject(Project['CSourceCodeFile']):
 
     def get_source_code_with_target(self, target_func_name):
         for source_code in self.source_code_files:
-            tfunc = source_code.get_function_node(target_func_name)
+            tfunc = source_code.get_c_function_node(target_func_name)
             if not tfunc:
                 continue
             return source_code
@@ -215,7 +215,7 @@ class CProject(Project['CSourceCodeFile']):
 
     def extract_calltree(self,
                          source_file: str = '',
-                         source_code: Optional['CSourceCodeFile'] = None,
+                         source_code: Optional[SourceCodeFile] = None,
                          function: Optional[str] = None,
                          visited_functions: Optional[set[str]] = None,
                          depth: int = 0,
@@ -244,7 +244,7 @@ class CProject(Project['CSourceCodeFile']):
         line_to_print += '\n'
         if not source_code:
             return line_to_print
-        func = source_code.get_function_node(function)
+        func = source_code.get_c_function_node(function)
         callsites = func.callsites()
         if function in visited_functions:
             return line_to_print
@@ -263,7 +263,7 @@ class CProject(Project['CSourceCodeFile']):
     def get_reachable_functions(
             self,
             source_file: str = '',
-            source_code: Optional['CSourceCodeFile'] = None,
+            source_code: Optional[SourceCodeFile] = None,
             function: Optional[str] = None,
             visited_functions: Optional[set[str]] = None) -> set[str]:
         """Gets the reachable frunctions from a given function."""
@@ -284,7 +284,7 @@ class CProject(Project['CSourceCodeFile']):
         if not source_code:
             return visited_functions
 
-        func = source_code.get_function_node(function)
+        func = source_code.get_c_function_node(function)
         if not func:
             return visited_functions
 
@@ -323,7 +323,7 @@ class CProject(Project['CSourceCodeFile']):
         """Gets the first instance of a given function."""
 
         for source_code in self.source_code_files:
-            func = source_code.get_function_node(target_function_name)
+            func = source_code.get_c_function_node(target_function_name)
             if func is not None:
                 return func
         return None
@@ -940,7 +940,7 @@ class CSourceCodeFile(SourceCodeFile):
             func_names.append(func.name())
         return func_names
 
-    def get_function_node(self, target_function_name):
+    def get_c_function_node(self, target_function_name):
         """Gets the tree-sitter node corresponding to a function."""
 
         # Find the first instance of the function name
