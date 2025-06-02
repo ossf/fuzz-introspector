@@ -80,8 +80,12 @@ def analyse_folder(
     if language in [constants.LANGUAGES.C, constants.LANGUAGES.CPP]:
         logger.info('Going C/C++ route')
         logger.info('Loading tree-sitter trees')
+
         if not entrypoint:
             entrypoint = 'LLVMFuzzerTestOneInput'
+        if not project.get_source_codes_with_harnesses():
+            module_only = True
+
         project = frontend_c_cpp.load_treesitter_trees(source_files)
     elif language == constants.LANGUAGES.GO:
         logger.info('Going Go route')
