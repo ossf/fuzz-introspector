@@ -247,7 +247,7 @@ class GoProject(Project[GoSourceCodeFile]):
 
     def extract_calltree(self,
                          source_file: str = '',
-                         source_code: Optional[GoSourceCodeFile] = None,
+                         source_code: Optional[SourceCodeFile] = None,
                          function: Optional[str] = None,
                          visited_functions: Optional[set[str]] = None,
                          depth: int = 0,
@@ -271,7 +271,7 @@ class GoProject(Project[GoSourceCodeFile]):
         line_to_print += ' '
         line_to_print += source_file
 
-        if not source_code:
+        if not source_code or not isinstance(source_code, GoSourceCodeFile):
             source_code = self.find_source_with_func_def(function)
 
         line_to_print += ' '
@@ -301,7 +301,7 @@ class GoProject(Project[GoSourceCodeFile]):
     def get_reachable_functions(
             self,
             source_file: str = '',
-            source_code: Optional[GoSourceCodeFile] = None,
+            source_code: Optional[SourceCodeFile] = None,
             function: Optional[str] = None,
             visited_functions: Optional[set[str]] = None) -> set[str]:
         """Get a list of reachable functions for a provided function name."""
@@ -318,7 +318,7 @@ class GoProject(Project[GoSourceCodeFile]):
         if not source_code and function:
             source_code = self.find_source_with_func_def(function)
 
-        if not source_code:
+        if not source_code or not isinstance(source_code, GoSourceCodeFile):
             visited_functions.add(function)
             return visited_functions
 

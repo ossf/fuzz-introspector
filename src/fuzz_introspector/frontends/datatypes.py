@@ -91,6 +91,16 @@ class SourceCodeFile():
         """Dummy function for source code files."""
         return False
 
+    # TODO To be removed after combning treesitter for C and C++
+    def get_c_function_node(self, target_function_name):
+        """Dummy function for retrieving tree-sitter node of a function"""
+        return None
+
+    # TODO To be removed after combning treesitter for C and C++
+    def get_linenumber(self, bytepos) -> int:
+        """Dummy function to get line number from byte range"""
+        return -1
+
 
 class Project(Generic[T]):
     """Wrapper for doing analysis of a collection of source files."""
@@ -179,7 +189,7 @@ class Project(Generic[T]):
 
     def extract_calltree(self,
                          source_file: str = '',
-                         source_code: Optional[T] = None,
+                         source_code: Optional[SourceCodeFile] = None,
                          function: Optional[str] = None,
                          visited_functions: Optional[set[str]] = None,
                          depth: int = 0,
@@ -192,7 +202,7 @@ class Project(Generic[T]):
     def get_reachable_functions(
             self,
             source_file: str = '',
-            source_code: Optional[T] = None,
+            source_code: Optional[SourceCodeFile] = None,
             function: Optional[str] = None,
             visited_functions: Optional[set[str]] = None) -> set[str]:
         """Get a list of reachable functions for a provided function name."""
