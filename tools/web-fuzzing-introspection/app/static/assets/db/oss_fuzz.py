@@ -51,6 +51,7 @@ def get_introspector_report_url_typedef(project_name, datestr):
     return get_introspector_report_url_base(project_name,
                                             datestr) + "full_type_defs.json"
 
+
 def get_introspector_report_url_macro_block(project_name, datestr):
     return get_introspector_report_url_base(project_name,
                                             datestr) + "macro_block_info.json"
