@@ -1211,7 +1211,7 @@ class JvmProject(Project[JvmSourceCodeFile]):
 
     def extract_calltree(self,
                          source_file: str = '',
-                         source_code: Optional[JvmSourceCodeFile] = None,
+                         source_code: Optional[SourceCodeFile] = None,
                          function: Optional[str] = None,
                          visited_functions: Optional[set[str]] = None,
                          depth: int = 0,
@@ -1228,7 +1228,10 @@ class JvmProject(Project[JvmSourceCodeFile]):
             source_code = self.find_source_with_method(function)
 
         if not function and source_code:
-            function = source_code.get_entry_method_name(True)
+            if not isinstance(source_code, JvmSourceCodeFile):
+                function = source_code.get_entry_function_name()
+            else:
+                function = source_code.get_entry_method_name(True)
 
         if not function:
             return ''
@@ -1241,7 +1244,7 @@ class JvmProject(Project[JvmSourceCodeFile]):
         line_to_print += str(line_number)
         line_to_print += '\n'
 
-        if not source_code:
+        if not source_code or not isinstance(source_code, JvmSourceCodeFile):
             return line_to_print
 
         function_node = source_code.get_method_node(function)
@@ -1270,7 +1273,7 @@ class JvmProject(Project[JvmSourceCodeFile]):
     def get_reachable_functions(
             self,
             source_file: str = '',
-            source_code: Optional[JvmSourceCodeFile] = None,
+            source_code: Optional[SourceCodeFile] = None,
             function: Optional[str] = None,
             visited_functions: Optional[set[str]] = None) -> set[str]:
         """Get a list of reachable functions for a provided function name."""
@@ -1281,9 +1284,15 @@ class JvmProject(Project[JvmSourceCodeFile]):
             source_code = self.find_source_with_method(function)
 
         if not function and source_code:
-            function = source_code.get_entry_method_name(True)
+            if not isinstance(source_code, JvmSourceCodeFile):
+                function = source_code.get_entry_function_name()
+            else:
+                function = source_code.get_entry_method_name(True)
 
         if source_code and function:
+            if not isinstance(source_code, JvmSourceCodeFile):
+                return visited_functions
+
             function_node = source_code.get_method_node(function)
             if not function_node:
                 visited_functions.add(function)

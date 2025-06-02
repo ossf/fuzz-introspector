@@ -453,6 +453,10 @@ def extract_local_project_data(project_name, oss_fuzz_path,
     typedef_list = oss_fuzz.extract_local_introspector_typedef(
         project_name, oss_fuzz_path)
 
+    # Extract macro block information
+    macro_block = oss_fuzz.extract_local_introspector_macro_block(
+        project_name, oss_fuzz_path)
+
     introspector_data_dict = {
         "introspector_report_url":
         'introspector_url',
@@ -475,7 +479,9 @@ def extract_local_project_data(project_name, oss_fuzz_path,
         'project_name':
         project_name,
         'typedef_list':
-        typedef_list
+        typedef_list,
+        'macro_block':
+        macro_block
     }
 
     code_coverage_data_dict = prepare_code_coverage_dict(
@@ -731,6 +737,10 @@ def extract_project_data(project_name, date_str, should_include_details,
         typedef_list = oss_fuzz.extract_introspector_typedef(
             project_name, date_str)
 
+        # Extract macro block information
+        macro_block = oss_fuzz.extract_introspector_macro_block(
+            project_name, date_str)
+
         introspector_data_dict = {
             "introspector_report_url": introspector_report_url,
             "coverage_lines":
@@ -745,7 +755,8 @@ def extract_project_data(project_name, date_str, should_include_details,
             'annotated_cfg': annotated_cfg,
             'optimal_targets': optimal_targets,
             'project_name': project_name,
-            'typedef_list': typedef_list
+            'typedef_list': typedef_list,
+            'macro_block': macro_block
         }
 
     code_coverage_data_dict = prepare_code_coverage_dict(
