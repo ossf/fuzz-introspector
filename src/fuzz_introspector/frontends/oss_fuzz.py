@@ -139,11 +139,10 @@ def analyse_folder(
         target = os.path.join(out, 'full_type_defs.json')
         project.dump_type_definition(target, dump_output)
 
-# TODO Initialise once it is ready
-#        target = os.path.join(out, 'macro_block_info.json')
-#        project.dump_macro_block_info(target, dump_output)
+        target = os.path.join(out, 'macro_block_info.json')
+        project.dump_macro_block_info(target, dump_output)
 
-# Process calltree and method data
+    # Process calltree and method data
     for harness in project.get_source_codes_with_harnesses():
         if language == 'go':
             entry_function = harness.get_entry_function_name()
@@ -185,11 +184,9 @@ def analyse_folder(
         target = os.path.join(out, 'full_type_defs.json')
         project.dump_type_definition(target, dump_output)
 
-
-# TODO Initialise once it is ready
-#        # Macro block information
-#        target = os.path.join(out, 'macro_block_info.json')
-#        project.dump_macro_block_info(target, dump_output)
+        # Macro block information
+        target = os.path.join(out, 'macro_block_info.json')
+        project.dump_macro_block_info(target, dump_output)
 
     if pairings:
         with open(os.path.join(out, 'exe_to_fuzz_introspector_logs.yaml'),
