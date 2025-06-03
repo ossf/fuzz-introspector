@@ -133,7 +133,7 @@ def create_all_function_table(
             "Reached by functions": len(fd.incoming_references),
             "Accumulated cyclomatic complexity":
             fd.total_cyclomatic_complexity,
-            "Undiscovered complexity": fd.new_unreached_complexity
+            "Undiscovered complexity": fd.new_unreached_complexity,
             "asserts": fd.assert_list,
         }
 
