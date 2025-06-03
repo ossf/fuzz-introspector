@@ -170,7 +170,8 @@ def retrieve_functions(proj: str, is_constructor: bool) -> List[Function]:
                      is_enum_class=func.get('enum', False),
                      is_static=func.get('static', False),
                      need_close=func.get('need_close', False),
-                     exceptions=func.get('exc', [])))
+                     exceptions=func.get('exc', []),
+                     asserts=func.get('asserts', [])))
     JSON_TO_FUNCTION_CACHE[json_path] = result_list
 
     # At this point if google analytics tag is set it means we are in production, and we should

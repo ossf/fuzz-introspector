@@ -162,5 +162,7 @@ def convert_functions_to_list_of_dict(
             function.debug_data,
             'is_enum_class':
             function.is_enum_class,
+            'assert_stmts':
+            function.asserts
         })
     return sorted_function_dict_list_by_fuzz_worthiness

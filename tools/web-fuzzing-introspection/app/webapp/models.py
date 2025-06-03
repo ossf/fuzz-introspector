@@ -133,7 +133,8 @@ class Function:
                  is_enum_class: bool = False,
                  is_static: bool = False,
                  need_close: bool = False,
-                 exceptions: List[str] = []):
+                 exceptions: List[str] = [],
+                 asserts: List[Dict[str, Any]] = []):
         self.name = name
         self.function_filename = function_filename
         self.project = project
@@ -162,6 +163,7 @@ class Function:
         self.is_static = is_static
         self.need_close = need_close
         self.exceptions = exceptions
+        self.asserts = asserts
 
         # Handles the case when function signature is not available
         # Majorly used for python project
@@ -187,7 +189,8 @@ class Function:
             'is_jvm_library': self.is_jvm_library,
             'is_enum_class': self.is_enum_class,
             'is_static': self.is_static,
-            'exceptions': self.exceptions
+            'exceptions': self.exceptions,
+            'assert_stmts': self.asserts
         }
 
 
