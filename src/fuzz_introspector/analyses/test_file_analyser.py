@@ -85,8 +85,7 @@ class TestFileAnalyser(analysis.AnalysisInterface):
                       conclusions: List[html_helpers.HTMLConclusion],
                       out_dir: str) -> str:
         """Analysis function."""
-        if not basefolder:
-            basefolder = os.environ.get('SRC', '/src')
+        basefolder = os.environ.get('SRC', '/src')
 
         language = utils.detect_language(basefolder)
 
