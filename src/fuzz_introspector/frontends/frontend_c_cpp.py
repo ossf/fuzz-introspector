@@ -27,6 +27,9 @@ from fuzz_introspector.frontends.datatypes import SourceCodeFile, Project
 
 logger = logging.getLogger(name=__name__)
 
+# For caching function nodes to increase processing speed
+_function_node_cache: dict[tuple[str, str, bool], 'FunctionDefinition'] = {}
+
 
 class CppSourceCodeFile(SourceCodeFile):
     """Class for holding file-specific information."""
@@ -465,11 +468,36 @@ class FunctionDefinition():
         """Gets the callsites of the function."""
         if not self.base_callsites:
             callsites = []
-            for child in self.root.children:
-                try:
-                    callsites.extend(self._process_callsites(child, project))
-                except UnicodeDecodeError:
-                    logger.debug('Error decoding statement.')
+            cursor = self.root.walk()
+            visited = set()
+            node = self.root
+
+            while True:
+                if node.id not in visited:
+                    visited.add(node.id)
+                    try:
+                        callsites.extend(self._process_callsites(
+                            node, project))
+                    except UnicodeDecodeError:
+                        logger.debug('Error decoding statement.')
+
+                # Find next child
+                if cursor.goto_first_child():
+                    node = cursor.node
+                    continue
+
+                # Find next sibiling or parents if no more children
+                while not cursor.goto_next_sibling():
+                    if not cursor.goto_parent():
+                        node = None
+                        break
+                    node = cursor.node
+
+                if node is None:
+                    break
+
+                # Move to next node to process (sibiling or parent)
+                node = cursor.node
 
             callsites = sorted(set(callsites), key=lambda x: x[1])
             self.base_callsites = [(x[0], x[2]) for x in callsites]
@@ -974,9 +1002,6 @@ class FunctionDefinition():
             if name_text:
                 self.var_map[name_text.decode().replace('&', '')] = var_type
 
-        for child in stmt.children:
-            callsites.extend(self._process_callsites(child, project))
-
         return callsites
 
 
@@ -1096,6 +1121,7 @@ class CppProject(Project[CppSourceCodeFile]):
 
         self.report['Fuzzing method'] = 'LLVMFuzzerTestOneInput'
         self.report['Fuzzer filename'] = harness_source
+        _function_node_cache.clear()
 
     def extract_calltree(self,
                          source_file: str = '',
@@ -1352,10 +1378,15 @@ def get_function_node(target_name: str,
                       namespace: str = '') -> Optional[FunctionDefinition]:
     """Helper to retrieve the RustFunction object of a function."""
 
+    cache_key = (target_name, namespace, one_layer_only)
+    if cache_key in _function_node_cache:
+        return _function_node_cache[cache_key]
+
     logger.debug('Finding match for %s', target_name)
     for function in function_list:
         if target_name == function.name:
             logger.debug('Found exact match')
+            _function_node_cache[cache_key] = function
             return function
 
     if namespace:
@@ -1363,6 +1394,7 @@ def get_function_node(target_name: str,
         for function in function_list:
             if namespace + '::' + target_name == function.name:
                 logger.debug('Found namespace match')
+                _function_node_cache[cache_key] = function
                 return function
 
     # Exact match
@@ -1390,6 +1422,7 @@ def get_function_node(target_name: str,
         for func in function_list:
             if func.name.endswith('::'.join(name_split[count:])):
                 logger.debug('Found match: %s', func.name)
+                _function_node_cache[cache_key] = func
                 return func
 
     logger.debug('Found no matching function node')
