@@ -91,7 +91,7 @@ class CppSourceCodeFile(SourceCodeFile):
         # TODO handles namespace for all nodes
         # TODO Add more C++ specific type defintions and macros
         for child in node.children:
-            if child.type == 'function_definition':
+            if child.type in ['function_definition', 'preproc_function_def']:
                 self._process_function_node(child, namespace)
             elif child.type == 'namespace_definition':
                 # Only valid for Cpp projects
@@ -124,8 +124,9 @@ class CppSourceCodeFile(SourceCodeFile):
 
     def _process_function_node(self, node: Node, namespace: str) -> None:
         """Internal helper for processing function node."""
-        self.func_defs.append(
-            FunctionDefinition(node, self.tree_sitter_lang, self, namespace))
+        func = FunctionDefinition(node, self.tree_sitter_lang, self, namespace)
+        if func.valid:
+            self.func_defs.append(func)
 
     def _process_namespace_node(self, node: Node, namespace: str) -> None:
         """Recursive internal helper for processing namespace definition."""
@@ -427,6 +428,7 @@ class FunctionDefinition():
         self.tree_sitter_lang = tree_sitter_lang
         self.parent_source = source_code
         self.namespace_or_class = namespace
+        self.valid = True
 
         # Store method line information
         self.start_line = self.root.start_point.row + 1
@@ -479,6 +481,33 @@ class FunctionDefinition():
 
     def _extract_information(self):
         """Extract information from tree-sitter node."""
+        # Handling macro function definition
+        if self.root.type == 'preproc_function_def':
+            name_node = self.root.child_by_field_name('name')
+            param_node = self.root.child_by_field_name('parameters')
+            def_node = self.root.child_by_field_name('value')
+            if (not name_node or not name_node.text or not param_node
+                    or not param_node.text or not def_node
+                    or not def_node.text):
+                self.valid = False
+                return
+
+            self.name = name_node.text.decode()
+            for idx, param in enumerate(param_node.children):
+                if param.text:
+                    param_name = param.text.decode()
+                else:
+                    param_name = f'arg{idx}'
+                self.arg_names.append(param_name)
+                self.arg_types.append('auto')
+            self.return_type = 'auto'
+            self.sig = self.name + param_node.text.decode()
+            self.complexity = 1
+            self.icount = 1
+            self.bbcount = 1
+
+            return
+
         # Extract function name and return type
         name_node = self.root.child_by_field_name('declarator')
         self.sig = name_node.text.decode()
