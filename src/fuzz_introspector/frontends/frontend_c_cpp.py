@@ -1,4 +1,4 @@
-# Copyright 2024 Fuzz Introspector Authors
+# Copyright 2025 Fuzz Introspector Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
 # limitations under the License.
 #
 ################################################################################
-"""Tree-sitter frontend for cpp."""
+"""Tree-sitter frontend for c or cpp projects."""
 
 from typing import Any, Optional
 
@@ -23,62 +23,31 @@ import os
 import copy
 import logging
 
-from fuzz_introspector.frontends import datatypes
+from fuzz_introspector.frontends.datatypes import SourceCodeFile, Project
 
 logger = logging.getLogger(name=__name__)
 
 
-class CppSourceCodeFile(datatypes.SourceCodeFile):
+class CppSourceCodeFile(SourceCodeFile):
     """Class for holding file-specific information."""
 
     def language_specific_process(self) -> None:
         """Function to perform some language specific processes in
         subclasses."""
+        # Variables initialisation
         self.func_defs: list['FunctionDefinition'] = []
-        if self.source_content:
-            # Initialization routines
-            self.load_tree()
-            if self.root:
-                self.process_tree(self.root)
+        self.struct_defs: list[dict[str, Any]] = []
+        self.union_defs: list[dict[str, Any]] = []
+        self.enum_defs: list[dict[str, Any]] = []
+        self.preproc_defs: list[dict[str, Any]] = []
+        self.typedefs: list[dict[str, Any]] = []
+        self.includes: set[str] = set()
 
-    def process_tree(self, node: Node, namespace: str = ''):
-        """Process the node from the parsed tree."""
-        for child in node.children:
-            if child.type == 'function_definition':
-                self._process_function_node(child, namespace)
-            elif child.type == 'namespace_definition':
-                self._process_namespace_node(child, namespace)
-            else:
-                self.process_tree(child, namespace)
+        # Process tree
+        self.process_tree(self.root, '')
 
-    def _process_namespace_node(self, node: Node, namespace: str = ''):
-        """Recursive internal helper for processing namespace definition."""
-        new_namespace = node.child_by_field_name('name')
-        if new_namespace:
-            # Nested namespace
-            if new_namespace.type == 'nested_namespace_specifier':
-                for child in new_namespace.children:
-                    if not child.is_named or not child.text:
-                        continue
-                    namespace += '::' + child.text.decode()
-                    if namespace.startswith('::'):
-                        namespace = namespace[2:]
-
-            # General namespace
-            elif new_namespace.type == 'namespace_identifier':
-                if new_namespace.text:
-                    namespace += '::' + new_namespace.text.decode()
-                    if namespace.startswith('::'):
-                        namespace = namespace[2:]
-
-        # Continue to process the tree of the namespace
-        self.process_tree(node, namespace)
-
-    def _process_function_node(self, node: Node, namespace: str = ''):
-        """Internal helper for processing function node."""
-
-        self.func_defs.append(
-            FunctionDefinition(node, self.tree_sitter_lang, self, namespace))
+        # Combine full type definitions
+        self.store_full_type_defs()
 
     def get_function_node(
             self,
@@ -117,6 +86,337 @@ class CppSourceCodeFile(datatypes.SourceCodeFile):
 
         return False
 
+    def process_tree(self, node: Node, namespace: str = ''):
+        """Process the node from the parsed tree."""
+        # TODO handles namespace for all nodes
+        # TODO Add more C++ specific type defintions and macros
+        for child in node.children:
+            if child.type == 'function_definition':
+                self._process_function_node(child, namespace)
+            elif child.type == 'namespace_definition':
+                # Only valid for Cpp projects
+                self._process_namespace_node(child, namespace)
+            elif child.type == 'enum_specifier':
+                self._process_enum(child, namespace)
+            elif child.type == 'preproc_def':
+                self._process_macro_definition(child, namespace)
+            elif child.type == 'struct_specifier':
+                self._process_struct(child, namespace)
+            elif child.type == 'union_specifier':
+                self._process_union(child, namespace)
+            elif child.type == 'type_definition':
+                self._process_typedef(child, namespace)
+            elif child.type == 'preproc_include':
+                self._process_include(child, namespace)
+            elif child.type in ['preproc_ifdef', 'preproc_if']:
+                self._process_macro_block(child, namespace, [])
+
+            # Ensure recursive into nested items
+            self.process_tree(child, namespace)
+
+    def store_full_type_defs(self) -> None:
+        """Helper to gather all custom type definitions."""
+        self.full_type_defs.extend(self.struct_defs)
+        self.full_type_defs.extend(self.typedefs)
+        self.full_type_defs.extend(self.enum_defs)
+        self.full_type_defs.extend(self.union_defs)
+        self.full_type_defs.extend(self.preproc_defs)
+
+    def _process_function_node(self, node: Node, namespace: str) -> None:
+        """Internal helper for processing function node."""
+        self.func_defs.append(
+            FunctionDefinition(node, self.tree_sitter_lang, self, namespace))
+
+    def _process_namespace_node(self, node: Node, namespace: str) -> None:
+        """Recursive internal helper for processing namespace definition."""
+        new_namespace = node.child_by_field_name('name')
+        if new_namespace:
+            # Nested namespace
+            if new_namespace.type == 'nested_namespace_specifier':
+                for child in new_namespace.children:
+                    if not child.is_named or not child.text:
+                        continue
+                    namespace += '::' + child.text.decode()
+                    if namespace.startswith('::'):
+                        namespace = namespace[2:]
+
+            # General namespace
+            elif new_namespace.type == 'namespace_identifier':
+                if new_namespace.text:
+                    namespace += '::' + new_namespace.text.decode()
+                    if namespace.startswith('::'):
+                        namespace = namespace[2:]
+
+        # Continue to process the tree of the namespace
+        self.process_tree(node, namespace)
+
+    def _process_enum(self, enum: Node, namespace: str) -> None:
+        """Internal helper for processing enum definition."""
+        enum_name_field = enum.child_by_field_name('name')
+        enum_body = enum.child_by_field_name('body')
+        if not enum_name_field or not enum_name_field.text or not enum_body:
+            # Skip anonymous enum or forward declaration
+            return
+
+        enum_item_query = self.tree_sitter_lang.query('( enumerator ) @en')
+        enumerator_list = []
+        for _, enumerators in enum_item_query.captures(enum_body).items():
+            for enumerator in enumerators:
+                item_dict = {}
+                enum_item_name = enumerator.child_by_field_name('name')
+                enum_item_value = enumerator.child_by_field_name('value')
+
+                if not enum_item_name or not enum_item_name.text:
+                    # Skip anonymous enum items
+                    continue
+                item_dict['name'] = enum_item_name.text.decode()
+
+                if enum_item_value and enum_item_value.text:
+                    item_dict['value'] = enum_item_value.text.decode()
+
+                enumerator_list.append(item_dict)
+
+        self.enum_defs.append({
+            'name': enum_name_field.text.decode(),
+            'enumerators': enumerator_list,
+            'item_type': 'enum',
+            'pos': {
+                'source_file': self.source_file,
+                'line_start': enum.start_point.row,
+                'line_end': enum.end_point.row,
+            }
+        })
+
+    def _process_macro_definition(self, preproc: Node, namespace: str) -> None:
+        """Internal helper for processing macro definition."""
+        preproc_name_field = preproc.child_by_field_name('name')
+        preproc_body_field = preproc.child_by_field_name('value')
+        if (not preproc_name_field or not preproc_name_field.text
+                or not preproc_body_field or not preproc_body_field.text):
+            # Skip invalid preproc definition
+            return
+
+        self.preproc_defs.append({
+            'name':
+            preproc_name_field.text.decode(),
+            'type_or_value':
+            preproc_body_field.text.decode(),
+            'item_type':
+            'preproc_def',
+            'pos': {
+                'source_file': self.source_file,
+                'line_start': preproc.start_point.row,
+                'line_end': preproc.end_point.row,
+            }
+        })
+
+    def _process_struct(self, struct: Node, namespace: str) -> None:
+        """Internal helper for processing struct definition."""
+        struct_body_field = struct.child_by_field_name('body')
+        if not struct_body_field:
+            # Skip forward declaration
+            return
+
+        # Extract name for struct or anonymous struct
+        struct_name_field = struct.child_by_field_name('name')
+        if struct_name_field and struct_name_field.text:
+            struct_name = struct_name_field.text.decode()
+        else:
+            parent = struct.parent
+            declarator = None
+            if parent and parent.type in ['declaration', 'type_definition']:
+                declarator = parent.child_by_field_name('declarator')
+            if declarator and declarator.text:
+                struct_name = declarator.text.decode()
+            else:
+                # Skip anonymous struct with no name
+                return
+
+        # Go through each of the field declarations
+        fields = []
+        for child in struct_body_field.children:
+            child_name = child.child_by_field_name('type')
+            child_type = child.child_by_field_name('declarator')
+
+            if not child_name or not child_name.text or not child_type or not child_type.text:
+                continue
+
+            if child.type == 'field_declaration':
+                fields.append({
+                    'type': child_name.text.decode(),
+                    'name': child_type.text.decode()
+                })
+        self.struct_defs.append({
+            'name': struct_name,
+            'fields': fields,
+            'item_type': 'struct',
+            'pos': {
+                'source_file': self.source_file,
+                'line_start': struct.start_point.row,
+                'line_end': struct.end_point.row,
+            }
+        })
+
+    def _process_union(self, union: Node, namespace: str) -> None:
+        """Internal helper for processing union definition."""
+        union_body_field = union.child_by_field_name('body')
+        if not union_body_field:
+            # Skip forward declaration
+            return
+
+        # Extract name for union or anonymous union
+        union_name_field = union.child_by_field_name('name')
+        if union_name_field and union_name_field.text:
+            union_name = union_name_field.text.decode()
+        else:
+            parent = union.parent
+            declarator = None
+            if parent and parent.type in ['declaration', 'type_definition']:
+                declarator = parent.child_by_field_name('declarator')
+            if declarator and declarator.text:
+                union_name = declarator.text.decode()
+            else:
+                # Skip anonymous union with no name
+                return
+
+        # Go through each of the field declarations
+        fields = []
+        for child in union_body_field.children:
+            child_name = child.child_by_field_name('type')
+            child_type = child.child_by_field_name('declarator')
+
+            if not child_name or not child_name.text or not child_type or not child_type.text:
+                continue
+            if child.type == 'field_declaration':
+                fields.append({
+                    'type': child_name.text.decode(),
+                    'name': child_type.text.decode(),
+                })
+        self.union_defs.append({
+            'name': union_name,
+            'fields': fields,
+            'item_type': 'union',
+            'pos': {
+                'source_file': self.source_file,
+                'line_start': union.start_point.row,
+                'line_end': union.end_point.row,
+            }
+        })
+
+    def _process_typedef(self, typedef: Node, namespace: str) -> None:
+        """Internal helper for processing custom type definition."""
+        # Skip if this is an anonymous type.
+        typedef_declarator_node = typedef.child_by_field_name('declarator')
+        if not typedef_declarator_node or not typedef_declarator_node.text:
+            return
+
+        typedef_struct: dict[str, Any] = {
+            'name': typedef_declarator_node.text.decode(),
+            'item_type': 'typedef',
+        }
+
+        typedef_struct['pos'] = {
+            'source_file': self.source_file,
+            'line_start': typedef.start_point.row,
+            'line_end': typedef.end_point.row,
+        }
+
+        typedef_type = typedef.child_by_field_name('type')
+        if not typedef_type or not typedef_type.text:
+            # Skip invalid type definition
+            return
+
+        if typedef_type.type in ['struct_specifier', 'union_specifier']:
+            # Already handled in the struct/union section
+            return
+        elif typedef_type.type == 'primitive_type':
+            typedef_struct['type'] = typedef_type.text.decode()
+        elif typedef_type.type == 'sized_type_specifier':
+            typedef_struct['type'] = typedef_type.text.decode()
+
+        self.typedefs.append(typedef_struct)
+
+    def _process_include(self, include: Node, namespace: str) -> None:
+        """Internal helper for processing include statements."""
+        include_path_node = include.child_by_field_name('path')
+        if not include_path_node or not include_path_node.text:
+            # Skip invalid include statement
+            return
+
+        include_path = include_path_node.text.decode().replace(
+            '"', '').replace('>', '').replace('<', '')
+        self.includes.add(include_path)
+
+    def _process_macro_block(self, macro: Node, namespace: str,
+                             conditions: list[dict[str, str]]) -> None:
+        """Recursive function to process macro nodes and extract all #elif
+        and #else macro sub-branches."""
+        # if it is the #elif or #else branches, previous condition must be reversed.
+        if conditions:
+            if conditions[-1]['type'] == 'ifdef':
+                conditions[-1]['type'] = 'ifndef'
+            elif conditions[-1]['type'] == 'ifndef':
+                conditions[-1]['type'] = 'ifdef'
+            else:
+                conditions[-1]['type'] = 'not'
+
+        if macro.type == 'preproc_ifdef':
+            var_name = macro.child_by_field_name('name')
+
+            # Skip invalid macro
+            if not var_name or not var_name.text:
+                return
+
+            if macro and macro.text and macro.text.decode().startswith(
+                    '#ifdef'):
+                type = 'ifdef'
+            else:
+                type = 'ifndef'
+            conditions.append({
+                'type': type,
+                'condition': var_name.text.decode(),
+            })
+        elif macro.type in ['preproc_if', 'preproc_elif']:
+            condition = macro.child_by_field_name('condition')
+
+            # Skip invalid macro
+            if not condition or not condition.text:
+                return
+
+            conditions.append({
+                'type': 'if',
+                'condition': condition.text.decode(),
+            })
+
+        # Extract #else #elif branches
+        alternative = macro.child_by_field_name('alternative')
+
+        if alternative:
+            # Have #elif or #else branches
+            self.macro_blocks.append({
+                'conditions': conditions,
+                'pos': {
+                    'source_file': self.source_file,
+                    'line_start': macro.start_point.row,
+                    'line_end': alternative.start_point.row,
+                }
+            })
+        else:
+            # No more #elif or #else branches
+            self.macro_blocks.append({
+                'conditions': conditions,
+                'pos': {
+                    'source_file': self.source_file,
+                    'line_start': macro.start_point.row,
+                    'line_end': macro.end_point.row,
+                }
+            })
+            return
+
+        # Recursively extract more #else or #elseif branches
+        self._process_macro_block(alternative, namespace,
+                                  copy.deepcopy(conditions))
+
 
 class FunctionDefinition():
     """Wrapper for a function definition"""
@@ -136,6 +436,7 @@ class FunctionDefinition():
         self.name = ''
         self.complexity = 0
         self.icount = 0
+        self.bbcount = 0
         self.arg_names: list[str] = []
         self.arg_types: list[str] = []
         self.return_type = ''
@@ -146,6 +447,7 @@ class FunctionDefinition():
         self.detailed_callsites: list[dict[str, str]] = []
         self.var_map: dict[str, str] = {}
         self.depth = -1
+        self.assert_stmts: list[dict[str, Any]] = []
 
         # Extract information from tree-sitter node
         self._extract_information()
@@ -157,31 +459,23 @@ class FunctionDefinition():
 
         return ''
 
-    def _extract_pointer_array_from_type(
-            self, param_name: Node) -> tuple[int, int, Node]:
-        """Extract the pointer, array count from type and return the
-        pain type."""
-        # Count pointer
-        pointer_count = 0
-        while param_name.type == 'pointer_declarator':
-            pointer_count += 1
-            child = param_name.child_by_field_name('declarator')
-            if child:
-                param_name = child
-            else:
-                break
+    def extract_callsites(self, project):
+        """Gets the callsites of the function."""
+        if not self.base_callsites:
+            callsites = []
+            for child in self.root.children:
+                try:
+                    callsites.extend(self._process_callsites(child, project))
+                except UnicodeDecodeError:
+                    logger.debug('Error decoding statement.')
 
-        # Count array
-        array_count = 0
-        while param_name.type == 'array_declarator':
-            array_count += 1
-            child = param_name.child_by_field_name('declarator')
-            if child:
-                param_name = child
-            else:
-                break
+            callsites = sorted(set(callsites), key=lambda x: x[1])
+            self.base_callsites = [(x[0], x[2]) for x in callsites]
 
-        return (pointer_count, array_count, param_name)
+        if not self.detailed_callsites:
+            for dst, src_line in self.base_callsites:
+                src_loc = f'{self.parent_source.source_file}:{src_line},1'
+                self.detailed_callsites.append({'Src': src_loc, 'Dst': dst})
 
     def _extract_information(self):
         """Extract information from tree-sitter node."""
@@ -207,6 +501,7 @@ class FunctionDefinition():
 
         # Handle the full name
         # Extract the scope that the function is defined in
+        # Only valid for C++ code since C code does not have class or namespace
         logger.debug('Iterating parents')
         tmp_root = self.root
         full_name = ''
@@ -263,6 +558,7 @@ class FunctionDefinition():
             logger.debug('Assigning name as signature')
             full_name = self.sig
 
+        # TODO Check if final full_name process logic is needed.
         # try:
         #    full_name = full_name + self.root.child_by_field_name(
         #    'declarator').child_by_field_name(
@@ -281,6 +577,7 @@ class FunctionDefinition():
         logger.debug('Done walking')
 
         # Handles class or namespace in the function name
+        # Only needed for C++ code
         if '::' in self.name:
             self.namespace_or_class, _ = self.name.rsplit('::', 1)
 
@@ -331,6 +628,34 @@ class FunctionDefinition():
         # Handles other fields
         self._process_complexity()
         self._process_icount()
+        self._process_bbcount()
+        self._process_assert_stmts()
+
+    def _extract_pointer_array_from_type(
+            self, param_name: Node) -> tuple[int, int, Node]:
+        """Extract the pointer, array count from type and return the
+        pain type."""
+        # Count pointer
+        pointer_count = 0
+        while param_name.type == 'pointer_declarator':
+            pointer_count += 1
+            child = param_name.child_by_field_name('declarator')
+            if child:
+                param_name = child
+            else:
+                break
+
+        # Count array
+        array_count = 0
+        while param_name.type == 'array_declarator':
+            array_count += 1
+            child = param_name.child_by_field_name('declarator')
+            if child:
+                param_name = child
+            else:
+                break
+
+        return (pointer_count, array_count, param_name)
 
     def _process_complexity(self):
         """Gets complexity measure based on counting branch nodes in a
@@ -366,6 +691,38 @@ class FunctionDefinition():
             return count
 
         self.icount += _traverse_node_instr_count(self.root)
+
+    def _process_bbcount(self):
+        """Get the approximate number of basic blocks in a function"""
+        self.bbcount = 1
+
+        if_query = self.tree_sitter_lang.query('( if_statement ) @fi')
+        if_res = if_query.captures(self.root)
+        for _, if_exprs in if_res.items():
+            self.bbcount += len(if_exprs)
+
+        case_query = self.tree_sitter_lang.query('( case_statement ) @ci')
+        case_res = case_query.captures(self.root)
+        for _, case_exprs in case_res.items():
+            self.bbcount += len(case_exprs)
+
+    def _process_assert_stmts(self):
+        """Gets a list of assert statements in the function."""
+        call_query = self.tree_sitter_lang.query('( call_expression ) @ce')
+        call_res = call_query.captures(self.root)
+        for _, call_exprs in call_res.items():
+            for call_expr in call_exprs:
+                func_call = call_expr.child_by_field_name('function')
+                args = call_expr.child_by_field_name('arguments')
+                if func_call and func_call.text.decode() == 'assert':
+                    self.assert_stmts.append({
+                        'condition': args.text.decode(),
+                        'pos': {
+                            'source_file': self.parent_source.source_file,
+                            'line_start': call_expr.start_point.row,
+                            'line_end': call_expr.end_point.row,
+                        }
+                    })
 
     def _process_invoke(self, expr: Node,
                         project) -> list[tuple[str, int, int]]:
@@ -593,32 +950,20 @@ class FunctionDefinition():
 
         return callsites
 
-    def extract_callsites(self, project):
-        """Gets the callsites of the function."""
 
-        if not self.base_callsites:
-            callsites = []
-            for child in self.root.children:
-                try:
-                    callsites.extend(self._process_callsites(child, project))
-                except UnicodeDecodeError:
-                    logger.debug('Error decoding statement.')
-
-            callsites = sorted(set(callsites), key=lambda x: x[1])
-            self.base_callsites = [(x[0], x[2]) for x in callsites]
-
-        if not self.detailed_callsites:
-            for dst, src_line in self.base_callsites:
-                src_loc = f'{self.parent_source.source_file}:{src_line},1'
-                self.detailed_callsites.append({'Src': src_loc, 'Dst': dst})
-
-
-class CppProject(datatypes.Project[CppSourceCodeFile]):
+class CppProject(Project[CppSourceCodeFile]):
     """Wrapper for doing analysis of a collection of source files."""
 
     def __init__(self, source_code_files: list[CppSourceCodeFile]):
         super().__init__(source_code_files)
         self.internal_func_list: list[dict[str, Any]] = []
+
+    def get_function_from_name(self, function_name):
+        for func in self.all_functions:
+            if func.name == function_name:
+                return func
+
+        return None
 
     def generate_report(self,
                         entry_function: str = '',
@@ -626,6 +971,7 @@ class CppProject(datatypes.Project[CppSourceCodeFile]):
                         harness_source: str = '') -> None:
         """Helper function for generating yaml function report."""
         # pylint: disable=unused-argument
+        included_header_files: set[str] = set()
 
         self.report['report'] = 'name'
         self.report['sources'] = []
@@ -634,27 +980,52 @@ class CppProject(datatypes.Project[CppSourceCodeFile]):
 
         self.all_functions = []
         for source_code in self.source_code_files:
-            # Log entry method if provided
+            # Retrieve included header files in source_code
+            included_header_files.update(source_code.includes)
 
-            # Retrieve project information
+            # Retrieve functions in source_code
+            self.all_functions.extend(source_code.func_defs)
+
+            # Save base information of each source code
             func_names = [func.name for func in source_code.func_defs]
-
             self.report['sources'].append({
                 'source_file': source_code.source_file,
                 'function_names': func_names,
+                'types': {
+                    'structs': source_code.struct_defs,
+                    'typedefs': source_code.typedefs,
+                    'preproc_defs': source_code.preproc_defs,
+                    'enum': source_code.enum_defs,
+                    'union': source_code.union_defs,
+                }
             })
-
-            for func in source_code.func_defs:
-                self.all_functions.append(func)
 
         # Process all project functions
         if not self.internal_func_list:
             func_list = []
             for func in self.all_functions:
                 logger.debug('Iterating %s', func.name)
+
+                # Extracting callsites of functions
                 logger.debug('Extracing callsites')
                 func.extract_callsites(self)
+                callsites = func.base_callsites
+                reached = set()
+                for cs_dst, _ in callsites:
+                    reached.add(cs_dst)
                 logger.debug('Done extracting callsites')
+
+                # Calculating function uses
+                logger.debug('Calculating function uses')
+                func_uses = self._calculate_function_uses(func.name)
+                logger.debug('Done calculating function uses')
+
+                # Calculating function depth
+                logger.debug('Calculating function depth')
+                func_depth = self._calculate_function_depth(func)
+                logger.debug('Done calculating function depth')
+
+                # Storing function information
                 func_dict: dict[str, Any] = {}
                 func_dict['functionName'] = func.name
                 func_dict[
@@ -674,20 +1045,13 @@ class CppProject(datatypes.Project[CppSourceCodeFile]):
                 func_dict['argCount'] = len(func_dict['argTypes'])
                 func_dict['returnType'] = func.return_type
                 func_dict['BranchProfiles'] = []
-                func_dict['Callsites'] = func.detailed_callsites
-                logger.debug('Calculating function uses')
-                func_dict['functionUses'] = self.calculate_function_uses(
-                    func.name)
-                logger.debug('Getting function depth')
-                func_dict['functionDepth'] = self.calculate_function_depth(
-                    func)
                 func_dict['constantsTouched'] = []
-                func_dict['BBCount'] = 0
+                func_dict['BBCount'] = func.bbcount
                 func_dict['signature'] = func.sig
-                callsites = func.base_callsites
-                reached = set()
-                for cs_dst, _ in callsites:
-                    reached.add(cs_dst)
+                func_dict['assertStmts'] = func.assert_stmts
+                func_dict['Callsites'] = func.detailed_callsites
+                func_dict['functionUses'] = func_uses
+                func_dict['functionDepth'] = func_depth
                 func_dict['functionsReached'] = list(reached)
 
                 logger.debug('Done')
@@ -699,21 +1063,14 @@ class CppProject(datatypes.Project[CppSourceCodeFile]):
         if func_list:
             self.report['All functions'] = {}
             self.report['All functions']['Elements'] = func_list
+        self.report['included-header-files'] = list(included_header_files)
 
         self.report['Fuzzing method'] = 'LLVMFuzzerTestOneInput'
         self.report['Fuzzer filename'] = harness_source
 
-    def get_function_from_name(self, function_name):
-        for func in self.all_functions:
-            if func.name == function_name:
-                return func
-
-        return None
-
     def extract_calltree(self,
                          source_file: str = '',
-                         source_code: Optional[
-                             datatypes.SourceCodeFile] = None,
+                         source_code: Optional[SourceCodeFile] = None,
                          function: Optional[str] = None,
                          visited_functions: Optional[set[str]] = None,
                          depth: int = 0,
@@ -733,7 +1090,7 @@ class CppProject(datatypes.Project[CppSourceCodeFile]):
             return ''
 
         if not source_code:
-            result = self.find_source_with_func_def(function)
+            result = self._find_source_with_func_def(function)
             if result:
                 source_code = result[0]
 
@@ -794,7 +1151,7 @@ class CppProject(datatypes.Project[CppSourceCodeFile]):
     def get_reachable_functions(
             self,
             source_file: str = '',
-            source_code: Optional[datatypes.SourceCodeFile] = None,
+            source_code: Optional[SourceCodeFile] = None,
             function: Optional[str] = None,
             visited_functions: Optional[set[str]] = None) -> set[str]:
         """Gets the reachable frunctions from a given function."""
@@ -809,7 +1166,7 @@ class CppProject(datatypes.Project[CppSourceCodeFile]):
             return visited_functions
 
         source_code = None
-        result = self.find_source_with_func_def(function)
+        result = self._find_source_with_func_def(function)
         if result:
             source_code = result[0]
 
@@ -843,26 +1200,58 @@ class CppProject(datatypes.Project[CppSourceCodeFile]):
 
         return visited_functions
 
-    def find_function_from_approximate_name(
-            self, function_name: str) -> Optional['FunctionDefinition']:
-        """Locate a function element with name approximately."""
-        function_names = []
-        for func in self.all_functions:
-            if func.name == function_name:
-                function_names.append(func)
-        if len(function_names) == 1:
-            return function_names[0]
+    def _calculate_function_uses(self, target_name: str) -> int:
+        """Calculate how many functions called the target function."""
+        func_use_count = 0
 
-        function_names = []
-        for func in self.all_functions:
-            if func.name.endswith(function_name):
-                function_names.append(func)
-        if len(function_names) == 1:
-            return function_names[0]
+        for source_file in self.source_code_files:
+            for function in source_file.func_defs:
+                found = False
+                for callsite in function.base_callsites:
+                    if callsite[0] == target_name:
+                        found = True
+                        break
+                    if callsite[0].endswith(target_name):
+                        found = True
+                        break
+                if found:
+                    func_use_count += 1
 
-        return None
+        return func_use_count
 
-    def find_source_with_func_def(
+    def _calculate_function_depth(self,
+                                  target_function: FunctionDefinition) -> int:
+        """Calculate function depth of the target function."""
+
+        def _recursive_function_depth(function: FunctionDefinition) -> int:
+            if function.depth != -1:
+                return function.depth
+
+            callsites = function.base_callsites
+            if len(callsites) == 0:
+                return 0
+
+            depth = 0
+            visited.append(function.name)
+            for callsite in callsites:
+                target = self._find_source_with_func_def(callsite[0])
+                if target and target[1].name in visited:
+                    depth = max(depth, 1)
+                elif target:
+                    depth = max(depth,
+                                _recursive_function_depth(target[1]) + 1)
+                    function.depth = depth
+                else:
+                    visited.append(callsite[0])
+
+            return depth
+
+        visited: list[str] = []
+        func_depth = _recursive_function_depth(target_function)
+
+        return func_depth
+
+    def _find_source_with_func_def(
             self, name: str
     ) -> Optional[tuple[CppSourceCodeFile, FunctionDefinition]]:
         """Finds the source code with a given function."""
@@ -895,59 +1284,9 @@ class CppProject(datatypes.Project[CppSourceCodeFile]):
 
         return None
 
-    def calculate_function_uses(self, target_name: str) -> int:
-        """Calculate how many functions called the target function."""
-        func_use_count = 0
 
-        for source_file in self.source_code_files:
-            for function in source_file.func_defs:
-                found = False
-                for callsite in function.base_callsites:
-                    if callsite[0] == target_name:
-                        found = True
-                        break
-                    if callsite[0].endswith(target_name):
-                        found = True
-                        break
-                if found:
-                    func_use_count += 1
-
-        return func_use_count
-
-    def calculate_function_depth(self,
-                                 target_function: FunctionDefinition) -> int:
-        """Calculate function depth of the target function."""
-
-        def _recursive_function_depth(function: FunctionDefinition) -> int:
-            if function.depth != -1:
-                return function.depth
-
-            callsites = function.base_callsites
-            if len(callsites) == 0:
-                return 0
-
-            depth = 0
-            visited.append(function.name)
-            for callsite in callsites:
-                target = self.find_source_with_func_def(callsite[0])
-                if target and target[1].name in visited:
-                    depth = max(depth, 1)
-                elif target:
-                    depth = max(depth,
-                                _recursive_function_depth(target[1]) + 1)
-                    function.depth = depth
-                else:
-                    visited.append(callsite[0])
-
-            return depth
-
-        visited: list[str] = []
-        func_depth = _recursive_function_depth(target_function)
-
-        return func_depth
-
-
-def load_treesitter_trees(source_files, is_log=True) -> CppProject:
+def load_treesitter_trees(source_files: list[str],
+                          is_log: bool = True) -> CppProject:
     """Creates treesitter trees for all files in a given list of
     source files."""
     results = []
@@ -960,11 +1299,12 @@ def load_treesitter_trees(source_files, is_log=True) -> CppProject:
             source_cls = CppSourceCodeFile('c++', code_file)
         except RecursionError:
             continue
-        results.append(source_cls)
 
         if is_log:
             if source_cls.has_libfuzzer_harness():
                 logger.info('harness: %s', code_file)
+
+        results.append(source_cls)
 
     return CppProject(results)
 
