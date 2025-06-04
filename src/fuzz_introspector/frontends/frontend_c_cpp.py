@@ -474,7 +474,8 @@ class FunctionDefinition():
                 if node.id not in visited:
                     visited.add(node.id)
                     try:
-                        callsites.extend(self._process_callsites(node, project))
+                        callsites.extend(self._process_callsites(
+                            node, project))
                     except UnicodeDecodeError:
                         logger.debug('Error decoding statement.')
 
