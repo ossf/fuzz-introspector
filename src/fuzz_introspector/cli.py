@@ -88,7 +88,7 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
                                    "OptimalTargets", "RuntimeCoverageAnalysis",
                                    "FuzzEngineInputAnalysis",
                                    "FilePathAnalyser", "MetadataAnalysis",
-                                   "AnnotatedCFG", "TestFileAnalyser"
+                                   "AnnotatedCFG", "FrontendAnalyser"
                                ],
                                help="""
             Analyses to run. Available options:
@@ -96,7 +96,7 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
             FuzzDriverSynthesizerAnalysis, FuzzEngineInputAnalysis,
             FilePathAnalyser, ThirdPartyAPICoverageAnalyser,
             MetadataAnalysis, OptimalTargets, RuntimeCoverageAnalysis,
-            SinkCoverageAnalyser, TestFileAnalyser
+            SinkCoverageAnalyser, FrontendAnalyser
         """)
     report_parser.add_argument("--enable-all-analyses",
                                action='store_true',
@@ -152,7 +152,7 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
                                                     help="""
         Available analyser:
         SourceCodeLineAnalyser FarReachLowCoverageAnalyser
-        PublicCandidateAnalyser TestFileAnalyser""")
+        PublicCandidateAnalyser FrontendAnalyser""")
 
     source_code_line_analyser_parser = analyser_parser.add_parser(
         'SourceCodeLineAnalyser',
@@ -259,21 +259,22 @@ def get_cmdline_parser() -> argparse.ArgumentParser:
         type=str,
         help='Folder to store analysis results.')
 
-    test_file_analyser_parser = analyser_parser.add_parser(
-        'TestFileAnalyser',
-        help=('Provide analysis of public test files found in the project.'))
+    frontend_analyser_parser = analyser_parser.add_parser(
+        'FrontendAnalyser',
+        help=('Do a second run of the frontend and provide analysis '
+              'of public test files found in the project.'))
 
-    test_file_analyser_parser.add_argument(
+    frontend_analyser_parser.add_argument(
         '--target-dir',
         type=str,
         help='Directory holding source to analyse.',
         required=True)
-    test_file_analyser_parser.add_argument(
+    frontend_analyser_parser.add_argument(
         '--language',
         type=str,
-        help='Programming of the source code to analyse.',
+        help='Programming language of the source code to analyse.',
         choices=constants.LANGUAGES_SUPPORTED)
-    test_file_analyser_parser.add_argument(
+    frontend_analyser_parser.add_argument(
         '--out-dir',
         default='',
         type=str,

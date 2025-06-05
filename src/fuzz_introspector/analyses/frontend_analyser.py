@@ -27,10 +27,10 @@ from fuzz_introspector.frontends import oss_fuzz
 logger = logging.getLogger(name=__name__)
 
 
-class TestFileAnalyser(analysis.AnalysisInterface):
-    """Analysis utility for testing analysis."""
+class FrontendAnalyser(analysis.AnalysisInterface):
+    """Analysis utility for a second frontend run and test file analysis."""
 
-    name: str = 'TestFileAnalyser'
+    name: str = 'FrontendAnalyser'
 
     def __init__(self) -> None:
         self.json_results: Dict[str, Any] = {}
@@ -84,25 +84,33 @@ class TestFileAnalyser(analysis.AnalysisInterface):
                       basefolder: str, coverage_url: str,
                       conclusions: List[html_helpers.HTMLConclusion],
                       out_dir: str) -> str:
-        """Analysis function."""
+        """Analysis function. Perform another frontend run and extract all
+        test files in the project for additional analysis."""
+        # Configure base directory and detect language
         basefolder = os.environ.get('SRC', '/src')
-
         language = utils.detect_language(basefolder)
 
-        # Calls frontend for report or full approach
+        # Prepare separate out directory
+        temp_dir = os.path.join(out_dir, 'second-frontend-run')
+        os.makedirs(temp_dir, exist_ok=True)
+
+        # Perform a second run of the frontend on the target project. This
+        # ensure non-compiled source codes ignored by LTO are also included
+        # in the analysis.
         oss_fuzz.analyse_folder(language=language,
                                 directory=basefolder,
-                                out=out_dir,
+                                out=temp_dir,
                                 module_only=True)
 
-        # Generate comple FI backend profile analysis report from updated frontend result
+        # Generate FI backend analysis report from second frontend run result
         introspection_proj = analysis.IntrospectionProject(
-            proj_profile.language, basefolder, out_dir)
-        introspection_proj.load_data_files(True, out_dir, basefolder)
+            proj_profile.language, basefolder, temp_dir)
+        introspection_proj.load_data_files(True, temp_dir, basefolder)
 
         # Calls standalone analysis
         self.standalone_analysis(introspection_proj.proj_profile,
                                  introspection_proj.profiles, out_dir)
+
         return ''
 
     def standalone_analysis(self,

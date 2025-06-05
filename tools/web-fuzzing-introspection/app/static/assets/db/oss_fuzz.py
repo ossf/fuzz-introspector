@@ -47,14 +47,18 @@ def get_introspector_report_url_report(project_name, datestr):
                                             datestr) + "fuzz_report.html"
 
 
-def get_introspector_report_url_typedef(project_name, datestr):
-    return get_introspector_report_url_base(project_name,
-                                            datestr) + "full_type_defs.json"
+def get_introspector_report_url_typedef(project_name, datestr, second_run=False):
+    base = get_introspector_report_url_base(project_name, datestr)
+    if second_run:
+        base += "second-frontend-run/"
+    return base + "full_type_defs.json"
 
 
-def get_introspector_report_url_macro_block(project_name, datestr):
-    return get_introspector_report_url_base(project_name,
-                                            datestr) + "macro_block_info.json"
+def get_introspector_report_url_macro_block(project_name, datestr, second_run=False):
+    base = get_introspector_report_url_base(project_name, datestr)
+    if second_run:
+        base += "second-frontend-run/"
+    return base + "macro_block_info.json"
 
 
 def get_fuzzer_stats_fuzz_count_url(project_name, date_str):
@@ -244,10 +248,17 @@ def extract_local_introspector_report(project_name, oss_fuzz_folder):
 
 
 def extract_local_introspector_typedef(project_name, oss_fuzz_folder):
-    summary_json = os.path.join(oss_fuzz_folder, 'build', 'out', project_name,
-                                'inspector', 'full_type_defs.json')
+    json_base = os.path.join(oss_fuzz_folder, 'build', 'out', project_name,
+                             'inspector')
+
+    summary_json = os.path.join(json_base, 'full_type_defs.json')
     if not os.path.isfile(summary_json):
-        return {}
+        # Failed to locate the json in first introspector run
+        # Possibly run from LTO, try locate the file in second introspector run
+        summary_json = os.path.join(json_base, 'second-frontend-run',
+                                    'full_type_defs.json')
+        if not os.path.isfile(summary_json):
+            return {}
 
     with open(summary_json, 'r') as f:
         json_list = json.load(f)
@@ -255,10 +266,17 @@ def extract_local_introspector_typedef(project_name, oss_fuzz_folder):
 
 
 def extract_local_introspector_macro_block(project_name, oss_fuzz_folder):
-    summary_json = os.path.join(oss_fuzz_folder, 'build', 'out', project_name,
-                                'inspector', 'macro_block_info.json')
+    json_base = os.path.join(oss_fuzz_folder, 'build', 'out', project_name,
+                             'inspector')
+
+    summary_json = os.path.join(json_base, 'macro_block_info.json')
     if not os.path.isfile(summary_json):
-        return {}
+        # Failed to locate the json in first introspector run
+        # Possibly run from LTO, try locate the file in second introspector run
+        summary_json = os.path.join(json_base, 'second-frontend-run',
+                                    'macro_block_info.json')
+        if not os.path.isfile(summary_json):
+            return {}
 
     with open(summary_json, 'r') as f:
         json_list = json.load(f)
@@ -402,12 +420,21 @@ def extract_introspector_typedef(project_name, date_str):
     introspector_test_url = get_introspector_report_url_typedef(
         project_name, date_str.replace("-", ""))
 
-    # Read the introspector atifact
+    # Read the introspector artifact
     try:
         raw_introspector_json_request = requests.get(introspector_test_url,
                                                      timeout=10)
     except:
-        return []
+        # Failed to locate the json in first introspector run
+        # Possibly run from LTO, try locate the file in second introspector run
+        introspector_test_url = get_introspector_report_url_typedef(
+            project_name, date_str.replace("-", ""), True)
+        try:
+            raw_introspector_json_request = requests.get(introspector_test_url,
+                                                         timeout=10)
+        except:
+            return []
+
     try:
         typedef_list = json.loads(raw_introspector_json_request.text)
     except:
@@ -425,7 +452,16 @@ def extract_introspector_macro_block(project_name, date_str):
         raw_introspector_json_request = requests.get(introspector_test_url,
                                                      timeout=10)
     except:
-        return []
+        # Failed to locate the json in first introspector run
+        # Possibly run from LTO, try locate the file in second introspector run
+        introspector_test_url = get_introspector_report_url_macro_block(
+            project_name, date_str.replace("-", ""), True)
+        try:
+            raw_introspector_json_request = requests.get(introspector_test_url,
+                                                         timeout=10)
+        except:
+            return []
+
     try:
         return json.loads(raw_introspector_json_request.text)
     except:
