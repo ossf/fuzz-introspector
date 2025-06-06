@@ -47,14 +47,18 @@ def get_introspector_report_url_report(project_name, datestr):
                                             datestr) + "fuzz_report.html"
 
 
-def get_introspector_report_url_typedef(project_name, datestr, second_run=False):
+def get_introspector_report_url_typedef(project_name,
+                                        datestr,
+                                        second_run=False):
     base = get_introspector_report_url_base(project_name, datestr)
     if second_run:
         base += "second-frontend-run/"
     return base + "full_type_defs.json"
 
 
-def get_introspector_report_url_macro_block(project_name, datestr, second_run=False):
+def get_introspector_report_url_macro_block(project_name,
+                                            datestr,
+                                            second_run=False):
     base = get_introspector_report_url_base(project_name, datestr)
     if second_run:
         base += "second-frontend-run/"
