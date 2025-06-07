@@ -251,6 +251,16 @@ def extract_local_introspector_function_list(project_name, oss_fuzz_folder):
     return function_list
 
 
+def extract_local_introspector_branch_blockers(project_name, oss_fuzz_folder):
+    summary_json = os.path.join(oss_fuzz_folder, 'build', 'out', project_name,
+                                'inspector', 'branch-blockers.json')
+    if not os.path.isfile(summary_json):
+        return {}
+    with open(summary_json, 'r') as f:
+        json_dict = json.load(f)
+    return json_dict
+
+
 def extract_local_introspector_constructor_list(project_name, oss_fuzz_folder):
     summary_json = os.path.join(oss_fuzz_folder, 'build', 'out', project_name,
                                 'inspector',
