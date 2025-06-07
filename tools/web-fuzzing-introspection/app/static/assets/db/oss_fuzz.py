@@ -32,6 +32,11 @@ def get_introspector_report_url_summary(project_name, datestr):
                                             datestr) + "summary.json"
 
 
+def get_introspector_report_url_branch_blockers(project_name, datestr):
+    return get_introspector_report_url_base(project_name,
+                                            datestr) + "branch-blockers.json"
+
+
 def get_introspector_report_url_all_functions(project_name, datestr):
     return get_introspector_report_url_base(
         project_name, datestr) + "all-fuzz-introspector-functions.json"
@@ -150,6 +155,24 @@ def extract_introspector_light_all_files(project_name, date_str):
         return []
 
     return all_urls
+
+
+def extract_introspector_branch_blockers(project_name, date_str):
+    introspector_branch_blockers_url = get_introspector_report_url_branch_blockers(
+        project_name, date_str.replace("-", ""))
+
+    # Read the introspector atifact
+    try:
+        raw_introspector_json_request = requests.get(
+            introspector_branch_blockers_url, timeout=10)
+    except:
+        return None
+    try:
+        branch_blockers = json.loads(raw_introspector_json_request.text)
+    except:
+        return None
+
+    return branch_blockers
 
 
 def get_introspector_type_map_url_summary(project_name, datestr):

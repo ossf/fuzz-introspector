@@ -171,24 +171,16 @@ def save_type_map(debug_report, project_name):
         json.dump(debug_report, report_fd)
 
 
-def extract_and_refine_branch_blockers(introspector_report, project_name):
+def extract_and_refine_branch_blockers(branch_blockers, project_name):
     branch_pairs = list()
-    for key in introspector_report:
-        if key == "MergedProjectProfile" or key == 'analyses':
-            continue
 
-        # Fuzzer-specific dictionary, get the contents of it.
-        val = introspector_report[key]
-        if not isinstance(val, dict):
-            continue
+    if not isinstance(branch_blockers, dict):
+        return branch_pairs
 
-        branch_blockers = val.get('branch_blockers', None)
-        if branch_blockers is None or not isinstance(branch_blockers, list):
-            continue
-
-        for branch_blocker in branch_blockers:
-            function_blocked = branch_blocker.get('function_name', None)
-            blocked_unique_not_covered_complexity = branch_blocker.get(
+    for _, blockers in branch_blockers.items():
+        for blocker in blockers:
+            function_blocked = blocker.get('function_name', None)
+            blocked_unique_not_covered_complexity = blocker.get(
                 'blocked_unique_not_covered_complexity', None)
             if blocked_unique_not_covered_complexity < 5:
                 continue
@@ -205,11 +197,11 @@ def extract_and_refine_branch_blockers(introspector_report, project_name):
                 'blocked_runtime_coverage':
                 blocked_unique_not_covered_complexity,
                 'source_file':
-                branch_blocker.get('source_file', "N/A"),
+                blocker.get('source_file', "N/A"),
                 'linenumber':
-                branch_blocker.get('branch_line_number', -1),
+                blocker.get('branch_line_number', -1),
                 'blocked_unique_functions':
-                branch_blocker.get('blocked_unique_functions', [])
+                blocker.get('blocked_unique_functions', [])
             })
     return branch_pairs
 
@@ -357,6 +349,8 @@ def extract_local_project_data(project_name, oss_fuzz_path,
         # Default set to c++ as this is OSS-Fuzz's default.
         project_language = 'c++'
 
+    branch_blockers = oss_fuzz.extract_local_introspector_branch_blockers(
+        project_name, oss_fuzz_path)
     code_coverage_summary = oss_fuzz.get_local_code_coverage_summary(
         project_name, oss_fuzz_path)
     cov_fuzz_stats = oss_fuzz.get_local_code_coverage_stats(
@@ -437,6 +431,10 @@ def extract_local_project_data(project_name, oss_fuzz_path,
     # Get details if needed and otherwise leave empty
     refined_proj_list = list()
     annotated_cfg = dict()
+
+    branch_pairs = extract_and_refine_branch_blockers(branch_blockers,
+                                                      project_name)
+    save_branch_blockers(branch_pairs, project_name)
 
     refined_proj_list = extract_and_refine_functions(all_function_list, '')
     refined_constructor_list = extract_and_refine_functions(
@@ -568,6 +566,9 @@ def extract_project_data(project_name, date_str, should_include_details,
         introspector_report = None
 
     introspector_report_url = oss_fuzz.get_introspector_report_url_report(
+        project_name, date_str.replace("-", ""))
+
+    branch_blockers = oss_fuzz.extract_introspector_branch_blockers(
         project_name, date_str.replace("-", ""))
 
     test_files = oss_fuzz.extract_introspector_test_files(
@@ -730,7 +731,7 @@ def extract_project_data(project_name, date_str, should_include_details,
             annotated_cfg = extract_and_refine_annotated_cfg(
                 introspector_report)
             branch_pairs = extract_and_refine_branch_blockers(
-                introspector_report, project_name)
+                branch_blockers, project_name)
 
         # Dump things we dont want to accummulate.
         save_branch_blockers(branch_pairs, project_name)
