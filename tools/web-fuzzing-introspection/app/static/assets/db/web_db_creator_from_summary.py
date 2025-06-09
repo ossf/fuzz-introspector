@@ -261,8 +261,6 @@ def extract_and_refine_functions(all_function_list, date_str):
             func.get('return_type', 'N/A'),
             'raw-name':
             func.get('raw-function-name', 'N/A'),
-            'date-str':
-            date_str,
             'src_begin':
             func.get('source_line_begin', 'N/A'),
             'src_end':
