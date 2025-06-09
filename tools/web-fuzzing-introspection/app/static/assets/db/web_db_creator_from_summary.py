@@ -69,9 +69,14 @@ logging.getLogger("urllib3").setLevel(logging.WARNING)
 logger = logging.getLogger(name=__name__)
 
 
-def git_clone_project(git_url: str, destination: str) -> bool:
+def git_clone_project(git_url: str,
+                      destination: str,
+                      single_depth: bool = True) -> bool:
     """Clones a Git repository into a given destination folder."""
-    cmd = ["git clone", git_url, destination]
+    cmd = ["git clone"]
+    if single_depth:
+        cmd += ['--depth', '1']
+    cmd += [git_url, destination]
     try:
         subprocess.check_call(" ".join(cmd),
                               shell=True,
@@ -1294,7 +1299,7 @@ def extract_oss_fuzz_total_history(date_range, must_include):
     of_tmp = 'tmp-oss-fuzz-clone'
     if os.path.isdir(of_tmp):
         shutil.rmtree(of_tmp)
-    git_clone_project(constants.OSS_FUZZ_REPO, of_tmp)
+    git_clone_project(constants.OSS_FUZZ_REPO, of_tmp, False)
 
     if not os.path.isdir(of_tmp):
         return
