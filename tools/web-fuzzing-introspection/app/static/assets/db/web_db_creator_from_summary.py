@@ -282,6 +282,18 @@ def extract_and_refine_functions(all_function_list, date_str):
         introspector_func['need_close'] = func.get('need_close', False)
         introspector_func['exc'] = func.get('exceptions', [])
 
+        # Remove duplicate information from function callsites. This is,
+        # specifically, the keys in the callsites dictionary are lists of
+        # destinations composed of strings. These strings each hold 3
+        # elements separated by colons, and the first two elements
+        # are redundant information found elsewhere.
+        new_callsites = {}
+        for callsite in introspector_func['callsites']:
+            new_callsites[callsite] = []
+            for callsite_strs in introspector_func['callsites'][callsite]:
+                new_callsites[callsite].append(callsite_strs.split(':')[-1])
+        introspector_func['callsites'] = new_callsites
+
         # For JVM projects, the function name, function signature and function raw
         # name should be the same. Remove them to avoid duplication and reduce the
         # db size if they are indeed the same.

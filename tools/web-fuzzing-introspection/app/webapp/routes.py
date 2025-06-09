@@ -1606,7 +1606,7 @@ def api_cross_references(args):
                 func_xrefs.append(function)
                 all_locations = function.callsites[cs_dst]
                 for loc in all_locations:
-                    cs_linenumber = int(loc.split(':')[-1])
+                    cs_linenumber = int(loc)
                     xrefs.append({
                         'filename': function.function_filename,
                         'cs_linenumber': cs_linenumber,
