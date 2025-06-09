@@ -291,7 +291,6 @@ def extract_and_refine_functions(all_function_list, date_str):
         for callsite in introspector_func['callsites']:
             new_callsites[callsite] = []
             for callsite_strs in introspector_func['callsites'][callsite]:
-                #if callsite_strs not in new_callsites[callsite]:
                 new_callsites[callsite].append(callsite_strs.split(':')[-1])
         introspector_func['callsites'] = new_callsites
 
