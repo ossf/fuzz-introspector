@@ -121,7 +121,6 @@ class Function:
                  return_type: str = "",
                  function_argument_names: List[str] = [],
                  raw_function_name: str = "",
-                 date_str: str = "",
                  source_line_begin: int = -1,
                  source_line_end: int = -1,
                  callsites: Dict[str, List[str]] = {},
@@ -150,7 +149,6 @@ class Function:
         self.function_argument_names = function_argument_names
         self.return_type = return_type
         self.raw_function_name = raw_function_name
-        self.date_str = date_str
         self.source_line_begin = source_line_begin
         self.source_line_end = source_line_end
         self.callsites = callsites
