@@ -77,6 +77,9 @@ class DBSummary:
 
 
 class ProjectTimestamp:
+    __slots__ = ('project_name', 'date', 'language', 'coverage_data',
+                 'introspector_data', 'fuzzer_count', 'introspector_url',
+                 'project_url', 'project_repository')
 
     def __init__(self,
                  project_name: str,
@@ -104,6 +107,16 @@ class ProjectTimestamp:
 
 
 class Function:
+    __slots__ = ('name', 'project', 'is_reached', 'runtime_code_coverage',
+                 'function_filename', 'reached_by_fuzzers',
+                 'code_coverage_url', 'accummulated_cyclomatic_complexity',
+                 'llvm_instruction_count', 'undiscovered_complexity',
+                 'function_arguments', 'function_debug_arguments',
+                 'return_type', 'function_argument_names', 'raw_function_name',
+                 'source_line_begin', 'source_line_end', 'callsites',
+                 'calldepth', 'func_signature', 'debug_data', 'is_accessible',
+                 'is_jvm_library', 'is_enum_class', 'is_static', 'need_close',
+                 'exceptions', 'asserts')
 
     def __init__(self,
                  name: str,
@@ -121,7 +134,6 @@ class Function:
                  return_type: str = "",
                  function_argument_names: List[str] = [],
                  raw_function_name: str = "",
-                 date_str: str = "",
                  source_line_begin: int = -1,
                  source_line_end: int = -1,
                  callsites: Dict[str, List[str]] = {},
@@ -150,7 +162,6 @@ class Function:
         self.function_argument_names = function_argument_names
         self.return_type = return_type
         self.raw_function_name = raw_function_name
-        self.date_str = date_str
         self.source_line_begin = source_line_begin
         self.source_line_end = source_line_end
         self.callsites = callsites
@@ -178,7 +189,6 @@ class Function:
             'runtime_code_coverage': self.runtime_code_coverage,
             'return_type': self.return_type,
             'function_argument_names': self.function_argument_names,
-            'function_arguments': self.function_arguments,
             'raw_function_name': self.raw_function_name,
             'accummulated_cyclomatic_complexity':
             self.accummulated_cyclomatic_complexity,

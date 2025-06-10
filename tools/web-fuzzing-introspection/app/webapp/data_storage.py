@@ -26,8 +26,6 @@ BLOCKERS: List[BranchBlocker] = []
 
 BUILD_STATUS: List[BuildStatus] = []
 
-PROJECT_DEBUG_DATA: List[DebugStatus] = []
-
 ALL_HEADER_FILES: List[Dict[str, Any]] = []
 
 TOTAL_FUNCTION_COUNT = -1
@@ -62,10 +60,6 @@ def get_blockers() -> List[BranchBlocker]:
 
 def get_build_status() -> List[BuildStatus]:
     return BUILD_STATUS
-
-
-def get_debug_data() -> List[DebugStatus]:
-    return PROJECT_DEBUG_DATA
 
 
 def get_project_debug_report(project: str) -> Optional[DebugStatus]:
@@ -159,7 +153,6 @@ def retrieve_functions(proj: str, is_constructor: bool) -> List[Function]:
                      return_type=func['rtn'],
                      function_argument_names=func['args-names'],
                      raw_function_name=func.get('raw-name', func['name']),
-                     date_str=func.get('date-str', ''),
                      source_line_begin=func.get('src_begin', -1),
                      source_line_end=func.get('src_end', -1),
                      callsites=func.get('callsites', {}),

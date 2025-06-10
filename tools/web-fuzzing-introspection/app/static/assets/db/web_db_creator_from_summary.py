@@ -69,9 +69,14 @@ logging.getLogger("urllib3").setLevel(logging.WARNING)
 logger = logging.getLogger(name=__name__)
 
 
-def git_clone_project(git_url: str, destination: str) -> bool:
+def git_clone_project(git_url: str,
+                      destination: str,
+                      single_depth: bool = True) -> bool:
     """Clones a Git repository into a given destination folder."""
-    cmd = ["git clone", git_url, destination]
+    cmd = ["git clone"]
+    if single_depth:
+        cmd += ['--depth', '1']
+    cmd += [git_url, destination]
     try:
         subprocess.check_call(" ".join(cmd),
                               shell=True,
@@ -256,8 +261,6 @@ def extract_and_refine_functions(all_function_list, date_str):
             func.get('return_type', 'N/A'),
             'raw-name':
             func.get('raw-function-name', 'N/A'),
-            'date-str':
-            date_str,
             'src_begin':
             func.get('source_line_begin', 'N/A'),
             'src_end':
@@ -276,6 +279,18 @@ def extract_and_refine_functions(all_function_list, date_str):
         introspector_func['static'] = func.get('is_static', False)
         introspector_func['need_close'] = func.get('need_close', False)
         introspector_func['exc'] = func.get('exceptions', [])
+
+        # Remove duplicate information from function callsites. This is,
+        # specifically, the keys in the callsites dictionary are lists of
+        # destinations composed of strings. These strings each hold 3
+        # elements separated by colons, and the first two elements
+        # are redundant information found elsewhere.
+        new_callsites = {}
+        for callsite in introspector_func['callsites']:
+            new_callsites[callsite] = []
+            for callsite_strs in introspector_func['callsites'][callsite]:
+                new_callsites[callsite].append(callsite_strs.split(':')[-1])
+        introspector_func['callsites'] = new_callsites
 
         # For JVM projects, the function name, function signature and function raw
         # name should be the same. Remove them to avoid duplication and reduce the
@@ -1294,7 +1309,7 @@ def extract_oss_fuzz_total_history(date_range, must_include):
     of_tmp = 'tmp-oss-fuzz-clone'
     if os.path.isdir(of_tmp):
         shutil.rmtree(of_tmp)
-    git_clone_project(constants.OSS_FUZZ_REPO, of_tmp)
+    git_clone_project(constants.OSS_FUZZ_REPO, of_tmp, False)
 
     if not os.path.isdir(of_tmp):
         return

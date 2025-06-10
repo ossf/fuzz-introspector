@@ -89,34 +89,6 @@ def load_db() -> None:
                 recent_results=project_timestamp.get('recent_results'),
             ))
 
-        introspector_data = project_timestamp.get('introspector-data', None)
-        if introspector_data is None:
-            debug_report = None
-        else:
-            debug_report = introspector_data.get('debug_report', None)
-
-        if debug_report is None:
-            print("Adding empty %s" % (project_timestamp['project_name']))
-            data_storage.PROJECT_DEBUG_DATA.append(
-                models.DebugStatus(
-                    project_name=project_timestamp['project_name'],
-                    all_files_in_project=[],
-                    all_functions_in_project=[],
-                    all_global_variables=[],
-                    all_types=[]))
-        else:
-            print("Adding non-empty %s" % (project_timestamp['project_name']))
-            data_storage.PROJECT_DEBUG_DATA.append(
-                models.DebugStatus(
-                    project_name=project_timestamp['project_name'],
-                    all_files_in_project=debug_report.get(
-                        'all_files_in_project', []),
-                    all_functions_in_project=debug_report.get(
-                        'all_functions_in_project', []),
-                    all_global_variables=debug_report.get(
-                        'all_global_variables,', []),
-                    all_types=debug_report.get('all_types', [])))
-
     if os.path.isfile(projects_build_status):
         # Read the builds
         with open(projects_build_status, 'r') as f:
