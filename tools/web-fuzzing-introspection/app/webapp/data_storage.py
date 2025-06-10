@@ -112,7 +112,6 @@ def get_project_branch_blockers(project: str) -> List[BranchBlocker]:
 
 def retrieve_functions(proj: str, is_constructor: bool) -> List[Function]:
     """Retrieve functions or constructors"""
-    print('Retrieving functions for project:', proj)
     if is_constructor:
         json_path = all_constructors_file.replace('{PROJ}', proj)
     else:
