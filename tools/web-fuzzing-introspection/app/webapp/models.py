@@ -77,6 +77,9 @@ class DBSummary:
 
 
 class ProjectTimestamp:
+    __slots__ = ('project_name', 'date', 'language', 'coverage_data',
+                 'introspector_data', 'fuzzer_count', 'introspector_url',
+                 'project_url', 'project_repository')
 
     def __init__(self,
                  project_name: str,
