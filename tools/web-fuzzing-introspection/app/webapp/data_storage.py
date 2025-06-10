@@ -26,8 +26,6 @@ BLOCKERS: List[BranchBlocker] = []
 
 BUILD_STATUS: List[BuildStatus] = []
 
-PROJECT_DEBUG_DATA: List[DebugStatus] = []
-
 ALL_HEADER_FILES: List[Dict[str, Any]] = []
 
 TOTAL_FUNCTION_COUNT = -1
@@ -62,10 +60,6 @@ def get_blockers() -> List[BranchBlocker]:
 
 def get_build_status() -> List[BuildStatus]:
     return BUILD_STATUS
-
-
-def get_debug_data() -> List[DebugStatus]:
-    return PROJECT_DEBUG_DATA
 
 
 def get_project_debug_report(project: str) -> Optional[DebugStatus]:
