@@ -104,6 +104,16 @@ class ProjectTimestamp:
 
 
 class Function:
+    __slots__ = ('name', 'project', 'is_reached', 'runtime_code_coverage',
+                 'function_filename', 'reached_by_fuzzers',
+                 'code_coverage_url', 'accummulated_cyclomatic_complexity',
+                 'llvm_instruction_count', 'undiscovered_complexity',
+                 'function_arguments', 'function_debug_arguments',
+                 'return_type', 'function_argument_names', 'raw_function_name',
+                 'source_line_begin', 'source_line_end', 'callsites',
+                 'calldepth', 'func_signature', 'debug_data', 'is_accessible',
+                 'is_jvm_library', 'is_enum_class', 'is_static', 'need_close',
+                 'exceptions', 'asserts')
 
     def __init__(self,
                  name: str,
