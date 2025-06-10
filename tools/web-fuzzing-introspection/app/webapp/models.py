@@ -176,7 +176,6 @@ class Function:
             'runtime_code_coverage': self.runtime_code_coverage,
             'return_type': self.return_type,
             'function_argument_names': self.function_argument_names,
-            'function_arguments': self.function_arguments,
             'raw_function_name': self.raw_function_name,
             'accummulated_cyclomatic_complexity':
             self.accummulated_cyclomatic_complexity,
