@@ -432,17 +432,16 @@ def extract_local_project_data(project_name, oss_fuzz_path,
     refined_proj_list = list()
     annotated_cfg = dict()
 
-    branch_pairs = extract_and_refine_branch_blockers(branch_blockers,
-                                                      project_name)
-    save_branch_blockers(branch_pairs, project_name)
-
     refined_proj_list = extract_and_refine_functions(all_function_list, '')
     refined_constructor_list = extract_and_refine_functions(
         all_constructor_list, '')
     annotated_cfg = extract_and_refine_annotated_cfg(introspector_report)
 
+    branch_pairs = extract_and_refine_branch_blockers(branch_blockers,
+                                                      project_name)
     # Dump things we dont want to accummulate.
-    #save_branch_blockers(branch_pairs, project_name)
+    save_branch_blockers(branch_pairs, project_name)
+
     try:
         project_repository = oss_fuzz.try_to_get_project_repository(
             project_name)
