@@ -297,7 +297,8 @@ class FuzzerProfile:
                             break
                 else:
                     if self.coverage.is_func_hit(func_name):
-                        self.functions_reached_by_fuzzer_runtime.append(func_name)
+                        self.functions_reached_by_fuzzer_runtime.append(
+                            func_name)
 
         return func_name in self.functions_reached_by_fuzzer_runtime
 
