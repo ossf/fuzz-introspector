@@ -139,8 +139,8 @@ def create_all_function_table(
             "Args": args_row,
             "Function call depth": fd.function_depth,
             "Reached by Fuzzers": reached_by_fuzzers_row,
-            "Reached by Fuzzers (Runtime)": reached_by_fuzzers_runtime_row,
-            "Reached by Fuzzers (Statically and Runtime)":
+            "Runtime reached by Fuzzers": reached_by_fuzzers_runtime_row,
+            "Combined Reached by Fuzzers":
             reached_by_fuzzers_combined_row,
             "collapsible_id": collapsible_id,
             "Fuzzers runtime hit": func_hit_at_runtime_row,
