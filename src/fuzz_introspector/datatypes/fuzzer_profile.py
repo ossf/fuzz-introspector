@@ -279,7 +279,9 @@ class FuzzerProfile:
         # Prepare the functions reached by runtime using coverage report.
         if not self.functions_reached_by_fuzzer_runtime:
             if not self.coverage:
-                logger.warning('No coverage report for retrieving runtime reached functions.')
+                logger.warning(
+                    'No coverage report for retrieving runtime reached functions.'
+                )
                 return False
 
             for func in all_functions:
@@ -289,7 +291,8 @@ class FuzzerProfile:
                 func_end = func.function_line_number_end
                 for line in range(func_start, func_end + 1):
                     if self.coverage.is_file_lineno_hit(func_source, line):
-                        self.functions_reached_by_fuzzer_runtime.append(func_name)
+                        self.functions_reached_by_fuzzer_runtime.append(
+                            func_name)
                         break
 
         return func_name in self.functions_reached_by_fuzzer_runtime
@@ -309,8 +312,8 @@ class FuzzerProfile:
         :returns: `True` if the fuzzer reaches the function statically or in
                   runtime. `False` otherwise.
         """
-        return (func_name in self.functions_reached_by_fuzzer or
-                self.reaches_func_runtime(func_name, all_functions))
+        return (func_name in self.functions_reached_by_fuzzer
+                or self.reaches_func_runtime(func_name, all_functions))
 
     def correlate_executable_name(self, correlation_dict) -> None:
         for elem in correlation_dict['pairings']:

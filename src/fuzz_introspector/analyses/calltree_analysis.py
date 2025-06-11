@@ -235,8 +235,8 @@ class FuzzCalltreeAnalysis(analysis.AnalysisInterface):
                         new_node = all_callsites[i]
                         if depth > new_node.depth:
                             break  # Reached the caller of the node
-                        if (depth == new_node.depth and
-                                branch_linenumber >= new_node.src_linenumber):
+                        if (depth == new_node.depth and branch_linenumber
+                                >= new_node.src_linenumber):
                             found_node = new_node
                     blocker_node_map[blocker] = found_node
                     break

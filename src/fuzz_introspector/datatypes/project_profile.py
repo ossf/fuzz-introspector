@@ -93,23 +93,30 @@ class MergedProjectProfile:
                         fd.reached_by_fuzzers.append(profile2.identifier)
 
                     # Dynamically reached functions
-                    temp_list = list(self.all_functions.values()) + list(self.all_constructors.values())
-                    if profile2.reaches_func_runtime(fd.function_name, temp_list):
+                    temp_list = list(self.all_functions.values())
+                    temp_list.extend(self.all_constructors.values())
+                    if profile2.reaches_func_runtime(fd.function_name,
+                                                     temp_list):
                         fd.hitcount_runtime += 1
-                        fd.reached_by_fuzzers_runtime.append(profile2.identifier)
+                        fd.reached_by_fuzzers_runtime.append(
+                            profile2.identifier)
 
                     # Statically or dynamically reached functions
-                    if profile2.reaches_func_combined(fd.function_name, temp_list):
+                    if profile2.reaches_func_combined(fd.function_name,
+                                                      temp_list):
                         fd.hitcount_combined += 1
-                        fd.reached_by_fuzzers_combined.append(profile2.identifier)
+                        fd.reached_by_fuzzers_combined.append(
+                            profile2.identifier)
 
                     if fd.function_name not in self.all_functions:
                         self.all_functions[fd.function_name] = fd
 
                 # Deduplicate the reached_by_fuzzer* list
                 fd.reached_by_fuzzers = list(set(fd.reached_by_fuzzers))
-                fd.reached_by_fuzzers_runtime = list(set(fd.reached_by_fuzzers_runtime))
-                fd.reached_by_fuzzers_combined = list(set(fd.reached_by_fuzzers_combined))
+                fd.reached_by_fuzzers_runtime = list(
+                    set(fd.reached_by_fuzzers_runtime))
+                fd.reached_by_fuzzers_combined = list(
+                    set(fd.reached_by_fuzzers_combined))
 
         # Gather complexity information about each function
         logger.info(
