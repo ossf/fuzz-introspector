@@ -16,8 +16,6 @@
 import os
 import logging
 
-from itertools import chain
-
 from typing import (
     Any,
     Dict,
@@ -291,7 +289,7 @@ class FuzzerProfile:
                 func_end = func.function_line_number_end
                 for line in range(func_start, func_end + 1):
                     if self.coverage.is_file_lineno_hit(func_source, line):
-                        self.self.functions_reached_by_fuzzer_runtime.append(func_name)
+                        self.functions_reached_by_fuzzer_runtime.append(func_name)
                         break
 
         return func_name in self.functions_reached_by_fuzzer_runtime
@@ -303,7 +301,9 @@ class FuzzerProfile:
         function in runtime
 
         :param func_name: function to check for
+        :param all_functions: the full FunctionsProfile list of the project
         :type func_name: str
+        :type all_functions: list[FunctionProfile]
 
         :rtype: bool
         :returns: `True` if the fuzzer reaches the function statically or in
