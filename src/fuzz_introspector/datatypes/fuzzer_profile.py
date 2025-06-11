@@ -286,8 +286,18 @@ class FuzzerProfile:
 
             for func in all_functions:
                 func_name = func.function_name
-                if self.is_func_hit(func_name):
-                    self.functions_reached_by_fuzzer_runtime.append(func_name)
+                if self.coverage.get_type() == 'file':
+                    func_source = func.function_source_file
+                    func_start = func.function_linenumber
+                    func_end = func.function_line_number_end
+                    for line in range(func_start, func_end + 1):
+                        if self.coverage.is_file_lineno_hit(func_source, line):
+                            self.functions_reached_by_fuzzer_runtime.append(
+                                func_name)
+                            break
+                else:
+                    if self.is_func_hit(func_name):
+                        self.functions_reached_by_fuzzer_runtime.append(func_name)
 
         return func_name in self.functions_reached_by_fuzzer_runtime
 
