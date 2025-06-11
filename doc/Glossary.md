@@ -21,6 +21,8 @@ way that the Fuzz introspector HTML report is generated.
       - [Cyclomatic complexity](#cyclomatic-complexity)
       - [Functions reached](#functions-reached)
       - [Reached by functions](#reached-by-functions)
+      - [Runtime reached by functions](#reached-by-functions-runtime)
+      - [Combined reached by functions](#reached-by-functions-combined)
       - [Accumulated cyclomatic complexity](#accumulated-cyclomatic-complexity)
       - [Undiscovered complexity](#undiscovered-complexity)
   * [Fuzzer details](#fuzzer-details)
@@ -48,6 +50,12 @@ Call depth the function
 
 #### Reached by Fuzzers
 Names of the fuzzers that statically reach this function.
+
+#### Runtime reached by Fuzzers
+Names of the fuzzers that dynamically reach this function.
+
+#### Combined reached by Fuzzers
+Names of the fuzzers that statically or dynamically reach this function.
 
 #### Fuzzers runtime hit
 Yes/No based on whether the function is hit at runtime.

@@ -114,15 +114,14 @@ def create_all_function_table(
         if fd.hitcount_runtime > 0:
             reached_by_fuzzers_runtime_row = html_helpers.create_collapsible_element(
                 str(fd.hitcount_runtime), str(fd.reached_by_fuzzers_runtime),
-                collapsible_id)
+                collapsible_id + "10")
         else:
             reached_by_fuzzers_runtime_row = "0"
 
-        collapsible_id = demangled_func_name + random_suffix
         if fd.hitcount_combined > 0:
             reached_by_fuzzers_combined_row = html_helpers.create_collapsible_element(
                 str(fd.hitcount_combined), str(fd.reached_by_fuzzers_combined),
-                collapsible_id)
+                collapsible_id + "21")
         else:
             reached_by_fuzzers_combined_row = "0"
 
