@@ -140,8 +140,7 @@ def create_all_function_table(
             "Function call depth": fd.function_depth,
             "Reached by Fuzzers": reached_by_fuzzers_row,
             "Runtime reached by Fuzzers": reached_by_fuzzers_runtime_row,
-            "Combined Reached by Fuzzers":
-            reached_by_fuzzers_combined_row,
+            "Combined Reached by Fuzzers": reached_by_fuzzers_combined_row,
             "collapsible_id": collapsible_id,
             "Fuzzers runtime hit": func_hit_at_runtime_row,
             "Func lines hit %": "%.5s" % (str(hit_percentage)) + "%",
