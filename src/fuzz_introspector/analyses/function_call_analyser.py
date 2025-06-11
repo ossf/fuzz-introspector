@@ -269,7 +269,7 @@ class ThirdPartyAPICoverageAnalyser(analysis.AnalysisInterface):
                     if coverage.is_func_lineno_hit(parent_func, lineno):
                         fuzzer_hit = True
                         break
-                list_of_fuzzer_covered = fd.reached_by_fuzzers if fuzzer_hit else [
+                list_of_fuzzer_covered = fd.reached_by_fuzzers_combined if fuzzer_hit else [
                     ""
                 ]
 

@@ -32,6 +32,8 @@ def print_function_details(project_name, functions_to_analyse: typing.List[str],
 
         function_profile = all_functions[function_name]
         reached_by_fuzzer_count = len(function_profile.reached_by_fuzzers)
+        reached_by_fuzzer_runtime_count = len(function_profile.reached_by_fuzzers_runtime)
+        reached_by_fuzzer_combined_count = len(function_profile.reached_by_fuzzers_combined)
         code_coverage = introspector_project.proj_profile.get_func_hit_percentage(
             function_name)
 

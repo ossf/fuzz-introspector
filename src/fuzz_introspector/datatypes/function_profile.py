@@ -109,7 +109,11 @@ class FunctionProfile:
 
         # These are set later.
         self.hitcount: int = 0
+        self.hitcount_runtime: int = 0
+        self.hitcount_combined: int = 0
         self.reached_by_fuzzers: List[str] = []
+        self.reached_by_fuzzers_runtime: List[str] = []
+        self.reached_by_fuzzers_combined: List[str] = []
         self.incoming_references: List[str] = []
         self.new_unreached_complexity: int = 0
         self.total_cyclomatic_complexity: int = 0
@@ -127,6 +131,8 @@ class FunctionProfile:
             'function_arguments': self.arg_types,
             'function_signature': self.signature,
             'reached_by_fuzzers': self.reached_by_fuzzers,
+            'reached_by_fuzzers_runtime': self.reached_by_fuzzers_runtime,
+            'reached_by_fuzzers_combined': self.reached_by_fuzzers_combined,
             'return_type': self.return_type,
             'runtime_coverage_percent': coverage,
             'source_line_begin': self.function_linenumber,

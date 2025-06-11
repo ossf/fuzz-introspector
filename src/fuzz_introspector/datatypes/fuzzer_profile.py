@@ -16,6 +16,8 @@
 import os
 import logging
 
+from itertools import chain
+
 from typing import (
     Any,
     Dict,
@@ -58,6 +60,7 @@ class FuzzerProfile:
         self.introspector_data_file = cfg_file
 
         self.functions_reached_by_fuzzer: List[str] = []
+        self.functions_reached_by_fuzzer_runtime: List[str] = []
 
         # Load calltree file
         self.fuzzer_callsite_calltree = cfg_load.data_file_read_calltree(
@@ -260,6 +263,54 @@ class FuzzerProfile:
                   otherwise.
         """
         return func_name in self.functions_reached_by_fuzzer
+
+    def reaches_func_runtime(
+            self, func_name: str,
+            all_functions: list[function_profile.FunctionProfile]) -> bool:
+        """Identifies if the fuzzer dynamically reaches a given function in runtime
+
+        :param func_name: function to check for
+        :param all_functions: the full FunctionsProfile list of the project
+        :type func_name: str
+        :type all_functions: list[FunctionProfile]
+
+        :rtype: bool
+        :returns: `True` if the fuzzer reaches the function in runtime. `False`
+                  otherwise.
+        """
+        # Prepare the functions reached by runtime using coverage report.
+        if not self.functions_reached_by_fuzzer_runtime:
+            if not self.coverage:
+                logger.warning('No coverage report for retrieving runtime reached functions.')
+                return False
+
+            for func in all_functions:
+                func_name = func.function_name
+                func_source = func.function_source_file
+                func_start = func.function_linenumber
+                func_end = func.function_line_number_end
+                for line in range(func_start, func_end + 1):
+                    if self.coverage.is_file_lineno_hit(func_source, line):
+                        self.self.functions_reached_by_fuzzer_runtime.append(func_name)
+                        break
+
+        return func_name in self.functions_reached_by_fuzzer_runtime
+
+    def reaches_func_combined(
+            self, func_name: str,
+            all_functions: list[function_profile.FunctionProfile]) -> bool:
+        """Identifies if the fuzzer statically or dynamically reaches a given
+        function in runtime
+
+        :param func_name: function to check for
+        :type func_name: str
+
+        :rtype: bool
+        :returns: `True` if the fuzzer reaches the function statically or in
+                  runtime. `False` otherwise.
+        """
+        return (func_name in self.functions_reached_by_fuzzer or
+                self.reaches_func_runtime(func_name, all_functions))
 
     def correlate_executable_name(self, correlation_dict) -> None:
         for elem in correlation_dict['pairings']:

@@ -153,10 +153,10 @@ class PublicCandidateAnalyser(analysis.AnalysisInterface):
         return sorted(
             functions,
             key=lambda item:
-            (bool(item.reached_by_fuzzers), item.is_enum,
+            (bool(item.reached_by_fuzzers_combined), item.is_enum,
              proj_profile.get_func_hit_percentage(item.function_name), -item.
              function_depth, -item.cyclomatic_complexity, item.
              new_unreached_complexity, -item.arg_count, -(
                  item.function_line_number_end - item.function_linenumber),
-             len(item.reached_by_fuzzers)),
+             len(item.reached_by_fuzzers_combined)),
             reverse=False)
