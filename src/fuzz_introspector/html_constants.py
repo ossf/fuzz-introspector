@@ -84,7 +84,7 @@ ALL_FUNCTION_TABLE_COLUMNS = [
     ("Runtime reached by Fuzzers",
      "The specific fuzzers that reach this function. Based on runtime coverage"
      " analysis."),
-    ("Combined rReached by Fuzzers",
+    ("Combined reached by Fuzzers",
      "The specific fuzzers that reach this function. Based on both static and "
      "runtime coverageanalysis."),
     ("Fuzzers runtime hit",
