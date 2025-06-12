@@ -21,7 +21,6 @@ import tempfile
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../")
 
 from fuzz_introspector import code_coverage  # noqa: E402
-from fuzz_introspector.datatypes import function_profile  # noqa: E402
 from fuzz_introspector.datatypes import fuzzer_profile  # noqa: E402
 
 
@@ -177,38 +176,13 @@ def test_reaches_func(tmpdir, sample_cfg1):
         generate_temp_elem(
             "Random",
             ["stu", "vwx"]
-        ),
-        generate_temp_elem(
-            "abc",
-            ["Random"]
-        ),
-        generate_temp_elem(
-            "def",
-            []
-        ),
-        generate_temp_elem(
-            "jkl",
-            []
-        ),
-        generate_temp_elem(
-            "mno",
-            []
-        ),
-        generate_temp_elem(
-            "stu",
-            []
-        ),
-        generate_temp_elem(
-            "vwx",
-            []
-        ),
+        )
     ]
 
     # Statically reached functions
     fp = base_cpp_profile(tmpdir, sample_cfg1, elem)
     fp._set_all_reached_functions()
-#    print([temp.functions_reached for temp in fp.all_class_functions.values()])
-#    assert(False)
+
     # Ensure set_all_reached_functions analysis has been done
     assert len(fp.functions_reached_by_fuzzer) != 0
 
@@ -222,20 +196,17 @@ def test_reaches_func(tmpdir, sample_cfg1):
         os.path.dirname(path),
         os.path.splitext(os.path.basename(path))[0])
     os.remove(path)
+    fp._set_all_reached_functions_runtime()
 
-    funcs = []
-    for item in elem:
-        funcs.append(function_profile.FunctionProfile(item))
-
-    assert fp.reaches_func_runtime('abc', funcs)
-    assert fp.reaches_func_runtime('stu', funcs)
-    assert fp.reaches_func_runtime('Random', funcs)
-    assert not fp.reaches_func_runtime('def', funcs)
-    assert not fp.reaches_func_runtime('jkl', funcs)
+    assert fp.reaches_func_runtime('abc')
+    assert fp.reaches_func_runtime('stu')
+    assert fp.reaches_func_runtime('Random')
+    assert not fp.reaches_func_runtime('def')
+    assert not fp.reaches_func_runtime('jkl')
 
     # Runtime or tatically reached functions
-    assert fp.reaches_func_combined('abc', funcs)
-    assert fp.reaches_func_combined('stu', funcs)
-    assert fp.reaches_func_combined('Random', funcs)
-    assert fp.reaches_func_combined('def', funcs)
-    assert not fp.reaches_func_combined('jkl', funcs)
+    assert fp.reaches_func_combined('abc')
+    assert fp.reaches_func_combined('stu')
+    assert fp.reaches_func_combined('Random')
+    assert fp.reaches_func_combined('def')
+    assert not fp.reaches_func_combined('jkl')
