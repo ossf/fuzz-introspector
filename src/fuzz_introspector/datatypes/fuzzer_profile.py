@@ -548,8 +548,7 @@ class FuzzerProfile:
         """
         if not self.coverage:
             logger.warning(
-                'No coverage report for retrieving runtime reached functions.'
-            )
+                'No coverage report for retrieving runtime reached functions.')
             return
 
         for func_name in self.coverage.covmap:
