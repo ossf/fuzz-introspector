@@ -1485,6 +1485,9 @@ def branch_blockers(args):
     
     ## Example 1:
     - `project`: `tinyxml2`
+
+    **Note:** 
+    This API endpoint currently does not return branch blocker data due to ongoing considerations regarding data storage. Please refer to [#2185](https://github.com/ossf/fuzz-introspector/issues/2185) [#2183](https://github.com/ossf/fuzz-introspector/pull/2183) for details.
     """
     project_name = args.get('project', '')
     if not project_name:

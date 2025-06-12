@@ -440,7 +440,7 @@ def extract_local_project_data(project_name, oss_fuzz_path,
     branch_pairs = extract_and_refine_branch_blockers(branch_blockers,
                                                       project_name)
     # Dump things we dont want to accummulate.
-    save_branch_blockers(branch_pairs, project_name)
+    # save_branch_blockers(branch_pairs, project_name)
 
     try:
         project_repository = oss_fuzz.try_to_get_project_repository(
@@ -733,7 +733,7 @@ def extract_project_data(project_name, date_str, should_include_details,
                 branch_blockers, project_name)
 
         # Dump things we dont want to accummulate.
-        save_branch_blockers(branch_pairs, project_name)
+        # save_branch_blockers(branch_pairs, project_name)
 
         # Extract type definition
         typedef_list = oss_fuzz.extract_introspector_typedef(
