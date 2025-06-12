@@ -19,7 +19,10 @@ import pytest
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../")
 
+from fuzz_introspector import code_coverage  # noqa: E402
 from fuzz_introspector.datatypes import fuzzer_profile  # noqa: E402
+
+TEST_DATA_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data')
 
 
 @pytest.fixture
@@ -115,18 +118,19 @@ def test_reaches_func(tmpdir, sample_cfg1):
     elem = [
         generate_temp_elem(
             "LLVMFuzzerTestOneInput",
-            ["abc", "def", "ghi"]
+            ["abc", "def"]
         ),
         generate_temp_elem(
             "TestOneInput",
-            ["jkl", "mno", "pqr"]
+            ["jkl", "mno"]
         ),
         generate_temp_elem(
             "Random",
-            ["stu", "vwx", "yz"]
+            ["stu", "vwx"]
         )
     ]
 
+    # Statically reached functions
     fp = base_cpp_profile(tmpdir, sample_cfg1, elem)
     fp._set_all_reached_functions()
 
@@ -136,3 +140,20 @@ def test_reaches_func(tmpdir, sample_cfg1):
     assert fp.reaches_func('abc')
     assert not fp.reaches_func('stu')
     assert not fp.reaches_func('mno')
+
+    # Runtime reached functions
+    fp.coverage = code_coverage.load_llvm_coverage(TEST_DATA_PATH, 'reached_func')
+    fp._set_all_reached_functions_runtime()
+
+    assert fp.reaches_func_runtime('abc')
+    assert fp.reaches_func_runtime('stu')
+    assert fp.reaches_func_runtime('Random')
+    assert not fp.reaches_func_runtime('def')
+    assert not fp.reaches_func_runtime('jkl')
+
+    # Runtime or tatically reached functions
+    assert fp.reaches_func_combined('abc')
+    assert fp.reaches_func_combined('stu')
+    assert fp.reaches_func_combined('Random')
+    assert fp.reaches_func_combined('def')
+    assert not fp.reaches_func_combined('jkl')

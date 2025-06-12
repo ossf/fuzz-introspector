@@ -137,6 +137,8 @@ function createTable(value) {
       {data: "Args"},
       {data: "Function call depth"},
       {data: "Reached by Fuzzers"},
+      {data: "Runtime reached by Fuzzers"},
+      {data: "Combined reached by Fuzzers"},
       {data: "Fuzzers runtime hit"},
       {data: "Func lines hit %"},
       {data: "I Count"},

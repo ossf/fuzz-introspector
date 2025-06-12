@@ -64,7 +64,7 @@ def sample_jvm_coverage_xml():
 
 def test_load_llvm_coverage():
     """Tests loading llvm coverage from a .covreport file."""
-    cov_profile = code_coverage.load_llvm_coverage(TEST_DATA_PATH)
+    cov_profile = code_coverage.load_llvm_coverage(TEST_DATA_PATH, 'sample_cov')
     assert len(cov_profile.covmap) > 0
     assert len(cov_profile.file_map) == 0
     assert len(cov_profile.branch_cov_map) > 0

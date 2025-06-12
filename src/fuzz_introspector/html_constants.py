@@ -81,6 +81,12 @@ ALL_FUNCTION_TABLE_COLUMNS = [
     ("Reached by Fuzzers",
      "The specific fuzzers that reach this function. Based on static analysis."
      ),
+    ("Runtime reached by Fuzzers",
+     "The specific fuzzers that reach this function. Based on runtime coverage"
+     " analysis."),
+    ("Combined reached by Fuzzers",
+     "The specific fuzzers that reach this function. Based on both static and "
+     "runtime coverageanalysis."),
     ("Fuzzers runtime hit",
      "Indicates whether the function is hit at runtime by the given corpus. "
      "Based on dynamic analysis."),

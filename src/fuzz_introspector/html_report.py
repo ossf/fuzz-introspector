@@ -110,6 +110,21 @@ def create_all_function_table(
         else:
             reached_by_fuzzers_row = "0"
 
+        collapsible_id = demangled_func_name + random_suffix
+        if fd.hitcount_runtime > 0:
+            reached_by_fuzzers_runtime_row = html_helpers.create_collapsible_element(
+                str(fd.hitcount_runtime), str(fd.reached_by_fuzzers_runtime),
+                collapsible_id + "10")
+        else:
+            reached_by_fuzzers_runtime_row = "0"
+
+        if fd.hitcount_combined > 0:
+            reached_by_fuzzers_combined_row = html_helpers.create_collapsible_element(
+                str(fd.hitcount_combined), str(fd.reached_by_fuzzers_combined),
+                collapsible_id + "21")
+        else:
+            reached_by_fuzzers_combined_row = "0"
+
         if fd.arg_count > 0:
             args_row = html_helpers.create_collapsible_element(
                 str(fd.arg_count), str(fd.arg_types), collapsible_id + "2")
@@ -123,6 +138,8 @@ def create_all_function_table(
             "Args": args_row,
             "Function call depth": fd.function_depth,
             "Reached by Fuzzers": reached_by_fuzzers_row,
+            "Runtime reached by Fuzzers": reached_by_fuzzers_runtime_row,
+            "Combined reached by Fuzzers": reached_by_fuzzers_combined_row,
             "collapsible_id": collapsible_id,
             "Fuzzers runtime hit": func_hit_at_runtime_row,
             "Func lines hit %": "%.5s" % (str(hit_percentage)) + "%",
@@ -150,6 +167,9 @@ def create_all_function_table(
         json_copy['Args'] = fd.arg_types
         json_copy['ArgNames'] = fd.arg_names
         json_copy['Reached by Fuzzers'] = fd.reached_by_fuzzers
+        json_copy['Runtime reached by Fuzzers'] = fd.reached_by_fuzzers_runtime
+        json_copy[
+            'Combined reached by Fuzzers'] = fd.reached_by_fuzzers_combined
         json_copy['return_type'] = fd.return_type
         json_copy['raw-function-name'] = fd.raw_function_name
         json_copy['callsites'] = fd.callsite
@@ -863,6 +883,10 @@ def create_html_report(introspection_proj: analysis.IntrospectionProject,
             json_copy['ArgNames'] = fd.arg_names
             json_copy['Function call depth'] = fd.function_depth
             json_copy['Reached by Fuzzers'] = fd.reached_by_fuzzers
+            json_copy[
+                'Runtime reached by Fuzzers'] = fd.reached_by_fuzzers_runtime
+            json_copy[
+                'Combined reached by Fuzzers'] = fd.reached_by_fuzzers_combined
             json_copy['collapsible_id'] = fd.function_name
             json_copy['return_type'] = fd.return_type
             json_copy['raw-function-name'] = fd.raw_function_name

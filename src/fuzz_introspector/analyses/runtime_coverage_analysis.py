@@ -95,7 +95,7 @@ class RuntimeCoverageAnalysis(analysis.AnalysisInterface):
 
                 if funcname in proj_profile.all_functions:
                     reached_by = str(proj_profile.all_functions[funcname].
-                                     reached_by_fuzzers)
+                                     reached_by_fuzzers_combined)
                 else:
                     reached_by = ""
 

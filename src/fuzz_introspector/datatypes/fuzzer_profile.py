@@ -58,6 +58,7 @@ class FuzzerProfile:
         self.introspector_data_file = cfg_file
 
         self.functions_reached_by_fuzzer: List[str] = []
+        self.functions_reached_by_fuzzer_runtime: List[str] = []
 
         # Load calltree file
         self.fuzzer_callsite_calltree = cfg_load.data_file_read_calltree(
@@ -261,6 +262,32 @@ class FuzzerProfile:
         """
         return func_name in self.functions_reached_by_fuzzer
 
+    def reaches_func_runtime(self, func_name: str) -> bool:
+        """Identifies if the fuzzer dynamically reaches a given function in runtime
+
+        :param func_name: function to check for
+        :type func_name: str
+
+        :rtype: bool
+        :returns: `True` if the fuzzer reaches the function in runtime. `False`
+                  otherwise.
+        """
+        return func_name in self.functions_reached_by_fuzzer_runtime
+
+    def reaches_func_combined(self, func_name: str) -> bool:
+        """Identifies if the fuzzer statically or dynamically reaches a given
+        function in runtime
+
+        :param func_name: function to check for
+        :type func_name: str
+
+        :rtype: bool
+        :returns: `True` if the fuzzer reaches the function statically or in
+                  runtime. `False` otherwise.
+        """
+        return (func_name in self.functions_reached_by_fuzzer
+                or self.reaches_func_runtime(func_name))
+
     def correlate_executable_name(self, correlation_dict) -> None:
         for elem in correlation_dict['pairings']:
             if os.path.basename(self.introspector_data_file
@@ -354,6 +381,8 @@ class FuzzerProfile:
         self._set_total_cyclomatic_complexity()
         logger.info("%s: setting fd cache", self.identifier)
         self._set_fd_cache()
+        logger.info("%s: setting reached funcs in runtime", self.identifier)
+        self._set_all_reached_functions_runtime()
         logger.info("%s: finished accummulating profile", self.identifier)
         if return_dict is not None:
             return_dict[uniq_id] = self
@@ -511,6 +540,20 @@ class FuzzerProfile:
             f.function_name for f in self.all_class_functions.values()
             if f.function_name not in self.functions_reached_by_fuzzer
         ]
+
+    def _set_all_reached_functions_runtime(self) -> None:
+        """Sets self.functions_reached_by_fuzzer_runtime to all functions
+        reached by the fuzzer during runtime. This is based on identifying
+        all functions reached covered in the runtime coverage report.
+        """
+        if not self.coverage:
+            logger.warning(
+                'No coverage report for retrieving runtime reached functions.')
+            return
+
+        for func_name in self.coverage.covmap:
+            if self.coverage.is_func_hit(func_name):
+                self.functions_reached_by_fuzzer_runtime.append(func_name)
 
     def _load_coverage(self, target_folder: str) -> None:
         """Load coverage data for this profile"""
