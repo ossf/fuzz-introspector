@@ -16,12 +16,13 @@
 import os
 import sys
 import pytest
-import tempfile
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../")
 
 from fuzz_introspector import code_coverage  # noqa: E402
 from fuzz_introspector.datatypes import fuzzer_profile  # noqa: E402
+
+TEST_DATA_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data')
 
 
 @pytest.fixture
@@ -112,56 +113,6 @@ def generate_temp_elem(name, func):
     }
 
 
-def generate_temp_covreport():
-    sample_coverage = """
-fuzzlib.c:Random:
-  1|      110|int x0 = 32;
-  2|      213|int x1 = 8;
-
-fuzzlib.c:def:
-  3|      0|int x0 = 25;
-  4|      0|int x1 = 49;
-  5|      0|int x2 = 55;
-
-fuzzlib.c:TestOneInput:
-  6|      0|int x0 = 55;
-  7|      0|int x1 = 53;
-  8|    113|int x2 = 29;
-
-fuzzlib.c:vwx:
-  9|      0|int x0 = 25;
- 10|      0|int x1 = 10;
-
-fuzzlib.c:jkl:
- 15|      0|int x0 = 48;
- 16|      0|int x1 = 10;
-
-fuzzlib.c:abc:
- 20|      0|int x0 = 6;
- 21|      333|int x1 = 7;
-
-fuzzlib.c:stu:
- 22|      0|int x0 = 45;
- 23|      0|int x1 = 93;
- 24|      133|int x2 = 81;
-
-fuzzlib.c:LLVMFuzzerTestOneInput:
- 25|    409|int x0 = 27;
- 26|      0|int x1 = 59;
-
-fuzzlib.c:mno:
- 27|      0|int x0 = 0;
- 28|      0|int x1 = 1;
-"""
-
-    with tempfile.NamedTemporaryFile(delete=False, mode="w+", suffix='.covreport') as f:
-        f.write(sample_coverage)
-        f.flush()
-        return f.name
-
-    return None
-
-
 def test_reaches_func(tmpdir, sample_cfg1):
     """test for reaches file with refine path"""
     elem = [
@@ -191,11 +142,7 @@ def test_reaches_func(tmpdir, sample_cfg1):
     assert not fp.reaches_func('mno')
 
     # Runtime reached functions
-    path = generate_temp_covreport()
-    fp.coverage = code_coverage.load_llvm_coverage(
-        os.path.dirname(path),
-        os.path.splitext(os.path.basename(path))[0])
-    os.remove(path)
+    fp.coverage = code_coverage.load_llvm_coverage(TEST_DATA_PATH, 'reached_func')
     fp._set_all_reached_functions_runtime()
 
     assert fp.reaches_func_runtime('abc')

@@ -1,0 +1,30 @@
+fuzzlib.c:Random:
+  1|      110|int x0 = 32;
+  2|      213|int x1 = 8;
+fuzzlib.c:def:
+  3|      0|int x0 = 25;
+  4|      0|int x1 = 49;
+  5|      0|int x2 = 55;
+fuzzlib.c:TestOneInput:
+  6|      0|int x0 = 55;
+  7|      0|int x1 = 53;
+  8|    113|int x2 = 29;
+fuzzlib.c:vwx:
+  9|      0|int x0 = 25;
+ 10|      0|int x1 = 10;
+fuzzlib.c:jkl:
+ 15|      0|int x0 = 48;
+ 16|      0|int x1 = 10;
+fuzzlib.c:abc:
+ 20|      0|int x0 = 6;
+ 21|      333|int x1 = 7;
+fuzzlib.c:stu:
+ 22|      0|int x0 = 45;
+ 23|      0|int x1 = 93;
+ 24|      133|int x2 = 81;
+fuzzlib.c:LLVMFuzzerTestOneInput:
+ 25|    409|int x0 = 27;
+ 26|      0|int x1 = 59;
+fuzzlib.c:mno:
+ 27|      0|int x0 = 0;
+ 28|      0|int x1 = 1;
