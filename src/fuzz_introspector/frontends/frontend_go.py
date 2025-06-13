@@ -92,7 +92,9 @@ class GoSourceCodeFile(SourceCodeFile):
 
                     for path in import_spec.children:
                         if path.type == 'import_spec':
-                            path = path.text.decode(encoding='utf-8', errors='ignore').replace('"', '')
+                            path = path.text.decode(encoding='utf-8',
+                                                    errors='ignore').replace(
+                                                        '"', '')
                             # Only store the package name, not full path
                             import_set.add(path.rsplit('/', 1)[-1])
 
@@ -450,15 +452,18 @@ class FunctionMethod():
                     receiver_type = child.child_by_field_name('type')
 
                     if receiver_name and receiver_type:
-                        self.receiver = receiver_type.text.decode(encoding='utf-8', errors='ignore')
-                        self.receiver_name = receiver_name.text.decode(encoding='utf-8', errors='ignore')
+                        self.receiver = receiver_type.text.decode(
+                            encoding='utf-8', errors='ignore')
+                        self.receiver_name = receiver_name.text.decode(
+                            encoding='utf-8', errors='ignore')
                         self.var_map[self.receiver_name] = self.receiver
 
         # Process name
         name_node = self.root
         while name_node.child_by_field_name('name') is not None:
             name_node = name_node.child_by_field_name('name')
-            self.name = name_node.text.decode(encoding='utf-8', errors='ignore')
+            self.name = name_node.text.decode(encoding='utf-8',
+                                              errors='ignore')
         if self.receiver:
             self.name = f'{self.receiver}.{self.name}'
 
@@ -479,12 +484,14 @@ class FunctionMethod():
                     param_tmp = param
                     while param_tmp.child_by_field_name('name') is not None:
                         param_tmp = param_tmp.child_by_field_name('name')
-                    param_name = param_tmp.text.decode(encoding='utf-8', errors='ignore')
+                    param_name = param_tmp.text.decode(encoding='utf-8',
+                                                       errors='ignore')
 
                     # Param type
                     if not param.child_by_field_name('type'):
                         continue
-                    type_str = param.child_by_field_name('type').text.decode(encoding='utf-8', errors='ignore')
+                    type_str = param.child_by_field_name('type').text.decode(
+                        encoding='utf-8', errors='ignore')
                     param_tmp = param
                     while param_tmp.child_by_field_name(
                             'declarator') is not None:
@@ -505,7 +512,8 @@ class FunctionMethod():
         # Process return value
         result = self.root.child_by_field_name('result')
         if result:
-            self.return_type = result.text.decode(encoding='utf-8', errors='ignore')
+            self.return_type = result.text.decode(encoding='utf-8',
+                                                  errors='ignore')
         else:
             self.return_type = 'void'
 
@@ -582,12 +590,14 @@ class FunctionMethod():
         # Simple call
         if call_child.type == 'identifier':
             if call_child.text:
-                target_name = call_child.text.decode(encoding='utf-8', errors='ignore')
+                target_name = call_child.text.decode(encoding='utf-8',
+                                                     errors='ignore')
 
         # Package/method call
         if call_child.type == 'selector_expression':
             if call_child.text:
-                target_name = call_child.text.decode(encoding='utf-8', errors='ignore')
+                target_name = call_child.text.decode(encoding='utf-8',
+                                                     errors='ignore')
 
             # Variable call
             split_call = target_name.split('.') if target_name else []
@@ -629,14 +639,17 @@ class FunctionMethod():
 
             # Identifier
             if child.type == 'identifier':
-                if child.text and child.text.decode(encoding='utf-8', errors='ignore') in self.var_map:
-                    return self.var_map[child.text.decode(encoding='utf-8', errors='ignore')]
+                if child.text and child.text.decode(
+                        encoding='utf-8', errors='ignore') in self.var_map:
+                    return self.var_map[child.text.decode(encoding='utf-8',
+                                                          errors='ignore')]
 
             # Composite Literal
             elif child.type == 'composite_literal':
                 composite_type = child.child_by_field_name('type')
                 if composite_type and composite_type.text:
-                    return composite_type.text.decode(encoding='utf-8', errors='ignore')
+                    return composite_type.text.decode(encoding='utf-8',
+                                                      errors='ignore')
 
             # Call expression
             elif child.type == 'call_expression':
@@ -655,17 +668,20 @@ class FunctionMethod():
                 if target_name == 'new':
                     for arg in args.children:
                         if arg.type.endswith('identifier') and arg.text:
-                            return arg.text.decode(encoding='utf-8', errors='ignore')
+                            return arg.text.decode(encoding='utf-8',
+                                                   errors='ignore')
 
                 elif target_name == 'make':
                     for arg in args.children:
                         type_node = arg.child_by_field_name('value')
                         if type_node and type_node.text:
-                            return type_node.text.decode(encoding='utf-8', errors='ignore')
+                            return type_node.text.decode(encoding='utf-8',
+                                                         errors='ignore')
 
                         type_node = arg.child_by_field_name('element')
                         if type_node and type_node.text:
-                            return type_node.text.decode(encoding='utf-8', errors='ignore')
+                            return type_node.text.decode(encoding='utf-8',
+                                                         errors='ignore')
 
             # Selector expression
             elif child.type == 'selector_expression':
@@ -680,7 +696,8 @@ class FunctionMethod():
                 if not op or not op.text:
                     continue
 
-                parent_type = self.var_map.get(op.text.decode(encoding='utf-8', errors='ignore'))
+                parent_type = self.var_map.get(
+                    op.text.decode(encoding='utf-8', errors='ignore'))
                 if parent_type:
                     if '[' in parent_type and ']' in parent_type:
                         return parent_type.rsplit(']', 1)[-1]
@@ -712,7 +729,8 @@ class FunctionMethod():
 
                 for child in left.children:
                     if child.type == 'identifier' and child.text:
-                        decl_name = child.text.decode(encoding='utf-8', errors='ignore')
+                        decl_name = child.text.decode(encoding='utf-8',
+                                                      errors='ignore')
 
                 decl_type = self._detect_variable_type(right, all_funcs_meths)
 
@@ -733,13 +751,16 @@ class FunctionMethod():
 
                     for left_child in left.children:
                         if left_child.type == 'identifier' and left_child.text:
-                            decl_name = left_child.text.decode(encoding='utf-8', errors='ignore')
+                            decl_name = left_child.text.decode(
+                                encoding='utf-8', errors='ignore')
 
                     if right.type == 'identifier':
                         if not right.text:
                             continue
 
-                        decl_type = self.var_map.get(right.text.decode(encoding='utf-8', errors='ignore'), '')
+                        decl_type = self.var_map.get(
+                            right.text.decode(encoding='utf-8',
+                                              errors='ignore'), '')
                         if decl_type and '[' in decl_type and ']' in decl_type:
                             decl_type = decl_type.split(']', 1)[-1]
                         elif decl_type == 'string':

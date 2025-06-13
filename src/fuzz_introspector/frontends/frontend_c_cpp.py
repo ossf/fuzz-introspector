@@ -140,14 +140,16 @@ class CppSourceCodeFile(SourceCodeFile):
                 for child in new_namespace.children:
                     if not child.is_named or not child.text:
                         continue
-                    namespace += '::' + child.text.decode(encoding='utf-8', errors='ignore')
+                    namespace += '::' + child.text.decode(encoding='utf-8',
+                                                          errors='ignore')
                     if namespace.startswith('::'):
                         namespace = namespace[2:]
 
             # General namespace
             elif new_namespace.type == 'namespace_identifier':
                 if new_namespace.text:
-                    namespace += '::' + new_namespace.text.decode(encoding='utf-8', errors='ignore')
+                    namespace += '::' + new_namespace.text.decode(
+                        encoding='utf-8', errors='ignore')
                     if namespace.startswith('::'):
                         namespace = namespace[2:]
 
@@ -173,17 +175,22 @@ class CppSourceCodeFile(SourceCodeFile):
                 if not enum_item_name or not enum_item_name.text:
                     # Skip anonymous enum items
                     continue
-                item_dict['name'] = enum_item_name.text.decode(encoding='utf-8', errors='ignore')
+                item_dict['name'] = enum_item_name.text.decode(
+                    encoding='utf-8', errors='ignore')
 
                 if enum_item_value and enum_item_value.text:
-                    item_dict['value'] = enum_item_value.text.decode(encoding='utf-8', errors='ignore')
+                    item_dict['value'] = enum_item_value.text.decode(
+                        encoding='utf-8', errors='ignore')
 
                 enumerator_list.append(item_dict)
 
         self.enum_defs.append({
-            'name': enum_name_field.text.decode(encoding='utf-8', errors='ignore'),
-            'enumerators': enumerator_list,
-            'item_type': 'enum',
+            'name':
+            enum_name_field.text.decode(encoding='utf-8', errors='ignore'),
+            'enumerators':
+            enumerator_list,
+            'item_type':
+            'enum',
             'pos': {
                 'source_file': self.source_file,
                 'line_start': enum.start_point.row,
@@ -224,14 +231,16 @@ class CppSourceCodeFile(SourceCodeFile):
         # Extract name for struct or anonymous struct
         struct_name_field = struct.child_by_field_name('name')
         if struct_name_field and struct_name_field.text:
-            struct_name = struct_name_field.text.decode(encoding='utf-8', errors='ignore')
+            struct_name = struct_name_field.text.decode(encoding='utf-8',
+                                                        errors='ignore')
         else:
             parent = struct.parent
             declarator = None
             if parent and parent.type in ['declaration', 'type_definition']:
                 declarator = parent.child_by_field_name('declarator')
             if declarator and declarator.text:
-                struct_name = declarator.text.decode(encoding='utf-8', errors='ignore')
+                struct_name = declarator.text.decode(encoding='utf-8',
+                                                     errors='ignore')
             else:
                 # Skip anonymous struct with no name
                 return
@@ -247,8 +256,10 @@ class CppSourceCodeFile(SourceCodeFile):
 
             if child.type == 'field_declaration':
                 fields.append({
-                    'type': child_name.text.decode(encoding='utf-8', errors='ignore'),
-                    'name': child_type.text.decode(encoding='utf-8', errors='ignore')
+                    'type':
+                    child_name.text.decode(encoding='utf-8', errors='ignore'),
+                    'name':
+                    child_type.text.decode(encoding='utf-8', errors='ignore')
                 })
         self.struct_defs.append({
             'name': struct_name,
@@ -271,14 +282,16 @@ class CppSourceCodeFile(SourceCodeFile):
         # Extract name for union or anonymous union
         union_name_field = union.child_by_field_name('name')
         if union_name_field and union_name_field.text:
-            union_name = union_name_field.text.decode(encoding='utf-8', errors='ignore')
+            union_name = union_name_field.text.decode(encoding='utf-8',
+                                                      errors='ignore')
         else:
             parent = union.parent
             declarator = None
             if parent and parent.type in ['declaration', 'type_definition']:
                 declarator = parent.child_by_field_name('declarator')
             if declarator and declarator.text:
-                union_name = declarator.text.decode(encoding='utf-8', errors='ignore')
+                union_name = declarator.text.decode(encoding='utf-8',
+                                                    errors='ignore')
             else:
                 # Skip anonymous union with no name
                 return
@@ -293,8 +306,10 @@ class CppSourceCodeFile(SourceCodeFile):
                 continue
             if child.type == 'field_declaration':
                 fields.append({
-                    'type': child_name.text.decode(encoding='utf-8', errors='ignore'),
-                    'name': child_type.text.decode(encoding='utf-8', errors='ignore'),
+                    'type':
+                    child_name.text.decode(encoding='utf-8', errors='ignore'),
+                    'name':
+                    child_type.text.decode(encoding='utf-8', errors='ignore'),
                 })
         self.union_defs.append({
             'name': union_name,
@@ -315,8 +330,11 @@ class CppSourceCodeFile(SourceCodeFile):
             return
 
         typedef_struct: dict[str, Any] = {
-            'name': typedef_declarator_node.text.decode(encoding='utf-8', errors='ignore'),
-            'item_type': 'typedef',
+            'name':
+            typedef_declarator_node.text.decode(encoding='utf-8',
+                                                errors='ignore'),
+            'item_type':
+            'typedef',
         }
 
         typedef_struct['pos'] = {
@@ -334,9 +352,11 @@ class CppSourceCodeFile(SourceCodeFile):
             # Already handled in the struct/union section
             return
         elif typedef_type.type == 'primitive_type':
-            typedef_struct['type'] = typedef_type.text.decode(encoding='utf-8', errors='ignore')
+            typedef_struct['type'] = typedef_type.text.decode(encoding='utf-8',
+                                                              errors='ignore')
         elif typedef_type.type == 'sized_type_specifier':
-            typedef_struct['type'] = typedef_type.text.decode(encoding='utf-8', errors='ignore')
+            typedef_struct['type'] = typedef_type.text.decode(encoding='utf-8',
+                                                              errors='ignore')
 
         self.typedefs.append(typedef_struct)
 
@@ -347,8 +367,10 @@ class CppSourceCodeFile(SourceCodeFile):
             # Skip invalid include statement
             return
 
-        include_path = include_path_node.text.decode(encoding='utf-8', errors='ignore').replace(
-            '"', '').replace('>', '').replace('<', '')
+        include_path = include_path_node.text.decode(
+            encoding='utf-8',
+            errors='ignore').replace('"', '').replace('>',
+                                                      '').replace('<', '')
         self.includes.add(include_path)
 
     def _process_macro_block(self, macro: Node, namespace: str,
@@ -371,14 +393,16 @@ class CppSourceCodeFile(SourceCodeFile):
             if not var_name or not var_name.text:
                 return
 
-            if macro and macro.text and macro.text.decode(encoding='utf-8', errors='ignore').startswith(
-                    '#ifdef'):
+            if macro and macro.text and macro.text.decode(
+                    encoding='utf-8', errors='ignore').startswith('#ifdef'):
                 type = 'ifdef'
             else:
                 type = 'ifndef'
             conditions.append({
-                'type': type,
-                'condition': var_name.text.decode(encoding='utf-8', errors='ignore'),
+                'type':
+                type,
+                'condition':
+                var_name.text.decode(encoding='utf-8', errors='ignore'),
             })
         elif macro.type in ['preproc_if', 'preproc_elif']:
             condition = macro.child_by_field_name('condition')
@@ -388,8 +412,10 @@ class CppSourceCodeFile(SourceCodeFile):
                 return
 
             conditions.append({
-                'type': 'if',
-                'condition': condition.text.decode(encoding='utf-8', errors='ignore'),
+                'type':
+                'if',
+                'condition':
+                condition.text.decode(encoding='utf-8', errors='ignore'),
             })
 
         # Extract #else #elif branches
@@ -520,16 +546,19 @@ class FunctionDefinition():
                 self.valid = False
                 return
 
-            self.name = name_node.text.decode(encoding='utf-8', errors='ignore')
+            self.name = name_node.text.decode(encoding='utf-8',
+                                              errors='ignore')
             for idx, param in enumerate(param_node.children):
                 if param.text:
-                    param_name = param.text.decode(encoding='utf-8', errors='ignore')
+                    param_name = param.text.decode(encoding='utf-8',
+                                                   errors='ignore')
                 else:
                     param_name = f'arg{idx}'
                 self.arg_names.append(param_name)
                 self.arg_types.append('auto')
             self.return_type = 'auto'
-            self.sig = self.name + param_node.text.decode(encoding='utf-8', errors='ignore')
+            self.sig = self.name + param_node.text.decode(encoding='utf-8',
+                                                          errors='ignore')
             self.complexity = 1
             self.icount = 1
             self.bbcount = 1
@@ -543,12 +572,14 @@ class FunctionDefinition():
         param_list_node = None
         for child in name_node.children:
             if 'identifier' in child.type:
-                self.name = child.text.decode(encoding='utf-8', errors='ignore')
+                self.name = child.text.decode(encoding='utf-8',
+                                              errors='ignore')
 
             elif child.type == 'function_declarator':
                 for decl in child.children:
                     if 'identifier' in decl.type:
-                        self.name = decl.text.decode(encoding='utf-8', errors='ignore')
+                        self.name = decl.text.decode(encoding='utf-8',
+                                                     errors='ignore')
 
                     elif decl.type == 'parameter_list':
                         param_list_node = decl
@@ -569,13 +600,14 @@ class FunctionDefinition():
                 break
             if (new_parent.type == 'class_specifier'
                     and new_parent.child_by_field_name('name') is not None):
-                full_name = new_parent.child_by_field_name(
-                    'name').text.decode(encoding='utf-8', errors='ignore') + '::' + full_name
+                full_name = new_parent.child_by_field_name('name').text.decode(
+                    encoding='utf-8', errors='ignore') + '::' + full_name
             if new_parent.type == 'namespace_definition':
                 # Ignore anonymous namespaces
                 if new_parent.child_by_field_name('name') is not None:
                     full_name = new_parent.child_by_field_name(
-                        'name').text.decode(encoding='utf-8', errors='ignore') + '::' + full_name
+                        'name').text.decode(encoding='utf-8',
+                                            errors='ignore') + '::' + full_name
             tmp_root = new_parent
         logger.debug('Full function scope not from name: %s', full_name)
 
@@ -592,21 +624,26 @@ class FunctionDefinition():
                         if child.child_by_field_name(
                                 'declarator').type == 'identifier':
                             tmp_name = child.child_by_field_name(
-                                'declarator').text.decode(encoding='utf-8', errors='ignore')
+                                'declarator').text.decode(encoding='utf-8',
+                                                          errors='ignore')
             if tmp_node.child_by_field_name('scope') is not None:
                 scope_to_add = tmp_node.child_by_field_name(
-                    'scope').text.decode(encoding='utf-8', errors='ignore') + '::'
+                    'scope').text.decode(encoding='utf-8',
+                                         errors='ignore') + '::'
 
             if tmp_node.type == 'identifier':
-                tmp_name = tmp_node.text.decode(encoding='utf-8', errors='ignore')
+                tmp_name = tmp_node.text.decode(encoding='utf-8',
+                                                errors='ignore')
                 break
             if tmp_node.type == 'field_identifier':
-                tmp_name = tmp_node.text.decode(encoding='utf-8', errors='ignore')
+                tmp_name = tmp_node.text.decode(encoding='utf-8',
+                                                errors='ignore')
                 break
             if tmp_node.child_by_field_name(
                     'name') is not None and tmp_node.child_by_field_name(
                         'name').type == 'identifier':
-                tmp_name = tmp_node.child_by_field_name('name').text.decode(encoding='utf-8', errors='ignore')
+                tmp_name = tmp_node.child_by_field_name('name').text.decode(
+                    encoding='utf-8', errors='ignore')
             tmp_node = tmp_node.child_by_field_name('declarator')
         if tmp_name:
             logger.debug('Assigning name')
@@ -624,7 +661,8 @@ class FunctionDefinition():
         # except:
         #    try:
         #        full_name = full_name + self.root.child_by_field_name(
-        #        'declarator').child_by_field_name('declarator').text.decode(encoding='utf-8', errors='ignore')
+        #        'declarator').child_by_field_name(
+        #        'declarator').text.decode(encoding='utf-8', errors='ignore')
         #    except:
 
         # This can happen for e.g. operators
@@ -641,7 +679,8 @@ class FunctionDefinition():
         # Handles return type
         type_node = self.root.child_by_field_name('type')
         if type_node:
-            self.return_type = type_node.text.decode(encoding='utf-8', errors='ignore')
+            self.return_type = type_node.text.decode(encoding='utf-8',
+                                                     errors='ignore')
         else:
             self.return_type = 'void'
 
@@ -678,8 +717,10 @@ class FunctionDefinition():
                     self.arg_types.append(
                         f'{param_type.text.decode(encoding="utf-8", errors="ignore")}{"*" * pcount}'
                         f'{"[]" * acount}')
-                    self.arg_names.append(param_name.text.decode(encoding='utf-8', errors='ignore').replace(
-                        '&', ''))
+                    self.arg_names.append(
+                        param_name.text.decode(encoding='utf-8',
+                                               errors='ignore').replace(
+                                                   '&', ''))
                     self.var_map[self.arg_names[-1]] = self.arg_types[-1]
 
         # Handles other fields
@@ -771,9 +812,11 @@ class FunctionDefinition():
             for call_expr in call_exprs:
                 func_call = call_expr.child_by_field_name('function')
                 args = call_expr.child_by_field_name('arguments')
-                if func_call and func_call.text.decode(encoding='utf-8', errors='ignore') == 'assert':
+                if func_call and func_call.text.decode(
+                        encoding='utf-8', errors='ignore') == 'assert':
                     self.assert_stmts.append({
-                        'condition': args.text.decode(encoding='utf-8', errors='ignore'),
+                        'condition':
+                        args.text.decode(encoding='utf-8', errors='ignore'),
                         'pos': {
                             'source_file': self.parent_source.source_file,
                             'line_start': call_expr.start_point.row,
@@ -785,8 +828,10 @@ class FunctionDefinition():
                         project) -> list[tuple[str, int, int]]:
         """Internal helper for processing the function invocation statement."""
         # logger.debug('Current namespace: %s', self.namespace_or_class)
-        logger.debug('Processing invoke: %s',
-                     expr.text.decode(encoding='utf-8', errors='ignore') if expr.text else '')
+        logger.debug(
+            'Processing invoke: %s',
+            expr.text.decode(encoding='utf-8', errors='ignore')
+            if expr.text else '')
         callsites = []
         target_name: str = ''
 
@@ -801,7 +846,8 @@ class FunctionDefinition():
             if func.type in [
                     'identifier', 'qualified_identifier', 'template_function'
             ] and func.text:
-                target_name = func.text.decode(encoding='utf-8', errors='ignore')
+                target_name = func.text.decode(encoding='utf-8',
+                                               errors='ignore')
 
                 # Find the matching function in our project
                 matched_func = get_function_node(
@@ -814,7 +860,8 @@ class FunctionDefinition():
                 else:
                     name_node = func.child_by_field_name('name')
                     if name_node and name_node.text:
-                        target_name2 = name_node.text.decode(encoding='utf-8', errors='ignore')
+                        target_name2 = name_node.text.decode(encoding='utf-8',
+                                                             errors='ignore')
                         matched_func2 = get_function_node(
                             target_name2,
                             project.all_functions,
@@ -850,7 +897,6 @@ class FunctionDefinition():
                                         project) -> tuple[Optional[str], str]:
         """Helper for determining the return type of a field expression
         in a chained call and its full qualified name."""
-        # logger.debug('Handling field expression: %s',field_expr.text.decode(encoding='utf-8', errors='ignore'))
         ret_type = None
         object_type = None
 
@@ -862,10 +908,12 @@ class FunctionDefinition():
 
         if field.type == 'template_method':
             name_node = field.child_by_field_name('name')
-            full_name = (name_node.text.decode(encoding='utf-8', errors='ignore')
+            full_name = (name_node.text.decode(encoding='utf-8',
+                                               errors='ignore')
                          if name_node and name_node.text else '')
         else:
-            full_name = field.text.decode(encoding='utf-8', errors='ignore') if field.text else ''
+            full_name = field.text.decode(
+                encoding='utf-8', errors='ignore') if field.text else ''
 
         # Chained field access
         if arg.type == 'field_expression':
@@ -878,7 +926,8 @@ class FunctionDefinition():
         # Named object
         elif arg.type in ['identifier', 'qualified_identifier']:
             if arg.text:
-                object_type = self.var_map.get(arg.text.decode(encoding='utf-8', errors='ignore'))
+                object_type = self.var_map.get(
+                    arg.text.decode(encoding='utf-8', errors='ignore'))
         elif arg.type == 'call_expression':
             # Bail, we do not support this yet. Examples of code:
             # "static_cast<impl::xpath_query_impl*>(_impl)->root->eval_string
@@ -900,18 +949,18 @@ class FunctionDefinition():
     def _process_callsites(self, stmt: Node,
                            project) -> list[tuple[str, int, int]]:
         """Process and store the callsites of the function."""
-        logger.debug('Processing callsite: %s',
-                     stmt.text.decode(encoding='utf-8', errors='ignore') if stmt.text else '')
+        logger.debug(
+            'Processing callsite: %s',
+            stmt.text.decode(encoding='utf-8', errors='ignore')
+            if stmt.text else '')
         callsites = []
 
         # Call statement
         if stmt.type == 'call_expression':
-            # logger.debug('Handling call expression: %s', stmt.text.decode(encoding='utf-8', errors='ignore'))
             callsites.extend(self._process_invoke(stmt, project))
 
         # Constructor call statement
         elif stmt.type == 'new_expression':
-            # logger.debug('Handling new_expression: %s', stmt.text.decode(encoding='utf-8', errors='ignore'))
             ctr_type = stmt.child_by_field_name('type')
             if ctr_type and ctr_type.text:
                 cls = ctr_type.text.decode(encoding='utf-8', errors='ignore')
@@ -920,7 +969,6 @@ class FunctionDefinition():
                     (cls, stmt.byte_range[1], stmt.start_point.row + 1))
 
         elif stmt.type == 'declaration':
-            # logger.debug('Handling declaration: %s', stmt.text.decode(encoding='utf-8', errors='ignore'))
             var_type = ''
             var_type_obj = stmt.child_by_field_name('type')
 
@@ -938,16 +986,19 @@ class FunctionDefinition():
                     if var_type_obj.child_by_field_name('scope') is not None:
                         scope = var_type_obj.child_by_field_name('scope')
                         if scope and scope.text:
-                            var_type += scope.text.decode(encoding='utf-8', errors='ignore')
+                            var_type += scope.text.decode(encoding='utf-8',
+                                                          errors='ignore')
                     var_type += '::'
                     var_type_obj = var_type_obj.child_by_field_name('name')
 
                 if var_type_obj and var_type_obj.type == 'template_type':
                     template_name = var_type_obj.child_by_field_name('name')
                     if template_name and template_name.text:
-                        var_type += template_name.text.decode(encoding='utf-8', errors='ignore')
+                        var_type += template_name.text.decode(encoding='utf-8',
+                                                              errors='ignore')
                 else:
-                    var_type += (var_type_obj.text.decode(encoding='utf-8', errors='ignore')
+                    var_type += (var_type_obj.text.decode(encoding='utf-8',
+                                                          errors='ignore')
                                  if var_type_obj and var_type_obj.text else '')
 
                 break
@@ -961,8 +1012,9 @@ class FunctionDefinition():
                 logger.debug('Could not extract necessary attributes')
                 return []
 
-            logger.debug('Extracted declaration: Type `%s` : Name `%s`',
-                         var_type, var_name.text.decode(encoding='utf-8', errors='ignore'))
+            logger.debug(
+                'Extracted declaration: Type `%s` : Name `%s`', var_type,
+                var_name.text.decode(encoding='utf-8', errors='ignore'))
             # Handles implicit default constructor call
             if var_name.type == 'identifier':
                 # We're looking for a constructor, so add the name as it
@@ -1000,7 +1052,9 @@ class FunctionDefinition():
             var_type = f'{var_type}{"*" * pcount}{"[]" * acount}'
             name_text = var_name.text
             if name_text:
-                self.var_map[name_text.decode(encoding='utf-8', errors='ignore').replace('&', '')] = var_type
+                self.var_map[name_text.decode(encoding='utf-8',
+                                              errors='ignore').replace(
+                                                  '&', '')] = var_type
 
         return callsites
 
