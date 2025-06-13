@@ -334,7 +334,7 @@ def extract_code_coverage_data(code_coverage_summary):
     return line_total_summary
 
 
-def prepare_code_coverage_dict(
+def prepare_code_coverage_data(
         code_coverage_summary, project_name: str, date_str: str,
         project_language: str) -> Optional[Dict[str, Any]]:
     """Gets coverage URL and line coverage total of a project"""
@@ -498,7 +498,7 @@ def extract_local_project_data(project_name, oss_fuzz_path,
         macro_block
     }
 
-    code_coverage_data_dict = prepare_code_coverage_dict(
+    code_coverage_data_dict = prepare_code_coverage_data(
         code_coverage_summary, project_name, '', project_language)
 
     if cov_fuzz_stats is not None:
@@ -776,7 +776,7 @@ def extract_project_data(project_name, date_str, should_include_details,
             'macro_block': macro_block
         }
 
-    code_coverage_data_dict = prepare_code_coverage_dict(
+    code_coverage_data_dict = prepare_code_coverage_data(
         code_coverage_summary, project_name, date_str, project_language)
 
     per_fuzzer_cov = {}
@@ -788,9 +788,18 @@ def extract_project_data(project_name, date_str, should_include_details,
         amount_of_fuzzers = len(all_fuzzers)
         for ff in all_fuzzers:
             try:
+                fuzzer_corpus_size = oss_fuzz.get_fuzzer_corpus_size(
+                    project_name, date_str.replace("-", ""), ff,
+                    introspector_report)
+            except:
+                fuzzer_corpus_size = None
+
+            try:
                 fuzzer_cov = oss_fuzz.get_fuzzer_code_coverage_summary(
                     project_name, date_str.replace("-", ""), ff)
                 fuzzer_cov_data = extract_code_coverage_data(fuzzer_cov)
+                if fuzzer_cov_data is not None:
+                    fuzzer_cov_data['corpus_size'] = fuzzer_corpus_size
                 per_fuzzer_cov[ff] = fuzzer_cov_data
             except:
                 pass
@@ -958,8 +967,36 @@ def extend_db_timestamps(db_timestamp, output_directory):
             json.dump(existing_timestamps, f)
 
 
+def per_fuzzer_coverage_has_degraded(fuzzer_data: List[Dict[str, Any]],
+                                     project_name: str,
+                                     ff: str) -> List[Dict[str, str]]:
+    """Go through the fuzzer data and find coverage drops."""
+
+    def get_url(date):
+        report_url = oss_fuzz.get_fuzzer_code_coverage_summary_url(
+            project_name, date.replace('-', ''), ff)
+        report_url = report_url[:-len('summary.json')] + 'index.html'
+        return report_url
+
+    res = []
+    for yesterday, today in zip(fuzzer_data[:-1], fuzzer_data[1:]):
+        if yesterday['percentage'] - today[
+                'percentage'] > FUZZER_COVERAGE_IS_DEGRADED:
+            res.append({
+                'before_date': yesterday['date'],
+                'before_url': get_url(yesterday['date']),
+                'before_perc': yesterday['percentage'],
+                'current_date': today['date'],
+                'current_url': get_url(today['date']),
+                'current_perc': today['percentage'],
+            })
+
+    return res
+
+
 def per_fuzzer_coverage_analysis(project_name: str,
-                                 coverages: Dict[str, List[Tuple[int, str]]],
+                                 per_fuzzer_data: Dict[str, List[Dict[str,
+                                                                      Any]]],
                                  lost_fuzzers):
     """Go through the recent coverage results and combine them into a short summary.
     Including an assessment if the fuzzer got worse over time.
@@ -971,34 +1008,47 @@ def per_fuzzer_coverage_analysis(project_name: str,
     # at per fuzzer coverage, which is should already be normalized to what
     # can be reached.
     # TODO What would be a good percentage to mark as coverage degradation,
-    # taking 5% for now but should be observed, maybe per it should be
+    # taking 5% for now but should be observed, maybe it should be
     # configurable per project as well.
     results = {}
-    for ff, data in coverages.items():
+    for ff, data in per_fuzzer_data.items():
         if len(data) > 0:
-            values = [dd[0] for dd in data]
-            dates = [dd[1] for dd in data]
-            latest_date_with_value = next(dd[1] for dd in reversed(data)
-                                          if dd[0] is not None)
+            percentages = [dd['percentage'] for dd in data]
+            dates = [dd['date'] for dd in data]
+            totals = [dd['total'] for dd in data]
+            covered = [dd['covered'] for dd in data]
+            corpus_size = [dd['corpus_size'] for dd in data]
+            latest_date_with_value = next(dd['date'] for dd in reversed(data)
+                                          if dd['percentage'] is not None)
             if latest_date_with_value is not None:
                 report_url = oss_fuzz.get_fuzzer_code_coverage_summary_url(
                     project_name, latest_date_with_value.replace('-', ''), ff)
                 report_url = report_url[:-len('summary.json')] + 'index.html'
             else:
                 report_url = None
-            max_cov = max(values[:-1], default=0)
-            avg_cov = round(statistics.fmean(values), 2)
-            current = values[-1]
+            max_cov = max(percentages[:-1], default=0)
+            avg_cov = round(statistics.fmean(percentages), 2)
+            current = percentages[-1]
+            try:
+                days_degraded = per_fuzzer_coverage_has_degraded(
+                    data, project_name, ff)
+            except:
+                days_degraded = []
             results[ff] = {
                 'report_url': report_url,
                 'report_date': latest_date_with_value,
-                'coverages_values': values,
+                'hashed_name': str(hash(ff)),
+                'coverages_perc': percentages,
+                'coverages_totals': totals,
+                'coverages_covered': covered,
+                'coverages_corpus': corpus_size,
                 'coverages_dates': dates,
                 'max': max_cov,
                 'avg': avg_cov,
                 'current': current,
-                'has_degraded':
+                'max_has_degraded':
                 (max_cov - current) > FUZZER_COVERAGE_IS_DEGRADED,
+                'days_degraded': days_degraded,
                 'got_lost': ff in lost_fuzzers,
             }
     return results
@@ -1038,7 +1088,18 @@ def calculate_recent_results(projects_with_new_results, timestamps,
                     except:
                         perc = 0
 
-                    per_fuzzer_coverages[ff].append((perc, do))
+                    per_fuzzer_coverages[ff].append({
+                        'corpus_size':
+                        cov_data['corpus_size'],
+                        'covered':
+                        cov_data['covered'],
+                        'total':
+                        cov_data['count'],
+                        'percentage':
+                        perc,
+                        'date':
+                        do
+                    })
             except:
                 continue
 
@@ -1450,6 +1511,7 @@ def setup_webapp_cache() -> None:
     os.mkdir("extracted-db-archive")
 
     db_archive.extractall("extracted-db-archive")
+
     logger.info("Extracted it all")
 
     # Copy over the files
