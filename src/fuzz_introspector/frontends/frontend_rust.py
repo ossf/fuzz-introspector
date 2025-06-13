@@ -63,7 +63,9 @@ class RustSourceCodeFile(datatypes.SourceCodeFile):
                 impl_type = node.child_by_field_name('type')
                 impl_body = node.child_by_field_name('body')
                 if impl_type and impl_type.text:
-                    prefix.append(impl_type.text.decode().split('<')[0])
+                    prefix.append(
+                        impl_type.text.decode(encoding='utf-8',
+                                              errors='ignore').split('<')[0])
 
                 # Check impl_bdoy
                 if not impl_body:
@@ -90,7 +92,9 @@ class RustSourceCodeFile(datatypes.SourceCodeFile):
                 # Basic info of this mod
                 mod_name = node.child_by_field_name('name')
                 if mod_name and mod_name.text:
-                    prefix.append(mod_name.text.decode())
+                    prefix.append(
+                        mod_name.text.decode(encoding='utf-8',
+                                             errors='ignore'))
 
                 # Loop through the body of this mod
                 for mod in mod_body.children:
@@ -116,7 +120,9 @@ class RustSourceCodeFile(datatypes.SourceCodeFile):
                 trait_name = node.child_by_field_name('name')
                 trait_body = node.child_by_field_name('body')
                 if trait_name and trait_name.text:
-                    prefix.append(trait_name.text.decode().split('<')[0])
+                    prefix.append(
+                        trait_name.text.decode(encoding='utf-8',
+                                               errors='ignore').split('<')[0])
 
                 # Check trait_body
                 if not trait_body:
@@ -150,7 +156,8 @@ class RustSourceCodeFile(datatypes.SourceCodeFile):
                 use_stmt = node.child_by_field_name('argument')
                 if use_stmt and use_stmt.text:
                     use_map = self._process_recursive_use(
-                        use_stmt.text.decode())
+                        use_stmt.text.decode(encoding='utf-8',
+                                             errors='ignore'))
                     self.uses.update(use_map)
 
             # Handling macro definition
@@ -276,21 +283,23 @@ class RustFunction():
     def function_source_code_as_text(self) -> str:
         """Returns the source code the function."""
         if self.root and self.root.text:
-            return self.root.text.decode()
+            return self.root.text.decode(encoding='utf-8', errors='ignore')
 
         return ''
 
     def _process_declaration(self):
         """Internal helper to process the function/method declaration."""
         # Process name
-        self.name = self.root.child_by_field_name('name').text.decode()
+        self.name = self.root.child_by_field_name('name').text.decode(
+            encoding='utf-8', errors='ignore')
         if self.prefix:
             self.name = f'{"::".join(self.prefix)}::{self.name}'
 
         # Process return type
         return_type = self.root.child_by_field_name('return_type')
         if return_type:
-            self.return_type = return_type.text.decode().split('<')[0]
+            self.return_type = return_type.text.decode(
+                encoding='utf-8', errors='ignore').split('<')[0]
         else:
             self.return_type = 'void'
 
@@ -300,12 +309,17 @@ class RustFunction():
             if param.type == 'parameter':
                 for item in param.children:
                     if item.type == 'identifier':
-                        self.arg_names.append(item.text.decode())
+                        self.arg_names.append(
+                            item.text.decode(encoding='utf-8',
+                                             errors='ignore'))
                     elif 'type' in item.type:
-                        self.arg_types.append(item.text.decode())
+                        self.arg_types.append(
+                            item.text.decode(encoding='utf-8',
+                                             errors='ignore'))
 
         # Process signature
-        signature = self.root.text.decode().split('{')[0]
+        signature = self.root.text.decode(encoding='utf-8',
+                                          errors='ignore').split('{')[0]
         self.sig = ''.join(line.strip() for line in signature.splitlines()
                            if line.strip())
 
@@ -327,7 +341,8 @@ class RustFunction():
         for child in self.root.children:
             # Process name
             if child.type == 'identifier':
-                self.name = child.text.decode()
+                self.name = child.text.decode(encoding='utf-8',
+                                              errors='ignore')
                 if self.name == 'fuzz_target':
                     self.is_entry_method = True
 
@@ -335,7 +350,8 @@ class RustFunction():
             elif child.type == 'token_tree':
                 for token_tree in child.children:
                     if token_tree.type == 'token_tree':
-                        content = token_tree.text.decode()
+                        content = token_tree.text.decode(encoding='utf-8',
+                                                         errors='ignore')
                         if content.startswith('{'):
                             cbytes = content.encode('utf-8')
                             root = self.parent_source.parser.parse(cbytes)
@@ -344,7 +360,8 @@ class RustFunction():
             elif child.type == 'macro_rule':
                 token_tree = child.child_by_field_name('right')
                 if token_tree:
-                    content = token_tree.text.decode()
+                    content = token_tree.text.decode(encoding='utf-8',
+                                                     errors='ignore')
                     if content.startswith('{'):
                         cbytes = content.encode('utf-8')
                         root = self.parent_source.parser.parse(cbytes)
@@ -424,7 +441,8 @@ class RustFunction():
                 # Simple function call
                 if func.type in ['identifier', 'scoped_identifier']:
                     if func.text:
-                        target_name = func.text.decode()
+                        target_name = func.text.decode(encoding='utf-8',
+                                                       errors='ignore')
 
                     # Ignore lambda function calls
                     if target_name in self.var_map:
@@ -437,7 +455,9 @@ class RustFunction():
                     _, target_name = _process_field_expr_return_type(func)
 
                 elif func.type == 'generic_function' and func.text:
-                    target_name = func.text.decode().split('.', 1)[-1]
+                    target_name = func.text.decode(encoding='utf-8',
+                                                   errors='ignore').split(
+                                                       '.', 1)[-1]
 
                 if target_name and func.byte_range and func.start_point:
                     callsites.append((target_name, func.byte_range[1],
@@ -463,7 +483,9 @@ class RustFunction():
 
             name = field_expr.child_by_field_name('field')
             obj = field_expr.child_by_field_name('value')
-            full_name = name.text.decode() if name and name.text else ''
+            full_name = name.text.decode(
+                encoding='utf-8',
+                errors='ignore') if name and name.text else ''
 
             if not obj:
                 return (return_type, full_name)
@@ -472,7 +494,8 @@ class RustFunction():
             if obj.type == 'call_expression':
                 object_type = _retrieve_return_type(obj)
             elif obj.type in ['identifier', 'scoped_identifier']:
-                object_text = obj.text.decode() if obj.text else ''
+                object_text = obj.text.decode(
+                    encoding='utf-8', errors='ignore') if obj.text else ''
                 node = get_function_node(object_text, functions)
                 if node:
                     object_type = node.return_type
@@ -501,7 +524,8 @@ class RustFunction():
             func = call_expr.child_by_field_name('function')
             if func:
                 if func.type in ['identifier', 'scoped_identifier']:
-                    func_name = func.text.decode() if func.text else ''
+                    func_name = func.text.decode(
+                        encoding='utf-8', errors='ignore') if func.text else ''
                     node = get_function_node(func_name, functions)
                     if node:
                         return_type = node.return_type
@@ -520,10 +544,13 @@ class RustFunction():
                 param_name = stmt.child_by_field_name('pattern')
                 param_type = stmt.child_by_field_name('value')
                 if param_name and param_type:
-                    name = param_name.text.decode() if param_name.text else ''
+                    name = param_name.text.decode(
+                        encoding='utf-8',
+                        errors='ignore') if param_name.text else ''
                     return_type = None
                     if param_type.type == 'identifier':
-                        target = (param_type.text.decode()
+                        target = (param_type.text.decode(encoding='utf-8',
+                                                         errors='ignore')
                                   if param_type.text else '')
                         return_type = self.var_map.get(target)
                         if not return_type:
@@ -536,14 +563,17 @@ class RustFunction():
                         # for pointers and primitive types are needed.
                         return_node = param_type.child_by_field_name('type')
                         if return_node and return_node.text:
-                            return_type = return_node.text.decode()
+                            return_type = return_node.text.decode(
+                                encoding='utf-8', errors='ignore')
                     elif param_type.type == 'call_expression':
                         return_type = _retrieve_return_type(param_type)
                     elif param_type.type == 'reference_expression':
                         for ref_type in param_type.children:
                             if ref_type.type == 'identifier':
                                 key_bytes = ref_type.text
-                                key = key_bytes.decode() if key_bytes else ''
+                                key = key_bytes.decode(
+                                    encoding='utf-8',
+                                    errors='ignore') if key_bytes else ''
                                 return_type = self.var_map.get(key)
                             elif ref_type.type == 'call_expression':
                                 return_type = _retrieve_return_type(ref_type)
@@ -554,7 +584,8 @@ class RustFunction():
             elif stmt.type == 'macro_invocation':
                 for child in stmt.children:
                     if child.type == 'identifier' and child.text:
-                        macro_name = child.text.decode()
+                        macro_name = child.text.decode(encoding='utf-8',
+                                                       errors='ignore')
                         target_func = get_function_node(macro_name, functions)
                         if target_func and target_func.is_macro:
                             callsites.append(
