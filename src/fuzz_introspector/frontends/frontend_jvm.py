@@ -104,7 +104,7 @@ class JvmSourceCodeFile(SourceCodeFile):
             for node in nodes:
                 for package in node.children:
                     if package.type in ['scoped_identifier', 'identifier']:
-                        self.package = package.text.decode()
+                        self.package = package.text.decode(encoding='utf-8', errors='ignore')
 
     def _set_class_interface_declaration(self):
         """Internal helper for retrieving all classes."""
@@ -124,7 +124,7 @@ class JvmSourceCodeFile(SourceCodeFile):
                 wildcard = False
                 for imp in node.children:
                     if imp.type == 'scoped_identifier':
-                        package = imp.text.decode()
+                        package = imp.text.decode(encoding='utf-8', errors='ignore')
                     if imp.type == 'asterisk':
                         wildcard = True
                 if not wildcard and not package.startswith('java.lang'):
@@ -271,7 +271,7 @@ class JavaMethod():
     def function_source_code_as_text(self) -> str:
         """Returns the source code the function."""
         if self.root and self.root.text:
-            return self.root.text.decode()
+            return self.root.text.decode(encoding='utf-8', errors='ignore')
 
         return ''
 
@@ -317,20 +317,20 @@ class JavaMethod():
                 if self.is_constructor:
                     self.name = '<init>'
                 else:
-                    self.name = child.text.decode()
+                    self.name = child.text.decode(encoding='utf-8', errors='ignore')
                     if self.name == self.parent_source.entrypoint:
                         self.is_entry_method = True
 
             # Process modifiers and annotations
             elif child.type == 'modifiers':
                 for modifier in child.children:
-                    if modifier.text.decode() == 'public':
+                    if modifier.text.decode(encoding='utf-8', errors='ignore') == 'public':
                         self.public = True
-                    if modifier.text.decode() == 'abstract':
+                    if modifier.text.decode(encoding='utf-8', errors='ignore') == 'abstract':
                         self.concrete = False
-                    if modifier.text.decode() == 'static':
+                    if modifier.text.decode(encoding='utf-8', errors='ignore') == 'static':
                         self.static = True
-                    if modifier.text.decode() == '@FuzzTest':
+                    if modifier.text.decode(encoding='utf-8', errors='ignore') == '@FuzzTest':
                         self.is_entry_method = True
 
             # Process arguments
@@ -338,9 +338,9 @@ class JavaMethod():
                 for argument in child.children:
                     if argument.type == 'formal_parameter':
                         arg_name = argument.child_by_field_name(
-                            'name').text.decode()
+                            'name').text.decode(encoding='utf-8', errors='ignore')
                         arg_type = argument.child_by_field_name(
-                            'type').text.decode()
+                            'type').text.decode(encoding='utf-8', errors='ignore')
 
                         self.arg_names.append(arg_name)
                         self.arg_types.append(arg_type)
@@ -349,7 +349,7 @@ class JavaMethod():
             # Process return type
             elif child.type.endswith('type_identifier') or child.type.endswith(
                     '_type'):
-                self.return_type = child.text.decode()
+                self.return_type = child.text.decode(encoding='utf-8', errors='ignore')
 
             # Process body and store statment nodes
             elif child.type in ['block', 'constructor_body']:
@@ -362,7 +362,7 @@ class JavaMethod():
             elif child.type == 'throws':
                 for exception in child.children:
                     if exception.type.endswith('type_identifier'):
-                        self.exceptions.append(exception.text.decode())
+                        self.exceptions.append(exception.text.decode(encoding='utf-8', errors='ignore'))
 
     def _process_statements(self):
         """Loop through all statements and process them."""
@@ -460,7 +460,7 @@ class JavaMethod():
 
             # Variable call or static call
             else:
-                var_name = stmt.text.decode() if stmt.text else ''
+                var_name = stmt.text.decode(encoding='utf-8', errors='ignore') if stmt.text else ''
                 return_value = self.var_map.get(var_name, '')
                 if not return_value:
                     return_value = self.class_interface.class_fields.get(
@@ -479,7 +479,7 @@ class JavaMethod():
                     cls = classes.get(object_class)
                     if cls and field.text:
                         return_value = cls.class_fields.get(
-                            field.text.decode(), self.class_interface.name)
+                            field.text.decode(encoding='utf-8', errors='ignore'), self.class_interface.name)
 
             # Chained call
             elif stmt.type == 'method_invocation':
@@ -507,7 +507,7 @@ class JavaMethod():
                             continue
                         return_value = (
                             self.parent_source.get_full_qualified_name(
-                                cast_type.text.decode()))
+                                cast_type.text.decode(encoding='utf-8', errors='ignore')))
 
                         if value.type == 'method_invocation':
                             _, invoke_callsites = self._process_invoke(
@@ -562,7 +562,7 @@ class JavaMethod():
 
             # Variables
             elif argument.type == 'identifier':
-                arg_name = argument.text.decode() if argument.text else ''
+                arg_name = argument.text.decode(encoding='utf-8', errors='ignore') if argument.text else ''
                 return_value = self.var_map.get(arg_name, '')
                 if not return_value:
                     return_value = self.class_interface.class_fields.get(
@@ -599,7 +599,7 @@ class JavaMethod():
                     cls = classes.get(object_class)
                     if cls and field.text:
                         return_value = cls.class_fields.get(
-                            field.text.decode(), self.class_interface.name)
+                            field.text.decode(encoding='utf-8', errors='ignore'), self.class_interface.name)
                 return_values.append(return_value)
 
             # Type casting expression
@@ -610,7 +610,7 @@ class JavaMethod():
                     continue
 
                 return_value = self.parent_source.get_full_qualified_name(
-                    cast_type.text.decode())
+                    cast_type.text.decode(encoding='utf-8', errors='ignore'))
 
                 if value.type == 'method_invocation':
                     _, invoke_callsites = self._process_invoke(value, classes)
@@ -664,7 +664,7 @@ class JavaMethod():
 
                 elif cls_type.type.endswith(
                         'type_identifier') or cls_type.type.endswith('_type'):
-                    cls_name = cls_type.text.decode() if cls_type.text else ''
+                    cls_name = cls_type.text.decode(encoding='utf-8', errors='ignore') if cls_type.text else ''
                     object_type = cls_name.split('<')[0]
 
             object_type = self.parent_source.get_full_qualified_name(
@@ -699,7 +699,7 @@ class JavaMethod():
                     object_type = packaged_type
                     break
 
-            target_name = (f'[{object_type}].{name.text.decode()}'
+            target_name = (f'[{object_type}].{name.text.decode(encoding="utf-8", errors="ignore")}'
                            f'({",".join(argument_types)})')
             callsites.append(
                 (target_name, expr.byte_range[1], expr.start_point.row + 1))
@@ -708,10 +708,10 @@ class JavaMethod():
         # Preserve the full method call
         elif name and name.text:
             if objects and objects.text:
-                target_name = (f'{objects.text.decode()}.{name.text.decode()}'
+                target_name = (f'{objects.text.decode(encoding="utf-8", errors="ignore")}.{name.text.decode(encoding="utf-8", errors="ignore")}'
                                f'({",".join(argument_types)})')
             else:
-                target_name = (f'{name.text.decode()}'
+                target_name = (f'{name.text.decode(encoding="utf-8", errors="ignore")}'
                                f'({",".join(argument_types)})')
 
             callsites.append(
@@ -721,7 +721,7 @@ class JavaMethod():
         if object_type == 'com.code_intelligence.jazzer.api.FuzzedDataProvider':
             if name and name.text:
                 return_type = FUZZING_METHOD_RETURN_TYPE_MAP.get(
-                    name.text.decode(), '')
+                    name.text.decode(encoding='utf-8', errors='ignore'), '')
         else:
             return_type = self.class_interface.name
             if object_type in classes and target_name:
@@ -764,7 +764,7 @@ class JavaMethod():
             if not left or not left.text or not right:
                 return type_str, callsites
 
-            var_name = left.text.decode().split(' ')[-1]
+            var_name = left.text.decode(encoding='utf-8', errors='ignore').split(' ')[-1]
             type_str, invoke_callsites = self._process_callsites(
                 right, classes)
             self.var_map[var_name] = type_str
@@ -777,7 +777,7 @@ class JavaMethod():
                     if not name_node or not name_node.text or not value_node:
                         continue
 
-                    var_name = name_node.text.decode()
+                    var_name = name_node.text.decode(encoding='utf-8', errors='ignore')
                     type_str, invoke_callsites = self._process_callsites(
                         value_node, classes)
                     self.var_map[var_name] = type_str
@@ -788,7 +788,7 @@ class JavaMethod():
             if not name_node or not name_node.text or not value_node:
                 return type_str, callsites
 
-            var_name = name_node.text.decode()
+            var_name = name_node.text.decode(encoding='utf-8', errors='ignore')
             type_str, invoke_callsites = self._process_callsites(
                 value_node, classes)
             self.var_map[var_name] = type_str
@@ -900,7 +900,7 @@ class JavaClassInterface():
             if child.type == 'superclass':
                 for cls in child.children:
                     if cls.type.endswith('type_identifier') and cls.text:
-                        self.super_class = cls.text.decode()
+                        self.super_class = cls.text.decode(encoding='utf-8', errors='ignore')
 
             # Process super interfaces
             elif child.type == 'super_interfaces':
@@ -912,13 +912,13 @@ class JavaClassInterface():
                     for interface in interfaces.children:
                         if (interface.type.endswith('type_identifier')
                                 and interface.text):
-                            type_set.add(interface.text.decode())
+                            type_set.add(interface.text.decode(encoding='utf-8', errors='ignore'))
                     self.super_interfaces = list(type_set)
 
             # Process modifiers
             elif child.type == 'modifiers':
                 for modifier in child.children:
-                    modi_txt = modifier.text.decode() if modifier.text else ''
+                    modi_txt = modifier.text.decode(encoding='utf-8', errors='ignore') if modifier.text else ''
                     if modi_txt == 'public':
                         self.class_public = True
                     if modi_txt == 'abstract':
@@ -931,7 +931,7 @@ class JavaClassInterface():
 
             # Process name
             elif child.type == 'identifier':
-                self.name = child.text.decode() if child.text else ''
+                self.name = child.text.decode(encoding='utf-8', errors='ignore') if child.text else ''
                 if self.package:
                     self.name = f'{self.package}.{self.name}'
 
@@ -953,7 +953,7 @@ class JavaClassInterface():
                         if not type_node or not type_node.text:
                             continue
 
-                        field_type = type_node.text.decode()
+                        field_type = type_node.text.decode(encoding='utf-8', errors='ignore')
                         fields = [
                             field for field in body.children
                             if field.type == 'variable_declarator'
@@ -964,7 +964,7 @@ class JavaClassInterface():
                             name_node = field.child_by_field_name('name')
 
                         if name_node and name_node.text and field_type:
-                            field_name = name_node.text.decode()
+                            field_name = name_node.text.decode(encoding='utf-8', errors='ignore')
                             self.class_fields[field_name] = field_type
 
                     # Process inner classes or interfaces
