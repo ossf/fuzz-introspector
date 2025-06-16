@@ -143,6 +143,8 @@ def retrieve_functions(proj: str, is_constructor: bool) -> List[Function]:
                      runtime_code_coverage=func['cov'],
                      function_filename=func['file'],
                      reached_by_fuzzers=func['fuzzers'],
+                     cov_fuzzers=func.get('cov_fuzzers', []),
+                     comb_fuzzers=func.get('comb_fuzzers', []),
                      code_coverage_url=func['cov_url'],
                      is_reached=(len(func['fuzzers']) > 0),
                      llvm_instruction_count=func['icount'],

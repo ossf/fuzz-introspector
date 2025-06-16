@@ -109,8 +109,9 @@ class ProjectTimestamp:
 
 class Function:
     __slots__ = ('name', 'project', 'is_reached', 'runtime_code_coverage',
-                 'function_filename', 'reached_by_fuzzers',
-                 'code_coverage_url', 'accummulated_cyclomatic_complexity',
+                 'function_filename', 'reached_by_fuzzers', 'cov_fuzzers',
+                 'comb_fuzzers', 'code_coverage_url',
+                 'accummulated_cyclomatic_complexity',
                  'llvm_instruction_count', 'undiscovered_complexity',
                  'function_arguments', 'function_debug_arguments',
                  'return_type', 'function_argument_names', 'raw_function_name',
@@ -126,6 +127,8 @@ class Function:
                  runtime_code_coverage: float = 0.0,
                  function_filename: str = "",
                  reached_by_fuzzers: List[str] = [],
+                 cov_fuzzers: List[str] = [],
+                 comb_fuzzers: List[str] = [],
                  code_coverage_url: str = "",
                  accummulated_cyclomatic_complexity: int = 0,
                  llvm_instruction_count: int = 0,
@@ -154,6 +157,8 @@ class Function:
         self.is_reached = is_reached
         self.runtime_code_coverage = runtime_code_coverage
         self.reached_by_fuzzers = reached_by_fuzzers
+        self.cov_fuzzers = cov_fuzzers
+        self.comb_fuzzers = comb_fuzzers
         self.code_coverage_url = code_coverage_url
         self.accummulated_cyclomatic_complexity = accummulated_cyclomatic_complexity
         self.llvm_instruction_count = llvm_instruction_count
@@ -201,7 +206,10 @@ class Function:
             'is_enum_class': self.is_enum_class,
             'is_static': self.is_static,
             'exceptions': self.exceptions,
-            'assert_stmts': self.asserts
+            'assert_stmts': self.asserts,
+            'reached-by-fuzzers': self.reached_by_fuzzers,
+            'cov_fuzzers': self.cov_fuzzers,
+            'comb_fuzzers': self.comb_fuzzers,
         }
 
 

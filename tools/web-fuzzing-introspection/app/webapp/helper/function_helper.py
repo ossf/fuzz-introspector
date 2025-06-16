@@ -150,6 +150,10 @@ def convert_functions_to_list_of_dict(
             function.func_signature,
             'reached_by_fuzzers':
             function.reached_by_fuzzers,
+            'cov_fuzzers':
+            function.cov_fuzzers,
+            'comb_fuzzers':
+            function.comb_fuzzers,
             'return_type':
             function.return_type,
             'runtime_coverage_percent':
