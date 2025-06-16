@@ -239,6 +239,10 @@ def extract_and_refine_functions(all_function_list, date_str):
             float(func['Func lines hit %'].replace("%", "")),
             'fuzzers':
             func['Reached by Fuzzers'],
+            'cov-fuzzer':
+            func.get('Runtime reached by Fuzzers', []),
+            'comb-fuzzers':
+            func.get('Combined reached by Fuzzers', []),
             'acc_cc':
             func['Accumulated cyclomatic complexity'],
             'icount':
