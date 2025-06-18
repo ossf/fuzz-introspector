@@ -546,11 +546,6 @@ def extract_introspector_typedef(project_name, date_str):
         except:
             return []
 
-    #try:
-    #    typedef_list = json.loads(raw_introspector_json_request.text)
-    #except:
-    #    return []#
-
     return typedef_list
 
 
