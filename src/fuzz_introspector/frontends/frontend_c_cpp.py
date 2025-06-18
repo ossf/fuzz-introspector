@@ -344,7 +344,7 @@ class CppSourceCodeFile(SourceCodeFile):
         }
 
         typedef_type = typedef.child_by_field_name('type')
-        if not typedef_type or not typedef_type.text:
+        if not typedef_type:
             # Skip invalid type definition
             return
 
@@ -355,7 +355,11 @@ class CppSourceCodeFile(SourceCodeFile):
 
             typedef_name = typedef_type.child_by_field_name('name')
             if typedef_name and typedef_name.text:
-              typedef_type = typedef_name
+                typedef_type = typedef_name
+
+        if not typedef_type or not typedef_type.text:
+            # Skip invalid type text
+            return
 
         typedef_struct['type'] = typedef_type.text.decode(encoding='utf-8',
                                                           errors='ignore')
