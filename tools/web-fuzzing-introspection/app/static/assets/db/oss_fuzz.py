@@ -527,25 +527,24 @@ def extract_introspector_typedef(project_name, date_str):
     introspector_test_url = get_introspector_report_url_typedef(
         project_name, date_str.replace("-", ""))
 
+    print('Extracting typedefs from: %s' % (introspector_test_url))
     # Read the introspector artifact
     try:
-        raw_introspector_json_request = requests.get(introspector_test_url,
-                                                     timeout=10)
+        typedef_list = json.loads(
+            requests.get(introspector_test_url, timeout=10).text)
+
     except:
         # Failed to locate the json in first introspector run
         # Possibly run from LTO, try locate the file in second introspector run
         introspector_test_url = get_introspector_report_url_typedef(
             project_name, date_str.replace("-", ""), True)
+        print('Extracting second run typedefs from: %s' %
+              (introspector_test_url))
         try:
-            raw_introspector_json_request = requests.get(introspector_test_url,
-                                                         timeout=10)
+            typedef_list = json.loads(
+                requests.get(introspector_test_url, timeout=10).text)
         except:
             return []
-
-    try:
-        typedef_list = json.loads(raw_introspector_json_request.text)
-    except:
-        return []
 
     return typedef_list
 
@@ -556,23 +555,19 @@ def extract_introspector_macro_block(project_name, date_str):
 
     # Read the introspector atifact
     try:
-        raw_introspector_json_request = requests.get(introspector_test_url,
-                                                     timeout=10)
+        return json.loads(requests.get(introspector_test_url, timeout=10).text)
     except:
         # Failed to locate the json in first introspector run
         # Possibly run from LTO, try locate the file in second introspector run
         introspector_test_url = get_introspector_report_url_macro_block(
             project_name, date_str.replace("-", ""), True)
         try:
-            raw_introspector_json_request = requests.get(introspector_test_url,
-                                                         timeout=10)
+            return json.loads(
+                requests.get(introspector_test_url, timeout=10).text)
         except:
             return []
 
-    try:
-        return json.loads(raw_introspector_json_request.text)
-    except:
-        return []
+    return []
 
 
 def extract_introspector_report(project_name, date_str):
