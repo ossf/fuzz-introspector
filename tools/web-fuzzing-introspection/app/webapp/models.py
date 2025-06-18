@@ -24,6 +24,9 @@ def get_date_at_offset_as_str(day_offset: int = -1) -> str:
 
 
 class Project:
+    __slots__ = ('name', 'language', 'date', 'coverage_data',
+                 'introspector_data', 'fuzzer_count', 'project_repository',
+                 'light_analysis', 'recent_results')
 
     def __init__(self, name: str, language: str, date: str,
                  coverage_data: Optional[Dict[str, Any]],
@@ -51,6 +54,9 @@ class Project:
 
 
 class DBTimestamp:
+    __slots__ = ('date', 'project_count', 'fuzzer_count', 'function_count',
+                 'function_coverage_estimate', 'accummulated_lines_total',
+                 'accummulated_lines_covered')
 
     def __init__(self, date: str, project_count: int, fuzzer_count: int,
                  function_count: int, function_coverage_estimate: float,
@@ -66,6 +72,8 @@ class DBTimestamp:
 
 
 class DBSummary:
+    __slots__ = ('all_projects', 'total_number_of_projects', 'total_fuzzers',
+                 'total_functions', 'language_count')
 
     def __init__(self, all_projects: List[Project],
                  total_number_of_projects: int, total_fuzzers: int,
