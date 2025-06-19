@@ -344,19 +344,25 @@ class CppSourceCodeFile(SourceCodeFile):
         }
 
         typedef_type = typedef.child_by_field_name('type')
-        if not typedef_type or not typedef_type.text:
+        if not typedef_type:
             # Skip invalid type definition
             return
 
-        if typedef_type.type in ['struct_specifier', 'union_specifier']:
-            # Already handled in the struct/union section
+        if typedef_type.child_count > 0:
+            if typedef_type.child_by_field_name('body'):
+                # Already handled by other process statements
+                return
+
+            typedef_name = typedef_type.child_by_field_name('name')
+            if typedef_name and typedef_name.text:
+                typedef_type = typedef_name
+
+        if not typedef_type or not typedef_type.text:
+            # Skip invalid type text
             return
-        elif typedef_type.type == 'primitive_type':
-            typedef_struct['type'] = typedef_type.text.decode(encoding='utf-8',
-                                                              errors='ignore')
-        elif typedef_type.type == 'sized_type_specifier':
-            typedef_struct['type'] = typedef_type.text.decode(encoding='utf-8',
-                                                              errors='ignore')
+
+        typedef_struct['type'] = typedef_type.text.decode(encoding='utf-8',
+                                                          errors='ignore')
 
         self.typedefs.append(typedef_struct)
 
