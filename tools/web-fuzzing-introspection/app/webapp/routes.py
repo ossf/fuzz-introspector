@@ -2747,7 +2747,7 @@ def extract_project_tests_xref(project_name: str,
     for file, reach_list in test_files.items():
         for target in reach_list:
             func_name = target['function_name'].split('::')[-1]
-            if not funcs or any(func.endswith(func_name) for func in funcs):
+            if not funcs or any(func == func_name for func in funcs):
                 result.setdefault(func_name, []).append(file)
 
     return result
