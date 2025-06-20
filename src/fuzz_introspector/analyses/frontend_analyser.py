@@ -20,7 +20,8 @@ from typing import (Any, List, Dict, Optional)
 
 from fuzz_introspector import (analysis, html_helpers, utils)
 
-from fuzz_introspector.datatypes import (project_profile, fuzzer_profile)
+from fuzz_introspector.datatypes import (project_profile, fuzzer_profile,
+                                         function_profile)
 
 from fuzz_introspector.frontends import oss_fuzz
 
@@ -48,8 +49,8 @@ PRIMITIVE_TYPES = [
     'float32', 'float64', 'i8', 'i16', 'i32', 'i64', 'i128', 'int', 'int8',
     'int16', 'int32', 'int64', 'isize', 'long', 'double', 'nullptr_t', 'rune',
     'short', 'str', 'string', 'u8', 'u16', 'u32', 'u64', 'u128', 'uint',
-    'uint8', 'uint16', 'uint32', 'uint64', 'usize', 'uintptr', 'unsafe.Pointer',
-    'wchar_t', 'size_t'
+    'uint8', 'uint16', 'uint32', 'uint64', 'usize', 'uintptr',
+    'unsafe.Pointer', 'wchar_t', 'size_t'
 ]
 
 
@@ -160,7 +161,7 @@ class FrontendAnalyser(analysis.AnalysisInterface):
         super().standalone_analysis(proj_profile, profiles, out_dir)
 
         # Extract all functions
-        functions = []
+        functions: list[function_profile.FunctionProfile] = []
         for profile in profiles:
             functions.extend(profile.all_class_functions.values())
         func_names = [f.function_name.split('::')[-1] for f in functions]
@@ -207,8 +208,9 @@ class FrontendAnalyser(analysis.AnalysisInterface):
             # Tree sitter parsing of the test filees
             node = None
             if os.path.isfile(test_file):
-                with open(test_file, 'rb') as f:
-                    node = parser.parse(f.read()).root_node
+                with open(test_file, 'rb') as file:
+                    src = file.read()  # type: bytes
+                    node = parser.parse(src).root_node
 
             if not node:
                 continue
@@ -220,11 +222,9 @@ class FrontendAnalyser(analysis.AnalysisInterface):
             declarations = {}
             type_nodes = data.get('dt', [])
             name_nodes = data.get('dn', [])
-            kinds = {
-                (n.start_point[0], n.start_point[1]): kind
-                for kind in ('dp', 'da', 'dp')
-                for n in data.get(kind, [])
-            }
+            kinds = {(n.start_point[0], n.start_point[1]): kind
+                     for kind in ('dp', 'da', 'dp')
+                     for n in data.get(kind, [])}
 
             # Process variable declarations
             for name_node, type_node in zip(name_nodes, type_nodes):
@@ -307,8 +307,8 @@ class FrontendAnalyser(analysis.AnalysisInterface):
                 # used for this function call
                 filtered = [
                     decl for param, decl in declarations.items()
-                    if param in params and
-                    not self._check_primitive(decl.get('type', 'void'))
+                    if param in params
+                    and not self._check_primitive(str(decl.get('type', '')))
                 ]
                 key = (name, name_node.start_point[0], name_node.end_point[0])
                 if key in handled:
@@ -322,7 +322,9 @@ class FrontendAnalyser(analysis.AnalysisInterface):
                     'call_end': name_node.end_point[0] + 1,
                 })
 
-            func_call_list = [call for call in func_call_list if call['params']]
+            func_call_list = [
+                call for call in func_call_list if call['params']
+            ]
             if func_call_list:
                 test_functions[test_file] = func_call_list
 
