@@ -527,7 +527,6 @@ def extract_introspector_typedef(project_name, date_str):
     introspector_test_url = get_introspector_report_url_typedef(
         project_name, date_str.replace("-", ""))
 
-    print('Extracting typedefs from: %s' % (introspector_test_url))
     # Read the introspector artifact
     try:
         typedef_list = json.loads(
@@ -538,8 +537,6 @@ def extract_introspector_typedef(project_name, date_str):
         # Possibly run from LTO, try locate the file in second introspector run
         introspector_test_url = get_introspector_report_url_typedef(
             project_name, date_str.replace("-", ""), True)
-        print('Extracting second run typedefs from: %s' %
-              (introspector_test_url))
         try:
             typedef_list = json.loads(
                 requests.get(introspector_test_url, timeout=10).text)
