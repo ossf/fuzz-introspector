@@ -759,7 +759,7 @@ def extract_project_data(project_name, date_str, should_include_details,
             # Extract macro block information
             macro_block = oss_fuzz.extract_introspector_macro_block(
                 project_name, date_str)
-        
+
         # Dump things we dont want to accummulate.
         # save_branch_blockers(branch_pairs, project_name)
 
