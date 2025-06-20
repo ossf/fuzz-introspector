@@ -163,7 +163,7 @@ class FrontendAnalyser(analysis.AnalysisInterface):
         functions = []
         for profile in profiles:
             functions.extend(profile.all_class_functions.values())
-        func_names = [f.function_name.split('::')[-1] for f in functions])
+        func_names = [f.function_name.split('::')[-1] for f in functions]
 
         # Get test files from json
         test_files = set()
