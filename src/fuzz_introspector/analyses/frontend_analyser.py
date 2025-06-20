@@ -16,7 +16,7 @@ import json
 import logging
 import os
 
-from typing import (Any, List, Dict)
+from typing import (Any, List, Dict, Optional)
 
 from fuzz_introspector import (analysis, html_helpers, utils)
 
@@ -24,11 +24,40 @@ from fuzz_introspector.datatypes import (project_profile, fuzzer_profile)
 
 from fuzz_introspector.frontends import oss_fuzz
 
+from tree_sitter import Language, Parser, Query
+import tree_sitter_cpp
+
 logger = logging.getLogger(name=__name__)
+
+QUERY = """
+(declaration type: (_) @dt declarator: (pointer_declarator declarator: (identifier) @dn)) @dp
+
+(declaration type: (_) @dt declarator: (array_declarator declarator: (identifier) @dn)) @da
+
+(declaration type: (_) @dt declarator: (identifier) @dn) @d
+
+(assignment_expression left: (identifier) @an right: (call_expression function: (identifier) @ai)) @ae
+
+(call_expression function: (identifier) @cn arguments: (argument_list) @ca)
+"""
+
+PRIMITIVE_TYPES = [
+    'void', 'auto', '_Bool', 'bool', 'byte', 'char', 'char16_t', 'char32_t',
+    'char8_t', 'complex128', 'complex64', 'double', 'f32', 'f64', 'float',
+    'float32', 'float64', 'i8', 'i16', 'i32', 'i64', 'i128', 'int', 'int8',
+    'int16', 'int32', 'int64', 'isize', 'long', 'double', 'nullptr_t', 'rune',
+    'short', 'str', 'string', 'u8', 'u16', 'u32', 'u64', 'u128', 'uint',
+    'uint8', 'uint16', 'uint32', 'uint64', 'usize', 'uintptr', 'unsafe.Pointer',
+    'wchar_t', 'size_t'
+]
 
 
 class FrontendAnalyser(analysis.AnalysisInterface):
     """Analysis utility for a second frontend run and test file analysis."""
+    # TODO arthur extend to other language
+    LANGUAGE: dict[str, Language] = {
+        'c-cpp': Language(tree_sitter_cpp.language()),
+    }
 
     name: str = 'FrontendAnalyser'
 
@@ -39,6 +68,15 @@ class FrontendAnalyser(analysis.AnalysisInterface):
         self.directory = set()
         if os.path.isdir('/src/'):
             self.directory.add('/src/')
+
+    def _check_primitive(self, type_str: Optional[str]) -> bool:
+        """Check if the type str is primitive."""
+        if not type_str:
+            return True
+
+        type_str = type_str.replace('*', '').replace('[]', '')
+
+        return type_str in PRIMITIVE_TYPES
 
     @classmethod
     def get_name(cls):
@@ -119,8 +157,13 @@ class FrontendAnalyser(analysis.AnalysisInterface):
                             out_dir: str) -> None:
         """Standalone analysis."""
         super().standalone_analysis(proj_profile, profiles, out_dir)
-        functions = proj_profile.get_all_functions()
 
+        # Extract all functions
+        functions = []
+        for profile in profiles:
+            functions.extend(profile.all_class_functions)
+
+        # Get test files from json
         test_files = set()
         if os.path.isfile(os.path.join(out_dir, 'all_tests.json')):
             with open(os.path.join(out_dir, 'all_tests.json'), 'r') as f:
@@ -140,43 +183,143 @@ class FrontendAnalyser(analysis.AnalysisInterface):
         if not self.language:
             self.language = proj_profile.language
 
+        # Ensure all test/example files has been added
         test_files.update(
             analysis.extract_tests_from_directories(self.directory,
                                                     self.language, out_dir,
                                                     False))
 
-        # Get all functions within test files
-        test_functions: dict[str, list[dict[str, object]]] = {}
-        seen_functions: dict[str, set[tuple[str, str]]] = {}
-        for function in functions.values():
-            test_source = function.function_source_file
+        tree_sitter_lang = self.LANGUAGE.get(self.language)
+        if not tree_sitter_lang:
+            logger.warning('Language not support: %s', self.language)
+            return None
 
-            # Skip unrelated functions
-            if test_source not in test_files:
+        # Extract calls from each test/example file
+        test_functions: dict[str, list[dict[str, object]]] = {}
+        parser = Parser(tree_sitter_lang)
+        query = Query(tree_sitter_lang, QUERY)
+        for test_file in test_files:
+            func_call_list = []
+
+            # Tree sitter parsing of the test filees
+            node = None
+            if os.path.isfile(test_file):
+                with open(test_file, 'rb') as f:
+                    node = parser.parse(f.read()).root_node
+
+            if not node:
                 continue
 
-            if test_source not in test_functions:
-                test_functions[test_source] = []
-                seen_functions[test_source] = set()
+            # Extract function calls data from test files
+            data = query.captures(node)
 
-            for reached_name in function.functions_reached:
-                reached = functions.get(reached_name)
+            # Extract variable declarations (normal, pointers, arrays)
+            declarations = {}
+            type_nodes = data.get('dt', [])
+            name_nodes = data.get('dn', [])
+            kinds = {
+                (n.start_point[0], n.start_point[1]): kind
+                for kind in ('dp', 'da', 'dp')
+                for n in data.get(kind, [])
+            }
 
-                # Skip other test functions or external functions
-                if not reached or reached.function_source_file in test_files:
+            # Process variable declarations
+            for name_node, type_node in zip(name_nodes, type_nodes):
+                if not name_node.text or not type_node.text:
                     continue
 
-                key = (reached.function_name, reached.function_source_file)
+                name = name_node.text.decode(encoding='utf-8',
+                                             errors='ignore').strip()
+                base = type_node.text.decode(encoding='utf-8',
+                                             errors='ignore').strip()
 
-                # Skip duplicated, reached funcitons
-                if key in seen_functions[test_source]:
-                    continue
+                pos = (name_node.start_point[0], name_node.start_point[1])
+                kind = kinds.get(pos, 'dp')
 
-                seen_functions[test_source].add(key)
-                test_functions[test_source].append(reached.to_dict())
+                if kind == 'dp':
+                    full_type = f'{base}*'
+                elif kind == 'da':
+                    full_type = f'{base}[]'
+                else:
+                    full_type = base
 
-        # Remove useless test files
-        test_functions = {k: v for k, v in test_functions.items() if v}
+                declarations[name] = {
+                    'type': full_type,
+                    'decl_line': pos[0] + 1,
+                    'init_func': None,
+                    'init_start': -1,
+                    'init_end': -1,
+                }
+
+                # Extract and process variable initialisation and assignment
+                assign_names = data.get('an', [])
+                assign_inits = data.get('ai', [])
+                for name_node, stmt_node in zip(assign_names, assign_inits):
+                    if not name_node.text or not stmt_node.text:
+                        continue
+
+                    name = name_node.text.decode(encoding='utf-8',
+                                                 errors='ignore').strip()
+                    stmt = stmt_node.text.decode(encoding='utf-8',
+                                                 errors='ignore').strip()
+
+                    pos = (stmt_node.start_point[0], stmt_node.end_point[0])
+                    if name in declarations:
+                        declarations[name]['init_func'] = stmt
+                        declarations[name]['init_start'] = pos[0] + 1
+                        declarations[name]['init_end'] = pos[1] + 1
+
+                # Capture function called and args by this test files
+                called = []
+                call_names = data.get('cn', [])
+                call_args = data.get('ca', [])
+                for name_node, args_node in zip(call_names, call_args):
+                    if not name_node.text:
+                        continue
+
+                    name = name_node.text.decode(encoding='utf-8',
+                                                 errors='ignore').strip()
+
+                    # Skip non-project functions
+                    if name not in functions:
+                        continue
+
+                    # Extract declaration and intialisation for params
+                    # of this function call
+                    params = set()
+                    for child in args_node.children:
+                        if child.type == 'identifier':
+                            if not child.text:
+                                continue
+
+                            params.add(
+                                child.text.decode(encoding='utf-8',
+                                                  errors='ignore').strip())
+                        else:
+                            arg = child.child_by_field_name('argument')
+                            if arg and arg.text and arg.type == 'identifier':
+                                params.add(
+                                    arg.text.decode(encoding='utf-8',
+                                                    errors='ignore').strip())
+
+                    # Filter declaration for this function call and store full
+                    # details including declaration initialisation of parameters
+                    # used for this function call
+                    filtered = [
+                        decl for param, decl in declarations.items()
+                        if param in params and decl.get('init_func') and
+                        not self._check_primitive(decl.get('type'))
+                    ]
+                    func_call_list.append({
+                        'function_name': name,
+                        'params': filtered,
+                        'call_start': name_node.start_point[0] + 1,
+                        'call_end': name_node.end_point[0] + 1,
+                    })
+
+
+            func_call_list = [call for call in func_call_list if call['params']]
+            test_functions[test_file] = func_call_list
 
         # Store test files
         with open(os.path.join(out_dir, 'all_tests.json'), 'w') as f:
