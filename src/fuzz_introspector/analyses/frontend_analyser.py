@@ -36,7 +36,8 @@ QUERY = """
 
 (declaration type: (_) @dt declarator: (identifier) @dn) @d
 
-(assignment_expression left: (identifier) @an right: (call_expression function: (identifier) @ai)) @ae
+(assignment_expression left: (identifier) @an
+ right: (call_expression function: (identifier) @ai)) @ae
 
 (call_expression function: (identifier) @cn arguments: (argument_list) @ca)
 """
@@ -161,8 +162,8 @@ class FrontendAnalyser(analysis.AnalysisInterface):
         # Extract all functions
         functions = []
         for profile in profiles:
-            functions.extend(
-                [func.split('::')[-1] for func in profile.all_class_functions])
+            functions.extend(profile.all_class_functions.values())
+        func_names = [f.function_name.split('::')[-1] for f in functions])
 
         # Get test files from json
         test_files = set()
@@ -174,7 +175,7 @@ class FrontendAnalyser(analysis.AnalysisInterface):
         if not self.directory:
             paths = [
                 os.path.abspath(func.function_source_file)
-                for func in functions.values()
+                for func in functions
             ]
             common_path = os.path.commonpath(paths)
             if os.path.isfile(common_path):
@@ -272,7 +273,6 @@ class FrontendAnalyser(analysis.AnalysisInterface):
                     declarations[name]['init_end'] = pos[1] + 1
 
             # Capture function called and args by this test files
-            called = []
             call_names = data.get('cn', [])
             call_args = data.get('ca', [])
             for name_node, args_node in zip(call_names, call_args):
@@ -283,7 +283,7 @@ class FrontendAnalyser(analysis.AnalysisInterface):
                                              errors='ignore').strip()
 
                 # Skip non-project functions
-                if name not in functions:
+                if name not in func_names:
                     continue
 
                 # Extract declaration and intialisation for params
@@ -308,7 +308,7 @@ class FrontendAnalyser(analysis.AnalysisInterface):
                 filtered = [
                     decl for param, decl in declarations.items()
                     if param in params and
-                    not self._check_primitive(decl.get('type'))
+                    not self._check_primitive(decl.get('type', 'void'))
                 ]
                 key = (name, name_node.start_point[0], name_node.end_point[0])
                 if key in handled:
@@ -321,7 +321,6 @@ class FrontendAnalyser(analysis.AnalysisInterface):
                     'call_start': name_node.start_point[0] + 1,
                     'call_end': name_node.end_point[0] + 1,
                 })
-
 
             func_call_list = [call for call in func_call_list if call['params']]
             if func_call_list:
