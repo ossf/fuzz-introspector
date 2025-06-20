@@ -161,7 +161,8 @@ class FrontendAnalyser(analysis.AnalysisInterface):
         # Extract all functions
         functions = []
         for profile in profiles:
-            functions.extend(profile.all_class_functions)
+            functions.extend(
+                [func.split('::')[-1] for func in profile.all_class_functions])
 
         # Get test files from json
         test_files = set()
@@ -200,6 +201,7 @@ class FrontendAnalyser(analysis.AnalysisInterface):
         query = Query(tree_sitter_lang, QUERY)
         for test_file in test_files:
             func_call_list = []
+            handled = []
 
             # Tree sitter parsing of the test filees
             node = None
@@ -251,75 +253,79 @@ class FrontendAnalyser(analysis.AnalysisInterface):
                     'init_end': -1,
                 }
 
-                # Extract and process variable initialisation and assignment
-                assign_names = data.get('an', [])
-                assign_inits = data.get('ai', [])
-                for name_node, stmt_node in zip(assign_names, assign_inits):
-                    if not name_node.text or not stmt_node.text:
-                        continue
+            # Extract and process variable initialisation and assignment
+            assign_names = data.get('an', [])
+            assign_inits = data.get('ai', [])
+            for name_node, stmt_node in zip(assign_names, assign_inits):
+                if not name_node.text or not stmt_node.text:
+                    continue
 
-                    name = name_node.text.decode(encoding='utf-8',
-                                                 errors='ignore').strip()
-                    stmt = stmt_node.text.decode(encoding='utf-8',
-                                                 errors='ignore').strip()
+                name = name_node.text.decode(encoding='utf-8',
+                                             errors='ignore').strip()
+                stmt = stmt_node.text.decode(encoding='utf-8',
+                                             errors='ignore').strip()
 
-                    pos = (stmt_node.start_point[0], stmt_node.end_point[0])
-                    if name in declarations:
-                        declarations[name]['init_func'] = stmt
-                        declarations[name]['init_start'] = pos[0] + 1
-                        declarations[name]['init_end'] = pos[1] + 1
+                pos = (stmt_node.start_point[0], stmt_node.end_point[0])
+                if name in declarations:
+                    declarations[name]['init_func'] = stmt
+                    declarations[name]['init_start'] = pos[0] + 1
+                    declarations[name]['init_end'] = pos[1] + 1
 
-                # Capture function called and args by this test files
-                called = []
-                call_names = data.get('cn', [])
-                call_args = data.get('ca', [])
-                for name_node, args_node in zip(call_names, call_args):
-                    if not name_node.text:
-                        continue
+            # Capture function called and args by this test files
+            called = []
+            call_names = data.get('cn', [])
+            call_args = data.get('ca', [])
+            for name_node, args_node in zip(call_names, call_args):
+                if not name_node.text:
+                    continue
 
-                    name = name_node.text.decode(encoding='utf-8',
-                                                 errors='ignore').strip()
+                name = name_node.text.decode(encoding='utf-8',
+                                             errors='ignore').strip()
 
-                    # Skip non-project functions
-                    if name not in functions:
-                        continue
+                # Skip non-project functions
+                if name not in functions:
+                    continue
 
-                    # Extract declaration and intialisation for params
-                    # of this function call
-                    params = set()
-                    for child in args_node.children:
-                        if child.type == 'identifier':
-                            if not child.text:
-                                continue
+                # Extract declaration and intialisation for params
+                # of this function call
+                params = set()
+                for child in args_node.children:
+                    stack = [child]
+                    while stack:
+                        curr = stack.pop()
 
+                        if curr.type == 'identifier' and curr.text:
                             params.add(
-                                child.text.decode(encoding='utf-8',
-                                                  errors='ignore').strip())
-                        else:
-                            arg = child.child_by_field_name('argument')
-                            if arg and arg.text and arg.type == 'identifier':
-                                params.add(
-                                    arg.text.decode(encoding='utf-8',
-                                                    errors='ignore').strip())
+                                curr.text.decode(encoding='utf-8',
+                                                 errors='ignore').strip())
+                            break
+                        if curr.child_count > 0:
+                            stack.extend(curr.children)
 
-                    # Filter declaration for this function call and store full
-                    # details including declaration initialisation of parameters
-                    # used for this function call
-                    filtered = [
-                        decl for param, decl in declarations.items()
-                        if param in params and decl.get('init_func') and
-                        not self._check_primitive(decl.get('type'))
-                    ]
-                    func_call_list.append({
-                        'function_name': name,
-                        'params': filtered,
-                        'call_start': name_node.start_point[0] + 1,
-                        'call_end': name_node.end_point[0] + 1,
-                    })
+                # Filter declaration for this function call and store full
+                # details including declaration initialisation of parameters
+                # used for this function call
+                filtered = [
+                    decl for param, decl in declarations.items()
+                    if param in params and
+                    not self._check_primitive(decl.get('type'))
+                ]
+                key = (name, name_node.start_point[0], name_node.end_point[0])
+                if key in handled:
+                    continue
+
+                handled.append(key)
+                func_call_list.append({
+                    'function_name': name,
+                    'params': filtered,
+                    'call_start': name_node.start_point[0] + 1,
+                    'call_end': name_node.end_point[0] + 1,
+                })
 
 
             func_call_list = [call for call in func_call_list if call['params']]
-            test_functions[test_file] = func_call_list
+            if func_call_list:
+                test_functions[test_file] = func_call_list
 
         # Store test files
         with open(os.path.join(out_dir, 'all_tests.json'), 'w') as f:
