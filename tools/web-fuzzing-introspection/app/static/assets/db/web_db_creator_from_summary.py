@@ -733,6 +733,8 @@ def extract_project_data(project_name, date_str, should_include_details,
         refined_constructor_list = list()
         branch_pairs = list()
         annotated_cfg = dict()
+        macro_block = []
+        typedef_list = []
         if should_include_details:
             # Extract all function list
             if all_function_list is None:
@@ -751,16 +753,15 @@ def extract_project_data(project_name, date_str, should_include_details,
             branch_pairs = extract_and_refine_branch_blockers(
                 branch_blockers, project_name)
 
+            # Extract type definition
+            typedef_list = oss_fuzz.extract_introspector_typedef(
+                project_name, date_str)
+            # Extract macro block information
+            macro_block = oss_fuzz.extract_introspector_macro_block(
+                project_name, date_str)
+        
         # Dump things we dont want to accummulate.
         # save_branch_blockers(branch_pairs, project_name)
-
-        # Extract type definition
-        typedef_list = oss_fuzz.extract_introspector_typedef(
-            project_name, date_str)
-
-        # Extract macro block information
-        macro_block = oss_fuzz.extract_introspector_macro_block(
-            project_name, date_str)
 
         introspector_data_dict = {
             "introspector_report_url": introspector_report_url,
