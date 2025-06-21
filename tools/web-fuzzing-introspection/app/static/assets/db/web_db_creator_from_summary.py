@@ -754,11 +754,11 @@ def extract_project_data(project_name, date_str, should_include_details,
                 branch_blockers, project_name)
 
             # Extract type definition
-            typedef_list = oss_fuzz.extract_introspector_typedef(
-                project_name, date_str)
+            # typedef_list = oss_fuzz.extract_introspector_typedef(
+            #    project_name, date_str)
             # Extract macro block information
-            macro_block = oss_fuzz.extract_introspector_macro_block(
-                project_name, date_str)
+            # macro_block = oss_fuzz.extract_introspector_macro_block(
+            #    project_name, date_str)
 
         # Dump things we dont want to accummulate.
         # save_branch_blockers(branch_pairs, project_name)

@@ -1365,6 +1365,45 @@ def api_annotated_cfg(args):
         return {'result': 'error', 'msg': 'Found no introspector data.'}
 
 
+def get_introspector_report_url_base(project_name, datestr):
+    """Base FI URL extractor."""
+    base_url = 'https://storage.googleapis.com/oss-fuzz-introspector/{0}/inspector-report/{1}/'
+    project_url = base_url.format(project_name, datestr)
+    return project_url
+
+def get_introspector_report_url_typedef(project_name,
+                                        datestr,
+                                        second_run=False):
+    """Get's URL for typedef extaction"""
+    base = get_introspector_report_url_base(project_name, datestr)
+    if second_run:
+        base += "second-frontend-run/"
+    return base + "full_type_defs.json"
+
+def extract_introspector_typedef(project_name, date_str):
+    """Extracts typedefs from Google storage."""
+    introspector_test_url = get_introspector_report_url_typedef(
+        project_name, date_str.replace("-", ""))
+
+    # Read the introspector artifact
+    try:
+        typedef_list = json.loads(
+            requests.get(introspector_test_url, timeout=10).text)
+
+    except: # pylint: disable=bare-except
+        # Failed to locate the json in first introspector run
+        # Possibly run from LTO, try locate the file in second introspector run
+        introspector_test_url = get_introspector_report_url_typedef(
+            project_name, date_str.replace("-", ""), True)
+        try:
+            typedef_list = json.loads(
+                requests.get(introspector_test_url, timeout=10).text)
+        except: # pylint: disable=bare-except
+            return []
+
+    return typedef_list
+
+
 @api_blueprint.route('/api/full-type-definition')
 @api_blueprint.arguments(ProjectSchema, location='query')
 def api_full_type_definition(args):
@@ -1380,19 +1419,30 @@ def api_full_type_definition(args):
     if target_project.introspector_data is None:
         return {'result': 'error', 'msg': 'Found no introspector data.'}
 
-    try:
-        return {
-            'result': 'success',
-            'project': {
-                'name': project_name,
-                'typedef_list':
-                target_project.introspector_data['typedef_list'],
+    # Get list directly if it is there. This happens only in local runs.
+    if 'typedef_list' in target_project.introspector_data:
+        if target_project.introspector_data['typedef_list']:
+            # If typedefs are already in the introspector data, return them
+            return {
+                'result': 'success',
+                'project': {
+                    'name': project_name,
+                    'typedef_list':
+                    target_project.introspector_data['typedef_list'],
+                }
             }
-        }
-    except KeyError:
-        return {'result': 'error', 'msg': 'Found no type definition data.'}
-    except TypeError:
-        return {'result': 'error', 'msg': 'Found no introspector data.'}
+
+    # Try fetching dynamically
+    logger.info('Fetching typedef dynamically')
+    latest_introspector_datestr = get_latest_introspector_date(project_name)
+    if not latest_introspector_datestr:
+        # Backup to capture simply the latest build.
+        for ps in data_storage.PROJECT_TIMESTAMPS:
+            if ps.project_name == project_name:
+                latest_introspector_datestr = ps.date
+
+    typedef_list =  extract_introspector_typedef(project_name, latest_introspector_datestr)
+    return typedef_list
 
 
 @blueprint.route('/api/check_macro')
