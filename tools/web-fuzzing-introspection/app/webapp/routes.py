@@ -1364,6 +1364,7 @@ def api_annotated_cfg(args):
     except TypeError:
         return {'result': 'error', 'msg': 'Found no introspector data.'}
 
+
 def get_introspector_report_url_typedef(project_name,
                                         datestr,
                                         second_run=False):
@@ -1372,6 +1373,7 @@ def get_introspector_report_url_typedef(project_name,
     if second_run:
         base += "second-frontend-run/"
     return base + "full_type_defs.json"
+
 
 def extract_introspector_typedef(project_name, date_str):
     """Extracts typedefs from Google storage."""
@@ -1383,7 +1385,7 @@ def extract_introspector_typedef(project_name, date_str):
         typedef_list = json.loads(
             requests.get(introspector_test_url, timeout=10).text)
 
-    except: # pylint: disable=bare-except
+    except:  # pylint: disable=bare-except
         # Failed to locate the json in first introspector run
         # Possibly run from LTO, try locate the file in second introspector run
         introspector_test_url = get_introspector_report_url_typedef(
@@ -1391,7 +1393,7 @@ def extract_introspector_typedef(project_name, date_str):
         try:
             typedef_list = json.loads(
                 requests.get(introspector_test_url, timeout=10).text)
-        except: # pylint: disable=bare-except
+        except:  # pylint: disable=bare-except
             return []
 
     return typedef_list
@@ -1419,7 +1421,8 @@ def api_full_type_definition(args):
             return {
                 'result': 'success',
                 'project': {
-                    'name': project_name,
+                    'name':
+                    project_name,
                     'typedef_list':
                     target_project.introspector_data['typedef_list'],
                 }
@@ -1434,7 +1437,8 @@ def api_full_type_definition(args):
             if ps.project_name == project_name:
                 latest_introspector_datestr = ps.date
 
-    typedef_list =  extract_introspector_typedef(project_name, latest_introspector_datestr)
+    typedef_list = extract_introspector_typedef(project_name,
+                                                latest_introspector_datestr)
     return typedef_list
 
 
