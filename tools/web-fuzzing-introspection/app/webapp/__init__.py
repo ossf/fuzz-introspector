@@ -89,6 +89,9 @@ def load_db() -> None:
                 recent_results=project_timestamp.get('recent_results'),
             ))
 
+    if 'G_ANALYTICS_TAG' in os.environ:
+        os.remove(project_currents)
+
     if os.path.isfile(projects_build_status):
         # Read the builds
         with open(projects_build_status, 'r') as f:
