@@ -1364,13 +1364,6 @@ def api_annotated_cfg(args):
     except TypeError:
         return {'result': 'error', 'msg': 'Found no introspector data.'}
 
-
-def get_introspector_report_url_base(project_name, datestr):
-    """Base FI URL extractor."""
-    base_url = 'https://storage.googleapis.com/oss-fuzz-introspector/{0}/inspector-report/{1}/'
-    project_url = base_url.format(project_name, datestr)
-    return project_url
-
 def get_introspector_report_url_typedef(project_name,
                                         datestr,
                                         second_run=False):
