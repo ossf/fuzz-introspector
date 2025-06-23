@@ -1439,7 +1439,14 @@ def api_full_type_definition(args):
 
     typedef_list = extract_introspector_typedef(project_name,
                                                 latest_introspector_datestr)
-    return typedef_list
+
+    return {
+        'result': 'success',
+        'project': {
+            'name': project_name,
+            'typedef_list': typedef_list,
+        }
+    }
 
 
 @blueprint.route('/api/check_macro')
