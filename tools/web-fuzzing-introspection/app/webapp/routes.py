@@ -147,7 +147,6 @@ class ProjectFunctionsQuerySchema(marshmallow.Schema):
         missing='false', description='Comma-separated list of function names.')
 
 
-
 def get_introspector_report_url_base(project_name, datestr):
     base_url = 'https://storage.googleapis.com/oss-fuzz-introspector/{0}/inspector-report/{1}/'
     project_url = base_url.format(project_name, datestr.replace("-", ""))
@@ -2781,7 +2780,8 @@ def extract_project_tests(project_name,
     return tests_file_list
 
 
-def _load_project_tests_xref(project_name: str) -> Dict[str, List[Dict[str, Any]]]:
+def _load_project_tests_xref(
+        project_name: str) -> Dict[str, List[Dict[str, Any]]]:
     """Helper to extract the cross reference from test files."""
     # Check existing test_files_xref.json
     test_files: Dict[str, List[Dict[str, Any]]] = {}
@@ -2815,7 +2815,8 @@ def extract_project_tests_xref(project_name: str,
 
 
 def extract_project_tests_xref_details(
-        project_name: str, funcs: List[str]) -> Dict[str, Dict[str, List[Dict[str, Any]]]]:
+        project_name: str,
+        funcs: List[str]) -> Dict[str, Dict[str, List[Dict[str, Any]]]]:
     """Extracts test files that invoke the target functions or all functions
     if target functions are not provided. Detail lines of the function called
     in each test file is also included."""
@@ -2826,7 +2827,8 @@ def extract_project_tests_xref_details(
         for target in reach_list:
             func_name = target['function_name'].split('::')[-1]
             if not funcs or func_name in funcs:
-                result.setdefault(func_name, {}).setdefault(file, []).append(target)
+                result.setdefault(func_name, {}).setdefault(file,
+                                                            []).append(target)
 
     return result
 
