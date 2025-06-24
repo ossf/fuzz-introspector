@@ -132,51 +132,53 @@
               </table>
 
               {% if project.has_recent_results() %}
-              <div style="max-height: 30rem; overflow: auto; margin-top: 1.5rem">
-                <table class="profile__table" style="max-width: 80%;">
-                  <thead>
-                    <th style="padding: 0 0.5rem;">Fuzzer</th>
-                    <th style="padding: 0 0.5rem;">Code coverage (lines)</th>
-                    <th style="padding: 0 0.5rem;">Latest Report</th>
-                    <th style="padding: 0 0.5rem;">Comments</th>
-                  </thead>
-                  <tbody>
-                    {% for fuzzer, fuzzer_data in project.recent_results.items()
-                      |sort(attribute='0')
-                      |sort(reverse=true, attribute='1.got_lost,1.has_degraded')
-                    %}
-                      <tr
-                        {% if fuzzer_data['got_lost'] or fuzzer_data['max_has_degraded'] %}
-                          class="alert alert-danger" role="alert"
-                        {% endif %}
-                      >
-                        <td style="padding: 0 0.5rem;">
-                          {{fuzzer}} (<a href="#perFuzzerCoverageLinesOverTimePlot{{ fuzzer_data['hashed_name'] }}">plot</a>)
-                        </td>
-                        <td style="padding: 0 0.5rem;">
-                          <code style="color: unset; white-space: nowrap;">
-                            {{ fuzzer_data['current'] }}% (avg: {{ fuzzer_data['avg'] }}%, max: {{ fuzzer_data['max'] }}%)
-                          </code>
-                        </td>
-                        <td style="padding: 0 0.5rem;">
-                          <a href="{{fuzzer_data['report_url']}}">{{ fuzzer_data['report_date'] }}</a>
-                        </td>
-                        <td style="padding: 0 0.5rem;">
-                          {% if fuzzer_data['got_lost'] %}
-                            Fuzzer no longer available!<br>
+              <div class="container">
+                <div style="max-height: 30rem; overflow: auto; margin-top: 1.5rem">
+                  <table style="width: 100%;">
+                    <thead>
+                      <th style="padding: 0 0.5rem;">Fuzzer</th>
+                      <th style="padding: 0 0.5rem;">Code coverage (lines)</th>
+                      <th style="padding: 0 0.5rem;">Latest Report</th>
+                      <th style="padding: 0 0.5rem;">Comments</th>
+                    </thead>
+                    <tbody>
+                      {% for fuzzer, fuzzer_data in project.recent_results.items()
+                        |sort(attribute='0')
+                        |sort(reverse=true, attribute='1.got_lost,1.has_degraded')
+                      %}
+                        <tr
+                          {% if fuzzer_data['got_lost'] or fuzzer_data['max_has_degraded'] %}
+                            class="alert alert-danger" role="alert"
                           {% endif %}
-                          {% if fuzzer_data['max_has_degraded'] %}
-                            Coverage has degraded!<br>
-                          {% endif %}
-                          {% for day_degraded in fuzzer_data['days_degraded'] %}
-                            Degraded from <a href="{{ day_degraded['before_url'] }}">{{day_degraded['before_date']}} ({{day_degraded['before_perc']}}%)</a>
-                            to <a href="{{ day_degraded['current_url'] }}">{{day_degraded['current_date']}} ({{day_degraded['current_perc']}}%)</a>!<br>
-                          {% endfor %}
-                        </td>
-                      </tr>
-                    {% endfor %}
-                  </tbody>
-                </table>
+                        >
+                          <td style="padding: 0 0.5rem;">
+                            {{fuzzer}} (<a href="#perFuzzerCoverageLinesOverTimePlot{{ fuzzer_data['hashed_name'] }}">plot</a>)
+                          </td>
+                          <td style="padding: 0 0.5rem;">
+                            <code style="color: unset; white-space: nowrap;">
+                              {{ fuzzer_data['current'] }}% (avg: {{ fuzzer_data['avg'] }}%, max: {{ fuzzer_data['max'] }}%)
+                            </code>
+                          </td>
+                          <td style="padding: 0 0.5rem;">
+                            <a href="{{fuzzer_data['report_url']}}">{{ fuzzer_data['report_date'] }}</a>
+                          </td>
+                          <td style="padding: 0 0.5rem;">
+                            {% if fuzzer_data['got_lost'] %}
+                              Fuzzer no longer available!<br>
+                            {% endif %}
+                            {% if fuzzer_data['max_has_degraded'] %}
+                              Coverage has degraded!<br>
+                            {% endif %}
+                            {% for day_degraded in fuzzer_data['days_degraded'] %}
+                              Degraded from <a href="{{ day_degraded['before_url'] }}">{{day_degraded['before_date']}} ({{day_degraded['before_perc']}}%)</a>
+                              to <a href="{{ day_degraded['current_url'] }}">{{day_degraded['current_date']}} ({{day_degraded['current_perc']}}%)</a>!<br>
+                            {% endfor %}
+                          </td>
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
               </div>
               {% endif %}
 
@@ -322,7 +324,10 @@
 // Plot for code coverage in terms of lines over time
 const code_coverage_lines_x = [];
 const code_coverage_lines_y = [];
+const code_coverage_lines_covered = [];
+const code_coverage_lines_total = [];
 const code_coverage_functions_y = [];
+const code_coverage_functions_total = [];
 const code_reachability_y = [];
 const fuzzer_count_y = [];
 max_fuzzer_count = 0;
@@ -332,28 +337,87 @@ max_fuzzer_count = 0;
   {% if project_timestamp.coverage_data != None %}
     code_coverage_lines_x.push('{{project_timestamp.date}}');
     code_coverage_lines_y.push({{project_timestamp.coverage_data.line_coverage.percent}});
+    code_coverage_lines_covered.push({{project_timestamp.coverage_data.line_coverage.covered}});
+    code_coverage_lines_total.push({{project_timestamp.coverage_data.line_coverage.count}});
     fuzzer_count_y.push({{project_timestamp.fuzzer_count}});
     max_fuzzer_count = Math.max(max_fuzzer_count, {{project_timestamp.fuzzer_count}});
 
     // Stats dependending on fuzz introspector
     {% if project.has_introspector() %}
       code_coverage_functions_y.push({{project_timestamp.introspector_data.functions_covered_estimate}});
+      code_coverage_functions_total.push({{project_timestamp.introspector_data.function_count}});
       code_reachability_y.push({{project_timestamp.introspector_data.static_reachability}});
     {% endif %}
   {% endif %}
 {%endfor%}
 
 // Plot for code coverage in terms of lines over time
-const code_coverage_lines_data = [{
-  x: code_coverage_lines_x,
-  y: code_coverage_lines_y,
-  mode:'lines'
-}];
+const code_coverage_lines_data = [
+  {
+    x: code_coverage_lines_x,
+    y: code_coverage_lines_y,
+    mode:'lines',
+    name: 'Percentage',
+    line: {
+      dash: 'solid',
+      width: 2,
+    },
+  },
+  {
+    x: code_coverage_lines_x,
+    y: code_coverage_lines_covered,
+    mode:'lines',
+    yaxis: 'y2',
+    name: 'Covered Lines',
+    line: {
+      dash: 'dash',
+      width: 2,
+    },
+  },
+  {
+    x: code_coverage_lines_x,
+    y: code_coverage_lines_total,
+    mode:'lines',
+    yaxis: 'y2',
+    name: 'Total Lines',
+    line: {
+      dash: 'dash',
+      width: 2,
+    },
+  },
+];
 const code_coverage_lines_layout = {
-  xaxis: {title: 'Date'},
-  yaxis: {title: 'Coverage', range: [0.0, 100.0]},  
-  title: 'Code Coverage (lines) %',
-  type: 'scatter'
+  xaxis: { title: 'Date' },
+  yaxis: {
+    title: {
+      text: 'Coverage %',
+      standoff: 40,
+    },
+    range: [0.0, 100.0],
+    side: 'left',
+    ticklabelposition: 'inside',
+  },
+  yaxis2: {
+    title: {
+      text: 'Coverage Totals',
+      standoff: 35,
+    },
+    anchor: 'x',
+    overlaying: 'y',
+    side: 'left',
+    ticklabelposition: 'outside',
+    rangemode: 'tozero',
+    autorange: true,
+  },
+  title: 'Code Coverage (lines)',
+  legend: {
+    orientation: 'h',
+    x: 0.5,
+    xanchor: 'center',
+    y: -0.25,
+    yanchor: 'top',
+    traceorder: 'normal',
+  },
 };
 Plotly.newPlot('codeCoverageLinesOverTimePlot', code_coverage_lines_data, code_coverage_lines_layout);
 
@@ -454,7 +518,7 @@ for (const [fuzzer_name, data] of fuzzers) {
     yaxis: {
       title: {
         text: 'Coverage %',
-        standoff: 20,
+        standoff: 40,
       },
       range: [0.0, 100.0],
       side: 'left',
@@ -463,7 +527,7 @@ for (const [fuzzer_name, data] of fuzzers) {
     yaxis2: {
       title: {
         text: 'Coverage Totals',
-        standoff: 15,
+        standoff: 35,
       },
       anchor: 'x',
       overlaying: 'y',
@@ -489,7 +553,7 @@ for (const [fuzzer_name, data] of fuzzers) {
       orientation: 'h',
       x: 0.5,
       xanchor: 'center',
-      y: -0.22,
+      y: -0.25,
       yanchor: 'top',
       traceorder: 'normal',
     },
@@ -501,16 +565,61 @@ for (const [fuzzer_name, data] of fuzzers) {
 {% if project.has_introspector() %}
 // Plots dependend on Fuzz Introspector
 // Plot for code coverage in terms of functions over time
-const code_coverage_functions_data = [{
-  x: code_coverage_lines_x,
-  y: code_coverage_functions_y,
-  mode:'lines'
-}];
+const code_coverage_functions_data = [
+  {
+    x: code_coverage_lines_x,
+    y: code_coverage_functions_y,
+    mode:'lines',
+    name: 'Percentage',
+    line: {
+      dash: 'solid',
+      width: 2,
+    },
+  },
+  {
+    x: code_coverage_lines_x,
+    y: code_coverage_functions_total,
+    mode:'lines',
+    yaxis: 'y2',
+    name: 'Total Functions',
+    line: {
+      dash: 'dash',
+      width: 2,
+    },
+  },
+];
 const code_coverage_functions_layout = {
-  xaxis: {title: 'Date'},
-  yaxis: {title: 'Coverage', range: [0.0, 100.0]},  
-  title: 'Code Coverage (functions) %',
-  type: 'scatter'
+  xaxis: { title: 'Date' },
+  yaxis: {
+    title: {
+      text: 'Coverage %',
+      standoff: 40,
+    },
+    range: [0.0, 100.0],
+    side: 'left',
+    ticklabelposition: 'inside',
+  },
+  yaxis2: {
+    title: {
+      text: 'Function Totals',
+      standoff: 35,
+    },
+    anchor: 'x',
+    overlaying: 'y',
+    side: 'left',
+    ticklabelposition: 'outside',
+    rangemode: 'tozero',
+    autorange: true,
+  },
+  title: 'Code Coverage (functions)',
+  legend: {
+    orientation: 'h',
+    x: 0.5,
+    xanchor: 'center',
+    y: -0.25,
+    yanchor: 'top',
+    traceorder: 'normal',
+  },
 };
 Plotly.newPlot('codeCoverageFunctionsOverTimePlot', code_coverage_functions_data, code_coverage_functions_layout);
 
