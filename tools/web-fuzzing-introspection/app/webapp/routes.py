@@ -143,8 +143,6 @@ class ProjectFunctionsQuerySchema(marshmallow.Schema):
         description='Name of the OSS-Fuzz project.')
     functions = marshmallow.fields.String(
         missing='', description='Comma-separated list of function names.')
-    details = marshmallow.fields.String(
-        missing='false', description='Comma-separated list of function names.')
 
 
 def get_introspector_report_url_base(project_name, datestr):
@@ -2808,7 +2806,7 @@ def extract_project_tests_xref(project_name: str,
     for file, reach_list in test_files.items():
         for target in reach_list:
             func_name = target['function_name'].split('::')[-1]
-            if not funcs or any(func == func_name for func in funcs):
+            if not funcs or func_name in funcs:
                 result.setdefault(func_name, set()).add(file)
 
     return {k: list(v) for k, v in result.items()}
@@ -2825,6 +2823,10 @@ def extract_project_tests_xref_details(
     test_files = _load_project_tests_xref(project_name)
     for file, reach_list in test_files.items():
         for target in reach_list:
+            if 'params' not in target:
+                # Old version of test xrefs
+                return {}
+
             func_name = target['function_name'].split('::')[-1]
             if not funcs or func_name in funcs:
                 result.setdefault(func_name, {}).setdefault(file,
@@ -3016,11 +3018,11 @@ def project_tests_xref(args):
     funcs = [func for func in funcs if func]
 
     # Determine if details are needed and extract test xref dict
-    details = args.get('details', 'false').strip().lower() == 'true'
     test_files: Dict[str, Any] = {}
-    if details:
-        test_files = extract_project_tests_xref_details(project, funcs)
-    else:
+    details = True
+    test_files = extract_project_tests_xref_details(project, funcs)
+    if not test_files:
+        details = False
         test_files = extract_project_tests_xref(project, funcs)
 
     if not test_files:
@@ -3031,7 +3033,7 @@ def project_tests_xref(args):
             [f'Could not find test files matching the requirements']
         }
 
-    return {'result': 'success', 'test-files-xref': test_files}
+    return {'result': 'success', 'test-files-xref': test_files, 'details': details}
 
 
 @api_blueprint.route('/api/addr-to-recursive-dwarf-info')
