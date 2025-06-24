@@ -3033,7 +3033,11 @@ def project_tests_xref(args):
             [f'Could not find test files matching the requirements']
         }
 
-    return {'result': 'success', 'test-files-xref': test_files, 'details': details}
+    return {
+        'result': 'success',
+        'test-files-xref': test_files,
+        'details': details
+    }
 
 
 @api_blueprint.route('/api/addr-to-recursive-dwarf-info')
