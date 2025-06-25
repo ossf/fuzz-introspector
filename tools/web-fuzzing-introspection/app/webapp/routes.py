@@ -19,7 +19,7 @@ import re
 import json
 import signal
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set
 import requests
 
 from flask import render_template, request, redirect
@@ -2778,31 +2778,59 @@ def extract_project_tests(project_name,
     return tests_file_list
 
 
-def extract_project_tests_xref(project_name: str,
-                               funcs: List[str]) -> Dict[str, List[str]]:
-    """Extracts test files that invoke the target functions or all functions
-    if target functions are not provided."""
-    result: Dict[str, List[str]] = {}
+def _load_project_tests_xref(
+        project_name: str) -> Dict[str, List[Dict[str, Any]]]:
+    """Helper to extract the cross reference from test files."""
+    # Check existing test_files_xref.json
     test_files: Dict[str, List[Dict[str, Any]]] = {}
 
-    # Check existing test_files_xref.json
     test_json = os.path.join(
         os.path.dirname(__file__),
         f"../static/assets/db/db-projects/{project_name}/test_files_xref.json")
     if not os.path.isfile(test_json):
-        return result
+        return test_files
 
     with open(test_json, 'r') as f:
         test_files = json.load(f)
 
-    if not test_files:
-        return result
+    return test_files
 
+
+def extract_project_tests_xref(project_name: str,
+                               funcs: List[str]) -> Dict[str, List[str]]:
+    """Extracts test files that invoke the target functions or all functions
+    if target functions are not provided."""
+    result: Dict[str, Set[str]] = {}
+
+    test_files = _load_project_tests_xref(project_name)
     for file, reach_list in test_files.items():
         for target in reach_list:
             func_name = target['function_name'].split('::')[-1]
-            if not funcs or any(func == func_name for func in funcs):
-                result.setdefault(func_name, []).append(file)
+            if not funcs or func_name in funcs:
+                result.setdefault(func_name, set()).add(file)
+
+    return {k: list(v) for k, v in result.items()}
+
+
+def extract_project_tests_xref_details(
+        project_name: str,
+        funcs: List[str]) -> Dict[str, Dict[str, List[Dict[str, Any]]]]:
+    """Extracts test files that invoke the target functions or all functions
+    if target functions are not provided. Detail lines of the function called
+    in each test file is also included."""
+    result: Dict[str, Dict[str, List[Dict[str, Any]]]] = {}
+
+    test_files = _load_project_tests_xref(project_name)
+    for file, reach_list in test_files.items():
+        for target in reach_list:
+            if 'params' not in target:
+                # Old version of test xrefs
+                return {}
+
+            func_name = target['function_name'].split('::')[-1]
+            if not funcs or func_name in funcs:
+                result.setdefault(func_name, {}).setdefault(file,
+                                                            []).append(target)
 
     return result
 
@@ -2988,7 +3016,15 @@ def project_tests_xref(args):
     # Get target functions if provided
     funcs = args.get('functions', '').split(',')
     funcs = [func for func in funcs if func]
-    test_files = extract_project_tests_xref(project, funcs)
+
+    # Determine if details are needed and extract test xref dict
+    test_files: Dict[str, Any] = {}
+    details = True
+    test_files = extract_project_tests_xref_details(project, funcs)
+    if not test_files:
+        details = False
+        test_files = extract_project_tests_xref(project, funcs)
+
     if not test_files:
         return {
             'result':
@@ -2997,7 +3033,11 @@ def project_tests_xref(args):
             [f'Could not find test files matching the requirements']
         }
 
-    return {'result': 'success', 'test-files-xref': test_files}
+    return {
+        'result': 'success',
+        'test-files-xref': test_files,
+        'details': details
+    }
 
 
 @api_blueprint.route('/api/addr-to-recursive-dwarf-info')
