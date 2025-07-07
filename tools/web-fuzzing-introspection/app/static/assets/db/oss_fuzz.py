@@ -76,6 +76,14 @@ def get_fuzzer_stats_fuzz_count_url(project_name, date_str):
     return coverage_targets
 
 
+def get_fuzzer_target_coverage_error_log_url(project_name, date_str, target):
+    '''Get the url for the potential errors that are encountered during coverage measurement of a target.
+    Note that if the file does not exist, no errors have been recorded.'''
+    base_url = 'https://storage.googleapis.com/oss-fuzz-coverage/{0}/fuzzer_stats/{1}/{2}_error.log'
+    url = base_url.format(project_name, date_str, target)
+    return url
+
+
 def get_introspector_project_tests_url(project_name, datestr):
     return get_introspector_report_url_base(project_name,
                                             datestr) + "light/all_tests.json"
@@ -382,6 +390,17 @@ def get_fuzzer_code_coverage_summary(project_name, datestr, fuzzer):
         json_dict = json.loads(coverage_summary_raw)
         return json_dict
     except:
+        return None
+
+
+def get_fuzzer_target_coverage_error_log(project_name, datestr, fuzzer):
+    url = get_fuzzer_target_coverage_error_log_url(project_name, datestr,
+                                                   fuzzer)
+    try:
+        response = requests.get(url, timeout=20)
+        if response.status_code == 200:
+            return response.text.strip()
+    except Exception as e:
         return None
 
 
