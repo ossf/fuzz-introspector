@@ -136,10 +136,10 @@
                 <div style="max-height: 30rem; overflow: auto; margin-top: 1.5rem">
                   <table style="width: 100%;">
                     <thead>
-                      <th style="padding: 0 0.5rem;">Fuzzer</th>
-                      <th style="padding: 0 0.5rem;">Code coverage (lines)</th>
-                      <th style="padding: 0 0.5rem;">Latest Report</th>
-                      <th style="padding: 0 0.5rem;">Comments</th>
+                      <th style="padding: 0.5rem 0.5rem;">Fuzzer</th>
+                      <th style="padding: 0.5rem 0.5rem;">Code coverage (lines)</th>
+                      <th style="padding: 0.5rem 0.5rem;">Latest Report</th>
+                      <th style="padding: 0.5rem 0.5rem;">Comments</th>
                     </thead>
                     <tbody>
                       {% for fuzzer, fuzzer_data in project.recent_results.items()
@@ -147,27 +147,30 @@
                         |sort(reverse=true, attribute='1.got_lost,1.has_degraded')
                       %}
                         <tr
-                          {% if fuzzer_data['got_lost'] or fuzzer_data['max_has_degraded'] %}
+                          {% if fuzzer_data['got_lost'] or fuzzer_data['max_has_degraded'] or fuzzer_data['coverage_error'] %}
                             class="alert alert-danger" role="alert"
                           {% endif %}
                         >
-                          <td style="padding: 0 0.5rem;">
+                          <td style="padding: 0.2rem 0.2rem;">
                             {{fuzzer}} (<a href="#perFuzzerCoverageLinesOverTimePlot{{ fuzzer_data['hashed_name'] }}">plot</a>)
                           </td>
-                          <td style="padding: 0 0.5rem;">
+                          <td style="padding: 0.2rem 0.2rem;">
                             <code style="color: unset; white-space: nowrap;">
                               {{ fuzzer_data['current'] }}% (avg: {{ fuzzer_data['avg'] }}%, max: {{ fuzzer_data['max'] }}%)
                             </code>
                           </td>
-                          <td style="padding: 0 0.5rem;">
+                          <td style="padding: 0.2rem 0.2rem;">
                             <a href="{{fuzzer_data['report_url']}}">{{ fuzzer_data['report_date'] }}</a>
                           </td>
-                          <td style="padding: 0 0.5rem;">
+                          <td style="padding: 0.2rem 0.2rem;">
                             {% if fuzzer_data['got_lost'] %}
                               Fuzzer no longer available!<br>
                             {% endif %}
                             {% if fuzzer_data['max_has_degraded'] %}
                               Coverage has degraded!<br>
+                            {% endif %}
+                            {% if fuzzer_data['coverage_error'] %}
+                              Coverage error: {{ fuzzer_data['coverage_error'] }}<br>
                             {% endif %}
                             {% for day_degraded in fuzzer_data['days_degraded'] %}
                               Degraded from <a href="{{ day_degraded['before_url'] }}">{{day_degraded['before_date']}} ({{day_degraded['before_perc']}}%)</a>

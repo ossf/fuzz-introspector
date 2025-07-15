@@ -69,6 +69,29 @@ logging.getLogger("urllib3").setLevel(logging.WARNING)
 logger = logging.getLogger(name=__name__)
 
 
+def parse_coverage_error(error_log: str) -> str:
+    """Parse coverage error log to extract the first error cause with details.
+    
+    Examples:
+    - "==140== ERROR: libFuzzer: out-of-memory (used: 2108Mb; limit: 2048Mb)"
+      -> "out-of-memory (used: 2108Mb; limit: 2048Mb)"
+    - "==10925== ERROR: libFuzzer: timeout after 1 seconds"
+      -> "timeout (used: 120s; limit: 100s)"
+    """
+    import re
+
+    # Pattern to match libFuzzer error messages
+    # Captures everything after "ERROR: libFuzzer: "
+    pattern = r'==\d+== ERROR: libFuzzer: (.*?)(?:\n|$)'
+
+    match = re.search(pattern, error_log)
+    if match:
+        return match.group(1).strip()
+
+    # Fallback: if no pattern matches, return the original error_log
+    return error_log
+
+
 def git_clone_project(git_url: str,
                       destination: str,
                       single_depth: bool = True) -> bool:
@@ -792,6 +815,14 @@ def extract_project_data(project_name, date_str, should_include_details,
 
         amount_of_fuzzers = len(all_fuzzers)
         for ff in all_fuzzers:
+            per_fuzzer_cov_result = {}
+            try:
+                fuzzer_coverage_error_log = oss_fuzz.get_fuzzer_target_coverage_error_log(
+                    project_name, date_str.replace("-", ""), ff)
+            except:
+                fuzzer_coverage_error_log = None
+            per_fuzzer_cov_result['error_log'] = fuzzer_coverage_error_log
+
             try:
                 fuzzer_corpus_size = oss_fuzz.get_fuzzer_corpus_size(
                     project_name, date_str.replace("-", ""), ff,
@@ -805,9 +836,11 @@ def extract_project_data(project_name, date_str, should_include_details,
                 fuzzer_cov_data = extract_code_coverage_data(fuzzer_cov)
                 if fuzzer_cov_data is not None:
                     fuzzer_cov_data['corpus_size'] = fuzzer_corpus_size
-                per_fuzzer_cov[ff] = fuzzer_cov_data
+                per_fuzzer_cov_result['fuzzer_cov_data'] = fuzzer_cov_data
             except:
-                pass
+                per_fuzzer_cov_result['fuzzer_cov_data'] = None
+
+            per_fuzzer_cov[ff] = per_fuzzer_cov_result
 
     project_timestamp = {
         "project_name": project_name,
@@ -1039,6 +1072,12 @@ def per_fuzzer_coverage_analysis(project_name: str,
                     data, project_name, ff)
             except:
                 days_degraded = []
+            try:
+                coverage_error = data[-1]['error_log']
+                if coverage_error:
+                    coverage_error = parse_coverage_error(coverage_error)
+            except:
+                coverage_error = None
             results[ff] = {
                 'report_url': report_url,
                 'report_date': latest_date_with_value,
@@ -1055,6 +1094,7 @@ def per_fuzzer_coverage_analysis(project_name: str,
                 (max_cov - current) > FUZZER_COVERAGE_IS_DEGRADED,
                 'days_degraded': days_degraded,
                 'got_lost': ff in lost_fuzzers,
+                'coverage_error': coverage_error,
             }
     return results
 
@@ -1086,7 +1126,9 @@ def calculate_recent_results(projects_with_new_results, timestamps,
                 fuzzers_past |= fuzzers_current
                 fuzzers_current = set(per_fuzzer_coverage_data.keys())
 
-                for ff, cov_data in per_fuzzer_coverage_data.items():
+                for ff, ff_data in per_fuzzer_coverage_data.items():
+                    cov_data = ff_data['fuzzer_cov_data']
+                    error_log = ff_data['error_log']
                     try:
                         perc = round(
                             100 * cov_data['covered'] / cov_data['count'], 2)
@@ -1102,8 +1144,10 @@ def calculate_recent_results(projects_with_new_results, timestamps,
                         cov_data['count'],
                         'percentage':
                         perc,
+                        'error_log':
+                        error_log,
                         'date':
-                        do
+                        do,
                     })
             except:
                 continue
