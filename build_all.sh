@@ -30,8 +30,9 @@ if [ -d $BUILD_BASE ]; then
         -DLLVM_BINUTILS_INCDIR=../binutils/include \
         -DCMAKE_BUILD_TYPE=Release \
         -DLLVM_TARGETS_TO_BUILD="X86" ../llvm-project/llvm/
-  make llvm-headers
-  make -j5
+  make -j5 llvm-headers
+  make -j10
+  make
 else
   echo "Cloning and building binutild-gdb and LLVM from scratch."
   mkdir $BUILD_BASE
@@ -56,7 +57,7 @@ else
   cd ${BUILD_BASE}
   git clone https://github.com/llvm/llvm-project/
   cd llvm-project/
-  git checkout llvmorg-18-init-14420-gea3a3b25
+  git checkout llvmorg-21.1.0-rc3
 
   echo "Applying diffs to insert Fuzz Introspector plugin in the LLVM pipeline"
   $BASE/frontends/llvm/patch-llvm.sh
