@@ -29,9 +29,12 @@ if [ -f ./llvm/lib/Transforms/IPO/PassManagerBuilder.cpp ]; then
     sed -i 's/MPM.addPass(CrossDSOCFIPass());/MPM.addPass(CrossDSOCFIPass());\n  MPM.addPass(FuzzIntrospectorPass());/g' ./llvm/lib/Passes/PassBuilderPipelines.cpp
     sed -i 's/MODULE_PASS("annotation2metadata", Annotation2MetadataPass())/MODULE_PASS("annotation2metadata", Annotation2MetadataPass())\nMODULE_PASS("fuzz-introspector", FuzzIntrospectorPass())/g' ./llvm/lib/Passes/PassRegistry.def
 else
-    echo "Applying llvm 18 pathes"
+    echo "Applying llvm 18 patches"
     echo "add_subdirectory(FuzzIntrospector)" >> ./llvm/lib/Transforms/CMakeLists.txt
     sed -i 's/Instrumentation/Instrumentation\n  FuzzIntrospector/g' ./llvm/lib/Transforms/IPO/CMakeLists.txt
+
+    #  This is for LLVM 21. Monitor if this affects more.
+    sed -i 's/LLVM_ABI void initializeMIRNamerPass/LLVM_ABI void initializeFuzzIntrospectorPass(PassRegistry \&);\nLLVM_ABI void initializeMIRNamerPass/g' llvm/include/llvm/InitializePasses.h
 
     sed -i 's/void initializeXRayInstrumentationPass(PassRegistry\&);/void initializeXRayInstrumentationPass(PassRegistry\&);\nvoid initializeFuzzIntrospectorPass(PassRegistry\&);/g' ./llvm/include/llvm/InitializePasses.h
     sed -i 's/#include "llvm\/Transforms\/Instrumentation\/ThreadSanitizer.h"/#include "llvm\/Transforms\/Instrumentation\/ThreadSanitizer.h"\n#include "llvm\/Transforms\/FuzzIntrospector\/FuzzIntrospector.h"/g' ./llvm/lib/Passes/PassBuilder.cpp

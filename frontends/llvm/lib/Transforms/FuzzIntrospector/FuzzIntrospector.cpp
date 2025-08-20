@@ -2260,7 +2260,8 @@ FuzzIntrospector::getBBDebugInfo(BasicBlock *BB, DILocation *PrevLoc) {
   BranchInst *CurrBI;
   Instruction *CurrTI, *CurrI;
   DILocation *CurrLoc;
-
+  /* TODO(David): Fix this for LLVM 21. Although I'm not 100% sure we still use this.*/
+/*
   // Traverse all dummy BBs associated with the previous Loc.
   do {
     CurrTI = CurrBB->getTerminator();
@@ -2281,7 +2282,7 @@ FuzzIntrospector::getBBDebugInfo(BasicBlock *BB, DILocation *PrevLoc) {
   }
   if (CurrI)
     Result = getInsnDebugInfo(CurrI);
-
+*/
   return Result;
 }
 
