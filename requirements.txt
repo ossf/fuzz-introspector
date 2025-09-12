@@ -20,9 +20,10 @@ coverage
 setuptools>=65.5.1 # not directly required, pinned by Snyk to avoid a vulnerability 
 tqdm # For displaying loading bar (auto-fuzz tool)
 rust-demangler # For correctly demangle rust function name
-tree-sitter
-tree-sitter-cpp
-tree-sitter-go
-tree-sitter-java
-tree-sitter-python
-tree-sitter-rust
+tree-sitter==0.23.2
+tree-sitter-cpp==0.23.4
+tree-sitter-go==0.23.4
+tree-sitter-java==0.23.5
+tree-sitter-python==0.23.6
+tree-sitter-rust==0.23.2
+tree-sitter-languages==1.10.2
