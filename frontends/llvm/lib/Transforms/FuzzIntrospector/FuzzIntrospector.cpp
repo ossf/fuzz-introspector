@@ -25,6 +25,8 @@
 #include "llvm/IR/GlobalVariable.h"
 #include "llvm/IR/InstIterator.h"
 #include "llvm/IR/IntrinsicInst.h"
+#include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/Function.h"
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Operator.h"
@@ -53,6 +55,7 @@
 #include "llvm/InitializePasses.h"
 #include "llvm/Pass.h"
 #include "llvm/Transforms/Utils/CallGraphUpdater.h"
+#include "llvm/Transforms/Utils/ModuleUtils.h"
 
 using namespace std;
 using namespace llvm;
@@ -880,6 +883,7 @@ void FuzzIntrospector::makeDefaultConfig() {
       "llvm[.]",
       "sanitizer_cov",
       "sancov[.]module",
+      "__fuzz_introspector_keep_alive",	// FuzzIntrospector association internals
   };
 
   std::vector<string> *current = &ConfigFuncsToAvoid;
@@ -970,6 +974,17 @@ bool FuzzIntrospector::runOnModule(Module &M) {
                          llvm::GlobalValue::LinkageTypes::ExternalLinkage,
                          FuzzIntrospectorTag, "FuzzIntrospectorTag");
   GV->setInitializer(FuzzIntrospectorTag);
+
+  // Create a function that will be a global constructor to avoid Rust aggressively
+  // stripping the unused global variable away
+  FunctionType *FT = FunctionType::get(Type::getVoidTy(M.getContext()), false);
+  Function *F = Function::Create(FT, GlobalValue::InternalLinkage,
+		  "__fuzz_introspector_keep_alive", &M);
+  BasicBlock *BB = BasicBlock::Create(M.getContext(), "entry", F);
+  IRBuilder<> Builder(BB);
+  Builder.CreateLoad(GV->getValueType(), GV, true, "volatile_read");
+  Builder.CreateRetVoid();
+  llvm::appendToGlobalCtors(M, F, 0);
 
   extractFuzzerReachabilityGraph(M, "LLVMFuzzerTestOneInput");
   dumpCalltree(&FuzzerCalltree, nextCalltreeFile);
