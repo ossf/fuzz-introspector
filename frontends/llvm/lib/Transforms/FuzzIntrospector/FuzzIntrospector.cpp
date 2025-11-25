@@ -149,6 +149,27 @@ typedef struct BranchSidesComplexity {
         FalseSideComp(FC) {}
 } BranchSidesComplexity;
 
+typedef struct AlwaysQuotedString {
+  std::string &Storage;
+  explicit AlwaysQuotedString(std::string &S) : Storage(S) {}
+};
+
+template <> struct yaml::ScalarTraits<AlwaysQuotedString> {
+  static void output(const AlwaysQuotedString &S, void *Ctx, raw_ostream &OS) {
+    OS << S.Storage;
+  }
+
+  static StringRef input(StringRef Scalar, void *Ctx, AlwaysQuotedString &S) {
+    S.Storage = Scalar.str();
+    return StringRef();
+  }
+
+  static QuotingType mustQuote(StringRef) {
+    return QuotingType::Double;
+  }
+};
+
+
 // YAML mappings for outputting the typedefs above
 template <> struct yaml::MappingTraits<FuzzerFunctionWrapper> {
   static void mapping(IO &io, FuzzerFunctionWrapper &Func) {
@@ -289,10 +310,15 @@ typedef struct FunctionDebugWrapperS {
 
 template <> struct yaml::MappingTraits<FunctionDebugWrapper> {
   static void mapping(IO &io, FunctionDebugWrapper &fw) {
-    io.mapRequired("name", fw.funcName);
+    // Ensure function names are always quoted which forces pyyaml to treat them as strings
+    // https://github.com/yaml/pyyaml/issues/613
+    AlwaysQuotedString QuotedName(fw.funcName);
+    AlwaysQuotedString QuotedRawName(fw.rawName);
+
+    io.mapRequired("name", QuotedName);
     io.mapRequired("file_location", fw.fileLocation);
     io.mapRequired("type_arguments", fw.argTypes);
-    io.mapRequired("raw_name", fw.rawName);
+    io.mapRequired("raw_name", QuotedRawName);
     io.mapRequired("is_public", fw.isPublic);
     io.mapRequired("is_private", fw.isPrivate);
   }
