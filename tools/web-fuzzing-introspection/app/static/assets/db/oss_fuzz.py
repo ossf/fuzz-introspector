@@ -727,9 +727,16 @@ def get_projects_build_status():
         build_status_dict[p['name']] = project_dict
     for p in cov_build_json['projects']:
         project_dict = build_status_dict.get(p['name'], dict())
-        project_dict['cov-build'] = p['history'][0]['success']
-        project_dict['cov-build-log'] = constants.OSS_FUZZ_BUILD_LOG_BASE + p[
-            'history'][0]['build_id'] + '.txt'
+
+        try:
+            project_dict['cov-build'] = p['history'][0]['success']
+            project_dict[
+                'cov-build-log'] = constants.OSS_FUZZ_BUILD_LOG_BASE + p[
+                    'history'][0]['build_id'] + '.txt'
+        except (KeyError, IndexError):
+            project_dict['cov-build'] = False
+            project_dict['cov-build-log'] = 'N/A'
+
         build_status_dict[p['name']] = project_dict
     for p in introspector_build_json['projects']:
         project_dict = build_status_dict.get(p['name'], dict())
