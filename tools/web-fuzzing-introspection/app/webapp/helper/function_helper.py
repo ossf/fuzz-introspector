@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import re
-import sys
 from typing import Dict, List, Set, Any
 
 from .. import models

@@ -19,7 +19,7 @@ import re
 import json
 import signal
 import logging
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional
 import requests
 
 from flask import render_template, request, redirect
@@ -1614,7 +1614,7 @@ def get_header_files_needed_for_function(args):
         }
     headers_to_include = target_function.debug_data.get(
         'possible-header-files', [])
-    return {'result': 'succes', 'headers-to-include': headers_to_include}
+    return {'result': 'success', 'headers-to-include': headers_to_include}
 
 
 @api_blueprint.route('/api/all-cross-references')
@@ -1703,7 +1703,7 @@ def api_get_project_language_from_source_files(args):
         '.cc': 'c++',
         '.cpp': 'c++',
         '.c++': 'c++',
-        '.cxx': 'c+',
+        '.cxx': 'c++',
         '.py': 'python',
         '.java': 'java',
         '.go': 'go',
@@ -2066,7 +2066,7 @@ def function_debug_types(args):
         return {'result': 'error', 'msg': 'Could not find function'}
 
     return {
-        'result': 'succes',
+        'result': 'success',
         'arg-types': target_function.function_debug_arguments
     }
 
@@ -2171,7 +2171,7 @@ def api_function_source_code(args):
     if source_code is None:
         return {'result': 'error', 'msg': 'No source code'}
     return {
-        'result': 'succes',
+        'result': 'success',
         'source': source_code,
         'filepath': src_file,
         'src_begin': src_begin,
@@ -2897,7 +2897,7 @@ def _ignore_irrelevant_tests(tests_file_list,
                                          project_name):
                 result_list.append(test_file)
 
-        return
+        return result_list
 
     return repo_match
 

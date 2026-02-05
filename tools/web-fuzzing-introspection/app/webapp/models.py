@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
 import datetime
 from typing import Dict, List, Optional, Any
 
@@ -112,7 +111,7 @@ class ProjectTimestamp:
         self.project_repository = project_repository
 
     def has_introspector(self) -> bool:
-        return self.introspector_data != None
+        return self.introspector_data is not None
 
 
 class Function:

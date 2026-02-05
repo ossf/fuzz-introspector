@@ -4,7 +4,6 @@
 from typing import List, Dict, Any, Optional
 
 import os
-import json
 import orjson
 
 from .models import *
@@ -79,7 +78,7 @@ def get_project_debug_report(project: str) -> Optional[DebugStatus]:
         all_files_in_project=debug_report.get('all_files_in_project', []),
         all_functions_in_project=debug_report.get('all_functions_in_project',
                                                   []),
-        all_global_variables=debug_report.get('all_global_variables,', []),
+        all_global_variables=debug_report.get('all_global_variables', []),
         all_types=debug_report.get('all_types', []))
     return debug_model
 
