@@ -30,9 +30,6 @@ import marshmallow
 from . import models, data_storage, page_texts
 from .helper import function_helper
 
-# Use these during testing.
-#from app.site import test_data
-
 blueprint = Blueprint('site', __name__, template_folder='templates')
 
 api_blueprint = Blueprint('api',
@@ -988,8 +985,7 @@ def remove_functions_with_header_declarations(function_list):
 def oracle_2(all_functions,
              all_projects,
              no_static_functions=False,
-             only_referenced_functions=False,
-             only_functions_declared_in_header_files=False):
+             only_referenced_functions=False):
     tmp_list = []
     project_count = {}
     funcs_max_to_display = 4000
@@ -1012,10 +1008,6 @@ def oracle_2(all_functions,
         functions_to_analyse = functions_with_xref
     else:
         functions_to_analyse = all_functions
-
-    if only_functions_declared_in_header_files:
-        functions_to_analyse = remove_functions_with_header_declarations(
-            functions_to_analyse)
 
     logger.info('Matching fuzz arguments in functions.')
     for function in functions_to_analyse:
@@ -1158,7 +1150,6 @@ def api_optimal_targets(args):
     if project_name is None:
         return {'result': 'error', 'msg': 'Please provide project name'}
 
-    only_functions_declared_in_header_files = False
     target_project = get_project_with_name(project_name)
     if target_project is None:
         return {'result': 'error', 'msg': 'Project not in the database'}
@@ -1177,12 +1168,6 @@ def api_optimal_targets(args):
             substituted_function = None
             for model_func in project_functions:
                 if model_func.name == function['name'].replace(' ', ''):
-                    if only_functions_declared_in_header_files:
-                        possible_header_files = model_func.debug_data.get(
-                            'possible-header-files', [])
-                        if not possible_header_files:
-                            continue
-
                     substituted_function = {
                         'function_name': model_func.name,
                         'function_filename': model_func.function_filename,
@@ -2283,8 +2268,6 @@ def api_oracle_2(args):
     no_static_functions = request.args.get(
         'exclude-static-functions', 'false').lower() == 'true'
 
-    only_functions_declared_in_header_files = False
-
     # Only referenced args
     only_referenced_functions = request.args.get(
         'only-referenced-functions', 'false').lower() == 'true'
@@ -2300,9 +2283,7 @@ def api_oracle_2(args):
         all_functions,
         all_projects,
         no_static_functions=no_static_functions,
-        only_referenced_functions=only_referenced_functions,
-        only_functions_declared_in_header_files=
-        only_functions_declared_in_header_files)
+        only_referenced_functions=only_referenced_functions)
 
     functions_to_return = function_helper.convert_functions_to_list_of_dict(
         raw_interesting_functions)
@@ -2429,7 +2410,6 @@ def far_reach_but_low_coverage(args):
     only_referenced_functions = request.args.get(
         'only-referenced-functions', 'false').lower() == 'true'
 
-    only_functions_declared_in_header_files = False
     target_project = get_project_with_name(project_name)
     if target_project is None:
         # Is the project a ghost project: a project that no longer
@@ -2482,10 +2462,6 @@ def far_reach_but_low_coverage(args):
         if only_referenced_functions and function.name not in xref_dict:
             continue
         functions_to_return.append(function)
-    # Disable the below for a moment
-    if only_functions_declared_in_header_files and False:
-        functions_to_return = remove_functions_with_header_declarations(
-            functions_to_return)
 
     new_functions_to_return = []
     logger.info("Iterating")

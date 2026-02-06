@@ -12,13 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
 import os
+from typing import Optional, Tuple
 
 from flask import Flask
 from flask_smorest import Api
-from typing import Optional, Tuple
+
 import webapp
 from webapp import routes
+
+logger = logging.getLogger(__name__)
 
 
 def create_app():
@@ -35,28 +39,27 @@ def create_app():
     api = Api(app)
     api.register_blueprint(routes.api_blueprint)
 
-    try:
-        routes.gtag = os.environ['G_ANALYTICS_TAG']
-        print("google tag set")
-    except KeyError:
-        print("Not setting google tag")
-        routes.gtag = None
+    routes.gtag = os.getenv('G_ANALYTICS_TAG')
+    if routes.gtag:
+        logger.info("Google analytics tag set")
+    else:
+        logger.info("Not setting google analytics tag")
 
-    try:
-        routes.is_local = bool(os.environ['FUZZ_INTROSPECTOR_LOCAL_OSS_FUZZ'])
-        routes.local_oss_fuzz = os.environ['FUZZ_INTROSPECTOR_LOCAL_OSS_FUZZ']
-        print('Local webapp is set')
-    except KeyError:
-        print('Using remote version of webapp')
+    local_oss_fuzz = os.getenv('FUZZ_INTROSPECTOR_LOCAL_OSS_FUZZ', '')
+    if local_oss_fuzz:
+        routes.is_local = True
+        routes.local_oss_fuzz = local_oss_fuzz
+        logger.info("Local webapp is set")
+    else:
+        logger.info("Using remote version of webapp")
         routes.is_local = False
 
     if not routes.is_local:
-        try:
-            routes.allow_shutdown = bool(
-                os.environ['FUZZ_INTROSPECTOR_SHUTDOWN'])
-            print('Local webapp is set')
-        except KeyError:
-            print('Using remote version of webapp')
+        routes.allow_shutdown = bool(
+            os.getenv('FUZZ_INTROSPECTOR_SHUTDOWN', ''))
+        if routes.allow_shutdown:
+            logger.info("Shutdown endpoint enabled")
+        else:
             routes.allow_shutdown = False
 
     webapp.load_db()
@@ -74,4 +77,4 @@ if __name__ == "__main__":
     create_app().run(debug=False,
                      host="0.0.0.0",
                      ssl_context=ssl_context,
-                     port=int(os.environ.get("WEBAPP_PORT", '8080')))
+                     port=int(os.getenv("WEBAPP_PORT", '8080')))
