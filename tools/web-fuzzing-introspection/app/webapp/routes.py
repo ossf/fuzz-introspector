@@ -604,9 +604,7 @@ def project_profile():
         # should be more carefully constructed, perhaps based on a variety of
         # heuristics.
         functions_of_interest = []
-        functions_of_interest_all = get_functions_of_interest(project.name)
-        for i in range(min(10, len(functions_of_interest_all))):
-            func_of_interest = functions_of_interest_all[i]
+        for func_of_interest in get_functions_of_interest(project.name)[:10]:
             functions_of_interest.append({
                 'function_name':
                 func_of_interest.name,
@@ -966,20 +964,6 @@ def is_static(target_function) -> bool:
     if 'static' in pre_body:
         return True
     return False
-
-
-def remove_functions_with_header_declarations(function_list):
-    """For a list of functions sorts out functions without possible header
-    declarations.
-    """
-    new_functions = []
-    for function in function_list:
-        possible_header_files = function.debug_data.get(
-            'possible-header-files', [])
-        if not possible_header_files:
-            continue
-        new_functions.append(function)
-    return new_functions
 
 
 def oracle_2(all_functions,

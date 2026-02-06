@@ -126,9 +126,9 @@ def _sort_functions_by_fuzz_worthiness(
 def convert_functions_to_list_of_dict(
         functions: List[models.Function]) -> List[Dict[str, Any]]:
     """Convert a function list to a list of dict"""
-    sorted_function_dict_list_by_fuzz_worthiness = []
+    result = []
     for function in functions:
-        sorted_function_dict_list_by_fuzz_worthiness.append({
+        result.append({
             'project':
             function.project,
             'function_name':
@@ -168,4 +168,4 @@ def convert_functions_to_list_of_dict(
             'assert_stmts':
             function.asserts
         })
-    return sorted_function_dict_list_by_fuzz_worthiness
+    return result
