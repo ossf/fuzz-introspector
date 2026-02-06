@@ -59,7 +59,7 @@ NO_KEY_MSG = '<Error><Code>NoSuchKey</Code><Message>The specified key does not e
 # Add functions in here to make the oracles focus on a specific API.
 ALLOWED_ORACLE_RETURNS: List[str] = []
 
-# Max length of testcase sorce code to return from API.
+# Max length of testcase source code to return from API.
 MAX_TEST_SIZE = 6000
 
 # Max matches to show when searching for functions in functions view.
@@ -179,9 +179,8 @@ def all_functions_in_db():
 def extract_introspector_raw_source_code(project_name, date_str,
                                          target_file) -> str:
     """Returns the contents of a source code file."""
-    # Remove leading slash to avoid errors
-    while target_file.startswith('/'):
-        target_file = target_file[1:]
+    # Remove leading slashes to avoid errors
+    target_file = target_file.lstrip('/')
 
     if is_local:
         src_location = os.path.join(local_oss_fuzz, 'build', 'out',
@@ -210,9 +209,8 @@ def extract_introspector_raw_source_code(project_name, date_str,
 
 def _light_extract_introspector_raw_source_code(project_name, date_str,
                                                 target_file):
-    # Remove leading slash to avoid errors
-    while target_file.startswith('/'):
-        target_file = target_file[1:]
+    # Remove leading slashes to avoid errors
+    target_file = target_file.lstrip('/')
 
     if is_local:
         src_location = os.path.join(local_oss_fuzz, 'build', 'out',
@@ -269,7 +267,7 @@ def extract_lines_from_source_code(
 
     # Return None if source is not found.
     if not raw_source:
-        logger.info("Did not found source")
+        logger.info("Did not find source")
         return None
 
     return_source = ""
@@ -302,7 +300,7 @@ def extract_lines_from_source_code(
     if sanity_check_function_end:
         found_end_braces = False
 
-        if len(function_lines) > 0:
+        if function_lines:
             if '}' in function_lines[-1]:
                 found_end_braces = True
         if not found_end_braces and len(function_lines) > 1:
@@ -679,7 +677,7 @@ def project_profile():
                     if ps.project_repository:
                         project_repo = ps.project_repository
 
-            if datestr and len(real_stats) > 0:
+            if datestr and real_stats:
                 latest_coverage_report = get_coverage_report_url(
                     build_status.project_name, datestr, build_status.language)
             else:
@@ -1265,7 +1263,7 @@ def _get_harness_source_and_executable(project_name):
 
     # Ensure the files are present in the source code
     with open(all_file_json, 'r') as f:
-        all_files_list = json.loads(f.read())
+        all_files_list = json.load(f)
 
     for harness_dict in source_harness_pairs:
         found_harnesses = []
@@ -1321,7 +1319,7 @@ def api_annotated_cfg(args):
 def get_introspector_report_url_typedef(project_name,
                                         datestr,
                                         second_run=False):
-    """Get's URL for typedef extaction"""
+    """Gets URL for typedef extraction"""
     base = get_introspector_report_url_base(project_name, datestr)
     if second_run:
         base += "second-frontend-run/"
@@ -1650,7 +1648,7 @@ def api_get_project_language_from_source_files(args):
 
     # Ensure the files are present in the source code
     with open(all_file_json, 'r') as f:
-        all_files_list = json.loads(f.read())
+        all_files_list = json.load(f)
 
     languages = {'c': 0, 'c++': 0, 'python': 0, 'java': 0, 'go': 0, 'rust': 0}
     extensions = {
@@ -1717,9 +1715,8 @@ def api_project_all_project_source_files(args):
 
             # Read the introspector artifact
             try:
-                src_path_str = str(
+                src_path_list = json.loads(
                     requests.get(introspector_summary_url, timeout=10).text)
-                src_path_list = json.loads(src_path_str)
             except (requests.RequestException, ConnectionError,
                     json.JSONDecodeError, ValueError):
                 # Ignore the error and assume no source path is found
@@ -1782,7 +1779,7 @@ def api_project_all_public_candidates(args):
     target_list = data_storage.get_functions_by_project(
         project_name) + data_storage.get_constructors_by_project(project_name)
 
-    # Get the list of function / constructor candidiates to return
+    # Get the list of function / constructor candidates to return
     list_to_return = function_helper.filter_sort_functions(target_list, True)
 
     return {'result': 'success', 'functions': list_to_return}
@@ -1990,7 +1987,7 @@ def api_type_info(args):
         for elem_type in debug_info.all_types:
             if elem_type.get('name') == type_name:
                 return_elem.append(elem_type)
-    if len(return_elem) > 0:
+    if return_elem:
         return {'result': 'success', 'type_data': return_elem}
 
     return {'result': 'error', 'msg': 'Could not find type'}
@@ -2515,7 +2512,7 @@ def get_full_recursive_types(debug_type_dictionary, resulting_types,
     to_visit = set()
     to_visit.add(type_to_query)
 
-    while len(to_visit) > 0:
+    while to_visit:
         type_to_query = to_visit.pop()
 
         if type_to_query in addresses_visited:
@@ -2534,7 +2531,7 @@ def get_full_recursive_types(debug_type_dictionary, resulting_types,
         addresses_visited.add(type_to_query)
         type_to_query = str(target_type.get('base_type_addr', ''))
 
-        logger.info("Type to query: " + type_to_query)
+        logger.info("Type to query: %s", type_to_query)
         if int(type_to_query) == 0:
             continue
 
@@ -2937,7 +2934,7 @@ def project_tests_xref(args):
             'result':
             'error',
             'extended_msgs':
-            [f'Could not find test files matching the requirements']
+            ['Could not find test files matching the requirements']
         }
 
     return {
@@ -2958,7 +2955,7 @@ def type_at_addr():
 @api_blueprint.route('/api/function-target-oracle')
 def api_all_interesting_function_targets():
     """Returns a list of function targets based on analysis of all functions
-    in all OSS-Fuzz projects (assuming they have introspetor builds)
+    in all OSS-Fuzz projects (assuming they have introspector builds)
     using several different heuristics."""
     result_dict = {}
 
@@ -3135,7 +3132,7 @@ def sample_cross_references(args):
     is the source code itself. For each cross-reference, the full function
     source code call is returned.
 
-    Only functions with source code of length less than 70 aer included in
+    Only functions with source code of length less than 70 are included in
     the returned list.
 
     # Examples
