@@ -455,7 +455,7 @@ def get_project_with_name(project_name) -> Optional[models.Project]:
     return None
 
 
-def get_fuction_with_name(function_name,
+def get_function_with_name(function_name,
                           project_name) -> Optional[models.Function]:
     """Gets the function with the given function name from a given project"""
 
@@ -491,7 +491,7 @@ def index():
     """Renders index page"""
     db_summary = get_frontpage_summary_stats()
     db_timestamps = data_storage.DB_TIMESTAMPS
-    logger.info("Length of timestamps: %d" % (len(db_timestamps)))
+    logger.info("Length of timestamps: %d", len(db_timestamps))
     # Maximum projects
     max_proj = 0
     max_fuzzer_count = 0
@@ -534,7 +534,7 @@ def index():
 @blueprint.route('/function-profile', methods=['GET'])
 def function_profile():
     """Renders a given function."""
-    func_profile = get_fuction_with_name(request.args.get('function', 'none'),
+    func_profile = get_function_with_name(request.args.get('function', 'none'),
                                          request.args.get('project', 'none'))
 
     related_functions = get_all_related_functions(func_profile)

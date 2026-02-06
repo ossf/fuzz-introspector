@@ -1,19 +1,18 @@
-# Auto-generated
-#from app.site.models import *
-
 from typing import List, Dict, Any, Optional
 
+import logging
 import os
 import orjson
 
-from .models import *
+logger = logging.getLogger(__name__)
 
-all_functions_file = os.path.join(
-    os.path.dirname(__file__),
-    '../static/assets/db/all-functions-db-{PROJ}.json')
-all_constructors_file = os.path.join(
-    os.path.dirname(__file__),
-    '../static/assets/db/all-constructors-db-{PROJ}.json')
+from .models import (BranchBlocker, BuildStatus, DBTimestamp, DebugStatus,
+                     Function, Project, ProjectTimestamp)
+
+DB_DIR = os.path.join(os.path.dirname(__file__), '../static/assets/db')
+
+all_functions_file = os.path.join(DB_DIR, 'all-functions-db-{PROJ}.json')
+all_constructors_file = os.path.join(DB_DIR, 'all-constructors-db-{PROJ}.json')
 
 PROJECT_TIMESTAMPS: List[ProjectTimestamp] = []
 
@@ -29,7 +28,7 @@ ALL_HEADER_FILES: List[Dict[str, Any]] = []
 
 TOTAL_FUNCTION_COUNT = -1
 
-JSON_TO_FUNCTION_CACHE: Dict[str, List[Function]] = dict()
+JSON_TO_FUNCTION_CACHE: Dict[str, List[Function]] = {}
 
 PROJECTS_NOT_IN_OSSFUZZ: List[str] = []
 
@@ -63,11 +62,10 @@ def get_build_status() -> List[BuildStatus]:
 
 def get_project_debug_report(project: str) -> Optional[DebugStatus]:
     debug_report_path = os.path.join(
-        os.path.dirname(__file__),
-        f"../static/assets/db/db-projects/{project}/debug_report.json")
-    print(f"getting path: {debug_report_path}")
+        DB_DIR, f"db-projects/{project}/debug_report.json")
+    logger.info("Getting path: %s", debug_report_path)
     if not os.path.isfile(debug_report_path):
-        print("Failed")
+        logger.warning("Debug report not found: %s", debug_report_path)
         return None
 
     with open(debug_report_path, 'r') as f:
@@ -85,17 +83,16 @@ def get_project_debug_report(project: str) -> Optional[DebugStatus]:
 
 def get_project_branch_blockers(project: str) -> List[BranchBlocker]:
     branch_blockers_path = os.path.join(
-        os.path.dirname(__file__),
-        f"../static/assets/db/db-projects/{project}/branch_blockers.json")
-    print(f"getting path: {branch_blockers_path}")
+        DB_DIR, f"db-projects/{project}/branch_blockers.json")
+    logger.info("Getting path: %s", branch_blockers_path)
     if not os.path.isfile(branch_blockers_path):
-        print("Failed")
+        logger.warning("Branch blockers not found: %s", branch_blockers_path)
         return []
 
     with open(branch_blockers_path, 'r') as f:
         branch_report = orjson.loads(f.read())
 
-    branch_models = list()
+    branch_models = []
     for json_bb in branch_report:
         branch_models.append(
             BranchBlocker(project_name=json_bb.get('project', ''),
