@@ -129,43 +129,25 @@ def convert_functions_to_list_of_dict(
     result = []
     for function in functions:
         result.append({
-            'project':
-            function.project,
-            'function_name':
-            function.name,
-            'function_filename':
-            function.function_filename,
-            'raw_function_name':
-            function.raw_function_name,
-            'is_reached':
-            function.is_reached,
+            'project': function.project,
+            'function_name': function.name,
+            'function_filename': function.function_filename,
+            'raw_function_name': function.raw_function_name,
+            'is_reached': function.is_reached,
             'accummulated_complexity':
             function.accummulated_cyclomatic_complexity,
-            'function_argument_names':
-            function.function_argument_names,
-            'function_arguments':
-            function.function_arguments,
-            'function_signature':
-            function.func_signature,
-            'reached_by_fuzzers':
-            function.reached_by_fuzzers,
-            'cov_fuzzers':
-            function.cov_fuzzers,
-            'comb_fuzzers':
-            function.comb_fuzzers,
-            'return_type':
-            function.return_type,
-            'runtime_coverage_percent':
-            function.runtime_code_coverage,
-            'source_line_begin':
-            function.source_line_begin,
-            'source_line_end':
-            function.source_line_end,
-            'debug_summary':
-            function.debug_data,
-            'is_enum_class':
-            function.is_enum_class,
-            'assert_stmts':
-            function.asserts
+            'function_argument_names': function.function_argument_names,
+            'function_arguments': function.function_arguments,
+            'function_signature': function.func_signature,
+            'reached_by_fuzzers': function.reached_by_fuzzers,
+            'cov_fuzzers': function.cov_fuzzers,
+            'comb_fuzzers': function.comb_fuzzers,
+            'return_type': function.return_type,
+            'runtime_coverage_percent': function.runtime_code_coverage,
+            'source_line_begin': function.source_line_begin,
+            'source_line_end': function.source_line_end,
+            'debug_summary': function.debug_data,
+            'is_enum_class': function.is_enum_class,
+            'assert_stmts': function.asserts
         })
     return result
