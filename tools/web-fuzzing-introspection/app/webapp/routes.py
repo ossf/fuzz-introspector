@@ -606,7 +606,7 @@ def project_profile():
         # Display a maximum of 10 functions of interest. Down the line, this
         # should be more carefully constructed, perhaps based on a variety of
         # heuristics.
-        functions_of_interest = list()
+        functions_of_interest = []
         functions_of_interest_all = get_functions_of_interest(project.name)
         for i in range(min(10, len(functions_of_interest_all))):
             func_of_interest = functions_of_interest_all[i]
@@ -759,7 +759,7 @@ def function_search():
 def projects_overview():
     # Get statistics of the project
     project_statistics = data_storage.PROJECT_TIMESTAMPS
-    latest_coverage_profiles = dict()
+    latest_coverage_profiles = {}
     for ps in project_statistics:
         latest_coverage_profiles[ps.project_name] = ps
 
@@ -785,7 +785,7 @@ def oracle_3(all_functions, all_projects):
         - at least one argument.
     """
     functions_of_interest = []
-    projects_added = dict()
+    projects_added = {}
 
     for function in all_functions:
         if (function.runtime_code_coverage < 20.0
@@ -835,7 +835,7 @@ def oracle_1(all_functions,
              no_static_functions=False,
              only_referenced_functions=False):
     tmp_list = []
-    project_count = dict()
+    project_count = {}
 
     if only_referenced_functions and len(all_projects) == 1:
         xref_dict = get_cross_reference_dict_from_project(all_projects[0].name)
@@ -992,7 +992,7 @@ def oracle_2(all_functions,
              only_referenced_functions=False,
              only_functions_declared_in_header_files=False):
     tmp_list = []
-    project_count = dict()
+    project_count = {}
     funcs_max_to_display = 4000
 
     if len(all_projects) == 1:
@@ -1073,7 +1073,7 @@ def target_oracle():
                     continue
                 total_funcs.add(func)
                 functions_to_display.append((func, heuristic_name))
-    func_to_lang = dict()
+    func_to_lang = {}
     for func, _ in functions_to_display:
         language = 'c'
         for proj in all_projects:
@@ -1097,7 +1097,7 @@ def target_oracle():
 def indexing_overview():
     build_status = data_storage.get_build_status()
 
-    languages_summarised = dict()
+    languages_summarised = {}
     for bs in build_status:
         if bs.language not in languages_summarised:
             languages_summarised[bs.language] = {
@@ -1108,11 +1108,11 @@ def indexing_overview():
             }
         languages_summarised[bs.language]['all'] += 1
         languages_summarised[bs.language][
-            'fuzz_build'] += 1 if bs.fuzz_build_status is True else 0
+            'fuzz_build'] += 1 if bs.fuzz_build_status else 0
         languages_summarised[bs.language][
-            'cov_build'] += 1 if bs.coverage_build_status is True else 0
+            'cov_build'] += 1 if bs.coverage_build_status else 0
         languages_summarised[bs.language][
-            'introspector_build'] += 1 if bs.introspector_build_status is True else 0
+            'introspector_build'] += 1 if bs.introspector_build_status else 0
 
     logger.info(json.dumps(languages_summarised))
 
@@ -1258,8 +1258,8 @@ def _get_harness_source_and_executable(project_name):
     light_pairs_to_ret = _light_harness_source_and_executable(target_project)
 
     all_file_json = os.path.join(
-        os.path.dirname(__file__),
-        f"../static/assets/db/db-projects/{project_name}/all_files.json")
+        data_storage.DB_DIR,
+        f"db-projects/{project_name}/all_files.json")
 
     if not os.path.isfile(all_file_json):
         if light_pairs_to_ret:
@@ -1675,8 +1675,8 @@ def api_get_project_language_from_source_files(args):
         return {'result': 'error', 'msg': 'Please provide a project name'}
 
     all_file_json = os.path.join(
-        os.path.dirname(__file__),
-        f"../static/assets/db/db-projects/{project_name}/all_files.json")
+        data_storage.DB_DIR,
+        f"db-projects/{project_name}/all_files.json")
     if not os.path.isfile(all_file_json):
         return {'result': 'error', 'msg': 'Did not find file check json'}
 
@@ -2017,7 +2017,7 @@ def api_type_info(args):
         return {'result': 'error', 'msg': 'No function name provided'}
 
     debug_info = data_storage.get_project_debug_report(project_name)
-    return_elem = list()
+    return_elem = []
     if debug_info is not None:
         for elem_type in debug_info.all_types:
             if elem_type.get('name') == type_name:
@@ -2272,7 +2272,7 @@ def api_oracle_2(args):
     ## Example 1:
     - `project`: `htslib`
     """
-    err_msgs = list()
+    err_msgs = []
     logger.info('easy-params-far-reach 1')
     project_name = args.get('project', '')
     if not project_name:
@@ -2309,7 +2309,7 @@ def api_oracle_2(args):
         raw_interesting_functions)
 
     if ALLOWED_ORACLE_RETURNS:
-        functions_to_return = sort_funtions_to_return(functions_to_return)
+        functions_to_return = sort_functions_to_return(functions_to_return)
 
     logger.info('easy-params-far-reach 2')
     result_status = 'success'
@@ -2372,7 +2372,7 @@ def api_oracle_1(args):
         raw_functions)
 
     if ALLOWED_ORACLE_RETURNS:
-        functions_to_return = sort_funtions_to_return(functions_to_return)
+        functions_to_return = sort_functions_to_return(functions_to_return)
 
     return returner.dump({
         'result': 'success',
@@ -2415,7 +2415,7 @@ def far_reach_but_low_coverage(args):
     ## Example 1:
     - `project`: `htslib`
     """
-    err_msgs = list()
+    err_msgs = []
     project_name = args.get('project', '')
     if not project_name:
         return {
@@ -2448,16 +2448,16 @@ def far_reach_but_low_coverage(args):
         err_msgs.append('Missing a recent introspector build.')
 
         # Check that builds are failing
-        if bs.introspector_build_status is False:
+        if not bs.introspector_build_status:
             err_msgs.append(
                 'No successful builds historically recently: introspector.')
-        if bs.coverage_build_status is False:
+        if not bs.coverage_build_status:
             err_msgs.append('No successful builds: coverage.')
-        if bs.fuzz_build_status is False:
+        if not bs.fuzz_build_status:
             err_msgs.append('Build status failing: fuzzing.')
-        if bs.introspector_build_status is False and bs.coverage_build_status is False and bs.fuzz_build_status is False:
+        if not bs.introspector_build_status and not bs.coverage_build_status and not bs.fuzz_build_status:
             err_msgs.append('All builds failing.')
-        elif bs.introspector_build_status is False and bs.coverage_build_status is False:
+        elif not bs.introspector_build_status and not bs.coverage_build_status:
             err_msgs.append(
                 'No data as no history of coverage or introspector builds.')
 
@@ -2477,7 +2477,7 @@ def far_reach_but_low_coverage(args):
     sorted_functions_of_interest = get_functions_of_interest(project_name)
 
     max_functions_to_show = 30
-    functions_to_return = list()
+    functions_to_return = []
     logger.info('Functions of interest: %d', len(sorted_functions_of_interest))
     for function in sorted_functions_of_interest:
         if only_referenced_functions and function.name not in xref_dict:
@@ -2490,8 +2490,7 @@ def far_reach_but_low_coverage(args):
 
     new_functions_to_return = []
     logger.info("Iterating")
-    for i in range(len(functions_to_return)):
-        function = functions_to_return[i]
+    for function in functions_to_return:
         if len(new_functions_to_return) >= max_functions_to_show:
             break
         if no_static_functions:
@@ -2514,19 +2513,19 @@ def far_reach_but_low_coverage(args):
             return {'result': 'error', 'extended_msgs': err_msgs}
 
         # Check that builds are failing
-        if bs.introspector_build_status is False:
+        if not bs.introspector_build_status:
             err_msgs.append('No successful build: introspector.')
-        if bs.coverage_build_status is False:
+        if not bs.coverage_build_status:
             err_msgs.append('Build status failing: coverage.')
-        if bs.fuzz_build_status is False:
+        if not bs.fuzz_build_status:
             err_msgs.append('Build status failing: fuzzing.')
-        if bs.introspector_build_status is False and bs.coverage_build_status is False and bs.fuzz_build_status is False:
+        if not bs.introspector_build_status and not bs.coverage_build_status and not bs.fuzz_build_status:
             err_msgs.append('All builds failing.')
     else:
         result_status = 'success'
 
     if ALLOWED_ORACLE_RETURNS:
-        functions_to_return = sort_funtions_to_return(functions_to_return)
+        functions_to_return = sort_functions_to_return(functions_to_return)
 
     return {
         'result': result_status,
@@ -2535,7 +2534,7 @@ def far_reach_but_low_coverage(args):
     }
 
 
-def sort_funtions_to_return(functions_to_return):
+def sort_functions_to_return(functions_to_return):
     adjusted_functions = []
     for func in functions_to_return:
         if func['function_name'] not in ALLOWED_ORACLE_RETURNS:
@@ -2656,9 +2655,7 @@ def should_ignore_testpath(test_path: str) -> bool:
         '/external/', '/build/', '/src/inspector/', '/source-code/',
         '/workspace/'
     }
-    if [bp for bp in banned_paths if bp in test_path]:
-        return True
-    return False
+    return any(bp in test_path for bp in banned_paths)
 
 
 @api_blueprint.route('/api/ofg-validity-check')
@@ -2701,8 +2698,8 @@ def extract_project_tests(project_name,
                           try_ignore_irrelevant=True) -> List[Optional[str]]:
     """Extracts the tests in terms of file paths of a given project"""
     tests_file = os.path.join(
-        os.path.dirname(__file__),
-        f"../static/assets/db/db-projects/{project_name}/test_files.json")
+        data_storage.DB_DIR,
+        f"db-projects/{project_name}/test_files.json")
     if not os.path.isfile(tests_file):
         return []
 
@@ -2736,8 +2733,8 @@ def _load_project_tests_xref(
     test_files: Dict[str, List[Dict[str, Any]]] = {}
 
     test_json = os.path.join(
-        os.path.dirname(__file__),
-        f"../static/assets/db/db-projects/{project_name}/test_files_xref.json")
+        data_storage.DB_DIR,
+        f"db-projects/{project_name}/test_files_xref.json")
     if not os.path.isfile(test_json):
         return test_files
 
@@ -3013,13 +3010,13 @@ def type_at_addr():
 
     logger.info("Opening type map")
     type_map = os.path.join(
-        os.path.dirname(__file__),
-        f"../static/assets/db/db-projects/{project}/type_map.json")
+        data_storage.DB_DIR,
+        f"db-projects/{project}/type_map.json")
 
     with open(type_map, 'r') as f:
         type_map_dict = json.load(f)
 
-    resulting_types = dict()
+    resulting_types = {}
     logger.info("Getting types")
     get_full_recursive_types(type_map_dict, resulting_types, addr)
 
@@ -3087,7 +3084,7 @@ def get_cross_reference_dict_from_project(project_name) -> Dict[str, int]:
     # Get all functions of the target project
     project_functions = data_storage.get_functions_by_project(project_name)
 
-    func_xrefs: Dict[str, int] = dict()
+    func_xrefs: Dict[str, int] = {}
     for function in project_functions:
         callsites = function.callsites
         for cs_dst in callsites:
@@ -3145,7 +3142,7 @@ def database_language_stats():
     """Gets stats about line coverage across all languages."""
 
     project_statistics = data_storage.PROJECT_TIMESTAMPS
-    latest_coverage_profiles = dict()
+    latest_coverage_profiles = {}
     for ps in project_statistics:
         latest_coverage_profiles[ps.project_name] = ps
 
