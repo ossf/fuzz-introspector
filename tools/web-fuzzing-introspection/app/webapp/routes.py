@@ -718,8 +718,8 @@ def function_search():
     """Renders function search page"""
     info_msg = None
     query = request.args.get('q', '')
-    logger.info("query: { %s }" % (query))
-    if query == '':
+    logger.info("query: { %s }", query)
+    if not query:
         # Pick a random interesting query
         # Some queries involving fuzzing-interesting targets.
         interesting_query_roulette = [
@@ -727,32 +727,23 @@ def function_search():
             'read_xml', 'message', 'request', 'parse_header', 'parse_request',
             'header', 'decompress', 'file_read'
         ]
-        interesting_query = random.choice(interesting_query_roulette)
-        tmp_list = []
-        for function in all_functions_in_db():
-            if interesting_query in function.name:
-                tmp_list.append(function)
-        functions_to_display = tmp_list
+        query = random.choice(interesting_query_roulette)
+        info_msg = f"No query was given, picked the query \"{query}\" for this"
 
-        # Shuffle to give varying results each time
-        random.shuffle(functions_to_display)
+    functions_to_display = [
+        f for f in all_functions_in_db() if query in f.name
+    ]
 
-        total_matches = len(functions_to_display)
-        if total_matches >= 100:
-            functions_to_display = functions_to_display[:100]
-        info_msg = f"No query was given, picked the query \"{interesting_query}\" for this"
-    else:
-        tmp_list = []
-        for function in all_functions_in_db():
-            if query in function.name:
-                tmp_list.append(function)
-        functions_to_display = tmp_list
-
+    if not info_msg:
+        # User-provided query: cap results
         total_matches = len(functions_to_display)
         if total_matches >= MAX_MATCHES_TO_DISPLAY:
-            functions_to_display = functions_to_display[
-                0:MAX_MATCHES_TO_DISPLAY]
+            functions_to_display = functions_to_display[:MAX_MATCHES_TO_DISPLAY]
             info_msg = f"Found {total_matches} matches. Only showing the first {MAX_MATCHES_TO_DISPLAY}."
+    else:
+        # Random query: shuffle and cap at 100
+        random.shuffle(functions_to_display)
+        functions_to_display = functions_to_display[:100]
 
     return render_template('function-search.html',
                            gtag=gtag,
