@@ -143,9 +143,8 @@ class ProjectFunctionsQuerySchema(marshmallow.Schema):
 
 
 def get_introspector_report_url_base(project_name, datestr):
-    base_url = 'https://storage.googleapis.com/oss-fuzz-introspector/{0}/inspector-report/{1}/'
-    project_url = base_url.format(project_name, datestr.replace("-", ""))
-    return project_url
+    datestr_clean = datestr.replace("-", "")
+    return f'https://storage.googleapis.com/oss-fuzz-introspector/{project_name}/inspector-report/{datestr_clean}/'
 
 
 def get_introspector_report_url_source_base(project_name, datestr):
@@ -163,10 +162,8 @@ def get_coverage_report_url(project_name, datestr, language):
         file_report = "index.html"
     else:
         file_report = "report.html"
-    base_url = 'https://storage.googleapis.com/oss-fuzz-coverage/{0}/reports/{1}/linux/{2}'
-    project_url = base_url.format(project_name, datestr.replace("-", ""),
-                                  file_report)
-    return project_url
+    datestr_clean = datestr.replace("-", "")
+    return f'https://storage.googleapis.com/oss-fuzz-coverage/{project_name}/reports/{datestr_clean}/linux/{file_report}'
 
 
 def all_functions_in_db():
@@ -262,7 +259,7 @@ def extract_lines_from_source_code(
     if not raw_source and light_raw_source:
         raw_source = light_raw_source
 
-    if '<Error><Code>NoSuchKey</Code><Message>The specified key does not exist.' in raw_source:
+    if NO_KEY_MSG in raw_source:
         raw_source = light_raw_source
 
     # Return None if source is not found.
@@ -787,13 +784,9 @@ def oracle_3(all_functions, all_projects):
                 and len(function.function_argument_names) > 0):
 
             # Skip non c/c++
-            to_continue = False
-            for proj in all_projects:
-                if proj.name == function.project and proj.language in {
-                        'c', 'c++'
-                }:
-                    to_continue = True
-            if not to_continue:
+            if not any(proj.name == function.project
+                       and proj.language in {'c', 'c++'}
+                       for proj in all_projects):
                 continue
 
             # If there is only a single argument then we want it to be
@@ -870,14 +863,9 @@ def oracle_1(all_functions,
                 and project_count.get(function.project, 0) < max_project_count
                 and function.accummulated_cyclomatic_complexity > 30):
 
-            to_continue = False
-
-            for proj in all_projects:
-                if proj.name == function.project and proj.language in {
-                        'c', 'c++'
-                }:
-                    to_continue = True
-            if not to_continue:
+            if not any(proj.name == function.project
+                       and proj.language in {'c', 'c++'}
+                       for proj in all_projects):
                 continue
 
             if no_static_functions:
@@ -934,7 +922,7 @@ def is_static(target_function) -> bool:
     src_file = target_function.function_filename
 
     # Check if we have accompanying debug info
-    debug_source_dict = target_function.debug_data.get('source', None)
+    debug_source_dict = target_function.debug_data.get('source')
     if debug_source_dict:
         source_line = int(debug_source_dict.get('source_line', -1))
         if source_line != -1:
@@ -959,9 +947,7 @@ def is_static(target_function) -> bool:
         if '{' in line:
             break
         pre_body += line + '\n'
-    if 'static' in pre_body:
-        return True
-    return False
+    return 'static' in pre_body
 
 
 def oracle_2(all_functions,
@@ -1128,7 +1114,7 @@ def api_optimal_targets(args):
     ## Example 1:
     - `project`: `tinyxml2`
     """
-    project_name = args.get('project', None)
+    project_name = args.get('project')
     if project_name is None:
         return {'result': 'error', 'msg': 'Please provide project name'}
 
@@ -1208,7 +1194,7 @@ def harness_source_and_executable(args):
     ## Example 1:
     - `project`: `leveldb`
     """
-    project_name = args.get('project', None)
+    project_name = args.get('project')
     if project_name is None:
         return {'result': 'error', 'msg': 'Please provide project name'}
 
@@ -1750,7 +1736,7 @@ def api_project_all_functions(args):
 @api_blueprint.arguments(ProjectSchema, location='query')
 def api_project_all_jvm_constructors(args):
     """Returns a json representation of all the constructors in a given project"""
-    project_name = args.get('project', None)
+    project_name = args.get('project')
     if project_name is None:
         return {'result': 'error', 'msg': 'Please provide a project name'}
 
@@ -1772,7 +1758,7 @@ def api_project_all_public_candidates(args):
         ## Example 1
         - `project`: `tinyxml2`
     """
-    project_name = args.get('project', None)
+    project_name = args.get('project')
     if project_name is None:
         return {'result': 'error', 'msg': 'Please provide a project name'}
 
@@ -1795,7 +1781,7 @@ def api_project_all_public_classes(args):
         ## Example 1
         - `project`: `tinyxml2`
     """
-    project_name = args.get('project', None)
+    project_name = args.get('project')
     if project_name is None:
         return {'result': 'error', 'msg': 'Please provide a project name'}
 
@@ -1833,11 +1819,11 @@ def api_project_source_code(args):
     if not filepath:
         return {'result': 'error', 'msg': 'No filepath provided'}
 
-    begin_line = args.get('begin_line', None)
+    begin_line = args.get('begin_line')
     if begin_line is None:
         return {'result': 'error', 'msg': 'No begin line provided'}
 
-    end_line = args.get('end_line', None)
+    end_line = args.get('end_line')
     if end_line is None:
         return {'result': 'error', 'msg': 'No end line provided'}
 
@@ -1889,10 +1875,10 @@ def get_latest_introspector_date(project_name: str) -> str:
 @api_blueprint.arguments(ProjectTestCodeQuerySchema, location='query')
 def api_project_test_code(args):
     """Extracts source code of a test"""
-    project_name = args.get('project', None)
+    project_name = args.get('project')
     if project_name is None:
         return {'result': 'error', 'msg': 'Please provide a project name'}
-    filepath = args.get('filepath', None)
+    filepath = args.get('filepath')
     if filepath is None:
         return {'result': 'error', 'msg': 'No filepath provided'}
 
@@ -1974,10 +1960,10 @@ def api_type_info(args):
     - `project` : `htslib`
     - `type_name`: `sam_hrec_type_s`
     """
-    project_name = args.get('project', None)
+    project_name = args.get('project')
     if project_name is None:
         return {'result': 'error', 'msg': 'Please provide a project name'}
-    type_name = args.get('type_name', None)
+    type_name = args.get('type_name')
     if type_name is None:
         return {'result': 'error', 'msg': 'No function name provided'}
 
@@ -2004,11 +1990,11 @@ def function_debug_types(args):
     - `function_signature`: `void sam_hrecs_remove_ref_altnames(sam_hrecs_t *, int, const char *)`
     
     """
-    project_name = args.get('project', None)
+    project_name = args.get('project')
     if project_name is None:
         return {'result': 'error', 'msg': 'Please provide a project name'}
 
-    function_signature = args.get('function_signature', None)
+    function_signature = args.get('function_signature')
     if function_signature is None:
         return {'result': 'error', 'msg': 'No function signature provided'}
 
@@ -2108,7 +2094,7 @@ def api_function_source_code(args):
     src_file = target_function.function_filename
 
     # Check if we have accompanying debug info
-    debug_source_dict = target_function.debug_data.get('source', None)
+    debug_source_dict = target_function.debug_data.get('source')
     if debug_source_dict:
         source_line = int(debug_source_dict.get('source_line', -1))
         if source_line != -1:
@@ -2144,7 +2130,7 @@ def api_function_with_matching_type(args):
         - `project`: `htslib`
         - `return_type`: `sam_hrecs_t *`
     """
-    project_name = args.get('project', None)
+    project_name = args.get('project')
     if project_name is None:
         return {'result': 'error', 'msg': 'Please provide a project name'}
 
@@ -2152,7 +2138,7 @@ def api_function_with_matching_type(args):
     if project is None:
         return {'result': 'error', 'msg': 'Could not find project'}
 
-    return_type = args.get('return_type', None)
+    return_type = args.get('return_type')
     if return_type is None:
         return {
             'result': 'error',
@@ -2176,10 +2162,10 @@ def api_function_with_matching_type(args):
 @api_blueprint.arguments(ProjectFunctionSignatureQuerySchema, location='query')
 def api_jvm_method_properties(args):
     """Returns some properties for the jvm method"""
-    project_name = args.get('project', None)
+    project_name = args.get('project')
     if project_name is None:
         return {'result': 'error', 'msg': 'Please provide a project name'}
-    function_signature = args.get('function_signature', None)
+    function_signature = args.get('function_signature')
     if function_signature is None:
         return {'result': 'error', 'msg': 'No function signature provided'}
 
@@ -2298,7 +2284,7 @@ def api_oracle_1(args):
     """
     returner = ProjectFunctionSourceDataSchema()
 
-    project_name = args.get('project', None)
+    project_name = args.get('project')
     if project_name is None:
         return returner.dump({
             'result': 'error',
@@ -2351,7 +2337,7 @@ def project_repository(args):
     ## Example 1:
     - `project`: `htslib`
     """
-    project_name = args.get('project', None)
+    project_name = args.get('project')
     if project_name is None:
         return {
             'result': 'error',
@@ -2519,7 +2505,7 @@ def get_full_recursive_types(debug_type_dictionary, resulting_types,
             continue
         addresses_visited.add(type_to_query)
 
-        target_type = debug_type_dictionary.get(type_to_query, None)
+        target_type = debug_type_dictionary.get(type_to_query)
         if target_type is None:
             logger.info("Target is None")
             continue
@@ -3188,7 +3174,7 @@ def sample_cross_references(args):
         if (src_end - src_begin) > 70:
             continue
         # Check if we have accompanying debug info
-        debug_source_dict = target_function.debug_data.get('source', None)
+        debug_source_dict = target_function.debug_data.get('source')
         if debug_source_dict is not None:
             source_line = int(debug_source_dict.get('source_line', -1))
             if source_line != -1:
