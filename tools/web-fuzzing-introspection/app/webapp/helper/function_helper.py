@@ -99,8 +99,8 @@ def _sort_functions_by_fuzz_worthiness(
         functions: List[models.Function]) -> List[models.Function]:
     """
         Sort the function list according to the following criteria in order.
-        The order is acscending unless otherwise specified.
-        For boolean sorting, False is always in front of True in acscending order.
+        The order is ascending unless otherwise specified.
+        For boolean sorting, False is always in front of True in ascending order.
         1) If the function is reached by any existing fuzzers.
         2) If the function belongs to a enum class (only for JVM project).
         3) The runtime code coverage of the function.

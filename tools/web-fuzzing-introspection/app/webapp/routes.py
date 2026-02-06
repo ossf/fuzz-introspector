@@ -709,7 +709,7 @@ def project_profile():
                 page_main_url=page_texts.get_page_main_url(),
                 page_base_title=page_texts.get_page_base_title(),
                 base_cov_url=page_texts.get_default_coverage_base())
-    logger.info("Nothing to do. We shuold probably have a 404")
+    logger.info("Nothing to do. We should probably have a 404")
     return redirect("/")
 
 
@@ -775,11 +775,11 @@ def projects_overview():
 
 
 def oracle_3(all_functions, all_projects):
-    """Filters fucntions that:
+    """Filters functions that:
     - "have far reach but low coverage and are likely easy to trigger"
 
     More technically, functions with:
-        - a low code coevrage percent in the function itself;
+        - a low code coverage percent in the function itself;
         - a high accummulated cyclomatic complexity;
         - less than a certain number of arguments (3 or below);
         - at least one argument.
@@ -818,9 +818,8 @@ def oracle_3(all_functions, all_projects):
             if len(current_list) < 5:
                 current_list.append(function)
             else:
-                for idx in range(len(current_list)):
-                    if current_list[
-                            idx].accummulated_cyclomatic_complexity < function.accummulated_cyclomatic_complexity:
+                for idx, existing in enumerate(current_list):
+                    if existing.accummulated_cyclomatic_complexity < function.accummulated_cyclomatic_complexity:
                         current_list[idx] = function
                         break
 
@@ -842,22 +841,22 @@ def oracle_1(all_functions,
     else:
         xref_dict = {}
 
+    interesting_fuzz_keywords = {
+        'deserialize',
+        'parse',
+        'parse_xml',
+        'read_file',
+        'read_json',
+        'read_xml',
+        'request',
+        'parse_header',
+        'parse_request',
+        'compress',
+        'file_read',
+        'read_message',
+        'load_image',
+    }
     for function in all_functions:
-        interesting_fuzz_keywords = {
-            'deserialize',
-            'parse',
-            'parse_xml',
-            'read_file',
-            'read_json',
-            'read_xml',
-            'request',
-            'parse_header',
-            'parse_request',
-            'compress',
-            'file_read',
-            'read_message',
-            'load_image',
-        }
         if only_referenced_functions and function.name not in xref_dict:
             continue
 
@@ -1680,7 +1679,7 @@ def api_get_project_language_from_source_files(args):
     if not os.path.isfile(all_file_json):
         return {'result': 'error', 'msg': 'Did not find file check json'}
 
-    # Ensure the files are present in the soruce code
+    # Ensure the files are present in the source code
     with open(all_file_json, 'r') as f:
         all_files_list = json.loads(f.read())
 
@@ -2286,7 +2285,7 @@ def api_oracle_2(args):
 
     only_functions_declared_in_header_files = False
 
-    # Only refernced args
+    # Only referenced args
     only_referenced_functions = request.args.get(
         'only-referenced-functions', 'false').lower() == 'true'
 
@@ -2348,7 +2347,7 @@ def api_oracle_1(args):
     no_static_functions = request.args.get(
         'exclude-static-functions', 'false').lower() == 'true'
 
-    # Only refernced args
+    # Only referenced args
     only_referenced_functions = request.args.get(
         'only-referenced-functions', 'false').lower() == 'true'
 
@@ -2993,34 +2992,7 @@ def type_at_addr():
     """Temporarily deprecated."""
     # Temporary disabling this API because of size limit.
     # @arthurscchan 14/6/2024
-    return {'result': 'error', 'extended_msgs': ['Temporary disabled']}
-    project = request.args.get('project', None)
-    if project is None:
-        return {
-            'result': 'error',
-            'extended_msgs': ['Please provide project name']
-        }
-
-    addr = request.args.get('addr', None)
-    if addr is None:
-        return {
-            'result': 'error',
-            'extended_msgs': ['Please provide project name']
-        }
-
-    logger.info("Opening type map")
-    type_map = os.path.join(
-        data_storage.DB_DIR,
-        f"db-projects/{project}/type_map.json")
-
-    with open(type_map, 'r') as f:
-        type_map_dict = json.load(f)
-
-    resulting_types = {}
-    logger.info("Getting types")
-    get_full_recursive_types(type_map_dict, resulting_types, addr)
-
-    return {'result': 'success', 'dwarf-map': resulting_types}
+    return {'result': 'error', 'extended_msgs': ['Temporarily disabled']}
 
 
 @api_blueprint.route('/api/function-target-oracle')
