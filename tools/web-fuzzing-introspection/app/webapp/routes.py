@@ -19,7 +19,7 @@ import re
 import json
 import signal
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set
 import requests
 
 from flask import render_template, request, redirect
@@ -738,7 +738,8 @@ def function_search():
         # User-provided query: cap results
         total_matches = len(functions_to_display)
         if total_matches >= MAX_MATCHES_TO_DISPLAY:
-            functions_to_display = functions_to_display[:MAX_MATCHES_TO_DISPLAY]
+            functions_to_display = functions_to_display[:
+                                                        MAX_MATCHES_TO_DISPLAY]
             info_msg = f"Found {total_matches} matches. Only showing the first {MAX_MATCHES_TO_DISPLAY}."
     else:
         # Random query: shuffle and cap at 100
