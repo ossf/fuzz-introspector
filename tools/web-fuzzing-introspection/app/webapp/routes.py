@@ -162,7 +162,7 @@ def get_introspector_url(project_name, datestr):
 
 
 def get_coverage_report_url(project_name, datestr, language):
-    if language == 'java' or language == 'python' or language == 'go':
+    if language in ('java', 'python', 'go'):
         file_report = "index.html"
     else:
         file_report = "report.html"
@@ -1159,12 +1159,6 @@ def api_optimal_targets(args):
     if project_name is None:
         return {'result': 'error', 'msg': 'Please provide project name'}
 
-    only_functions_declared_in_header_files_arg = request.args.get(
-        'only-with-header-file-declaration', 'false').lower()
-    if only_functions_declared_in_header_files_arg == 'true':
-        only_functions_declared_in_header_files = True
-    else:
-        only_functions_declared_in_header_files = False
     only_functions_declared_in_header_files = False
     target_project = get_project_with_name(project_name)
     if target_project is None:
@@ -1990,7 +1984,7 @@ def api_project_test_code(args):
     if latest_closing > 0:
         content_to_return = "\n".join(split_lines[:latest_closing + 1])
 
-    logger.info("Latest closing: %d" % (latest_closing))
+    logger.info("Latest closing: %d", latest_closing)
     return {'result': 'success', 'source_code': content_to_return}
 
 
@@ -2287,29 +2281,14 @@ def api_oracle_2(args):
             'extended_msgs': ['Please provide project name']
         }
 
-    no_static_funcs_arg = request.args.get('exclude-static-functions',
-                                           'false').lower()
-    if no_static_funcs_arg == 'true':
-        no_static_functions = True
-    else:
-        no_static_functions = False
-
-    only_functions_declared_in_header_files_arg = request.args.get(
-        'only-with-header-file-declaration', 'false').lower()
-    if only_functions_declared_in_header_files_arg == 'true':
-        only_functions_declared_in_header_files = True
-    else:
-        only_functions_declared_in_header_files = False
+    no_static_functions = request.args.get(
+        'exclude-static-functions', 'false').lower() == 'true'
 
     only_functions_declared_in_header_files = False
 
     # Only refernced args
-    only_referenced_functions_arg = request.args.get(
-        'only-referenced-functions', 'false').lower()
-    if only_referenced_functions_arg == 'true':
-        only_referenced_functions = True
-    else:
-        only_referenced_functions = False
+    only_referenced_functions = request.args.get(
+        'only-referenced-functions', 'false').lower() == 'true'
 
     target_project = get_project_with_name(project_name)
     if target_project is None:
@@ -2366,20 +2345,12 @@ def api_oracle_1(args):
             'functions': []
         })
 
-    no_static_funcs_arg = request.args.get('exclude-static-functions',
-                                           'false').lower()
-    if no_static_funcs_arg == 'true':
-        no_static_functions = True
-    else:
-        no_static_functions = False
+    no_static_functions = request.args.get(
+        'exclude-static-functions', 'false').lower() == 'true'
 
     # Only refernced args
-    only_referenced_functions_arg = request.args.get(
-        'only-referenced-functions', 'false').lower()
-    if only_referenced_functions_arg == 'true':
-        only_referenced_functions = True
-    else:
-        only_referenced_functions = False
+    only_referenced_functions = request.args.get(
+        'only-referenced-functions', 'false').lower() == 'true'
 
     target_project = get_project_with_name(project_name)
     if not target_project:
@@ -2452,27 +2423,13 @@ def far_reach_but_low_coverage(args):
             'extended_msgs': ['Please provide project name']
         }
 
-    no_static_funcs_arg = request.args.get('exclude-static-functions',
-                                           'false').lower()
-    if no_static_funcs_arg == 'true':
-        no_static_functions = True
-    else:
-        no_static_functions = False
+    no_static_functions = request.args.get(
+        'exclude-static-functions', 'false').lower() == 'true'
 
     # Check for only using functions with cross references
-    only_referenced_functions_arg = request.args.get(
-        'only-referenced-functions', 'false').lower()
-    if only_referenced_functions_arg == 'true':
-        only_referenced_functions = True
-    else:
-        only_referenced_functions = False
+    only_referenced_functions = request.args.get(
+        'only-referenced-functions', 'false').lower() == 'true'
 
-    only_functions_declared_in_header_files_arg = request.args.get(
-        'only-with-header-file-declaration', 'false').lower()
-    if only_functions_declared_in_header_files_arg == 'true':
-        only_functions_declared_in_header_files = True
-    else:
-        only_functions_declared_in_header_files = False
     only_functions_declared_in_header_files = False
     target_project = get_project_with_name(project_name)
     if target_project is None:
@@ -2591,7 +2548,7 @@ def get_full_recursive_types(debug_type_dictionary, resulting_types,
                              target_type):
     """Recursively iterates atomic type elements to construct a friendly
     string representing the type."""
-    logger.info("Target type: %s" % (str(target_type)))
+    logger.info("Target type: %s", target_type)
     if int(target_type) == 0:
         return ['void']
 
@@ -3054,7 +3011,7 @@ def type_at_addr():
             'extended_msgs': ['Please provide project name']
         }
 
-    print("Opening type map")
+    logger.info("Opening type map")
     type_map = os.path.join(
         os.path.dirname(__file__),
         f"../static/assets/db/db-projects/{project}/type_map.json")
@@ -3063,7 +3020,7 @@ def type_at_addr():
         type_map_dict = json.load(f)
 
     resulting_types = dict()
-    print("Getting types")
+    logger.info("Getting types")
     get_full_recursive_types(type_map_dict, resulting_types, addr)
 
     return {'result': 'success', 'dwarf-map': resulting_types}
