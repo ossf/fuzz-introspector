@@ -13,8 +13,8 @@ def load_db() -> None:
 
     db_dir = data_storage.DB_DIR
     db_timestamps_file = os.path.join(db_dir, "db-timestamps.json")
-    project_timestamps_file = os.path.join(
-        db_dir, "all-project-timestamps.json")
+    project_timestamps_file = os.path.join(db_dir,
+                                           "all-project-timestamps.json")
     project_currents = os.path.join(db_dir, "all-project-current.json")
 
     projects_build_status = os.path.join(db_dir, "build-status.json")
@@ -23,8 +23,8 @@ def load_db() -> None:
     all_projects_not_in_ossfuzz = os.path.join(
         db_dir, "projects-not-in-oss-fuzz.json")
 
-    full_project_count = os.path.join(
-        db_dir, 'full-oss-fuzz-project-count.json')
+    full_project_count = os.path.join(db_dir,
+                                      'full-oss-fuzz-project-count.json')
 
     if len(data_storage.DB_TIMESTAMPS) > 0:
         return

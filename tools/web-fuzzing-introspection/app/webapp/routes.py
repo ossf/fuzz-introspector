@@ -448,7 +448,7 @@ def get_project_with_name(project_name) -> Optional[models.Project]:
 
 
 def get_function_with_name(function_name,
-                          project_name) -> Optional[models.Function]:
+                           project_name) -> Optional[models.Function]:
     """Gets the function with the given function name from a given project"""
 
     all_functions = data_storage.get_functions_by_project(project_name)
@@ -527,7 +527,7 @@ def index():
 def function_profile():
     """Renders a given function."""
     func_profile = get_function_with_name(request.args.get('function', 'none'),
-                                         request.args.get('project', 'none'))
+                                          request.args.get('project', 'none'))
 
     related_functions = get_all_related_functions(func_profile)
     return render_template('function-profile.html',
@@ -1066,10 +1066,10 @@ def indexing_overview():
                 'introspector_build': 0
             }
         languages_summarised[bs.language]['all'] += 1
-        languages_summarised[bs.language][
-            'fuzz_build'] += 1 if bs.fuzz_build_status else 0
-        languages_summarised[bs.language][
-            'cov_build'] += 1 if bs.coverage_build_status else 0
+        languages_summarised[
+            bs.language]['fuzz_build'] += 1 if bs.fuzz_build_status else 0
+        languages_summarised[
+            bs.language]['cov_build'] += 1 if bs.coverage_build_status else 0
         languages_summarised[bs.language][
             'introspector_build'] += 1 if bs.introspector_build_status else 0
 
@@ -1209,9 +1209,8 @@ def _get_harness_source_and_executable(project_name):
 
     light_pairs_to_ret = _light_harness_source_and_executable(target_project)
 
-    all_file_json = os.path.join(
-        data_storage.DB_DIR,
-        f"db-projects/{project_name}/all_files.json")
+    all_file_json = os.path.join(data_storage.DB_DIR,
+                                 f"db-projects/{project_name}/all_files.json")
 
     if not os.path.isfile(all_file_json):
         if light_pairs_to_ret:
@@ -1626,9 +1625,8 @@ def api_get_project_language_from_source_files(args):
     if not project_name:
         return {'result': 'error', 'msg': 'Please provide a project name'}
 
-    all_file_json = os.path.join(
-        data_storage.DB_DIR,
-        f"db-projects/{project_name}/all_files.json")
+    all_file_json = os.path.join(data_storage.DB_DIR,
+                                 f"db-projects/{project_name}/all_files.json")
     if not os.path.isfile(all_file_json):
         return {'result': 'error', 'msg': 'Did not find file check json'}
 
@@ -2232,12 +2230,12 @@ def api_oracle_2(args):
             'extended_msgs': ['Please provide project name']
         }
 
-    no_static_functions = request.args.get(
-        'exclude-static-functions', 'false').lower() == 'true'
+    no_static_functions = request.args.get('exclude-static-functions',
+                                           'false').lower() == 'true'
 
     # Only referenced args
-    only_referenced_functions = request.args.get(
-        'only-referenced-functions', 'false').lower() == 'true'
+    only_referenced_functions = request.args.get('only-referenced-functions',
+                                                 'false').lower() == 'true'
 
     target_project = get_project_with_name(project_name)
     if target_project is None:
@@ -2292,12 +2290,12 @@ def api_oracle_1(args):
             'functions': []
         })
 
-    no_static_functions = request.args.get(
-        'exclude-static-functions', 'false').lower() == 'true'
+    no_static_functions = request.args.get('exclude-static-functions',
+                                           'false').lower() == 'true'
 
     # Only referenced args
-    only_referenced_functions = request.args.get(
-        'only-referenced-functions', 'false').lower() == 'true'
+    only_referenced_functions = request.args.get('only-referenced-functions',
+                                                 'false').lower() == 'true'
 
     target_project = get_project_with_name(project_name)
     if not target_project:
@@ -2370,12 +2368,12 @@ def far_reach_but_low_coverage(args):
             'extended_msgs': ['Please provide project name']
         }
 
-    no_static_functions = request.args.get(
-        'exclude-static-functions', 'false').lower() == 'true'
+    no_static_functions = request.args.get('exclude-static-functions',
+                                           'false').lower() == 'true'
 
     # Check for only using functions with cross references
-    only_referenced_functions = request.args.get(
-        'only-referenced-functions', 'false').lower() == 'true'
+    only_referenced_functions = request.args.get('only-referenced-functions',
+                                                 'false').lower() == 'true'
 
     target_project = get_project_with_name(project_name)
     if target_project is None:
@@ -2639,9 +2637,8 @@ def extract_project_tests(project_name,
                           refine: bool = True,
                           try_ignore_irrelevant=True) -> List[Optional[str]]:
     """Extracts the tests in terms of file paths of a given project"""
-    tests_file = os.path.join(
-        data_storage.DB_DIR,
-        f"db-projects/{project_name}/test_files.json")
+    tests_file = os.path.join(data_storage.DB_DIR,
+                              f"db-projects/{project_name}/test_files.json")
     if not os.path.isfile(tests_file):
         return []
 
