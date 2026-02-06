@@ -201,11 +201,11 @@ def extract_introspector_raw_source_code(project_name, date_str,
                                                 date_str.replace("-", "")),
         target_file)
 
-    logger.info("URL1: %s" % (introspector_summary_url))
-    # Read the introspector atifact
+    logger.info("URL1: %s", introspector_summary_url)
+    # Read the introspector artifact
     try:
         raw_source = requests.get(introspector_summary_url, timeout=10).text
-    except:
+    except (requests.RequestException, ConnectionError):
         return ''
 
     return raw_source
@@ -231,7 +231,7 @@ def _light_extract_introspector_raw_source_code(project_name, date_str,
     source_url = introspector_url + 'light/source_files/' + target_file
     try:
         raw_source = requests.get(source_url, timeout=10).text
-    except:
+    except (requests.RequestException, ConnectionError):
         return None
 
     return raw_source
@@ -359,7 +359,6 @@ def api_get_target_function(args):
     - `project`: `tinyxml2`
     - `function`: `tinyxml2::XMLNode::InsertEndChild(tinyxml2::XMLNode*)`
     """
-    err_msgs = list()
     project_name = args.get('project', '')
     if not project_name:
         return {
@@ -378,7 +377,7 @@ def api_get_target_function(args):
     try:
         converted_function = function_helper.convert_functions_to_list_of_dict(
             [function_of_interest])[0]
-    except:
+    except (IndexError, KeyError, AttributeError):
         return {'result': 'error', 'msg': 'Failed to convert function.'}
 
     return {'result': 'success', 'function': converted_function}
@@ -1117,11 +1116,11 @@ def indexing_overview():
             }
         languages_summarised[bs.language]['all'] += 1
         languages_summarised[bs.language][
-            'fuzz_build'] += 1 if bs.fuzz_build_status == True else 0
+            'fuzz_build'] += 1 if bs.fuzz_build_status is True else 0
         languages_summarised[bs.language][
-            'cov_build'] += 1 if bs.coverage_build_status == True else 0
+            'cov_build'] += 1 if bs.coverage_build_status is True else 0
         languages_summarised[bs.language][
-            'introspector_build'] += 1 if bs.introspector_build_status == True else 0
+            'introspector_build'] += 1 if bs.introspector_build_status is True else 0
 
     logger.info(json.dumps(languages_summarised))
 
@@ -1385,7 +1384,8 @@ def extract_introspector_typedef(project_name, date_str):
         typedef_list = json.loads(
             requests.get(introspector_test_url, timeout=10).text)
 
-    except:  # pylint: disable=bare-except
+    except (requests.RequestException, ConnectionError, json.JSONDecodeError,
+            ValueError):
         # Failed to locate the json in first introspector run
         # Possibly run from LTO, try locate the file in second introspector run
         introspector_test_url = get_introspector_report_url_typedef(
@@ -1393,7 +1393,8 @@ def extract_introspector_typedef(project_name, date_str):
         try:
             typedef_list = json.loads(
                 requests.get(introspector_test_url, timeout=10).text)
-        except:  # pylint: disable=bare-except
+        except (requests.RequestException, ConnectionError,
+                json.JSONDecodeError, ValueError):
             return []
 
     return typedef_list
@@ -1758,14 +1759,15 @@ def api_project_all_project_source_files(args):
             introspector_summary_url = get_introspector_report_url_source_base(
                 project_name, date_str.replace("-", "")) + '/index.json'
 
-            logger.info("URL2: %s" % (introspector_summary_url))
+            logger.info("URL2: %s", introspector_summary_url)
 
-            # Read the introspector atifact
+            # Read the introspector artifact
             try:
                 src_path_str = str(
                     requests.get(introspector_summary_url, timeout=10).text)
                 src_path_list = json.loads(src_path_str)
-            except:
+            except (requests.RequestException, ConnectionError,
+                    json.JSONDecodeError, ValueError):
                 # Ignore the error and assume no source path is found
                 pass
 
@@ -1880,12 +1882,12 @@ def api_project_source_code(args):
     if not filepath:
         return {'result': 'error', 'msg': 'No filepath provided'}
 
-    begin_line = args.get('begin_line', -1432)
-    if begin_line == -1432:
+    begin_line = args.get('begin_line', None)
+    if begin_line is None:
         return {'result': 'error', 'msg': 'No begin line provided'}
 
-    end_line = args.get('end_line', -1432)
-    if end_line == -1432:
+    end_line = args.get('end_line', None)
+    if end_line is None:
         return {'result': 'error', 'msg': 'No end line provided'}
 
     # If this is a local build do not look for project timestamps
