@@ -1,0 +1,212 @@
+name: LLVM frontend
+
+on:
+  pull_request:
+    paths:
+      - 'frontends/llvm/**'
+      - '.github/workflows/llvm-frontend.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'frontends/llvm/**'
+  workflow_dispatch:
+    inputs:
+      run_lto:
+        description: 'Also run full LTO build (takes ~60 min)'
+        type: boolean
+        default: false
+  schedule:
+    # Full LTO build every Monday at 06:00 UTC
+    - cron: '0 6 * * 1'
+
+permissions: read-all
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────────────
+  # Job 1: Fast — install LLVM from apt.llvm.org, run test_build.sh
+  #
+  # Covers:
+  #   - patch-llvm.sh sed patterns for the installed version
+  #   - Syntax check (all #if LLVM_VERSION_MAJOR branches active for that ver)
+  #   - End-to-end: build .so, run via opt, check YAML, arg names, branch sides
+  # Does NOT cover: LTO path (plugin embedded in clang, whole-program IR)
+  # ─────────────────────────────────────────────────────────────────────────
+  plugin-tests:
+    name: Plugin tests (LLVM ${{ matrix.llvm }})
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        llvm: [18, 22]
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: Install LLVM ${{ matrix.llvm }}
+        run: |
+          wget -qO- https://apt.llvm.org/llvm.sh | sudo bash -s ${{ matrix.llvm }}
+          sudo apt-get install -y llvm-${{ matrix.llvm }}-dev
+
+      - name: Install Python deps
+        run: pip install pyyaml
+
+      - name: Run tests
+        run: |
+          cd frontends/llvm
+          bash test_build.sh all ${{ matrix.llvm }}
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Job 2: Full LTO build from source
+  #
+  # Covers everything Job 1 does PLUS:
+  #   - patch-llvm.sh actually modifies the LLVM tree correctly
+  #   - Plugin compiles as part of the LLVM build
+  #   - Patched clang produces correct output with -flto (whole-program IR)
+  #
+  # Triggered by: schedule (Monday), workflow_dispatch with run_lto=true
+  # NOT triggered on every PR (too slow for routine checks).
+  # ─────────────────────────────────────────────────────────────────────────
+  lto-build:
+    name: Full LTO build (llvmorg-22.1.0)
+    runs-on: ubuntu-22.04
+    if: |
+      github.event_name == 'schedule' ||
+      (github.event_name == 'workflow_dispatch' && inputs.run_lto == true)
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: Install build tools
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y cmake ninja-build python3-pip python3-yaml
+          pip install pyyaml
+
+      # Cache the LLVM build. Key includes the LLVM tag and patch-llvm.sh
+      # so that a change to either invalidates the cache.
+      - name: Cache LLVM build
+        id: cache-llvm
+        uses: actions/cache@v4
+        with:
+          path: build/llvm-build
+          key: llvm-22.1.0-${{ hashFiles('frontends/llvm/patch-llvm.sh') }}
+
+      - name: Clone LLVM source
+        if: steps.cache-llvm.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p build
+          cd build
+          git clone --depth 1 --branch llvmorg-22.1.0 \
+            https://github.com/llvm/llvm-project.git
+
+      - name: Apply patch-llvm.sh and copy plugin sources
+        if: steps.cache-llvm.outputs.cache-hit != 'true'
+        run: |
+          cd build/llvm-project
+          bash $GITHUB_WORKSPACE/frontends/llvm/patch-llvm.sh
+          cp -r $GITHUB_WORKSPACE/frontends/llvm/include/llvm/Transforms/FuzzIntrospector \
+                llvm/include/llvm/Transforms/
+          cp -r $GITHUB_WORKSPACE/frontends/llvm/lib/Transforms/FuzzIntrospector \
+                llvm/lib/Transforms/
+
+      - name: Configure LLVM (X86 only, Release, clang only)
+        if: steps.cache-llvm.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p build/llvm-build
+          cd build/llvm-build
+          cmake -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DLLVM_ENABLE_PROJECTS="clang" \
+            -DLLVM_TARGETS_TO_BUILD=X86 \
+            -DLLVM_ENABLE_RTTI=ON \
+            -DLLVM_INCLUDE_TESTS=OFF \
+            -DLLVM_INCLUDE_BENCHMARKS=OFF \
+            ../llvm-project/llvm
+
+      - name: Build LLVM + patched clang
+        if: steps.cache-llvm.outputs.cache-hit != 'true'
+        run: |
+          cd build/llvm-build
+          ninja clang -j$(nproc)
+
+      # When the cache is hit, the plugin sources may have changed — rebuild.
+      - name: Rebuild plugin (cache-hit path)
+        if: steps.cache-llvm.outputs.cache-hit == 'true'
+        run: |
+          cp -r frontends/llvm/include/llvm/Transforms/FuzzIntrospector \
+                build/llvm-project/llvm/include/llvm/Transforms/
+          cp -r frontends/llvm/lib/Transforms/FuzzIntrospector \
+                build/llvm-project/llvm/lib/Transforms/
+          cd build/llvm-build
+          ninja LLVMFuzzIntrospector -j$(nproc)
+
+      - name: Smoke-test patched clang
+        run: |
+          CLANG=$GITHUB_WORKSPACE/build/llvm-build/bin/clang
+          echo 'int main(){}' | $CLANG -x c - -o /dev/null
+          $CLANG --version
+
+      # Compile the test fuzzer with -flto so the plugin sees whole-program IR
+      - name: Compile test fuzzer with -flto
+        run: |
+          CLANG=$GITHUB_WORKSPACE/build/llvm-build/bin/clang++
+          mkdir -p /tmp/fi_lto_out
+          FUZZ_INTROSPECTOR=1 \
+          FUZZINTRO_OUTDIR=/tmp/fi_lto_out \
+          FI_BRANCH_PROFILE=1 \
+            $CLANG -flto -g -O1 -include stdint.h \
+              frontends/llvm/../../tests/cpp-simple-example-1/fuzzer.cpp \
+              -o /dev/null \
+              -fuse-ld=lld 2>&1 || true
+          # Note: linking may fail without libFuzzer; what matters is that
+          # the plugin ran during compilation and produced YAML output.
+
+      - name: Check LTO plugin output
+        run: |
+          python3 - <<'PYEOF'
+          import yaml, glob, sys, os
+
+          files = glob.glob('/tmp/fi_lto_out/*.data.yaml')
+          if not files:
+              print('FAIL: no YAML output produced — plugin did not run under LTO')
+              sys.exit(1)
+
+          with open(files[0]) as f:
+              data = yaml.safe_load(f)
+
+          fns = {fn['functionName']: fn
+                 for fn in data.get('All functions', {}).get('Elements', [])}
+
+          errors = []
+
+          # Entry point must be present (proves whole-program IR was visible)
+          if 'LLVMFuzzerTestOneInput' not in fns:
+              errors.append('LLVMFuzzerTestOneInput not found (whole-program IR missing?)')
+
+          # ex4(size_t s) — branch with two sides
+          ex4 = next((v for k, v in fns.items() if '_Z3ex4m' in k), None)
+          if ex4 is None:
+              errors.append('ex4 not found')
+          else:
+              bp = ex4.get('BranchProfiles', [])
+              if not bp:
+                  errors.append('ex4 has no BranchProfiles')
+              else:
+                  entry  = bp[0]
+                  br_str = entry.get('Branch String', '')
+                  sides  = entry.get('Branch Sides', [])
+                  br_line = br_str.split(':')[-1].split(',')[0] if ':' in br_str else ''
+                  if len(sides) != 2:
+                      errors.append(f'ex4: expected 2 branch sides, got {len(sides)}')
+                  for s in sides:
+                      loc  = s.get('BranchSide', '')
+                      line = loc.split(':')[-1].split(',')[0] if ':' in loc else ''
+                      if line and line == br_line:
+                          errors.append(f'branch side {loc!r} == branch line (PrevLoc not filtering)')
+
+          if errors:
+              print('FAIL: ' + '; '.join(errors))
+              sys.exit(1)
+          else:
+              print(f'PASS: LTO output correct, {len(fns)} functions, branch sides OK')
+          PYEOF
