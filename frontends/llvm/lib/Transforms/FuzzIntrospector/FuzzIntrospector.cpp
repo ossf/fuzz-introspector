@@ -15,10 +15,14 @@
 
 #include "llvm/Transforms/FuzzIntrospector/FuzzIntrospector.h"
 
+#include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringExtras.h"
 #include "llvm/BinaryFormat/Dwarf.h"
 #include "llvm/IR/DebugInfo.h"
 #include "llvm/IR/DebugInfoMetadata.h"
+#if LLVM_VERSION_MAJOR >= 19
+#include "llvm/IR/DebugProgramInstruction.h"
+#endif
 #include "llvm/IR/DebugLoc.h"
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/Function.h"
@@ -464,11 +468,16 @@ void FuzzIntrospector::dumpDebugCompileUnits(std::ofstream &O,
                                              DebugInfoFinder &Finder) {
   for (DICompileUnit *CU : Finder.compile_units()) {
     O << "Compile unit: ";
-    auto Lang = dwarf::LanguageString(CU->getSourceLanguage());
+#if LLVM_VERSION_MAJOR >= 22
+    auto SourceLang = CU->getSourceLanguage().getName();
+#else
+    auto SourceLang = CU->getSourceLanguage();
+#endif
+    auto Lang = dwarf::LanguageString(SourceLang);
     if (!Lang.empty())
       O << Lang.str();
     else
-      O << "unknown-language(" << CU->getSourceLanguage() << ")";
+      O << "unknown-language(" << SourceLang << ")";
     printFile(O, CU->getFilename(), CU->getDirectory());
     O << '\n';
   }
@@ -957,6 +966,10 @@ bool FuzzIntrospector::runOnModule(Module &M) {
     dumpCalltree(&FuzzerCalltree, "targetCalltree.txt");
     return true;
   }
+
+#if LLVM_VERSION_MAJOR >= 19
+  M.convertToNewDbgValues();
+#endif
 
   // Extract and log reachability graph
   std::string nextCalltreeFile = getNextLogFile();
@@ -1677,39 +1690,107 @@ FuzzerFunctionWrapper FuzzIntrospector::wrapFunction(Function *F) {
   // Find the depth of the function.
   FuncWrap.ReturnType = resolveTypeName(F->getReturnType());
 
-  // Arguments
-  // errs() << "Function:\n";
-  // errs() << FuncWrap.FunctionName << "\n";
+#if LLVM_VERSION_MAJOR >= 19 && LLVM_VERSION_MAJOR <= 20
+  // LLVM 21+ removed IsNewDbgInfoFormat (field always true); assert only valid on 19-20.
+  assert(F->getParent()->IsNewDbgInfoFormat &&
+         "Module must be normalized to DbgRecord format");
+#endif
+
+#if LLVM_VERSION_MAJOR >= 19
+  // New path: use DbgVariableRecord API for LLVM 19+
+  SmallVector<bool, 8> NeedNameByIndex(F->arg_size(), false);
+  unsigned MissingArgCount = 0;
+  for (auto &A : F->args()) {
+    if (!A.hasName()) {
+      NeedNameByIndex[A.getArgNo()] = true;
+      ++MissingArgCount;
+    }
+  }
+
+  SmallVector<std::string, 8> ArgNameByIndex;
+
+  if (MissingArgCount > 0) {
+    ArgNameByIndex.resize(F->arg_size());
+
+    DISubprogram *FSP = F->getSubprogram();
+    if (FSP != nullptr) {
+      unsigned Remaining = MissingArgCount;
+
+      auto recordArg = [&](const DILocalVariable *DLV) -> bool {
+        if (!DLV || DLV->getName().empty())
+          return false;
+        if (!DLV->getScope() ||
+            DLV->getScope()->getSubprogram() != FSP)
+          return false;
+        unsigned ArgNo = DLV->getArg();
+        if (ArgNo == 0)
+          return false;
+        unsigned Idx = ArgNo - 1;
+        if (Idx >= ArgNameByIndex.size())
+          return false;
+        if (!NeedNameByIndex[Idx])
+          return false;
+        ArgNameByIndex[Idx] = DLV->getName().str();
+        NeedNameByIndex[Idx] = false;
+        return true;
+      };
+
+      for (auto &BB : *F) {
+        for (auto &I : BB) {
+          for (DbgVariableRecord &DVR :
+               filterDbgVars(I.getDbgRecordRange())) {
+            if (recordArg(DVR.getVariable()) && --Remaining == 0)
+              goto done_scan;
+          }
+        }
+      }
+    done_scan:;
+    }
+  }
+
+  // Build argument lists
   for (auto &A : F->args()) {
     FuncWrap.ArgTypes.push_back(resolveTypeName(A.getType()));
-    // FuncWrap.ArgNames.push_back(A.getName().str());
+    if (A.hasName()) {
+      FuncWrap.ArgNames.push_back(A.getName().str());
+    } else {
+      unsigned ArgNo = A.getArgNo();
+      if (ArgNo < ArgNameByIndex.size() && !ArgNameByIndex[ArgNo].empty())
+        FuncWrap.ArgNames.push_back(ArgNameByIndex[ArgNo]);
+      else
+        FuncWrap.ArgNames.push_back("");
+    }
+  }
+#else
+  // Legacy path: original logic for LLVM < 19
+  for (auto &A : F->args()) {
+    FuncWrap.ArgTypes.push_back(resolveTypeName(A.getType()));
     if (A.getName().str().empty()) {
-      const DILocalVariable *Var = NULL;
       bool FoundArg = false;
       for (auto &BB : *F) {
         for (auto &I : BB) {
           if (const DbgDeclareInst *DbgDeclare = dyn_cast<DbgDeclareInst>(&I)) {
-            if (auto DLV =
-                    dyn_cast<DILocalVariable>(DbgDeclare->getVariable())) {
+            if (auto DLV = dyn_cast<DILocalVariable>(DbgDeclare->getVariable())) {
               if (DLV->getArg() == A.getArgNo() + 1 &&
                   !DLV->getName().empty() &&
                   DLV->getScope()->getSubprogram() == F->getSubprogram()) {
-                // errs() << "--" << DLV->getName().str() << "\n";
                 FuncWrap.ArgNames.push_back(DLV->getName().str());
                 FoundArg = true;
+                break;
               }
             }
           }
         }
+        if (FoundArg) break;
       }
-      if (FoundArg == false) {
+      if (!FoundArg) {
         FuncWrap.ArgNames.push_back("");
       }
     } else {
-      // It's non empty, we just push that.
       FuncWrap.ArgNames.push_back(A.getName().str());
     }
   }
+#endif
 
   // Log the amount of basic blocks, instruction count and cyclomatic
   // complexity of the function.
@@ -2254,36 +2335,28 @@ FuzzIntrospector::getInsnDebugInfo(Instruction *I) {
 
 std::pair<std::string, std::string>
 FuzzIntrospector::getBBDebugInfo(BasicBlock *BB, DILocation *PrevLoc) {
-  std::pair<std::string, std::string> Result = make_pair("", "");
+#if LLVM_VERSION_MAJOR >= 20
+  // LLVM 20+ returns end() for empty/all-PHI blocks; the loop below handles it.
+  BasicBlock::iterator It =
+      BB->getFirstNonPHIOrDbgOrLifetime(/*SkipPseudoOp=*/true);
+#else
+  // LLVM < 20 returns nullptr for empty/all-PHI blocks.
+  Instruction *FirstReal =
+      BB->getFirstNonPHIOrDbgOrLifetime(/*SkipPseudoOp=*/true);
+  if (FirstReal == nullptr)
+    return std::make_pair(std::string(), std::string());
+  BasicBlock::iterator It = FirstReal->getIterator();
+#endif
 
-  BasicBlock *CurrBB = BB;
-  BranchInst *CurrBI;
-  Instruction *CurrTI, *CurrI;
-  DILocation *CurrLoc;
-  /* TODO(David): Fix this for LLVM 21. Although I'm not 100% sure we still use this.*/
-/*
-  // Traverse all dummy BBs associated with the previous Loc.
-  do {
-    CurrTI = CurrBB->getTerminator();
-    CurrI = CurrBB->getFirstNonPHIOrDbgOrLifetime(true);
-    if (CurrI == nullptr)
-      break;
-    CurrLoc = CurrI->getDebugLoc();
-    CurrBI = dyn_cast<BranchInst>(CurrTI);
-    if (CurrBI && !CurrBI->isConditional()) {
-      CurrBB = CurrBI->getSuccessor(0);
-    } else
-      break;
-  } while (CurrLoc == PrevLoc);
-
-  // To skip the return BB in optimized CFG.
-  if (dyn_cast<ReturnInst>(CurrTI)) {
-    CurrI = BB->getFirstNonPHIOrDbgOrLifetime(true);
+  // Skip instructions whose location matches the branch/switch site (PrevLoc)
+  // to avoid attributing a branch side to the same source line as the branch
+  // itself in optimised CFGs.
+  for (; It != BB->end(); ++It) {
+    DILocation *Loc = It->getDebugLoc();
+    if (Loc && Loc != PrevLoc)
+      return getInsnDebugInfo(&*It);
   }
-  if (CurrI)
-    Result = getInsnDebugInfo(CurrI);
-*/
-  return Result;
+  return std::make_pair(std::string(), std::string());
 }
 
 void FuzzIntrospector::writeOutMap(std::vector<BranchProfileEntry> OutMap,

@@ -65,7 +65,7 @@ cd ../
 # Build LLVM and Clang
 git clone https://github.com/llvm/llvm-project/
 cd llvm-project/
-git checkout release/15.x
+git checkout llvmorg-22.1.0
 
 # Patch Clang to run fuzz introspector
 ../../frontends/llvm/patch-llvm.sh

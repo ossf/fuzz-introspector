@@ -57,7 +57,7 @@ else
   cd ${BUILD_BASE}
   git clone https://github.com/llvm/llvm-project/
   cd llvm-project/
-  git checkout llvmorg-21.1.0-rc3
+  git checkout llvmorg-22.1.0
 
   echo "Applying diffs to insert Fuzz Introspector plugin in the LLVM pipeline"
   $BASE/frontends/llvm/patch-llvm.sh
