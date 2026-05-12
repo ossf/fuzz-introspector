@@ -478,12 +478,78 @@ def get_all_related_functions(primary_function) -> List[models.Function]:
     return related_functions
 
 
+def _filter_outage_timestamps(
+        db_timestamps: List[models.DBTimestamp]) -> List[models.DBTimestamp]:
+    """Drops snapshots that reflect Fuzz Introspector pipeline outages rather
+    than real OSS-Fuzz progress.
+
+    Uses a small state machine over the time series so that both the initial
+    dip *and the multi-day recovery tail* of an outage are treated as one
+    event:
+
+    * Sentinel rows (``project_count <= 0``) are always dropped and put the
+      filter into the "outage" state.
+    * A value below ``drop_threshold`` (85%) of the trailing-median baseline
+      enters the outage state.
+    * While in the outage state every row is dropped until the count climbs
+      back to ``recover_threshold`` (95%) of the pre-outage baseline — this
+      hides the gradual rebuild that follows a multi-day pipeline failure
+      (e.g. the 2025-06-25 → 2025-07-09 recovery), which would otherwise
+      leave a visible dip in the chart.
+    * The baseline is the trailing 15-day median of *kept* values only, so
+      the rolling reference is never polluted by the very rows we are
+      classifying as outages.
+    """
+    window = 15
+    drop_threshold = 0.85
+    recover_threshold = 0.95
+
+    kept: List[models.DBTimestamp] = []
+    recent_kept: List[int] = []
+    in_outage = False
+
+    for ts in db_timestamps:
+        baseline: Optional[float] = None
+        if recent_kept:
+            tail = sorted(recent_kept[-window:])
+            mid = len(tail) // 2
+            baseline = (float(tail[mid]) if len(tail) % 2 else
+                        (tail[mid - 1] + tail[mid]) / 2.0)
+
+        if ts.project_count <= 0:
+            in_outage = True
+            continue
+
+        if baseline is None:
+            # Warm-up: no baseline yet, keep the row.
+            kept.append(ts)
+            recent_kept.append(ts.project_count)
+            continue
+
+        if in_outage:
+            if ts.project_count >= recover_threshold * baseline:
+                in_outage = False
+                kept.append(ts)
+                recent_kept.append(ts.project_count)
+            # else: still recovering — drop.
+        else:
+            if ts.project_count < drop_threshold * baseline:
+                in_outage = True
+                # Drop this row; it's the start of the outage.
+            else:
+                kept.append(ts)
+                recent_kept.append(ts.project_count)
+
+    return kept
+
+
 @blueprint.route('/')
 def index():
     """Renders index page"""
     db_summary = get_frontpage_summary_stats()
-    db_timestamps = data_storage.DB_TIMESTAMPS
-    logger.info("Length of timestamps: %d", len(db_timestamps))
+    db_timestamps = _filter_outage_timestamps(data_storage.DB_TIMESTAMPS)
+    logger.info("Length of timestamps: %d (filtered from %d)",
+                len(db_timestamps), len(data_storage.DB_TIMESTAMPS))
     # Maximum projects
     max_proj = 0
     max_fuzzer_count = 0

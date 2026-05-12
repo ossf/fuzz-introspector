@@ -158,7 +158,10 @@ line_counter_coverage_over_time.push({{db_timestamp.accummulated_lines_covered}}
 
 all_integrated_projects_x = [];
 all_integrated_projects_y = [];
-max_project_count = 0
+// Baseline Y-range from the primary "Coverage builds" series so the chart
+// stays scaled correctly even when full-oss-fuzz-project-count.json is
+// missing or partial (common on dev checkouts).
+max_project_count = {{max_proj}}
 {% for all_int_proj_ts  in all_integrated_projects %}
 all_integrated_projects_x.push("{{all_int_proj_ts.date}}")
 all_integrated_projects_y.push({{all_int_proj_ts.get("project-count")}})
