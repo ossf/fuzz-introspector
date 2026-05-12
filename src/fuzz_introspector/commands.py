@@ -113,6 +113,7 @@ def analyse_end_to_end(arg_language,
         correlation_file = ''
 
     try:
+        is_parallel = os.getenv('FUZZ_INTROSPECTOR_PARALLEL', "true").lower() == "true"
         exit_code, return_values2 = run_analysis_on_dir(
             target_folder=out_dir,
             coverage_url=coverage_url,
@@ -123,7 +124,8 @@ def analyse_end_to_end(arg_language,
             language=language,
             out_dir=out_dir,
             dump_files=dump_files,
-            harness_lists=harness_lists)
+            harness_lists=harness_lists,
+            parallelise=is_parallel)
         for k, v in return_values2.items():
             return_values[k] = v
     except DataLoaderError:
