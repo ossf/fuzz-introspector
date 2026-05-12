@@ -60,7 +60,7 @@ FI_EXCLUDE_ALL_NON_MUSTS = bool(int(os.getenv('FI_EXCLUDE_ALL_NON_MUSTS',
 NUM_RECENT_DAYS = 30
 FUZZER_COVERAGE_IS_DEGRADED = 5  # 5% or more is a degradation
 
-MUST_INCLUDES = set()
+MUST_INCLUDES: set[str] = set()
 MUST_INCLUDE_WITH_LANG: List[Any] = []
 
 logging.getLogger("requests").setLevel(logging.WARNING)
