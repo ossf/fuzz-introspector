@@ -555,7 +555,7 @@ def extract_local_project_data(project_name, oss_fuzz_path,
 
 
 def extract_project_data(project_name, date_str, should_include_details,
-                         manager_return_dict):
+                         manager_return_dict, build_status=None):
     """
     Extracts data about a given project on a given date. The data will be placed
     in manager_return dict.
@@ -593,14 +593,33 @@ def extract_project_data(project_name, date_str, should_include_details,
 
     collect_debug_info = project_language in {'c', 'c++'}
 
+    # Decide whether to attempt the per-artefact GETs against GCS. OSS-Fuzz's
+    # build-status JSON only reflects the latest build, so it is a reliable
+    # signal only for the most recent date in a sweep (the one that gets
+    # `should_include_details=True`). For older dates we still try, because
+    # the build may have been healthy on that historical date even if it is
+    # broken today. When build_status is missing entirely, fall back to the
+    # previous unconditional behaviour.
+    try_coverage_fetches = True
+    try_introspector_fetches = project_language in {'c', 'c++', 'python', 'java'}
+    if should_include_details and build_status:
+        if build_status.get('cov-build') is not True:
+            try_coverage_fetches = False
+        if build_status.get('introspector-build') is not True:
+            try_introspector_fetches = False
+
     # Extract code coverage and introspector reports.
-    code_coverage_summary = oss_fuzz.get_code_coverage_summary(
-        project_name, date_str.replace("-", ""))
-    cov_fuzz_stats = oss_fuzz.get_fuzzer_stats_fuzz_count(
-        project_name, date_str.replace("-", ""))
+    if try_coverage_fetches:
+        code_coverage_summary = oss_fuzz.get_code_coverage_summary(
+            project_name, date_str.replace("-", ""))
+        cov_fuzz_stats = oss_fuzz.get_fuzzer_stats_fuzz_count(
+            project_name, date_str.replace("-", ""))
+    else:
+        code_coverage_summary = None
+        cov_fuzz_stats = None
 
     # Get introspector reports for languages with introspector support
-    if project_language in {'c', 'c++', 'python', 'java'}:
+    if try_introspector_fetches:
         introspector_report = oss_fuzz.extract_introspector_report(
             project_name, date_str)
     else:
@@ -609,27 +628,30 @@ def extract_project_data(project_name, date_str, should_include_details,
     introspector_report_url = oss_fuzz.get_introspector_report_url_report(
         project_name, date_str.replace("-", ""))
 
-    branch_blockers = oss_fuzz.extract_introspector_branch_blockers(
-        project_name, date_str.replace("-", ""))
+    if try_introspector_fetches:
+        branch_blockers = oss_fuzz.extract_introspector_branch_blockers(
+            project_name, date_str.replace("-", ""))
 
-    test_files = oss_fuzz.extract_introspector_test_files(
-        project_name, date_str.replace("-", ""))
-    if test_files:
-        save_test_files_report(test_files, project_name)
-    test_files_xref = oss_fuzz.extract_introspector_test_files_xref(
-        project_name, date_str.replace("-", ""))
-    if test_files_xref:
-        save_test_files_xref_report(test_files_xref, project_name)
+        test_files = oss_fuzz.extract_introspector_test_files(
+            project_name, date_str.replace("-", ""))
+        if test_files:
+            save_test_files_report(test_files, project_name)
+        test_files_xref = oss_fuzz.extract_introspector_test_files_xref(
+            project_name, date_str.replace("-", ""))
+        if test_files_xref:
+            save_test_files_xref_report(test_files_xref, project_name)
 
-    all_files = oss_fuzz.extract_introspector_all_files(
-        project_name, date_str.replace("-", ""))
-    if all_files:
-        new_all_files = []
-        for file in all_files:
-            if '/src/inspector/source-code/' in file:
-                continue
-            new_all_files.append(file)
-        save_all_files_report(new_all_files, project_name)
+        all_files = oss_fuzz.extract_introspector_all_files(
+            project_name, date_str.replace("-", ""))
+        if all_files:
+            new_all_files = []
+            for file in all_files:
+                if '/src/inspector/source-code/' in file:
+                    continue
+                new_all_files.append(file)
+            save_all_files_report(new_all_files, project_name)
+    else:
+        branch_blockers = None
 
     # Collet debug informaiton for languages with debug information
     # Disable dumping type map for now because it takes too much storage.
@@ -668,12 +690,17 @@ def extract_project_data(project_name, date_str, should_include_details,
     # Save the report
     save_fuzz_introspector_report(introspector_report, project_name, date_str)
 
-    light_test_files = oss_fuzz.extract_introspector_light_all_tests(
-        project_name, date_str.replace("-", ""))
-    light_all_files = oss_fuzz.extract_introspector_light_all_files(
-        project_name, date_str.replace("-", ""))
-    light_all_pairs = oss_fuzz.extract_introspector_light_all_pairs(
-        project_name, date_str.replace("-", ""))
+    if try_introspector_fetches:
+        light_test_files = oss_fuzz.extract_introspector_light_all_tests(
+            project_name, date_str.replace("-", ""))
+        light_all_files = oss_fuzz.extract_introspector_light_all_files(
+            project_name, date_str.replace("-", ""))
+        light_all_pairs = oss_fuzz.extract_introspector_light_all_pairs(
+            project_name, date_str.replace("-", ""))
+    else:
+        light_test_files = []
+        light_all_files = []
+        light_all_pairs = []
 
     light_report = {
         'test-files': light_test_files,
@@ -763,8 +790,14 @@ def extract_project_data(project_name, date_str, should_include_details,
             if all_function_list is None:
                 all_function_list = oss_fuzz.extract_new_introspector_functions(
                     project_name, date_str)
-            all_constructor_list = oss_fuzz.extract_new_introspector_constructors(
-                project_name, date_str)
+            # The constructor list is JVM-only; skip the GET for other
+            # languages where the artefact does not exist.
+            if project_language == 'java':
+                all_constructor_list = (
+                    oss_fuzz.extract_new_introspector_constructors(
+                        project_name, date_str))
+            else:
+                all_constructor_list = []
 
             refined_proj_list = extract_and_refine_functions(
                 all_function_list, date_str)
@@ -906,7 +939,8 @@ def analyse_list_of_projects(date, projects_to_analyse,
     for project_name in project_name_list:
         futures.append(
             executor.submit(extract_project_data, project_name, date,
-                            should_include_details, analyses_dictionary))
+                            should_include_details, analyses_dictionary,
+                            projects_to_analyse.get(project_name)))
 
     # wait for all tasks to complete
     logger.info('Waiting for completion.')
