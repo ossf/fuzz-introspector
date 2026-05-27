@@ -554,8 +554,11 @@ def extract_local_project_data(project_name, oss_fuzz_path,
     }
 
 
-def extract_project_data(project_name, date_str, should_include_details,
-                         manager_return_dict, build_status=None):
+def extract_project_data(project_name,
+                         date_str,
+                         should_include_details,
+                         manager_return_dict,
+                         build_status=None):
     """
     Extracts data about a given project on a given date. The data will be placed
     in manager_return dict.
@@ -601,7 +604,9 @@ def extract_project_data(project_name, date_str, should_include_details,
     # broken today. When build_status is missing entirely, fall back to the
     # previous unconditional behaviour.
     try_coverage_fetches = True
-    try_introspector_fetches = project_language in {'c', 'c++', 'python', 'java'}
+    try_introspector_fetches = project_language in {
+        'c', 'c++', 'python', 'java'
+    }
     if should_include_details and build_status:
         if build_status.get('cov-build') is not True:
             try_coverage_fetches = False
