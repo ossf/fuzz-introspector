@@ -629,6 +629,8 @@ def project_profile():
         datestr = None
         latest_statistics = None
         latest_coverage_report = None
+        coverage_date = None
+        latest_coverage_ps = None
         latest_fuzz_introspector_report = None
         latest_introspector_datestr = ""
         project_url = ''
@@ -639,13 +641,12 @@ def project_profile():
                 datestr = ps.date
                 latest_statistics = ps
 
-                if project_build_status:
-                    project_language = project_build_status.language
-                else:
-                    project_language = 'c++'
+                # Remember the most recent date for which coverage data
+                # actually exists, so the project page can link to that
+                # report instead of today's (potentially failing) one.
+                if ps.coverage_data is not None:
+                    latest_coverage_ps = ps
 
-                latest_coverage_report = get_coverage_report_url(
-                    project.name, datestr, project_language)
                 if ps.introspector_data is not None:
                     if ps.introspector_url:
                         latest_fuzz_introspector_report = ps.introspector_url
@@ -657,6 +658,12 @@ def project_profile():
                     project_url = ps.project_url
                 if ps.project_repository:
                     project_repo = ps.project_repository
+
+        if latest_coverage_ps is not None:
+            latest_coverage_report = latest_coverage_ps.coverage_data.get(
+                'coverage_url')
+            coverage_date = latest_coverage_ps.date
+
         if not project_url:
             project_url = f'https://github.com/google/oss-fuzz/tree/master/projects/{project.name}'
 
@@ -688,7 +695,8 @@ def project_profile():
             has_project_stats=True,
             project_build_status=project_build_status,
             functions_of_interest=functions_of_interest,
-            latest_coverage_report=None,
+            latest_coverage_report=latest_coverage_report,
+            coverage_date=coverage_date,
             latest_statistics=latest_statistics,
             latest_fuzz_introspector_report=latest_fuzz_introspector_report,
             latest_introspector_datestr=latest_introspector_datestr,
@@ -719,6 +727,8 @@ def project_profile():
             datestr = None
             latest_statistics = None
             latest_coverage_report = None
+            coverage_date = None
+            latest_coverage_ps = None
             latest_fuzz_introspector_report = None
             latest_introspector_datestr = ""
             project_repo = ''
@@ -727,9 +737,10 @@ def project_profile():
                     real_stats.append(ps)
                     datestr = ps.date
                     latest_statistics = ps
-                    latest_coverage_report = get_coverage_report_url(
-                        build_status.project_name, datestr,
-                        build_status.language)
+                    # Track the most recent date that actually has coverage
+                    # data so the page links to a real report.
+                    if ps.coverage_data is not None:
+                        latest_coverage_ps = ps
                     if ps.introspector_data is not None:
                         if ps.introspector_url:
                             latest_fuzz_introspector_report = ps.introspector_url
@@ -740,11 +751,10 @@ def project_profile():
                     if ps.project_repository:
                         project_repo = ps.project_repository
 
-            if datestr and real_stats:
-                latest_coverage_report = get_coverage_report_url(
-                    build_status.project_name, datestr, build_status.language)
-            else:
-                latest_coverage_report = None
+            if latest_coverage_ps is not None:
+                latest_coverage_report = latest_coverage_ps.coverage_data.get(
+                    'coverage_url')
+                coverage_date = latest_coverage_ps.date
             project_url = f'https://github.com/google/oss-fuzz/tree/master/projects/{project.name}'
             return render_template(
                 'project-profile.html',
@@ -756,7 +766,7 @@ def project_profile():
                 project_build_status=build_status,
                 functions_of_interest=[],
                 latest_coverage_report=latest_coverage_report,
-                coverage_date=datestr,
+                coverage_date=coverage_date,
                 project_url=project_url,
                 latest_statistics=latest_statistics,
                 latest_introspector_datestr=latest_introspector_datestr,
