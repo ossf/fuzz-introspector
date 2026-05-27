@@ -580,8 +580,11 @@ def extract_local_project_data(project_name, oss_fuzz_path,
     }
 
 
-def extract_project_data(project_name, date_str, should_include_details,
-                         manager_return_dict):
+def extract_project_data(project_name,
+                         date_str,
+                         should_include_details,
+                         manager_return_dict,
+                         build_status=None):
     """
     Extracts data about a given project on a given date. The data will be placed
     in manager_return dict.
@@ -629,6 +632,7 @@ def extract_project_data(project_name, date_str, should_include_details,
     try_introspector_fetches = project_language in {
         'c', 'c++', 'python', 'java'
     }
+
     if build_status_on_or_before('introspector', project_name,
                                  date_str) is False:
         try_introspector_fetches = False
@@ -966,7 +970,8 @@ def analyse_list_of_projects(date, projects_to_analyse,
     for project_name in project_name_list:
         futures.append(
             executor.submit(extract_project_data, project_name, date,
-                            should_include_details, analyses_dictionary))
+                            should_include_details, analyses_dictionary,
+                            projects_to_analyse.get(project_name)))
 
     # wait for all tasks to complete
     logger.info('Waiting for completion.')
