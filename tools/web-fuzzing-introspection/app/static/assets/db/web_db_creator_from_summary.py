@@ -63,6 +63,32 @@ FUZZER_COVERAGE_IS_DEGRADED = 5  # 5% or more is a degradation
 MUST_INCLUDES: set[str] = set()
 MUST_INCLUDE_WITH_LANG: List[Any] = []
 
+# Per-pipeline date-indexed build history populated by
+# extract_oss_fuzz_build_status. Shape:
+#   {pipeline: {project_name: [(YYYY-MM-DD, success_bool), ...] desc-sorted}}
+# Used by build_status_on_or_before to skip GETs against (project, date)
+# pairs whose build is known to have failed.
+BUILD_HISTORY: Dict[str, Dict[str, List[Tuple[str, bool]]]] = {}
+
+
+def build_status_on_or_before(pipeline: str, project_name: str,
+                              date_str: str) -> Optional[bool]:
+    """Look up whether the most recent build of `pipeline` for `project_name`
+    completed on or before `date_str` was successful. Returns None when the
+    answer isn't known (no history loaded, project not present, or the date
+    predates the recorded window) — callers should treat None as "no signal,
+    proceed as usual"."""
+    if not BUILD_HISTORY:
+        return None
+    history = BUILD_HISTORY.get(pipeline, {}).get(project_name)
+    if not history:
+        return None
+    for d, ok in history:  # sorted descending by date
+        if d <= date_str:
+            return ok
+    return None
+
+
 logging.getLogger("requests").setLevel(logging.WARNING)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 
@@ -554,11 +580,8 @@ def extract_local_project_data(project_name, oss_fuzz_path,
     }
 
 
-def extract_project_data(project_name,
-                         date_str,
-                         should_include_details,
-                         manager_return_dict,
-                         build_status=None):
+def extract_project_data(project_name, date_str, should_include_details,
+                         manager_return_dict):
     """
     Extracts data about a given project on a given date. The data will be placed
     in manager_return dict.
@@ -596,22 +619,21 @@ def extract_project_data(project_name,
 
     collect_debug_info = project_language in {'c', 'c++'}
 
-    # Decide whether to attempt the per-artefact GETs against GCS. OSS-Fuzz's
-    # build-status JSON only reflects the latest build, so it is a reliable
-    # signal only for the most recent date in a sweep (the one that gets
-    # `should_include_details=True`). For older dates we still try, because
-    # the build may have been healthy on that historical date even if it is
-    # broken today. When build_status is missing entirely, fall back to the
-    # previous unconditional behaviour.
+    # Decide whether to attempt the per-artefact GETs against GCS. We consult
+    # the per-pipeline build-history index for the specific date being
+    # processed: if the most recent build at or before this date is recorded
+    # as a failure, the artefacts won't exist on GCS and the GETs would just
+    # 404. Returns None when the date predates the recorded history window;
+    # in that case we fall back to the previous unconditional behaviour.
     try_coverage_fetches = True
     try_introspector_fetches = project_language in {
         'c', 'c++', 'python', 'java'
     }
-    if should_include_details and build_status:
-        if build_status.get('cov-build') is not True:
-            try_coverage_fetches = False
-        if build_status.get('introspector-build') is not True:
-            try_introspector_fetches = False
+    if build_status_on_or_before('introspector', project_name,
+                                 date_str) is False:
+        try_introspector_fetches = False
+    if build_status_on_or_before('coverage', project_name, date_str) is False:
+        try_coverage_fetches = False
 
     # Extract code coverage and introspector reports.
     if try_coverage_fetches:
@@ -944,8 +966,7 @@ def analyse_list_of_projects(date, projects_to_analyse,
     for project_name in project_name_list:
         futures.append(
             executor.submit(extract_project_data, project_name, date,
-                            should_include_details, analyses_dictionary,
-                            projects_to_analyse.get(project_name)))
+                            should_include_details, analyses_dictionary))
 
     # wait for all tasks to complete
     logger.info('Waiting for completion.')
@@ -1200,23 +1221,36 @@ def calculate_recent_results(projects_with_new_results, timestamps,
     return results
 
 
+_EXISTING_TIMESTAMPS_CACHE = None
+
+
 def extend_db_json_files(project_timestamps, output_directory,
                          should_include_details):
     """Extends a set of DB .json files."""
 
-    existing_timestamps = []
-    logging.info('Loading existing timestamps')
-    if os.path.isfile(
-            os.path.join(output_directory, DB_JSON_ALL_PROJECT_TIMESTAMP)):
-        with open(
-                os.path.join(output_directory, DB_JSON_ALL_PROJECT_TIMESTAMP),
-                'r') as f:
-            try:
-                existing_timestamps = orjson.loads(f.read())
-            except:
-                existing_timestamps = []
+    # The aggregate timestamp file can hold ~1M+ entries on a full historical
+    # sweep, and parsing it from JSON takes ~30s. Since the same process wrote
+    # it on the previous iteration, we keep an in-memory copy and only load
+    # from disk once per process. The on-disk write still happens every
+    # iteration so downstream consumers see the same behaviour as before.
+    global _EXISTING_TIMESTAMPS_CACHE
+    if _EXISTING_TIMESTAMPS_CACHE is not None:
+        existing_timestamps = _EXISTING_TIMESTAMPS_CACHE
+        logging.info('Reusing cached existing timestamps')
     else:
         existing_timestamps = []
+        logging.info('Loading existing timestamps')
+        if os.path.isfile(
+                os.path.join(output_directory, DB_JSON_ALL_PROJECT_TIMESTAMP)):
+            with open(
+                    os.path.join(output_directory,
+                                 DB_JSON_ALL_PROJECT_TIMESTAMP), 'r') as f:
+                try:
+                    existing_timestamps = orjson.loads(f.read())
+                except:
+                    existing_timestamps = []
+        else:
+            existing_timestamps = []
     logging.info('Number of existing timestamps: %d', len(existing_timestamps))
 
     logging.info('Creating timestamp mapping')
@@ -1291,6 +1325,11 @@ def extend_db_json_files(project_timestamps, output_directory,
                 os.path.join(output_directory, DB_JSON_ALL_PROJECT_TIMESTAMP),
                 'w') as f:
             f.write(orjson.dumps(existing_timestamps).decode('utf-8'))
+
+    # Update the in-memory cache so the next iteration in this process can
+    # skip the disk load. `existing_timestamps` may have been rebound above
+    # (e.g. by the FI_EXCLUDE_ALL_NON_MUSTS filter), so re-bind from the local.
+    _EXISTING_TIMESTAMPS_CACHE = existing_timestamps
 
 
 def extend_func_db(function_dict, output_dir, target):
@@ -1541,7 +1580,12 @@ def extract_oss_fuzz_build_status(output_directory):
         shutil.rmtree(oss_fuzz_local_clone)
     git_clone_project(constants.OSS_FUZZ_REPO, oss_fuzz_local_clone)
 
-    build_status_dict = oss_fuzz.get_projects_build_status()
+    build_status_dict, build_history = oss_fuzz.get_projects_build_status()
+
+    # Stash the per-pipeline date-indexed history so per-(project, date) GETs
+    # can be skipped when the build for that date is known to have failed.
+    global BUILD_HISTORY
+    BUILD_HISTORY = build_history
 
     if FI_EXCLUDE_ALL_NON_MUSTS:
         new_build_status_dict = {}

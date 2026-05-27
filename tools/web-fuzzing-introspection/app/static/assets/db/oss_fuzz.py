@@ -734,6 +734,25 @@ def get_introspector_type_map(project_name, date_str):
     return introspector_type_map
 
 
+def _index_history_by_date(build_json):
+    """Turn one of the OSS-Fuzz status-*.json files into a per-project history
+    index: {project_name: [(YYYY-MM-DD, success_bool), ...]} sorted descending
+    by date so callers can look up "most recent build on or before date X" in
+    a short linear walk. Entries with an unparseable finish_time are skipped."""
+    idx = {}
+    for p in build_json.get('projects', []):
+        entries = []
+        for h in p.get('history', []):
+            ft = h.get('finish_time') or ''
+            # finish_time is an ISO 8601 timestamp; the first 10 chars are the
+            # YYYY-MM-DD date which is the granularity we compare against.
+            if len(ft) >= 10 and ft[4] == '-' and ft[7] == '-':
+                entries.append((ft[:10], bool(h.get('success', False))))
+        entries.sort(reverse=True)
+        idx[p['name']] = entries
+    return idx
+
+
 def get_projects_build_status():
     fuzz_build_url = constants.OSS_FUZZ_BUILD_STATUS_URL + '/' + constants.FUZZ_BUILD_JSON
     coverage_build_url = constants.OSS_FUZZ_BUILD_STATUS_URL + '/' + constants.COVERAGE_BUILD_JSON
@@ -747,6 +766,12 @@ def get_projects_build_status():
     fuzz_build_json = json.loads(fuzz_build_raw)
     cov_build_json = json.loads(coverage_build_raw)
     introspector_build_json = json.loads(introspector_build_raw)
+
+    build_history = {
+        'fuzz': _index_history_by_date(fuzz_build_json),
+        'coverage': _index_history_by_date(cov_build_json),
+        'introspector': _index_history_by_date(introspector_build_json),
+    }
 
     build_status_dict = dict()
     for p in fuzz_build_json['projects']:
@@ -792,7 +817,7 @@ def get_projects_build_status():
         project_language = try_to_get_project_language(project_name)
         build_status_dict[project_name]['language'] = project_language
     print("Number of projects: %d" % (len(build_status_dict)))
-    return build_status_dict
+    return build_status_dict, build_history
 
 
 def try_to_get_project_language(project_name):
