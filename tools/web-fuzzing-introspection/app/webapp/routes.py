@@ -659,7 +659,8 @@ def project_profile():
                 if ps.project_repository:
                     project_repo = ps.project_repository
 
-        if latest_coverage_ps is not None:
+        if (latest_coverage_ps is not None
+                and latest_coverage_ps.coverage_data is not None):
             latest_coverage_report = latest_coverage_ps.coverage_data.get(
                 'coverage_url')
             coverage_date = latest_coverage_ps.date
@@ -751,7 +752,8 @@ def project_profile():
                     if ps.project_repository:
                         project_repo = ps.project_repository
 
-            if latest_coverage_ps is not None:
+            if (latest_coverage_ps is not None
+                    and latest_coverage_ps.coverage_data is not None):
                 latest_coverage_report = latest_coverage_ps.coverage_data.get(
                     'coverage_url')
                 coverage_date = latest_coverage_ps.date
