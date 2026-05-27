@@ -29,16 +29,30 @@ if [ -f ./llvm/lib/Transforms/IPO/PassManagerBuilder.cpp ]; then
     sed -i 's/MPM.addPass(CrossDSOCFIPass());/MPM.addPass(CrossDSOCFIPass());\n  MPM.addPass(FuzzIntrospectorPass());/g' ./llvm/lib/Passes/PassBuilderPipelines.cpp
     sed -i 's/MODULE_PASS("annotation2metadata", Annotation2MetadataPass())/MODULE_PASS("annotation2metadata", Annotation2MetadataPass())\nMODULE_PASS("fuzz-introspector", FuzzIntrospectorPass())/g' ./llvm/lib/Passes/PassRegistry.def
 else
-    echo "Applying llvm 18 patches"
+    echo "Applying llvm 18+ patches (LLVM 18-22)"
     echo "add_subdirectory(FuzzIntrospector)" >> ./llvm/lib/Transforms/CMakeLists.txt
     sed -i 's/Instrumentation/Instrumentation\n  FuzzIntrospector/g' ./llvm/lib/Transforms/IPO/CMakeLists.txt
 
-    #  This is for LLVM 21. Monitor if this affects more.
+    # LLVM 21+: InitializePasses.h uses LLVM_ABI visibility macros.
+    # On LLVM 21+, initializeXRayInstrumentationPass was renamed to
+    # initializeXRayInstrumentationLegacyPass, so the sed below is a no-op.
     sed -i 's/LLVM_ABI void initializeMIRNamerPass/LLVM_ABI void initializeFuzzIntrospectorPass(PassRegistry \&);\nLLVM_ABI void initializeMIRNamerPass/g' llvm/include/llvm/InitializePasses.h
 
-    sed -i 's/void initializeXRayInstrumentationPass(PassRegistry\&);/void initializeXRayInstrumentationPass(PassRegistry\&);\nvoid initializeFuzzIntrospectorPass(PassRegistry\&);/g' ./llvm/include/llvm/InitializePasses.h
+    # LLVM 18-20: no LLVM_ABI macros; anchor on initializeXRayInstrumentationPass
+    # which was present through LLVM 20 but renamed in LLVM 21+.
+    # [ ]* handles spacing: LLVM 18-19 use "PassRegistry&", LLVM 20 uses "PassRegistry &".
+    sed -i 's/void initializeXRayInstrumentationPass(PassRegistry[ ]*\&);/void initializeXRayInstrumentationPass(PassRegistry \&);\nvoid initializeFuzzIntrospectorPass(PassRegistry \&);/g' ./llvm/include/llvm/InitializePasses.h
+
+    # Verify that exactly one of the two sed commands above injected the declaration.
+    _count=$(grep -c 'initializeFuzzIntrospectorPass' llvm/include/llvm/InitializePasses.h || true)
+    [ "$_count" -eq 1 ] || \
+        { echo "ERROR: expected exactly one initializeFuzzIntrospectorPass declaration, got $_count"; exit 1; }
+
     sed -i 's/#include "llvm\/Transforms\/Instrumentation\/ThreadSanitizer.h"/#include "llvm\/Transforms\/Instrumentation\/ThreadSanitizer.h"\n#include "llvm\/Transforms\/FuzzIntrospector\/FuzzIntrospector.h"/g' ./llvm/lib/Passes/PassBuilder.cpp
     sed -i 's/#include "llvm\/Transforms\/Instrumentation\/PGOInstrumentation.h"/#include "llvm\/Transforms\/Instrumentation\/PGOInstrumentation.h"\n#include "llvm\/Transforms\/FuzzIntrospector\/FuzzIntrospector.h"/g' ./llvm/lib/Passes/PassBuilderPipelines.cpp
     sed -i 's/MPM.addPass(CrossDSOCFIPass());/MPM.addPass(CrossDSOCFIPass());\n  MPM.addPass(FuzzIntrospectorPass());/g' ./llvm/lib/Passes/PassBuilderPipelines.cpp
+    grep -q 'FuzzIntrospectorPass' ./llvm/lib/Passes/PassBuilderPipelines.cpp || \
+        { echo "ERROR: Failed to inject FuzzIntrospectorPass into PassBuilderPipelines.cpp (CrossDSOCFIPass anchor not found)"; exit 1; }
+    echo "Verified: FuzzIntrospectorPass present in PassBuilderPipelines.cpp"
     sed -i 's/MODULE_PASS("annotation2metadata", Annotation2MetadataPass())/MODULE_PASS("annotation2metadata", Annotation2MetadataPass())\nMODULE_PASS("fuzz-introspector", FuzzIntrospectorPass())/g' ./llvm/lib/Passes/PassRegistry.def
 fi
