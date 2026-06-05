@@ -8,4 +8,4 @@ requests==2.32.4
 pyyaml==6.0.2
 orjson==3.10.0
 flask_smorest==0.44.0
-marshmallow==3.21.0
+marshmallow==3.26.2
