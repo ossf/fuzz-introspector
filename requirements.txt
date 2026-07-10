@@ -4,7 +4,7 @@ lxml==6.1.0
 matplotlib==3.10.0
 numpy==2.1.0
 PyYAML==6.0.2
-soupsieve==2.2.1
+soupsieve==2.8.4
 yapf==0.32.0
 pylint==3.0.0
 flake8
