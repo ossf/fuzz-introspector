@@ -242,3 +242,27 @@ def test_resolve_coverage_link(
     if (temp_file is not None):
         # Remove temp html_status.json file
         os.remove('temp_html_status.json')
+
+
+def test_resolve_coverage_link_go_report_without_select(tmp_path):
+    """A go coverage report that has no <select id='files'> should fall back
+    to the default index.html link instead of crashing."""
+    report_dir = tmp_path / "report" / "linux"
+    report_dir.mkdir(parents=True)
+    (report_dir / "index.html").write_text(
+        "<html><body>no file selector here</body></html>"
+    )
+
+    old_out = os.environ.get('OUT')
+    os.environ['OUT'] = str(tmp_path)
+    try:
+        actual = utils.resolve_coverage_link(
+            'https://coverage-url.com/', 'main.go', 13, 'name', 'go'
+        )
+    finally:
+        if old_out is None:
+            del os.environ['OUT']
+        else:
+            os.environ['OUT'] = old_out
+
+    assert actual == 'https://coverage-url.com/index.html'
