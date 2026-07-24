@@ -377,12 +377,13 @@ def resolve_coverage_link(cov_url: str, source_file: str, lineno: int,
         if report_html:
             soup = BeautifulSoup(report_html, 'html.parser')
             select_element = soup.find('select', id='files')
-            for option in select_element.find_all('option'):
-                key = option['value']
-                file = option.text.strip().split(' ')[0]
-                if file.endswith(source_file):
-                    result = f'{result}#{key}'
-                    break
+            if select_element:
+                for option in select_element.find_all('option'):
+                    key = option['value']
+                    file = option.text.strip().split(' ')[0]
+                    if file.endswith(source_file):
+                        result = f'{result}#{key}'
+                        break
     else:
         logger.info('Unsupported language for coverage link resolve')
 
