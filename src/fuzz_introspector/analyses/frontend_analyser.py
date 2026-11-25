@@ -127,7 +127,7 @@ class FrontendAnalyser(analysis.AnalysisInterface):
         """Analysis function. Perform another frontend run and extract all
         test files in the project for additional analysis."""
         # Configure base directory and detect language
-        basefolder = os.environ.get('SRC', '/src')
+        basefolder = os.environ.get('SRC', basefolder)
         language = utils.detect_language(basefolder)
 
         # Prepare separate out directory
