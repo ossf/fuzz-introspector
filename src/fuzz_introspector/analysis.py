@@ -88,17 +88,16 @@ class IntrospectionProject():
 
         logger.info("[+] Accummulating profiles")
         logger.info("Accummulating using multiprocessing")
-        manager = multiprocessing.Manager()
         semaphore = multiprocessing.Semaphore(10)
 
-        return_dict = manager.dict()
+        queue: multiprocessing.Queue = multiprocessing.Queue()
 
         jobs = []
         idx = 0
         for profile in self.profiles:
             p = multiprocessing.Process(
                 target=fuzzer_profile.FuzzerProfile.accummulate_profile,
-                args=(profile, self.base_folder, return_dict, f"uniq-{idx}",
+                args=(profile, self.base_folder, queue, f"uniq-{idx}",
                       semaphore))
             jobs.append(p)
             idx += 1
@@ -107,8 +106,12 @@ class IntrospectionProject():
             proc.join()
 
         new_profiles = []
-        for idx in return_dict:
-            new_profiles.append(return_dict[idx])
+        while not queue.empty():
+            try:
+                _, profile = queue.get_nowait()
+                new_profiles.append(profile)
+            except Exception:
+                break
         self.profiles = new_profiles
 
         logger.info("[+] Creating project profile")

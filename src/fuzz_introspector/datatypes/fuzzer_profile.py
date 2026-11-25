@@ -385,7 +385,7 @@ class FuzzerProfile:
         self._set_all_reached_functions_runtime()
         logger.info("%s: finished accummulating profile", self.identifier)
         if return_dict is not None:
-            return_dict[uniq_id] = self
+            return_dict.put((uniq_id, self))
         if semaphore is not None:
             semaphore.release()
 

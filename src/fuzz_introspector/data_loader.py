@@ -83,14 +83,14 @@ def read_fuzzer_data_file_to_profile(
     return profile
 
 
-def _load_profile(data_file: str, language: str, manager, semaphore=None):
+def _load_profile(data_file: str, language: str, queue, semaphore=None):
     """Internal function used for multithreaded profile loading"""
     if semaphore is not None:
         semaphore.acquire()
 
     profile = read_fuzzer_data_file_to_profile(data_file, language)
     if profile is not None:
-        manager[data_file] = profile
+        queue.put(profile)
     else:
         logger.error('profile is none')
     if semaphore is not None:
@@ -150,27 +150,33 @@ def load_all_profiles(
 
     logger.info(" - found %d profiles to load", len(data_files))
     if parallelise:
-        manager = multiprocessing.Manager()
         semaphore = multiprocessing.Semaphore(semaphore_count)
-        return_dict = manager.dict()
+        queue: multiprocessing.Queue = multiprocessing.Queue()
         jobs = []
         for data_file in data_files:
             p = multiprocessing.Process(target=_load_profile,
-                                        args=(data_file, language, return_dict,
+                                        args=(data_file, language, queue,
                                               semaphore))
             jobs.append(p)
             p.start()
         for proc in jobs:
             proc.join()
 
-        for v in return_dict.values():
-            profiles.append(v)
+        while not queue.empty():
+            try:
+                profiles.append(queue.get_nowait())
+            except Exception:
+                break
     else:
-        return_dict_gen: Dict[Any, Any] = dict()
+        import queue as _queue
+        serial_queue: _queue.Queue = _queue.Queue()
         for data_file in data_files:
-            _load_profile(data_file, language, return_dict_gen, None)
-        for v in return_dict_gen.values():
-            profiles.append(v)
+            _load_profile(data_file, language, serial_queue, None)
+        while not serial_queue.empty():
+            try:
+                profiles.append(serial_queue.get_nowait())
+            except Exception:
+                break
 
     return profiles
 
